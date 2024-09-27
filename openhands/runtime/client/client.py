@@ -60,6 +60,7 @@ ROOT_GID = 0
 INIT_COMMANDS = [
     'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"',
 ]
+SOFT_TIMEOUT_SECONDS = 60
 
 
 class RuntimeClient:
@@ -74,7 +75,6 @@ class RuntimeClient:
         username: str,
         user_id: int,
         browsergym_eval_env: str | None,
-        cmd_timeout: int
     ) -> None:
         self.plugins_to_load = plugins_to_load
         self.username = username
@@ -86,7 +86,6 @@ class RuntimeClient:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.browser = BrowserEnv(browsergym_eval_env)
-        self.cmd_timeout = cmd_timeout
 
     @property
     def initial_pwd(self):
@@ -365,18 +364,18 @@ class RuntimeClient:
             for command in commands:
                 if command == '':
                     output, exit_code = self._continue_bash(
-                        timeout=self.cmd_timeout,
+                        timeout=SOFT_TIMEOUT_SECONDS,
                         keep_prompt=action.keep_prompt,
                         kill_on_timeout=False,
                     )
                 elif command.lower() == 'ctrl+c':
                     output, exit_code = self._interrupt_bash(
-                        timeout=self.cmd_timeout
+                        timeout=SOFT_TIMEOUT_SECONDS
                     )
                 else:
                     output, exit_code = self._execute_bash(
                         command,
-                        timeout=self.cmd_timeout
+                        timeout=SOFT_TIMEOUT_SECONDS
                         if not action.blocking
                         else action.timeout,
                         keep_prompt=action.keep_prompt,
@@ -542,12 +541,6 @@ if __name__ == '__main__':
         help='BrowserGym environment used for browser evaluation',
         default=None,
     )
-    parser.add_argument(
-        '--cmd-timeout',
-        type=int,
-        help='Timeout for a single command',
-        default=180,
-    )
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
 
@@ -569,7 +562,6 @@ if __name__ == '__main__':
             username=args.username,
             user_id=args.user_id,
             browsergym_eval_env=args.browsergym_eval_env,
-            cmd_timeout=args.cmd_timeout,
         )
         await client.ainit()
         yield

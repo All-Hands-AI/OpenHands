@@ -148,8 +148,7 @@ class RemoteRuntime(Runtime):
                 f'{plugin_arg}'
                 f'--username {"openhands" if self.config.run_as_openhands else "root"} '
                 f'--user-id {self.config.sandbox.user_id} '
-                f'{browsergym_arg} '
-                f'--cmd-timeout {self.config.sandbox.timeout}'
+                f'{browsergym_arg}'
             ),
             'working_dir': '/openhands/code/',
             'name': self.container_name,

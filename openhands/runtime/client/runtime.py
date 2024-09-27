@@ -281,7 +281,6 @@ class EventStreamRuntime(Runtime):
                     f'--username {"openhands" if self.config.run_as_openhands else "root"} '
                     f'--user-id {self.config.sandbox.user_id} '
                     f'{browsergym_arg} '
-                    f'--cmd-timeout {self.config.sandbox.timeout}'
                 ),
                 network_mode=network_mode,
                 ports=port_mapping,
