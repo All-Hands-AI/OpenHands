@@ -141,14 +141,23 @@ def prep_docker_build_folder(
         file.write(dockerfile_content)
 
     # Get the MD5 hash of the dir_path directory
-    dist_hash = dirhash(dir_path, 'md5')
+    dir_hash = dirhash(
+        dir_path,
+        'md5',
+        ignore=[
+            '.*/',  # hidden directories
+            '__pycache__/',
+            '*.pyc',
+        ],
+    )
+    hash = f'v{oh_version}_{dir_hash}'
     logger.info(
         f'Input base image: {base_image}\n'
         f'Skip init: {skip_init}\n'
         f'Extra deps: {extra_deps}\n'
-        f'Hash for docker build directory [{dir_path}] (contents: {os.listdir(dir_path)}): {dist_hash}\n'
+        f'Hash for docker build directory [{dir_path}] (contents: {os.listdir(dir_path)}): {hash}\n'
     )
-    return dist_hash
+    return hash
 
 
 def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
