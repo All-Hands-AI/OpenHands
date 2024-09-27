@@ -11,6 +11,7 @@ import os
 import re
 import shutil
 import subprocess
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -86,6 +87,8 @@ class RuntimeClient:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.browser = BrowserEnv(browsergym_eval_env)
+        self.start_time = time.time()
+        self.last_execution_time = self.start_time
 
     @property
     def initial_pwd(self):
@@ -600,6 +603,14 @@ if __name__ == '__main__':
             response = await call_next(request)
         return response
 
+    @app.get('/server_info')
+    async def get_server_info():
+        assert client is not None
+        current_time = time.time()
+        uptime = current_time - client.start_time
+        idle_time = current_time - client.last_execution_time
+        return {'uptime': uptime, 'idle_time': idle_time}
+
     @app.post('/execute_action')
     async def execute_action(action_request: ActionRequest):
         assert client is not None
@@ -607,6 +618,7 @@ if __name__ == '__main__':
             action = event_from_dict(action_request.action)
             if not isinstance(action, Action):
                 raise HTTPException(status_code=400, detail='Invalid action type')
+            client.last_execution_time = time.time()
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
