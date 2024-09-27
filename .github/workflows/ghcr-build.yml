@@ -56,7 +56,9 @@ jobs:
           docker-images: false
           swap-storage: true
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v3.0.0
+        with:
+          image: tonistiigi/binfmt:latest
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -118,7 +120,9 @@ jobs:
           docker-images: false
           swap-storage: true
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v3.0.0
+        with:
+          image: tonistiigi/binfmt:latest
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
