@@ -443,12 +443,11 @@ hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
 hint: 'development'. The just-created branch can be renamed via this command:
 hint:
 hint: 	git branch -m <name>
-error: chmod on /workspace/.git/config.lock failed: Operation not permitted
-fatal: could not set 'core.filemode' to 'false'
+Initialized empty Git repository in /workspace/.git/
 
 [Python Interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]
 openhands@docker-desktop:/workspace $
-[Command -1 finished with exit code 128]
+[Command -1 finished with exit code 0]
 
 
 ENVIRONMENT REMINDER: You have 17 turns left to complete the task. When finished reply with <finish></finish>.

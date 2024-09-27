@@ -1,4 +1,6 @@
-Great, we've successfully initialized a git repository. Now, let's create a simple file and add it to the staging area:
+It seems the current directory is empty. Let's create a simple file to add to our repository.
 
 <execute_bash>
-echo "Hello, Git!" > hello.txt && git add hello.txt
+echo "Hello, Git!" > hello.txt
+git add hello.txt
+git status

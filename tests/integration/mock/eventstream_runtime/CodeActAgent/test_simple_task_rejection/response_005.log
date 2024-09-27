@@ -1,4 +1,4 @@
-Now that we've added a file to the staging area, let's check the status to confirm:
+Great, we have a new file "hello.txt" staged for commit. Now, let's create a commit message for this change:
 
 <execute_bash>
-git status
+git commit -m "Initial commit: Add hello.txt file"

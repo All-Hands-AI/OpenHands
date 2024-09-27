@@ -1,4 +1,4 @@
-The script has been created successfully with the correct content. Since we don't have permission to change the file's executable permissions, we can run it using the bash command directly. Let's test the script:
+The contents of the file look correct. Now, let's run the script to ensure it prints "hello" as expected:
 
 <execute_bash>
-bash hello.sh
+./hello.sh
