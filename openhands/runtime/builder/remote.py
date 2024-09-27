@@ -98,9 +98,9 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
             # Wait before polling again
             sleep_if_should_continue(30)
 
-    def image_exists(self, image_name: str, pull_from_remote: bool = True) -> bool:
+    def image_exists(self, image_name: str, pull_from_repo: bool = True) -> bool:
         """Checks if an image exists in the remote registry using the /image_exists endpoint."""
-        params = {'image': image_name, 'pull_from_remote': pull_from_remote}
+        params = {'image': image_name, 'pull_from_repo': pull_from_repo}
         response = send_request(
             self.session, 'GET', f'{self.api_url}/image_exists', params=params
         )
