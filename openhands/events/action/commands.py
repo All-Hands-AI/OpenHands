@@ -29,7 +29,6 @@ class CmdRunAction(Action):
     runnable: ClassVar[bool] = True
     is_confirmed: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
     security_risk: ActionSecurityRisk | None = None
-    timeout: int | None = None
 
     @property
     def message(self) -> str:
