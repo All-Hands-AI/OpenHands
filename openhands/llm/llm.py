@@ -137,13 +137,24 @@ class LLM(RetryMixin, DebugMixin):
         def wrapper(*args, **kwargs):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
             messages: list[dict[str, Any]] | dict[str, Any] = []
-            # some callers might just send the messages directly
-            if 'messages' in kwargs:
-                messages = kwargs['messages']
-            else:
-                messages = args[0] if len(args) > 0 else []
 
-            # work with a list
+            # some callers might just send the model and messages directly
+            # litellm allows positional args, like completion(model, messages, **kwargs)
+            if len(args) > 1:
+                # ignore the first argument if it's provided (it would be the model)
+                # if we will allow overriding the configured model,
+                # we'll need to make sure it's not in kwargs in the same time
+                # (as the partial function included it)
+                # note that we could also allow other positional args, if we remove them from kwargs
+                messages = args[1] if len(args) > 1 else args[0]
+                kwargs['messages'] = messages
+
+                # we need to remove the first arguments from args
+                args = args[2:]
+            elif 'messages' in kwargs:
+                messages = kwargs['messages']
+
+            # ensure we work with a list of messages
             messages = messages if isinstance(messages, list) else [messages]
 
             # if we have no messages, something went very wrong
