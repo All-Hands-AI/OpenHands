@@ -71,11 +71,11 @@ jobs:
       - name: Build and push app image
         if: "!github.event.pull_request.head.repo.fork"
         run: |
-          ./containers/build.sh openhands ${{ github.repository_owner }} --push
+          ./containers/build.sh -i openhands -o ${{ github.repository_owner }} --push
       - name: Build app image
         if: "github.event.pull_request.head.repo.fork"
         run: |
-          ./containers/build.sh openhands image ${{ github.repository_owner }}
+          ./containers/build.sh -i openhands -o ${{ github.repository_owner }} --load
       - name: Get hash in App Image
         id: get_hash_in_app_image
         run: |
@@ -154,7 +154,7 @@ jobs:
       - name: Build and push runtime image ${{ matrix.base_image.image }}
         if: github.event.pull_request.head.repo.fork != true
         run: |
-          ./containers/build.sh runtime ${{ github.repository_owner }} --push ${{ matrix.base_image.tag }}
+          ./containers/build.sh -i runtime -o ${{ github.repository_owner }} --push -t ${{ matrix.base_image.tag }}
       # Forked repos can't push to GHCR, so we need to upload the image as an artifact
       - name: Build runtime image ${{ matrix.base_image.image }} for fork
         if: github.event.pull_request.head.repo.fork
