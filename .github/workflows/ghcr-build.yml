@@ -75,7 +75,7 @@ jobs:
       - name: Build app image
         if: "github.event.pull_request.head.repo.fork"
         run: |
-          ./containers/build.sh openhands image ${{ github.repository_owner }}
+          ./containers/build.sh openhands ${{ github.repository_owner }}
       - name: Get hash in App Image
         id: get_hash_in_app_image
         run: |
