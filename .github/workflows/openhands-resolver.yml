@@ -77,7 +77,7 @@ jobs:
               --issue-number ${{ github.event.issue.number }} \
               --pr-type branch \
               --send-on-failure | tee branch_result.txt && \
-              grep "Branch" branch_result.txt | sed 's/.*\///g; s/.expand=1//g' > branch_name.txt
+              grep "branch created" branch_result.txt | sed 's/.*\///g; s/.expand=1//g' > branch_name.txt
           fi
 
       - name: Comment on issue
@@ -89,20 +89,38 @@ jobs:
             const issueNumber = context.issue.number;
             const success = ${{ steps.check_result.outputs.RESOLUTION_SUCCESS }};
 
-            if (success) {
-              const prNumber = fs.readFileSync('pr_number.txt', 'utf8').trim();
+            let prNumber = '';
+            let branchName = '';
+
+            try {
+              if (success) {
+                prNumber = fs.readFileSync('pr_number.txt', 'utf8').trim();
+              } else {
+                branchName = fs.readFileSync('branch_name.txt', 'utf8').trim();
+              }
+            } catch (error) {
+              console.error('Error reading file:', error);
+            }
+
+            if (success && prNumber) {
               github.rest.issues.createComment({
                 issue_number: issueNumber,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 body: `A potential fix has been generated and a draft PR #${prNumber} has been created. Please review the changes.`
               });
-            } else {
-              const branchName = fs.readFileSync('branch_name.txt', 'utf8').trim();
+            } else if (!success && branchName) {
               github.rest.issues.createComment({
                 issue_number: issueNumber,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 body: `An attempt was made to automatically fix this issue, but it was unsuccessful. A branch named '${branchName}' has been created with the attempted changes. You can view the branch [here](https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${branchName}). Manual intervention may be required.`
+              });
+            } else {
+              github.rest.issues.createComment({
+                issue_number: issueNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `The workflow to fix this issue encountered an error. Please check the workflow logs for more information.`
               });
             }
