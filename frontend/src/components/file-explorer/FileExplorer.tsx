@@ -18,6 +18,7 @@ import ExplorerTree from "./ExplorerTree";
 import toast from "#/utils/toast";
 import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
+import { retrieveFiles } from "#/api/open-hands";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
@@ -94,6 +95,7 @@ interface FileExplorerProps {
 
 function FileExplorer({ files }: FileExplorerProps) {
   const { revalidate } = useRevalidator();
+  const [allFiles, setAllFiles] = React.useState<string[]>(files);
   const [isHidden, setIsHidden] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -112,6 +114,9 @@ function FileExplorer({ files }: FileExplorerProps) {
       return;
     }
     dispatch(setRefreshID(Math.random()));
+    // TODO: Get token from data loader
+    const token = localStorage.getItem("token");
+    if (token) retrieveFiles(token).then(setAllFiles);
     revalidate();
   };
 
@@ -211,7 +216,7 @@ function FileExplorer({ files }: FileExplorerProps) {
         )}
       >
         <div className="flex flex-col relative h-full px-3 py-2">
-          <div className="sticky top-0 bg-neutral-800 z-10">
+          <div className="sticky top-0 bg-neutral-800">
             <div
               className={twMerge(
                 "flex items-center",
@@ -233,7 +238,7 @@ function FileExplorer({ files }: FileExplorerProps) {
           </div>
           <div className="overflow-auto flex-grow">
             <div style={{ display: isHidden ? "none" : "block" }}>
-              <ExplorerTree files={files} />
+              <ExplorerTree files={allFiles} />
             </div>
           </div>
         </div>
