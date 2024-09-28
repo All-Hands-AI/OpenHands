@@ -36,6 +36,17 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
     ServiceUnavailableError,
 )
 
+# cache prompt supporting models
+# remove this when we gemini and deepseek are supported
+CACHE_PROMPT_SUPPORTED_MODELS = [
+    'claude-3-5-sonnet-20240620',
+    'claude-3-haiku-20240307',
+    'claude-3-opus-20240229',
+    'anthropic/claude-3-opus-20240229',
+    'anthropic/claude-3-haiku-20240307',
+    'anthropic/claude-3-5-sonnet-20240620',
+]
+
 
 class LLM(RetryMixin, DebugMixin):
     """The LLM class represents a Language Model instance.
@@ -138,18 +149,17 @@ class LLM(RetryMixin, DebugMixin):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
             messages: list[dict[str, Any]] | dict[str, Any] = []
 
-            # some callers might just send the model and messages directly
+            # some callers might send the model and messages directly
             # litellm allows positional args, like completion(model, messages, **kwargs)
             if len(args) > 1:
                 # ignore the first argument if it's provided (it would be the model)
-                # if we will allow overriding the configured model,
-                # we'll need to make sure it's not in kwargs in the same time
-                # (as the partial function included it)
-                # note that we could also allow other positional args, if we remove them from kwargs
+                # design wise: we don't allow overriding the configured values
+                # implementation wise: the partial function set the model as a kwarg already
+                # as well as other kwargs
                 messages = args[1] if len(args) > 1 else args[0]
                 kwargs['messages'] = messages
 
-                # we need to remove the first arguments from args
+                # remove the first args, they're sent in kwargs
                 args = args[2:]
             elif 'messages' in kwargs:
                 messages = kwargs['messages']
@@ -235,6 +245,7 @@ class LLM(RetryMixin, DebugMixin):
             self.config.caching_prompt is True
             and self.model_info is not None
             and self.model_info.get('supports_prompt_caching', False)
+            and self.config.model in CACHE_PROMPT_SUPPORTED_MODELS
         )
 
     def _post_completion(self, response: ModelResponse) -> None:
