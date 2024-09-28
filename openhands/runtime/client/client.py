@@ -323,7 +323,13 @@ class RuntimeClient:
             logger.debug('Requesting exit code...')
             self.shell.expect(self.__bash_expect_regex, timeout=timeout)
             _exit_code_output = self.shell.before
-            exit_code = int(_exit_code_output.strip().split()[0])
+            try:
+                exit_code = int(_exit_code_output.strip().split()[0])
+            except:
+                logger.error('Error getting exit code from bash script')
+                # If we try to run an invalid shell script the output sometimes includes error text
+                # rather than the error code - we assume this is an error
+                exit_code = 2
 
         except pexpect.TIMEOUT as e:
             if kill_on_timeout:
@@ -622,7 +628,7 @@ if __name__ == '__main__':
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
-            logger.error(f'Error processing command: {str(e)}')
+            logger.error(f'Error processing command: {str(e)}', exc_info=True, stack_info=True)
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post('/upload_file')
