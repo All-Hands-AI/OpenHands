@@ -128,12 +128,29 @@ fi
 
 echo "Args: $args"
 
+# Modify the platform selection based on --load flag
+if [[ $load -eq 1 ]]; then
+  # When loading, build only for the current platform
+  platform=$(docker version -f '{{.Server.Os}}/{{.Server.Arch}}')
+else
+  # For push or without load, build for multiple platforms
+  platform="linux/amd64,linux/arm64"
+fi
+
+echo "Building for platform(s): $platform"
+
 docker buildx build \
   $args \
   --build-arg OPENHANDS_BUILD_VERSION="$OPENHANDS_BUILD_VERSION" \
   --cache-from=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag \
   --cache-from=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag_base-main \
-  --platform linux/amd64,linux/arm64 \
+  --platform $platform \
   --provenance=false \
   -f "$dir/Dockerfile" \
   "$DOCKER_BASE_DIR"
+
+# If load was requested, print the loaded images
+if [[ $load -eq 1 ]]; then
+  echo "Local images built:"
+  docker images "$DOCKER_REPOSITORY" --format "{{.Repository}}:{{.Tag}}"
+fi
