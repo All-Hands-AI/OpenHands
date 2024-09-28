@@ -15,9 +15,6 @@ Frontend:
 - Located in the `frontend` directory
 - Prerequisites: A recent version of NodeJS / NPM
 - Setup: Run `npm install` in the frontend directory
-- Development:
-  - Start the app: `npm run start -- --port 3001`
-  - View the app at http://localhost:3001
 - Testing:
   - Run tests: `npm run test`
   - To run specific tests: `npm run test -- -t "TestName"`
