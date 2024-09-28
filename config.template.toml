@@ -112,7 +112,7 @@ api_key = "your-api-key"
 #embedding_deployment_name = ""
 
 # Embedding model to use
-embedding_model = ""
+embedding_model = "local"
 
 # Maximum number of characters in an observation's content
 #max_message_chars = 10000
@@ -188,7 +188,7 @@ model = "gpt-4o-mini"
 #memory_max_threads = 2
 
 # LLM config group to use
-#llm_config = 'llm'
+#llm_config = 'your-llm-config-group'
 
 [agent.RepoExplorerAgent]
 # Example: use a cheaper model for RepoExplorerAgent to reduce cost, especially
@@ -232,7 +232,7 @@ llm_config = 'gpt3'
 [security]
 
 # Enable confirmation mode
-#confirmation_mode = true
+#confirmation_mode = false
 
 # The security analyzer to use
 #security_analyzer = ""
