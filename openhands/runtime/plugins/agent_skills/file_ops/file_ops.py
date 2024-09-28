@@ -510,11 +510,11 @@ def _edit_file_impl(
         # NOTE: we need to get env var inside this function
         # because the env var will be set AFTER the agentskills is imported
         if enable_auto_lint:
-            # BACKUP the original file
-            original_file_backup_path = os.path.join(
-                os.path.dirname(file_name),
-                f'.backup.{os.path.basename(file_name)}',
-            )
+            # Generate a random temporary file path
+            suffix = os.path.splitext(file_name)[1]
+            with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tfile:
+                original_file_backup_path = tfile.name
+
             with open(original_file_backup_path, 'w') as f:
                 f.writelines(lines)
 
@@ -597,7 +597,9 @@ def _edit_file_impl(
                     file_name, 'w'
                 ) as fout:
                     fout.write(fin.read())
-                os.remove(original_file_backup_path)
+
+                # Don't forget to remove the temporary file after you're done
+                os.unlink(original_file_backup_path)
                 return ret_str
 
     except FileNotFoundError as e:
@@ -784,7 +786,6 @@ def append_file(file_name: str, content: str) -> None:
 
     Args:
         file_name: str: The name of the file to edit.
-        line_number: int: The line number (starting from 1) to insert the content after.
         content: str: The content to insert.
     """
     ret_str = _edit_file_impl(

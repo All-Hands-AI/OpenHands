@@ -55,7 +55,6 @@ def create_runtime(
 
     config: The app config.
     sid: The session id.
-    runtime_tools_config: (will be deprecated) The runtime tools config.
     """
     # if sid is provided on the command line, use it as the name of the event stream
     # otherwise generate it on the basis of the configured jwt_secret
@@ -143,6 +142,9 @@ async def run_controller(
         initial_state=initial_state,
         headless_mode=headless_mode,
     )
+
+    if controller is not None:
+        controller.agent_task = asyncio.create_task(controller.start_step_loop())
 
     assert isinstance(task_str, str), f'task_str must be a string, got {type(task_str)}'
     # Logging

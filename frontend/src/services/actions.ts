@@ -6,10 +6,11 @@ import {
   ActionSecurityRisk,
   appendSecurityAnalyzerInput,
 } from "#/state/securityAnalyzerSlice";
+import { setCurStatusMessage } from "#/state/statusSlice";
 import { setRootTask } from "#/state/taskSlice";
 import store from "#/store";
 import ActionType from "#/types/ActionType";
-import { ActionMessage } from "#/types/Message";
+import { ActionMessage, StatusMessage } from "#/types/Message";
 import { SocketMessage } from "#/types/ResponseType";
 import { handleObservationMessage } from "./observations";
 import { getRootTask } from "./taskService";
@@ -138,6 +139,16 @@ export function handleActionMessage(message: ActionMessage) {
   }
 }
 
+export function handleStatusMessage(message: StatusMessage) {
+  const msg = message.status == null ? "" : message.status.trim();
+  store.dispatch(
+    setCurStatusMessage({
+      ...message,
+      status: msg,
+    }),
+  );
+}
+
 export function handleAssistantMessage(data: string | SocketMessage) {
   let socketMessage: SocketMessage;
 
@@ -149,6 +160,8 @@ export function handleAssistantMessage(data: string | SocketMessage) {
 
   if ("action" in socketMessage) {
     handleActionMessage(socketMessage);
+  } else if ("status" in socketMessage) {
+    handleStatusMessage(socketMessage);
   } else {
     handleObservationMessage(socketMessage);
   }

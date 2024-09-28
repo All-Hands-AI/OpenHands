@@ -18,6 +18,7 @@ enum IndicatorColor {
 function AgentStatusBar() {
   const { t } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { curStatusMessage } = useSelector((state: RootState) => state.status);
 
   const AgentStatusMap: {
     [k: string]: { message: string; indicator: IndicatorColor };
@@ -90,14 +91,25 @@ function AgentStatusBar() {
     }
   }, [curAgentState]);
 
+  const [statusMessage, setStatusMessage] = React.useState<string>("");
+
+  React.useEffect(() => {
+    const trimmedCustomMessage = curStatusMessage.status.trim();
+    if (trimmedCustomMessage) {
+      setStatusMessage(t(trimmedCustomMessage));
+    } else {
+      setStatusMessage(AgentStatusMap[curAgentState].message);
+    }
+  }, [curAgentState, curStatusMessage.status]);
+
   return (
-    <div className="flex items-center">
-      <div
-        className={`w-3 h-3 mr-2 rounded-full animate-pulse ${AgentStatusMap[curAgentState].indicator}`}
-      />
-      <span className="text-sm text-stone-400">
-        {AgentStatusMap[curAgentState].message}
-      </span>
+    <div className="flex flex-col items-center">
+      <div className="flex items-center">
+        <div
+          className={`w-3 h-3 mr-2 rounded-full animate-pulse ${AgentStatusMap[curAgentState].indicator}`}
+        />
+        <span className="text-sm text-stone-400">{statusMessage}</span>
+      </div>
     </div>
   );
 }

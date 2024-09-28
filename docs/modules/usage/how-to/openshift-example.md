@@ -177,6 +177,7 @@ spec:
       claimName: docker-pvc
 ```
 
+
 ```bash
 # create the pod
 $ oc create -f pod.yaml
@@ -262,3 +263,167 @@ Events:                   <none>
 6. Connect to OpenHands UI, configure the Agent, then test:
 
 ![image](https://github.com/user-attachments/assets/12f94804-a0c7-4744-b873-e003c9caf40e)
+
+
+
+## GCP GKE Openhands deployment
+
+**Warning**: this deployment grants the OpenHands application access to the Kubernetes docker socket, which creates security risk. Use at your own discretion.
+1- Create policy for privillege access
+2- Create gke credentials(optional)
+3- Create openhands deployment
+4- Verification and ui access commands
+5- Tshoot pod to verify the internal container
+
+1. create policy for privillege access
+```bash
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: privileged-role
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["create", "get", "list", "watch", "delete"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["create", "get", "list", "watch", "delete"]
+- apiGroups: [""]
+  resources: ["pods/exec"]
+  verbs: ["create"]
+- apiGroups: [""]
+  resources: ["pods/log"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: privileged-role-binding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: privileged-role
+subjects:
+- kind: ServiceAccount
+  name: default  # Change to your service account name
+  namespace: default
+```
+2. create gke credentials(optional)
+```bash
+kubectl create secret generic google-cloud-key \
+  --from-file=key.json=/path/to/your/google-cloud-key.json
+  ```
+3. create openhands deployment
+## as this is tested for the single worker node if you have multiple specify the flag for the single worker
+
+```bash
+kind: Deployment
+metadata:
+  name: openhands-app-2024
+  labels:
+    app: openhands-app-2024
+spec:
+  replicas: 1  # You can increase this number for multiple replicas
+  selector:
+    matchLabels:
+      app: openhands-app-2024
+  template:
+    metadata:
+      labels:
+        app: openhands-app-2024
+    spec:
+      containers:
+      - name: openhands-app-2024
+        image: ghcr.io/all-hands-ai/openhands:main
+        env:
+        - name: SANDBOX_USER_ID
+          value: "1000"
+        - name: SANDBOX_API_HOSTNAME
+          value: '10.164.0.4'
+        - name: WORKSPACE_MOUNT_PATH
+          value: "/tmp/workspace_base"
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: "/tmp/workspace_base/google-cloud-key.json"
+        volumeMounts:
+        - name: workspace-volume
+          mountPath: /tmp/workspace_base
+        - name: docker-sock
+          mountPath: /var/run/docker.sock
+        - name: google-credentials
+          mountPath: "/tmp/workspace_base/google-cloud-key.json"
+        securityContext:
+          privileged: true  # Add this to allow privileged access
+        ports:
+        - containerPort: 3000
+      - name: openhands-sandbox-2024
+        image: ghcr.io/opendevin/sandbox:main
+    #    securityContext:
+    #      privileged: true  # Add this to allow privileged access
+        ports:
+        - containerPort: 51963
+        command: ["/usr/sbin/sshd", "-D", "-p 51963", "-o", "PermitRootLogin=yes"]
+      volumes:
+      #- name: workspace-volume
+      #  persistentVolumeClaim:
+      #    claimName: workspace-pvc
+      - name: workspace-volume
+        emptyDir: {}
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock       # Use host's Docker socket
+          type: Socket
+      - name: google-credentials
+        secret:
+          secretName: google-cloud-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openhands-app-2024-svc
+spec:
+  selector:
+    app: openhands-app-2024
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80
+    targetPort: 3000
+  - name: ssh
+    protocol: TCP
+    port: 51963
+    targetPort: 51963
+  type: LoadBalancer
+  ```
+
+5. Tshoot pod to verify the internal container
+### if you want to know more regarding the internal container runtime use below mention pod deployment use kubectl exec -it to enter into container and you can check the contaienr run time using normal docker commands like "docker ps -a"
+
+```bash
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docker-in-docker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docker-in-docker
+  template:
+    metadata:
+      labels:
+        app: docker-in-docker
+    spec:
+      containers:
+      - name: dind
+        image: docker:20.10-dind
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: docker-sock
+          mountPath: /var/run/docker.sock
+      volumes:
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock
+          type: Socket
+```
