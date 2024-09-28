@@ -1,40 +1,13 @@
 #!/bin/bash
 set -eo pipefail
 
-# Initialize variables with default values
-image_name=""
-org_name=""
+image_name=$1
+org_name=$2
 push=0
-load=0
-tag_suffix=""
-
-# Function to display usage information
-usage() {
-    echo "Usage: $0 -i <image_name> [-o <org_name>] [--push] [--load] [-t <tag_suffix>]"
-    echo "  -i: Image name (required)"
-    echo "  -o: Organization name"
-    echo "  --push: Push the image"
-    echo "  --load: Load the image"
-    echo "  -t: Tag suffix"
-    exit 1
-}
-
-# Parse command-line options
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        -i) image_name="$2"; shift 2 ;;
-        -o) org_name="$2"; shift 2 ;;
-        --push) push=1; shift ;;
-        --load) load=1; shift ;;
-        -t) tag_suffix="$2"; shift 2 ;;
-        *) usage ;;
-    esac
-done
-# Check if required arguments are provided
-if [[ -z "$image_name" ]]; then
-    echo "Error: Image name is required."
-    usage
+if [[ $3 == "--push" ]]; then
+  push=1
 fi
+tag_suffix=$4
 
 echo "Building: $image_name"
 tags=()
@@ -120,10 +93,6 @@ done
 if [[ $push -eq 1 ]]; then
   args+=" --push"
   args+=" --cache-to=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag,mode=max"
-fi
-
-if [[ $load -eq 1 ]]; then
-  args+=" --load"
 fi
 
 echo "Args: $args"
