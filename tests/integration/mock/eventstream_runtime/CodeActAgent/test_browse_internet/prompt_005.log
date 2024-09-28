@@ -409,9 +409,9 @@ Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me fo
 ----------
 
 
-<execute_browse>
+<execute_>
 . I should start with: Get the content on "http://localhost:8000"
-</execute_browse>
+</execute_>
 
 ----------
 
