@@ -53,8 +53,8 @@ code {
 
 .markdown-body ul {
   list-style-type: disc; /* Handles bullet points */
-  margin-left: 20px;
-  padding-left: 0.5em; /* Adds some indentation */
+  margin-left: 10px;
+  padding-left: 0.25em; /* Reduces indentation */
 }
 
 .markdown-body th {
