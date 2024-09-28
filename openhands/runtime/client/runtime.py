@@ -10,6 +10,7 @@ import requests
 import tenacity
 
 from openhands.core.config import AppConfig
+from openhands.core.logger import DEBUG
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
@@ -248,7 +249,7 @@ class EventStreamRuntime(Runtime):
                 'port': str(self._container_port),
                 'PYTHONUNBUFFERED': 1,
             }
-            if self.config.debug:
+            if self.config.debug or DEBUG:
                 environment['DEBUG'] = 'true'
 
             logger.debug(f'Workspace Base: {self.config.workspace_base}')
