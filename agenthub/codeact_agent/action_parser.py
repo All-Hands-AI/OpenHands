@@ -159,7 +159,9 @@ class CodeActActionParserAgentDelegate(ActionParser):
         thought = action_str.replace(self.agent_delegate.group(0), '').strip()
         browse_actions = self.agent_delegate.group(1).strip()
         task = f'{thought}. I should start with: {browse_actions}'
-        return AgentDelegateAction(agent='BrowsingAgent', inputs={'task': task})
+        return AgentDelegateAction(
+            agent='BrowsingAgent', inputs={'task': task}, action_suffix='browse'
+        )
 
 
 class CodeActActionParserMessage(ActionParser):
