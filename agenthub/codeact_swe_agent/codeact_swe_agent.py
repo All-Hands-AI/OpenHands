@@ -166,7 +166,6 @@ class CodeActSWEAgent(Agent):
                 '</execute_ipython>',
                 '</execute_bash>',
             ],
-            temperature=0.0,
         )
 
         return self.response_parser.parse(response)
