@@ -141,14 +141,23 @@ def prep_docker_build_folder(
         file.write(dockerfile_content)
 
     # Get the MD5 hash of the dir_path directory
-    dist_hash = dirhash(dir_path, 'md5')
+    dir_hash = dirhash(
+        dir_path,
+        'md5',
+        ignore=[
+            '.*/',  # hidden directories
+            '__pycache__/',
+            '*.pyc',
+        ],
+    )
+    hash = f'v{oh_version}_{dir_hash}'
     logger.info(
         f'Input base image: {base_image}\n'
         f'Skip init: {skip_init}\n'
         f'Extra deps: {extra_deps}\n'
-        f'Hash for docker build directory [{dir_path}] (contents: {os.listdir(dir_path)}): {dist_hash}\n'
+        f'Hash for docker build directory [{dir_path}] (contents: {os.listdir(dir_path)}): {hash}\n'
     )
-    return dist_hash
+    return hash
 
 
 def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
@@ -242,7 +251,7 @@ def build_runtime_image(
 
     # Scenario 1: If we already have an image with the exact same hash, then it means the image is already built
     # with the exact same source code and Dockerfile, so we will reuse it. Building it is not required.
-    if not force_rebuild and runtime_builder.image_exists(hash_runtime_image_name):
+    if not force_rebuild and runtime_builder.image_exists(hash_runtime_image_name, False):
         logger.info(
             f'Image [{hash_runtime_image_name}] already exists so we will reuse it.'
         )
