@@ -83,7 +83,7 @@ def create_runtime(
 
 async def run_controller(
     config: AppConfig,
-    task_str: str,
+    initial_user_actions: list[Action],
     sid: str | None = None,
     runtime: Runtime | None = None,
     agent: Agent | None = None,
@@ -96,7 +96,7 @@ async def run_controller(
 
     Args:
         config: The app config.
-        task_str: The task to run. It can be a string.
+        initial_user_actions: a list of Actions containing initial user inputs
         runtime: (optional) A runtime for the agent to run on.
         agent: (optional) A agent to run.
         exit_on_message: quit if agent asks for a message from user (optional)
@@ -146,11 +146,13 @@ async def run_controller(
     if controller is not None:
         controller.agent_task = asyncio.create_task(controller.start_step_loop())
 
-    assert isinstance(task_str, str), f'task_str must be a string, got {type(task_str)}'
+    assert isinstance(
+        initial_user_actions, list
+    ), f'initial user actions must be list, got {type(initial_user_actions)}'
     # Logging
     logger.info(
         f'Agent Controller Initialized: Running agent {agent.name}, model '
-        f'{agent.llm.config.model}, with task: "{task_str}"'
+        f'{agent.llm.config.model}, with actions: {initial_user_actions}'
     )
 
     # start event is a MessageAction with the task, either resumed or new
@@ -166,8 +168,12 @@ async def run_controller(
             EventSource.USER,
         )
     elif initial_state is None:
-        # init with the provided task
-        event_stream.add_event(MessageAction(content=task_str), EventSource.USER)
+        # init with the provided actions
+        for user_action in initial_user_actions:
+            assert isinstance(
+                user_action, Action
+            ), f'each element of initial_user_actions must be Action, got {type(user_action)}'
+            event_stream.add_event(user_action, EventSource.USER)
 
     async def on_event(event: Event):
         if isinstance(event, AgentStateChangedObservation):
@@ -224,7 +230,7 @@ if __name__ == '__main__':
         task_str = read_task_from_stdin()
     else:
         raise ValueError('No task provided. Please specify a task through -t, -f.')
-
+    initial_user_actions: list[Action] = [MessageAction(content=task_str)]
     # Load the app config
     # this will load config from config.toml in the current directory
     # as well as from the environment variables
@@ -253,7 +259,7 @@ if __name__ == '__main__':
     asyncio.run(
         run_controller(
             config=config,
-            task_str=task_str,
+            initial_user_actions=initial_user_actions,
             sid=sid,
         )
     )
