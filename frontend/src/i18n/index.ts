@@ -69,4 +69,5 @@ i18n
     }
   });
 
+export { I18nKey } from './declaration';
 export default i18n;

@@ -198,4 +198,22 @@ describe("Message", () => {
       expect(rejectButton).toBeInTheDocument();
     });
   });
+
+  it("should apply markdown-body class to the message content", () => {
+    render(
+      <ChatMessage
+        message={{
+          sender: "user",
+          content: "- Bullet point 1
+- Bullet point 2",
+          imageUrls: [],
+          timestamp: new Date().toISOString(),
+        }}
+        isLastMessage={false}
+      />,
+    );
+
+    const markdownBody = screen.getByTestId("message-content");
+    expect(markdownBody).toHaveClass("markdown-body");
+  });
 });

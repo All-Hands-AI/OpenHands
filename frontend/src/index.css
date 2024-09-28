@@ -47,14 +47,14 @@ code {
 
 .markdown-body ol {
   list-style-type: decimal; /* Handles numbered lists */
-  margin-left: 20px;
-  padding-left: 0.5em; /* Adds some indentation */
+  margin-left: 1em;
+  padding-left: 0.2em; /* Reduces indentation */
 }
 
 .markdown-body ul {
   list-style-type: disc; /* Handles bullet points */
-  margin-left: 20px;
-  padding-left: 0.5em; /* Adds some indentation */
+  margin-left: 1em;
+  padding-left: 0.2em; /* Reduces indentation */
 }
 
 .markdown-body th {

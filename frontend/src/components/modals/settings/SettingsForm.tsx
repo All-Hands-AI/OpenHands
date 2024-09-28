@@ -3,7 +3,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { AvailableLanguages } from "../../../i18n";
-import { I18nKey } from "../../../i18n/declaration";
+import { I18nKey } from "../../../i18n";
 import { AutocompleteCombobox } from "./AutocompleteCombobox";
 import { Settings } from "#/services/settings";
 import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
