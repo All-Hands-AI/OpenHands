@@ -26,12 +26,13 @@ class RuntimeBuilder(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def image_exists(self, image_name: str) -> bool:
+    def image_exists(self, image_name: str, pull_from_repo: bool = True) -> bool:
         """
         Check if the runtime image exists.
 
         Args:
             image_name (str): The name of the runtime image (e.g., "repo:sha").
+            pull_from_repo (bool): Whether to pull from the remote repo if the image not present locally
 
         Returns:
             bool: Whether the runtime image exists.
