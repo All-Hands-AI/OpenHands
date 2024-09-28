@@ -105,7 +105,6 @@ function CodeEditor() {
   }, [activeFilepath, fileContents, fetcher]);
 
   React.useEffect(() => {
-    // if save file is successful, mark the file as unchanged
     if (saveFile.data?.success) {
       // refetch file content
       const refetchFileFormData = new FormData();
@@ -114,6 +113,7 @@ function CodeEditor() {
         method: "POST",
       });
 
+      // if save file is successful, mark the file as unchanged
       dispatch(
         setChanged({
           path: activeFilepath,

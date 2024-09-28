@@ -25,7 +25,7 @@ function MainTextareaInput({
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   const adjustHeight = () => {
-    const MAX_LINES = 5;
+    const MAX_LINES = 15;
 
     const textarea = textareaRef.current;
     if (textarea) {
