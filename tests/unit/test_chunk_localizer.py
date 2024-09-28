@@ -72,6 +72,16 @@ def test_create_chunks_with_large_size():
     assert chunks[0].line_range == (1, 3)
 
 
+def test_create_chunks_with_last_chunk_smaller():
+    text = 'line1\nline2\nline3'
+    chunks = create_chunks(text, size=2)
+    assert len(chunks) == 2
+    assert chunks[0].text == 'line1\nline2'
+    assert chunks[0].line_range == (1, 2)
+    assert chunks[1].text == 'line3'
+    assert chunks[1].line_range == (3, 3)
+
+
 def test_normalized_lcs_edge_cases():
     assert normalized_lcs('', '') == 0.0
     assert normalized_lcs('a', '') == 0.0

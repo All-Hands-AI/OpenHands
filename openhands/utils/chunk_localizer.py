@@ -25,13 +25,16 @@ class Chunk(BaseModel):
 
 def _create_chunks_from_raw_string(content: str, size: int):
     lines = content.split('\n')
-    return [
-        Chunk(
-            text='\n'.join(lines[i : i + size]),
-            line_range=(i + 1, i + min(size, len(lines))),
+    ret = []
+    for i in range(0, len(lines), size):
+        _cur_lines = lines[i : i + size]
+        ret.append(
+            Chunk(
+                text='\n'.join(_cur_lines),
+                line_range=(i + 1, i + len(_cur_lines)),
+            )
         )
-        for i in range(0, len(lines), size)
-    ]
+    return ret
 
 
 def create_chunks(
