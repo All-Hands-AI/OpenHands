@@ -1,3 +1,5 @@
+from typing import Any
+
 from openhands.core.logger import llm_prompt_logger, llm_response_logger
 from openhands.core.logger import openhands_logger as logger
 
@@ -5,7 +7,7 @@ MESSAGE_SEPARATOR = '\n\n----------\n\n'
 
 
 class DebugMixin:
-    def log_prompt(self, messages):
+    def log_prompt(self, messages: list[dict[str, Any]] | dict[str, Any]):
         if not messages:
             logger.debug('No completion messages!')
             return
@@ -20,11 +22,11 @@ class DebugMixin:
         else:
             logger.debug('No completion messages!')
 
-    def log_response(self, message_back):
+    def log_response(self, message_back: str):
         if message_back:
             llm_response_logger.debug(message_back)
 
-    def _format_message_content(self, message):
+    def _format_message_content(self, message: dict[str, Any]):
         content = message['content']
         if isinstance(content, list):
             return '\n'.join(
@@ -32,7 +34,7 @@ class DebugMixin:
             )
         return str(content)
 
-    def _format_content_element(self, element):
+    def _format_content_element(self, element: dict[str, Any]):
         if isinstance(element, dict):
             if 'text' in element:
                 return element['text']
@@ -43,10 +45,6 @@ class DebugMixin:
             ):
                 return element['image_url']['url']
         return str(element)
-
-    def _log_stats(self, stats):
-        if stats:
-            logger.info(stats)
 
     # This method should be implemented in the class that uses DebugMixin
     def vision_is_active(self):
