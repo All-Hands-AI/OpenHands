@@ -70,6 +70,12 @@ def get_top_k_chunk_matches(
     """Get the top k chunks in the text that match the query.
 
     The query could be a string of draft code edits.
+
+    Args:
+        text: The text to search for the query.
+        query: The query to search for in the text.
+        k: The number of top chunks to return.
+        max_chunk_size: The maximum number of lines in a chunk.
     """
     raw_chunks = create_chunks(text, max_chunk_size)
     chunks_with_lcs: list[Chunk] = [

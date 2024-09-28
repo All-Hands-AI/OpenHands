@@ -20,6 +20,7 @@ from openhands.events.observation import (
 )
 from openhands.linter import DefaultLinter, LintResult
 from openhands.llm.llm import LLM
+from openhands.utils.chunk_localizer import Chunk, get_top_k_chunk_matches
 
 SYS_MSG = """Your job is to produce a new version of the file based on the old version and the
 provided draft of the new version. The provided draft may be incomplete (it may skip lines) and/or incorrectly indented. You should try to apply the changes present in the draft to the old version, and output a new version of the file.
@@ -253,11 +254,31 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             # end == -1 means the user wants to edit till the end of the file
             end_idx = len(old_file_lines)
 
+        # Get the range of lines to edit - reject if too long
         length_of_range = end_idx - start_idx
         if length_of_range > self.MAX_LINES_TO_EDIT:
-            return ErrorObservation(
-                f'The range of lines to edit is too long. The maximum number of lines allowed to edit at once is {self.MAX_LINES_TO_EDIT}.'
+            error_msg = (
+                f'[Edit error: The range of lines to edit is too long.]\n'
+                f'[The maximum number of lines allowed to edit at once is {self.MAX_LINES_TO_EDIT}.]\n'
             )
+            # search for relevant ranges to hint the agent
+            topk_chunks: list[Chunk] = get_top_k_chunk_matches(
+                text=original_file_content,
+                query=action.content,  # edit draft as query
+                k=3,
+            )
+            error_msg += (
+                'Here are some snippets that maybe relevant to the provided edit.\n'
+            )
+            for i, chunk in enumerate(topk_chunks):
+                error_msg += f'[begin relevant snippet {i+1}. Line range: L{chunk.line_range[0]}-L{chunk.line_range[1]}. Similarity: {chunk.normalized_lcs}]\n'
+                error_msg += chunk.visualize() + '\n'
+                error_msg += f'[end relevant snippet {i+1}]\n'
+                error_msg += '-' * 40 + '\n'
+
+            error_msg += f'[Please try to reduce the range of edit to less than {self.MAX_LINES_TO_EDIT} and try again. Consider using `open_file` to explore around the relevant snippets if needed.]'
+
+            return ErrorObservation(error_msg)
 
         content_to_edit = '\n'.join(old_file_lines[start_idx:end_idx])
         _edited_content = get_new_file_contents(
