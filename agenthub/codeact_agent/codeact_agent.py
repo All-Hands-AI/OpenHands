@@ -216,11 +216,14 @@ class CodeActAgent(Agent):
         return self.action_parser.parse(response)
 
     def _get_messages(self, state: State) -> list[Message]:
-        delegated_task = ''
-        if state.inputs.get('task') is not None:
+        delegated_task = state.inputs.get('task')
+        if delegated_task is not None:
             # CodeActAgent is delegated a task
-            delegated_task = '\n' + state.inputs['task']
-            self.initial_task_str = [state.inputs['task']]
+            delegated_task = str(delegated_task)
+            self.initial_task_str[0] = delegated_task
+            delegated_task = '\n' + delegated_task
+        else:
+            delegated_task = ''
 
         messages: list[Message] = [
             Message(
