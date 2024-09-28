@@ -117,34 +117,57 @@ class LLM(RetryMixin, DebugMixin):
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
-        self._completion = partial(
-            litellm_completion,
-            model=self.config.model,
-            api_key=self.config.api_key,
-            base_url=self.config.base_url,
-            api_version=self.config.api_version,
-            custom_llm_provider=self.config.custom_llm_provider,
-            max_tokens=self.config.max_output_tokens,
-            timeout=self.config.timeout,
-            temperature=self.config.temperature,
-            top_p=self.config.top_p,
-            drop_params=self.config.drop_params,
-        )
-
         if self.vision_is_active():
             logger.debug('LLM: model has vision enabled')
         if self.is_caching_prompt_active():
             logger.debug('LLM: caching prompt enabled')
 
-        completion_unwrapped = self._completion
+        # Create config_dict with only compatible keys
+        config_dict = self.config.get_litellm_compatible_dict()
+        # Handle max_tokens parameter
+        if 'max_output_tokens' in config_dict:
+            config_dict['max_tokens'] = config_dict.pop('max_output_tokens')
 
-        @self.retry_decorator(
-            num_retries=self.config.num_retries,
-            retry_exceptions=LLM_RETRY_EXCEPTIONS,
-            retry_min_wait=self.config.retry_min_wait,
-            retry_max_wait=self.config.retry_max_wait,
-            retry_multiplier=self.config.retry_multiplier,
-        )
+        if self.config.router_models:
+            """Example of how to configure the router via code:
+            config = LLMConfig(
+                model="gpt-4",  # This is a fallback if router fails
+                router_models=[
+                    {
+                        "model": "gpt-3.5-turbo",
+                        "api_key": "your-openai-api-key",
+                    },
+                    {
+                        "model": "claude-2",
+                        "api_key": "your-anthropic-api-key",
+                    },
+                    {
+                        "model": "azure/gpt-4",
+                        "api_base": "https://your-azure-endpoint.openai.azure.com",
+                        "api_key": "your-azure-api-key",
+                        "api_version": "2023-05-15",
+                    },
+                    # ... other models as shown above
+                ],
+                router_routing_strategy="simple-shuffle",
+                # ... other router configurations
+            )
+            """
+            router_config = {
+                'model_list': self.config.router_models,
+                'routing_strategy': self.config.router_routing_strategy,
+                'num_retries': self.config.router_num_retries,
+                'cooldown_time': self.config.router_cooldown_time,
+                'allowed_fails': self.config.router_allowed_fails,
+                'cache_responses': self.config.router_cache_responses,
+                'cache_kwargs': self.config.router_cache_kwargs,
+                **self.config.router_options,
+            }
+            self.router = litellm.Router(**router_config)
+            completion_func = partial(self.router.completion, **config_dict)
+        else:
+            completion_func = partial(litellm_completion, **config_dict)
+
         def wrapper(*args, **kwargs):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
             messages: list[dict[str, Any]] | dict[str, Any] = []
@@ -183,8 +206,9 @@ class LLM(RetryMixin, DebugMixin):
                         'anthropic-beta': 'prompt-caching-2024-07-31',
                     }
 
+            # Call the completion function (either router.completion or litellm_completion)
             # we don't support streaming here, thus we get a ModelResponse
-            resp: ModelResponse = completion_unwrapped(*args, **kwargs)
+            resp: ModelResponse = completion_func(*args, **kwargs)
 
             # log for evals or other scripts that need the raw completion
             if self.config.log_completions:
@@ -206,6 +230,16 @@ class LLM(RetryMixin, DebugMixin):
             self._post_completion(resp)
 
             return resp
+
+        # Apply retry decorator only if not using router
+        if not self.config.router_models:
+            wrapper = self.retry_decorator(
+                num_retries=self.config.num_retries,
+                retry_exceptions=LLM_RETRY_EXCEPTIONS,
+                retry_min_wait=self.config.retry_min_wait,
+                retry_max_wait=self.config.retry_max_wait,
+                retry_multiplier=self.config.retry_multiplier,
+            )(wrapper)
 
         self._completion = wrapper
 

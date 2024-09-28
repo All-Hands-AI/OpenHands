@@ -1,5 +1,6 @@
 import os
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
+from typing import Any
 
 from openhands.core.config.config_utils import get_field_info
 
@@ -71,6 +72,57 @@ class LLMConfig:
     disable_vision: bool | None = None
     caching_prompt: bool = True
     log_completions: bool = False
+
+    # Router-specific configurations
+    router_models: list[dict[str, Any]] = field(default_factory=list)
+    router_options: dict[str, Any] = field(
+        default_factory=lambda: {
+            'timeout': 30,
+            'max_retries': 10,
+        }
+    )
+    router_routing_strategy: str = 'simple-shuffle'
+    router_num_retries: int = 3
+    router_cooldown_time: float = 1.0
+    router_allowed_fails: int = 5
+    router_cache_responses: bool = False
+    router_cache_kwargs: dict[str, Any] = field(default_factory=dict)
+
+    def get_litellm_compatible_dict(self) -> dict:
+        """Return a dict with only the fields compatible with litellm."""
+        compatible_keys = [
+            'model',
+            'api_key',
+            'base_url',
+            'api_version',
+            'timeout',
+            'temperature',
+            'top_p',
+            'custom_llm_provider',
+            'max_output_tokens',
+            'drop_params',
+        ]
+        result = {
+            k: v
+            for k, v in self.__dict__.items()
+            if k in compatible_keys and v is not None
+        }
+
+        # Convert max_output_tokens to max_tokens for compatibility
+        if 'max_output_tokens' in result:
+            result['max_tokens'] = result.pop('max_output_tokens')
+
+        return result
+
+    @classmethod
+    def from_dict(cls, config_dict: dict[str, Any]) -> 'LLMConfig':
+        """Create an LLMConfig instance from a dictionary (e.g., parsed from TOML)."""
+        # Filter out keys that are not fields in LLMConfig
+        valid_keys = {f.name for f in fields(cls)}
+        filtered_dict = {k: v for k, v in config_dict.items() if k in valid_keys}
+
+        # Create the LLMConfig instance
+        return cls(**filtered_dict)
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""

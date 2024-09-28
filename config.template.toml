@@ -164,12 +164,38 @@ model = "gpt-4o"
 # If model is vision capable, this option allows to disable image processing (useful for cost reduction).
 #disable_vision = true
 
-[llm.gpt4o-mini]
-# API key to use
-api_key = "your-api-key"
+################################### Router ###################################
+# litellm Router configuration
+##############################################################################
 
-# Model to use
-model = "gpt-4o-mini"
+#router_routing_strategy = "simple-shuffle"
+#router_num_retries = 3
+#router_cooldown_time = 1.0
+#router_allowed_fails = 5
+#router_cache_responses = false
+
+# List notation is used to specify multiple models for the same configuration!
+
+#[[llm.router_models]]
+#model = "gpt-3.5-turbo"
+#api_key = "your-openai-api-key"
+
+#[[llm.router_models]]
+#model = "claude-3-opus"
+#api_key = "your-anthropic-api-key"
+
+#[[llm.router_models]]
+#model = "azure/gpt-4"
+#api_base = "https://your-azure-endpoint.openai.azure.com"
+#api_key = "your-azure-api-key"
+#api_version = "2023-05-15"
+
+#[llm.router_options]
+#timeout = 30
+#max_retries = 3
+
+#[llm.router_cache_kwargs]
+# Add any cache-related options here if needed
 
 #################################### Agent ###################################
 # Configuration for agents (group name starts with 'agent')
