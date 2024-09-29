@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import shutil
 import tempfile
 from typing import Any
 
@@ -90,7 +91,6 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
 DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/')
-logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
 
 
 def get_instance_docker_image(instance_id: str) -> str:
@@ -343,6 +343,7 @@ def process_instance(
         reset_logger_for_multiprocessing(logger, instance.instance_id, log_dir)
     else:
         logger.info(f'Starting evaluation for instance {instance.instance_id}.')
+    logger.info(f'Metadata: {metadata.model_dump_json()}')
 
     runtime = create_runtime(config, sid=instance.instance_id)
     initialize_runtime(runtime, instance)
@@ -432,14 +433,21 @@ if __name__ == '__main__':
         default='test',
         help='split to evaluate on',
     )
+    # Map-reduce arguments
+    parser.add_argument(
+        '--map-reduce-write-inputs',
+        action='store_true',
+        help='write inputs to output_dir/mr_inputs',
+    )
+    parser.add_argument(
+        '--map-reduce-read-input-file',
+        type=str,
+        default=None,
+        help='read input (arguments for process_instance) from this file, run it, and write output to output_dir/mr_outputs',
+    )
     args, _ = parser.parse_known_args()
 
-    # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
-    # so we don't need to manage file uploading to OpenHands's repo
-    dataset = load_dataset(args.dataset, split=args.split)
-    logger.info(f'Loaded dataset {args.dataset} with split {args.split}')
-    swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id')
-
+    # 1. Load metadata
     llm_config = None
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
@@ -464,8 +472,33 @@ if __name__ == '__main__':
         details=details,
     )
 
+    # Map-reduce folders
+    mr_inputs_dir = os.path.join(metadata.eval_output_dir, 'mr_inputs')
+    mr_outputs_dir = os.path.join(metadata.eval_output_dir, 'mr_outputs')
+    if args.map_reduce_read_input_file:
+        with open(args.map_reduce_read_input_file, 'r') as file:
+            instance = json.load(file)
+            instance = pd.Series(instance)
+        input_file_name = os.path.basename(args.map_reduce_read_input_file)
+        output_file = os.path.join(mr_outputs_dir, input_file_name)
+        output: EvalOutput = process_instance(instance, metadata, reset_logger=True)
+        with open(output_file, 'w') as f:
+            json.dump(output.to_dict(), f)
+        exit(0)
+
+    logger.info(f'Using evaluation output directory: {metadata.eval_output_dir}')
+
+    # 2. Load dataset
+    # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
+    # so we don't need to manage file uploading to OpenHands's repo
+    dataset = load_dataset(args.dataset, split=args.split)
+    logger.info(f'Loaded dataset {args.dataset} with split {args.split}')
+    swe_bench_tests = filter_dataset(dataset.to_pandas(), 'instance_id')
+
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
-    instances = prepare_dataset(swe_bench_tests, output_file, args.eval_n_limit)
+    instances: pd.DataFrame = prepare_dataset(
+        swe_bench_tests, output_file, args.eval_n_limit
+    )
 
     if len(instances) > 0 and not isinstance(
         instances['PASS_TO_PASS'][instances['PASS_TO_PASS'].index[0]], str
@@ -473,6 +506,20 @@ if __name__ == '__main__':
         for col in ['PASS_TO_PASS', 'FAIL_TO_PASS']:
             instances[col] = instances[col].apply(lambda x: str(x))
 
-    run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
-    )
+    if args.map_reduce_write_inputs:
+        if os.path.exists(mr_inputs_dir):
+            logger.info(f'Removing existing mr_inputs_dir: {mr_inputs_dir}')
+            shutil.rmtree(mr_inputs_dir)
+        logger.info(
+            f'Writing {len(instances)} instances to {mr_inputs_dir}. No evaluation will be performed.'
+        )
+        os.makedirs(mr_inputs_dir, exist_ok=True)
+        for _, instance in instances.iterrows():
+            with open(
+                os.path.join(mr_inputs_dir, f'{instance["instance_id"]}.json'), 'w'
+            ) as f:
+                json.dump(instance.to_dict(), f)
+    else:
+        run_evaluation(
+            instances, metadata, output_file, args.eval_num_workers, process_instance
+        )
