@@ -483,7 +483,7 @@ if __name__ == '__main__':
         output_file = os.path.join(mr_outputs_dir, input_file_name)
         output: EvalOutput = process_instance(instance, metadata, reset_logger=True)
         with open(output_file, 'w') as f:
-            json.dump(output.to_dict(), f)
+            json.dump(output.model_dump(), f)
         exit(0)
 
     logger.info(f'Using evaluation output directory: {metadata.eval_output_dir}')
