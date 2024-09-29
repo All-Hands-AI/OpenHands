@@ -4,6 +4,7 @@ import {
   redirect,
   useLoaderData,
   useNavigation,
+  useRouteLoaderData,
 } from "@remix-run/react";
 import React from "react";
 import { SuggestionBox } from "./suggestion-box";
@@ -21,6 +22,7 @@ import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { LoadingSpinner } from "#/components/modals/LoadingProject";
 import store from "#/store";
 import { setInitialQuery } from "#/state/initial-query-slice";
+import { clientLoader as rootClientLoader } from "#/root";
 
 const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
 const redirectUri = "http://localhost:3001/oauth/github/callback";
@@ -67,7 +69,7 @@ export const clientLoader = async () => {
     }
   }
 
-  return json({ repositories, ghToken });
+  return json({ repositories });
 };
 
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
@@ -79,8 +81,10 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 };
 
 function Home() {
+  const rootData = useRouteLoaderData<typeof rootClientLoader>("root");
+  console.warn(rootData?.user);
   const navigation = useNavigation();
-  const { repositories, ghToken } = useLoaderData<typeof clientLoader>();
+  const { repositories } = useLoaderData<typeof clientLoader>();
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
     React.useState(false);
   const [importedFile, setImportedFile] = React.useState<File | null>(null);
@@ -110,7 +114,9 @@ function Home() {
             title="Open a Repo"
             content={
               <GitHubAuth
-                isLoggedIn={!!ghToken}
+                isLoggedIn={
+                  !!rootData?.user && !isGitHubErrorReponse(rootData.user)
+                }
                 repositories={repositories}
                 onConnectToGitHub={handleConnectToGitHub}
               />
