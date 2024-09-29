@@ -42,8 +42,6 @@ const isAgentStateChange = (
   data.extras instanceof Object &&
   "agent_state" in data.extras;
 
-const Terminal = React.lazy(() => import("../components/terminal/Terminal"));
-
 export const clientLoader = async () => {
   const q = store.getState().initalQuery.initialQuery;
   const repo =
@@ -105,6 +103,11 @@ function App() {
   const { settings, token, ghToken, repo, q, lastCommit } =
     useLoaderData<typeof clientLoader>();
   const fetcher = useFetcher();
+
+  const Terminal = React.useMemo(
+    () => React.lazy(() => import("../components/terminal/Terminal")),
+    [],
+  );
 
   const exportGitHubTokenToTerminal = (gitHubToken: string) => {
     const command = `export GH_TOKEN=${gitHubToken}`;
