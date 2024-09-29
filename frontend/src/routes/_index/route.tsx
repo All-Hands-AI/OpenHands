@@ -149,7 +149,7 @@ function Home() {
         </div>
       </div>
       {connectToGitHubModalOpen && (
-        <ModalBackdrop>
+        <ModalBackdrop onClose={() => setConnectToGitHubModalOpen(false)}>
           <ConnectToGitHubModal
             onClose={() => setConnectToGitHubModalOpen(false)}
           />

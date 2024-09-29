@@ -94,7 +94,7 @@ function EmptyProjectMenuCard({
         <EllipsisH width={36} height={36} />
       </button>
       {connectToGitHubModalOpen && (
-        <ModalBackdrop>
+        <ModalBackdrop onClose={() => setConnectToGitHubModalOpen(false)}>
           <ConnectToGitHubModal
             onClose={() => setConnectToGitHubModalOpen(false)}
           />

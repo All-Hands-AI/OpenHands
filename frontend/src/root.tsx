@@ -219,7 +219,7 @@ export default function App() {
           </ModalBackdrop>
         )}
         {(settingsIsUpdated || settingsModalIsOpen) && (
-          <ModalBackdrop>
+          <ModalBackdrop onClose={() => setSettingsModalIsOpen(false)}>
             <div className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2">
               <span className="text-xl leading-6 font-semibold -tracking-[0.01em">
                 AI Provider Configuration
@@ -238,7 +238,7 @@ export default function App() {
           </ModalBackdrop>
         )}
         {accountSettingsModalOpen && (
-          <ModalBackdrop>
+          <ModalBackdrop onClose={() => setAccountSettingsModalOpen(false)}>
             <AccountSettingsModal
               onClose={() => setAccountSettingsModalOpen(false)}
               selectedLanguage={settings.LANGUAGE}
@@ -247,7 +247,7 @@ export default function App() {
           </ModalBackdrop>
         )}
         {startNewProjectModalIsOpen && (
-          <ModalBackdrop>
+          <ModalBackdrop onClose={() => setStartNewProjectModalIsOpen(false)}>
             <ConfirmResetWorkspaceModal
               onConfirm={() => {
                 setStartNewProjectModalIsOpen(false);
