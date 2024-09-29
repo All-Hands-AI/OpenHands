@@ -4,7 +4,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  defer,
+  json,
   useFetcher,
   useLoaderData,
   useLocation,
@@ -62,9 +62,9 @@ export const clientLoader = async () => {
   const token = localStorage.getItem("token");
   const ghToken = localStorage.getItem("ghToken");
 
-  const models = getModels();
-  const agents = getAgents();
-  const securityAnalyzers = retrieveSecurityAnalyzers();
+  const models = await getModels();
+  const agents = await getAgents();
+  const securityAnalyzers = await retrieveSecurityAnalyzers();
 
   let user: GitHubUser | GitHubErrorReponse | null = null;
   if (ghToken) user = await retrieveGitHubUser(ghToken);
@@ -78,7 +78,7 @@ export const clientLoader = async () => {
   const settings = getSettings();
   await i18n.changeLanguage(settings.LANGUAGE);
 
-  return defer({
+  return json({
     token,
     ghToken,
     user,

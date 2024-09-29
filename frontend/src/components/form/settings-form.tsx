@@ -4,9 +4,9 @@ import {
   Input,
   Switch,
 } from "@nextui-org/react";
-import React, { Suspense } from "react";
+import React from "react";
 import clsx from "clsx";
-import { Await, useFetcher } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
 import { ModelSelector } from "#/components/modals/settings/ModelSelector";
 import { Settings } from "#/services/settings";
@@ -14,12 +14,13 @@ import ConfirmResetDefaultsModal from "#/components/modals/confirmation-modals/C
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import ModalButton from "../buttons/ModalButton";
 import { clientAction } from "#/routes/Settings";
+import { extractModelAndProvider } from "#/utils/extractModelAndProvider";
 
 interface SettingsFormProps {
   settings: Settings;
-  models: Promise<string[]>;
-  agents: Promise<string[]>;
-  securityAnalyzers: Promise<string[]>;
+  models: string[];
+  agents: string[];
+  securityAnalyzers: string[];
   onClose: () => void;
 }
 
@@ -32,9 +33,27 @@ export function SettingsForm({
 }: SettingsFormProps) {
   const fetcher = useFetcher<typeof clientAction>();
   const formRef = React.useRef<HTMLFormElement>(null);
-  const [showAdvancedOptions, setShowAdvancedOptions] = React.useState(
-    localStorage.getItem("use-advanced-options") === "true",
-  );
+
+  // Figure out if the advanced options should be enabled by default
+  const advancedAlreadyInUse = React.useMemo(() => {
+    const organizedModels = organizeModelsAndProviders(models);
+    const { provider, model } = extractModelAndProvider(
+      settings.LLM_MODEL || "",
+    );
+    const isKnownModel =
+      provider in organizedModels &&
+      organizedModels[provider].models.includes(model);
+
+    return (
+      !!settings.SECURITY_ANALYZER ||
+      !!settings.CONFIRMATION_MODE ||
+      !!settings.LLM_BASE_URL ||
+      (!!settings.LLM_MODEL && !isKnownModel)
+    );
+  }, [settings, models]);
+
+  const [showAdvancedOptions, setShowAdvancedOptions] =
+    React.useState(advancedAlreadyInUse);
   const [confirmResetDefaultsModalOpen, setConfirmResetDefaultsModalOpen] =
     React.useState(false);
 
@@ -109,16 +128,10 @@ export function SettingsForm({
         )}
 
         {!showAdvancedOptions && (
-          <Suspense fallback={<div>Loading models...</div>}>
-            <Await resolve={models}>
-              {(resolvedModels) => (
-                <ModelSelector
-                  models={organizeModelsAndProviders(resolvedModels)}
-                  currentModel={settings.LLM_MODEL}
-                />
-              )}
-            </Await>
-          </Suspense>
+          <ModelSelector
+            models={organizeModelsAndProviders(models)}
+            currentModel={settings.LLM_MODEL}
+          />
         )}
 
         <fieldset data-testid="api-key-input" className="flex flex-col gap-2">
@@ -150,35 +163,28 @@ export function SettingsForm({
           <label htmlFor="agent" className="font-[500] text-[#A3A3A3] text-xs">
             Agent
           </label>
-          <Suspense fallback={<div>Loading...</div>}>
-            <Await resolve={agents}>
-              {(resolvedAgents) => (
-                <Autocomplete
-                  isRequired
-                  id="agent"
-                  aria-label="Agent"
-                  data-testid="agent-input"
-                  name="agent"
-                  defaultSelectedKey={
-                    fetcher.formData?.get("agent")?.toString() ?? settings.AGENT
-                  }
-                  isClearable={false}
-                  inputProps={{
-                    classNames: {
-                      inputWrapper:
-                        "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
-                    },
-                  }}
-                >
-                  {resolvedAgents.map((agent) => (
-                    <AutocompleteItem key={agent} value={agent}>
-                      {agent}
-                    </AutocompleteItem>
-                  ))}
-                </Autocomplete>
-              )}
-            </Await>
-          </Suspense>
+          <Autocomplete
+            isRequired
+            id="agent"
+            aria-label="Agent"
+            data-testid="agent-input"
+            name="agent"
+            defaultSelectedKey={
+              fetcher.formData?.get("agent")?.toString() ?? settings.AGENT
+            }
+            isClearable={false}
+            inputProps={{
+              classNames: {
+                inputWrapper: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
+              },
+            }}
+          >
+            {agents.map((agent) => (
+              <AutocompleteItem key={agent} value={agent}>
+                {agent}
+              </AutocompleteItem>
+            ))}
+          </Autocomplete>
         </fieldset>
 
         {showAdvancedOptions && (
@@ -190,35 +196,28 @@ export function SettingsForm({
               >
                 Security Analyzer (Optional)
               </label>
-              <Suspense fallback={<div>Loading analyzers...</div>}>
-                <Await resolve={securityAnalyzers}>
-                  {(resolvedSecurityAnalyzers) => (
-                    <Autocomplete
-                      isRequired
-                      id="security-analyzer"
-                      name="security-analyzer"
-                      aria-label="Security Analyzer"
-                      defaultSelectedKey={
-                        fetcher.formData
-                          ?.get("security-analyzer")
-                          ?.toString() ?? settings.SECURITY_ANALYZER
-                      }
-                      inputProps={{
-                        classNames: {
-                          inputWrapper:
-                            "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
-                        },
-                      }}
-                    >
-                      {resolvedSecurityAnalyzers.map((analyzer) => (
-                        <AutocompleteItem key={analyzer} value={analyzer}>
-                          {analyzer}
-                        </AutocompleteItem>
-                      ))}
-                    </Autocomplete>
-                  )}
-                </Await>
-              </Suspense>
+              <Autocomplete
+                isRequired
+                id="security-analyzer"
+                name="security-analyzer"
+                aria-label="Security Analyzer"
+                defaultSelectedKey={
+                  fetcher.formData?.get("security-analyzer")?.toString() ??
+                  settings.SECURITY_ANALYZER
+                }
+                inputProps={{
+                  classNames: {
+                    inputWrapper:
+                      "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
+                  },
+                }}
+              >
+                {securityAnalyzers.map((analyzer) => (
+                  <AutocompleteItem key={analyzer} value={analyzer}>
+                    {analyzer}
+                  </AutocompleteItem>
+                ))}
+              </Autocomplete>
             </fieldset>
 
             <Switch
