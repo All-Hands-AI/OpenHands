@@ -126,7 +126,9 @@ export default function App() {
         <button
           type="button"
           aria-label="All Hands Logo"
-          onClick={() => setStartNewProjectModalIsOpen(true)}
+          onClick={() => {
+            if (location.pathname !== "/") setStartNewProjectModalIsOpen(true);
+          }}
         >
           <AllHandsLogo width={34} height={23} />
         </button>
