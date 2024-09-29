@@ -98,6 +98,8 @@ if [ -z "$INSTANCE_ID" ]; then
 
     RESULT_OUTPUT_DIR=$(dirname $SWEBENCH_FORMAT_JSONL)
     echo "RESULT_OUTPUT_DIR: $RESULT_OUTPUT_DIR"
+    RESULT_OUTPUT_DIR_NAME=$(basename $RESULT_OUTPUT_DIR)
+    echo "RESULT_OUTPUT_DIR_NAME: $RESULT_OUTPUT_DIR_NAME"
 
     # move the eval results to the target directory
     mkdir -p $RESULT_OUTPUT_DIR
@@ -106,7 +108,7 @@ if [ -z "$INSTANCE_ID" ]; then
         rm -rf $RESULT_OUTPUT_DIR/eval_outputs
     fi
 
-    mv logs/run_instance_logs/$RUN_ID/$MODEL_NAME_OR_PATH $RESULT_OUTPUT_DIR
+    mv logs/run_evaluation/$RUN_ID/$RESULT_OUTPUT_DIR_NAME $RESULT_OUTPUT_DIR
     mv $RESULT_OUTPUT_DIR/$MODEL_NAME_OR_PATH $RESULT_OUTPUT_DIR/eval_outputs
     echo "RUN_ID: $RUN_ID" > $RESULT_OUTPUT_DIR/run_id.txt
 
