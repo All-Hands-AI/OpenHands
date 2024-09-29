@@ -209,7 +209,7 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
           )}
         </div>
       </Form>
-      <label className="flex self-start items-center text-[#A3A3A3] text-xs leading-[18px] -tracking-[0.08px]">
+      <label className="flex self-start items-center text-[#A3A3A3] text-xs leading-[18px] -tracking-[0.08px] cursor-pointer">
         <Clip width={16} height={16} />
         Attach a file
         <input
