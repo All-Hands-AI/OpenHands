@@ -26,7 +26,10 @@ import CodeIcon from "#/assets/code.svg?react";
 import GlobeIcon from "#/assets/globe.svg?react";
 import ListIcon from "#/assets/list-type-number.svg?react";
 import { createChatMessage } from "#/services/chatService";
-import { clearFiles } from "#/state/initial-query-slice";
+import {
+  clearFiles,
+  clearSelectedRepository,
+} from "#/state/initial-query-slice";
 import { isGitHubErrorReponse, retrieveLatestGitHubCommit } from "#/api/github";
 import { uploadFile } from "#/api/open-hands";
 import AgentState from "#/types/AgentState";
@@ -43,7 +46,9 @@ const Terminal = React.lazy(() => import("../components/terminal/Terminal"));
 
 export const clientLoader = async () => {
   const q = store.getState().initalQuery.initialQuery;
-  const repo = store.getState().initalQuery.selectedRepository;
+  const repo =
+    store.getState().initalQuery.selectedRepository ||
+    localStorage.getItem("repo");
   const importedProject = store.getState().initalQuery.importedProjectZip;
 
   const settings = getSettings();
@@ -168,11 +173,12 @@ function App() {
 
             if (ghToken && repo) {
               sendCloneRepoCommandToTerminal(ghToken, repo);
+              dispatch(clearSelectedRepository()); // reset selected repository; maybe better to move this to '/'?
             }
 
             if (q) {
               sendInitialQuery(q, files);
-              dispatch(clearFiles()); // reset selected files; maybe better to move this to '/'?
+              dispatch(clearFiles()); // reset selected files
             }
           }
         }

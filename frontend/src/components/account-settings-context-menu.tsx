@@ -1,7 +1,7 @@
-import React from "react";
 import { ContextMenu } from "./context-menu/context-menu";
 import { ContextMenuListItem } from "./context-menu/context-menu-list-item";
 import { ContextMenuSeparator } from "./context-menu/context-menu-separator";
+import { useClickOutsideElement } from "#/hooks/useClickOutsideElement";
 
 interface AccountSettingsContextMenuProps {
   isLoggedIn: boolean;
@@ -16,18 +16,7 @@ export function AccountSettingsContextMenu({
   onLogout,
   onClose,
 }: AccountSettingsContextMenuProps) {
-  const menuRef = React.useRef<HTMLUListElement>(null);
-
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
+  const menuRef = useClickOutsideElement<HTMLUListElement>(onClose);
 
   return (
     <ContextMenu ref={menuRef} className="absolute left-full -top-1 z-10">

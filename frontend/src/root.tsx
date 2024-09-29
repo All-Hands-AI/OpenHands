@@ -254,7 +254,7 @@ export default function App() {
               onConfirm={() => {
                 setStartNewProjectModalIsOpen(false);
 
-                // remove token action and redirect to /
+                // call new session action and redirect to '/'
                 submit(new FormData(), {
                   method: "POST",
                   action: "/new-session",

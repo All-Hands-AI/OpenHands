@@ -33,6 +33,9 @@ export const selectedFilesSlice = createSlice({
     setSelectedRepository(state, action: PayloadAction<string | null>) {
       state.selectedRepository = action.payload;
     },
+    clearSelectedRepository(state) {
+      state.selectedRepository = null;
+    },
     setImportedProjectZip(state, action: PayloadAction<string | null>) {
       state.importedProjectZip = action.payload;
     },
@@ -45,6 +48,7 @@ export const {
   clearFiles,
   setInitialQuery,
   setSelectedRepository,
+  clearSelectedRepository,
   setImportedProjectZip,
 } = selectedFilesSlice.actions;
 export default selectedFilesSlice.reducer;
