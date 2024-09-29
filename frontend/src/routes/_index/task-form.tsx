@@ -10,6 +10,7 @@ import { SuggestionBubble } from "#/components/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
 
 interface MainTextareaInputProps {
+  disabled: boolean;
   placeholder: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
@@ -17,6 +18,7 @@ interface MainTextareaInputProps {
 }
 
 function MainTextareaInput({
+  disabled,
   placeholder,
   value,
   onChange,
@@ -50,6 +52,7 @@ function MainTextareaInput({
   return (
     <textarea
       ref={textareaRef}
+      disabled={disabled}
       name="q"
       rows={1}
       placeholder={placeholder}
@@ -191,6 +194,7 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
         />
         <div className="relative">
           <MainTextareaInput
+            disabled={navigation.state === "submitting"}
             placeholder={
               selectedRepository
                 ? `What would you like to change in ${selectedRepository}`
