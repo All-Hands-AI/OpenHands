@@ -111,25 +111,28 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
     (state: RootState) => state.initalQuery,
   );
 
+  const hasLoadedProject = React.useMemo(
+    () => importedProjectZip || selectedRepository,
+    [importedProjectZip, selectedRepository],
+  );
+
   const formRef = React.useRef<HTMLFormElement>(null);
   const [text, setText] = React.useState("");
   const [suggestion, setSuggestion] = React.useState(
-    getRandomKey(
-      selectedRepository ? SUGGESTIONS.repo : SUGGESTIONS["non-repo"],
-    ),
+    getRandomKey(hasLoadedProject ? SUGGESTIONS.repo : SUGGESTIONS["non-repo"]),
   );
 
   React.useEffect(() => {
     // Display a suggestion based on whether a repository is selected
-    if (selectedRepository) {
+    if (hasLoadedProject) {
       setSuggestion(getRandomKey(SUGGESTIONS.repo));
     } else {
       setSuggestion(getRandomKey(SUGGESTIONS["non-repo"]));
     }
-  }, [selectedRepository]);
+  }, [selectedRepository, importedProjectZip]);
 
   const onRefreshSuggestion = () => {
-    const suggestions = SUGGESTIONS[selectedRepository ? "repo" : "non-repo"];
+    const suggestions = SUGGESTIONS[hasLoadedProject ? "repo" : "non-repo"];
     // remove current suggestion to avoid refreshing to the same suggestion
     const suggestionCopy = { ...suggestions };
     delete suggestionCopy[suggestion];
@@ -139,7 +142,7 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
   };
 
   const onClickSuggestion = () => {
-    const suggestions = SUGGESTIONS[selectedRepository ? "repo" : "non-repo"];
+    const suggestions = SUGGESTIONS[hasLoadedProject ? "repo" : "non-repo"];
     const value = suggestions[suggestion];
     setText(value);
   };

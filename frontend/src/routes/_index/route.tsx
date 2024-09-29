@@ -82,7 +82,6 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 
 function Home() {
   const rootData = useRouteLoaderData<typeof rootClientLoader>("root");
-  console.warn(rootData?.user);
   const navigation = useNavigation();
   const { repositories } = useLoaderData<typeof clientLoader>();
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
