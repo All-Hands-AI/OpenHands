@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+import toml
 from litellm.exceptions import (
     APIConnectionError,
     InternalServerError,
@@ -26,7 +27,7 @@ def mock_logger(monkeypatch):
 @pytest.fixture
 def default_config():
     return LLMConfig(
-        model='gpt-4o',
+        model='openai/gpt-4o',
         api_key='test_key',
         num_retries=2,
         retry_min_wait=1,
@@ -34,9 +35,56 @@ def default_config():
     )
 
 
+@pytest.fixture
+def router_config():
+    model_list = [
+        {
+            'model_name': 'gpt-3.5-turbo',
+            'litellm_params': {
+                'model': 'gpt-3.5-turbo',
+                'api_key': 'OPENAI_API_KEY',
+                'max_retries': 3,
+            },
+            'model_info': {'id': '1234'},
+            'tpm': 100000,
+            'rpm': 10000,
+        },
+        {
+            'model_name': 'claude-3-5-sonnet-20240620',
+            'litellm_params': {
+                'model': 'azure/claude-3-5-sonnet-20240620',
+                'api_key': 'AZURE_API_KEY',
+                'api_base': 'https://MODEL-URL.openai.azure.com//openai/',
+                'api_version': '2023-05-15',
+                'max_retries': 7,
+                'timeout': 0.01,
+                'stream_timeout': 0.000_001,
+            },
+            'tpm': 100000,
+            'rpm': 10000,
+        },
+    ]
+    return LLMConfig(
+        model='gpt-4o',
+        api_key='dummy_default_key',
+        router_models=model_list,
+        router_routing_strategy='simple-shuffle',
+        router_num_retries=3,
+        router_cooldown_time=1.0,
+        router_allowed_fails=5,
+        router_cache_responses=False,
+        router_options={
+            'set_verbose': True,
+            'debug_level': 1,
+            'default_litellm_params': {},
+            'timeout': 30,
+        },
+    )
+
+
 def test_llm_init_with_default_config(default_config):
     llm = LLM(default_config)
-    assert llm.config.model == 'gpt-4o'
+    assert llm.config.model == 'openai/gpt-4o'
     assert llm.config.api_key == 'test_key'
     assert isinstance(llm.metrics, Metrics)
 
@@ -86,7 +134,7 @@ def test_llm_init_with_metrics():
 
 
 def test_llm_reset():
-    llm = LLM(LLMConfig(model='gpt-4o-mini', api_key='test_key'))
+    llm = LLM(LLMConfig(model='openai/gpt-4o-mini', api_key='test_key'))
     initial_metrics = llm.metrics
     llm.reset()
     assert llm.metrics is not initial_metrics
@@ -95,7 +143,7 @@ def test_llm_reset():
 
 @patch('openhands.llm.llm.litellm.get_model_info')
 def test_llm_init_with_openrouter_model(mock_get_model_info, default_config):
-    default_config.model = 'openrouter:gpt-4o-mini'
+    default_config.model = 'openrouter/gpt-4o-mini'
     mock_get_model_info.return_value = {
         'max_input_tokens': 7000,
         'max_output_tokens': 1500,
@@ -103,10 +151,12 @@ def test_llm_init_with_openrouter_model(mock_get_model_info, default_config):
     llm = LLM(default_config)
     assert llm.config.max_input_tokens == 7000
     assert llm.config.max_output_tokens == 1500
-    mock_get_model_info.assert_called_once_with('openrouter:gpt-4o-mini')
+    mock_get_model_info.assert_called_once_with('openrouter/gpt-4o-mini')
 
 
+######################################################################################
 # Tests involving completion and retries
+######################################################################################
 
 
 @patch('openhands.llm.llm.litellm_completion')
@@ -332,3 +382,370 @@ def test_completion_with_two_positional_args(mock_litellm_completion, default_co
     assert (
         len(call_args) == 0
     )  # No positional args should be passed to litellm_completion here
+
+
+######################################################################################
+#################################### Router tests ####################################
+######################################################################################
+
+
+@patch('openhands.llm.llm.litellm.Router')
+@patch('openhands.llm.llm.litellm_completion')
+def test_router_completion_with_fallback(
+    mock_litellm_completion, mock_router, router_config
+):
+    # Mock the router's completion method to raise an exception
+    mock_router_instance = MagicMock()
+    mock_router_instance.completion.side_effect = APIConnectionError(
+        'Router error', llm_provider='test_provider', model='test_model'
+    )
+    mock_router.return_value = mock_router_instance
+
+    # Mock the litellm_completion method to return a fallback response
+    mock_litellm_completion.return_value = {
+        'choices': [{'message': {'content': 'Fallback response'}}]
+    }
+
+    llm = LLM(router_config)
+
+    response = llm._router_completion_with_fallback(
+        messages=[{'role': 'user', 'content': 'Hello!'}]
+    )
+
+    # Check if the router's completion method was called
+    mock_router_instance.completion.assert_called_once_with(
+        messages=[{'role': 'user', 'content': 'Hello!'}]
+    )
+
+    # Check if the litellm_completion method was called as a fallback
+    mock_litellm_completion.assert_called_once_with(
+        model=router_config.model, messages=[{'role': 'user', 'content': 'Hello!'}]
+    )
+
+    # Check the response
+    assert response['choices'][0]['message']['content'] == 'Fallback response'
+
+
+# credits go to the litellm project for the below tests
+
+
+@patch('openhands.llm.llm.litellm.Router')
+def test_llm_init_with_router(mock_router, router_config):
+    llm = LLM(router_config)
+
+    # Check if Router was initialized with correct parameters
+    mock_router.assert_called_once()
+    router_args = mock_router.call_args[1]
+    assert router_args['model_list'] == router_config.router_models
+    assert router_args['routing_strategy'] == router_config.router_routing_strategy
+    assert router_args['num_retries'] == router_config.router_num_retries
+    assert router_args['cooldown_time'] == router_config.router_cooldown_time
+    assert router_args['allowed_fails'] == router_config.router_allowed_fails
+    assert router_args['cache_responses'] == router_config.router_cache_responses
+    assert router_args['set_verbose'] == router_config.router_options['set_verbose']
+    assert router_args['debug_level'] == router_config.router_options['debug_level']
+
+    # Check if the router attribute is set
+    assert hasattr(llm, 'router')
+    assert isinstance(llm.router, MagicMock)
+
+
+@patch('openhands.llm.llm.litellm.Router')
+def test_llm_completion_with_router(mock_router, router_config):
+    # Mock the router's completion method
+    mock_router_instance = MagicMock()
+    mock_router_instance.completion.return_value = {
+        'choices': [{'message': {'content': 'Router response'}}]
+    }
+    mock_router.return_value = mock_router_instance
+
+    llm = LLM(router_config)
+    response = llm.completion(messages=[{'role': 'user', 'content': 'Hello!'}])
+
+    # Check if the router's completion method was called
+    mock_router_instance.completion.assert_called_once_with(
+        messages=[{'role': 'user', 'content': 'Hello!'}]
+    )
+
+    # Check the response
+    assert response['choices'][0]['message']['content'] == 'Router response'
+
+
+@patch('openhands.llm.llm.litellm.Router')
+@patch('openhands.llm.llm.litellm_completion')
+def test_llm_completion_with_router_no_model(
+    mock_litellm_completion, mock_router, router_config
+):
+    # Remove the router_models from the config
+    router_config.router_models = []
+
+    # Mock the router's completion method
+    mock_router_instance = MagicMock()
+    mock_router_instance.completion.return_value = {
+        'choices': [{'message': {'content': 'Router response'}}]
+    }
+    mock_router.return_value = mock_router_instance
+
+    # Mock the litellm_completion method
+    mock_litellm_completion.return_value = {
+        'choices': [{'message': {'content': 'Fallback response'}}]
+    }
+
+    # Create the LLM instance
+    llm = LLM(router_config)
+
+    # Call the completion method
+    response = llm.completion(messages=[{'role': 'user', 'content': 'Hello!'}])
+
+    # Check if the litellm_completion method was called with the default model
+    mock_litellm_completion.assert_called_once_with(
+        model=router_config.model,
+        api_key=router_config.api_key,
+        temperature=router_config.temperature,
+        top_p=router_config.top_p,
+        drop_params=router_config.drop_params,
+        max_tokens=4096,  # This is the default value set in the LLM class
+        messages=[{'role': 'user', 'content': 'Hello!'}],
+    )
+
+    # Check the response
+    assert response['choices'][0]['message']['content'] == 'Fallback response'
+
+
+@patch('openhands.llm.llm.litellm.Router')
+def test_router_init_gpt_4_vision_enhancements(mock_router):
+    router_config = LLMConfig(
+        model='gpt-4-vision-enhanced',
+        api_key='dummy_default_key',
+        router_models=[
+            {
+                'model_name': 'gpt-4-vision-enhancements',
+                'litellm_params': {
+                    'model': 'azure/gpt-4-vision',
+                    'api_key': 'AZURE_API_KEY',
+                    'base_url': 'https://gpt-4-vision-resource.openai.azure.com/openai/deployments/gpt-4-vision/extensions/',
+                    'dataSources': [
+                        {
+                            'type': 'AzureComputerVision',
+                            'parameters': {
+                                'endpoint': 'AZURE_VISION_ENHANCE_ENDPOINT',
+                                'key': 'AZURE_VISION_ENHANCE_KEY',
+                            },
+                        }
+                    ],
+                },
+            }
+        ],
+        router_routing_strategy='simple-shuffle',
+        router_num_retries=3,
+        router_cooldown_time=1.0,
+        router_allowed_fails=5,
+        router_cache_responses=False,
+        router_options={
+            'set_verbose': True,
+            'debug_level': 1,
+            'default_litellm_params': {},
+            'timeout': 30,
+        },
+    )
+
+    llm = LLM(router_config)
+
+    # Check if Router was initialized with correct parameters
+    mock_router.assert_called_once()
+    router_args = mock_router.call_args[1]
+    assert router_args['model_list'] == router_config.router_models
+    assert router_args['routing_strategy'] == router_config.router_routing_strategy
+    assert router_args['num_retries'] == router_config.router_num_retries
+    assert router_args['cooldown_time'] == router_config.router_cooldown_time
+    assert router_args['allowed_fails'] == router_config.router_allowed_fails
+    assert router_args['cache_responses'] == router_config.router_cache_responses
+    assert router_args['set_verbose'] == router_config.router_options['set_verbose']
+    assert router_args['debug_level'] == router_config.router_options['debug_level']
+
+    # Check if the router attribute is set
+    assert hasattr(llm, 'router')
+    assert isinstance(llm.router, MagicMock)
+
+
+@patch('openhands.llm.llm.litellm.Router')
+def test_llm_init_with_toml_config(mock_router):
+    # Mock TOML configuration
+    toml_config = """
+model = "gpt-4-vision-enhanced"
+api_key = "dummy_default_key"
+
+[[router_models]]
+model_name = "gpt-4-vision-enhancements"
+[router_models.litellm_params]
+model = "azure/gpt-4-vision"
+api_key = "AZURE_API_KEY"
+base_url = "https://gpt-4-vision-resource.openai.azure.com/openai/deployments/gpt-4-vision/extensions/"
+
+[[router_models.litellm_params.dataSources]]
+type = "AzureComputerVision"
+
+[router_models.litellm_params.dataSources.parameters]
+endpoint = "AZURE_VISION_ENHANCE_ENDPOINT"
+key = "AZURE_VISION_ENHANCE_KEY"
+
+[router_options]
+set_verbose = true
+debug_level = 1
+timeout = 30
+
+router_routing_strategy = "simple-shuffle"
+router_num_retries = 3
+router_cooldown_time = 1.0
+router_allowed_fails = 5
+router_cache_responses = false
+    """
+
+    # Parse the TOML configuration
+    config_data = toml.loads(toml_config)
+
+    # Initialize LLMConfig with the parsed data
+    router_config = LLMConfig(
+        model=config_data.get('model', 'default_model'),
+        api_key=config_data.get('api_key', 'default_api_key'),
+        router_models=config_data.get('router_models', []),
+        router_routing_strategy=config_data.get(
+            'router_routing_strategy', 'default_strategy'
+        ),
+        router_num_retries=config_data.get('router_num_retries', 3),
+        router_cooldown_time=config_data.get('router_cooldown_time', 1.0),
+        router_allowed_fails=config_data.get('router_allowed_fails', 5),
+        router_cache_responses=config_data.get('router_cache_responses', False),
+        router_options=config_data.get('router_options', {}),
+    )
+
+    llm = LLM(router_config)
+
+    # Check if Router was initialized with correct parameters
+    mock_router.assert_called_once()
+    router_args = mock_router.call_args[1]
+    assert router_args['model_list'] == router_config.router_models
+    assert router_args['routing_strategy'] == router_config.router_routing_strategy
+    assert router_args['num_retries'] == router_config.router_num_retries
+    assert router_args['cooldown_time'] == router_config.router_cooldown_time
+    assert router_args['allowed_fails'] == router_config.router_allowed_fails
+    assert router_args['cache_responses'] == router_config.router_cache_responses
+    assert router_args['set_verbose'] == router_config.router_options['set_verbose']
+    assert router_args['debug_level'] == router_config.router_options['debug_level']
+
+    # Check if the router attribute is set
+    assert hasattr(llm, 'router')
+    assert isinstance(llm.router, MagicMock)
+
+
+@pytest.fixture
+def router_with_fallbacks_config():
+    return LLMConfig(
+        model='bad-model',
+        api_key='dummy_default_key',
+        router_models=[
+            {
+                'model_name': 'bad-model',
+                'litellm_params': {
+                    'model': 'openai/my-bad-model',
+                    'api_key': 'my-bad-api-key',
+                },
+            },
+            {
+                'model_name': 'my-good-model',
+                'litellm_params': {
+                    'model': 'gpt-4o',
+                    'api_key': 'OPENAI_API_KEY',
+                },
+            },
+        ],
+        router_routing_strategy='simple-shuffle',
+        router_num_retries=3,
+        router_cooldown_time=1.0,
+        router_allowed_fails=5,
+        router_cache_responses=False,
+        router_options={
+            'set_verbose': True,
+            'debug_level': 1,
+            'timeout': 30,
+        },
+    )
+
+
+@patch('openhands.llm.llm.litellm.Router')
+def test_client_side_fallbacks_list(mock_router, router_with_fallbacks_config):
+    mock_router_instance = MagicMock()
+    mock_router_instance.completion.return_value = {
+        'choices': [{'message': {'content': 'Hey! nice day'}}]
+    }
+    mock_router.return_value = mock_router_instance
+
+    llm = LLM(router_with_fallbacks_config)
+
+    response = llm.completion(
+        messages=[{'role': 'user', 'content': "Hey, how's it going?"}],
+        fallbacks=['my-good-model'],
+        mock_testing_fallbacks=True,
+        mock_response='Hey! nice day',
+    )
+
+    assert response['choices'][0]['message']['content'] == 'Hey! nice day'
+    assert mock_router_instance.completion.call_count == 1
+
+
+@pytest.fixture
+def router_content_policy_config():
+    return LLMConfig(
+        model='content-policy-model',
+        api_key='dummy_default_key',
+        router_models=[
+            {
+                'model_name': 'content-policy-model',
+                'litellm_params': {
+                    'model': 'openai/content-policy-model',
+                    'api_key': 'content-policy-api-key',
+                },
+            },
+            {
+                'model_name': 'fallback-model',
+                'litellm_params': {
+                    'model': 'gpt-4o',
+                    'api_key': 'OPENAI_API_KEY',
+                },
+            },
+        ],
+        router_routing_strategy='simple-shuffle',
+        router_num_retries=3,
+        router_cooldown_time=1.0,
+        router_allowed_fails=5,
+        router_cache_responses=False,
+        router_options={
+            'set_verbose': True,
+            'debug_level': 1,
+            'timeout': 30,
+        },
+    )
+
+
+@patch('openhands.llm.llm.litellm.Router')
+def test_router_content_policy_fallbacks(mock_router, router_content_policy_config):
+    mock_router_instance = MagicMock()
+    mock_router_instance.completion.return_value = {
+        'choices': [{'message': {'content': 'Content policy fallback response'}}]
+    }
+    mock_router.return_value = mock_router_instance
+
+    llm = LLM(router_content_policy_config)
+
+    response = llm.completion(
+        messages=[{'role': 'user', 'content': 'Test content policy'}],
+        fallbacks=['fallback-model'],
+        mock_testing_fallbacks=True,
+        mock_response='Content policy fallback response',
+    )
+
+    assert (
+        response['choices'][0]['message']['content']
+        == 'Content policy fallback response'
+    )
+    assert mock_router_instance.completion.call_count == 1

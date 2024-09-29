@@ -124,47 +124,72 @@ class LLM(RetryMixin, DebugMixin):
 
         # Create config_dict with only compatible keys
         config_dict = self.config.get_litellm_compatible_dict()
+
         # Handle max_tokens parameter
         if 'max_output_tokens' in config_dict:
             config_dict['max_tokens'] = config_dict.pop('max_output_tokens')
 
         if self.config.router_models:
-            """Example of how to configure the router via code:
-            config = LLMConfig(
-                model="gpt-4",  # This is a fallback if router fails
-                router_models=[
-                    {
-                        "model": "gpt-3.5-turbo",
-                        "api_key": "your-openai-api-key",
-                    },
-                    {
-                        "model": "claude-2",
-                        "api_key": "your-anthropic-api-key",
-                    },
-                    {
-                        "model": "azure/gpt-4",
-                        "api_base": "https://your-azure-endpoint.openai.azure.com",
-                        "api_key": "your-azure-api-key",
-                        "api_version": "2023-05-15",
-                    },
-                    # ... other models as shown above
-                ],
-                router_routing_strategy="simple-shuffle",
-                # ... other router configurations
-            )
-            """
+            valid_router_args = {
+                'model_list',
+                'assistants_config',
+                'redis_url',
+                'redis_host',
+                'redis_port',
+                'redis_password',
+                'cache_responses',
+                'cache_kwargs',
+                'caching_groups',
+                'client_ttl',
+                'polling_interval',
+                'default_priority',
+                'num_retries',
+                'timeout',
+                'default_litellm_params',
+                'default_max_parallel_requests',
+                'set_verbose',
+                'debug_level',
+                'default_fallbacks',
+                'fallbacks',
+                'context_window_fallbacks',
+                'content_policy_fallbacks',
+                'model_group_alias',
+                'enable_pre_call_checks',
+                'enable_tag_filtering',
+                'retry_after',
+                'retry_policy',
+                'model_group_retry_policy',
+                'allowed_fails',
+                'allowed_fails_policy',
+                'cooldown_time',
+                'disable_cooldowns',
+                'routing_strategy',
+                'routing_strategy_args',
+                'semaphore',
+                'alerting_config',
+                'router_general_settings',
+            }
+
+            merged_router_options = {**self.config.router_options, **config_dict}
+
             router_config = {
-                'model_list': self.config.router_models,
-                'routing_strategy': self.config.router_routing_strategy,
-                'num_retries': self.config.router_num_retries,
-                'cooldown_time': self.config.router_cooldown_time,
-                'allowed_fails': self.config.router_allowed_fails,
-                'cache_responses': self.config.router_cache_responses,
-                'cache_kwargs': self.config.router_cache_kwargs,
-                **self.config.router_options,
+                key: value
+                for key, value in {
+                    'model_list': self.config.router_models,
+                    'routing_strategy': self.config.router_routing_strategy,
+                    'num_retries': self.config.router_num_retries,
+                    'cooldown_time': self.config.router_cooldown_time,
+                    'allowed_fails': self.config.router_allowed_fails,
+                    'cache_responses': self.config.router_cache_responses,
+                    'cache_kwargs': self.config.router_cache_kwargs,
+                    'set_verbose': self.config.router_options.get('set_verbose', False),
+                    'debug_level': self.config.router_options.get('debug_level', 0),
+                    **merged_router_options,
+                }.items()
+                if key in valid_router_args
             }
             self.router = litellm.Router(**router_config)
-            completion_func = partial(self.router.completion, **config_dict)
+            completion_func = self._router_completion_with_fallback
         else:
             completion_func = partial(litellm_completion, **config_dict)
 
@@ -242,6 +267,22 @@ class LLM(RetryMixin, DebugMixin):
             )(wrapper)
 
         self._completion = wrapper
+
+    def _router_completion_with_fallback(self, *args, **kwargs):
+        # If 'model' is not in kwargs, add the default model
+        # if 'model' not in kwargs:
+        #     kwargs['model'] = self.config.model
+        try:
+            return self.router.completion(*args, **kwargs)
+        except Exception as e:
+            logger.warning(
+                f'Router completion failed: {e}. Falling back to default model.'
+            )
+            # Use the model from kwargs if available, otherwise use a default model
+            fallback_model = kwargs.get('model') or self.config.model
+            # Ensure 'model' is in kwargs for litellm_completion
+            kwargs['model'] = fallback_model
+            return litellm_completion(*args, **kwargs)
 
     @property
     def completion(self):

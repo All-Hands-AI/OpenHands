@@ -168,32 +168,75 @@ model = "gpt-4o"
 # litellm Router configuration
 ##############################################################################
 
+# Routing strategy to use for the router. Options include "simple-shuffle", "round-robin", etc.
 #router_routing_strategy = "simple-shuffle"
+
+# Number of retries to attempt when an operation fails.
 #router_num_retries = 3
+
+# Cooldown time (in seconds) between retry attempts.
 #router_cooldown_time = 1.0
+
+# Number of allowed failures before giving up.
 #router_allowed_fails = 5
+
+# Whether to cache responses from the router. This would require additional modules, like Redis.
+# (not implemented by OpenHands!)
 #router_cache_responses = false
 
 # List notation is used to specify multiple models for the same configuration!
+# Each model can have its own specific parameters.
 
+# Example configuration for OpenAI's gpt-4o model
 #[[llm.router_models]]
-#model = "gpt-3.5-turbo"
+#model_name = "gpt-4o"
 #api_key = "your-openai-api-key"
+#litellm_params = {
+#    "model": "gpt-4o",  # Model name
+#    "api_key": "OPENAI_API_KEY",  # API key for the model
+#    "max_retries": 3,  # Maximum number of retries for this model
+#    "max_tokens": 100  # Maximum number of tokens for the completion
+#}
+#model_info = {"id": "1234"}  # Additional model information
+#tpm = 100000  # Tokens per minute
+#rpm = 10000  # Requests per minute
 
+# Example configuration for Anthropic's Claude-3 Opus model
 #[[llm.router_models]]
-#model = "claude-3-opus"
+#model_name = "claude-3-5-sonnet-20240620"
 #api_key = "your-anthropic-api-key"
+#litellm_params = {
+#    "model": "azure/claude-3-5-sonnet-20240620",  # Model name
+#    "api_key": "AZURE_API_KEY",  # API key for the model
+#    "api_base": "https://your-azure-endpoint.openai.azure.com",  # Base URL for the API
+#    "api_version": "2023-05-15",  # API version
+#    "max_retries": 7,  # Maximum number of retries for this model
+#    "timeout": 0.01,  # Timeout for the API
+#    "stream_timeout": 0.000_001,  # Stream timeout for the API
+#    "max_tokens": 100  # Maximum number of tokens for the completion
+#}
+#tpm = 100000  # Tokens per minute
+#rpm = 10000  # Requests per minute
 
+# Example configuration for Azure's GPT-4 model
 #[[llm.router_models]]
-#model = "azure/gpt-4"
+#model_name = "azure/gpt-4"
 #api_base = "https://your-azure-endpoint.openai.azure.com"
 #api_key = "your-azure-api-key"
 #api_version = "2023-05-15"
+#litellm_params = {
+#    "max_tokens": 100  # Maximum number of tokens for the completion
+#}
 
+# Router options for additional configurations
 #[llm.router_options]
-#timeout = 30
-#max_retries = 3
+#timeout = 30  # Timeout for the router operations
+#max_retries = 3  # Maximum number of retries for the router
+#set_verbose = true  # Enable verbose logging
+#debug_level = 1  # Debug level for logging
+#default_litellm_params = {}  # Default parameters for litellm
 
+# Cache-related options for the router
 #[llm.router_cache_kwargs]
 # Add any cache-related options here if needed
 

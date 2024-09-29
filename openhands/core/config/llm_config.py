@@ -114,16 +114,6 @@ class LLMConfig:
 
         return result
 
-    @classmethod
-    def from_dict(cls, config_dict: dict[str, Any]) -> 'LLMConfig':
-        """Create an LLMConfig instance from a dictionary (e.g., parsed from TOML)."""
-        # Filter out keys that are not fields in LLMConfig
-        valid_keys = {f.name for f in fields(cls)}
-        filtered_dict = {k: v for k, v in config_dict.items() if k in valid_keys}
-
-        # Create the LLMConfig instance
-        return cls(**filtered_dict)
-
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
         result = {}
