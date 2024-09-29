@@ -104,6 +104,7 @@ export default function App() {
     settings,
   } = useLoaderData<typeof clientLoader>();
   const submit = useSubmit();
+  const logoutFetcher = useFetcher({ key: "logout" });
 
   const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
     React.useState(false);
@@ -137,7 +138,15 @@ export default function App() {
                 "bg-white w-8 h-8 rounded-full flex items-center justify-center",
                 fetcher.state !== "idle" && "bg-transparent",
               )}
-              onClick={() => setAccountContextMenuIsVisible((prev) => !prev)}
+              onClick={() => {
+                if (!user) {
+                  // If the user is not logged in, opening the modal is the only option,
+                  // so we do that instead of toggling the context menu.
+                  setAccountSettingsModalOpen(true);
+                  return;
+                }
+                setAccountContextMenuIsVisible((prev) => !prev);
+              }}
             >
               {!user && fetcher.state === "idle" && (
                 <DefaultUserAvatar width={20} height={20} />
@@ -162,14 +171,14 @@ export default function App() {
                   setAccountSettingsModalOpen(true);
                 }}
                 onLogout={() => {
-                  submit(
+                  logoutFetcher.submit(
                     {},
                     {
                       method: "POST",
                       action: "/logout",
-                      navigate: false,
                     },
                   );
+                  setAccountContextMenuIsVisible(false);
                 }}
               />
             )}
