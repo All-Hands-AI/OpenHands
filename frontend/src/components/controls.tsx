@@ -21,7 +21,6 @@ export function Controls({
 }: ControlsProps) {
   const rootData = useRouteLoaderData<typeof rootClientLoader>("root");
   const appData = useRouteLoaderData<typeof appClientLoader>("routes/app");
-  console.warn(appData);
 
   const projectMenuCardData = React.useMemo(
     () =>

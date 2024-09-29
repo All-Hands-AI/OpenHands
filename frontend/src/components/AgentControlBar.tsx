@@ -1,15 +1,14 @@
 import { Tooltip } from "@nextui-org/react";
-import React, { useEffect } from "react";
+import React from "react";
 import { useSelector } from "react-redux";
 import PauseIcon from "#/assets/pause";
 import PlayIcon from "#/assets/play";
 import { generateAgentStateChangeEvent } from "#/services/agentStateService";
-import store, { RootState } from "#/store";
+import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
-import { clearMessages } from "#/state/chatSlice";
 import { useSocket } from "#/context/socket";
 
-const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
+const IgnoreTaskStateMap: Record<string, AgentState[]> = {
   [AgentState.PAUSED]: [
     AgentState.INIT,
     AgentState.PAUSED,
@@ -35,7 +34,7 @@ const IgnoreTaskStateMap: { [k: string]: AgentState[] } = {
 };
 
 interface ActionButtonProps {
-  isDisabled: boolean;
+  isDisabled?: boolean;
   content: string;
   action: AgentState;
   handleAction: (action: AgentState) => void;
@@ -75,41 +74,19 @@ function ActionButton({
 function AgentControlBar() {
   const { send } = useSocket();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
-  const [desiredState, setDesiredState] = React.useState(AgentState.INIT);
-  const [isLoading, setIsLoading] = React.useState(false);
 
   const handleAction = (action: AgentState) => {
-    if (IgnoreTaskStateMap[action].includes(curAgentState)) {
-      return;
+    if (!IgnoreTaskStateMap[action].includes(curAgentState)) {
+      send(generateAgentStateChangeEvent(action));
     }
-
-    setIsLoading(true);
-
-    setDesiredState(action);
-    send(generateAgentStateChangeEvent(action));
   };
-
-  useEffect(() => {
-    if (curAgentState === desiredState) {
-      if (curAgentState === AgentState.STOPPED) {
-        store.dispatch(clearMessages());
-      }
-      setIsLoading(false);
-    } else if (curAgentState === AgentState.RUNNING) {
-      setDesiredState(AgentState.RUNNING);
-    }
-    // We only want to run this effect when curAgentState changes
-  }, [curAgentState]);
 
   return (
     <div className="flex justify-between items-center gap-20">
       <ActionButton
         isDisabled={
-          isLoading ||
-          (curAgentState === AgentState.PAUSED
-            ? IgnoreTaskStateMap[AgentState.PAUSED]
-            : IgnoreTaskStateMap[AgentState.RUNNING]
-          ).includes(curAgentState)
+          curAgentState !== AgentState.RUNNING &&
+          curAgentState !== AgentState.PAUSED
         }
         content={
           curAgentState === AgentState.PAUSED
