@@ -1,6 +1,5 @@
 import React from "react";
 import { useDispatch } from "react-redux";
-import { useRouteLoaderData } from "@remix-run/react";
 import EllipsisH from "#/assets/ellipsis-h.svg?react";
 import { ModalBackdrop } from "../modals/modal-backdrop";
 import { ConnectToGitHubModal } from "../modals/connect-to-github-modal";
@@ -11,10 +10,6 @@ import { ProjectMenuCardContextMenu } from "./project.menu-card-context-menu";
 import { ProjectMenuDetailsPlaceholder } from "./project-menu-details-placeholder";
 import { ProjectMenuDetails } from "./project-menu-details";
 import { downloadWorkspace } from "#/utils/download-workspace";
-import { clientLoader } from "#/root";
-import { isGitHubErrorReponse } from "#/api/github";
-import { sendTerminalCommand } from "#/services/terminalService";
-import { appendInput } from "#/state/commandSlice";
 
 interface ProjectMenuCardProps {
   isConnectedToGitHub: boolean;
@@ -29,32 +24,12 @@ export function ProjectMenuCard({
   isConnectedToGitHub,
   githubData,
 }: ProjectMenuCardProps) {
-  const data = useRouteLoaderData<typeof clientLoader>("root");
-  // To avoid re-rendering the component when the user object changes, we memoize the user ID.
-  const userId = React.useMemo(() => {
-    if (data?.user && !isGitHubErrorReponse(data.user)) return data.user.id;
-    return null;
-  }, [data?.user]);
-
   const { send } = useSocket();
   const dispatch = useDispatch();
 
   const [contextMenuIsOpen, setContextMenuIsOpen] = React.useState(false);
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
     React.useState(false);
-
-  const exportGitHubTokenToTerminal = (gitHubToken: string) => {
-    const command = `export GH_TOKEN=${gitHubToken}`;
-    const event = sendTerminalCommand(command);
-
-    send(event);
-    dispatch(appendInput(command.replace(gitHubToken, "***")));
-  };
-
-  React.useEffect(() => {
-    // Export if the user valid
-    if (userId && data?.ghToken) exportGitHubTokenToTerminal(data.ghToken);
-  }, [userId, data?.ghToken]);
 
   const toggleMenuVisibility = () => {
     setContextMenuIsOpen((prev) => !prev);

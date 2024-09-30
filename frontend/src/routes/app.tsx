@@ -7,6 +7,7 @@ import {
   useLoaderData,
   json,
   ClientActionFunctionArgs,
+  useRouteLoaderData,
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import WebSocket from "ws";
@@ -35,6 +36,7 @@ import { isGitHubErrorReponse, retrieveLatestGitHubCommit } from "#/api/github";
 import { uploadFile } from "#/api/open-hands";
 import AgentState from "#/types/AgentState";
 import { base64ToBlob } from "#/utils/base64-to-blob";
+import { clientLoader as rootClientLoader } from "#/root";
 
 const isAgentStateChange = (
   data: object,
@@ -100,10 +102,18 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 function App() {
   const dispatch = useDispatch();
   const { files } = useSelector((state: RootState) => state.initalQuery);
-  const { start, send, setRuntimeIsInitialized } = useSocket();
+  const { start, send, setRuntimeIsInitialized, runtimeActive } = useSocket();
   const { settings, token, ghToken, repo, q, lastCommit } =
     useLoaderData<typeof clientLoader>();
   const fetcher = useFetcher();
+  const data = useRouteLoaderData<typeof rootClientLoader>("root");
+
+  // To avoid re-rendering the component when the user object changes, we memoize the user ID.
+  // We use this to ensure the github token is valid before exporting it to the terminal.
+  const userId = React.useMemo(() => {
+    if (data?.user && !isGitHubErrorReponse(data.user)) return data.user.id;
+    return null;
+  }, [data?.user]);
 
   const Terminal = React.useMemo(
     () => React.lazy(() => import("../components/terminal/Terminal")),
@@ -170,10 +180,6 @@ function App() {
 
         // handle new session
         if (!token) {
-          if (ghToken) {
-            exportGitHubTokenToTerminal(ghToken);
-          }
-
           if (ghToken && repo) {
             sendCloneRepoCommandToTerminal(ghToken, repo);
             dispatch(clearSelectedRepository()); // reset selected repository; maybe better to move this to '/'?
@@ -203,6 +209,13 @@ function App() {
     dispatch(clearTerminal());
     startSocketConnection();
   });
+
+  React.useEffect(() => {
+    // Export if the user valid, this could happen mid-session so it is handled here
+    if (userId && ghToken && runtimeActive) {
+      exportGitHubTokenToTerminal(ghToken);
+    }
+  }, [userId, ghToken, runtimeActive]);
 
   const {
     isOpen: securityModalIsOpen,
