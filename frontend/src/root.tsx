@@ -126,6 +126,14 @@ export default function App() {
     );
   };
 
+  const handleAccountSettingsModalClose = () => {
+    // If the user closes the modal without connecting to GitHub,
+    // we need to log them out to clear the invalid token from the
+    // local storage
+    if (isGitHubErrorReponse(user)) handleUserLogout();
+    setAccountSettingsModalOpen(false);
+  };
+
   return (
     <div className="bg-root-primary p-3 h-screen flex gap-3">
       <aside className="px-1 flex flex-col gap-[15px]">
@@ -208,15 +216,9 @@ export default function App() {
           </ModalBackdrop>
         )}
         {accountSettingsModalOpen && (
-          <ModalBackdrop onClose={() => setAccountSettingsModalOpen(false)}>
+          <ModalBackdrop onClose={handleAccountSettingsModalClose}>
             <AccountSettingsModal
-              onClose={() => {
-                // If the user closes the modal without connecting to GitHub,
-                // we need to log them out to clear the invalid token from the
-                // local storage
-                if (isGitHubErrorReponse(user)) handleUserLogout();
-                setAccountSettingsModalOpen(false);
-              }}
+              onClose={handleAccountSettingsModalClose}
               selectedLanguage={settings.LANGUAGE}
               gitHubError={isGitHubErrorReponse(user)}
             />
