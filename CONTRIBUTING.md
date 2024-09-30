@@ -16,10 +16,9 @@ To understand the codebase, please refer to the README in each module:
 - [frontend](./frontend/README.md)
 - [evaluation](./evaluation/README.md)
 - [openhands](./openhands/README.md)
+    - [agenthub](./openhands/agenthub/README.md)
     - [server](./openhands/server/README.md)
 
-Also worth checking out:
-- [agenthub](./openhands/agenthub/README.md)
 
 When you write code, it is also good to write tests. Please navigate to the `tests` folder to see existing test suites.
 At the moment, we have two kinds of tests: `unit` and `integration`. Please refer to the README for each test suite. These tests also run on GitHub's continuous integration to ensure quality of the project.
