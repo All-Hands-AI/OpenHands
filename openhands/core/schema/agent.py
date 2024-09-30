@@ -6,6 +6,10 @@ class AgentState(str, Enum):
     """The agent is loading.
     """
 
+    RATE_LIMITED = 'rate_limited'
+    """The agent is rate limited.
+    """
+
     INIT = 'init'
     """The agent is initialized.
     """

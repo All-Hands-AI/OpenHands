@@ -1,4 +1,18 @@
 {
+"AGENT_STATUS$RATE_LIMITED_MESSAGE": {
+    "en": "Agent is rate limited. Please wait.",
+    "zh-CN": "代理已达到速率限制。请稍候。",
+    "de": "Agent ist ratenbegrenzt. Bitte warten.",
+    "ko-KR": "에이전트가 속도 제한되었습니다. 잠시만 기다려주세요.",
+    "no": "Agenten er hastighetsbegrenset. Vennligst vent.",
+    "zh-TW": "代理已達到速率限制。請稍候。",
+    "it": "L'agente è limitato dalla velocità. Attendere prego.",
+    "pt": "O agente está com limite de taxa. Por favor, aguarde.",
+    "es": "El agente está limitado por tasa. Por favor, espere.",
+    "ar": "الوكيل محدود بمعدل. يرجى الانتظار.",
+    "fr": "L'agent est limité en débit. Veuillez patienter.",
+    "tr": "Ajan hız sınırlamasına tabi. Lütfen bekleyin."
+  },
   "WORKSPACE$TITLE": {
     "en": "OpenHands Workspace",
     "zh-CN": "OpenHands 工作区",

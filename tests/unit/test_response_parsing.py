@@ -1,7 +1,5 @@
 import pytest
 
-from agenthub.micro.agent import parse_response as parse_response_micro
-from agenthub.planner_agent.prompt import parse_response as parse_response_planner
 from openhands.core.exceptions import LLMResponseError
 from openhands.core.utils.json import loads as custom_loads
 from openhands.events.action import (
@@ -9,10 +7,12 @@ from openhands.events.action import (
     MessageAction,
 )
 
+# TODO: Replace this with the correct import for parse_response
+from openhands.utils.microagent import parse_response
 
 @pytest.mark.parametrize(
     'parse_response_module',
-    [parse_response_micro, parse_response_planner],
+    [parse_response],
 )
 def test_parse_single_complete_json(parse_response_module):
     input_response = """

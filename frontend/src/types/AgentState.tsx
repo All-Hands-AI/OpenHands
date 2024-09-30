@@ -1,4 +1,5 @@
 enum AgentState {
+  RATE_LIMITED = "rate_limited",
   LOADING = "loading",
   INIT = "init",
   RUNNING = "running",

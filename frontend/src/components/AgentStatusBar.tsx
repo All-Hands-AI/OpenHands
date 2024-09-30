@@ -20,9 +20,13 @@ function AgentStatusBar() {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const { curStatusMessage } = useSelector((state: RootState) => state.status);
 
-  const AgentStatusMap: {
+const AgentStatusMap: {
     [k: string]: { message: string; indicator: IndicatorColor };
   } = {
+[AgentState.RATE_LIMITED]: {
+      message: t(I18nKey.AGENT_STATUS$RATE_LIMITED_MESSAGE),
+      indicator: IndicatorColor.YELLOW,
+    },
     [AgentState.INIT]: {
       message: t(I18nKey.CHAT_INTERFACE$AGENT_INIT_MESSAGE),
       indicator: IndicatorColor.BLUE,

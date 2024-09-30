@@ -500,7 +500,7 @@ class AgentController:
             self.event_stream.add_event(obs, EventSource.AGENT)
         return
 
-    async def _handle_traffic_control(
+async def _handle_traffic_control(
         self, limit_type: str, current_value: float, max_value: float
     ):
         """Handles agent state after hitting the traffic control limit.
@@ -511,6 +511,8 @@ class AgentController:
             max_value (float): The maximum value of the limit.
         """
         stop_step = False
+        self.state.agent_state = AgentState.RATE_LIMITED
+        await self._publish_agent_state_changed()
         if self.state.traffic_control_state == TrafficControlState.PAUSED:
             logger.info('Hitting traffic control, temporarily resume upon user request')
             self.state.traffic_control_state = TrafficControlState.NORMAL
