@@ -153,9 +153,14 @@ export function SettingsForm({
           />
           <p className="text-sm text-[#A3A3A3]">
             Don&apos;t know your API key?{" "}
-            <span className="underline underline-offset-2">
+            <a
+              href="https://docs.all-hands.dev/modules/usage/llms"
+              rel="noreferrer noopener"
+              target="_blank"
+              className="underline underline-offset-2"
+            >
               Click here for instructions
-            </span>
+            </a>
           </p>
         </fieldset>
 
