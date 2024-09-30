@@ -12,43 +12,4 @@ To use the OpenHands GitHub Action in the OpenHands repository:
 
 ## Installing the Action in a New Repository
 
-To install the OpenHands GitHub Action in your own repository:
-
-1. Create a `.github/workflows` directory in your repository if it doesn't already exist.
-2. Create a new file named `openhands-resolver.yml` in the `.github/workflows` directory.
-3. Copy the following content into the `openhands-resolver.yml` file:
-
-```yaml
-name: OpenHands Resolver
-
-on:
-  issues:
-    types: [labeled]
-
-jobs:
-  resolve_issue:
-    if: github.event.label.name == 'fix-me'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install git+https://github.com/All-Hands-AI/OpenHands.git
-      - name: Run OpenHands
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          openhands resolve-issue --repo ${{ github.repository }} --issue ${{ github.event.issue.number }}
-
-```
-
-4. Commit and push the new file to your repository.
-
-Now, whenever an issue in your repository is labeled with `fix-me`, the OpenHands GitHub Action will automatically trigger and attempt to resolve the issue.
-
-Note: Make sure you have the necessary permissions and secrets set up in your repository for the action to work correctly.
+To install the OpenHands GitHub Action in your own repository, follow the [directions in the OpenHands Resolver repo](https://github.com/All-Hands-AI/OpenHands-resolver?tab=readme-ov-file#using-the-github-actions-workflow).
