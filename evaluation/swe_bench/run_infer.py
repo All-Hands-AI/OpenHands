@@ -433,18 +433,6 @@ if __name__ == '__main__':
         default='test',
         help='split to evaluate on',
     )
-    # Map-reduce arguments
-    parser.add_argument(
-        '--map-reduce-write-inputs',
-        action='store_true',
-        help='write inputs to output_dir/mr_inputs',
-    )
-    parser.add_argument(
-        '--map-reduce-read-input-file',
-        type=str,
-        default=None,
-        help='read input (arguments for process_instance) from this file, run it, and write output to output_dir/mr_outputs',
-    )
     args, _ = parser.parse_known_args()
 
     # 1. Load metadata
@@ -475,11 +463,11 @@ if __name__ == '__main__':
     # Map-reduce folders
     mr_inputs_dir = os.path.join(metadata.eval_output_dir, 'mr_inputs')
     mr_outputs_dir = os.path.join(metadata.eval_output_dir, 'mr_outputs')
-    if args.map_reduce_read_input_file:
-        with open(args.map_reduce_read_input_file, 'r') as file:
+    if args.eval_map_reduce_read_input_file:
+        with open(args.eval_map_reduce_read_input_file, 'r') as file:
             instance = json.load(file)
             instance = pd.Series(instance)
-        input_file_name = os.path.basename(args.map_reduce_read_input_file)
+        input_file_name = os.path.basename(args.eval_map_reduce_read_input_file)
         output_file = os.path.join(mr_outputs_dir, input_file_name)
         output: EvalOutput = process_instance(instance, metadata, reset_logger=True)
         with open(output_file, 'w') as f:
@@ -506,7 +494,7 @@ if __name__ == '__main__':
         for col in ['PASS_TO_PASS', 'FAIL_TO_PASS']:
             instances[col] = instances[col].apply(lambda x: str(x))
 
-    if args.map_reduce_write_inputs:
+    if args.eval_map_reduce_write_inputs:
         if os.path.exists(mr_inputs_dir):
             logger.info(f'Removing existing mr_inputs_dir: {mr_inputs_dir}')
             shutil.rmtree(mr_inputs_dir)

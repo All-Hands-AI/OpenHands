@@ -2,6 +2,7 @@
 set -eo pipefail
 
 source "evaluation/utils/version_control.sh"
+source "evaluation/utils/parallel_processing.sh"
 
 # first check if parallel is installed
 if ! command -v parallel &> /dev/null
@@ -101,7 +102,7 @@ run_inference() {
     fi
 
     # Run the command and get cmd outputs in a variable
-    write_input_cmd="$command --map-reduce-write-inputs"
+    write_input_cmd="$command --eval-map-reduce-write-inputs"
     write_input_cmd_outputs=$(eval $write_input_cmd 2>&1)
     echo ""
     echo "------ Creating input files for map-reduce ------"
@@ -116,43 +117,9 @@ run_inference() {
     echo "MR_INPUTS_DIR: $mr_inputs_dir"
     echo "MR_OUTPUTS_DIR: $mr_outputs_dir"
     echo ""
-    echo "------ Checking number of input/output files ------"
-    input_files=$(ls $mr_inputs_dir)
-    output_files=$(ls $mr_outputs_dir)
-    num_input_files=$(echo "$input_files" | wc -l)
-    num_output_files=$(echo "$output_files" | wc -l)
-    echo "# input files: $num_input_files"
-    echo "# output files: $num_output_files"
 
-    # Get the input files to run (input files - output files)
-    input_files_to_run=$(comm -23 <(ls "$mr_inputs_dir" | sort) <(ls "$mr_outputs_dir" | sort))
-    echo "# tasks remaining: $(echo "$input_files_to_run" | wc -l)"
-    echo "------------------------------------------------"
-
-    # Infer commands
-    infer_cmd="$command --map-reduce-read-input-file"
-    # add mr_inputs_dir to each input file in input_files_to_run
-    input_filepaths=$(
-      echo "$input_files_to_run" | xargs -I {} echo "$mr_inputs_dir/{}"
-    )
-
-    echo "-------- Running inference in parallel --------"
-    # Create an array of infer commands
-    infer_logs_dir=$(realpath "$eval_output_dir/infer_logs")
-    mkdir -p $infer_logs_dir
-    infer_cmds=()
-    while IFS= read -r filepath; do
-        log_file="$infer_logs_dir/$(basename $filepath).log"
-        infer_cmds+=(
-          "echo 'Running $(basename $filepath)...'; $infer_cmd $filepath"
-        )
-    done <<< "$input_filepaths"
-
-    echo "Number of infer commands to run: ${#infer_cmds[@]}"
-    # Use GNU Parallel to run commands in parallel with progress bar
-    printf '%s\n' "${infer_cmds[@]}" | \
-    parallel --bar --ungroup --jobs $NUM_WORKERS
-
+    # Call the parallel processing function from the library
+    run_parallel_inference "$command" "$mr_inputs_dir" "$mr_outputs_dir" "$eval_output_dir" "$NUM_WORKERS"
 }
 
 if [ -n "$N_RUNS" ]; then

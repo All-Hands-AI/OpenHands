@@ -365,6 +365,18 @@ def get_parser() -> argparse.ArgumentParser:
         type=str,
         help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
     )
+    # Map-reduce arguments for evaluation
+    parser.add_argument(
+        '--eval-map-reduce-write-inputs',
+        action='store_true',
+        help='write inputs to output_dir/mr_inputs',
+    )
+    parser.add_argument(
+        '--eval-map-reduce-read-input-file',
+        type=str,
+        default=None,
+        help='read input (arguments for process_instance) from this file, run it, and write output to output_dir/mr_outputs',
+    )
     return parser
 
 
