@@ -470,8 +470,11 @@ if __name__ == '__main__':
             instance = pd.Series(instance)
         input_file_name = os.path.basename(args.eval_map_reduce_read_input_file)
         output_file = os.path.join(mr_outputs_dir, input_file_name)
-        output: EvalOutput = process_instance_wrapper(process_instance)(
-            instance, metadata, reset_logger=True
+        output: EvalOutput = process_instance_wrapper(
+            process_instance,
+            instance,
+            metadata,
+            use_mp=True,
         )
         with open(output_file, 'w') as f:
             json.dump(output.model_dump(), f)
