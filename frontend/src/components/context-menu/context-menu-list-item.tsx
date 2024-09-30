@@ -8,10 +8,12 @@ export function ContextMenuListItem({
   onClick,
 }: ContextMenuListItemProps) {
   return (
-    <li className="text-sm px-4 py-2 hover:bg-white/10 first-of-type:rounded-t-md last-of-type:rounded-b-md">
-      <button type="button" onClick={onClick}>
-        {children}
-      </button>
-    </li>
+    <button
+      type="button"
+      className="text-sm px-4 py-2 w-full text-start hover:bg-white/10 first-of-type:rounded-t-md last-of-type:rounded-b-md"
+      onClick={onClick}
+    >
+      {children}
+    </button>
   );
 }
