@@ -1,9 +1,10 @@
 import asyncio
 from functools import partial
+from typing import Any
 
-from openhands.core.exceptions import LLMResponseError, UserCancelledError
+from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import openhands_logger as logger
-from openhands.llm.async_llm import AsyncLLM
+from openhands.llm.async_llm import LLM_RETRY_EXCEPTIONS, AsyncLLM
 
 
 class StreamingLLM(AsyncLLM):
@@ -31,18 +32,30 @@ class StreamingLLM(AsyncLLM):
 
         @self.retry_decorator(
             num_retries=self.config.num_retries,
-            retry_exceptions=self.retry_exceptions,
+            retry_exceptions=LLM_RETRY_EXCEPTIONS,
             retry_min_wait=self.config.retry_min_wait,
             retry_max_wait=self.config.retry_max_wait,
             retry_multiplier=self.config.retry_multiplier,
         )
         async def async_streaming_completion_wrapper(*args, **kwargs):
-            # some callers might just send the messages directly
-            if 'messages' in kwargs:
-                messages = kwargs['messages']
-            else:
-                messages = args[1] if len(args) > 1 else []
+            messages: list[dict[str, Any]] | dict[str, Any] = []
 
+            # some callers might send the model and messages directly
+            # litellm allows positional args, like completion(model, messages, **kwargs)
+            # see llm.py for more details
+            if len(args) > 1:
+                messages = args[1] if len(args) > 1 else args[0]
+                kwargs['messages'] = messages
+
+                # remove the first args, they're sent in kwargs
+                args = args[2:]
+            elif 'messages' in kwargs:
+                messages = kwargs['messages']
+
+            # ensure we work with a list of messages
+            messages = messages if isinstance(messages, list) else [messages]
+
+            # if we have no messages, something went very wrong
             if not messages:
                 raise ValueError(
                     'The messages list is empty. At least one message is required.'
@@ -90,7 +103,4 @@ class StreamingLLM(AsyncLLM):
     @property
     def async_streaming_completion(self):
         """Decorator for the async litellm acompletion function with streaming."""
-        try:
-            return self._async_streaming_completion
-        except Exception as e:
-            raise LLMResponseError(e)
+        return self._async_streaming_completion
