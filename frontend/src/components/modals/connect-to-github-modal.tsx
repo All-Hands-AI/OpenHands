@@ -48,6 +48,7 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
           label="GitHub Token"
           name="ghToken"
           required
+          type="password"
           defaultValue={data?.ghToken ?? ""}
         />
 
