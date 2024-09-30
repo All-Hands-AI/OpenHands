@@ -3,7 +3,7 @@ import React from "react";
 import { isGitHubErrorReponse } from "#/api/github";
 import { AccountSettingsContextMenu } from "./account-settings-context-menu";
 import { LoadingSpinner } from "./modals/LoadingProject";
-import DefaultUserAvatar from "./assets/default-user.svg?react";
+import DefaultUserAvatar from "#/assets/default-user.svg?react";
 
 interface UserAvatarProps {
   isLoading: boolean;

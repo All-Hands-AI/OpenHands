@@ -110,6 +110,7 @@ export default function App() {
     React.useState(false);
 
   React.useEffect(() => {
+    // If the github token is invalid, open the account settings modal again
     if (isGitHubErrorReponse(user)) {
       setAccountSettingsModalOpen(true);
     }
@@ -209,7 +210,13 @@ export default function App() {
         {accountSettingsModalOpen && (
           <ModalBackdrop onClose={() => setAccountSettingsModalOpen(false)}>
             <AccountSettingsModal
-              onClose={() => setAccountSettingsModalOpen(false)}
+              onClose={() => {
+                // If the user closes the modal without connecting to GitHub,
+                // we need to log them out to clear the invalid token from the
+                // local storage
+                if (isGitHubErrorReponse(user)) handleUserLogout();
+                setAccountSettingsModalOpen(false);
+              }}
               selectedLanguage={settings.LANGUAGE}
               gitHubError={isGitHubErrorReponse(user)}
             />
