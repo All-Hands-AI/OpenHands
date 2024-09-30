@@ -84,7 +84,7 @@ To create an evaluation workflow for your benchmark, follow these steps:
 
 1. Import relevant OpenHands utilities:
    ```python
-    import agenthub
+    import openhands.agenthub
     from evaluation.utils.shared import (
         EvalMetadata,
         EvalOutput,

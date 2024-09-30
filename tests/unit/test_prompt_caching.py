@@ -2,7 +2,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from agenthub.codeact_agent.codeact_agent import CodeActAgent
+from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.events import EventSource, EventStream
 from openhands.events.action import CmdRunAction, MessageAction

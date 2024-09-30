@@ -4,7 +4,7 @@ import sys
 import uuid
 from typing import Callable, Protocol, Type
 
-import agenthub  # noqa F401 (we import this to get the agents registered)
+import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -66,7 +66,7 @@ def create_runtime(
     event_stream = EventStream(session_id, file_store)
 
     # agent class
-    agent_cls = agenthub.Agent.get_cls(config.default_agent)
+    agent_cls = openhands.agenthub.Agent.get_cls(config.default_agent)
 
     # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)

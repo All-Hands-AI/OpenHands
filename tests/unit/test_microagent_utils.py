@@ -3,7 +3,7 @@ import os
 import pytest
 from pytest import MonkeyPatch
 
-import agenthub  # noqa: F401
+import openhands.agenthub  # noqa: F401
 from openhands.core.exceptions import (
     AgentNotRegisteredError,
     MicroAgentValidationError,

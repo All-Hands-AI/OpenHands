@@ -56,7 +56,6 @@ def _check_source_code_in_dir(temp_dir):
 
     # The source code should only include the `openhands` folder, but not the other folders
     assert set(os.listdir(code_dir)) == {
-        'agenthub',
         'openhands',
         'pyproject.toml',
         'poetry.lock',

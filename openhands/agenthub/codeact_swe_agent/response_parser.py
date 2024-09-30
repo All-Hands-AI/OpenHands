@@ -1,4 +1,4 @@
-from agenthub.codeact_swe_agent.action_parser import (
+from openhands.agenthub.codeact_swe_agent.action_parser import (
     CodeActSWEActionParserCmdRun,
     CodeActSWEActionParserFinish,
     CodeActSWEActionParserIPythonRunCell,
