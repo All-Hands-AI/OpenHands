@@ -9,7 +9,6 @@ import {
   useLoaderData,
   useLocation,
   useNavigation,
-  useSubmit,
 } from "@remix-run/react";
 import "./tailwind.css";
 import "./index.css";
@@ -39,6 +38,7 @@ import DefaultUserAvatar from "./assets/default-user.svg?react";
 import i18n from "./i18n";
 import { cn } from "./utils/utils";
 import { AccountSettingsContextMenu } from "./components/account-settings-context-menu";
+import { useSocket } from "./context/socket";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -91,9 +91,9 @@ export const clientLoader = async () => {
 };
 
 export default function App() {
+  const { stop } = useSocket();
   const navigation = useNavigation();
   const location = useLocation();
-  const fetcher = useFetcher({ key: "login" });
   const {
     token,
     user,
@@ -103,8 +103,9 @@ export default function App() {
     settingsIsUpdated,
     settings,
   } = useLoaderData<typeof clientLoader>();
-  const submit = useSubmit();
+  const loginFetcher = useFetcher({ key: "login" });
   const logoutFetcher = useFetcher({ key: "logout" });
+  const endSessionFetcher = useFetcher({ key: "end-session" });
 
   const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
     React.useState(false);
@@ -138,7 +139,7 @@ export default function App() {
               type="button"
               className={cn(
                 "bg-white w-8 h-8 rounded-full flex items-center justify-center",
-                fetcher.state !== "idle" && "bg-transparent",
+                loginFetcher.state !== "idle" && "bg-transparent",
               )}
               onClick={() => {
                 if (!user) {
@@ -150,10 +151,10 @@ export default function App() {
                 setAccountContextMenuIsVisible((prev) => !prev);
               }}
             >
-              {!user && fetcher.state === "idle" && (
+              {!user && loginFetcher.state === "idle" && (
                 <DefaultUserAvatar width={20} height={20} />
               )}
-              {!user && fetcher.state !== "idle" && (
+              {!user && loginFetcher.state !== "idle" && (
                 <LoadingSpinner size="small" />
               )}
               {user && !isGitHubErrorReponse(user) && (
@@ -217,7 +218,13 @@ export default function App() {
         <Outlet />
         {navigation.state === "loading" && location.pathname !== "/" && (
           <ModalBackdrop>
-            <LoadingProjectModal />
+            <LoadingProjectModal
+              message={
+                endSessionFetcher.state === "loading"
+                  ? "Ending session, please wait..."
+                  : undefined
+              }
+            />
           </ModalBackdrop>
         )}
         {(settingsIsUpdated || settingsModalIsOpen) && (
@@ -253,12 +260,12 @@ export default function App() {
             <ConfirmResetWorkspaceModal
               onConfirm={() => {
                 setStartNewProjectModalIsOpen(false);
-
+                // stop ws connection
+                stop();
                 // call new session action and redirect to '/'
-                submit(new FormData(), {
+                endSessionFetcher.submit(new FormData(), {
                   method: "POST",
-                  action: "/new-session",
-                  replace: true,
+                  action: "/end-session",
                 });
               }}
               onCancel={() => setStartNewProjectModalIsOpen(false)}

@@ -9,6 +9,7 @@ import {
   ClientActionFunctionArgs,
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
+import WebSocket from "ws";
 import ChatInterface from "#/components/chat/ChatInterface";
 import { getSettings } from "#/services/settings";
 import Security from "../components/modals/security/Security";
@@ -141,53 +142,60 @@ function App() {
     );
   };
 
+  const handleOpen = React.useCallback(() => {
+    const initEvent = {
+      action: ActionType.INIT,
+      args: settings,
+    };
+    send(JSON.stringify(initEvent));
+  }, [settings]);
+
+  const handleMessage = React.useCallback(
+    (message: MessageEvent<WebSocket.Data>) => {
+      // set token received from the server
+      const parsed = JSON.parse(message.data.toString());
+      if ("token" in parsed) {
+        fetcher.submit({ token: parsed.token }, { method: "post" });
+        return;
+      }
+
+      handleAssistantMessage(message.data.toString());
+
+      // handle first time connection
+      if (
+        isAgentStateChange(parsed) &&
+        parsed.extras.agent_state === AgentState.INIT
+      ) {
+        setRuntimeIsInitialized();
+
+        // handle new session
+        if (!token) {
+          if (ghToken) {
+            exportGitHubTokenToTerminal(ghToken);
+          }
+
+          if (ghToken && repo) {
+            sendCloneRepoCommandToTerminal(ghToken, repo);
+            dispatch(clearSelectedRepository()); // reset selected repository; maybe better to move this to '/'?
+          }
+
+          if (q) {
+            sendInitialQuery(q, files);
+            dispatch(clearFiles()); // reset selected files
+          }
+        }
+      }
+    },
+    [token, ghToken, repo, q, files],
+  );
+
   const startSocketConnection = React.useCallback(() => {
     start({
       token,
-      onOpen: () => {
-        const initEvent = {
-          action: ActionType.INIT,
-          args: settings,
-        };
-        send(JSON.stringify(initEvent));
-      },
-      onMessage: (message) => {
-        // set token received from the server
-        const parsed = JSON.parse(message.data.toString());
-        if ("token" in parsed) {
-          fetcher.submit({ token: parsed.token }, { method: "post" });
-          return;
-        }
-
-        handleAssistantMessage(message.data.toString());
-
-        // handle first time connection
-        if (
-          isAgentStateChange(parsed) &&
-          parsed.extras.agent_state === AgentState.INIT
-        ) {
-          setRuntimeIsInitialized();
-
-          // handle new session
-          if (!token) {
-            if (ghToken) {
-              exportGitHubTokenToTerminal(ghToken);
-            }
-
-            if (ghToken && repo) {
-              sendCloneRepoCommandToTerminal(ghToken, repo);
-              dispatch(clearSelectedRepository()); // reset selected repository; maybe better to move this to '/'?
-            }
-
-            if (q) {
-              sendInitialQuery(q, files);
-              dispatch(clearFiles()); // reset selected files
-            }
-          }
-        }
-      },
+      onOpen: handleOpen,
+      onMessage: handleMessage,
     });
-  }, [token, q, ghToken, repo]);
+  }, [token, handleOpen, handleMessage]);
 
   useEffectOnce(() => {
     // clear and restart the socket connection

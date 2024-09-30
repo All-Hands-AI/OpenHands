@@ -23,11 +23,15 @@ export function LoadingSpinner({ size }: LoadingSpinnerProps) {
   );
 }
 
-function LoadingProjectModal() {
+interface LoadingProjectModalProps {
+  message?: string;
+}
+
+function LoadingProjectModal({ message }: LoadingProjectModalProps) {
   return (
     <ModalBody>
       <span className="text-xl leading-6 -tracking-[0.01em] font-semibold">
-        Loading...
+        {message || "Loading..."}
       </span>
       <LoadingSpinner size="large" />
     </ModalBody>
