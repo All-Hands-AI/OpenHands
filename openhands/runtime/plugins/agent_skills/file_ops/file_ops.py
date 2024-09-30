@@ -22,10 +22,7 @@ import shutil
 import tempfile
 import uuid
 
-if __package__ is None or __package__ == '':
-    from aider import Linter
-else:
-    from openhands.runtime.plugins.agent_skills.utils.aider import Linter
+from openhands.linter import DefaultLinter, LintResult
 
 CURRENT_FILE: str | None = None
 CURRENT_LINE = 1
@@ -98,13 +95,16 @@ def _lint_file(file_path: str) -> tuple[str | None, int | None]:
     Returns:
         tuple[str | None, int | None]: (lint_error, first_error_line_number)
     """
-    linter = Linter(root=os.getcwd())
-    lint_error = linter.lint(file_path)
+    linter = DefaultLinter()
+    lint_error: list[LintResult] = linter.lint(file_path)
     if not lint_error:
         # Linting successful. No issues found.
         return None, None
-    first_error_line = lint_error.lines[0] if lint_error.lines else None
-    return 'ERRORS:\n' + lint_error.text, first_error_line
+    first_error_line = lint_error[0].line if len(lint_error) > 0 else None
+    error_text = 'ERRORS:\n' + '\n'.join(
+        [f'{file_path}:{err.line}:{err.column}: {err.message}' for err in lint_error]
+    )
+    return error_text, first_error_line
 
 
 def _print_window(
@@ -518,7 +518,8 @@ def _edit_file_impl(
             with open(original_file_backup_path, 'w') as f:
                 f.writelines(lines)
 
-            lint_error, first_error_line = _lint_file(file_name)
+            file_name_abs = os.path.abspath(file_name)
+            lint_error, first_error_line = _lint_file(file_name_abs)
 
             # Select the errors caused by the modification
             def extract_last_part(line):
