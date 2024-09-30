@@ -2,7 +2,7 @@
 set -eo pipefail
 
 source "evaluation/utils/version_control.sh"
-source "evaluation/utils/parallel_processing.sh"
+source "evaluation/utils/parallel_inference.sh"
 
 # first check if parallel is installed
 if ! command -v parallel &> /dev/null
