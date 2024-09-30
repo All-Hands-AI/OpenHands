@@ -182,7 +182,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                     + '-' * 40
                     + '\n'
                 )
-                error_message += '-' * 20 + 'First 5 lint errors' + '-' * 20
+                error_message += '-' * 20 + 'First 5 lint errors' + '-' * 20 + '\n'
                 for i, lint_error in enumerate(updated_lint_error[:5]):
                     error_message += f'[begin lint error {i}]\n'
                     error_message += lint_error.visualize().strip() + '\n'
@@ -266,12 +266,14 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 text=original_file_content,
                 query=action.content,  # edit draft as query
                 k=3,
+                max_chunk_size=20,  # lines
             )
             error_msg += (
                 'Here are some snippets that maybe relevant to the provided edit.\n'
             )
             for i, chunk in enumerate(topk_chunks):
                 error_msg += f'[begin relevant snippet {i+1}. Line range: L{chunk.line_range[0]}-L{chunk.line_range[1]}. Similarity: {chunk.normalized_lcs}]\n'
+                error_msg += f'[Browse around it via `open_file("{action.path}", {(chunk.line_range[0] + chunk.line_range[1]) // 2})`]\n'
                 error_msg += chunk.visualize() + '\n'
                 error_msg += f'[end relevant snippet {i+1}]\n'
                 error_msg += '-' * 40 + '\n'
