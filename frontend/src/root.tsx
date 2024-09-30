@@ -23,9 +23,7 @@ import {
   getModels,
   retrieveSecurityAnalyzers,
 } from "./api/open-hands";
-import LoadingProjectModal, {
-  LoadingSpinner,
-} from "./components/modals/LoadingProject";
+import LoadingProjectModal from "./components/modals/LoadingProject";
 import {
   getSettings,
   maybeMigrateSettings,
@@ -34,11 +32,9 @@ import {
 import AccountSettingsModal from "./components/modals/AccountSettingsModal";
 import NewProjectIcon from "./assets/new-project.svg?react";
 import ConfirmResetWorkspaceModal from "./components/modals/confirmation-modals/ConfirmResetWorkspaceModal";
-import DefaultUserAvatar from "./assets/default-user.svg?react";
 import i18n from "./i18n";
-import { cn } from "./utils/utils";
-import { AccountSettingsContextMenu } from "./components/account-settings-context-menu";
 import { useSocket } from "./context/socket";
+import { UserAvatar } from "./components/user-avatar";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -107,8 +103,6 @@ export default function App() {
   const logoutFetcher = useFetcher({ key: "logout" });
   const endSessionFetcher = useFetcher({ key: "end-session" });
 
-  const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
-    React.useState(false);
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
@@ -120,6 +114,16 @@ export default function App() {
       setAccountSettingsModalOpen(true);
     }
   }, [user]);
+
+  const handleUserLogout = () => {
+    logoutFetcher.submit(
+      {},
+      {
+        method: "POST",
+        action: "/logout",
+      },
+    );
+  };
 
   return (
     <div className="bg-root-primary p-3 h-screen flex gap-3">
@@ -134,58 +138,14 @@ export default function App() {
           <AllHandsLogo width={34} height={23} />
         </button>
         <nav className="py-[18px] flex flex-col items-center gap-[18px]">
-          <div className="w-8 h-8 relative">
-            <button
-              type="button"
-              className={cn(
-                "bg-white w-8 h-8 rounded-full flex items-center justify-center",
-                loginFetcher.state !== "idle" && "bg-transparent",
-              )}
-              onClick={() => {
-                if (!user) {
-                  // If the user is not logged in, opening the modal is the only option,
-                  // so we do that instead of toggling the context menu.
-                  setAccountSettingsModalOpen(true);
-                  return;
-                }
-                setAccountContextMenuIsVisible((prev) => !prev);
-              }}
-            >
-              {!user && loginFetcher.state === "idle" && (
-                <DefaultUserAvatar width={20} height={20} />
-              )}
-              {!user && loginFetcher.state !== "idle" && (
-                <LoadingSpinner size="small" />
-              )}
-              {user && !isGitHubErrorReponse(user) && (
-                <img
-                  src={user.avatar_url}
-                  alt="User avatar"
-                  className="w-full h-full rounded-full"
-                />
-              )}
-            </button>
-            {accountContextMenuIsVisible && (
-              <AccountSettingsContextMenu
-                isLoggedIn={!!user}
-                onClose={() => setAccountContextMenuIsVisible(false)}
-                onClickAccountSettings={() => {
-                  setAccountContextMenuIsVisible(false);
-                  setAccountSettingsModalOpen(true);
-                }}
-                onLogout={() => {
-                  logoutFetcher.submit(
-                    {},
-                    {
-                      method: "POST",
-                      action: "/logout",
-                    },
-                  );
-                  setAccountContextMenuIsVisible(false);
-                }}
-              />
-            )}
-          </div>
+          <UserAvatar
+            user={user}
+            isLoading={loginFetcher.state !== "idle"}
+            onLogout={handleUserLogout}
+            handleOpenAccountSettingsModal={() =>
+              setAccountSettingsModalOpen(true)
+            }
+          />
           <button
             type="button"
             className="w-8 h-8 rounded-full hover:opacity-80 flex items-center justify-center"
