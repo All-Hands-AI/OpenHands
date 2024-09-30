@@ -1,126 +1,13 @@
-name: Auto-Fix Tagged Issues with OpenHands
+name: Resolve Issues with OpenHands
 
 on:
   issues:
     types: [labeled]
 
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
-
 jobs:
-  auto-fix:
+  call-openhands-resolver:
+    uses: All-Hands-AI/openhands-resolver/.github/workflows/openhands-resolver.yml@main
     if: github.event.label.name == 'fix-me'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Comment on issue with start message
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `OpenHands started fixing the issue! You can monitor the progress [here](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`
-            });
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install openhands-resolver
-
-      - name: Attempt to resolve issue
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          LLM_MODEL: ${{ secrets.LLM_MODEL }}
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
-        run: |
-          python -m openhands_resolver.resolve_issues \
-            --repo ${{ github.repository }} \
-            --issue-numbers ${{ github.event.issue.number }}
-
-      - name: Check resolution result
-        id: check_result
-        run: |
-          if grep -q '"success":true' output/output.jsonl; then
-            echo "RESOLUTION_SUCCESS=true" >> $GITHUB_OUTPUT
-          else
-            echo "RESOLUTION_SUCCESS=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Create draft PR or push branch
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-          GITHUB_USERNAME: ${{ secrets.PAT_USERNAME }}
-          LLM_MODEL: ${{ secrets.LLM_MODEL }}
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
-        run: |
-          if [ "${{ steps.check_result.outputs.RESOLUTION_SUCCESS }}" == "true" ]; then
-            python -m openhands_resolver.send_pull_request \
-              --issue-number ${{ github.event.issue.number }} \
-              --pr-type draft | tee pr_result.txt && \
-              grep "draft created" pr_result.txt | sed 's/.*\///g' > pr_number.txt
-          else
-            python -m openhands_resolver.send_pull_request \
-              --issue-number ${{ github.event.issue.number }} \
-              --pr-type branch \
-              --send-on-failure | tee branch_result.txt && \
-              grep "branch created" branch_result.txt | sed 's/.*\///g; s/.expand=1//g' > branch_name.txt
-          fi
-
-      - name: Comment on issue
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            const fs = require('fs');
-            const issueNumber = context.issue.number;
-            const success = ${{ steps.check_result.outputs.RESOLUTION_SUCCESS }};
-
-            let prNumber = '';
-            let branchName = '';
-
-            try {
-              if (success) {
-                prNumber = fs.readFileSync('pr_number.txt', 'utf8').trim();
-              } else {
-                branchName = fs.readFileSync('branch_name.txt', 'utf8').trim();
-              }
-            } catch (error) {
-              console.error('Error reading file:', error);
-            }
-
-            if (success && prNumber) {
-              github.rest.issues.createComment({
-                issue_number: issueNumber,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: `A potential fix has been generated and a draft PR #${prNumber} has been created. Please review the changes.`
-              });
-            } else if (!success && branchName) {
-              github.rest.issues.createComment({
-                issue_number: issueNumber,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: `An attempt was made to automatically fix this issue, but it was unsuccessful. A branch named '${branchName}' has been created with the attempted changes. You can view the branch [here](https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${branchName}). Manual intervention may be required.`
-              });
-            } else {
-              github.rest.issues.createComment({
-                issue_number: issueNumber,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: `The workflow to fix this issue encountered an error. Please check the workflow logs for more information.`
-              });
-            }
+    with:
+      issue_number: ${{ github.event.issue.number }}
+    secrets: inherit
