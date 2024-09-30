@@ -75,7 +75,7 @@ class RemoteRuntime(Runtime):
             )
 
         self.runtime_builder = RemoteRuntimeBuilder(
-            self.config.sandbox.remote_runtime_url, self.config.sandbox.api_key
+            self.config.sandbox.remote_runtime_api_url, self.config.sandbox.api_key
         )
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
@@ -93,7 +93,7 @@ class RemoteRuntime(Runtime):
         response = send_request(
             self.session,
             'GET',
-            f'{self.config.sandbox.remote_runtime_url}/registry_prefix',
+            f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
         )
         response_json = response.json()
         registry_prefix = response_json['registry_prefix']
@@ -120,7 +120,7 @@ class RemoteRuntime(Runtime):
         response = send_request(
             self.session,
             'GET',
-            f'{self.config.sandbox.remote_runtime_url}/image_exists',
+            f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
             params={'image': self.container_image},
         )
         if response.status_code != 200 or not response.json()['exists']:
@@ -156,7 +156,7 @@ class RemoteRuntime(Runtime):
         response = send_request(
             self.session,
             'POST',
-            f'{self.config.sandbox.remote_runtime_url}/start',
+            f'{self.config.sandbox.remote_runtime_api_url}/start',
             json=start_request,
         )
         if response.status_code != 201:
@@ -215,7 +215,7 @@ class RemoteRuntime(Runtime):
                 response = send_request(
                     self.session,
                     'POST',
-                    f'{self.config.sandbox.remote_runtime_url}/stop',
+                    f'{self.config.sandbox.remote_runtime_api_url}/stop',
                     json={'runtime_id': self.runtime_id},
                 )
                 if response.status_code != 200:
