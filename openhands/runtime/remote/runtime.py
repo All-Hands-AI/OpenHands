@@ -83,6 +83,7 @@ class RemoteRuntime(Runtime):
         self.instance_id = (
             sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
+        self.container_name = 'oh-remote-runtime-' + self.instance_id
         if self.config.sandbox.runtime_container_image is not None:
             logger.info(
                 f'Running remote runtime with image: {self.config.sandbox.runtime_container_image}'
@@ -92,7 +93,6 @@ class RemoteRuntime(Runtime):
             logger.info(
                 f'Building remote runtime with base image: {self.config.sandbox.base_container_image}'
             )
-            self.container_name = 'oh-remote-runtime-' + self.instance_id
             logger.debug(f'RemoteRuntime `{sid}` config:\n{self.config}')
             response = send_request(
                 self.session,
@@ -197,7 +197,7 @@ class RemoteRuntime(Runtime):
         reraise=True,
     )
     def _wait_until_alive(self):
-        logger.info('Waiting for sandbox to be alive...')
+        logger.info(f'Waiting for runtime to be alive at url: {self.runtime_url}')
         response = send_request(
             self.session,
             'GET',
