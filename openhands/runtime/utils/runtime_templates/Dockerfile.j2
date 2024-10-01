@@ -31,12 +31,12 @@ ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry
 
 # Install micromamba
 RUN mkdir -p /openhands/micromamba/bin && \
-    /bin/bash -c "PREFIX_LOCATION=/openhands/micromamba BIN_FOLDER=/openhands/micromamba/bin INIT_YES=no CONDA_FORGE_YES=no $(curl -L https://micro.mamba.pm/install.sh)"
+    /bin/bash -c "PREFIX_LOCATION=/openhands/micromamba BIN_FOLDER=/openhands/micromamba/bin INIT_YES=no CONDA_FORGE_YES=yes $(curl -L https://micro.mamba.pm/install.sh)"
 
 # Set up micromamba
 ENV MAMBA_ROOT_PREFIX=/openhands/micromamba
-RUN /openhands/micromamba/bin/micromamba create -n openhands python=3.11 -y && \
-    /openhands/micromamba/bin/micromamba install -n openhands conda-forge::poetry -y
+RUN /openhands/micromamba/bin/micromamba create -n openhands -y && \
+    /openhands/micromamba/bin/micromamba install -n openhands conda-forge::poetry python=3.11 -y
 
 # ================================================================
 # END: Build Runtime Image from Scratch
