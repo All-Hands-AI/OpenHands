@@ -126,9 +126,7 @@ class EventStreamRuntime(Runtime):
         self.config = config
         self._host_port = 30000  # initial dummy value
         self._container_port = 30001  # initial dummy value
-        self.api_url = (
-            f'http://{self.config.sandbox.api_hostname}:{self._container_port}'
-        )
+        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.session = requests.Session()
         self.instance_id = (
             sid + '_' + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
@@ -226,7 +224,7 @@ class EventStreamRuntime(Runtime):
                 self._host_port
             )  # in future this might differ from host port
             self.api_url = (
-                f'http://{self.config.sandbox.api_hostname}:{self._container_port}'
+                f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
             )
 
             use_host_network = self.config.sandbox.use_host_network
