@@ -177,9 +177,6 @@ class LLM(RetryMixin, DebugMixin):
                 # implementation wise: the partial function set the model as a kwarg already
                 # as well as other kwargs
                 messages = args[1] if len(args) > 1 else args[0]
-
-                # Only add messages to kwargs if it's not already there
-                # if 'messages' not in kwargs:
                 kwargs['messages'] = messages
 
                 # remove the first args, they're sent in kwargs
