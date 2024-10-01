@@ -60,7 +60,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         target_image_tag = tags[1].split(':')[1] if len(tags) > 1 else None
 
         # Check if the image exists and pull if necessary
-        self.image_exists(target_image_repo)
+        self.image_exists(target_image_hash_name, tag=target_image_hash_tag)
 
         buildx_cmd = [
             'docker',
@@ -166,11 +166,15 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         )
         return target_image_hash_name
 
-    def image_exists(self, image_name: str, pull_from_repo: bool = True) -> bool:
+    def image_exists(
+        self, image_name: str, tag: str | None = None, pull_from_repo: bool = True
+    ) -> bool:
         """Check if the image exists in the registry (try to pull it first) or in the local store.
 
         Args:
             image_name (str): The Docker image to check (<image repo>:<image tag>)
+            tag (str): The tag to pull. If ``tag`` is ``None`` or empty, it
+                is set to ``latest``.
             pull_from_repo (bool): Whether to pull from the remote repo if the image not present locally
         Returns:
             bool: Whether the Docker image exists in the registry or in the local store
@@ -186,9 +190,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             return True
         except docker.errors.ImageNotFound:
             if not pull_from_repo:
-                logger.debug(
-                    f'Image {image_name} not found locally'
-                )
+                logger.debug(f'Image {image_name} not found locally')
                 return False
             try:
                 logger.debug(
@@ -198,7 +200,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 layers: dict[str, dict[str, str]] = {}
                 previous_layer_count = 0
                 for line in self.docker_client.api.pull(
-                    image_name, stream=True, decode=True
+                    image_name, tag=tag, stream=True, decode=True
                 ):
                     self._output_build_progress(line, layers, previous_layer_count)
                     previous_layer_count = len(layers)
