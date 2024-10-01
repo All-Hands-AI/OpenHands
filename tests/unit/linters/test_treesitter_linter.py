@@ -17,7 +17,6 @@ def test_syntax_error_py_file(syntax_error_py_file):
     assert (
         result[0].visualize()
         == (
-            '1|\n'
             '2|    def foo():\n'
             '3|        print("Hello, World!")\n'
             '4|    print("Wrong indent")\n'

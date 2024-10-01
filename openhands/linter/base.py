@@ -73,6 +73,7 @@ class BaseLinter(ABC):
     @abstractmethod
     def lint(self, file_path: str) -> list[LintResult]:
         """Lint the given file.
+
         file_path: The path to the file to lint. Required to be absolute.
         """
         pass

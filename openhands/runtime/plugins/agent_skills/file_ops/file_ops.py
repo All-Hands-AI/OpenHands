@@ -551,6 +551,28 @@ def _edit_file_impl(
             file_name_abs = os.path.abspath(file_name)
             lint_error, first_error_line = _lint_file(file_name_abs)
 
+            # Select the errors caused by the modification
+            def extract_last_part(line):
+                parts = line.split(':')
+                if len(parts) > 1:
+                    return parts[-1].strip()
+                return line.strip()
+
+            def subtract_strings(str1, str2) -> str:
+                lines1 = str1.splitlines()
+                lines2 = str2.splitlines()
+
+                last_parts1 = [extract_last_part(line) for line in lines1]
+
+                remaining_lines = [
+                    line
+                    for line in lines2
+                    if extract_last_part(line) not in last_parts1
+                ]
+
+                result = '\n'.join(remaining_lines)
+                return result
+
             if original_lint_error and lint_error:
                 lint_error = _subtract_strings(original_lint_error, lint_error)
                 if lint_error == '':
