@@ -2,7 +2,7 @@ import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
 
 const sidebars: SidebarsConfig = {
   apiSidebar: [require("./modules/python/sidebar.json")],
-  docsSidebar: [
+docsSidebar: [
     {
       type: 'doc',
       label: 'Getting Started',
@@ -10,17 +10,38 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'LLMs',
+      label: 'Usage Methods',
       items: [
         {
           type: 'doc',
-          label: 'Overview',
-          id: 'usage/llms/llms',
+          label: 'CLI Mode',
+          id: 'usage/how-to/cli-mode',
         },
         {
+          type: 'doc',
+          label: 'Headless Mode',
+          id: 'usage/how-to/headless-mode',
+        },
+        {
+          type: 'doc',
+          label: 'Github Actions',
+          id: 'usage/how-to/github-actions',
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Advanced Configuration',
+      items: [
+        {
           type: 'category',
-          label: 'Providers',
+          label: 'LLM Configuration',
           items: [
+            {
+              type: 'doc',
+              label: 'Overview',
+              id: 'usage/llms/llms',
+            },
             {
               type: 'doc',
               label: 'Azure',
@@ -48,6 +69,11 @@ const sidebars: SidebarsConfig = {
             },
           ],
         },
+        {
+          type: 'doc',
+          label: 'Custom Sandbox',
+          id: 'usage/how-to/custom-sandbox-guide',
+        },
       ],
     },
     {
@@ -62,48 +88,28 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'How-to Guides',
+      label: 'For OpenHands Developers',
       items: [
         {
           type: 'doc',
-          id: 'usage/how-to/cli-mode',
-        },
-        {
-          type: 'doc',
-          id: 'usage/how-to/headless-mode',
-        },
-        {
-          type: 'doc',
-          id: 'usage/how-to/custom-sandbox-guide',
-        },
-        {
-          type: 'doc',
-          id: 'usage/how-to/evaluation-harness',
-        },
-        {
-          type: 'doc',
-          id: 'usage/how-to/openshift-example',
-        },
-        {
-          type: 'doc',
-          id: 'usage/how-to/debugging',
-        }
-      ]
-    },
-    {
-      type: 'category',
-      label: 'Architecture',
-      items: [
-        {
-          type: 'doc',
-          label: 'Backend',
+          label: 'Architecture',
           id: 'usage/architecture/backend',
         },
         {
           type: 'doc',
-          label: 'Runtime',
-          id: 'usage/architecture/runtime',
-        }
+          label: 'Debugging',
+          id: 'usage/how-to/debugging',
+        },
+        {
+          type: 'doc',
+          label: 'Evaluation',
+          id: 'usage/how-to/evaluation-harness',
+        },
+        {
+          type: 'doc',
+          label: 'Kubernetes Deployment',
+          id: 'usage/how-to/openshift-example',
+        },
       ],
     },
     {
