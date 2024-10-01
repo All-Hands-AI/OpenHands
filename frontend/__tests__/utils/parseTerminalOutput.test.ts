@@ -7,15 +7,14 @@ describe("parseTerminalOutput", () => {
       "web_scraper.py\r\n\r\n[Python Interpreter: /openhands/poetry/openhands-5O4_aCHf-py3.11/bin/python]\nopenhands@659478cb008c:/workspace $ ";
 
     const parsed = parseTerminalOutput(raw);
-
-    expect(parsed.output).toBe("web_scraper.py");
-    expect(parsed.symbol).toBe("openhands@659478cb008c:/workspace $");
+    expect(parsed).toBe("web_scraper.py");
   });
 
-  it("should return raw output if unable to parse", () => {
-    const raw = "web_scraper.py";
+  it("should parse even if there is no output", () => {
+    const raw =
+      "[Python Interpreter: /openhands/poetry/openhands-5O4_aCHf-py3.11/bin/python]\nopenhands@659478cb008c:/workspace $ ";
 
     const parsed = parseTerminalOutput(raw);
-    expect(parsed.output).toBe("web_scraper.py");
+    expect(parsed).toBe("");
   });
 });
