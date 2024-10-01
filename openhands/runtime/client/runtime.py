@@ -272,7 +272,7 @@ class EventStreamRuntime(Runtime):
             container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=(
-                    f'/openhands/miniforge3/bin/mamba run --no-capture-output -n base '
+                    f'/openhands/micromamba/bin/micromamba run -n openhands '
                     f'poetry run '
                     f'python -u -m openhands.runtime.client.client {self._container_port} '
                     f'--working-dir "{sandbox_workspace_dir}" '

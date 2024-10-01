@@ -19,7 +19,7 @@ from openhands.events.observation import (
 # Browsing tests
 # ============================================================================================================================
 
-PY3_FOR_TESTING = '/openhands/miniforge3/bin/mamba run -n base python3'
+PY3_FOR_TESTING = '/openhands/micromamba/bin/micromamba run -n openhands python3'
 
 
 def test_simple_browse(temp_dir, box_class, run_as_openhands):
