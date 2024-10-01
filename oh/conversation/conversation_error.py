@@ -1,0 +1,4 @@
+
+
+class ConversationError(Exception):
+    pass
