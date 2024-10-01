@@ -8,7 +8,7 @@ This mode is different from the [headless mode](headless-mode), which is non-int
 
 To start an interactive OpenHands session via the command line, follow these steps:
 
-1. Ensure you have followed the [Development setup instructions](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md)
+1. Ensure you have followed the [Development setup instructions](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
 2. Run the following command:
 
