@@ -22,11 +22,6 @@ const sidebars: SidebarsConfig = {
           label: 'Headless Mode',
           id: 'usage/how-to/headless-mode',
         },
-        {
-          type: 'doc',
-          label: 'Github Actions',
-          id: 'usage/how-to/openhands-resolver',
-        },
       ],
     },
     {
