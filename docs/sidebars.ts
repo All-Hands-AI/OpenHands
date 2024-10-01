@@ -2,7 +2,7 @@ import type { SidebarsConfig } from "@docusaurus/plugin-content-docs";
 
 const sidebars: SidebarsConfig = {
   apiSidebar: [require("./modules/python/sidebar.json")],
-docsSidebar: [
+  docsSidebar: [
     {
       type: 'doc',
       label: 'Getting Started',
