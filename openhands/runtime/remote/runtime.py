@@ -84,8 +84,14 @@ class RemoteRuntime(Runtime):
             sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
         if self.config.sandbox.runtime_container_image is not None:
+            logger.info(
+                f'Running remote runtime with image: {self.config.sandbox.runtime_container_image}'
+            )
             self.container_image = self.config.sandbox.runtime_container_image
         else:
+            logger.info(
+                f'Building remote runtime with base image: {self.config.sandbox.base_container_image}'
+            )
             self.container_name = 'oh-remote-runtime-' + self.instance_id
             logger.debug(f'RemoteRuntime `{sid}` config:\n{self.config}')
             response = send_request(
@@ -109,20 +115,21 @@ class RemoteRuntime(Runtime):
 
             # Build the container image
             self.container_image = build_runtime_image(
-                self.container_image,
+                self.config.sandbox.base_container_image,
                 self.runtime_builder,
                 extra_deps=self.config.sandbox.runtime_extra_deps,
             )
 
-        # Use the /image_exists endpoint to check if the image exists
-        response = send_request(
-            self.session,
-            'GET',
-            f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
-            params={'image': self.container_image},
-        )
-        if response.status_code != 200 or not response.json()['exists']:
-            raise RuntimeError(f'Container image {self.container_image} does not exist')
+            response = send_request(
+                self.session,
+                'GET',
+                f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
+                params={'image': self.container_image},
+            )
+            if response.status_code != 200 or not response.json()['exists']:
+                raise RuntimeError(
+                    f'Container image {self.container_image} does not exist'
+                )
 
         # Prepare the request body for the /start endpoint
         plugin_arg = ''
