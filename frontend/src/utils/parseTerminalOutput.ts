@@ -16,5 +16,6 @@ export const parseTerminalOutput = (raw: string) => {
   const envRegex = /(.*)\[Python Interpreter: (.*)\]/s;
   const match = raw.match(envRegex);
 
-  return match?.[1]?.trim() || "";
+  if (!match) return raw;
+  return match[1]?.trim() || "";
 };

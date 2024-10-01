@@ -17,4 +17,10 @@ describe("parseTerminalOutput", () => {
     const parsed = parseTerminalOutput(raw);
     expect(parsed).toBe("");
   });
+
+  it("should return the string if it doesn't match the regex", () => {
+    const raw = "web_scraper.py";
+    const parsed = parseTerminalOutput(raw);
+    expect(parsed).toBe("web_scraper.py");
+  });
 });
