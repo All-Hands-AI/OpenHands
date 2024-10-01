@@ -172,13 +172,17 @@ class AgentSession:
         logger.info(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
 
-        self.runtime = runtime_cls(
-            config=config,
-            event_stream=self.event_stream,
-            sid=self.sid,
-            plugins=agent.sandbox_plugins,
-            status_message_callback=status_message_callback,
-        )
+        try:
+            self.runtime = runtime_cls(
+                config=config,
+                event_stream=self.event_stream,
+                sid=self.sid,
+                plugins=agent.sandbox_plugins,
+                status_message_callback=status_message_callback,
+            )
+        except Exception as e:
+            logger.error(f'Runtime initialization failed: {e}')
+            raise
 
         if self.runtime is not None:
             logger.debug(
