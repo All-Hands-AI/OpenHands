@@ -157,14 +157,14 @@ def test_generate_dockerfile_scratch():
     assert 'apt-get update' in dockerfile_content
     assert 'apt-get install -y wget sudo apt-utils' in dockerfile_content
     assert (
-        'RUN /openhands/micromamba/bin/micromamba install conda-forge::poetry python=3.11 -y'
+        'RUN /openhands/miniforge3/bin/mamba install conda-forge::poetry python=3.11 -y'
         in dockerfile_content
     )
 
     # Check the update command
     assert 'COPY ./code /openhands/code' in dockerfile_content
     assert (
-        '/openhands/micromamba/bin/micromamba run -n openhands poetry install'
+        '/openhands/miniforge3/bin/mamba run -n base poetry install'
         in dockerfile_content
     )
 
