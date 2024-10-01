@@ -7,6 +7,7 @@ import {
   useRouteLoaderData,
 } from "@remix-run/react";
 import React from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { SuggestionBox } from "./suggestion-box";
 import { TaskForm } from "./task-form";
 import { HeroHeading } from "./hero-heading";
@@ -20,9 +21,10 @@ import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import { ConnectToGitHubModal } from "#/components/modals/connect-to-github-modal";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { LoadingSpinner } from "#/components/modals/LoadingProject";
-import store from "#/store";
-import { setInitialQuery } from "#/state/initial-query-slice";
+import store, { RootState } from "#/store";
+import { removeFile, setInitialQuery } from "#/state/initial-query-slice";
 import { clientLoader as rootClientLoader } from "#/root";
+import { UploadedFilePreview } from "./uploaded-file-preview";
 
 const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
 const redirectUri = "http://localhost:3001/oauth/github/callback";
@@ -88,6 +90,9 @@ function Home() {
     React.useState(false);
   const [importedFile, setImportedFile] = React.useState<File | null>(null);
 
+  const dispatch = useDispatch();
+  const { files } = useSelector((state: RootState) => state.initalQuery);
+
   const handleConnectToGitHub = () => {
     const isSaas = import.meta.env.VITE_APP_MODE === "saas";
 
@@ -106,8 +111,21 @@ function Home() {
         </div>
       )}
       <HeroHeading />
-      <div className="flex flex-col gap-16 items-center">
-        <TaskForm importedProjectZip={importedFile} />
+      <div className="flex flex-col gap-16 w-[600px] items-center">
+        <div className="flex flex-col gap-2 w-full">
+          {files.length > 0 && (
+            <div className="flex gap-2 overflow-auto">
+              {files.map((file, index) => (
+                <UploadedFilePreview
+                  key={index}
+                  file={file}
+                  onRemove={() => dispatch(removeFile(file))}
+                />
+              ))}
+            </div>
+          )}
+          <TaskForm importedProjectZip={importedFile} />
+        </div>
         <div className="flex gap-4 w-full">
           <SuggestionBox
             title="Open a Repo"

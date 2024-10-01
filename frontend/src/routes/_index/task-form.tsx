@@ -5,7 +5,7 @@ import Send from "#/assets/send.svg?react";
 import Clip from "#/assets/clip.svg?react";
 import { cn } from "#/utils/utils";
 import { RootState } from "#/store";
-import { addFile, removeFile } from "#/state/initial-query-slice";
+import { addFile } from "#/state/initial-query-slice";
 import { SuggestionBubble } from "#/components/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
@@ -66,7 +66,7 @@ function MainTextareaInput({
       }}
       value={value}
       className={cn(
-        "bg-[#404040] placeholder:text-[#A3A3A3] border border-[#525252] w-[600px] rounded-lg px-[16px] py-[18px] text-[17px] leading-5",
+        "bg-[#404040] placeholder:text-[#A3A3A3] border border-[#525252] w-full rounded-lg px-[16px] py-[18px] text-[17px] leading-5",
         "focus:bg-[#525252]",
         "resize-none",
       )}
@@ -81,27 +81,6 @@ const getRandomKey = (obj: Record<string, string>) => {
   return randomKey;
 };
 
-interface UploadedFilePreviewProps {
-  file: string; // base64
-  onRemove: () => void;
-}
-
-function UploadedFilePreview({ file, onRemove }: UploadedFilePreviewProps) {
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        aria-label="Remove"
-        onClick={onRemove}
-        className="absolute right-1 top-1 text-[#A3A3A3] hover:text-danger"
-      >
-        &times;
-      </button>
-      <img src={file} alt="" className="w-16 h-16 aspect-auto rounded" />
-    </div>
-  );
-}
-
 interface TaskFormProps {
   importedProjectZip: File | null;
 }
@@ -111,7 +90,7 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
   const navigation = useNavigation();
   const fetcher = useFetcher();
 
-  const { files, selectedRepository } = useSelector(
+  const { selectedRepository } = useSelector(
     (state: RootState) => state.initalQuery,
   );
 
@@ -169,18 +148,7 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
   };
 
   return (
-    <div className="flex flex-col gap-2">
-      {files.length > 0 && (
-        <div className="flex gap-2">
-          {files.map((file, index) => (
-            <UploadedFilePreview
-              key={index}
-              file={file}
-              onRemove={() => dispatch(removeFile(file))}
-            />
-          ))}
-        </div>
-      )}
+    <div className="flex flex-col gap-2 w-full">
       <Form
         ref={formRef}
         method="post"
@@ -193,7 +161,7 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
           onClick={onClickSuggestion}
           onRefresh={onRefreshSuggestion}
         />
-        <div className="relative">
+        <div className="relative w-full">
           <MainTextareaInput
             disabled={navigation.state === "submitting"}
             placeholder={
