@@ -79,7 +79,6 @@ def get_config(instance: pd.Series) -> AppConfig:
     config = AppConfig(
         run_as_openhands=False,
         runtime=os.environ.get('RUNTIME', 'eventstream'),
-        llm=default_llm,
         sandbox=SandboxConfig(
             base_container_image=base_container_image,
             use_host_network=False,
@@ -92,6 +91,7 @@ def get_config(instance: pd.Series) -> AppConfig:
         workspace_base=None,
         workspace_mount_path=None,
     )
+    config.set_llm_config(default_llm)
     return config
 
 
