@@ -11,13 +11,18 @@ run_parallel_inference() {
     echo "------ Checking number of input/output files ------"
     input_files=$(ls $mr_inputs_dir)
     output_files=$(ls $mr_outputs_dir)
-    num_input_files=$(echo "$input_files" | wc -l)
-    num_output_files=$(echo "$output_files" | wc -l)
+    num_input_files=$(ls $mr_inputs_dir | wc -l)
+    num_output_files=$(ls $mr_outputs_dir | wc -l)
     echo "# input files: $num_input_files"
     echo "# output files: $num_output_files"
 
     # Get the input files to run (input files - output files)
     input_files_to_run=$(comm -23 <(ls "$mr_inputs_dir" | sort) <(ls "$mr_outputs_dir" | sort))
+    # return if empty
+    if [ -z "$input_files_to_run" ]; then
+        echo "No input files to run"
+        return 1
+    fi
     echo "# tasks remaining: $(echo "$input_files_to_run" | wc -l)"
     echo "------------------------------------------------"
 
