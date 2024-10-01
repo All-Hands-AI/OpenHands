@@ -178,10 +178,11 @@ def test_generate_dockerfile_skip_init():
     assert 'RUN apt update && apt install -y wget sudo' not in dockerfile_content
     assert 'conda-forge::poetry' not in dockerfile_content
     assert 'python=3.11' not in dockerfile_content
+    assert 'https://micro.mamba.pm/install.sh' not in dockerfile_content
 
     # These update commands SHOULD still in the dockerfile
     assert 'COPY ./code /openhands/code' in dockerfile_content
-    assert 'https://micro.mamba.pm/install.sh' in dockerfile_content
+    assert 'poetry install' in dockerfile_content
 
 
 def test_get_runtime_image_repo_and_tag_eventstream():
