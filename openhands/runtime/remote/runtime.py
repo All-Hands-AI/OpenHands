@@ -83,48 +83,53 @@ class RemoteRuntime(Runtime):
         self.instance_id = (
             sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
-        if self.config.sandbox.runtime_container_image is not None:
-            raise ValueError(
-                'Setting runtime_container_image is not supported in the remote runtime.'
-            )
-        self.container_image: str = self.config.sandbox.base_container_image
         self.container_name = 'oh-remote-runtime-' + self.instance_id
-        logger.debug(f'RemoteRuntime `{sid}` config:\n{self.config}')
-        response = send_request(
-            self.session,
-            'GET',
-            f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
-        )
-        response_json = response.json()
-        registry_prefix = response_json['registry_prefix']
-        os.environ['OH_RUNTIME_RUNTIME_IMAGE_REPO'] = (
-            registry_prefix.rstrip('/') + '/runtime'
-        )
-        logger.info(
-            f'Runtime image repo: {os.environ["OH_RUNTIME_RUNTIME_IMAGE_REPO"]}'
-        )
-
-        if self.config.sandbox.runtime_extra_deps:
+        if self.config.sandbox.runtime_container_image is not None:
             logger.info(
-                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
+                f'Running remote runtime with image: {self.config.sandbox.runtime_container_image}'
+            )
+            self.container_image = self.config.sandbox.runtime_container_image
+        else:
+            logger.info(
+                f'Building remote runtime with base image: {self.config.sandbox.base_container_image}'
+            )
+            logger.debug(f'RemoteRuntime `{sid}` config:\n{self.config}')
+            response = send_request(
+                self.session,
+                'GET',
+                f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
+            )
+            response_json = response.json()
+            registry_prefix = response_json['registry_prefix']
+            os.environ['OH_RUNTIME_RUNTIME_IMAGE_REPO'] = (
+                registry_prefix.rstrip('/') + '/runtime'
+            )
+            logger.info(
+                f'Runtime image repo: {os.environ["OH_RUNTIME_RUNTIME_IMAGE_REPO"]}'
             )
 
-        # Build the container image
-        self.container_image = build_runtime_image(
-            self.container_image,
-            self.runtime_builder,
-            extra_deps=self.config.sandbox.runtime_extra_deps,
-        )
+            if self.config.sandbox.runtime_extra_deps:
+                logger.info(
+                    f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
+                )
 
-        # Use the /image_exists endpoint to check if the image exists
-        response = send_request(
-            self.session,
-            'GET',
-            f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
-            params={'image': self.container_image},
-        )
-        if response.status_code != 200 or not response.json()['exists']:
-            raise RuntimeError(f'Container image {self.container_image} does not exist')
+            # Build the container image
+            self.container_image = build_runtime_image(
+                self.config.sandbox.base_container_image,
+                self.runtime_builder,
+                extra_deps=self.config.sandbox.runtime_extra_deps,
+            )
+
+            response = send_request(
+                self.session,
+                'GET',
+                f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
+                params={'image': self.container_image},
+            )
+            if response.status_code != 200 or not response.json()['exists']:
+                raise RuntimeError(
+                    f'Container image {self.container_image} does not exist'
+                )
 
         # Prepare the request body for the /start endpoint
         plugin_arg = ''
@@ -192,7 +197,7 @@ class RemoteRuntime(Runtime):
         reraise=True,
     )
     def _wait_until_alive(self):
-        logger.info('Waiting for sandbox to be alive...')
+        logger.info(f'Waiting for runtime to be alive at url: {self.runtime_url}')
         response = send_request(
             self.session,
             'GET',
