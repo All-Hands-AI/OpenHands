@@ -4,7 +4,7 @@ This guide explains how to use the OpenHands GitHub Action, both within the Open
 
 ## Using the Action in the OpenHands Repository
 
-To use the OpenHands GitHub Action in the OpenHands repository:
+To use the OpenHands GitHub Action in the OpenHands repository, an OpenHands maintainer can:
 
 1. Create an issue in the repository.
 2. Add the `fix-me` label to the issue.
