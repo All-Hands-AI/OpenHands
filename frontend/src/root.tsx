@@ -87,7 +87,7 @@ export const clientLoader = async () => {
 };
 
 export default function App() {
-  const { stop } = useSocket();
+  const { stop, isConnected } = useSocket();
   const navigation = useNavigation();
   const location = useLocation();
   const {
@@ -205,7 +205,13 @@ export default function App() {
               <p className="text-xs text-[#A3A3A3]">
                 To continue, connect an OpenAI, Anthropic, or other LLM account
               </p>
+              {isConnected && (
+                <p className="text-xs text-danger">
+                  Settings are disabled during an active session
+                </p>
+              )}
               <SettingsForm
+                disabled={isConnected}
                 settings={settings}
                 models={models}
                 agents={agents}

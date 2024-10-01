@@ -17,6 +17,7 @@ import { clientAction } from "#/routes/Settings";
 import { extractModelAndProvider } from "#/utils/extractModelAndProvider";
 
 interface SettingsFormProps {
+  disabled: boolean;
   settings: Settings;
   models: string[];
   agents: string[];
@@ -25,6 +26,7 @@ interface SettingsFormProps {
 }
 
 export function SettingsForm({
+  disabled,
   settings,
   models,
   agents,
@@ -68,6 +70,7 @@ export function SettingsForm({
     >
       <div className="flex flex-col gap-2">
         <Switch
+          isDisabled={disabled}
           name="use-advanced-options"
           isSelected={showAdvancedOptions}
           onValueChange={setShowAdvancedOptions}
@@ -96,6 +99,7 @@ export function SettingsForm({
                 Custom Model
               </label>
               <Input
+                isDisabled={disabled}
                 id="custom-model"
                 name="custom-model"
                 defaultValue={settings.LLM_MODEL}
@@ -114,6 +118,7 @@ export function SettingsForm({
                 Base URL
               </label>
               <Input
+                isDisabled={disabled}
                 id="base-url"
                 name="base-url"
                 defaultValue={settings.LLM_BASE_URL}
@@ -129,6 +134,7 @@ export function SettingsForm({
 
         {!showAdvancedOptions && (
           <ModelSelector
+            isDisabled={disabled}
             models={organizeModelsAndProviders(models)}
             currentModel={settings.LLM_MODEL}
           />
@@ -142,6 +148,7 @@ export function SettingsForm({
             API Key
           </label>
           <Input
+            isDisabled={disabled}
             id="api-key"
             name="api-key"
             aria-label="API Key"
@@ -169,6 +176,7 @@ export function SettingsForm({
             Agent
           </label>
           <Autocomplete
+            isDisabled={disabled}
             isRequired
             id="agent"
             aria-label="Agent"
@@ -202,6 +210,7 @@ export function SettingsForm({
                 Security Analyzer (Optional)
               </label>
               <Autocomplete
+                isDisabled={disabled}
                 isRequired
                 id="security-analyzer"
                 name="security-analyzer"
@@ -226,6 +235,7 @@ export function SettingsForm({
             </fieldset>
 
             <Switch
+              isDisabled={disabled}
               name="confirmation-mode"
               defaultSelected={settings.CONFIRMATION_MODE}
               classNames={{
@@ -248,7 +258,7 @@ export function SettingsForm({
 
       <div className="flex flex-col gap-2">
         <ModalButton
-          disabled={fetcher.state === "submitting"}
+          disabled={disabled || fetcher.state === "submitting"}
           type="submit"
           text="Save"
           className="bg-[#4465DB] w-full"
@@ -259,6 +269,7 @@ export function SettingsForm({
           onClick={onClose}
         />
         <ModalButton
+          disabled={disabled}
           text="Reset to defaults"
           variant="text-like"
           className="text-danger self-start"
