@@ -31,7 +31,8 @@ ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry
 
 # Install micromamba
 RUN mkdir -p /openhands/micromamba && \
-    curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj -C /openhands/micromamba
+    curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj -C /openhands/ && \
+    ls -alh /openhands/micromamba
 
 # Set up micromamba
 ENV MAMBA_ROOT_PREFIX=/openhands/micromamba
