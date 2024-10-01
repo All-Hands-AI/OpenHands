@@ -61,7 +61,7 @@ class EvalOutput(BaseModel):
     history: (
         list[dict[str, Any]] | list[tuple[dict[str, Any], dict[str, Any]]] | None
     ) = None
-    llm_completions: list[dict[str, Any]]
+    llm_completions: list[dict[str, Any]] | None = None
     metrics: dict[str, Any] | None = None
     error: str | None = None
 
