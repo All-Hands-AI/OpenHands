@@ -183,7 +183,8 @@ class SandboxConfig:
     """Configuration for the sandbox.
 
     Attributes:
-        api_hostname: The hostname for the EventStream Runtime API.
+        remote_runtime_api_url: The hostname for the Remote Runtime API.
+        local_runtime_url: The default hostname for the local runtime. You may want to change to http://host.docker.internal for DIND environments
         base_container_image: The base container image from which to build the runtime image.
         runtime_container_image: The runtime container image to use.
         user_id: The user ID for the sandbox.
@@ -204,7 +205,8 @@ class SandboxConfig:
             Default is None for general purpose browsing. Check evaluation/miniwob and evaluation/webarena for examples.
     """
 
-    api_hostname: str = 'localhost'
+    remote_runtime_api_url: str = 'http://localhost:8000'
+    local_runtime_url: str = 'http://localhost'
     api_key: str | None = None
     base_container_image: str = 'nikolaik/python-nodejs:python3.11-nodejs22'  # default to nikolaik/python-nodejs:python3.11-nodejs22 for eventstream runtime
     runtime_container_image: str | None = None
@@ -754,6 +756,18 @@ def get_parser() -> argparse.ArgumentParser:
         default=None,
         type=str,
         help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
+    )
+    # Map-reduce arguments for evaluation
+    parser.add_argument(
+        '--eval-map-reduce-write-inputs',
+        action='store_true',
+        help='write inputs to output_dir/mr_inputs',
+    )
+    parser.add_argument(
+        '--eval-map-reduce-read-input-file',
+        type=str,
+        default=None,
+        help='read input (arguments for process_instance) from this file, run it, and write output to output_dir/mr_outputs',
     )
     return parser
 
