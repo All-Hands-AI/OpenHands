@@ -195,11 +195,13 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
                 layers: dict[str, dict[str, str]] = {}
                 previous_layer_count = 0
-                _splited_image_name = image_name.split(':')
-                image_repo = _splited_image_name[0]
-                image_tag = (
-                    _splited_image_name[1] if len(_splited_image_name) > 1 else None
-                )
+
+                if ':' in image_name:
+                    image_repo, image_tag = image_name.split(':', 1)
+                else:
+                    image_repo = image_name
+                    image_tag = None
+
                 for line in self.docker_client.api.pull(
                     image_repo, tag=image_tag, stream=True, decode=True
                 ):
