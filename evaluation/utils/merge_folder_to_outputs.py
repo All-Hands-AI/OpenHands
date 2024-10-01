@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import shutil
 from glob import glob
 
 import pandas as pd
@@ -48,3 +49,6 @@ if os.path.exists(output_file):
 new_df = pd.concat([existing_df, pd.DataFrame(df_to_concat)], ignore_index=True)
 print(f'New combined output file {output_file} has {len(new_df)} rows.')
 new_df.to_json(output_file, lines=True, orient='records')
+
+# Remove the mr_outputs folder
+shutil.rmtree(mr_output_dir)
