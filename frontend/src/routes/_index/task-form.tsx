@@ -5,9 +5,10 @@ import Send from "#/assets/send.svg?react";
 import Clip from "#/assets/clip.svg?react";
 import { cn } from "#/utils/utils";
 import { RootState } from "#/store";
-import { removeFile } from "#/state/initial-query-slice";
+import { addFile, removeFile } from "#/state/initial-query-slice";
 import { SuggestionBubble } from "#/components/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
+import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 
 interface MainTextareaInputProps {
   disabled: boolean;
@@ -226,15 +227,11 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
           id="file-input"
           multiple
           onChange={(event) => {
-            // CURRENTLY ONLY SUPPORTS SINGLE FILE UPLOAD
             if (event.target.files) {
-              const formData = new FormData();
-              formData.append("file", event.target.files[0]);
-
-              fetcher.submit(formData, {
-                method: "POST",
-                action: "/upload-initial-files",
-                encType: "multipart/form-data",
+              Array.from(event.target.files).forEach((file) => {
+                convertImageToBase64(file).then((base64) => {
+                  dispatch(addFile(base64));
+                });
               });
             } else {
               // TODO: handle error

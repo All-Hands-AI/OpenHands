@@ -21,13 +21,8 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 
   if (isMultipart) {
     const formData = await request.formData();
-    const file = formData.get("file");
     const importedProject = formData.get("imported-project");
 
-    if (file instanceof File) {
-      // TODO: Take care of this if SSR is enabled (store may not available on the server)
-      store.dispatch(addFile(await convertImageToBase64(file)));
-    }
     if (importedProject instanceof File) {
       store.dispatch(
         setImportedProjectZip(await convertZipToBase64(importedProject)),
