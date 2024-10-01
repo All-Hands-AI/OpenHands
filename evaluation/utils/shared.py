@@ -159,6 +159,10 @@ def make_metadata(
     )
 
     pathlib.Path(eval_output_path).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(os.path.join(eval_output_path, 'logs')).mkdir(
+        parents=True, exist_ok=True
+    )
+    logger.info(f'Using evaluation output directory: {eval_output_path}')
 
     metadata = EvalMetadata(
         agent_class=agent_class,
@@ -173,6 +177,11 @@ def make_metadata(
         data_split=data_split,
         details=details,
     )
+    metadata_json = metadata.model_dump_json()
+    logger.info(f'Metadata: {metadata_json}')
+    with open(os.path.join(eval_output_path, 'metadata.json'), 'w') as f:
+        f.write(metadata_json)
+
     return metadata
 
 
@@ -243,7 +252,7 @@ def update_progress(
     output_fp.flush()
 
 
-def process_instance_wrapper(
+def _process_instance_wrapper(
     process_instance_func: Callable[[pd.Series, EvalMetadata, bool], EvalOutput],
     instance: pd.Series,
     metadata: EvalMetadata,
@@ -292,9 +301,9 @@ def process_instance_wrapper(
             time.sleep(5)
 
 
-def process_instance_wrapper_mp(args):
+def _process_instance_wrapper_mp(args):
     """Wrapper for multiprocessing, especially for imap_unordered."""
-    return process_instance_wrapper(*args)
+    return _process_instance_wrapper(*args)
 
 
 def run_evaluation(
@@ -328,12 +337,12 @@ def run_evaluation(
                     (process_instance_func, instance, metadata, True, max_retries)
                     for _, instance in dataset.iterrows()
                 )
-                results = pool.imap_unordered(process_instance_wrapper_mp, args_iter)
+                results = pool.imap_unordered(_process_instance_wrapper_mp, args_iter)
                 for result in results:
                     update_progress(result, pbar, output_fp)
         else:
             for _, instance in dataset.iterrows():
-                result = process_instance_wrapper(
+                result = _process_instance_wrapper(
                     process_instance_func=process_instance_func,
                     instance=instance,
                     metadata=metadata,

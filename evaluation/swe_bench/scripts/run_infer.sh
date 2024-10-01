@@ -2,14 +2,6 @@
 set -eo pipefail
 
 source "evaluation/utils/version_control.sh"
-source "evaluation/utils/parallel_inference.sh"
-
-# first check if parallel is installed
-if ! command -v parallel &> /dev/null
-then
-    echo "GNU Parallel could not be found, please install it (e.g. sudo apt-get install parallel)"
-    exit 1
-fi
 
 MODEL_CONFIG=$1
 COMMIT_HASH=$2
@@ -19,7 +11,6 @@ MAX_ITER=$5
 NUM_WORKERS=$6
 DATASET=$7
 SPLIT=$8
-N_RUNS=$9
 
 if [ -z "$NUM_WORKERS" ]; then
   NUM_WORKERS=1
@@ -82,55 +73,22 @@ echo "EVAL_NOTE: $EVAL_NOTE"
 
 unset SANDBOX_ENV_GITHUB_TOKEN # prevent the agent from using the github token to push
 
-run_inference() {
-    local run_eval_note=$1
-    echo "RUN_EVAL_NOTE: $run_eval_note"
+COMMAND="poetry run python evaluation/swe_bench/run_infer.py \
+  --agent-cls $AGENT \
+  --llm-config $MODEL_CONFIG \
+  --max-iterations $MAX_ITER \
+  --max-chars 10000000 \
+  --eval-num-workers $NUM_WORKERS \
+  --eval-note $EVAL_NOTE \
+  --dataset $DATASET \
+  --split $SPLIT"
 
-    # Write inputs to mr_inputs
-    local command="poetry run python evaluation/swe_bench/run_infer.py \
-        --agent-cls $AGENT \
-        --llm-config $MODEL_CONFIG \
-        --max-iterations $MAX_ITER \
-        --max-chars 10000000 \
-        --eval-num-workers $NUM_WORKERS \
-        --eval-note $run_eval_note \
-        --dataset $DATASET \
-        --split $SPLIT"
-    if [ -n "$EVAL_LIMIT" ]; then
-        echo "EVAL_LIMIT: $EVAL_LIMIT"
-        command="$command --eval-n-limit $EVAL_LIMIT"
-    fi
-
-    # Run the command and get cmd outputs in a variable
-    write_input_cmd="$command --eval-map-reduce-write-inputs"
-    write_input_cmd_outputs=$(eval $write_input_cmd 2>&1)
-    echo ""
-    echo "------ Creating input files for map-reduce ------"
-    echo "$write_input_cmd_outputs"
-    echo "------------------------------------------------"
-    eval_output_dir=$(echo "$write_input_cmd_outputs" | grep "Using evaluation output directory:" | awk '{print $NF}')
-    mr_inputs_dir=$(realpath "$eval_output_dir/mr_inputs")
-    mkdir -p $mr_inputs_dir
-    mr_outputs_dir=$(realpath "$eval_output_dir/mr_outputs")
-    mkdir -p $mr_outputs_dir
-    echo "EVAL_OUTPUT_DIR: $eval_output_dir"
-    echo "MR_INPUTS_DIR: $mr_inputs_dir"
-    echo "MR_OUTPUTS_DIR: $mr_outputs_dir"
-    echo ""
-
-    # Call the parallel processing function from the library
-    run_parallel_inference "$command" "$mr_inputs_dir" "$mr_outputs_dir" "$eval_output_dir" "$NUM_WORKERS"
-}
-
-if [ -n "$N_RUNS" ]; then
-    echo "Running the same experiment $N_RUNS times and save results to different directories"
-    for i in $(seq 1 $N_RUNS); do
-        RUN_EVAL_NOTE="$EVAL_NOTE-run_$i"
-        echo "Running iteration $i of $N_RUNS"
-        run_inference "$RUN_EVAL_NOTE"
-    done
-else
-    run_inference "$EVAL_NOTE"
+if [ -n "$EVAL_LIMIT" ]; then
+  echo "EVAL_LIMIT: $EVAL_LIMIT"
+  COMMAND="$COMMAND --eval-n-limit $EVAL_LIMIT"
 fi
+
+# Run the command
+eval $COMMAND
 
 checkout_original_branch
