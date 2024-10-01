@@ -92,9 +92,20 @@ const sidebars: SidebarsConfig = {
       label: 'For OpenHands Developers',
       items: [
         {
-          type: 'doc',
+          type: 'category',
           label: 'Architecture',
-          id: 'usage/architecture/backend',
+          items: [
+            {
+              type: 'doc',
+              label: 'Backend',
+              id: 'usage/architecture/backend',
+            },
+            {
+              type: 'doc',
+              label: 'Runtime',
+              id: 'usage/architecture/runtime',
+            },
+          ],
         },
         {
           type: 'doc',
