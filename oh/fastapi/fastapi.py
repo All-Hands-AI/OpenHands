@@ -303,9 +303,9 @@ def add_open_hands_to_fastapi(api: FastAPI, conversation_broker: ConversationBro
         listener_id = await conversation.add_listener(WebsocketConversationListener(conversation.id, websocket, event_info_adapter))
         try:
             while websocket.application_state == WebSocketState.CONNECTED:
-                data = await websocket.receive_text()
-                runnable = runnnable_type_adapter.validate_json(data)
-                conversation.create_task(runnable)
+                data = await websocket.receive_json()
+                runnable = runnnable_type_adapter.validate_python(data["runnable"])
+                await conversation.create_task(runnable, data.get("title"), data.get("delay"))
         except WebSocketDisconnect as e:
             _LOGGER.debug('websocket_closed')
         finally:
@@ -323,9 +323,9 @@ def add_open_hands_to_fastapi(api: FastAPI, conversation_broker: ConversationBro
         listener_id = await conversation.add_listener(WebsocketConversationListener(conversation_id, websocket, event_info_adapter))
         try:
             while websocket.application_state == WebSocketState.CONNECTED:
-                data = await websocket.receive_text()
-                runnable = runnnable_type_adapter.validate_json(data)
-                conversation.create_task(runnable)
+                data = await websocket.receive_json()
+                runnable = runnnable_type_adapter.validate_python(data["runnable"])
+                await conversation.create_task(runnable, data.get("title"), data.get("delay"))
         except WebSocketDisconnect as e:
             _LOGGER.debug('websocket_closed')
         finally:
