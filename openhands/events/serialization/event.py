@@ -82,9 +82,10 @@ def event_to_memory(event: 'Event', max_message_chars: int) -> dict:
     d.pop('images_urls', None)
 
     # runnable actions have some extra fields used in the BE/FE, which should not be sent to the LLM
-    d.pop('blocking', None)
-    d.pop('keep_prompt', None)
-    d.pop('is_confirmed', None)
+    if 'args' in d:
+        d['args'].pop('blocking', None)
+        d['args'].pop('keep_prompt', None)
+        d['args'].pop('is_confirmed', None)
 
     if 'extras' in d:
         remove_fields(d['extras'], DELETE_FROM_MEMORY_EXTRAS)
