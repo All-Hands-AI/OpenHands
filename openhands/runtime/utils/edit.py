@@ -280,9 +280,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 error_msg += f'[end relevant snippet {i+1}]\n'
                 error_msg += '-' * 40 + '\n'
 
-            error_msg += '-' * 20 + 'IMPORTANT' + '-' * 20 + '\n'
-            error_msg += 'Consider using `open_file` to explore around the relevant snippets if needed.\n'
-            error_msg += f'**IMPORTANT**: Please REDUCE the range of edits to less than {self.MAX_LINES_TO_EDIT} lines by setting `start` and `end` in the edit action (e.g. `<file_edit path="{action.path}" start=[PUT LINE NUMBER HERE] end=[PUT LINE NUMBER HERE] />`). '
+            error_msg += f'[Please try to reduce the range of edit to less than {self.MAX_LINES_TO_EDIT} and try again. Consider using `open_file` to explore around the relevant snippets if needed.]'
 
             return ErrorObservation(error_msg)
 
