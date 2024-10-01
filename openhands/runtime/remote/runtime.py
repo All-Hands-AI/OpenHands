@@ -36,7 +36,7 @@ from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime import Runtime
-from openhands.runtime.utils.tenacity_stop import stop_if_should_exit
+from openhands.utils.tenacity_stop import stop_if_should_exit
 from openhands.runtime.utils.request import (
     DEFAULT_RETRY_EXCEPTIONS,
     is_404_error,

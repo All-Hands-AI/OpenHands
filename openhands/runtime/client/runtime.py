@@ -36,7 +36,7 @@ from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime import Runtime
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.runtime_build import build_runtime_image
-from openhands.runtime.utils.tenacity_stop import stop_if_should_exit
+from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
 class LogBuffer:

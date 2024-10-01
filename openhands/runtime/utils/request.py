@@ -10,7 +10,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from openhands.runtime.utils.tenacity_stop import stop_if_should_exit
+from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
 def is_server_error(exception):
