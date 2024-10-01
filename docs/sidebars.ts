@@ -25,7 +25,7 @@ docsSidebar: [
         {
           type: 'doc',
           label: 'Github Actions',
-          id: 'usage/how-to/github-actions',
+          id: 'usage/how-to/openhands-resolver',
         },
       ],
     },
