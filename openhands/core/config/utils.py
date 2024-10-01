@@ -18,6 +18,7 @@ from openhands.core.config.config_utils import (
     UndefinedString,
 )
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.router_config import ModelConfig, RouterConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 
 load_dotenv()
@@ -112,6 +113,9 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
 
     core_config = toml_config['core']
 
+    router_config: RouterConfig | None = None
+    llm_config: LLMConfig | None = None
+
     # load llm configs and agent configs
     for key, value in toml_config.items():
         if isinstance(value, dict):
@@ -132,6 +136,36 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                             )
                             agent_config = AgentConfig(**nested_value)
                             cfg.set_agent_config(agent_config, nested_key)
+                elif key is not None and key.lower() == 'router_config':
+                    # Router config as standalone section (with models)
+                    router_config = RouterConfig(
+                        models=[
+                            ModelConfig(
+                                model_name=model['model_name'],
+                                litellm_params={
+                                    **model.get('litellm_params', {}),
+                                    'dataSources': [
+                                        {
+                                            **data_source,
+                                            'parameters': data_source.get(
+                                                'parameters', {}
+                                            ),
+                                        }
+                                        for data_source in model.get(
+                                            'litellm_params', {}
+                                        ).get('dataSources', [])
+                                    ],
+                                },
+                            )
+                            for model in value.get('models', [])
+                        ],
+                        routing_strategy=value.get(
+                            'routing_strategy', 'simple-shuffle'
+                        ),
+                        num_retries=value.get('num_retries', 8),
+                        cooldown_time=value.get('cooldown_time', 1.0),
+                        allowed_fails=value.get('allowed_fails', None),
+                    )
                 elif key is not None and key.lower() == 'llm':
                     logger.openhands_logger.debug(
                         'Attempt to load default LLM config from config toml'
@@ -144,11 +178,15 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
                             logger.openhands_logger.debug(
-                                f'Attempt to load group {nested_key} from config toml as llm config'
+                                f'Attempt to load group `{nested_key}` from config toml as llm config'
                             )
                             llm_config = LLMConfig(**nested_value)
                             cfg.set_llm_config(llm_config, nested_key)
-                elif not key.startswith('sandbox') and key.lower() != 'core':
+                elif (
+                    key is not None
+                    and not key.startswith('sandbox')
+                    and key.lower() != 'core'
+                ):
                     logger.openhands_logger.warning(
                         f'Unknown key in {toml_file}: "{key}"'
                     )
@@ -159,6 +197,13 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                 )
         else:
             logger.openhands_logger.warning(f'Unknown key in {toml_file}: "{key}')
+
+    # TODO: right now the router_config is treated as "standalone" section in the toml file
+    # and added to the default "llm" section in the AppConfig. At least one test makes use of this.
+    if router_config is not None:
+        if 'llm' not in cfg.llms:
+            cfg.llms['llm'] = LLMConfig()
+        cfg.llms['llm'].router_config = router_config
 
     try:
         # set sandbox config from the toml file

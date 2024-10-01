@@ -166,79 +166,137 @@ model = "gpt-4o"
 
 ################################### Router ###################################
 # litellm Router configuration
+# https://litellm.vercel.app/docs/routing
 ##############################################################################
 
-# Routing strategy to use for the router. Options include "simple-shuffle", "round-robin", etc.
-#router_routing_strategy = "simple-shuffle"
+# The "router_config"section can only occur once in the config.toml file!
+#[router_config]
 
-# Number of retries to attempt when an operation fails.
-#router_num_retries = 3
+# The default model to use for routing, which must be part of the "models" entries below.
+#default_model = "gpt-4o"
 
-# Cooldown time (in seconds) between retry attempts.
-#router_cooldown_time = 1.0
+# The strategy to use for routing (e.g., usage-based-routing, cost-based-routing)
+#routing_strategy = "usage-based-routing"
 
-# Number of allowed failures before giving up.
-#router_allowed_fails = 5
+# Number of retries to attempt when an operation fails
+#num_retries = 3
 
-# Whether to cache responses from the router. This would require additional modules, like Redis.
-# (not implemented by OpenHands!)
-#router_cache_responses = false
+# waits min. 5s before retrying request
+#retry_after = 15
 
-# List notation is used to specify multiple models for the same configuration!
-# Each model can have its own specific parameters.
+# cooldown model if it fails > 1 call in a minute
+#allowed_fails = 1
 
-# Example configuration for OpenAI's gpt-4o model
-#[[llm.router_models]]
+# cooldown the deployment for 100 seconds if it num_fails > allowed_fails
+#cooldown_time = 100
+
+# raise timeout error if call takes > 240s
+#timeout = 240
+
+# Whether to cache responses for reuse
+#cache_responses = false
+
+# Additional cache configuration options, see documentation for details
+#[router_config.cache_kwargs]
+
+#[router_config.retry_policy]
+#exceptions_to_retry = [ "RateLimitError",]  # List of exceptions to retry on
+#max_retries = 8  # Maximum number of retries for the specified exceptions
+#retry_after = 15  # Time to wait before the first retry for the specified exceptions
+#retry_after_multiplier = 2  # Multiplier for exponential backoff calculation
+
+# --- Important Notes ---
+# - The model entries below are just examples, you can add, edit or remove these as needed.
+# - For each model entry, there is a corresponding set of "litellm_params" section,
+#   which must be specified in the exact same syntax as shown below.
+# - The syntax with the brackets [[ ]] is mandatory, even if there is only one model entry,
+#   or the whole config file may not be loaded!
+# - The model name must be unique in the list!
+# - The model name can be the same as the model alias.
+# - The empty lines are only added for readability, they are not required.
+# ----
+
+# --- 1st model example: Azure OpenAI
+
+# See: https://learn.microsoft.com/en-us/azure/ai-services/openai/quotas-limits
+# See: https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models
+
+#[[router_config.models]]
+# An alias name for this model, must be unique in the list
+#model_name = "gpt-4-vision-enhancements"
+
+# Each model can have its own set of parameters, note the single [] syntax!
+#[router_config.models.litellm_params]
+# The actual model name as per the provider's API
+#model = "azure/gpt-4-vision"
+# API key for the provider
+#api_key = "AZURE_API_KEY"
+# Base URL for the API
+#base_url = "https://gpt-4-vision-resource.openai.azure.com/openai/deployments/gpt-4-vision/extensions/"
+# some providers may require/offer datasources for deployments (optional)
+#[[router_config.models.litellm_params.dataSources]]
+# Type of data source
+#type = "AzureComputerVision"
+#[router_config.models.litellm_params.dataSources.parameters]
+#endpoint = "AZURE_VISION_ENHANCE_ENDPOINT"  # Endpoint for the data source
+#key = "AZURE_VISION_ENHANCE_KEY"            # Key for the data source
+#rpm = 900           # Requests per minute limit
+#tpm = 150000        # Tokens per minute limit
+
+# --- 2nd model example: OpenRouter w/ Qwen 2.5
+
+# See: https://openrouter.ai/models/
+
+#[[router_config.models]]
+#model_name = "or-qwen-2.5"
+
+#[router_config.models.litellm_params]
+#model = "openrouter/qwen/qwen-2.5-72b-instruct"
+#api_base = "https://openrouter.ai/api/v1" # Optional with litellm if model starts with "openrouter/"
+#api_key = "sk-or-v1-xxx"
+# Note: all other models may have these parameters, which are optional,
+# but are only mentioned here for brevity. These are example values!
+#max_retries = 3       # Number of retries to attempt when an operation fails
+#max_tokens = 4000     # Maximum number of output tokens
+#tpm = 10000           # Tokens per minute limit
+#rpm = 6               # Requests per minute limit
+#timeout = 120         # The timeout set in router is for the entire length of the call
+
+# --- 3rd model example: Anthropic w/ Sonnet 3.5
+
+#[[router_config.models]]
+#model_name = "ant-sonnet-3.5"
+
+#[router_config.models.litellm_params]
+#model = "anthropic/claude-3-5-sonnet-20240620"
+#api_key = "sk-ant-xxx"
+#api_base not needed
+
+# --- 4th model example: OpenAI w/ GPT-4o
+
+# See: https://platform.openai.com/docs/models
+
+#[[router_config.models]]
 #model_name = "gpt-4o"
-#api_key = "your-openai-api-key"
-#litellm_params = {
-#    "model": "gpt-4o",  # Model name
-#    "api_key": "OPENAI_API_KEY",  # API key for the model
-#    "max_retries": 3,  # Maximum number of retries for this model
-#    "max_tokens": 100  # Maximum number of tokens for the completion
-#}
-#model_info = {"id": "1234"}  # Additional model information
-#tpm = 100000  # Tokens per minute
-#rpm = 10000  # Requests per minute
+#[router_config.models.litellm_params]
+# This has 128K context length with 16K max output tokens!
+# "Dynamic model continuously updated"
+#model = "openai/chatgpt-4o-latest"
+#api_key = "sk-proj-xxx"
+#api_base not needed
+#max_tokens = 16384
+#rpm = 6
 
-# Example configuration for Anthropic's Claude-3 Opus model
-#[[llm.router_models]]
-#model_name = "claude-3-5-sonnet-20240620"
-#api_key = "your-anthropic-api-key"
-#litellm_params = {
-#    "model": "azure/claude-3-5-sonnet-20240620",  # Model name
-#    "api_key": "AZURE_API_KEY",  # API key for the model
-#    "api_base": "https://your-azure-endpoint.openai.azure.com",  # Base URL for the API
-#    "api_version": "2023-05-15",  # API version
-#    "max_retries": 7,  # Maximum number of retries for this model
-#    "timeout": 0.01,  # Timeout for the API
-#    "stream_timeout": 0.000_001,  # Stream timeout for the API
-#    "max_tokens": 100  # Maximum number of tokens for the completion
-#}
-#tpm = 100000  # Tokens per minute
-#rpm = 10000  # Requests per minute
+# --- 5th model example: Groq w/ Llama 3.2 90B
 
-# Example configuration for Azure's GPT-4 model
-#[[llm.router_models]]
-#model_name = "azure/gpt-4"
-#api_base = "https://your-azure-endpoint.openai.azure.com"
-#api_key = "your-azure-api-key"
-#api_version = "2023-05-15"
-#litellm_params = {
-#    "max_tokens": 100  # Maximum number of tokens for the completion
-#}
+#[[router_config.models]]
+#model_name = "groq-lama-3.2-90b"
+#[router_config.models.litellm_params]
+#model = "groq/llama-3.2-90b-text-preview"
+#api_base = "https://api.groq.com/openai/v1"
+#api_key = "gsk_xxx"
 
-# Router options for additional configurations
-#[llm.router_options]
-#timeout = 30  # Timeout for the router operations
-#max_retries = 3  # Maximum number of retries for the router
-#set_verbose = true  # Enable verbose logging
-#debug_level = 1  # Debug level for logging
-#default_litellm_params = {}  # Default parameters for litellm
 
-# Cache-related options for the router
-#[llm.router_cache_kwargs]
-# Add any cache-related options here if needed
 
 #################################### Agent ###################################
 # Configuration for agents (group name starts with 'agent')

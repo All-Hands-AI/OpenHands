@@ -1,8 +1,8 @@
 import os
-from dataclasses import dataclass, field, fields
-from typing import Any
+from dataclasses import dataclass, fields
 
 from openhands.core.config.config_utils import get_field_info
+from openhands.core.config.router_config import RouterConfig
 
 LLM_SENSITIVE_FIELDS = ['api_key', 'aws_access_key_id', 'aws_secret_access_key']
 
@@ -33,13 +33,14 @@ class LLMConfig:
         custom_llm_provider: The custom LLM provider to use. This is undocumented in openhands, and normally not used. It is documented on the litellm side.
         max_input_tokens: The maximum number of input tokens. Note that this is currently unused, and the value at runtime is actually the total tokens in OpenAI (e.g. 128,000 tokens for GPT-4).
         max_output_tokens: The maximum number of output tokens. This is sent to the LLM.
-        input_cost_per_token: The cost per input token. This will available in logs for the user to check.
-        output_cost_per_token: The cost per output token. This will available in logs for the user to check.
-        ollama_base_url: The base URL for the OLLAMA API.
+        input_cost_per_token: The cost per input token. This will be used in logs for the user to check.
+        output_cost_per_token: The cost per output token. This will be used in logs for the user to check.
+        ollama_base_url: The base URL for the OLLAMA API used to retrieve model names.
         drop_params: Drop any unmapped (unsupported) params without causing an exception.
         disable_vision: If model is vision capable, this option allows to disable image processing (useful for cost reduction).
         caching_prompt: Use the prompt caching feature if provided by the LLM and supported by the provider.
         log_completions: Whether to log LLM completions to the state.
+        router_config: The router configuration with model list, routing strategy, etc.; gets assigned by load_from_toml.
     """
 
     model: str = 'gpt-4o'
@@ -73,46 +74,8 @@ class LLMConfig:
     caching_prompt: bool = True
     log_completions: bool = False
 
-    # Router-specific configurations
-    router_models: list[dict[str, Any]] = field(default_factory=list)
-    router_options: dict[str, Any] = field(
-        default_factory=lambda: {
-            'timeout': 30,
-            'max_retries': 10,
-        }
-    )
-    router_routing_strategy: str = 'simple-shuffle'
-    router_num_retries: int = 3
-    router_cooldown_time: float = 1.0
-    router_allowed_fails: int = 5
-    router_cache_responses: bool = False
-    router_cache_kwargs: dict[str, Any] = field(default_factory=dict)
-
-    def get_litellm_compatible_dict(self) -> dict:
-        """Return a dict with only the fields compatible with litellm."""
-        compatible_keys = [
-            'model',
-            'api_key',
-            'base_url',
-            'api_version',
-            'timeout',
-            'temperature',
-            'top_p',
-            'custom_llm_provider',
-            'max_output_tokens',
-            'drop_params',
-        ]
-        result = {
-            k: v
-            for k, v in self.__dict__.items()
-            if k in compatible_keys and v is not None
-        }
-
-        # Convert max_output_tokens to max_tokens for compatibility
-        if 'max_output_tokens' in result:
-            result['max_tokens'] = result.pop('max_output_tokens')
-
-        return result
+    # Single router configuration, set up by load_from_toml
+    router_config: RouterConfig | None = None
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
@@ -122,8 +85,7 @@ class LLMConfig:
         return result
 
     def __post_init__(self):
-        """
-        Post-initialization hook to assign OpenRouter-related variables to environment variables.
+        """Post-initialization hook to assign OpenRouter-related variables to environment variables.
         This ensures that these values are accessible to litellm at runtime.
         """
 

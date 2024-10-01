@@ -9,7 +9,7 @@ from openhands.core.config import LLMConfig
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
-from litellm import ModelInfo
+from litellm import ModelInfo, Router
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
@@ -71,6 +71,7 @@ class LLM(RetryMixin, DebugMixin):
         self.metrics: Metrics = metrics if metrics is not None else Metrics()
         self.cost_metric_supported: bool = True
         self.config: LLMConfig = copy.deepcopy(config)
+        self.router: Router | None = None
 
         # list of LLM completions (for logging purposes). Each completion is a dict with the following keys:
         # - 'messages': list of messages
@@ -79,16 +80,17 @@ class LLM(RetryMixin, DebugMixin):
 
         # litellm actually uses base Exception here for unknown model
         self.model_info: ModelInfo | None = None
-        try:
-            if self.config.model.startswith('openrouter'):
-                self.model_info = litellm.get_model_info(self.config.model)
-            else:
-                self.model_info = litellm.get_model_info(
-                    self.config.model.split(':')[0]
-                )
-        # noinspection PyBroadException
-        except Exception as e:
-            logger.warning(f'Could not get model info for {config.model}:\n{e}')
+        if self.config.model:
+            try:
+                if self.config.model.startswith('openrouter'):
+                    self.model_info = litellm.get_model_info(self.config.model)
+                else:
+                    self.model_info = litellm.get_model_info(
+                        self.config.model.split(':')[0]
+                    )
+            # noinspection PyBroadException
+            except Exception as e:
+                logger.warning(f'Could not get model info for {config.model}:\n{e}')
 
         # Set the max tokens in an LM-specific way if not set
         if self.config.max_input_tokens is None:
@@ -122,76 +124,46 @@ class LLM(RetryMixin, DebugMixin):
         if self.is_caching_prompt_active():
             logger.debug('LLM: caching prompt enabled')
 
-        # Create config_dict with only compatible keys
-        config_dict = self.config.get_litellm_compatible_dict()
+        router_config: dict[str, Any] | None = None
 
-        # Handle max_tokens parameter
-        if 'max_output_tokens' in config_dict:
-            config_dict['max_tokens'] = config_dict.pop('max_output_tokens')
-
-        if self.config.router_models:
-            valid_router_args = {
-                'model_list',
-                'assistants_config',
-                'redis_url',
-                'redis_host',
-                'redis_port',
-                'redis_password',
-                'cache_responses',
-                'cache_kwargs',
-                'caching_groups',
-                'client_ttl',
-                'polling_interval',
-                'default_priority',
-                'num_retries',
-                'timeout',
-                'default_litellm_params',
-                'default_max_parallel_requests',
-                'set_verbose',
-                'debug_level',
-                'default_fallbacks',
-                'fallbacks',
-                'context_window_fallbacks',
-                'content_policy_fallbacks',
-                'model_group_alias',
-                'enable_pre_call_checks',
-                'enable_tag_filtering',
-                'retry_after',
-                'retry_policy',
-                'model_group_retry_policy',
-                'allowed_fails',
-                'allowed_fails_policy',
-                'cooldown_time',
-                'disable_cooldowns',
-                'routing_strategy',
-                'routing_strategy_args',
-                'semaphore',
-                'alerting_config',
-                'router_general_settings',
-            }
-
-            merged_router_options = {**self.config.router_options, **config_dict}
-
+        # Set up router configuration
+        if self.config.router_config and self.config.router_config.models:
+            model_list = [
+                {
+                    'model_name': model.model_name,
+                    'litellm_params': model.litellm_params,
+                }
+                for model in self.config.router_config.models
+            ]
             router_config = {
-                key: value
-                for key, value in {
-                    'model_list': self.config.router_models,
-                    'routing_strategy': self.config.router_routing_strategy,
-                    'num_retries': self.config.router_num_retries,
-                    'cooldown_time': self.config.router_cooldown_time,
-                    'allowed_fails': self.config.router_allowed_fails,
-                    'cache_responses': self.config.router_cache_responses,
-                    'cache_kwargs': self.config.router_cache_kwargs,
-                    'set_verbose': self.config.router_options.get('set_verbose', False),
-                    'debug_level': self.config.router_options.get('debug_level', 0),
-                    **merged_router_options,
-                }.items()
-                if key in valid_router_args
+                'model_list': model_list,
+                'routing_strategy': self.config.router_config.routing_strategy,
+                'num_retries': self.config.router_config.num_retries,
+                'cooldown_time': self.config.router_config.cooldown_time,
+                'allowed_fails': self.config.router_config.allowed_fails,
+                'cache_responses': self.config.router_config.cache_responses,
+                'cache_kwargs': self.config.router_config.cache_kwargs,
+                'retry_policy': self.config.router_config.retry_policy,
+                'default_fallbacks': self.config.router_config.default_fallbacks,
             }
             self.router = litellm.Router(**router_config)
-            completion_func = self._router_completion_with_fallback
+            completion_func = self.router.completion
         else:
-            completion_func = partial(litellm_completion, **config_dict)
+            # If no router models are specified, use the default model config
+            self._completion = partial(
+                litellm_completion,
+                model=self.config.model,
+                api_key=self.config.api_key,
+                base_url=self.config.base_url,
+                api_version=self.config.api_version,
+                custom_llm_provider=self.config.custom_llm_provider,
+                max_tokens=self.config.max_output_tokens,
+                timeout=self.config.timeout,
+                temperature=self.config.temperature,
+                top_p=self.config.top_p,
+                drop_params=self.config.drop_params,
+            )
+            completion_unwrapped = self._completion
 
         def wrapper(*args, **kwargs):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
@@ -205,6 +177,9 @@ class LLM(RetryMixin, DebugMixin):
                 # implementation wise: the partial function set the model as a kwarg already
                 # as well as other kwargs
                 messages = args[1] if len(args) > 1 else args[0]
+
+                # Only add messages to kwargs if it's not already there
+                # if 'messages' not in kwargs:
                 kwargs['messages'] = messages
 
                 # remove the first args, they're sent in kwargs
@@ -233,7 +208,12 @@ class LLM(RetryMixin, DebugMixin):
 
             # Call the completion function (either router.completion or litellm_completion)
             # we don't support streaming here, thus we get a ModelResponse
-            resp: ModelResponse = completion_func(*args, **kwargs)
+            if self.router and self.config.router_config:
+                default_model = self.config.router_config.models[0].model_name
+                model = kwargs.pop('model', default_model)
+                resp: ModelResponse = completion_func(model, **kwargs)
+            else:
+                resp = completion_unwrapped(*args, **kwargs)
 
             # log for evals or other scripts that need the raw completion
             if self.config.log_completions:
@@ -256,8 +236,7 @@ class LLM(RetryMixin, DebugMixin):
 
             return resp
 
-        # Apply retry decorator only if not using router
-        if not self.config.router_models:
+        if not (self.config.router_config and self.config.router_config.models):
             wrapper = self.retry_decorator(
                 num_retries=self.config.num_retries,
                 retry_exceptions=LLM_RETRY_EXCEPTIONS,
@@ -266,23 +245,7 @@ class LLM(RetryMixin, DebugMixin):
                 retry_multiplier=self.config.retry_multiplier,
             )(wrapper)
 
-        self._completion = wrapper
-
-    def _router_completion_with_fallback(self, *args, **kwargs):
-        # If 'model' is not in kwargs, add the default model
-        # if 'model' not in kwargs:
-        #     kwargs['model'] = self.config.model
-        try:
-            return self.router.completion(*args, **kwargs)
-        except Exception as e:
-            logger.warning(
-                f'Router completion failed: {e}. Falling back to default model.'
-            )
-            # Use the model from kwargs if available, otherwise use a default model
-            fallback_model = kwargs.get('model') or self.config.model
-            # Ensure 'model' is in kwargs for litellm_completion
-            kwargs['model'] = fallback_model
-            return litellm_completion(*args, **kwargs)
+        self._completion = partial(wrapper)
 
     @property
     def completion(self):
