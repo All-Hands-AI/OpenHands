@@ -325,8 +325,8 @@ class RuntimeClient:
             _exit_code_output = self.shell.before
             try:
                 exit_code = int(_exit_code_output.strip().split()[0])
-            except:
-                logger.error('Error getting exit code from bash script')
+            except Exception as e:
+                logger.error(f'Error getting exit code from bash script: {e}')
                 # If we try to run an invalid shell script the output sometimes includes error text
                 # rather than the error code - we assume this is an error
                 exit_code = 2
@@ -432,7 +432,9 @@ class RuntimeClient:
         # NOTE: this is part of initialization, so we hard code the timeout
         result, exit_code = self._execute_bash('pwd', timeout=60, keep_prompt=False)
         if exit_code != 0:
-            raise RuntimeError('Failed to get working directory')
+            raise RuntimeError(
+                f'Failed to get working directory (exit code: {exit_code}): {result}'
+            )
         return result.strip()
 
     def _resolve_path(self, path: str, working_dir: str) -> str:
@@ -628,7 +630,9 @@ if __name__ == '__main__':
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
-            logger.error(f'Error processing command: {str(e)}', exc_info=True, stack_info=True)
+            logger.error(
+                f'Error processing command: {str(e)}', exc_info=True, stack_info=True
+            )
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post('/upload_file')
