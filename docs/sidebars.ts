@@ -38,29 +38,35 @@ const sidebars: SidebarsConfig = {
               id: 'usage/llms/llms',
             },
             {
-              type: 'doc',
-              label: 'Azure',
-              id: 'usage/llms/azure-llms',
-            },
-            {
-              type: 'doc',
-              label: 'Google',
-              id: 'usage/llms/google-llms',
-            },
-            {
-              type: 'doc',
-              label: 'Groq',
-              id: 'usage/llms/groq',
-            },
-            {
-              type: 'doc',
-              label: 'OpenAI',
-              id: 'usage/llms/openai-llms',
-            },
-            {
-              type: 'doc',
-              label: 'OpenRouter',
-              id: 'usage/llms/openrouter',
+              type: 'category',
+              label: 'Providers',
+              items: [
+                {
+                  type: 'doc',
+                  label: 'Azure',
+                  id: 'usage/llms/azure-llms',
+                },
+                {
+                  type: 'doc',
+                  label: 'Google',
+                  id: 'usage/llms/google-llms',
+                },
+                {
+                  type: 'doc',
+                  label: 'Groq',
+                  id: 'usage/llms/groq',
+                },
+                {
+                  type: 'doc',
+                  label: 'OpenAI',
+                  id: 'usage/llms/openai-llms',
+                },
+                {
+                  type: 'doc',
+                  label: 'OpenRouter',
+                  id: 'usage/llms/openrouter',
+                },
+              ],
             },
           ],
         },
