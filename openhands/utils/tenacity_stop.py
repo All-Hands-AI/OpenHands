@@ -1,7 +1,6 @@
-
-
 from tenacity import RetryCallState
 from tenacity.stop import stop_base
+
 from openhands.runtime.utils.shutdown_listener import should_exit
 
 
