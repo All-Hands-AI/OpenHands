@@ -10,43 +10,75 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'LLMs',
+      label: 'Usage Methods',
       items: [
         {
           type: 'doc',
-          label: 'Overview',
-          id: 'usage/llms/llms',
+          label: 'CLI Mode',
+          id: 'usage/how-to/cli-mode',
         },
         {
+          type: 'doc',
+          label: 'Headless Mode',
+          id: 'usage/how-to/headless-mode',
+        },
+        {
+          type: 'doc',
+          label: 'Github Actions',
+          id: 'usage/how-to/github-action',
+        },
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Advanced Configuration',
+      items: [
+        {
           type: 'category',
-          label: 'Providers',
+          label: 'LLM Configuration',
           items: [
             {
               type: 'doc',
-              label: 'Azure',
-              id: 'usage/llms/azure-llms',
+              label: 'Overview',
+              id: 'usage/llms/llms',
             },
             {
-              type: 'doc',
-              label: 'Google',
-              id: 'usage/llms/google-llms',
-            },
-            {
-              type: 'doc',
-              label: 'Groq',
-              id: 'usage/llms/groq',
-            },
-            {
-              type: 'doc',
-              label: 'OpenAI',
-              id: 'usage/llms/openai-llms',
-            },
-            {
-              type: 'doc',
-              label: 'OpenRouter',
-              id: 'usage/llms/openrouter',
+              type: 'category',
+              label: 'Providers',
+              items: [
+                {
+                  type: 'doc',
+                  label: 'Azure',
+                  id: 'usage/llms/azure-llms',
+                },
+                {
+                  type: 'doc',
+                  label: 'Google',
+                  id: 'usage/llms/google-llms',
+                },
+                {
+                  type: 'doc',
+                  label: 'Groq',
+                  id: 'usage/llms/groq',
+                },
+                {
+                  type: 'doc',
+                  label: 'OpenAI',
+                  id: 'usage/llms/openai-llms',
+                },
+                {
+                  type: 'doc',
+                  label: 'OpenRouter',
+                  id: 'usage/llms/openrouter',
+                },
+              ],
             },
           ],
+        },
+        {
+          type: 'doc',
+          label: 'Custom Sandbox',
+          id: 'usage/how-to/custom-sandbox-guide',
         },
       ],
     },
@@ -62,48 +94,39 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'How-to Guides',
+      label: 'For OpenHands Developers',
       items: [
         {
-          type: 'doc',
-          id: 'usage/how-to/cli-mode',
+          type: 'category',
+          label: 'Architecture',
+          items: [
+            {
+              type: 'doc',
+              label: 'Backend',
+              id: 'usage/architecture/backend',
+            },
+            {
+              type: 'doc',
+              label: 'Runtime',
+              id: 'usage/architecture/runtime',
+            },
+          ],
         },
         {
           type: 'doc',
-          id: 'usage/how-to/headless-mode',
+          label: 'Debugging',
+          id: 'usage/how-to/debugging',
         },
         {
           type: 'doc',
-          id: 'usage/how-to/custom-sandbox-guide',
-        },
-        {
-          type: 'doc',
+          label: 'Evaluation',
           id: 'usage/how-to/evaluation-harness',
         },
         {
           type: 'doc',
+          label: 'Kubernetes Deployment',
           id: 'usage/how-to/openshift-example',
         },
-        {
-          type: 'doc',
-          id: 'usage/how-to/debugging',
-        }
-      ]
-    },
-    {
-      type: 'category',
-      label: 'Architecture',
-      items: [
-        {
-          type: 'doc',
-          label: 'Backend',
-          id: 'usage/architecture/backend',
-        },
-        {
-          type: 'doc',
-          label: 'Runtime',
-          id: 'usage/architecture/runtime',
-        }
       ],
     },
     {

@@ -59,13 +59,6 @@ class RemoteRuntime(Runtime):
         status_message_callback: Optional[Callable] = None,
     ):
         self.config = config
-        if self.config.sandbox.api_hostname == 'localhost':
-            self.config.sandbox.api_hostname = 'api.all-hands.dev/v0/runtime'
-            logger.info(
-                'Using localhost as the API hostname is not supported in the RemoteRuntime. Please set a proper hostname.\n'
-                'Setting it to default value: api.all-hands.dev/v0/runtime'
-            )
-        self.api_url = f'https://{self.config.sandbox.api_hostname.rstrip("/")}'
 
         if self.config.sandbox.api_key is None:
             raise ValueError(
@@ -82,7 +75,7 @@ class RemoteRuntime(Runtime):
             )
 
         self.runtime_builder = RemoteRuntimeBuilder(
-            self.api_url, self.config.sandbox.api_key
+            self.config.sandbox.remote_runtime_api_url, self.config.sandbox.api_key
         )
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
@@ -90,44 +83,53 @@ class RemoteRuntime(Runtime):
         self.instance_id = (
             sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
-        if self.config.sandbox.runtime_container_image is not None:
-            raise ValueError(
-                'Setting runtime_container_image is not supported in the remote runtime.'
-            )
-        self.container_image: str = self.config.sandbox.base_container_image
         self.container_name = 'oh-remote-runtime-' + self.instance_id
-        logger.debug(f'RemoteRuntime `{sid}` config:\n{self.config}')
-        response = send_request(self.session, 'GET', f'{self.api_url}/registry_prefix')
-        response_json = response.json()
-        registry_prefix = response_json['registry_prefix']
-        os.environ['OH_RUNTIME_RUNTIME_IMAGE_REPO'] = (
-            registry_prefix.rstrip('/') + '/runtime'
-        )
-        logger.info(
-            f'Runtime image repo: {os.environ["OH_RUNTIME_RUNTIME_IMAGE_REPO"]}'
-        )
-
-        if self.config.sandbox.runtime_extra_deps:
+        if self.config.sandbox.runtime_container_image is not None:
             logger.info(
-                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
+                f'Running remote runtime with image: {self.config.sandbox.runtime_container_image}'
+            )
+            self.container_image = self.config.sandbox.runtime_container_image
+        else:
+            logger.info(
+                f'Building remote runtime with base image: {self.config.sandbox.base_container_image}'
+            )
+            logger.debug(f'RemoteRuntime `{sid}` config:\n{self.config}')
+            response = send_request(
+                self.session,
+                'GET',
+                f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
+            )
+            response_json = response.json()
+            registry_prefix = response_json['registry_prefix']
+            os.environ['OH_RUNTIME_RUNTIME_IMAGE_REPO'] = (
+                registry_prefix.rstrip('/') + '/runtime'
+            )
+            logger.info(
+                f'Runtime image repo: {os.environ["OH_RUNTIME_RUNTIME_IMAGE_REPO"]}'
             )
 
-        # Build the container image
-        self.container_image = build_runtime_image(
-            self.container_image,
-            self.runtime_builder,
-            extra_deps=self.config.sandbox.runtime_extra_deps,
-        )
+            if self.config.sandbox.runtime_extra_deps:
+                logger.info(
+                    f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
+                )
 
-        # Use the /image_exists endpoint to check if the image exists
-        response = send_request(
-            self.session,
-            'GET',
-            f'{self.api_url}/image_exists',
-            params={'image': self.container_image},
-        )
-        if response.status_code != 200 or not response.json()['exists']:
-            raise RuntimeError(f'Container image {self.container_image} does not exist')
+            # Build the container image
+            self.container_image = build_runtime_image(
+                self.config.sandbox.base_container_image,
+                self.runtime_builder,
+                extra_deps=self.config.sandbox.runtime_extra_deps,
+            )
+
+            response = send_request(
+                self.session,
+                'GET',
+                f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
+                params={'image': self.container_image},
+            )
+            if response.status_code != 200 or not response.json()['exists']:
+                raise RuntimeError(
+                    f'Container image {self.container_image} does not exist'
+                )
 
         # Prepare the request body for the /start endpoint
         plugin_arg = ''
@@ -157,7 +159,10 @@ class RemoteRuntime(Runtime):
 
         # Start the sandbox using the /start endpoint
         response = send_request(
-            self.session, 'POST', f'{self.api_url}/start', json=start_request
+            self.session,
+            'POST',
+            f'{self.config.sandbox.remote_runtime_api_url}/start',
+            json=start_request,
         )
         if response.status_code != 201:
             raise RuntimeError(f'Failed to start sandbox: {response.text}')
@@ -192,7 +197,7 @@ class RemoteRuntime(Runtime):
         reraise=True,
     )
     def _wait_until_alive(self):
-        logger.info('Waiting for sandbox to be alive...')
+        logger.info(f'Waiting for runtime to be alive at url: {self.runtime_url}')
         response = send_request(
             self.session,
             'GET',
@@ -215,7 +220,7 @@ class RemoteRuntime(Runtime):
                 response = send_request(
                     self.session,
                     'POST',
-                    f'{self.api_url}/stop',
+                    f'{self.config.sandbox.remote_runtime_api_url}/stop',
                     json={'runtime_id': self.runtime_id},
                 )
                 if response.status_code != 200:
