@@ -30,7 +30,9 @@ RUN mkdir -p /openhands && \
 
 # Install micromamba
 RUN mkdir -p /openhands/micromamba/bin && \
-    /bin/bash -c "PREFIX_LOCATION=/openhands/micromamba BIN_FOLDER=/openhands/micromamba/bin INIT_YES=no CONDA_FORGE_YES=yes $(curl -L https://micro.mamba.pm/install.sh)"
+    /bin/bash -c "PREFIX_LOCATION=/openhands/micromamba BIN_FOLDER=/openhands/micromamba/bin INIT_YES=no CONDA_FORGE_YES=yes $(curl -L https://micro.mamba.pm/install.sh)" && \
+    /openhands/micromamba/bin/micromamba config remove channels defaults && \
+    /openhands/micromamba/bin/micromamba config list
 
 # Create the openhands virtual environment and install poetry and python
 RUN /openhands/micromamba/bin/micromamba create -n openhands -y && \
