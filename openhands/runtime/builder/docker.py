@@ -110,6 +110,10 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             return_code = process.wait()
 
             if return_code != 0:
+                logger.error(
+                    f'Buildx command failed: {buildx_cmd}.\nStatus code: {return_code}\nSTDERR: {process.stderr}'
+                )
+
                 raise subprocess.CalledProcessError(
                     return_code,
                     process.args,
@@ -186,9 +190,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             return True
         except docker.errors.ImageNotFound:
             if not pull_from_repo:
-                logger.debug(
-                    f'Image {image_name} not found locally'
-                )
+                logger.debug(f'Image {image_name} not found locally')
                 return False
             try:
                 logger.debug(
