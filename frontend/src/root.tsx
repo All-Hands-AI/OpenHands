@@ -4,7 +4,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  json,
+  defer,
   useFetcher,
   useLoaderData,
   useLocation,
@@ -58,10 +58,6 @@ export const clientLoader = async () => {
   const token = localStorage.getItem("token");
   const ghToken = localStorage.getItem("ghToken");
 
-  const models = await getModels();
-  const agents = await getAgents();
-  const securityAnalyzers = await retrieveSecurityAnalyzers();
-
   let user: GitHubUser | GitHubErrorReponse | null = null;
   if (ghToken) user = await retrieveGitHubUser(ghToken);
 
@@ -74,13 +70,10 @@ export const clientLoader = async () => {
   const settings = getSettings();
   await i18n.changeLanguage(settings.LANGUAGE);
 
-  return json({
+  return defer({
     token,
     ghToken,
     user,
-    models,
-    agents,
-    securityAnalyzers,
     settingsIsUpdated,
     settings,
   });
@@ -90,15 +83,8 @@ export default function App() {
   const { stop, isConnected } = useSocket();
   const navigation = useNavigation();
   const location = useLocation();
-  const {
-    token,
-    user,
-    models,
-    agents,
-    securityAnalyzers,
-    settingsIsUpdated,
-    settings,
-  } = useLoaderData<typeof clientLoader>();
+  const { token, user, settingsIsUpdated, settings } =
+    useLoaderData<typeof clientLoader>();
   const loginFetcher = useFetcher({ key: "login" });
   const logoutFetcher = useFetcher({ key: "logout" });
   const endSessionFetcher = useFetcher({ key: "end-session" });
@@ -108,6 +94,30 @@ export default function App() {
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
   const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
     React.useState(false);
+  const [data, setData] = React.useState<{
+    models: string[];
+    agents: string[];
+    securityAnalyzers: string[];
+  }>({
+    models: [],
+    agents: [],
+    securityAnalyzers: [],
+  });
+
+  React.useEffect(() => {
+    // We fetch this here instead of the data loader because the server seems to block
+    // the retrieval when the session is closing -- preventing the screen from rendering until
+    // the fetch is complete
+    (async () => {
+      const [models, agents, securityAnalyzers] = await Promise.all([
+        getModels(),
+        getAgents(),
+        retrieveSecurityAnalyzers(),
+      ]);
+
+      setData({ models, agents, securityAnalyzers });
+    })();
+  }, []);
 
   React.useEffect(() => {
     // If the github token is invalid, open the account settings modal again
@@ -213,9 +223,9 @@ export default function App() {
               <SettingsForm
                 disabled={isConnected}
                 settings={settings}
-                models={models}
-                agents={agents}
-                securityAnalyzers={securityAnalyzers}
+                models={data.models}
+                agents={data.agents}
+                securityAnalyzers={data.securityAnalyzers}
                 onClose={() => setSettingsModalIsOpen(false)}
               />
             </div>
