@@ -251,7 +251,9 @@ def build_runtime_image(
 
     # Scenario 1: If we already have an image with the exact same hash, then it means the image is already built
     # with the exact same source code and Dockerfile, so we will reuse it. Building it is not required.
-    if not force_rebuild and runtime_builder.image_exists(hash_runtime_image_name, False):
+    if not force_rebuild and runtime_builder.image_exists(
+        hash_runtime_image_name, False
+    ):
         logger.info(
             f'Image [{hash_runtime_image_name}] already exists so we will reuse it.'
         )

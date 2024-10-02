@@ -8,7 +8,10 @@ import requests
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import RuntimeBuilder
 from openhands.runtime.utils.request import send_request
-from openhands.runtime.utils.shutdown_listener import should_exit, sleep_if_should_continue
+from openhands.runtime.utils.shutdown_listener import (
+    should_exit,
+    sleep_if_should_continue,
+)
 
 
 class RemoteRuntimeBuilder(RuntimeBuilder):
