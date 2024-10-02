@@ -90,7 +90,7 @@ function ChatMessage({
         </button>
       )}
       <Markdown
-        className="-space-y-2"
+        className="-space-y-3"
         components={{
           code,
           ul,
