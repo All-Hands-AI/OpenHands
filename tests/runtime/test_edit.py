@@ -2,7 +2,9 @@
 
 import os
 
+import pytest
 from conftest import (
+    TEST_IN_CI,
     _close_test_runtime,
     _load_runtime,
 )
@@ -10,10 +12,6 @@ from conftest import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import FileEditAction, FileReadAction
 from openhands.events.observation import FileEditObservation
-
-# ============================================================================================================================
-# Bash-specific tests
-# ============================================================================================================================
 
 ORGINAL = """from flask import Flask
 app = Flask(__name__)
@@ -28,6 +26,10 @@ if __name__ == '__main__':
 """
 
 
+@pytest.mark.skipif(
+    TEST_IN_CI != 'True',
+    reason='This test requires LLM to run.',
+)
 def test_edit_from_scratch(temp_dir, box_class, run_as_openhands):
     runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
     try:
@@ -64,6 +66,10 @@ def index():
 """
 
 
+@pytest.mark.skipif(
+    TEST_IN_CI != 'True',
+    reason='This test requires LLM to run.',
+)
 def test_edit(temp_dir, box_class, run_as_openhands):
     runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
     try:
