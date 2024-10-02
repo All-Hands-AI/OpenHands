@@ -113,8 +113,8 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 raise subprocess.CalledProcessError(
                     return_code,
                     process.args,
-                    output=None,
-                    stderr=None,
+                    output=process.stdout.read() if process.stdout else None,
+                    stderr=process.stderr.read() if process.stderr else None,
                 )
 
         except subprocess.CalledProcessError as e:
