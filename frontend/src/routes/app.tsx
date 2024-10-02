@@ -37,6 +37,7 @@ import { uploadFile } from "#/api/open-hands";
 import AgentState from "#/types/AgentState";
 import { base64ToBlob } from "#/utils/base64-to-blob";
 import { clientLoader as rootClientLoader } from "#/root";
+import { clearJupyter } from "#/state/jupyterSlice";
 
 const isAgentStateChange = (
   data: object,
@@ -207,6 +208,7 @@ function App() {
     // clear and restart the socket connection
     dispatch(clearMessages());
     dispatch(clearTerminal());
+    dispatch(clearJupyter());
     startSocketConnection();
   });
 
