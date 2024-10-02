@@ -123,6 +123,7 @@ def test_help_message(capsys):
         '--eval-ids EVAL_IDS',
         '-l LLM_CONFIG, --llm-config LLM_CONFIG',
         '-n NAME, --name NAME',
+        '--configfile CONFIGFILE',
     ]
 
     for element in expected_elements:
