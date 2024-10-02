@@ -622,7 +622,7 @@ if __name__ == '__main__':
     @app.middleware('http')
     async def authenticate_requests(request: Request, call_next):
         if request.url.path != '/alive':
-            await verify_api_key(request.headers.get('X-Session-API-Key'))
+            verify_api_key(request.headers.get('X-Session-API-Key'))
         response = await call_next(request)
         return response
 
