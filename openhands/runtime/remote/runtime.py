@@ -260,8 +260,7 @@ class RemoteRuntime(Runtime):
                     'POST',
                     f'{self.runtime_url}/execute_action',
                     json=request_body,
-                    # wait a few more seconds to get the timeout error from client side
-                    timeout=action.timeout + 5,
+                    timeout=action.timeout,
                     retry_exceptions=list(
                         filter(lambda e: e != TimeoutError, DEFAULT_RETRY_EXCEPTIONS)
                     ),
