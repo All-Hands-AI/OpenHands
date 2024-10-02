@@ -257,17 +257,19 @@ export function SettingsForm({
       </div>
 
       <div className="flex flex-col gap-2">
-        <ModalButton
-          disabled={disabled || fetcher.state === "submitting"}
-          type="submit"
-          text="Save"
-          className="bg-[#4465DB] w-full"
-        />
-        <ModalButton
-          text="Close"
-          className="bg-[#737373] w-full"
-          onClick={onClose}
-        />
+        <div className="flex gap-2">
+          <ModalButton
+            disabled={disabled || fetcher.state === "submitting"}
+            type="submit"
+            text="Save"
+            className="bg-[#4465DB] w-full"
+          />
+          <ModalButton
+            text="Close"
+            className="bg-[#737373] w-full"
+            onClick={onClose}
+          />
+        </div>
         <ModalButton
           disabled={disabled}
           text="Reset to defaults"
