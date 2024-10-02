@@ -193,10 +193,7 @@ ten actions--more happened before that.
     "action": "run",
     "args": {
       "command": "bash hello.sh",
-      "thought": "",
-      "blocking": false,
-      "keep_prompt": true,
-      "is_confirmed": "confirmed"
+      "thought": ""
     }
   },
   {
