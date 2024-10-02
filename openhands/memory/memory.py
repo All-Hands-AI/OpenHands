@@ -36,7 +36,10 @@ class LongTermMemory:
         """Initialize the chromadb and set up ChromaVectorStore for later use."""
 
         # initialize the chromadb client
-        db = chromadb.Client(chromadb.Settings(anonymized_telemetry=False))
+        db = chromadb.PersistentClient(
+            path=f'./cache/sessions/{event_stream.sid}/memory',
+            # anonymized_telemetry=False,
+        )
         self.collection = db.get_or_create_collection(name='memories')
         vector_store = ChromaVectorStore(chroma_collection=self.collection)
 
@@ -167,8 +170,11 @@ class LongTermMemory:
         if documents:
             logger.debug(f'Batch inserting {len(documents)} documents into the index.')
             # batch insert documents using llama-index's batch processing
+
             nodes = self.create_nodes(documents)
-            self.index.insert_nodes(nodes)
+            index_dict = self.index.build_index_from_nodes(nodes)
+            logger.debug(f'Index dict: {index_dict}')
+            # self.index.insert_nodes(nodes, show_progress=True)
         else:
             logger.debug('No valid documents found to insert into the index.')
 
