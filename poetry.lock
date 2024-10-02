@@ -571,17 +571,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.35.30"
+version = "1.35.31"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.35.30-py3-none-any.whl", hash = "sha256:d89c3459db89c5408e83219ab849ffd0146bc4285e75cdc67c6e45d390a12df2"},
-    {file = "boto3-1.35.30.tar.gz", hash = "sha256:d2851aec8e9dc6937977acbe9a5124ecc31b3ad5f50a10cd9ae52636da3f52fa"},
+    {file = "boto3-1.35.31-py3-none-any.whl", hash = "sha256:2e9af74d10d8af7610a8d8468d2914961f116912a024fce17351825260385a52"},
+    {file = "boto3-1.35.31.tar.gz", hash = "sha256:8c593af260c4ea3eb6f079c09908f94494ca2222aa4e40a7ff490fab1cee8b39"},
 ]
 
 [package.dependencies]
-botocore = ">=1.35.30,<1.36.0"
+botocore = ">=1.35.31,<1.36.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -590,13 +590,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.35.30"
+version = "1.35.31"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.35.30-py3-none-any.whl", hash = "sha256:3bb9f9dde001608671ea74681ac3cec06bbbb10cba8cb8c1387a25e843075ce0"},
-    {file = "botocore-1.35.30.tar.gz", hash = "sha256:ab5350e8a50e48d371fa2d517d65c29a40c43788cb9a15387f93eac5a23df0fd"},
+    {file = "botocore-1.35.31-py3-none-any.whl", hash = "sha256:4cee814875bc78656aef4011d3d6b2231e96f53ea3661ee428201afb579d5c31"},
+    {file = "botocore-1.35.31.tar.gz", hash = "sha256:f7bfa910cf2cbcc8c2307c1cf7b93495d614c2d699883417893e0a337fe4eb63"},
 ]
 
 [package.dependencies]
@@ -2240,13 +2240,13 @@ httplib2 = ">=0.19.0"
 
 [[package]]
 name = "google-cloud-aiplatform"
-version = "1.68.0"
+version = "1.69.0"
 description = "Vertex AI API client library"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "google-cloud-aiplatform-1.68.0.tar.gz", hash = "sha256:d74e9f33707c7a14c6a32a7cfe9acd32b90975dfba9fac487d105c8ba5197f40"},
-    {file = "google_cloud_aiplatform-1.68.0-py2.py3-none-any.whl", hash = "sha256:24dacc34457665ab6054bdf47e2475793dcf2d865b568420a909b452a477b3e6"},
+    {file = "google-cloud-aiplatform-1.69.0.tar.gz", hash = "sha256:08be3a4432fd87d9cc86db83ba626f988d13597197bc53c6808e1c4c65a25bb0"},
+    {file = "google_cloud_aiplatform-1.69.0-py2.py3-none-any.whl", hash = "sha256:6e21c29bf4506ed3bfb00cfe47ab1ad1788854b18f0ded2458016837c917e520"},
 ]
 
 [package.dependencies]
@@ -3762,13 +3762,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.48.7"
+version = "1.48.9"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.48.7-py3-none-any.whl", hash = "sha256:4971a9e681188635c2ee6dc44fe35bb2774586e9018682adcccdbb516b839c64"},
-    {file = "litellm-1.48.7.tar.gz", hash = "sha256:ff1fef7049e9afa09598f98d1e510a6d5f252ec65c0526b8bfaf13eadfcf65e5"},
+    {file = "litellm-1.48.9-py3-none-any.whl", hash = "sha256:9608f510e82c27b15bab7bcfab5e1308055f0c457e7881ccfff91c189bf2c055"},
+    {file = "litellm-1.48.9.tar.gz", hash = "sha256:02dd2f66fab24f388692694401bbabd34de5a62a16d064b3f15726a550a65cd3"},
 ]
 
 [package.dependencies]
@@ -5365,13 +5365,13 @@ sympy = "*"
 
 [[package]]
 name = "openai"
-version = "1.50.2"
+version = "1.51.0"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.50.2-py3-none-any.whl", hash = "sha256:822dd2051baa3393d0d5406990611975dd6f533020dc9375a34d4fe67e8b75f7"},
-    {file = "openai-1.50.2.tar.gz", hash = "sha256:3987ae027152fc8bea745d60b02c8f4c4a76e1b5c70e73565fa556db6f78c9e6"},
+    {file = "openai-1.51.0-py3-none-any.whl", hash = "sha256:d9affafb7e51e5a27dce78589d4964ce4d6f6d560307265933a94b2e3f3c5d2c"},
+    {file = "openai-1.51.0.tar.gz", hash = "sha256:8dc4f9d75ccdd5466fc8c99a952186eddceb9fd6ba694044773f3736a847149d"},
 ]
 
 [package.dependencies]
@@ -7120,13 +7120,13 @@ files = [
 
 [[package]]
 name = "reportlab"
-version = "4.2.4"
+version = "4.2.5"
 description = "The Reportlab Toolkit"
 optional = false
 python-versions = "<4,>=3.7"
 files = [
-    {file = "reportlab-4.2.4-py3-none-any.whl", hash = "sha256:6e4d86647b8bfd772f475a58f9b0dcba4b340b1969f0db36333089f6ca9ab362"},
-    {file = "reportlab-4.2.4.tar.gz", hash = "sha256:a00b57292e156a7bda84edf31d60c25578153076c8fb96331d0c59eddda052c8"},
+    {file = "reportlab-4.2.5-py3-none-any.whl", hash = "sha256:eb2745525a982d9880babb991619e97ac3f661fae30571b7d50387026ca765ee"},
+    {file = "reportlab-4.2.5.tar.gz", hash = "sha256:5cf35b8fd609b68080ac7bbb0ae1e376104f7d5f7b2d3914c7adc63f2593941f"},
 ]
 
 [package.dependencies]
@@ -8012,13 +8012,13 @@ full = ["httpx (>=0.22.0)", "itsdangerous", "jinja2", "python-multipart (>=0.0.7
 
 [[package]]
 name = "streamlit"
-version = "1.38.0"
+version = "1.39.0"
 description = "A faster way to build and share data apps"
 optional = false
 python-versions = "!=3.9.7,>=3.8"
 files = [
-    {file = "streamlit-1.38.0-py2.py3-none-any.whl", hash = "sha256:0653ecfe86fef0f1608e3e082aef7eb335d8713f6f31e9c3b19486d1c67d7c41"},
-    {file = "streamlit-1.38.0.tar.gz", hash = "sha256:c4bf36b3ef871499ed4594574834583113f93f077dd3035d516d295786f2ad63"},
+    {file = "streamlit-1.39.0-py2.py3-none-any.whl", hash = "sha256:a359fc54ed568b35b055ff1d453c320735539ad12e264365a36458aef55a5fba"},
+    {file = "streamlit-1.39.0.tar.gz", hash = "sha256:fef9de7983c4ee65c08e85607d7ffccb56b00482b1041fa62f90e4815d39df3a"},
 ]
 
 [package.dependencies]
@@ -8029,18 +8029,18 @@ click = ">=7.0,<9"
 gitpython = ">=3.0.7,<3.1.19 || >3.1.19,<4"
 numpy = ">=1.20,<3"
 packaging = ">=20,<25"
-pandas = ">=1.3.0,<3"
+pandas = ">=1.4.0,<3"
 pillow = ">=7.1.0,<11"
 protobuf = ">=3.20,<6"
 pyarrow = ">=7.0"
 pydeck = ">=0.8.0b4,<1"
 requests = ">=2.27,<3"
 rich = ">=10.14.0,<14"
-tenacity = ">=8.1.0,<9"
+tenacity = ">=8.1.0,<10"
 toml = ">=0.10.1,<2"
 tornado = ">=6.0.3,<7"
 typing-extensions = ">=4.3.0,<5"
-watchdog = {version = ">=2.1.5,<5", markers = "platform_system != \"Darwin\""}
+watchdog = {version = ">=2.1.5,<6", markers = "platform_system != \"Darwin\""}
 
 [package.extras]
 snowflake = ["snowflake-connector-python (>=2.8.0)", "snowflake-snowpark-python[modin] (>=1.17.0)"]
