@@ -168,6 +168,7 @@ class EventStreamRuntime(Runtime):
                 self.base_container_image,
                 self.runtime_builder,
                 extra_deps=self.config.sandbox.runtime_extra_deps,
+                force_rebuild=self.config.sandbox.force_rebuild_runtime,
             )
         self.container = self._init_container(
             sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,  # e.g. /workspace

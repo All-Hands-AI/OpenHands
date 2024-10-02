@@ -155,7 +155,7 @@ def test_generate_dockerfile_scratch():
     )
     assert base_image in dockerfile_content
     assert 'apt-get update' in dockerfile_content
-    assert 'apt-get install -y wget sudo apt-utils' in dockerfile_content
+    assert 'apt-get install -y wget curl sudo apt-utils' in dockerfile_content
     assert 'poetry' in dockerfile_content and '-c conda-forge' in dockerfile_content
     assert 'python=3.11' in dockerfile_content
 
@@ -347,7 +347,7 @@ def live_docker_image():
     dockerfile_content = f"""
     # syntax=docker/dockerfile:1.4
     FROM {DEFAULT_BASE_IMAGE} AS base
-    RUN apt-get update && apt-get install -y wget sudo apt-utils
+    RUN apt-get update && apt-get install -y wget curl sudo apt-utils
 
     FROM base AS intermediate
     RUN mkdir -p /openhands
