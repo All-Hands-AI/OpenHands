@@ -418,8 +418,7 @@ class EventStreamRuntime(Runtime):
                 response = self.session.post(
                     f'{self.api_url}/execute_action',
                     json={'action': event_to_dict(action)},
-                    # wait a few more seconds to get the timeout error from client side
-                    timeout=action.timeout + 5,
+                    timeout=action.timeout,
                 )
                 if response.status_code == 200:
                     output = response.json()
