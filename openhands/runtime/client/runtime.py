@@ -429,13 +429,15 @@ class EventStreamRuntime(Runtime):
                     logger.debug(f'response: {response}')
                     error_message = response.text
                     logger.error(f'Error from server: {error_message}')
-                    obs = ErrorObservation(f'Command execution failed: {error_message}')
+                    obs = ErrorObservation(f'Action execution failed: {error_message}')
             except requests.Timeout:
                 logger.error('No response received within the timeout period.')
-                obs = ErrorObservation('Command execution timed out')
+                obs = ErrorObservation(
+                    f'Action execution timed out after {action.timeout} seconds.'
+                )
             except Exception as e:
-                logger.error(f'Error during command execution: {e}')
-                obs = ErrorObservation(f'Command execution failed: {str(e)}')
+                logger.error(f'Error during action execution: {e}')
+                obs = ErrorObservation(f'Action execution failed: {str(e)}')
             self._refresh_logs()
             return obs
 
