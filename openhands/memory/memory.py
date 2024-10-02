@@ -1,6 +1,5 @@
 import json
-
-import chromadb
+import time
 
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
@@ -10,8 +9,17 @@ from openhands.memory.embeddings import check_llama_index
 
 # use a small utility function to avoid importing large dependencies when not needed
 if check_llama_index():
+    import chromadb
+
+    # FIXME: hack to avoid CUDA error
+    import torch
     from llama_index.core import Document
-    from llama_index.core.schema import TextNode  # Imported TextNode
+    from llama_index.core.ingestion import IngestionPipeline
+    from llama_index.core.schema import TextNode
+
+    torch.device('cpu')
+    torch.set_default_device('cpu')
+    torch.set_default_dtype(torch.float32)
 
     from openhands.memory.embeddings import (
         ChromaVectorStore,
@@ -38,23 +46,26 @@ class LongTermMemory:
         # initialize the chromadb client
         db = chromadb.PersistentClient(
             path=f'./cache/sessions/{event_stream.sid}/memory',
-            # anonymized_telemetry=False,
+            # FIXME anonymized_telemetry=False,
         )
         self.collection = db.get_or_create_collection(name='memories')
         vector_store = ChromaVectorStore(chroma_collection=self.collection)
 
         # embedding model
         embedding_strategy = llm_config.embedding_model
-        embed_model = EmbeddingsLoader.get_embedding_model(
+        self.embed_model = EmbeddingsLoader.get_embedding_model(
             embedding_strategy, llm_config
         )
 
         # instantiate the index
-        self.index = VectorStoreIndex.from_vector_store(vector_store, embed_model)
+        self.index = VectorStoreIndex.from_vector_store(vector_store, self.embed_model)
         self.thought_idx = 0
 
         # initialize the event stream
         self.event_stream = event_stream
+
+        # max of threads to run the pipeline
+        self.memory_max_threads = memory_max_threads
 
         # load existing events into the index
         self.load_events_into_index()
@@ -171,13 +182,40 @@ class LongTermMemory:
             logger.debug(f'Batch inserting {len(documents)} documents into the index.')
             # batch insert documents using llama-index's batch processing
 
-            nodes = self.create_nodes(documents)
-            index_dict = self.index.build_index_from_nodes(nodes)
-            logger.debug(f'Index dict: {index_dict}')
-            # self.index.insert_nodes(nodes, show_progress=True)
+            # nodes = self.create_nodes(documents)
+
+            # set up a pipeline with transformations to make
+            pipeline = IngestionPipeline(
+                transformations=[
+                    self.embed_model,
+                ],
+            )
+
+            # TODO: we probably want this False
+            pipeline.disable_cache = True
+
+            start = time.time()
+            nodes = pipeline.run(
+                documents=documents,
+                show_progress=True,
+                num_workers=self.memory_max_threads,
+            )
+            end = time.time()
+            print(f'---------Time: {end - start}---------')
+            print(f'---------Nodes: {len(nodes)}---------')
+
         else:
             logger.debug('No valid documents found to insert into the index.')
 
     def create_nodes(self, documents: list[Document]) -> list[TextNode]:
         """Create nodes from a list of documents."""
         return [self._create_node(doc) for doc in documents]
+
+    def _run_pipeline(
+        self, pipeline: IngestionPipeline, documents: list[Document]
+    ) -> list[TextNode]:
+        """Create nodes from a list of documents."""
+        time.sleep(0.01)
+        return pipeline.run(
+            documents=documents, show_progress=True, num_workers=self.memory_max_threads
+        )
