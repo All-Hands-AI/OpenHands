@@ -50,7 +50,7 @@ def send_request(
         for fn in retry_fns:
             retry_condition |= retry_if_exception(fn)
     # wait a few more seconds to get the timeout error from client side
-    kwargs['timeout'] = timeout + 5
+    kwargs['timeout'] = timeout + 10
 
     @retry(
         stop=stop_after_delay(timeout) | stop_if_should_exit(),
