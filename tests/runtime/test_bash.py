@@ -121,6 +121,24 @@ def test_bash_pexcept_eof(temp_dir, box_class, run_as_openhands):
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == 0
         assert '/workspace' in obs.content
+
+        # run it again!
+        action = CmdRunAction(command='python3 -m http.server 8080')
+        action.timeout = 1
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 130  # script was killed by SIGINT
+        assert 'Serving HTTP on 0.0.0.0 port 8080' in obs.content
+        assert 'Keyboard interrupt received, exiting.' in obs.content
+
+        # things should still work
+        action = CmdRunAction(command='ls')
+        action.timeout = 1
+        obs = runtime.run_action(action)
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0
+        assert '/workspace' in obs.content
     finally:
         _close_test_runtime(runtime)
 
