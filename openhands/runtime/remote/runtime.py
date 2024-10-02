@@ -144,7 +144,7 @@ class RemoteRuntime(Runtime):
             'image': self.container_image,
             'command': (
                 f'/openhands/micromamba/bin/micromamba run -n openhands '
-                'PYTHONUNBUFFERED=1 poetry run '
+                'poetry run '
                 f'python -u -m openhands.runtime.client.client {self.port} '
                 f'--working-dir {self.config.workspace_mount_path_in_sandbox} '
                 f'{plugin_arg}'
