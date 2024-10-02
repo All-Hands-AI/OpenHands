@@ -30,6 +30,25 @@ const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
 const redirectUri = "http://localhost:3001/oauth/github/callback";
 const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user`;
 
+interface AttachedFilesSliderProps {
+  files: string[];
+  onRemove: (file: string) => void;
+}
+
+function AttachedFilesSlider({ files, onRemove }: AttachedFilesSliderProps) {
+  return (
+    <div className="flex gap-2 overflow-auto">
+      {files.map((file, index) => (
+        <UploadedFilePreview
+          key={index}
+          file={file}
+          onRemove={() => onRemove(file)}
+        />
+      ))}
+    </div>
+  );
+}
+
 interface GitHubAuthProps {
   onConnectToGitHub: () => void;
   repositories: GitHubRepository[];
@@ -113,18 +132,13 @@ function Home() {
       <HeroHeading />
       <div className="flex flex-col gap-16 w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
-          {files.length > 0 && (
-            <div className="flex gap-2 overflow-auto">
-              {files.map((file, index) => (
-                <UploadedFilePreview
-                  key={index}
-                  file={file}
-                  onRemove={() => dispatch(removeFile(file))}
-                />
-              ))}
-            </div>
-          )}
           <TaskForm importedProjectZip={importedFile} />
+          {files.length > 0 && (
+            <AttachedFilesSlider
+              files={files}
+              onRemove={(file) => dispatch(removeFile(file))}
+            />
+          )}
         </div>
         <div className="flex gap-4 w-full">
           <SuggestionBox
