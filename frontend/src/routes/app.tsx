@@ -141,9 +141,11 @@ function App() {
     dispatch(appendInput(command.replace(gitHubToken, "***")));
   };
 
-  const sendInitialQuery = (query: string, base64Files: string[]) => {
-    const timestamp = new Date().toISOString();
-    send(createChatMessage(query, base64Files, timestamp));
+  const addIntialQueryToChat = (
+    query: string,
+    base64Files: string[],
+    timestamp = new Date().toISOString(),
+  ) => {
     dispatch(
       addUserMessage({
         content: query,
@@ -153,12 +155,20 @@ function App() {
     );
   };
 
+  const sendInitialQuery = (query: string, base64Files: string[]) => {
+    const timestamp = new Date().toISOString();
+    send(createChatMessage(query, base64Files, timestamp));
+  };
+
   const handleOpen = React.useCallback(() => {
     const initEvent = {
       action: ActionType.INIT,
       args: settings,
     };
     send(JSON.stringify(initEvent));
+
+    // display query in UI, but don't send it to the server
+    if (q) addIntialQueryToChat(q, files);
   }, [settings]);
 
   const handleMessage = React.useCallback(
