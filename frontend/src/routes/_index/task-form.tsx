@@ -177,7 +177,7 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
             <button
               type="submit"
               aria-label="Submit"
-              className="absolute right-4 top-1/2 transform -translate-y-1/2"
+              className="absolute right-4 top-4"
               disabled={navigation.state === "loading"}
             >
               <Send width={24} height={24} />
