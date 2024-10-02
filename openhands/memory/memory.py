@@ -11,6 +11,7 @@ from tenacity import (
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.utils import json
+from openhands.utils.tenacity_stop import stop_if_should_exit
 
 try:
     import chromadb
@@ -50,7 +51,7 @@ if LLAMA_INDEX_AVAILABLE:
 
     @retry(
         reraise=True,
-        stop=stop_after_attempt(num_retries),
+        stop=stop_after_attempt(num_retries) | stop_if_should_exit(),
         wait=wait_random_exponential(min=retry_min_wait, max=retry_max_wait),
         retry=retry_if_exception_type(
             (RateLimitError, APIConnectionError, InternalServerError)

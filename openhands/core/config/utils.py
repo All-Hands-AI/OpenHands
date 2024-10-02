@@ -282,6 +282,12 @@ def get_parser() -> argparse.ArgumentParser:
     """Get the parser for the command line arguments."""
     parser = argparse.ArgumentParser(description='Run an agent with a specific task')
     parser.add_argument(
+        '--config-file',
+        type=str,
+        default='config.toml',
+        help='Path to the config file (default: config.toml in the current directory)',
+    )
+    parser.add_argument(
         '-d',
         '--directory',
         type=str,
@@ -375,14 +381,17 @@ def parse_arguments() -> argparse.Namespace:
     return parsed_args
 
 
-def load_app_config(set_logging_levels: bool = True) -> AppConfig:
-    """Load the configuration from the config.toml file and environment variables.
+def load_app_config(
+    set_logging_levels: bool = True, config_file: str = 'config.toml'
+) -> AppConfig:
+    """Load the configuration from the specified config file and environment variables.
 
     Args:
         set_logger_levels: Whether to set the global variables for logging levels.
+        config_file: Path to the config file. Defaults to 'config.toml' in the current directory.
     """
     config = AppConfig()
-    load_from_toml(config)
+    load_from_toml(config, config_file)
     load_from_env(config, os.environ)
     finalize_config(config)
     if set_logging_levels:
