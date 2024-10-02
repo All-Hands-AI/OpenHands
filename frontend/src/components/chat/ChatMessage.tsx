@@ -89,7 +89,17 @@ function ChatMessage({
           {isCopy ? <FaClipboardCheck /> : <FaClipboard />}
         </button>
       )}
-      <Markdown components={{ code }} remarkPlugins={[remarkGfm]}>
+      <Markdown
+        components={{
+          code,
+          ul: ({ children }) => (
+            <ul className="list-disc ml-5 pl-2 leading-4">{children}</ul>
+          ),
+          ol: ({ children }) => (
+            <ol className="list-decimal ml-5 pl-2 leading-4">{children}</ol>
+          ),
+        }}
+      >
         {message.content}
       </Markdown>
       {(message.imageUrls?.length ?? 0) > 0 && (
