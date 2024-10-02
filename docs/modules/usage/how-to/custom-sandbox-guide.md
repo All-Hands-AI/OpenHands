@@ -9,8 +9,8 @@ as python and Node.js but your use case may need additional software installed b
 
 There are two ways you can do so:
 
-1. Use an existing image from docker hub
-2. Creating your own custom docker image and using it
+1. Use an existing image from docker hub.
+2. Creating your own custom docker image and using it.
 
 If you want to take the first approach, you can skip the `Create Your Docker Image` section.
 
