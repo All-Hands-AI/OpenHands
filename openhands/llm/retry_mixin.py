@@ -8,6 +8,7 @@ from tenacity import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
+
 class RetryMixin:
     """Mixin class for retry logic."""
 
