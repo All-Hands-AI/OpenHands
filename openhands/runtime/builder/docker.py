@@ -36,14 +36,12 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         logger.info(f'Image [{target_image_hash_name}] build finished.')
 
-        assert (
-            target_image_tag
-        ), f'Expected target image tag [{target_image_tag}] is None'
-        image = self.docker_client.images.get(target_image_hash_name)
-        image.tag(target_image_repo, target_image_tag)
-        logger.info(
-            f'Re-tagged image [{target_image_hash_name}] with more generic tag [{target_image_tag}]'
-        )
+        if target_image_tag:
+            image = self.docker_client.images.get(target_image_hash_name)
+            image.tag(target_image_repo, target_image_tag)
+            logger.info(
+                f'Re-tagged image [{target_image_hash_name}] with more generic tag [{target_image_tag}]'
+            )
 
         # Check if the image is built successfully
         image = self.docker_client.images.get(target_image_hash_name)
