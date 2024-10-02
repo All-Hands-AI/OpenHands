@@ -33,7 +33,8 @@ if __name__ == '__main__':
             num_empty_patch += 1
             continue
 
-        resolved = _d.get('report', {}).get('resolved', False)
+        report = _d.get('report', {}) or {}
+        resolved = report.get('resolved', False)
         if resolved:
             num_resolved += 1
 
