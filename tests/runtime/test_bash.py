@@ -78,6 +78,26 @@ def test_bash_timeout_and_keyboard_interrupt(temp_dir, box_class, run_as_openhan
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == 0
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+        # run it again!
+        action = CmdRunAction(command='python -c "import time; time.sleep(10)"')
+        action.timeout = 1
+        obs = runtime.run_action(action)
+        assert isinstance(obs, CmdOutputObservation)
+        assert (
+            '[Command timed out after 1 seconds. SIGINT was sent to interrupt it.]'
+            in obs.content
+        )
+        assert 'KeyboardInterrupt' in obs.content
+
+        # things should still work
+        action = CmdRunAction(command='ls')
+        action.timeout = 1
+        obs = runtime.run_action(action)
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0
+        assert '/workspace' in obs.content
+
     finally:
         _close_test_runtime(runtime)
 
