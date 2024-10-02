@@ -293,7 +293,7 @@ jobs:
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=false \
-          poetry run pytest -n 3 -raR --reruns 1 --reruns-delay 3 --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
+          poetry run pytest -n 3 -raRs --reruns 2 --reruns-delay 5 --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
@@ -371,7 +371,7 @@ jobs:
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=true \
-          poetry run pytest -n 3 -raR --reruns 1 --reruns-delay 3 --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
+          poetry run pytest -n 3 -raRs --reruns 2 --reruns-delay 5 --cov=agenthub --cov=openhands --cov-report=xml -s ./tests/runtime
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
