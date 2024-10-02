@@ -228,7 +228,7 @@ if __name__ == '__main__':
     # Load the app config
     # this will load config from config.toml in the current directory
     # as well as from the environment variables
-    config = load_app_config(config_file=args.config)
+    config = load_app_config(config_file=args.configfile)
 
     # Override default LLM configs ([llm] section in config.toml)
     if args.llm_config:

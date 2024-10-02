@@ -282,7 +282,7 @@ def get_parser() -> argparse.ArgumentParser:
     """Get the parser for the command line arguments."""
     parser = argparse.ArgumentParser(description='Run an agent with a specific task')
     parser.add_argument(
-        '--config',
+        '--configfile',
         type=str,
         default='config.toml',
         help='Path to the config file (default: config.toml in the current directory)',
