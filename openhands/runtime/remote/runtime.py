@@ -41,6 +41,7 @@ from openhands.runtime.utils.request import (
     send_request,
 )
 from openhands.runtime.utils.runtime_build import build_runtime_image
+from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
 class RemoteRuntime(Runtime):
@@ -250,7 +251,8 @@ class RemoteRuntime(Runtime):
                     'POST',
                     f'{self.runtime_url}/execute_action',
                     json=request_body,
-                    timeout=action.timeout,
+                    # wait a few more seconds to get the timeout error from client side
+                    timeout=action.timeout + 5,
                     retry_exceptions=list(
                         filter(lambda e: e != TimeoutError, DEFAULT_RETRY_EXCEPTIONS)
                     ),
