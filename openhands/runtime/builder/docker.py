@@ -96,16 +96,27 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             process = subprocess.Popen(
                 buildx_cmd,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
+                stderr=subprocess.PIPE,
                 universal_newlines=True,
                 bufsize=1,
             )
 
-            if process.stdout:
-                for line in iter(process.stdout.readline, ''):
-                    line = line.strip()
+            # Read stdout and stderr concurrently
+            while True:
+                stdout_line = process.stdout.readline() if process.stdout else ''
+                stderr_line = process.stderr.readline() if process.stderr else ''
+
+                if not stdout_line and not stderr_line and process.poll() is not None:
+                    break
+
+                if stdout_line:
+                    line = stdout_line.strip()
                     if line:
                         self._output_logs(line)
+
+                if stderr_line:
+                    sys.stderr.write(stderr_line)
+                    sys.stderr.flush()
 
             return_code = process.wait()
 
@@ -120,6 +131,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         except subprocess.CalledProcessError as e:
             logger.error(f'Image build failed:\n{e}')
             logger.error(f'Command output:\n{e.output}')
+            if e.stderr:
+                sys.stderr.write(f'Error output:\n{e.stderr.decode()}\n')
+                sys.stderr.flush()
             raise
 
         except subprocess.TimeoutExpired:
