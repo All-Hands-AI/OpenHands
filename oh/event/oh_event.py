@@ -20,7 +20,6 @@ class OhEvent(Generic[T]):
     detail: T
     id: UUID = field(default_factory=uuid4)
     created_at: datetime = field(default_factory=datetime.now)
-    handled_at: Optional[datetime] = None
 
     def dump() -> str:
         # Dump this event to an external format.

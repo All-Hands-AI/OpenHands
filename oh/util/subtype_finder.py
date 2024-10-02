@@ -8,7 +8,7 @@ T = TypeVar("T")
 _LOGGER = logging.getLogger(__name__)
 
 
-def find_subtypes(base_type: T) -> Set[T]:
+def find_subtypes(base_type: Type[T]) -> Set[Type[T]]:
     subtype_modules = getattr(
         base_type,
         "__subtype_modules__",

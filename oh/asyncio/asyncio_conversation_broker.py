@@ -4,6 +4,7 @@ from itertools import count
 import logging
 from typing import Dict, Optional
 from uuid import UUID, uuid4
+from oh.agent.agent_config import AgentConfig
 from oh.asyncio.asyncio_conversation import AsyncioConversation
 from oh.event.detail.conversation_status_update import ConversationStatusUpdate
 from oh.conversation.conversation_abc import ConversationABC
@@ -37,7 +38,9 @@ class AsyncioConversationBroker(ConversationBrokerABC):
     async def remove_listener(self, listener_id: UUID) -> bool:
         return self.listeners.pop(listener_id) is not None
 
-    async def get_conversation(self, conversation_id: UUID) -> Optional[ConversationABC]:
+    async def get_conversation(
+        self, conversation_id: UUID
+    ) -> Optional[ConversationABC]:
         return self.conversations.get(conversation_id)
 
     async def search_conversations(
@@ -58,34 +61,51 @@ class AsyncioConversationBroker(ConversationBrokerABC):
         )
         return results
 
-    async def create_conversation(self) -> ConversationABC:
-        conversation = AsyncioConversation(workspace_path=self.workspace_path)
+    async def create_conversation(self, agent_config: AgentConfig) -> ConversationABC:
+        conversation = AsyncioConversation(workspace_path=self.workspace_path, agent_config=agent_config)
         self.conversations[conversation.id] = conversation
+        if self.listeners:
+            await asyncio.wait(
+                asyncio.create_task(listener.after_create_conversation(conversation))
+                for listener in self.listeners.values()
+            )
         asyncio.create_task(self._on_conversation_ready(conversation))
         _LOGGER.info(f"conversation_created:{conversation.id}")
         return conversation
 
     async def _on_conversation_ready(self, conversation: AsyncioConversation):
         conversation.status = ConversationStatus.READY
-        await conversation.trigger_event(ConversationStatusUpdate(conversation.id, conversation.status))
+        await conversation.trigger_event(
+            ConversationStatusUpdate(conversation.id, conversation.status)
+        )
 
-    async def destroy_conversation(self, conversation_id: UUID, grace_period: int = 10) -> bool:
+    async def destroy_conversation(
+        self, conversation_id: UUID, grace_period: int = 10
+    ) -> bool:
         conversation = self.conversations.pop(conversation_id)
         if not conversation or conversation.status in [
             ConversationStatus.DESTROYING,
             ConversationStatus.DESTROYED,
         ]:
             return False
-        await conversation.trigger_event(ConversationStatusUpdate(conversation.id, ConversationStatus.DESTROYING))
+        if self.listeners:
+            await asyncio.wait(
+                asyncio.create_task(listener.before_destroy_conversation(conversation))
+                for listener in self.listeners.values()
+            )
+        await conversation.trigger_event(
+            ConversationStatusUpdate(conversation.id, ConversationStatus.DESTROYING)
+        )
         await conversation.destroy(grace_period)
         return True
 
-
     async def shutdown(self, grace_period: int = 10):
-        _LOGGER.info('shutting_down')
+        _LOGGER.info("shutting_down")
         if self.conversations:
-            await asyncio.wait((
-                asyncio.create_task(conversation.destroy(grace_period))
-                for conversation in self.conversations.values()
-            ), timeout=grace_period)
-
+            await asyncio.wait(
+                (
+                    asyncio.create_task(conversation.destroy(grace_period))
+                    for conversation in self.conversations.values()
+                ),
+                timeout=grace_period,
+            )

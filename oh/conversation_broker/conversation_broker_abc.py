@@ -25,7 +25,9 @@ class ConversationBrokerABC(ABC):
         """Remove a listener for conversations"""
 
     @abstractmethod
-    async def get_conversation(self, conversation_id: UUID) -> Optional[ConversationABC]:
+    async def get_conversation(
+        self, conversation_id: UUID
+    ) -> Optional[ConversationABC]:
         """Given an id, get conversation info. Return None if the conversation could not be found."""
 
     @abstractmethod
@@ -45,12 +47,14 @@ class ConversationBrokerABC(ABC):
         """Begin the process of creating a conversation. Once the conversation is ready, it will fire a READY event"""
 
     @abstractmethod
-    async def destroy_conversation(self, conversation_id: UUID, grace_period: int = 10) -> bool:
+    async def destroy_conversation(
+        self, conversation_id: UUID, grace_period: int = 10
+    ) -> bool:
         """
         Begin the process of destroying a conversation. An attempt will be made to gracefully
         terminate any running tasks within the conversation.
         """
-    
+
     @abstractmethod
     async def shutdown(self, grace_period: int = 10):
-        """ Called when server is shutting down"""
+        """Called when server is shutting down"""

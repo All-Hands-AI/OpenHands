@@ -15,7 +15,5 @@ class OhTask:
     id: UUID = field(default_factory=uuid4)
     status: TaskStatus = TaskStatus.PENDING
     title: Optional[str] = None
-    code: Optional[str] = None
-    progress: Optional[float] = None
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)

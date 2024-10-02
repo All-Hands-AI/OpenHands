@@ -11,13 +11,13 @@ import mimetypes
 import os
 from pathlib import Path, PurePosixPath
 import shutil
-from typing import Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 from uuid import UUID, uuid4
 
+from oh.agent.agent_config import AgentConfig
 from oh.event.detail.event_detail_abc import EventDetailABC
 from oh.event.event_filter import EventFilter
 from oh.event.oh_event import OhEvent
-from oh.asyncio.asyncio_progress_listener import AsyncioProgressListener
 from oh.file.download import Download
 from oh.file.file_error import FileError
 from oh.file.file_filter import FileFilter
@@ -45,9 +45,9 @@ _LOGGER = logging.getLogger(__name__)
 @dataclass
 class AsyncioConversation(ConversationABC):
     workspace_path: Path
+    agent_config: AgentConfig
     id: UUID = field(default_factory=uuid4)
     status: ConversationStatus = ConversationStatus.CREATING
-    message: Optional[str] = None
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
     listeners: Dict[UUID, ConversationListenerABC] = field(default_factory=dict)
@@ -70,7 +70,7 @@ class AsyncioConversation(ConversationABC):
     async def trigger_event(self, detail: EventDetailABC):
         event = OhEvent(conversation_id=self.id, detail=detail)
         await self.event_storage.create(event)
-        _LOGGER.debug(f'conversation_event:{self.id}:{event}')
+        _LOGGER.debug(f"conversation_event:{self.id}:{event}")
         if self.listeners:
             await asyncio.wait(
                 [
@@ -104,36 +104,42 @@ class AsyncioConversation(ConversationABC):
         await self.task_storage.create(task)
         asyncio_task = asyncio.create_task(self._run_task(task, delay))
         self.asyncio_tasks[task.id] = asyncio_task
+        asyncio_task.add_done_callback(self._task_done(task.id))
         return task
+    
+    def _task_done(self, task_id: UUID) -> Callable:
+        def on_task_done(future: asyncio.Future):
+            asyncio.create_task(self._cleanup_task(task_id))
+        return on_task_done
+    
+    async def _cleanup_task(self, task_id: UUID):
+        asyncio_task = self.asyncio_tasks.pop(task_id, None)
+        task = await self.task_storage.read(task_id)
+        if asyncio_task.exception:
+            task.status = TaskStatus.ERROR 
+        elif asyncio_task.cancelled:
+            task.status = TaskStatus.CANCELLED
+        elif asyncio_task.done:
+            task.status = TaskStatus.COMPLETED
+        self.task_storage.update(task)
 
     async def run_task(
         self,
-        conversation_id: UUID,
         runnable: RunnableABC,
         title: Optional[str] = None,
         delay: float = 0,
     ):
         if self.status != ConversationStatus.READY:
             raise ConversationError(str(self.status))
-        task = await self.create_task(conversation_id, runnable, title, delay)
+        task = await self.create_task(runnable, title, delay)
         result = await self.asyncio_tasks[task.id]
         return result
 
     async def cancel_task(self, task_id: UUID) -> bool:
-        task = await self.task_storage.read(task_id)
-        if (
-            task is None
-            or task.status not in [TaskStatus.PENDING, TaskStatus.RUNNING]
-            or not task.runnable.cancellable
-        ):
-            return False
-        asyncio_task = self.asyncio_tasks.get(task.id)
-        if asyncio_task is None:
-            return False
-        task.status = TaskStatus.CANCELLING
-        self.task_storage.update(task)
-        await self.asyncio_tasks[task.id]
-        return True
+        asyncio_task = self.asyncio_tasks[task_id]
+        if asyncio_task:
+            return asyncio_task.cancel()
+        return False
 
     async def get_task(self, task_id: UUID) -> Optional[OhTask]:
         return await self.task_storage.read(task_id)
@@ -147,18 +153,12 @@ class AsyncioConversation(ConversationABC):
         return await self.task_storage.count(filter)
 
     async def _run_task(self, task: OhTask, delay: float):
-        try:
-            if delay:
-                await asyncio.sleep(delay)
-            await task.runnable.run(
-                task_id=task.id,
-                progress_listener=AsyncioProgressListener(
-                    task.id, self.task_storage, self
-                ),
-                conversation=self,
-            )
-        finally:
-            self.asyncio_tasks.pop(task.id)
+        if delay:
+            await asyncio.sleep(delay)
+        await task.runnable.run(
+            task_id=task.id,
+            conversation=self,
+        )
 
     def _to_internal_path(self, path: str) -> Path:
         result = Path(self.workspace_path, PurePosixPath(path)).resolve()
@@ -283,26 +283,12 @@ class AsyncioConversation(ConversationABC):
     async def destroy(self, grace_period: int):
         _LOGGER.info(f"destroying_conversation:{self.id}")
         self.status = ConversationStatus.DESTROYING
-        try:
-            await self._graceful_shutdown(grace_period)
-        except TimeoutError:
-            # A non graceful shutdown - we may have to cancel tasks in progress
-            _LOGGER.info(f"cancelling_all_tasks:{self.id}")
-            for task in self.asyncio_tasks:
-                task.cancel()
-        _LOGGER.info(f"conversation_destroyed:{self.id}")
-    
-    async def _graceful_shutdown(self, grace_period: int):
-        page_id = None
-        while True:
-            page = await self.search_tasks(page_id=page_id)
-            for task in page.results:
-                if task.status not in [TaskStatus.PENDING, TaskStatus.RUNNING] or not task.runnable.cancellable:
-                    continue
-                task.status = TaskStatus.CANCELLING
-                asyncio.create_task(self.task_storage.update(task))
+        if (self.asyncio_tasks):
+            done, pending = await asyncio.wait((
+                asyncio.create_task(self.cancel_task(task_id))
+                for task_id in self.asyncio_tasks
+            ), timeout=grace_period)
+            if pending:
+                # Not all tasks finished in the allotted time
+                raise TimeoutError()
 
-            if page.next_page_id:
-                page_id = page.next_page_id
-            else:
-                await asyncio.wait(self.asyncio_tasks.values(), timeout=grace_period)

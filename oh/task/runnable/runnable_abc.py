@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from uuid import UUID
 
 from oh.conversation import conversation_abc
-from oh.task import runnable_progress_listener_abc
 
 
 class RunnableABC(ABC):
@@ -19,12 +18,10 @@ class RunnableABC(ABC):
     async def run(
         self,
         task_id: UUID,
-        progress_listener: runnable_progress_listener_abc.RunnableProgressListenerABC,
         conversation: conversation_abc.ConversationABC,
     ):
         """
         Execute this task
         task_id: The id of this task
-        progress_listener: Used to alert external actors of changes in progress
         conversation: Conversation in which this task is run
         """

@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Optional, Union
 from uuid import UUID
 
+from oh.agent.agent_abc import AgentABC
+from oh.agent.agent_config import AgentConfig
 from oh.event import oh_event
 from oh.event.detail.event_detail_abc import EventDetailABC
 from oh.event.event_filter import EventFilter
@@ -42,7 +44,7 @@ class ConversationABC(ABC):
 
     id: UUID
     status: ConversationStatus
-    message: Optional[str]
+    agent_config: AgentConfig
     created_at: datetime
     updated_at: datetime
 
@@ -81,17 +83,16 @@ class ConversationABC(ABC):
         title: Optional[str] = None,
         delay: float = 0,
     ) -> oh_task.OhTask:
-        """Create a task and return details of it.  Throw a SesionError if the conversation is not in a ready state. """
+        """Create a task and return details of it.  Throw a SesionError if the conversation is not in a ready state."""
 
     @abstractmethod
     async def run_task(
         self,
-        conversation_id: UUID,
         runnable: runnable_abc.RunnableABC,
         title: Optional[str] = None,
         delay: float = 0,
     ):
-        """Run the task and return the result. Throw a SesionError if the conversation is not in a ready state. """
+        """Run the task and return the result. Throw a SesionError if the conversation is not in a ready state."""
 
     @abstractmethod
     async def cancel_task(self, task_id: UUID) -> bool:
