@@ -54,7 +54,6 @@ python-pptx = "*"
 pylatexenc = "*"
 tornado = "*"
 python-dotenv = "*"
-runloop-api-client = "0.1.0a22"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
