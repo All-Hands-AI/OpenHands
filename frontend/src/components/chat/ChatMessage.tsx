@@ -3,12 +3,12 @@ import Markdown from "react-markdown";
 import { FaClipboard, FaClipboardCheck } from "react-icons/fa";
 import { twMerge } from "tailwind-merge";
 import { useTranslation } from "react-i18next";
-import remarkGfm from "remark-gfm";
 import { code } from "../markdown/code";
 import toast from "#/utils/toast";
 import { I18nKey } from "#/i18n/declaration";
 import ConfirmationButtons from "./ConfirmationButtons";
 import { formatTimestamp } from "#/utils/utils";
+import { ol, ul } from "../markdown/list";
 
 interface MessageProps {
   message: Message;
@@ -92,12 +92,8 @@ function ChatMessage({
       <Markdown
         components={{
           code,
-          ul: ({ children }) => (
-            <ul className="list-disc ml-5 pl-2 leading-4">{children}</ul>
-          ),
-          ol: ({ children }) => (
-            <ol className="list-decimal ml-5 pl-2 leading-4">{children}</ol>
-          ),
+          ul,
+          ol,
         }}
       >
         {message.content}
