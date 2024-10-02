@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 import tempfile
+import platform
 from typing import Any
 
 import pandas as pd
@@ -434,6 +435,11 @@ if __name__ == '__main__':
         help='split to evaluate on',
     )
     args, _ = parser.parse_known_args()
+
+    # Check if the processor is arm64
+    if platform.machine() == 'arm64':
+        logger.error("SWE-bench evaluation is not supported on arm64 processors.")
+        raise SystemExit("Evaluation aborted: arm64 processor detected.")
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenHands's repo

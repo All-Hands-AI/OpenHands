@@ -1,4 +1,5 @@
 import os
+import platform
 import tempfile
 import time
 
@@ -302,6 +303,11 @@ if __name__ == '__main__':
         help='split to evaluate on',
     )
     args, _ = parser.parse_known_args()
+
+    # Check if the processor is arm64
+    if platform.machine() == 'arm64':
+        logger.error("SWE-bench evaluation is not supported on arm64 processors.")
+        raise SystemExit("Evaluation aborted: arm64 processor detected.")
 
     # Load SWE-Bench dataset
     full_dataset: list[SWEbenchInstance] = load_swebench_dataset(
