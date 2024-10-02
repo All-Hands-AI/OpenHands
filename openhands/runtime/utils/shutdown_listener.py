@@ -1,6 +1,7 @@
 """
 This module monitors the app for shutdown signals
 """
+
 import asyncio
 import signal
 import time
@@ -16,7 +17,7 @@ def _register_signal_handler(sig: signal.Signals):
 
     def handler(sig_: int, frame: FrameType | None):
         global _should_exit
-        _should_exit = True    
+        _should_exit = True
         if original_handler:
             original_handler(sig_, frame)  # type: ignore[unreachable]
 
@@ -43,7 +44,7 @@ def should_continue() -> bool:
 
 
 def sleep_if_should_continue(timeout: float):
-    if(timeout <= 1):
+    if timeout <= 1:
         time.sleep(timeout)
         return
     start_time = time.time()
@@ -52,7 +53,7 @@ def sleep_if_should_continue(timeout: float):
 
 
 async def async_sleep_if_should_continue(timeout: float):
-    if(timeout <= 1):
+    if timeout <= 1:
         await asyncio.sleep(timeout)
         return
     start_time = time.time()

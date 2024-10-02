@@ -1,5 +1,6 @@
-import subprocess
 import os
+import subprocess
+
 
 def run_cmd(cmd: str, cwd: str | None = None) -> str | None:
     """Run a command and return the output.
