@@ -36,13 +36,13 @@ from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime import Runtime
-from openhands.utils.tenacity_stop import stop_if_should_exit
 from openhands.runtime.utils.request import (
     DEFAULT_RETRY_EXCEPTIONS,
     is_404_error,
     send_request,
 )
 from openhands.runtime.utils.runtime_build import build_runtime_image
+from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
 class RemoteRuntime(Runtime):
@@ -260,7 +260,8 @@ class RemoteRuntime(Runtime):
                     'POST',
                     f'{self.runtime_url}/execute_action',
                     json=request_body,
-                    timeout=action.timeout,
+                    # wait a few more seconds to get the timeout error from client side
+                    timeout=action.timeout + 5,
                     retry_exceptions=list(
                         filter(lambda e: e != TimeoutError, DEFAULT_RETRY_EXCEPTIONS)
                     ),
