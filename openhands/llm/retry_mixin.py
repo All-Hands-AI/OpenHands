@@ -5,9 +5,8 @@ from tenacity import (
     wait_exponential,
 )
 
-from openhands.core.exceptions import OperationCancelled
 from openhands.core.logger import openhands_logger as logger
-from openhands.runtime.utils.shutdown_listener import should_exit
+from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
 class RetryMixin:
@@ -32,7 +31,7 @@ class RetryMixin:
 
         return retry(
             before_sleep=self.log_retry_attempt,
-            stop=stop_after_attempt(num_retries),
+            stop=stop_after_attempt(num_retries) | stop_if_should_exit(),
             reraise=True,
             retry=(retry_if_exception_type(retry_exceptions)),
             wait=wait_exponential(
@@ -44,8 +43,6 @@ class RetryMixin:
 
     def log_retry_attempt(self, retry_state):
         """Log retry attempts."""
-        if should_exit():
-            raise OperationCancelled('Operation cancelled.')  # exits the @retry loop
         exception = retry_state.outcome.exception()
         logger.error(
             f'{exception}. Attempt #{retry_state.attempt_number} | You can customize retry values in the configuration.',

@@ -36,6 +36,7 @@ from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime import Runtime
+from openhands.utils.tenacity_stop import stop_if_should_exit
 from openhands.runtime.utils.request import (
     DEFAULT_RETRY_EXCEPTIONS,
     is_404_error,
@@ -191,7 +192,7 @@ class RemoteRuntime(Runtime):
         ), 'Runtime URL is not set. This should never happen.'
 
     @retry(
-        stop=stop_after_attempt(10),
+        stop=stop_after_attempt(10) | stop_if_should_exit(),
         wait=wait_exponential(multiplier=1, min=4, max=60),
         retry=retry_if_exception_type(RuntimeError),
         reraise=True,
