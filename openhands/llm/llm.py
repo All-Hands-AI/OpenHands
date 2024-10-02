@@ -13,6 +13,7 @@ from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     APIConnectionError,
+    APIError,
     ContentPolicyViolationError,
     InternalServerError,
     NotFoundError,
@@ -37,6 +38,14 @@ from openhands.core.metrics import Metrics
 __all__ = ['LLM']
 
 message_separator = '\n\n----------\n\n'
+# tuple of exceptions to retry on
+LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
+    APIConnectionError,
+    APIError,
+    InternalServerError,
+    RateLimitError,
+    ServiceUnavailableError,
+)
 
 cache_prompting_supported_models = [
     'claude-3-5-sonnet-20240620',
