@@ -31,6 +31,7 @@ import {
 } from "./services/settings";
 import AccountSettingsModal from "./components/modals/AccountSettingsModal";
 import NewProjectIcon from "./assets/new-project.svg?react";
+import DocsIcon from "./assets/docs.svg?react";
 import ConfirmResetWorkspaceModal from "./components/modals/confirmation-modals/ConfirmResetWorkspaceModal";
 import i18n from "./i18n";
 import { useSocket } from "./context/socket";
@@ -180,7 +181,7 @@ export default function App() {
             className="w-8 h-8 rounded-full hover:opacity-80 flex items-center justify-center"
             aria-label="Documentation"
           >
-            Docs
+            <DocsIcon width={28} height={28} />
           </a>
           {!!token && (
             <button
