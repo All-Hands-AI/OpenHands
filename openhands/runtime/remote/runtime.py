@@ -41,7 +41,6 @@ from openhands.runtime.utils.request import (
     send_request,
 )
 from openhands.runtime.utils.runtime_build import build_runtime_image
-from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
 class RemoteRuntime(Runtime):
