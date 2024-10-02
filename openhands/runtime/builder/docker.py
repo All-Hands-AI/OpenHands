@@ -110,15 +110,11 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             return_code = process.wait()
 
             if return_code != 0:
-                logger.error(
-                    f'Buildx command failed: {buildx_cmd}.\nStatus code: {return_code}\nSTDOUT:\n{process.stdout.read() if process.stdout else ""}\nSTDERR:\n{process.stderr.read() if process.stderr else ""}'
-                )
-
                 raise subprocess.CalledProcessError(
                     return_code,
                     process.args,
-                    output=None,
-                    stderr=None,
+                    output=process.stdout.read() if process.stdout else None,
+                    stderr=process.stderr.read() if process.stderr else None,
                 )
 
         except subprocess.CalledProcessError as e:
