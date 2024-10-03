@@ -188,6 +188,11 @@ class LLM(RetryMixin, DebugMixin):
             # we don't support streaming here, thus we get a ModelResponse
             resp: ModelResponse = completion_unwrapped(*args, **kwargs)
 
+            # Check for x-litellm-response-cost header
+            completion_cost = None
+            if hasattr(resp, 'headers') and 'x-litellm-response-cost' in resp.headers:
+                completion_cost = float(resp.headers['x-litellm-response-cost'])
+
             # log for evals or other scripts that need the raw completion
             if self.config.log_completions:
                 self.llm_completions.append(
@@ -195,7 +200,7 @@ class LLM(RetryMixin, DebugMixin):
                         'messages': messages,
                         'response': resp,
                         'timestamp': time.time(),
-                        'cost': self._completion_cost(resp),
+                        'cost': completion_cost if completion_cost is not None else self._completion_cost(resp),
                     }
                 )
 
@@ -337,9 +342,48 @@ class LLM(RetryMixin, DebugMixin):
                 return True
         return False
 
-    def _completion_cost(self, response):
-        """Calculate the cost of a completion response based on the model.  Local models are treated as free.
+def _completion_cost(self, response):
+        """Calculate the cost of a completion response based on the model. Local models are treated as free.
         Add the current cost into total cost in metrics.
+
+        Args:
+            response: A response from a model invocation.
+
+        Returns:
+            number: The cost of the response.
+        """
+        if not self.cost_metric_supported:
+            return 0.0
+
+        # Check for x-litellm-response-cost header
+        if hasattr(response, 'headers') and 'x-litellm-response-cost' in response.headers:
+            cost = float(response.headers['x-litellm-response-cost'])
+            self.metrics.add_cost(cost)
+            return cost
+
+        extra_kwargs = {}
+        if (
+            self.config.input_cost_per_token is not None
+            and self.config.output_cost_per_token is not None
+        ):
+            cost_per_token = CostPerToken(
+                input_cost_per_token=self.config.input_cost_per_token,
+                output_cost_per_token=self.config.output_cost_per_token,
+            )
+            logger.info(f'Using custom cost per token: {cost_per_token}')
+            extra_kwargs['custom_cost_per_token'] = cost_per_token
+
+        if not self._is_local():
+            try:
+                cost = litellm_completion_cost(
+                    completion_response=response, **extra_kwargs
+                )
+                self.metrics.add_cost(cost)
+                return cost
+            except Exception:
+                self.cost_metric_supported = False
+                logger.warning('Cost calculation not supported for this model.')
+        return 0.0
 
         Args:
             response: A response from a model invocation.
