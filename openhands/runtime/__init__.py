@@ -1,25 +1,79 @@
+from dataclasses import dataclass
+
 from openhands.runtime.e2b.sandbox import E2BBox
 
 
+@dataclass
+class RuntimeInfo:
+    module: str
+    class_name: str
+
+
+# Core runtimes as default
+_registered_runtimes = {
+    'eventstream': RuntimeInfo('client', 'EventStreamRuntime'),
+    'e2b': RuntimeInfo('e2b', 'E2bRuntime'),
+    'remote': RuntimeInfo('remote', 'RemoteRuntime'),
+}
+
+
+def register_runtime(name: str, module: str, class_name: str):
+    """
+    Registers a new runtime with the given name, module, and class name.
+
+    This function allows you to add a new runtime to the system. It takes the name
+    of the runtime, the module where the runtime class is defined, and the class name
+    of the runtime. The runtime information is stored in the _registered_runtimes
+    dictionary, which maps the runtime name to its corresponding RuntimeInfo object.
+
+    Example:
+    >>> register_runtime("new_runtime", "new_module", "NewRuntime")
+    """
+    _registered_runtimes[name] = RuntimeInfo(module, class_name)
+
+
 def get_runtime_cls(name: str):
-    # Local imports to avoid circular imports
-    if name == 'eventstream':
-        from openhands.runtime.client.runtime import EventStreamRuntime
+    """
+    Returns the runtime class based on the given name using the registered runtime information.
 
-        return EventStreamRuntime
-    elif name == 'e2b':
-        from openhands.runtime.e2b.runtime import E2BRuntime
+    This function dynamically imports and returns the runtime class corresponding to the
+    provided name. It uses the information stored in the _registered_runtimes dictionary
+    to determine the module and class name for the requested runtime.
 
-        return E2BRuntime
-    elif name == 'remote':
-        from openhands.runtime.remote.runtime import RemoteRuntime
+    The function performs the following steps:
+    1. Retrieves the RuntimeInfo object for the given name from _registered_runtimes.
+    2. Dynamically imports the module containing the runtime class.
+    3. Retrieves the runtime class from the imported module using getattr.
 
-        return RemoteRuntime
-    else:
+    If the runtime is not found or cannot be imported, it raises a ValueError.
+
+    Args:
+        name (str): The name of the runtime to retrieve.
+
+    Returns:
+        type: The runtime class corresponding to the given name.
+
+    Raises:
+        ValueError: If the specified runtime is not supported or cannot be imported.
+
+    Example:
+        >>> runtime_cls = get_runtime_cls("eventstream")
+        >>> runtime_instance = runtime_cls(config, event_stream)
+    """
+    import importlib
+
+    try:
+        runtime_info = _registered_runtimes[name]
+        module = importlib.import_module(
+            f'openhands.runtime.{runtime_info.module}.runtime'
+        )
+        return getattr(module, runtime_info.class_name)
+    except (ImportError, AttributeError, KeyError):
         raise ValueError(f'Runtime {name} not supported')
 
 
 __all__ = [
     'E2BBox',
     'get_runtime_cls',
+    'register_runtime',
 ]
