@@ -36,9 +36,9 @@ swebench_official_report_json = os.path.join(dirname, 'report.json')
 openhands_remote_report_jsonl = args.input_file.replace(
     '.jsonl', '.swebench_eval.jsonl'
 )
-output_md_filepath = os.path.join(dirname, 'README.md')
 
 if os.path.exists(swebench_official_report_json):
+    output_md_filepath = os.path.join(dirname, 'README.md')
     with open(swebench_official_report_json, 'r') as f:
         report = json.load(f)
 
@@ -96,6 +96,8 @@ if os.path.exists(swebench_official_report_json):
         f.write(output_md)
 
 elif os.path.exists(openhands_remote_report_jsonl):
+    output_md_filepath = args.input_file.replace('.jsonl', '.swebench_eval.md')
+
     df_eval = pd.read_json(openhands_remote_report_jsonl, lines=True, orient='records')
 
     assert len(df['instance_id'].unique()) == len(
@@ -110,10 +112,12 @@ elif os.path.exists(openhands_remote_report_jsonl):
     df['report'] = df.apply(apply_report, axis=1)
 
     _n_instances = len(df)
-    _n_resolved = len(df[df['report']['resolved']])
+    _n_resolved = len(df[df['report'].apply(lambda x: x.get('resolved', False))])
     _n_unresolved = _n_instances - _n_resolved
-    _n_empty_patch = len(df[df['report']['empty_generation']])
-    _n_error = len(df[df['report']['error_eval']])
+    _n_empty_patch = len(
+        df[df['report'].apply(lambda x: x.get('empty_generation', False))]
+    )
+    _n_error = len(df[df['report'].apply(lambda x: x.get('error_eval', False))])
     output_md = (
         '# SWE-bench Report\n'
         'This folder contains the evaluation results of the SWE-bench using the [official evaluation docker containerization](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md#choosing-the-right-cache_level).\n\n'
@@ -125,41 +129,55 @@ elif os.path.exists(openhands_remote_report_jsonl):
         f'- error instances: {_n_error}\n'
     )
 
+    def _instance_id_to_log_path(instance_id):
+        path = f"{args.input_file.replace('.jsonl', '.swebench_eval.logs')}/instance_{instance_id}.log"
+        # make it relative path
+        path = os.path.relpath(path, start=dirname)
+        return path
+
     output_md += '\n## Resolved Instances\n'
     # instance_id to status
-    for instance_id in sorted(df[df['report']['resolved']]['instance_id'].unique()):
+    for instance_id in sorted(
+        df[df['report'].apply(lambda x: x.get('resolved', False))][
+            'instance_id'
+        ].unique()
+    ):
         instance_id_to_status[instance_id]['resolved'] = True
-        output_md += (
-            f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
-        )
+        output_md += f'- [{instance_id}]({_instance_id_to_log_path(instance_id)})\n'
 
     output_md += '\n## Unresolved Instances\n'
-    for instance_id in sorted(df[~df['report']['resolved']]['instance_id'].unique()):
-        output_md += (
-            f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
-        )
+    for instance_id in sorted(
+        df[~df['report'].apply(lambda x: x.get('resolved', False))][
+            'instance_id'
+        ].unique()
+    ):
+        output_md += f'- [{instance_id}]({_instance_id_to_log_path(instance_id)})\n'
 
     output_md += '\n## Error Instances\n'
-    for instance_id in sorted(df[df['report']['error_eval']]['instance_id'].unique()):
+    for instance_id in sorted(
+        df[df['report'].apply(lambda x: x.get('error_eval', False))][
+            'instance_id'
+        ].unique()
+    ):
         instance_id_to_status[instance_id]['error_eval'] = True
-        output_md += (
-            f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
-        )
+        output_md += f'- [{instance_id}]({_instance_id_to_log_path(instance_id)})\n'
 
     output_md += '\n## Empty Patch Instances\n'
     for instance_id in sorted(
-        df[df['report']['empty_generation']]['instance_id'].unique()
+        df[df['report'].apply(lambda x: x.get('empty_generation', False))][
+            'instance_id'
+        ].unique()
     ):
         instance_id_to_status[instance_id]['empty_generation'] = True
-        output_md += (
-            f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
-        )
+        output_md += f'- [{instance_id}]({_instance_id_to_log_path(instance_id)})\n'
 
     output_md += '\n## Incomplete Instances\n'
-    for instance_id in sorted(df[df['report']['test_timeout']]['instance_id'].unique()):
-        output_md += (
-            f'- [{instance_id}](./eval_outputs/{instance_id}/run_instance.log)\n'
-        )
+    for instance_id in sorted(
+        df[df['report'].apply(lambda x: x.get('test_timeout', False))][
+            'instance_id'
+        ].unique()
+    ):
+        output_md += f'- [{instance_id}]({_instance_id_to_log_path(instance_id)})\n'
     with open(output_md_filepath, 'w') as f:
         f.write(output_md)
 else:
