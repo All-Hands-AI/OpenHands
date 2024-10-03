@@ -119,6 +119,7 @@ class RemoteRuntime(Runtime):
                 self.config.sandbox.base_container_image,
                 self.runtime_builder,
                 extra_deps=self.config.sandbox.runtime_extra_deps,
+                force_rebuild=self.config.sandbox.force_rebuild_runtime,
             )
 
             response = send_request(
@@ -144,8 +145,8 @@ class RemoteRuntime(Runtime):
         start_request = {
             'image': self.container_image,
             'command': (
-                f'/openhands/miniforge3/bin/mamba run --no-capture-output -n base '
-                'PYTHONUNBUFFERED=1 poetry run '
+                f'/openhands/micromamba/bin/micromamba run -n openhands '
+                'poetry run '
                 f'python -u -m openhands.runtime.client.client {self.port} '
                 f'--working-dir {self.config.workspace_mount_path_in_sandbox} '
                 f'{plugin_arg}'
@@ -174,6 +175,11 @@ class RemoteRuntime(Runtime):
         logger.info(
             f'Sandbox started. Runtime ID: {self.runtime_id}, URL: {self.runtime_url}'
         )
+
+        if 'session_api_key' in start_response:
+            self.session.headers.update(
+                {'X-Session-API-Key': start_response['session_api_key']}
+            )
 
         # Initialize the eventstream and env vars
         super().__init__(
