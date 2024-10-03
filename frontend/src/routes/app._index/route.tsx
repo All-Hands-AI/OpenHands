@@ -11,8 +11,8 @@ import AgentState from "#/types/AgentState";
 import FileExplorer from "#/components/file-explorer/FileExplorer";
 import { retrieveFiles, retrieveFileContent } from "#/api/open-hands";
 import { useSocket } from "#/context/socket";
-import { FilesProvider } from "#/context/files";
 import CodeEditorCompoonent from "./code-editor-component";
+import { useFiles } from "#/context/files";
 
 export const clientLoader = async () => {
   const token = localStorage.getItem("token");
@@ -47,17 +47,16 @@ export function ErrorBoundary() {
 
 function CodeEditor() {
   const { token } = useLoaderData<typeof clientLoader>();
-
   const { runtimeActive } = useSocket();
+  const { setPaths } = useFiles();
+
   const agentState = useSelector(
     (state: RootState) => state.agent.curAgentState,
   );
 
-  const [files, setFiles] = React.useState<string[]>([]);
-
   React.useEffect(() => {
     // only retrieve files if connected to WS to prevent requesting before runtime is ready
-    if (runtimeActive && token) retrieveFiles(token).then(setFiles);
+    if (runtimeActive && token) retrieveFiles(token).then(setPaths);
   }, [runtimeActive, token]);
 
   // Code editing is only allowed when the agent is paused, finished, or awaiting user input (server rules)
@@ -70,16 +69,14 @@ function CodeEditor() {
   );
 
   return (
-    <FilesProvider defaultPaths={files}>
-      <div className="flex h-full w-full bg-neutral-900 relative">
-        <FileExplorer />
-        <div className="flex flex-col min-h-0 w-full pt-3">
-          <div className="flex grow items-center justify-center">
-            <CodeEditorCompoonent isReadOnly={!isEditingAllowed} />
-          </div>
+    <div className="flex h-full w-full bg-neutral-900 relative">
+      <FileExplorer />
+      <div className="flex flex-col min-h-0 w-full pt-3">
+        <div className="flex grow items-center justify-center">
+          <CodeEditorCompoonent isReadOnly={!isEditingAllowed} />
         </div>
       </div>
-    </FilesProvider>
+    </div>
   );
 }
 

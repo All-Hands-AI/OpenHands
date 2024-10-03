@@ -35,20 +35,15 @@ const FilesContext = React.createContext<FilesContextType | undefined>(
 
 interface FilesProviderProps {
   children: React.ReactNode;
-  defaultPaths: string[];
 }
 
-function FilesProvider({ children, defaultPaths }: FilesProviderProps) {
+function FilesProvider({ children }: FilesProviderProps) {
   const [paths, setPaths] = React.useState<string[]>([]);
   const [files, setFiles] = React.useState<Record<string, string>>({});
   const [modifiedFiles, setModifiedFiles] = React.useState<
     Record<string, string>
   >({});
   const [selectedPath, setSelectedPath] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    setPaths(defaultPaths);
-  }, [defaultPaths]);
 
   const setFileContent = React.useCallback((path: string, content: string) => {
     setFiles((prev) => ({ ...prev, [path]: content }));

@@ -1,6 +1,5 @@
 import { useDisclosure } from "@nextui-org/react";
 import React from "react";
-import { Toaster } from "react-hot-toast";
 import {
   Outlet,
   useFetcher,
@@ -38,6 +37,7 @@ import AgentState from "#/types/AgentState";
 import { base64ToBlob } from "#/utils/base64-to-blob";
 import { clientLoader as rootClientLoader } from "#/root";
 import { clearJupyter } from "#/state/jupyterSlice";
+import { FilesProvider } from "#/context/files";
 
 const isAgentStateChange = (
   data: object,
@@ -256,7 +256,9 @@ function App() {
               },
             ]}
           >
-            <Outlet />
+            <FilesProvider>
+              <Outlet />
+            </FilesProvider>
           </Container>
           {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
            * that it loads only in the client-side. */}
