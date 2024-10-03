@@ -103,6 +103,20 @@ def _generate_dockerfile(
     return dockerfile_content
 
 
+def get_from_scratch_hash() -> str:
+    dir_path = os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__)))
+    dir_hash = dirhash(
+        dir_path,
+        'md5',
+        ignore=[
+            '.*/',  # hidden directories
+            '__pycache__/',
+            '*.pyc',
+        ],
+    )   
+    return dir_hash 
+
+
 def prep_docker_build_folder(
     dir_path: str,
     base_image: str,
@@ -141,15 +155,7 @@ def prep_docker_build_folder(
         file.write(dockerfile_content)
 
     # Get the MD5 hash of the dir_path directory
-    dir_hash = dirhash(
-        dir_path,
-        'md5',
-        ignore=[
-            '.*/',  # hidden directories
-            '__pycache__/',
-            '*.pyc',
-        ],
-    )
+    dir_hash = get_from_scratch_hash()
     hash = f'v{oh_version}_{dir_hash}'
     logger.info(
         f'Input base image: {base_image}\n'
@@ -228,14 +234,9 @@ def build_runtime_image(
 
     See https://docs.all-hands.dev/modules/usage/architecture/runtime for more details.
     """
-    # Calculate the hash for the docker build folder (source code and Dockerfile)
-    with tempfile.TemporaryDirectory() as temp_dir:
-        from_scratch_hash = prep_docker_build_folder(
-            temp_dir,
-            base_image=base_image,
-            skip_init=False,
-            extra_deps=extra_deps,
-        )
+
+    # Calculate the has for the source directory
+    from_scratch_hash = get_from_scratch_hash()
 
     runtime_image_repo, runtime_image_tag = get_runtime_image_repo_and_tag(base_image)
 
