@@ -44,10 +44,10 @@ OPENHANDS_BUILD_VERSION="dev"
 cache_tag_base="buildcache"
 cache_tag="$cache_tag_base"
 
-if [[ -n $GITHUB_SHA ]]; then
-  git_hash=$(git rev-parse --short "$GITHUB_SHA")
+if [[ -n $RELEVANT_SHA ]]; then
+  git_hash=$(git rev-parse --short "$RELEVANT_SHA")
   tags+=("$git_hash")
-  tags+=("$GITHUB_SHA")
+  tags+=("$RELEVANT_SHA")
 fi
 
 if [[ -n $GITHUB_REF_NAME ]]; then
