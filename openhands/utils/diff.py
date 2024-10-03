@@ -21,7 +21,12 @@ def get_diff(old_contents: str, new_contents: str, filepath: str = 'file') -> st
 def parse_diff(diff_patch: str) -> list[whatthepatch.patch.Change]:
     patch = whatthepatch.parse_patch(diff_patch)
     patch_list = list(patch)
-    assert len(patch_list) == 1, 'parse_diff only supports single file diff.'
+    assert len(patch_list) == 1, (
+        'parse_diff only supports single file diff. But got:\nPATCH:\n'
+        + diff_patch
+        + '\nPATCH LIST:\n'
+        + str(patch_list)
+    )
     changes = patch_list[0].changes
 
     # ignore changes that are the same (i.e., old_lineno == new_lineno)
