@@ -2,7 +2,7 @@ import copy
 import time
 import warnings
 from functools import partial
-from typing import Any
+from typing import Any, List, Tuple
 
 from openhands.core.config import LLMConfig
 
@@ -26,6 +26,7 @@ from openhands.core.message import Message
 from openhands.core.metrics import Metrics
 from openhands.llm.debug_mixin import DebugMixin
 from openhands.llm.retry_mixin import RetryMixin
+from openhands.llm.llm_router import LLMRouter
 
 __all__ = ['LLM']
 
@@ -77,6 +78,11 @@ class LLM(RetryMixin, DebugMixin):
         # list of LLM completions (for logging purposes). Each completion is a dict with the following keys:
         # - 'messages': list of messages
         # - 'response': response from the LLM
+
+        if self.config.llm_router_enabled:
+            self.router = LLMRouter(config, metrics)
+        else:
+            self.router = None
         self.llm_completions: list[dict[str, Any]] = []
 
         # litellm actually uses base Exception here for unknown model
@@ -123,6 +129,7 @@ class LLM(RetryMixin, DebugMixin):
             litellm_completion,
             model=self.config.model,
             api_key=self.config.api_key,
+
             base_url=self.config.base_url,
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
@@ -173,6 +180,7 @@ class LLM(RetryMixin, DebugMixin):
             if not messages:
                 raise ValueError(
                     'The messages list is empty. At least one message is required.'
+
                 )
 
             # log the entire LLM prompt
@@ -211,6 +219,40 @@ class LLM(RetryMixin, DebugMixin):
 
         self._completion = wrapper
 
+
+    def complete(
+        self,
+        messages: List[Message],
+        **kwargs: Any,
+    ) -> Tuple[str, float]:
+        """Complete the given messages using the best selected model or the default model."""
+        start_time = time.time()
+
+        if self.router:
+            response, _ = self.router.complete(messages, **kwargs)
+        else:
+            response = self._completion(
+                messages=[{"role": msg.role, "content": msg.content} for msg in messages],
+                **kwargs
+            )
+
+        latency = time.time() - start_time
+        return response.choices[0].message.content, latency
+
+    def stream(
+        self,
+        messages: List[Message],
+        **kwargs: Any,
+    ):
+        """Stream the response using the best selected model or the default model."""
+        if self.router:
+            yield from self.router.stream(messages, **kwargs)
+        else:
+            yield from self._completion(
+                messages=[{"role": msg.role, "content": msg.content} for msg in messages],
+                stream=True,
+                **kwargs
+            )
     @property
     def completion(self):
         """Decorator for the litellm completion function.
