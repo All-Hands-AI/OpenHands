@@ -176,6 +176,11 @@ class RemoteRuntime(Runtime):
             f'Sandbox started. Runtime ID: {self.runtime_id}, URL: {self.runtime_url}'
         )
 
+        if 'session_api_key' in start_response:
+            self.session.headers.update(
+                {'X-Session-API-Key': start_response['session_api_key']}
+            )
+
         # Initialize the eventstream and env vars
         super().__init__(
             config, event_stream, sid, plugins, env_vars, status_message_callback
