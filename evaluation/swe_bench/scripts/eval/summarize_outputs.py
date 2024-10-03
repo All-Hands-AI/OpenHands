@@ -5,7 +5,7 @@ from collections import Counter
 
 ERROR_KEYWORDS = [
     'Agent encountered an error while processing the last action',
-    'litellm',
+    'APIError',
     'Action execution failed',
 ]
 
