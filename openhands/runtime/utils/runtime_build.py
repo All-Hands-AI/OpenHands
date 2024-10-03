@@ -152,19 +152,6 @@ def prep_docker_build_folder(
     )
     hash = f'v{oh_version}_{dir_hash}'
 
-    my_dir = os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__)))
-    new_hash = dirhash(
-        my_dir,
-        'md5',
-        ignore=[
-            '.*/',  # hidden directories
-            '__pycache__/',
-            '*.pyc',
-        ],
-    )
-    logger.info("TRACE:prep_docker_build_folder:new_hash:{new_hash}")
-    logger.info("TRACE:prep_docker_build_folder:old_hash:{hash}")
-
     logger.info(
         f'Input base image: {base_image}\n'
         f'Skip init: {skip_init}\n'
