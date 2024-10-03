@@ -3,7 +3,7 @@
 The sandbox is where the agent does its work. Instead of running commands directly on your computer
 (which could be dangerous), the agent runs them inside of a Docker container.
 
-The default OpenHands sandbox (`python-nodejs:python3.11-nodejs22`
+The default OpenHands sandbox (`python-nodejs:python3.12-nodejs22`
 from [nikolaik/python-nodejs](https://hub.docker.com/r/nikolaik/python-nodejs)) comes with some packages installed such
 as python and Node.js but your use case may need additional software installed by default.
 

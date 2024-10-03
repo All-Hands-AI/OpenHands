@@ -36,7 +36,7 @@ RUN mkdir -p /openhands/micromamba/bin && \
 
 # Create the openhands virtual environment and install poetry and python
 RUN /openhands/micromamba/bin/micromamba create -n openhands -y && \
-    /openhands/micromamba/bin/micromamba install -n openhands -c conda-forge poetry python=3.11 -y
+    /openhands/micromamba/bin/micromamba install -n openhands -c conda-forge poetry python=3.12 -y
 
 # ================================================================
 # END: Build Runtime Image from Scratch
@@ -61,7 +61,7 @@ RUN \
     /openhands/micromamba/bin/micromamba config set changeps1 False && \
     # Configure Poetry and create virtual environment
     /openhands/micromamba/bin/micromamba run -n openhands poetry config virtualenvs.path /openhands/poetry && \
-    /openhands/micromamba/bin/micromamba run -n openhands poetry env use python3.11 && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry env use python3.12 && \
     # Install project dependencies
     /openhands/micromamba/bin/micromamba run -n openhands poetry install --only main,runtime --no-interaction --no-root && \
     # Update and install additional tools

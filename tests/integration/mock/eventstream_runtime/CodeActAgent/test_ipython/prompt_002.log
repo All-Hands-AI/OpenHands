@@ -419,7 +419,7 @@ OBSERVATION:
 (this is the end of the file)
 [File /workspace/test.txt created.]
 [Jupyter current working directory: /workspace]
-[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]
+[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python]
 
 
 ENVIRONMENT REMINDER: You have 18 turns left to complete the task. When finished reply with <finish></finish>.
