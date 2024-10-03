@@ -8,6 +8,7 @@ import FileIcon from "../FileIcons";
 import { listFiles } from "#/services/fileService";
 import { setCode, setActiveFilepath } from "#/state/codeSlice";
 import { retrieveFileContent } from "#/api/open-hands";
+import { useFiles } from "#/context/files";
 
 interface TitleProps {
   name: string;
@@ -37,13 +38,13 @@ interface TreeNodeProps {
 }
 
 function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
+  const { setFileContent, modifiedFiles, setSelectedPath, files } = useFiles();
   const fetcher = useFetcher({ key: "file-selector" });
 
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
   const [children, setChildren] = React.useState<string[] | null>(null);
   const refreshID = useSelector((state: RootState) => state.code.refreshID);
   const activeFilepath = useSelector((state: RootState) => state.code.path);
-  const fileStates = useSelector((state: RootState) => state.fileState.changed);
 
   const dispatch = useDispatch();
 
@@ -75,7 +76,13 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
       // TODO: Move to data loader
       const token = localStorage.getItem("token");
       if (token) {
-        const code = await retrieveFileContent(token, path);
+        let code = modifiedFiles[path] || files[path];
+        if (!code) {
+          code = await retrieveFileContent(token, path);
+          setFileContent(path, code);
+        }
+
+        setSelectedPath(path);
         dispatch(setCode(code));
         dispatch(setActiveFilepath(path));
       } else {
@@ -107,7 +114,7 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
             onClick={handleClick}
           />
 
-          {fileStates[path] && (
+          {modifiedFiles[path] && (
             <div className="w-2 h-2 rounded-full bg-neutral-500" />
           )}
         </button>

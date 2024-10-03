@@ -15,10 +15,89 @@ import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import { I18nKey } from "#/i18n/declaration";
 import FileExplorer from "#/components/file-explorer/FileExplorer";
-import { retrieveFiles, retrieveFileContent } from "#/api/open-hands";
+import {
+  retrieveFiles,
+  retrieveFileContent,
+  saveFileContent,
+} from "#/api/open-hands";
 import { setChanged } from "#/state/file-state-slice";
 import { clientAction as saveFileContentClientAction } from "#/routes/save-file-content";
 import { useSocket } from "#/context/socket";
+import { FilesProvider, useFiles } from "#/context/files";
+
+interface CodeEditorCompoonentProps {
+  isReadOnly: boolean;
+}
+
+function CodeEditorCompoonent({ isReadOnly }: CodeEditorCompoonentProps) {
+  const {
+    files,
+    selectedPath,
+    modifiedFiles,
+    modifyFileContent,
+    saveFileContent: saveNewFileContent,
+  } = useFiles();
+
+  const handleEditorDidMount = React.useCallback(
+    (editor: editor.IStandaloneCodeEditor, monaco: Monaco): void => {
+      monaco.editor.defineTheme("my-theme", {
+        base: "vs-dark",
+        inherit: true,
+        rules: [],
+        colors: {
+          "editor.background": "#171717",
+        },
+      });
+
+      monaco.editor.setTheme("my-theme");
+    },
+    [],
+  );
+
+  const handleEditorChange = (value: string | undefined) => {
+    if (selectedPath && value) modifyFileContent(selectedPath, value);
+  };
+
+  React.useEffect(() => {
+    const handleSave = async (event: KeyboardEvent) => {
+      if (selectedPath && event.metaKey && event.key === "s") {
+        event.preventDefault();
+        const content = saveNewFileContent(selectedPath);
+
+        if (content) {
+          try {
+            const token = localStorage.getItem("token")?.toString();
+            if (token) await saveFileContent(token, selectedPath, content);
+          } catch (error) {
+            // handle error
+          }
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleSave);
+    return () => {
+      document.removeEventListener("keydown", handleSave);
+    };
+  }, []);
+
+  return (
+    <Editor
+      data-testid="code-editor"
+      height="100%"
+      path={selectedPath ?? undefined}
+      defaultValue=""
+      value={
+        selectedPath
+          ? modifiedFiles[selectedPath] || files[selectedPath]
+          : undefined
+      }
+      onMount={handleEditorDidMount}
+      onChange={handleEditorChange}
+      options={{ readOnly: isReadOnly }}
+    />
+  );
+}
 
 export const clientLoader = async () => {
   const token = localStorage.getItem("token");
@@ -77,34 +156,6 @@ function CodeEditor() {
   }, [runtimeActive, token]);
 
   React.useEffect(() => {
-    // save file content on cmd+s
-    const handleSave = (event: KeyboardEvent) => {
-      if (event.metaKey && event.key === "s") {
-        event.preventDefault();
-
-        if (fileContents[activeFilepath]) {
-          const saveFileFormData = new FormData();
-          saveFileFormData.append("file", activeFilepath);
-          saveFileFormData.append(
-            "content",
-            fileContents[activeFilepath].trimEnd() || "",
-          );
-          saveFile.submit(saveFileFormData, {
-            method: "POST",
-            action: "/save-file-content",
-          });
-        }
-      }
-    };
-
-    document.addEventListener("keydown", handleSave);
-
-    return () => {
-      document.removeEventListener("keydown", handleSave);
-    };
-  }, [activeFilepath, fileContents, fetcher]);
-
-  React.useEffect(() => {
     if (saveFile.data?.success) {
       // refetch file content
       const refetchFileFormData = new FormData();
@@ -134,11 +185,6 @@ function CodeEditor() {
     }
   }, [fetcher.data]);
 
-  const selectedFileName = React.useMemo(() => {
-    const paths = activeFilepath.split("/");
-    return paths[paths.length - 1];
-  }, [activeFilepath]);
-
   const isEditingAllowed = React.useMemo(
     () =>
       agentState === AgentState.INIT ||
@@ -148,75 +194,28 @@ function CodeEditor() {
     [agentState],
   );
 
-  const handleEditorChange = React.useCallback(
-    (value: string | undefined): void => {
-      if (value && isEditingAllowed) {
-        setFileContents((prev) => ({ ...prev, [activeFilepath]: value }));
-        dispatch(
-          setChanged({
-            path: activeFilepath,
-            changed: value !== fetcher.data?.selectedFileContent,
-          }),
-        );
-      }
-    },
-    [
-      dispatch,
-      activeFilepath,
-      isEditingAllowed,
-      fetcher.data?.selectedFileContent,
-    ],
-  );
-
-  const handleEditorDidMount = React.useCallback(
-    (editor: editor.IStandaloneCodeEditor, monaco: Monaco): void => {
-      monaco.editor.defineTheme("my-theme", {
-        base: "vs-dark",
-        inherit: true,
-        rules: [],
-        colors: {
-          "editor.background": "#171717",
-        },
-      });
-
-      monaco.editor.setTheme("my-theme");
-    },
-    [],
-  );
-
   return (
-    <div className="flex h-full w-full bg-neutral-900 relative">
-      <FileExplorer files={files} />
-      <div className="flex flex-col min-h-0 w-full pt-3">
-        <div className="flex grow items-center justify-center">
-          {!fileContents[activeFilepath] &&
-          !fetcher.data?.selectedFileContent ? (
-            <div
-              data-testid="code-editor-empty-message"
-              className="flex flex-col items-center text-neutral-400"
-            >
-              <VscCode size={100} />
-              {t(I18nKey.CODE_EDITOR$EMPTY_MESSAGE)}
-            </div>
-          ) : (
-            <Editor
-              data-testid="code-editor"
-              height="100%"
-              path={selectedFileName.toLowerCase()}
-              defaultValue=""
-              value={
-                fileContents[activeFilepath] ||
-                fetcher.data?.selectedFileContent ||
-                ""
-              }
-              onMount={handleEditorDidMount}
-              onChange={handleEditorChange}
-              options={{ readOnly: !isEditingAllowed }}
-            />
-          )}
+    <FilesProvider defaultPaths={files}>
+      <div className="flex h-full w-full bg-neutral-900 relative">
+        <FileExplorer />
+        <div className="flex flex-col min-h-0 w-full pt-3">
+          <div className="flex grow items-center justify-center">
+            {!fileContents[activeFilepath] &&
+            !fetcher.data?.selectedFileContent ? (
+              <div
+                data-testid="code-editor-empty-message"
+                className="flex flex-col items-center text-neutral-400"
+              >
+                <VscCode size={100} />
+                {t(I18nKey.CODE_EDITOR$EMPTY_MESSAGE)}
+              </div>
+            ) : (
+              <CodeEditorCompoonent isReadOnly={!isEditingAllowed} />
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </FilesProvider>
   );
 }
 

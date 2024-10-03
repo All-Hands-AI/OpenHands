@@ -19,6 +19,7 @@ import toast from "#/utils/toast";
 import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
 import { retrieveFiles } from "#/api/open-hands";
+import { useFiles } from "#/context/files";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
@@ -89,13 +90,10 @@ function ExplorerActions({
   );
 }
 
-interface FileExplorerProps {
-  files: string[];
-}
-
-function FileExplorer({ files }: FileExplorerProps) {
+function FileExplorer() {
   const { revalidate } = useRevalidator();
-  const [allFiles, setAllFiles] = React.useState<string[]>(files);
+
+  const { paths, setPaths } = useFiles();
   const [isHidden, setIsHidden] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -116,7 +114,7 @@ function FileExplorer({ files }: FileExplorerProps) {
     dispatch(setRefreshID(Math.random()));
     // TODO: Get token from data loader
     const token = localStorage.getItem("token");
-    if (token) retrieveFiles(token).then(setAllFiles);
+    if (token) retrieveFiles(token).then(setPaths);
     revalidate();
   };
 
@@ -238,7 +236,7 @@ function FileExplorer({ files }: FileExplorerProps) {
           </div>
           <div className="overflow-auto flex-grow">
             <div style={{ display: isHidden ? "none" : "block" }}>
-              <ExplorerTree files={allFiles} />
+              <ExplorerTree files={paths} />
             </div>
           </div>
         </div>
