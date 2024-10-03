@@ -54,7 +54,7 @@ python-pptx = "*"
 pylatexenc = "*"
 tornado = "*"
 python-dotenv = "*"
-protobuf = "^4.21.6"
+protobuf = "^4.21.6" # chromadb currently fails on 5.0+
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
