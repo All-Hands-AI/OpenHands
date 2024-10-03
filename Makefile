@@ -10,7 +10,7 @@ DEFAULT_WORKSPACE_DIR = "./workspace"
 DEFAULT_MODEL = "gpt-4o"
 CONFIG_FILE = config.toml
 PRE_COMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
-PYTHON_VERSION = 3.11
+PYTHON_VERSION = 3.12
 
 # ANSI color codes
 GREEN=$(shell tput -Txterm setaf 2)
