@@ -4,13 +4,13 @@ from minio import Minio
 
 from openhands.storage.files import FileStore
 
-AWS_S3_ENDPOINT = 's3.amazonaws.com'
-
+AWS_S3_ENDPOINT = 
 
 class S3FileStore(FileStore):
-    def __init__(self, endpoint: str = AWS_S3_ENDPOINT) -> None:
+    def __init__(self) -> None:
         access_key = os.getenv('AWS_ACCESS_KEY_ID')
         secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+        endpoint = os.getenv('AWS_S3_ENDPOINT', 's3.amazonaws.com')
         self.bucket = os.getenv('AWS_S3_BUCKET')
         self.client = Minio(endpoint, access_key, secret_key)
 
