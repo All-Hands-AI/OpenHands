@@ -280,7 +280,6 @@ function App() {
         onOpenChange={onSecurityModalOpenChange}
         securityAnalyzer={settings.SECURITY_ANALYZER}
       />
-      <Toaster />
     </div>
   );
 }

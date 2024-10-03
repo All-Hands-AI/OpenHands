@@ -13,6 +13,7 @@ import {
 import "./tailwind.css";
 import "./index.css";
 import React from "react";
+import { Toaster } from "react-hot-toast";
 import CogTooth from "./assets/cog-tooth";
 import { SettingsForm } from "./components/form/settings-form";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
@@ -50,6 +51,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
         <ScrollRestoration />
         <Scripts />
+        <Toaster />
       </body>
     </html>
   );
