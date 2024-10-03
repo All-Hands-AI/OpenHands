@@ -66,7 +66,7 @@ def test_bash_timeout_and_keyboard_interrupt(temp_dir, box_class, run_as_openhan
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
         assert (
-            '[Command timed out after 1 seconds. SIGINT was sent to interrupt it.]'
+            '[Command timed out after 1 seconds. SIGINT was sent to interrupt the command.]'
             in obs.content
         )
         assert 'KeyboardInterrupt' in obs.content
@@ -85,7 +85,7 @@ def test_bash_timeout_and_keyboard_interrupt(temp_dir, box_class, run_as_openhan
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert (
-            '[Command timed out after 1 seconds. SIGINT was sent to interrupt it.]'
+            '[Command timed out after 1 seconds. SIGINT was sent to interrupt the command.]'
             in obs.content
         )
         assert 'KeyboardInterrupt' in obs.content
