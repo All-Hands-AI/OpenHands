@@ -13,7 +13,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.12"
 datasets = "*"
 pandas = "*"
 litellm = "*"
@@ -54,6 +54,7 @@ python-pptx = "*"
 pylatexenc = "*"
 tornado = "*"
 python-dotenv = "*"
+protobuf = "^4.21.6" # chromadb currently fails on 5.0+
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
