@@ -196,6 +196,7 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
           onAPIKeyChange={handleAPIKeyChange}
           onConfirmationModeChange={handleConfirmationModeChange}
           onSecurityAnalyzerChange={handleSecurityAnalyzerChange}
+          promptingBestPracticesUrl="/docs/prompting_best_practices.md"
         />
       )}
     </BaseModal>

@@ -16,6 +16,7 @@ interface SettingsFormProps {
   agents: string[];
   securityAnalyzers: string[];
   disabled: boolean;
+  promptingBestPracticesUrl: string;
 
   onModelChange: (model: string) => void;
   onBaseURLChange: (baseURL: string) => void;
@@ -32,6 +33,7 @@ function SettingsForm({
   agents,
   securityAnalyzers,
   disabled,
+  promptingBestPracticesUrl,
   onModelChange,
   onBaseURLChange,
   onAPIKeyChange,
@@ -79,6 +81,11 @@ function SettingsForm({
       >
         Advanced Options
       </Switch>
+      <div className="mt-4">
+        <a href={promptingBestPracticesUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+          Prompting Best Practices
+        </a>
+      </div>
       {enableAdvanced && (
         <>
           <Input
