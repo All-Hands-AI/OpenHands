@@ -26,7 +26,7 @@ on:
         default: ''
 
 env:
-  BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST: nikolaik/python-nodejs:python3.11-nodejs22
+  BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST: nikolaik/python-nodejs:python3.12-nodejs22
 
 jobs:
   # Builds the OpenHands Docker images
@@ -100,7 +100,7 @@ jobs:
     strategy:
       matrix:
         base_image:
-          - image: 'nikolaik/python-nodejs:python3.11-nodejs22'
+          - image: 'nikolaik/python-nodejs:python3.12-nodejs22'
             tag: nikolaik
     steps:
       - name: Checkout
@@ -135,7 +135,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
       - name: Cache Poetry dependencies
         uses: actions/cache@v4
         with:
@@ -192,7 +192,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
@@ -271,7 +271,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
@@ -349,7 +349,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
@@ -428,7 +428,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
