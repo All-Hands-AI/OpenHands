@@ -39,7 +39,7 @@ from openhands.utils.prompt import PromptManager
 
 
 class CodeActAgent(Agent):
-    VERSION = '1.9'
+    VERSION = '2.0'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.

@@ -242,10 +242,11 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
 
         # Get the range of lines to edit - reject if too long
         length_of_range = end_idx - start_idx
-        if length_of_range > self.MAX_LINES_TO_EDIT:
+        if length_of_range > self.MAX_LINES_TO_EDIT + 1:
             error_msg = (
                 f'[Edit error: The range of lines to edit is too long.]\n'
-                f'[The maximum number of lines allowed to edit at once is {self.MAX_LINES_TO_EDIT}.]\n'
+                f'[The maximum number of lines allowed to edit at once is {self.MAX_LINES_TO_EDIT}. '
+                f'Got (L{start_idx + 1}-L{end_idx}) {length_of_range} lines.]\n'  # [start_idx, end_idx), so no need to + 1
             )
             # search for relevant ranges to hint the agent
             topk_chunks: list[Chunk] = get_top_k_chunk_matches(
