@@ -7,6 +7,17 @@ import {
   settingsAreUpToDate,
 } from "#/services/settings";
 
+const requestedToEndSession = (formData: FormData) =>
+  formData.get("end-session")?.toString() === "true";
+
+const removeSessionTokenAndSelectedRepo = () => {
+  const token = localStorage.getItem("token");
+  const repo = localStorage.getItem("repo");
+
+  if (token) localStorage.removeItem("token");
+  if (repo) localStorage.removeItem("repo");
+};
+
 // This is the route for saving settings. It only exports the action function.
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const formData = await request.formData();
@@ -21,7 +32,9 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 
   if (intent === "reset") {
     saveSettings(getDefaultSettings());
-    return json(null);
+    if (requestedToEndSession(formData)) removeSessionTokenAndSelectedRepo();
+
+    return json({ success: true });
   }
 
   const keys = Array.from(formData.keys());
@@ -78,5 +91,6 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
     );
   }
 
+  if (requestedToEndSession(formData)) removeSessionTokenAndSelectedRepo();
   return json({ success: true });
 };

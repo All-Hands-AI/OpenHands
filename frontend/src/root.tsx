@@ -32,10 +32,10 @@ import {
 import AccountSettingsModal from "./components/modals/AccountSettingsModal";
 import NewProjectIcon from "./assets/new-project.svg?react";
 import DocsIcon from "./assets/docs.svg?react";
-import ConfirmResetWorkspaceModal from "./components/modals/confirmation-modals/ConfirmResetWorkspaceModal";
 import i18n from "./i18n";
 import { useSocket } from "./context/socket";
 import { UserAvatar } from "./components/user-avatar";
+import { DangerModal } from "./components/modals/confirmation-modals/danger-modal";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -127,6 +127,14 @@ export default function App() {
     }
   }, [user]);
 
+  React.useEffect(() => {
+    // If the user is on the home page, we should stop the socket connection.
+    // This is relevant when the user redirects here for whatever reason.
+    if (location.pathname === "/" && isConnected) {
+      stop();
+    }
+  }, [location.pathname]);
+
   const handleUserLogout = () => {
     logoutFetcher.submit(
       {},
@@ -143,6 +151,15 @@ export default function App() {
     // local storage
     if (isGitHubErrorReponse(user)) handleUserLogout();
     setAccountSettingsModalOpen(false);
+  };
+
+  const handleEndSession = () => {
+    setStartNewProjectModalIsOpen(false);
+    // call new session action and redirect to '/'
+    endSessionFetcher.submit(new FormData(), {
+      method: "POST",
+      action: "/end-session",
+    });
   };
 
   return (
@@ -218,11 +235,11 @@ export default function App() {
               </p>
               {isConnected && (
                 <p className="text-xs text-danger">
-                  Settings are disabled during an active session
+                  Changing settings during an active session will end the
+                  session
                 </p>
               )}
               <SettingsForm
-                disabled={isConnected}
                 settings={settings}
                 models={data.models}
                 agents={data.agents}
@@ -243,18 +260,19 @@ export default function App() {
         )}
         {startNewProjectModalIsOpen && (
           <ModalBackdrop onClose={() => setStartNewProjectModalIsOpen(false)}>
-            <ConfirmResetWorkspaceModal
-              onConfirm={() => {
-                setStartNewProjectModalIsOpen(false);
-                // stop ws connection
-                stop();
-                // call new session action and redirect to '/'
-                endSessionFetcher.submit(new FormData(), {
-                  method: "POST",
-                  action: "/end-session",
-                });
+            <DangerModal
+              title="Are you sure you want to exit?"
+              description="You will lose any unsaved information."
+              buttons={{
+                danger: {
+                  text: "Exit Project",
+                  onClick: handleEndSession,
+                },
+                cancel: {
+                  text: "Cancel",
+                  onClick: () => setStartNewProjectModalIsOpen(false),
+                },
               }}
-              onCancel={() => setStartNewProjectModalIsOpen(false)}
             />
           </ModalBackdrop>
         )}
