@@ -159,17 +159,12 @@ done
 
         with open(f'{temp_dir}/resistant_script.sh', 'w') as f:
             f.write(script_content)
+        os.chmod(f'{temp_dir}/resistant_script.sh', 0o777)
 
         runtime.copy_to(
             os.path.join(temp_dir, 'resistant_script.sh'),
             runtime.config.workspace_mount_path_in_sandbox,
         )
-
-        # Make the script executable
-        action = CmdRunAction(command='chmod +x resistant_script.sh')
-        obs = runtime.run_action(action)
-        assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 0
 
         # Run the resistant script
         action = CmdRunAction(command='./resistant_script.sh')
