@@ -167,7 +167,7 @@ done
         )
 
         # Run the resistant script
-        action = CmdRunAction(command='sudo ./resistant_script.sh')
+        action = CmdRunAction(command='sudo bash ./resistant_script.sh')
         action.timeout = 5
         action.blocking = True
         logger.info(action, extra={'msg_type': 'ACTION'})
@@ -220,7 +220,7 @@ done
         )
 
         # Run the resistant script
-        action = CmdRunAction(command='sudo ./resistant_script.sh')
+        action = CmdRunAction(command='sudo bash ./resistant_script.sh')
         action.timeout = 2
         action.blocking = True
         logger.info(action, extra={'msg_type': 'ACTION'})
