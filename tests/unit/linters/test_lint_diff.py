@@ -296,3 +296,9 @@ foo()
         and result[1].column == 30
         and result[1].message == "F821 undefined name 'ANOTHER_UNDEFINED_VARIABLE'"
     )
+
+
+def test_parse_diff_with_empty_patch():
+    diff_patch = ''
+    changes = parse_diff(diff_patch)
+    assert len(changes) == 0

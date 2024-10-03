@@ -19,6 +19,10 @@ def get_diff(old_contents: str, new_contents: str, filepath: str = 'file') -> st
 
 
 def parse_diff(diff_patch: str) -> list[whatthepatch.patch.Change]:
+    # handle empty patch
+    if diff_patch.strip() == '':
+        return []
+
     patch = whatthepatch.parse_patch(diff_patch)
     patch_list = list(patch)
     assert len(patch_list) == 1, (
