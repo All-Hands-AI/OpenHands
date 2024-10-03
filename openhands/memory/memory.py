@@ -1,7 +1,9 @@
 import json
-import time
+import os
 
-from openhands.core.config import LLMConfig
+from joblib import Parallel, delayed
+
+from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.serialization.event import event_to_memory
 from openhands.events.stream import EventStream
@@ -17,9 +19,17 @@ if check_llama_index():
     from llama_index.core.ingestion import IngestionPipeline
     from llama_index.core.schema import TextNode
 
-    torch.device('cpu')
-    torch.set_default_device('cpu')
-    torch.set_default_dtype(torch.float32)
+    # Disable CUDA and MPS to enforce CPU usage
+    os.environ['CUDA_VISIBLE_DEVICES'] = ''
+    os.environ['PYTORCH_FORCE_CPU'] = '1'  # Custom environment variable if supported
+
+    # Disable CUDA availability
+    torch.cuda.is_available = lambda: False
+
+    # Disable MPS if available
+    if hasattr(torch.backends, 'mps'):
+        torch.backends.mps.is_available = lambda: False
+        torch.backends.mps.is_built = False
 
     from openhands.memory.embeddings import (
         ChromaVectorStore,
@@ -38,8 +48,8 @@ class LongTermMemory:
     def __init__(
         self,
         llm_config: LLMConfig,
+        agent_config: AgentConfig,
         event_stream: EventStream,
-        memory_max_threads: int = 1,
     ):
         """Initialize the chromadb and set up ChromaVectorStore for later use."""
 
@@ -65,10 +75,7 @@ class LongTermMemory:
         self.event_stream = event_stream
 
         # max of threads to run the pipeline
-        self.memory_max_threads = memory_max_threads
-
-        # load existing events into the index
-        self.load_events_into_index()
+        self.memory_max_threads = agent_config.memory_max_threads
 
     def add_event(self, event: dict):
         """Adds a new event to the long term memory with a unique id.
@@ -134,16 +141,13 @@ class LongTermMemory:
 
         return [r.get_text() for r in results]
 
-    def load_events_into_index(self) -> None:
-        """Load all events from the EventStream and batch insert them into the index.
-
-        Utilizes llama-index's batch processing to handle multiple documents.
-        """
+    def _events_to_docs(self) -> list[Document]:
+        """Convert all events from the EventStream to documents for batch insert into the index."""
         try:
             events = self.event_stream.get_events()
         except Exception as e:
             logger.debug(f'No events found for session {self.event_stream.sid}: {e}')
-            return
+            return []
 
         documents: list[Document] = []
 
@@ -180,42 +184,34 @@ class LongTermMemory:
 
         if documents:
             logger.debug(f'Batch inserting {len(documents)} documents into the index.')
-            # batch insert documents using llama-index's batch processing
-
-            # nodes = self.create_nodes(documents)
-
-            # set up a pipeline with transformations to make
-            pipeline = IngestionPipeline(
-                transformations=[
-                    self.embed_model,
-                ],
-            )
-
-            # TODO: we probably want this False
-            pipeline.disable_cache = True
-
-            start = time.time()
-            nodes = pipeline.run(
-                documents=documents,
-                show_progress=True,
-                num_workers=self.memory_max_threads,
-            )
-            end = time.time()
-            print(f'---------Time: {end - start}---------')
-            print(f'---------Nodes: {len(nodes)}---------')
-
         else:
             logger.debug('No valid documents found to insert into the index.')
+
+        return documents
 
     def create_nodes(self, documents: list[Document]) -> list[TextNode]:
         """Create nodes from a list of documents."""
         return [self._create_node(doc) for doc in documents]
 
-    def _run_pipeline(
-        self, pipeline: IngestionPipeline, documents: list[Document]
-    ) -> list[TextNode]:
-        """Create nodes from a list of documents."""
-        time.sleep(0.01)
+    def _run_pipeline(self, documents: list[Document]) -> list[TextNode]:
+        """Create and index nodes from a list of documents, with embeddings."""
+
+        # set up a pipeline with transformations to make
+        pipeline = IngestionPipeline(
+            transformations=[
+                self.embed_model,
+            ],
+        )
+
+        # TODO: we probably want this False
+        pipeline.disable_cache = True
         return pipeline.run(
             documents=documents, show_progress=True, num_workers=self.memory_max_threads
         )
+
+    def _run_docs_in_parallel(self, documents: list[Document]) -> list[TextNode]:
+        """Run the pipeline in parallel for each document."""
+        results = Parallel(n_jobs=self.memory_max_threads, backend='threading')(
+            delayed(self._add_document)(doc) for doc in documents
+        )
+        return results
