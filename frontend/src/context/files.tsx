@@ -79,7 +79,7 @@ function FilesProvider({ children, defaultPaths }: FilesProviderProps) {
 
       return content;
     },
-    [modifiedFiles],
+    [files, modifiedFiles, selectedPath],
   );
 
   const value = React.useMemo(

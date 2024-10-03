@@ -1,7 +1,6 @@
 import { ClientActionFunctionArgs, json } from "@remix-run/react";
-import { addFile, setImportedProjectZip } from "#/state/initial-query-slice";
+import { setImportedProjectZip } from "#/state/initial-query-slice";
 import store from "#/store";
-import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 
 const convertZipToBase64 = async (file: File) => {
   const reader = new FileReader();
