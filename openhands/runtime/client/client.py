@@ -16,9 +16,10 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import pexpect
-from fastapi import FastAPI, HTTPException, Request, UploadFile
+from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
@@ -62,6 +63,15 @@ INIT_COMMANDS = [
     'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"',
 ]
 SOFT_TIMEOUT_SECONDS = 5
+
+SESSION_API_KEY = os.environ.get('SESSION_API_KEY')
+api_key_header = APIKeyHeader(name='X-Session-API-Key', auto_error=False)
+
+
+def verify_api_key(api_key: str = Depends(api_key_header)):
+    if SESSION_API_KEY and api_key != SESSION_API_KEY:
+        raise HTTPException(status_code=403, detail='Invalid API Key')
+    return api_key
 
 
 class RuntimeClient:
@@ -607,6 +617,16 @@ if __name__ == '__main__':
         assert client is not None
         async with client.lock:
             response = await call_next(request)
+        return response
+
+    @app.middleware('http')
+    async def authenticate_requests(request: Request, call_next):
+        if request.url.path != '/alive' and request.url.path != '/server_info':
+            try:
+                verify_api_key(request.headers.get('X-Session-API-Key'))
+            except HTTPException as e:
+                return e
+        response = await call_next(request)
         return response
 
     @app.get('/server_info')
