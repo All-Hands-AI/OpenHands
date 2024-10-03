@@ -4,6 +4,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+from pathlib import Path
 
 import docker
 from dirhash import dirhash
@@ -104,16 +105,21 @@ def _generate_dockerfile(
 
 
 def get_from_scratch_hash() -> str:
-    dir_path = os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__)))
-    dir_hash = dirhash(
-        dir_path,
-        'md5',
-        ignore=[
-            '.*/',  # hidden directories
-            '__pycache__/',
-            '*.pyc',
-        ],
-    )   
+    project_dir = os.path.dirname(os.path.dirname(os.path.abspath(openhands.__file__)))
+    hashes = [
+        dirhash(
+            Path(project_dir, to_hash),
+            'md5',
+            ignore=[
+                '.*/',  # hidden directories
+                '__pycache__/',
+                '*.pyc',
+            ],
+        )
+        for to_hash in ['agenthub', 'openhands']
+    ]
+    hashes.append(hashlib.md5(open('pyproject.toml', 'rb').read()).hexdigest())
+    dir_hash = hashlib.md5(":".join(hashes).encode()).hexdigest()
     return dir_hash 
 
 
