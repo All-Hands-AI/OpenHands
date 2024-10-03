@@ -19,7 +19,7 @@ from openhands.events.observation import (
 # Browsing tests
 # ============================================================================================================================
 
-PY3_FOR_TESTING = '/openhands/miniforge3/bin/mamba run -n base python3'
+PY3_FOR_TESTING = '/openhands/micromamba/bin/micromamba run -n openhands python3'
 
 
 def test_simple_browse(temp_dir, box_class, run_as_openhands):
@@ -75,6 +75,7 @@ def test_browsergym_eval_env(box_class, temp_dir):
         run_as_openhands=False,  # need root permission to access file
         base_container_image='xingyaoww/od-eval-miniwob:v1.0',
         browsergym_eval_env='browsergym/miniwob.choose-list',
+        force_rebuild_runtime=True,
     )
     from openhands.runtime.browser.browser_env import (
         BROWSER_EVAL_GET_GOAL_ACTION,
