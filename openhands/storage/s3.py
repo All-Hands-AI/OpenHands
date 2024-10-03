@@ -1,3 +1,4 @@
+import io
 import os
 
 from minio import Minio
@@ -15,8 +16,10 @@ class S3FileStore(FileStore):
         self.client = Minio(endpoint, access_key, secret_key, secure=secure)
 
     def write(self, path: str, contents: str) -> None:
+        as_bytes = contents.encode('utf-8')
+        stream = io.BytesIO(as_bytes)
         try:
-            self.client.put_object(self.bucket, path, contents)
+            self.client.put_object(self.bucket, path, stream, len(as_bytes))
         except Exception as e:
             raise FileNotFoundError(f'Failed to write to S3 at path {path}: {e}')
 
