@@ -15,13 +15,27 @@ class S3FileStore(FileStore):
         self.client = Minio(endpoint, access_key, secret_key, secure=secure)
 
     def write(self, path: str, contents: str) -> None:
-        self.client.put_object(self.bucket, path, contents)
+        try:
+            self.client.put_object(self.bucket, path, contents)
+        except Exception as e:
+            raise FileNotFoundError(f'Failed to write to S3 at path {path}: {e}')
 
     def read(self, path: str) -> str:
-        return self.client.get_object(self.bucket, path).data.decode('utf-8')
+        try:
+            return self.client.get_object(self.bucket, path).data.decode('utf-8')
+        except Exception as e:
+            raise FileNotFoundError(f'Failed to read from S3 at path {path}: {e}')
 
     def list(self, path: str) -> list[str]:
-        return [obj.object_name for obj in self.client.list_objects(self.bucket, path)]
+        try:
+            return [
+                obj.object_name for obj in self.client.list_objects(self.bucket, path)
+            ]
+        except Exception as e:
+            raise FileNotFoundError(f'Failed to list S3 objects at path {path}: {e}')
 
     def delete(self, path: str) -> None:
-        self.client.remove_object(self.bucket, path)
+        try:
+            self.client.remove_object(self.bucket, path)
+        except Exception as e:
+            raise FileNotFoundError(f'Failed to delete S3 object at path {path}: {e}')
