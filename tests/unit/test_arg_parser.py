@@ -123,10 +123,11 @@ def test_help_message(capsys):
         '--eval-ids EVAL_IDS',
         '-l LLM_CONFIG, --llm-config LLM_CONFIG',
         '-n NAME, --name NAME',
+        '--config-file CONFIG_FILE',
     ]
 
     for element in expected_elements:
         assert element in help_output, f"Expected '{element}' to be in the help message"
 
     option_count = help_output.count('  -')
-    assert option_count == 14, f'Expected 14 options, found {option_count}'
+    assert option_count == 15, f'Expected 15 options, found {option_count}'

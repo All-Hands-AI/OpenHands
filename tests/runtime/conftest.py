@@ -208,6 +208,7 @@ def _load_runtime(
     base_container_image: str | None = None,
     browsergym_eval_env: str | None = None,
     use_workspace: bool | None = None,
+    force_rebuild_runtime: bool = False,
 ) -> Runtime:
     sid = 'rt_' + str(random.randint(100000, 999999))
 
@@ -217,7 +218,7 @@ def _load_runtime(
 
     config = load_app_config()
     config.run_as_openhands = run_as_openhands
-
+    config.sandbox.force_rebuild_runtime = force_rebuild_runtime
     # Folder where all tests create their own folder
     global test_mount_path
     if use_workspace:

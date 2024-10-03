@@ -18,6 +18,7 @@ class SandboxConfig:
         enable_auto_lint: Whether to enable auto-lint.
         use_host_network: Whether to use the host network.
         initialize_plugins: Whether to initialize plugins.
+        force_rebuild_runtime: Whether to force rebuild the runtime image.
         runtime_extra_deps: The extra dependencies to install in the runtime image (typically used for evaluation).
             This will be rendered into the end of the Dockerfile that builds the runtime image.
             It can contain any valid shell commands (e.g., pip install numpy).
@@ -43,6 +44,7 @@ class SandboxConfig:
     )
     use_host_network: bool = False
     initialize_plugins: bool = True
+    force_rebuild_runtime: bool = False
     runtime_extra_deps: str | None = None
     runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
     browsergym_eval_env: str | None = None

@@ -91,7 +91,7 @@ async def main():
         return
 
     logger.setLevel(logging.WARNING)
-    config = load_app_config()
+    config = load_app_config(config_file=args.config_file)
     sid = 'cli'
 
     agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
