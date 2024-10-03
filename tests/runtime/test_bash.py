@@ -179,7 +179,7 @@ done
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 0
+        assert obs.exit_code == 130  # script was killed by SIGINT
         assert 'Still running...' in obs.content
         assert 'Caught SIGINT (1/1), ignoring...' in obs.content
         assert 'Stopped' not in obs.content
