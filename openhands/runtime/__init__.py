@@ -1,19 +1,18 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 from openhands.runtime.e2b.sandbox import E2BBox
 
 
-@dataclass
-class RuntimeInfo:
+class RuntimeInfo(BaseModel):
     module: str
     class_name: str
 
 
 # Core runtimes as default
-_registered_runtimes = {
-    'eventstream': RuntimeInfo('client', 'EventStreamRuntime'),
-    'e2b': RuntimeInfo('e2b', 'E2bRuntime'),
-    'remote': RuntimeInfo('remote', 'RemoteRuntime'),
+_registered_runtimes: dict[str, RuntimeInfo] = {
+    'eventstream': RuntimeInfo(module='client', class_name='EventStreamRuntime'),
+    'e2b': RuntimeInfo(module='e2b', class_name='E2bRuntime'),
+    'remote': RuntimeInfo(module='remote', class_name='RemoteRuntime'),
 }
 
 
@@ -29,7 +28,7 @@ def register_runtime(name: str, module: str, class_name: str):
     Example:
     >>> register_runtime("new_runtime", "new_module", "NewRuntime")
     """
-    _registered_runtimes[name] = RuntimeInfo(module, class_name)
+    _registered_runtimes[name] = RuntimeInfo(module=module, class_name=class_name)
 
 
 def get_runtime_cls(name: str):

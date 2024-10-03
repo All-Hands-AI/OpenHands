@@ -17,7 +17,7 @@ def test_register_and_get_runtime():
     # Check if it's registered
     assert 'test_runtime' in _registered_runtimes
     assert _registered_runtimes['test_runtime'] == RuntimeInfo(
-        'test_module', 'TestRuntime'
+        module='test_module', class_name='TestRuntime'
     )
 
     # Mock the import process
