@@ -27,6 +27,7 @@ on:
 
 env:
   BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST: nikolaik/python-nodejs:python3.12-nodejs22
+  RELEVANT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
   # Builds the OpenHands Docker images
