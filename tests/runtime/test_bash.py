@@ -102,8 +102,8 @@ def test_bash_timeout_and_keyboard_interrupt(temp_dir, box_class, run_as_openhan
         _close_test_runtime(runtime)
 
 
-def test_bash_pexcept_eof(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class, run_as_openhands=False)
+def test_bash_pexcept_eof(temp_dir, box_class, run_as_openhands):
+    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
     try:
         action = CmdRunAction(command='python3 -m http.server 8080')
         action.timeout = 1
@@ -143,8 +143,8 @@ def test_bash_pexcept_eof(temp_dir, box_class):
         _close_test_runtime(runtime)
 
 
-def test_process_resistant_to_one_sigint(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class, run_as_openhands=False)
+def test_process_resistant_to_one_sigint(temp_dir, box_class, run_as_openhands):
+    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
     try:
         # Create a bash script that ignores SIGINT up to 1 times
         script_content = """
