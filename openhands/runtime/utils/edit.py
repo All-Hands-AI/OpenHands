@@ -1,4 +1,3 @@
-import difflib
 import os
 import re
 import tempfile
@@ -21,6 +20,7 @@ from openhands.events.observation import (
 from openhands.linter import DefaultLinter, LintResult
 from openhands.llm.llm import LLM
 from openhands.utils.chunk_localizer import Chunk, get_top_k_chunk_matches
+from openhands.utils.diff import get_diff
 
 SYS_MSG = """Your job is to produce a new version of the file based on the old version and the
 provided draft of the new version. The provided draft may be incomplete (it may skip lines) and/or incorrectly indented. You should try to apply the changes present in the draft to the old version, and output a new version of the file.
@@ -72,18 +72,6 @@ def get_new_file_contents(
             return new_contents
         num_retries -= 1
     return None
-
-
-def get_diff(old_contents: str, new_contents: str, filepath: str) -> str:
-    diff = list(
-        difflib.unified_diff(
-            old_contents.strip().split('\n'),
-            new_contents.strip().split('\n'),
-            fromfile=filepath,
-            tofile=filepath,
-        )
-    )
-    return '\n'.join(map(lambda x: x.rstrip(), diff))
 
 
 class FileEditRuntimeInterface(ABC):
