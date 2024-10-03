@@ -13,7 +13,7 @@ import BrowserPanel from "./Browser";
 import Planner from "./Planner";
 import JupyterEditor from "./Jupyter";
 import { getSettings } from "#/services/settings";
-import CodeEditor from "#/routes/app._index";
+import CodeEditor from "#/routes/app._index/route";
 
 function Workspace() {
   const { t } = useTranslation();

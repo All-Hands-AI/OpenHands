@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { screen, within } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
 import userEvent from "@testing-library/user-event";
-import CodeEditor from "#/routes/app._index";
+import CodeEditor from "#/routes/app._index/route";
 
 const RemixStub = createRemixStub([{ path: "/app", Component: CodeEditor }]);
 
