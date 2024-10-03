@@ -17,7 +17,7 @@ from openhands.events.observation import (
     FileWriteObservation,
     Observation,
 )
-from openhands.linter import DefaultLinter, LintResult
+from openhands.linter import DefaultLinter
 from openhands.llm.llm import LLM
 from openhands.utils.chunk_localizer import Chunk, get_top_k_chunk_matches
 from openhands.utils.diff import get_diff
@@ -146,19 +146,15 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             # Lint the original file
             original_file_copy.write(old_content)
             original_file_copy.flush()
-            original_lint_error: list[LintResult] = linter.lint(original_file_copy.name)
 
             # Lint the updated file
             updated_file_copy.write(new_content)
             updated_file_copy.flush()
-            updated_lint_error: list[LintResult] = linter.lint(updated_file_copy.name)
 
-            # Subtract the lint errors caused by the unchanged lines
-            if original_lint_error and updated_lint_error:
-                # remove the lint errors caused by the unchanged lines
-                updated_lint_error = [
-                    err for err in updated_lint_error if err not in original_lint_error
-                ]
+            updated_lint_error = linter.lint_file_diff(
+                original_file_copy.name, updated_file_copy.name
+            )
+
             if len(updated_lint_error) > 0:
                 error_message = (
                     (
