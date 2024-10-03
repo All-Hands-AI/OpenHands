@@ -4,6 +4,7 @@ from minio import Minio
 
 from openhands.storage.files import FileStore
 
+
 class S3FileStore(FileStore):
     def __init__(self) -> None:
         access_key = os.getenv('AWS_ACCESS_KEY_ID')
