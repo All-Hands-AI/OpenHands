@@ -1,3 +1,4 @@
+import asyncio
 import os
 import re
 import tempfile
@@ -257,7 +258,7 @@ async def websocket_endpoint(websocket: WebSocket):
         {"action": "finish", "args": {}}
         ```
     """
-    await websocket.accept()
+    await asyncio.wait_for(websocket.accept(), 10)
 
     if websocket.query_params.get('token'):
         token = websocket.query_params.get('token')

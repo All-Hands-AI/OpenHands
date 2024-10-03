@@ -155,16 +155,14 @@ def test_generate_dockerfile_scratch():
     )
     assert base_image in dockerfile_content
     assert 'apt-get update' in dockerfile_content
-    assert 'apt-get install -y wget sudo apt-utils' in dockerfile_content
-    assert (
-        'RUN /openhands/miniforge3/bin/mamba install conda-forge::poetry python=3.11 -y'
-        in dockerfile_content
-    )
+    assert 'apt-get install -y wget curl sudo apt-utils' in dockerfile_content
+    assert 'poetry' in dockerfile_content and '-c conda-forge' in dockerfile_content
+    assert 'python=3.11' in dockerfile_content
 
     # Check the update command
     assert 'COPY ./code /openhands/code' in dockerfile_content
     assert (
-        '/openhands/miniforge3/bin/mamba run -n base poetry install'
+        '/openhands/micromamba/bin/micromamba run -n openhands poetry install'
         in dockerfile_content
     )
 
@@ -178,17 +176,13 @@ def test_generate_dockerfile_skip_init():
 
     # These commands SHOULD NOT include in the dockerfile if skip_init is True
     assert 'RUN apt update && apt install -y wget sudo' not in dockerfile_content
-    assert (
-        'RUN /openhands/miniforge3/bin/mamba install conda-forge::poetry python=3.11 -y'
-        not in dockerfile_content
-    )
+    assert '-c conda-forge' not in dockerfile_content
+    assert 'python=3.11' not in dockerfile_content
+    assert 'https://micro.mamba.pm/install.sh' not in dockerfile_content
 
     # These update commands SHOULD still in the dockerfile
     assert 'COPY ./code /openhands/code' in dockerfile_content
-    assert (
-        '/openhands/miniforge3/bin/mamba run -n base poetry install'
-        in dockerfile_content
-    )
+    assert 'poetry install' in dockerfile_content
 
 
 def test_get_runtime_image_repo_and_tag_eventstream():
@@ -353,7 +347,7 @@ def live_docker_image():
     dockerfile_content = f"""
     # syntax=docker/dockerfile:1.4
     FROM {DEFAULT_BASE_IMAGE} AS base
-    RUN apt-get update && apt-get install -y wget sudo apt-utils
+    RUN apt-get update && apt-get install -y wget curl sudo apt-utils
 
     FROM base AS intermediate
     RUN mkdir -p /openhands
