@@ -19,7 +19,7 @@ jobs:
       INSTALL_DOCKER: '1' # Set to '0' to skip Docker installation
     strategy:
       matrix:
-        python-version: ['3.11']
+        python-version: ['3.12']
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
@@ -107,7 +107,7 @@ jobs:
       INSTALL_DOCKER: '0' # Set to '0' to skip Docker installation
     strategy:
       matrix:
-        python-version: ['3.11']
+        python-version: ['3.12']
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
