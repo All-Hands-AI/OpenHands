@@ -55,6 +55,7 @@ pylatexenc = "*"
 tornado = "*"
 python-dotenv = "*"
 pylcs = "^0.1.1"
+whatthepatch = "^1.0.6"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
