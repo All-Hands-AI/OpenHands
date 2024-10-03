@@ -63,5 +63,4 @@ class DefaultLinter(BaseLinter):
             for error in updated_lint_error:
                 if error.line == new_lineno:
                     selected_errors.append(error)
-                    break
         return selected_errors

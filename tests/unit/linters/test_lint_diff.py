@@ -259,3 +259,40 @@ def foo():
         str(tmp_path / 'new.py'),
     )
     assert len(result) == 0  # Linter should ignore changes in docstrings
+
+
+def test_lint_with_multiple_errors_on_same_line(tmp_path):
+    old_content = """
+def foo():
+    print("Hello, World!")
+    x = 10
+foo()
+"""
+    new_content = """
+def foo():
+    print("Hello, World!")
+    x = UNDEFINED_VARIABLE + ANOTHER_UNDEFINED_VARIABLE
+foo()
+"""
+    with open(tmp_path / 'old.py', 'w') as f:
+        f.write(old_content)
+    with open(tmp_path / 'new.py', 'w') as f:
+        f.write(new_content)
+
+    linter = DefaultLinter()
+    result: list[LintResult] = linter.lint_file_diff(
+        str(tmp_path / 'old.py'),
+        str(tmp_path / 'new.py'),
+    )
+    print(result)
+    assert len(result) == 2
+    assert (
+        result[0].line == 4
+        and result[0].column == 9
+        and result[0].message == "F821 undefined name 'UNDEFINED_VARIABLE'"
+    )
+    assert (
+        result[1].line == 4
+        and result[1].column == 30
+        and result[1].message == "F821 undefined name 'ANOTHER_UNDEFINED_VARIABLE'"
+    )
