@@ -3,6 +3,7 @@ import Markdown from "react-markdown";
 import { FaClipboard, FaClipboardCheck } from "react-icons/fa";
 import { twMerge } from "tailwind-merge";
 import { useTranslation } from "react-i18next";
+import remarkGfm from "remark-gfm";
 import { code } from "../markdown/code";
 import toast from "#/utils/toast";
 import { I18nKey } from "#/i18n/declaration";
@@ -90,12 +91,13 @@ function ChatMessage({
         </button>
       )}
       <Markdown
-        className="-space-y-3"
+        className="-space-y-4"
         components={{
           code,
           ul,
           ol,
         }}
+        remarkPlugins={[remarkGfm]}
       >
         {message.content}
       </Markdown>
