@@ -42,6 +42,7 @@ from openhands.runtime.utils.request import (
     send_request,
 )
 from openhands.runtime.utils.runtime_build import build_runtime_image
+from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
 class RemoteRuntime(Runtime):
@@ -83,48 +84,54 @@ class RemoteRuntime(Runtime):
         self.instance_id = (
             sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
-        if self.config.sandbox.runtime_container_image is not None:
-            raise ValueError(
-                'Setting runtime_container_image is not supported in the remote runtime.'
-            )
-        self.container_image: str = self.config.sandbox.base_container_image
         self.container_name = 'oh-remote-runtime-' + self.instance_id
-        logger.debug(f'RemoteRuntime `{sid}` config:\n{self.config}')
-        response = send_request(
-            self.session,
-            'GET',
-            f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
-        )
-        response_json = response.json()
-        registry_prefix = response_json['registry_prefix']
-        os.environ['OH_RUNTIME_RUNTIME_IMAGE_REPO'] = (
-            registry_prefix.rstrip('/') + '/runtime'
-        )
-        logger.info(
-            f'Runtime image repo: {os.environ["OH_RUNTIME_RUNTIME_IMAGE_REPO"]}'
-        )
-
-        if self.config.sandbox.runtime_extra_deps:
+        if self.config.sandbox.runtime_container_image is not None:
             logger.info(
-                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
+                f'Running remote runtime with image: {self.config.sandbox.runtime_container_image}'
+            )
+            self.container_image = self.config.sandbox.runtime_container_image
+        else:
+            logger.info(
+                f'Building remote runtime with base image: {self.config.sandbox.base_container_image}'
+            )
+            logger.debug(f'RemoteRuntime `{sid}` config:\n{self.config}')
+            response = send_request(
+                self.session,
+                'GET',
+                f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
+            )
+            response_json = response.json()
+            registry_prefix = response_json['registry_prefix']
+            os.environ['OH_RUNTIME_RUNTIME_IMAGE_REPO'] = (
+                registry_prefix.rstrip('/') + '/runtime'
+            )
+            logger.info(
+                f'Runtime image repo: {os.environ["OH_RUNTIME_RUNTIME_IMAGE_REPO"]}'
             )
 
-        # Build the container image
-        self.container_image = build_runtime_image(
-            self.container_image,
-            self.runtime_builder,
-            extra_deps=self.config.sandbox.runtime_extra_deps,
-        )
+            if self.config.sandbox.runtime_extra_deps:
+                logger.info(
+                    f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
+                )
 
-        # Use the /image_exists endpoint to check if the image exists
-        response = send_request(
-            self.session,
-            'GET',
-            f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
-            params={'image': self.container_image},
-        )
-        if response.status_code != 200 or not response.json()['exists']:
-            raise RuntimeError(f'Container image {self.container_image} does not exist')
+            # Build the container image
+            self.container_image = build_runtime_image(
+                self.config.sandbox.base_container_image,
+                self.runtime_builder,
+                extra_deps=self.config.sandbox.runtime_extra_deps,
+                force_rebuild=self.config.sandbox.force_rebuild_runtime,
+            )
+
+            response = send_request(
+                self.session,
+                'GET',
+                f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
+                params={'image': self.container_image},
+            )
+            if response.status_code != 200 or not response.json()['exists']:
+                raise RuntimeError(
+                    f'Container image {self.container_image} does not exist'
+                )
 
         # Prepare the request body for the /start endpoint
         plugin_arg = ''
@@ -138,8 +145,8 @@ class RemoteRuntime(Runtime):
         start_request = {
             'image': self.container_image,
             'command': (
-                f'/openhands/miniforge3/bin/mamba run --no-capture-output -n base '
-                'PYTHONUNBUFFERED=1 poetry run '
+                f'/openhands/micromamba/bin/micromamba run -n openhands '
+                'poetry run '
                 f'python -u -m openhands.runtime.client.client {self.port} '
                 f'--working-dir {self.config.workspace_mount_path_in_sandbox} '
                 f'{plugin_arg}'
@@ -169,6 +176,11 @@ class RemoteRuntime(Runtime):
             f'Sandbox started. Runtime ID: {self.runtime_id}, URL: {self.runtime_url}'
         )
 
+        if 'session_api_key' in start_response:
+            self.session.headers.update(
+                {'X-Session-API-Key': start_response['session_api_key']}
+            )
+
         # Initialize the eventstream and env vars
         super().__init__(
             config, event_stream, sid, plugins, env_vars, status_message_callback
@@ -186,13 +198,13 @@ class RemoteRuntime(Runtime):
         ), 'Runtime URL is not set. This should never happen.'
 
     @retry(
-        stop=stop_after_attempt(10),
+        stop=stop_after_attempt(10) | stop_if_should_exit(),
         wait=wait_exponential(multiplier=1, min=4, max=60),
         retry=retry_if_exception_type(RuntimeError),
         reraise=True,
     )
     def _wait_until_alive(self):
-        logger.info('Waiting for sandbox to be alive...')
+        logger.info(f'Waiting for runtime to be alive at url: {self.runtime_url}')
         response = send_request(
             self.session,
             'GET',

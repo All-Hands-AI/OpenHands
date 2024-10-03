@@ -57,7 +57,7 @@ def _put_source_code_to_dir(temp_dir: str):
         raise RuntimeError(f'Image build failed:\n{result}')
 
     if not os.path.exists(tarball_path):
-        logger.error(f'Source distribution not found at {tarball_path}')
+        logger.error(f'Source distribution not found at {tarball_path}. (Do you need to run `make build`?)')
         raise RuntimeError(f'Source distribution not found at {tarball_path}')
     logger.info(f'Source distribution created at {tarball_path}')
 
@@ -251,7 +251,9 @@ def build_runtime_image(
 
     # Scenario 1: If we already have an image with the exact same hash, then it means the image is already built
     # with the exact same source code and Dockerfile, so we will reuse it. Building it is not required.
-    if not force_rebuild and runtime_builder.image_exists(hash_runtime_image_name, False):
+    if not force_rebuild and runtime_builder.image_exists(
+        hash_runtime_image_name, False
+    ):
         logger.info(
             f'Image [{hash_runtime_image_name}] already exists so we will reuse it.'
         )

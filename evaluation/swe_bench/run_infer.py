@@ -131,6 +131,7 @@ def get_config(
             # large enough timeout, since some testcases take very long to run
             timeout=300,
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
+            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
         ),
         # do not mount workspace
         workspace_base=None,

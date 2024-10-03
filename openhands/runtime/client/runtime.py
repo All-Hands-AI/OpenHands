@@ -36,6 +36,7 @@ from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime import Runtime
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.runtime_build import build_runtime_image
+from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
 class LogBuffer:
@@ -166,6 +167,7 @@ class EventStreamRuntime(Runtime):
                 self.base_container_image,
                 self.runtime_builder,
                 extra_deps=self.config.sandbox.runtime_extra_deps,
+                force_rebuild=self.config.sandbox.force_rebuild_runtime,
             )
         self.container = self._init_container(
             sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,  # e.g. /workspace
@@ -201,7 +203,7 @@ class EventStreamRuntime(Runtime):
             raise ex
 
     @tenacity.retry(
-        stop=tenacity.stop_after_attempt(5),
+        stop=tenacity.stop_after_attempt(5) | stop_if_should_exit(),
         wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
     )
     def _init_container(
@@ -272,7 +274,7 @@ class EventStreamRuntime(Runtime):
             container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=(
-                    f'/openhands/miniforge3/bin/mamba run --no-capture-output -n base '
+                    f'/openhands/micromamba/bin/micromamba run -n openhands '
                     f'poetry run '
                     f'python -u -m openhands.runtime.client.client {self._container_port} '
                     f'--working-dir "{sandbox_workspace_dir}" '
@@ -322,7 +324,7 @@ class EventStreamRuntime(Runtime):
             )
 
     @tenacity.retry(
-        stop=tenacity.stop_after_attempt(10),
+        stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
         wait=tenacity.wait_exponential(multiplier=2, min=1, max=20),
         reraise=(ConnectionRefusedError,),
     )
@@ -428,13 +430,15 @@ class EventStreamRuntime(Runtime):
                     logger.debug(f'response: {response}')
                     error_message = response.text
                     logger.error(f'Error from server: {error_message}')
-                    obs = ErrorObservation(f'Command execution failed: {error_message}')
+                    obs = ErrorObservation(f'Action execution failed: {error_message}')
             except requests.Timeout:
                 logger.error('No response received within the timeout period.')
-                obs = ErrorObservation('Command execution timed out')
+                obs = ErrorObservation(
+                    f'Action execution timed out after {action.timeout} seconds.'
+                )
             except Exception as e:
-                logger.error(f'Error during command execution: {e}')
-                obs = ErrorObservation(f'Command execution failed: {str(e)}')
+                logger.error(f'Error during action execution: {e}')
+                obs = ErrorObservation(f'Action execution failed: {str(e)}')
             self._refresh_logs()
             return obs
 
