@@ -5,6 +5,8 @@ from openhands.agenthub.memcodeact_agent.action_parser import MemCodeActResponse
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
+from openhands.core.config.memory_config import MemoryConfig
+from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
     Action,
@@ -24,6 +26,7 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
+from openhands.memory.conversation_memory import ConversationMemory
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -68,6 +71,7 @@ class MemCodeActAgent(Agent):
         self,
         llm: LLM,
         config: AgentConfig,
+        memory_config: MemoryConfig = None,
     ) -> None:
         """Initializes a new instance of the MemCodeActAgent class.
 
@@ -76,6 +80,10 @@ class MemCodeActAgent(Agent):
         """
         super().__init__(llm, config)
         self.reset()
+
+        self.memory_config = memory_config
+
+        self.conversation_memory = ConversationMemory(self.memory_config)
 
         self.micro_agent = (
             MicroAgent(
@@ -168,11 +176,15 @@ class MemCodeActAgent(Agent):
         else:
             # If an observation message is not returned, it will cause an error
             # when the LLM tries to return the next message
-            raise ValueError(f'Unknown observation type: {type(obs)}')
+            logger.debug(f'Unknown observation type: {type(obs)}')
+            return None
 
     def reset(self) -> None:
         """Resets the MemCodeAct Agent."""
         super().reset()
+
+        # clean its history
+        self.conversation_memory.reset()
 
     def step(self, state: State) -> Action:
         """Performs one step using the MemCodeAct Agent.

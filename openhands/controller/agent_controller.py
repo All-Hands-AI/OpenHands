@@ -347,6 +347,7 @@ class AgentController:
         Args:
             action (AgentDelegateAction): The action containing information about the delegate agent to start.
         """
+        # prepare the required arguments for the delegate agent: llm, agent_config, memory
         agent_cls: Type[Agent] = Agent.get_cls(action.agent)
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)

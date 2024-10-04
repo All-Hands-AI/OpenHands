@@ -27,7 +27,7 @@ class DelegatorAgent(Agent):
         Otherwise, delegates the task to the next agent in the pipeline.
 
         Parameters:
-        - state (State): The current state given the previous actions and observations
+        - state: The current state given the previous actions and observations
 
         Returns:
         - AgentFinishAction: If the last state was 'completed', 'verified', or 'abandoned'
