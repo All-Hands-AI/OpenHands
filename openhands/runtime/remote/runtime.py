@@ -48,6 +48,20 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 class RemoteRuntime(Runtime):
     """This runtime will connect to a remote oh-runtime-client."""
 
+
+    def _check_existing_runtime(self) -> dict | None:
+        try:
+            response = send_request(
+                self.session,
+                'GET',
+                f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.instance_id}'
+            )
+            if response.status_code == 200:
+                return response.json()
+        except Exception as e:
+            logger.warning(f"Error checking existing runtime: {e}")
+        return None
+
     port: int = 60000  # default port for the remote runtime client
 
     def __init__(
@@ -85,15 +99,22 @@ class RemoteRuntime(Runtime):
             sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
         self.container_name = 'oh-remote-runtime-' + self.instance_id
-        if self.config.sandbox.runtime_container_image is not None:
-            logger.info(
-                f'Running remote runtime with image: {self.config.sandbox.runtime_container_image}'
-            )
-            self.container_image = self.config.sandbox.runtime_container_image
+        
+        existing_runtime = self._check_existing_runtime()
+        if existing_runtime:
+            self.runtime_id = existing_runtime['runtime_id']
+            self.runtime_url = existing_runtime['url']
+            logger.info(f'Using existing runtime with ID: {self.runtime_id}')
         else:
-            logger.info(
-                f'Building remote runtime with base image: {self.config.sandbox.base_container_image}'
-            )
+            if self.config.sandbox.runtime_container_image is not None:
+                logger.info(
+                    f'Running remote runtime with image: {self.config.sandbox.runtime_container_image}'
+                )
+                self.container_image = self.config.sandbox.runtime_container_image
+            else:
+                logger.info(
+                    f'Building remote runtime with base image: {self.config.sandbox.base_container_image}'
+                )
             logger.debug(f'RemoteRuntime `{sid}` config:\n{self.config}')
             response = send_request(
                 self.session,
@@ -154,6 +175,7 @@ class RemoteRuntime(Runtime):
                 f'--user-id {self.config.sandbox.user_id} '
                 f'{browsergym_arg}'
             ),
+            'runtime_id': self.instance_id,
             'working_dir': '/openhands/code/',
             'name': self.container_name,
             'environment': {'DEBUG': 'true'} if self.config.debug else {},
