@@ -292,7 +292,7 @@ class EventStreamRuntime(Runtime):
                 name=self.container_name,
                 detach=True,
                 environment=environment,
-                volumes=None,
+                volumes=volumes,
             )
             self.log_buffer = LogBuffer(container)
             logger.info(f'Container started. Server url: {self.api_url}')
