@@ -47,3 +47,16 @@ jobs:
         run: pip install pre-commit==3.7.0
       - name: Run pre-commit hooks
         run: pre-commit run --files openhands/**/* agenthub/**/* evaluation/**/* tests/**/* --show-diff-on-failure --config ./dev_config/python/.pre-commit-config.yaml
+      - name: Commit linting changes
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        run: |
+          if git diff --quiet --exit-code; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add .
+          git commit -am "Apply automatic linting fixes" || echo "No changes to commit"
+          git push
