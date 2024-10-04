@@ -31,6 +31,37 @@ from openhands.runtime import get_runtime_cls
 from openhands.storage import get_file_store
 
 
+def display_message(message: str):
+    print(colored('🤖 ' + message + '\n', 'yellow'))
+
+
+def display_command(command: str):
+    print('❯ ' + colored(command + '\n', 'green'))
+
+
+def display_command_output(output: str):
+    lines = output.split('\n')
+    for line in lines:
+        if line.startswith('[Python Interpreter') or line.startswith('openhands@'):
+            # TODO: clean this up once we clean up terminal output
+            continue
+        print(colored(line, 'blue'))
+    print('\n')
+
+
+def display_event(event: Event):
+    if isinstance(event, Action):
+        if hasattr(event, 'thought'):
+            display_message(event.thought)
+    if isinstance(event, MessageAction):
+        if event.source != EventSource.USER:
+            display_message(event.content)
+    if isinstance(event, CmdRunAction):
+        display_command(event.command)
+    if isinstance(event, CmdOutputObservation):
+        display_command_output(event.content)
+
+
 async def launch_cli(directory: str):
     os.chdir(directory)
     config = load_app_config()
@@ -106,37 +137,6 @@ def launch_ui(directory: str):
     os.environ['WORKSPACE_BASE'] = directory
     os.environ['WORKSPACE_MOUNT_PATH'] = directory
     subprocess.run(['make', 'run'], check=True)
-
-
-def display_message(message: str):
-    print(colored('🤖 ' + message + '\n', 'yellow'))
-
-
-def display_command(command: str):
-    print('❯ ' + colored(command + '\n', 'green'))
-
-
-def display_command_output(output: str):
-    lines = output.split('\n')
-    for line in lines:
-        if line.startswith('[Python Interpreter') or line.startswith('openhands@'):
-            # TODO: clean this up once we clean up terminal output
-            continue
-        print(colored(line, 'blue'))
-    print('\n')
-
-
-def display_event(event: Event):
-    if isinstance(event, Action):
-        if hasattr(event, 'thought'):
-            display_message(event.thought)
-    if isinstance(event, MessageAction):
-        if event.source != EventSource.USER:
-            display_message(event.content)
-    if isinstance(event, CmdRunAction):
-        display_command(event.command)
-    if isinstance(event, CmdOutputObservation):
-        display_command_output(event.content)
 
 
 async def main():
