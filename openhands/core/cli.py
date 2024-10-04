@@ -80,7 +80,6 @@ async def main():
     subparsers = parser.add_subparsers(dest='command', help='Available commands')
     launch_parser = subparsers.add_parser('launch', help='Launch OpenHands')
     launch_parser.add_argument('mode', choices=['cli', 'ui'], help='Launch mode')
-    launch_parser.add_argument('--directory', default='.', help='Workspace directory')
 
     args = parser.parse_args()
 
@@ -89,10 +88,12 @@ async def main():
         return
 
     if args.command == 'launch':
+        directory = os.getcwd()
+        print(f'Launching OpenHands in workspace: {directory}...')
         if args.mode == 'cli':
-            await launch_cli(args.directory)
+            await launch_cli(directory)
         elif args.mode == 'ui':
-            launch_ui(args.directory)
+            launch_ui(directory)
     else:
         parser.print_help()
 
