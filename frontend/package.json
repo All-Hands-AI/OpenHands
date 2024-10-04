@@ -21,7 +21,7 @@
     "eslint-config-airbnb-typescript": "^18.0.0",
     "i18next": "^23.15.1",
     "i18next-browser-languagedetector": "^8.0.0",
-    "i18next-http-backend": "^2.6.1",
+    "i18next-http-backend": "^2.6.2",
     "isbot": "^5.1.17",
     "jose": "^5.9.3",
     "monaco-editor": "^0.52.0",
@@ -37,7 +37,7 @@
     "react-syntax-highlighter": "^15.5.0",
     "remark-gfm": "^4.0.0",
     "sirv-cli": "^2.0.2",
-    "tailwind-merge": "^2.5.2",
+    "tailwind-merge": "^2.5.3",
     "vite": "^5.4.8",
     "web-vitals": "^3.5.2",
     "ws": "^8.18.0"
