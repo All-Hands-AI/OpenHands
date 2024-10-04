@@ -89,14 +89,9 @@ class RemoteRuntime(Runtime):
             config, event_stream, sid, plugins, env_vars, status_message_callback
         )
 
-        logger.info(
-            f'Runtime initialized with plugins: {[plugin.name for plugin in self.plugins]}'
-        )
-        logger.info(f'Runtime initialized with env vars: {env_vars}')
-
     @retry(
-        stop=stop_after_attempt(10) | stop_if_should_exit(),
-        wait=wait_exponential(multiplier=1, min=4, max=60),
+        stop=stop_after_attempt(20) | stop_if_should_exit(),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
         retry=retry_if_exception_type(RuntimeError),
         reraise=True,
     )
