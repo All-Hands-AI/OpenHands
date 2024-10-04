@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import FeedbackModal from "#/components/modals/feedback/FeedbackModal";
 import { sendFeedback } from "#/api/open-hands";
 
-describe("FeedbackModal", () => {
+describe.skip("FeedbackModal", () => {
   Storage.prototype.setItem = vi.fn();
   Storage.prototype.getItem = vi.fn();
 

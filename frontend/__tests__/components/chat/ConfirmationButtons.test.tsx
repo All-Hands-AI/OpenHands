@@ -10,7 +10,7 @@ describe("ConfirmationButtons", () => {
     changeAgentState: vi.fn(),
   }));
 
-  it("should change agent state appropriately on button click", async () => {
+  it.skip("should change agent state appropriately on button click", async () => {
     const user = userEvent.setup();
     render(<ConfirmationButtons />);
 

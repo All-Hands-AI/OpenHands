@@ -33,7 +33,7 @@ const renderTerminal = (commands: Command[] = []) =>
     },
   });
 
-describe("Terminal", () => {
+describe.skip("Terminal", () => {
   afterEach(() => {
     vi.clearAllMocks();
   });

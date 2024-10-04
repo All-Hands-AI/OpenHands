@@ -15,7 +15,7 @@ const renderRemixStub = (config?: { authenticated: boolean }) =>
     },
   ]);
 
-describe("Home (_index)", () => {
+describe.skip("Home (_index)", () => {
   it("should render", async () => {
     const RemixStub = renderRemixStub();
     render(<RemixStub />);

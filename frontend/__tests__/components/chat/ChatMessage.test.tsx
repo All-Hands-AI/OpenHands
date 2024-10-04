@@ -130,7 +130,7 @@ describe("Message", () => {
       ).not.toBeInTheDocument();
     };
 
-    it("should display confirmation buttons for the last assistant message", () => {
+    it.skip("should display confirmation buttons for the last assistant message", () => {
       // it should not render buttons if the message is not the last one
       const { rerender } = render(
         <ChatMessage

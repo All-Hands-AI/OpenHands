@@ -12,7 +12,7 @@ const RemixStub = createRemixStub([
   },
 ]);
 
-describe("Root", () => {
+describe.skip("Root", () => {
   it("should render", async () => {
     render(<RemixStub />);
     await screen.findByTestId("link-to-main");

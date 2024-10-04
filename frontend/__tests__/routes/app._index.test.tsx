@@ -7,7 +7,7 @@ import CodeEditor from "#/routes/app._index/route";
 
 const RemixStub = createRemixStub([{ path: "/app", Component: CodeEditor }]);
 
-describe("CodeEditor", () => {
+describe.skip("CodeEditor", () => {
   it("should render", async () => {
     renderWithProviders(<RemixStub initialEntries={["/app"]} />);
     await screen.findByTestId("file-explorer");

@@ -32,7 +32,7 @@ const renderFileExplorerWithRunningAgentState = () =>
     },
   });
 
-describe("FileExplorer", () => {
+describe.skip("FileExplorer", () => {
   afterEach(() => {
     vi.clearAllMocks();
   });

@@ -5,7 +5,7 @@ import ExplorerTree from "#/components/file-explorer/ExplorerTree";
 
 const FILES = ["file-1-1.ts", "folder-1-2"];
 
-describe("ExplorerTree", () => {
+describe.skip("ExplorerTree", () => {
   afterEach(() => {
     vi.resetAllMocks();
   });

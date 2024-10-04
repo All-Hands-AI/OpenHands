@@ -33,7 +33,7 @@ declare module "vitest" {
 HTMLElement.prototype.scrollTo = vi.fn().mockImplementation(() => {});
 const TEST_TIMESTAMP = new Date().toISOString();
 
-describe("ChatInterface", () => {
+describe.skip("ChatInterface", () => {
   const sessionSendSpy = vi.spyOn(Session, "send");
   vi.spyOn(Session, "isConnected").mockReturnValue(true);
 

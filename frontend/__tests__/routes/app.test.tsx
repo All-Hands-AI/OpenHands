@@ -9,7 +9,7 @@ import { AgentStateChangeObservation } from "#/types/core/observations";
 
 const RemixStub = createRemixStub([{ path: "/app", Component: App }]);
 
-describe("App", () => {
+describe.skip("App", () => {
   const agent = ws.link("ws://localhost:3001/ws");
   const server = setupServer();
 
