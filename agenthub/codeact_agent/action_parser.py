@@ -1,10 +1,10 @@
 import re
 
 from openhands.controller.action_parser import (
-    ActionParseError,
     ActionParser,
     ResponseParser,
 )
+from openhands.core.exceptions import LLMMalformedActionError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
@@ -214,13 +214,11 @@ class CodeActActionParserFileEdit(ActionParser):
             logger.error(
                 f'FileEditAction detected but the format is incorrect. Unable to match for <file_edit> in:\n{"-" * 80}\n{action_str}\n{"-" * 80}'
             )
-            raise ActionParseError(
-                error=(
-                    'FileEditAction detected but the format is incorrect. Usage:\n'
-                    '<file_edit path="[path]" start=[start_line] end=[end_line]>\n'
-                    '[content_to_edit]\n'
-                    '</file_edit>\n'
-                )
+            raise LLMMalformedActionError(
+                'FileEditAction detected but the format is incorrect. Usage:\n'
+                '<file_edit path="[path]" start=[start_line] end=[end_line]>\n'
+                '[content_to_edit]\n'
+                '</file_edit>\n'
             )
 
         path = self.file_edit_match.group(2)
@@ -228,24 +226,24 @@ class CodeActActionParserFileEdit(ActionParser):
         end = self.file_edit_match.group(6)
 
         if not path:
-            raise ActionParseError(
-                error='FileEditAction detected but no `path` specified. You should specify the path of the file to edit.'
+            raise LLMMalformedActionError(
+                'FileEditAction detected but no `path` specified. You should specify the path of the file to edit.'
             )
 
         if start:
             try:
                 int(start)
             except ValueError:
-                raise ActionParseError(
-                    error=f'FileEditAction detected but `start` is not a valid integer: {start}'
+                raise LLMMalformedActionError(
+                    f'FileEditAction detected but `start` is not a valid integer: {start}'
                 )
 
         if end:
             try:
                 int(end)
             except ValueError:
-                raise ActionParseError(
-                    error=f'FileEditAction detected but `end` is not a valid integer: {end}'
+                raise LLMMalformedActionError(
+                    f'FileEditAction detected but `end` is not a valid integer: {end}'
                 )
 
         return True

@@ -139,12 +139,12 @@ class AgentController:
 
         This method should be called for a particular type of errors, which have:
         - a user-friendly message, which will be shown in the chat box. This should not be a raw exception message.
-        - an ErrorObservation that can be sent to the LLM by the agent, with the exception message, so it can self-correct next time.
+        - an ErrorObservation that can be sent to the LLM by the user role, with the exception message, so it can self-correct next time.
         """
         self.state.last_error = message
         if exception:
             self.state.last_error += f': {exception}'
-        self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
+        self.event_stream.add_event(ErrorObservation(message), EventSource.USER)
 
     async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
@@ -443,10 +443,6 @@ class AgentController:
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
             self.event_stream.add_event(action, EventSource.AGENT)
-        else:
-            assert isinstance(action, NullAction)
-            if action.next_obs is not None:
-                self.event_stream.add_event(action.next_obs, EventSource.AGENT)
 
         await self.update_state_after_step()
         logger.info(action, extra={'msg_type': 'ACTION'})

@@ -2,11 +2,9 @@ import os
 from itertools import islice
 
 from agenthub.codeact_agent.action_parser import CodeActResponseParser
-from openhands.controller.action_parser import ActionParseError
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
-from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
     Action,
@@ -16,7 +14,6 @@ from openhands.events.action import (
     FileEditAction,
     IPythonRunCellAction,
     MessageAction,
-    NullAction,
 )
 from openhands.events.observation import (
     AgentDelegateObservation,
@@ -218,11 +215,7 @@ class CodeActAgent(Agent):
 
         response = self.llm.completion(**params)
 
-        try:
-            return self.action_parser.parse(response)
-        except ActionParseError as e:
-            logger.error(f'Agent Action Parser error: {str(e)}')
-            return NullAction(next_obs=ErrorObservation(content=e.error))
+        return self.action_parser.parse(response)
 
     def _get_messages(self, state: State) -> list[Message]:
         messages: list[Message] = [
