@@ -174,7 +174,6 @@ def insert_batch_docs(
     index: VectorStoreIndex, documents: list[Document], num_workers: int
 ) -> list[TextNode]:
     """Run the document indexing in parallel."""
-    print(f'\nbackend=threading, n_jobs={num_workers}\n')
     results = Parallel(n_jobs=num_workers, backend='threading')(
         delayed(index.insert)(doc) for doc in documents
     )
