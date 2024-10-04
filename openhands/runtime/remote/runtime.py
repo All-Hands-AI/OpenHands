@@ -244,6 +244,9 @@ class RemoteRuntime(Runtime):
             raise RuntimeError(msg)
 
     def close(self):
+        if self.config.sandbox.keep_remote_runtime_alive:
+            self.session.close()
+            return
         if self.runtime_id:
             try:
                 response = send_request(
