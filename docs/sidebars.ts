@@ -27,6 +27,11 @@ const sidebars: SidebarsConfig = {
           label: 'Github Actions',
           id: 'usage/how-to/github-action',
         },
+        {
+          type: 'doc',
+          label: 'Prompting Best Practices',
+          id: 'usage/prompting-best-practices',
+        },
       ],
     },
     {

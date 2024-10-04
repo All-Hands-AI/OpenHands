@@ -35,6 +35,9 @@ from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime import Runtime
 from openhands.runtime.utils import find_available_tcp_port
+from openhands.runtime.utils.request import (
+    send_request,
+)
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
@@ -167,6 +170,7 @@ class EventStreamRuntime(Runtime):
                 self.base_container_image,
                 self.runtime_builder,
                 extra_deps=self.config.sandbox.runtime_extra_deps,
+                force_rebuild=self.config.sandbox.force_rebuild_runtime,
             )
         self.container = self._init_container(
             sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,  # e.g. /workspace
@@ -273,7 +277,7 @@ class EventStreamRuntime(Runtime):
             container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=(
-                    f'/openhands/miniforge3/bin/mamba run --no-capture-output -n base '
+                    f'/openhands/micromamba/bin/micromamba run -n openhands '
                     f'poetry run '
                     f'python -u -m openhands.runtime.client.client {self._container_port} '
                     f'--working-dir "{sandbox_workspace_dir}" '
@@ -332,7 +336,12 @@ class EventStreamRuntime(Runtime):
         if not (self.log_buffer and self.log_buffer.client_ready):
             raise RuntimeError('Runtime client is not ready.')
 
-        response = self.session.get(f'{self.api_url}/alive')
+        response = send_request(
+            self.session,
+            'GET',
+            f'{self.api_url}/alive',
+            retry_exceptions=[ConnectionRefusedError],
+        )
         if response.status_code == 200:
             return
         else:
@@ -415,7 +424,9 @@ class EventStreamRuntime(Runtime):
             assert action.timeout is not None
 
             try:
-                response = self.session.post(
+                response = send_request(
+                    self.session,
+                    'POST',
                     f'{self.api_url}/execute_action',
                     json={'action': event_to_dict(action)},
                     timeout=action.timeout,
@@ -429,13 +440,15 @@ class EventStreamRuntime(Runtime):
                     logger.debug(f'response: {response}')
                     error_message = response.text
                     logger.error(f'Error from server: {error_message}')
-                    obs = ErrorObservation(f'Command execution failed: {error_message}')
+                    obs = ErrorObservation(f'Action execution failed: {error_message}')
             except requests.Timeout:
                 logger.error('No response received within the timeout period.')
-                obs = ErrorObservation('Command execution timed out')
+                obs = ErrorObservation(
+                    f'Action execution timed out after {action.timeout} seconds.'
+                )
             except Exception as e:
-                logger.error(f'Error during command execution: {e}')
-                obs = ErrorObservation(f'Command execution failed: {str(e)}')
+                logger.error(f'Error during action execution: {e}')
+                obs = ErrorObservation(f'Action execution failed: {str(e)}')
             self._refresh_logs()
             return obs
 
@@ -492,8 +505,12 @@ class EventStreamRuntime(Runtime):
 
             params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
 
-            response = self.session.post(
-                f'{self.api_url}/upload_file', files=upload_data, params=params
+            response = send_request(
+                self.session,
+                'POST',
+                f'{self.api_url}/upload_file',
+                files=upload_data,
+                params=params,
             )
             if response.status_code == 200:
                 return
@@ -522,7 +539,12 @@ class EventStreamRuntime(Runtime):
             if path is not None:
                 data['path'] = path
 
-            response = self.session.post(f'{self.api_url}/list_files', json=data)
+            response = send_request(
+                self.session,
+                'POST',
+                f'{self.api_url}/list_files',
+                json=data,
+            )
             if response.status_code == 200:
                 response_json = response.json()
                 assert isinstance(response_json, list)

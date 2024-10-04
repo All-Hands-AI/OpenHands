@@ -1,11 +1,13 @@
-{% if skip_init %}
 FROM {{ base_image }}
-{% else %}
+
+# Shared environment variables (regardless of init or not)
+ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry
+ENV MAMBA_ROOT_PREFIX=/openhands/micromamba
+
+{% if not skip_init %}
 # ================================================================
 # START: Build Runtime Image from Scratch
 # ================================================================
-FROM {{ base_image }}
-
 {% if 'ubuntu' in base_image and (base_image.endswith(':latest') or base_image.endswith(':24.04')) %}
 {% set LIBGL_MESA = 'libgl1' %}
 {% else %}
@@ -14,7 +16,7 @@ FROM {{ base_image }}
 
 # Install necessary packages and clean up in one layer
 RUN apt-get update && \
-    apt-get install -y wget sudo apt-utils {{ LIBGL_MESA }} libasound2-plugins git && \
+    apt-get install -y wget curl sudo apt-utils {{ LIBGL_MESA }} libasound2-plugins git && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -26,19 +28,16 @@ RUN mkdir -p /openhands && \
     mkdir -p /openhands/logs && \
     mkdir -p /openhands/poetry
 
-# Directory containing subdirectories for virtual environment.
-ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry
+# Install micromamba
+RUN mkdir -p /openhands/micromamba/bin && \
+    /bin/bash -c "PREFIX_LOCATION=/openhands/micromamba BIN_FOLDER=/openhands/micromamba/bin INIT_YES=no CONDA_FORGE_YES=yes $(curl -L https://micro.mamba.pm/install.sh)" && \
+    /openhands/micromamba/bin/micromamba config remove channels defaults && \
+    /openhands/micromamba/bin/micromamba config list
 
-RUN if [ ! -d /openhands/miniforge3 ]; then \
-    wget --progress=bar:force -O Miniforge3.sh "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh" && \
-    bash Miniforge3.sh -b -p /openhands/miniforge3 && \
-    rm Miniforge3.sh && \
-    chmod -R g+w /openhands/miniforge3 && \
-    bash -c ". /openhands/miniforge3/etc/profile.d/conda.sh && conda config --set changeps1 False && conda config --append channels conda-forge"; \
-    fi
+# Create the openhands virtual environment and install poetry and python
+RUN /openhands/micromamba/bin/micromamba create -n openhands -y && \
+    /openhands/micromamba/bin/micromamba install -n openhands -c conda-forge poetry python=3.12 -y
 
-# Install Python and Poetry
-RUN /openhands/miniforge3/bin/mamba install conda-forge::poetry python=3.11 -y
 # ================================================================
 # END: Build Runtime Image from Scratch
 # ================================================================
@@ -59,27 +58,28 @@ COPY ./code /openhands/code
 # virtual environment are used by default.
 WORKDIR /openhands/code
 RUN \
+    /openhands/micromamba/bin/micromamba config set changeps1 False && \
     # Configure Poetry and create virtual environment
-    /openhands/miniforge3/bin/mamba run -n base poetry config virtualenvs.path /openhands/poetry && \
-    /openhands/miniforge3/bin/mamba run -n base poetry env use python3.11 && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry config virtualenvs.path /openhands/poetry && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry env use python3.12 && \
     # Install project dependencies
-    /openhands/miniforge3/bin/mamba run -n base poetry install --only main,runtime --no-interaction --no-root && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry install --only main,runtime --no-interaction --no-root && \
     # Update and install additional tools
     apt-get update && \
-    /openhands/miniforge3/bin/mamba run -n base poetry run pip install playwright && \
-    /openhands/miniforge3/bin/mamba run -n base poetry run playwright install --with-deps chromium && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry run pip install playwright && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium && \
     # Set environment variables
-    echo "OH_INTERPRETER_PATH=$(/openhands/miniforge3/bin/mamba run -n base poetry run python -c "import sys; print(sys.executable)")" >> /etc/environment && \
+    echo "OH_INTERPRETER_PATH=$(/openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print(sys.executable)")" >> /etc/environment && \
     # Install extra dependencies if specified
     {{ extra_deps }} {% if extra_deps %} && {% endif %} \
     # Clear caches
-    /openhands/miniforge3/bin/mamba run -n base poetry cache clear --all . && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry cache clear --all . && \
     # Set permissions
     {% if not skip_init %}chmod -R g+rws /openhands/poetry && {% endif %} \
     mkdir -p /openhands/workspace && chmod -R g+rws,o+rw /openhands/workspace && \
     # Clean up
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
-    /openhands/miniforge3/bin/mamba clean --all
+    /openhands/micromamba/bin/micromamba clean --all
 # ================================================================
 # END: Copy Project and Install/Update Dependencies
 # ================================================================
