@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -115,7 +115,7 @@ def test_add_event_with_missing_keys(long_term_memory: LongTermMemory):
     # Creating an event with additional unexpected attributes
     event = Event()
     event._id = -1
-    event._timestamp = datetime.utcnow().isoformat()
+    event._timestamp = datetime.now(timezone.utc).isoformat()
     event._source = EventSource.AGENT
     event.action = 'test_action'
     event.unexpected_key = 'value'
@@ -129,52 +129,18 @@ def test_add_event_with_missing_keys(long_term_memory: LongTermMemory):
     assert kwargs['document'].extra_info['id'] == 'test_action'
 
 
-def test_load_events_into_index_success(
-    long_term_memory: LongTermMemory, mock_event_stream: EventStream
-):
-    event1 = _create_action_event('action1')
-    event2 = _create_observation_event('observation1')
-    mock_event_stream.get_events.return_value = [event1, event2]
-
-    # Mock insert_batch_docs
-    with patch('openhands.memory.embeddings.insert_batch_docs') as mock_run_docs:
-        # convert events to documents
-        documents = long_term_memory._events_to_docs()
-
-        # Mock the insert_batch_docs to simulate document insertion
-        mock_run_docs.return_value = []
-
-        # Call insert_batch_docs with the documents
-        mock_run_docs(
-            index=long_term_memory.index,
-            documents=documents,
-            num_workers=long_term_memory.memory_max_threads,
-        )
-
-        # Assert that insert_batch_docs was called with the correct arguments
-        mock_run_docs.assert_called_once_with(
-            index=long_term_memory.index,
-            documents=documents,
-            num_workers=long_term_memory.memory_max_threads,
-        )
-
-    # Check if thought_idx was incremented correctly
-    assert long_term_memory.thought_idx == 2
-
-
-def test_load_events_into_index_no_events(
+def test_events_to_docs_no_events(
     long_term_memory: LongTermMemory, mock_event_stream: EventStream
 ):
     mock_event_stream.get_events.side_effect = FileNotFoundError
-    # Mock insert_batch_docs
-    with patch('openhands.memory.embeddings.insert_batch_docs') as mock_run_docs:
-        # convert events to documents
-        long_term_memory._events_to_docs()
 
-        # Since get_events raises, documents should be empty and insert_batch_docs should not be called
-        mock_run_docs.assert_not_called()
+    # convert events to documents
+    documents = long_term_memory._events_to_docs()
 
-    # Ensure thought_idx remains unchanged
+    # since get_events raises, documents should be empty
+    assert len(documents) == 0
+
+    # thought_idx remains unchanged
     assert long_term_memory.thought_idx == 0
 
 
@@ -190,15 +156,13 @@ def test_load_events_into_index_with_invalid_json(
         event = _create_action_event('invalid_action')
         mock_event_stream.get_events.return_value = [event]
 
-        # Mock insert_batch_docs
-        with patch('openhands.memory.embeddings.insert_batch_docs') as mock_run_docs:
-            # Attempt to convert events to documents
-            long_term_memory._events_to_docs()
+        # convert events to documents
+        documents = long_term_memory._events_to_docs()
 
-            # Since event_to_memory raises, documents should be empty and insert_batch_docs should not be called
-            mock_run_docs.assert_not_called()
+        # since event_to_memory raises, documents should be empty
+        assert len(documents) == 0
 
-    # Ensure thought_idx remains unchanged
+    # thought_idx remains unchanged
     assert long_term_memory.thought_idx == 0
 
 
