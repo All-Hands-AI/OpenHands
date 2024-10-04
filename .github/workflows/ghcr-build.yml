@@ -161,7 +161,7 @@ jobs:
         if: github.event.pull_request.head.repo.fork
         uses: docker/build-push-action@v6
         with:
-          tags: ghcr.io/all-hands-ai/runtime:$RELEVANT_SHA-${{ matrix.base_image.tag }}
+          tags: ghcr.io/all-hands-ai/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           outputs: type=docker,dest=/tmp/runtime-${{ matrix.base_image.tag }}.tar
           context: containers/runtime
       - name: Upload runtime image for fork
@@ -285,7 +285,7 @@ jobs:
           # Install to be able to retry on failures for flaky tests
           poetry run pip install pytest-rerunfailures
 
-          image_name=ghcr.io/${{ github.repository_owner }}/runtime:$RELEVANT_SHA-${{ matrix.base_image }}
+          image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
           SKIP_CONTAINER_LOGS=true \
@@ -363,7 +363,7 @@ jobs:
           # Install to be able to retry on failures for flaky tests
           poetry run pip install pytest-rerunfailures
 
-          image_name=ghcr.io/${{ github.repository_owner }}/runtime:$RELEVANT_SHA-${{ matrix.base_image }}
+          image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
           SKIP_CONTAINER_LOGS=true \
@@ -436,7 +436,7 @@ jobs:
         run: make install-python-dependencies
       - name: Run integration tests
         run: |
-          image_name=ghcr.io/${{ github.repository_owner }}/runtime:$RELEVANT_SHA-${{ matrix.base_image }}
+          image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
           TEST_RUNTIME=eventstream \

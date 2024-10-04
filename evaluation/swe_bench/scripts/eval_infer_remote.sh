@@ -41,3 +41,6 @@ fi
 
 # Run the command
 eval $COMMAND
+
+# update the output with evaluation results
+poetry run python evaluation/swe_bench/scripts/eval/update_output_with_eval.py $INPUT_FILE
