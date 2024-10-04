@@ -135,4 +135,5 @@ enable = true
 style = "semver"
 
 [tool.poetry.scripts]
+openhands = "openhands.core.cli:main"
 oh = "openhands.core.cli:main"
