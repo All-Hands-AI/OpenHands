@@ -123,11 +123,6 @@ class AgentSession:
             self.controller.agent_task = self.controller.start_step_loop()
             await self.controller.agent_task  # type: ignore
 
-    def _run(self):
-        #Maybe just use the thread pool executor here???
-        asyncio.set_event_loop(self.loop)
-        self.loop.run_forever()
-
     async def close(self):
         """Closes the Agent session"""
 
