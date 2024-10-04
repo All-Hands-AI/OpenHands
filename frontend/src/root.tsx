@@ -25,11 +25,7 @@ import {
   retrieveSecurityAnalyzers,
 } from "./api/open-hands";
 import LoadingProjectModal from "./components/modals/LoadingProject";
-import {
-  getSettings,
-  maybeMigrateSettings,
-  settingsAreUpToDate,
-} from "./services/settings";
+import { getSettings, settingsAreUpToDate } from "./services/settings";
 import AccountSettingsModal from "./components/modals/AccountSettingsModal";
 import NewProjectIcon from "./assets/new-project.svg?react";
 import DocsIcon from "./assets/docs.svg?react";
@@ -58,20 +54,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export const clientLoader = async () => {
-  const token = localStorage.getItem("token");
+  let token = localStorage.getItem("token");
   const ghToken = localStorage.getItem("ghToken");
 
   let user: GitHubUser | GitHubErrorReponse | null = null;
   if (ghToken) user = await retrieveGitHubUser(ghToken);
 
-  let settingsIsUpdated = false;
-  if (!settingsAreUpToDate()) {
-    maybeMigrateSettings();
-    settingsIsUpdated = true;
-  }
-
   const settings = getSettings();
   await i18n.changeLanguage(settings.LANGUAGE);
+
+  const settingsIsUpdated = settingsAreUpToDate();
+  if (!settingsIsUpdated) {
+    localStorage.removeItem("token");
+    token = null;
+  }
 
   return defer({
     token,
@@ -226,7 +222,7 @@ export default function App() {
             />
           </ModalBackdrop>
         )}
-        {(settingsIsUpdated || settingsModalIsOpen) && (
+        {(!settingsIsUpdated || settingsModalIsOpen) && (
           <ModalBackdrop onClose={() => setSettingsModalIsOpen(false)}>
             <div className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2">
               <span className="text-xl leading-6 font-semibold -tracking-[0.01em">

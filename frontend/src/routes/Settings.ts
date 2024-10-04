@@ -2,6 +2,7 @@ import { ClientActionFunctionArgs, json } from "@remix-run/react";
 import {
   getDefaultSettings,
   LATEST_SETTINGS_VERSION,
+  maybeMigrateSettings,
   saveSettings,
   Settings,
   settingsAreUpToDate,
@@ -84,7 +85,8 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   );
 
   // If the settings version is different from the current version, update it.
-  if (!settingsAreUpToDate) {
+  if (!settingsAreUpToDate()) {
+    maybeMigrateSettings();
     localStorage.setItem(
       "SETTINGS_VERSION",
       LATEST_SETTINGS_VERSION.toString(),

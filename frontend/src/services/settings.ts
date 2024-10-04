@@ -1,4 +1,4 @@
-export const LATEST_SETTINGS_VERSION = 2;
+export const LATEST_SETTINGS_VERSION = 3;
 
 export type Settings = {
   LLM_MODEL: string;
@@ -49,6 +49,9 @@ export const maybeMigrateSettings = () => {
     }
     localStorage.removeItem("CUSTOM_LLM_MODEL");
     localStorage.removeItem("USING_CUSTOM_MODEL");
+  }
+  if (currentVersion < 3) {
+    localStorage.removeItem("token");
   }
 };
 

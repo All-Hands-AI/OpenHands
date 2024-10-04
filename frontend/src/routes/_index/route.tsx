@@ -76,12 +76,6 @@ function GitHubAuth({
 
 export const clientLoader = async () => {
   const ghToken = localStorage.getItem("ghToken");
-  const token = localStorage.getItem("token");
-
-  if (token) {
-    return redirect("/app");
-  }
-
   let repositories: GitHubRepository[] = [];
   if (ghToken) {
     const data = await retrieveAllGitHubUserRepositories(ghToken);
