@@ -59,6 +59,7 @@ class RemoteRuntime(Runtime):
         status_message_callback: Optional[Callable] = None,
     ):
         self.config = config
+        self.status_message_callback = status_message_callback
 
         if self.config.sandbox.api_key is None:
             raise ValueError(
@@ -118,6 +119,7 @@ class RemoteRuntime(Runtime):
         if existing_runtime:
             logger.info(f'Using existing runtime with ID: {self.runtime_id}')
         else:
+            self.send_status_message('STATUS$STARTING_CONTAINER')
             if self.config.sandbox.runtime_container_image is None:
                 logger.info(
                     f'Building remote runtime with base image: {self.config.sandbox.base_container_image}'
@@ -134,6 +136,7 @@ class RemoteRuntime(Runtime):
         assert (
             self.runtime_url is not None
         ), 'Runtime URL is not set. This should never happen.'
+        self.send_status_message('STATUS$WAITING_FOR_CLIENT')
         self._wait_until_alive()
 
     def _check_existing_runtime(self) -> bool:
@@ -413,3 +416,8 @@ class RemoteRuntime(Runtime):
             raise TimeoutError('List files operation timed out')
         except Exception as e:
             raise RuntimeError(f'List files operation failed: {str(e)}')
+
+    def send_status_message(self, message: str):
+        """Sends a status message if the callback function was provided."""
+        if self.status_message_callback:
+            self.status_message_callback(message)
