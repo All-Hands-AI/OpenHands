@@ -37,3 +37,5 @@ Good prompts are:
 5. Specify the programming language or framework if it's not obvious from the context.
 
 Remember, the more precise and informative your prompt is, the better the AI can assist you in developing or modifying the OpenHands software.
+
+See [Getting Started with OpenHands](./getting-started) for more examples of helpful prompts.
