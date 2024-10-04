@@ -1,8 +1,8 @@
 import asyncio
+import io
 import os
 import re
 import tempfile
-import zipfile
 import uuid
 import warnings
 
@@ -18,6 +18,7 @@ with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
 
+from dotenv import load_dotenv
 from fastapi import (
     FastAPI,
     HTTPException,
@@ -28,7 +29,7 @@ from fastapi import (
     status,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -56,8 +57,6 @@ from openhands.llm import bedrock
 from openhands.runtime.runtime import Runtime
 from openhands.server.auth import get_sid_from_token, sign_token
 from openhands.server.session import SessionManager
-
-from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -132,26 +131,6 @@ def load_file_upload_config() -> tuple[int, bool, list[str]]:
     return max_file_size_mb, restrict_file_types, allowed_extensions
 
 
-def zip_directory(dir: str):
-    """Zip the contents of a directory.
-
-    This function creates a zip archive of the given directory.
-    """
-    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
-    cwd = os.getcwd() + dir
-
-    with zipfile.ZipFile(temp_file, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for root, _, files in os.walk(cwd):
-            for file in files:
-                file_path = os.path.join(root, file)
-                arcname = os.path.relpath(file_path, cwd)  # relative path for zip
-                zipf.write(file_path, arcname)
-
-    # "Close" the file so it can be used in the response
-    temp_file.seek(0)
-    return temp_file.name
-
-
 # Load configuration
 MAX_FILE_SIZE_MB, RESTRICT_FILE_TYPES, ALLOWED_EXTENSIONS = load_file_upload_config()
 
@@ -200,7 +179,7 @@ async def attach_session(request: Request, call_next):
         return response
 
     # Bypass authentication for OPTIONS requests (preflight)
-    if request.method == "OPTIONS":
+    if request.method == 'OPTIONS':
         response = await call_next(request)
         return response
 
@@ -792,11 +771,15 @@ async def security_api(request: Request):
 async def zip_current_workspace(request: Request):
     logger.info('Zipping workspace')
     runtime: Runtime = request.state.session.agent_session.runtime
-    workspace_dir = runtime.config.workspace_mount_path_in_sandbox
 
     try:
-        zip_file = zip_directory(workspace_dir)
-        response = FileResponse(zip_file, filename="workspace.zip", media_type='application/x-zip-compressed')
+        zip_file_bytes = runtime.zip_files_in_sandbox()
+        zip_stream = io.BytesIO(zip_file_bytes)  # Wrap to behave like a file stream
+        response = StreamingResponse(
+            zip_stream,
+            media_type='application/x-zip-compressed',
+            headers={'Content-Disposition': 'attachment; filename=workspace.zip'},
+        )
 
         return response
     except Exception as e:
@@ -811,37 +794,39 @@ class AuthCode(BaseModel):
     code: str
 
 
-@app.post("/github/callback")
+@app.post('/github/callback')
 def github_callback(auth_code: AuthCode):
     # Prepare data for the token exchange request
     data = {
-        "client_id": os.getenv("GITHUB_CLIENT_ID"),
-        "client_secret": os.getenv("GITHUB_CLIENT_SECRET"),
-        "code": auth_code.code,
+        'client_id': os.getenv('GITHUB_CLIENT_ID'),
+        'client_secret': os.getenv('GITHUB_CLIENT_SECRET'),
+        'code': auth_code.code,
     }
 
-    logger.info(f"Exchanging code for token: {data}")
+    logger.info(f'Exchanging code for token: {data}')
 
-    headers = {"Accept": "application/json"}
-    response = requests.post("https://github.com/login/oauth/access_token", data=data, headers=headers)
+    headers = {'Accept': 'application/json'}
+    response = requests.post(
+        'https://github.com/login/oauth/access_token', data=data, headers=headers
+    )
 
     if response.status_code != 200:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={"error": "Failed to exchange code for token"},
+            content={'error': 'Failed to exchange code for token'},
         )
 
     token_response = response.json()
 
-    if "access_token" not in token_response:
+    if 'access_token' not in token_response:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={"error": "No access token in response"},
+            content={'error': 'No access token in response'},
         )
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content={"access_token": token_response["access_token"]},
+        content={'access_token': token_response['access_token']},
     )
 
 

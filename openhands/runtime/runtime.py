@@ -202,3 +202,8 @@ class Runtime:
         If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
         """
         raise NotImplementedError('This method is not implemented in the base class.')
+
+    @abstractmethod
+    def zip_files_in_sandbox(self) -> bytes:
+        """Zip all files in the sandbox and return the zip file as bytes."""
+        raise NotImplementedError('This method is not implemented in the base class.')
