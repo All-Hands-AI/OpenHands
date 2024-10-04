@@ -1,7 +1,4 @@
 import json
-import os
-
-from joblib import Parallel, delayed
 
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.logger import openhands_logger as logger
@@ -12,37 +9,16 @@ from openhands.memory.embeddings import check_llama_index
 # use a small utility function to avoid importing large dependencies when not needed
 if check_llama_index():
     import chromadb
-    import torch
     from llama_index.core import Document
-    from llama_index.core.ingestion import IngestionPipeline
+    from llama_index.core.indices.vector_store.base import VectorStoreIndex
+    from llama_index.core.indices.vector_store.retrievers.retriever import (
+        VectorIndexRetriever,
+    )
     from llama_index.core.schema import TextNode
-
-    # Determine the device to use: CUDA, MPS, or CPU
-    if torch.cuda.is_available():
-        device = 'cuda'
-    elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
-        device = 'mps'
-    else:
-        device = 'cpu'
-        os.environ['CUDA_VISIBLE_DEVICES'] = ''
-        os.environ['PYTORCH_FORCE_CPU'] = '1'  # try to force CPU to avoid errors
-
-        # Override CUDA availability
-        torch.cuda.is_available = lambda: False
-
-    # Disable MPS if not available
-    if device != 'mps' and hasattr(torch.backends, 'mps'):
-        torch.backends.mps.is_available = lambda: False
-        torch.backends.mps.is_built = False
-
-    # Log the device being used
-    logger.info(f'Using device for embeddings: {device}')
+    from llama_index.vector_stores.chroma import ChromaVectorStore
 
     from openhands.memory.embeddings import (
-        ChromaVectorStore,
         EmbeddingsLoader,
-        VectorIndexRetriever,
-        VectorStoreIndex,
     )
 
 
@@ -199,27 +175,3 @@ class LongTermMemory:
     def create_nodes(self, documents: list[Document]) -> list[TextNode]:
         """Create nodes from a list of documents."""
         return [self._create_node(doc) for doc in documents]
-
-    def _run_pipeline(self, documents: list[Document]) -> list[TextNode]:
-        """Create and index nodes from a list of documents, with embeddings."""
-
-        # set up a pipeline with transformations to make
-        pipeline = IngestionPipeline(
-            transformations=[
-                self.embed_model,
-            ],
-        )
-
-        # TODO: we probably want this False
-        pipeline.disable_cache = True
-        return pipeline.run(
-            documents=documents, show_progress=True, num_workers=self.memory_max_threads
-        )
-
-    def _run_docs_in_parallel(self, documents: list[Document]) -> list[TextNode]:
-        """Run the pipeline in parallel for each document."""
-        print(f'\nbackend=threading, n_jobs={self.memory_max_threads}\n')
-        results = Parallel(n_jobs=self.memory_max_threads, backend='threading')(
-            delayed(self._add_document)(doc) for doc in documents
-        )
-        return results

@@ -1,12 +1,36 @@
+import importlib.util
+import os
+
+from joblib import Parallel, delayed
+
 from openhands.core.config import LLMConfig
 
 try:
-    import chromadb
+    # check if those we need later are available using importlib
+    if importlib.util.find_spec('chromadb') is None:
+        raise ImportError(
+            'chromadb is not available. Please install it using poetry install --with llama-index'
+        )
+
+    if (
+        importlib.util.find_spec(
+            'llama_index.core.indices.vector_store.retrievers.retriever'
+        )
+        is None
+        or importlib.util.find_spec('llama_index.core.indices.vector_store.base')
+        is None
+    ):
+        raise ImportError(
+            'llama_index is not available. Please install it using poetry install --with llama-index'
+        )
+
     from llama_index.core import Document, VectorStoreIndex
-    from llama_index.core.retrievers import VectorIndexRetriever
-    from llama_index.vector_stores.chroma import ChromaVectorStore
+    from llama_index.core.base.embeddings.base import BaseEmbedding
+    from llama_index.core.ingestion import IngestionPipeline
+    from llama_index.core.schema import TextNode
 
     LLAMA_INDEX_AVAILABLE = True
+
 except ImportError:
     LLAMA_INDEX_AVAILABLE = False
 
@@ -45,7 +69,7 @@ class EmbeddingsLoader:
     """Loader for embedding model initialization."""
 
     @staticmethod
-    def get_embedding_model(strategy: str, llm_config: LLMConfig):
+    def get_embedding_model(strategy: str, llm_config: LLMConfig) -> BaseEmbedding:
         """Initialize and return the appropriate embedding model based on the strategy.
 
         Parameters:
@@ -89,4 +113,69 @@ class EmbeddingsLoader:
         else:
             from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
-            return HuggingFaceEmbedding(model_name='BAAI/bge-small-en-v1.5')
+            # initialize the local embedding model
+            local_embed_model = HuggingFaceEmbedding(
+                model_name='BAAI/bge-small-en-v1.5'
+            )
+
+            # for local embeddings, we need torch
+            import torch
+
+            # choose the best device
+            # first determine what is available: CUDA, MPS, or CPU
+            if torch.cuda.is_available():
+                device = 'cuda'
+            elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
+                device = 'mps'
+            else:
+                device = 'cpu'
+                os.environ['CUDA_VISIBLE_DEVICES'] = ''
+                os.environ['PYTORCH_FORCE_CPU'] = (
+                    '1'  # try to force CPU to avoid errors
+                )
+
+                # override CUDA availability
+                torch.cuda.is_available = lambda: False
+
+            # disable MPS to avoid errors
+            if device != 'mps' and hasattr(torch.backends, 'mps'):
+                torch.backends.mps.is_available = lambda: False
+                torch.backends.mps.is_built = False
+
+            # the device being used
+            print(f'Using device for embeddings: {device}')
+
+            return local_embed_model
+
+
+# --------------------------------------------------------------------------
+# Utility functions to run pipelines, split out for profiling
+# --------------------------------------------------------------------------
+def run_pipeline(
+    embed_model: BaseEmbedding, documents: list[Document], num_workers: int
+) -> list[TextNode]:
+    """Run a pipeline embedding documents."""
+
+    # set up a pipeline with the transformations to make
+    pipeline = IngestionPipeline(
+        transformations=[
+            embed_model,
+        ],
+    )
+
+    # run the pipeline with num_workers
+    nodes = pipeline.run(
+        documents=documents, show_progress=True, num_workers=num_workers
+    )
+    return nodes
+
+
+def run_docs_in_parallel(
+    index: VectorStoreIndex, documents: list[Document], num_workers: int
+) -> list[TextNode]:
+    """Run the document indexing in parallel."""
+    print(f'\nbackend=threading, n_jobs={num_workers}\n')
+    results = Parallel(n_jobs=num_workers, backend='threading')(
+        delayed(index.insert)(doc) for doc in documents
+    )
+    return results
