@@ -1,3 +1,4 @@
+import asyncio
 import atexit
 import copy
 import json
@@ -147,6 +148,12 @@ class Runtime:
                 'Action has been rejected by the user! Waiting for further user input.'
             )
         observation = getattr(self, action_type)(action)
+        return observation
+    
+    async def async_run_action(self, action: Action) -> Observation:
+        observation = await asyncio.get_event_loop().run_in_executor(
+            None, self.run_action, action
+        )
         return observation
 
     # ====================================================================

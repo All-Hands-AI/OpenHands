@@ -32,7 +32,7 @@ class AgentSession:
     runtime: Runtime | None = None
     security_analyzer: SecurityAnalyzer | None = None
     _closed: bool = False
-    loop: asyncio.AbstractEventLoop
+    loop: asyncio.AbstractEventLoop | None = None
 
     def __init__(self, sid: str, file_store: FileStore):
         """Initializes a new instance of the Session class
@@ -45,7 +45,6 @@ class AgentSession:
         self.sid = sid
         self.event_stream = EventStream(sid, file_store)
         self.file_store = file_store
-        self.loop = asyncio.new_event_loop()
 
     async def start(
         self,
@@ -73,17 +72,9 @@ class AgentSession:
                 'Session already started. You need to close this session and start a new one.'
             )
 
-        self.thread = Thread(target=self._run, daemon=True)
-        self.thread.start()
-
-        def coro_callback(task):
-            fut: concurrent.futures.Future = concurrent.futures.Future()
-            try:
-                fut.set_result(task.result())
-            except Exception as e:
-                logger.error(f'Error starting session: {e}')
-
-        coro = self._start(
+        asyncio.get_event_loop().run_in_executor(
+            None, 
+            self._start_thread,
             runtime_name,
             config,
             agent,
@@ -93,9 +84,15 @@ class AgentSession:
             agent_configs,
             status_message_callback,
         )
-        asyncio.run_coroutine_threadsafe(coro, self.loop).add_done_callback(
-            coro_callback
-        )  # type: ignore
+
+    def _start_thread(
+        self,
+        *args
+    ):
+        try:
+            asyncio.run(self._start(*args))
+        except RuntimeError as e:
+            logger.info('Session Finished')
 
     async def _start(
         self,
@@ -108,6 +105,7 @@ class AgentSession:
         agent_configs: dict[str, AgentConfig] | None = None,
         status_message_callback: Optional[Callable] = None,
     ):
+        self.loop = asyncio.get_running_loop()
         self._create_security_analyzer(config.security.security_analyzer)
         self._create_runtime(runtime_name, config, agent, status_message_callback)
         self._create_controller(
@@ -126,6 +124,7 @@ class AgentSession:
             await self.controller.agent_task  # type: ignore
 
     def _run(self):
+        #Maybe just use the thread pool executor here???
         asyncio.set_event_loop(self.loop)
         self.loop.run_forever()
 
@@ -143,10 +142,8 @@ class AgentSession:
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
 
-        self.loop.call_soon_threadsafe(self.loop.stop)
-        if self.thread:
-            # We may be closing an agent_session that was never actually started
-            self.thread.join()
+        if self.loop:
+            self.loop.call_soon_threadsafe(self.loop.stop)
 
         self._closed = True
 
