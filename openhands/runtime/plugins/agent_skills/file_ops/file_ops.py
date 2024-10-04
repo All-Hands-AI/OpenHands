@@ -205,7 +205,7 @@ def open_file(
     output += _print_window(
         CURRENT_FILE,
         CURRENT_LINE,
-        _clamp(context_lines, 1, 100),
+        _clamp(context_lines, 1, 300),
         return_str=True,
         ignore_window=False,
     )
