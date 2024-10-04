@@ -8,7 +8,7 @@ SANDBOX_PATH_PREFIX = '/workspace'
 WORKSPACE_BASE = 'workspace'
 
 
-def test_resolve_path():
+def test_resolve_path():  
     assert (
         files.resolve_path('test.txt', '/workspace')
         == Path(WORKSPACE_BASE) / 'test.txt'
