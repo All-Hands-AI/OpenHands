@@ -1,5 +1,6 @@
 import asyncio
-import logging
+import os
+import subprocess
 from typing import Type
 
 from termcolor import colored
@@ -12,7 +13,6 @@ from openhands.core.config import (
     get_parser,
     load_app_config,
 )
-from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
@@ -28,62 +28,12 @@ from openhands.events.observation import (
 )
 from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
-from openhands.runtime.runtime import Runtime
 from openhands.storage import get_file_store
 
 
-def display_message(message: str):
-    print(colored('🤖 ' + message + '\n', 'yellow'))
-
-
-def display_command(command: str):
-    print('❯ ' + colored(command + '\n', 'green'))
-
-
-def display_command_output(output: str):
-    lines = output.split('\n')
-    for line in lines:
-        if line.startswith('[Python Interpreter') or line.startswith('openhands@'):
-            # TODO: clean this up once we clean up terminal output
-            continue
-        print(colored(line, 'blue'))
-    print('\n')
-
-
-def display_event(event: Event):
-    if isinstance(event, Action):
-        if hasattr(event, 'thought'):
-            display_message(event.thought)
-    if isinstance(event, MessageAction):
-        if event.source != EventSource.USER:
-            display_message(event.content)
-    if isinstance(event, CmdRunAction):
-        display_command(event.command)
-    if isinstance(event, CmdOutputObservation):
-        display_command_output(event.content)
-
-
-async def main():
-    """Runs the agent in CLI mode"""
-
-    parser = get_parser()
-    # Add the version argument
-    parser.add_argument(
-        '-v',
-        '--version',
-        action='version',
-        version=f'{__version__}',
-        help='Show the version number and exit',
-        default=None,
-    )
-    args = parser.parse_args()
-
-    if args.version:
-        print(f'OpenHands version: {__version__}')
-        return
-
-    logger.setLevel(logging.WARNING)
-    config = load_app_config(config_file=args.config_file)
+async def launch_cli(directory: str):
+    os.chdir(directory)
+    config = load_app_config()
     sid = 'cli'
 
     agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
@@ -98,7 +48,7 @@ async def main():
     event_stream = EventStream(sid, file_store)
 
     runtime_cls = get_runtime_cls(config.runtime)
-    runtime: Runtime = runtime_cls(  # noqa: F841
+    runtime_cls(
         config=config,
         event_stream=event_stream,
         sid=sid,
@@ -149,6 +99,78 @@ async def main():
 
     print('Exiting...')
     await controller.close()
+
+
+def launch_ui(directory: str):
+    os.chdir(directory)
+    os.environ['WORKSPACE_BASE'] = directory
+    os.environ['WORKSPACE_MOUNT_PATH'] = directory
+    subprocess.run(['make', 'run'], check=True)
+
+
+def display_message(message: str):
+    print(colored('🤖 ' + message + '\n', 'yellow'))
+
+
+def display_command(command: str):
+    print('❯ ' + colored(command + '\n', 'green'))
+
+
+def display_command_output(output: str):
+    lines = output.split('\n')
+    for line in lines:
+        if line.startswith('[Python Interpreter') or line.startswith('openhands@'):
+            # TODO: clean this up once we clean up terminal output
+            continue
+        print(colored(line, 'blue'))
+    print('\n')
+
+
+def display_event(event: Event):
+    if isinstance(event, Action):
+        if hasattr(event, 'thought'):
+            display_message(event.thought)
+    if isinstance(event, MessageAction):
+        if event.source != EventSource.USER:
+            display_message(event.content)
+    if isinstance(event, CmdRunAction):
+        display_command(event.command)
+    if isinstance(event, CmdOutputObservation):
+        display_command_output(event.content)
+
+
+async def main():
+    """Runs the OpenHands CLI"""
+
+    parser = get_parser()
+    # Add the version argument
+    parser.add_argument(
+        '-v',
+        '--version',
+        action='version',
+        version=f'{__version__}',
+        help='Show the version number and exit',
+        default=None,
+    )
+    # Add the launch subcommand
+    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    launch_parser = subparsers.add_parser('launch', help='Launch OpenHands')
+    launch_parser.add_argument('mode', choices=['cli', 'ui'], help='Launch mode')
+    launch_parser.add_argument('--directory', default='.', help='Workspace directory')
+
+    args = parser.parse_args()
+
+    if args.version:
+        print(f'OpenHands version: {__version__}')
+        return
+
+    if args.command == 'launch':
+        if args.mode == 'cli':
+            await launch_cli(args.directory)
+        elif args.mode == 'ui':
+            launch_ui(args.directory)
+    else:
+        parser.print_help()
 
 
 if __name__ == '__main__':
