@@ -38,26 +38,39 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Set up python
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
           cache: 'pip'
+
       - name: Install pre-commit
         run: pip install pre-commit==3.7.0
-      - name: Run pre-commit hooks
+
+      - name: Run formatting hook
         run: |
           CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r HEAD^ HEAD)
-          pre-commit run --files $CHANGED_FILES --show-diff-on-failure --config ./dev_config/python/.pre-commit-config.yaml
-      - name: Commit linting changes
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+          pre-commit run ruff-format --files $CHANGED_FILES \
+            --show-diff-on-failure --config ./dev_config/python/.pre-commit-config.yaml
+
+      - name: Commit formatting changes
+        if: >
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
         run: |
-          if ! git diff-index --quiet HEAD --; then # Check for changes after pre-commit
+          if ! git diff-index --quiet HEAD --; then
             git config --global user.name 'github-actions[bot]'
             git config --global user.email 'github-actions[bot]@users.noreply.github.com'
             git add .
-            git commit -am "Apply automatic linting fixes"
+            git commit -m "Apply automatic formatting fixes"
             git push
           else
-            echo "No changes to commit"
+            echo "No formatting changes to commit"
           fi
+
+      - name: Run pre-commit hooks
+        run: |
+          CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r HEAD^ HEAD)
+          pre-commit run --files $CHANGED_FILES \
+            --show-diff-on-failure --config ./dev_config/python/.pre-commit-config.yaml
