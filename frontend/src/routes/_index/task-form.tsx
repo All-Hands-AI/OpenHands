@@ -66,7 +66,8 @@ function MainTextareaInput({
       }}
       value={value}
       className={cn(
-        "bg-[#404040] placeholder:text-[#A3A3A3] border border-[#525252] w-full rounded-lg px-[16px] py-[18px] text-[17px] leading-5",
+        "bg-[#404040] placeholder:text-[#A3A3A3] border border-[#525252] w-full rounded-lg px-4 py-[18px] text-[17px] leading-5",
+        "pr-[calc(16px+24px)]", // 24px for the send button
         "focus:bg-[#525252]",
         "resize-none",
       )}
