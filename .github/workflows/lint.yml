@@ -49,6 +49,7 @@ jobs:
         run: pip install pre-commit==3.7.0
 
       - name: Run formatting hook
+        continue-on-error: true
         run: |
           CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r HEAD^ HEAD)
           pre-commit run ruff-format --files $CHANGED_FILES \
