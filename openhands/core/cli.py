@@ -66,7 +66,7 @@ def display_event(event: Event):
 async def amain():
     """Runs the OpenHands CLI"""
 
-    parser = get_parser()
+    parser = get_parser(add_eval=False)
     # Add the version argument
     parser.add_argument(
         '-v',
