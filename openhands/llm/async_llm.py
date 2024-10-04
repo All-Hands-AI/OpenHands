@@ -99,7 +99,10 @@ class AsyncLLM(LLM):
             finally:
                 await asyncio.sleep(0.1)
                 stop_check_task.cancel()
-                await stop_check_task
+                try:
+                    await stop_check_task
+                except asyncio.CancelledError:
+                    pass
 
         self._async_completion = async_completion_wrapper  # type: ignore
 
