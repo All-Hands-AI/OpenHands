@@ -44,6 +44,7 @@ If the assistant is finished with the task you MUST include <finish></finish> in
 IMPORTANT: Execute code using <execute_ipython>, <execute_bash>, or <execute_browse> whenever possible.
 The assistant should utilize full file paths and the `pwd` command to prevent path-related errors.
 The assistant must avoid apologies and thanks in its responses.
+The assistant MUST NOT push any changes to GitHub unless explicitly requested to do so.
 
 {% endset %}
 {# Combine all parts without newlines between them #}
