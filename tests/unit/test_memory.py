@@ -73,7 +73,7 @@ def _create_action_event(action: str) -> Event:
     """Helper function to create an action event."""
     event = Event()
     event._id = -1
-    event._timestamp = datetime.utcnow().isoformat()
+    event._timestamp = datetime.now(timezone.utc).isoformat()
     event._source = EventSource.AGENT
     event.action = action
     return event
@@ -83,7 +83,7 @@ def _create_observation_event(observation: str) -> Event:
     """Helper function to create an observation event."""
     event = Event()
     event._id = -1
-    event._timestamp = datetime.utcnow().isoformat()
+    event._timestamp = datetime.now(timezone.utc).isoformat()
     event._source = EventSource.USER
     event.observation = observation
     return event
