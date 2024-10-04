@@ -40,8 +40,6 @@ from openhands.runtime.utils.request import (
 )
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.tenacity_stop import stop_if_should_exit
-
-
 class LogBuffer:
     """Synchronous buffer for Docker container logs.
 
@@ -93,9 +91,7 @@ class LogBuffer:
 
     def __del__(self):
         if self.log_stream_thread.is_alive():
-            logger.warn(
-                "LogBuffer was not properly closed. Use 'log_buffer.close()' for clean shutdown."
-            )
+            logger.warn("LogBuffer was not properly closed. Use 'log_buffer.close()' for clean shutdown.")
             self.close(timeout=5)
 
     def close(self, timeout: float = 5.0):
