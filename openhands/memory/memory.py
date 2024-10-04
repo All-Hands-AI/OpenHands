@@ -2,6 +2,7 @@ import json
 
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.events.event import Event
 from openhands.events.serialization.event import event_to_memory
 from openhands.events.stream import EventStream
 from openhands.memory.embeddings import check_llama_index
@@ -60,24 +61,32 @@ class LongTermMemory:
         # max of threads to run the pipeline
         self.memory_max_threads = agent_config.memory_max_threads
 
-    def add_event(self, event: dict):
+    def add_event(self, event: Event):
         """Adds a new event to the long term memory with a unique id.
 
         Parameters:
-        - event (dict): The new event to be added to memory
+        - event: The new event to be added to memory
         """
+        try:
+            # convert the event to a memory-friendly format, and don't truncate
+            event_data = event_to_memory(event, -1)
+        except (json.JSONDecodeError, KeyError, ValueError) as e:
+            logger.warning(f'Failed to process event: {e}')
+            return
+
+        # determine the event type and ID
         event_type = ''
         event_id = ''
-        if 'action' in event:
+        if 'action' in event_data:
             event_type = 'action'
-            event_id = event['action']
-        elif 'observation' in event:
+            event_id = event_data['action']
+        elif 'observation' in event_data:
             event_type = 'observation'
-            event_id = event['observation']
+            event_id = event_data['observation']
 
         # create a Document instance for the event
         doc = Document(
-            text=json.dumps(event),
+            text=json.dumps(event_data),
             doc_id=str(self.thought_idx),
             extra_info={
                 'type': event_type,

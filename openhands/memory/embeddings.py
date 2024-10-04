@@ -170,7 +170,7 @@ def run_pipeline(
     return nodes
 
 
-def run_docs_in_parallel(
+def insert_batch_docs(
     index: VectorStoreIndex, documents: list[Document], num_workers: int
 ) -> list[TextNode]:
     """Run the document indexing in parallel."""
