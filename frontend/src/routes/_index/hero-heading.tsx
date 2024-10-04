@@ -15,7 +15,7 @@ export function HeroHeading() {
           <a
             rel="noopener noreferrer"
             target="_blank"
-            href="https://docs.all-hands.dev/modules/usage/agents"
+            href="https://docs.all-hands.dev/modules/usage/getting-started"
             className="text-hyperlink underline underline-offset-[3px]"
           >
             Read this
