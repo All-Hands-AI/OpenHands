@@ -12,24 +12,31 @@ from openhands.memory.embeddings import check_llama_index
 # use a small utility function to avoid importing large dependencies when not needed
 if check_llama_index():
     import chromadb
-
-    # FIXME: hack to avoid CUDA error
     import torch
     from llama_index.core import Document
     from llama_index.core.ingestion import IngestionPipeline
     from llama_index.core.schema import TextNode
 
-    # Disable CUDA and MPS to enforce CPU usage
-    os.environ['CUDA_VISIBLE_DEVICES'] = ''
-    os.environ['PYTORCH_FORCE_CPU'] = '1'  # Custom environment variable if supported
+    # Determine the device to use: CUDA, MPS, or CPU
+    if torch.cuda.is_available():
+        device = 'cuda'
+    elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
+        device = 'mps'
+    else:
+        device = 'cpu'
+        os.environ['CUDA_VISIBLE_DEVICES'] = ''
+        os.environ['PYTORCH_FORCE_CPU'] = '1'  # try to force CPU to avoid errors
 
-    # Disable CUDA availability
-    torch.cuda.is_available = lambda: False
+        # Override CUDA availability
+        torch.cuda.is_available = lambda: False
 
-    # Disable MPS if available
-    if hasattr(torch.backends, 'mps'):
+    # Disable MPS if not available
+    if device != 'mps' and hasattr(torch.backends, 'mps'):
         torch.backends.mps.is_available = lambda: False
         torch.backends.mps.is_built = False
+
+    # Log the device being used
+    logger.info(f'Using device for embeddings: {device}')
 
     from openhands.memory.embeddings import (
         ChromaVectorStore,
@@ -211,6 +218,7 @@ class LongTermMemory:
 
     def _run_docs_in_parallel(self, documents: list[Document]) -> list[TextNode]:
         """Run the pipeline in parallel for each document."""
+        print(f'\nbackend=threading, n_jobs={self.memory_max_threads}\n')
         results = Parallel(n_jobs=self.memory_max_threads, backend='threading')(
             delayed(self._add_document)(doc) for doc in documents
         )
