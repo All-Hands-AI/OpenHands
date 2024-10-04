@@ -63,6 +63,40 @@ def display_event(event: Event):
         display_command_output(event.content)
 
 
+async def main():
+    """Runs the OpenHands CLI"""
+
+    parser = get_parser()
+    # Add the version argument
+    parser.add_argument(
+        '-v',
+        '--version',
+        action='version',
+        version=f'{__version__}',
+        help='Show the version number and exit',
+        default=None,
+    )
+    # Add the launch subcommand
+    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    launch_parser = subparsers.add_parser('launch', help='Launch OpenHands')
+    launch_parser.add_argument('mode', choices=['cli', 'ui'], help='Launch mode')
+    launch_parser.add_argument('--directory', default='.', help='Workspace directory')
+
+    args = parser.parse_args()
+
+    if args.version:
+        print(f'OpenHands version: {__version__}')
+        return
+
+    if args.command == 'launch':
+        if args.mode == 'cli':
+            await launch_cli(args.directory)
+        elif args.mode == 'ui':
+            launch_ui(args.directory)
+    else:
+        parser.print_help()
+
+
 async def launch_cli(directory: str):
     os.chdir(directory)
     config = load_app_config()
@@ -138,40 +172,6 @@ def launch_ui(directory: str):
     os.environ['WORKSPACE_BASE'] = directory
     os.environ['WORKSPACE_MOUNT_PATH'] = directory
     subprocess.run(['make', 'run'], check=True)
-
-
-async def main():
-    """Runs the OpenHands CLI"""
-
-    parser = get_parser()
-    # Add the version argument
-    parser.add_argument(
-        '-v',
-        '--version',
-        action='version',
-        version=f'{__version__}',
-        help='Show the version number and exit',
-        default=None,
-    )
-    # Add the launch subcommand
-    subparsers = parser.add_subparsers(dest='command', help='Available commands')
-    launch_parser = subparsers.add_parser('launch', help='Launch OpenHands')
-    launch_parser.add_argument('mode', choices=['cli', 'ui'], help='Launch mode')
-    launch_parser.add_argument('--directory', default='.', help='Workspace directory')
-
-    args = parser.parse_args()
-
-    if args.version:
-        print(f'OpenHands version: {__version__}')
-        return
-
-    if args.command == 'launch':
-        if args.mode == 'cli':
-            await launch_cli(args.directory)
-        elif args.mode == 'ui':
-            launch_ui(args.directory)
-    else:
-        parser.print_help()
 
 
 if __name__ == '__main__':
