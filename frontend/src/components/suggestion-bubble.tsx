@@ -13,10 +13,9 @@ export function SuggestionBubble({
   onRefresh,
 }: SuggestionBubbleProps) {
   return (
-    <button
-      type="button"
+    <div
       onClick={onClick}
-      className="border border-neutral-600 rounded-lg px-[10px] py-2 flex items-center justify-center gap-4"
+      className="border border-neutral-600 rounded-lg px-[10px] py-2 flex items-center justify-center gap-4 cursor-pointer"
     >
       <div className="flex items-center gap-2">
         <Lightbulb width={18} height={18} />
@@ -31,6 +30,6 @@ export function SuggestionBubble({
       >
         <Refresh width={14} height={14} />
       </button>
-    </button>
+    </div>
   );
 }

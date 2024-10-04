@@ -6,6 +6,7 @@ import {
 } from "#/types/core/observations";
 import { AssistantMessageAction } from "#/types/core/actions";
 import { TokenConfigSuccess } from "#/types/core/variances";
+import EventLogger from "#/utils/event-logger";
 
 const generateAgentStateChangeObservation = (
   state: AgentState,
@@ -51,18 +52,13 @@ const generateAgentRunObservation = (): CommandObservation => ({
 const api = ws.link("ws://localhost:3000/ws");
 
 export const handlers: WebSocketHandler[] = [
-  api.addEventListener("connection", ({ server, client }) => {
+  api.addEventListener("connection", ({ client }) => {
     client.send(
       JSON.stringify({
         status: "ok",
         token: Math.random().toString(36).substring(7),
       } satisfies TokenConfigSuccess),
     );
-
-    // data received from the server
-    server.addEventListener("message", (event) => {
-      console.log("data received from server", event.data);
-    });
 
     // data received from the client
     client.addEventListener("message", async (event) => {
@@ -113,7 +109,7 @@ export const handlers: WebSocketHandler[] = [
             break;
         }
       }
-      console.warn(JSON.stringify(JSON.parse(event.data.toString()), null, 2));
+      EventLogger.message(event);
     });
   }),
 ];

@@ -1,5 +1,6 @@
 import React from "react";
 import { Data } from "ws";
+import EventLogger from "#/utils/event-logger";
 
 interface WebSocketClientOptions {
   token: string | null;
@@ -39,7 +40,7 @@ function SocketProvider({ children }: SocketProviderProps) {
 
   const start = React.useCallback((options?: WebSocketClientOptions): void => {
     if (wsRef.current) {
-      console.warn(
+      EventLogger.warning(
         "WebSocket connection is already established, but a new one is starting anyways.",
       );
     }
@@ -61,23 +62,19 @@ function SocketProvider({ children }: SocketProviderProps) {
     });
 
     ws.addEventListener("message", (event) => {
-      console.warn(
-        "Received message",
-        JSON.stringify(JSON.parse(event.data.toString()), null, 2),
-      );
+      EventLogger.message(event);
 
       setEvents((prevEvents) => [...prevEvents, JSON.parse(event.data)]);
       options?.onMessage?.(event);
     });
 
     ws.addEventListener("error", (event) => {
-      console.error("SOCKET ERROR", event);
-
+      EventLogger.event(event, "SOCKET ERROR");
       options?.onError?.(event);
     });
 
     ws.addEventListener("close", (event) => {
-      console.warn("SOCKET CLOSED", event);
+      EventLogger.event(event, "SOCKET CLOSE");
 
       setIsConnected(false);
       setRuntimeActive(false);
@@ -98,7 +95,7 @@ function SocketProvider({ children }: SocketProviderProps) {
   const send = React.useCallback(
     (data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
       if (!wsRef.current) {
-        console.error("WebSocket is not connected.");
+        EventLogger.error("WebSocket is not connected.");
         return;
       }
       wsRef.current.send(data);
