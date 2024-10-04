@@ -5,7 +5,7 @@ OpenHands uses LiteLLM to make calls to Azure's chat models. You can find their 
 ## Azure OpenAI Configuration
 
 When running OpenHands, you'll need to set the following environment variable using `-e` in the
-[docker run command](/modules/usage/getting-started#installation):
+[docker run command](/modules/usage/installation):
 
 ```
 LLM_API_VERSION="<api-version>"              # e.g. "2023-05-15"
@@ -37,7 +37,7 @@ OpenHands uses llama-index for embeddings. You can find their documentation on A
 ### Azure OpenAI Configuration
 
 When running OpenHands, set the following environment variables using `-e` in the
-[docker run command](/modules/usage/getting-started#installation):
+[docker run command](/modules/usage/installation):
 
 ```
 LLM_EMBEDDING_MODEL="azureopenai"
