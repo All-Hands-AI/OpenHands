@@ -6,8 +6,6 @@ import uuid
 import warnings
 
 import requests
-from pathspec import PathSpec
-from pathspec.patterns import GitWildMatchPattern
 
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
