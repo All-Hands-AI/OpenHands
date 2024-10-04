@@ -28,6 +28,7 @@ from openhands.events.observation import (
 )
 from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
+from openhands.runtime.runtime import Runtime
 from openhands.storage import get_file_store
 
 
@@ -79,7 +80,7 @@ async def launch_cli(directory: str):
     event_stream = EventStream(sid, file_store)
 
     runtime_cls = get_runtime_cls(config.runtime)
-    runtime_cls(
+    runtime: Runtime = runtime_cls(  # noqa: F841
         config=config,
         event_stream=event_stream,
         sid=sid,
