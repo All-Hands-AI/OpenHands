@@ -1,10 +1,18 @@
 from pathlib import Path
+
 import pytest
+
 from openhands.runtime.utils import files
+
 SANDBOX_PATH_PREFIX = '/workspace'
 WORKSPACE_BASE = 'workspace'
+
+
 def test_resolve_path():
-    assert (files.resolve_path('test.txt', '/workspace') == Path(WORKSPACE_BASE) / 'test.txt')
+    assert (
+        files.resolve_path('test.txt', '/workspace')
+        == Path(WORKSPACE_BASE) / 'test.txt'
+    )
     assert (
         files.resolve_path('subdir/test.txt', '/workspace')
         == Path(WORKSPACE_BASE) / 'subdir' / 'test.txt'
