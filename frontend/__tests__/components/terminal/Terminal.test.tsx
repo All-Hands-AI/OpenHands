@@ -108,7 +108,7 @@ describe("Terminal", () => {
       {
         type: "output",
         content:
-          "Hello\r\n\r\n[Python Interpreter: /openhands/poetry/openhands-5O4_aCHf-py3.11/bin/python]\nopenhands@659478cb008c:/workspace $ ",
+          "Hello\r\n\r\n[Python Interpreter: /openhands/poetry/openhands-5O4_aCHf-py3.12/bin/python]\nopenhands@659478cb008c:/workspace $ ",
       },
     ]);
 
