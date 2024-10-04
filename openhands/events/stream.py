@@ -2,7 +2,7 @@ import asyncio
 import threading
 from datetime import datetime
 from enum import Enum
-from typing import Coroutine, Iterable
+from typing import Callable, Iterable
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.utils import json
@@ -26,7 +26,7 @@ class EventStream:
     file_store: FileStore
     # For each subscriber ID, there is a stack of callback functions - useful
     # when there are agent delegates
-    _subscribers: dict[str, list[Coroutine]]
+    _subscribers: dict[str, list[Callable]]
     _cur_id: int
     _lock: threading.Lock
 
@@ -111,7 +111,7 @@ class EventStream:
     def get_latest_event_id(self) -> int:
         return self._cur_id - 1
 
-    def subscribe(self, id: EventStreamSubscriber, callback: Coroutine, append=False):
+    def subscribe(self, id: EventStreamSubscriber, callback: Callable, append=False):
         if id in self._subscribers:
             if append:
                 self._subscribers[id].append(callback)
@@ -141,9 +141,11 @@ class EventStream:
         for key in sorted(self._subscribers.keys()):
             stack = self._subscribers[key]
             callback = stack[-1]
-            asyncio.get_event_loop().run_in_executor(None, self._callback, callback, event)
+            asyncio.get_event_loop().run_in_executor(
+                None, self._callback, callback, event
+            )
 
-    def _callback(self, callback: Coroutine, event: Event):
+    def _callback(self, callback: Callable, event: Event):
         asyncio.run(callback(event))
 
     def filtered_events_by_source(self, source: EventSource):
