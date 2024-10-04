@@ -1,7 +1,6 @@
 import os
 import tempfile
 import threading
-import uuid
 from typing import Callable, Optional
 from zipfile import ZipFile
 
@@ -48,20 +47,6 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 class RemoteRuntime(Runtime):
     """This runtime will connect to a remote oh-runtime-client."""
 
-
-    def _check_existing_runtime(self) -> dict | None:
-        try:
-            response = send_request(
-                self.session,
-                'GET',
-                f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.instance_id}'
-            )
-            if response.status_code == 200:
-                return response.json()
-        except Exception as e:
-            logger.warning(f"Error checking existing runtime: {e}")
-        return None
-
     port: int = 60000  # default port for the remote runtime client
 
     def __init__(
@@ -95,113 +80,9 @@ class RemoteRuntime(Runtime):
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
 
-        self.instance_id = (
-            sid + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
-        )
-        self.container_name = 'oh-remote-runtime-' + self.instance_id
-        
-        existing_runtime = self._check_existing_runtime()
-        if existing_runtime:
-            self.runtime_id = existing_runtime['runtime_id']
-            self.runtime_url = existing_runtime['url']
-            logger.info(f'Using existing runtime with ID: {self.runtime_id}')
-        else:
-            if self.config.sandbox.runtime_container_image is not None:
-                logger.info(
-                    f'Running remote runtime with image: {self.config.sandbox.runtime_container_image}'
-                )
-                self.container_image = self.config.sandbox.runtime_container_image
-            else:
-                logger.info(
-                    f'Building remote runtime with base image: {self.config.sandbox.base_container_image}'
-                )
-            logger.debug(f'RemoteRuntime `{sid}` config:\n{self.config}')
-            response = send_request(
-                self.session,
-                'GET',
-                f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
-            )
-            response_json = response.json()
-            registry_prefix = response_json['registry_prefix']
-            os.environ['OH_RUNTIME_RUNTIME_IMAGE_REPO'] = (
-                registry_prefix.rstrip('/') + '/runtime'
-            )
-            logger.info(
-                f'Runtime image repo: {os.environ["OH_RUNTIME_RUNTIME_IMAGE_REPO"]}'
-            )
+        self.instance_id = sid
 
-            if self.config.sandbox.runtime_extra_deps:
-                logger.info(
-                    f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
-                )
-
-            # Build the container image
-            self.container_image = build_runtime_image(
-                self.config.sandbox.base_container_image,
-                self.runtime_builder,
-                extra_deps=self.config.sandbox.runtime_extra_deps,
-                force_rebuild=self.config.sandbox.force_rebuild_runtime,
-            )
-
-            response = send_request(
-                self.session,
-                'GET',
-                f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
-                params={'image': self.container_image},
-            )
-            if response.status_code != 200 or not response.json()['exists']:
-                raise RuntimeError(
-                    f'Container image {self.container_image} does not exist'
-                )
-
-        # Prepare the request body for the /start endpoint
-        plugin_arg = ''
-        if plugins is not None and len(plugins) > 0:
-            plugin_arg = f'--plugins {" ".join([plugin.name for plugin in plugins])} '
-        browsergym_arg = (
-            f'--browsergym-eval-env {self.config.sandbox.browsergym_eval_env}'
-            if self.config.sandbox.browsergym_eval_env is not None
-            else ''
-        )
-        start_request = {
-            'image': self.container_image,
-            'command': (
-                f'/openhands/micromamba/bin/micromamba run -n openhands '
-                'poetry run '
-                f'python -u -m openhands.runtime.client.client {self.port} '
-                f'--working-dir {self.config.workspace_mount_path_in_sandbox} '
-                f'{plugin_arg}'
-                f'--username {"openhands" if self.config.run_as_openhands else "root"} '
-                f'--user-id {self.config.sandbox.user_id} '
-                f'{browsergym_arg}'
-            ),
-            'runtime_id': self.instance_id,
-            'working_dir': '/openhands/code/',
-            'name': self.container_name,
-            'environment': {'DEBUG': 'true'} if self.config.debug else {},
-        }
-
-        # Start the sandbox using the /start endpoint
-        response = send_request(
-            self.session,
-            'POST',
-            f'{self.config.sandbox.remote_runtime_api_url}/start',
-            json=start_request,
-        )
-        if response.status_code != 201:
-            raise RuntimeError(f'Failed to start sandbox: {response.text}')
-        start_response = response.json()
-        self.runtime_id = start_response['runtime_id']
-        self.runtime_url = start_response['url']
-
-        logger.info(
-            f'Sandbox started. Runtime ID: {self.runtime_id}, URL: {self.runtime_url}'
-        )
-
-        if 'session_api_key' in start_response:
-            self.session.headers.update(
-                {'X-Session-API-Key': start_response['session_api_key']}
-            )
+        self._start_or_attach_to_runtime(plugins)
 
         # Initialize the eventstream and env vars
         super().__init__(
@@ -212,12 +93,6 @@ class RemoteRuntime(Runtime):
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.plugins]}'
         )
         logger.info(f'Runtime initialized with env vars: {env_vars}')
-        assert (
-            self.runtime_id is not None
-        ), 'Runtime ID is not set. This should never happen.'
-        assert (
-            self.runtime_url is not None
-        ), 'Runtime URL is not set. This should never happen.'
 
     @retry(
         stop=stop_after_attempt(10) | stop_if_should_exit(),
@@ -242,6 +117,135 @@ class RemoteRuntime(Runtime):
             msg = f'Runtime is not alive yet (id={self.runtime_id}). Status: {response.status_code}.'
             logger.warning(msg)
             raise RuntimeError(msg)
+
+    def _start_or_attach_to_runtime(self, plugins: list[PluginRequirement] | None):
+        existing_runtime = self._check_existing_runtime()
+        if existing_runtime:
+            logger.info(f'Using existing runtime with ID: {self.runtime_id}')
+        else:
+            if self.config.sandbox.runtime_container_image is None:
+                logger.info(
+                    f'Building remote runtime with base image: {self.config.sandbox.base_container_image}'
+                )
+                self._build_runtime()
+            else:
+                logger.info(
+                    f'Running remote runtime with image: {self.config.sandbox.runtime_container_image}'
+                )
+            self._start_runtime(plugins)
+        assert (
+            self.runtime_id is not None
+        ), 'Runtime ID is not set. This should never happen.'
+        assert (
+            self.runtime_url is not None
+        ), 'Runtime URL is not set. This should never happen.'
+        self._wait_until_alive()
+
+    def _check_existing_runtime(self) -> bool:
+        try:
+            response = send_request(
+                self.session,
+                'GET',
+                f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.instance_id}',
+            )
+            if response.status_code == 200:
+                self._parse_runtime_response(response)
+                return True
+        except Exception as e:
+            logger.info(f'Could not find existing runtime: {e}')
+        return False
+
+    def _start_runtime(self, plugins: list[PluginRequirement] | None):
+        # Prepare the request body for the /start endpoint
+        plugin_arg = ''
+        if plugins is not None and len(plugins) > 0:
+            plugin_arg = f'--plugins {" ".join([plugin.name for plugin in plugins])} '
+        browsergym_arg = (
+            f'--browsergym-eval-env {self.config.sandbox.browsergym_eval_env}'
+            if self.config.sandbox.browsergym_eval_env is not None
+            else ''
+        )
+        start_request = {
+            'image': self.container_image,
+            'command': (
+                f'/openhands/micromamba/bin/micromamba run -n openhands '
+                'poetry run '
+                f'python -u -m openhands.runtime.client.client {self.port} '
+                f'--working-dir {self.config.workspace_mount_path_in_sandbox} '
+                f'{plugin_arg}'
+                f'--username {"openhands" if self.config.run_as_openhands else "root"} '
+                f'--user-id {self.config.sandbox.user_id} '
+                f'{browsergym_arg}'
+            ),
+            'working_dir': '/openhands/code/',
+            'environment': {'DEBUG': 'true'} if self.config.debug else {},
+        }
+
+        # Start the sandbox using the /start endpoint
+        response = send_request(
+            self.session,
+            'POST',
+            f'{self.config.sandbox.remote_runtime_api_url}/start?id={self.instance_id}',
+            json=start_request,
+        )
+        if response.status_code != 201:
+            raise RuntimeError(f'Failed to start sandbox: {response.text}')
+        self._parse_runtime_response(response)
+        logger.info(
+            f'Sandbox started. Runtime ID: {self.runtime_id}, URL: {self.runtime_url}'
+        )
+
+    def _parse_runtime_response(self, response: requests.Response):
+        start_response = response.json()
+        self.runtime_id = start_response['runtime_id']
+        self.runtime_url = start_response['url']
+        if 'session_api_key' in start_response:
+            self.session.headers.update(
+                {'X-Session-API-Key': start_response['session_api_key']}
+            )
+        elif 'sandbox_api_key' in start_response:
+            # FIXME: Remove this once the runtime API is updated
+            self.session.headers.update(
+                {'X-Session-API-Key': start_response['sandbox_api_key']}
+            )
+
+    def _build_runtime(self):
+        logger.debug(f'RemoteRuntime `{self.instance_id}` config:\n{self.config}')
+        response = send_request(
+            self.session,
+            'GET',
+            f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
+        )
+        response_json = response.json()
+        registry_prefix = response_json['registry_prefix']
+        os.environ['OH_RUNTIME_RUNTIME_IMAGE_REPO'] = (
+            registry_prefix.rstrip('/') + '/runtime'
+        )
+        logger.info(
+            f'Runtime image repo: {os.environ["OH_RUNTIME_RUNTIME_IMAGE_REPO"]}'
+        )
+
+        if self.config.sandbox.runtime_extra_deps:
+            logger.info(
+                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
+            )
+
+        # Build the container image
+        self.container_image = build_runtime_image(
+            self.config.sandbox.base_container_image,
+            self.runtime_builder,
+            extra_deps=self.config.sandbox.runtime_extra_deps,
+            force_rebuild=self.config.sandbox.force_rebuild_runtime,
+        )
+
+        response = send_request(
+            self.session,
+            'GET',
+            f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
+            params={'image': self.container_image},
+        )
+        if response.status_code != 200 or not response.json()['exists']:
+            raise RuntimeError(f'Container image {self.container_image} does not exist')
 
     def close(self):
         if self.config.sandbox.keep_remote_runtime_alive:
@@ -277,8 +281,6 @@ class RemoteRuntime(Runtime):
                 return ErrorObservation(
                     f'Action {action_type} is not supported in the current runtime.'
                 )
-
-            self._wait_until_alive()
 
             assert action.timeout is not None
 
@@ -341,7 +343,6 @@ class RemoteRuntime(Runtime):
         if not os.path.exists(host_src):
             raise FileNotFoundError(f'Source file {host_src} does not exist')
 
-        self._wait_until_alive()
         try:
             if recursive:
                 with tempfile.NamedTemporaryFile(
@@ -392,7 +393,6 @@ class RemoteRuntime(Runtime):
             logger.info(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
 
     def list_files(self, path: str | None = None) -> list[str]:
-        self._wait_until_alive()
         try:
             data = {}
             if path is not None:
