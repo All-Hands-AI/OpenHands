@@ -54,7 +54,7 @@ python-pptx = "*"
 pylatexenc = "*"
 tornado = "*"
 python-dotenv = "*"
-protobuf = "^4.21.6" # chromadb currently fails on 5.0+
+protobuf = ">=4.21.6,<6.0.0" # chromadb currently fails on 5.0+
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
@@ -66,7 +66,7 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.6.8"
+ruff = "0.6.9"
 mypy = "1.11.2"
 pre-commit = "3.8.0"
 build = "*"
