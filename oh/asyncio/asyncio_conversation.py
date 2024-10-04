@@ -15,9 +15,10 @@ from typing import Callable, Dict, List, Optional, Union
 from uuid import UUID, uuid4
 
 from oh.agent.agent_config import AgentConfig
-from oh.event.detail.event_detail_abc import EventDetailABC
-from oh.event.event_filter import EventFilter
-from oh.event.oh_event import OhEvent
+from oh.agent.agent_info import AgentInfo
+from oh.announcement.detail.announcement_detail_abc import AnnouncementDetailABC
+from oh.announcement.announcement_filter import AnnouncementFilter
+from oh.announcement.announcement import Announcement
 from oh.file.download import Download
 from oh.file.file_error import FileError
 from oh.file.file_filter import FileFilter
@@ -30,15 +31,12 @@ from oh.conversation.conversation_status import ConversationStatus
 from oh.storage.mem_storage import MemStorage
 from oh.storage.page import Page
 from oh.storage.storage_abc import StorageABC
-from oh.task.oh_task import OhTask
-from oh.task.runnable.runnable_abc import RunnableABC
-from oh.task.task_filter import TaskFilter
-from oh.task.task_status import TaskStatus
-from oh.util.sync_to_async import sync_to_async
+from oh.command.oh_command import Command
+from oh.command.runnable.runnable_abc import RunnableABC
+from oh.command.command_filter import CommandFilter
+from oh.command.command_status import CommandStatus
+from oh.util.async_util import async_thread, wait_all
 
-_aio_copy = sync_to_async(shutil.copy)
-_aio_copyfileobj = sync_to_async(shutil.copyfileobj)
-_aio_rmtree = sync_to_async(shutil.rmtree)
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -51,9 +49,13 @@ class AsyncioConversation(ConversationABC):
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)
     listeners: Dict[UUID, ConversationListenerABC] = field(default_factory=dict)
-    event_storage: StorageABC[OhEvent, EventFilter] = field(default_factory=MemStorage)
-    task_storage: StorageABC[OhTask, TaskFilter] = field(default_factory=MemStorage)
-    asyncio_tasks: Dict[UUID, asyncio.Task] = field(default_factory=dict)
+    event_storage: StorageABC[Announcement, AnnouncementFilter] = field(
+        default_factory=MemStorage
+    )
+    command_storage: StorageABC[Command, CommandFilter] = field(
+        default_factory=MemStorage
+    )
+    tasks: Dict[UUID, asyncio.Task] = field(default_factory=dict)
     max_file_page_size: int = 100
 
     def __post_init__(self):
@@ -67,63 +69,58 @@ class AsyncioConversation(ConversationABC):
     async def remove_listener(self, listener_id: UUID) -> bool:
         return self.listeners.pop(listener_id) is not None
 
-    async def trigger_event(self, detail: EventDetailABC):
-        event = OhEvent(conversation_id=self.id, detail=detail)
+    async def trigger_event(self, detail: AnnouncementDetailABC):
+        event = Announcement(conversation_id=self.id, detail=detail)
         await self.event_storage.create(event)
         _LOGGER.debug(f"conversation_event:{self.id}:{event}")
-        if self.listeners:
-            await asyncio.wait(
-                [
-                    asyncio.create_task(listener.on_event(event))
-                    for listener in self.listeners.values()
-                ]
-            )
+        await wait_all(listener.on_event(event) for listener in self.listeners.values())
 
-    async def get_event(self, event_id: UUID) -> Optional[OhEvent]:
+    async def get_event(self, event_id: UUID) -> Optional[Announcement]:
         return await self.event_storage.read(event_id)
 
     async def search_events(
-        self, filter: Optional[EventFilter] = None, page_id: Optional[str] = None
-    ) -> Page[OhEvent]:
+        self, filter: Optional[AnnouncementFilter] = None, page_id: Optional[str] = None
+    ) -> Page[Announcement]:
         return await self.event_storage.search(filter, page_id)
 
-    async def count_events(self, filter: Optional[EventFilter] = None) -> int:
+    async def count_events(self, filter: Optional[AnnouncementFilter] = None) -> int:
         return await self.event_storage.count(filter)
 
-    async def create_task(
+    async def create_command(
         self, runnable: RunnableABC, title: Optional[str] = None, delay: float = 0
-    ) -> OhTask:
+    ) -> Command:
         if self.status != ConversationStatus.READY:
             raise ConversationError(str(self.status))
-        task = OhTask(
+        command = Command(
             conversation_id=self.id,
             runnable=runnable,
             title=title,
-            status=TaskStatus.PENDING if delay else TaskStatus.RUNNING,
+            status=CommandStatus.PENDING if delay else CommandStatus.RUNNING,
         )
-        await self.task_storage.create(task)
-        asyncio_task = asyncio.create_task(self._run_task(task, delay))
-        self.asyncio_tasks[task.id] = asyncio_task
-        asyncio_task.add_done_callback(self._task_done(task.id))
-        return task
-    
-    def _task_done(self, task_id: UUID) -> Callable:
-        def on_task_done(future: asyncio.Future):
-            asyncio.create_task(self._cleanup_task(task_id))
-        return on_task_done
-    
-    async def _cleanup_task(self, task_id: UUID):
-        asyncio_task = self.asyncio_tasks.pop(task_id, None)
-        task = await self.task_storage.read(task_id)
-        if asyncio_task.exception:
-            task.status = TaskStatus.ERROR 
-        elif asyncio_task.cancelled:
-            task.status = TaskStatus.CANCELLED
-        elif asyncio_task.done:
-            task.status = TaskStatus.COMPLETED
-        self.task_storage.update(task)
+        await self.command_storage.create(command)
+        task = asyncio.create_task(self._run_command(command, delay))
+        self.tasks[command.id] = task
+        task.add_done_callback(self._task_done(command.id))
+        return command
 
-    async def run_task(
+    def _task_done(self, command_id: UUID) -> Callable:
+        def on_task_done(future: asyncio.Future):
+            asyncio.create_task(self._cleanup_command(command_id))
+
+        return on_task_done
+
+    async def _cleanup_command(self, command_id: UUID):
+        asyncio_command = self.tasks.pop(command_id, None)
+        command = await self.command_storage.read(command_id)
+        if asyncio_command.exception:
+            command.status = CommandStatus.ERROR
+        elif asyncio_command.cancelled:
+            command.status = CommandStatus.CANCELLED
+        elif asyncio_command.done:
+            command.status = CommandStatus.COMPLETED
+        await self.command_storage.update(command)
+
+    async def run_command(
         self,
         runnable: RunnableABC,
         title: Optional[str] = None,
@@ -131,32 +128,32 @@ class AsyncioConversation(ConversationABC):
     ):
         if self.status != ConversationStatus.READY:
             raise ConversationError(str(self.status))
-        task = await self.create_task(runnable, title, delay)
-        result = await self.asyncio_tasks[task.id]
+        command = await self.create_command(runnable, title, delay)
+        result = await self.tasks[command.id]
         return result
 
-    async def cancel_task(self, task_id: UUID) -> bool:
-        asyncio_task = self.asyncio_tasks[task_id]
-        if asyncio_task:
-            return asyncio_task.cancel()
+    async def cancel_command(self, command_id: UUID) -> bool:
+        asyncio_command = self.tasks[command_id]
+        if asyncio_command:
+            return asyncio_command.cancel()
         return False
 
-    async def get_task(self, task_id: UUID) -> Optional[OhTask]:
-        return await self.task_storage.read(task_id)
+    async def get_command(self, command_id: UUID) -> Optional[Command]:
+        return await self.command_storage.read(command_id)
 
-    async def search_tasks(
-        self, filter: Optional[TaskFilter] = None, page_id: Optional[str] = None
-    ) -> Page[OhTask]:
-        return await self.task_storage.search(filter, page_id)
+    async def search_commands(
+        self, filter: Optional[CommandFilter] = None, page_id: Optional[str] = None
+    ) -> Page[Command]:
+        return await self.command_storage.search(filter, page_id)
 
-    async def count_tasks(self, filter: TaskFilter) -> int:
-        return await self.task_storage.count(filter)
+    async def count_commands(self, filter: CommandFilter) -> int:
+        return await self.command_storage.count(filter)
 
-    async def _run_task(self, task: OhTask, delay: float):
+    async def _run_command(self, command: Command, delay: float):
         if delay:
             await asyncio.sleep(delay)
-        await task.runnable.run(
-            task_id=task.id,
+        await command.runnable.run(
+            command_id=command.id,
             conversation=self,
         )
 
@@ -210,16 +207,16 @@ class AsyncioConversation(ConversationABC):
         internal_path = self._to_internal_path(path)
         internal_path.parent.mkdir(parents=True, exist_ok=True)
         if isinstance(content, Path):
-            await _aio_copy(content, internal_path)
+            await async_thread(shutil.copy, content, internal_path)
         else:
             with open(internal_path, "wb") as destination:
-                await _aio_copyfileobj(content, destination)
+                await async_thread(shutil.copyfileobj, content, destination)
 
     async def delete_file(self, path: str) -> bool:
         internal_path = self._to_internal_path(path)
         if not internal_path.exists():
             return False
-        await _aio_rmtree(internal_path)
+        await async_thread(shutil.rmtree, internal_path)
         return True
 
     async def load_file(self, path: str) -> Optional[Download]:
@@ -283,12 +280,7 @@ class AsyncioConversation(ConversationABC):
     async def destroy(self, grace_period: int):
         _LOGGER.info(f"destroying_conversation:{self.id}")
         self.status = ConversationStatus.DESTROYING
-        if (self.asyncio_tasks):
-            done, pending = await asyncio.wait((
-                asyncio.create_task(self.cancel_task(task_id))
-                for task_id in self.asyncio_tasks
-            ), timeout=grace_period)
-            if pending:
-                # Not all tasks finished in the allotted time
-                raise TimeoutError()
+        await wait_all(self.cancel_command(command_id) for command_id in self.tasks)
 
+    async def get_agent_info(self) -> AgentInfo:
+        return self.agent_config

@@ -3,17 +3,17 @@ from datetime import datetime
 from typing import Generic, Optional, TypeVar
 from uuid import UUID, uuid4
 
-from oh.event.detail.event_detail_abc import EventDetailABC
+from oh.announcement.detail.announcement_detail_abc import AnnouncementDetailABC
 
 
-T = TypeVar("T", bound=EventDetailABC)
+T = TypeVar("T", bound=AnnouncementDetailABC)
 
 
 @dataclass
-class OhEvent(Generic[T]):
+class Announcement(Generic[T]):
     """
     Class representing some event that occurred within and OpenHands Process that may be
-    interest externally. For example: TaskCompleted
+    interest externally. For example: CommandCompleted
     """
 
     conversation_id: UUID

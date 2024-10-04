@@ -6,7 +6,7 @@ from typing import Dict, Optional
 from uuid import UUID, uuid4
 from oh.agent.agent_config import AgentConfig
 from oh.asyncio.asyncio_conversation import AsyncioConversation
-from oh.event.detail.conversation_status_update import ConversationStatusUpdate
+from oh.announcement.detail.conversation_status_update import ConversationStatusUpdate
 from oh.conversation.conversation_abc import ConversationABC
 from oh.conversation.conversation_filter import ConversationFilter
 from oh.conversation.conversation_status import ConversationStatus
@@ -15,6 +15,7 @@ from oh.conversation_broker.conversation_broker_listener_abc import (
     ConversationBrokerListenerABC,
 )
 from oh.storage.page import Page
+from oh.util.async_util import wait_all
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -62,13 +63,14 @@ class AsyncioConversationBroker(ConversationBrokerABC):
         return results
 
     async def create_conversation(self, agent_config: AgentConfig) -> ConversationABC:
-        conversation = AsyncioConversation(workspace_path=self.workspace_path, agent_config=agent_config)
+        conversation = AsyncioConversation(
+            workspace_path=self.workspace_path, agent_config=agent_config
+        )
         self.conversations[conversation.id] = conversation
-        if self.listeners:
-            await asyncio.wait(
-                asyncio.create_task(listener.after_create_conversation(conversation))
-                for listener in self.listeners.values()
-            )
+        await wait_all(
+            listener.after_create_conversation(conversation)
+            for listener in self.listeners.values()
+        )
         asyncio.create_task(self._on_conversation_ready(conversation))
         _LOGGER.info(f"conversation_created:{conversation.id}")
         return conversation
@@ -88,11 +90,10 @@ class AsyncioConversationBroker(ConversationBrokerABC):
             ConversationStatus.DESTROYED,
         ]:
             return False
-        if self.listeners:
-            await asyncio.wait(
-                asyncio.create_task(listener.before_destroy_conversation(conversation))
-                for listener in self.listeners.values()
-            )
+        await wait_all(
+            asyncio.create_task(listener.before_destroy_conversation(conversation))
+            for listener in self.listeners.values()
+        )
         await conversation.trigger_event(
             ConversationStatusUpdate(conversation.id, ConversationStatus.DESTROYING)
         )
@@ -101,11 +102,10 @@ class AsyncioConversationBroker(ConversationBrokerABC):
 
     async def shutdown(self, grace_period: int = 10):
         _LOGGER.info("shutting_down")
-        if self.conversations:
-            await asyncio.wait(
-                (
-                    asyncio.create_task(conversation.destroy(grace_period))
-                    for conversation in self.conversations.values()
-                ),
-                timeout=grace_period,
-            )
+        await wait_all(
+            (
+                conversation.destroy(grace_period)
+                for conversation in self.conversations.values()
+            ),
+            timeout=grace_period,
+        )

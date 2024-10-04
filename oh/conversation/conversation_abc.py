@@ -6,31 +6,30 @@ from pathlib import Path
 from typing import Optional, Union
 from uuid import UUID
 
-from oh.agent.agent_abc import AgentABC
 from oh.agent.agent_config import AgentConfig
-from oh.event import oh_event
-from oh.event.detail.event_detail_abc import EventDetailABC
-from oh.event.event_filter import EventFilter
+from oh.agent.agent_info import AgentInfo
+from oh.announcement import announcement
+from oh.announcement.detail.announcement_detail_abc import AnnouncementDetailABC
+from oh.announcement.announcement_filter import AnnouncementFilter
 from oh.file.download import Download
 from oh.file.file_filter import FileFilter
 from oh.file.file_info import FileInfo
-from oh.file.file_permissions import FilePermissions
 from oh.conversation.listener import conversation_listener_abc
 from oh.conversation.conversation_status import ConversationStatus
 from oh.storage.page import Page
-from oh.task import oh_task
-from oh.task.runnable import runnable_abc
-from oh.task.task_filter import TaskFilter
+from oh.command import oh_command
+from oh.command.runnable import runnable_abc
+from oh.command.command_filter import CommandFilter
 
 
 class ConversationABC(ABC):
     """
-    Conversation combing output events, input tasks, and files, allowing interfacing internally with an
+    Conversation combing output events, input commands, and files, allowing interfacing internally with an
     AI Agent. A user can mantain multiple conversations concurrently, or multiple users could potentially
     share a single conversation.
-    * Events represent messages from the server to external clients
-    * Tasks represent tasks in progress on the server
-    * Files serve to store data related to tasks.
+    * Announcements represent messages from the server to external clients
+    * Commands represent commands in progress on the server
+    * Files serve to store data related to commands.
 
     All methods are designed to make no assumptions about the volume of data / requests being handled,
     and are designed to be environment agnostic - the actual conversation may be running locally or
@@ -44,7 +43,6 @@ class ConversationABC(ABC):
 
     id: UUID
     status: ConversationStatus
-    agent_config: AgentConfig
     created_at: datetime
     updated_at: datetime
 
@@ -59,58 +57,60 @@ class ConversationABC(ABC):
         """Remove the listener with the id given"""
 
     @abstractmethod
-    async def trigger_event(self, detail: EventDetailABC) -> oh_event.OhEvent:
+    async def trigger_event(
+        self, detail: AnnouncementDetailABC
+    ) -> announcement.Announcement:
         """Trigger the event given"""
 
     @abstractmethod
-    async def get_event(self, event_id: UUID) -> Optional[oh_event.OhEvent]:
+    async def get_event(self, event_id: UUID) -> Optional[announcement.Announcement]:
         """Get an event with the id given"""
 
     @abstractmethod
     async def search_events(
-        self, filter: Optional[EventFilter] = None, page_id: Optional[str] = None
-    ) -> Page[oh_event.OhEvent]:
+        self, filter: Optional[AnnouncementFilter] = None, page_id: Optional[str] = None
+    ) -> Page[announcement.Announcement]:
         """Search events in this conversation"""
 
     @abstractmethod
-    async def count_events(self, filter: Optional[EventFilter] = None) -> int:
+    async def count_events(self, filter: Optional[AnnouncementFilter] = None) -> int:
         """Count events in this conversation"""
 
     @abstractmethod
-    async def create_task(
+    async def create_command(
         self,
         runnable: runnable_abc.RunnableABC,
         title: Optional[str] = None,
         delay: float = 0,
-    ) -> oh_task.OhTask:
-        """Create a task and return details of it.  Throw a SesionError if the conversation is not in a ready state."""
+    ) -> oh_command.Command:
+        """Create a command and return details of it.  Throw a SesionError if the conversation is not in a ready state."""
 
     @abstractmethod
-    async def run_task(
+    async def run_command(
         self,
         runnable: runnable_abc.RunnableABC,
         title: Optional[str] = None,
         delay: float = 0,
     ):
-        """Run the task and return the result. Throw a SesionError if the conversation is not in a ready state."""
+        """Run the command and return the result. Throw a SesionError if the conversation is not in a ready state."""
 
     @abstractmethod
-    async def cancel_task(self, task_id: UUID) -> bool:
-        """Attempt to cancel task with the id given. Return true if the task was cancelled, false otherwise"""
+    async def cancel_command(self, command_id: UUID) -> bool:
+        """Attempt to cancel command with the id given. Return true if the command was cancelled, false otherwise"""
 
     @abstractmethod
-    async def get_task(self, task_id: UUID) -> Optional[oh_task.OhTask]:
-        """Get the handle for the task with the id given"""
+    async def get_command(self, command_id: UUID) -> Optional[oh_command.Command]:
+        """Get the handle for the command with the id given"""
 
     @abstractmethod
-    async def search_tasks(
-        self, filter: TaskFilter, page_id: str
-    ) -> Page[oh_task.OhTask]:
-        """Get info on running tasks"""
+    async def search_commands(
+        self, filter: CommandFilter, page_id: str
+    ) -> Page[oh_command.Command]:
+        """Get info on running commands"""
 
     @abstractmethod
-    async def count_tasks(self, filter: TaskFilter) -> int:
-        """Get the number of tasks"""
+    async def count_commands(self, filter: CommandFilter) -> int:
+        """Get the number of commands"""
 
     @abstractmethod
     async def create_dir(self, path: str) -> FileInfo:
@@ -148,3 +148,7 @@ class ConversationABC(ABC):
     @abstractmethod
     async def count_files(self, filter: FileFilter) -> int:
         """Search files available in the conversation"""
+
+    @abstractmethod
+    async def get_agent_info(self) -> AgentInfo:
+        """ Get the agent config for this conversation """

@@ -4,9 +4,9 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 from oh.conversation.conversation_abc import ConversationABC
-from oh.event.detail.text_reply import TextReply
-from oh.task.runnable.runnable_abc import RunnableABC
-from oh.task.task_status import TaskStatus
+from oh.announcement.detail.text_reply import TextReply
+from oh.command.runnable.runnable_abc import RunnableABC
+from oh.command.command_status import CommandStatus
 
 
 @dataclass
@@ -24,13 +24,15 @@ class Ticker(RunnableABC):
 
     async def run(
         self,
-        task_id: UUID,
+        command_id: UUID,
         conversation: ConversationABC,
     ):
         iteration = 0
         while (
-            await conversation.get_task(task_id)
-        ).status == TaskStatus.RUNNING and iteration < self.iterations:
-            conversation.trigger_event(TextReply(self.message.format(time=str(datetime.now()))))
+            await conversation.get_command(command_id)
+        ).status == CommandStatus.RUNNING and iteration < self.iterations:
+            await conversation.trigger_event(
+                TextReply(self.message.format(time=str(datetime.now())))
+            )
             iteration += 1
             await asyncio.sleep(self.interval)

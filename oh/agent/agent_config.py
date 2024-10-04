@@ -1,9 +1,8 @@
-
 from dataclasses import dataclass
+
+from oh.agent.agent_info import AgentInfo
 
 
 @dataclass
-class AgentConfig:
-    type: str
-    llm: str
+class AgentConfig(AgentInfo):
     key: str

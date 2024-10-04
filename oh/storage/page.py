@@ -6,7 +6,7 @@ T = TypeVar("T")
 
 @dataclass
 class Page(Generic[T]):
-    """A page of task info"""
+    """A page of command info"""
 
     results: List[T]
     next_page_id: Optional[str] = None

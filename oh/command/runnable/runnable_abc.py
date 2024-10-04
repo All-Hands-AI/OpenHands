@@ -7,9 +7,9 @@ from oh.conversation import conversation_abc
 
 class RunnableABC(ABC):
     """
-    Some runnable task. Runnables should endeavour to be good asyncio neighbors and not lock up
+    Some runnable command. Runnables should endeavour to be good asyncio neighbors and not lock up
     the main run loop too much. They may also implement cancellability by checking that the
-    status of the task is not CANCELLING in the service.
+    status of the command is not CANCELLING in the service.
     """
 
     cancellable: bool = False
@@ -17,11 +17,11 @@ class RunnableABC(ABC):
     @abstractmethod
     async def run(
         self,
-        task_id: UUID,
+        command_id: UUID,
         conversation: conversation_abc.ConversationABC,
     ):
         """
-        Execute this task
-        task_id: The id of this task
-        conversation: Conversation in which this task is run
+        Execute this command
+        command_id: The id of this command
+        conversation: Conversation in which this command is run
         """

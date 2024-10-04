@@ -3,8 +3,8 @@ from datetime import datetime
 from uuid import UUID
 
 
-class EventDetailABC(ABC):
+class AnnouncementDetailABC(ABC):
     """
     Class representing the detials of some event that occurred within and OpenHands Process that may be
-    interest externally. For example: TaskCompleted
+    interest externally. For example: CommandCompleted
     """

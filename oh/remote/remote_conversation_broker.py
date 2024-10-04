@@ -14,9 +14,10 @@ from oh.conversation_broker.conversation_broker_listener_abc import (
     ConversationBrokerListenerABC,
 )
 from oh.fastapi.dynamic_types import DynamicTypes
-from oh.remote.websocket_event_client import WebsocketEventClient
+from oh.remote.websocket_event_client import WebsocketAnnouncementClient
 from oh.remote.remote_conversation import RemoteConversation
 from oh.storage.page import Page
+from oh.util.async_util import wait_all
 
 _SESSION_INFO_PAGE_ADAPTER = TypeAdapter(Page[ConversationInfo])
 
@@ -33,7 +34,7 @@ class RemoteConversationBroker(ConversationBrokerABC):
 
     root_url: str
     listeners: Dict[UUID, ConversationBrokerListenerABC] = field(default_factory=dict)
-    websocket_event_client: WebsocketEventClient = None
+    websocket_event_client: WebsocketAnnouncementClient = None
     httpx_client: httpx.AsyncClient = None
     dynamic_types: DynamicTypes = field(default_factory=DynamicTypes)
 
@@ -43,7 +44,7 @@ class RemoteConversationBroker(ConversationBrokerABC):
         if not self.websocket_event_client:
             protocol = "wss" if self.root_url.startswith("https://") else "ws"
             websocket_url = f"{protocol}://{self.root_url.split("://")[1]}fire-hose"
-            self.websocket_event_client = WebsocketEventClient(websocket_url)
+            self.websocket_event_client = WebsocketAnnouncementClient(websocket_url)
         if not self.httpx_client:
             self.httpx_client = httpx.AsyncClient()
 
@@ -89,7 +90,10 @@ class RemoteConversationBroker(ConversationBrokerABC):
         return response.json()
 
     async def create_conversation(self, agent_config: AgentConfig) -> ConversationABC:
-        response = await self.httpx_client.post(f"{self.root_url}conversation")
+        response = await self.httpx_client.post(
+            f"{self.root_url}conversation",
+            json=TypeAdapter(AgentConfig).dump_python(agent_config),
+        )
         conversation_info = ConversationInfo.model_validate(response.json())
         conversation = RemoteConversation(
             id=conversation_info.id,
@@ -97,7 +101,6 @@ class RemoteConversationBroker(ConversationBrokerABC):
             created_at=conversation_info.created_at,
             updated_at=conversation_info.updated_at,
             root_url=self.root_url,
-            agent_config=agent_config,
             conversation_info=conversation_info,
             websocket_event_client=self.websocket_event_client,
             httpx_client=self.httpx_client,
@@ -118,12 +121,11 @@ class RemoteConversationBroker(ConversationBrokerABC):
 
     async def shutdown(self, grace_period: int = 10):
         # Note: This does not shut down remote server...
-        if self.listeners:
-            await asyncio.wait(
-                (
-                    asyncio.create_task(self.remove_listener(listener_id))
-                    for listener_id in list(self.listeners.keys())
-                ),
-                timeout=grace_period,
-            )
+        await wait_all(
+            (
+                self.remove_listener(listener_id)
+                for listener_id in list(self.listeners.keys())
+            ),
+            grace_period,
+        )
         await self.httpx_client.aclose()

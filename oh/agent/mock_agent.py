@@ -5,29 +5,30 @@ import random
 from uuid import UUID
 from oh.agent.agent_abc import AgentABC
 from oh.conversation import conversation_abc
-from oh.event.detail.text_reply import TextReply
-from oh.task.task_status import TaskStatus
+from oh.announcement.detail.text_reply import TextReply
+from oh.command.command_status import CommandStatus
 
 
 @dataclass
 class MockAgent(AgentABC):
-    """ Mocks an agent - when prompted, it produces a number of TextReply events at delayed intervals """
+    """Mocks an agent - when prompted, it produces a number of TextReply events at delayed intervals"""
+
     min_number_replies: int = 1
     max_number_replies: int = 100
     min_delay: int = 1
     max_delay: int = 15
     cancellable: bool = True
 
-    async def prompt(
-        self,
-        text: str,
-        conversation: conversation_abc.ConversationABC
-    ):
-        await conversation.trigger_event(TextReply(f"\"{text}\"??? That's a good one! Let me think about that!"))
+    async def prompt(self, text: str, conversation: conversation_abc.ConversationABC):
+        await conversation.trigger_event(
+            TextReply(f'"{text}"??? That\'s a good one! Let me think about that!')
+        )
 
-        remaining_replies = random.randint(self.min_number_replies, self.max_number_replies)
+        remaining_replies = random.randint(
+            self.min_number_replies, self.max_number_replies
+        )
         while remaining_replies:
-            
+
             # Trigger a random reply
             await conversation.trigger_event(TextReply(random.choice(_REPLIES)))
             remaining_replies -= 1

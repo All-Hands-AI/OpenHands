@@ -4,16 +4,16 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID, uuid4
 
-from oh.task.task_status import TaskStatus
-from oh.task.runnable import runnable_abc
+from oh.command.command_status import CommandStatus
+from oh.command.runnable import runnable_abc
 
 
 @dataclass
-class OhTask:
+class Command:
     conversation_id: UUID
     runnable: runnable_abc.RunnableABC
     id: UUID = field(default_factory=uuid4)
-    status: TaskStatus = TaskStatus.PENDING
+    status: CommandStatus = CommandStatus.PENDING
     title: Optional[str] = None
     created_at: datetime = field(default_factory=datetime.now)
     updated_at: datetime = field(default_factory=datetime.now)

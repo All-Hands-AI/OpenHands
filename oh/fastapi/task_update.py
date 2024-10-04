@@ -3,10 +3,10 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from oh.task.task_status import TaskStatus
+from oh.command.command_status import CommandStatus
 
 
-class TaskUpdate(BaseModel):
+class CommandUpdate(BaseModel):
     id: UUID
-    status: TaskStatus
-    type: Literal["TaskUpdate"] = "TaskUpdate"
+    status: CommandStatus
+    type: Literal["CommandUpdate"] = "CommandUpdate"

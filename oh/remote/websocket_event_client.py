@@ -7,10 +7,11 @@ from websockets.protocol import State
 
 from oh.conversation.listener.conversation_listener_abc import ConversationListenerABC
 from oh.fastapi.dynamic_types import DynamicTypes
+from oh.util.async_util import wait_all
 
 
 @dataclass
-class WebsocketEventClient:
+class WebsocketAnnouncementClient:
     """
     Client which attaches to the firehose websocket of an OpenHands server
     and reads all events
@@ -60,11 +61,9 @@ class WebsocketEventClient:
         while self.running:
             message = await self.websocket.recv()
             event = event_info_class.model_validate_json(message)
-            if self.listeners:
-                await asyncio.wait(
-                    asyncio.create_task(listener.on_event(event))
-                    for listener in self.listeners.values()
-                )
+            await wait_all(
+                listener.on_event(event) for listener in self.listeners.values()
+            )
 
     async def close(self):
         self.running = False

@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class TaskStatus(Enum):
+class CommandStatus(Enum):
     PENDING = "PENDING"
     RUNNING = "RUNNING"
     CANCELLING = "CANCELLING"
@@ -10,4 +10,8 @@ class TaskStatus(Enum):
     ERROR = "ERROR"
 
 
-FINISHED_STATUSES = (TaskStatus.CANCELLED, TaskStatus.COMPLETED, TaskStatus.ERROR)
+FINISHED_STATUSES = (
+    CommandStatus.CANCELLED,
+    CommandStatus.COMPLETED,
+    CommandStatus.ERROR,
+)

@@ -22,6 +22,7 @@ from fastapi.responses import (
 from fastapi.websockets import WebSocketState
 
 from oh.agent.agent_config import AgentConfig
+from oh.agent.agent_info import AgentInfo
 from oh.conversation.listener.conversation_listener_abc import ConversationListenerABC
 from oh.fastapi.conversation_info import ConversationInfo
 from oh.fastapi.dynamic_types import DynamicTypes
@@ -33,6 +34,7 @@ from oh.file.file_filter import FileFilter
 from oh.file.file_info import FileInfo
 from oh.conversation_broker.conversation_broker_abc import ConversationBrokerABC
 from oh.storage.page import Page
+from oh.util.async_util import wait_all
 
 _LOGGER = logging.getLogger(__name__)
 FILE_UPLOAD_TIMEOUT = 60  # TODO: make this configurable
@@ -43,11 +45,11 @@ def add_open_hands_to_fastapi(api: FastAPI, conversation_broker: ConversationBro
     """
     OpenHands external API consists of 3 main entities:
 
-    OhEvent - Some (Polymorphic) event that happened on the server
-    OhTask - Some task to perform on the server
-    Conversation - Context in which tasks are performed and events are triggered
+    Announcement - Some (Polymorphic) event that happened on the server
+    Command - Some command to perform on the server
+    Conversation - Context in which commands are performed and events are triggered
 
-    To begin creating tasks and receiving events, a conversation is required:
+    To begin creating commands and receiving events, a conversation is required:
 
     POST   /conversation  - begin a conversation
     GET    /conversation  - list conversations
@@ -57,10 +59,10 @@ def add_open_hands_to_fastapi(api: FastAPI, conversation_broker: ConversationBro
     GET    /conversation/{conversation_id}/event  - list conversation events
     POST   /conversation/{conversation_id}/event  - trigger a conversation event
     GET    /conversation/{conversation_id}/event/{event_id}  - get a conversation event
-    GET    /conversation/{conversation_id}/task  - list conversation tasks
-    GET    /conversation/{conversation_id}/task/{task_id}  - get a conversation task
-    POST   /conversation/{conversation_id}/task  - create a conversation task
-    DELETE /conversation/{conversation_id}/task/{task_id}  - cancel a conversation task
+    GET    /conversation/{conversation_id}/command  - list conversation commands
+    GET    /conversation/{conversation_id}/command/{command_id}  - get a conversation command
+    POST   /conversation/{conversation_id}/command  - create a conversation command
+    DELETE /conversation/{conversation_id}/command/{command_id}  - cancel a conversation command
 
     POST   /conversation/{conversation_id}/dir/{path}  - create a new directory
     POST   /conversation/{conversation_id}/file/{path}  - create a new file (touch)
@@ -71,6 +73,8 @@ def add_open_hands_to_fastapi(api: FastAPI, conversation_broker: ConversationBro
     GET    /conversation/{conversation_id}/file-search
     GET    /conversation/{conversation_id}/file-count
 
+    GET    /conversation/{conversation_id}/agent-info  - get agent info
+
     WS     /conversation/{conversation_id}  - connect to a conversation via websocket
     WS     /conversation/  - create a new conversation and connect to it via via websocket
     WS     /fire-hose  - fire hose of all events on the server
@@ -79,7 +83,9 @@ def add_open_hands_to_fastapi(api: FastAPI, conversation_broker: ConversationBro
     dynamic_types = DynamicTypes()
 
     @api.post("/conversation")
-    async def create_conversation(agent_config: Optional[AgentConfig] = None) -> ConversationInfo:
+    async def create_conversation(
+        agent_config: Annotated[Optional[AgentConfig], Body()] = None
+    ) -> ConversationInfo:
         """Begin the process of creating a conversation"""
         return await conversation_broker.create_conversation(agent_config)
 
@@ -104,7 +110,7 @@ def add_open_hands_to_fastapi(api: FastAPI, conversation_broker: ConversationBro
     async def destroy_conversation(conversation_id: UUID) -> bool:
         """
         Begin the process of destroying a conversation. An attempt will be made to gracefully
-        terminate any running tasks within the conversation.
+        terminate any running commands within the conversation.
         """
         return await conversation_broker.destroy_conversation(conversation_id)
 
@@ -141,39 +147,39 @@ def add_open_hands_to_fastapi(api: FastAPI, conversation_broker: ConversationBro
         event = await conversation.get_event(event_id)
         return event
 
-    @api.get("/conversation/{conversation_id}/task")
-    async def search_tasks(
+    @api.get("/conversation/{conversation_id}/command")
+    async def search_commands(
         conversation_id: UUID, page_id: Optional[str] = None
-    ) -> Page[dynamic_types.get_task_info_class()]:  # type: ignore
-        """Get tasks for a conversation"""
+    ) -> Page[dynamic_types.get_command_info_class()]:  # type: ignore
+        """Get commands for a conversation"""
         conversation = await conversation_broker.get_conversation(conversation_id)
-        page = await conversation.search_tasks(page_id=page_id)
+        page = await conversation.search_commands(page_id=page_id)
         return page
 
-    @api.get("/conversation/{conversation_id}/task/{task_id}")
-    async def get_task(conversation_id: UUID, task_id: UUID) -> Optional[dynamic_types.get_task_info_class()]:  # type: ignore
-        """Get tasks for a conversation"""
+    @api.get("/conversation/{conversation_id}/command/{command_id}")
+    async def get_command(conversation_id: UUID, command_id: UUID) -> Optional[dynamic_types.get_command_info_class()]:  # type: ignore
+        """Get commands for a conversation"""
         conversation = await conversation_broker.get_conversation(conversation_id)
-        task = await conversation.get_task(task_id)
-        return task
+        command = await conversation.get_command(command_id)
+        return command
 
-    @api.post("/conversation/{conversation_id}/task")
-    async def create_task(
+    @api.post("/conversation/{conversation_id}/command")
+    async def create_command(
         conversation_id: UUID,
-        create_task: Annotated[dynamic_types.get_create_task_class(), Body()],  # type: ignore
-    ) -> dynamic_types.get_task_info_class():  # type: ignore
+        create_command: Annotated[dynamic_types.get_create_command_class(), Body()],  # type: ignore
+    ) -> dynamic_types.get_command_info_class():  # type: ignore
         """Given an id, get conversation info. Return None if the conversation could not be found."""
         conversation = await conversation_broker.get_conversation(conversation_id)
-        task = await conversation.create_task(
-            create_task.runnable, create_task.title, create_task.delay
+        command = await conversation.create_command(
+            create_command.runnable, create_command.title, create_command.delay
         )
-        return task
+        return command
 
-    @api.delete("/conversation/{conversation_id}/task/{task_id}")
-    async def cancel_task(conversation_id: UUID, task_id: UUID) -> bool:
+    @api.delete("/conversation/{conversation_id}/command/{command_id}")
+    async def cancel_command(conversation_id: UUID, command_id: UUID) -> bool:
         """Given an id, get conversation info. Return None if the conversation could not be found."""
         conversation = await conversation_broker.get_conversation(conversation_id)
-        result = await conversation.cancel_task(task_id)
+        result = await conversation.cancel_command(command_id)
         return result
 
     @api.post("/conversation/{conversation_id}/dir/{path}")
@@ -199,18 +205,14 @@ def add_open_hands_to_fastapi(api: FastAPI, conversation_broker: ConversationBro
     ) -> List[FileInfo]:
         """Upload files to the path given. Any existing file is overwritten"""
         conversation = await conversation_broker.get_conversation(conversation_id)
-        done, pending = await asyncio.wait(
+        results = await wait_all(
             (
-                asyncio.create_task(
-                    conversation.save_file(f"{parent_path}/{file.filename}", file.file)
-                )
+                conversation.save_file(f"{parent_path}/{file.filename}", file.file)
                 for file in files
             ),
-            timeout=FILE_UPLOAD_TIMEOUT
+            FILE_UPLOAD_TIMEOUT,
         )
-        if pending:
-            raise TimeoutError()
-        return done
+        return results
 
     @api.delete("/conversation/{conversation_id}/file/{path}")
     async def delete_file(conversation_id: UUID, path: str) -> bool:
@@ -267,6 +269,12 @@ def add_open_hands_to_fastapi(api: FastAPI, conversation_broker: ConversationBro
         page = await conversation.count_files(FileFilter(path_prefix, path_delimiter))
         return page
 
+    @api.get("/conversation/{conversation_id}/file-count")
+    async def get_agent_info(conversation_id: UUID) -> AgentInfo:
+        conversation = await conversation_broker.get_conversation(conversation_id)
+        return await conversation.get_agent_info()
+        
+
     @api.get("/asyncapi.json")
     def get_async_schema() -> JSONResponse:
         return JSONResponse(
@@ -287,14 +295,14 @@ def add_open_hands_to_fastapi(api: FastAPI, conversation_broker: ConversationBro
                             },
                         },
                         "messages": {
-                            "Event": {
-                                "name": "Event",
+                            "Announcement": {
+                                "name": "Announcement",
                                 "payload": dynamic_types.get_event_info_type_adapter().json_schema(),
                             },
                         },
                         "operations": {
-                            "CreateTask": {
-                                "name": "CreateTask",
+                            "CreateCommand": {
+                                "name": "CreateCommand",
                                 "payload": dynamic_types.get_runnable_type_adapter().json_schema(),
                             }
                         },
@@ -304,9 +312,15 @@ def add_open_hands_to_fastapi(api: FastAPI, conversation_broker: ConversationBro
         )
 
     @api.websocket("/conversation")
-    async def connect_and_create_conversation(websocket: WebSocket):
+    async def connect_and_create_conversation(
+        websocket: WebSocket,
+        agent_type: str,
+        agent_llm: str,
+        agent_key: str,
+    ):
         await websocket.accept()
-        conversation = await conversation_broker.create_conversation()
+        agent_config = AgentConfig(agent_type, agent_llm, agent_key)
+        conversation = await conversation_broker.create_conversation(agent_config)
         listener_id = await conversation.add_listener(
             WebsocketConversationListener(
                 conversation.id, websocket, dynamic_types.get_event_info_type_adapter()
@@ -318,7 +332,7 @@ def add_open_hands_to_fastapi(api: FastAPI, conversation_broker: ConversationBro
                 runnable = dynamic_types.get_runnable_type_adapter().validate_python(
                     data["runnable"]
                 )
-                await conversation.create_task(
+                await conversation.create_command(
                     runnable, data.get("title"), data.get("delay")
                 )
         except WebSocketDisconnect as e:
@@ -345,7 +359,7 @@ def add_open_hands_to_fastapi(api: FastAPI, conversation_broker: ConversationBro
                 runnable = dynamic_types.get_runnable_type_adapter().validate_python(
                     data["runnable"]
                 )
-                await conversation.create_task(
+                await conversation.create_command(
                     runnable, data.get("title"), data.get("delay")
                 )
         except WebSocketDisconnect as e:
@@ -363,28 +377,14 @@ def add_open_hands_to_fastapi(api: FastAPI, conversation_broker: ConversationBro
         page_id = None
         while True:
             page = await conversation_broker.search_conversations(page_id=page_id)
-            if page.results:
-                done, pending = await asyncio.wait(
-                    (
-                        asyncio.create_task(
-                            conversation_broker.get_conversation(result.id)
-                        )
-                        for result in page.results
-                    ),
-                    timeout=GENERAL_TIMEOUT
-                )
-                if pending:
-                    raise TimeoutError()
-                conversations = [task.result() for task in done]
-                await asyncio.wait(
-                    (
-                        asyncio.create_task(
-                            listener.after_create_conversation(conversation)
-                        )
-                        for conversation in conversations
-                    ),
-                    timeout=GENERAL_TIMEOUT
-                )
+            conversations = await wait_all(
+                conversation_broker.get_conversation(result.id)
+                for result in page.results
+            )
+            await wait_all(
+                listener.after_create_conversation(conversation)
+                for conversation in conversations
+            )
             page_id = page.next_page_id
             if not page_id:
                 break

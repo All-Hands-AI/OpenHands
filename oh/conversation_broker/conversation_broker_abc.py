@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 from uuid import UUID
 
+from oh.agent.agent_config import AgentConfig
 from oh.conversation_broker.conversation_broker_listener_abc import (
     ConversationBrokerListenerABC,
 )
@@ -12,7 +13,7 @@ from oh.storage.page import Page
 
 class ConversationBrokerABC(ABC):
     """
-    Conversation manager. Responsible for coordinating access to conversations and conversation lifecycle management.
+    Conversation broker. Responsible for coordinating access to conversations and conversation lifecycle management.
     Typically inactive conversations are deleted after some grace period.
     """
 
@@ -41,9 +42,7 @@ class ConversationBrokerABC(ABC):
         """Get the number of conversations"""
 
     @abstractmethod
-    async def create_conversation(
-        self,
-    ) -> ConversationABC:
+    async def create_conversation(self, agent_config: AgentConfig) -> ConversationABC:
         """Begin the process of creating a conversation. Once the conversation is ready, it will fire a READY event"""
 
     @abstractmethod
@@ -52,7 +51,7 @@ class ConversationBrokerABC(ABC):
     ) -> bool:
         """
         Begin the process of destroying a conversation. An attempt will be made to gracefully
-        terminate any running tasks within the conversation.
+        terminate any running commands within the conversation.
         """
 
     @abstractmethod

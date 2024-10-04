@@ -4,5 +4,5 @@ from uuid import UUID
 
 
 @dataclass
-class TaskFilter:
+class CommandFilter:
     conversation_id__eq: Optional[UUID] = None
