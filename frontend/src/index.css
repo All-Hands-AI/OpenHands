@@ -45,18 +45,6 @@ code {
   white-space: pre-wrap; /* Handles line breaks */
 }
 
-.markdown-body ol {
-  list-style-type: decimal; /* Handles numbered lists */
-  margin-left: 20px;
-  padding-left: 0.5em; /* Adds some indentation */
-}
-
-.markdown-body ul {
-  list-style-type: disc; /* Handles bullet points */
-  margin-left: 20px;
-  padding-left: 0.5em; /* Adds some indentation */
-}
-
 .markdown-body th {
   text-align: left;
 }

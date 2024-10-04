@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openhands-ai"
-version = "0.9.7"
+version = "0.9.8"
 description = "OpenHands: Code Less, Make More"
 authors = ["OpenHands"]
 license = "MIT"
@@ -13,7 +13,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.12"
 datasets = "*"
 pandas = "*"
 litellm = "*"
@@ -56,6 +56,7 @@ tornado = "*"
 python-dotenv = "*"
 pylcs = "^0.1.1"
 whatthepatch = "^1.0.6"
+protobuf = "^4.21.6" # chromadb currently fails on 5.0+
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"

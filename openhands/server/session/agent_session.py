@@ -63,7 +63,7 @@ class AgentSession:
         - runtime_name: The name of the runtime associated with the session
         - config:
         - agent:
-        - max_interations:
+        - max_iterations:
         - max_budget_per_task:
         - agent_to_llm_config:
         - agent_configs:
@@ -144,7 +144,9 @@ class AgentSession:
             await self.security_analyzer.close()
 
         self.loop.call_soon_threadsafe(self.loop.stop)
-        self.thread.join()
+        if self.thread:
+            # We may be closing an agent_session that was never actually started
+            self.thread.join()
 
         self._closed = True
 

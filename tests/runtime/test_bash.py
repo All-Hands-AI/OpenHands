@@ -66,7 +66,7 @@ def test_bash_timeout_and_keyboard_interrupt(temp_dir, box_class, run_as_openhan
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
         assert (
-            '[Command timed out after 1 seconds. SIGINT was sent to interrupt it.]'
+            '[Command timed out after 1 seconds. SIGINT was sent to interrupt the command.]'
             in obs.content
         )
         assert 'KeyboardInterrupt' in obs.content
@@ -85,7 +85,7 @@ def test_bash_timeout_and_keyboard_interrupt(temp_dir, box_class, run_as_openhan
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert (
-            '[Command timed out after 1 seconds. SIGINT was sent to interrupt it.]'
+            '[Command timed out after 1 seconds. SIGINT was sent to interrupt the command.]'
             in obs.content
         )
         assert 'KeyboardInterrupt' in obs.content
@@ -159,27 +159,22 @@ done
 
         with open(f'{temp_dir}/resistant_script.sh', 'w') as f:
             f.write(script_content)
+        os.chmod(f'{temp_dir}/resistant_script.sh', 0o777)
 
         runtime.copy_to(
             os.path.join(temp_dir, 'resistant_script.sh'),
             runtime.config.workspace_mount_path_in_sandbox,
         )
 
-        # Make the script executable
-        action = CmdRunAction(command='chmod +x resistant_script.sh')
-        obs = runtime.run_action(action)
-        assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 0
-
         # Run the resistant script
-        action = CmdRunAction(command='./resistant_script.sh')
+        action = CmdRunAction(command='sudo bash ./resistant_script.sh')
         action.timeout = 5
         action.blocking = True
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 0
+        assert obs.exit_code == 130  # script was killed by SIGINT
         assert 'Still running...' in obs.content
         assert 'Caught SIGINT (1/1), ignoring...' in obs.content
         assert 'Stopped' not in obs.content
@@ -217,20 +212,15 @@ done
 
         with open(f'{temp_dir}/resistant_script.sh', 'w') as f:
             f.write(script_content)
+        os.chmod(f'{temp_dir}/resistant_script.sh', 0o777)
 
         runtime.copy_to(
             os.path.join(temp_dir, 'resistant_script.sh'),
             runtime.config.workspace_mount_path_in_sandbox,
         )
 
-        # Make the script executable
-        action = CmdRunAction(command='chmod +x resistant_script.sh')
-        obs = runtime.run_action(action)
-        assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 0
-
         # Run the resistant script
-        action = CmdRunAction(command='./resistant_script.sh')
+        action = CmdRunAction(command='sudo bash ./resistant_script.sh')
         action.timeout = 2
         action.blocking = True
         logger.info(action, extra={'msg_type': 'ACTION'})
