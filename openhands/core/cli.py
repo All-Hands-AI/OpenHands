@@ -63,7 +63,7 @@ def display_event(event: Event):
         display_command_output(event.content)
 
 
-async def main():
+async def amain():
     """Runs the OpenHands CLI"""
 
     parser = get_parser()
@@ -96,6 +96,10 @@ async def main():
             launch_ui(directory)
     else:
         parser.print_help()
+
+
+def main():
+    asyncio.run(amain())
 
 
 async def launch_cli(directory: str):
@@ -178,6 +182,6 @@ def launch_ui(directory: str):
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     try:
-        loop.run_until_complete(main())
+        loop.run_until_complete(amain())
     finally:
         pass
