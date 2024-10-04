@@ -59,17 +59,13 @@ def check_llama_index():
             'llama_index and its dependencies are not installed. '
             'To use memory features, please run: poetry install --with llama-index.'
         )
-    return LLAMA_INDEX_AVAILABLE
-
-
-check_llama_index()
 
 
 class EmbeddingsLoader:
     """Loader for embedding model initialization."""
 
     @staticmethod
-    def get_embedding_model(strategy: str, llm_config: LLMConfig) -> BaseEmbedding:
+    def get_embedding_model(strategy: str, llm_config: LLMConfig) -> 'BaseEmbedding':
         """Initialize and return the appropriate embedding model based on the strategy.
 
         Parameters:
@@ -152,8 +148,8 @@ class EmbeddingsLoader:
 # Utility functions to run pipelines, split out for profiling
 # --------------------------------------------------------------------------
 def run_pipeline(
-    embed_model: BaseEmbedding, documents: list[Document], num_workers: int
-) -> list[TextNode]:
+    embed_model: 'BaseEmbedding', documents: list['Document'], num_workers: int
+) -> list['TextNode']:
     """Run a pipeline embedding documents."""
 
     # set up a pipeline with the transformations to make
@@ -171,8 +167,8 @@ def run_pipeline(
 
 
 def insert_batch_docs(
-    index: VectorStoreIndex, documents: list[Document], num_workers: int
-) -> list[TextNode]:
+    index: 'VectorStoreIndex', documents: list['Document'], num_workers: int
+) -> list['TextNode']:
     """Run the document indexing in parallel."""
     results = Parallel(n_jobs=num_workers, backend='threading')(
         delayed(index.insert)(doc) for doc in documents

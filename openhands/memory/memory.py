@@ -5,10 +5,14 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import Event
 from openhands.events.serialization.event import event_to_memory
 from openhands.events.stream import EventStream
-from openhands.memory.embeddings import check_llama_index
+from openhands.memory.embeddings import (
+    LLAMA_INDEX_AVAILABLE,
+    EmbeddingsLoader,
+    check_llama_index,
+)
 
-# use a small utility function to avoid importing large dependencies when not needed
-if check_llama_index():
+# Conditional imports based on llama_index availability
+if LLAMA_INDEX_AVAILABLE:
     import chromadb
     from llama_index.core import Document
     from llama_index.core.indices.vector_store.base import VectorStoreIndex
@@ -18,15 +22,10 @@ if check_llama_index():
     from llama_index.core.schema import TextNode
     from llama_index.vector_stores.chroma import ChromaVectorStore
 
-    from openhands.memory.embeddings import (
-        EmbeddingsLoader,
-    )
-
 
 class LongTermMemory:
     """Handles storing information for the agent to access later, using chromadb."""
 
-    index: VectorStoreIndex
     event_stream: EventStream
 
     def __init__(
@@ -36,6 +35,8 @@ class LongTermMemory:
         event_stream: EventStream,
     ):
         """Initialize the chromadb and set up ChromaVectorStore for later use."""
+
+        check_llama_index()
 
         # initialize the chromadb client
         db = chromadb.PersistentClient(
@@ -98,11 +99,11 @@ class LongTermMemory:
         logger.debug('Adding %s event to memory: %d', event_type, self.thought_idx)
         self._add_document(document=doc)
 
-    def _add_document(self, document: Document):
+    def _add_document(self, document: 'Document'):
         """Inserts a single document into the index."""
         self.index.insert_nodes([self._create_node(document)])
 
-    def _create_node(self, document: Document) -> TextNode:
+    def _create_node(self, document: 'Document') -> 'TextNode':
         """Create a TextNode from a Document instance."""
         return TextNode(
             text=document.text,
@@ -133,7 +134,7 @@ class LongTermMemory:
 
         return [r.get_text() for r in results]
 
-    def _events_to_docs(self) -> list[Document]:
+    def _events_to_docs(self) -> list['Document']:
         """Convert all events from the EventStream to documents for batch insert into the index."""
         try:
             events = self.event_stream.get_events()
@@ -181,6 +182,6 @@ class LongTermMemory:
 
         return documents
 
-    def create_nodes(self, documents: list[Document]) -> list[TextNode]:
+    def create_nodes(self, documents: list['Document']) -> list['TextNode']:
         """Create nodes from a list of documents."""
         return [self._create_node(doc) for doc in documents]
