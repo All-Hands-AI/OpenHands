@@ -619,7 +619,7 @@ Successfully installed pymsgbox-1.0.9
 [notice] To update, run: pip install --upgrade pip
 Note: you may need to restart the kernel to use updated packages.
 [Jupyter current working directory: /workspace]
-[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]
+[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python]
 
 ----------
 
@@ -640,7 +640,7 @@ version_info
 OBSERVATION:
 '1.0.9'
 [Jupyter current working directory: /workspace]
-[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]
+[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python]
 
 ----------
 
@@ -654,7 +654,7 @@ cat /workspace/test.txt
 OBSERVATION:
 pymsgbox version: 1.0.9
 
-[Python Interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]
+[Python Interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python]
 openhands@docker-desktop:/workspace $
 [Command -1 finished with exit code 0]
 

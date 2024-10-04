@@ -9,7 +9,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import RuntimeBuilder
 from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.shutdown_listener import (
-    should_exit,
+    should_continue,
     sleep_if_should_continue,
 )
 
@@ -60,8 +60,8 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
         # Poll /build_status until the build is complete
         start_time = time.time()
         timeout = 30 * 60  # 20 minutes in seconds
-        while True:
-            if should_exit() or time.time() - start_time > timeout:
+        while should_continue():
+            if time.time() - start_time > timeout:
                 logger.error('Build timed out after 30 minutes')
                 raise RuntimeError('Build timed out after 30 minutes')
 
@@ -100,6 +100,8 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
 
             # Wait before polling again
             sleep_if_should_continue(30)
+
+        raise RuntimeError('Build interrupted (likely received SIGTERM or SIGINT).')
 
     def image_exists(self, image_name: str, pull_from_repo: bool = True) -> bool:
         """Checks if an image exists in the remote registry using the /image_exists endpoint."""

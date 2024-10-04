@@ -14,7 +14,7 @@ from openhands.events.action import CmdRunAction
 def test_bash_python_version(temp_dir, box_class, base_container_image):
     """Make sure Python is available in bash."""
     if base_container_image not in [
-        'python:3.11-bookworm',
+        'python:3.12-bookworm',
     ]:
         pytest.skip('This test is only for python-related images')
 
@@ -33,7 +33,7 @@ def test_bash_python_version(temp_dir, box_class, base_container_image):
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
-    assert 'Python 3.11' in obs.content  # Check for specific version
+    assert 'Python 3.12' in obs.content  # Check for specific version
 
     action = CmdRunAction(command='pip --version')
     logger.info(action, extra={'msg_type': 'ACTION'})

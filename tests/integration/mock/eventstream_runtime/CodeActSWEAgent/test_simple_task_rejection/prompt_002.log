@@ -605,7 +605,7 @@ OBSERVATION:
 fatal: not a git repository (or any parent up to mount point /)
 Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
 
-[Python Interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]
+[Python Interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python]
 openhands@docker-desktop:/workspace $
 [Command -1 finished with exit code 128]
 
