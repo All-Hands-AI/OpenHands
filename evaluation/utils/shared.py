@@ -86,6 +86,10 @@ class EvalOutput(BaseModel):
         return json.dumps(dumped_dict)
 
 
+class EvalException(Exception):
+    pass
+
+
 def codeact_user_response(
     state: State,
     encapsulate_solution: bool = False,
@@ -250,6 +254,15 @@ def update_progress(
     )
     output_fp.write(json.dumps(result.model_dump()) + '\n')
     output_fp.flush()
+
+
+def assert_and_raise(condition: bool, msg: str):
+    """Raise an EvalException if the condition is not met.
+
+    This will be used in conjunction with _process_instance_wrapper to handle retries. An EvalException should trigger a retry.
+    """
+    if not condition:
+        raise EvalException(msg)
 
 
 def _process_instance_wrapper(
