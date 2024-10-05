@@ -1,7 +1,3 @@
----
-sidebar_position: 3
----
-
 # 🤖 LLM Backends
 
 OpenHands can connect to any LLM supported by LiteLLM. However, it requires a powerful model to work.
