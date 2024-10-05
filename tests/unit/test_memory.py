@@ -221,7 +221,7 @@ def test_load_events_batch_insert(
     mock_event_stream.get_events.return_value = [event1, event2, event3]
 
     # Mock insert_batch_docs
-    with patch('openhands.memory.embeddings.insert_batch_docs') as mock_run_docs:
+    with patch('openhands.utils.embeddings.insert_batch_docs') as mock_run_docs:
         # convert events to documents
         documents = long_term_memory._events_to_docs()
 

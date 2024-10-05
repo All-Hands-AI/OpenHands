@@ -5,7 +5,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import Event
 from openhands.events.serialization.event import event_to_memory
 from openhands.events.stream import EventStream
-from openhands.memory.embeddings import (
+from openhands.utils.embeddings import (
     LLAMA_INDEX_AVAILABLE,
     EmbeddingsLoader,
     check_llama_index,
