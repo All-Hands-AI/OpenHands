@@ -78,7 +78,6 @@ class MicroAgent(Agent):
         message = Message(role='user', content=content)
         resp = self.llm.completion(
             messages=self.llm.format_messages_for_llm(message),
-            temperature=0.0,
         )
         action_resp = resp['choices'][0]['message']['content']
         action = parse_response(action_resp)

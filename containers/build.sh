@@ -1,13 +1,40 @@
 #!/bin/bash
 set -eo pipefail
 
-image_name=$1
-org_name=$2
+# Initialize variables with default values
+image_name=""
+org_name=""
 push=0
-if [[ $3 == "--push" ]]; then
-  push=1
+load=0
+tag_suffix=""
+
+# Function to display usage information
+usage() {
+    echo "Usage: $0 -i <image_name> [-o <org_name>] [--push] [--load] [-t <tag_suffix>]"
+    echo "  -i: Image name (required)"
+    echo "  -o: Organization name"
+    echo "  --push: Push the image"
+    echo "  --load: Load the image"
+    echo "  -t: Tag suffix"
+    exit 1
+}
+
+# Parse command-line options
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -i) image_name="$2"; shift 2 ;;
+        -o) org_name="$2"; shift 2 ;;
+        --push) push=1; shift ;;
+        --load) load=1; shift ;;
+        -t) tag_suffix="$2"; shift 2 ;;
+        *) usage ;;
+    esac
+done
+# Check if required arguments are provided
+if [[ -z "$image_name" ]]; then
+    echo "Error: Image name is required."
+    usage
 fi
-tag_suffix=$4
 
 echo "Building: $image_name"
 tags=()
@@ -17,10 +44,10 @@ OPENHANDS_BUILD_VERSION="dev"
 cache_tag_base="buildcache"
 cache_tag="$cache_tag_base"
 
-if [[ -n $GITHUB_SHA ]]; then
-  git_hash=$(git rev-parse --short "$GITHUB_SHA")
+if [[ -n $RELEVANT_SHA ]]; then
+  git_hash=$(git rev-parse --short "$RELEVANT_SHA")
   tags+=("$git_hash")
-  tags+=("$GITHUB_SHA")
+  tags+=("$RELEVANT_SHA")
 fi
 
 if [[ -n $GITHUB_REF_NAME ]]; then
@@ -95,14 +122,35 @@ if [[ $push -eq 1 ]]; then
   args+=" --cache-to=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag,mode=max"
 fi
 
+if [[ $load -eq 1 ]]; then
+  args+=" --load"
+fi
+
 echo "Args: $args"
+
+# Modify the platform selection based on --load flag
+if [[ $load -eq 1 ]]; then
+  # When loading, build only for the current platform
+  platform=$(docker version -f '{{.Server.Os}}/{{.Server.Arch}}')
+else
+  # For push or without load, build for multiple platforms
+  platform="linux/amd64,linux/arm64"
+fi
+
+echo "Building for platform(s): $platform"
 
 docker buildx build \
   $args \
   --build-arg OPENHANDS_BUILD_VERSION="$OPENHANDS_BUILD_VERSION" \
   --cache-from=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag \
   --cache-from=type=registry,ref=$DOCKER_REPOSITORY:$cache_tag_base-main \
-  --platform linux/amd64,linux/arm64 \
+  --platform $platform \
   --provenance=false \
   -f "$dir/Dockerfile" \
   "$DOCKER_BASE_DIR"
+
+# If load was requested, print the loaded images
+if [[ $load -eq 1 ]]; then
+  echo "Local images built:"
+  docker images "$DOCKER_REPOSITORY" --format "{{.Repository}}:{{.Tag}}"
+fi

@@ -1,3 +1,6 @@
+import os
+
+
 def get_version():
     try:
         from importlib.metadata import PackageNotFoundError, version
@@ -17,6 +20,16 @@ def get_version():
         except DistributionNotFound:
             pass
     except ImportError:
+        pass
+
+    # Try getting the version from pyproject.toml
+    try:
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        with open(os.path.join(root_dir, 'pyproject.toml'), 'r') as f:
+            for line in f:
+                if line.startswith('version ='):
+                    return line.split('=')[1].strip().strip('"')
+    except FileNotFoundError:
         pass
 
     return 'unknown'

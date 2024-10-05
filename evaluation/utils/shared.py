@@ -40,9 +40,9 @@ class EvalMetadata(BaseModel):
     def model_dump_json(self, *args, **kwargs):
         dumped = super().model_dump_json(*args, **kwargs)
         dumped_dict = json.loads(dumped)
-        logger.debug(f'Dumped metadata: {dumped_dict}')
         # avoid leaking sensitive information
         dumped_dict['llm_config'] = self.llm_config.to_safe_dict()
+        logger.debug(f'Dumped metadata: {dumped_dict}')
         return json.dumps(dumped_dict)
 
 
@@ -61,7 +61,7 @@ class EvalOutput(BaseModel):
     history: (
         list[dict[str, Any]] | list[tuple[dict[str, Any], dict[str, Any]]] | None
     ) = None
-    llm_completions: list[dict[str, Any]]
+    llm_completions: list[dict[str, Any]] | None = None
     metrics: dict[str, Any] | None = None
     error: str | None = None
 
@@ -84,6 +84,10 @@ class EvalOutput(BaseModel):
         if 'metadata' in dumped_dict:
             dumped_dict['metadata'] = json.loads(self.metadata.model_dump_json())
         return json.dumps(dumped_dict)
+
+
+class EvalException(Exception):
+    pass
 
 
 def codeact_user_response(
@@ -250,6 +254,15 @@ def update_progress(
     )
     output_fp.write(json.dumps(result.model_dump()) + '\n')
     output_fp.flush()
+
+
+def assert_and_raise(condition: bool, msg: str):
+    """Raise an EvalException if the condition is not met.
+
+    This will be used in conjunction with _process_instance_wrapper to handle retries. An EvalException should trigger a retry.
+    """
+    if not condition:
+        raise EvalException(msg)
 
 
 def _process_instance_wrapper(

@@ -218,7 +218,6 @@ class BrowsingAgent(Agent):
 
         response = self.llm.completion(
             messages=self.llm.format_messages_for_llm(messages),
-            temperature=0.0,
             stop=[')```', ')\n```'],
         )
         return self.response_parser.parse(response)

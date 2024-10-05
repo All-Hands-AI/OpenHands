@@ -60,7 +60,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         target_image_tag = tags[1].split(':')[1] if len(tags) > 1 else None
 
         # Check if the image exists and pull if necessary
-        self.image_exists(target_image_repo)
+        self.image_exists(target_image_hash_name)
 
         buildx_cmd = [
             'docker',
@@ -113,8 +113,8 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 raise subprocess.CalledProcessError(
                     return_code,
                     process.args,
-                    output=None,
-                    stderr=None,
+                    output=process.stdout.read() if process.stdout else None,
+                    stderr=process.stderr.read() if process.stderr else None,
                 )
 
         except subprocess.CalledProcessError as e:
@@ -166,11 +166,12 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         )
         return target_image_hash_name
 
-    def image_exists(self, image_name: str) -> bool:
+    def image_exists(self, image_name: str, pull_from_repo: bool = True) -> bool:
         """Check if the image exists in the registry (try to pull it first) or in the local store.
 
         Args:
             image_name (str): The Docker image to check (<image repo>:<image tag>)
+            pull_from_repo (bool): Whether to pull from the remote repo if the image not present locally
         Returns:
             bool: Whether the Docker image exists in the registry or in the local store
         """
@@ -184,6 +185,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             logger.debug('Image found locally.')
             return True
         except docker.errors.ImageNotFound:
+            if not pull_from_repo:
+                logger.debug(f'Image {image_name} not found locally')
+                return False
             try:
                 logger.debug(
                     'Image not found locally. Trying to pull it, please wait...'
@@ -191,8 +195,15 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
                 layers: dict[str, dict[str, str]] = {}
                 previous_layer_count = 0
+
+                if ':' in image_name:
+                    image_repo, image_tag = image_name.split(':', 1)
+                else:
+                    image_repo = image_name
+                    image_tag = None
+
                 for line in self.docker_client.api.pull(
-                    image_name, stream=True, decode=True
+                    image_repo, tag=image_tag, stream=True, decode=True
                 ):
                     self._output_build_progress(line, layers, previous_layer_count)
                     previous_layer_count = len(layers)

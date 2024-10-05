@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass, fields
 
 from openhands.core.config.config_utils import get_field_info
@@ -36,7 +37,7 @@ class LLMConfig:
         ollama_base_url: The base URL for the OLLAMA API.
         drop_params: Drop any unmapped (unsupported) params without causing an exception.
         disable_vision: If model is vision capable, this option allows to disable image processing (useful for cost reduction).
-        caching_prompt: Using the prompt caching feature provided by the LLM.
+        caching_prompt: Use the prompt caching feature if provided by the LLM and supported by the provider.
         log_completions: Whether to log LLM completions to the state.
     """
 
@@ -68,7 +69,7 @@ class LLMConfig:
     ollama_base_url: str | None = None
     drop_params: bool = True
     disable_vision: bool | None = None
-    caching_prompt: bool = False
+    caching_prompt: bool = True
     log_completions: bool = False
 
     def defaults_to_dict(self) -> dict:
@@ -77,6 +78,18 @@ class LLMConfig:
         for f in fields(self):
             result[f.name] = get_field_info(f)
         return result
+
+    def __post_init__(self):
+        """
+        Post-initialization hook to assign OpenRouter-related variables to environment variables.
+        This ensures that these values are accessible to litellm at runtime.
+        """
+
+        # Assign OpenRouter-specific variables to environment variables
+        if self.openrouter_site_url:
+            os.environ['OR_SITE_URL'] = self.openrouter_site_url
+        if self.openrouter_app_name:
+            os.environ['OR_APP_NAME'] = self.openrouter_app_name
 
     def __str__(self):
         attr_str = []
@@ -101,9 +114,3 @@ class LLMConfig:
             if k in LLM_SENSITIVE_FIELDS:
                 ret[k] = '******' if v else None
         return ret
-
-    def set_missing_attributes(self):
-        """Set any missing attributes to their default values."""
-        for field_name, field_obj in self.__dataclass_fields__.items():
-            if not hasattr(self, field_name):
-                setattr(self, field_name, field_obj.default)

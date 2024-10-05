@@ -1,0 +1,13 @@
+name: Resolve Issues with OpenHands
+
+on:
+  issues:
+    types: [labeled]
+
+jobs:
+  call-openhands-resolver:
+    uses: All-Hands-AI/openhands-resolver/.github/workflows/openhands-resolver.yml@main
+    if: github.event.label.name == 'fix-me'
+    with:
+      issue_number: ${{ github.event.issue.number }}
+    secrets: inherit
