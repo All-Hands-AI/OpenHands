@@ -72,17 +72,22 @@ class BrowsingActionParserBrowseInteractive(ActionParser):
         return True
 
     def parse(self, action_str: str) -> Action:
-        thought = action_str.split('```')[0].strip()
-        action_str = action_str.split('```')[1].strip()
+        # parse the action string into browser actions and thought
+        # the LLMs return currently only the browser actions, no thought
+        parts = action_str.split('```')
+        browser_actions = parts[0].strip()
+        thought = parts[1].strip() if len(parts) > 1 else ''
+
+        # if the LLM wants to talk to the user, we extract the message
         msg_content = ''
-        for sub_action in action_str.split('\n'):
+        for sub_action in browser_actions.split('\n'):
             if 'send_msg_to_user(' in sub_action:
                 tree = ast.parse(sub_action)
                 args = tree.body[0].value.args  # type: ignore
                 msg_content = args[0].value
 
         return BrowseInteractiveAction(
-            browser_actions=action_str,
+            browser_actions=browser_actions,
             thought=thought,
             browsergym_send_msg_to_user=msg_content,
         )
