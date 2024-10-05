@@ -72,17 +72,20 @@ class BrowsingActionParserBrowseInteractive(ActionParser):
         return True
 
     def parse(self, action_str: str) -> Action:
-        # parse the action string into browser actions and thought
-        # when both are present, it looks like this:
+        # parse the action string into browser_actions and thought
+        # the LLM can return only one string, or both
+
+        # when both are returned, it looks like this:
         ### Based on the current state of the page and the goal of finding out the president of the USA, the next action should involve searching for information related to the president.
         ### To achieve this, we can navigate to a reliable source such as a search engine or a specific website that provides information about the current president of the USA.
         ### Here is an example of a valid action to achieve this:
         ### ```
-        ### goto('https://www.whitehouse.gov/about-the-white-house/presidents/')
+        ### goto('https://www.whitehouse.gov/about-the-white-house/presidents/'
+        # in practice, BrowsingResponseParser.parse_response also added )``` to the end of the string
 
-        # the LLMs can also return only the browser actions, no thought, like this:
+        # when the LLM returns only one string, it looks like this:
         ### goto('https://www.whitehouse.gov/about-the-white-house/presidents/')
-        ### ```
+        # and parse_response added )``` to the end of the string
         parts = action_str.split('```')
         browser_actions = (
             parts[1].strip() if parts[1].strip() != '' else parts[0].strip()
