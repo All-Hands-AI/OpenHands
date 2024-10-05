@@ -185,7 +185,7 @@ model = "gpt-4o-mini"
 #memory_enabled = false
 
 # Memory maximum threads
-#memory_max_threads = 2
+#memory_max_threads = 3
 
 # LLM config group to use
 #llm_config = 'your-llm-config-group'
@@ -206,7 +206,7 @@ llm_config = 'gpt3'
 #user_id = 1000
 
 # Container image to use for the sandbox
-#base_container_image = "nikolaik/python-nodejs:python3.11-nodejs22"
+#base_container_image = "nikolaik/python-nodejs:python3.12-nodejs22"
 
 # Use host network
 #use_host_network = false

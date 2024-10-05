@@ -106,7 +106,7 @@ if [ -z "$INSTANCE_ID" ]; then
         rm -rf $RESULT_OUTPUT_DIR/eval_outputs
     fi
 
-    mv run_instance_logs/$RUN_ID/$MODEL_NAME_OR_PATH $RESULT_OUTPUT_DIR
+    mv logs/run_evaluation/$RUN_ID/$MODEL_NAME_OR_PATH $RESULT_OUTPUT_DIR
     mv $RESULT_OUTPUT_DIR/$MODEL_NAME_OR_PATH $RESULT_OUTPUT_DIR/eval_outputs
     echo "RUN_ID: $RUN_ID" > $RESULT_OUTPUT_DIR/run_id.txt
 

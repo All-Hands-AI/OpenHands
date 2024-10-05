@@ -16,9 +16,10 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 import pexpect
-from fastapi import FastAPI, HTTPException, Request, UploadFile
+from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
@@ -62,6 +63,15 @@ INIT_COMMANDS = [
     'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"',
 ]
 SOFT_TIMEOUT_SECONDS = 5
+
+SESSION_API_KEY = os.environ.get('SESSION_API_KEY')
+api_key_header = APIKeyHeader(name='X-Session-API-Key', auto_error=False)
+
+
+def verify_api_key(api_key: str = Depends(api_key_header)):
+    if SESSION_API_KEY and api_key != SESSION_API_KEY:
+        raise HTTPException(status_code=403, detail='Invalid API Key')
+    return api_key
 
 
 class RuntimeClient:
@@ -290,7 +300,7 @@ class RuntimeClient:
     def _execute_bash(
         self,
         command: str,
-        timeout: int | None,
+        timeout: int,
         keep_prompt: bool = True,
         kill_on_timeout: bool = True,
     ) -> tuple[str, int]:
@@ -300,19 +310,85 @@ class RuntimeClient:
             timeout=timeout, keep_prompt=keep_prompt, kill_on_timeout=kill_on_timeout
         )
 
-    def _interrupt_bash(self, timeout: int | None = None) -> tuple[str, int]:
+    def _interrupt_bash(
+        self,
+        action_timeout: int | None,
+        interrupt_timeout: int | None = None,
+        max_retries: int = 2,
+    ) -> tuple[str, int]:
         self.shell.sendintr()  # send SIGINT to the shell
-        self.shell.expect(self.__bash_expect_regex, timeout=timeout)
+        logger.debug('Sent SIGINT to bash. Waiting for output...')
+
+        interrupt_timeout = interrupt_timeout or 1  # default timeout for SIGINT
+        # try to interrupt the bash shell use SIGINT
+        while max_retries > 0:
+            try:
+                self.shell.expect(self.__bash_expect_regex, timeout=interrupt_timeout)
+                output = self.shell.before
+                logger.debug(f'Received output after SIGINT: {output}')
+                exit_code = 130  # SIGINT
+
+                _additional_msg = ''
+                if action_timeout is not None:
+                    _additional_msg = (
+                        f'Command timed out after {action_timeout} seconds. '
+                    )
+                output += (
+                    '\r\n\r\n'
+                    + f'[{_additional_msg}SIGINT was sent to interrupt the command.]'
+                )
+                return output, exit_code
+            except pexpect.TIMEOUT as e:
+                logger.warning(f'Bash pexpect.TIMEOUT while waiting for SIGINT: {e}')
+                max_retries -= 1
+
+        # fall back to send control-z
+        logger.error(
+            'Failed to get output after SIGINT. Max retries reached. Sending control-z...'
+        )
+        self.shell.sendcontrol('z')
+        self.shell.expect(self.__bash_expect_regex)
         output = self.shell.before
-        exit_code = 130  # SIGINT
+        logger.debug(f'Received output after control-z: {output}')
+        # Try to kill the job
+        self.shell.sendline('kill -9 %1')
+        self.shell.expect(self.__bash_expect_regex)
+        logger.debug(f'Received output after killing job %1: {self.shell.before}')
+        output += self.shell.before
+
+        _additional_msg = ''
+        if action_timeout is not None:
+            _additional_msg = f'Command timed out after {action_timeout} seconds. '
+        output += (
+            '\r\n\r\n'
+            + f'[{_additional_msg}SIGINT was sent to interrupt the command, but failed. The command was killed.]'
+        )
+
+        # Try to get the exit code again
+        self.shell.sendline('echo $?')
+        self.shell.expect(self.__bash_expect_regex)
+        _exit_code_output = self.shell.before
+        exit_code = self._parse_exit_code(_exit_code_output)
+
         return output, exit_code
+
+    def _parse_exit_code(self, output: str) -> int:
+        try:
+            exit_code = int(output.strip().split()[0])
+        except Exception:
+            logger.error('Error getting exit code from bash script')
+            # If we try to run an invalid shell script the output sometimes includes error text
+            # rather than the error code - we assume this is an error
+            exit_code = 2
+        return exit_code
 
     def _continue_bash(
         self,
-        timeout: int | None,
+        timeout: int,
         keep_prompt: bool = True,
         kill_on_timeout: bool = True,
     ) -> tuple[str, int]:
+        logger.debug(f'Continuing bash with timeout={timeout}')
         try:
             self.shell.expect(self.__bash_expect_regex, timeout=timeout)
 
@@ -323,31 +399,18 @@ class RuntimeClient:
             logger.debug('Requesting exit code...')
             self.shell.expect(self.__bash_expect_regex, timeout=timeout)
             _exit_code_output = self.shell.before
-            try:
-                exit_code = int(_exit_code_output.strip().split()[0])
-            except:
-                logger.error('Error getting exit code from bash script')
-                # If we try to run an invalid shell script the output sometimes includes error text
-                # rather than the error code - we assume this is an error
-                exit_code = 2
-
+            exit_code = self._parse_exit_code(_exit_code_output)
         except pexpect.TIMEOUT as e:
+            logger.warning(f'Bash pexpect.TIMEOUT while executing bash command: {e}')
             if kill_on_timeout:
-                output, exit_code = self._interrupt_bash()
-                output += (
-                    '\r\n\r\n'
-                    + f'[Command timed out after {timeout} seconds. SIGINT was sent to interrupt it.]'
-                )
-                logger.error(f'Failed to execute command. Error: {e}')
+                output, exit_code = self._interrupt_bash(action_timeout=timeout)
             else:
                 output = self.shell.before or ''
                 exit_code = -1
-
         finally:
             bash_prompt = self._get_bash_prompt_and_update_pwd()
             if keep_prompt:
                 output += '\r\n' + bash_prompt
-            # logger.debug(f'Command output:\n{output}')
         return output, exit_code
 
     async def run_action(self, action) -> Observation:
@@ -373,7 +436,7 @@ class RuntimeClient:
                     )
                 elif command.lower() == 'ctrl+c':
                     output, exit_code = self._interrupt_bash(
-                        timeout=SOFT_TIMEOUT_SECONDS
+                        action_timeout=None,  # intentionally None
                     )
                 else:
                     output, exit_code = self._execute_bash(
@@ -609,6 +672,16 @@ if __name__ == '__main__':
             response = await call_next(request)
         return response
 
+    @app.middleware('http')
+    async def authenticate_requests(request: Request, call_next):
+        if request.url.path != '/alive' and request.url.path != '/server_info':
+            try:
+                verify_api_key(request.headers.get('X-Session-API-Key'))
+            except HTTPException as e:
+                return e
+        response = await call_next(request)
+        return response
+
     @app.get('/server_info')
     async def get_server_info():
         assert client is not None
@@ -628,7 +701,9 @@ if __name__ == '__main__':
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
-            logger.error(f'Error processing command: {str(e)}', exc_info=True, stack_info=True)
+            logger.error(
+                f'Error processing command: {str(e)}', exc_info=True, stack_info=True
+            )
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post('/upload_file')

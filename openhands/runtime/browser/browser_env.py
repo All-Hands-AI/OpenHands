@@ -17,6 +17,7 @@ from PIL import Image
 from openhands.core.exceptions import BrowserInitException
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.utils.shutdown_listener import should_continue, should_exit
+from openhands.utils.tenacity_stop import stop_if_should_exit
 
 BROWSER_EVAL_GET_GOAL_ACTION = 'GET_EVAL_GOAL'
 BROWSER_EVAL_GET_REWARDS_ACTION = 'GET_EVAL_REWARDS'
@@ -52,7 +53,7 @@ class BrowserEnv:
 
     @tenacity.retry(
         wait=tenacity.wait_fixed(1),
-        stop=tenacity.stop_after_attempt(5),
+        stop=tenacity.stop_after_attempt(5) | stop_if_should_exit(),
         retry=tenacity.retry_if_exception_type(BrowserInitException),
     )
     def init_browser(self):
