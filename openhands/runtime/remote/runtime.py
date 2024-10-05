@@ -90,30 +90,6 @@ class RemoteRuntime(Runtime):
             config, event_stream, sid, plugins, env_vars, status_message_callback
         )
 
-    @retry(
-        stop=stop_after_attempt(20) | stop_if_should_exit(),
-        wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type(RuntimeError),
-        reraise=True,
-    )
-    def _wait_until_alive(self):
-        logger.info(f'Waiting for runtime to be alive at url: {self.runtime_url}')
-        response = send_request(
-            self.session,
-            'GET',
-            f'{self.runtime_url}/alive',
-            # Retry 404 errors for the /alive endpoint
-            # because the runtime might just be starting up
-            # and have not registered the endpoint yet
-            retry_fns=[is_404_error],
-            # leave enough time for the runtime to start up
-            timeout=600,
-        )
-        if response.status_code != 200:
-            msg = f'Runtime is not alive yet (id={self.runtime_id}). Status: {response.status_code}.'
-            logger.warning(msg)
-            raise RuntimeError(msg)
-
     def _start_or_attach_to_runtime(self, plugins: list[PluginRequirement] | None):
         existing_runtime = self._check_existing_runtime()
         if existing_runtime:
@@ -152,6 +128,44 @@ class RemoteRuntime(Runtime):
         except Exception as e:
             logger.info(f'Could not find existing runtime: {e}')
         return False
+
+    def _build_runtime(self):
+        logger.debug(f'RemoteRuntime `{self.instance_id}` config:\n{self.config}')
+        response = send_request(
+            self.session,
+            'GET',
+            f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
+        )
+        response_json = response.json()
+        registry_prefix = response_json['registry_prefix']
+        os.environ['OH_RUNTIME_RUNTIME_IMAGE_REPO'] = (
+            registry_prefix.rstrip('/') + '/runtime'
+        )
+        logger.info(
+            f'Runtime image repo: {os.environ["OH_RUNTIME_RUNTIME_IMAGE_REPO"]}'
+        )
+
+        if self.config.sandbox.runtime_extra_deps:
+            logger.info(
+                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
+            )
+
+        # Build the container image
+        self.container_image = build_runtime_image(
+            self.config.sandbox.base_container_image,
+            self.runtime_builder,
+            extra_deps=self.config.sandbox.runtime_extra_deps,
+            force_rebuild=self.config.sandbox.force_rebuild_runtime,
+        )
+
+        response = send_request(
+            self.session,
+            'GET',
+            f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
+            params={'image': self.container_image},
+        )
+        if response.status_code != 200 or not response.json()['exists']:
+            raise RuntimeError(f'Container image {self.container_image} does not exist')
 
     def _start_runtime(self, plugins: list[PluginRequirement] | None):
         # Prepare the request body for the /start endpoint
@@ -207,43 +221,29 @@ class RemoteRuntime(Runtime):
                 {'X-Session-API-Key': start_response['sandbox_api_key']}
             )
 
-    def _build_runtime(self):
-        logger.debug(f'RemoteRuntime `{self.instance_id}` config:\n{self.config}')
+    @retry(
+        stop=stop_after_attempt(20) | stop_if_should_exit(),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type(RuntimeError),
+        reraise=True,
+    )
+    def _wait_until_alive(self):
+        logger.info(f'Waiting for runtime to be alive at url: {self.runtime_url}')
         response = send_request(
             self.session,
             'GET',
-            f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
+            f'{self.runtime_url}/alive',
+            # Retry 404 errors for the /alive endpoint
+            # because the runtime might just be starting up
+            # and have not registered the endpoint yet
+            retry_fns=[is_404_error],
+            # leave enough time for the runtime to start up
+            timeout=600,
         )
-        response_json = response.json()
-        registry_prefix = response_json['registry_prefix']
-        os.environ['OH_RUNTIME_RUNTIME_IMAGE_REPO'] = (
-            registry_prefix.rstrip('/') + '/runtime'
-        )
-        logger.info(
-            f'Runtime image repo: {os.environ["OH_RUNTIME_RUNTIME_IMAGE_REPO"]}'
-        )
-
-        if self.config.sandbox.runtime_extra_deps:
-            logger.info(
-                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
-            )
-
-        # Build the container image
-        self.container_image = build_runtime_image(
-            self.config.sandbox.base_container_image,
-            self.runtime_builder,
-            extra_deps=self.config.sandbox.runtime_extra_deps,
-            force_rebuild=self.config.sandbox.force_rebuild_runtime,
-        )
-
-        response = send_request(
-            self.session,
-            'GET',
-            f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
-            params={'image': self.container_image},
-        )
-        if response.status_code != 200 or not response.json()['exists']:
-            raise RuntimeError(f'Container image {self.container_image} does not exist')
+        if response.status_code != 200:
+            msg = f'Runtime is not alive yet (id={self.runtime_id}). Status: {response.status_code}.'
+            logger.warning(msg)
+            raise RuntimeError(msg)
 
     def close(self):
         if self.config.sandbox.keep_remote_runtime_alive:
