@@ -10,7 +10,7 @@ from tenacity import (
     retry,
     retry_if_exception_type,
     stop_after_attempt,
-    wait_exponential,
+    wait_fixed,
 )
 
 from openhands.core.config import AppConfig
@@ -222,8 +222,8 @@ class RemoteRuntime(Runtime):
             )
 
     @retry(
-        stop=stop_after_attempt(20) | stop_if_should_exit(),
-        wait=wait_exponential(multiplier=1, min=1, max=10),
+        stop=stop_after_attempt(60) | stop_if_should_exit(),
+        wait=wait_fixed(2),
         retry=retry_if_exception_type(RuntimeError),
         reraise=True,
     )
