@@ -9,6 +9,7 @@ import docker
 from dirhash import dirhash
 from jinja2 import Environment, FileSystemLoader
 
+import openhands
 from openhands import __package_name__
 from openhands import __version__ as oh_version
 from openhands.core.logger import openhands_logger as logger
@@ -46,20 +47,21 @@ def _put_source_code_to_dir(temp_dir: str):
         for filename in ['pyproject.toml', 'poetry.lock']:
             shutil.move(os.path.join(dest_dir, 'openhands', filename), dest_dir)
     else:
-        # If package is not found, use the current working directory as source
-        source_dir = os.getcwd()
-        logger.info(
-            f'Package {__package_name__} not found. Using current directory: {source_dir}'
+        # If package is not found, build from source code
+        project_root = os.path.dirname(
+            os.path.dirname(os.path.abspath(openhands.__file__))
         )
+        logger.info(f'Building source distribution using project root: {project_root}')
+
         # Copy the 'openhands' directory
-        openhands_dir = os.path.join(source_dir, 'openhands')
+        openhands_dir = os.path.join(project_root, 'openhands')
         if not os.path.isdir(openhands_dir):
-            raise RuntimeError(f"'openhands' directory not found in {source_dir}")
+            raise RuntimeError(f"'openhands' directory not found in {project_root}")
         shutil.copytree(openhands_dir, os.path.join(dest_dir, 'openhands'))
 
         # Copy pyproject.toml and poetry.lock files
         for file in ['pyproject.toml', 'poetry.lock']:
-            src_file = os.path.join(source_dir, file)
+            src_file = os.path.join(project_root, file)
             dest_file = os.path.join(dest_dir, file)
             shutil.copy2(src_file, dest_file)
 
