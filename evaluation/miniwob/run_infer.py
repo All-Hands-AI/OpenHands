@@ -131,9 +131,9 @@ def process_instance(
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            initial_user_actions=[
-                MessageAction(content=task_str)
-            ],  # take output from initialize_runtime
+            initial_user_action=MessageAction(
+                content=task_str
+            ),  # take output from initialize_runtime
             runtime=runtime,
         )
     )
