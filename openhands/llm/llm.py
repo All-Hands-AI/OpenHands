@@ -32,6 +32,8 @@ __all__ = ['LLM']
 # tuple of exceptions to retry on
 LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
     APIConnectionError,
+    # FIXME: APIError is useful on 502 from a proxy for example,
+    # but it also retries on other errors that are permanent
     APIError,
     InternalServerError,
     RateLimitError,
