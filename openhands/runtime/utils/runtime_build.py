@@ -9,6 +9,7 @@ import docker
 from dirhash import dirhash
 from jinja2 import Environment, FileSystemLoader
 
+from openhands import __package_name__
 from openhands import __version__ as oh_version
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
@@ -27,19 +28,18 @@ def _put_source_code_to_dir(temp_dir: str):
     if not os.path.isdir(temp_dir):
         raise RuntimeError(f'Temp directory {temp_dir} does not exist')
 
-    package_name = 'openhands-ai'
     dest_dir = os.path.join(temp_dir, 'code')
 
     try:
         # Try to get the source directory from the installed package
-        distribution = importlib.metadata.distribution(package_name)
-        source_dir = os.path.dirname(distribution.locate_file(package_name))
+        distribution = importlib.metadata.distribution(__package_name__)
+        source_dir = os.path.dirname(distribution.locate_file(__package_name__))
         openhands_dir = os.path.join(source_dir, 'openhands')
     except importlib.metadata.PackageNotFoundError:
         pass
 
     if os.path.isdir(openhands_dir):
-        logger.info(f'Package {package_name} found')
+        logger.info(f'Package {__package_name__} found')
         shutil.copytree(openhands_dir, os.path.join(dest_dir, 'openhands'))
         # note: "pyproject.toml" and "poetry.lock" are included in the openhands
         # package, so we need to move them out to the top-level directory
@@ -49,7 +49,7 @@ def _put_source_code_to_dir(temp_dir: str):
         # If package is not found, use the current working directory as source
         source_dir = os.getcwd()
         logger.info(
-            f'Package {package_name} not found. Using current directory: {source_dir}'
+            f'Package {__package_name__} not found. Using current directory: {source_dir}'
         )
         # Copy the 'openhands' directory
         openhands_dir = os.path.join(source_dir, 'openhands')
