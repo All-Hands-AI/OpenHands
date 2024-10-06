@@ -185,7 +185,7 @@ model = "gpt-4o-mini"
 #memory_enabled = false
 
 # Memory maximum threads
-#memory_max_threads = 2
+#memory_max_threads = 3
 
 # LLM config group to use
 #llm_config = 'your-llm-config-group'

@@ -66,6 +66,8 @@ class RemoteRuntime(Runtime):
                 'API key is required to use the remote runtime. '
                 'Please set the API key in the config (config.toml) or as an environment variable (SANDBOX_API_KEY).'
             )
+        self.status_message_callback = status_message_callback
+        self.send_status_message('STATUS$STARTING_RUNTIME')
         self.session = requests.Session()
         self.session.headers.update({'X-API-Key': self.config.sandbox.api_key})
         self.action_semaphore = threading.Semaphore(1)
@@ -115,6 +117,7 @@ class RemoteRuntime(Runtime):
                 )
 
             # Build the container image
+            self.send_status_message('STATUS$STARTING_CONTAINER')
             self.container_image = build_runtime_image(
                 self.config.sandbox.base_container_image,
                 self.runtime_builder,
@@ -159,6 +162,7 @@ class RemoteRuntime(Runtime):
             'environment': {'DEBUG': 'true'} if self.config.debug else {},
         }
 
+        self.send_status_message('STATUS$WAITING_FOR_CLIENT')
         # Start the sandbox using the /start endpoint
         response = send_request(
             self.session,
@@ -196,6 +200,7 @@ class RemoteRuntime(Runtime):
         assert (
             self.runtime_url is not None
         ), 'Runtime URL is not set. This should never happen.'
+        self.send_status_message(' ')
 
     @retry(
         stop=stop_after_attempt(10) | stop_if_should_exit(),
@@ -393,3 +398,8 @@ class RemoteRuntime(Runtime):
             raise TimeoutError('List files operation timed out')
         except Exception as e:
             raise RuntimeError(f'List files operation failed: {str(e)}')
+
+    def send_status_message(self, message: str):
+        """Sends a status message if the callback function was provided."""
+        if self.status_message_callback:
+            self.status_message_callback(message)

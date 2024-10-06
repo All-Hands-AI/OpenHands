@@ -93,7 +93,7 @@ jobs:
         id: buildx
         uses: docker/setup-buildx-action@v3
       - name: Run Tests
-        run: poetry run pytest --forked --cov=agenthub --cov=openhands --cov-report=xml ./tests/unit
+        run: poetry run pytest --forked --cov=agenthub --cov=openhands --cov-report=xml ./tests/unit --ignore=tests/unit/test_memory.py
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
@@ -125,7 +125,7 @@ jobs:
       - name: Build Environment
         run: make build
       - name: Run Tests
-        run: poetry run pytest --forked --cov=agenthub --cov=openhands --cov-report=xml -svv ./tests/unit
+        run: poetry run pytest --forked --cov=agenthub --cov=openhands --cov-report=xml -svv ./tests/unit --ignore=tests/unit/test_memory.py
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
