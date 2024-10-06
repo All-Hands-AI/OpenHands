@@ -30,6 +30,7 @@ def _put_source_code_to_dir(temp_dir: str):
         raise RuntimeError(f'Temp directory {temp_dir} does not exist')
 
     dest_dir = os.path.join(temp_dir, 'code')
+    openhands_dir = None
 
     try:
         # Try to get the source directory from the installed package
