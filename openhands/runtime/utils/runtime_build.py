@@ -39,7 +39,7 @@ def _put_source_code_to_dir(temp_dir: str):
     except importlib.metadata.PackageNotFoundError:
         pass
 
-    if os.path.isdir(openhands_dir):
+    if openhands_dir is not None and os.path.isdir(openhands_dir):
         logger.info(f'Package {__package_name__} found')
         shutil.copytree(openhands_dir, os.path.join(dest_dir, 'openhands'))
         # note: "pyproject.toml" and "poetry.lock" are included in the openhands
