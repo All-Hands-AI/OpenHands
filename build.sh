@@ -2,4 +2,4 @@
 set -e
 
 cp pyproject.toml poetry.lock openhands
-poetry build
+poetry build -v
