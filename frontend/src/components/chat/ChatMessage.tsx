@@ -9,6 +9,7 @@ import toast from "#/utils/toast";
 import { I18nKey } from "#/i18n/declaration";
 import ConfirmationButtons from "./ConfirmationButtons";
 import { formatTimestamp } from "#/utils/utils";
+import { ol, ul } from "../markdown/list";
 
 interface MessageProps {
   message: Message;
@@ -89,7 +90,15 @@ function ChatMessage({
           {isCopy ? <FaClipboardCheck /> : <FaClipboard />}
         </button>
       )}
-      <Markdown components={{ code }} remarkPlugins={[remarkGfm]}>
+      <Markdown
+        className="-space-y-4"
+        components={{
+          code,
+          ul,
+          ol,
+        }}
+        remarkPlugins={[remarkGfm]}
+      >
         {message.content}
       </Markdown>
       {(message.imageUrls?.length ?? 0) > 0 && (

@@ -7,7 +7,7 @@ Otherwise, you can clone the OpenHands project directly.
 ### 1. Requirements
 * Linux, Mac OS, or [WSL on Windows](https://learn.microsoft.com/en-us/windows/wsl/install)  [ Ubuntu <= 22.04]
 * [Docker](https://docs.docker.com/engine/install/) (For those on MacOS, make sure to allow the default Docker socket to be used from advanced settings!)
-* [Python](https://www.python.org/downloads/) = 3.11
+* [Python](https://www.python.org/downloads/) = 3.12
 * [NodeJS](https://nodejs.org/en/download/package-manager) >= 18.17.1
 * [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) >= 1.8
 * netcat => sudo apt-get install netcat
@@ -22,8 +22,8 @@ If you want to develop without system admin/sudo access to upgrade/install `Pyth
 curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
 bash Miniforge3-$(uname)-$(uname -m).sh
 
-# Install Python 3.11, nodejs, and poetry
-mamba install python=3.11
+# Install Python 3.12, nodejs, and poetry
+mamba install python=3.12
 mamba install conda-forge::nodejs
 mamba install conda-forge::poetry
 ```

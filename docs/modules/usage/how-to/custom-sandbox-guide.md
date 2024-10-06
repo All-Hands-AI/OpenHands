@@ -3,14 +3,14 @@
 The sandbox is where the agent does its work. Instead of running commands directly on your computer
 (which could be dangerous), the agent runs them inside of a Docker container.
 
-The default OpenHands sandbox (`python-nodejs:python3.11-nodejs22`
+The default OpenHands sandbox (`python-nodejs:python3.12-nodejs22`
 from [nikolaik/python-nodejs](https://hub.docker.com/r/nikolaik/python-nodejs)) comes with some packages installed such
 as python and Node.js but your use case may need additional software installed by default.
 
 There are two ways you can do so:
 
-1. Use an existing image from docker hub
-2. Creating your own custom docker image and using it
+1. Use an existing image from docker hub.
+2. Creating your own custom docker image and using it.
 
 If you want to take the first approach, you can skip the `Create Your Docker Image` section.
 

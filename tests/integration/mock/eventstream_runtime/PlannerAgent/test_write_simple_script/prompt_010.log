@@ -193,16 +193,13 @@ ten actions--more happened before that.
     "action": "run",
     "args": {
       "command": "bash hello.sh",
-      "thought": "",
-      "blocking": false,
-      "keep_prompt": true,
-      "is_confirmed": "confirmed"
+      "thought": ""
     }
   },
   {
     "source": "agent",
     "observation": "run",
-    "content": "hello\r\n\r\n[Python Interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.11/bin/python]\nopenhands@docker-desktop:/workspace $ ",
+    "content": "hello\r\n\r\n[Python Interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python]\nopenhands@docker-desktop:/workspace $ ",
     "extras": {
       "command_id": -1,
       "command": "bash hello.sh",
