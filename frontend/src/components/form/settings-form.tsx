@@ -48,20 +48,36 @@ export function SettingsForm({
 
   // Figure out if the advanced options should be enabled by default
   const advancedAlreadyInUse = React.useMemo(() => {
-    const organizedModels = organizeModelsAndProviders(models);
-    const { provider, model } = extractModelAndProvider(
-      settings.LLM_MODEL || "",
-    );
-    const isKnownModel =
-      provider in organizedModels &&
-      organizedModels[provider].models.includes(model);
+    if (models.length > 0) {
+      const organizedModels = organizeModelsAndProviders(models);
+      const { provider, model } = extractModelAndProvider(
+        settings.LLM_MODEL || "",
+      );
+      const isKnownModel =
+        provider in organizedModels &&
+        organizedModels[provider].models.includes(model);
 
-    return (
-      !!settings.SECURITY_ANALYZER ||
-      !!settings.CONFIRMATION_MODE ||
-      !!settings.LLM_BASE_URL ||
-      (!!settings.LLM_MODEL && !isKnownModel)
-    );
+      const isUsingSecurityAnalyzer = !!settings.SECURITY_ANALYZER;
+      const isUsingConfirmationMode = !!settings.CONFIRMATION_MODE;
+      const isUsingBaseUrl = !!settings.LLM_BASE_URL;
+      const isUsingCustomModel = !!settings.LLM_MODEL && !isKnownModel;
+
+      console.log({
+        isUsingSecurityAnalyzer,
+        isUsingConfirmationMode,
+        isUsingBaseUrl,
+        isUsingCustomModel,
+      });
+
+      return (
+        isUsingSecurityAnalyzer ||
+        isUsingConfirmationMode ||
+        isUsingBaseUrl ||
+        isUsingCustomModel
+      );
+    }
+
+    return false;
   }, [settings, models]);
 
   const [showAdvancedOptions, setShowAdvancedOptions] =
