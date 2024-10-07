@@ -1,7 +1,3 @@
----
-sidebar_position: 3
----
-
 # 🧠 Main Agent and Capabilities
 
 ## CodeActAgent
