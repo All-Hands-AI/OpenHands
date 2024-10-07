@@ -557,6 +557,20 @@ class EventStreamRuntime(Runtime):
         except Exception as e:
             raise RuntimeError(f'List files operation failed: {str(e)}')
 
+    def zip_files_in_sandbox(self) -> bytes:
+        """Zips the files in the sandbox and returns the bytes for streaming."""
+        sandbox_dir = os.getcwd() + self.config.workspace_mount_path_in_sandbox
+        with tempfile.TemporaryFile() as temp_zip:
+            with ZipFile(temp_zip, 'w') as zipf:
+                for root, _, files in os.walk(sandbox_dir):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        zipf.write(
+                            file_path, arcname=os.path.relpath(file_path, sandbox_dir)
+                        )
+            temp_zip.seek(0)  # Rewind the file to the beginning after writing
+            return temp_zip.read()
+
     def _is_port_in_use_docker(self, port):
         containers = self.docker_client.containers.list()
         for container in containers:

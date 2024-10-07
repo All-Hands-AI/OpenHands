@@ -1,8 +1,4 @@
-import i18next from "i18next";
-import { I18nKey } from "#/i18n/declaration";
 import { request } from "./api";
-
-const translate = (key: I18nKey) => i18next.t(key);
 
 export async function selectFile(file: string): Promise<string> {
   const encodedFile = encodeURIComponent(file);
@@ -41,13 +37,10 @@ export async function uploadFiles(files: FileList): Promise<UploadResult> {
     }
   }
 
-  // Add skippedFilesCount to formData
   formData.append("skippedFilesCount", skippedFiles.length.toString());
-
-  // Add uploadedFilesCount to formData
   formData.append("uploadedFilesCount", uploadedCount.toString());
 
-  const response = await request("/api/upload-files", {
+  const response = await request("http://localhost:3000/api/upload-files", {
     method: "POST",
     body: formData,
   });
@@ -70,30 +63,13 @@ export async function uploadFiles(files: FileList): Promise<UploadResult> {
 export async function listFiles(
   path: string | undefined = undefined,
 ): Promise<string[]> {
-  let url = "/api/list-files";
+  let url = "http://localhost:3000/api/list-files";
   if (path) {
-    url = `/api/list-files?path=${encodeURIComponent(path)}`;
+    url = `http://localhost:3000/api/list-files?path=${encodeURIComponent(path)}`;
   }
   const data = await request(url);
   if (!Array.isArray(data)) {
     throw new Error("Invalid response format: data is not an array");
   }
   return data;
-}
-
-export async function saveFile(
-  filePath: string,
-  content: string,
-): Promise<void> {
-  if (!filePath || filePath.includes("..")) {
-    throw new Error(translate(I18nKey.FILE_SERVICE$INVALID_FILE_PATH));
-  }
-
-  await request("/api/save-file", {
-    method: "POST",
-    body: JSON.stringify({ filePath, content }),
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
 }

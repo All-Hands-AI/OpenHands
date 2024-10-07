@@ -13,15 +13,9 @@
  * console.log(parsed.symbol); // openhands@659478cb008c:/workspace $
  */
 export const parseTerminalOutput = (raw: string) => {
-  const envRegex = /\[Python Interpreter: (.*)\]/;
-  const env = raw.match(envRegex);
-  let fullOutput = raw;
-  if (env && env[0]) fullOutput = fullOutput.replace(`${env[0]}\n`, "");
-  const [output, s] = fullOutput.split("\r\n\r\n");
-  const symbol = s || "$";
+  const envRegex = /(.*)\[Python Interpreter: (.*)\]/s;
+  const match = raw.match(envRegex);
 
-  return {
-    output: output.trim(),
-    symbol: symbol.trim(),
-  };
+  if (!match) return raw;
+  return match[1]?.trim() || "";
 };

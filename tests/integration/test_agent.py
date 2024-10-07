@@ -9,10 +9,7 @@ from openhands.controller.state.state import State
 from openhands.core.config import load_app_config
 from openhands.core.main import run_controller
 from openhands.core.schema import AgentState
-from openhands.events.action import (
-    AgentFinishAction,
-    AgentRejectAction,
-)
+from openhands.events.action import AgentFinishAction, AgentRejectAction, MessageAction
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.delegate import AgentDelegateObservation
 from openhands.runtime import get_runtime_cls
@@ -90,7 +87,7 @@ def test_write_simple_script(current_test_name: str) -> None:
     task = "Write a shell script 'hello.sh' that prints 'hello'. Do not ask me for confirmation at any point."
 
     final_state: State | None = asyncio.run(
-        run_controller(CONFIG, task, exit_on_message=True)
+        run_controller(CONFIG, MessageAction(content=task), exit_on_message=True)
     )
     validate_final_state(final_state, current_test_name)
 
@@ -136,7 +133,7 @@ def test_edits(current_test_name: str):
     # Execute the task
     task = 'Fix typos in bad.txt. Do not ask me for confirmation at any point.'
     final_state: State | None = asyncio.run(
-        run_controller(CONFIG, task, exit_on_message=True)
+        run_controller(CONFIG, MessageAction(content=task), exit_on_message=True)
     )
     validate_final_state(final_state, current_test_name)
 
@@ -160,7 +157,7 @@ def test_ipython(current_test_name: str):
     # Execute the task
     task = "Use Jupyter IPython to write a text file containing 'hello world' to '/workspace/test.txt'. Do not ask me for confirmation at any point."
     final_state: State | None = asyncio.run(
-        run_controller(CONFIG, task, exit_on_message=True)
+        run_controller(CONFIG, MessageAction(content=task), exit_on_message=True)
     )
     validate_final_state(final_state, current_test_name)
 
@@ -185,7 +182,7 @@ def test_simple_task_rejection(current_test_name: str):
     # the workspace is not a git repo
     task = 'Write a git commit message for the current staging area. Do not ask me for confirmation at any point.'
     final_state: State | None = asyncio.run(
-        run_controller(CONFIG, task, exit_on_message=True)
+        run_controller(CONFIG, MessageAction(content=task), exit_on_message=True)
     )
     validate_final_state(final_state, current_test_name)
     assert isinstance(final_state.history.get_last_action(), AgentRejectAction)
@@ -200,7 +197,7 @@ def test_ipython_module(current_test_name: str):
     # Execute the task
     task = "Install and import pymsgbox==1.0.9 and print it's version in /workspace/test.txt. Do not ask me for confirmation at any point."
     final_state: State | None = asyncio.run(
-        run_controller(CONFIG, task, exit_on_message=True)
+        run_controller(CONFIG, MessageAction(content=task), exit_on_message=True)
     )
     validate_final_state(final_state, current_test_name)
 
@@ -226,7 +223,7 @@ def test_browse_internet(current_test_name: str):
     # Execute the task
     task = 'Browse localhost:8000, and tell me the ultimate answer to life. Do not ask me for confirmation at any point.'
     final_state: State | None = asyncio.run(
-        run_controller(CONFIG, task, exit_on_message=True)
+        run_controller(CONFIG, MessageAction(content=task), exit_on_message=True)
     )
     validate_final_state(final_state, current_test_name)
 
