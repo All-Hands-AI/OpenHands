@@ -9,28 +9,30 @@ engineering tasks without any guidance. So it's important to get a feel for what
 does well, and where it might need some help.
 
 ## Hello World
+
 The first thing you might want to try is a simple "hello world" example.
 This can be more complicated than it sounds!
 
 Try prompting the agent with:
 > Please write a bash script hello.sh that prints "hello world!"
 
-You should see that the agent not only writes the script--it sets the correct
+You should see that the agent not only writes the script, it sets the correct
 permissions and runs the script to check the output.
 
 You can continue prompting the agent to refine your code. This is a great way to
-work with agents--start simple, and iterate.
+work with agents. Start simple, and iterate.
 
 > Please modify hello.sh so that it accepts a name as the first argument, but defaults to "world"
 
-You can also work in any language you need--though the agent might need to spend some
+You can also work in any language you need, though the agent might need to spend some
 time setting up its environment!
 
 > Please convert hello.sh to a Ruby script, and run it
 
-## Building from scratch
-Agents do exceptionally well at "greenfield" tasks--tasks where they don't need
-any context about an existing codebase, and they can just start from scratch.
+## Building From Scratch
+
+Agents do exceptionally well at "greenfield" tasks (tasks where they don't need
+any context about an existing codebase) and they can just start from scratch.
 
 It's best to start with a simple task, and then iterate on it. It's also best to be
 as specific as possible about what you want, what the tech stack should be, etc.
@@ -51,7 +53,8 @@ You can ask the agent to commit and push for you:
 > Please commit the changes and push them to a new branch called "feature/due-dates"
 
 
-## Adding new code
+## Adding New Code
+
 OpenHands can also do a great job adding new code to an existing code base.
 
 For example, you can ask OpenHands to add a new GitHub action to your project
@@ -70,6 +73,7 @@ and more accurately. And it'll cost you fewer tokens!
 > directory. It should use the existing Widget component.
 
 ## Refactoring
+
 OpenHands does great at refactoring existing code, especially in small chunks.
 You probably don't want to try rearchitecting your whole codebase, but breaking up
 long files and functions, renaming variables, etc. tend to work very well.
@@ -81,6 +85,7 @@ long files and functions, renaming variables, etc. tend to work very well.
 > Please break ./api/routes.js into separate files for each route
 
 ## Bug Fixes
+
 OpenHands can also help you track down and fix bugs in your code. But, as any
 developer knows, bug fixing can be extremely tricky, and often OpenHands will need more context.
 It helps if you've diagnosed the bug, but want OpenHands to figure out the logic.
@@ -95,6 +100,7 @@ You can ask the agent to write a new test, and then iterate until it fixes the b
 > The `hello` function crashes on the empty string. Please write a test that reproduces this bug, then fix the code so it passes.
 
 ## More
+
 OpenHands is capable of helping out on just about any coding task. But it takes some practice
 to get the most out of it. Remember to:
 * Keep your tasks small
