@@ -35,6 +35,9 @@ from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime import Runtime
 from openhands.runtime.utils import find_available_tcp_port
+from openhands.runtime.utils.request import (
+    send_request,
+)
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
@@ -333,7 +336,12 @@ class EventStreamRuntime(Runtime):
         if not (self.log_buffer and self.log_buffer.client_ready):
             raise RuntimeError('Runtime client is not ready.')
 
-        response = self.session.get(f'{self.api_url}/alive')
+        response = send_request(
+            self.session,
+            'GET',
+            f'{self.api_url}/alive',
+            retry_exceptions=[ConnectionRefusedError],
+        )
         if response.status_code == 200:
             return
         else:
@@ -416,7 +424,9 @@ class EventStreamRuntime(Runtime):
             assert action.timeout is not None
 
             try:
-                response = self.session.post(
+                response = send_request(
+                    self.session,
+                    'POST',
                     f'{self.api_url}/execute_action',
                     json={'action': event_to_dict(action)},
                     timeout=action.timeout,
@@ -495,8 +505,12 @@ class EventStreamRuntime(Runtime):
 
             params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
 
-            response = self.session.post(
-                f'{self.api_url}/upload_file', files=upload_data, params=params
+            response = send_request(
+                self.session,
+                'POST',
+                f'{self.api_url}/upload_file',
+                files=upload_data,
+                params=params,
             )
             if response.status_code == 200:
                 return
@@ -525,7 +539,12 @@ class EventStreamRuntime(Runtime):
             if path is not None:
                 data['path'] = path
 
-            response = self.session.post(f'{self.api_url}/list_files', json=data)
+            response = send_request(
+                self.session,
+                'POST',
+                f'{self.api_url}/list_files',
+                json=data,
+            )
             if response.status_code == 200:
                 response_json = response.json()
                 assert isinstance(response_json, list)
@@ -537,6 +556,20 @@ class EventStreamRuntime(Runtime):
             raise TimeoutError('List files operation timed out')
         except Exception as e:
             raise RuntimeError(f'List files operation failed: {str(e)}')
+
+    def zip_files_in_sandbox(self) -> bytes:
+        """Zips the files in the sandbox and returns the bytes for streaming."""
+        sandbox_dir = os.getcwd() + self.config.workspace_mount_path_in_sandbox
+        with tempfile.TemporaryFile() as temp_zip:
+            with ZipFile(temp_zip, 'w') as zipf:
+                for root, _, files in os.walk(sandbox_dir):
+                    for file in files:
+                        file_path = os.path.join(root, file)
+                        zipf.write(
+                            file_path, arcname=os.path.relpath(file_path, sandbox_dir)
+                        )
+            temp_zip.seek(0)  # Rewind the file to the beginning after writing
+            return temp_zip.read()
 
     def _is_port_in_use_docker(self, port):
         containers = self.docker_client.containers.list()

@@ -23,7 +23,7 @@ if [[ -z "$item" ]]; then
   exit 1
 fi
 
-WORKSPACE_NAME=$(echo "$item" | jq -r '.repo + "__" + .version | gsub("/"; "__")')
+WORKSPACE_NAME=$(echo "$item" | jq -r '(.repo | tostring) + "__" + (.version | tostring) | gsub("/"; "__")')
 
 echo "WORKSPACE_NAME: $WORKSPACE_NAME"
 

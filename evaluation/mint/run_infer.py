@@ -29,6 +29,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import (
     CmdRunAction,
+    MessageAction,
 )
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.runtime import Runtime
@@ -180,7 +181,7 @@ def process_instance(
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            task_str=instruction,
+            initial_user_action=MessageAction(content=instruction),
             runtime=runtime,
             fake_user_response_fn=fake_user_response_fn,
         )

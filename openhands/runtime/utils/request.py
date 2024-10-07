@@ -49,7 +49,8 @@ def send_request(
     if retry_fns is not None:
         for fn in retry_fns:
             retry_condition |= retry_if_exception(fn)
-    kwargs['timeout'] = timeout
+    # wait a few more seconds to get the timeout error from client side
+    kwargs['timeout'] = timeout + 10
 
     @retry(
         stop=stop_after_delay(timeout) | stop_if_should_exit(),

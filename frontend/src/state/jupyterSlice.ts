@@ -19,9 +19,13 @@ export const cellSlice = createSlice({
     appendJupyterOutput: (state, action) => {
       state.cells.push({ content: action.payload, type: "output" });
     },
+    clearJupyter: (state) => {
+      state.cells = [];
+    },
   },
 });
 
-export const { appendJupyterInput, appendJupyterOutput } = cellSlice.actions;
+export const { appendJupyterInput, appendJupyterOutput, clearJupyter } =
+  cellSlice.actions;
 
 export default cellSlice.reducer;

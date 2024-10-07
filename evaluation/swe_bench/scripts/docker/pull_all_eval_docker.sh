@@ -22,11 +22,10 @@ if [ -z "$SET" ]; then
     SET="lite"
 fi
 
-NAMESPACE=$2 # xingyaoww
-if [ -z "$NAMESPACE" ]; then
-    echo "Default to namespace: xingyaoww"
-    NAMESPACE="xingyaoww"
-fi
+# Check if namespace is provided via argument $3, otherwise default to 'xingyaoww'
+NAMESPACE=${3:-xingyaoww}
+
+echo "Using namespace: $NAMESPACE"
 
 if [ "$SET" == "lite" ]; then
     IMAGE_FILE="$(dirname "$0")/all-swebench-lite-instance-images.txt"

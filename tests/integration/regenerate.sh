@@ -73,7 +73,7 @@ mkdir -p "$WORKSPACE_BASE"
 # use environmental variable if exists
 TEST_RUNTIME="${TEST_RUNTIME:-eventstream}"
 if [ -z "$SANDBOX_BASE_CONTAINER_IMAGE" ]; then
-  SANDBOX_BASE_CONTAINER_IMAGE="nikolaik/python-nodejs:python3.11-nodejs22"
+  SANDBOX_BASE_CONTAINER_IMAGE="nikolaik/python-nodejs:python3.12-nodejs22"
 fi
 
 MAX_ITERATIONS=20
