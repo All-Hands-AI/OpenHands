@@ -122,12 +122,30 @@ class RemoteRuntime(Runtime):
                 'GET',
                 f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.instance_id}',
             )
-            if response.status_code == 200:
+        except Exception as e:
+            logger.error(f'Error while looking for remote runtime: {e}')
+            return False
+
+        if response.status_code == 200:
+            data = response.json()
+            status = data.get('status')
+            if status == 'running':
                 self._parse_runtime_response(response)
                 return True
-        except Exception as e:
-            logger.info(f'Could not find existing runtime: {e}')
-        return False
+            elif status == 'stopped':
+                logger.info('Found existing remote runtime, but it is stopped')
+                return False
+            elif status == 'paused':
+                logger.info('Found existing remote runtime, but it is paused')
+                self._parse_runtime_response(response)
+                self._resume_runtime()
+                return True
+            else:
+                logger.error(f'Invalid response from runtime API: {data}')
+                return False
+        else:
+            logger.info('Could not find existing remote runtime')
+            return False
 
     def _build_runtime(self):
         logger.debug(f'RemoteRuntime `{self.instance_id}` config:\n{self.config}')
@@ -206,6 +224,17 @@ class RemoteRuntime(Runtime):
         logger.info(
             f'Sandbox started. Runtime ID: {self.runtime_id}, URL: {self.runtime_url}'
         )
+
+    def _resume_runtime(self):
+        response = send_request(
+            self.session,
+            'POST',
+            f'{self.config.sandbox.remote_runtime_api_url}/resume',
+            json={'runtime_id': self.runtime_id},
+        )
+        if response.status_code != 200:
+            raise RuntimeError(f'Failed to resume sandbox: {response.text}')
+        logger.info(f'Sandbox resumed. Runtime ID: {self.runtime_id}')
 
     def _parse_runtime_response(self, response: requests.Response):
         start_response = response.json()
