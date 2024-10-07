@@ -8,7 +8,7 @@
  * - Please do NOT serve this file on production.
  */
 
-const PACKAGE_VERSION = '2.3.0-ws.rc-11'
+const PACKAGE_VERSION = '2.3.0-ws.rc-12'
 const INTEGRITY_CHECKSUM = '26357c79639bfa20d64c0efca2a87423'
 const IS_MOCKED_RESPONSE = Symbol('isMockedResponse')
 const activeClientIds = new Set()
