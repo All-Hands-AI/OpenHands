@@ -1,7 +1,3 @@
----
-sidebar_position: 4
----
-
 # 🚧 Troubleshooting
 
 There are some error messages that frequently get reported by users.

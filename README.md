@@ -36,7 +36,7 @@ Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or jump to the [
 The easiest way to run OpenHands is in Docker. You can change `WORKSPACE_BASE` below to
 point OpenHands to existing code that you'd like to modify.
 
-See the [Getting Started](https://docs.all-hands.dev/modules/usage/getting-started) guide for
+See the [Installation](https://docs.all-hands.dev/modules/usage/installation) guide for
 system requirements and more information.
 
 ```bash
@@ -65,7 +65,7 @@ You'll need a model provider and API key. One option that works well: [Claude 3.
 You can also run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
 or as an [interactive CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode).
 
-Visit [Getting Started](https://docs.all-hands.dev/modules/usage/getting-started) for more information and setup instructions.
+Visit [Installation](https://docs.all-hands.dev/modules/usage/installation) for more information and setup instructions.
 
 If you want to modify the OpenHands source code, check out [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
