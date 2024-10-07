@@ -1,10 +1,22 @@
 {
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/.server/**/*.ts",
+    "**/.server/**/*.tsx",
+    "**/.client/**/*.ts",
+    "**/.client/**/*.tsx"
+  ],
   "compilerOptions": {
-    "target": "es5",
     "lib": [
       "dom",
       "dom.iterable",
-      "esnext"
+      "es2022"
+    ],
+    "target": "es2022",
+    "types": [
+      "@remix-run/node",
+      "vite/client",
     ],
     "allowJs": true,
     "skipLibCheck": true,
@@ -14,22 +26,17 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react",
-    "types": ["vite/client", "vitest/globals"],
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "#/*": ["./src/*"]
-    }
-  },
-  "include": [
-    "src",
-    "vite-env.d.ts",
-    "vite.config.ts",
-    "vitest.setup.ts",
-    "test-utils.tsx"
-  ]
+      "#/*": [
+        "./src/*"
+      ]
+    },
+    // Vite takes care of building everything, not tsc.
+    "noEmit": true
+  }
 }

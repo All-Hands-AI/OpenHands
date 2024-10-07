@@ -1,3 +1,4 @@
+import asyncio
 import re
 import uuid
 from typing import Any
@@ -144,10 +145,8 @@ class InvariantAnalyzer(SecurityAnalyzer):
         new_event = action_from_dict(
             {'action': 'change_agent_state', 'args': {'agent_state': 'user_confirmed'}}
         )
-        if event.source:
-            self.event_stream.add_event(new_event, event.source)
-        else:
-            self.event_stream.add_event(new_event, EventSource.AGENT)
+        event_source = event.source if event.source else EventSource.AGENT
+        await asyncio.get_event_loop().run_in_executor(None, self.event_stream.add_event, new_event, event_source)
 
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         logger.info('Calling security_risk on InvariantAnalyzer')
