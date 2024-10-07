@@ -145,7 +145,7 @@ class EventStream:
         for key in sorted(self._subscribers.keys()):
             stack = self._subscribers[key]
             callback = stack[-1]
-            tasks.append(asyncio.createTask(callback(event)))
+            tasks.append(asyncio.create_task(callback(event)))
         await asyncio.wait(tasks)
 
     def _callback(self, callback: Callable, event: Event):
