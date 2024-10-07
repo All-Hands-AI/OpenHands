@@ -168,35 +168,28 @@ function FileExplorer() {
     refreshWorkspace();
   }, [curAgentState]);
 
-  React.useEffect(() => {
-    const enableDragging = () => {
-      setIsDragging(true);
-    };
-
-    const disableDragging = () => {
-      setIsDragging(false);
-    };
-
-    document.addEventListener("dragenter", enableDragging);
-    document.addEventListener("drop", disableDragging);
-
-    return () => {
-      document.removeEventListener("dragenter", enableDragging);
-      document.removeEventListener("drop", disableDragging);
-    };
-  }, []);
-
   return (
-    <div data-testid="file-explorer" className="relative h-full">
+    <div
+      data-testid="file-explorer"
+      className="relative h-full"
+      onDragEnter={() => {
+        setIsDragging(true);
+      }}
+      onDragEnd={() => {
+        setIsDragging(false);
+      }}
+    >
       {isDragging && (
         <div
           data-testid="dropzone"
+          onDragLeave={() => setIsDragging(false)}
           onDrop={(event) => {
             event.preventDefault();
             const { files: droppedFiles } = event.dataTransfer;
             if (droppedFiles.length > 0) {
               uploadFileData(droppedFiles);
             }
+            setIsDragging(false);
           }}
           onDragOver={(event) => event.preventDefault()}
           className="z-10 absolute flex flex-col justify-center items-center bg-black top-0 bottom-0 left-0 right-0 opacity-65"
