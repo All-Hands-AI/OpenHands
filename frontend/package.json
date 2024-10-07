@@ -11,7 +11,7 @@
     "@nextui-org/react": "^2.4.8",
     "@react-types/shared": "^3.25.0",
     "@reduxjs/toolkit": "^2.2.7",
-    "@vitejs/plugin-react": "^4.3.1",
+    "@vitejs/plugin-react": "^4.3.2",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.4.0",
     "clsx": "^2.1.1",
