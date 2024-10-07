@@ -8,7 +8,7 @@ from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message, TextContent
+from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
     Action,
     AgentFinishAction,
@@ -91,10 +91,142 @@ In order to accomplish my goal I need to click on the button with bid 12
     return prompt
 
 
+# class BrowsingAgent(Agent):
+#     VERSION = '1.0'
+#     """
+#     An agent that interacts with the browser.
+#     """
+
+#     sandbox_plugins: list[PluginRequirement] = []
+#     response_parser = BrowsingResponseParser()
+
+#     def __init__(
+#         self,
+#         llm: LLM,
+#         config: AgentConfig,
+#     ) -> None:
+#         """Initializes a new instance of the BrowsingAgent class.
+
+#         Parameters:
+#         - llm (LLM): The llm to be used by this agent
+#         """
+#         super().__init__(llm, config)
+#         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
+#         # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
+#         action_subsets = ['chat', 'bid']
+#         if USE_NAV:
+#             action_subsets.append('nav')
+#         self.action_space = HighLevelActionSet(
+#             subsets=action_subsets,
+#             strict=False,  # less strict on the parsing of the actions
+#             multiaction=True,  # enable to agent to take multiple actions at once
+#         )
+
+#         self.reset()
+
+#     def reset(self) -> None:
+#         """Resets the Browsing Agent."""
+#         super().reset()
+#         self.cost_accumulator = 0
+#         self.error_accumulator = 0
+
+#     def step(self, state: State) -> Action:
+#         """Performs one step using the Browsing Agent.
+#         This includes gathering information on previous steps and prompting the model to make a browsing command to execute.
+
+#         Parameters:
+#         - state (State): used to get updated info
+
+#         Returns:
+#         - BrowseInteractiveAction(browsergym_command) - BrowserGym commands to run
+#         - MessageAction(content) - Message action to run (e.g. ask for clarification)
+#         - AgentFinishAction() - end the interaction
+#         """
+#         messages: list[Message] = []
+#         prev_actions = []
+#         cur_url = ''
+#         cur_axtree_txt = ''
+#         error_prefix = ''
+#         last_obs = None
+#         last_action = None
+
+#         if EVAL_MODE and len(state.history.get_events_as_list()) == 1:
+#             # for webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
+#             # initialize and retrieve the first observation by issuing an noop OP
+#             # For non-benchmark browsing, the browser env starts with a blank page, and the agent is expected to first navigate to desired websites
+#             return BrowseInteractiveAction(browser_actions='noop()')
+
+#         for event in state.history.get_events():
+#             if isinstance(event, BrowseInteractiveAction):
+#                 prev_actions.append(event.browser_actions)
+#                 last_action = event
+#             elif isinstance(event, MessageAction) and event.source == EventSource.AGENT:
+#                 # agent has responded, task finished.
+#                 return AgentFinishAction(outputs={'content': event.content})
+#             elif isinstance(event, Observation):
+#                 last_obs = event
+
+#         if EVAL_MODE:
+#             prev_actions = prev_actions[1:]  # remove the first noop action
+
+#         prev_action_str = '\n'.join(prev_actions)
+#         # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
+#         # we should also send a message back to the user in OpenHands and call it a day
+#         if (
+#             isinstance(last_action, BrowseInteractiveAction)
+#             and last_action.browsergym_send_msg_to_user
+#         ):
+#             return MessageAction(last_action.browsergym_send_msg_to_user)
+
+#         if isinstance(last_obs, BrowserOutputObservation):
+#             if last_obs.error:
+#                 # add error recovery prompt prefix
+#                 error_prefix = get_error_prefix(last_obs.last_browser_action)
+#                 self.error_accumulator += 1
+#                 if self.error_accumulator > 5:
+#                     return MessageAction('Too many errors encountered. Task failed.')
+
+#             cur_url = last_obs.url
+
+#             try:
+#                 cur_axtree_txt = flatten_axtree_to_str(
+#                     last_obs.axtree_object,
+#                     extra_properties=last_obs.extra_element_properties,
+#                     with_clickable=True,
+#                     filter_visible_only=True,
+#                 )
+#             except Exception as e:
+#                 logger.error(
+#                     'Error when trying to process the accessibility tree: %s', e
+#                 )
+#                 return MessageAction('Error encountered when browsing.')
+
+#         goal, _ = state.get_current_user_intent()
+
+#         if goal is None:
+#             goal = state.inputs['task']
+
+#         system_msg = get_system_message(
+#             goal,
+#             self.action_space.describe(with_long_description=False, with_examples=True),
+#         )
+
+#         messages.append(Message(role='system', content=[TextContent(text=system_msg)]))
+
+#         prompt = get_prompt(error_prefix, cur_url, cur_axtree_txt, prev_action_str)
+#         messages.append(Message(role='user', content=[TextContent(text=prompt)]))
+
+#         response = self.llm.completion(
+#             messages=self.llm.format_messages_for_llm(messages),
+#             stop=[')```', ')\n```'],
+#         )
+#         return self.response_parser.parse(response)
+
+
 class BrowsingAgent(Agent):
     VERSION = '1.0'
     """
-    An agent that interacts with the browser.
+    Re-implementing VisualWebArena Agent to integrate it into OpenHands repository
     """
 
     sandbox_plugins: list[PluginRequirement] = []
@@ -105,7 +237,7 @@ class BrowsingAgent(Agent):
         llm: LLM,
         config: AgentConfig,
     ) -> None:
-        """Initializes a new instance of the BrowsingAgent class.
+        """Initializes a new instance of the VWABrowsingAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
@@ -113,25 +245,28 @@ class BrowsingAgent(Agent):
         super().__init__(llm, config)
         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
         # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
-        action_subsets = ['chat', 'bid']
-        if USE_NAV:
-            action_subsets.append('nav')
+        action_subsets = [
+            'chat',
+            'bid',
+            'nav',
+            'tab',
+            'infeas',
+        ]  # VWA Agent uses all 5 of these action types
         self.action_space = HighLevelActionSet(
             subsets=action_subsets,
             strict=False,  # less strict on the parsing of the actions
-            multiaction=True,  # enable to agent to take multiple actions at once
+            multiaction=False,  # VWA Agent does not allow multi-action setting
         )
-
         self.reset()
 
     def reset(self) -> None:
-        """Resets the Browsing Agent."""
+        """Resets the VWABrowsing Agent."""
         super().reset()
         self.cost_accumulator = 0
         self.error_accumulator = 0
 
     def step(self, state: State) -> Action:
-        """Performs one step using the Browsing Agent.
+        """Performs one step using the VWABrowsing Agent.
         This includes gathering information on previous steps and prompting the model to make a browsing command to execute.
 
         Parameters:
@@ -143,22 +278,24 @@ class BrowsingAgent(Agent):
         - AgentFinishAction() - end the interaction
         """
         messages: list[Message] = []
-        prev_actions = []
-        cur_url = ''
+        # prev_actions = [] #VWA Agent does not use previous actions
+        user_content = []
+        # cur_url = '' #VWA Agent does not use current page URL
         cur_axtree_txt = ''
-        error_prefix = ''
+        # error_prefix = '' #VWA Agent does not use error prefix
         last_obs = None
         last_action = None
 
-        if EVAL_MODE and len(state.history.get_events_as_list()) == 1:
-            # for webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
+        # TODO: EVAL_MODE must be set to true for VisualWebArena task as well, even when USE_NAV is true
+        if len(state.history.get_events_as_list()) == 1:
+            # for visualwebarena, webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
             # initialize and retrieve the first observation by issuing an noop OP
             # For non-benchmark browsing, the browser env starts with a blank page, and the agent is expected to first navigate to desired websites
             return BrowseInteractiveAction(browser_actions='noop()')
 
         for event in state.history.get_events():
             if isinstance(event, BrowseInteractiveAction):
-                prev_actions.append(event.browser_actions)
+                # prev_actions.append(event.browser_actions) ##VWA Agent does not use prev_actions
                 last_action = event
             elif isinstance(event, MessageAction) and event.source == EventSource.AGENT:
                 # agent has responded, task finished.
@@ -166,12 +303,14 @@ class BrowsingAgent(Agent):
             elif isinstance(event, Observation):
                 last_obs = event
 
-        if EVAL_MODE:
-            prev_actions = prev_actions[1:]  # remove the first noop action
+        # VWA Agent does not use prev_actions
+        # if EVAL_MODE:
+        #     prev_actions = prev_actions[1:]  # remove the first noop action
 
-        prev_action_str = '\n'.join(prev_actions)
-        # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
-        # we should also send a message back to the user in OpenHands and call it a day
+        # prev_action_str = '\n'.join(prev_actions)
+        # # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
+        # # we should also send a message back to the user in OpenHands and call it a day
+
         if (
             isinstance(last_action, BrowseInteractiveAction)
             and last_action.browsergym_send_msg_to_user
@@ -179,15 +318,27 @@ class BrowsingAgent(Agent):
             return MessageAction(last_action.browsergym_send_msg_to_user)
 
         if isinstance(last_obs, BrowserOutputObservation):
-            if last_obs.error:
-                # add error recovery prompt prefix
-                error_prefix = get_error_prefix(last_obs.last_browser_action)
-                self.error_accumulator += 1
-                if self.error_accumulator > 5:
-                    return MessageAction('Too many errors encountered. Task failed.')
+            # VWA Agent does not add error recovery prompt prefix
+            # if last_obs.error:
+            #     # add error recovery prompt prefix
+            #     error_prefix = get_error_prefix(last_obs.last_browser_action)
+            #     self.error_accumulator += 1
+            #     if self.error_accumulator > 5:
+            #         return MessageAction('Too many errors encountered. Task failed.')
 
-            cur_url = last_obs.url
+            # VWA Agent does not use current_url
+            # cur_url = last_obs.url
 
+            # screenshot + som: will be a non-empty string if present in observation
+            if (last_obs.set_of_marks is not None) and (len(last_obs.set_of_marks) > 0):
+                user_content.append(
+                    TextContent(text='IMAGES: (1) current page screenshot')
+                )
+                user_content.append(ImageContent(image_urls=[last_obs.set_of_marks]))
+            else:
+                raise AssertionError(
+                    'Set-of-Marks annotated screenshot not present in BrowserOutputObservation'
+                )
             try:
                 cur_axtree_txt = flatten_axtree_to_str(
                     last_obs.axtree_object,
@@ -200,24 +351,53 @@ class BrowsingAgent(Agent):
                     'Error when trying to process the accessibility tree: %s', e
                 )
                 return MessageAction('Error encountered when browsing.')
-
-        goal, _ = state.get_current_user_intent()
-
+        # TODO: figure out a way to get image urls when openhands is run without UI for evaluation purpose
+        goal, image_urls = state.get_current_user_intent()
+        if image_urls is not None:
+            for idx, url in enumerate(image_urls):
+                user_content.append(
+                    TextContent(text=f'({idx+2}) input image {idx+1}))')
+                )
+                user_content.append(ImageContent(image_urls=[url]))
         if goal is None:
             goal = state.inputs['task']
-
-        system_msg = get_system_message(
-            goal,
-            self.action_space.describe(with_long_description=False, with_examples=True),
-        )
+        # currently keeping all prompts inside agent, can change once code evolves
+        system_msg = """\
+Review the current state of the page and all other information to find the best
+possible next action to accomplish your goal. Your answer will be interpreted
+and executed by a program, make sure to follow the formatting instructions."""
 
         messages.append(Message(role='system', content=[TextContent(text=system_msg)]))
+        user_prompt = f"""\
+# Goal:
+{goal}
 
-        prompt = get_prompt(error_prefix, cur_url, cur_axtree_txt, prev_action_str)
-        messages.append(Message(role='user', content=[TextContent(text=prompt)]))
+# Current Accessibility Tree:
+{cur_axtree_txt}
+
+# Action Space
+{self.action_space.describe(with_long_description=False, with_examples=True)}
+
+Here is an example with chain of thought of a valid action when clicking on a button:
+"
+In order to accomplish my goal I need to click on the button with bid 12
+```click("12")```
+"
+
+If you have completed the task, use the chat to return an answer. For example, if you are asked what is the color of the sky, return
+"
+```send_msg_to_user("blue")```
+"
+"""
+        user_content.append(TextContent(text=user_prompt))
+        messages.append(Message(role='user', content=user_content))
+
+        flat_messages = self.llm.format_messages_for_llm(messages)
 
         response = self.llm.completion(
-            messages=self.llm.format_messages_for_llm(messages),
+            messages=flat_messages,
+            temperature=0.0,
             stop=[')```', ')\n```'],
         )
+
         return self.response_parser.parse(response)

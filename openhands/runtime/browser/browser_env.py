@@ -11,7 +11,7 @@ import gymnasium as gym
 import html2text
 import numpy as np
 import tenacity
-from browsergym.utils.obs import flatten_dom_to_str
+from browsergym.utils.obs import flatten_dom_to_str, overlay_som
 from PIL import Image
 
 from openhands.core.exceptions import BrowserInitException
@@ -73,7 +73,11 @@ class BrowserEnv:
         if self.eval_mode:
             assert self.browsergym_eval_env is not None
             logger.info('Initializing browser env for web browsing evaluation.')
-            if 'webarena' in self.browsergym_eval_env:
+            if not self.browsergym_eval_env.startswith('browsergym/'):
+                self.browsergym_eval_env = 'browsergym/' + self.browsergym_eval_env
+            if 'visualwebarena' in self.browsergym_eval_env:
+                import browsergym.visualwebarena  # noqa F401 register visualwebarena tasks as gym environments
+            elif 'webarena' in self.browsergym_eval_env:
                 import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
             elif 'miniwob' in self.browsergym_eval_env:
                 import browsergym.miniwob  # noqa F401 register miniwob tasks as gym environments
@@ -95,10 +99,12 @@ class BrowserEnv:
 
         # EVAL ONLY: save the goal into file for evaluation
         self.eval_goal = None
+        self.goal_image_urls = None
         self.eval_rewards: list[float] = []
         if self.eval_mode:
             logger.info(f"Browsing goal: {obs['goal']}")
             self.eval_goal = obs['goal']
+            self.goal_image_urls = obs.get('goal_image_urls', [])
 
         logger.info('Browser env started.')
         while should_continue():
@@ -118,7 +124,13 @@ class BrowserEnv:
                     # EVAL ONLY: Get evaluation info
                     if action_data['action'] == BROWSER_EVAL_GET_GOAL_ACTION:
                         self.browser_side.send(
-                            (unique_request_id, {'text_content': self.eval_goal})
+                            (
+                                unique_request_id,
+                                {
+                                    'text_content': self.eval_goal,
+                                    'image_content': self.goal_image_urls,
+                                },
+                            )
                         )
                         continue
                     elif action_data['action'] == BROWSER_EVAL_GET_REWARDS_ACTION:
@@ -141,7 +153,15 @@ class BrowserEnv:
                     html_str = flatten_dom_to_str(obs['dom_object'])
                     obs['text_content'] = self.html_text_converter.handle(html_str)
                     # make observation serializable
-                    obs['screenshot'] = self.image_to_png_base64_url(obs['screenshot'])
+                    obs['set_of_marks'] = self.image_to_png_base64_url(
+                        overlay_som(
+                            obs['screenshot'], obs.get('extra_element_properties', {})
+                        ),
+                        add_data_prefix=True,
+                    )
+                    obs['screenshot'] = self.image_to_png_base64_url(
+                        obs['screenshot'], add_data_prefix=True
+                    )
                     obs['active_page_index'] = obs['active_page_index'].item()
                     obs['elapsed_time'] = obs['elapsed_time'].item()
                     self.browser_side.send((unique_request_id, obs))
