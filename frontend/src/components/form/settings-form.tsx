@@ -211,41 +211,43 @@ export function SettingsForm({
             </p>
           </fieldset>
 
-          <fieldset
-            data-testid="agent-selector"
-            className="flex flex-col gap-2"
-          >
-            <label
-              htmlFor="agent"
-              className="font-[500] text-[#A3A3A3] text-xs"
+          {showAdvancedOptions && (
+            <fieldset
+              data-testid="agent-selector"
+              className="flex flex-col gap-2"
             >
-              Agent
-            </label>
-            <Autocomplete
-              isDisabled={disabled}
-              isRequired
-              id="agent"
-              aria-label="Agent"
-              data-testid="agent-input"
-              name="agent"
-              defaultSelectedKey={
-                fetcher.formData?.get("agent")?.toString() ?? settings.AGENT
-              }
-              isClearable={false}
-              inputProps={{
-                classNames: {
-                  inputWrapper:
-                    "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
-                },
-              }}
-            >
-              {agents.map((agent) => (
-                <AutocompleteItem key={agent} value={agent}>
-                  {agent}
-                </AutocompleteItem>
-              ))}
-            </Autocomplete>
-          </fieldset>
+              <label
+                htmlFor="agent"
+                className="font-[500] text-[#A3A3A3] text-xs"
+              >
+                Agent
+              </label>
+              <Autocomplete
+                isDisabled={disabled}
+                isRequired
+                id="agent"
+                aria-label="Agent"
+                data-testid="agent-input"
+                name="agent"
+                defaultSelectedKey={
+                  fetcher.formData?.get("agent")?.toString() ?? settings.AGENT
+                }
+                isClearable={false}
+                inputProps={{
+                  classNames: {
+                    inputWrapper:
+                      "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
+                  },
+                }}
+              >
+                {agents.map((agent) => (
+                  <AutocompleteItem key={agent} value={agent}>
+                    {agent}
+                  </AutocompleteItem>
+                ))}
+              </Autocomplete>
+            </fieldset>
+          )}
 
           {showAdvancedOptions && (
             <>
