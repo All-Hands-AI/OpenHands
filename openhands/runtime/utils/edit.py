@@ -194,6 +194,8 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 content=get_diff('', action.content, action.path),
                 path=action.path,
                 prev_exist=False,
+                old_content='',
+                new_content=action.content,
             )
         assert isinstance(
             obs, FileReadObservation
@@ -228,7 +230,13 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                     return error_obs
 
             obs = self.write(FileWriteAction(path=action.path, content=updated_content))
-            return FileEditObservation(content=diff, path=action.path, prev_exist=True)
+            return FileEditObservation(
+                content=diff,
+                path=action.path,
+                prev_exist=True,
+                old_content=original_file_content,
+                new_content=updated_content,
+            )
 
         # Get the 0-indexed start and end
         start_idx = start - 1
@@ -298,4 +306,10 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             if error_obs is not None:
                 return error_obs
         obs = self.write(FileWriteAction(path=action.path, content=updated_content))
-        return FileEditObservation(content=diff, path=action.path, prev_exist=True)
+        return FileEditObservation(
+            content=diff,
+            path=action.path,
+            prev_exist=True,
+            old_content=original_file_content,
+            new_content=updated_content,
+        )

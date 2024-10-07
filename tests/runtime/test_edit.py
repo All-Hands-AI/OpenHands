@@ -12,6 +12,7 @@ from conftest import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import FileEditAction, FileReadAction
 from openhands.events.observation import FileEditObservation
+from openhands.utils.diff import get_diff
 
 ORGINAL = """from flask import Flask
 app = Flask(__name__)
@@ -176,3 +177,182 @@ def test_edit_long_file(temp_dir, box_class, run_as_openhands):
         )
     finally:
         _close_test_runtime(runtime)
+
+
+# ======================================================================================
+# Test FileEditObservation (things that are displayed to the agent)
+# ======================================================================================
+
+
+def test_edit_obs_insert_only():
+    EDIT_LONG_INSERT_ONLY = (
+        '\n'.join([f'This is line {i}' for i in range(1, 100)])
+        + EDIT_LONG
+        + '\n'.join([f'This is line {i}' for i in range(100, 1000)])
+    )
+
+    diff = get_diff(ORIGINAL_LONG, EDIT_LONG_INSERT_ONLY, '/workspace/app.py')
+    obs = FileEditObservation(
+        content=diff,
+        path='/workspace/app.py',
+        prev_exist=True,
+        old_content=ORIGINAL_LONG,
+        new_content=EDIT_LONG_INSERT_ONLY,
+    )
+    assert (
+        str(obs).strip()
+        == """
+[Existing file /workspace/app.py is edited with 1 changes.]
+[begin of edit 1 / 1]
+(content before edits)
+  98|This is line 98
+  99|This is line 99
+ 100|This is line 100
+ 101|This is line 101
+(content after edits)
+  98|This is line 98
+  99|This is line 99
++100|This is line 100 + 10
++101|This is line 101 + 10
+ 102|This is line 100
+ 103|This is line 101
+[end of edit 1 / 1]
+""".strip()
+    )
+
+
+def test_edit_obs_replace():
+    _new_content = (
+        '\n'.join([f'This is line {i}' for i in range(1, 100)])
+        + EDIT_LONG
+        + '\n'.join([f'This is line {i}' for i in range(102, 1000)])
+    )
+
+    diff = get_diff(ORIGINAL_LONG, _new_content, '/workspace/app.py')
+    obs = FileEditObservation(
+        content=diff,
+        path='/workspace/app.py',
+        prev_exist=True,
+        old_content=ORIGINAL_LONG,
+        new_content=_new_content,
+    )
+    print(str(obs))
+    assert (
+        str(obs).strip()
+        == """
+[Existing file /workspace/app.py is edited with 1 changes.]
+[begin of edit 1 / 1]
+(content before edits)
+  98|This is line 98
+  99|This is line 99
+-100|This is line 100
+-101|This is line 101
+ 102|This is line 102
+ 103|This is line 103
+(content after edits)
+  98|This is line 98
+  99|This is line 99
++100|This is line 100 + 10
++101|This is line 101 + 10
+ 102|This is line 102
+ 103|This is line 103
+[end of edit 1 / 1]
+""".strip()
+    )
+
+
+def test_edit_obs_replace_with_empty_line():
+    _new_content = (
+        '\n'.join([f'This is line {i}' for i in range(1, 100)])
+        + '\n'
+        + EDIT_LONG
+        + '\n'.join([f'This is line {i}' for i in range(102, 1000)])
+    )
+
+    diff = get_diff(ORIGINAL_LONG, _new_content, '/workspace/app.py')
+    obs = FileEditObservation(
+        content=diff,
+        path='/workspace/app.py',
+        prev_exist=True,
+        old_content=ORIGINAL_LONG,
+        new_content=_new_content,
+    )
+    print(str(obs))
+    assert (
+        str(obs).strip()
+        == """
+[Existing file /workspace/app.py is edited with 1 changes.]
+[begin of edit 1 / 1]
+(content before edits)
+  98|This is line 98
+  99|This is line 99
+-100|This is line 100
+-101|This is line 101
+ 102|This is line 102
+ 103|This is line 103
+(content after edits)
+  98|This is line 98
+  99|This is line 99
++100|
++101|This is line 100 + 10
++102|This is line 101 + 10
+ 103|This is line 102
+ 104|This is line 103
+[end of edit 1 / 1]
+""".strip()
+    )
+
+
+def test_edit_obs_multiple_edits():
+    _new_content = (
+        '\n'.join([f'This is line {i}' for i in range(1, 50)])
+        + '\nbalabala\n'
+        + '\n'.join([f'This is line {i}' for i in range(50, 100)])
+        + EDIT_LONG
+        + '\n'.join([f'This is line {i}' for i in range(102, 1000)])
+    )
+
+    diff = get_diff(ORIGINAL_LONG, _new_content, '/workspace/app.py')
+    obs = FileEditObservation(
+        content=diff,
+        path='/workspace/app.py',
+        prev_exist=True,
+        old_content=ORIGINAL_LONG,
+        new_content=_new_content,
+    )
+    assert (
+        str(obs).strip()
+        == """
+[Existing file /workspace/app.py is edited with 2 changes.]
+[begin of edit 1 / 2]
+(content before edits)
+ 48|This is line 48
+ 49|This is line 49
+ 50|This is line 50
+ 51|This is line 51
+(content after edits)
+ 48|This is line 48
+ 49|This is line 49
++50|balabala
+ 51|This is line 50
+ 52|This is line 51
+[end of edit 1 / 2]
+-------------------------
+[begin of edit 2 / 2]
+(content before edits)
+  98|This is line 98
+  99|This is line 99
+-100|This is line 100
+-101|This is line 101
+ 102|This is line 102
+ 103|This is line 103
+(content after edits)
+  99|This is line 98
+ 100|This is line 99
++101|This is line 100 + 10
++102|This is line 101 + 10
+ 103|This is line 102
+ 104|This is line 103
+[end of edit 2 / 2]
+""".strip()
+    )
