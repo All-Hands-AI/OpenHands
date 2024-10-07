@@ -78,6 +78,8 @@ class Runtime:
     def setup_initial_env(self) -> None:
         logger.debug(f'Adding env vars: {self.initial_env_vars}')
         self.add_env_vars(self.initial_env_vars)
+        if self.config.sandbox.runtime_startup_env_vars:
+            self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
 
     def close(self) -> None:
         pass
@@ -208,4 +210,9 @@ class Runtime:
 
         If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
         """
+        raise NotImplementedError('This method is not implemented in the base class.')
+
+    @abstractmethod
+    def zip_files_in_sandbox(self) -> bytes:
+        """Zip all files in the sandbox and return the zip file as bytes."""
         raise NotImplementedError('This method is not implemented in the base class.')

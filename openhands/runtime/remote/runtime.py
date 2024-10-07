@@ -205,6 +205,9 @@ class RemoteRuntime(Runtime):
         
         self.send_status_message(' ')
 
+        self._wait_until_alive()
+        self.setup_initial_env()
+
     @retry(
         stop=stop_after_attempt(10) | stop_if_should_exit(),
         wait=wait_exponential(multiplier=1, min=4, max=60),
