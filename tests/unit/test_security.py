@@ -1,4 +1,6 @@
 import asyncio
+import concurrent
+from itertools import chain
 import pathlib
 import tempfile
 
@@ -42,7 +44,7 @@ def temp_dir(monkeypatch):
         yield temp_dir
 
 
-async def add_events(event_stream: EventStream, data: list[tuple[Event, EventSource]]):
+def add_events(event_stream: EventStream, data: list[tuple[Event, EventSource]]):
     for event, source in data:
         event_stream.add_event(event, source)
 
@@ -62,7 +64,7 @@ def test_msg(temp_dir: str):
         (MessageAction('Hello world!'), EventSource.USER),
         (MessageAction('ABC!'), EventSource.AGENT),
     ]
-    asyncio.run(add_events(event_stream, data))
+    add_events(event_stream, data)
     for i in range(3):
         assert data[i][0].security_risk == ActionSecurityRisk.LOW
     assert data[3][0].security_risk == ActionSecurityRisk.MEDIUM
@@ -86,7 +88,7 @@ def test_cmd(cmd, expected_risk, temp_dir: str):
         (MessageAction('Hello world!'), EventSource.USER),
         (CmdRunAction(cmd), EventSource.USER),
     ]
-    asyncio.run(add_events(event_stream, data))
+    add_events(event_stream, data)
     assert data[0][0].security_risk == ActionSecurityRisk.LOW
     assert data[1][0].security_risk == expected_risk
 
@@ -115,7 +117,7 @@ def test_leak_secrets(code, expected_risk, temp_dir: str):
         (IPythonRunCellAction(code), EventSource.AGENT),
         (IPythonRunCellAction('hello'), EventSource.AGENT),
     ]
-    asyncio.run(add_events(event_stream, data))
+    add_events(event_stream, data)
     assert data[0][0].security_risk == ActionSecurityRisk.LOW
     assert data[1][0].security_risk == expected_risk
     assert data[2][0].security_risk == ActionSecurityRisk.LOW
@@ -133,7 +135,7 @@ def test_unsafe_python_code(temp_dir: str):
         (MessageAction('Hello world!'), EventSource.USER),
         (IPythonRunCellAction(code), EventSource.AGENT),
     ]
-    asyncio.run(add_events(event_stream, data))
+    add_events(event_stream, data)
     assert data[0][0].security_risk == ActionSecurityRisk.LOW
     # TODO: this failed but idk why and seems not deterministic to me
     # assert data[1][0].security_risk == ActionSecurityRisk.MEDIUM
@@ -148,7 +150,7 @@ def test_unsafe_bash_command(temp_dir: str):
         (MessageAction('Hello world!'), EventSource.USER),
         (CmdRunAction(code), EventSource.AGENT),
     ]
-    asyncio.run(add_events(event_stream, data))
+    add_events(event_stream, data)
     assert data[0][0].security_risk == ActionSecurityRisk.LOW
     assert data[1][0].security_risk == ActionSecurityRisk.MEDIUM
 

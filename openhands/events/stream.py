@@ -2,7 +2,7 @@ import asyncio
 import threading
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Iterable
+from typing import Callable, Iterable, List
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.utils import json
@@ -141,9 +141,7 @@ class EventStream:
         for key in sorted(self._subscribers.keys()):
             stack = self._subscribers[key]
             callback = stack[-1]
-            asyncio.get_event_loop().run_in_executor(
-                None, self._callback, callback, event
-            )
+            callback(event)
 
     def _callback(self, callback: Callable, event: Event):
         asyncio.run(callback(event))
