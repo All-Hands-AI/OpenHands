@@ -129,9 +129,9 @@ class EventStream:
                 del self._subscribers[id]
 
     def add_event(self, event: Event, source: EventSource):
-        asyncio.create_task(self.async_add_events(event, source))
+        asyncio.run(self.async_add_event(event, source))
 
-    async def async_add_events(self, event: Event, source: EventSource):
+    async def async_add_event(self, event: Event, source: EventSource):
         with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1
@@ -146,7 +146,8 @@ class EventStream:
             stack = self._subscribers[key]
             callback = stack[-1]
             tasks.append(asyncio.create_task(callback(event)))
-        await asyncio.wait(tasks)
+        if tasks:
+            await asyncio.wait(tasks)
 
     def _callback(self, callback: Callable, event: Event):
         asyncio.run(callback(event))
