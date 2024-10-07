@@ -65,3 +65,19 @@ def test_env_vars_runtime_operations(temp_dir, box_class):
     )
 
     _close_test_runtime(runtime)
+
+
+def test_env_vars_added_by_config(temp_dir, box_class):
+    runtime = _load_runtime(
+        temp_dir,
+        box_class,
+        runtime_startup_env_vars={'ADDED_ENV_VAR': 'added_value'},
+    )
+
+    # Test adding single env var
+    obs = runtime.run_action(CmdRunAction(command='echo $ADDED_ENV_VAR'))
+    assert (
+        obs.exit_code == 0
+        and obs.content.strip().split('\r\n')[0].strip() == 'added_value'
+    )
+    _close_test_runtime(runtime)

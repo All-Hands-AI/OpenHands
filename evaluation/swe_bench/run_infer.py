@@ -29,7 +29,7 @@ from openhands.core.config import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import CmdRunAction
+from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
 from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.runtime import Runtime
@@ -365,6 +365,7 @@ def process_instance(
         logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
     runtime = create_runtime(config, sid=instance.instance_id)
+
     try:
         initialize_runtime(runtime, instance)
 
@@ -374,7 +375,7 @@ def process_instance(
         state: State | None = asyncio.run(
             run_controller(
                 config=config,
-                task_str=instruction,
+                initial_user_action=MessageAction(content=instruction),
                 runtime=runtime,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                     metadata.agent_class

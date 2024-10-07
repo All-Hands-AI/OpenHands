@@ -250,6 +250,9 @@ class RemoteRuntime(Runtime):
                 {'X-Session-API-Key': start_response['sandbox_api_key']}
             )
 
+        self._wait_until_alive()
+        self.setup_initial_env()
+
     @retry(
         stop=stop_after_attempt(60) | stop_if_should_exit(),
         wait=wait_fixed(2),

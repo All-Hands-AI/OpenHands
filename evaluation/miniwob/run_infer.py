@@ -128,11 +128,12 @@ def process_instance(
 
     runtime = create_runtime(config, sid=env_id)
     task_str = initialize_runtime(runtime)
-
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            task_str=task_str,  # take output from initialize_runtime
+            initial_user_action=MessageAction(
+                content=task_str
+            ),  # take output from initialize_runtime
             runtime=runtime,
         )
     )
