@@ -1,17 +1,12 @@
----
-sidebar_position: 3
----
-
 # 🤖 LLM Backends
 
 OpenHands can connect to any LLM supported by LiteLLM. However, it requires a powerful model to work.
 The following are verified by the community to work with OpenHands:
 
-* claude-3-5-sonnet
+* claude-3-5-sonnet (recommended)
 * gemini-1.5-pro / gemini-1.5-flash
 * gpt-4 / gpt-4o
 * llama-3.1-405b / hermes-3-llama-3.1-405b
-* wizardlm-2-8x22b
 
 :::warning
 OpenHands will issue many prompts to the LLM you configure. Most of these LLMs cost money, so be sure to set spending
@@ -39,7 +34,7 @@ The following can be set in the OpenHands UI through the Settings:
 * `Base URL` (through `Advanced Settings`)
 
 There are some settings that may be necessary for some LLMs/providers that cannot be set through the UI. Instead, these
-can be set through environment variables passed to the [docker run command](/modules/usage/getting-started#installation)
+can be set through environment variables passed to the [docker run command](/modules/usage/installation)
 using `-e`:
 
 * `LLM_API_VERSION`
@@ -68,7 +63,7 @@ You can customize these options as you need for the provider you're using. Check
 * `LLM_RETRY_MAX_WAIT` (Default of 120 seconds)
 * `LLM_RETRY_MULTIPLIER` (Default of 2)
 
-If you running `openhands` in development mode, you can also set these options to the values you need in `config.toml` file:
+If you are running OpenHands in development mode, you can also set these options in the `config.toml` file:
 
 ```toml
 [llm]

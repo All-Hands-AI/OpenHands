@@ -10,6 +10,8 @@ from tenacity import (
     wait_exponential,
 )
 
+from openhands.utils.tenacity_stop import stop_if_should_exit
+
 
 def is_server_error(exception):
     return (
@@ -47,10 +49,11 @@ def send_request(
     if retry_fns is not None:
         for fn in retry_fns:
             retry_condition |= retry_if_exception(fn)
-    kwargs["timeout"] = timeout
+    # wait a few more seconds to get the timeout error from client side
+    kwargs['timeout'] = timeout + 10
 
     @retry(
-        stop=stop_after_delay(timeout),
+        stop=stop_after_delay(timeout) | stop_if_should_exit(),
         wait=wait_exponential(multiplier=1, min=4, max=60),
         retry=retry_condition,
         reraise=True,

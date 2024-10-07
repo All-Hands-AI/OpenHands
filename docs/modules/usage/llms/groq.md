@@ -8,8 +8,8 @@ When running OpenHands, you'll need to set the following in the OpenHands UI thr
 * `LLM Provider` to `Groq`
 * `LLM Model` to the model you will be using. [Visit here to see the list of
 models that Groq hosts](https://console.groq.com/docs/models). If the model is not in the list, toggle
-`Advanced Options`, and enter it in `Custom Model` (e.g. groq/&lt;model-name&gt; like `groq/llama3-70b-8192`)
-* `API key` to your Groq API key. To find or create your Groq API Key, [see here](https://console.groq.com/keys)
+`Advanced Options`, and enter it in `Custom Model` (e.g. groq/&lt;model-name&gt; like `groq/llama3-70b-8192`).
+* `API key` to your Groq API key. To find or create your Groq API Key, [see here](https://console.groq.com/keys).
 
 
 

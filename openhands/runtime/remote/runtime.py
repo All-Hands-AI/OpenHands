@@ -42,6 +42,7 @@ from openhands.runtime.utils.request import (
     send_request,
 )
 from openhands.runtime.utils.runtime_build import build_runtime_image
+from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
 class RemoteRuntime(Runtime):
@@ -65,6 +66,8 @@ class RemoteRuntime(Runtime):
                 'API key is required to use the remote runtime. '
                 'Please set the API key in the config (config.toml) or as an environment variable (SANDBOX_API_KEY).'
             )
+        self.status_message_callback = status_message_callback
+        self.send_status_message('STATUS$STARTING_RUNTIME')
         self.session = requests.Session()
         self.session.headers.update({'X-API-Key': self.config.sandbox.api_key})
         self.action_semaphore = threading.Semaphore(1)
@@ -114,10 +117,12 @@ class RemoteRuntime(Runtime):
                 )
 
             # Build the container image
+            self.send_status_message('STATUS$STARTING_CONTAINER')
             self.container_image = build_runtime_image(
                 self.config.sandbox.base_container_image,
                 self.runtime_builder,
                 extra_deps=self.config.sandbox.runtime_extra_deps,
+                force_rebuild=self.config.sandbox.force_rebuild_runtime,
             )
 
             response = send_request(
@@ -143,8 +148,8 @@ class RemoteRuntime(Runtime):
         start_request = {
             'image': self.container_image,
             'command': (
-                f'/openhands/miniforge3/bin/mamba run --no-capture-output -n base '
-                'PYTHONUNBUFFERED=1 poetry run '
+                f'/openhands/micromamba/bin/micromamba run -n openhands '
+                'poetry run '
                 f'python -u -m openhands.runtime.client.client {self.port} '
                 f'--working-dir {self.config.workspace_mount_path_in_sandbox} '
                 f'{plugin_arg}'
@@ -157,6 +162,7 @@ class RemoteRuntime(Runtime):
             'environment': {'DEBUG': 'true'} if self.config.debug else {},
         }
 
+        self.send_status_message('STATUS$WAITING_FOR_CLIENT')
         # Start the sandbox using the /start endpoint
         response = send_request(
             self.session,
@@ -174,6 +180,11 @@ class RemoteRuntime(Runtime):
             f'Sandbox started. Runtime ID: {self.runtime_id}, URL: {self.runtime_url}'
         )
 
+        if 'session_api_key' in start_response:
+            self.session.headers.update(
+                {'X-Session-API-Key': start_response['session_api_key']}
+            )
+
         # Initialize the eventstream and env vars
         super().__init__(
             config, event_stream, sid, plugins, env_vars, status_message_callback
@@ -189,9 +200,10 @@ class RemoteRuntime(Runtime):
         assert (
             self.runtime_url is not None
         ), 'Runtime URL is not set. This should never happen.'
+        self.send_status_message(' ')
 
     @retry(
-        stop=stop_after_attempt(10),
+        stop=stop_after_attempt(10) | stop_if_should_exit(),
         wait=wait_exponential(multiplier=1, min=4, max=60),
         retry=retry_if_exception_type(RuntimeError),
         reraise=True,
@@ -386,3 +398,8 @@ class RemoteRuntime(Runtime):
             raise TimeoutError('List files operation timed out')
         except Exception as e:
             raise RuntimeError(f'List files operation failed: {str(e)}')
+
+    def send_status_message(self, message: str):
+        """Sends a status message if the callback function was provided."""
+        if self.status_message_callback:
+            self.status_message_callback(message)
