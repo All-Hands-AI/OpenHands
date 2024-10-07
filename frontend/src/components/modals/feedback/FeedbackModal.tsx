@@ -8,7 +8,7 @@ import toast from "#/utils/toast";
 import { getToken } from "#/services/auth";
 import { removeApiKey, removeUnwantedKeys } from "#/utils/utils";
 import { useSocket } from "#/context/socket";
-import { Feedback, sendFeedback } from "#/api/open-hands";
+import OpenHands, { Feedback } from "#/api/open-hands";
 
 const isEmailValid = (email: string) => {
   // Regular expression to validate email format
@@ -104,7 +104,7 @@ function FeedbackModal({
       // TODO: Move to data loader
       const token = localStorage.getItem("token");
       if (token) {
-        const response = await sendFeedback(token, feedback);
+        const response = await OpenHands.sendFeedback(token, feedback);
         if (response.statusCode === 200) {
           const { message, feedback_id: feedbackId, password } = response.body;
           const link = `${VIEWER_PAGE}?share_id=${feedbackId}`;

@@ -19,11 +19,7 @@ import { SettingsForm } from "./components/form/settings-form";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { isGitHubErrorReponse, retrieveGitHubUser } from "./api/github";
-import {
-  getAgents,
-  getModels,
-  retrieveSecurityAnalyzers,
-} from "./api/open-hands";
+import OpenHands from "./api/open-hands";
 import LoadingProjectModal from "./components/modals/LoadingProject";
 import { getSettings, settingsAreUpToDate } from "./services/settings";
 import AccountSettingsModal from "./components/modals/AccountSettingsModal";
@@ -109,9 +105,9 @@ export default function App() {
     // the fetch is complete
     (async () => {
       const [models, agents, securityAnalyzers] = await Promise.all([
-        getModels(),
-        getAgents(),
-        retrieveSecurityAnalyzers(),
+        OpenHands.getModels(),
+        OpenHands.getAgents(),
+        OpenHands.getSecurityAnalyzers(),
       ]);
 
       setData({ models, agents, securityAnalyzers });

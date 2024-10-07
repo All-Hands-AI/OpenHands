@@ -5,7 +5,7 @@ import { VscCode } from "react-icons/vsc";
 import { type editor } from "monaco-editor";
 import { I18nKey } from "#/i18n/declaration";
 import { useFiles } from "#/context/files";
-import { saveFileContent } from "#/api/open-hands";
+import OpenHands from "#/api/open-hands";
 
 interface CodeEditorCompoonentProps {
   isReadOnly: boolean;
@@ -49,7 +49,7 @@ function CodeEditorCompoonent({ isReadOnly }: CodeEditorCompoonentProps) {
         if (content) {
           try {
             const token = localStorage.getItem("token")?.toString();
-            if (token) await saveFileContent(token, selectedPath, content);
+            if (token) await OpenHands.saveFile(token, selectedPath, content);
           } catch (error) {
             // handle error
           }

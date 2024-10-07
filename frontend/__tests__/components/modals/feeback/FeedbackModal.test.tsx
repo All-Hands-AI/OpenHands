@@ -3,7 +3,7 @@ import { Mock, afterEach, describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import toast from "react-hot-toast";
 import FeedbackModal from "#/components/modals/feedback/FeedbackModal";
-import { sendFeedback } from "#/api/open-hands";
+import OpenHands from "#/api/open-hands";
 
 describe.skip("FeedbackModal", () => {
   Storage.prototype.setItem = vi.fn();
@@ -70,7 +70,7 @@ describe.skip("FeedbackModal", () => {
     await user.click(submitButton);
 
     expect(screen.getByTestId("invalid-email-message")).toBeInTheDocument();
-    expect(sendFeedback).not.toHaveBeenCalled();
+    expect(OpenHands.sendFeedback).not.toHaveBeenCalled();
   });
 
   it("should call sendFeedback with the correct data when the share button is clicked", async () => {
@@ -107,7 +107,7 @@ describe.skip("FeedbackModal", () => {
       screen.queryByTestId("invalid-email-message"),
     ).not.toBeInTheDocument();
 
-    expect(sendFeedback).toHaveBeenCalledWith({
+    expect(OpenHands.sendFeedback).toHaveBeenCalledWith({
       email,
       permissions: "public",
       feedback: "negative",
@@ -159,7 +159,7 @@ describe.skip("FeedbackModal", () => {
 
   // TODO: figure out how to properly mock toast
   it.skip("should display a success toast when the feedback is shared successfully", async () => {
-    (sendFeedback as Mock).mockResolvedValue({
+    (OpenHands.sendFeedback as Mock).mockResolvedValue({
       statusCode: 200,
       body: {
         message: "Feedback shared",

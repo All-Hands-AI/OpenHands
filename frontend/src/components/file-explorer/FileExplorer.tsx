@@ -18,7 +18,7 @@ import ExplorerTree from "./ExplorerTree";
 import toast from "#/utils/toast";
 import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
-import { retrieveFiles } from "#/api/open-hands";
+import OpenHands from "#/api/open-hands";
 import { useFiles } from "#/context/files";
 
 interface ExplorerActionsProps {
@@ -114,7 +114,7 @@ function FileExplorer() {
     dispatch(setRefreshID(Math.random()));
     // TODO: Get token from data loader
     const token = localStorage.getItem("token");
-    if (token) retrieveFiles(token).then(setPaths);
+    if (token) OpenHands.getFiles(token).then(setPaths);
     revalidate();
   };
 

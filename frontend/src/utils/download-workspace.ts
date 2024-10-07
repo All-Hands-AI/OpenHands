@@ -1,4 +1,4 @@
-import { retrieveWorkspaceZipBlob } from "#/api/open-hands";
+import OpenHands from "#/api/open-hands";
 
 /**
  * Downloads the current workspace as a .zip file.
@@ -10,7 +10,7 @@ export const downloadWorkspace = async () => {
       throw new Error("No token found");
     }
 
-    const blob = await retrieveWorkspaceZipBlob(token);
+    const blob = await OpenHands.getWorkspaceZip(token);
 
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");

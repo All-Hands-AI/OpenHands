@@ -32,7 +32,7 @@ import {
   clearSelectedRepository,
 } from "#/state/initial-query-slice";
 import { isGitHubErrorReponse, retrieveLatestGitHubCommit } from "#/api/github";
-import { uploadFile } from "#/api/open-hands";
+import OpenHands from "#/api/open-hands";
 import AgentState from "#/types/AgentState";
 import { base64ToBlob } from "#/utils/base64-to-blob";
 import { clientLoader as rootClientLoader } from "#/root";
@@ -62,7 +62,7 @@ export const clientLoader = async () => {
     const file = new File([blob], "imported-project.zip", {
       type: blob.type,
     });
-    await uploadFile(token, file);
+    await OpenHands.uploadFile(token, file);
   }
 
   if (repo) localStorage.setItem("repo", repo);

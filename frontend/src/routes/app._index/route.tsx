@@ -9,7 +9,7 @@ import {
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import FileExplorer from "#/components/file-explorer/FileExplorer";
-import { retrieveFiles, retrieveFileContent } from "#/api/open-hands";
+import OpenHands from "#/api/open-hands";
 import { useSocket } from "#/context/socket";
 import CodeEditorCompoonent from "./code-editor-component";
 import { useFiles } from "#/context/files";
@@ -28,7 +28,7 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   let selectedFileContent: string | null = null;
 
   if (file && token) {
-    selectedFileContent = await retrieveFileContent(token, file);
+    selectedFileContent = await OpenHands.getFile(token, file);
   }
 
   return json({ file, selectedFileContent });
@@ -56,7 +56,7 @@ function CodeEditor() {
 
   React.useEffect(() => {
     // only retrieve files if connected to WS to prevent requesting before runtime is ready
-    if (runtimeActive && token) retrieveFiles(token).then(setPaths);
+    if (runtimeActive && token) OpenHands.getFiles(token).then(setPaths);
   }, [runtimeActive, token]);
 
   // Code editing is only allowed when the agent is paused, finished, or awaiting user input (server rules)

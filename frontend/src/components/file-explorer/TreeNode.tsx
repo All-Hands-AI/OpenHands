@@ -4,7 +4,7 @@ import { RootState } from "#/store";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
 import { listFiles } from "#/services/fileService";
-import { retrieveFileContent } from "#/api/open-hands";
+import OpenHands from "#/api/open-hands";
 import { useFiles } from "#/context/files";
 import { cn } from "#/utils/utils";
 
@@ -75,7 +75,7 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
     } else if (token) {
       setSelectedPath(path);
       const code = modifiedFiles[path] || files[path];
-      const fetchedCode = await retrieveFileContent(token, path);
+      const fetchedCode = await OpenHands.getFile(token, path);
 
       if (!code || fetchedCode !== files[path]) {
         setFileContent(path, fetchedCode);
