@@ -2,7 +2,7 @@ import asyncio
 import threading
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Iterable, List
+from typing import Callable, Iterable
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.utils import json
