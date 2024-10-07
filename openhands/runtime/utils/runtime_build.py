@@ -57,7 +57,7 @@ def _put_source_code_to_dir(temp_dir: str):
         raise RuntimeError(f'Image build failed:\n{result}')
 
     if not os.path.exists(tarball_path):
-        logger.error(f'Source distribution not found at {tarball_path}')
+        logger.error(f'Source distribution not found at {tarball_path}. (Do you need to run `make build`?)')
         raise RuntimeError(f'Source distribution not found at {tarball_path}')
     logger.info(f'Source distribution created at {tarball_path}')
 
@@ -389,7 +389,7 @@ def _build_sandbox_image(
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--base_image', type=str, default='nikolaik/python-nodejs:python3.11-nodejs22'
+        '--base_image', type=str, default='nikolaik/python-nodejs:python3.12-nodejs22'
     )
     parser.add_argument('--build_folder', type=str, default=None)
     parser.add_argument('--force_rebuild', action='store_true', default=False)
