@@ -12,7 +12,7 @@ import {
  * @returns Base URL of the OpenHands API
  */
 const generateBaseURL = () => {
-  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL;
+  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || "localhost:3000";
   return `http://${baseUrl}`;
 };
 

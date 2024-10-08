@@ -45,7 +45,7 @@ function SocketProvider({ children }: SocketProviderProps) {
       );
     }
 
-    const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL;
+    const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || "localhost:3000";
     const ws = new WebSocket(
       `ws://${baseUrl}/ws${options?.token ? `?token=${options.token}` : ""}`,
     );
