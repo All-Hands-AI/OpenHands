@@ -723,7 +723,7 @@ if __name__ == '__main__':
             if not os.path.exists(full_dest_path):
                 os.makedirs(full_dest_path, exist_ok=True)
 
-            if recursive:
+            if recursive or file.filename.endswith('.zip'):
                 # For recursive uploads, we expect a zip file
                 if not file.filename.endswith('.zip'):
                     raise HTTPException(
