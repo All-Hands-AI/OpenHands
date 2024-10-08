@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import TreeNode from "./TreeNode";
 import { I18nKey } from "#/i18n/declaration";

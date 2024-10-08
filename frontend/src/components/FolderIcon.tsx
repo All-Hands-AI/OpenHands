@@ -1,4 +1,3 @@
-import React from "react";
 import { FaFolder, FaFolderOpen } from "react-icons/fa";
 
 interface FolderIconProps {

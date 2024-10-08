@@ -209,6 +209,7 @@ def _load_runtime(
     browsergym_eval_env: str | None = None,
     use_workspace: bool | None = None,
     force_rebuild_runtime: bool = False,
+    runtime_startup_env_vars: dict[str, str] | None = None,
 ) -> Runtime:
     sid = 'rt_' + str(random.randint(100000, 999999))
 
@@ -241,6 +242,8 @@ def _load_runtime(
 
     config.sandbox.browsergym_eval_env = browsergym_eval_env
     config.sandbox.enable_auto_lint = enable_auto_lint
+    if runtime_startup_env_vars is not None:
+        config.sandbox.runtime_startup_env_vars = runtime_startup_env_vars
 
     if base_container_image is not None:
         config.sandbox.base_container_image = base_container_image

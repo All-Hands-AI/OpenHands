@@ -1,4 +1,5 @@
 import asyncio
+import io
 import os
 import re
 import tempfile
@@ -17,6 +18,7 @@ with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
 
+from dotenv import load_dotenv
 from fastapi import (
     FastAPI,
     HTTPException,
@@ -27,11 +29,12 @@ from fastapi import (
     status,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
-import agenthub  # noqa F401 (we import this to get the agents registered)
+import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller.agent import Agent
 from openhands.core.config import LLMConfig, load_app_config
 from openhands.core.logger import openhands_logger as logger
@@ -55,6 +58,8 @@ from openhands.runtime.runtime import Runtime
 from openhands.server.auth import get_sid_from_token, sign_token
 from openhands.server.session import SessionManager
 
+load_dotenv()
+
 config = load_app_config()
 file_store = get_file_store(config.file_store, config.file_store_path)
 session_manager = SessionManager(config, file_store)
@@ -62,7 +67,7 @@ session_manager = SessionManager(config, file_store)
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost:3001'],
+    allow_origins=['http://localhost:3001', 'http://127.0.0.1:3001'],
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
@@ -173,7 +178,14 @@ async def attach_session(request: Request, call_next):
         response = await call_next(request)
         return response
 
+    # Bypass authentication for OPTIONS requests (preflight)
+    if request.method == 'OPTIONS':
+        response = await call_next(request)
+        return response
+
+    # For all other methods, validate the Authorization header
     if not request.headers.get('Authorization'):
+        logger.warning('Missing Authorization header')
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': 'Missing Authorization header'},
@@ -185,6 +197,7 @@ async def attach_session(request: Request, call_next):
 
     request.state.sid = get_sid_from_token(auth_token, config.jwt_secret)
     if request.state.sid == '':
+        logger.warning('Invalid token')
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': 'Invalid token'},
@@ -754,4 +767,67 @@ async def security_api(request: Request):
     )
 
 
-app.mount('/', StaticFiles(directory='./frontend/dist', html=True), name='dist')
+@app.get('/api/zip-directory')
+async def zip_current_workspace(request: Request):
+    logger.info('Zipping workspace')
+    runtime: Runtime = request.state.session.agent_session.runtime
+
+    try:
+        zip_file_bytes = runtime.zip_files_in_sandbox()
+        zip_stream = io.BytesIO(zip_file_bytes)  # Wrap to behave like a file stream
+        response = StreamingResponse(
+            zip_stream,
+            media_type='application/x-zip-compressed',
+            headers={'Content-Disposition': 'attachment; filename=workspace.zip'},
+        )
+
+        return response
+    except Exception as e:
+        logger.error(f'Error zipping workspace: {e}', exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail='Failed to zip workspace',
+        )
+
+
+class AuthCode(BaseModel):
+    code: str
+
+
+@app.post('/github/callback')
+def github_callback(auth_code: AuthCode):
+    # Prepare data for the token exchange request
+    data = {
+        'client_id': os.getenv('GITHUB_CLIENT_ID'),
+        'client_secret': os.getenv('GITHUB_CLIENT_SECRET'),
+        'code': auth_code.code,
+    }
+
+    logger.info(f'Exchanging code for token: {data}')
+
+    headers = {'Accept': 'application/json'}
+    response = requests.post(
+        'https://github.com/login/oauth/access_token', data=data, headers=headers
+    )
+
+    if response.status_code != 200:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={'error': 'Failed to exchange code for token'},
+        )
+
+    token_response = response.json()
+
+    if 'access_token' not in token_response:
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={'error': 'No access token in response'},
+        )
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={'access_token': token_response['access_token']},
+    )
+
+
+app.mount('/', StaticFiles(directory='./frontend/build', html=True), name='dist')
