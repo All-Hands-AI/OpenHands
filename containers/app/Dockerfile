@@ -69,7 +69,7 @@ RUN playwright install --with-deps chromium
 
 COPY --chown=openhands:app --chmod=770 ./openhands ./openhands
 COPY --chown=openhands:app --chmod=777 ./openhands/runtime/plugins ./openhands/runtime/plugins
-COPY --chown=openhands:app --chmod=770 ./agenthub ./agenthub
+COPY --chown=openhands:app --chmod=770 ./openhands/agenthub ./openhands/agenthub
 COPY --chown=openhands:app ./pyproject.toml ./pyproject.toml
 COPY --chown=openhands:app ./poetry.lock ./poetry.lock
 COPY --chown=openhands:app ./README.md ./README.md
@@ -82,7 +82,7 @@ RUN python openhands/core/download.py # No-op to download assets
 # openhands:openhands -> openhands:app
 RUN find /app \! -group app -exec chgrp app {} +
 
-COPY --chown=openhands:app --chmod=770 --from=frontend-builder /app/dist ./frontend/dist
+COPY --chown=openhands:app --chmod=770 --from=frontend-builder /app/build/client ./frontend/build
 COPY --chown=openhands:app --chmod=770 ./containers/app/entrypoint.sh /app/entrypoint.sh
 
 USER root

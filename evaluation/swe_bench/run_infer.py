@@ -8,7 +8,7 @@ import pandas as pd
 import toml
 from datasets import load_dataset
 
-import agenthub
+import openhands.agenthub
 from evaluation.swe_bench.prompt import CODEACT_SWE_PROMPT
 from evaluation.utils.shared import (
     EvalMetadata,
@@ -29,7 +29,7 @@ from openhands.core.config import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import CmdRunAction
+from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
 from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.runtime import Runtime
@@ -365,6 +365,7 @@ def process_instance(
         logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
     runtime = create_runtime(config, sid=instance.instance_id)
+
     try:
         initialize_runtime(runtime, instance)
 
@@ -374,7 +375,7 @@ def process_instance(
         state: State | None = asyncio.run(
             run_controller(
                 config=config,
-                task_str=instruction,
+                initial_user_action=MessageAction(content=instruction),
                 runtime=runtime,
                 fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                     metadata.agent_class
@@ -469,7 +470,7 @@ if __name__ == '__main__':
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     details = {}
-    _agent_cls = agenthub.Agent.get_cls(args.agent_cls)
+    _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
     if hasattr(_agent_cls, 'system_message'):
         details['system_message'] = _agent_cls.system_message
     if hasattr(_agent_cls, 'in_context_example'):
