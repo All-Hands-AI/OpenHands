@@ -28,6 +28,7 @@ NOTE:
 - The output file should be COMPLETE and CORRECTLY INDENTED. Do not omit any lines, and do not change any lines that are not part of the changes.
 - You should output the new version of the file by wrapping the new version of the file content in a ``` block.
 - If there's no explicit comment to remove the existing code, we should keep them and append the new code to the end of the file.
+- If there's placeholder comments like `# no changes before` or `# no changes here`, we should replace these comments with the original code near the placeholder comments.
 """
 
 USER_MSG = """
@@ -42,6 +43,9 @@ HERE IS THE DRAFT OF THE NEW VERSION OF THE FILE:
 ```
 
 GIVE ME THE NEW VERSION OF THE FILE.
+IMPORTANT:
+- There should be NO placeholder comments like `# no changes before` or `# no changes here`. They should be replaced with the original code near the placeholder comments.
+- The output file should be COMPLETE and CORRECTLY INDENTED. Do not omit any lines, and do not change any lines that are not part of the changes.
 """.strip()
 
 
