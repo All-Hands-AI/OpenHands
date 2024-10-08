@@ -1,5 +1,6 @@
 import {
   ClientActionFunctionArgs,
+  ClientLoaderFunctionArgs,
   json,
   redirect,
   useLoaderData,
@@ -25,10 +26,6 @@ import store, { RootState } from "#/store";
 import { removeFile, setInitialQuery } from "#/state/initial-query-slice";
 import { clientLoader as rootClientLoader } from "#/root";
 import { UploadedFilePreview } from "./uploaded-file-preview";
-
-const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
-const redirectUri = "http://localhost:3001/oauth/github/callback";
-const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user`;
 
 interface AttachedFilesSliderProps {
   files: string[];
@@ -74,7 +71,7 @@ function GitHubAuth({
   );
 }
 
-export const clientLoader = async () => {
+export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   const ghToken = localStorage.getItem("ghToken");
   let repositories: GitHubRepository[] = [];
   if (ghToken) {
@@ -84,7 +81,12 @@ export const clientLoader = async () => {
     }
   }
 
-  return json({ repositories });
+  const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
+  const requestUrl = new URL(request.url);
+  const redirectUri = `${requestUrl.origin}/oauth/github/callback`;
+  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user`;
+
+  return json({ repositories, githubAuthUrl });
 };
 
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
@@ -98,7 +100,7 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 function Home() {
   const rootData = useRouteLoaderData<typeof rootClientLoader>("root");
   const navigation = useNavigation();
-  const { repositories } = useLoaderData<typeof clientLoader>();
+  const { repositories, githubAuthUrl } = useLoaderData<typeof clientLoader>();
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
     React.useState(false);
   const [importedFile, setImportedFile] = React.useState<File | null>(null);

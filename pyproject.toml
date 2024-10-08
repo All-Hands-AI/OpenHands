@@ -6,9 +6,7 @@ authors = ["OpenHands"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/All-Hands-AI/OpenHands"
-include = ["poetry.lock"]
 packages = [
-  { include = "agenthub/**/*" },
   { include = "openhands/**/*" }
 ]
 
@@ -86,6 +84,7 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -115,6 +114,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
