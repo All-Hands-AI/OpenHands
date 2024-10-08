@@ -420,6 +420,9 @@ class RuntimeClient:
         logger.debug(f'Action output:\n{observation}')
         return observation
 
+    def run_action_sync(self, action) -> Observation:
+        return asyncio.run(self.run_action(action))
+
     async def run(self, action: CmdRunAction) -> CmdOutputObservation:
         try:
             assert (
@@ -698,7 +701,9 @@ if __name__ == '__main__':
             if not isinstance(action, Action):
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
-            observation = await client.run_action(action)
+            observation = await asyncio.get_event_loop().run_in_executor(
+                None, client.run_action_sync, action
+            )
             return event_to_dict(observation)
         except Exception as e:
             logger.error(

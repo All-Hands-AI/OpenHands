@@ -1,6 +1,4 @@
 import asyncio
-import concurrent.futures
-from threading import Thread
 from typing import Callable, Optional
 
 from openhands.controller import AgentController
@@ -73,7 +71,7 @@ class AgentSession:
             )
 
         asyncio.get_event_loop().run_in_executor(
-            None, 
+            None,
             self._start_thread,
             runtime_name,
             config,
@@ -85,13 +83,10 @@ class AgentSession:
             status_message_callback,
         )
 
-    def _start_thread(
-        self,
-        *args
-    ):
+    def _start_thread(self, *args):
         try:
-            asyncio.run(self._start(*args))
-        except RuntimeError as e:
+            asyncio.run(self._start(*args), debug=True)
+        except RuntimeError:
             logger.info('Session Finished')
 
     async def _start(
