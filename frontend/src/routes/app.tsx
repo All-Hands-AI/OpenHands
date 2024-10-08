@@ -180,6 +180,11 @@ function App() {
         return;
       }
 
+      if ("error" in parsed) {
+        fetcher.submit({}, { method: "POST", action: "/end-session" });
+        return;
+      }
+
       handleAssistantMessage(message.data.toString());
 
       // handle first time connection
