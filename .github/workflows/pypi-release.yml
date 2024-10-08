@@ -26,6 +26,6 @@ jobs:
       - name: Install Poetry Dependencies
         run: poetry install --no-interaction --no-root
       - name: Build poetry project
-        run: poetry build -v
+        run: ./build.sh
       - name: publish
         run: poetry publish -u __token__ -p ${{ secrets.PYPI_TOKEN }}

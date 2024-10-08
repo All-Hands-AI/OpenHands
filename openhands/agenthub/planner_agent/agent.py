@@ -1,5 +1,5 @@
-from agenthub.planner_agent.prompt import get_prompt_and_images
-from agenthub.planner_agent.response_parser import PlannerResponseParser
+from openhands.agenthub.planner_agent.prompt import get_prompt_and_images
+from openhands.agenthub.planner_agent.response_parser import PlannerResponseParser
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
