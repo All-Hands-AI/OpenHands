@@ -38,7 +38,7 @@ export function ProjectMenuCard({
   const handlePushToGitHub = () => {
     const rawEvent = {
       content:
-        "Please create a new branch and commit the changes. Then push them to the remote repository, and open up a pull request using the GitHub API and the token in the GH_TOKEN environment variable",
+        "Please create a new branch and commit the changes. Then push them to the remote repository, and open up a pull request using the GitHub API and the token in the GITHUB_TOKEN environment variable",
       imageUrls: [],
       timestamp: new Date().toISOString(),
     };
