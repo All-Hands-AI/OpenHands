@@ -4,7 +4,7 @@ from typing import Type
 
 from termcolor import colored
 
-import agenthub  # noqa F401 (we import this to get the agents registered)
+import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands import __version__
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent

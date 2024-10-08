@@ -3,11 +3,7 @@ import i18next from "i18next";
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import {
-  fetchAgents,
-  fetchModels,
-  fetchSecurityAnalyzers,
-} from "#/services/options";
+import { fetchSecurityAnalyzers } from "#/services/options";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import Session from "#/services/session";
@@ -28,15 +24,20 @@ import SettingsForm from "./SettingsForm";
 interface SettingsProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  models: string[];
+  agents: string[];
 }
 
 const REQUIRED_SETTINGS = ["LLM_MODEL"];
 
-function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
+function SettingsModal({
+  isOpen,
+  onOpenChange,
+  models,
+  agents,
+}: SettingsProps) {
   const { t } = useTranslation();
 
-  const [models, setModels] = React.useState<string[]>([]);
-  const [agents, setAgents] = React.useState<string[]>([]);
   const [securityAnalyzers, setSecurityAnalyzers] = React.useState<string[]>(
     [],
   );
@@ -62,10 +63,6 @@ function SettingsModal({ isOpen, onOpenChange }: SettingsProps) {
   React.useEffect(() => {
     (async () => {
       try {
-        const fetchedModels = await fetchModels();
-        const fetchedAgents = await fetchAgents();
-        setModels(fetchedModels);
-        setAgents(fetchedAgents);
         setSecurityAnalyzers(await fetchSecurityAnalyzers());
       } catch (error) {
         toast.error("settings", t(I18nKey.CONFIGURATION$ERROR_FETCH_MODELS));

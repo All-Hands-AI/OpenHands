@@ -1,11 +1,11 @@
 import { Tooltip } from "@nextui-org/react";
 import { useTranslation } from "react-i18next";
-import React from "react";
 import ConfirmIcon from "#/assets/confirm";
 import RejectIcon from "#/assets/reject";
 import { I18nKey } from "#/i18n/declaration";
 import AgentState from "#/types/AgentState";
-import { changeAgentState } from "#/services/agentStateService";
+import { generateAgentStateChangeEvent } from "#/services/agentStateService";
+import { useSocket } from "#/context/socket";
 
 interface ActionTooltipProps {
   type: "confirm" | "reject";
@@ -37,6 +37,12 @@ function ActionTooltip({ type, onClick }: ActionTooltipProps) {
 
 function ConfirmationButtons() {
   const { t } = useTranslation();
+  const { send } = useSocket();
+
+  const handleStateChange = (state: AgentState) => {
+    const event = generateAgentStateChangeEvent(state);
+    send(event);
+  };
 
   return (
     <div className="flex justify-between items-center pt-4">
@@ -44,11 +50,11 @@ function ConfirmationButtons() {
       <div className="flex items-center gap-3">
         <ActionTooltip
           type="confirm"
-          onClick={() => changeAgentState(AgentState.USER_CONFIRMED)}
+          onClick={() => handleStateChange(AgentState.USER_CONFIRMED)}
         />
         <ActionTooltip
           type="reject"
-          onClick={() => changeAgentState(AgentState.USER_REJECTED)}
+          onClick={() => handleStateChange(AgentState.USER_REJECTED)}
         />
       </div>
     </div>
