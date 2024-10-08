@@ -1,6 +1,7 @@
 import {
   Links,
   Meta,
+  MetaFunction,
   Outlet,
   Scripts,
   ScrollRestoration,
@@ -48,6 +49,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
     </html>
   );
 }
+
+export const meta: MetaFunction = () => [
+  { title: "OpenHands" },
+  { name: "description", content: "Let's Start Building!" },
+];
 
 export const clientLoader = async () => {
   let token = localStorage.getItem("token");
