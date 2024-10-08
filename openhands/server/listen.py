@@ -776,7 +776,7 @@ async def zip_current_workspace(request: Request):
     runtime: Runtime = request.state.session.agent_session.runtime
 
     try:
-        zip_file_bytes = runtime.zip_files_in_sandbox()
+        zip_file_bytes = runtime.copy_from()
         zip_stream = io.BytesIO(zip_file_bytes)  # Wrap to behave like a file stream
         response = StreamingResponse(
             zip_stream,

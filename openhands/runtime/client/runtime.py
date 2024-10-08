@@ -557,9 +557,11 @@ class EventStreamRuntime(Runtime):
         except Exception as e:
             raise RuntimeError(f'List files operation failed: {str(e)}')
 
-    def zip_files_in_sandbox(self) -> bytes:
-        """Zips the files in the sandbox and returns the bytes for streaming."""
-        sandbox_dir = os.getcwd() + self.config.workspace_mount_path_in_sandbox
+    def copy_from(self, src: str | None = None) -> bytes:
+        """Zip all files in the sandbox and return as a stream of bytes."""
+        sandbox_dir = (
+            src if src else os.getcwd() + self.config.workspace_mount_path_in_sandbox
+        )
         with tempfile.TemporaryFile() as temp_zip:
             with ZipFile(temp_zip, 'w') as zipf:
                 for root, _, files in os.walk(sandbox_dir):
