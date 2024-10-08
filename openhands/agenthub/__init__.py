@@ -1,13 +1,13 @@
 from dotenv import load_dotenv
 
-from agenthub.micro.agent import MicroAgent
-from agenthub.micro.registry import all_microagents
+from openhands.agenthub.micro.agent import MicroAgent
+from openhands.agenthub.micro.registry import all_microagents
 from openhands.controller.agent import Agent
 
 load_dotenv()
 
 
-from agenthub import (  # noqa: E402
+from openhands.agenthub import (  # noqa: E402
     browsing_agent,
     codeact_agent,
     codeact_swe_agent,
