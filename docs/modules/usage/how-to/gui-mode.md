@@ -4,15 +4,9 @@
 
 OpenHands provides a user-friendly Graphical User Interface (GUI) mode for interacting with the AI assistant. This mode offers an intuitive way to set up the environment, manage settings, and communicate with the AI.
 
-## System Requirements
-
-* Docker version 26.0.0+ or Docker Desktop 4.31.0+.
-* You must be using Linux or Mac OS.
-  * If you are on Windows, you must use [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
-
 ## Installation and Setup
 
-1. Follow the instructions in the [Getting Started](../getting-started.mdx) guide to install OpenHands.
+1. Follow the instructions in the [Installation](../installation) guide to install OpenHands.
 
 2. After running the command, access OpenHands at [http://localhost:3000](http://localhost:3000).
 
