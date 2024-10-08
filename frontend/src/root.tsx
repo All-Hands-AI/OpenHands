@@ -1,6 +1,7 @@
 import {
   Links,
   Meta,
+  MetaFunction,
   Outlet,
   Scripts,
   ScrollRestoration,
@@ -48,6 +49,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
     </html>
   );
 }
+
+export const meta: MetaFunction = () => [
+  { title: "OpenHands" },
+  { name: "description", content: "Let's Start Building!" },
+];
 
 export const clientLoader = async () => {
   let token = localStorage.getItem("token");
@@ -157,7 +163,7 @@ export default function App() {
   };
 
   return (
-    <div className="bg-root-primary p-3 h-screen flex gap-3">
+    <div className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3">
       <aside className="px-1 flex flex-col gap-[15px]">
         <button
           type="button"

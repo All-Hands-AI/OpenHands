@@ -1,63 +1,123 @@
 # Getting Started with the OpenHands Frontend
 
-The frontend code can be run against the docker image defined in the [Main README](../README.md) as a backend
+## Overview
 
-## Prerequisites
+This is the frontend of the OpenHands project. It is a React application that provides a web interface for the OpenHands project.
 
-A recent version of NodeJS / NPM (`brew install node`)
+## Tech Stack
 
-## Available Scripts
+- Remix SPA Mode (React + Vite + React Router)
+- TypeScript
+- Redux
+- Tailwind CSS
+- i18next
+- React Testing Library
+- Vitest
+- Mock Service Worker
 
-In the project directory, you can run:
+## Getting Started
 
-### `npm run start -- --port 3001`
+### Prerequisites
 
-Runs the app in development mode.\
-Open [http://localhost:3001](http://localhost:3001) to view it in the browser.
+- Node.js 20.x or later
+- `npm`, `bun`, or any other package manager that supports the `package.json` file
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### Installation
 
-### `npm run make-i18n`
+```sh
+# Clone the repository
+git clone https://github.com/All-Hands-AI/OpenHands.git
 
-Generates the i18n declaration file.\
-Run this when first setting up the repository or when updating translations.
+# Change the directory to the frontend
+cd OpenHands/frontend
 
-### `npm run test`
-
-Runs the available test suites for the application.\
-It launches the test runner in interactive watch mode, allowing you to see the results of your tests in real time.
-
-In order to skip all but one specific test file, like the one for the ChatInterface, the following command might be used: `npm run test -- -t "ChatInterface"`
-
-### `npm run build`
-
-Builds the app for production to the `dist` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-## Environment Variables
-
-You can set the environment variables in `frontend/.env` to configure the frontend.
-The following variables are available:
-
-```javascript
-VITE_BACKEND_HOST="127.0.0.1:3000" // The host of the backend
-VITE_USE_TLS="false"               // Whether to use TLS for the backend (includes HTTPS and WSS)
-VITE_INSECURE_SKIP_VERIFY="false"  // Whether to skip verifying the backend's certificate. Only takes effect if `VITE_USE_TLS` is true. Don't use this in production!
-VITE_FRONTEND_PORT="3001"          // The port of the frontend
+# Install the dependencies
+npm install
 ```
 
-You can also set the environment variables from outside the project, like `export VITE_BACKEND_HOST="127.0.0.1:3000"`.
+### Running the Application in Development Mode
 
-The outside environment variables will override the ones in the `.env` file.
+We use `msw` to mock the backend API. To start the application with the mocked backend, run the following command:
 
-## Learn More
+```sh
+npm run dev
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+This will start the application in development mode. Open [http://localhost:3001](http://localhost:3001) to view it in the browser.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+**NOTE: The backend is _partially_ mocked using `msw`. Therefore, some features may not work as they would with the actual backend.**
 
-For more information on tests, you can refer to the official documentation of [Vitest](https://vitest.dev/) and [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/).
+### Running the Application with the Actual Backend (Production Mode)
+
+There are two ways to run the application with the actual backend:
+
+```sh
+# Build the application from the root directory
+make build
+
+# Start the application
+make start
+```
+
+OR
+
+```sh
+# Start the backend from the root directory
+make start-backend
+
+# Build the frontend
+cd frontend && npm run build
+
+# Serve the frontend
+npm start -- --port 3001
+```
+
+### Environment Variables
+
+TODO
+
+### Project Structure
+
+```sh
+frontend
+├── __tests__ # Tests
+├── public
+├── src
+│   ├── api # API calls
+│   ├── assets
+│   ├── components # Reusable components
+│   ├── context # Local state management
+│   ├── hooks # Custom hooks
+│   ├── i18n # Internationalization
+│   ├── mocks # MSW mocks for development
+│   ├── routes # React Router file-based routes
+│   ├── services
+│   ├── state # Redux state management
+│   ├── types
+│   ├── utils # Utility/helper functions
+│   └── root.tsx # Entry point
+└── .env.sample # Sample environment variables
+```
+
+### Features
+
+- Real-time updates with WebSockets
+- Internationalization
+- Router data loading with Remix
+- User authentication with GitHub OAuth (if saas mode is enabled)
+
+## Testing
+
+We use `Vitest` for testing. To run the tests, run the following command:
+
+```sh
+npm run test
+```
+
+## Contributing
+
+Please read the [CONTRIBUTING.md](../CONTRIBUTING.md) file for details on our code of conduct, and the process for submitting pull requests to us.
+
+## Troubleshooting
+
+TODO
