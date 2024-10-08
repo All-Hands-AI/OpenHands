@@ -4,24 +4,7 @@ import {
   redirect,
   useLoaderData,
 } from "@remix-run/react";
-
-const retrieveGitHubAccessToken = async (
-  code: string,
-): Promise<{ access_token: string }> => {
-  const response = await fetch("http://localhost:3000/github/callback", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ code }),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to retrieve access token");
-  }
-
-  return response.json();
-};
+import OpenHands from "#/api/open-hands";
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -29,7 +12,8 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
 
   if (code) {
     // request to the server to exchange the code for a token
-    const { access_token: accessToken } = await retrieveGitHubAccessToken(code);
+    const { access_token: accessToken } =
+      await OpenHands.getGitHubAccessToken(code);
     // set the token in local storage
     localStorage.setItem("ghToken", accessToken);
     return redirect("/");
