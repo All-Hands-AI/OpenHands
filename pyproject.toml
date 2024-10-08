@@ -6,7 +6,6 @@ authors = ["OpenHands"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/All-Hands-AI/OpenHands"
-include = ["poetry.lock"]
 packages = [
   { include = "openhands/**/*" }
 ]

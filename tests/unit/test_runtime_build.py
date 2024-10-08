@@ -54,14 +54,12 @@ def _check_source_code_in_dir(temp_dir):
     # check the source file is the same as the current code base
     assert os.path.exists(os.path.join(code_dir, 'pyproject.toml'))
 
-    # The source code should only include the `openhands` folder, but not the other folders
+    # The source code should only include the `openhands` folder,
+    # and pyproject.toml & poetry.lock that are needed to build the runtime image
     assert set(os.listdir(code_dir)) == {
         'openhands',
         'pyproject.toml',
         'poetry.lock',
-        'LICENSE',
-        'README.md',
-        'PKG-INFO',
     }
     assert os.path.exists(os.path.join(code_dir, 'openhands'))
     assert os.path.isdir(os.path.join(code_dir, 'openhands'))
