@@ -1,7 +1,12 @@
 from typing import Any, Callable, Type
 
 import requests
-from requests.exceptions import ChunkedEncodingError, ConnectionError, Timeout
+from requests.exceptions import (
+    ChunkedEncodingError,
+    ConnectionError,
+    HTTPError,
+    Timeout,
+)
 from tenacity import (
     retry,
     retry_if_exception,
@@ -31,6 +36,7 @@ def is_404_error(exception):
 DEFAULT_RETRY_EXCEPTIONS = [
     ConnectionError,
     Timeout,
+    HTTPError,
     IncompleteRead,
     ChunkedEncodingError,
 ]
