@@ -85,7 +85,7 @@ class AgentSession:
 
     def _start_thread(self, *args):
         try:
-            asyncio.run(self._start(*args))
+            asyncio.run(self._start(*args), debug=True)
         except RuntimeError:
             logger.info('Session Finished')
 

@@ -12,7 +12,6 @@ import { useTranslation } from "react-i18next";
 import { twMerge } from "tailwind-merge";
 import AgentState from "#/types/AgentState";
 import { setRefreshID } from "#/state/codeSlice";
-import { uploadFiles } from "#/services/fileService";
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
 import toast from "#/utils/toast";
@@ -20,6 +19,7 @@ import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
 import OpenHands from "#/api/open-hands";
 import { useFiles } from "#/context/files";
+import { isOpenHandsErrorResponse } from "#/api/open-hands.utils";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
@@ -118,43 +118,46 @@ function FileExplorer() {
     revalidate();
   };
 
-  const uploadFileData = async (toAdd: FileList) => {
+  const uploadFileData = async (files: FileList) => {
     try {
-      const result = await uploadFiles(toAdd);
+      const token = localStorage.getItem("token");
+      if (token) {
+        const result = await OpenHands.uploadFiles(token, Array.from(files));
 
-      if (result.error) {
-        // Handle error response
-        toast.error(
-          `upload-error-${new Date().getTime()}`,
-          result.error || t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE),
-        );
-        return;
+        if (isOpenHandsErrorResponse(result)) {
+          // Handle error response
+          toast.error(
+            `upload-error-${new Date().getTime()}`,
+            result.error || t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE),
+          );
+          return;
+        }
+
+        const uploadedCount = result.uploaded_files.length;
+        const skippedCount = result.skipped_files.length;
+
+        if (uploadedCount > 0) {
+          toast.success(
+            `upload-success-${new Date().getTime()}`,
+            t(I18nKey.EXPLORER$UPLOAD_SUCCESS_MESSAGE, {
+              count: uploadedCount,
+            }),
+          );
+        }
+
+        if (skippedCount > 0) {
+          const message = t(I18nKey.EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE, {
+            count: skippedCount,
+          });
+          toast.info(message);
+        }
+
+        if (uploadedCount === 0 && skippedCount === 0) {
+          toast.info(t(I18nKey.EXPLORER$NO_FILES_UPLOADED_MESSAGE));
+        }
+
+        refreshWorkspace();
       }
-
-      const uploadedCount = result.uploadedFiles.length;
-      const skippedCount = result.skippedFiles.length;
-
-      if (uploadedCount > 0) {
-        toast.success(
-          `upload-success-${new Date().getTime()}`,
-          t(I18nKey.EXPLORER$UPLOAD_SUCCESS_MESSAGE, {
-            count: uploadedCount,
-          }),
-        );
-      }
-
-      if (skippedCount > 0) {
-        const message = t(I18nKey.EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE, {
-          count: skippedCount,
-        });
-        toast.info(message);
-      }
-
-      if (uploadedCount === 0 && skippedCount === 0) {
-        toast.info(t(I18nKey.EXPLORER$NO_FILES_UPLOADED_MESSAGE));
-      }
-
-      refreshWorkspace();
     } catch (error) {
       // Handle unexpected errors (network issues, etc.)
       toast.error(

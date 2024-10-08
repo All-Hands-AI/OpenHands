@@ -233,7 +233,7 @@ class RemoteRuntime(Runtime):
             logger.warning(msg)
             raise RuntimeError(msg)
 
-    def close(self):
+    def close(self, timeout: int = 10):
         if self.runtime_id:
             try:
                 response = send_request(
@@ -241,6 +241,7 @@ class RemoteRuntime(Runtime):
                     'POST',
                     f'{self.config.sandbox.remote_runtime_api_url}/stop',
                     json={'runtime_id': self.runtime_id},
+                    timeout=timeout,
                 )
                 if response.status_code != 200:
                     logger.error(f'Failed to stop sandbox: {response.text}')
