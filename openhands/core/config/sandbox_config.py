@@ -18,6 +18,7 @@ class SandboxConfig:
         enable_auto_lint: Whether to enable auto-lint.
         use_host_network: Whether to use the host network.
         initialize_plugins: Whether to initialize plugins.
+        force_rebuild_runtime: Whether to force rebuild the runtime image.
         runtime_extra_deps: The extra dependencies to install in the runtime image (typically used for evaluation).
             This will be rendered into the end of the Dockerfile that builds the runtime image.
             It can contain any valid shell commands (e.g., pip install numpy).
@@ -34,7 +35,7 @@ class SandboxConfig:
     remote_runtime_api_url: str = 'http://localhost:8000'
     local_runtime_url: str = 'http://localhost'
     api_key: str | None = None
-    base_container_image: str = 'nikolaik/python-nodejs:python3.11-nodejs22'  # default to nikolaik/python-nodejs:python3.11-nodejs22 for eventstream runtime
+    base_container_image: str = 'nikolaik/python-nodejs:python3.12-nodejs22'  # default to nikolaik/python-nodejs:python3.12-nodejs22 for eventstream runtime
     runtime_container_image: str | None = None
     user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     timeout: int = 120
@@ -43,6 +44,7 @@ class SandboxConfig:
     )
     use_host_network: bool = False
     initialize_plugins: bool = True
+    force_rebuild_runtime: bool = False
     runtime_extra_deps: str | None = None
     runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
     browsergym_eval_env: str | None = None

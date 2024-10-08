@@ -73,7 +73,7 @@ mkdir -p "$WORKSPACE_BASE"
 # use environmental variable if exists
 TEST_RUNTIME="${TEST_RUNTIME:-eventstream}"
 if [ -z "$SANDBOX_BASE_CONTAINER_IMAGE" ]; then
-  SANDBOX_BASE_CONTAINER_IMAGE="nikolaik/python-nodejs:python3.11-nodejs22"
+  SANDBOX_BASE_CONTAINER_IMAGE="nikolaik/python-nodejs:python3.12-nodejs22"
 fi
 
 MAX_ITERATIONS=20
@@ -119,7 +119,7 @@ run_test() {
   local pytest_cmd="poetry run pytest --cache-clear -vvsxx $SCRIPT_DIR/test_agent.py::$test_name"
   # Check if TEST_IN_CI is defined
   if [ -n "$TEST_IN_CI" ]; then
-    pytest_cmd+=" --cov=agenthub --cov=openhands --cov-report=xml --cov-append"
+    pytest_cmd+=" --cov=openhands --cov-report=xml --cov-append"
   fi
 
   env SCRIPT_DIR="$SCRIPT_DIR" \

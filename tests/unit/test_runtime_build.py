@@ -22,7 +22,7 @@ from openhands.runtime.utils.runtime_build import (
 )
 
 OH_VERSION = f'oh_v{oh_version}'
-DEFAULT_BASE_IMAGE = 'nikolaik/python-nodejs:python3.11-nodejs22'
+DEFAULT_BASE_IMAGE = 'nikolaik/python-nodejs:python3.12-nodejs22'
 
 
 @pytest.fixture
@@ -54,15 +54,12 @@ def _check_source_code_in_dir(temp_dir):
     # check the source file is the same as the current code base
     assert os.path.exists(os.path.join(code_dir, 'pyproject.toml'))
 
-    # The source code should only include the `openhands` folder, but not the other folders
+    # The source code should only include the `openhands` folder,
+    # and pyproject.toml & poetry.lock that are needed to build the runtime image
     assert set(os.listdir(code_dir)) == {
-        'agenthub',
         'openhands',
         'pyproject.toml',
         'poetry.lock',
-        'LICENSE',
-        'README.md',
-        'PKG-INFO',
     }
     assert os.path.exists(os.path.join(code_dir, 'openhands'))
     assert os.path.isdir(os.path.join(code_dir, 'openhands'))
@@ -155,16 +152,14 @@ def test_generate_dockerfile_scratch():
     )
     assert base_image in dockerfile_content
     assert 'apt-get update' in dockerfile_content
-    assert 'apt-get install -y wget sudo apt-utils' in dockerfile_content
-    assert (
-        'RUN /openhands/miniforge3/bin/mamba install conda-forge::poetry python=3.11 -y'
-        in dockerfile_content
-    )
+    assert 'apt-get install -y wget curl sudo apt-utils' in dockerfile_content
+    assert 'poetry' in dockerfile_content and '-c conda-forge' in dockerfile_content
+    assert 'python=3.12' in dockerfile_content
 
     # Check the update command
     assert 'COPY ./code /openhands/code' in dockerfile_content
     assert (
-        '/openhands/miniforge3/bin/mamba run -n base poetry install'
+        '/openhands/micromamba/bin/micromamba run -n openhands poetry install'
         in dockerfile_content
     )
 
@@ -178,17 +173,13 @@ def test_generate_dockerfile_skip_init():
 
     # These commands SHOULD NOT include in the dockerfile if skip_init is True
     assert 'RUN apt update && apt install -y wget sudo' not in dockerfile_content
-    assert (
-        'RUN /openhands/miniforge3/bin/mamba install conda-forge::poetry python=3.11 -y'
-        not in dockerfile_content
-    )
+    assert '-c conda-forge' not in dockerfile_content
+    assert 'python=3.12' not in dockerfile_content
+    assert 'https://micro.mamba.pm/install.sh' not in dockerfile_content
 
     # These update commands SHOULD still in the dockerfile
     assert 'COPY ./code /openhands/code' in dockerfile_content
-    assert (
-        '/openhands/miniforge3/bin/mamba run -n base poetry install'
-        in dockerfile_content
-    )
+    assert 'poetry install' in dockerfile_content
 
 
 def test_get_runtime_image_repo_and_tag_eventstream():
@@ -203,7 +194,7 @@ def test_get_runtime_image_repo_and_tag_eventstream():
     assert (
         img_repo == f'{get_runtime_image_repo()}'
         and img_tag
-        == f'{OH_VERSION}_image_nikolaik_s_python-nodejs_tag_python3.11-nodejs22'
+        == f'{OH_VERSION}_image_nikolaik_s_python-nodejs_tag_python3.12-nodejs22'
     )
 
     base_image = 'ubuntu'
@@ -353,7 +344,7 @@ def live_docker_image():
     dockerfile_content = f"""
     # syntax=docker/dockerfile:1.4
     FROM {DEFAULT_BASE_IMAGE} AS base
-    RUN apt-get update && apt-get install -y wget sudo apt-utils
+    RUN apt-get update && apt-get install -y wget curl sudo apt-utils
 
     FROM base AS intermediate
     RUN mkdir -p /openhands

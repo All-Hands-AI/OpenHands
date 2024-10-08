@@ -55,18 +55,18 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | d
   && apt-get clean \
   && apt-get autoremove -y
 
-# Python 3.11
+# Python 3.12
 RUN add-apt-repository ppa:deadsnakes/ppa \
     && apt-get update \
-    && apt-get install -y python3.11 python3.11-venv python3.11-dev python3-pip \
-    && ln -s /usr/bin/python3.11 /usr/bin/python
+    && apt-get install -y python3.12 python3.12-venv python3.12-dev python3-pip \
+    && ln -s /usr/bin/python3.12 /usr/bin/python
 
 # NodeJS >= 18.17.1
 RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs
 
 # Poetry >= 1.8
-RUN curl -fsSL https://install.python-poetry.org | python3.11 - \
+RUN curl -fsSL https://install.python-poetry.org | python3.12 - \
     && ln -s ~/.local/bin/poetry /usr/local/bin/poetry
 
 #

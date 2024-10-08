@@ -76,10 +76,21 @@ export const getExtension = (code: string) => {
   return "";
 };
 
-export const formatTimestamp = (timestamp: string) => {
-  const date = new Date(timestamp);
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(date);
-};
+/**
+ * Format a timestamp to a human-readable format
+ * @param timestamp The timestamp to format (ISO 8601)
+ * @returns The formatted timestamp
+ *
+ * @example
+ * formatTimestamp("2021-10-10T10:10:10.000") // "10/10/2021, 10:10:10"
+ * formatTimestamp("2021-10-10T22:10:10.000") // "10/10/2021, 22:10:10"
+ */
+export const formatTimestamp = (timestamp: string) =>
+  new Date(timestamp).toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });

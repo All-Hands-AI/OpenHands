@@ -1,9 +1,16 @@
 import { Textarea } from "@nextui-org/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { VscArrowUp, VscFileMedia } from "react-icons/vsc";
-import { twMerge } from "tailwind-merge";
+import { useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
+import Clip from "#/assets/clip.svg?react";
+import { RootState } from "#/store";
+import AgentState from "#/types/AgentState";
+import { useSocket } from "#/context/socket";
+import { generateAgentStateChangeEvent } from "#/services/agentStateService";
+import { cn } from "#/utils/utils";
+import ArrowSendIcon from "#/assets/arrow-send.svg?react";
+import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 
 interface ChatInputProps {
   disabled?: boolean;
@@ -11,24 +18,21 @@ interface ChatInputProps {
 }
 
 function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
+  const { send } = useSocket();
   const { t } = useTranslation();
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const [message, setMessage] = React.useState("");
   const [files, setFiles] = React.useState<File[]>([]);
   // This is true when the user is typing in an IME (e.g., Chinese, Japanese)
   const [isComposing, setIsComposing] = React.useState(false);
 
-  const convertImageToBase64 = (file: File): Promise<string> =>
-    new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        resolve(reader.result as string);
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
   const handleSendChatMessage = async () => {
+    if (curAgentState === AgentState.RUNNING) {
+      send(generateAgentStateChangeEvent(AgentState.STOPPED));
+      return;
+    }
+
     if (message.trim()) {
       let base64images: string[] = [];
       if (files.length > 0) {
@@ -79,9 +83,26 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
   };
 
   return (
-    <div className="w-full relative text-base flex pt-3">
+    <div className="w-full relative text-base flex">
       <Textarea
         value={message}
+        startContent={
+          <label
+            htmlFor="file-input"
+            className="cursor-pointer"
+            aria-label={t(I18nKey.CHAT_INTERFACE$TOOLTIP_UPLOAD_IMAGE)}
+          >
+            <Clip width={24} height={24} />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+              id="file-input"
+              multiple
+            />
+          </label>
+        }
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={onKeyPress}
         onCompositionStart={() => setIsComposing(true)}
@@ -97,39 +118,22 @@ function ChatInput({ disabled = false, onSendMessage }: ChatInputProps) {
         minRows={1}
         variant="bordered"
       />
-      <label
-        htmlFor="file-input"
-        className={twMerge(
-          "bg-transparent border rounded-lg p-1 border-white hover:opacity-80 cursor-pointer select-none absolute right-16 bottom-[19px] transition active:bg-white active:text-black",
-          disabled
-            ? "cursor-not-allowed border-neutral-400 text-neutral-400"
-            : "hover:bg-neutral-500",
-        )}
-        aria-label={t(I18nKey.CHAT_INTERFACE$TOOLTIP_UPLOAD_IMAGE)}
-      >
-        <VscFileMedia />
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="hidden"
-          id="file-input"
-          multiple
-        />
-      </label>
       <button
         type="button"
         onClick={handleSendChatMessage}
         disabled={disabled}
-        className={twMerge(
-          "bg-transparent border rounded-lg p-1 border-white hover:opacity-80 cursor-pointer select-none absolute right-5 bottom-[19px] transition active:bg-white active:text-black",
-          disabled
-            ? "cursor-not-allowed border-neutral-400 text-neutral-400"
-            : "hover:bg-neutral-500",
+        className={cn(
+          "bg-transparent border rounded-lg p-[7px] border-white hover:opacity-80 cursor-pointer select-none absolute right-5 bottom-[19px] transition active:bg-white active:text-black",
+          "w-6 h-6 flex items-center justify-center",
+          "disabled:cursor-not-allowed disabled:border-neutral-400 disabled:text-neutral-400",
+          "hover:bg-neutral-500",
         )}
         aria-label={t(I18nKey.CHAT_INTERFACE$TOOLTIP_SEND_MESSAGE)}
       >
-        <VscArrowUp />
+        {curAgentState !== AgentState.RUNNING && <ArrowSendIcon />}
+        {curAgentState === AgentState.RUNNING && (
+          <div className="w-[10px] h-[10px] bg-white" />
+        )}
       </button>
       {files.length > 0 && (
         <div className="absolute bottom-16 right-5 flex space-x-2 p-4 border-1 border-neutral-500 bg-neutral-800 rounded-lg">

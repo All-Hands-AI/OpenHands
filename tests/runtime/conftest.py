@@ -193,7 +193,7 @@ def base_container_image(request):
                 request.param = None
         if request.param is None:
             request.param = pytest.param(
-                'nikolaik/python-nodejs:python3.11-nodejs22',
+                'nikolaik/python-nodejs:python3.12-nodejs22',
                 'golang:1.23-bookworm',
             )
     print(f'Container image: {request.param}')
@@ -208,6 +208,8 @@ def _load_runtime(
     base_container_image: str | None = None,
     browsergym_eval_env: str | None = None,
     use_workspace: bool | None = None,
+    force_rebuild_runtime: bool = False,
+    runtime_startup_env_vars: dict[str, str] | None = None,
 ) -> Runtime:
     sid = 'rt_' + str(random.randint(100000, 999999))
 
@@ -217,7 +219,7 @@ def _load_runtime(
 
     config = load_app_config()
     config.run_as_openhands = run_as_openhands
-
+    config.sandbox.force_rebuild_runtime = force_rebuild_runtime
     # Folder where all tests create their own folder
     global test_mount_path
     if use_workspace:
@@ -240,6 +242,8 @@ def _load_runtime(
 
     config.sandbox.browsergym_eval_env = browsergym_eval_env
     config.sandbox.enable_auto_lint = enable_auto_lint
+    if runtime_startup_env_vars is not None:
+        config.sandbox.runtime_startup_env_vars = runtime_startup_env_vars
 
     if base_container_image is not None:
         config.sandbox.base_container_image = base_container_image

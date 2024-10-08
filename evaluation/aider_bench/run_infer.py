@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import os
 import tempfile
 from typing import Any
@@ -24,11 +25,12 @@ from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
+    load_from_toml,
     parse_arguments,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import CmdRunAction
+from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.runtime import Runtime
 
@@ -59,6 +61,13 @@ def get_config(
         workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
+
+    # copy 'draft_editor' config if exists
+    config_copy = copy.deepcopy(config)
+    load_from_toml(config_copy)
+    if 'draft_editor' in config_copy.llms:
+        config.set_llm_config(config_copy.llms['draft_editor'], 'draft_editor')
+
     return config
 
 
@@ -129,7 +138,7 @@ def complete_runtime(
         logger.info(f'Running test file: {script_name}')
 
     action = CmdRunAction(
-        command=f'python -m unittest {script_name}',
+        command=f'python3 -m unittest {script_name}',
         keep_prompt=False,
     )
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -202,7 +211,7 @@ def process_instance(
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            task_str=instruction,
+            initial_user_action=MessageAction(content=instruction),
             runtime=runtime,
             fake_user_response_fn=FAKE_RESPONSES[metadata.agent_class],
         )

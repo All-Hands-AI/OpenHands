@@ -4,11 +4,12 @@ import { Input, Radio, RadioGroup } from "@nextui-org/react";
 import hotToast from "react-hot-toast";
 import { I18nKey } from "#/i18n/declaration";
 import BaseModal from "../base-modal/BaseModal";
-import { Feedback, sendFeedback } from "#/services/feedbackService";
 import toast from "#/utils/toast";
 import { getToken } from "#/services/auth";
-import Session from "#/services/session";
 import { removeApiKey, removeUnwantedKeys } from "#/utils/utils";
+import { useSocket } from "#/context/socket";
+import OpenHands from "#/api/open-hands";
+import { Feedback } from "#/api/open-hands.types";
 
 const isEmailValid = (email: string) => {
   // Regular expression to validate email format
@@ -32,6 +33,7 @@ function FeedbackModal({
   onOpenChange,
   onSendFeedback,
 }: FeedbackModalProps) {
+  const { events } = useSocket();
   const { t } = useTranslation();
 
   const [email, setEmail] = React.useState("");
@@ -95,21 +97,25 @@ function FeedbackModal({
       email,
       permissions,
       token: getToken(),
-      trajectory: removeApiKey(removeUnwantedKeys(Session._history)),
+      trajectory: removeApiKey(removeUnwantedKeys(events)),
     };
 
     try {
-      const response = await sendFeedback(feedback);
       localStorage.setItem("feedback-email", email); // store email in local storage
-      if (response.statusCode === 200) {
-        const { message, feedback_id: feedbackId, password } = response.body;
-        const link = `${VIEWER_PAGE}?share_id=${feedbackId}`;
-        shareFeedbackToast(message, link, password);
-      } else {
-        toast.error(
-          "share-error",
-          `Failed to share, please contact the developers: ${response.body.message}`,
-        );
+      // TODO: Move to data loader
+      const token = localStorage.getItem("token");
+      if (token) {
+        const response = await OpenHands.sendFeedback(token, feedback);
+        if (response.statusCode === 200) {
+          const { message, feedback_id: feedbackId, password } = response.body;
+          const link = `${VIEWER_PAGE}?share_id=${feedbackId}`;
+          shareFeedbackToast(message, link, password);
+        } else {
+          toast.error(
+            "share-error",
+            `Failed to share, please contact the developers: ${response.body.message}`,
+          );
+        }
       }
     } catch (error) {
       toast.error(

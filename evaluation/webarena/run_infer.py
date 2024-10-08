@@ -54,7 +54,7 @@ def get_config(
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            base_container_image='python:3.11-bookworm',
+            base_container_image='python:3.12-bookworm',
             enable_auto_lint=True,
             use_host_network=False,
             browsergym_eval_env=env_id,
@@ -148,7 +148,7 @@ def process_instance(
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            task_str=task_str,
+            initial_user_action=MessageAction(content=task_str),
             runtime=runtime,
         )
     )

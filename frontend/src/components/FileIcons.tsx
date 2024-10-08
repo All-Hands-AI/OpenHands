@@ -1,4 +1,3 @@
-import React from "react";
 import { DiJavascript } from "react-icons/di";
 import {
   FaCss3,

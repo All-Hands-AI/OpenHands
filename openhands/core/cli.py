@@ -1,15 +1,15 @@
-import argparse
 import asyncio
 import logging
 from typing import Type
 
 from termcolor import colored
 
-import agenthub  # noqa F401 (we import this to get the agents registered)
+import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands import __version__
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.core.config import (
+    get_parser,
     load_app_config,
 )
 from openhands.core.logger import openhands_logger as logger
@@ -63,10 +63,10 @@ def display_event(event: Event):
         display_command_output(event.content)
 
 
-def get_parser() -> argparse.ArgumentParser:
-    """Get the parser for the command line arguments."""
-    parser = argparse.ArgumentParser(description='Run an agent with a specific task')
+async def main():
+    """Runs the agent in CLI mode"""
 
+    parser = get_parser()
     # Add the version argument
     parser.add_argument(
         '-v',
@@ -76,14 +76,6 @@ def get_parser() -> argparse.ArgumentParser:
         help='Show the version number and exit',
         default=None,
     )
-
-    return parser
-
-
-async def main():
-    """Runs the agent in CLI mode"""
-
-    parser = get_parser()
     args = parser.parse_args()
 
     if args.version:
@@ -91,7 +83,7 @@ async def main():
         return
 
     logger.setLevel(logging.WARNING)
-    config = load_app_config()
+    config = load_app_config(config_file=args.config_file)
     sid = 'cli'
 
     agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)

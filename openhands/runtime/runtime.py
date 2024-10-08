@@ -1,3 +1,4 @@
+import asyncio
 import atexit
 import copy
 import json
@@ -77,6 +78,8 @@ class Runtime:
     def setup_initial_env(self) -> None:
         logger.debug(f'Adding env vars: {self.initial_env_vars}')
         self.add_env_vars(self.initial_env_vars)
+        if self.config.sandbox.runtime_startup_env_vars:
+            self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
 
     def close(self) -> None:
         pass
@@ -115,10 +118,10 @@ class Runtime:
             if event.timeout is None:
                 event.timeout = self.config.sandbox.timeout
             assert event.timeout is not None
-            observation = self.run_action(event)
+            observation = await self.async_run_action(event)
             observation._cause = event.id  # type: ignore[attr-defined]
             source = event.source if event.source else EventSource.AGENT
-            self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
+            await self.event_stream.async_add_event(observation, source)  # type: ignore[arg-type]
 
     def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.
@@ -147,6 +150,12 @@ class Runtime:
                 'Action has been rejected by the user! Waiting for further user input.'
             )
         observation = getattr(self, action_type)(action)
+        return observation
+
+    async def async_run_action(self, action: Action) -> Observation:
+        observation = await asyncio.get_event_loop().run_in_executor(
+            None, self.run_action, action
+        )
         return observation
 
     # ====================================================================
@@ -201,4 +210,9 @@ class Runtime:
 
         If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
         """
+        raise NotImplementedError('This method is not implemented in the base class.')
+
+    @abstractmethod
+    def zip_files_in_sandbox(self) -> bytes:
+        """Zip all files in the sandbox and return the zip file as bytes."""
         raise NotImplementedError('This method is not implemented in the base class.')

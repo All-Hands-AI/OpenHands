@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: 3.12
       - name: Install Poetry
         uses: snok/install-poetry@v1.4.1
         with:
@@ -26,6 +26,6 @@ jobs:
       - name: Install Poetry Dependencies
         run: poetry install --no-interaction --no-root
       - name: Build poetry project
-        run: poetry build -v
+        run: ./build.sh
       - name: publish
         run: poetry publish -u __token__ -p ${{ secrets.PYPI_TOKEN }}

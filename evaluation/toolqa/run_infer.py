@@ -23,7 +23,7 @@ from openhands.core.config import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import CmdRunAction
+from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.runtime import Runtime
 
@@ -45,7 +45,7 @@ def get_config(
         runtime='eventstream',
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            base_container_image='python:3.11-bookworm',
+            base_container_image='python:3.12-bookworm',
             enable_auto_lint=True,
             use_host_network=False,
         ),
@@ -109,7 +109,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            task_str=instruction,
+            initial_user_action=MessageAction(content=instruction),
             runtime=runtime,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
                 metadata.agent_class
