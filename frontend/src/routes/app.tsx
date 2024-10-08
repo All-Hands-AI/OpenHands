@@ -62,7 +62,7 @@ export const clientLoader = async () => {
     const file = new File([blob], "imported-project.zip", {
       type: blob.type,
     });
-    await OpenHands.uploadFile(token, file);
+    await OpenHands.uploadFiles(token, [file]);
   }
 
   if (repo) localStorage.setItem("repo", repo);

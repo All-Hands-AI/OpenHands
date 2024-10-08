@@ -1,36 +1,20 @@
-interface ErrorResponse {
-  error: string;
-}
+import {
+  SaveFileSuccessResponse,
+  FileUploadSuccessResponse,
+  Feedback,
+  FeedbackResponse,
+  GitHubAccessTokenResponse,
+  ErrorResponse,
+} from "./open-hands.types";
 
-interface SaveFileSuccessResponse {
-  message: string;
-}
-
-interface FileUploadSuccessResponse {
-  message: string;
-  uploaded_files: string[];
-  skipped_files: { name: string; reason: string }[];
-}
-
-interface FeedbackBodyResponse {
-  message: string;
-  feedback_id: string;
-  password: string;
-}
-
-interface FeedbackResponse {
-  statusCode: number;
-  body: FeedbackBodyResponse;
-}
-
-export interface Feedback {
-  version: string;
-  email: string;
-  token: string;
-  feedback: "positive" | "negative";
-  permissions: "public" | "private";
-  trajectory: unknown[];
-}
+/**
+ * Generate the base URL of the OpenHands API
+ * @returns Base URL of the OpenHands API
+ */
+const generateBaseURL = () => {
+  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || "localhost:3000";
+  return `http://${baseUrl}`;
+};
 
 /**
  * Class to interact with the OpenHands API
@@ -39,7 +23,7 @@ class OpenHands {
   /**
    * Base URL of the OpenHands API
    */
-  static BASE_URL = "http://localhost:3000";
+  static BASE_URL = generateBaseURL();
 
   /**
    * Retrieve the list of models available
@@ -73,12 +57,17 @@ class OpenHands {
   /**
    * Retrieve the list of files available in the workspace
    * @param token User token provided by the server
-   * @returns List of files available in the workspace
+   * @param path Path to list files from
+   * @returns List of files available in the given path. If path is not provided, it lists all the files in the workspace
    */
-  static async getFiles(token: string): Promise<string[]> {
-    const response = await fetch(`${OpenHands.BASE_URL}/api/list-files`, {
+  static async getFiles(token: string, path?: string): Promise<string[]> {
+    const url = new URL(`${OpenHands.BASE_URL}/api/list-files`);
+    if (path) url.searchParams.append("path", encodeURIComponent(path));
+
+    const response = await fetch(url.toString(), {
       headers: OpenHands.generateHeaders(token),
     });
+
     return response.json();
   }
 
@@ -126,12 +115,12 @@ class OpenHands {
    * @param file File to upload
    * @returns Success message or error message
    */
-  static async uploadFile(
+  static async uploadFiles(
     token: string,
-    file: File,
+    file: File[],
   ): Promise<FileUploadSuccessResponse | ErrorResponse> {
     const formData = new FormData();
-    formData.append("files", file);
+    file.forEach((f) => formData.append("files", f));
 
     const response = await fetch(`${OpenHands.BASE_URL}/api/upload-files`, {
       method: "POST",
@@ -169,6 +158,22 @@ class OpenHands {
       method: "POST",
       headers: OpenHands.generateHeaders(token),
       body: JSON.stringify(data),
+    });
+
+    return response.json();
+  }
+
+  /**
+   * Get the GitHub access token
+   * @param code Code provided by GitHub
+   * @returns GitHub access token
+   */
+  static async getGitHubAccessToken(
+    code: string,
+  ): Promise<GitHubAccessTokenResponse> {
+    const response = await fetch(`${OpenHands.BASE_URL}/github/callback`, {
+      method: "POST",
+      body: JSON.stringify({ code }),
     });
 
     return response.json();
