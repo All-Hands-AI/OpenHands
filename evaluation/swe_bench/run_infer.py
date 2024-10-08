@@ -8,7 +8,7 @@ import pandas as pd
 import toml
 from datasets import load_dataset
 
-import agenthub
+import openhands.agenthub
 from evaluation.swe_bench.prompt import CODEACT_SWE_PROMPT
 from evaluation.utils.shared import (
     EvalMetadata,
@@ -470,7 +470,7 @@ if __name__ == '__main__':
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     details = {}
-    _agent_cls = agenthub.Agent.get_cls(args.agent_cls)
+    _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
     if hasattr(_agent_cls, 'system_message'):
         details['system_message'] = _agent_cls.system_message
     if hasattr(_agent_cls, 'in_context_example'):

@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from agenthub.codeact_agent.codeact_agent import CodeActAgent
+from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.message import TextContent
 from openhands.events.observation.commands import (
