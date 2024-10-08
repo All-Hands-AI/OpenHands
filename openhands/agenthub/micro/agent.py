@@ -1,7 +1,7 @@
 from jinja2 import BaseLoader, Environment
 
-from agenthub.micro.instructions import instructions
-from agenthub.micro.registry import all_microagents
+from openhands.agenthub.micro.instructions import instructions
+from openhands.agenthub.micro.registry import all_microagents
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig

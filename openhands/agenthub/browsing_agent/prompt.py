@@ -12,7 +12,7 @@ from browsergym.core.action.base import AbstractActionSet
 from browsergym.core.action.highlevel import HighLevelActionSet
 from browsergym.core.action.python import PythonActionSet
 
-from agenthub.browsing_agent.utils import (
+from openhands.agenthub.browsing_agent.utils import (
     ParseError,
     parse_html_tags_raise,
 )
