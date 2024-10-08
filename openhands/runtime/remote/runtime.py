@@ -203,10 +203,7 @@ class RemoteRuntime(Runtime):
         ), 'Runtime URL is not set. This should never happen.'
 
         self._wait_until_alive()
-
         self.send_status_message(' ')
-
-        self._wait_until_alive()
         self.setup_initial_env()
 
     @retry(
