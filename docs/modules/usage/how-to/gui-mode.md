@@ -12,24 +12,7 @@ OpenHands provides a user-friendly Graphical User Interface (GUI) mode for inter
 
 ## Installation and Setup
 
-1. Run the following command to start OpenHands in GUI mode:
-
-```bash
-export WORKSPACE_BASE=$(pwd)/workspace
-
-docker pull ghcr.io/all-hands-ai/runtime:0.9-nikolaik
-
-docker run -it --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.9-nikolaik \
-    -e SANDBOX_USER_ID=$(id -u) \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
-    -v $WORKSPACE_BASE:/opt/workspace_base \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -p 3000:3000 \
-    --add-host host.docker.internal:host-gateway \
-    --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/all-hands-ai/openhands:0.9
-```
+1. Follow the instructions in the [Getting Started](../getting-started.mdx) guide to install OpenHands.
 
 2. After running the command, access OpenHands at [http://localhost:3000](http://localhost:3000).
 
@@ -56,7 +39,7 @@ The main interface consists of several key components:
 2. **Input Box**: Located at the bottom of the screen, use this to type your messages or commands to the AI.
 3. **Send Button**: Click this to send your message to the AI.
 4. **Settings Button**: A gear icon that opens the settings modal, allowing you to adjust your configuration at any time.
-5. **Workspace Panel**: Displays the files and folders in your workspace, allowing you to navigate and select files for the AI to work on.
+5. **Workspace Panel**: Displays the files and folders in your workspace, allowing you to navigate and view files, or the agent's past commands or web browsing history.
 
 ### Interacting with the AI
 
@@ -65,24 +48,10 @@ The main interface consists of several key components:
 3. The AI will process your input and provide a response in the chat window.
 4. You can continue the conversation by asking follow-up questions or providing additional information.
 
-### Working with Files
-
-1. Use the workspace panel to navigate your project structure.
-2. Click on a file to select it for the AI to work on.
-3. You can ask the AI to perform various tasks on the selected file, such as code review, bug fixing, or adding new features.
-
-### Customizing the Environment
-
-1. Click the Settings button (gear icon) to open the settings modal.
-2. Adjust your LLM provider, model, or API key as needed.
-3. Toggle Advanced Options for more detailed configuration.
-4. Click "Save" to apply any changes.
-
 ## Tips for Effective Use
 
-1. Be specific in your requests to get the most accurate and helpful responses from the AI.
-2. Use the workspace panel to provide context about your project structure.
-3. Regularly check and update your settings to ensure optimal performance.
-4. Experiment with different LLM models to find the one that best suits your needs.
+1. Be specific in your requests to get the most accurate and helpful responses, as described in the [prompting best practices](../prompting-best-practices.md).
+2. Use the workspace panel to explore your project structure.
+3. Use one of the recommended models, as described in the [LLMs section](../llms/llms.md).
 
 Remember, the GUI mode of OpenHands is designed to make your interaction with the AI assistant as smooth and intuitive as possible. Don't hesitate to explore its features to maximize your productivity.
