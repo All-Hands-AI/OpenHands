@@ -214,13 +214,14 @@ class RemoteRuntime(Runtime):
             ),
             'working_dir': '/openhands/code/',
             'environment': {'DEBUG': 'true'} if self.config.debug else {},
+            'runtime_id': self.instance_id,
         }
 
         # Start the sandbox using the /start endpoint
         response = send_request_with_retry(
             self.session,
             'POST',
-            f'{self.config.sandbox.remote_runtime_api_url}/start?id={self.instance_id}',
+            f'{self.config.sandbox.remote_runtime_api_url}/start',
             json=start_request,
             timeout=300,
         )
