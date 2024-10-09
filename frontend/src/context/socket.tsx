@@ -48,8 +48,9 @@ function SocketProvider({ children }: SocketProviderProps) {
 
     const fallback = getValidFallbackHost();
     const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || fallback;
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(
-      `ws://${baseUrl}/ws${options?.token ? `?token=${options.token}` : ""}`,
+      `${protocol}//${baseUrl}/ws${options?.token ? `?token=${options.token}` : ""}`,
     );
 
     ws.addEventListener("open", (event) => {
