@@ -223,34 +223,8 @@ api_key = "your-api-key"
 # - The empty lines are only added for readability, they are not required.
 # ----
 
-# --- 1st model example: Azure OpenAI
 
-# See: https://learn.microsoft.com/en-us/azure/ai-services/openai/quotas-limits
-# See: https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/models
-
-#[[router_config.models]]
-# An alias name for this model, must be unique in the list
-#model_name = "gpt-4-vision-enhancements"
-
-# Each model can have its own set of parameters, note the single [] syntax!
-#[router_config.models.litellm_params]
-# The actual model name as per the provider's API
-#model = "azure/gpt-4-vision"
-# API key for the provider
-#api_key = "AZURE_API_KEY"
-# Base URL for the API
-#base_url = "https://gpt-4-vision-resource.openai.azure.com/openai/deployments/gpt-4-vision/extensions/"
-# some providers may require/offer datasources for deployments (optional)
-#[[router_config.models.litellm_params.dataSources]]
-# Type of data source
-#type = "AzureComputerVision"
-#[router_config.models.litellm_params.dataSources.parameters]
-#endpoint = "AZURE_VISION_ENHANCE_ENDPOINT"  # Endpoint for the data source
-#key = "AZURE_VISION_ENHANCE_KEY"            # Key for the data source
-#rpm = 900           # Requests per minute limit
-#tpm = 150000        # Tokens per minute limit
-
-# --- 2nd model example: OpenRouter w/ Qwen 2.5
+# --- 1st model example: OpenRouter w/ Qwen 2.5
 
 # See: https://openrouter.ai/models/
 
@@ -269,7 +243,7 @@ api_key = "your-api-key"
 #rpm = 6               # Requests per minute limit
 #timeout = 120         # The timeout set in router is for the entire length of the call
 
-# --- 3rd model example: Anthropic w/ Sonnet 3.5
+# --- 2rd model example: Anthropic w/ Sonnet 3.5
 
 #[[router_config.models]]
 #model_name = "ant-sonnet-3.5"
@@ -279,7 +253,7 @@ api_key = "your-api-key"
 #api_key = "sk-ant-xxx"
 #api_base not needed
 
-# --- 4th model example: OpenAI w/ GPT-4o
+# --- 3th model example: OpenAI w/ GPT-4o
 
 # See: https://platform.openai.com/docs/models
 
@@ -294,7 +268,7 @@ api_key = "your-api-key"
 #max_tokens = 16384
 #rpm = 6
 
-# --- 5th model example: Groq w/ Llama 3.2 90B
+# --- 4th model example: Groq w/ Llama 3.2 90B
 
 #[[router_config.models]]
 #model_name = "groq-lama-3.2-90b"
