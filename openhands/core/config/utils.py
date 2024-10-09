@@ -183,6 +183,8 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         cfg.llms['llm'].router_config = router_config
 
     # llms has the user-defined models, so gather them in the model_list
+    # FIXME read ALL models, and then let fallbacks and content_policy_fallbacks restrict the list actually in use?
+    # or use also a model_list = ['openr_qwen', '...'] to restrict the models available to the router at all
     if router_config is not None:
         router_config.model_list = [
             ModelConfig(
@@ -194,7 +196,9 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
             for model_key, model_params in cfg.llms.items()
             if model_key != 'llm'
         ]
-        logger.openhands_logger.info(f'router_config.models={router_config.model_list}')
+        logger.openhands_logger.debug(
+            f'router_config.models={router_config.model_list}'
+        )
     try:
         # set sandbox config from the toml file
         sandbox_config = cfg.sandbox

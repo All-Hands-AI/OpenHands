@@ -99,6 +99,7 @@ class LLMConfig:
             'retry_multiplier',
             'retry_min_wait',
             'retry_max_wait',
+            'max_message_chars',
         }
         # Collect all attributes except those in excluded_fields
         return {
