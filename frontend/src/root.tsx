@@ -130,8 +130,6 @@ export default function App() {
 
   React.useEffect(() => {
     if (location.pathname === "/") {
-      // There is no reason to keep the token in the local storage if the user is on the home page
-      clearSession();
       // If the user is on the home page, we should stop the socket connection.
       // This is relevant when the user redirects here for whatever reason.
       if (isConnected) stop();
