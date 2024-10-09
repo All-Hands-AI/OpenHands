@@ -4,7 +4,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 1
     groups:
       # put packages in their own group if they have a history of breaking the build or needing to be reverted
       pre-commit:
@@ -26,7 +26,7 @@ updates:
     directory: "/frontend"
     schedule:
       interval: "daily"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 1
     groups:
       docusaurus:
         patterns:
@@ -48,7 +48,7 @@ updates:
     schedule:
       interval: "weekly"
       day: "wednesday"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 1
     groups:
       docusaurus:
         patterns:
