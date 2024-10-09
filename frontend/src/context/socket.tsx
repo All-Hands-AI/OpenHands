@@ -1,6 +1,7 @@
 import React from "react";
 import { Data } from "ws";
 import EventLogger from "#/utils/event-logger";
+import { getValidFallbackHost } from "#/utils/get-valid-fallback-host";
 
 interface WebSocketClientOptions {
   token: string | null;
@@ -45,7 +46,8 @@ function SocketProvider({ children }: SocketProviderProps) {
       );
     }
 
-    const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || "localhost:3000";
+    const fallback = getValidFallbackHost();
+    const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || fallback;
     const ws = new WebSocket(
       `ws://${baseUrl}/ws${options?.token ? `?token=${options.token}` : ""}`,
     );
