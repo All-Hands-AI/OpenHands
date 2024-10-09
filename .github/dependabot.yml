@@ -8,6 +8,9 @@ updates:
     open-pull-requests-limit: 5
     groups:
       # put packages in their own group if they have a history of breaking the build or needing to be reverted
+      pre-commit:
+        patterns:
+          - "pre-commit"
       boto3:
         patterns:
           - "boto3"
