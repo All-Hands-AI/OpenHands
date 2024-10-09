@@ -11,6 +11,24 @@ updates:
       interval: "weekly"
       day: "monday"
     open-pull-requests-limit: 5
+    groups:
+      # put packages in 'flaky' group if they have a history of breaking the build or needing to be reverted
+      version-flaky:
+        applies-to: "version-updates"
+        patterns:
+          - "boto3"
+      security-flaky:
+        applies-to: "security-updates"
+        patterns:
+          - "boto3"
+      security-all:
+        applies-to: "security-updates"
+        patterns:
+          - "*"
+      version-all:
+        applies-to: "version-updates"
+        patterns:
+          - "*"
 
   - package-ecosystem: "npm"
     directory: "/frontend"
@@ -25,11 +43,20 @@ updates:
       eslint:
         patterns:
           - "*eslint*"
+      security-all:
+        applies-to: "security-updates"
+        patterns:
+          - "*"
+      version-all:
+        applies-to: "version-updates"
+        patterns:
+          - "*"
 
   - package-ecosystem: "npm"
     directory: "/docs"
     schedule:
-      interval: "monthly"
+      interval: "weekly"
+      day: "wednesday"
     open-pull-requests-limit: 5
     groups:
       docusaurus:
@@ -38,3 +65,11 @@ updates:
       eslint:
         patterns:
           - "*eslint*"
+      security-all:
+        applies-to: "security-updates"
+        patterns:
+          - "*"
+      version-all:
+        applies-to: "version-updates"
+        patterns:
+          - "*"
