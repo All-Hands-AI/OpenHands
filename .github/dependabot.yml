@@ -3,8 +3,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "weekly"
-      day: "monday"
+      interval: "daily"
     open-pull-requests-limit: 5
     groups:
       # put packages in their own group if they have a history of breaking the build or needing to be reverted
@@ -26,8 +25,7 @@ updates:
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
-      interval: "weekly"
-      day: "tuesday"
+      interval: "daily"
     open-pull-requests-limit: 5
     groups:
       docusaurus:
