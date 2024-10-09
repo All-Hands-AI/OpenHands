@@ -69,9 +69,8 @@ session_manager = SessionManager(config, file_store)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global session_manager
-    await session_manager.start()
-    yield
-    await session_manager.stop()
+    async with session_manager:
+        yield
 
 
 app = FastAPI(lifespan=lifespan)

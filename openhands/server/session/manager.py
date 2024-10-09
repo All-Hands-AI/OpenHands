@@ -21,11 +21,12 @@ class SessionManager:
         self.config = config
         self.file_store = file_store
 
-    async def start(self):
+    async def __aenter__(self):
         if not self._session_cleanup_task:
             self._session_cleanup_task = asyncio.create_task(self._cleanup_sessions())
+        return self
 
-    async def stop(self):
+    async def __aexit__(self, exc_type, exc_value, traceback):
         if self._session_cleanup_task:
             self._session_cleanup_task.cancel()
             self._session_cleanup_task = None
