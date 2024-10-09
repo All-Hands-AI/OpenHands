@@ -8,7 +8,7 @@ export function HeroHeading() {
         Let&apos;s Start Building!
       </h1>
       <p className="mx-4 text-sm flex flex-col gap-2">
-        All Hands makes it easy to build and maintain software using a simple
+        OpenHands makes it easy to build and maintain software using a simple
         prompt.{" "}
         <span className="">
           Not sure how to start?{" "}
