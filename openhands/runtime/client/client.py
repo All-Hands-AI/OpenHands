@@ -714,8 +714,7 @@ if __name__ == '__main__':
         file: UploadFile, destination: str = '/', recursive: bool = False
     ):
         assert client is not None
-        print('CLIENT AVAILABLE' if client is not None else 'CLIENT UNAVAILABLE')
-        print('DESTINATION: ', destination)
+
         try:
             # Ensure the destination directory exists
             if not os.path.isabs(destination):
