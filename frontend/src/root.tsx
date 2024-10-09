@@ -30,6 +30,7 @@ import i18n from "./i18n";
 import { useSocket } from "./context/socket";
 import { UserAvatar } from "./components/user-avatar";
 import { DangerModal } from "./components/modals/confirmation-modals/danger-modal";
+import { clearSession } from "./utils/clear-session";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -128,10 +129,12 @@ export default function App() {
   }, [user]);
 
   React.useEffect(() => {
-    // If the user is on the home page, we should stop the socket connection.
-    // This is relevant when the user redirects here for whatever reason.
-    if (location.pathname === "/" && isConnected) {
-      stop();
+    if (location.pathname === "/") {
+      // There is no reason to keep the token in the local storage if the user is on the home page
+      clearSession();
+      // If the user is on the home page, we should stop the socket connection.
+      // This is relevant when the user redirects here for whatever reason.
+      if (isConnected) stop();
     }
   }, [location.pathname]);
 
