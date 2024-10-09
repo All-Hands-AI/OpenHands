@@ -72,7 +72,7 @@ def process_instance(
         f'NOTE: You should copy the "query" as is into the <execute_browse> tag. DO NOT change ANYTHING in the query.'
     )
 
-    runtime = create_runtime(config, sid=instance.instance_id)
+    runtime = create_runtime(config)
 
     state: State | None = asyncio.run(
         run_controller(

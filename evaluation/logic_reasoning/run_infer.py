@@ -201,10 +201,7 @@ def process_instance(
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
-    # use a session id for concurrent evaluation
-    sid = instance['instance_id']
-
-    runtime = create_runtime(config, sid=sid)
+    runtime = create_runtime(config)
     initialize_runtime(runtime, instance)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state

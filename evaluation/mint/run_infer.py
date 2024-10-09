@@ -175,7 +175,7 @@ def process_instance(
         },
     )
 
-    runtime = create_runtime(config, sid=instance.instance_id)
+    runtime = create_runtime(config)
     initialize_runtime(runtime)
 
     state: State | None = asyncio.run(
