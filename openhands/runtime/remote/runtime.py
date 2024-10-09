@@ -251,11 +251,6 @@ class RemoteRuntime(Runtime):
             self.session.headers.update(
                 {'X-Session-API-Key': start_response['session_api_key']}
             )
-        elif 'sandbox_api_key' in start_response:
-            # FIXME: Remove this once the runtime API is updated
-            self.session.headers.update(
-                {'X-Session-API-Key': start_response['sandbox_api_key']}
-            )
 
     @retry(
         stop=stop_after_attempt(60) | stop_if_should_exit(),
