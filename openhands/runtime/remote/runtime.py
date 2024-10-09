@@ -126,7 +126,7 @@ class RemoteRuntime(Runtime):
                 timeout=5,
             )
         except Exception as e:
-            logger.error(f'Error while looking for remote runtime: {e}')
+            logger.debug(f'Error while looking for remote runtime: {e}')
             return False
 
         if response.status_code == 200:
