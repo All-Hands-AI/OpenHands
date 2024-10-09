@@ -28,7 +28,7 @@ COPY ./pyproject.toml ./poetry.lock ./
 RUN touch README.md
 RUN export POETRY_CACHE_DIR && poetry install --without evaluation,llama-index --no-root && rm -rf $POETRY_CACHE_DIR
 
-FROM python:3.12.3-slim AS runtime
+FROM python:3.12.3-slim AS openhands-app
 
 WORKDIR /app
 
@@ -45,6 +45,13 @@ RUN mkdir -p $WORKSPACE_BASE
 
 RUN apt-get update -y \
     && apt-get install -y curl ssh sudo
+
+# Install Docker
+RUN apt install -y apt-transport-https ca-certificates gnupg \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null \
+    && apt update \
+    && apt install -y docker-ce
 
 # Default is 1000, but OSX is often 501
 RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs
