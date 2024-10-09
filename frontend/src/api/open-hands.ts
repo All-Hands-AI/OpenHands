@@ -65,7 +65,7 @@ class OpenHands {
    */
   static async getFiles(token: string, path?: string): Promise<string[]> {
     const url = new URL(`${OpenHands.BASE_URL}/api/list-files`);
-    if (path) url.searchParams.append("path", encodeURIComponent(path));
+    if (path) url.searchParams.append("path", path);
 
     const response = await fetch(url.toString(), {
       headers: OpenHands.generateHeaders(token),
