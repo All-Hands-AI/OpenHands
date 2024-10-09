@@ -16,7 +16,7 @@ const generateBaseURL = () => {
   const fallback = getValidFallbackHost();
   const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || fallback;
 
-  return window.location.protocol + "//" + baseUrl;
+  return `${window.location.protocol}//${baseUrl}`;
 };
 
 /**
