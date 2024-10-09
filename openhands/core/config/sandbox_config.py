@@ -34,6 +34,7 @@ class SandboxConfig:
 
     remote_runtime_api_url: str = 'http://localhost:8000'
     local_runtime_url: str = 'http://localhost'
+    keep_remote_runtime_alive: bool = True
     api_key: str | None = None
     base_container_image: str = 'nikolaik/python-nodejs:python3.12-nodejs22'  # default to nikolaik/python-nodejs:python3.12-nodejs22 for eventstream runtime
     runtime_container_image: str | None = None
