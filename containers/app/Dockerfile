@@ -46,11 +46,12 @@ RUN mkdir -p $WORKSPACE_BASE
 RUN apt-get update -y \
     && apt-get install -y curl ssh sudo
 
-# Install Docker
-RUN apt install -y apt-transport-https ca-certificates gnupg \
-    && curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker.gpg \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://download.docker.com/linux/debian bookworm stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null \
-    && apt update \
+# Install Docker - https://docs.docker.com/engine/install/debian/
+RUN apt-get install ca-certificates curl \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc \
+    && chmod a+r /etc/apt/keyrings/docker.asc \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null \
+    && apt-get update \
     && apt install -y docker-ce
 
 # Default is 1000, but OSX is often 501
