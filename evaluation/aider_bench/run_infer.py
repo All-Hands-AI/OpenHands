@@ -203,7 +203,7 @@ def process_instance(
     # create sandbox and run the agent
     # =============================================
 
-    runtime: Runtime = create_runtime(config, sid=str(instance.instance_id))
+    runtime: Runtime = create_runtime(config)
 
     initialize_runtime(runtime, instance=instance)
 
