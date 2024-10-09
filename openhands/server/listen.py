@@ -775,8 +775,9 @@ async def zip_current_workspace(request: Request):
     logger.info('Zipping workspace')
     runtime: Runtime = request.state.session.agent_session.runtime
 
+    path = runtime.config.workspace_mount_path_in_sandbox
     try:
-        zip_file_bytes = runtime.copy_from()
+        zip_file_bytes = runtime.copy_from(path)
         zip_stream = io.BytesIO(zip_file_bytes)  # Wrap to behave like a file stream
         response = StreamingResponse(
             zip_stream,

@@ -11,9 +11,11 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
+from zipfile import ZipFile
 
 import pexpect
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
@@ -711,7 +713,8 @@ if __name__ == '__main__':
         file: UploadFile, destination: str = '/', recursive: bool = False
     ):
         assert client is not None
-
+        print('CLIENT AVAILABLE' if client is not None else 'CLIENT UNAVAILABLE')
+        print('DESTINATION: ', destination)
         try:
             # Ensure the destination directory exists
             if not os.path.isabs(destination):
@@ -756,6 +759,31 @@ if __name__ == '__main__':
                 },
                 status_code=200,
             )
+
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get('/download_files')
+    async def download_file(path: str):
+        try:
+            if not os.path.isabs(path):
+                raise HTTPException(
+                    status_code=400, detail='Path must be an absolute path'
+                )
+
+            if not os.path.exists(path):
+                raise HTTPException(status_code=404, detail='File not found')
+
+            with tempfile.TemporaryFile() as temp_zip:
+                with ZipFile(temp_zip, 'w') as zipf:
+                    for root, _, files in os.walk(path):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            zipf.write(
+                                file_path, arcname=os.path.relpath(file_path, path)
+                            )
+                temp_zip.seek(0)  # Rewind the file to the beginning after writing
+                return temp_zip.read()
 
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
