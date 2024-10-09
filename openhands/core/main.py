@@ -211,7 +211,7 @@ def generate_sid(config: AppConfig, session_name: str | None = None) -> str:
     jwt_secret = config.jwt_secret
 
     hash_str = hashlib.sha256(f'{session_name}{jwt_secret}'.encode('utf-8')).hexdigest()
-    return f'{session_name}_{hash_str[:16]}'
+    return f'{session_name}-{hash_str[:16]}'
 
 
 if __name__ == '__main__':
