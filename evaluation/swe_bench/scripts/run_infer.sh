@@ -99,9 +99,9 @@ if [ -z "$N_RUNS" ]; then
 fi
 
 for i in $(seq 1 $N_RUNS); do
-  EVAL_NOTE="$EVAL_NOTE-run_$i"
-  echo "EVAL_NOTE: $EVAL_NOTE"
-  run_eval $EVAL_NOTE
+  current_eval_note="$EVAL_NOTE-run_$i"
+  echo "EVAL_NOTE: $current_eval_note"
+  run_eval $current_eval_note
 done
 
 checkout_original_branch
