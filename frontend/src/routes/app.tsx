@@ -62,7 +62,7 @@ export const clientLoader = async () => {
     const file = new File([blob], "imported-project.zip", {
       type: blob.type,
     });
-    await OpenHands.uploadFile(token, file);
+    await OpenHands.uploadFiles(token, [file]);
   }
 
   if (repo) localStorage.setItem("repo", repo);
@@ -122,7 +122,7 @@ function App() {
   );
 
   const exportGitHubTokenToTerminal = (gitHubToken: string) => {
-    const command = `export GH_TOKEN=${gitHubToken}`;
+    const command = `export GITHUB_TOKEN=${gitHubToken}`;
     const event = sendTerminalCommand(command);
 
     send(event);
@@ -177,6 +177,11 @@ function App() {
       const parsed = JSON.parse(message.data.toString());
       if ("token" in parsed) {
         fetcher.submit({ token: parsed.token }, { method: "post" });
+        return;
+      }
+
+      if ("error" in parsed) {
+        fetcher.submit({}, { method: "POST", action: "/end-session" });
         return;
       }
 

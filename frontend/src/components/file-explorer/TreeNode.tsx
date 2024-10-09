@@ -3,7 +3,6 @@ import { useSelector } from "react-redux";
 import { RootState } from "#/store";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
-import { listFiles } from "#/services/fileService";
 import OpenHands from "#/api/open-hands";
 import { useFiles } from "#/context/files";
 import { cn } from "#/utils/utils";
@@ -58,7 +57,12 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
       setChildren(null);
       return;
     }
-    setChildren(await listFiles(path));
+
+    const token = localStorage.getItem("token");
+    if (token) {
+      const newChildren = await OpenHands.getFiles(token, path);
+      setChildren(newChildren);
+    }
   };
 
   React.useEffect(() => {

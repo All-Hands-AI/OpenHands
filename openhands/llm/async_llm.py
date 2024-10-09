@@ -73,7 +73,7 @@ class AsyncLLM(LLM):
                         and self.config.on_cancel_requested_fn is not None
                         and await self.config.on_cancel_requested_fn()
                     ):
-                        raise UserCancelledError('LLM request cancelled by user')
+                        return
                     await asyncio.sleep(0.1)
 
             stop_check_task = asyncio.create_task(check_stopped())
