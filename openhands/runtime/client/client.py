@@ -7,6 +7,7 @@ NOTE: this will be executed inside the docker sandbox.
 
 import argparse
 import asyncio
+import io
 import os
 import re
 import shutil
@@ -20,7 +21,7 @@ from zipfile import ZipFile
 import pexpect
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -784,7 +785,15 @@ if __name__ == '__main__':
                                 file_path, arcname=os.path.relpath(file_path, path)
                             )
                 temp_zip.seek(0)  # Rewind the file to the beginning after writing
-                return temp_zip.read()
+                content = temp_zip.read()
+                # Good for small to medium-sized files. For very large files, streaming directly from the
+                # file chunks may be more memory-efficient.
+                zip_stream = io.BytesIO(content)
+                return StreamingResponse(
+                    content=zip_stream,
+                    media_type='application/zip',
+                    headers={'Content-Disposition': f'attachment; filename={path}.zip'},
+                )
 
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))

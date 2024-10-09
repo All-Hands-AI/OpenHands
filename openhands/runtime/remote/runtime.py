@@ -421,7 +421,7 @@ class RemoteRuntime(Runtime):
                 'GET',
                 f'{self.runtime_url}/download_files',
                 params=params,
-                timeout=5,
+                timeout=30,
                 retry_exceptions=list(
                     filter(lambda e: e != TimeoutError, DEFAULT_RETRY_EXCEPTIONS)
                 ),

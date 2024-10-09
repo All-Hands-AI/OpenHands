@@ -568,10 +568,12 @@ class EventStreamRuntime(Runtime):
                 'GET',
                 f'{self.api_url}/download_files',
                 params=params,
-                timeout=5,
+                stream=True,
+                timeout=30,
             )
             if response.status_code == 200:
-                return response.content
+                data = response.content
+                return data
             else:
                 error_message = response.text
                 raise Exception(f'Copy operation failed: {error_message}')
