@@ -30,7 +30,6 @@ import i18n from "./i18n";
 import { useSocket } from "./context/socket";
 import { UserAvatar } from "./components/user-avatar";
 import { DangerModal } from "./components/modals/confirmation-modals/danger-modal";
-import { clearSession } from "./utils/clear-session";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
