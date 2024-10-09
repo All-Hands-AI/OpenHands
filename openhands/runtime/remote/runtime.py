@@ -416,11 +416,12 @@ class RemoteRuntime(Runtime):
         self._wait_until_alive()
         try:
             params = {'path': path}
-            response = send_request(
+            response = send_request_with_retry(
                 self.session,
                 'GET',
                 f'{self.runtime_url}/download_files',
                 params=params,
+                timeout=5,
                 retry_exceptions=list(
                     filter(lambda e: e != TimeoutError, DEFAULT_RETRY_EXCEPTIONS)
                 ),

@@ -765,6 +765,7 @@ if __name__ == '__main__':
 
     @app.get('/download_files')
     async def download_file(path: str):
+        logger.info('Downloading files')
         try:
             if not os.path.isabs(path):
                 raise HTTPException(

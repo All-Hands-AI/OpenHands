@@ -563,8 +563,12 @@ class EventStreamRuntime(Runtime):
         self._refresh_logs()
         try:
             params = {'path': path}
-            response = send_request(
-                self.session, 'GET', f'{self.api_url}/download_files', params=params
+            response = send_request_with_retry(
+                self.session,
+                'GET',
+                f'{self.api_url}/download_files',
+                params=params,
+                timeout=5,
             )
             if response.status_code == 200:
                 return response.content
