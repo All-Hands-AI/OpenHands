@@ -1,8 +1,3 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
-
 version: 2
 updates:
   - package-ecosystem: "pip"
@@ -12,13 +7,8 @@ updates:
       day: "monday"
     open-pull-requests-limit: 5
     groups:
-      # put packages in 'flaky' group if they have a history of breaking the build or needing to be reverted
-      version-flaky:
-        applies-to: "version-updates"
-        patterns:
-          - "boto3"
-      security-flaky:
-        applies-to: "security-updates"
+      # put packages in their own group if they have a history of breaking the build or needing to be reverted
+      boto3:
         patterns:
           - "boto3"
       security-all:
