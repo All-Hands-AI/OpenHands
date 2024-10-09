@@ -8,14 +8,16 @@ updates:
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "daily"
-    open-pull-requests-limit: 20
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
 
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
-      interval: "daily"
-    open-pull-requests-limit: 20
+      interval: "weekly"
+      day: "tuesday"
+    open-pull-requests-limit: 5
     groups:
       docusaurus:
         patterns:
@@ -27,8 +29,8 @@ updates:
   - package-ecosystem: "npm"
     directory: "/docs"
     schedule:
-      interval: "daily"
-    open-pull-requests-limit: 20
+      interval: "monthly"
+    open-pull-requests-limit: 5
     groups:
       docusaurus:
         patterns:
