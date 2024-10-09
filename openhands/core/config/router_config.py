@@ -17,7 +17,7 @@ class ModelConfig:
 @dataclass
 class RouterConfig:
     default_model: str | None = field(default=None)
-    models: List[ModelConfig] = field(default_factory=list)
+    model_list: List[ModelConfig] = field(default_factory=list)
     routing_strategy: str = 'simple-shuffle'
     cooldown_time: Optional[float] = 1
     num_retries: Optional[int] = 8

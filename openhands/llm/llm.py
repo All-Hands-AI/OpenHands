@@ -131,13 +131,13 @@ class LLM(RetryMixin, DebugMixin):
         router_config: dict[str, Any] | None = None
 
         # Set up router configuration
-        if self.config.router_config and self.config.router_config.models:
+        if self.config.router_config and self.config.router_config.model_list:
             model_list = [
                 {
                     'model_name': model.model_name,
                     'litellm_params': model.litellm_params,
                 }
-                for model in self.config.router_config.models
+                for model in self.config.router_config.model_list
             ]
             router_config = {
                 'model_list': model_list,
@@ -210,7 +210,7 @@ class LLM(RetryMixin, DebugMixin):
             # Call the completion function (either router.completion or litellm_completion)
             # we don't support streaming here, thus we get a ModelResponse
             if self.router and self.config.router_config:
-                default_model = self.config.router_config.models[0].model_name
+                default_model = self.config.router_config.model_list[0].model_name
                 model = kwargs.pop('model', default_model)
                 resp: ModelResponse = completion_func(model, **kwargs)
             else:
@@ -237,7 +237,7 @@ class LLM(RetryMixin, DebugMixin):
 
             return resp
 
-        if not (self.config.router_config and self.config.router_config.models):
+        if not (self.config.router_config and self.config.router_config.model_list):
             wrapper = self.retry_decorator(
                 num_retries=self.config.num_retries,
                 retry_exceptions=LLM_RETRY_EXCEPTIONS,

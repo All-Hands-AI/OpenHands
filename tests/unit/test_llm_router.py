@@ -51,7 +51,7 @@ def get_llm_router_config():
         model='gpt-4o',
         api_key='dummy_default_key',
         router_config=RouterConfig(
-            models=model_list,
+            model_list=model_list,
             routing_strategy='simple-shuffle',
             num_retries=3,
             cooldown_time=1.0,
@@ -89,7 +89,7 @@ def router_content_policy_config():
         model='content-policy-model',
         api_key='dummy_default_key',
         router_config=RouterConfig(
-            models=model_list,
+            model_list=model_list,
             routing_strategy='simple-shuffle',
             num_retries=3,
             cooldown_time=1.0,
@@ -110,22 +110,13 @@ def router_content_policy_config_azure():
                 'max_tokens': 4096,
                 'timeout': 300,
                 'base_url': 'https://gpt-4-vision-resource.openai.azure.com/openai/deployments/gpt-4-vision/extensions/',
-                'dataSources': [
-                    {
-                        'type': 'AzureComputerVision',
-                        'parameters': {
-                            'endpoint': 'AZURE_VISION_ENHANCE_ENDPOINT',
-                            'key': 'AZURE_VISION_ENHANCE_KEY',
-                        },
-                    }
-                ],
             },
         )
     ]
     return LLMConfig(
         model='gpt-4-vision-enhanced',
         router_config=RouterConfig(
-            models=model_list,
+            model_list=model_list,
             routing_strategy='simple-shuffle',
             cooldown_time=1.0,
             num_retries=8,

@@ -119,6 +119,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     # load llm configs and agent configs
     for key, value in toml_config.items():
         if isinstance(value, dict):
+            logger.openhands_logger.debug(f'key={key}, value={value}')
             try:
                 if key is not None and key.lower() == 'agent':
                     logger.openhands_logger.debug(
@@ -137,35 +138,10 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                             agent_config = AgentConfig(**nested_value)
                             cfg.set_agent_config(agent_config, nested_key)
                 elif key is not None and key.lower() == 'router_config':
-                    # Router config as standalone section (with models)
-                    router_config = RouterConfig(
-                        models=[
-                            ModelConfig(
-                                model_name=model['model_name'],
-                                litellm_params={
-                                    **model.get('litellm_params', {}),
-                                    'dataSources': [
-                                        {
-                                            **data_source,
-                                            'parameters': data_source.get(
-                                                'parameters', {}
-                                            ),
-                                        }
-                                        for data_source in model.get(
-                                            'litellm_params', {}
-                                        ).get('dataSources', [])
-                                    ],
-                                },
-                            )
-                            for model in value.get('models', [])
-                        ],
-                        routing_strategy=value.get(
-                            'routing_strategy', 'simple-shuffle'
-                        ),
-                        num_retries=value.get('num_retries', 8),
-                        cooldown_time=value.get('cooldown_time', 1.0),
-                        allowed_fails=value.get('allowed_fails', None),
-                    )
+                    # Router config as standalone section (with non-dict/non-nested values)
+                    router_config = RouterConfig(**value)
+                    # TODO: Retry Policy is actually dict
+                    logger.openhands_logger.debug(f'router_config={router_config}')
                 elif key is not None and key.lower() == 'llm':
                     logger.openhands_logger.debug(
                         'Attempt to load default LLM config from config toml'
@@ -200,11 +176,25 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
 
     # TODO: right now the router_config is treated as "standalone" section in the toml file
     # and added to the default "llm" section in the AppConfig. At least one test makes use of this.
+    # TODO starting with an LLM disables the router even if configured. Maybe that's okay, we can document it then
     if router_config is not None:
         if 'llm' not in cfg.llms:
             cfg.llms['llm'] = LLMConfig()
         cfg.llms['llm'].router_config = router_config
 
+    # llms has the user-defined models, so gather them in the model_list
+    if router_config is not None:
+        router_config.model_list = [
+            ModelConfig(
+                # model name is the key in the llms dict
+                model_name=model_key,
+                # litellm_params is a subset of the LLMConfig instance we found in the configuration file
+                litellm_params=model_params.to_litellm_params(),
+            )
+            for model_key, model_params in cfg.llms.items()
+            if model_key != 'llm'
+        ]
+        logger.openhands_logger.info(f'router_config.models={router_config.model_list}')
     try:
         # set sandbox config from the toml file
         sandbox_config = cfg.sandbox

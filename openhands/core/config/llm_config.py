@@ -84,6 +84,29 @@ class LLMConfig:
             result[f.name] = get_field_info(f)
         return result
 
+    def to_litellm_params(self) -> dict:
+        """Gather necessary attributes for litellm_params, excluding specific unsupported fields."""
+        excluded_fields = {
+            'log_completions',
+            'caching_prompt',
+            'disable_vision',
+            'ollama_base_url',
+            'openrouter_site_url',
+            'openrouter_app_name',
+            'embedding_model',
+            'embedding_base_url',
+            'embedding_deployment_name',
+            'retry_multiplier',
+            'retry_min_wait',
+            'retry_max_wait',
+        }
+        # Collect all attributes except those in excluded_fields
+        return {
+            field.name: getattr(self, field.name)
+            for field in fields(self)
+            if field.name not in excluded_fields
+        }
+
     def __post_init__(self):
         """Post-initialization hook to assign OpenRouter-related variables to environment variables.
         This ensures that these values are accessible to litellm at runtime.
@@ -111,7 +134,7 @@ class LLMConfig:
     def __repr__(self):
         return self.__str__()
 
-    def to_safe_dict(self):
+    def to_safe_dict(self) -> dict:
         """Return a dict with the sensitive fields replaced with ******."""
         ret = self.__dict__.copy()
         for k, v in ret.items():
