@@ -7,7 +7,7 @@ import requests
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import RuntimeBuilder
-from openhands.runtime.utils.request import send_request
+from openhands.runtime.utils.request import send_request_with_retry
 from openhands.runtime.utils.shutdown_listener import (
     should_continue,
     sleep_if_should_continue,
@@ -44,9 +44,13 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
         for tag in tags[1:]:
             files.append(('tags', (None, tag)))
 
-        # Send the POST request to /build
-        response = send_request(
-            self.session, 'POST', f'{self.api_url}/build', files=files
+        # Send the POST request to /build (Begins the build process)
+        response = send_request_with_retry(
+            self.session,
+            'POST',
+            f'{self.api_url}/build',
+            files=files,
+            timeout=30,
         )
 
         if response.status_code != 202:
@@ -65,11 +69,12 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
                 logger.error('Build timed out after 30 minutes')
                 raise RuntimeError('Build timed out after 30 minutes')
 
-            status_response = send_request(
+            status_response = send_request_with_retry(
                 self.session,
                 'GET',
                 f'{self.api_url}/build_status',
                 params={'build_id': build_id},
+                timeout=30,
             )
 
             if status_response.status_code != 200:
@@ -106,8 +111,12 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
     def image_exists(self, image_name: str, pull_from_repo: bool = True) -> bool:
         """Checks if an image exists in the remote registry using the /image_exists endpoint."""
         params = {'image': image_name}
-        response = send_request(
-            self.session, 'GET', f'{self.api_url}/image_exists', params=params
+        response = send_request_with_retry(
+            self.session,
+            'GET',
+            f'{self.api_url}/image_exists',
+            params=params,
+            timeout=30,
         )
 
         if response.status_code != 200:
