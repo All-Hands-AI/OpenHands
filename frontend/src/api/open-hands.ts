@@ -1,3 +1,4 @@
+import { getValidFallbackHost } from "#/utils/get-valid-fallback-host";
 import {
   SaveFileSuccessResponse,
   FileUploadSuccessResponse,
@@ -12,7 +13,9 @@ import {
  * @returns Base URL of the OpenHands API
  */
 const generateBaseURL = () => {
-  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || "localhost:3000";
+  const fallback = getValidFallbackHost();
+  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || fallback;
+
   return `http://${baseUrl}`;
 };
 
