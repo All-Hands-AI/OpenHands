@@ -122,7 +122,7 @@ function App() {
   );
 
   const exportGitHubTokenToTerminal = (gitHubToken: string) => {
-    const command = `export GH_TOKEN=${gitHubToken}`;
+    const command = `export GITHUB_TOKEN=${gitHubToken}`;
     const event = sendTerminalCommand(command);
 
     send(event);

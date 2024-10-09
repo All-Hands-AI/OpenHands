@@ -94,12 +94,14 @@ function AgentStatusBar() {
   const [statusMessage, setStatusMessage] = React.useState<string>("");
 
   React.useEffect(() => {
-    const trimmedCustomMessage = curStatusMessage.status.trim();
-    if (trimmedCustomMessage) {
-      setStatusMessage(t(trimmedCustomMessage));
-    } else {
-      setStatusMessage(AgentStatusMap[curAgentState].message);
+    if (curAgentState === AgentState.LOADING) {
+      const trimmedCustomMessage = curStatusMessage.status.trim();
+      if (trimmedCustomMessage) {
+        setStatusMessage(t(trimmedCustomMessage));
+        return;
+      }
     }
+    setStatusMessage(AgentStatusMap[curAgentState].message);
   }, [curAgentState, curStatusMessage.status]);
 
   return (
