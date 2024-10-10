@@ -124,6 +124,7 @@ class EventStreamRuntime(Runtime):
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_message_callback: Callable | None = None,
+        attach_to_existing: bool = False,
     ):
         self.config = config
         self._host_port = 30000  # initial dummy value
@@ -170,15 +171,23 @@ class EventStreamRuntime(Runtime):
                 extra_deps=self.config.sandbox.runtime_extra_deps,
                 force_rebuild=self.config.sandbox.force_rebuild_runtime,
             )
-        self.container = self._init_container(
-            sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,  # e.g. /workspace
-            mount_dir=self.config.workspace_mount_path,  # e.g. /opt/openhands/_test_workspace
-            plugins=plugins,
-        )
+
+        if not attach_to_existing:
+            self.container = self._init_container(
+                sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,  # e.g. /workspace
+                mount_dir=self.config.workspace_mount_path,  # e.g. /opt/openhands/_test_workspace
+                plugins=plugins,
+            )
 
         # will initialize both the event stream and the env vars
         super().__init__(
-            config, event_stream, sid, plugins, env_vars, status_message_callback
+            config,
+            event_stream,
+            sid,
+            plugins,
+            env_vars,
+            status_message_callback,
+            attach_to_existing,
         )
 
         logger.info('Waiting for client to become ready...')

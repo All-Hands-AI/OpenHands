@@ -57,6 +57,7 @@ class RemoteRuntime(Runtime):
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_message_callback: Optional[Callable] = None,
+        attach_to_existing: bool = False,
     ):
         self.config = config
         self.status_message_callback = status_message_callback
@@ -83,19 +84,29 @@ class RemoteRuntime(Runtime):
 
         self.instance_id = sid
 
-        self._start_or_attach_to_runtime(plugins)
+        self._start_or_attach_to_runtime(plugins, attach_to_existing)
 
         # Initialize the eventstream and env vars
         super().__init__(
-            config, event_stream, sid, plugins, env_vars, status_message_callback
+            config,
+            event_stream,
+            sid,
+            plugins,
+            env_vars,
+            status_message_callback,
+            attach_to_existing,
         )
         self._wait_until_alive()
         self.setup_initial_env()
 
-    def _start_or_attach_to_runtime(self, plugins: list[PluginRequirement] | None):
+    def _start_or_attach_to_runtime(
+        self, plugins: list[PluginRequirement] | None, attach_to_existing: bool = False
+    ):
         existing_runtime = self._check_existing_runtime()
         if existing_runtime:
             logger.info(f'Using existing runtime with ID: {self.runtime_id}')
+        elif attach_to_existing:
+            raise RuntimeError('Could not find existing runtime to attach to.')
         else:
             self.send_status_message('STATUS$STARTING_CONTAINER')
             if self.config.sandbox.runtime_container_image is None:

@@ -13,7 +13,6 @@ import ActionType from "#/types/ActionType";
 import { ActionMessage, StatusMessage } from "#/types/Message";
 import { SocketMessage } from "#/types/ResponseType";
 import { handleObservationMessage } from "./observations";
-import { getRootTask } from "./taskService";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -74,16 +73,6 @@ const messageActions = {
     ) {
       store.dispatch(appendJupyterInput(message.args.code));
     }
-  },
-  [ActionType.ADD_TASK]: () => {
-    getRootTask().then((fetchedRootTask) =>
-      store.dispatch(setRootTask(fetchedRootTask)),
-    );
-  },
-  [ActionType.MODIFY_TASK]: () => {
-    getRootTask().then((fetchedRootTask) =>
-      store.dispatch(setRootTask(fetchedRootTask)),
-    );
   },
 };
 
