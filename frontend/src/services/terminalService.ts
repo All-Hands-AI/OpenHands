@@ -11,10 +11,7 @@ export function getGitHubTokenCommand(gitHubToken: string) {
   return event;
 }
 
-export function getCloneRepoCommand(
-  gitHubToken: string,
-  repository: string,
-) {
+export function getCloneRepoCommand(gitHubToken: string, repository: string) {
   const url = `https://${gitHubToken}@github.com/${repository}.git`;
   const command = `git clone ${url}`;
   const event = getTerminalCommand(command);

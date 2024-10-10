@@ -21,8 +21,11 @@ import ActionType from "#/types/ActionType";
 import { handleAssistantMessage } from "#/services/actions";
 import { addUserMessage, clearMessages } from "#/state/chatSlice";
 import { useSocket } from "#/context/socket";
-import { getGitHubTokenCommand, getCloneRepoCommand } from "#/services/terminalService";
-import { appendInput, clearTerminal } from "#/state/commandSlice";
+import {
+  getGitHubTokenCommand,
+  getCloneRepoCommand,
+} from "#/services/terminalService";
+import { clearTerminal } from "#/state/commandSlice";
 import { useEffectOnce } from "#/utils/use-effect-once";
 import CodeIcon from "#/assets/code.svg?react";
 import GlobeIcon from "#/assets/globe.svg?react";
