@@ -7,18 +7,21 @@ NOTE: this will be executed inside the docker sandbox.
 
 import argparse
 import asyncio
+import io
 import os
 import re
 import shutil
 import subprocess
+import tempfile
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
+from zipfile import ZipFile
 
 import pexpect
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -756,6 +759,40 @@ if __name__ == '__main__':
                 },
                 status_code=200,
             )
+
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get('/download_files')
+    async def download_file(path: str):
+        logger.info('Downloading files')
+        try:
+            if not os.path.isabs(path):
+                raise HTTPException(
+                    status_code=400, detail='Path must be an absolute path'
+                )
+
+            if not os.path.exists(path):
+                raise HTTPException(status_code=404, detail='File not found')
+
+            with tempfile.TemporaryFile() as temp_zip:
+                with ZipFile(temp_zip, 'w') as zipf:
+                    for root, _, files in os.walk(path):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            zipf.write(
+                                file_path, arcname=os.path.relpath(file_path, path)
+                            )
+                temp_zip.seek(0)  # Rewind the file to the beginning after writing
+                content = temp_zip.read()
+                # Good for small to medium-sized files. For very large files, streaming directly from the
+                # file chunks may be more memory-efficient.
+                zip_stream = io.BytesIO(content)
+                return StreamingResponse(
+                    content=zip_stream,
+                    media_type='application/zip',
+                    headers={'Content-Disposition': f'attachment; filename={path}.zip'},
+                )
 
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))

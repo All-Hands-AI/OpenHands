@@ -453,6 +453,31 @@ class RemoteRuntime(Runtime):
         except Exception as e:
             raise RuntimeError(f'List files operation failed: {str(e)}')
 
+    def copy_from(self, path: str) -> bytes:
+        """Zip all files in the sandbox and return as a stream of bytes."""
+        self._wait_until_alive()
+        try:
+            params = {'path': path}
+            response = send_request_with_retry(
+                self.session,
+                'GET',
+                f'{self.runtime_url}/download_files',
+                params=params,
+                timeout=30,
+                retry_exceptions=list(
+                    filter(lambda e: e != TimeoutError, DEFAULT_RETRY_EXCEPTIONS)
+                ),
+            )
+            if response.status_code == 200:
+                return response.content
+            else:
+                error_message = response.text
+                raise Exception(f'Copy operation failed: {error_message}')
+        except requests.Timeout:
+            raise TimeoutError('Copy operation timed out')
+        except Exception as e:
+            raise RuntimeError(f'Copy operation failed: {str(e)}')
+
     def send_status_message(self, message: str):
         """Sends a status message if the callback function was provided."""
         if self.status_message_callback:
