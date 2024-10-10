@@ -365,7 +365,7 @@ def process_instance(
     else:
         logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
-    runtime = create_runtime(config, sid=instance.instance_id)
+    runtime = create_runtime(config)
 
     try:
         initialize_runtime(runtime, instance)
