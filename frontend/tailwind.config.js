@@ -13,6 +13,9 @@ export default {
         'hyperlink': '#007AFF',
         'danger': '#EF3744',
       },
+      listStyleType: {
+        alpha: 'lower-alpha',
+      },
     },
   },
   darkMode: "class",
