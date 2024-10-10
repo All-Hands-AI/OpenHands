@@ -207,10 +207,12 @@ api_key = "your-api-key"
 #[router_config.cache_kwargs]
 
 #[router_config.retry_policy]
-#exceptions_to_retry = [ "RateLimitError",]  # List of exceptions to retry on
-#max_retries = 8  # Maximum number of retries for the specified exceptions
-#retry_after = 15  # Time to wait before the first retry for the specified exceptions
-#retry_after_multiplier = 2  # Multiplier for exponential backoff calculation
+#RateLimitErrorAllowedFails=3
+#TimeoutErrorRetries=3
+#InternalServerErrorRetries=3
+#ContentPolicyViolationErrorRetries=0
+#AuthenticationErrorRetries=0
+#BadRequestErrorRetries=0
 
 # --- Important Notes ---
 # - The model entries below are just examples, you can add, edit or remove these as needed.
