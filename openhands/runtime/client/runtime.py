@@ -1,4 +1,5 @@
 import os
+import subprocess
 import tempfile
 import threading
 import uuid
@@ -8,6 +9,7 @@ from zipfile import ZipFile
 import docker
 import requests
 import tenacity
+from docker.types import DeviceRequest
 
 from openhands.core.config import AppConfig
 from openhands.core.logger import DEBUG
@@ -272,6 +274,14 @@ class EventStreamRuntime(Runtime):
             else:
                 browsergym_arg = ''
 
+            # enable gpu if available in the host
+            enable_gpu = check_nvidia_smi()
+            device_requests = (
+                [DeviceRequest(count=-1, capabilities=[["gpu"]])]
+                if enable_gpu
+                else None
+            )
+
             container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=(
@@ -291,6 +301,9 @@ class EventStreamRuntime(Runtime):
                 detach=True,
                 environment=environment,
                 volumes=volumes,
+                device_requests=device_requests,
+                mem_limit=self.config.sandbox.mem_limit,
+                shm_size=self.config.sandbox.shm_size,
             )
             self.log_buffer = LogBuffer(container)
             logger.info(f'Container started. Server url: {self.api_url}')
@@ -593,3 +606,25 @@ class EventStreamRuntime(Runtime):
         """Sends a status message if the callback function was provided."""
         if self.status_message_callback:
             self.status_message_callback(message)
+
+def check_nvidia_smi() -> bool:
+    try:
+        # Run nvidia-smi command and capture output
+        result = subprocess.run(
+            ["nvidia-smi"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+        if result.returncode == 0:
+            logger.info("`nvidia-smi` command executed successfully. GPU avaialable.")
+            return True
+        else:
+            logger.error("`nvidia-smi` command failed.")
+            logger.error(result.stderr)
+            return False
+    except FileNotFoundError:
+        logger.error(
+            "`nvidia-smi` command not found. GPU might not be installed or the drivers are not set up correctly."
+        )
+        return False
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
+        return False

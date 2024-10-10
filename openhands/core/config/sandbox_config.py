@@ -30,6 +30,8 @@ class SandboxConfig:
             For example, for specifying the base url of website for browsergym evaluation.
         browsergym_eval_env: The BrowserGym environment to use for evaluation.
             Default is None for general purpose browsing. Check evaluation/miniwob and evaluation/webarena for examples.
+        mem_limit: The memory limit for the sandbox. Defaults to None, which means unlimited.
+        shm_size: The shared memory size for the sandbox. Defaults to 2 GB.
     """
 
     remote_runtime_api_url: str = 'http://localhost:8000'
@@ -49,6 +51,8 @@ class SandboxConfig:
     runtime_extra_deps: str | None = None
     runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
     browsergym_eval_env: str | None = None
+    mem_limit: str | None = None
+    shm_size: str = '2g'
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
