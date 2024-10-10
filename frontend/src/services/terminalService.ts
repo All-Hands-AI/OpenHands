@@ -7,13 +7,13 @@ export function getTerminalCommand(command: string, hidden: boolean = false) {
 
 export function getGitHubTokenCommand(gitHubToken: string) {
   const command = `export GITHUB_TOKEN=${gitHubToken}`;
-  const event = getTerminalCommand(command);
+  const event = getTerminalCommand(command, true);
   return event;
 }
 
 export function getCloneRepoCommand(gitHubToken: string, repository: string) {
   const url = `https://${gitHubToken}@github.com/${repository}.git`;
   const command = `git clone ${url}`;
-  const event = getTerminalCommand(command);
+  const event = getTerminalCommand(command, true);
   return event;
 }
