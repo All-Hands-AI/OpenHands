@@ -1,11 +1,7 @@
 import { redirect } from "@remix-run/react";
+import { clearSession } from "#/utils/clear-session";
 
 export const clientAction = () => {
-  const token = localStorage.getItem("token");
-  const repo = localStorage.getItem("repo");
-
-  if (token) localStorage.removeItem("token");
-  if (repo) localStorage.removeItem("repo");
-
+  clearSession();
   return redirect("/");
 };
