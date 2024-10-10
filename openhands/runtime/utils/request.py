@@ -33,13 +33,13 @@ DEFAULT_RETRY_EXCEPTIONS = [
 ]
 
 
-def send_request(
+def send_request_with_retry(
     session: requests.Session,
     method: str,
     url: str,
+    timeout: int,
     retry_exceptions: list[Type[Exception]] | None = None,
     retry_fns: list[Callable[[Exception], bool]] | None = None,
-    timeout: int = 120,
     **kwargs: Any,
 ) -> requests.Response:
     exceptions_to_catch = retry_exceptions or DEFAULT_RETRY_EXCEPTIONS
@@ -54,7 +54,7 @@ def send_request(
 
     @retry(
         stop=stop_after_delay(timeout) | stop_if_should_exit(),
-        wait=wait_exponential(multiplier=1, min=4, max=60),
+        wait=wait_exponential(multiplier=1, min=4, max=20),
         retry=retry_condition,
         reraise=True,
     )

@@ -1,3 +1,4 @@
+import { getValidFallbackHost } from "#/utils/get-valid-fallback-host";
 import {
   SaveFileSuccessResponse,
   FileUploadSuccessResponse,
@@ -12,8 +13,13 @@ import {
  * @returns Base URL of the OpenHands API
  */
 const generateBaseURL = () => {
-  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || "localhost:3000";
-  return `http://${baseUrl}`;
+  const fallback = getValidFallbackHost();
+  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || fallback;
+
+  if (typeof window === "undefined") {
+    return `http://${baseUrl}`;
+  }
+  return `${window.location.protocol}//${baseUrl}`;
 };
 
 /**
@@ -62,7 +68,7 @@ class OpenHands {
    */
   static async getFiles(token: string, path?: string): Promise<string[]> {
     const url = new URL(`${OpenHands.BASE_URL}/api/list-files`);
-    if (path) url.searchParams.append("path", encodeURIComponent(path));
+    if (path) url.searchParams.append("path", path);
 
     const response = await fetch(url.toString(), {
       headers: OpenHands.generateHeaders(token),

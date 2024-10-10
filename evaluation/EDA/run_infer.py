@@ -118,7 +118,7 @@ def process_instance(
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    runtime = create_runtime(config, sid=instance['text'].strip())
+    runtime = create_runtime(config)
 
     state: State | None = asyncio.run(
         run_controller(
