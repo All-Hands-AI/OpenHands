@@ -1,61 +1,61 @@
+def extract_between(content, start_markers, end_markers=None):
+    for marker in start_markers:
+        if marker in content:
+            result = content.split(marker, 1)[1]
+            if end_markers:
+                for end_marker in end_markers:
+                    if end_marker in result:
+                        result = result.split(end_marker, 1)[0]
+            return result
+    return ''
+
+
 def extract_gen_hypo_from_logs(content):
-    gen_workflow = ''
-    gen_hypothesis = ''
     error = ''
 
     # extract workflow
-    if 'WORKFLOW_SUMMARY:' in content:
-        gen_workflow = content.split('WORKFLOW_SUMMARY:')[1]
-    if '**WORKFLOW_SUMMARY**' in content:
-        gen_workflow = content.split('**WORKFLOW_SUMMARY**:')[1]
-    if "'WORKFLOW_SUMMARY'" in content:
-        gen_workflow = content.split("'WORKFLOW_SUMMARY':")[1]
-    if 'WORKFLOW SUMMARY' in content:
-        gen_workflow = content.split('WORKFLOW SUMMARY')[1]
+    gen_workflow = extract_between(
+        content,
+        [
+            'WORKFLOW_SUMMARY:',
+            '**WORKFLOW_SUMMARY**:',
+            "'WORKFLOW_SUMMARY':",
+            'WORKFLOW SUMMARY',
+        ],
+        [
+            'FINAL_ANSWER:',
+            '**FINAL_ANSWER**:',
+            "'FINAL_ANSWER':",
+            'FINAL ANSWER',
+            'Final Answer',
+            'Scientific Hypothesis',
+        ],
+    )
 
-    if 'FINAL_ANSWER:' in gen_workflow:
-        gen_workflow = gen_workflow.split('FINAL_ANSWER:')[0]
-    if '**FINAL_ANSWER**' in gen_workflow:
-        gen_workflow = gen_workflow.split('**FINAL_ANSWER**:')[0]
-    if "'FINAL_ANSWER'" in gen_workflow:
-        gen_workflow = gen_workflow.split("'FINAL_ANSWER':")[0]
-    if 'FINAL ANSWER' in gen_workflow:
-        gen_workflow = gen_workflow.split('FINAL ANSWER')[0]
-    if 'Final Answer' in gen_workflow:
-        gen_workflow = gen_workflow.split('Final Answer')[0]
-    if 'Scientific Hypothesis' in gen_workflow:
-        gen_workflow = gen_workflow.split('Scientific Hypothesis')[0]
-
-    if gen_workflow == '':
+    if not gen_workflow:
         error += 'No Workflow Summary found in the line. | '
 
     # extract final answer
-    if 'FINAL_ANSWER:' in content:
-        gen_hypothesis = content.split('FINAL_ANSWER:')[1]
-    if '**FINAL_ANSWER**' in content:
-        gen_hypothesis = content.split('**FINAL_ANSWER**:')[1]
-    if "'FINAL_ANSWER'" in content:
-        gen_hypothesis = content.split("'FINAL_ANSWER':")[1]
-    if 'Final Answer' in content:
-        gen_hypothesis = content.split('Final Answer')[1]
-    if 'Scientific Hypothesis' in content:
-        gen_hypothesis = content.split('Scientific Hypothesis')[1]
+    gen_hypothesis = extract_between(
+        content,
+        [
+            'FINAL_ANSWER:',
+            '**FINAL_ANSWER**:',
+            "'FINAL_ANSWER':",
+            'Final Answer',
+            'Scientific Hypothesis',
+        ],
+        [
+            'NEXT-AGENT:',
+            '**NEXT-AGENT**:',
+            "'NEXT-AGENT':",
+            'FEEDBACK:',
+            '**FEEDBACK**:',
+            "'FEEDBACK':",
+        ],
+    )
 
-    if 'NEXT-AGENT:' in gen_hypothesis:
-        gen_hypothesis = gen_hypothesis.split('NEXT-AGENT:')[0]
-    if '**NEXT-AGENT**' in gen_hypothesis:
-        gen_hypothesis = gen_hypothesis.split('**NEXT-AGENT**:')[0]
-    if "'NEXT-AGENT'" in gen_hypothesis:
-        gen_hypothesis = gen_hypothesis.split("'NEXT-AGENT':")[0]
-
-    if 'FEEDBACK' in gen_hypothesis:
-        gen_hypothesis = gen_hypothesis.split('FEEDBACK:')[0]
-    if '**FEEDBACK**' in gen_hypothesis:
-        gen_hypothesis = gen_hypothesis.split('**FEEDBACK**:')[0]
-    if "'FEEDBACK'" in gen_hypothesis:
-        gen_hypothesis = gen_hypothesis.split("'FEEDBACK':")[0]
-
-    if gen_hypothesis == '':
+    if not gen_hypothesis:
         error += 'No Final Answer in the line.'
 
     return gen_hypothesis, gen_workflow, error
