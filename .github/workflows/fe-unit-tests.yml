@@ -12,6 +12,11 @@ on:
       - 'frontend/**'
       -  '.github/workflows/fe-unit-tests.yml'
 
+# If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
+concurrency:
+  group: ${{ github.workflow }}-${{ (github.head_ref && github.ref) || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   # Run frontend unit tests
   fe-test:
