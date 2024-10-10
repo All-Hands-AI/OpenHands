@@ -72,6 +72,9 @@ function GitHubAuth({
 }
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
+  const token = localStorage.getItem("token");
+  if (token) return redirect("/app");
+
   const ghToken = localStorage.getItem("ghToken");
   let repositories: GitHubRepository[] = [];
   if (ghToken) {

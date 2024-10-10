@@ -5,71 +5,55 @@ labels: ['bug']
 body:
   - type: markdown
     attributes:
-      value: Thank you for taking the time to fill out this bug report. We greatly appreciate your effort to complete this template fully. Please provide as much information as possible to help us understand and address the issue effectively.
+      value: Thank you for taking the time to fill out this bug report. Please provide as much information as possible to help us understand and address the issue effectively.
 
   - type: checkboxes
     attributes:
       label: Is there an existing issue for the same bug?
       description: Please check if an issue already exists for the bug you encountered.
       options:
-      - label: I have checked the troubleshooting document at https://docs.all-hands.dev/modules/usage/troubleshooting
-        required: true
       - label: I have checked the existing issues.
         required: true
 
   - type: textarea
     id: bug-description
     attributes:
-      label: Describe the bug
-      description: Provide a short description of the problem.
+      label: Describe the bug and reproduction steps
+      description: Provide a description of the issue along with any reproduction steps.
     validations:
       required: true
 
-  - type: textarea
-    id: current-version
+  - type: dropdown
+    id: installation
     attributes:
-      label: Current OpenHands version
-      description: What version of OpenHands are you using? If you're running in docker, tell us the tag you're using (e.g. ghcr.io/all-hands-ai/openhands:0.3.1).
-      render: bash
-    validations:
-      required: true
+      label: OpenHands Installation
+      description: How are you running OpenHands?
+      options:
+        - Docker command in README
+        - Development workflow
+      default: 0
 
-  - type: textarea
-    id: config
+  - type: input
+    id: openhands-version
     attributes:
-      label: Installation and Configuration
-      description: Please provide any commands you ran and any configuration (redacting API keys)
-      render: bash
-    validations:
-      required: true
+      label: OpenHands Version
+      description: What version of OpenHands are you using?
+      placeholder: ex. 0.9.8, main, etc.
 
-  - type: textarea
-    id: model-agent
-    attributes:
-      label: Model and Agent
-      description: What model and agent are you using? You can see these settings in the UI by clicking the settings wheel.
-      placeholder: |
-        - Model:
-        - Agent:
-
-  - type: textarea
-    id: os-version
+  - type: dropdown
+    id: os
     attributes:
       label: Operating System
-      description: What Operating System are you using? Linux, Mac OS, WSL on Windows
-
-  - type: textarea
-    id: repro-steps
-    attributes:
-      label: Reproduction Steps
-      description: Please list the steps to reproduce the issue.
-      placeholder: |
-        1.
-        2.
-        3.
+      options:
+        - MacOS
+        - Linux
+        - WSL on Windows
 
   - type: textarea
     id: additional-context
     attributes:
       label: Logs, Errors, Screenshots, and Additional Context
-      description: If you want to share the chat history you can click the thumbs-down (👎) button above the input field and you will get a shareable link (you can also click thumbs up when things are going well of course!). LLM logs will be stored in the `logs/llm/default` folder. Please add any additional context about the problem here.
+      description: Please provide any additional information you think might help. If you want to share the chat history
+        you can click the thumbs-down (👎) button above the input field and you will get a shareable link
+        (you can also click thumbs up when things are going well of course!). LLM logs will be stored in the
+        `logs/llm/default` folder. Please add any additional context about the problem here.

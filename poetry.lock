@@ -195,13 +195,13 @@ files = [
 
 [[package]]
 name = "anthropic"
-version = "0.35.0"
+version = "0.36.0"
 description = "The official Python library for the anthropic API"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "anthropic-0.35.0-py3-none-any.whl", hash = "sha256:777983989ed9e444eb4a6d92dad84027f14a6639cba6f48772c0078d51959828"},
-    {file = "anthropic-0.35.0.tar.gz", hash = "sha256:d2f998246413c309a7770d1faa617500f505377a04ab45a13a66f8559daf3742"},
+    {file = "anthropic-0.36.0-py3-none-any.whl", hash = "sha256:9183b9eaa0f409f2047244d7ef02c9c3eb916959c0b2960f7605dcb6cabbf548"},
+    {file = "anthropic-0.36.0.tar.gz", hash = "sha256:7b0b1457096605572a29559d9a8ce224b9389d379b410e7d1bf5e0c1379f9ee2"},
 ]
 
 [package.dependencies]
@@ -571,17 +571,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.35.35"
+version = "1.35.36"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.35.35-py3-none-any.whl", hash = "sha256:72eb73d90448632d7388644388be6977293ccb8fbfefd5fd39d7e75ff2d48f8a"},
-    {file = "boto3-1.35.35.tar.gz", hash = "sha256:73d4f22b57a725f0e8a6e0c4b2d16336c128e39f3189c24f9e513daa7c14936b"},
+    {file = "boto3-1.35.36-py3-none-any.whl", hash = "sha256:33735b9449cd2ef176531ba2cb2265c904a91244440b0e161a17da9d24a1e6d1"},
+    {file = "boto3-1.35.36.tar.gz", hash = "sha256:586524b623e4fbbebe28b604c6205eb12f263cc4746bccb011562d07e217a4cb"},
 ]
 
 [package.dependencies]
-botocore = ">=1.35.35,<1.36.0"
+botocore = ">=1.35.36,<1.36.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -590,13 +590,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.35.35"
+version = "1.35.36"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.35.35-py3-none-any.whl", hash = "sha256:44b843e310b6338c3086908928709c7a303a2bb0326ea3c93ece5ac5afafb6c8"},
-    {file = "botocore-1.35.35.tar.gz", hash = "sha256:899d303046391caa1d05093a673e52d02185b37bc64bd78771ad6752167a25ab"},
+    {file = "botocore-1.35.36-py3-none-any.whl", hash = "sha256:64241c778bf2dc863d93abab159e14024d97a926a5715056ef6411418cb9ead3"},
+    {file = "botocore-1.35.36.tar.gz", hash = "sha256:354ec1b766f0029b5d6ff0c45d1a0f9e5007b7d2f3ec89bcdd755b208c5bc797"},
 ]
 
 [package.dependencies]
@@ -609,32 +609,32 @@ crt = ["awscrt (==0.22.0)"]
 
 [[package]]
 name = "browsergym"
-version = "0.7.1"
+version = "0.8.0"
 description = "BrowserGym: a gym environment for web task automation in the Chromium browser"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym-0.7.1-py3-none-any.whl", hash = "sha256:af216abf3e1ad538e4d31e5bf96da03768ac4aabc9a566159355fa2b6af093da"},
-    {file = "browsergym-0.7.1.tar.gz", hash = "sha256:c269eb8b6da4bd186c05529f3492a9bef2210a89e2cdae4b7557b6ae7091c28e"},
+    {file = "browsergym-0.8.0-py3-none-any.whl", hash = "sha256:c66f3f042af06451d09e3f8d3d2a331f41048ecdfa5b51980d1f929e96aacd84"},
+    {file = "browsergym-0.8.0.tar.gz", hash = "sha256:d6522cf8ac905907891943f60176d9ef984eba6d209bf7e41eee4463ff1bed08"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.7.1"
-browsergym-experiments = "0.7.1"
-browsergym-miniwob = "0.7.1"
-browsergym-visualwebarena = "0.7.1"
-browsergym-webarena = "0.7.1"
+browsergym-core = "0.8.0"
+browsergym-experiments = "0.8.0"
+browsergym-miniwob = "0.8.0"
+browsergym-visualwebarena = "0.8.0"
+browsergym-webarena = "0.8.0"
 browsergym-workarena = "*"
 
 [[package]]
 name = "browsergym-core"
-version = "0.7.1"
+version = "0.8.0"
 description = "BrowserGym: a gym environment for web task automation in the Chromium browser"
 optional = false
 python-versions = ">3.9"
 files = [
-    {file = "browsergym_core-0.7.1-py3-none-any.whl", hash = "sha256:28a79537e91fd0dff639fbed9d1f3318b99f8aa5efe054f2468fc0bf2d220ba6"},
-    {file = "browsergym_core-0.7.1.tar.gz", hash = "sha256:da6bdd190a8ccdc8394e68a2a17701b7af3208e0267ca7ed9fd33dc4c2c7ea99"},
+    {file = "browsergym_core-0.8.0-py3-none-any.whl", hash = "sha256:9f949246c077a2fe1b5a02f65665beefbc17ae14a73397b75b7e7bf037f2aaba"},
+    {file = "browsergym_core-0.8.0.tar.gz", hash = "sha256:8102c79a10aadd0c5195f570ed35b61845bcf8c6aea0ae66956e7a27ee6136e3"},
 ]
 
 [package.dependencies]
@@ -648,62 +648,62 @@ pyparsing = ">=3"
 
 [[package]]
 name = "browsergym-experiments"
-version = "0.7.1"
+version = "0.8.0"
 description = "Experimentation tools for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_experiments-0.7.1-py3-none-any.whl", hash = "sha256:0f3104da708436fe93460cd609590d28aa9dcbeda68d8a51599a56daaea7cd96"},
-    {file = "browsergym_experiments-0.7.1.tar.gz", hash = "sha256:75f9e5676e625cb7ec4a5fbce8d6832708b01cb4e5af9c150cfd27182af60a74"},
+    {file = "browsergym_experiments-0.8.0-py3-none-any.whl", hash = "sha256:52fe37013212ae2dbdf6276e5bc46d6a6271405e601dd8d9d72fb838a0208f47"},
+    {file = "browsergym_experiments-0.8.0.tar.gz", hash = "sha256:fef7e047ff06d961ae79baa89b69cccd8b3ea7781fddeadc20e7a504c32ef5e0"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.7.1"
+browsergym-core = "0.8.0"
 tiktoken = ">=0.4"
 
 [[package]]
 name = "browsergym-miniwob"
-version = "0.7.1"
+version = "0.8.0"
 description = "MiniWoB++ benchmark for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_miniwob-0.7.1-py3-none-any.whl", hash = "sha256:69f560b5d0210a5db3b2672d0ac48e274170f765832e3628da3fd0ba694d3f40"},
-    {file = "browsergym_miniwob-0.7.1.tar.gz", hash = "sha256:635909cbe0646985699fc65715c463e258c04dad16521bfa59cb0ae4ec797f8f"},
+    {file = "browsergym_miniwob-0.8.0-py3-none-any.whl", hash = "sha256:cfe54e1d58dab5e8524705cbbfabbe656cdff88f01fba6e253c8451aa7fabea9"},
+    {file = "browsergym_miniwob-0.8.0.tar.gz", hash = "sha256:617c73af493a7c707d395ca750ede5aa17f1015488dea9abe5823f0a22112d5d"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.7.1"
+browsergym-core = "0.8.0"
 
 [[package]]
 name = "browsergym-visualwebarena"
-version = "0.7.1"
+version = "0.8.0"
 description = "VisualWebArena benchmark for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_visualwebarena-0.7.1-py3-none-any.whl", hash = "sha256:bf9bb0d2f406276531aee10dd04371b152cfa2c703402291e57a04ea47847c43"},
-    {file = "browsergym_visualwebarena-0.7.1.tar.gz", hash = "sha256:b26db1d75a9ecae7d97a1bbefad2d7ea10e49119e4aec8320cf6f8bcd265e45c"},
+    {file = "browsergym_visualwebarena-0.8.0-py3-none-any.whl", hash = "sha256:19342f512296739bfb87526944d1d687185f0292bd126cef66abac64df595bef"},
+    {file = "browsergym_visualwebarena-0.8.0.tar.gz", hash = "sha256:551a899239a94d3ffa687a925d78f60481b6cc838bce25ab5741c2f70537d22e"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.7.1"
-libvisualwebarena = "0.0.8"
+browsergym-core = "0.8.0"
+libvisualwebarena = "0.0.14"
 requests = "*"
 
 [[package]]
 name = "browsergym-webarena"
-version = "0.7.1"
+version = "0.8.0"
 description = "WebArena benchmark for BrowserGym"
 optional = false
 python-versions = ">3.7"
 files = [
-    {file = "browsergym_webarena-0.7.1-py3-none-any.whl", hash = "sha256:117cb2946d8a9b3536d0a55300eb28b7650c0e70339855bed8890f0f8fc887e9"},
-    {file = "browsergym_webarena-0.7.1.tar.gz", hash = "sha256:568de29ab0a7a1a569855e1bb71af5cfd4e982156988a64e30ada3bfe309b399"},
+    {file = "browsergym_webarena-0.8.0-py3-none-any.whl", hash = "sha256:e5bac8f812f816b5329deed17d410359c70763e74529131d3e306c8cbcf0c7da"},
+    {file = "browsergym_webarena-0.8.0.tar.gz", hash = "sha256:8d62a470e44d4973fcaf6cbaa7d5dda0fdd6f718274e039b6274abbb59684aee"},
 ]
 
 [package.dependencies]
-browsergym-core = "0.7.1"
+browsergym-core = "0.8.0"
 libwebarena = "0.0.3"
 
 [[package]]
@@ -1014,13 +1014,13 @@ numpy = "*"
 
 [[package]]
 name = "chromadb"
-version = "0.5.11"
+version = "0.5.12"
 description = "Chroma."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "chromadb-0.5.11-py3-none-any.whl", hash = "sha256:f02d9326869cea926f980bd6c9a0150a0ef2e151072f325998c16a9502fb4b25"},
-    {file = "chromadb-0.5.11.tar.gz", hash = "sha256:252e970b3e1a27b594cc7b3685238691bf8eaa232225d4dee9e33ec83580775f"},
+    {file = "chromadb-0.5.12-py3-none-any.whl", hash = "sha256:213b10018ac50bf1295920fef279f40ffbfd9c5f16eebc3c37f319af83b843cc"},
+    {file = "chromadb-0.5.12.tar.gz", hash = "sha256:18f10f95b631e7a13b3445184f77b161baf09f278f16c26dd9f065d012242d2f"},
 ]
 
 [package.dependencies]
@@ -2278,13 +2278,13 @@ httplib2 = ">=0.19.0"
 
 [[package]]
 name = "google-cloud-aiplatform"
-version = "1.69.0"
+version = "1.70.0"
 description = "Vertex AI API client library"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "google-cloud-aiplatform-1.69.0.tar.gz", hash = "sha256:08be3a4432fd87d9cc86db83ba626f988d13597197bc53c6808e1c4c65a25bb0"},
-    {file = "google_cloud_aiplatform-1.69.0-py2.py3-none-any.whl", hash = "sha256:6e21c29bf4506ed3bfb00cfe47ab1ad1788854b18f0ded2458016837c917e520"},
+    {file = "google-cloud-aiplatform-1.70.0.tar.gz", hash = "sha256:e8edef6dbc7911380d0ea55c47544e799f62b891cb1a83b504ca1c09fff9884b"},
+    {file = "google_cloud_aiplatform-1.70.0-py2.py3-none-any.whl", hash = "sha256:690e6041f03d3aa85102ac3f316c958d6f43a99aefb7fb3f8938dee56d08abd9"},
 ]
 
 [package.dependencies]
@@ -2314,8 +2314,8 @@ metadata = ["numpy (>=1.15.0)", "pandas (>=1.0.0)"]
 pipelines = ["pyyaml (>=5.3.1,<7)"]
 prediction = ["docker (>=5.0.3)", "fastapi (>=0.71.0,<=0.114.0)", "httpx (>=0.23.0,<0.25.0)", "starlette (>=0.17.1)", "uvicorn[standard] (>=0.16.0)"]
 private-endpoints = ["requests (>=2.28.1)", "urllib3 (>=1.21.1,<1.27)"]
-ray = ["google-cloud-bigquery", "google-cloud-bigquery-storage", "immutabledict", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=6.0.1)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || >=2.33.dev0,<=2.33.0)", "ray[default] (>=2.5,<=2.33.0)", "setuptools (<70.0.0)"]
-ray-testing = ["google-cloud-bigquery", "google-cloud-bigquery-storage", "immutabledict", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=6.0.1)", "pytest-xdist", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || >=2.33.dev0,<=2.33.0)", "ray[default] (>=2.5,<=2.33.0)", "ray[train]", "scikit-learn", "setuptools (<70.0.0)", "tensorflow", "torch (>=2.0.0,<2.1.0)", "xgboost", "xgboost-ray"]
+ray = ["google-cloud-bigquery", "google-cloud-bigquery-storage", "immutabledict", "pandas (>=1.0.0)", "pyarrow (>=6.0.1)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || >=2.33.dev0,<=2.33.0)", "ray[default] (>=2.5,<=2.33.0)", "setuptools (<70.0.0)"]
+ray-testing = ["google-cloud-bigquery", "google-cloud-bigquery-storage", "immutabledict", "pandas (>=1.0.0)", "pyarrow (>=6.0.1)", "pytest-xdist", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || >=2.33.dev0,<=2.33.0)", "ray[default] (>=2.5,<=2.33.0)", "ray[train]", "scikit-learn", "setuptools (<70.0.0)", "tensorflow", "torch (>=2.0.0,<2.1.0)", "xgboost", "xgboost-ray"]
 reasoningengine = ["cloudpickle (>=3.0,<4.0)", "google-cloud-trace (<2)", "opentelemetry-exporter-gcp-trace (<2)", "opentelemetry-sdk (<2)", "pydantic (>=2.6.3,<3)"]
 tensorboard = ["tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.4.0,<3.0.0dev)", "werkzeug (>=2.0.0,<2.1.0dev)"]
 testing = ["bigframes", "docker (>=5.0.3)", "explainable-ai-sdk (>=1.0.0)", "fastapi (>=0.71.0,<=0.114.0)", "google-api-core (>=2.11,<3.0.0)", "google-cloud-bigquery", "google-cloud-bigquery-storage", "google-vizier (>=0.1.6)", "grpcio-testing", "httpx (>=0.23.0,<0.25.0)", "immutabledict", "ipython", "kfp (>=2.6.0,<3.0.0)", "lit-nlp (==0.4.0)", "mlflow (>=1.27.0,<=2.16.0)", "nltk", "numpy (>=1.15.0)", "pandas (>=1.0.0)", "pandas (>=1.0.0,<2.2.0)", "pyarrow (>=10.0.1)", "pyarrow (>=14.0.0)", "pyarrow (>=3.0.0,<8.0dev)", "pyarrow (>=6.0.1)", "pytest-asyncio", "pytest-xdist", "pyyaml (>=5.3.1,<7)", "ray[default] (>=2.4,<2.5.dev0 || >2.9.0,!=2.9.1,!=2.9.2,<2.10.dev0 || >=2.33.dev0,<=2.33.0)", "ray[default] (>=2.5,<=2.33.0)", "requests (>=2.28.1)", "requests-toolbelt (<1.0.0)", "scikit-learn", "sentencepiece (>=0.2.0)", "setuptools (<70.0.0)", "starlette (>=0.17.1)", "tensorboard-plugin-profile (>=2.4.0,<3.0.0dev)", "tensorflow (==2.13.0)", "tensorflow (==2.16.1)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.3.0,<3.0.0dev)", "tensorflow (>=2.4.0,<3.0.0dev)", "torch (>=2.0.0,<2.1.0)", "torch (>=2.2.0)", "tqdm (>=4.23.0)", "urllib3 (>=1.21.1,<1.27)", "uvicorn[standard] (>=0.16.0)", "werkzeug (>=2.0.0,<2.1.0dev)", "xgboost"]
@@ -3243,13 +3243,13 @@ files = [
 
 [[package]]
 name = "json-repair"
-version = "0.29.10"
+version = "0.30.0"
 description = "A package to repair broken json strings"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "json_repair-0.29.10-py3-none-any.whl", hash = "sha256:750eacc3c0228a72b512654855515c1a88174b641b7b834f769a01f49a0e65ca"},
-    {file = "json_repair-0.29.10.tar.gz", hash = "sha256:8050f9db6e6a42f843e21b3fe8410308b0f6085bfd81506343552522b6b707f8"},
+    {file = "json_repair-0.30.0-py3-none-any.whl", hash = "sha256:bda4a5552dc12085c6363ff5acfcdb0c9cafc629989a2112081b7e205828228d"},
+    {file = "json_repair-0.30.0.tar.gz", hash = "sha256:24f12087a0e385ed47207eab1fca12bffd473e48db5bb803793d6c4fd97377ce"},
 ]
 
 [[package]]
@@ -3729,13 +3729,13 @@ test = ["pytest (>=7.4)", "pytest-cov (>=4.1)"]
 
 [[package]]
 name = "libvisualwebarena"
-version = "0.0.8"
+version = "0.0.14"
 description = "This is an unofficial, use-at-your-own risks port of the visualwebarena benchmark, for use as a standalone library package."
 optional = false
 python-versions = "<4,>=3.7"
 files = [
-    {file = "libvisualwebarena-0.0.8-py3-none-any.whl", hash = "sha256:a16cc6d743463c35306bce1e8661e1aa025c7880bd94319d92239c3baf65d640"},
-    {file = "libvisualwebarena-0.0.8.tar.gz", hash = "sha256:09a9006f8908602fafbf6675aac738609b0d19de523ecee29ad9625b1427a717"},
+    {file = "libvisualwebarena-0.0.14-py3-none-any.whl", hash = "sha256:636b06ca1d52f1a363503b5b563492e83f2482efaf85bb26b69744565a499f0f"},
+    {file = "libvisualwebarena-0.0.14.tar.gz", hash = "sha256:7e660179f60f1df8d884204f2b742a2117e7fe050823d839ca5744ea1c0709a7"},
 ]
 
 [package.dependencies]
@@ -3782,13 +3782,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.48.18"
+version = "1.49.0"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.48.18-py3-none-any.whl", hash = "sha256:8a58a6241ba63bb8bf1214784a8197859196bdc2b4d0dd9402b719928b9f0954"},
-    {file = "litellm-1.48.18.tar.gz", hash = "sha256:c77191c86a306dd706fde9374d74a0b8d936c52be6cf1f61f9cd541124bdb520"},
+    {file = "litellm-1.49.0-py3-none-any.whl", hash = "sha256:53711018b730f8a4262c11461b702b771e46e0c974f9c0bcd5b384b027308dd5"},
+    {file = "litellm-1.49.0.tar.gz", hash = "sha256:f5ef51b571b14de318fccdd6728f4e705aad68250f9ed374c7fe6c4e95d6c008"},
 ]
 
 [package.dependencies]
@@ -3825,19 +3825,19 @@ pydantic = ">=1.10"
 
 [[package]]
 name = "llama-index"
-version = "0.11.16"
+version = "0.11.17"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index-0.11.16-py3-none-any.whl", hash = "sha256:de10b9381ce43e08ba04be01b83ac679ed2eb180a8a858b00eca4fcabbe66fb6"},
-    {file = "llama_index-0.11.16.tar.gz", hash = "sha256:8baa26d3939c1f0a798a95013e70fba8297cfbd564fafc15431c2fc1b142086b"},
+    {file = "llama_index-0.11.17-py3-none-any.whl", hash = "sha256:85a3d2cd1908181555ae926f880dfae5284b24fda6b866e60969a44302d87350"},
+    {file = "llama_index-0.11.17.tar.gz", hash = "sha256:b2176f400b33cd765e86775724d8ad5c6e4812ecdc36f2ca4500edcadc015af4"},
 ]
 
 [package.dependencies]
 llama-index-agent-openai = ">=0.3.4,<0.4.0"
 llama-index-cli = ">=0.3.1,<0.4.0"
-llama-index-core = ">=0.11.16,<0.12.0"
+llama-index-core = ">=0.11.17,<0.12.0"
 llama-index-embeddings-openai = ">=0.2.4,<0.3.0"
 llama-index-indices-managed-llama-cloud = ">=0.3.0"
 llama-index-legacy = ">=0.9.48,<0.10.0"
@@ -3883,13 +3883,13 @@ llama-index-llms-openai = ">=0.2.0,<0.3.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.11.16"
+version = "0.11.17"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.8.1"
 files = [
-    {file = "llama_index_core-0.11.16-py3-none-any.whl", hash = "sha256:099ba785e357506fd5a24c1a6b8fa5286366d6c71637649fab0f9126dcea842c"},
-    {file = "llama_index_core-0.11.16.tar.gz", hash = "sha256:232a5cebcc73b951d9c663bd30ed59de5356dbd8f9ab88024d19c88bdd1b3254"},
+    {file = "llama_index_core-0.11.17-py3-none-any.whl", hash = "sha256:d65565b54ea55b2db12f9a1cd5c250b770d7e43d3363137cff431a6116ef069c"},
+    {file = "llama_index_core-0.11.17.tar.gz", hash = "sha256:1143baf8d819e27555bdb142abdf2833d3d37731f270f46fa1e07fc4b97116ae"},
 ]
 
 [package.dependencies]
@@ -5408,13 +5408,13 @@ sympy = "*"
 
 [[package]]
 name = "openai"
-version = "1.51.1"
+version = "1.51.2"
 description = "The official Python library for the openai API"
 optional = false
 python-versions = ">=3.7.1"
 files = [
-    {file = "openai-1.51.1-py3-none-any.whl", hash = "sha256:035ba637bef7523282b5b8d9f2f5fdc0bb5bc18d52af2bfc7f64e4a7b0a169fb"},
-    {file = "openai-1.51.1.tar.gz", hash = "sha256:a4908d68e0a1f4bcb45cbaf273c5fbdc3a4fa6239bb75128b58b94f7d5411563"},
+    {file = "openai-1.51.2-py3-none-any.whl", hash = "sha256:5c5954711cba931423e471c37ff22ae0fd3892be9b083eee36459865fbbb83fa"},
+    {file = "openai-1.51.2.tar.gz", hash = "sha256:c6a51fac62a1ca9df85a522e462918f6bb6bc51a8897032217e453a0730123a6"},
 ]
 
 [package.dependencies]
@@ -6013,13 +6013,13 @@ test = ["coverage", "django", "flake8", "freezegun (==0.3.15)", "mock (>=2.0.0)"
 
 [[package]]
 name = "pre-commit"
-version = "4.0.0"
+version = "4.0.1"
 description = "A framework for managing and maintaining multi-language pre-commit hooks."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "pre_commit-4.0.0-py2.py3-none-any.whl", hash = "sha256:0ca2341cf94ac1865350970951e54b1a50521e57b7b500403307aed4315a1234"},
-    {file = "pre_commit-4.0.0.tar.gz", hash = "sha256:5d9807162cc5537940f94f266cbe2d716a75cfad0d78a317a92cac16287cfed6"},
+    {file = "pre_commit-4.0.1-py2.py3-none-any.whl", hash = "sha256:efde913840816312445dc98787724647c65473daefe420785f885e8ed9a06878"},
+    {file = "pre_commit-4.0.1.tar.gz", hash = "sha256:80905ac375958c0444c65e9cebebd948b3cdb518f335a091a670a89d652139d2"},
 ]
 
 [package.dependencies]
@@ -9700,4 +9700,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "fe132649818529c696805e64da839526b1f8cf5167c9f625681e870a4931dac3"
+content-hash = "bdddb4441e696439a0da653d8065c7ff820478f997ed6762b8a1294e510a8eab"
