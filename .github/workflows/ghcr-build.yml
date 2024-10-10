@@ -92,6 +92,7 @@ jobs:
         run: |
           docker run -e SANDBOX_USER_ID=0 -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/${REPO_OWNER}/openhands:${{ env.RELEVANT_SHA }} /bin/bash -c "docker run hello-world"
 
+
   # Builds the runtime Docker images
   ghcr_build_runtime:
     name: Build Image
