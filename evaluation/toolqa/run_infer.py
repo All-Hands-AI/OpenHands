@@ -102,7 +102,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
     logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
-    runtime = create_runtime(config, sid=qid)
+    runtime = create_runtime(config)
     initialize_runtime(runtime)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state

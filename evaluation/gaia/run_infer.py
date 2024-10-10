@@ -141,7 +141,7 @@ def process_instance(
     instruction += AGENT_CLS_TO_INST_SUFFIX.get(metadata.agent_class, '')
     logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
-    runtime = create_runtime(config, sid=instance['instance_id'])
+    runtime = create_runtime(config)
     initialize_runtime(runtime, instance)
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
