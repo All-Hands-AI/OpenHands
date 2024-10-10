@@ -82,8 +82,8 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
             'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
             'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
             # TODO: uncomment these once we finalized editing
-            # 'You should NEVER use web browsing or any other web-based tools.\n'
-            # 'You should ALWAYS use the default Python interpreter available in the <execute_bash> environment to run code related to the provided issue and/or repository.\n'
+            'You should NEVER use web browsing or any other web-based tools.\n'
+            'You should ALWAYS use the default Python interpreter available in the <execute_bash> environment to run code related to the provided issue and/or repository.\n'
         )
 
     # NOTE: You can actually set slightly different instruction for different agents
