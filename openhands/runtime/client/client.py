@@ -11,13 +11,17 @@ import os
 import re
 import shutil
 import subprocess
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 import pexpect
-from fastapi import FastAPI, HTTPException, Request, UploadFile
+from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
 
 from openhands.core.logger import openhands_logger as logger
@@ -60,6 +64,15 @@ INIT_COMMANDS = [
 ]
 SOFT_TIMEOUT_SECONDS = 5
 
+SESSION_API_KEY = os.environ.get('SESSION_API_KEY')
+api_key_header = APIKeyHeader(name='X-Session-API-Key', auto_error=False)
+
+
+def verify_api_key(api_key: str = Depends(api_key_header)):
+    if SESSION_API_KEY and api_key != SESSION_API_KEY:
+        raise HTTPException(status_code=403, detail='Invalid API Key')
+    return api_key
+
 
 class RuntimeClient:
     """RuntimeClient is running inside docker sandbox.
@@ -84,6 +97,8 @@ class RuntimeClient:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.browser = BrowserEnv(browsergym_eval_env)
+        self.start_time = time.time()
+        self.last_execution_time = self.start_time
 
     @property
     def initial_pwd(self):
@@ -575,12 +590,59 @@ if __name__ == '__main__':
 
     app = FastAPI(lifespan=lifespan)
 
+    # TODO below 3 exception handlers were recommended by Sonnet.
+    # Are these something we should keep?
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception):
+        logger.exception('Unhandled exception occurred:')
+        return JSONResponse(
+            status_code=500,
+            content={
+                'message': 'An unexpected error occurred. Please try again later.'
+            },
+        )
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+        logger.error(f'HTTP exception occurred: {exc.detail}')
+        return JSONResponse(
+            status_code=exc.status_code, content={'message': exc.detail}
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(
+        request: Request, exc: RequestValidationError
+    ):
+        logger.error(f'Validation error occurred: {exc}')
+        return JSONResponse(
+            status_code=422,
+            content={'message': 'Invalid request parameters', 'details': exc.errors()},
+        )
+
     @app.middleware('http')
     async def one_request_at_a_time(request: Request, call_next):
         assert client is not None
         async with client.lock:
             response = await call_next(request)
         return response
+
+    @app.middleware('http')
+    async def authenticate_requests(request: Request, call_next):
+        if request.url.path != '/alive' and request.url.path != '/server_info':
+            try:
+                verify_api_key(request.headers.get('X-Session-API-Key'))
+            except HTTPException as e:
+                return e
+        response = await call_next(request)
+        return response
+
+    @app.get('/server_info')
+    async def get_server_info():
+        assert client is not None
+        current_time = time.time()
+        uptime = current_time - client.start_time
+        idle_time = current_time - client.last_execution_time
+        return {'uptime': uptime, 'idle_time': idle_time}
 
     @app.post('/execute_action')
     async def execute_action(action_request: ActionRequest):
@@ -589,10 +651,13 @@ if __name__ == '__main__':
             action = event_from_dict(action_request.action)
             if not isinstance(action, Action):
                 raise HTTPException(status_code=400, detail='Invalid action type')
+            client.last_execution_time = time.time()
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
-            logger.error(f'Error processing command: {str(e)}')
+            logger.error(
+                f'Error processing command: {str(e)}', exc_info=True, stack_info=True
+            )
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post('/upload_file')
@@ -612,7 +677,7 @@ if __name__ == '__main__':
             if not os.path.exists(full_dest_path):
                 os.makedirs(full_dest_path, exist_ok=True)
 
-            if recursive:
+            if recursive or file.filename.endswith('.zip'):
                 # For recursive uploads, we expect a zip file
                 if not file.filename.endswith('.zip'):
                     raise HTTPException(
