@@ -5,6 +5,7 @@ import re
 import tempfile
 import uuid
 import warnings
+from contextlib import asynccontextmanager
 
 import requests
 from pathspec import PathSpec
@@ -64,7 +65,15 @@ config = load_app_config()
 file_store = get_file_store(config.file_store, config.file_store_path)
 session_manager = SessionManager(config, file_store)
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global session_manager
+    async with session_manager:
+        yield
+
+
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=['http://localhost:3001', 'http://127.0.0.1:3001'],
