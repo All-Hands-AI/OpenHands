@@ -213,6 +213,6 @@ class Runtime:
         raise NotImplementedError('This method is not implemented in the base class.')
 
     @abstractmethod
-    def zip_files_in_sandbox(self) -> bytes:
-        """Zip all files in the sandbox and return the zip file as bytes."""
+    def copy_from(self, path: str) -> bytes:
+        """Zip all files in the sandbox and return as a stream of bytes."""
         raise NotImplementedError('This method is not implemented in the base class.')
