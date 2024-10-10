@@ -78,12 +78,19 @@ jobs:
           export REPO_OWNER=${{ github.repository_owner }}
           REPO_OWNER=$(echo $REPO_OWNER | tr '[:upper:]' '[:lower:]')
           # Run the build script in the app image
-          docker run -e SANDBOX_USER_ID=0 -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/${REPO_OWNER}/openhands:$RELEVANT_SHA /bin/bash -c "mkdir -p containers/runtime; python3 openhands/runtime/utils/runtime_build.py --base_image ${{ env.BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST }} --build_folder containers/runtime --force_rebuild" 2>&1 | tee docker-outputs.txt
+          docker run -e SANDBOX_USER_ID=0 -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/${REPO_OWNER}/openhands:${{ env.RELEVANT_SHA }} /bin/bash -c "mkdir -p containers/runtime; python3 openhands/runtime/utils/runtime_build.py --base_image ${{ env.BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST }} --build_folder containers/runtime --force_rebuild" 2>&1 | tee docker-outputs.txt
           # Get the hash from the build script
           hash_from_app_image=$(cat docker-outputs.txt | grep "Hash for docker build directory" | awk -F "): " '{print $2}' | uniq | head -n1)
           echo "hash_from_app_image=$hash_from_app_image" >> $GITHUB_OUTPUT
           echo "Hash from app image: $hash_from_app_image"
+      # This test should move when we have a test suite for the app image
+      - name: Test docker in App Image
+        run: |
+          # Lowercase the repository owner
+          export REPO_OWNER=${{ github.repository_owner }}
+          REPO_OWNER=$(echo $REPO_OWNER | tr '[:upper:]' '[:lower:]')
 
+          docker run -e SANDBOX_USER_ID=0 -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/${REPO_OWNER}/openhands:${{ env.RELEVANT_SHA }} /bin/bash -c "docker run hello-world"
 
   # Builds the runtime Docker images
   ghcr_build_runtime:
