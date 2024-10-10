@@ -107,6 +107,7 @@ class RemoteRuntime(Runtime):
                 logger.info(
                     f'Running remote runtime with image: {self.config.sandbox.runtime_container_image}'
                 )
+                self.container_image = self.config.sandbox.runtime_container_image
             self._start_runtime(plugins)
         assert (
             self.runtime_id is not None
