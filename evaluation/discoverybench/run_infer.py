@@ -8,7 +8,9 @@ import pandas as pd
 from evaluation.discoverybench.eval_utils.eval_w_subhypo_gen import (
     run_eval_gold_vs_gen_NL_hypo_workflow,
 )
-from evaluation.discoverybench.utils import extract_gen_hypo_from_logs
+from evaluation.discoverybench.eval_utils.response_parser import (
+    extract_gen_hypo_from_logs,
+)
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
