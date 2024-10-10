@@ -211,9 +211,6 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     else:
         logger.info(f'Starting evaluation for instance {instance["instance_id"]}.')
 
-    # Create a sandbox, using the instance ID and PID as the session ID to avoid conflicts
-    sid = str(instance['instance_id'])
-
     repo_url = instance['github']
     repo_name = repo_url.split('/')[-1]
     task_path = os.path.join('/workspace', repo_name, instance['path'][2:])
@@ -235,7 +232,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     )
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
-    runtime = create_runtime(config, sid=sid)
+    runtime = create_runtime(config)
     initialize_runtime(runtime, instance)
 
     # Run the agent
