@@ -214,7 +214,7 @@ Again do not quit without reporting the answer first.
 Ok now its time to start solving the question. Good luck!
 """
 
-    runtime = create_runtime(config, sid=f'gptq_{str(instance.instance_id)}')
+    runtime = create_runtime(config)
 
     state: State | None = asyncio.run(
         run_controller(
