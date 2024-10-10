@@ -7,7 +7,6 @@ import {
   appendSecurityAnalyzerInput,
 } from "#/state/securityAnalyzerSlice";
 import { setCurStatusMessage } from "#/state/statusSlice";
-import { setRootTask } from "#/state/taskSlice";
 import store from "#/store";
 import ActionType from "#/types/ActionType";
 import { ActionMessage, StatusMessage } from "#/types/Message";
