@@ -42,7 +42,6 @@ Let's push the code to GitHub.
 If we're currently on the openhands-workspace branch, please create a new branch with a descriptive name.
 Commit any changes and push them to the remote repository.
 Finally, pen up a pull request using the GitHub API and the token in the GITHUB_TOKEN environment variable, then show me the URL of the pull request.
-Don't do this again until I ask you to.
 `,
       imageUrls: [],
       timestamp: new Date().toISOString(),
