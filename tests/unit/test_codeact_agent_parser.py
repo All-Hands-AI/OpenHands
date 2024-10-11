@@ -12,19 +12,19 @@ from openhands.events.action import AgentDelegateAction
         (
             'I need to search for information.\n<execute_browse>Tell me who is the Vice President of the USA</execute_browse>',
             'BrowsingAgent',
-            'I need to search for information.',
+            'I need to search for information.\nI should start with: Tell me who is the Vice President of the USA',
             'Tell me who is the Vice President of the USA',
         ),
         (
             '<execute_browse>Search for recent climate change data</execute_browse>',
             'BrowsingAgent',
-            '',
+            'I should start with: Search for recent climate change data',
             'Search for recent climate change data',
         ),
         (
             "Let's use the browsing agent to find this information.\n<execute_browse>Find the population of Tokyo in 2023</execute_browse>\nThis will help us answer the question.",
             'BrowsingAgent',
-            "Let's use the browsing agent to find this information.\n\nThis will help us answer the question.",
+            "Let's use the browsing agent to find this information.\n\nThis will help us answer the question.\nI should start with: Find the population of Tokyo in 2023",
             'Find the population of Tokyo in 2023',
         ),
     ],
