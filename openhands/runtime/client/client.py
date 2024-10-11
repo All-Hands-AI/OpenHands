@@ -46,8 +46,7 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization import event_from_dict, event_to_dict
-from openhands.runtime.browser import browse
-from openhands.runtime.browser.browser_env import BrowserEnv
+from openhands.runtime.browser import BrowserEnv
 from openhands.runtime.plugins import (
     ALL_PLUGINS,
     JupyterPlugin,
@@ -585,10 +584,10 @@ class RuntimeClient:
         return FileWriteObservation(content='', path=filepath)
 
     async def browse(self, action: BrowseURLAction) -> Observation:
-        return await browse(action, self.browser)
+        return self.browser.execute(action)
 
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
-        return await browse(action, self.browser)
+        return self.browser.execute(action)
 
     def close(self):
         self.shell.close()

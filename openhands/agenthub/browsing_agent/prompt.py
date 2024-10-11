@@ -16,7 +16,7 @@ from openhands.agenthub.browsing_agent.utils import (
     ParseError,
     parse_html_tags_raise,
 )
-from openhands.runtime.browser.browser_env import BrowserEnv
+from openhands.runtime.browser.utils import image_to_jpg_base64_url
 
 
 @dataclass
@@ -295,7 +295,7 @@ class Observation(Shrinkable):
         if self.flags.use_screenshot:
             if isinstance(prompt, str):
                 prompt = [{'type': 'text', 'text': prompt}]
-            img_url = BrowserEnv.image_to_jpg_base64_url(
+            img_url = image_to_jpg_base64_url(
                 self.obs['screenshot'], add_data_prefix=True
             )
             prompt.append({'type': 'image_url', 'image_url': img_url})

@@ -27,7 +27,7 @@ class BrowseURLAction(Action):
 
 @dataclass
 class BrowseInteractiveAction(Action):
-    browser_actions: str
+    browser_actions: str  # BrowserGym action string
     thought: str = ''
     browsergym_send_msg_to_user: str = ''
     action: str = ActionType.BROWSE_INTERACTIVE
