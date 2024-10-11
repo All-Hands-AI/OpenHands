@@ -696,9 +696,33 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
         _output_error(f'File {file_name} not found.')
         return None
 
-    # search for `to_replace` in the file
-    # if found, replace it with `new_content`
-    # if not found, perform a fuzzy search to find the closest match and replace it with `new_content`
+    # Preserve the original file permissions
+    original_permissions = os.stat(file_name).st_mode
+
+    try:
+        # search for `to_replace` in the file
+        # if found, replace it with `new_content`
+        # if not found, perform a fuzzy search to find the closest match and replace it with `new_content`
+        with open(file_name, 'r') as file:
+            content = file.read()
+
+        if to_replace in content:
+            new_content = content.replace(to_replace, new_content)
+            with open(file_name, 'w') as file:
+                file.write(new_content)
+        else:
+            _output_error(f'Content to replace not found in {file_name}.')
+            return None
+
+    except Exception as e:
+        _output_error(f'An error occurred while editing the file: {str(e)}')
+        return None
+
+    finally:
+        # Restore the original file permissions
+        os.chmod(file_name, original_permissions)
+
+    return _edit_file_impl(file_name, content=new_content)
     with open(file_name, 'r') as file:
         file_content = file.read()
 
