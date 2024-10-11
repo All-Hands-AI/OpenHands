@@ -14,10 +14,10 @@ import subprocess
 import tempfile
 import threading
 import time
-from contextlib import contextmanager
 from pathlib import Path
 from zipfile import ZipFile
 
+import nest_asyncio
 import pexpect
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
@@ -619,24 +619,16 @@ if __name__ == '__main__':
                 raise ValueError(f'Plugin {plugin} not found')
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
 
-    client: RuntimeClient | None = None
+    client = RuntimeClient(
+        plugins_to_load,
+        work_dir=args.working_dir,
+        username=args.username,
+        user_id=args.user_id,
+        browsergym_eval_env=args.browsergym_eval_env,
+    )
+    client.init()
 
-    @contextmanager
-    def lifespan(app: FastAPI):
-        global client
-        client = RuntimeClient(
-            plugins_to_load,
-            work_dir=args.working_dir,
-            username=args.username,
-            user_id=args.user_id,
-            browsergym_eval_env=args.browsergym_eval_env,
-        )
-        client.init()
-        yield
-        # Clean up & release the resources
-        client.close()
-
-    app = FastAPI(lifespan=lifespan)
+    app = FastAPI()
 
     # TODO below 3 exception handlers were recommended by Sonnet.
     # Are these something we should keep?
@@ -667,7 +659,6 @@ if __name__ == '__main__':
 
     @app.middleware('http')
     def one_request_at_a_time(request: Request, call_next):
-        assert client is not None
         with client.lock:
             response = call_next(request)
         return response
@@ -683,8 +674,7 @@ if __name__ == '__main__':
         return response
 
     @app.get('/server_info')
-    async def get_server_info():
-        assert client is not None
+    def get_server_info():
         current_time = time.time()
         uptime = current_time - client.start_time
         idle_time = current_time - client.last_execution_time
@@ -692,7 +682,6 @@ if __name__ == '__main__':
 
     @app.post('/execute_action')
     def execute_action(action_request: ActionRequest):
-        assert client is not None
         try:
             action = event_from_dict(action_request.action)
             if not isinstance(action, Action):
@@ -707,11 +696,7 @@ if __name__ == '__main__':
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.post('/upload_file')
-    async def upload_file(
-        file: UploadFile, destination: str = '/', recursive: bool = False
-    ):
-        assert client is not None
-
+    def upload_file(file: UploadFile, destination: str = '/', recursive: bool = False):
         try:
             # Ensure the destination directory exists
             if not os.path.isabs(destination):
@@ -761,7 +746,7 @@ if __name__ == '__main__':
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get('/download_files')
-    async def download_file(path: str):
+    def download_file(path: str):
         logger.info('Downloading files')
         try:
             if not os.path.isabs(path):
@@ -795,7 +780,7 @@ if __name__ == '__main__':
             raise HTTPException(status_code=500, detail=str(e))
 
     @app.get('/alive')
-    async def alive():
+    def alive():
         return {'status': 'ok'}
 
     # ================================
@@ -824,8 +809,6 @@ if __name__ == '__main__':
         Raises:
             HTTPException: If there's an error listing the files.
         """
-        assert client is not None
-
         # get request as dict
         request_dict = request.json()
         path = request_dict.get('path', None)
@@ -883,4 +866,10 @@ if __name__ == '__main__':
     logger.info('Runtime client initialized.')
 
     logger.info(f'Starting action execution API on port {args.port}')
-    run(app, host='0.0.0.0', port=args.port)
+    nest_asyncio.apply()
+    # BrowserEnv uses BrowserGym, which uses Playwright's sync API which might
+    # interfere with asyncio.run called by uvicorn.
+    try:
+        run(app, host='0.0.0.0', port=args.port)
+    finally:
+        client.close()

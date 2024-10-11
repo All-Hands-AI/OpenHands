@@ -123,6 +123,7 @@ class BrowserEnv:
             obs: BrowserOutputObservation = self._execute_browsergym_action(action_str)
             return obs
         except Exception as e:
+            logger.error(f'Error executing action in BrowserEnv: {e}', exc_info=True)
             return BrowserOutputObservation(
                 content=str(e),
                 screenshot='',
