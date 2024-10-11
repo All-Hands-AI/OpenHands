@@ -1,17 +1,12 @@
 import os
 import tempfile
 import threading
+import time
 from typing import Callable, Optional
 from zipfile import ZipFile
 
 import requests
 from requests.exceptions import Timeout
-from tenacity import (
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_fixed,
-)
 
 from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
@@ -41,7 +36,6 @@ from openhands.runtime.utils.request import (
     send_request_with_retry,
 )
 from openhands.runtime.utils.runtime_build import build_runtime_image
-from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
 class RemoteRuntime(Runtime):
@@ -254,14 +248,42 @@ class RemoteRuntime(Runtime):
                 {'X-Session-API-Key': start_response['session_api_key']}
             )
 
-    @retry(
-        stop=stop_after_attempt(60) | stop_if_should_exit(),
-        wait=wait_fixed(2),
-        retry=retry_if_exception_type(RuntimeError),
-        reraise=True,
-    )
     def _wait_until_alive(self):
         logger.info(f'Waiting for runtime to be alive at url: {self.runtime_url}')
+        # send GET request to /runtime/<id>
+        pod_running = False
+        while not pod_running:
+            runtime_info_response = send_request_with_retry(
+                self.session,
+                'GET',
+                f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.runtime_id}',
+                timeout=10,
+            )
+            if runtime_info_response.status_code != 200:
+                raise RuntimeError(
+                    f'Failed to get runtime status: {runtime_info_response.status_code}. Response: {runtime_info_response.text}'
+                )
+            runtime_data = runtime_info_response.json()
+            assert runtime_data['runtime_id'] == self.runtime_id
+            pod_status = runtime_data['pod_status']
+            logger.info(
+                f'Waiting for runtime pod to be active. Current status: {pod_status}'
+            )
+            if pod_status == 'Running':
+                pod_running = True
+            elif (
+                pod_status == 'Failed'
+                or pod_status == 'Unknown'
+                or pod_status == 'Not Found'
+            ):
+                # clean up the runtime
+                self.close()
+                raise RuntimeError(
+                    f'Runtime pod failed to start. Current status: {pod_status}'
+                )
+            else:
+                time.sleep(5)
+
         response = send_request_with_retry(
             self.session,
             'GET',
