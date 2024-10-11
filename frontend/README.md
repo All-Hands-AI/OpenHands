@@ -104,13 +104,7 @@ graph TD
   A[frontend] --> B[__tests__ <br> # Tests]
   A --> C[public]
   A --> D[src]
-
-  subgraph src
-    E[api] --- F[assets] --- G[components] --- H[context] --- I[hooks] --- J[i18n] --- K[mocks] --- L[routes] --- M[services] --- N[state] --- O[types] --- P[utils] --- Q[root.tsx]
-  end
-  
   A --> R[.env.sample <br> # Sample environment variables]
-
 ```
 
 
