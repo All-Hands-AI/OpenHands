@@ -110,19 +110,19 @@ graph TD
 flowchart TD
     D[src]
     
-    D --> E[api <br> # API calls]
+    D --> E[api ]
     D --> F[assets]
-    D --> G[components <br> # Reusable components]
-    D --> H[context <br> # Local state management]
-    D --> I[hooks <br> # Custom hooks]
-    D --> J[i18n <br> # Internationalization]
-    D --> K[mocks <br> # MSW mocks for development]
-    D --> L[routes <br> # React Router file-based routes]
+    D --> G[components]
+    D --> H[context
+    D --> I[hooks]
+    D --> J[i18n]
+    D --> K[mocks]
+    D --> L[routes]
     D --> M[services]
-    D --> N[state <br> # Redux state management]
+    D --> N[state]
     D --> O[types]
-    D --> P[utils <br> # Utility/helper functions]
-    D --> Q[root.tsx <br> # Entry point]
+    D --> P[utils]
+    D --> Q[root.tsx]
 
 ```
 
