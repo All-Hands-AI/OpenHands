@@ -19,7 +19,7 @@ class JupyterRequirement(PluginRequirement):
 class JupyterPlugin(Plugin):
     name: str = 'jupyter'
 
-    async def initialize(self, username: str, kernel_id: str = 'openhands-default'):
+    def initialize(self, username: str, kernel_id: str = 'openhands-default'):
         self.kernel_gateway_port = find_available_tcp_port(40000, 49999)
         self.kernel_id = kernel_id
         self.gateway_process = subprocess.Popen(
@@ -51,13 +51,10 @@ class JupyterPlugin(Plugin):
         logger.info(
             f'Jupyter kernel gateway started at port {self.kernel_gateway_port}. Output: {output}'
         )
-        _obs = await self.run(
-            IPythonRunCellAction(code='import sys; print(sys.executable)')
-        )
+        _obs = self.run(IPythonRunCellAction(code='import sys; print(sys.executable)'))
         self.python_interpreter_path = _obs.content.strip()
 
-    async def _run(self, action: Action) -> IPythonRunCellObservation:
-        """Internal method to run a code cell in the jupyter kernel."""
+    def run(self, action: Action) -> IPythonRunCellObservation:
         if not isinstance(action, IPythonRunCellAction):
             raise ValueError(
                 f'Jupyter plugin only supports IPythonRunCellAction, but got {action}'
@@ -69,13 +66,9 @@ class JupyterPlugin(Plugin):
             )
 
         if not self.kernel.initialized:
-            await self.kernel.initialize()
-        output = await self.kernel.execute(action.code, timeout=action.timeout)
+            self.kernel.initialize()
+        output = self.kernel.execute(action.code, timeout=action.timeout)
         return IPythonRunCellObservation(
             content=output,
             code=action.code,
         )
-
-    async def run(self, action: Action) -> IPythonRunCellObservation:
-        obs = await self._run(action)
-        return obs

@@ -6,15 +6,15 @@ NOTE: this will be executed inside the docker sandbox.
 """
 
 import argparse
-import asyncio
 import io
 import os
 import re
 import shutil
 import subprocess
 import tempfile
+import threading
 import time
-from contextlib import asynccontextmanager
+from contextlib import contextmanager
 from pathlib import Path
 from zipfile import ZipFile
 
@@ -96,7 +96,7 @@ class RuntimeClient:
         self._initial_pwd = work_dir
         self._init_user(self.username, self.user_id)
         self._init_bash_shell(self.pwd, self.username)
-        self.lock = asyncio.Lock()
+        self.lock = threading.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.browser = BrowserEnv(browsergym_eval_env)
         self.start_time = time.time()
@@ -106,14 +106,14 @@ class RuntimeClient:
     def initial_pwd(self):
         return self._initial_pwd
 
-    async def ainit(self):
+    def init(self):
         for plugin in self.plugins_to_load:
-            await plugin.initialize(self.username)
+            plugin.initialize(self.username)
             self.plugins[plugin.name] = plugin
             logger.info(f'Initializing plugin: {plugin.name}')
 
             if isinstance(plugin, JupyterPlugin):
-                await self.run_ipython(
+                self.run_ipython(
                     IPythonRunCellAction(code=f'import os; os.chdir("{self.pwd}")')
                 )
 
@@ -121,14 +121,14 @@ class RuntimeClient:
         # TODO: refactor AgentSkills to be part of JupyterPlugin
         # AFTER ServerRuntime is deprecated
         if 'agent_skills' in self.plugins and 'jupyter' in self.plugins:
-            obs = await self.run_ipython(
+            obs = self.run_ipython(
                 IPythonRunCellAction(
                     code='from openhands.runtime.plugins.agent_skills.agentskills import *\n'
                 )
             )
             logger.info(f'AgentSkills initialized: {obs}')
 
-        await self._init_bash_commands()
+        self._init_bash_commands()
         logger.info('Runtime client initialized.')
 
     def _init_user(self, username: str, user_id: int) -> None:
@@ -251,13 +251,13 @@ class RuntimeClient:
         self.shell.sendline(f'chmod g+rw "{work_dir}"')
         self.shell.expect(self.__bash_expect_regex)
 
-    async def _init_bash_commands(self):
+    def _init_bash_commands(self):
         logger.info(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
         for command in INIT_COMMANDS:
             action = CmdRunAction(command=command)
             action.timeout = 300
             logger.debug(f'Executing init command: {command}')
-            obs: CmdOutputObservation = await self.run(action)
+            obs: CmdOutputObservation = self.run(action)
             logger.debug(
                 f'Init command outputs (exit code: {obs.exit_code}): {obs.content}'
             )
@@ -415,14 +415,14 @@ class RuntimeClient:
                 output += '\r\n' + bash_prompt
         return output, exit_code
 
-    async def run_action(self, action) -> Observation:
+    def run_action(self, action) -> Observation:
         action_type = action.action
         logger.debug(f'Running action:\n{action}')
-        observation = await getattr(self, action_type)(action)
+        observation = getattr(self, action_type)(action)
         logger.debug(f'Action output:\n{observation}')
         return observation
 
-    async def run(self, action: CmdRunAction) -> CmdOutputObservation:
+    def run(self, action: CmdRunAction) -> CmdOutputObservation:
         try:
             assert (
                 action.timeout is not None
@@ -467,7 +467,7 @@ class RuntimeClient:
         except UnicodeDecodeError:
             raise RuntimeError('Command output could not be decoded as utf-8')
 
-    async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
+    def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         if 'jupyter' in self.plugins:
             _jupyter_plugin: JupyterPlugin = self.plugins['jupyter']  # type: ignore
             # This is used to make AgentSkills in Jupyter aware of the
@@ -477,13 +477,13 @@ class RuntimeClient:
                 logger.debug(f'{self.pwd} != {jupyter_pwd} -> reset Jupyter PWD')
                 reset_jupyter_pwd_code = f'import os; os.chdir("{self.pwd}")'
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_pwd_code)
-                _reset_obs = await _jupyter_plugin.run(_aux_action)
+                _reset_obs = _jupyter_plugin.run(_aux_action)
                 logger.debug(
                     f'Changed working directory in IPython to: {self.pwd}. Output: {_reset_obs}'
                 )
                 self._jupyter_pwd = self.pwd
 
-            obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
+            obs: IPythonRunCellObservation = _jupyter_plugin.run(action)
             obs.content = obs.content.rstrip()
             obs.content += f'\n[Jupyter current working directory: {self.pwd}]'
             obs.content += f'\n[Jupyter Python interpreter: {_jupyter_plugin.python_interpreter_path}]'
@@ -506,7 +506,7 @@ class RuntimeClient:
             return str(Path(working_dir) / filepath)
         return str(filepath)
 
-    async def read(self, action: FileReadAction) -> Observation:
+    def read(self, action: FileReadAction) -> Observation:
         # NOTE: the client code is running inside the sandbox,
         # so there's no need to check permission
         working_dir = self._get_working_directory()
@@ -528,7 +528,7 @@ class RuntimeClient:
         code_view = ''.join(lines)
         return FileReadObservation(path=filepath, content=code_view)
 
-    async def write(self, action: FileWriteAction) -> Observation:
+    def write(self, action: FileWriteAction) -> Observation:
         working_dir = self._get_working_directory()
         filepath = self._resolve_path(action.path, working_dir)
 
@@ -583,10 +583,10 @@ class RuntimeClient:
             return ErrorObservation(f'Malformed paths not permitted: {filepath}')
         return FileWriteObservation(content='', path=filepath)
 
-    async def browse(self, action: BrowseURLAction) -> Observation:
+    def browse(self, action: BrowseURLAction) -> Observation:
         return self.browser.execute(action)
 
-    async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+    def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         return self.browser.execute(action)
 
     def close(self):
@@ -621,8 +621,8 @@ if __name__ == '__main__':
 
     client: RuntimeClient | None = None
 
-    @asynccontextmanager
-    async def lifespan(app: FastAPI):
+    @contextmanager
+    def lifespan(app: FastAPI):
         global client
         client = RuntimeClient(
             plugins_to_load,
@@ -631,7 +631,7 @@ if __name__ == '__main__':
             user_id=args.user_id,
             browsergym_eval_env=args.browsergym_eval_env,
         )
-        await client.ainit()
+        client.init()
         yield
         # Clean up & release the resources
         client.close()
@@ -641,7 +641,7 @@ if __name__ == '__main__':
     # TODO below 3 exception handlers were recommended by Sonnet.
     # Are these something we should keep?
     @app.exception_handler(Exception)
-    async def global_exception_handler(request: Request, exc: Exception):
+    def global_exception_handler(request: Request, exc: Exception):
         logger.exception('Unhandled exception occurred:')
         return JSONResponse(
             status_code=500,
@@ -651,16 +651,14 @@ if __name__ == '__main__':
         )
 
     @app.exception_handler(StarletteHTTPException)
-    async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    def http_exception_handler(request: Request, exc: StarletteHTTPException):
         logger.error(f'HTTP exception occurred: {exc.detail}')
         return JSONResponse(
             status_code=exc.status_code, content={'message': exc.detail}
         )
 
     @app.exception_handler(RequestValidationError)
-    async def validation_exception_handler(
-        request: Request, exc: RequestValidationError
-    ):
+    def validation_exception_handler(request: Request, exc: RequestValidationError):
         logger.error(f'Validation error occurred: {exc}')
         return JSONResponse(
             status_code=422,
@@ -668,20 +666,20 @@ if __name__ == '__main__':
         )
 
     @app.middleware('http')
-    async def one_request_at_a_time(request: Request, call_next):
+    def one_request_at_a_time(request: Request, call_next):
         assert client is not None
-        async with client.lock:
-            response = await call_next(request)
+        with client.lock:
+            response = call_next(request)
         return response
 
     @app.middleware('http')
-    async def authenticate_requests(request: Request, call_next):
+    def authenticate_requests(request: Request, call_next):
         if request.url.path != '/alive' and request.url.path != '/server_info':
             try:
                 verify_api_key(request.headers.get('X-Session-API-Key'))
             except HTTPException as e:
                 return e
-        response = await call_next(request)
+        response = call_next(request)
         return response
 
     @app.get('/server_info')
@@ -693,14 +691,14 @@ if __name__ == '__main__':
         return {'uptime': uptime, 'idle_time': idle_time}
 
     @app.post('/execute_action')
-    async def execute_action(action_request: ActionRequest):
+    def execute_action(action_request: ActionRequest):
         assert client is not None
         try:
             action = event_from_dict(action_request.action)
             if not isinstance(action, Action):
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
-            observation = await client.run_action(action)
+            observation = client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
             logger.error(
@@ -805,7 +803,7 @@ if __name__ == '__main__':
     # ================================
 
     @app.post('/list_files')
-    async def list_files(request: Request):
+    def list_files(request: Request):
         """List files in the specified path.
 
         This function retrieves a list of files from the agent's runtime file store,
@@ -829,7 +827,7 @@ if __name__ == '__main__':
         assert client is not None
 
         # get request as dict
-        request_dict = await request.json()
+        request_dict = request.json()
         path = request_dict.get('path', None)
 
         # Get the full path of the requested directory
