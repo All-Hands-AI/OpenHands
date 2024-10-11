@@ -14,12 +14,12 @@ class Plugin:
     name: str
 
     @abstractmethod
-    async def initialize(self, username: str):
+    def initialize(self, username: str):
         """Initialize the plugin."""
         pass
 
     @abstractmethod
-    async def run(self, action: Action) -> Observation:
+    def run(self, action: Action) -> Observation:
         """Run the plugin for a given action."""
         pass
 

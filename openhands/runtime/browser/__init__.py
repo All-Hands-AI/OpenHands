@@ -1,3 +1,3 @@
-from openhands.runtime.browser.utils import browse
+from openhands.runtime.browser.browser_env import BrowserEnv
 
-__all__ = ['browse']
+__all__ = ['BrowserEnv']

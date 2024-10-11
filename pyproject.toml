@@ -50,9 +50,9 @@ python-docx = "*"
 PyPDF2 = "*"
 python-pptx = "*"
 pylatexenc = "*"
-tornado = "*"
 python-dotenv = "*"
 protobuf = ">=4.21.6,<6.0.0" # chromadb currently fails on 5.0+
+websockets = "^13.1"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
