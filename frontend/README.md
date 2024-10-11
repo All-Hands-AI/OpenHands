@@ -113,7 +113,7 @@ flowchart TD
     D --> E[api ]
     D --> F[assets]
     D --> G[components]
-    D --> H[context
+    D --> H[context]
     D --> I[hooks]
     D --> J[i18n]
     D --> K[mocks]
