@@ -259,7 +259,7 @@ class RemoteRuntime(Runtime):
                 self.session,
                 'GET',
                 f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.runtime_id}',
-                timeout=10,
+                timeout=5,
             )
             if runtime_info_response.status_code != 200:
                 raise RuntimeError(
