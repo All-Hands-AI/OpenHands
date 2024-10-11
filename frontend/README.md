@@ -106,6 +106,23 @@ graph TD
   A --> D[src]
   A --> R[.env.sample <br> # Sample environment variables]
 ```
+```mermaid
+A --> D[src]
+  
+  D --> E[api <br> # API calls]
+  D --> F[assets]
+  D --> G[components <br> # Reusable components]
+  D --> H[context <br> # Local state management]
+  D --> I[hooks <br> # Custom hooks]
+  D --> J[i18n <br> # Internationalization]
+  D --> K[mocks <br> # MSW mocks for development]
+  D --> L[routes <br> # React Router file-based routes]
+  D --> M[services]
+  D --> N[state <br> # Redux state management]
+  D --> O[types]
+  D --> P[utils <br> # Utility/helper functions]
+  D --> Q[root.tsx <br> # Entry point]
+```
 
 
 ### Features
