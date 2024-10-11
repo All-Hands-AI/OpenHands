@@ -109,20 +109,40 @@ graph TD
 ```mermaid
 flowchart TD
     D[src]
-    
-    D --> E[api ]
-    D --> F[assets]
-    D --> G[components]
-    D --> H[context]
-    D --> I[hooks]
-    D --> J[i18n]
-    D --> K[mocks]
-    D --> L[routes]
-    D --> M[services]
-    D --> N[state]
-    D --> O[types]
-    D --> P[utils]
-    D --> Q[root.tsx]
+
+    subgraph API_Components
+        E[api <br> # API calls]
+        F[assets]
+        G[components <br> # Reusable components]
+    end
+
+    subgraph State_Management
+        H[context <br> # Local state management]
+        N[state <br> # Redux state management]
+        J[i18n <br> # Internationalization]
+    end
+
+    subgraph Development
+        K[mocks <br> # MSW mocks for development]
+        I[hooks <br> # Custom hooks]
+        P[utils <br> # Utility/helper functions]
+    end
+
+    subgraph Routing_Services
+        L[routes <br> # React Router file-based routes]
+        M[services]
+    end
+
+    subgraph Types_Entry
+        O[types]
+        Q[root.tsx <br> # Entry point]
+    end
+
+    D --> API_Components
+    D --> State_Management
+    D --> Development
+    D --> Routing_Services
+    D --> Types_Entry
 
 ```
 
