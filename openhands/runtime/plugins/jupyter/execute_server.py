@@ -122,7 +122,7 @@ class JupyterKernel:
             self.heartbeat_thread = Thread(target=self._send_heartbeat, daemon=True)
             self.heartbeat_thread.start()
 
-    def execute(self, code, timeout=120):
+    def execute(self, code: str, timeout: int | None = None):
         if not self.ws:
             self._connect()
         assert self.ws is not None
@@ -155,7 +155,7 @@ class JupyterKernel:
         execution_done = False
         start_time = time.time()
 
-        while not execution_done and time.time() - start_time < timeout:
+        while not execution_done and time.time() - start_time < (timeout or 120):
             msg = json.loads(self.ws.recv())
             msg_type = msg['msg_type']
             parent_msg_id = msg['parent_header'].get('msg_id', None)
