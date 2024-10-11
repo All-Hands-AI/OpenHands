@@ -291,19 +291,21 @@ class LLM(RetryMixin, DebugMixin):
             # read the prompt caching status as received from the provider
             model_extra = usage.get('model_extra', {})
 
-            cache_creation_input_tokens = model_extra.get('cache_creation_input_tokens')
-            if cache_creation_input_tokens:
-                stats += (
-                    'Input tokens (cache write): '
-                    + str(cache_creation_input_tokens)
-                    + '\n'
-                )
+            # NOTE: the keys are different for Anthropic and DeepSeek
+            # Anthropic: cache_creation_input_tokens, cache_read_input_tokens
+            # DeepSeek: prompt_cache_miss_tokens, prompt_cache_hit_tokens
 
-            cache_read_input_tokens = model_extra.get('cache_read_input_tokens')
-            if cache_read_input_tokens:
-                stats += (
-                    'Input tokens (cache read): ' + str(cache_read_input_tokens) + '\n'
-                )
+            cache_write_tokens = model_extra.get(
+                'cache_creation_input_tokens'
+            ) or model_extra.get('prompt_cache_miss_tokens')
+            if cache_write_tokens:
+                stats += 'Input tokens (cache write): ' + str(cache_write_tokens) + '\n'
+
+            cache_read_tokens = model_extra.get(
+                'cache_read_input_tokens'
+            ) or model_extra.get('prompt_cache_hit_tokens')
+            if cache_read_tokens:
+                stats += 'Input tokens (cache hit): ' + str(cache_read_tokens) + '\n'
 
         # log the stats
         if stats:
