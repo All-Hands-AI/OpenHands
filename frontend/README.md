@@ -107,21 +107,21 @@ graph TD
   A --> R[.env.sample <br> # Sample environment variables]
 ```
 ```mermaid
-A --> D[src]
+
   
-  D --> E[api <br> # API calls]
-  D --> F[assets]
-  D --> G[components <br> # Reusable components]
-  D --> H[context <br> # Local state management]
-  D --> I[hooks <br> # Custom hooks]
-  D --> J[i18n <br> # Internationalization]
-  D --> K[mocks <br> # MSW mocks for development]
-  D --> L[routes <br> # React Router file-based routes]
-  D --> M[services]
-  D --> N[state <br> # Redux state management]
-  D --> O[types]
-  D --> P[utils <br> # Utility/helper functions]
-  D --> Q[root.tsx <br> # Entry point]
+   D[src]--> E[api <br> # API calls]
+   D[src] --> F[assets]
+   D[src] --> G[components <br> # Reusable components]
+   D[src] --> H[context <br> # Local state management]
+   D[src] --> I[hooks <br> # Custom hooks]
+   D[src] --> J[i18n <br> # Internationalization]
+   D[src] --> K[mocks <br> # MSW mocks for development]
+   D[src] --> L[routes <br> # React Router file-based routes]
+   D[src] --> M[services]
+   D[src] --> N[state <br> # Redux state management]
+   D[src] --> O[types]
+   D[src] --> P[utils <br> # Utility/helper functions]
+   D[src] --> Q[root.tsx <br> # Entry point]
 ```
 
 
