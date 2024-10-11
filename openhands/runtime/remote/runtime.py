@@ -252,6 +252,8 @@ class RemoteRuntime(Runtime):
         logger.info(f'Waiting for runtime to be alive at url: {self.runtime_url}')
         # send GET request to /runtime/<id>
         pod_running = False
+        max_not_found_count = 12  # 2 minutes
+        not_found_count = 0
         while not pod_running:
             runtime_info_response = send_request_with_retry(
                 self.session,
@@ -271,6 +273,12 @@ class RemoteRuntime(Runtime):
             )
             if pod_status == 'Running':
                 pod_running = True
+                # break the loop
+            elif pod_status == 'Not Found' and not_found_count < max_not_found_count:
+                not_found_count += 1
+                logger.info(
+                    f'Runtime pod not found. Count: {not_found_count} / {max_not_found_count}'
+                )
             elif (
                 pod_status == 'Failed'
                 or pod_status == 'Unknown'
@@ -282,7 +290,8 @@ class RemoteRuntime(Runtime):
                     f'Runtime pod failed to start. Current status: {pod_status}'
                 )
             else:
-                time.sleep(5)
+                # Pending
+                time.sleep(10)
 
         response = send_request_with_retry(
             self.session,
