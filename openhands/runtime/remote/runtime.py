@@ -273,7 +273,7 @@ class RemoteRuntime(Runtime):
             )
             if pod_status == 'Running':
                 pod_running = True
-                # break the loop
+                break
             elif pod_status == 'Not Found' and not_found_count < max_not_found_count:
                 not_found_count += 1
                 logger.info(
@@ -289,9 +289,8 @@ class RemoteRuntime(Runtime):
                 raise RuntimeError(
                     f'Runtime pod failed to start. Current status: {pod_status}'
                 )
-            else:
-                # Pending
-                time.sleep(10)
+            # Pending otherwise - add proper sleep
+            time.sleep(10)
 
         response = send_request_with_retry(
             self.session,
