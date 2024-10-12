@@ -36,7 +36,7 @@ Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or jump to the [
 The easiest way to run OpenHands is in Docker. You can change `WORKSPACE_BASE` below to
 point OpenHands to existing code that you'd like to modify.
 
-See the [Getting Started](https://docs.all-hands.dev/modules/usage/getting-started) guide for
+See the [Installation](https://docs.all-hands.dev/modules/usage/installation) guide for
 system requirements and more information.
 
 ```bash
@@ -65,7 +65,7 @@ You'll need a model provider and API key. One option that works well: [Claude 3.
 You can also run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
 or as an [interactive CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode).
 
-Visit [Getting Started](https://docs.all-hands.dev/modules/usage/getting-started) for more information and setup instructions.
+Visit [Installation](https://docs.all-hands.dev/modules/usage/installation) for more information and setup instructions.
 
 If you want to modify the OpenHands source code, check out [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
@@ -120,8 +120,8 @@ For a list of open source projects and licenses used in OpenHands, please see ou
 ## 📚 Cite
 
 ```
-@misc{opendevin,
-      title={{OpenDevin: An Open Platform for AI Software Developers as Generalist Agents}},
+@misc{openhands,
+      title={{OpenHands: An Open Platform for AI Software Developers as Generalist Agents}},
       author={Xingyao Wang and Boxuan Li and Yufan Song and Frank F. Xu and Xiangru Tang and Mingchen Zhuge and Jiayi Pan and Yueqi Song and Bowen Li and Jaskirat Singh and Hoang H. Tran and Fuqiang Li and Ren Ma and Mingzhang Zheng and Bill Qian and Yanjun Shao and Niklas Muennighoff and Yizhe Zhang and Binyuan Hui and Junyang Lin and Robert Brennan and Hao Peng and Heng Ji and Graham Neubig},
       year={2024},
       eprint={2407.16741},

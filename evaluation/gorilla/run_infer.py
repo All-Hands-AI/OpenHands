@@ -80,7 +80,7 @@ def process_instance(
     # logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    runtime = create_runtime(config, sid=instance_id)
+    runtime = create_runtime(config)
     state: State | None = asyncio.run(
         run_controller(
             config=config,

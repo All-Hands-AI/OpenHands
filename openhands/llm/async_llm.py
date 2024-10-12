@@ -2,7 +2,7 @@ import asyncio
 from functools import partial
 from typing import Any
 
-from litellm import completion as litellm_acompletion
+from litellm import acompletion as litellm_acompletion
 
 from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import openhands_logger as logger
@@ -40,7 +40,7 @@ class AsyncLLM(LLM):
             retry_multiplier=self.config.retry_multiplier,
         )
         async def async_completion_wrapper(*args, **kwargs):
-            """Wrapper for the litellm acompletion function."""
+            """Wrapper for the litellm acompletion function that adds logging and cost tracking."""
             messages: list[dict[str, Any]] | dict[str, Any] = []
 
             # some callers might send the model and messages directly
@@ -73,7 +73,7 @@ class AsyncLLM(LLM):
                         and self.config.on_cancel_requested_fn is not None
                         and await self.config.on_cancel_requested_fn()
                     ):
-                        raise UserCancelledError('LLM request cancelled by user')
+                        return
                     await asyncio.sleep(0.1)
 
             stop_check_task = asyncio.create_task(check_stopped())
@@ -84,6 +84,8 @@ class AsyncLLM(LLM):
 
                 message_back = resp['choices'][0]['message']['content']
                 self.log_response(message_back)
+
+                # log costs and tokens used
                 self._post_completion(resp)
 
                 # We do not support streaming in this method, thus return resp

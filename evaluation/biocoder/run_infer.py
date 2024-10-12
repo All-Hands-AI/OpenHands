@@ -274,10 +274,7 @@ def process_instance(
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
-    # use a session id for concurrent evaluation
-    sid = instance.instance_id.replace('/', '__')
-
-    runtime = create_runtime(config, sid=sid)
+    runtime = create_runtime(config)
 
     initialize_runtime(runtime, instance)
 

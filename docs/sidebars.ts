@@ -24,6 +24,11 @@ const sidebars: SidebarsConfig = {
       items: [
         {
           type: 'doc',
+          label: 'GUI Mode',
+          id: 'usage/how-to/gui-mode',
+        },
+        {
+          type: 'doc',
           label: 'CLI Mode',
           id: 'usage/how-to/cli-mode',
         },

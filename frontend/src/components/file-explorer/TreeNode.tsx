@@ -1,25 +1,20 @@
 import React from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { twMerge } from "tailwind-merge";
+import { useSelector } from "react-redux";
 import { RootState } from "#/store";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
-import { listFiles, selectFile } from "#/services/fileService";
-import {
-  setCode,
-  setActiveFilepath,
-  addOrUpdateFileState,
-} from "#/state/codeSlice";
+import OpenHands from "#/api/open-hands";
+import { useFiles } from "#/context/files";
+import { cn } from "#/utils/utils";
 
 interface TitleProps {
   name: string;
   type: "folder" | "file";
   isOpen: boolean;
-  isUnsaved: boolean;
   onClick: () => void;
 }
 
-function Title({ name, type, isOpen, isUnsaved, onClick }: TitleProps) {
+function Title({ name, type, isOpen, onClick }: TitleProps) {
   return (
     <div
       onClick={onClick}
@@ -29,10 +24,7 @@ function Title({ name, type, isOpen, isUnsaved, onClick }: TitleProps) {
         {type === "folder" && <FolderIcon isOpen={isOpen} />}
         {type === "file" && <FileIcon filename={name} />}
       </div>
-      <div className="flex-grow">
-        {name}
-        {isUnsaved && "*"}
-      </div>
+      <div className="flex-grow">{name}</div>
     </div>
   );
 }
@@ -43,15 +35,16 @@ interface TreeNodeProps {
 }
 
 function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
+  const {
+    setFileContent,
+    modifiedFiles,
+    setSelectedPath,
+    files,
+    selectedPath,
+  } = useFiles();
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
   const [children, setChildren] = React.useState<string[] | null>(null);
   const refreshID = useSelector((state: RootState) => state.code.refreshID);
-  const activeFilepath = useSelector((state: RootState) => state.code.path);
-  const fileStates = useSelector((state: RootState) => state.code.fileStates);
-  const fileState = fileStates.find((f) => f.path === path);
-  const isUnsaved = fileState?.savedContent !== fileState?.unsavedContent;
-
-  const dispatch = useDispatch();
 
   const fileParts = path.split("/");
   const filename =
@@ -64,8 +57,12 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
       setChildren(null);
       return;
     }
-    const files = await listFiles(path);
-    setChildren(files);
+
+    const token = localStorage.getItem("token");
+    if (token) {
+      const newChildren = await OpenHands.getFiles(token, path);
+      setChildren(newChildren);
+    }
   };
 
   React.useEffect(() => {
@@ -75,37 +72,50 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   }, [refreshID, isOpen]);
 
   const handleClick = async () => {
+    const token = localStorage.getItem("token");
+
     if (isDirectory) {
       setIsOpen((prev) => !prev);
-    } else {
-      let newFileState = fileStates.find((f) => f.path === path);
-      const code = await selectFile(path);
-      newFileState = { path, savedContent: code, unsavedContent: code };
-      dispatch(addOrUpdateFileState(newFileState));
-      dispatch(setCode(code));
-      dispatch(setActiveFilepath(path));
+    } else if (token) {
+      setSelectedPath(path);
+      const code = modifiedFiles[path] || files[path];
+      const fetchedCode = await OpenHands.getFile(token, path);
+
+      if (!code || fetchedCode !== files[path]) {
+        setFileContent(path, fetchedCode);
+      }
     }
   };
 
   return (
     <div
-      className={twMerge(
+      className={cn(
         "text-sm text-neutral-400",
-        path === activeFilepath ? "bg-gray-700" : "",
+        path === selectedPath && "bg-gray-700",
       )}
     >
-      <Title
-        name={filename}
-        type={isDirectory ? "folder" : "file"}
-        isOpen={isOpen}
-        isUnsaved={isUnsaved}
-        onClick={handleClick}
-      />
+      <button
+        type={isDirectory ? "button" : "submit"}
+        name="file"
+        value={path}
+        className="flex items-center justify-between w-full px-1"
+      >
+        <Title
+          name={filename}
+          type={isDirectory ? "folder" : "file"}
+          isOpen={isOpen}
+          onClick={handleClick}
+        />
+
+        {modifiedFiles[path] && (
+          <div className="w-2 h-2 rounded-full bg-neutral-500" />
+        )}
+      </button>
 
       {isOpen && children && (
         <div className="ml-5">
           {children.map((child, index) => (
-            <TreeNode key={index} path={`${child}`} />
+            <TreeNode key={index} path={child} />
           ))}
         </div>
       )}
