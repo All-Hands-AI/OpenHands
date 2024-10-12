@@ -211,7 +211,7 @@ async def run_controller(
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         histories = [event_to_dict(event) for event in state.history.get_events()]
         with open(file_path, 'w') as f:
-            json.dump(histories, f, intent=4)
+            json.dump(histories, f)
 
     return state
 
