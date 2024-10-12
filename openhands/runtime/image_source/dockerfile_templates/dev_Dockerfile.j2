@@ -1,0 +1,10 @@
+# ================================================================
+# This should build upon the intermediate image with the current
+# code. When developming this means that building the docker image
+# is typically only a single file copy
+# ================================================================
+
+FROM {{ base_image }}
+
+RUN if [ -d /openhands/code ]; then rm -rf /openhands/code; fi
+COPY ./code /openhands/code

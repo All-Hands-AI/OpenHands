@@ -102,7 +102,7 @@ class AgentSession:
     ):
         self.loop = asyncio.get_running_loop()
         self._create_security_analyzer(config.security.security_analyzer)
-        self._create_runtime(runtime_name, config, agent, status_message_callback)
+        await self._create_runtime(runtime_name, config, agent, status_message_callback)
         self._create_controller(
             agent,
             config.security.confirmation_mode,
@@ -150,7 +150,7 @@ class AgentSession:
                 security_analyzer, SecurityAnalyzer
             )(self.event_stream)
 
-    def _create_runtime(
+    async def _create_runtime(
         self,
         runtime_name: str,
         config: AppConfig,
@@ -179,6 +179,7 @@ class AgentSession:
                 plugins=agent.sandbox_plugins,
                 status_message_callback=status_message_callback,
             )
+            self.runtime.ainit()
         except Exception as e:
             logger.error(f'Runtime initialization failed: {e}', exc_info=True)
             raise

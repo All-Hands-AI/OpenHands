@@ -32,15 +32,15 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.remote.remote_image_source import RemoteImageSource
 from openhands.runtime.runtime import Runtime
 from openhands.runtime.utils.request import (
     DEFAULT_RETRY_EXCEPTIONS,
     is_404_error,
     send_request_with_retry,
 )
-from openhands.runtime.utils.runtime_build import build_runtime_image
+from openhands.utils.async_utils import sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
@@ -75,20 +75,17 @@ class RemoteRuntime(Runtime):
                 'Setting workspace_base is not supported in the remote runtime.'
             )
 
-        self.runtime_builder = RemoteRuntimeBuilder(
-            self.config.sandbox.remote_runtime_api_url, self.config.sandbox.api_key
-        )
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
-
         self.instance_id = sid
-
-        self._start_or_attach_to_runtime(plugins)
 
         # Initialize the eventstream and env vars
         super().__init__(
             config, event_stream, sid, plugins, env_vars, status_message_callback
         )
+
+    async def ainit(self):
+        self._start_or_attach_to_runtime(self.plugins)
         self._wait_until_alive()
         self.setup_initial_env()
 
@@ -151,9 +148,10 @@ class RemoteRuntime(Runtime):
             logger.info('Could not find existing remote runtime')
             return False
 
-    def _build_runtime(self):
+    async def _build_runtime(self):
         logger.debug(f'RemoteRuntime `{self.instance_id}` config:\n{self.config}')
-        response = send_request_with_retry(
+        response = await sync_from_async(
+            send_request_with_retry,
             self.session,
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
@@ -173,15 +171,14 @@ class RemoteRuntime(Runtime):
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
             )
 
-        # Build the container image
-        self.container_image = build_runtime_image(
-            self.config.sandbox.base_container_image,
-            self.runtime_builder,
-            extra_deps=self.config.sandbox.runtime_extra_deps,
-            force_rebuild=self.config.sandbox.force_rebuild_runtime,
+        source = RemoteImageSource(
+            api_url=self.config.sandbox.remote_runtime_api_url,
+            key=self.config.sandbox.api_key,  # type: ignore
         )
+        self.container_image = await source.get_image()
 
-        response = send_request_with_retry(
+        response = await sync_from_async(
+            send_request_with_retry,
             self.session,
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/image_exists',

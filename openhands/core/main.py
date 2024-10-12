@@ -25,6 +25,7 @@ from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime import Runtime
 from openhands.storage import get_file_store
+from openhands.utils.async_utils import async_from_sync
 
 
 class FakeUserResponseFunc(Protocol):
@@ -77,6 +78,7 @@ def create_runtime(
         sid=session_id,
         plugins=agent_cls.sandbox_plugins,
     )
+    async_from_sync(runtime.ainit)
 
     return runtime
 

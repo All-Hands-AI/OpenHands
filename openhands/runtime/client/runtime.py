@@ -31,12 +31,14 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.runtime.builder import DockerRuntimeBuilder
+from openhands.runtime.image_source.dev_build_image_source import DevBuildImageSource
+from openhands.runtime.image_source.image_source_abc import ImageSourceABC
+from openhands.runtime.image_source.specific_image_source import SpecificImageSource
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime import Runtime
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.request import send_request_with_retry
-from openhands.runtime.utils.runtime_build import build_runtime_image
+from openhands.utils.async_utils import async_from_sync
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
@@ -143,7 +145,6 @@ class EventStreamRuntime(Runtime):
         self.container = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
-        self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
         logger.debug(f'EventStreamRuntime `{self.instance_id}`')
 
         # Buffer for container logs
@@ -157,28 +158,23 @@ class EventStreamRuntime(Runtime):
         self.skip_container_logs = (
             os.environ.get('SKIP_CONTAINER_LOGS', 'false').lower() == 'true'
         )
-        if self.runtime_container_image is None:
-            if self.base_container_image is None:
-                raise ValueError(
-                    'Neither runtime container image nor base container image is set'
-                )
-            logger.info('Preparing container, this might take a few minutes...')
-            self.send_status_message('STATUS$STARTING_CONTAINER')
-            self.runtime_container_image = build_runtime_image(
-                self.base_container_image,
-                self.runtime_builder,
-                extra_deps=self.config.sandbox.runtime_extra_deps,
-                force_rebuild=self.config.sandbox.force_rebuild_runtime,
-            )
-        self.container = self._init_container(
-            sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,  # e.g. /workspace
-            mount_dir=self.config.workspace_mount_path,  # e.g. /opt/openhands/_test_workspace
-            plugins=plugins,
-        )
 
         # will initialize both the event stream and the env vars
         super().__init__(
             config, event_stream, sid, plugins, env_vars, status_message_callback
+        )
+
+    async def ainit(self):
+        logger.info('Preparing container, this might take a few minutes...')
+        self.send_status_message('STATUS$STARTING_CONTAINER')
+
+        source = self._get_image_source()
+        self.runtime_container_image = async_from_sync(source.get_image, 0)
+
+        self.container = self._init_container(
+            sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,  # e.g. /workspace
+            mount_dir=self.config.workspace_mount_path,  # e.g. /opt/openhands/_test_workspace
+            plugins=self.plugins,
         )
 
         logger.info('Waiting for client to become ready...')
@@ -192,6 +188,23 @@ class EventStreamRuntime(Runtime):
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
         )
         self.send_status_message(' ')
+
+    def _get_image_source(self) -> ImageSourceABC:
+        if self.runtime_container_image:
+            return SpecificImageSource(
+                image_name=self.runtime_container_image,
+                docker_client=self.docker_client,
+            )
+        elif self.base_container_image:
+            return DevBuildImageSource(
+                base_image_name=self.base_container_image,
+                extra_deps=self.config.sandbox.runtime_extra_deps,
+                docker_client=self.docker_client,
+            )
+        else:
+            raise ValueError(
+                'Neither runtime container image nor base container image is set'
+            )
 
     @staticmethod
     def _init_docker_client() -> docker.DockerClient:

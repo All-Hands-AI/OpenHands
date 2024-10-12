@@ -1,0 +1,8 @@
+# ================================================================
+# Build the sandbox docker image in a single step
+# ================================================================
+
+{% include "intermediate_Dockerfile" %}
+
+RUN if [ -d /openhands/code ]; then rm -rf /openhands/code; fi
+COPY ./code /openhands/code

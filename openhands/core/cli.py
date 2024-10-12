@@ -104,6 +104,7 @@ async def main():
         sid=sid,
         plugins=agent_cls.sandbox_plugins,
     )
+    await runtime.ainit()
 
     controller = AgentController(
         agent=agent,
