@@ -10,6 +10,11 @@ on:
       - main
   pull_request:
 
+# If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
+concurrency:
+  group: ${{ github.workflow }}-${{ (github.head_ref && github.ref) || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   # Run python unit tests on macOS
   test-on-macos:
@@ -93,7 +98,7 @@ jobs:
         id: buildx
         uses: docker/setup-buildx-action@v3
       - name: Run Tests
-        run: poetry run pytest --forked --cov=agenthub --cov=openhands --cov-report=xml ./tests/unit --ignore=tests/unit/test_memory.py
+        run: poetry run pytest --forked --cov=openhands --cov-report=xml ./tests/unit --ignore=tests/unit/test_memory.py
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
@@ -125,7 +130,7 @@ jobs:
       - name: Build Environment
         run: make build
       - name: Run Tests
-        run: poetry run pytest --forked --cov=agenthub --cov=openhands --cov-report=xml -svv ./tests/unit --ignore=tests/unit/test_memory.py
+        run: poetry run pytest --forked --cov=openhands --cov-report=xml -svv ./tests/unit --ignore=tests/unit/test_memory.py
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:

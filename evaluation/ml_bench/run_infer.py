@@ -39,7 +39,7 @@ from openhands.core.config import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import CmdRunAction
+from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.runtime import Runtime
 
@@ -211,9 +211,6 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     else:
         logger.info(f'Starting evaluation for instance {instance["instance_id"]}.')
 
-    # Create a sandbox, using the instance ID and PID as the session ID to avoid conflicts
-    sid = str(instance['instance_id'])
-
     repo_url = instance['github']
     repo_name = repo_url.split('/')[-1]
     task_path = os.path.join('/workspace', repo_name, instance['path'][2:])
@@ -235,14 +232,14 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     )
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
-    runtime = create_runtime(config, sid=sid)
+    runtime = create_runtime(config)
     initialize_runtime(runtime, instance)
 
     # Run the agent
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            task_str=instruction,
+            initial_user_action=MessageAction(content=instruction),
             runtime=runtime,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
                 metadata.agent_class

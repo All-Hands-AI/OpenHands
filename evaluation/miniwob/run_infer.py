@@ -126,13 +126,14 @@ def process_instance(
     else:
         logger.info(f'Starting evaluation for instance {env_id}.')
 
-    runtime = create_runtime(config, sid=env_id)
+    runtime = create_runtime(config)
     task_str = initialize_runtime(runtime)
-
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            task_str=task_str,  # take output from initialize_runtime
+            initial_user_action=MessageAction(
+                content=task_str
+            ),  # take output from initialize_runtime
             runtime=runtime,
         )
     )

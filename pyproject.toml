@@ -6,9 +6,7 @@ authors = ["OpenHands"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/All-Hands-AI/OpenHands"
-include = ["poetry.lock"]
 packages = [
-  { include = "agenthub/**/*" },
   { include = "openhands/**/*" }
 ]
 
@@ -27,7 +25,7 @@ uvicorn = "*"
 types-toml = "*"
 numpy = "*"
 json-repair = "*"
-browsergym = "0.7.1" # integrate browsergym as the browsing interface
+browsergym = "0.8.0" # integrate browsergym as the browsing interface
 html2text = "*"
 e2b = "^0.17.1"
 pexpect = "*"
@@ -68,7 +66,7 @@ llama-index-embeddings-ollama = "*"
 [tool.poetry.group.dev.dependencies]
 ruff = "0.6.9"
 mypy = "1.11.2"
-pre-commit = "3.8.0"
+pre-commit = "4.0.1"
 build = "*"
 
 [tool.poetry.group.test.dependencies]
@@ -85,6 +83,7 @@ reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
+
 
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
@@ -115,6 +114,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"

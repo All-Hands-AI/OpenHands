@@ -214,12 +214,12 @@ Again do not quit without reporting the answer first.
 Ok now its time to start solving the question. Good luck!
 """
 
-    runtime = create_runtime(config, sid=f'gptq_{str(instance.instance_id)}')
+    runtime = create_runtime(config)
 
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            task_str=instruction,
+            initial_user_action=MessageAction(content=instruction),
             runtime=runtime,
             fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN.get(
                 metadata.agent_class

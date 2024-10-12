@@ -28,7 +28,7 @@ COPY ./pyproject.toml ./poetry.lock ./
 RUN touch README.md
 RUN export POETRY_CACHE_DIR && poetry install --without evaluation,llama-index --no-root && rm -rf $POETRY_CACHE_DIR
 
-FROM python:3.12.3-slim AS runtime
+FROM python:3.12.3-slim AS openhands-app
 
 WORKDIR /app
 
@@ -45,6 +45,14 @@ RUN mkdir -p $WORKSPACE_BASE
 
 RUN apt-get update -y \
     && apt-get install -y curl ssh sudo
+
+# Install Docker - https://docs.docker.com/engine/install/debian/
+RUN apt-get install ca-certificates curl \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc \
+    && chmod a+r /etc/apt/keyrings/docker.asc \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null \
+    && apt-get update \
+    && apt install -y docker-ce
 
 # Default is 1000, but OSX is often 501
 RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs
@@ -69,7 +77,7 @@ RUN playwright install --with-deps chromium
 
 COPY --chown=openhands:app --chmod=770 ./openhands ./openhands
 COPY --chown=openhands:app --chmod=777 ./openhands/runtime/plugins ./openhands/runtime/plugins
-COPY --chown=openhands:app --chmod=770 ./agenthub ./agenthub
+COPY --chown=openhands:app --chmod=770 ./openhands/agenthub ./openhands/agenthub
 COPY --chown=openhands:app ./pyproject.toml ./pyproject.toml
 COPY --chown=openhands:app ./poetry.lock ./poetry.lock
 COPY --chown=openhands:app ./README.md ./README.md
@@ -82,7 +90,7 @@ RUN python openhands/core/download.py # No-op to download assets
 # openhands:openhands -> openhands:app
 RUN find /app \! -group app -exec chgrp app {} +
 
-COPY --chown=openhands:app --chmod=770 --from=frontend-builder /app/dist ./frontend/dist
+COPY --chown=openhands:app --chmod=770 --from=frontend-builder /app/build/client ./frontend/build
 COPY --chown=openhands:app --chmod=770 ./containers/app/entrypoint.sh /app/entrypoint.sh
 
 USER root

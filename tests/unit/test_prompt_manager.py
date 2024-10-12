@@ -10,8 +10,8 @@ from openhands.utils.prompt import PromptManager
 
 @pytest.fixture
 def prompt_dir(tmp_path):
-    # Copy contents from "agenthub/codeact_agent" to the temp directory
-    shutil.copytree('agenthub/codeact_agent', tmp_path, dirs_exist_ok=True)
+    # Copy contents from "openhands/agenthub/codeact_agent" to the temp directory
+    shutil.copytree('openhands/agenthub/codeact_agent', tmp_path, dirs_exist_ok=True)
 
     # Return the temporary directory path
     return tmp_path

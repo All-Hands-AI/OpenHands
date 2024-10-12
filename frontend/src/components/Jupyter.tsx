@@ -1,10 +1,10 @@
-import React, { useRef } from "react";
+import React from "react";
 import { useSelector } from "react-redux";
 import SyntaxHighlighter from "react-syntax-highlighter";
 import Markdown from "react-markdown";
-import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { VscArrowDown } from "react-icons/vsc";
 import { useTranslation } from "react-i18next";
+import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { RootState } from "#/store";
 import { Cell } from "#/state/jupyterSlice";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
@@ -78,11 +78,11 @@ function JupyterCell({ cell }: IJupyterCell): JSX.Element {
   );
 }
 
-function Jupyter(): JSX.Element {
+function JupyterEditor(): JSX.Element {
   const { t } = useTranslation();
 
   const { cells } = useSelector((state: RootState) => state.jupyter);
-  const jupyterRef = useRef<HTMLDivElement>(null);
+  const jupyterRef = React.useRef<HTMLDivElement>(null);
 
   const { hitBottom, scrollDomToBottom, onChatBodyScroll } =
     useScrollToBottom(jupyterRef);
@@ -117,4 +117,4 @@ function Jupyter(): JSX.Element {
   );
 }
 
-export default Jupyter;
+export default JupyterEditor;

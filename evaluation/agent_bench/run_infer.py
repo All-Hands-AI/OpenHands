@@ -209,7 +209,7 @@ def process_instance(
     # create sandbox and run the agent
     # =============================================
 
-    runtime: Runtime = create_runtime(config, sid=instance.instance_id)
+    runtime: Runtime = create_runtime(config)
 
     initialize_runtime(runtime, instance=instance)
 
@@ -217,7 +217,7 @@ def process_instance(
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            task_str=instruction,
+            initial_user_action=MessageAction(content=instruction),
             runtime=runtime,
             fake_user_response_fn=FAKE_RESPONSES[metadata.agent_class],
         )
