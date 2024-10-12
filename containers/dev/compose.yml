@@ -8,14 +8,16 @@ services:
     image: openhands:dev
     container_name: openhands-dev
     environment:
+      - FRONTEND_HOST=${FRONTEND_HOST:-"0.0.0.0"}
       - BACKEND_HOST=${BACKEND_HOST:-"0.0.0.0"}
-      - SANDBOX_API_HOSTNAME=host.docker.internal
+      - SANDBOX_LOCAL_RUNTIME_URL=http://host.docker.internal
       #
-      - SANDBOX_RUNTIME_CONTAINER_IMAGE=${SANDBOX_RUNTIME_CONTAINER_IMAGE:-ghcr.io/all-hands-ai/runtime:0.9-nikolaik}
+      - SANDBOX_BASE_CONTAINER_IMAGE=${SANDBOX_BASE_CONTAINER_IMAGE:-nikolaik/python-nodejs:python3.12-nodejs22}
       - SANDBOX_USER_ID=${SANDBOX_USER_ID:-1234}
       - WORKSPACE_MOUNT_PATH=${WORKSPACE_BASE:-$PWD/workspace}
     ports:
-      - "3000:3000"
+      - "${BACKEND_PORT:-3000}:3000"
+      - "${FRONTEND_PORT:-3001}:3001"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

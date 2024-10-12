@@ -1,0 +1,37 @@
+###
+services:
+  sandbox:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        - PYTHON_VERSION=3.12
+        - NODE_VERSION=22
+    image: custom-sandbox
+
+  # docker compose --profile dind run --rm sandbox-dind
+  sandbox-dind:
+    profiles:
+      - dind
+    privileged: true
+    image: custom-sandbox
+    entrypoint: /entrypoint.sh
+    command: /bin/bash
+    volumes:
+      - ./:/app
+      - ./entrypoint.sh:/entrypoint.sh
+    stdin_open: true
+    tty: true
+
+  # docker compose --profile host run --rm sandbox-host
+  sandbox-host:
+    profiles:
+      - host
+    privileged: true
+    image: custom-sandbox
+    command: /bin/bash
+    volumes:
+      - ./:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    stdin_open: true
+    tty: true

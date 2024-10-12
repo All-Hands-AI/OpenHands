@@ -165,6 +165,7 @@ class EventStreamRuntime(Runtime):
                 extra_deps=self.config.sandbox.runtime_extra_deps,
                 force_rebuild=self.config.sandbox.force_rebuild_runtime,
             )
+        logger.debug('Runtime container image: %s', self.runtime_container_image)
 
         if not attach_to_existing:
             self._init_container(
@@ -235,13 +236,19 @@ class EventStreamRuntime(Runtime):
                 f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
             )
 
+            extra_options = self.config.sandbox.runtime_extra_options
+            logger.debug('Sandbox runtime_extra_options: %s', extra_options)
+
             use_host_network = self.config.sandbox.use_host_network
-            network_mode: str | None = 'host' if use_host_network else None
+            network_mode: str | None = (
+                'host' if use_host_network else extra_options.get('network_mode')
+            )
             port_mapping: dict[str, list[dict[str, str]]] | None = (
                 None
                 if use_host_network
                 else {
-                    f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}]
+                    **extra_options.get('ports', {}).copy(),
+                    f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}],
                 }
             )
 
@@ -251,23 +258,32 @@ class EventStreamRuntime(Runtime):
                 )
 
             # Combine environment variables
-            environment = {
-                'port': str(self._container_port),
-                'PYTHONUNBUFFERED': 1,
-            }
+            environment = extra_options.get('environment', {}).copy()
+            environment.update(
+                {
+                    'port': str(self._container_port),
+                    'PYTHONUNBUFFERED': '1',
+                }
+            )
             if self.config.debug or DEBUG:
                 environment['DEBUG'] = 'true'
 
+            # expand env, '~', and relative paths for volume keys
+            volumes = {
+                os.path.abspath(os.path.expanduser(os.path.expandvars(key))): value
+                for key, value in extra_options.get('volumes', {}).items()
+            }
             logger.debug(f'Workspace Base: {self.config.workspace_base}')
             if mount_dir is not None and sandbox_workspace_dir is not None:
                 # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
-                volumes = {mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}}
+                volumes.update(
+                    {mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}}
+                )
                 logger.debug(f'Mount dir: {mount_dir}')
             else:
                 logger.warn(
                     'Warning: Mount dir is not set, will not mount the workspace directory to the container!\n'
                 )
-                volumes = None
             logger.debug(f'Sandbox workspace: {sandbox_workspace_dir}')
 
             if self.config.sandbox.browsergym_eval_env is not None:
@@ -277,6 +293,11 @@ class EventStreamRuntime(Runtime):
             else:
                 browsergym_arg = ''
 
+            filtered_extra_options = {
+                key: value
+                for key, value in extra_options.items()
+                if key not in ['network_mode', 'ports', 'environment', 'volumes']
+            }
             self.container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=(
@@ -296,6 +317,7 @@ class EventStreamRuntime(Runtime):
                 detach=True,
                 environment=environment,
                 volumes=volumes,
+                **filtered_extra_options,
             )
             self.log_buffer = LogBuffer(self.container)
             logger.info(f'Container started. Server url: {self.api_url}')

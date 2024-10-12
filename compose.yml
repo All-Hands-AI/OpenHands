@@ -7,16 +7,19 @@ services:
     image: openhands:latest
     container_name: openhands-app-${DATE:-}
     environment:
-      - SANDBOX_RUNTIME_CONTAINER_IMAGE=${SANDBOX_RUNTIME_CONTAINER_IMAGE:-ghcr.io/all-hands-ai/runtime:0.9-nikolaik}
+      - SANDBOX_BASE_CONTAINER_IMAGE=${SANDBOX_BASE_CONTAINER_IMAGE:-nikolaik/python-nodejs:python3.12-nodejs22}
       - SANDBOX_USER_ID=${SANDBOX_USER_ID:-1234}
       - WORKSPACE_MOUNT_PATH=${WORKSPACE_BASE:-$PWD/workspace}
+      - LLM_MODEL=${LLM_MODEL:-openai/gpt-4o}
+      - LLM_API_KEY=${LLM_API_KEY:-${OPENAI_API_KEY}}
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${WORKSPACE_BASE:-$PWD/workspace}:/opt/workspace_base
+      - ./config.toml:/app/config.toml
     pull_policy: build
     stdin_open: true
     tty: true

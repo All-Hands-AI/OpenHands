@@ -229,6 +229,10 @@ llm_config = 'gpt3'
 # BrowserGym environment to use for evaluation
 #browsergym_eval_env = ""
 
+# Extra options to pass to the runtime when running the container
+# https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run
+# runtime_extra_options = {}
+
 #################################### Security ###################################
 # Configuration for security features
 ##############################################################################

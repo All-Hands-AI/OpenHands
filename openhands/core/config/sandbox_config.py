@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass, field, fields
+from typing import Any
 
 from openhands.core.config.config_utils import get_field_info
 
@@ -49,6 +50,7 @@ class SandboxConfig:
     runtime_extra_deps: str | None = None
     runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
     browsergym_eval_env: str | None = None
+    runtime_extra_options: dict[str, Any] = field(default_factory=dict)
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
