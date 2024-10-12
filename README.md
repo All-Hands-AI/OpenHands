@@ -93,8 +93,8 @@ For details, please check [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## ✨ Contributors
 
-<a href="https://github.com/souzatharsis/podcastfy/graphs/contributors">
-  <img alt="contributors" src="https://contrib.rocks/image?repo=souzatharsis/podcastfy"/>
+<a href="https://github.com/All-Hands-AI/OpenHands/graphs/contributors">
+  <img alt="contributors" src="https://contrib.rocks/image?repo=All-Hands-AI/OpenHands"/>
 </a>
 
 
