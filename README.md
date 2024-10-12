@@ -91,6 +91,13 @@ software engineering with AI, there are many ways to get involved:
 
 For details, please check [CONTRIBUTING.md](./CONTRIBUTING.md).
 
+## ✨ Contributors
+
+<a href="https://github.com/souzatharsis/podcastfy/graphs/contributors">
+  <img alt="contributors" src="https://contrib.rocks/image?repo=souzatharsis/podcastfy"/>
+</a>
+
+
 ## 🤖 Join Our Community
 
 Whether you're a developer, a researcher, or simply enthusiastic about OpenHands, we'd love to have you in our community.
@@ -130,3 +137,8 @@ For a list of open source projects and licenses used in OpenHands, please see ou
       url={https://arxiv.org/abs/2407.16741},
 }
 ```
+<p align="right" style="font-size: 14px; color: #555; margin-top: 20px;">
+    <a href="#readme-top" style="text-decoration: none; color: #007bff; font-weight: bold;">
+        ↑ Back to Top ↑
+    </a>
+</p>
