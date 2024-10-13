@@ -14,7 +14,7 @@ When choosing a model, consider both the quality of outputs and the associated c
 
 Please refer to the [full article](https://www.all-hands.dev/blog/evaluation-of-llms-as-coding-agents-on-swe-bench-at-30x-speed) for more details.
 
-Based on these findings and community feedback, the following models have been verified to work well with OpenHands:
+Based on these findings and community feedback, the following models have been verified to work reasonably well with OpenHands:
 
 - claude-3-5-sonnet (recommended)
 - gpt-4 / gpt-4o
