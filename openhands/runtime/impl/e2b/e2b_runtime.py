@@ -12,8 +12,8 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.stream import EventStream
-from openhands.runtime.e2b.filestore import E2BFileStore
-from openhands.runtime.e2b.sandbox import E2BSandbox
+from openhands.runtime.impl.e2b.filestore import E2BFileStore
+from openhands.runtime.impl.e2b.sandbox import E2BSandbox
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime import Runtime
 from openhands.runtime.utils.files import insert_lines, read_lines

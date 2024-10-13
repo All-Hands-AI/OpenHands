@@ -277,7 +277,7 @@ class EventStreamRuntime(Runtime):
                 command=(
                     f'/openhands/micromamba/bin/micromamba run -n openhands '
                     f'poetry run '
-                    f'python -u -m openhands.runtime.client.client {self._container_port} '
+                    f'python -u -m openhands.runtime.server {self._container_port} '
                     f'--working-dir "{sandbox_workspace_dir}" '
                     f'{plugin_arg}'
                     f'--username {"openhands" if self.config.run_as_openhands else "root"} '
