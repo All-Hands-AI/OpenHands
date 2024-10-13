@@ -207,7 +207,7 @@ async def run_controller(
 
     # save trajectories if applicable
     if config.trajectories_path is not None:
-        file_path = os.path.join(config.trajectories_path, sid + '.traj')
+        file_path = os.path.join(config.trajectories_path, sid + '.json')
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         histories = [
             event_to_trajectory(event)
