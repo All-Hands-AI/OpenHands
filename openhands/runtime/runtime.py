@@ -1,4 +1,3 @@
-import asyncio
 import atexit
 import copy
 import json
@@ -30,6 +29,7 @@ from openhands.events.observation import (
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.plugins import JupyterRequirement, PluginRequirement
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
+from openhands.utils.async_utils import sync_from_async
 
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
@@ -122,7 +122,7 @@ class Runtime(FileEditRuntimeMixin):
             if event.timeout is None:
                 event.timeout = self.config.sandbox.timeout
             assert event.timeout is not None
-            observation = await self.async_run_action(event)
+            observation = await sync_from_async(self.run_action, event)
             observation._cause = event.id  # type: ignore[attr-defined]
             source = event.source if event.source else EventSource.AGENT
             await self.event_stream.async_add_event(observation, source)  # type: ignore[arg-type]
@@ -154,12 +154,6 @@ class Runtime(FileEditRuntimeMixin):
                 'Action has been rejected by the user! Waiting for further user input.'
             )
         observation = getattr(self, action_type)(action)
-        return observation
-
-    async def async_run_action(self, action: Action) -> Observation:
-        observation = await asyncio.get_event_loop().run_in_executor(
-            None, self.run_action, action
-        )
         return observation
 
     # ====================================================================
@@ -217,6 +211,6 @@ class Runtime(FileEditRuntimeMixin):
         raise NotImplementedError('This method is not implemented in the base class.')
 
     @abstractmethod
-    def zip_files_in_sandbox(self) -> bytes:
-        """Zip all files in the sandbox and return the zip file as bytes."""
+    def copy_from(self, path: str) -> bytes:
+        """Zip all files in the sandbox and return as a stream of bytes."""
         raise NotImplementedError('This method is not implemented in the base class.')
