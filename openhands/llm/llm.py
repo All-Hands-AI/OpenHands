@@ -72,7 +72,9 @@ class LLM(RetryMixin, DebugMixin):
             config: The LLM configuration.
             metrics: The metrics to use.
         """
-        self.metrics: Metrics = metrics if metrics is not None else Metrics()
+        self.metrics: Metrics = (
+            metrics if metrics is not None else Metrics(model_name=config.model)
+        )
         self.cost_metric_supported: bool = True
         self.config: LLMConfig = copy.deepcopy(config)
 
@@ -388,7 +390,7 @@ class LLM(RetryMixin, DebugMixin):
         return str(self)
 
     def reset(self):
-        self.metrics = Metrics()
+        self.metrics = Metrics(model_name=self.config.model)
         self.llm_completions = []
 
     def format_messages_for_llm(self, messages: Message | list[Message]) -> list[dict]:

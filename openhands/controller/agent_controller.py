@@ -35,6 +35,7 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
     ErrorObservation,
+    FileEditObservation,
     Observation,
 )
 from openhands.events.serialization.event import truncate_content
@@ -242,6 +243,11 @@ class AgentController:
         elif isinstance(observation, ErrorObservation):
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
+        elif (
+            isinstance(observation, FileEditObservation)
+            and observation.edit_cost is not None
+        ):
+            self.state.metrics.add_cost(observation.edit_cost)
 
     async def _handle_message_action(self, action: MessageAction):
         """Handles message actions from the event stream.

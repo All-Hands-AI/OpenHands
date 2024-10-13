@@ -39,6 +39,7 @@ def test_llm_init_with_default_config(default_config):
     assert llm.config.model == 'gpt-4o'
     assert llm.config.api_key == 'test_key'
     assert isinstance(llm.metrics, Metrics)
+    assert llm.metrics.model_name == 'gpt-4o'
 
 
 @patch('openhands.llm.llm.litellm.get_model_info')
@@ -83,6 +84,9 @@ def test_llm_init_with_metrics():
     metrics = Metrics()
     llm = LLM(config, metrics=metrics)
     assert llm.metrics is metrics
+    assert (
+        llm.metrics.model_name == 'default'
+    )  # because we didn't specify model_name in Metrics init
 
 
 def test_llm_reset():

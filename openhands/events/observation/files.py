@@ -38,6 +38,7 @@ class FileEditObservation(Observation):
     prev_exist: bool
     old_content: str
     new_content: str
+    edit_cost: float | None = None  # optional metadata, LLM call cost of the edit
     observation: str = ObservationType.EDIT
 
     @property

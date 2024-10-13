@@ -1,12 +1,24 @@
+import time
+
+from pydantic import BaseModel, field
+
+
+class Cost(BaseModel):
+    model: str
+    cost: float
+    timestamp: float = field(default_factory=time.time)
+
+
 class Metrics:
     """Metrics class can record various metrics during running and evaluation.
     Currently, we define the following metrics:
         accumulated_cost: the total cost (USD $) of the current LLM.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, model_name: str = 'default') -> None:
         self._accumulated_cost: float = 0.0
-        self._costs: list[float] = []
+        self._costs: list[Cost] = []
+        self.model_name = model_name
 
     @property
     def accumulated_cost(self) -> float:
@@ -19,14 +31,14 @@ class Metrics:
         self._accumulated_cost = value
 
     @property
-    def costs(self) -> list:
+    def costs(self) -> list[Cost]:
         return self._costs
 
-    def add_cost(self, value: float) -> None:
+    def add_cost(self, value: float, model: str | None = None) -> None:
         if value < 0:
             raise ValueError('Added cost cannot be negative.')
         self._accumulated_cost += value
-        self._costs.append(value)
+        self._costs.append(Cost(cost=value, model=model or self.model_name))
 
     def merge(self, other: 'Metrics') -> None:
         self._accumulated_cost += other.accumulated_cost

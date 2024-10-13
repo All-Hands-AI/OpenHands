@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 
 from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.metrics import Metrics
 from openhands.events.action import (
     FileEditAction,
     FileReadAction,
@@ -105,7 +106,11 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 'ERROR: Draft editor LLM is not set. Please set a draft editor LLM in the config.'
             )
 
-        self.draft_editor_llm = LLM(llm_config.draft_editor)
+        # manually set the model name for the draft editor LLM to distinguish token costs
+        llm_metrics = Metrics(
+            model_name='draft_editor:' + llm_config.draft_editor.model
+        )
+        self.draft_editor_llm = LLM(llm_config.draft_editor, metrics=llm_metrics)
         logger.info(
             f'[Draft edit functionality] enabled with LLM: {self.draft_editor_llm}'
         )
@@ -283,9 +288,11 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             return ErrorObservation(error_msg)
 
         content_to_edit = '\n'.join(old_file_lines[start_idx:end_idx])
+        self.draft_editor_llm.reset()
         _edited_content = get_new_file_contents(
             self.draft_editor_llm, content_to_edit, action.content
         )
+        cost = self.draft_editor_llm.metrics.accumulated_cost
         if _edited_content is None:
             return ErrorObservation(
                 'Failed to get new file contents. '
@@ -316,4 +323,5 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             prev_exist=True,
             old_content=original_file_content,
             new_content=updated_content,
+            edit_cost=cost,
         )
