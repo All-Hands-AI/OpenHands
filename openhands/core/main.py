@@ -23,7 +23,7 @@ from openhands.events.action import MessageAction
 from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
-from openhands.events.serialization.event import event_to_dict
+from openhands.events.serialization.event import event_to_trajectory
 from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime import Runtime
@@ -209,7 +209,10 @@ async def run_controller(
     if config.trajectories_path is not None:
         file_path = os.path.join(config.trajectories_path, sid + '.traj')
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        histories = [event_to_dict(event) for event in state.history.get_events()]
+        histories = [
+            event_to_trajectory(event)
+            for event in state.history.get_events(include_delegates=True)
+        ]
         with open(file_path, 'w') as f:
             json.dump(histories, f)
 
