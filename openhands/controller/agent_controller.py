@@ -245,9 +245,9 @@ class AgentController:
                 self.state.metrics.merge(self.state.local_metrics)
         elif (
             isinstance(observation, FileEditObservation)
-            and observation.edit_cost is not None
+            and observation.edit_cost_metrics is not None
         ):
-            self.state.metrics.add_cost(observation.edit_cost)
+            self.state.metrics.merge(observation.edit_cost_metrics)
 
     async def _handle_message_action(self, action: MessageAction):
         """Handles message actions from the event stream.

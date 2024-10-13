@@ -297,7 +297,6 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         _edited_content = get_new_file_contents(
             self.draft_editor_llm, content_to_edit, action.content
         )
-        cost = self.draft_editor_llm.metrics.accumulated_cost
         if _edited_content is None:
             return ErrorObservation(
                 'Failed to get new file contents. '
@@ -328,5 +327,5 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             prev_exist=True,
             old_content=original_file_content,
             new_content=updated_content,
-            edit_cost=cost,
+            edit_cost_metrics=self.draft_editor_llm.metrics,
         )

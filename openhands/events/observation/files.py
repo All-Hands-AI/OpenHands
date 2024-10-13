@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 
+from openhands.core.metrics import Metrics
 from openhands.core.schema import ObservationType
 from openhands.events.observation.observation import Observation
 
@@ -38,7 +39,9 @@ class FileEditObservation(Observation):
     prev_exist: bool
     old_content: str
     new_content: str
-    edit_cost: float | None = None  # optional metadata, LLM call cost of the edit
+    edit_cost_metrics: Metrics | None = (
+        None  # optional metadata, LLM call cost of the edit
+    )
     observation: str = ObservationType.EDIT
 
     @property
