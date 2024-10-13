@@ -120,8 +120,8 @@ For a list of open source projects and licenses used in OpenHands, please see ou
 ## 📚 Cite
 
 ```
-@misc{opendevin,
-      title={{OpenDevin: An Open Platform for AI Software Developers as Generalist Agents}},
+@misc{openhands,
+      title={{OpenHands: An Open Platform for AI Software Developers as Generalist Agents}},
       author={Xingyao Wang and Boxuan Li and Yufan Song and Frank F. Xu and Xiangru Tang and Mingchen Zhuge and Jiayi Pan and Yueqi Song and Bowen Li and Jaskirat Singh and Hoang H. Tran and Fuqiang Li and Ren Ma and Mingzhang Zheng and Bill Qian and Yanjun Shao and Niklas Muennighoff and Yizhe Zhang and Binyuan Hui and Junyang Lin and Robert Brennan and Hao Peng and Heng Ji and Graham Neubig},
       year={2024},
       eprint={2407.16741},

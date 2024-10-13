@@ -571,17 +571,17 @@ files = [
 
 [[package]]
 name = "boto3"
-version = "1.35.37"
+version = "1.35.39"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "boto3-1.35.37-py3-none-any.whl", hash = "sha256:385ca77bf8ea4ab2d97f6e2435bdb29f77d9301e2f7ac796c2f465753c2adf3c"},
-    {file = "boto3-1.35.37.tar.gz", hash = "sha256:470d981583885859fed2fd1c185eeb01cc03e60272d499bafe41b12625b158c8"},
+    {file = "boto3-1.35.39-py3-none-any.whl", hash = "sha256:5970b62c1ec8177501e02520f0d41839ca5fc549b30bac4e8c0c0882ae776217"},
+    {file = "boto3-1.35.39.tar.gz", hash = "sha256:670f811c65e3c5fe4ed8c8d69be0b44b1d649e992c0fc16de43816d1188f88f1"},
 ]
 
 [package.dependencies]
-botocore = ">=1.35.37,<1.36.0"
+botocore = ">=1.35.39,<1.36.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.10.0,<0.11.0"
 
@@ -590,13 +590,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.35.37"
+version = "1.35.39"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "botocore-1.35.37-py3-none-any.whl", hash = "sha256:64f965d4ba7adb8d79ce044c3aef7356e05dd74753cf7e9115b80f477845d920"},
-    {file = "botocore-1.35.37.tar.gz", hash = "sha256:b2b4d29bafd95b698344f2f0577bb67064adbf1735d8a0e3c7473daa59c23ba6"},
+    {file = "botocore-1.35.39-py3-none-any.whl", hash = "sha256:781c547eb6a79c0e4b0bedd87b81fbfed957816b4841d33e20c8f1989c7c19ce"},
+    {file = "botocore-1.35.39.tar.gz", hash = "sha256:cb7f851933b5ccc2fba4f0a8b846252410aa0efac5bfbe93b82d10801f5f8e90"},
 ]
 
 [package.dependencies]
@@ -1014,13 +1014,13 @@ numpy = "*"
 
 [[package]]
 name = "chromadb"
-version = "0.5.12"
+version = "0.5.13"
 description = "Chroma."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "chromadb-0.5.12-py3-none-any.whl", hash = "sha256:213b10018ac50bf1295920fef279f40ffbfd9c5f16eebc3c37f319af83b843cc"},
-    {file = "chromadb-0.5.12.tar.gz", hash = "sha256:18f10f95b631e7a13b3445184f77b161baf09f278f16c26dd9f065d012242d2f"},
+    {file = "chromadb-0.5.13-py3-none-any.whl", hash = "sha256:090134cb8a9bd35622175a8a9bb93a7b56ace413697489e9d2f43a5299a6b7bc"},
+    {file = "chromadb-0.5.13.tar.gz", hash = "sha256:fb1f44b5425976ef2bdf7403d365986ee5a224e5d8108fcd86472ff64de216a0"},
 ]
 
 [package.dependencies]
@@ -3782,13 +3782,13 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.49.0"
+version = "1.49.2"
 description = "Library to easily interface with LLM API providers"
 optional = false
 python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
 files = [
-    {file = "litellm-1.49.0-py3-none-any.whl", hash = "sha256:53711018b730f8a4262c11461b702b771e46e0c974f9c0bcd5b384b027308dd5"},
-    {file = "litellm-1.49.0.tar.gz", hash = "sha256:f5ef51b571b14de318fccdd6728f4e705aad68250f9ed374c7fe6c4e95d6c008"},
+    {file = "litellm-1.49.2-py3-none-any.whl", hash = "sha256:fa098963bb95fbe61fe3af24bfd020dd318b5483184ff8bd9c26b7938a47e298"},
+    {file = "litellm-1.49.2.tar.gz", hash = "sha256:f3a493264aae492fc292bb86c88b0c929c0b13267162272183727ce4a99e3859"},
 ]
 
 [package.dependencies]

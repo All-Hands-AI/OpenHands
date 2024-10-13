@@ -1,4 +1,3 @@
-import asyncio
 import re
 import uuid
 from typing import Any
@@ -20,6 +19,7 @@ from openhands.runtime.utils import find_available_tcp_port
 from openhands.security.analyzer import SecurityAnalyzer
 from openhands.security.invariant.client import InvariantClient
 from openhands.security.invariant.parser import TraceElement, parse_element
+from openhands.utils.async_utils import sync_from_async
 
 
 class InvariantAnalyzer(SecurityAnalyzer):
@@ -146,7 +146,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
             {'action': 'change_agent_state', 'args': {'agent_state': 'user_confirmed'}}
         )
         event_source = event.source if event.source else EventSource.AGENT
-        await asyncio.get_event_loop().run_in_executor(None, self.event_stream.add_event, new_event, event_source)
+        await sync_from_async(self.event_stream.add_event, new_event, event_source)
 
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         logger.info('Calling security_risk on InvariantAnalyzer')
