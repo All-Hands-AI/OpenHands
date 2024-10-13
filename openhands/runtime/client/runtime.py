@@ -282,6 +282,18 @@ class EventStreamRuntime(Runtime):
                 else None
             )
 
+            logger.info(
+                f"About to start the container with\n"
+                f"runtime_container_image: {self.runtime_container_image}\n"
+                f"name: {self.container_name}\n"
+                f"network_mode: {network_mode}\n"
+                f"port_mapping: {port_mapping}\n"
+                f"environment: {environment}\n"
+                f"volumes: {volumes}\n"
+                f"device_requests: {device_requests}\n"
+                f"mem_limit: {self.config.sandbox.mem_limit}\n"
+                f"shm_size: {self.config.sandbox.shm_size}\n"
+            )
             container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=(
@@ -305,8 +317,8 @@ class EventStreamRuntime(Runtime):
                 mem_limit=self.config.sandbox.mem_limit,
                 shm_size=self.config.sandbox.shm_size,
             )
-            self.log_buffer = LogBuffer(container)
             logger.info(f'Container started. Server url: {self.api_url}')
+            self.log_buffer = LogBuffer(container)
             self.send_status_message('STATUS$CONTAINER_STARTED')
             return container
         except Exception as e:
