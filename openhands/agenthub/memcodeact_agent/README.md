@@ -27,39 +27,14 @@ The development of `memcodeact_agent` is inspired by two pivotal research papers
 
 ### Prerequisites
 
-- Python 3.10+
-- Required environment variables:
+- Configuration variables in `config.toml`, `agent.MemCodeactAgent` section:
+  - `micro_agent_name`: Name of the micro agent to use.
+  - `enable_memory`: Whether to enable long-term memory. Default is true for this agent.
+  - `cache_prompt`: Whether to cache the prompt. Default is false for this agent.
+
+
+- Optional environment variables:
   - `SANDBOX_ENV_GITHUB_TOKEN`: GitHub Personal Access Token with read-only permissions.
-
-### Installation
-
-1. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/All-Hands-AI/OpenHands.git
-   ```
-
-2. **Navigate to the Agent Directory:**
-   ```bash
-   cd OpenHands/odie/openhands/agenthub/memcodeact_agent
-   ```
-
-3. **Install Dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-### Usage
-
-1. **Configure Environment Variables:**
-   Set the `SANDBOX_ENV_GITHUB_TOKEN` in your environment variables to enable GitHub interactions.
-
-2. **Run the Agent:**
-   ```bash
-   python memcodeact_agent.py
-   ```
-
-3. **Interact with the Agent:**
-   Follow the prompts to execute tasks. The agent will utilize its memory capabilities to provide more coherent and contextually aware responses.
 
 ## Documentation
 
@@ -67,8 +42,4 @@ For detailed information on how to interact with the agent, refer to the [User P
 
 ## Contribution
 
-`memcodeact_agent` is an experimental agent designed for research and development purposes. Contributions are welcome! Please ensure that any changes adhere to the project's coding standards and are accompanied by appropriate tests.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](../LICENSE) file for details.
+`memcodeact_agent` is an experimental agent designed for research and development purposes. Contributions are welcome!
