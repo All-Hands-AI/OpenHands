@@ -1,12 +1,12 @@
 import time
 
-from pydantic import BaseModel, field
+from pydantic import BaseModel, Field
 
 
 class Cost(BaseModel):
     model: str
     cost: float
-    timestamp: float = field(default_factory=time.time)
+    timestamp: float = Field(default_factory=time.time)
 
 
 class Metrics:
