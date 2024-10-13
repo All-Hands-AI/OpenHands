@@ -4,7 +4,7 @@ possible next action to accomplish your goal. Your answer will be interpreted
 and executed by a program, make sure to follow the formatting instructions.
 
 # Goal:
-. I should start with: Get the content on "http://localhost:8000"
+Get the content on "http://localhost:8000"
 
 # Action Space
 
