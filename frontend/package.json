@@ -11,7 +11,7 @@
     "@nextui-org/react": "^2.4.8",
     "@react-types/shared": "^3.25.0",
     "@reduxjs/toolkit": "^2.2.8",
-    "@remix-run/node": "^2.11.2",
+    "@remix-run/node": "^2.13.1",
     "@remix-run/react": "^2.11.2",
     "@remix-run/serve": "^2.11.2",
     "@vitejs/plugin-react": "^4.3.2",
