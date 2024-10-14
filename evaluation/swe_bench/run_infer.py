@@ -80,8 +80,8 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
             instruction += f'# Hints\n{instance.hints_text}\n\n'
         instruction += (
             'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-            'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
-            # TODO: uncomment these once we finalized editing
+            'You should NOT modify any existing test case files. You SHOULD add new test in a NEW file to reproduce the issue.\n'
+            'You should verify that the issue is resolved and any new tests you create pass successfully.\n'
             'You should NEVER use web browsing or any other web-based tools.\n'
             'You should ALWAYS use the default Python interpreter available in the <execute_bash> environment to run code related to the provided issue and/or repository.\n'
         )
