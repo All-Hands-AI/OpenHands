@@ -62,13 +62,6 @@ export function SettingsForm({
       const isUsingBaseUrl = !!settings.LLM_BASE_URL;
       const isUsingCustomModel = !!settings.LLM_MODEL && !isKnownModel;
 
-      console.log({
-        isUsingSecurityAnalyzer,
-        isUsingConfirmationMode,
-        isUsingBaseUrl,
-        isUsingCustomModel,
-      });
-
       return (
         isUsingSecurityAnalyzer ||
         isUsingConfirmationMode ||

@@ -558,19 +558,29 @@ class EventStreamRuntime(Runtime):
         except Exception as e:
             raise RuntimeError(f'List files operation failed: {str(e)}')
 
-    def zip_files_in_sandbox(self) -> bytes:
-        """Zips the files in the sandbox and returns the bytes for streaming."""
-        sandbox_dir = os.getcwd() + self.config.workspace_mount_path_in_sandbox
-        with tempfile.TemporaryFile() as temp_zip:
-            with ZipFile(temp_zip, 'w') as zipf:
-                for root, _, files in os.walk(sandbox_dir):
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        zipf.write(
-                            file_path, arcname=os.path.relpath(file_path, sandbox_dir)
-                        )
-            temp_zip.seek(0)  # Rewind the file to the beginning after writing
-            return temp_zip.read()
+    def copy_from(self, path: str) -> bytes:
+        """Zip all files in the sandbox and return as a stream of bytes."""
+        self._refresh_logs()
+        try:
+            params = {'path': path}
+            response = send_request_with_retry(
+                self.session,
+                'GET',
+                f'{self.api_url}/download_files',
+                params=params,
+                stream=True,
+                timeout=30,
+            )
+            if response.status_code == 200:
+                data = response.content
+                return data
+            else:
+                error_message = response.text
+                raise Exception(f'Copy operation failed: {error_message}')
+        except requests.Timeout:
+            raise TimeoutError('Copy operation timed out')
+        except Exception as e:
+            raise RuntimeError(f'Copy operation failed: {str(e)}')
 
     def _is_port_in_use_docker(self, port):
         containers = self.docker_client.containers.list()
