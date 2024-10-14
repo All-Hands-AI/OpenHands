@@ -107,6 +107,7 @@ function Home() {
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
     React.useState(false);
   const [importedFile, setImportedFile] = React.useState<File | null>(null);
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
   const dispatch = useDispatch();
   const { files } = useSelector((state: RootState) => state.initalQuery);
@@ -131,7 +132,10 @@ function Home() {
       <HeroHeading />
       <div className="flex flex-col gap-16 w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
-          <TaskForm importedProjectZip={importedFile} />
+          <TaskForm
+            importedProjectZip={importedFile}
+            textareaRef={textareaRef}
+          />
           {files.length > 0 && (
             <AttachedFilesSlider
               files={files}
@@ -173,6 +177,8 @@ function Home() {
                       if (event.target.files) {
                         const zip = event.target.files[0];
                         setImportedFile(zip);
+                        // focus on the task form
+                        textareaRef.current?.focus();
                       } else {
                         // TODO: handle error
                       }
