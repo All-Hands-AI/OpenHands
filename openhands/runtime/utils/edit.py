@@ -298,10 +298,12 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             self.draft_editor_llm, content_to_edit, action.content
         )
         if _edited_content is None:
-            return ErrorObservation(
+            ret_err = ErrorObservation(
                 'Failed to get new file contents. '
                 'Please try to reduce the number of edits and try again.'
             )
+            ret_err.llm_metrics = self.draft_editor_llm.metrics
+            return ret_err
 
         # piece the updated content with the unchanged content
         updated_lines = (
@@ -319,13 +321,16 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 suffix, original_file_content, updated_content, action.path, diff
             )
             if error_obs is not None:
+                error_obs.llm_metrics = self.draft_editor_llm.metrics
                 return error_obs
+
         obs = self.write(FileWriteAction(path=action.path, content=updated_content))
-        return FileEditObservation(
+        ret_obs = FileEditObservation(
             content=diff,
             path=action.path,
             prev_exist=True,
             old_content=original_file_content,
             new_content=updated_content,
-            edit_cost_metrics=self.draft_editor_llm.metrics,
         )
+        ret_obs.llm_metrics = self.draft_editor_llm.metrics
+        return ret_obs

@@ -35,7 +35,6 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
     ErrorObservation,
-    FileEditObservation,
     Observation,
 )
 from openhands.events.serialization.event import truncate_content
@@ -228,6 +227,12 @@ class AgentController:
                 observation_to_print.content, self.agent.llm.config.max_message_chars
             )
         logger.info(observation_to_print, extra={'msg_type': 'OBSERVATION'})
+
+        if observation.llm_metrics is not None:
+            logger.info(f'observation.llm_metrics: {observation.llm_metrics}')
+            self.state.local_metrics.merge(observation.llm_metrics)
+            logger.info(f'self.state.metrics: {self.state.metrics}')
+
         if self._pending_action and self._pending_action.id == observation.cause:
             self._pending_action = None
             if self.state.agent_state == AgentState.USER_CONFIRMED:
@@ -243,11 +248,6 @@ class AgentController:
         elif isinstance(observation, ErrorObservation):
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
-        elif (
-            isinstance(observation, FileEditObservation)
-            and observation.edit_cost_metrics is not None
-        ):
-            self.state.metrics.merge(observation.edit_cost_metrics)
 
     async def _handle_message_action(self, action: MessageAction):
         """Handles message actions from the event stream.
