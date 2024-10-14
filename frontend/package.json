@@ -19,7 +19,7 @@
     "@xterm/xterm": "^5.4.0",
     "clsx": "^2.1.1",
     "eslint-config-airbnb-typescript": "^18.0.0",
-    "i18next": "^23.15.2",
+    "i18next": "^23.16.0",
     "i18next-browser-languagedetector": "^8.0.0",
     "i18next-http-backend": "^2.6.2",
     "isbot": "^5.1.17",
