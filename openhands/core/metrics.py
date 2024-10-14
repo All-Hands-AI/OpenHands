@@ -34,11 +34,11 @@ class Metrics:
     def costs(self) -> list[Cost]:
         return self._costs
 
-    def add_cost(self, value: float, model: str | None = None) -> None:
+    def add_cost(self, value: float) -> None:
         if value < 0:
             raise ValueError('Added cost cannot be negative.')
         self._accumulated_cost += value
-        self._costs.append(Cost(cost=value, model=model or self.model_name))
+        self._costs.append(Cost(cost=value, model=self.model_name))
 
     def merge(self, other: 'Metrics') -> None:
         self._accumulated_cost += other.accumulated_cost
