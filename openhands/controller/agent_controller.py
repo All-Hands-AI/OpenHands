@@ -127,8 +127,8 @@ class AgentController:
         self.state.local_iteration += 1
 
     async def update_state_after_step(self):
-        # update metrics especially for cost
-        self.state.local_metrics = self.agent.llm.metrics
+        # update metrics especially for cost. Use deepcopy to avoid it being modified by agent.reset()
+        self.state.local_metrics = copy.deepcopy(self.agent.llm.metrics)
         if 'llm_completions' not in self.state.extra_data:
             self.state.extra_data['llm_completions'] = []
         self.state.extra_data['llm_completions'].extend(self.agent.llm.llm_completions)
