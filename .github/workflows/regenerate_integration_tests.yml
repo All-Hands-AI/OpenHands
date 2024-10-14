@@ -52,12 +52,7 @@ jobs:
     - name: Build Environment
       run: make build
     - name: Regenerate integration tests
-      run: |
-        DEBUG=${{ inputs.debug }} \
-        LOG_TO_FILE=${{ inputs.log_to_file }} \
-        FORCE_REGENERATE=${{ inputs.force_regenerate_tests }} \
-        FORCE_USE_LLM=${{ inputs.force_use_llm }} \
-        ./tests/integration/regenerate.sh
+      run: ./tests/integration/regenerate.sh
     - name: Commit changes
       run: |
         if git diff --quiet --exit-code; then
