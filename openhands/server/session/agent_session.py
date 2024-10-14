@@ -134,6 +134,7 @@ class AgentSession:
 
         if self.loop:
             self.loop.call_soon_threadsafe(self.loop.stop)
+            self.loop = None
 
         self._closed = True
 
