@@ -220,6 +220,7 @@ def test_unsafe_bash_command(temp_dir: str):
                         arguments={
                             'blocking': False,
                             'command': 'ls',
+                            'hidden': True,
                             'keep_prompt': True,
                             'is_confirmed': ActionConfirmationStatus.CONFIRMED,
                         },
