@@ -53,11 +53,7 @@ def write_row_to_md_file(row):
         resolved = None
 
     instance_id = row['instance_id']
-    filename = (
-        f'{instance_id}.{str(resolved).lower()}.md'
-        if resolved is not None
-        else f'{instance_id}.md'
-    )
+    filename = f'{str(resolved).lower()}.{instance_id}.md'
     os.makedirs(output_md_folder, exist_ok=True)
     filepath = os.path.join(output_md_folder, filename)
 
