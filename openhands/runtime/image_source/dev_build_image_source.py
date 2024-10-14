@@ -25,7 +25,7 @@ class DevBuildImageSource(ImageSourceABC):
     """
 
     base_image_name: str = field(default='nikolaik/python-nodejs:python3.12-nodejs22')
-    extra_deps: Optional[str] = field(default=None)
+    extra_deps: str = field(default='')
     docker_client: DockerClient = field(default_factory=DockerClient.from_env)
     _image: Optional[str] = None
 

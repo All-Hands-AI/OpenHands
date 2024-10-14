@@ -28,7 +28,7 @@ class BuildImageSource(ImageSourceABC):
     base_image_name: str = field(default='nikolaik/python-nodejs:python3.12-nodejs22')
     sandbox_image_name_prefix: str = 'oh_sandbox_'
     cwd: str = field(default_factory=os.getcwd)
-    extra_deps: Optional[str] = field(default=None)
+    extra_deps: str = field(default='')
     target_image_name: Optional[str] = field(default=None)
     target_image_tag: Optional[str] = field(default=None)
     docker_file: str = 'full_Dockerfile.j2'

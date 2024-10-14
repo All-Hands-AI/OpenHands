@@ -179,7 +179,7 @@ class AgentSession:
                 plugins=agent.sandbox_plugins,
                 status_message_callback=status_message_callback,
             )
-            self.runtime.ainit()
+            await self.runtime.ainit()
         except Exception as e:
             logger.error(f'Runtime initialization failed: {e}', exc_info=True)
             raise

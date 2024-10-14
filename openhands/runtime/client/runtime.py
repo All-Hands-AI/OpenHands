@@ -198,7 +198,7 @@ class EventStreamRuntime(Runtime):
         elif self.base_container_image:
             return DevBuildImageSource(
                 base_image_name=self.base_container_image,
-                extra_deps=self.config.sandbox.runtime_extra_deps,
+                extra_deps=self.config.sandbox.runtime_extra_deps or '',
                 docker_client=self.docker_client,
             )
         else:
