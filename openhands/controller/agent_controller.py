@@ -228,8 +228,9 @@ class AgentController:
             )
         logger.info(observation_to_print, extra={'msg_type': 'OBSERVATION'})
 
+        # Merge with the metrics from the LLM - it will to synced to the controller's local metrics in update_state_after_step()
         if observation.llm_metrics is not None:
-            self.state.local_metrics.merge(observation.llm_metrics)
+            self.agent.llm.metrics.merge(observation.llm_metrics)
 
         if self._pending_action and self._pending_action.id == observation.cause:
             self._pending_action = None
