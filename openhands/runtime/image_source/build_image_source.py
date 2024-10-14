@@ -11,6 +11,7 @@ from docker import DockerClient
 from docker.models.images import Image
 from jinja2 import Environment, FileSystemLoader
 
+from openhands import __version__
 from openhands.core.logger import openhands_logger
 from openhands.runtime.image_source.image_source_abc import ImageSourceABC
 from openhands.utils.async_utils import wait_all
@@ -25,12 +26,12 @@ class BuildImageSource(ImageSourceABC):
     helps keep the build as fast as possible
     """
 
-    base_image_name: str = field(default='nikolaik/python-nodejs:python3.12-nodejs22')
-    sandbox_image_name_prefix: str = 'oh_sandbox_'
+    base_image: str = field(default='nikolaik/python-nodejs:python3.12-nodejs22')
+    sandbox_image_prefix: str = f'ghcr.io/all-hands-ai/runtime:v{__version__}_'
     cwd: str = field(default_factory=os.getcwd)
     extra_deps: str = field(default='')
     target_image_name: Optional[str] = field(default=None)
-    target_image_tag: Optional[str] = field(default=None)
+    target_image: Optional[str] = field(default=None)
     docker_file: str = 'full_Dockerfile.j2'
     docker_client: DockerClient = field(default_factory=DockerClient.from_env)
     _image: Optional[Image] = None
@@ -43,9 +44,11 @@ class BuildImageSource(ImageSourceABC):
         if not image:
             image = await self.build_image(image_name)
         self._image = image
-        return image.name + ':' + image.tags[0]
+        return image.tags[0]
 
     async def build_image_name(self) -> str:
+        if self.target_image:
+            return self.target_image
         md5s: Dict[Path, bytes] = {}
         root = Path(os.getcwd())
         await wait_all(
@@ -54,15 +57,15 @@ class BuildImageSource(ImageSourceABC):
         hash = hashlib.md5()
         for path in sorted(md5s, key=lambda p: str(p)):
             hash.update(md5s[path])
-        return self.sandbox_image_name_prefix + hash.hexdigest()
+        return self.sandbox_image_prefix + hash.hexdigest()
 
     async def build_image(self, image_name: str) -> Image:
         docker_client = self.docker_client
-        base_image = get_local_image(self.base_image_name, docker_client)
+        base_image = get_local_image(self.base_image, docker_client)
         if not base_image:
-            pull_image(self.base_image_name, docker_client)
+            pull_image(self.base_image, docker_client)
             # Make sure image exists...
-            docker_client.images.get(self.base_image_name)
+            docker_client.images.get(self.base_image)
         openhands_logger.info(f'building_docker_image:{image_name}')
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
@@ -71,7 +74,6 @@ class BuildImageSource(ImageSourceABC):
             self.create_dockerfile(temp_path)
             self.execute_docker_build(temp_path, image_name)
             image = docker_client.images.get(image_name)
-            self.retag_image(image)
             return image
 
     def build_project(self, temp_path: Path):
@@ -120,19 +122,19 @@ class BuildImageSource(ImageSourceABC):
         )
         template = env.get_template(self.docker_file)
         dockerfile_content = template.render(
-            base_image=self.base_image_name,
+            base_image=self.base_image,
             extra_deps=self.extra_deps,
         )
         with open(Path(temp_path, 'Dockerfile'), 'w') as file:
             file.write(dockerfile_content)
 
-    def execute_docker_build(self, temp_path: Path, image_name: str):
+    def execute_docker_build(self, temp_path: Path, tag: str):
         buildx_cmd = [
             'docker',
             'buildx',
             'build',
             '--progress=plain',
-            f'--tag={image_name}',
+            f'--tag={tag}',
             '--load',
         ]
 
@@ -185,15 +187,7 @@ class BuildImageSource(ImageSourceABC):
             )
             raise
 
-        openhands_logger.info(f'Image [{image_name}] build finished.')
-
-    def retag_image(self, image: Image):
-        if self.target_image_tag:
-            target_image_repo, target_image_tag = self.target_image_tag.split(':')
-            image.tag(target_image_repo, target_image_tag)
-            openhands_logger.info(
-                f'Re-tagged image [{image.tags[0]}] with more generic tag [{self.target_image_tag}]'
-            )
+        openhands_logger.info(f'Image [{tag}] build finished.')
 
 
 def compiled_filter(path: Path) -> bool:

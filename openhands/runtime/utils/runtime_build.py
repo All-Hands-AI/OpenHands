@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
         # Suppose we just use image source here?
         # We use BuildImageSource here, but we just get the folder
-        source = BuildImageSource(base_image_name=args.base_image, docker_client=None)
+        source = BuildImageSource(base_image=args.base_image, docker_client=None)
         docker_image_hash_tag = source.build_image_name()
         build_path = Path(build_folder)
         source.build_project(build_path)
@@ -119,7 +119,7 @@ if __name__ == '__main__':
         # We use BuildImageSource here
 
         source = BuildImageSource(
-            base_image_name=args.base_image,
+            base_image=args.base_image,
         )
         image_name = source.get_image()
         print(f'\nBUILT Image: {image_name}\n')

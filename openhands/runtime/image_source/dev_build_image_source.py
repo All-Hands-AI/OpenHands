@@ -24,7 +24,7 @@ class DevBuildImageSource(ImageSourceABC):
     much as possible as an intermediate image makes sense
     """
 
-    base_image_name: str = field(default='nikolaik/python-nodejs:python3.12-nodejs22')
+    base_image: str = field(default='nikolaik/python-nodejs:python3.12-nodejs22')
     extra_deps: str = field(default='')
     docker_client: DockerClient = field(default_factory=DockerClient.from_env)
     _image: Optional[str] = None
@@ -34,7 +34,7 @@ class DevBuildImageSource(ImageSourceABC):
             return self._image
 
         source = BuildImageSource(
-            base_image_name=self.base_image_name,
+            base_image=self.base_image,
             extra_deps=self.extra_deps,
             docker_client=self.docker_client,
         )
@@ -47,9 +47,9 @@ class DevBuildImageSource(ImageSourceABC):
 
     async def build_image(self, image_name: str) -> Image:
         intermediate_image = await self.get_intermediate_image()
-        self.remove_old_images(BuildImageSource.sandbox_image_name_prefix)
+        self.remove_old_images(BuildImageSource.sandbox_image_prefix)
         source = BuildImageSource(
-            base_image_name=intermediate_image.tags[0],
+            base_image=intermediate_image.tags[0],
             extra_deps=self.extra_deps,
             docker_file='dev_Dockerfile.j2',
             docker_client=self.docker_client,
@@ -79,8 +79,7 @@ class DevBuildImageSource(ImageSourceABC):
             Path(code_path, 'oh').mkdir()
             Path(code_path, 'oh', '__init__.py').touch()
             source = BuildImageSource(
-                target_image_name=None,
-                target_image_tag=None,
+                target_image=None,
                 docker_file='intermediate_Dockerfile.j2',
             )
             source.create_dockerfile(temp_path)

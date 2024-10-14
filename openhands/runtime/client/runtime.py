@@ -192,12 +192,12 @@ class EventStreamRuntime(Runtime):
     def _get_image_source(self) -> ImageSourceABC:
         if self.runtime_container_image:
             return SpecificImageSource(
-                image_name=self.runtime_container_image,
+                image=self.runtime_container_image,
                 docker_client=self.docker_client,
             )
         elif self.base_container_image:
             return DevBuildImageSource(
-                base_image_name=self.base_container_image,
+                base_image=self.base_container_image,
                 extra_deps=self.config.sandbox.runtime_extra_deps or '',
                 docker_client=self.docker_client,
             )

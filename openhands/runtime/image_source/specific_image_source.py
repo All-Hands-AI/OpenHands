@@ -13,13 +13,13 @@ class SpecificImageSource(ImageSourceABC):
     want to build one.
     """
 
-    image_name: str
+    image: str
     docker_client: DockerClient = field(default_factory=DockerClient.from_env)
 
     async def get_image(self) -> str:
         docker_client = self.docker_client
-        image = get_local_image(self.image_name, docker_client)
+        image = get_local_image(self.image, docker_client)
         if not image:
-            image = pull_image(self.image_name, docker_client)
-            image = get_local_image(self.image_name, docker_client)
-        return image.name + ':' + image.tags[0]
+            pull_image(self.image, docker_client)
+            image = get_local_image(self.image, docker_client)
+        return image.tags[0]  # type: ignore
