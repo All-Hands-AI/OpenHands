@@ -102,6 +102,7 @@ def test_cmd_run_action_serialization_deserialization():
             'command': 'echo "Hello world"',
             'thought': '',
             'keep_prompt': True,
+            'hidden': False,
             'is_confirmed': ActionConfirmationStatus.CONFIRMED,
         },
     }
