@@ -51,6 +51,10 @@ class Metrics:
             'costs': [cost.model_dump() for cost in self._costs],
         }
 
+    def reset(self):
+        self._accumulated_cost = 0.0
+        self._costs = []
+
     def log(self):
         """Log the metrics."""
         metrics = self.get()

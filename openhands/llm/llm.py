@@ -390,7 +390,7 @@ class LLM(RetryMixin, DebugMixin):
         return str(self)
 
     def reset(self):
-        self.metrics = Metrics(model_name=self.config.model)
+        self.metrics.reset()
         self.llm_completions = []
 
     def format_messages_for_llm(self, messages: Message | list[Message]) -> list[dict]:
