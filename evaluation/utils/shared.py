@@ -248,7 +248,7 @@ def update_progress(
     """Update the progress bar and write the result to the output file."""
     pbar.update(1)
     pbar.set_description(f'Instance {result.instance_id}')
-    pbar.set_postfix_str(f'Test Result: {result.test_result}')
+    pbar.set_postfix_str(f'Test Result: {str(result.test_result)[:300]}...')
     logger.info(
         f'Finished evaluation for instance {result.instance_id}: {str(result.test_result)[:300]}...\n'
     )
