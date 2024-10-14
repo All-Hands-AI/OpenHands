@@ -229,9 +229,7 @@ class AgentController:
         logger.info(observation_to_print, extra={'msg_type': 'OBSERVATION'})
 
         if observation.llm_metrics is not None:
-            logger.info(f'observation.llm_metrics: {observation.llm_metrics}')
             self.state.local_metrics.merge(observation.llm_metrics)
-            logger.info(f'self.state.metrics: {self.state.metrics}')
 
         if self._pending_action and self._pending_action.id == observation.cause:
             self._pending_action = None
@@ -454,8 +452,9 @@ class AgentController:
         logger.info(action, extra={'msg_type': 'ACTION'})
 
         if self._is_stuck():
-            await self.report_error('Agent got stuck in a loop')
+            # This need to go BEFORE report_error to sync metrics
             await self.set_agent_state_to(AgentState.ERROR)
+            await self.report_error('Agent got stuck in a loop')
 
     async def _delegate_step(self):
         """Executes a single step of the delegate agent."""
@@ -523,20 +522,21 @@ class AgentController:
         else:
             self.state.traffic_control_state = TrafficControlState.THROTTLING
             if self.headless_mode:
+                # This need to go BEFORE report_error to sync metrics
+                await self.set_agent_state_to(AgentState.ERROR)
                 # set to ERROR state if running in headless mode
                 # since user cannot resume on the web interface
                 await self.report_error(
                     f'Agent reached maximum {limit_type} in headless mode, task stopped. '
                     f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}'
                 )
-                await self.set_agent_state_to(AgentState.ERROR)
             else:
+                await self.set_agent_state_to(AgentState.PAUSED)
                 await self.report_error(
                     f'Agent reached maximum {limit_type}, task paused. '
                     f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}. '
                     f'{TRAFFIC_CONTROL_REMINDER}'
                 )
-                await self.set_agent_state_to(AgentState.PAUSED)
             stop_step = True
         return stop_step
 
