@@ -55,6 +55,7 @@ from openhands.runtime.plugins import (
 )
 from openhands.runtime.utils import split_bash_commands
 from openhands.runtime.utils.files import insert_lines, read_lines
+from openhands.utils.async_utils import wait_all
 
 
 class ActionRequest(BaseModel):
@@ -108,15 +109,7 @@ class RuntimeClient:
         return self._initial_pwd
 
     async def ainit(self):
-        for plugin in self.plugins_to_load:
-            await plugin.initialize(self.username)
-            self.plugins[plugin.name] = plugin
-            logger.info(f'Initializing plugin: {plugin.name}')
-
-            if isinstance(plugin, JupyterPlugin):
-                await self.run_ipython(
-                    IPythonRunCellAction(code=f'import os; os.chdir("{self.pwd}")')
-                )
+        await wait_all(self._init_plugin(plugin) for plugin in self.plugins_to_load)
 
         # This is a temporary workaround
         # TODO: refactor AgentSkills to be part of JupyterPlugin
@@ -131,6 +124,16 @@ class RuntimeClient:
 
         await self._init_bash_commands()
         logger.info('Runtime client initialized.')
+
+    async def _init_plugin(self, plugin: Plugin):
+        await plugin.initialize(self.username)
+        self.plugins[plugin.name] = plugin
+        logger.info(f'Initializing plugin: {plugin.name}')
+
+        if isinstance(plugin, JupyterPlugin):
+            await self.run_ipython(
+                IPythonRunCellAction(code=f'import os; os.chdir("{self.pwd}")')
+            )
 
     def _init_user(self, username: str, user_id: int) -> None:
         """Create working directory and user if not exists.

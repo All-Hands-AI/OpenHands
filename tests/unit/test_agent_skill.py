@@ -67,12 +67,6 @@ def _calculate_window_bounds(current_line, total_lines, window_size):
     return start, end
 
 
-def _generate_ruby_test_file_with_lines(temp_path, num_lines) -> str:
-    file_path = temp_path / 'test_file.rb'
-    file_path.write_text('\n' * num_lines)
-    return file_path
-
-
 def _capture_file_operation_error(operation, expected_error_msg):
     with io.StringIO() as buf:
         with contextlib.redirect_stdout(buf):

@@ -1,5 +1,7 @@
 import asyncio
 import hashlib
+import json
+import os
 import sys
 import uuid
 from typing import Callable, Protocol, Type
@@ -21,6 +23,7 @@ from openhands.events.action import MessageAction
 from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
+from openhands.events.serialization.event import event_to_trajectory
 from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime import Runtime
@@ -201,6 +204,17 @@ async def run_controller(
     # close when done
     await controller.close()
     state = controller.get_state()
+
+    # save trajectories if applicable
+    if config.trajectories_path is not None:
+        file_path = os.path.join(config.trajectories_path, sid + '.json')
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        histories = [
+            event_to_trajectory(event)
+            for event in state.history.get_events(include_delegates=True)
+        ]
+        with open(file_path, 'w') as f:
+            json.dump(histories, f)
 
     return state
 
