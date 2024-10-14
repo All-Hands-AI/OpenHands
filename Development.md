@@ -127,3 +127,12 @@ cd ./containers/dev
 ```
 
 You do need [Docker](https://docs.docker.com/engine/install/) installed on your host though.
+
+## Develop OpenHands with OpenHands
+
+Start up OpenHands to work on OpenHands with the help from OpenHands.
+
+```bash
+make start-oh-dev
+make stop-oh-dev
+```

@@ -13,7 +13,7 @@ It could take some time if you are running for the first time as Docker will pul
 
 ## Build and run
 
-If everything goes well, you should be inside a container after Docker finishes building the `openhands:dev` image similar to the following:
+If everything goes well, you should be inside a container after Docker finishes building the `openhands-dev` image similar to the following:
 
 ```bash
 Build and run in Docker ...

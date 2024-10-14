@@ -5,7 +5,10 @@ services:
     build:
       context: ${OPENHANDS_WORKSPACE:-../../}
       dockerfile: ./containers/dev/Dockerfile
-    image: openhands:dev
+      platforms:
+        - linux/amd64
+        - linux/arm64
+    image: openhands-dev
     container_name: openhands-dev
     environment:
       - FRONTEND_HOST=${FRONTEND_HOST:-"0.0.0.0"}

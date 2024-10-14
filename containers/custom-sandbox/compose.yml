@@ -7,6 +7,9 @@ services:
       args:
         - PYTHON_VERSION=3.12
         - NODE_VERSION=22
+      platforms:
+        - linux/amd64
+        - linux/arm64
     image: custom-sandbox
 
   # docker compose --profile dind run --rm sandbox-dind

@@ -1,0 +1,37 @@
+[core]
+debug=true
+workspace_mount_path_in_sandbox = "/workspace"
+
+[sandbox]
+base_container_image="openhands-dev"
+
+# runtime_extra_options
+# https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run
+
+# dockerd via docker.sock on host
+[sandbox.runtime_extra_options]
+privileged=true
+remove=true
+network_mode="bridge"
+publish_all_ports=true
+
+[sandbox.runtime_extra_options.environment]
+# "EXPERIMENTAL_DOCKER_DESKTOP_FORCE_QEMU"="1"
+"FRONTEND_HOST"="0.0.0.0"
+"BACKEND_HOST"="0.0.0.0"
+"SANDBOX_LOCAL_RUNTIME_URL"="http://${SANDBOX_API_HOSTNAME:-localhost}"
+"SANDBOX_USER_ID"="${SANDBOX_USER_ID}"
+"LLM_MODEL"="${LLM_MODEL:-openai/gpt-4o}"
+"LLM_API_KEY"="${LLM_API_KEY:-${OPENAI_API_KEY}}"
+
+[sandbox.runtime_extra_options.extra_hosts]
+"${SANDBOX_API_HOSTNAME:-localhost}"="host-gateway"
+
+[sandbox.runtime_extra_options.volumes]
+"/var/run/docker.sock"={bind="/var/run/docker.sock", mode="rw"}
+#
+
+[llm]
+model="openai/gpt-4o"
+api_key="${OPENAI_API_KEY}"
+embedding_model=""

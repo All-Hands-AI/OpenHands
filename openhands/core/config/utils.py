@@ -2,6 +2,8 @@ import argparse
 import os
 import pathlib
 import platform
+import re
+import tempfile
 from dataclasses import is_dataclass
 from types import UnionType
 from typing import Any, MutableMapping, get_args, get_origin
@@ -392,9 +394,55 @@ def load_app_config(
     """
     config = AppConfig()
     load_from_toml(config, config_file)
+    # override default with workspace config (.openhands.toml)
+    if config.workspace_base:
+        toml_path = os.path.join(config.workspace_base, '.openhands.toml')
+        load_toml_with_env(config, toml_path)
     load_from_env(config, os.environ)
     finalize_config(config)
     if set_logging_levels:
         logger.DEBUG = config.debug
         logger.DISABLE_COLOR_PRINTING = config.disable_color
     return config
+
+
+def load_toml_with_env(cfg: AppConfig, toml_file: str):
+    """Read the TOML file, substitute environment variables, and update the cfg.
+
+    Args:
+        cfg: The AppConfig object to update attributes of.
+        toml_file: The path to the toml file.
+    """
+
+    def substitute_env_vars(value):
+        pattern = re.compile(r'\$\{([A-Za-z_][A-Za-z0-9_]*)[:-]?(.*?)\}')
+
+        # form ${VAR:-default} or ${VAR}
+        def replacer(match):
+            env_var = match.group(1)
+            default_value = match.group(2)
+            return os.getenv(env_var, default_value)
+
+        return pattern.sub(replacer, value)
+
+    try:
+        with open(toml_file, 'r', encoding='utf-8') as file:
+            toml_data = file.read()
+    except FileNotFoundError:
+        logger.openhands_logger.info('no workspace config found')
+        return
+    except toml.TomlDecodeError as e:
+        logger.openhands_logger.warning(
+            'Cannot parse config from toml, toml values have not been applied.\nError: %s',
+            e,
+            exc_info=False,
+        )
+        return
+
+    substituted = substitute_env_vars(toml_data)
+
+    with tempfile.NamedTemporaryFile(delete=True, suffix='.toml') as temp_file:
+        temp_file.write(substituted.encode())
+        temp_file.flush()
+        load_from_toml(cfg, temp_file.name)
+        logger.openhands_logger.info('Loaded workspace config from %s', toml_file)

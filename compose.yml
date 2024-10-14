@@ -4,6 +4,9 @@ services:
     build:
       context: ./
       dockerfile: ./containers/app/Dockerfile
+      platforms:
+        - linux/amd64
+        - linux/arm64
     image: openhands:latest
     container_name: openhands-app-${DATE:-}
     environment:
@@ -19,7 +22,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${WORKSPACE_BASE:-$PWD/workspace}:/opt/workspace_base
-      - ./config.toml:/app/config.toml
+      - ${CONFIG_FILE:-./config.toml}:/app/config.toml
     pull_policy: build
     stdin_open: true
     tty: true

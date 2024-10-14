@@ -229,7 +229,8 @@ docker-run:
 		export WORKSPACE_BASE=${WORKSPACE_BASE}; \
 		export SANDBOX_USER_ID=$(shell id -u); \
 		export DATE=$(shell date +%Y%m%d%H%M%S); \
-		docker compose up $(OPTIONS); \
+		docker buildx bake openhands; \
+		docker compose up $(OPTIONS) openhands; \
 	fi
 
 # Run the app (WSL mode)
@@ -307,13 +308,22 @@ docker-dev:
 	fi
 
 # Develop OpenHands with OpenHands
-oh-dev:
+start-oh-dev:
 	@if [ -f /.dockerenv ]; then \
 		echo "Running inside a Docker container. Exiting..."; \
 		exit 0; \
 	else \
-		echo "$(YELLOW)Build and run OpenHands $(OPTIONS)...$(RESET)"; \
-		./containers/dev/oh-dev.sh $(OPTIONS); \
+		echo "$(YELLOW)Build and run OpenHands dev$(OPTIONS)...$(RESET)"; \
+		./containers/dev/dev-oh.sh $(OPTIONS); \
+	fi
+
+stop-oh-dev:
+	@if [ -f /.dockerenv ]; then \
+		echo "Running inside a Docker container. Exiting..."; \
+		exit 0; \
+	else \
+		echo "$(YELLOW)Stopping OpenHands dev $(OPTIONS)...$(RESET)"; \
+		docker-compose down $(OPTIONS) openhands; \
 	fi
 
 # Clean up all caches
@@ -336,9 +346,10 @@ help:
 	@echo "                        Backend Log file will be stored in the 'logs' directory."
 	@echo "  $(GREEN)docker-dev$(RESET)          - Build and run the OpenHands application in Docker."
 	@echo "  $(GREEN)docker-run$(RESET)          - Run the OpenHands application, starting both backend and frontend servers in Docker."
-	@echo "  $(GREEN)oh-dev$(RESET)              - Build and run OpenHands with OpenHands - eat our own dog food."
+	@echo "  $(GREEN)start-oh-dev$(RESET)        - Start building OpenHands with OpenHands - eat our own dog food."
+	@echo "  $(GREEN)stop-oh-dev$(RESET)         - Stop OpenHands dev."
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
 # Phony targets
 .PHONY: build check-dependencies check-python check-npm check-docker check-poetry install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint start-backend start-frontend run run-wsl setup-config setup-config-prompts help
-.PHONY: docker-dev docker-run oh-dev
+.PHONY: docker-dev docker-run start-oh-dev stop-oh-dev clean
