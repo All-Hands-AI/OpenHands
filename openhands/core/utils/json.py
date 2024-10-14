@@ -4,6 +4,7 @@ from datetime import datetime
 from json_repair import repair_json
 
 from openhands.core.exceptions import LLMResponseError
+from openhands.core.metrics import Metrics
 from openhands.events.event import Event
 from openhands.events.serialization import event_to_dict
 
@@ -14,6 +15,8 @@ def my_default_encoder(obj):
         return obj.isoformat()
     if isinstance(obj, Event):
         return event_to_dict(obj)
+    if isinstance(obj, Metrics):
+        return obj.get()
     return json.JSONEncoder().default(obj)
 
 

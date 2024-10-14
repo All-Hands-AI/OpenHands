@@ -44,9 +44,12 @@ class Metrics:
         self._accumulated_cost += other.accumulated_cost
         self._costs += other._costs
 
-    def get(self):
+    def get(self) -> dict:
         """Return the metrics in a dictionary."""
-        return {'accumulated_cost': self._accumulated_cost, 'costs': self._costs}
+        return {
+            'accumulated_cost': self._accumulated_cost,
+            'costs': [cost.model_dump() for cost in self._costs],
+        }
 
     def log(self):
         """Log the metrics."""
