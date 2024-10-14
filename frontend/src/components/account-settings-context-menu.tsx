@@ -23,12 +23,10 @@ export function AccountSettingsContextMenu({
       <ContextMenuListItem onClick={onClickAccountSettings}>
         Account Settings
       </ContextMenuListItem>
-      {isLoggedIn && (
-        <>
-          <ContextMenuSeparator />
-          <ContextMenuListItem onClick={onLogout}>Logout</ContextMenuListItem>
-        </>
-      )}
+      <ContextMenuSeparator />
+      <ContextMenuListItem disabled={!isLoggedIn} onClick={onLogout}>
+        Logout
+      </ContextMenuListItem>
     </ContextMenu>
   );
 }
