@@ -319,10 +319,7 @@ class EventStreamRuntime(Runtime):
         self._host_port = self._container_port
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         logger.info(
-            'attached to container:',
-            self.container_name,
-            self._container_port,
-            self.api_url,
+            f'attached to container: {self.container_name} {self._container_port} {self.api_url}'
         )
 
     def _refresh_logs(self):
