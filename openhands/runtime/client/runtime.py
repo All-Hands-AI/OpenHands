@@ -318,7 +318,7 @@ class EventStreamRuntime(Runtime):
             break
         self._host_port = self._container_port
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
-        print(
+        logger.info(
             'attached to container:',
             self.container_name,
             self._container_port,
