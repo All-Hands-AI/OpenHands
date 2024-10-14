@@ -13,7 +13,7 @@
     "@reduxjs/toolkit": "^2.2.8",
     "@remix-run/node": "^2.11.2",
     "@remix-run/react": "^2.11.2",
-    "@remix-run/serve": "^2.11.2",
+    "@remix-run/serve": "^2.13.1",
     "@vitejs/plugin-react": "^4.3.2",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.4.0",
