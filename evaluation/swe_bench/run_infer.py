@@ -223,6 +223,8 @@ def initialize_runtime(
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        if isinstance(obs, ErrorObservation):
+            logger.error(f'Failed to source ~/.bashrc: {obs.content}')
         assert_and_raise(
             obs.exit_code == 0, f'Failed to source ~/.bashrc: {obs.content}'
         )
