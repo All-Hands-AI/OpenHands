@@ -127,7 +127,7 @@ def process_instance(
             test_result=instance['test_result'],
         )
 
-    runtime = create_runtime(config, sid=instance_id)
+    runtime = create_runtime(config)
 
     # Get patch and save it to /tmp/patch.diff
     with tempfile.TemporaryDirectory() as temp_dir:

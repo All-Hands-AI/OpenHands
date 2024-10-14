@@ -28,6 +28,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.plugins import JupyterRequirement, PluginRequirement
+from openhands.utils.async_utils import sync_from_async
 
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
@@ -117,10 +118,10 @@ class Runtime:
             if event.timeout is None:
                 event.timeout = self.config.sandbox.timeout
             assert event.timeout is not None
-            observation = self.run_action(event)
+            observation = await sync_from_async(self.run_action, event)
             observation._cause = event.id  # type: ignore[attr-defined]
             source = event.source if event.source else EventSource.AGENT
-            self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
+            await self.event_stream.async_add_event(observation, source)  # type: ignore[arg-type]
 
     def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.
@@ -206,6 +207,6 @@ class Runtime:
         raise NotImplementedError('This method is not implemented in the base class.')
 
     @abstractmethod
-    def zip_files_in_sandbox(self) -> bytes:
-        """Zip all files in the sandbox and return the zip file as bytes."""
+    def copy_from(self, path: str) -> bytes:
+        """Zip all files in the sandbox and return as a stream of bytes."""
         raise NotImplementedError('This method is not implemented in the base class.')

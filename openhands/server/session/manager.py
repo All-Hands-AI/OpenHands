@@ -1,5 +1,6 @@
 import asyncio
 import time
+from typing import Optional
 
 from fastapi import WebSocket
 
@@ -14,11 +15,21 @@ class SessionManager:
     _sessions: dict[str, Session] = {}
     cleanup_interval: int = 300
     session_timeout: int = 600
+    _session_cleanup_task: Optional[asyncio.Task] = None
 
     def __init__(self, config: AppConfig, file_store: FileStore):
-        asyncio.create_task(self._cleanup_sessions())
         self.config = config
         self.file_store = file_store
+
+    async def __aenter__(self):
+        if not self._session_cleanup_task:
+            self._session_cleanup_task = asyncio.create_task(self._cleanup_sessions())
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        if self._session_cleanup_task:
+            self._session_cleanup_task.cancel()
+            self._session_cleanup_task = None
 
     def add_or_restart_session(self, sid: str, ws_conn: WebSocket) -> Session:
         if sid in self._sessions:

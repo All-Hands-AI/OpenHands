@@ -11,17 +11,18 @@ from openhands.events.serialization.utils import remove_fields
 TOP_KEYS = ['id', 'timestamp', 'source', 'message', 'cause', 'action', 'observation']
 UNDERSCORE_KEYS = ['id', 'timestamp', 'source', 'cause']
 
-DELETE_FROM_MEMORY_EXTRAS = {
+DELETE_FROM_TRAJECTORY_EXTRAS = {
     'screenshot',
     'dom_object',
     'axtree_object',
-    'open_pages_urls',
     'active_page_index',
     'last_browser_action',
     'last_browser_action_error',
     'focused_element_bid',
     'extra_element_properties',
 }
+
+DELETE_FROM_MEMORY_EXTRAS = DELETE_FROM_TRAJECTORY_EXTRAS | {'open_pages_urls'}
 
 
 def event_from_dict(data) -> 'Event':
@@ -70,6 +71,13 @@ def event_to_dict(event: 'Event') -> dict:
         d['extras'] = props
     else:
         raise ValueError('Event must be either action or observation')
+    return d
+
+
+def event_to_trajectory(event: 'Event') -> dict:
+    d = event_to_dict(event)
+    if 'extras' in d:
+        remove_fields(d['extras'], DELETE_FROM_TRAJECTORY_EXTRAS)
     return d
 
 

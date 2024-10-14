@@ -2,20 +2,13 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import { vi, describe, afterEach, it, expect } from "vitest";
-import { selectFile, listFiles } from "#/services/fileService";
 import TreeNode from "#/components/file-explorer/TreeNode";
+import OpenHands from "#/api/open-hands";
+
+const getFileSpy = vi.spyOn(OpenHands, "getFile");
+const getFilesSpy = vi.spyOn(OpenHands, "getFiles");
 
 vi.mock("../../services/fileService", async () => ({
-  listFiles: vi.fn(async (path: string = "/") => {
-    if (path === "/") {
-      return Promise.resolve(["folder1/", "file1.ts"]);
-    }
-    if (path === "/folder1/" || path === "folder1/") {
-      return Promise.resolve(["file2.ts"]);
-    }
-    return Promise.resolve([]);
-  }),
-  selectFile: vi.fn(async () => Promise.resolve({ code: "Hello world!" })),
   uploadFile: vi.fn(),
 }));
 
@@ -31,7 +24,7 @@ describe.skip("TreeNode", () => {
 
   it("should render a folder if it's in a subdir", async () => {
     renderWithProviders(<TreeNode path="/folder1/" defaultOpen />);
-    expect(listFiles).toHaveBeenCalledWith("/folder1/");
+    expect(getFilesSpy).toHaveBeenCalledWith("/folder1/");
 
     expect(await screen.findByText("folder1")).toBeInTheDocument();
     expect(await screen.findByText("file2.ts")).toBeInTheDocument();
@@ -63,27 +56,27 @@ describe.skip("TreeNode", () => {
     expect(screen.queryByText("file2.ts")).not.toBeInTheDocument();
 
     await user.click(folder1);
-    expect(listFiles).toHaveBeenCalledWith("/folder1/");
+    expect(getFilesSpy).toHaveBeenCalledWith("/folder1/");
 
     expect(folder1).toBeInTheDocument();
     expect(await screen.findByText("file2.ts")).toBeInTheDocument();
   });
 
-  it("should call `selectFile` and return the full path of a file when clicking on a file", async () => {
+  it("should call `OpenHands.getFile` and return the full path of a file when clicking on a file", async () => {
     const user = userEvent.setup();
     renderWithProviders(<TreeNode path="/folder1/file2.ts" defaultOpen />);
 
     const file2 = screen.getByText("file2.ts");
     await user.click(file2);
 
-    expect(selectFile).toHaveBeenCalledWith("/folder1/file2.ts");
+    expect(getFileSpy).toHaveBeenCalledWith("/folder1/file2.ts");
   });
 
   it("should render the full explorer given the defaultOpen prop", async () => {
     const user = userEvent.setup();
     renderWithProviders(<TreeNode path="/" defaultOpen />);
 
-    expect(listFiles).toHaveBeenCalledWith("/");
+    expect(getFilesSpy).toHaveBeenCalledWith("/");
 
     const file1 = await screen.findByText("file1.ts");
     const folder1 = await screen.findByText("folder1");
@@ -93,7 +86,7 @@ describe.skip("TreeNode", () => {
     expect(screen.queryByText("file2.ts")).not.toBeInTheDocument();
 
     await user.click(folder1);
-    expect(listFiles).toHaveBeenCalledWith("folder1/");
+    expect(getFilesSpy).toHaveBeenCalledWith("folder1/");
 
     expect(file1).toBeInTheDocument();
     expect(folder1).toBeInTheDocument();
@@ -109,7 +102,7 @@ describe.skip("TreeNode", () => {
     expect(screen.queryByText("file2.ts")).not.toBeInTheDocument();
 
     await userEvent.click(folder1);
-    expect(listFiles).toHaveBeenCalledWith("/folder1/");
+    expect(getFilesSpy).toHaveBeenCalledWith("/folder1/");
 
     expect(folder1).toBeInTheDocument();
     expect(await screen.findByText("file2.ts")).toBeInTheDocument();

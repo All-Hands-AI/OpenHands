@@ -10,6 +10,7 @@ import {
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import WebSocket from "ws";
+import toast from "react-hot-toast";
 import ChatInterface from "#/components/chat/ChatInterface";
 import { getSettings } from "#/services/settings";
 import Security from "../components/modals/security/Security";
@@ -62,7 +63,7 @@ export const clientLoader = async () => {
     const file = new File([blob], "imported-project.zip", {
       type: blob.type,
     });
-    await OpenHands.uploadFile(token, file);
+    await OpenHands.uploadFiles(token, [file]);
   }
 
   if (repo) localStorage.setItem("repo", repo);
@@ -122,7 +123,7 @@ function App() {
   );
 
   const exportGitHubTokenToTerminal = (gitHubToken: string) => {
-    const command = `export GH_TOKEN=${gitHubToken}`;
+    const command = `export GITHUB_TOKEN=${gitHubToken}`;
     const event = sendTerminalCommand(command);
 
     send(event);
@@ -177,6 +178,12 @@ function App() {
       const parsed = JSON.parse(message.data.toString());
       if ("token" in parsed) {
         fetcher.submit({ token: parsed.token }, { method: "post" });
+        return;
+      }
+
+      if ("error" in parsed) {
+        toast.error(parsed.error);
+        fetcher.submit({}, { method: "POST", action: "/end-session" });
         return;
       }
 

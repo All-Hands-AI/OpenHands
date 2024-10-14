@@ -8,7 +8,8 @@ import toast from "#/utils/toast";
 import { getToken } from "#/services/auth";
 import { removeApiKey, removeUnwantedKeys } from "#/utils/utils";
 import { useSocket } from "#/context/socket";
-import OpenHands, { Feedback } from "#/api/open-hands";
+import OpenHands from "#/api/open-hands";
+import { Feedback } from "#/api/open-hands.types";
 
 const isEmailValid = (email: string) => {
   // Regular expression to validate email format

@@ -1,11 +1,5 @@
-# Workflow that builds, tests and then pushes the runtime docker images to the ghcr.io repository
+# Workflow that builds, tests and then pushes the OpenHands and runtime docker images to the ghcr.io repository
 name: Build, Test and Publish RT Image
-
-# Only run one workflow of the same group at a time.
-# There can be at most one running and one pending job in a concurrency group at any time.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 # Always run on "main"
 # Always run on tags
@@ -24,6 +18,11 @@ on:
         description: 'Reason for manual trigger'
         required: true
         default: ''
+
+# If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
+concurrency:
+  group: ${{ github.workflow }}-${{ (github.head_ref && github.ref) || github.run_id }}
+  cancel-in-progress: true
 
 env:
   BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST: nikolaik/python-nodejs:python3.12-nodejs22
@@ -84,12 +83,19 @@ jobs:
           export REPO_OWNER=${{ github.repository_owner }}
           REPO_OWNER=$(echo $REPO_OWNER | tr '[:upper:]' '[:lower:]')
           # Run the build script in the app image
-          docker run -e SANDBOX_USER_ID=0 -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/${REPO_OWNER}/openhands:$RELEVANT_SHA /bin/bash -c "mkdir -p containers/runtime; python3 openhands/runtime/utils/runtime_build.py --base_image ${{ env.BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST }} --build_folder containers/runtime --force_rebuild" 2>&1 | tee docker-outputs.txt
+          docker run -e SANDBOX_USER_ID=0 -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/${REPO_OWNER}/openhands:${{ env.RELEVANT_SHA }} /bin/bash -c "mkdir -p containers/runtime; python3 openhands/runtime/utils/runtime_build.py --base_image ${{ env.BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST }} --build_folder containers/runtime --force_rebuild" 2>&1 | tee docker-outputs.txt
           # Get the hash from the build script
           hash_from_app_image=$(cat docker-outputs.txt | grep "Hash for docker build directory" | awk -F "): " '{print $2}' | uniq | head -n1)
           echo "hash_from_app_image=$hash_from_app_image" >> $GITHUB_OUTPUT
           echo "Hash from app image: $hash_from_app_image"
+      # This test should move when we have a test suite for the app image
+      - name: Test docker in App Image
+        run: |
+          # Lowercase the repository owner
+          export REPO_OWNER=${{ github.repository_owner }}
+          REPO_OWNER=$(echo $REPO_OWNER | tr '[:upper:]' '[:lower:]')
 
+          docker run -e SANDBOX_USER_ID=0 -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/${REPO_OWNER}/openhands:${{ env.RELEVANT_SHA }} /bin/bash -c "docker run hello-world"
 
   # Builds the runtime Docker images
   ghcr_build_runtime:

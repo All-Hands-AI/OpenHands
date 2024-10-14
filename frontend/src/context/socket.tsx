@@ -1,6 +1,7 @@
 import React from "react";
 import { Data } from "ws";
 import EventLogger from "#/utils/event-logger";
+import { getValidFallbackHost } from "#/utils/get-valid-fallback-host";
 
 interface WebSocketClientOptions {
   token: string | null;
@@ -45,15 +46,11 @@ function SocketProvider({ children }: SocketProviderProps) {
       );
     }
 
-    /*
-    const wsUrl = new URL("/", document.baseURI);
-    wsUrl.protocol = wsUrl.protocol.replace("http", "ws");
-    if (options?.token) wsUrl.searchParams.set("token", options.token);
-    const ws = new WebSocket(`${wsUrl.origin}/ws`);
-    */
-    // TODO: Remove hardcoded URL; may have to use a proxy
+    const fallback = getValidFallbackHost();
+    const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || fallback;
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(
-      `ws://localhost:3000/ws${options?.token ? `?token=${options.token}` : ""}`,
+      `${protocol}//${baseUrl}/ws${options?.token ? `?token=${options.token}` : ""}`,
     );
 
     ws.addEventListener("open", (event) => {
