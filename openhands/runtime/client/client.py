@@ -322,12 +322,11 @@ class RuntimeClient:
         interrupt_timeout: int | None = None,
         max_retries: int = 2,
     ) -> tuple[str, int]:
-        self.shell.sendintr()  # send SIGINT to the shell
-        logger.debug('Sent SIGINT to bash. Waiting for output...')
-
         interrupt_timeout = interrupt_timeout or 1  # default timeout for SIGINT
         # try to interrupt the bash shell use SIGINT
         while max_retries > 0:
+            self.shell.sendintr()  # send SIGINT to the shell
+            logger.debug('Sent SIGINT to bash. Waiting for output...')
             try:
                 self.shell.expect(self.__bash_expect_regex, timeout=interrupt_timeout)
                 output = self.shell.before
