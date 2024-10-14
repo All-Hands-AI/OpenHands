@@ -46,7 +46,7 @@ echo "LOG_DIR: $LOG_DIR"
 echo "LOG_TO_FILE: $LOG_TO_FILE"
 
 WORKSPACE_BASE=${WORKSPACE_BASE}/_test_workspace
-mkdir -p "$WORKSPACE_BASE"
+# mkdir -p "$WORKSPACE_BASE"
 chmod -R 777 "$WORKSPACE_BASE"
 WORKSPACE_BASE=$(realpath "$WORKSPACE_BASE")
 
@@ -54,7 +54,7 @@ if [ -z "$WORKSPACE_MOUNT_PATH" ]; then
   WORKSPACE_MOUNT_PATH="$WORKSPACE_BASE"
 else
   WORKSPACE_MOUNT_PATH="${WORKSPACE_MOUNT_PATH}/_test_workspace"
-  mkdir -p "$WORKSPACE_MOUNT_PATH"
+  # mkdir -p "$WORKSPACE_MOUNT_PATH"
   chmod -R 755 "$WORKSPACE_MOUNT_PATH"
   WORKSPACE_MOUNT_PATH=$(realpath "$WORKSPACE_MOUNT_PATH")
 fi
@@ -68,7 +68,7 @@ echo "WORKSPACE_MOUNT_PATH_IN_SANDBOX: $WORKSPACE_MOUNT_PATH_IN_SANDBOX"
 # Ensure we're in the correct directory
 cd "$PROJECT_ROOT" || exit 1
 
-mkdir -p "$WORKSPACE_BASE"
+#mkdir -p "$WORKSPACE_BASE"
 
 # use environmental variable if exists
 TEST_RUNTIME="${TEST_RUNTIME:-eventstream}"
