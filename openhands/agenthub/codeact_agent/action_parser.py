@@ -158,8 +158,15 @@ class CodeActActionParserAgentDelegate(ActionParser):
         ), 'self.agent_delegate should not be None when parse is called'
         thought = action_str.replace(self.agent_delegate.group(0), '').strip()
         browse_actions = self.agent_delegate.group(1).strip()
-        task = f'{thought}. I should start with: {browse_actions}'
-        return AgentDelegateAction(agent='BrowsingAgent', inputs={'task': task})
+        thought = (
+            f'{thought}\nI should start with: {browse_actions}'
+            if thought
+            else f'I should start with: {browse_actions}'
+        )
+
+        return AgentDelegateAction(
+            agent='BrowsingAgent', thought=thought, inputs={'task': browse_actions}
+        )
 
 
 class CodeActActionParserMessage(ActionParser):
