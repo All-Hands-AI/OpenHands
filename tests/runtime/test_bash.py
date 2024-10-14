@@ -13,6 +13,7 @@ from conftest import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation
+from openhands.runtime.runtime import Runtime
 
 # ============================================================================================================================
 # Bash-specific tests
@@ -568,6 +569,26 @@ def test_copy_non_existent_file(temp_dir, box_class):
 
         obs = _run_cmd_action(runtime, f'ls {sandbox_dir}/should_not_exist.txt')
         assert obs.exit_code != 0  # File should not exist
+    finally:
+        _close_test_runtime(runtime)
+
+
+def test_copy_from_directory(temp_dir, box_class):
+    runtime: Runtime = _load_runtime(temp_dir, box_class)
+    sandbox_dir = _get_sandbox_folder(runtime)
+    try:
+        temp_dir_copy = os.path.join(temp_dir, 'test_dir')
+        # We need a separate directory, since temp_dir is mounted to /workspace
+        _create_host_test_dir_with_files(temp_dir_copy)
+
+        # Initial state
+        runtime.copy_to(temp_dir_copy, sandbox_dir, recursive=True)
+
+        path_to_copy_from = f'{sandbox_dir}/test_dir'
+        result = runtime.copy_from(path=path_to_copy_from)
+
+        # Result is returned in bytes
+        assert isinstance(result, bytes)
     finally:
         _close_test_runtime(runtime)
 

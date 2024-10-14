@@ -10,6 +10,7 @@ import {
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import WebSocket from "ws";
+import toast from "react-hot-toast";
 import ChatInterface from "#/components/chat/ChatInterface";
 import { getSettings } from "#/services/settings";
 import Security from "../components/modals/security/Security";
@@ -181,6 +182,7 @@ function App() {
       }
 
       if ("error" in parsed) {
+        toast.error(parsed.error);
         fetcher.submit({}, { method: "POST", action: "/end-session" });
         return;
       }

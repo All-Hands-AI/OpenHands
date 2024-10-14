@@ -28,6 +28,7 @@ class AppConfig:
         runtime: The runtime environment.
         file_store: The file store to use.
         file_store_path: The path to the file store.
+        trajectories_path: The folder path to store trajectories.
         workspace_base: The base path for the workspace. Defaults to ./workspace as an absolute path.
         workspace_mount_path: The path to mount the workspace. This is set to the workspace base by default.
         workspace_mount_path_in_sandbox: The path to mount the workspace in the sandbox. Defaults to /workspace.
@@ -53,6 +54,7 @@ class AppConfig:
     runtime: str = 'eventstream'
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
+    trajectories_path: str | None = None
     # TODO: clean up workspace path after the removal of ServerRuntime
     workspace_base: str = os.path.join(os.getcwd(), 'workspace')
     workspace_mount_path: str | None = (
