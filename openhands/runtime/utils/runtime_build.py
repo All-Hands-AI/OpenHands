@@ -203,6 +203,7 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
 def build_runtime_image(
     base_image: str,
     runtime_builder: RuntimeBuilder,
+    platform: str = 'linux/amd64',
     extra_deps: str | None = None,
     docker_build_folder: str | None = None,
     dry_run: bool = False,
@@ -214,6 +215,7 @@ def build_runtime_image(
     Parameters:
     - base_image (str): The name of the base Docker image to use
     - runtime_builder (RuntimeBuilder): The runtime builder to use
+    - platform (str): The target platform for the build (e.g. linux/amd64, linux/arm64)
     - extra_deps (str):
     - docker_build_folder (str): The directory to use for the build. If not provided a temporary directory will be used
     - dry_run (bool): if True, it will only ready the build folder. It will not actually build the Docker image
@@ -290,6 +292,7 @@ def build_runtime_image(
                 # since the Dockerfile is slightly different
                 target_image_hash_tag=from_scratch_hash,
                 target_image_tag=runtime_image_tag,
+                platform=platform,
             )
         else:
             logger.info(
@@ -326,6 +329,7 @@ def build_runtime_image(
                 # NOTE: WE ALWAYS use the "from_scratch_hash" tag for the target image
                 target_image_hash_tag=from_scratch_hash,
                 target_image_tag=runtime_image_tag,
+                platform=platform,
             )
         else:
             logger.info(
@@ -344,6 +348,7 @@ def _build_sandbox_image(
     target_image_repo: str,
     target_image_hash_tag: str,
     target_image_tag: str,
+    platform: str = 'linux/amd64',
 ) -> str:
     """Build and tag the sandbox image.
     The image will be tagged as both:
@@ -359,6 +364,7 @@ def _build_sandbox_image(
         e.g. 1234567890abcdef
     -target_image_tag (str): the tag for the target image that's generic and based on the base image name
         e.g. oh_v0.9.3_image_ubuntu_tag_22.04
+    - platform (str): the target platform for the build (e.g. linux/amd64, linux/arm64)
     """
     target_image_hash_name = f'{target_image_repo}:{target_image_hash_tag}'
     target_image_generic_name = f'{target_image_repo}:{target_image_tag}'
@@ -372,7 +378,9 @@ def _build_sandbox_image(
         tags_to_add.append(target_image_generic_name)
 
     try:
-        image_name = runtime_builder.build(path=docker_folder, tags=tags_to_add)
+        image_name = runtime_builder.build(
+            path=docker_folder, tags=tags_to_add, platform=platform
+        )
         if not image_name:
             raise RuntimeError(f'Build failed for image {target_image_hash_name}')
     except Exception as e:
@@ -389,6 +397,7 @@ if __name__ == '__main__':
     )
     parser.add_argument('--build_folder', type=str, default=None)
     parser.add_argument('--force_rebuild', action='store_true', default=False)
+    parser.add_argument('--platform', type=str, default='linux/amd64')
     args = parser.parse_args()
 
     if args.build_folder is not None:
@@ -419,6 +428,7 @@ if __name__ == '__main__':
                 docker_build_folder=temp_dir,
                 dry_run=True,
                 force_rebuild=args.force_rebuild,
+                platform=args.platform,
             )
 
             _runtime_image_repo, runtime_image_hash_tag = runtime_image_hash_name.split(
@@ -452,5 +462,7 @@ if __name__ == '__main__':
         # Dockerfile, we actually build the Docker image
         logger.info('Building image in a temporary folder')
         docker_builder = DockerRuntimeBuilder(docker.from_env())
-        image_name = build_runtime_image(args.base_image, docker_builder)
+        image_name = build_runtime_image(
+            args.base_image, docker_builder, platform=args.platform
+        )
         print(f'\nBUILT Image: {image_name}\n')

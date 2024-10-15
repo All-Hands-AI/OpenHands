@@ -7,6 +7,7 @@ class RuntimeBuilder(abc.ABC):
         self,
         path: str,
         tags: list[str],
+        platform: str = 'linux/amd64',
     ) -> str:
         """
         Build the runtime image.
@@ -14,7 +15,7 @@ class RuntimeBuilder(abc.ABC):
         Args:
             path (str): The path to the runtime image's build directory.
             tags (list[str]): The tags to apply to the runtime image (e.g., ["repo:my-repo", "sha:my-sha"]).
-
+            platform (str, optional): The target platform for the build. Defaults to "linux/amd64".
         Returns:
             str: The name:tag of the runtime image after build (e.g., "repo:sha").
                 This can be different from the tags input if the builder chooses to mutate the tags (e.g., adding a

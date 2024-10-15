@@ -27,6 +27,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         self,
         path: str,
         tags: list[str],
+        platform: str = 'linux/amd64',
         use_local_cache: bool = False,
         extra_build_args: list[str] | None = None,
     ) -> str:
@@ -35,6 +36,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         Args:
             path (str): The path to the Docker build context.
             tags (list[str]): A list of image tags to apply to the built image.
+            platform (str, optional): The target platform for the build. Defaults to "linux/amd64".
             use_local_cache (bool, optional): Whether to use and update the local build cache. Defaults to True.
             extra_build_args (list[str], optional): Additional arguments to pass to the Docker build command. Defaults to None.
 
@@ -71,6 +73,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             f'--build-arg=OPENHANDS_RUNTIME_BUILD_TIME={datetime.datetime.now().isoformat()}',
             f'--tag={target_image_hash_name}',
             '--load',
+            f'--platform={platform}',
         ]
 
         cache_dir = '/tmp/.buildx-cache'
