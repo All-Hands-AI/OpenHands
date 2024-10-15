@@ -53,20 +53,16 @@ def long_term_memory(
     mock_agent_config: AgentConfig,
     mock_event_stream: EventStream,
 ) -> LongTermMemory:
-    with patch(
-        f'{LongTermMemory.__module__}.chromadb.PersistentClient'
-    ) as mock_chroma_client:
+    mod = LongTermMemory.__module__
+    with patch(f'{mod}.chromadb.PersistentClient') as mock_chroma_client:
         mock_collection = MagicMock()
         mock_chroma_client.return_value.get_or_create_collection.return_value = (
             mock_collection
         )
         with (
-            patch(
-                f'{LongTermMemory.__module__}.chromadb.ChromaVectorStore', MagicMock()
-            ),
-            patch(
-                f'{LongTermMemory.__module__}.chromadb.VectorStoreIndex', MagicMock()
-            ),
+            patch(f'{mod}.chromadb.ChromaVectorStore', MagicMock()),
+            patch(f'{mod}.chromadb.EmbeddingsLoader', MagicMock()),
+            patch(f'{mod}.chromadb.VectorStoreIndex', MagicMock()),
         ):
             memory = LongTermMemory(
                 llm_config=mock_llm_config,
