@@ -4799,12 +4799,12 @@ type = ["mypy (==1.11.2)"]
 
 [[package]]
 name = "modal"
-version = "0.64.181"
+version = "0.64.182"
 description = "Python client library for Modal"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "modal-0.64.181-py3-none-any.whl", hash = "sha256:1d8dab39029abd2b11ca44b8401c71407b20e0e9a2e5c673ec6b1476d3b17fa2"},
+    {file = "modal-0.64.182-py3-none-any.whl", hash = "sha256:d3213550a0724b13b1dacf8b468d26c78f51d850fd2a76529f180921905bcad3"},
 ]
 
 [package.dependencies]
