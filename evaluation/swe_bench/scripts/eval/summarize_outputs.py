@@ -41,10 +41,15 @@ if __name__ == '__main__':
         _cur_main_agent_cost = 0
         _cur_editor_cost = 0
         for cost in costs:
-            if 'draft_editor' in cost['model']:
-                _cur_editor_cost += cost['cost']
+            if isinstance(cost, float):
+                # backward compatible
+                _cur_main_agent_cost += cost
             else:
-                _cur_main_agent_cost += cost['cost']
+                if 'draft_editor' in cost['model']:
+                    _cur_editor_cost += cost['cost']
+                else:
+                    _cur_main_agent_cost += cost['cost']
+
         main_agent_cost.append(_cur_main_agent_cost)
         editor_cost.append(_cur_editor_cost)
 
@@ -111,3 +116,4 @@ if __name__ == '__main__':
     print('Detailed error breakdown:')
     for error, count in error_counter.items():
         print(f'{error}: {count} ({count / num_lines * 100:.2f}%)')
+    print('-' * 100)
