@@ -60,9 +60,9 @@ def long_term_memory(
             mock_collection
         )
         with (
-            patch(f'{mod}.chromadb.ChromaVectorStore', MagicMock()),
-            patch(f'{mod}.chromadb.EmbeddingsLoader', MagicMock()),
-            patch(f'{mod}.chromadb.VectorStoreIndex', MagicMock()),
+            patch(f'{mod}.ChromaVectorStore', MagicMock()),
+            patch(f'{mod}.EmbeddingsLoader', MagicMock()),
+            patch(f'{mod}.VectorStoreIndex', MagicMock()),
         ):
             memory = LongTermMemory(
                 llm_config=mock_llm_config,
