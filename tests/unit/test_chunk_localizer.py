@@ -29,7 +29,7 @@ def test_create_chunks_raw_string():
     assert chunks[1].text == 'line3\nline4'
     assert chunks[1].line_range == (3, 4)
     assert chunks[2].text == 'line5'
-    assert chunks[2].line_range == (5, 6)
+    assert chunks[2].line_range == (5, 5)
 
 
 def test_normalized_lcs():
