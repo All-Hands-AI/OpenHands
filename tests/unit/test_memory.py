@@ -54,19 +54,27 @@ def long_term_memory(
     mock_event_stream: EventStream,
 ) -> LongTermMemory:
     with patch(
-        'openhands.memory.memory.chromadb.PersistentClient'
+        f'{LongTermMemory.__module__}.chromadb.PersistentClient'
     ) as mock_chroma_client:
         mock_collection = MagicMock()
         mock_chroma_client.return_value.get_or_create_collection.return_value = (
             mock_collection
         )
-        memory = LongTermMemory(
-            llm_config=mock_llm_config,
-            agent_config=mock_agent_config,
-            event_stream=mock_event_stream,
-        )
-        memory.collection = mock_collection
-        return memory
+        with (
+            patch(
+                f'{LongTermMemory.__module__}.chromadb.ChromaVectorStore', MagicMock()
+            ),
+            patch(
+                f'{LongTermMemory.__module__}.chromadb.VectorStoreIndex', MagicMock()
+            ),
+        ):
+            memory = LongTermMemory(
+                llm_config=mock_llm_config,
+                agent_config=mock_agent_config,
+                event_stream=mock_event_stream,
+            )
+            memory.collection = mock_collection
+            return memory
 
 
 def _create_action_event(action: str) -> Event:
