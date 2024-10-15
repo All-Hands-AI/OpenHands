@@ -38,7 +38,7 @@
     "remark-gfm": "^4.0.0",
     "sirv-cli": "^2.0.2",
     "tailwind-merge": "^2.5.3",
-    "vite": "^5.4.8",
+    "vite": "^5.4.9",
     "web-vitals": "^3.5.2",
     "ws": "^8.18.0"
   },
