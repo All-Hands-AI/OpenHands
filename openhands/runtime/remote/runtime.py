@@ -78,9 +78,6 @@ class RemoteRuntime(Runtime):
 
         self.sid = sid
 
-        self._start_or_attach_to_runtime(plugins, attach_to_existing)
-
-        # Initialize the eventstream and env vars
         super().__init__(
             config,
             event_stream,
@@ -90,6 +87,9 @@ class RemoteRuntime(Runtime):
             status_message_callback,
             attach_to_existing,
         )
+
+    async def connect(self):
+        self._start_or_attach_to_runtime(plugins, attach_to_existing)
         self._wait_until_alive()
         self.setup_initial_env()
 

@@ -146,7 +146,6 @@ class EventStreamRuntime(Runtime):
         self.session = requests.Session()
         self.status_message_callback = status_message_callback
 
-        self.send_status_message('STATUS$STARTING_RUNTIME')
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
@@ -167,6 +166,9 @@ class EventStreamRuntime(Runtime):
         self.skip_container_logs = (
             os.environ.get('SKIP_CONTAINER_LOGS', 'false').lower() == 'true'
         )
+
+    async def connect(self):
+        self.send_status_message('STATUS$STARTING_RUNTIME')
         if self.runtime_container_image is None:
             if self.base_container_image is None:
                 raise ValueError(

@@ -95,13 +95,9 @@ class ModalRuntime(EventStreamRuntime):
             sid + '_' + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
         self.status_message_callback = status_message_callback
-
-        self.send_status_message('STATUS$STARTING_RUNTIME')
         self.base_container_image_id = self.config.sandbox.base_container_image
         self.runtime_container_image_id = self.config.sandbox.runtime_container_image
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
-
-        logger.info(f'ModalRuntime `{self.instance_id}`')
 
         # Buffer for container logs
         self.log_buffer: LogBuffer | None = None
@@ -110,6 +106,11 @@ class ModalRuntime(EventStreamRuntime):
             logger.debug(
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
             )
+
+    async def connect(self):
+        self.send_status_message('STATUS$STARTING_RUNTIME')
+
+        logger.info(f'ModalRuntime `{self.instance_id}`')
 
         self.image = self._get_image_definition(
             self.base_container_image_id,
