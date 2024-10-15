@@ -16,9 +16,6 @@ updates:
       chromadb:
         patterns:
           - "chromadb"
-      boto3:
-        patterns:
-          - "boto3"
       security-all:
         applies-to: "security-updates"
         patterns:
