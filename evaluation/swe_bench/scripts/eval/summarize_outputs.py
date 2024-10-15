@@ -26,8 +26,23 @@ if __name__ == '__main__':
 
     error_counter = Counter()
 
+    main_agent_cost = []
+    editor_cost = []
     for line in lines:
         _d = json.loads(line)
+
+        # Cost
+        costs = _d['metrics'].get('costs', [])
+        _cur_main_agent_cost = 0
+        _cur_editor_cost = 0
+        for cost in costs:
+            if 'draft_editor' in cost['model']:
+                _cur_editor_cost += cost['cost']
+            else:
+                _cur_main_agent_cost += cost['cost']
+        main_agent_cost.append(_cur_main_agent_cost)
+        editor_cost.append(_cur_editor_cost)
+
         patch = _d.get('test_result', {}).get('git_patch', '')
         if patch == '':
             num_empty_patch += 1
@@ -69,6 +84,13 @@ if __name__ == '__main__':
     )
     print(
         f'# of loop: {num_agent_stuck_in_loop} / {num_lines} ({num_agent_stuck_in_loop / num_lines * 100:.2f}%)'
+    )
+    assert len(main_agent_cost) == num_lines
+    assert len(editor_cost) == num_lines
+    print(f'Avg. agent cost per instance: {sum(main_agent_cost) / num_lines:.2f} USD')
+    print(f'Avg. editor cost per instance: {sum(editor_cost) / num_lines:.2f} USD')
+    print(
+        f'Avg. total cost per instance: {(sum(main_agent_cost) + sum(editor_cost)) / num_lines:.2f} USD'
     )
     print('-' * 100)
     print('Detailed error breakdown:')
