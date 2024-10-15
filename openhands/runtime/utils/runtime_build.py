@@ -71,14 +71,14 @@ def _put_source_code_to_dir(temp_dir: str):
 
 def _generate_dockerfile(
     base_image: str,
-    skip_init: bool = False,
+    build_from_scratch: bool = True,
     extra_deps: str | None = None,
 ) -> str:
     """Generate the Dockerfile content for the runtime image based on the base image.
 
     Parameters:
     - base_image (str): The base image provided for the runtime image
-    - skip_init (boolean):
+    - build_from_scratch (boolean):
     - extra_deps (str):
 
     Returns:
@@ -93,7 +93,7 @@ def _generate_dockerfile(
 
     dockerfile_content = template.render(
         base_image=base_image,
-        skip_init=skip_init,
+        build_from_scratch=build_from_scratch,
         extra_deps=extra_deps if extra_deps is not None else '',
     )
     return dockerfile_content
@@ -102,7 +102,7 @@ def _generate_dockerfile(
 def prep_docker_build_folder(
     dir_path: str,
     base_image: str,
-    skip_init: bool = False,
+    build_from_scratch: bool = True,
     extra_deps: str | None = None,
 ) -> str:
     """Prepares a docker build folder by copying the source code and generating the Dockerfile
@@ -110,7 +110,7 @@ def prep_docker_build_folder(
     Parameters:
     - dir_path (str): The build folder to place the source code and Dockerfile
     - base_image (str): The base Docker image to use for the Dockerfile
-    - skip_init (str):
+    - build_from_scratch (str):
     - extra_deps (str):
 
     Returns:
@@ -122,7 +122,7 @@ def prep_docker_build_folder(
     # Create a Dockerfile and write it to dir_path
     dockerfile_content = _generate_dockerfile(
         base_image,
-        skip_init=skip_init,
+        build_from_scratch=build_from_scratch,
         extra_deps=extra_deps,
     )
     if os.getenv('SKIP_CONTAINER_LOGS', 'false') != 'true':
@@ -149,7 +149,7 @@ def prep_docker_build_folder(
     hash = f'v{oh_version}_{dir_hash}'
     logger.info(
         f'Input base image: {base_image}\n'
-        f'Skip init: {skip_init}\n'
+        f'Build from scratch: {build_from_scratch}\n'
         f'Extra deps: {extra_deps}\n'
         f'Hash for docker build directory [{dir_path}] (contents: {os.listdir(dir_path)}): {hash}\n'
     )
@@ -229,7 +229,7 @@ def build_runtime_image(
         from_scratch_hash = prep_docker_build_folder(
             temp_dir,
             base_image=base_image,
-            skip_init=False,
+            build_from_scratch=True,
             extra_deps=extra_deps,
         )
 
@@ -266,18 +266,18 @@ def build_runtime_image(
         )
 
         cur_docker_build_folder = docker_build_folder or tempfile.mkdtemp()
-        _skip_init_hash = prep_docker_build_folder(
+        _build_from_scratch_hash = prep_docker_build_folder(
             cur_docker_build_folder,
             # we want to use the existing generic image as base
             # so that we can leverage existing dependencies already installed in the image
             base_image=generic_runtime_image_name,
-            skip_init=True,  # skip init since we are re-using the existing image
+            build_from_scratch=False,  # do not build from scratch since we are re-using the existing image
             extra_deps=extra_deps,
         )
 
         assert (
-            _skip_init_hash != from_scratch_hash
-        ), f'The skip_init hash [{_skip_init_hash}] should not match the existing hash [{from_scratch_hash}]'
+            _build_from_scratch_hash != from_scratch_hash
+        ), f'The build_from_scratch hash [{_build_from_scratch_hash}] should not match the existing hash [{from_scratch_hash}]'
 
         if not dry_run:
             _build_sandbox_image(
@@ -286,7 +286,7 @@ def build_runtime_image(
                 target_image_repo=runtime_image_repo,
                 # NOTE: WE ALWAYS use the "from_scratch_hash" tag for the target image
                 # otherwise, even if the source code is exactly the same, the image *might* be re-built
-                # because the same source code will generate different hash when skip_init=True/False
+                # because the same source code will generate different hash when build_from_scratch=False/False
                 # since the Dockerfile is slightly different
                 target_image_hash_tag=from_scratch_hash,
                 target_image_tag=runtime_image_tag,
@@ -311,7 +311,7 @@ def build_runtime_image(
         _new_from_scratch_hash = prep_docker_build_folder(
             cur_docker_build_folder,
             base_image,
-            skip_init=False,
+            build_from_scratch=True,
             extra_deps=extra_deps,
         )
         assert (

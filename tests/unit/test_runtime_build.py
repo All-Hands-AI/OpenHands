@@ -81,7 +81,7 @@ def test_docker_build_folder(temp_dir):
     prep_docker_build_folder(
         temp_dir,
         base_image=DEFAULT_BASE_IMAGE,
-        skip_init=False,
+        build_from_scratch=True,
     )
 
     # check the source code is in the folder
@@ -100,14 +100,14 @@ def test_hash_folder_same(temp_dir):
     dir_hash_1 = prep_docker_build_folder(
         temp_dir,
         base_image=DEFAULT_BASE_IMAGE,
-        skip_init=False,
+        build_from_scratch=True,
     )
 
     with tempfile.TemporaryDirectory() as temp_dir_2:
         dir_hash_2 = prep_docker_build_folder(
             temp_dir_2,
             base_image=DEFAULT_BASE_IMAGE,
-            skip_init=False,
+            build_from_scratch=True,
         )
     assert dir_hash_1 == dir_hash_2
 
@@ -116,14 +116,14 @@ def test_hash_folder_diff_init(temp_dir):
     dir_hash_1 = prep_docker_build_folder(
         temp_dir,
         base_image=DEFAULT_BASE_IMAGE,
-        skip_init=False,
+        build_from_scratch=True,
     )
 
     with tempfile.TemporaryDirectory() as temp_dir_2:
         dir_hash_2 = prep_docker_build_folder(
             temp_dir_2,
             base_image=DEFAULT_BASE_IMAGE,
-            skip_init=True,
+            build_from_scratch=False,
         )
     assert dir_hash_1 != dir_hash_2
 
@@ -132,23 +132,23 @@ def test_hash_folder_diff_image(temp_dir):
     dir_hash_1 = prep_docker_build_folder(
         temp_dir,
         base_image=DEFAULT_BASE_IMAGE,
-        skip_init=False,
+        build_from_scratch=True,
     )
 
     with tempfile.TemporaryDirectory() as temp_dir_2:
         dir_hash_2 = prep_docker_build_folder(
             temp_dir_2,
             base_image='debian:11',
-            skip_init=False,
+            build_from_scratch=True,
         )
     assert dir_hash_1 != dir_hash_2
 
 
-def test_generate_dockerfile_scratch():
+def test_generate_dockerfile_build_from_scratch():
     base_image = 'debian:11'
     dockerfile_content = _generate_dockerfile(
         base_image,
-        skip_init=False,
+        build_from_scratch=True,
     )
     assert base_image in dockerfile_content
     assert 'apt-get update' in dockerfile_content
@@ -157,29 +157,35 @@ def test_generate_dockerfile_scratch():
     assert 'python=3.12' in dockerfile_content
 
     # Check the update command
-    assert 'COPY ./code /openhands/code' in dockerfile_content
+    assert (
+        'COPY ./code/openhands ./code/pyproject.toml ./code/poetry.lock /openhands/code'
+        in dockerfile_content
+    )
     assert (
         '/openhands/micromamba/bin/micromamba run -n openhands poetry install'
         in dockerfile_content
     )
 
 
-def test_generate_dockerfile_skip_init():
+def test_generate_dockerfile_build_from_existing():
     base_image = 'debian:11'
     dockerfile_content = _generate_dockerfile(
         base_image,
-        skip_init=True,
+        build_from_scratch=False,
     )
 
-    # These commands SHOULD NOT include in the dockerfile if skip_init is True
+    # These commands SHOULD NOT include in the dockerfile if build_from_scratch is False
     assert 'RUN apt update && apt install -y wget sudo' not in dockerfile_content
     assert '-c conda-forge' not in dockerfile_content
     assert 'python=3.12' not in dockerfile_content
     assert 'https://micro.mamba.pm/install.sh' not in dockerfile_content
+    assert 'poetry install' not in dockerfile_content
 
     # These update commands SHOULD still in the dockerfile
-    assert 'COPY ./code /openhands/code' in dockerfile_content
-    assert 'poetry install' in dockerfile_content
+    assert (
+        'COPY ./code/openhands ./code/pyproject.toml ./code/poetry.lock /openhands/code'
+        in dockerfile_content
+    )
 
 
 def test_get_runtime_image_repo_and_tag_eventstream():
@@ -211,7 +217,7 @@ def test_build_runtime_image_from_scratch(temp_dir):
     from_scratch_hash = prep_docker_build_folder(
         temp_dir,
         base_image,
-        skip_init=False,
+        build_from_scratch=True,
     )
 
     mock_runtime_builder = MagicMock()
@@ -237,7 +243,7 @@ def test_build_runtime_image_exact_hash_exist(temp_dir):
     from_scratch_hash = prep_docker_build_folder(
         temp_dir,
         base_image,
-        skip_init=False,
+        build_from_scratch=True,
     )
 
     mock_runtime_builder = MagicMock()
@@ -260,13 +266,13 @@ def test_build_runtime_image_exact_hash_not_exist(mock_build_sandbox_image, temp
     from_scratch_hash = prep_docker_build_folder(
         temp_dir,
         base_image,
-        skip_init=False,
+        build_from_scratch=True,
     )
     with tempfile.TemporaryDirectory() as temp_dir_2:
         non_from_scratch_hash = prep_docker_build_folder(
             temp_dir_2,
             base_image,
-            skip_init=True,
+            build_from_scratch=False,
         )
 
     mock_runtime_builder = MagicMock()
@@ -285,9 +291,14 @@ def test_build_runtime_image_exact_hash_not_exist(mock_build_sandbox_image, temp
 
         mock_prep_docker_build_folder.assert_has_calls(
             [
-                call(ANY, base_image=base_image, skip_init=False, extra_deps=None),
                 call(
-                    ANY, base_image=latest_image_name, skip_init=True, extra_deps=None
+                    ANY, base_image=base_image, build_from_scratch=True, extra_deps=None
+                ),
+                call(
+                    ANY,
+                    base_image=latest_image_name,
+                    build_from_scratch=False,
+                    extra_deps=None,
                 ),
             ]
         )
