@@ -3,6 +3,9 @@ import argparse
 import json
 from collections import Counter
 
+from openhands.events.serialization import event_from_dict
+from openhands.events.utils import get_pairs_from_events
+
 ERROR_KEYWORDS = [
     'Agent encountered an error while processing the last action',
     'APIError',
@@ -28,6 +31,8 @@ if __name__ == '__main__':
 
     main_agent_cost = []
     editor_cost = []
+    num_turns = []
+
     for line in lines:
         _d = json.loads(line)
 
@@ -43,6 +48,13 @@ if __name__ == '__main__':
         main_agent_cost.append(_cur_main_agent_cost)
         editor_cost.append(_cur_editor_cost)
 
+        # Turn status
+        history = _d.get('history', [])
+        events = [event_from_dict(event) for event in history]
+        pairs = get_pairs_from_events(events)
+        num_turns.append(len(pairs))
+
+        # Patch & resolve status
         patch = _d.get('test_result', {}).get('git_patch', '')
         if patch == '':
             num_empty_patch += 1
@@ -53,6 +65,7 @@ if __name__ == '__main__':
         if resolved:
             num_resolved += 1
 
+        # Error
         error = _d.get('error', None)
 
         if error is not None and isinstance(error, str):
@@ -85,8 +98,10 @@ if __name__ == '__main__':
     print(
         f'# of loop: {num_agent_stuck_in_loop} / {num_lines} ({num_agent_stuck_in_loop / num_lines * 100:.2f}%)'
     )
+    assert len(num_turns) == num_lines
     assert len(main_agent_cost) == num_lines
     assert len(editor_cost) == num_lines
+    print(f'Avg. num of turns per instance: {sum(num_turns) / num_lines:.2f}')
     print(f'Avg. agent cost per instance: {sum(main_agent_cost) / num_lines:.2f} USD')
     print(f'Avg. editor cost per instance: {sum(editor_cost) / num_lines:.2f} USD')
     print(
