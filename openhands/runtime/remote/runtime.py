@@ -89,17 +89,15 @@ class RemoteRuntime(Runtime):
         )
 
     async def connect(self):
-        self._start_or_attach_to_runtime(plugins, attach_to_existing)
+        self._start_or_attach_to_runtime()
         self._wait_until_alive()
         self.setup_initial_env()
 
-    def _start_or_attach_to_runtime(
-        self, plugins: list[PluginRequirement] | None, attach_to_existing: bool = False
-    ):
+    def _start_or_attach_to_runtime(self):
         existing_runtime = self._check_existing_runtime()
         if existing_runtime:
             logger.info(f'Using existing runtime with ID: {self.runtime_id}')
-        elif attach_to_existing:
+        elif self.attach_to_existing:
             raise RuntimeError('Could not find existing runtime to attach to.')
         else:
             self.send_status_message('STATUS$STARTING_CONTAINER')
@@ -113,7 +111,7 @@ class RemoteRuntime(Runtime):
                     f'Running remote runtime with image: {self.config.sandbox.runtime_container_image}'
                 )
                 self.container_image = self.config.sandbox.runtime_container_image
-            self._start_runtime(plugins)
+            self._start_runtime()
         assert (
             self.runtime_id is not None
         ), 'Runtime ID is not set. This should never happen.'
@@ -196,11 +194,13 @@ class RemoteRuntime(Runtime):
         if response.status_code != 200 or not response.json()['exists']:
             raise RuntimeError(f'Container image {self.container_image} does not exist')
 
-    def _start_runtime(self, plugins: list[PluginRequirement] | None):
+    def _start_runtime(self):
         # Prepare the request body for the /start endpoint
         plugin_arg = ''
-        if plugins is not None and len(plugins) > 0:
-            plugin_arg = f'--plugins {" ".join([plugin.name for plugin in plugins])} '
+        if self.plugins is not None and len(self.plugins) > 0:
+            plugin_arg = (
+                f'--plugins {" ".join([plugin.name for plugin in self.plugins])} '
+            )
         browsergym_arg = (
             f'--browsergym-eval-env {self.config.sandbox.browsergym_eval_env}'
             if self.config.sandbox.browsergym_eval_env is not None

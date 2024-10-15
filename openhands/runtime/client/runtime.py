@@ -126,7 +126,13 @@ class EventStreamRuntime(Runtime):
         attach_to_existing: bool = False,
     ):
         super().__init__(
-            config, event_stream, sid, plugins, env_vars, status_message_callback, attach_to_existing
+            config,
+            event_stream,
+            sid,
+            plugins,
+            env_vars,
+            status_message_callback,
+            attach_to_existing,
         )
 
     def __init__(
@@ -167,41 +173,48 @@ class EventStreamRuntime(Runtime):
             os.environ.get('SKIP_CONTAINER_LOGS', 'false').lower() == 'true'
         )
 
+        self.init_base_runtime(
+            config,
+            event_stream,
+            sid,
+            plugins,
+            env_vars,
+            status_message_callback,
+            attach_to_existing,
+        )
+
     async def connect(self):
         self.send_status_message('STATUS$STARTING_RUNTIME')
-        if self.runtime_container_image is None:
-            if self.base_container_image is None:
-                raise ValueError(
-                    'Neither runtime container image nor base container image is set'
+        if not self.attach_to_existing:
+            if self.runtime_container_image is None:
+                if self.base_container_image is None:
+                    raise ValueError(
+                        'Neither runtime container image nor base container image is set'
+                    )
+                logger.info('Preparing container, this might take a few minutes...')
+                self.send_status_message('STATUS$STARTING_CONTAINER')
+                self.runtime_container_image = build_runtime_image(
+                    self.base_container_image,
+                    self.runtime_builder,
+                    extra_deps=self.config.sandbox.runtime_extra_deps,
+                    force_rebuild=self.config.sandbox.force_rebuild_runtime,
                 )
-            logger.info('Preparing container, this might take a few minutes...')
-            self.send_status_message('STATUS$STARTING_CONTAINER')
-            self.runtime_container_image = build_runtime_image(
-                self.base_container_image,
-                self.runtime_builder,
-                extra_deps=self.config.sandbox.runtime_extra_deps,
-                force_rebuild=self.config.sandbox.force_rebuild_runtime,
-            )
 
-        if not attach_to_existing:
             self._init_container(
                 sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,  # e.g. /workspace
                 mount_dir=self.config.workspace_mount_path,  # e.g. /opt/openhands/_test_workspace
-                plugins=plugins,
+                plugins=self.plugins,
             )
+
         else:
             self._attach_to_container()
 
-        # Will initialize both the event stream and the env vars
-        self.init_base_runtime(
-            config, event_stream, sid, plugins, env_vars, status_message_callback, attach_to_existing
-        )
-
         logger.info('Waiting for client to become ready...')
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
-
         self._wait_until_alive()
-        self.setup_initial_env()
+
+        if not self.attach_to_existing:
+            self.setup_initial_env()
 
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
