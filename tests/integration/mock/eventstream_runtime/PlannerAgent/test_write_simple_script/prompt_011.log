@@ -192,7 +192,8 @@ ten actions--more happened before that.
     "action": "run",
     "args": {
       "command": "bash hello.sh",
-      "thought": ""
+      "thought": "",
+      "hidden": false
     }
   },
   {
@@ -202,7 +203,8 @@ ten actions--more happened before that.
     "extras": {
       "command_id": -1,
       "command": "bash hello.sh",
-      "exit_code": 0
+      "exit_code": 0,
+      "hidden": false
     }
   },
   {

@@ -67,7 +67,7 @@ llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.6.9"
-mypy = "1.11.2"
+mypy = "1.12.0"
 pre-commit = "4.0.1"
 build = "*"
 
