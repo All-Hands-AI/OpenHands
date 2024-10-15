@@ -1740,6 +1740,20 @@
     "fr": "Aucune page chargée.",
     "tr": "Sayfa yüklenmedi."
   },
+  "BROWSER$SCREENSHOT_ALT": {
+    "en": "Browser Screenshot",
+    "zh-CN": "浏览器截图",
+    "de": "Browser-Screenshot",
+    "ko-KR": "브라우저 스크린샷",
+    "no": "Nettleserskjermbilde",
+    "zh-TW": "瀏覽器截圖",
+    "it": "Screenshot del browser",
+    "pt": "Captura de tela do navegador",
+    "es": "Captura de pantalla del navegador",
+    "ar": "لقطة شاشة المتصفح",
+    "fr": "Capture d'écran du navigateur",
+    "tr": "Tarayıcı Ekran Görüntüsü"
+  },
   "PLANNER$EMPTY_MESSAGE": {
     "en": "No plan created.",
     "zh-CN": "计划未创建",
