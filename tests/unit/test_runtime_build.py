@@ -186,10 +186,7 @@ def test_generate_dockerfile_build_from_scratch():
     assert 'python=3.12' in dockerfile_content
 
     # Check the update command
-    assert (
-        'COPY ./code/openhands ./code/pyproject.toml ./code/poetry.lock /openhands/code'
-        in dockerfile_content
-    )
+    assert 'COPY ./code/openhands /openhands/code/openhands' in dockerfile_content
     assert (
         '/openhands/micromamba/bin/micromamba run -n openhands poetry install'
         in dockerfile_content
@@ -211,10 +208,7 @@ def test_generate_dockerfile_build_from_existing():
     assert 'poetry install' not in dockerfile_content
 
     # These update commands SHOULD still in the dockerfile
-    assert (
-        'COPY ./code/openhands ./code/pyproject.toml ./code/poetry.lock /openhands/code'
-        in dockerfile_content
-    )
+    assert 'COPY ./code/openhands /openhands/code/openhands' in dockerfile_content
 
 
 def test_get_runtime_image_repo_and_tag_eventstream():
