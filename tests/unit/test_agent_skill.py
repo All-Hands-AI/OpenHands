@@ -8,7 +8,6 @@ import pytest
 from openhands.runtime.plugins.agent_skills.file_ops.file_ops import (
     WINDOW,
     _print_window,
-    create_file,
     find_file,
     goto_line,
     open_file,
@@ -173,28 +172,6 @@ def test_open_file_long_with_lineno(tmp_path):
     else:
         expected += f'({1000 - end} more lines below)\n'
         expected += '[Use `scroll_down` to view the next 100 lines of the file!]\n'
-    assert result.split('\n') == expected.split('\n')
-
-
-def test_create_file_unexist_path():
-    with pytest.raises(FileNotFoundError):
-        create_file('/unexist/path/a.txt')
-
-
-def test_create_file(tmp_path):
-    temp_file_path = tmp_path / 'a.txt'
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            create_file(str(temp_file_path))
-        result = buf.getvalue()
-
-    expected = (
-        f'[File: {temp_file_path} (1 lines total)]\n'
-        '(this is the beginning of the file)\n'
-        '1|\n'
-        '(this is the end of the file)\n'
-        f'[File {temp_file_path} created.]\n'
-    )
     assert result.split('\n') == expected.split('\n')
 
 
@@ -399,7 +376,7 @@ def test_scroll_down_edge(tmp_path):
 
 def test_print_window_internal(tmp_path):
     test_file_path = tmp_path / 'a.txt'
-    create_file(str(test_file_path))
+    test_file_path.write_text('')
     open_file(str(test_file_path))
     with open(test_file_path, 'w') as file:
         for i in range(1, 101):
@@ -426,7 +403,7 @@ def test_print_window_internal(tmp_path):
 
 def test_open_file_large_line_number(tmp_path):
     test_file_path = tmp_path / 'a.txt'
-    create_file(str(test_file_path))
+    test_file_path.write_text('')
     open_file(str(test_file_path))
     with open(test_file_path, 'w') as file:
         for i in range(1, 1000):

@@ -7,7 +7,6 @@ Functions:
 - goto_line(line_number: int): Moves the window to show the specified line number.
 - scroll_down(): Moves the window down by the number of lines specified in WINDOW.
 - scroll_up(): Moves the window up by the number of lines specified in WINDOW.
-- create_file(filename: str): Creates and opens a new file with the given name.
 - search_dir(search_term: str, dir_path: str = './'): Searches for a term in all files in the specified directory.
 - search_file(search_term: str, file_path: str | None = None): Searches for a term in the specified file or the currently open file.
 - find_file(file_name: str, dir_path: str = './'): Finds all files with the given name in the specified directory.
@@ -267,23 +266,6 @@ def scroll_up() -> None:
         CURRENT_FILE, CURRENT_LINE, WINDOW, return_str=True, ignore_window=True
     )
     print(output)
-
-
-def create_file(filename: str) -> None:
-    """Creates and opens a new file with the given name.
-
-    Args:
-        filename: str: The name of the file to create.
-    """
-    if os.path.exists(filename):
-        _output_error(f"File '{filename}' already exists.")
-        return
-
-    with open(filename, 'w') as file:
-        file.write('\n')
-
-    open_file(filename)
-    print(f'[File {filename} created.]')
 
 
 class LineNumberError(Exception):
