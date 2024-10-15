@@ -30,6 +30,7 @@ import i18n from "./i18n";
 import { useSocket } from "./context/socket";
 import { UserAvatar } from "./components/user-avatar";
 import { DangerModal } from "./components/modals/confirmation-modals/danger-modal";
+import { getAccessTokenFromCookie } from "./utils/get-access-token-from-cookie";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -56,11 +57,11 @@ export const meta: MetaFunction = () => [
 ];
 
 export const clientLoader = async () => {
+  const accessToken = getAccessTokenFromCookie(document.cookie);
   let token = localStorage.getItem("token");
-  const ghToken = localStorage.getItem("ghToken");
 
   let user: GitHubUser | GitHubErrorReponse | null = null;
-  if (ghToken) user = await retrieveGitHubUser(ghToken);
+  if (accessToken) user = await retrieveGitHubUser(accessToken);
 
   const settings = getSettings();
   await i18n.changeLanguage(settings.LANGUAGE);
@@ -73,7 +74,7 @@ export const clientLoader = async () => {
 
   return defer({
     token,
-    ghToken,
+    ghToken: accessToken,
     user,
     settingsIsUpdated,
     settings,
@@ -146,10 +147,10 @@ export default function App() {
   };
 
   const handleAccountSettingsModalClose = () => {
-    // If the user closes the modal without connecting to GitHub,
-    // we need to log them out to clear the invalid token from the
-    // local storage
-    if (isGitHubErrorReponse(user)) handleUserLogout();
+    // TODO: handle github error response (display modal)
+    if (isGitHubErrorReponse(user)) {
+      // handleUserLogout();
+    }
     setAccountSettingsModalOpen(false);
   };
 

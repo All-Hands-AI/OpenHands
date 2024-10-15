@@ -3,7 +3,6 @@ import { useSelector } from "react-redux";
 import {
   ClientActionFunctionArgs,
   json,
-  useLoaderData,
   useRouteError,
 } from "@remix-run/react";
 import { RootState } from "#/store";
@@ -14,22 +13,12 @@ import { useSocket } from "#/context/socket";
 import CodeEditorCompoonent from "./code-editor-component";
 import { useFiles } from "#/context/files";
 
-export const clientLoader = async () => {
-  const token = localStorage.getItem("token");
-  return json({ token });
-};
-
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
-  const token = localStorage.getItem("token");
-
   const formData = await request.formData();
   const file = formData.get("file")?.toString();
 
   let selectedFileContent: string | null = null;
-
-  if (file && token) {
-    selectedFileContent = await OpenHands.getFile(token, file);
-  }
+  if (file) selectedFileContent = await OpenHands.getFile(file);
 
   return json({ file, selectedFileContent });
 };
@@ -46,7 +35,6 @@ export function ErrorBoundary() {
 }
 
 function CodeEditor() {
-  const { token } = useLoaderData<typeof clientLoader>();
   const { runtimeActive } = useSocket();
   const { setPaths } = useFiles();
 
@@ -56,8 +44,8 @@ function CodeEditor() {
 
   React.useEffect(() => {
     // only retrieve files if connected to WS to prevent requesting before runtime is ready
-    if (runtimeActive && token) OpenHands.getFiles(token).then(setPaths);
-  }, [runtimeActive, token]);
+    if (runtimeActive) OpenHands.getFiles().then(setPaths);
+  }, [runtimeActive]);
 
   // Code editing is only allowed when the agent is paused, finished, or awaiting user input (server rules)
   const isEditingAllowed = React.useMemo(

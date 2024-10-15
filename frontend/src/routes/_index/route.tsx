@@ -26,6 +26,7 @@ import store, { RootState } from "#/store";
 import { removeFile, setInitialQuery } from "#/state/initial-query-slice";
 import { clientLoader as rootClientLoader } from "#/root";
 import { UploadedFilePreview } from "./uploaded-file-preview";
+import { getAccessTokenFromCookie } from "#/utils/get-access-token-from-cookie";
 
 interface AttachedFilesSliderProps {
   files: string[];
@@ -75,7 +76,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   const token = localStorage.getItem("token");
   if (token) return redirect("/app");
 
-  const ghToken = localStorage.getItem("ghToken");
+  const ghToken = getAccessTokenFromCookie(document.cookie);
   let repositories: GitHubRepository[] = [];
   if (ghToken) {
     const data = await retrieveAllGitHubUserRepositories(ghToken);
