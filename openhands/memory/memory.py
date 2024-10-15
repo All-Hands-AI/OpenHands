@@ -43,14 +43,14 @@ class LongTermMemory:
             path=f'./cache/sessions/{event_stream.sid}/memory',
             # FIXME anonymized_telemetry=False,
         )
-        self.collection = db.get_or_create_collection(name='memories')  # slow
-        vector_store = ChromaVectorStore(chroma_collection=self.collection)  # slow
+        self.collection = db.get_or_create_collection(name='memories')
+        vector_store = ChromaVectorStore(chroma_collection=self.collection)
 
         # embedding model
-        embedding_strategy = llm_config.embedding_model  # slow
+        embedding_strategy = llm_config.embedding_model
         self.embed_model = EmbeddingsLoader.get_embedding_model(
             embedding_strategy, llm_config
-        )  # slow
+        )
 
         # instantiate the index
         self.index = VectorStoreIndex.from_vector_store(vector_store, self.embed_model)
