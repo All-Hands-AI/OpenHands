@@ -3,7 +3,7 @@
 This module provides various file manipulation skills for the OpenHands agent.
 
 Functions:
-- open_file(path: str, line_number: int | None = 1, context_lines: int = 300): Opens a file and optionally moves to a specific line.
+- open_file(path: str, line_number: int | None = 1, context_lines: int = 100): Opens a file and optionally moves to a specific line.
 - goto_line(line_number: int): Moves the window to show the specified line number.
 - scroll_down(): Moves the window down by the number of lines specified in WINDOW.
 - scroll_up(): Moves the window up by the number of lines specified in WINDOW.
@@ -19,7 +19,7 @@ from openhands.linter import DefaultLinter, LintResult
 
 CURRENT_FILE: str | None = None
 CURRENT_LINE = 1
-WINDOW = 300
+WINDOW = 100
 
 # This is also used in unit tests!
 MSG_FILE_UPDATED = '[File updated (edited at line {line_number}). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]'
@@ -168,12 +168,12 @@ def open_file(
 ) -> None:
     """Opens the file at the given path in the editor. IF the file is to be edited, first use `scroll_down` repeatedly to read the full file!
     If line_number is provided, the window will be moved to include that line.
-    It only shows the first 300 lines by default! `context_lines` is the max number of lines to be displayed, up to 300. Use `scroll_up` and `scroll_down` to view more content up or down.
+    It only shows the first 100 lines by default! `context_lines` is the max number of lines to be displayed, up to 100. Use `scroll_up` and `scroll_down` to view more content up or down.
 
     Args:
         path: str: The path to the file to open, preferred absolute path.
         line_number: int | None = 1: The line number to move to. Defaults to 1.
-        context_lines: int | None = 300: Only shows this number of lines in the context window (usually from line 1), with line_number as the center (if possible). Defaults to 300.
+        context_lines: int | None = 100: Only shows this number of lines in the context window (usually from line 1), with line_number as the center (if possible). Defaults to 100.
     """
     global CURRENT_FILE, CURRENT_LINE, WINDOW
 
@@ -198,12 +198,12 @@ def open_file(
     output += _print_window(
         CURRENT_FILE,
         CURRENT_LINE,
-        _clamp(context_lines, 1, 300),
+        _clamp(context_lines, 1, 100),
         return_str=True,
         ignore_window=False,
     )
     if output.strip().endswith('more lines below)'):
-        output += '\n[Use `scroll_down` to view the next 300 lines of the file!]'
+        output += '\n[Use `scroll_down` to view the next 100 lines of the file!]'
     print(output)
 
 
@@ -232,7 +232,7 @@ def goto_line(line_number: int) -> None:
 
 
 def scroll_down() -> None:
-    """Moves the window down by 300 lines.
+    """Moves the window down by 100 lines.
 
     Args:
         None
@@ -251,7 +251,7 @@ def scroll_down() -> None:
 
 
 def scroll_up() -> None:
-    """Moves the window up by 300 lines.
+    """Moves the window up by 100 lines.
 
     Args:
         None
