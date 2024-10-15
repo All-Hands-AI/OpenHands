@@ -37,7 +37,8 @@ from openhands.events.observation import (
     ErrorObservation,
     Observation,
 )
-from openhands.events.serialization.event import truncate_content
+from openhands.events.serialization.event import event_to_dict, truncate_content
+from openhands.events.utils import get_pairs_from_events
 from openhands.llm.llm import LLM
 from openhands.runtime.utils.shutdown_listener import should_continue
 
@@ -120,6 +121,10 @@ class AgentController:
     async def close(self):
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream."""
         await self.set_agent_state_to(AgentState.STOPPED)
+
+        # save trajectories if applicable
+
+        # unsubscribe from the event stream
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
 
     def update_state_before_step(self):
@@ -245,7 +250,7 @@ class AgentController:
         if isinstance(observation, CmdOutputObservation):
             return
         elif isinstance(observation, AgentDelegateObservation):
-            self.state.history.on_event(observation)
+            self._handle_delegate_observation(observation)
         elif isinstance(observation, ErrorObservation):
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
@@ -264,6 +269,49 @@ class AgentController:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
             await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+
+    def _handle_delegate_observation(self, observation: Observation):
+        """Handles delegate observations from the event stream.
+
+        Args:
+            observation (Observation): The observation to handle.
+        """
+        if not isinstance(observation, AgentDelegateObservation):
+            return
+
+        logger.debug('AgentDelegateObservation received')
+
+        # figure out what this delegate's actions were
+        # from the last AgentDelegateAction to this AgentDelegateObservation
+        # and save their ids as start and end ids
+        # in order to use later to exclude them from parent stream or summarize them instead
+        delegate_end = observation.id
+        delegate_start = -1
+        delegate_agent: str = ''
+        delegate_task: str = ''
+        for prev_event in self.event_stream.get_events(
+            end_id=observation.id - 1, reverse=True
+        ):
+            # retrieve the last AgentDelegateAction before this observation
+            if isinstance(prev_event, AgentDelegateAction):
+                delegate_start = prev_event.id
+                delegate_agent = prev_event.agent
+                delegate_task = prev_event.inputs.get('task', '')
+                break
+
+        if delegate_start == -1:
+            logger.error(
+                f'No AgentDelegateAction found for AgentDelegateObservation with id={delegate_end}'
+            )
+            return
+
+        self.state.delegates[(delegate_start, delegate_end)] = (
+            delegate_agent,
+            delegate_task,
+        )
+        logger.debug(
+            f'Delegate {delegate_agent} with task {delegate_task} ran from id={delegate_start} to id={delegate_end}'
+        )
 
     def reset_task(self):
         """Resets the agent's task."""
@@ -606,6 +654,20 @@ class AgentController:
             return True
 
         return self._stuck_detector.is_stuck()
+
+    # history is now available as a filtered stream of events, rather than list of pairs of (Action, Observation)
+    # we rebuild the pairs here
+    # for compatibility with the existing output format in evaluations
+    # remove this when it's no longer necessary
+    def compatibility_for_eval_history_pairs(self) -> list[tuple[dict, dict]]:
+        history_pairs = []
+
+        for action, observation in get_pairs_from_events(
+            self.event_stream.get_events(include_delegates=True)
+        ):
+            history_pairs.append((event_to_dict(action), event_to_dict(observation)))
+
+        return history_pairs
 
     def __repr__(self):
         return (

@@ -1,9 +1,7 @@
 from typing import ClassVar, Iterable
 
-from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.agent import (
-    AgentDelegateAction,
     ChangeAgentStateAction,
 )
 from openhands.events.action.empty import NullAction
@@ -13,9 +11,7 @@ from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.observation.delegate import AgentDelegateObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.observation.observation import Observation
-from openhands.events.serialization.event import event_to_dict
 from openhands.events.stream import EventStream
-from openhands.events.utils import get_pairs_from_events
 
 
 class ShortTermHistory(list[Event]):
@@ -173,52 +169,3 @@ class ShortTermHistory(list[Event]):
             if isinstance(event, AgentDelegateObservation):
                 return True
         return False
-
-    def on_event(self, event: Event):
-        if not isinstance(event, AgentDelegateObservation):
-            return
-
-        logger.debug('AgentDelegateObservation received')
-
-        # figure out what this delegate's actions were
-        # from the last AgentDelegateAction to this AgentDelegateObservation
-        # and save their ids as start and end ids
-        # in order to use later to exclude them from parent stream
-        # or summarize them
-        delegate_end = event.id
-        delegate_start = -1
-        delegate_agent: str = ''
-        delegate_task: str = ''
-        for prev_event in self._event_stream.get_events(
-            end_id=event.id - 1, reverse=True
-        ):
-            if isinstance(prev_event, AgentDelegateAction):
-                delegate_start = prev_event.id
-                delegate_agent = prev_event.agent
-                delegate_task = prev_event.inputs.get('task', '')
-                break
-
-        if delegate_start == -1:
-            logger.error(
-                f'No AgentDelegateAction found for AgentDelegateObservation with id={delegate_end}'
-            )
-            return
-
-        self.delegates[(delegate_start, delegate_end)] = (delegate_agent, delegate_task)
-        logger.debug(
-            f'Delegate {delegate_agent} with task {delegate_task} ran from id={delegate_start} to id={delegate_end}'
-        )
-
-    # TODO remove me when unnecessary
-    # history is now available as a filtered stream of events, rather than list of pairs of (Action, Observation)
-    # we rebuild the pairs here
-    # for compatibility with the existing output format in evaluations
-    def compatibility_for_eval_history_pairs(self) -> list[tuple[dict, dict]]:
-        history_pairs = []
-
-        for action, observation in get_pairs_from_events(
-            self.get_events_as_list(include_delegates=True)
-        ):
-            history_pairs.append((event_to_dict(action), event_to_dict(observation)))
-
-        return history_pairs
