@@ -211,7 +211,7 @@ async def attach_session(request: Request, call_next):
             content={'error': 'Invalid token'},
         )
 
-    request.state.conversation = session_manager.attach_to_conversation(
+    request.state.conversation = await session_manager.attach_to_conversation(
         request.state.sid
     )
     if request.state.conversation is None:

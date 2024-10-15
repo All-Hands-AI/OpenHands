@@ -95,13 +95,9 @@ class ModalRuntime(EventStreamRuntime):
             sid + '_' + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
         )
         self.status_message_callback = status_message_callback
-
-        self.send_status_message('STATUS$STARTING_RUNTIME')
         self.base_container_image_id = self.config.sandbox.base_container_image
         self.runtime_container_image_id = self.config.sandbox.runtime_container_image
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
-
-        logger.info(f'ModalRuntime `{self.instance_id}`')
 
         # Buffer for container logs
         self.log_buffer: LogBuffer | None = None
@@ -111,6 +107,15 @@ class ModalRuntime(EventStreamRuntime):
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
             )
 
+        self.init_base_runtime(
+            config, event_stream, sid, plugins, env_vars, status_message_callback
+        )
+
+    async def connect(self):
+        self.send_status_message('STATUS$STARTING_RUNTIME')
+
+        logger.info(f'ModalRuntime `{self.instance_id}`')
+
         self.image = self._get_image_definition(
             self.base_container_image_id,
             self.runtime_container_image_id,
@@ -119,12 +124,7 @@ class ModalRuntime(EventStreamRuntime):
 
         self.sandbox = self._init_sandbox(
             sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,
-            plugins=plugins,
-        )
-
-        # Will initialize both the event stream and the env vars
-        self.init_base_runtime(
-            config, event_stream, sid, plugins, env_vars, status_message_callback
+            plugins=self.plugins,
         )
 
         logger.info('Waiting for client to become ready...')
