@@ -475,9 +475,6 @@ if __name__ == '__main__':
 
     details = {}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
-    if hasattr(_agent_cls, 'prompt_manager'):
-        details['system_message'] = _agent_cls.prompt_manager.system_message
-        details['initial_user_message'] = _agent_cls.prompt_manager.initial_user_message
 
     metadata = make_metadata(
         llm_config,
