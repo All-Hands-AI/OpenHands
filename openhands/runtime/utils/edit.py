@@ -206,9 +206,10 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             )
             if isinstance(obs, ErrorObservation):
                 return obs
-            assert isinstance(
-                obs, FileWriteObservation
-            ), f'Expected FileWriteObservation, got {type(obs)}: {obs}'
+            if not isinstance(obs, FileWriteObservation):
+                raise RuntimeError(
+                    f'Runtime: Expected FileWriteObservation, got {type(obs)}: {obs}'
+                )
             return FileEditObservation(
                 content=get_diff('', action.content, action.path),
                 path=action.path,
@@ -216,9 +217,10 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 old_content='',
                 new_content=action.content,
             )
-        assert isinstance(
-            obs, FileReadObservation
-        ), f'Expected FileReadObservation, got {type(obs)}: {obs}'
+        if not isinstance(obs, FileReadObservation):
+            raise RuntimeError(
+                f'Runtime: Expected FileReadObservation, got {type(obs)}: {obs}'
+            )
 
         original_file_content = obs.content
         old_file_lines = original_file_content.split('\n')
