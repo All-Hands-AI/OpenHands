@@ -1,3 +1,4 @@
+import copy
 import os
 import re
 import tempfile
@@ -102,19 +103,23 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         llm_config = self.config.get_llm_config()
 
         if llm_config.draft_editor is None:
-            raise RuntimeError(
-                'ERROR: Draft editor LLM is not set. Please set a draft editor LLM in the config.'
+            logger.warning(
+                f'Draft editor LLM is not set. Fallback to use the LLM (model: {llm_config.model}) for the main agent. '
+                'Note that this may incur high costs for editing actions.'
             )
+            llm_config.draft_editor = copy.deepcopy(llm_config)
 
         # manually set the model name for the draft editor LLM to distinguish token costs
         llm_metrics = Metrics(
             model_name='draft_editor:' + llm_config.draft_editor.model
         )
         if llm_config.draft_editor.caching_prompt:
-            logger.warning(
+            logger.info(
                 'It is not recommended to cache draft editor LLM prompts as it may incur high costs for the same prompt. '
-                'Consider setting caching_prompt=false in the config.'
+                'Automatically setting caching_prompt=false.'
             )
+            llm_config.draft_editor.caching_prompt = False
+
         self.draft_editor_llm = LLM(llm_config.draft_editor, metrics=llm_metrics)
         logger.info(
             f'[Draft edit functionality] enabled with LLM: {self.draft_editor_llm}'
