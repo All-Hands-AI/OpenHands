@@ -16,7 +16,7 @@ from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from openhands.runtime.remote.runtime import RemoteRuntime
 from openhands.runtime.runtime import Runtime
 from openhands.storage import get_file_store
-from openhands.utils.async_utils import sync_from_async
+from openhands.utils import async_from_sync
 
 TEST_IN_CI = os.getenv('TEST_IN_CI', 'False').lower() in ['true', '1', 'yes']
 TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'eventstream').lower()
@@ -259,7 +259,7 @@ def _load_runtime(
         sid=sid,
         plugins=plugins,
     )
-    sync_from_async(runtime.connect, runtime)
+    async_from_sync(runtime.connect, 30, runtime)
     time.sleep(2)
     return runtime
 
