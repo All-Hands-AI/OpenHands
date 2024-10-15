@@ -53,6 +53,7 @@ class Runtime(FileEditRuntimeMixin):
     sid: str
     config: AppConfig
     initial_env_vars: dict[str, str]
+    attach_to_existing: bool
 
     def __init__(
         self,
@@ -62,12 +63,14 @@ class Runtime(FileEditRuntimeMixin):
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_message_callback: Callable | None = None,
+        attach_to_existing: bool = False,
     ):
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
         self.plugins = plugins if plugins is not None and len(plugins) > 0 else []
         self.status_message_callback = status_message_callback
+        self.attach_to_existing = attach_to_existing
 
         self.config = copy.deepcopy(config)
         atexit.register(self.close)
@@ -80,6 +83,8 @@ class Runtime(FileEditRuntimeMixin):
         FileEditRuntimeMixin.__init__(self)
 
     def setup_initial_env(self) -> None:
+        if self.attach_to_existing:
+            return
         logger.debug(f'Adding env vars: {self.initial_env_vars}')
         self.add_env_vars(self.initial_env_vars)
         if self.config.sandbox.runtime_startup_env_vars:

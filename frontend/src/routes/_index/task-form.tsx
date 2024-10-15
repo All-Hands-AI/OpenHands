@@ -18,19 +18,15 @@ interface MainTextareaInputProps {
   formRef: React.RefObject<HTMLFormElement>;
 }
 
-function MainTextareaInput({
-  disabled,
-  placeholder,
-  value,
-  onChange,
-  formRef,
-}: MainTextareaInputProps) {
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-
+const MainTextareaInput = React.forwardRef<
+  HTMLTextAreaElement,
+  MainTextareaInputProps
+>(({ disabled, placeholder, value, onChange, formRef }, ref) => {
   const adjustHeight = () => {
     const MAX_LINES = 15;
 
-    const textarea = textareaRef.current;
+    // ref can either be a callback ref or a MutableRefObject
+    const textarea = typeof ref === "function" ? null : ref?.current;
     if (textarea) {
       textarea.style.height = "auto"; // Reset to auto to recalculate scroll height
       const { scrollHeight } = textarea;
@@ -52,7 +48,7 @@ function MainTextareaInput({
 
   return (
     <textarea
-      ref={textareaRef}
+      ref={ref}
       disabled={disabled}
       name="q"
       rows={1}
@@ -73,7 +69,9 @@ function MainTextareaInput({
       )}
     />
   );
-}
+});
+
+MainTextareaInput.displayName = "MainTextareaInput";
 
 const getRandomKey = (obj: Record<string, string>) => {
   const keys = Object.keys(obj);
@@ -84,9 +82,10 @@ const getRandomKey = (obj: Record<string, string>) => {
 
 interface TaskFormProps {
   importedProjectZip: File | null;
+  textareaRef?: React.RefObject<HTMLTextAreaElement>;
 }
 
-export function TaskForm({ importedProjectZip }: TaskFormProps) {
+export function TaskForm({ importedProjectZip, textareaRef }: TaskFormProps) {
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const fetcher = useFetcher();
@@ -164,10 +163,11 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
         />
         <div className="relative w-full">
           <MainTextareaInput
+            ref={textareaRef}
             disabled={navigation.state === "submitting"}
             placeholder={
               selectedRepository
-                ? `What would you like to change in ${selectedRepository}`
+                ? `What would you like to change in ${selectedRepository}?`
                 : "What do you want to build?"
             }
             onChange={handleChange}

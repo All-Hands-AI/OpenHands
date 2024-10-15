@@ -322,12 +322,11 @@ class RuntimeClient:
         interrupt_timeout: int | None = None,
         max_retries: int = 2,
     ) -> tuple[str, int]:
-        self.shell.sendintr()  # send SIGINT to the shell
-        logger.debug('Sent SIGINT to bash. Waiting for output...')
-
         interrupt_timeout = interrupt_timeout or 1  # default timeout for SIGINT
         # try to interrupt the bash shell use SIGINT
         while max_retries > 0:
+            self.shell.sendintr()  # send SIGINT to the shell
+            logger.debug('Sent SIGINT to bash. Waiting for output...')
             try:
                 self.shell.expect(self.__bash_expect_regex, timeout=interrupt_timeout)
                 output = self.shell.before
@@ -466,6 +465,7 @@ class RuntimeClient:
                 command_id=-1,
                 content=all_output.rstrip('\r\n'),
                 command=action.command,
+                hidden=action.hidden,
                 exit_code=exit_code,
             )
         except UnicodeDecodeError:
@@ -481,7 +481,9 @@ class RuntimeClient:
                 logger.debug(f'{self.pwd} != {jupyter_pwd} -> reset Jupyter PWD')
                 reset_jupyter_pwd_code = f'import os; os.chdir("{self.pwd}")'
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_pwd_code)
-                _reset_obs = await _jupyter_plugin.run(_aux_action)
+                _reset_obs: IPythonRunCellObservation = await _jupyter_plugin.run(
+                    _aux_action
+                )
                 logger.debug(
                     f'Changed working directory in IPython to: {self.pwd}. Output: {_reset_obs}'
                 )

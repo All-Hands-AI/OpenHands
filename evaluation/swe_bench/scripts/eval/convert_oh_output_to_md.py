@@ -26,16 +26,27 @@ model_name = os.path.basename(os.path.dirname(args.oh_output_file))
 
 def convert_history_to_str(history):
     ret = ''
+    separator = '\n\n' + '-' * 100 + '\n'
 
     for i, event in enumerate(history):
-        event_obj = event_from_dict(event)
-
         if i != 0:
-            ret += '\n\n' + '-' * 100 + '\n'
+            ret += separator
 
-        ret += f'## {i+1}| {event_obj.__class__.__name__}\n\n'
-        ret += str(event_obj)
+        if isinstance(event, list):
+            # "event" is a legacy pair of (action, observation)
+            event_obj = event_from_dict(event[0])
+            ret += f'## {i+1}| {event_obj.__class__.__name__}\n\n'
+            ret += str(event_obj)
+            ret += separator
 
+            event_obj = event_from_dict(event[1])
+            ret += f'## {i+1}| {event_obj.__class__.__name__}\n\n'
+            ret += str(event_obj)
+        else:
+            # "event" is a single event
+            event_obj = event_from_dict(event)
+            ret += f'## {i+1}| {event_obj.__class__.__name__}\n\n'
+            ret += str(event_obj)
     return ret
 
 
