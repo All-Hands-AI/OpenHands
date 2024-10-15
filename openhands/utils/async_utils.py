@@ -27,6 +27,11 @@ def call_async_from_sync(
     and awaiting the result
     """
 
+    if corofn is None:
+        raise ValueError('corofn is None')
+    if not asyncio.iscoroutinefunction(corofn):
+        raise ValueError('corofn is not a coroutine function')
+
     async def arun():
         coro = corofn(*args, **kwargs)
         result = await coro

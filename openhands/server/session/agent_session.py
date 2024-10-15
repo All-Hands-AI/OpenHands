@@ -158,7 +158,7 @@ class AgentSession:
                 security_analyzer, SecurityAnalyzer
             )(self.event_stream)
 
-    def _create_runtime(
+    async def _create_runtime(
         self,
         runtime_name: str,
         config: AppConfig,
