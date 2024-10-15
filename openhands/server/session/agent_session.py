@@ -14,7 +14,7 @@ from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import call_coro_in_bg_thread
+from openhands.utils.async_utils import call_sync_from_async
 
 
 class AgentSession:
@@ -104,13 +104,15 @@ class AgentSession:
         self.loop = asyncio.get_running_loop()
         self._create_security_analyzer(config.security.security_analyzer)
 
-        await call_coro_in_bg_thread(
+        logger.info('TRACE:BEFORE:CREATE_RUNTIME')
+        await call_sync_from_async(
             self._create_runtime,
             runtime_name=runtime_name,
             config=config,
             agent=agent,
             status_message_callback=status_message_callback,
         )
+        logger.info('TRACE:AFTER:CREATE_RUNTIME')
         self._create_controller(
             agent,
             config.security.confirmation_mode,
@@ -158,7 +160,7 @@ class AgentSession:
                 security_analyzer, SecurityAnalyzer
             )(self.event_stream)
 
-    async def _create_runtime(
+    def _create_runtime(
         self,
         runtime_name: str,
         config: AppConfig,

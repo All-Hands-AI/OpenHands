@@ -40,6 +40,7 @@ from openhands.events.observation import (
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
 from openhands.runtime.utils.shutdown_listener import should_continue
+from openhands.utils.async_utils import call_coro_in_bg_thread
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -174,6 +175,9 @@ class AgentController:
         Args:
             event (Event): The incoming event to process.
         """
+        await call_coro_in_bg_thread(self._on_event, event=event)
+
+    async def _on_event(self, event: Event):
         if hasattr(event, 'hidden') and event.hidden:
             return
         if isinstance(event, Action):
