@@ -78,6 +78,18 @@ class EventStream:
         reverse=False,
         filter_out_type: tuple[type[Event], ...] | None = None,
     ) -> Iterable[Event]:
+        """
+        Retrieve events from the event stream, optionally filtering out events of a given type.
+
+        Args:
+            start_id: The ID of the first event to retrieve. Defaults to 0.
+            end_id: The ID of the last event to retrieve. Defaults to the last event in the stream.
+            reverse: Whether to retrieve events in reverse order. Defaults to False.
+            filter_out_type: A tuple of event types to filter out. Typically used to filter out backend events from the agent.
+
+        Yields:
+            Events from the stream that match the criteria.
+        """
         if reverse:
             if end_id is None:
                 end_id = self._cur_id - 1
