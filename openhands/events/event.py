@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 
+from openhands.core.metrics import Metrics
+
 
 class EventSource(str, Enum):
     AGENT = 'agent'
@@ -58,3 +60,14 @@ class Event:
         if hasattr(self, 'blocking'):
             # .blocking needs to be set to True if .timeout is set
             self.blocking = True
+
+    # optional metadata, LLM call cost of the edit
+    @property
+    def llm_metrics(self) -> Metrics | None:
+        if hasattr(self, '_llm_metrics'):
+            return self._llm_metrics  # type: ignore[attr-defined]
+        return None
+
+    @llm_metrics.setter
+    def llm_metrics(self, value: Metrics) -> None:
+        self._llm_metrics = value

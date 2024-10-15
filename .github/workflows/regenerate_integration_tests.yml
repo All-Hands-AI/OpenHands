@@ -55,7 +55,7 @@ jobs:
       run: |
         DEBUG=${{ inputs.debug }} \
         LOG_TO_FILE=${{ inputs.log_to_file }} \
-        FORCE_REGENERATE_TESTS=${{ inputs.force_regenerate_tests }} \
+        FORCE_REGENERATE=${{ inputs.force_regenerate_tests }} \
         FORCE_USE_LLM=${{ inputs.force_use_llm }} \
         ./tests/integration/regenerate.sh
     - name: Commit changes

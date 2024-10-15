@@ -10,6 +10,7 @@ import {
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import WebSocket from "ws";
+import toast from "react-hot-toast";
 import ChatInterface from "#/components/chat/ChatInterface";
 import { getSettings } from "#/services/settings";
 import Security from "../components/modals/security/Security";
@@ -20,8 +21,11 @@ import ActionType from "#/types/ActionType";
 import { handleAssistantMessage } from "#/services/actions";
 import { addUserMessage, clearMessages } from "#/state/chatSlice";
 import { useSocket } from "#/context/socket";
-import { sendTerminalCommand } from "#/services/terminalService";
-import { appendInput, clearTerminal } from "#/state/commandSlice";
+import {
+  getGitHubTokenCommand,
+  getCloneRepoCommand,
+} from "#/services/terminalService";
+import { clearTerminal } from "#/state/commandSlice";
 import { useEffectOnce } from "#/utils/use-effect-once";
 import CodeIcon from "#/assets/code.svg?react";
 import GlobeIcon from "#/assets/globe.svg?react";
@@ -121,26 +125,6 @@ function App() {
     [],
   );
 
-  const exportGitHubTokenToTerminal = (gitHubToken: string) => {
-    const command = `export GITHUB_TOKEN=${gitHubToken}`;
-    const event = sendTerminalCommand(command);
-
-    send(event);
-    dispatch(appendInput(command.replace(gitHubToken, "***")));
-  };
-
-  const sendCloneRepoCommandToTerminal = (
-    gitHubToken: string,
-    repository: string,
-  ) => {
-    const url = `https://${gitHubToken}@github.com/${repository}.git`;
-    const command = `git clone ${url}`;
-    const event = sendTerminalCommand(command);
-
-    send(event);
-    dispatch(appendInput(command.replace(gitHubToken, "***")));
-  };
-
   const addIntialQueryToChat = (
     query: string,
     base64Files: string[],
@@ -181,6 +165,7 @@ function App() {
       }
 
       if ("error" in parsed) {
+        toast.error(parsed.error);
         fetcher.submit({}, { method: "POST", action: "/end-session" });
         return;
       }
@@ -197,7 +182,7 @@ function App() {
         // handle new session
         if (!token) {
           if (ghToken && repo) {
-            sendCloneRepoCommandToTerminal(ghToken, repo);
+            send(getCloneRepoCommand(ghToken, repo));
             dispatch(clearSelectedRepository()); // reset selected repository; maybe better to move this to '/'?
           }
 
@@ -230,7 +215,7 @@ function App() {
   React.useEffect(() => {
     // Export if the user valid, this could happen mid-session so it is handled here
     if (userId && ghToken && runtimeActive) {
-      exportGitHubTokenToTerminal(ghToken);
+      send(getGitHubTokenCommand(ghToken));
     }
   }, [userId, ghToken, runtimeActive]);
 
@@ -243,7 +228,7 @@ function App() {
   return (
     <div className="flex flex-col h-full gap-3">
       <div className="flex h-full overflow-auto gap-3">
-        <Container className="w-1/4 max-h-full" label="Chat">
+        <Container className="w-1/4 max-h-full">
           <ChatInterface />
         </Container>
 

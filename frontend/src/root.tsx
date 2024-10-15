@@ -128,10 +128,10 @@ export default function App() {
   }, [user]);
 
   React.useEffect(() => {
-    // If the user is on the home page, we should stop the socket connection.
-    // This is relevant when the user redirects here for whatever reason.
-    if (location.pathname === "/" && isConnected) {
-      stop();
+    if (location.pathname === "/") {
+      // If the user is on the home page, we should stop the socket connection.
+      // This is relevant when the user redirects here for whatever reason.
+      if (isConnected) stop();
     }
   }, [location.pathname]);
 

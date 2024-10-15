@@ -180,7 +180,7 @@ class AgentSession:
                 status_message_callback=status_message_callback,
             )
         except Exception as e:
-            logger.error(f'Runtime initialization failed: {e}')
+            logger.error(f'Runtime initialization failed: {e}', exc_info=True)
             raise
 
         if self.runtime is not None:

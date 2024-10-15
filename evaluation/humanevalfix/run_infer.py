@@ -99,7 +99,7 @@ def get_config(
 
 
 def _get_instance_id(instance: pd.Series) -> str:
-    return instance.task_id.replace('/', '__')
+    return instance.instance_id.replace('/', '__')
 
 
 def initialize_runtime(
@@ -206,9 +206,9 @@ def process_instance(
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
         log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
-        reset_logger_for_multiprocessing(logger, instance.task_id, log_dir)
+        reset_logger_for_multiprocessing(logger, instance.instance_id, log_dir)
     else:
-        logger.info(f'Starting evaluation for instance {instance.task_id}.')
+        logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
     # Create file with HumanEvalFix problem
     # Prompt reference: https://github.com/bigcode-project/bigcode-evaluation-harness/blob/84b96da31b7f840b55c5733325346176140cdb6b/bigcode_eval/tasks/humanevalpack.py#L509
@@ -232,7 +232,7 @@ def process_instance(
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    runtime = create_runtime(config, sid=sid)
+    runtime = create_runtime(config)
     initialize_runtime(runtime, instance)
     state: State | None = asyncio.run(
         run_controller(
@@ -257,7 +257,7 @@ def process_instance(
 
     # Save the output
     output = EvalOutput(
-        instance_id=instance.task_id,
+        instance_id=instance.instance_id,
         instruction=instruction,
         metadata=metadata,
         history=histories,
