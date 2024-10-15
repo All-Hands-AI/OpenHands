@@ -103,8 +103,6 @@ class AgentSession:
     ):
         self.loop = asyncio.get_running_loop()
         self._create_security_analyzer(config.security.security_analyzer)
-
-        logger.info('TRACE:BEFORE:CREATE_RUNTIME')
         await call_sync_from_async(
             self._create_runtime,
             runtime_name=runtime_name,
@@ -112,7 +110,6 @@ class AgentSession:
             agent=agent,
             status_message_callback=status_message_callback,
         )
-        logger.info('TRACE:AFTER:CREATE_RUNTIME')
         self._create_controller(
             agent,
             config.security.confirmation_mode,

@@ -211,8 +211,8 @@ async def attach_session(request: Request, call_next):
             content={'error': 'Invalid token'},
         )
 
-    request.state.conversation = session_manager.attach_to_conversation(
-        request.state.sid
+    request.state.conversation = await call_sync_from_async(
+        session_manager.attach_to_conversation, request.state.sid
     )
     if request.state.conversation is None:
         return JSONResponse(
@@ -441,7 +441,9 @@ async def list_files(request: Request, path: str | None = None):
         )
 
     runtime: Runtime = request.state.conversation.runtime
-    file_list = await call_sync_from_async(runtime.list_files, path)
+    file_list = await asyncio.create_task(
+        call_sync_from_async(runtime.list_files, path)
+    )
     if path:
         file_list = [os.path.join(path, f) for f in file_list]
 
