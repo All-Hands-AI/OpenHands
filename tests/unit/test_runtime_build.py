@@ -259,7 +259,6 @@ def test_build_runtime_image_from_scratch(temp_dir):
                 f'{get_runtime_image_repo()}:{from_scratch_hash}',
                 f'{get_runtime_image_repo()}:{OH_VERSION}_image_debian_tag_11',
             ],
-            platform='linux/amd64',  # Added platform tag
         )
         assert image_name == f'{get_runtime_image_repo()}:{from_scratch_hash}'
 
@@ -341,7 +340,65 @@ def test_build_runtime_image_exact_hash_not_exist(mock_build_sandbox_image, temp
                 target_image_repo=repo,
                 target_image_hash_tag=from_scratch_hash,
                 target_image_tag=latest_image_tag,
-                platform='linux/amd64',  # Added platform argument
+            )
+            assert image_name == f'{repo}:{from_scratch_hash}'
+
+
+@patch('openhands.runtime.utils.runtime_build._build_sandbox_image')
+def test_build_runtime_image_includes_platform(mock_build_sandbox_image, temp_dir):
+    base_image = 'debian:11'
+    platform = 'linux/amd64'
+    repo, latest_image_tag = get_runtime_image_repo_and_tag(base_image)
+    latest_image_name = f'{repo}:{latest_image_tag}'
+
+    mock = MagicMock()
+    with patch(f'{_put_source_code_to_dir.__module__}._put_source_code_to_dir', mock):
+        from_scratch_hash = prep_docker_build_folder(
+            temp_dir,
+            base_image,
+            skip_init=False,
+        )
+        with tempfile.TemporaryDirectory() as temp_dir_2:
+            non_from_scratch_hash = prep_docker_build_folder(
+                temp_dir_2,
+                base_image,
+                skip_init=True,
+            )
+
+        mock_runtime_builder = MagicMock()
+        mock_runtime_builder.image_exists.side_effect = [False, True]
+
+        with patch(
+            'openhands.runtime.utils.runtime_build.prep_docker_build_folder'
+        ) as mock_prep_docker_build_folder:
+            mock_prep_docker_build_folder.side_effect = [
+                from_scratch_hash,
+                non_from_scratch_hash,
+            ]
+
+            image_name = build_runtime_image(
+                base_image, mock_runtime_builder, platform=platform
+            )
+
+            mock_prep_docker_build_folder.assert_has_calls(
+                [
+                    call(ANY, base_image=base_image, skip_init=False, extra_deps=None),
+                    call(
+                        ANY,
+                        base_image=latest_image_name,
+                        skip_init=True,
+                        extra_deps=None,
+                    ),
+                ]
+            )
+
+            mock_build_sandbox_image.assert_called_once_with(
+                docker_folder=ANY,
+                runtime_builder=mock_runtime_builder,
+                target_image_repo=repo,
+                target_image_hash_tag=from_scratch_hash,
+                target_image_tag=latest_image_tag,
+                platform=platform,
             )
             assert image_name == f'{repo}:{from_scratch_hash}'
 
