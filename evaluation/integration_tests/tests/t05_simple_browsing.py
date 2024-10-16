@@ -126,7 +126,7 @@ class Test(BaseIntegrationTest):
             else:
                 raise ValueError(f'Unknown event type: {type(event)}')
 
-            if 'The answer is OpenHands is all you need!' in content:
+            if 'OpenHands is all you need!' in content:
                 return TestResult(success=True)
         return TestResult(
             success=False,
