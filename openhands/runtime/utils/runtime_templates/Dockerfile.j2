@@ -8,8 +8,8 @@ ENV MAMBA_ROOT_PREFIX=/openhands/micromamba
 # ================================================================
 # START: Build Runtime Image from Scratch
 # ================================================================
-# This is used in cases where the base image is the current OpenHands release, rather
-# than something more generic like nikolaik/python-nodejs
+# This is used in cases where the base image is something more generic like nikolaik/python-nodejs
+# rather than the current OpenHands release
 
 {% if 'ubuntu' in base_image and (base_image.endswith(':latest') or base_image.endswith(':24.04')) %}
 {% set LIBGL_MESA = 'libgl1' %}

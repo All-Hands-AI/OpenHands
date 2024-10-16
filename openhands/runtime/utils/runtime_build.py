@@ -1,9 +1,12 @@
 import argparse
+import base64
 import hashlib
 import importlib.metadata
 import os
 import shutil
+import string
 import tempfile
+from pathlib import Path
 
 import docker
 from dirhash import dirhash
@@ -43,6 +46,7 @@ def _put_source_code_to_dir(temp_dir: str):
     if openhands_dir is not None and os.path.isdir(openhands_dir):
         logger.info(f'Package {__package_name__} found')
         shutil.copytree(openhands_dir, os.path.join(dest_dir, 'openhands'))
+        # THE BELOW IS JUST NOT TRUE! THIS DOES NOT WORK!
         # note: "pyproject.toml" and "poetry.lock" are included in the openhands
         # package, so we need to move them out to the top-level directory
         for filename in ['pyproject.toml', 'poetry.lock']:
@@ -198,6 +202,125 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
             )
 
         return get_runtime_image_repo(), new_tag
+
+
+_BASE36_ALPHABET = string.digits + string.ascii_lowercase
+
+
+def to_base36(b: bytes) -> str:
+    n = int.from_bytes(b, 'big')
+    chars = []
+    while n > 0:
+        n, remainder = divmod(n, 36)
+        chars.append(_BASE36_ALPHABET[remainder])
+    result = ''.join(chars)
+    return result
+
+
+def build_runtime_image_in_folder(
+    base_image: str,
+    runtime_builder: RuntimeBuilder,
+    docker_build_folder: str,
+    extra_deps: str | None = None,
+    dry_run: bool = False,
+    force_rebuild: bool = False,
+) -> str:
+    """Prepares the final docker build folder.
+    If dry_run is False, it will also build the OpenHands runtime Docker image using the docker build folder.
+
+    Parameters:
+    - base_image (str): The name of the base Docker image to use
+    - runtime_builder (RuntimeBuilder): The runtime builder to use
+    - extra_deps (str):
+    - docker_build_folder (str): The directory to use for the build. If not provided a temporary directory will be used
+    - dry_run (bool): if True, it will only ready the build folder. It will not actually build the Docker image
+    - force_rebuild (bool): if True, it will create the Dockerfile which uses the base_image
+
+    Returns:
+    - str: <image_repo>:<MD5 hash>. Where MD5 hash is the hash of the docker build folder
+
+    See https://docs.all-hands.dev/modules/usage/architecture/runtime for more details.
+    """
+    runtime_image_repo, generic_tag = get_runtime_image_repo_and_tag(base_image)
+    lock_tag = f'v{oh_version}_{get_hash_for_lock_files()}'
+    hash_tag = f'{lock_tag}_{get_hash_for_source_files()}'
+
+    if force_rebuild:
+        logger.info(
+            f'Force rebuild: [{runtime_image_repo}:{runtime_image_tag}] from scratch.'
+        )
+        prep_docker_build_folder_2(
+            build_folder,
+            base_image=base_image,
+            build_from_scratch=True,
+            extra_deps=extra_deps,
+        )
+        if not dry_run:
+            _build_sandbox_image_2(
+                docker_folder=docker_build_folder,
+                runtime_builder=runtime_builder,
+                target_image_repo=runtime_image_repo,
+                target_image_tags=[generic_tag, lock_tag, hash_tag],
+            )
+        return hash_tag
+
+    hash_image_name = f'{runtime_image_repo}:{hash_tag}'
+    lock_image_name = f'{runtime_image_repo}:{lock_tag}'
+    build_from_scratch = True
+
+    # If the exact image already exists, we do not need to build it
+    if runtime_builder.image_exists(hash_image_name, False):
+        logger.info(f'Reusing Image [{hash_image_name}]')
+        return hash_image_name
+
+    # We look for an existing image that shares the same lock_tag. If such an image exists, we
+    # can use it as the base image for the build and just copy source files. This makes the build
+    # much faster.
+    if runtime_builder.image_exists(lock_image_name):
+        logger.info(f'Build [{hash_image_name}] from [{lock_image_name}]')
+        build_from_scratch = False
+        base_image = lock_image_name
+    else:
+        logger.info(f'Build [{hash_image_name}] from scratch')
+
+    prep_docker_build_folder_2(
+        build_folder,
+        base_image=base_image,
+        build_from_scratch=build_from_scratch,
+        extra_deps=extra_deps,
+    )
+    if not dry_run:
+        _build_sandbox_image_2(
+            docker_folder=docker_build_folder,
+            runtime_builder=runtime_builder,
+            target_image_repo=runtime_image_repo,
+            target_image_tags=[generic_tag, lock_tag, hash_tag],
+        )
+
+
+def get_hash_for_lock_files():
+    distribution = importlib.metadata.distribution(__package_name__)
+    md5 = hashlib.md5()
+    md5.update(str(distribution.requires).encode())
+    md5.update(str(distribution.metadata).encode())
+    return to_base36(md5.digest())
+
+
+def get_hash_for_source_files():
+    openhands_source_dir = Path(openhands.__file__).parent
+    dir_hash = dirhash(
+        openhands_source_dir,
+        'md5',
+        ignore=[
+            '.*/',  # hidden directories
+            '__pycache__/',
+            '*.pyc',
+        ],
+    )
+    # reencode from base16 to base36
+    decoded = base64.b16decode(dir_hash, casefold=True)
+    result = to_base36(decoded.encode())
+    return result
 
 
 def build_runtime_image(
