@@ -7,7 +7,7 @@ GENERAL_TIMEOUT: int = 15
 EXECUTOR = ThreadPoolExecutor()
 
 
-async def sync_from_async(fn: Callable, *args, **kwargs):
+async def call_sync_from_async(fn: Callable, *args, **kwargs):
     """
     Shorthand for running a function in the default background thread pool executor
     and awaiting the result. The nature of synchronous code is that the future
@@ -19,13 +19,18 @@ async def sync_from_async(fn: Callable, *args, **kwargs):
     return result
 
 
-def async_from_sync(
+def call_async_from_sync(
     corofn: Callable, timeout: float = GENERAL_TIMEOUT, *args, **kwargs
 ):
     """
     Shorthand for running a coroutine in the default background thread pool executor
     and awaiting the result
     """
+
+    if corofn is None:
+        raise ValueError('corofn is None')
+    if not asyncio.iscoroutinefunction(corofn):
+        raise ValueError('corofn is not a coroutine function')
 
     async def arun():
         coro = corofn(*args, **kwargs)
@@ -44,6 +49,13 @@ def async_from_sync(
     futures.wait([future], timeout=timeout or None)
     result = future.result()
     return result
+
+
+async def call_coro_in_bg_thread(
+    corofn: Callable, timeout: float = GENERAL_TIMEOUT, *args, **kwargs
+):
+    """Function for running a coroutine in a background thread."""
+    await call_sync_from_async(call_async_from_sync, corofn, timeout, *args, **kwargs)
 
 
 async def wait_all(
