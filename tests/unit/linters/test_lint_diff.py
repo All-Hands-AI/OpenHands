@@ -370,3 +370,48 @@ def sum(a, b):
         and result[0].column == 16
         and result[0].message == "F821 undefined name 'variable'"
     )
+
+
+def test_lint_file_diff_catch_new_errors_outside_edits(tmp_path):
+    """
+    Make sure we catch new linting errors induced by our edits, even
+    though the error itself is not in the edit chunk
+    """
+    content = """def valid_func1():
+    print(my_sum(1, 2))
+def my_sum(a, b):
+    return a - b
+def valid_func2():
+    print(my_sum(0, 0))
+"""
+    # Add 100 lines of invalid code, which linter shall ignore
+    # because they are not being edited. For testing purpose, we
+    # must add these existing linting errors, otherwise the pre-edit
+    # linting would pass, and thus there won't be any comparison
+    # between pre-edit and post-edit linting.
+    for _ in range(100):
+        content += '\ninvalid_func()'
+
+    temp_file_old_path = tmp_path / 'problematic-file-test.py'
+    temp_file_old_path.write_text(content)
+
+    new_content = content.replace('def my_sum(a, b):', 'def my_sum2(a, b):')
+    temp_file_new_path = tmp_path / 'problematic-file-test-new.py'
+    temp_file_new_path.write_text(new_content)
+
+    linter = DefaultLinter()
+    result: list[LintResult] = linter.lint_file_diff(
+        str(temp_file_old_path),
+        str(temp_file_new_path),
+    )
+    assert len(result) == 2
+    assert (
+        result[0].line == 2
+        and result[0].column == 11
+        and result[0].message == "F821 undefined name 'my_sum'"
+    )
+    assert (
+        result[1].line == 6
+        and result[1].column == 11
+        and result[1].message == "F821 undefined name 'my_sum'"
+    )

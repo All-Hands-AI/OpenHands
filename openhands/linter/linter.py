@@ -1,10 +1,10 @@
 import os
 from collections import defaultdict
+from difflib import SequenceMatcher
 
 from openhands.linter.base import BaseLinter, LinterException, LintResult
 from openhands.linter.languages.python import PythonLinter
 from openhands.linter.languages.treesitter import TreesitterBasicLinter
-from openhands.utils.diff import get_diff, parse_diff
 
 
 class DefaultLinter(BaseLinter):
@@ -47,20 +47,76 @@ class DefaultLinter(BaseLinter):
         Returns:
             A list of lint errors that are introduced by the diff.
         """
-        updated_lint_error: list[LintResult] = self.lint(updated_file_path)
+        # 1. Lint the original and updated file
+        original_lint_errors: list[LintResult] = self.lint(original_file_path)
+        updated_lint_errors: list[LintResult] = self.lint(updated_file_path)
 
+        # 2. Load the original and updated file content
         with open(original_file_path, 'r') as f:
-            original_file_content = f.read()
+            old_lines = f.readlines()
         with open(updated_file_path, 'r') as f:
-            updated_file_content = f.read()
-        diff = get_diff(original_file_content, updated_file_content)
-        changes = parse_diff(diff)
+            new_lines = f.readlines()
 
-        # Select errors that are introduced by the new diff
+        # 3. Get line numbers that are changed & unchanged
+        # Map the line number of the original file to the updated file
+        # NOTE: this only works for lines that are not changed (i.e., equal)
+        old_to_new_line_no_mapping: dict[int, int] = {}
+        replace_or_inserted_lines: list[int] = []
+        for (
+            tag,
+            old_idx_start,
+            old_idx_end,
+            new_idx_start,
+            new_idx_end,
+        ) in SequenceMatcher(
+            isjunk=None,
+            a=old_lines,
+            b=new_lines,
+        ).get_opcodes():
+            if tag == 'equal':
+                for idx, _ in enumerate(old_lines[old_idx_start:old_idx_end]):
+                    old_to_new_line_no_mapping[old_idx_start + idx + 1] = (
+                        new_idx_start + idx + 1
+                    )
+            elif tag == 'replace' or tag == 'insert':
+                for idx, _ in enumerate(old_lines[old_idx_start:old_idx_end]):
+                    replace_or_inserted_lines.append(new_idx_start + idx + 1)
+            else:
+                # omit the case of delete
+                pass
+
+        # 4. Get pre-existing errors in unchanged lines
+        # increased error elsewhere introduced by the newlines
+        # i.e., we omit errors that are already in original files and report new one
+        new_line_no_to_original_errors: dict[int, list[LintResult]] = defaultdict(list)
+        for error in original_lint_errors:
+            if error.line in old_to_new_line_no_mapping:
+                new_line_no_to_original_errors[
+                    old_to_new_line_no_mapping[error.line]
+                ].append(error)
+
+        # 5. Select errors from lint results in new file to report
         selected_errors = []
-        for change in changes:
-            new_lineno = change.new
-            for error in updated_lint_error:
-                if error.line == new_lineno:
+        for error in updated_lint_errors:
+            # 5.1. Error introduced by replace/insert
+            if error.line in replace_or_inserted_lines:
+                selected_errors.append(error)
+            # 5.2. Error introduced by modified lines that impacted
+            #      the unchanged lines that HAVE pre-existing errors
+            elif error.line in new_line_no_to_original_errors:
+                # skip if the error is already reported
+                # or add if the error is new
+                if not any(
+                    original_error.message == error.message
+                    and original_error.column == error.column
+                    for original_error in new_line_no_to_original_errors[error.line]
+                ):
                     selected_errors.append(error)
+            # 5.3. Error introduced by modified lines that impacted
+            #      the unchanged lines that have NO pre-existing errors
+            else:
+                selected_errors.append(error)
+
+        # 6. Sort errors by line and column
+        selected_errors.sort(key=lambda x: (x.line, x.column))
         return selected_errors
