@@ -29,7 +29,7 @@ from openhands.events.observation import (
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.plugins import JupyterRequirement, PluginRequirement
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
-from openhands.utils.async_utils import sync_from_async
+from openhands.utils.async_utils import call_sync_from_async
 
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
@@ -127,7 +127,7 @@ class Runtime(FileEditRuntimeMixin):
             if event.timeout is None:
                 event.timeout = self.config.sandbox.timeout
             assert event.timeout is not None
-            observation = await sync_from_async(self.run_action, event)
+            observation = await call_sync_from_async(self.run_action, event)
             observation._cause = event.id  # type: ignore[attr-defined]
             source = event.source if event.source else EventSource.AGENT
             await self.event_stream.async_add_event(observation, source)  # type: ignore[arg-type]
