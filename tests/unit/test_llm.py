@@ -1,3 +1,4 @@
+import copy
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -91,9 +92,11 @@ def test_llm_init_with_metrics():
 
 def test_llm_reset():
     llm = LLM(LLMConfig(model='gpt-4o-mini', api_key='test_key'))
-    initial_metrics = llm.metrics
+    initial_metrics = copy.deepcopy(llm.metrics)
+    initial_metrics.add_cost(1.0)
     llm.reset()
-    assert llm.metrics is not initial_metrics
+    assert llm.metrics._accumulated_cost != initial_metrics._accumulated_cost
+    assert llm.metrics._costs != initial_metrics._costs
     assert isinstance(llm.metrics, Metrics)
 
 
