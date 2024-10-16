@@ -7,6 +7,7 @@ import {
   json,
   ClientActionFunctionArgs,
   useRouteLoaderData,
+  redirect,
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import WebSocket from "ws";
@@ -42,6 +43,8 @@ import { base64ToBlob } from "#/utils/base64-to-blob";
 import { clientLoader as rootClientLoader } from "#/root";
 import { clearJupyter } from "#/state/jupyterSlice";
 import { FilesProvider } from "#/context/files";
+import { getAccessTokenFromCookie } from "#/utils/get-access-token-from-cookie";
+import { clearSession } from "#/utils/clear-session";
 
 const isAgentStateChange = (
   data: object,
@@ -51,6 +54,12 @@ const isAgentStateChange = (
   "agent_state" in data.extras;
 
 export const clientLoader = async () => {
+  const accessToken = getAccessTokenFromCookie(document.cookie);
+  if (!accessToken) {
+    clearSession();
+    return redirect("/");
+  }
+
   const q = store.getState().initalQuery.initialQuery;
   const repo =
     store.getState().initalQuery.selectedRepository ||
@@ -58,22 +67,20 @@ export const clientLoader = async () => {
   const importedProject = store.getState().initalQuery.importedProjectZip;
 
   const settings = getSettings();
-  const token = localStorage.getItem("token");
-  const ghToken = localStorage.getItem("ghToken");
 
-  if (token && importedProject) {
+  if (importedProject) {
     const blob = base64ToBlob(importedProject);
     const file = new File([blob], "imported-project.zip", {
       type: blob.type,
     });
-    await OpenHands.uploadFiles(token, [file]);
+    await OpenHands.uploadFiles([file]);
   }
 
   if (repo) localStorage.setItem("repo", repo);
 
   let lastCommit: GitHubCommit | null = null;
-  if (ghToken && repo) {
-    const data = await retrieveLatestGitHubCommit(ghToken, repo);
+  if (accessToken && repo) {
+    const data = await retrieveLatestGitHubCommit(accessToken, repo);
     if (isGitHubErrorReponse(data)) {
       // TODO: Handle error
       console.error("Failed to retrieve latest commit", data);
@@ -84,8 +91,8 @@ export const clientLoader = async () => {
 
   return json({
     settings,
-    token,
-    ghToken,
+    token: localStorage.getItem("token"),
+    ghToken: accessToken,
     repo,
     q,
     lastCommit,

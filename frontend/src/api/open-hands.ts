@@ -62,16 +62,15 @@ class OpenHands {
 
   /**
    * Retrieve the list of files available in the workspace
-   * @param token User token provided by the server
    * @param path Path to list files from
    * @returns List of files available in the given path. If path is not provided, it lists all the files in the workspace
    */
-  static async getFiles(token: string, path?: string): Promise<string[]> {
+  static async getFiles(path?: string): Promise<string[]> {
     const url = new URL(`${OpenHands.BASE_URL}/api/list-files`);
     if (path) url.searchParams.append("path", path);
 
     const response = await fetch(url.toString(), {
-      headers: OpenHands.generateHeaders(token),
+      credentials: "include",
     });
 
     return response.json();
@@ -79,15 +78,14 @@ class OpenHands {
 
   /**
    * Retrieve the content of a file
-   * @param token User token provided by the server
    * @param path Full path of the file to retrieve
    * @returns Content of the file
    */
-  static async getFile(token: string, path: string): Promise<string> {
+  static async getFile(path: string): Promise<string> {
     const url = new URL(`${OpenHands.BASE_URL}/api/select-file`);
     url.searchParams.append("file", path);
     const response = await fetch(url.toString(), {
-      headers: OpenHands.generateHeaders(token),
+      credentials: "include",
     });
 
     const data = await response.json();
@@ -96,20 +94,18 @@ class OpenHands {
 
   /**
    * Save the content of a file
-   * @param token User token provided by the server
    * @param path Full path of the file to save
    * @param content Content to save in the file
    * @returns Success message or error message
    */
   static async saveFile(
-    token: string,
     path: string,
     content: string,
   ): Promise<SaveFileSuccessResponse | ErrorResponse> {
     const response = await fetch(`${OpenHands.BASE_URL}/api/save-file`, {
       method: "POST",
       body: JSON.stringify({ filePath: path, content }),
-      headers: OpenHands.generateHeaders(token),
+      credentials: "include",
     });
 
     return response.json();
@@ -117,12 +113,10 @@ class OpenHands {
 
   /**
    * Upload a file to the workspace
-   * @param token User token provided by the server
    * @param file File to upload
    * @returns Success message or error message
    */
   static async uploadFiles(
-    token: string,
     file: File[],
   ): Promise<FileUploadSuccessResponse | ErrorResponse> {
     const formData = new FormData();
@@ -130,8 +124,8 @@ class OpenHands {
 
     const response = await fetch(`${OpenHands.BASE_URL}/api/upload-files`, {
       method: "POST",
-      headers: OpenHands.generateHeaders(token),
       body: formData,
+      credentials: "include",
     });
 
     return response.json();
@@ -139,31 +133,25 @@ class OpenHands {
 
   /**
    * Get the blob of the workspace zip
-   * @param token User token provided by the server
    * @returns Blob of the workspace zip
    */
-  static async getWorkspaceZip(token: string): Promise<Blob> {
+  static async getWorkspaceZip(): Promise<Blob> {
     const response = await fetch(`${OpenHands.BASE_URL}/api/zip-directory`, {
-      headers: OpenHands.generateHeaders(token),
+      credentials: "include",
     });
     return response.blob();
   }
 
   /**
    * Send feedback to the server
-   * @param token User token provided by the server
    * @param data Feedback data
    * @returns The stored feedback data
    */
-  static async sendFeedback(
-    token: string,
-    data: Feedback,
-    // TODO: Type the response
-  ): Promise<FeedbackResponse> {
+  static async sendFeedback(data: Feedback): Promise<FeedbackResponse> {
     const response = await fetch(`${OpenHands.BASE_URL}/api/submit-feedback`, {
       method: "POST",
-      headers: OpenHands.generateHeaders(token),
       body: JSON.stringify(data),
+      credentials: "include",
     });
 
     return response.json();
@@ -185,15 +173,8 @@ class OpenHands {
     return response.json();
   }
 
-  /**
-   * Generate the headers for the request
-   * @param token User token provided by the server
-   * @returns Headers for the request
-   */
-  private static generateHeaders(token: string) {
-    return {
-      Authorization: `Bearer ${token}`,
-    };
+  static async logout(): Promise<void> {
+    await fetch(`${OpenHands.BASE_URL}/logout`);
   }
 }
 

@@ -48,8 +48,7 @@ function CodeEditorCompoonent({ isReadOnly }: CodeEditorCompoonentProps) {
 
         if (content) {
           try {
-            const token = localStorage.getItem("token")?.toString();
-            if (token) await OpenHands.saveFile(token, selectedPath, content);
+            await OpenHands.saveFile(selectedPath, content);
           } catch (error) {
             // handle error
           }
