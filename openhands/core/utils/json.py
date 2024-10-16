@@ -4,9 +4,9 @@ from datetime import datetime
 from json_repair import repair_json
 
 from openhands.core.exceptions import LLMResponseError
-from openhands.core.metrics import Metrics
 from openhands.events.event import Event
 from openhands.events.serialization import event_to_dict
+from openhands.llm.metrics import Metrics
 
 
 def my_default_encoder(obj):

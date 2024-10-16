@@ -11,8 +11,8 @@ from litellm.exceptions import (
 
 from openhands.core.config import LLMConfig
 from openhands.core.exceptions import OperationCancelled
-from openhands.core.metrics import Metrics
 from openhands.llm.llm import LLM
+from openhands.llm.metrics import Metrics
 
 
 @pytest.fixture(autouse=True)

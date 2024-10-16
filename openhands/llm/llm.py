@@ -23,8 +23,8 @@ from litellm.types.utils import CostPerToken, ModelResponse, Usage
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
-from openhands.core.metrics import Metrics
 from openhands.llm.debug_mixin import DebugMixin
+from openhands.llm.metrics import Metrics
 from openhands.llm.retry_mixin import RetryMixin
 
 __all__ = ['LLM']

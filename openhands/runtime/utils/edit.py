@@ -6,7 +6,6 @@ from abc import ABC, abstractmethod
 
 from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.metrics import Metrics
 from openhands.events.action import (
     FileEditAction,
     FileReadAction,
@@ -21,6 +20,7 @@ from openhands.events.observation import (
 )
 from openhands.linter import DefaultLinter
 from openhands.llm.llm import LLM
+from openhands.llm.metrics import Metrics
 from openhands.utils.chunk_localizer import Chunk, get_top_k_chunk_matches
 from openhands.utils.diff import get_diff
 
