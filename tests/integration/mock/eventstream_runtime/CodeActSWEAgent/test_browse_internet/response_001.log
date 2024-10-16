@@ -1,2 +1,0 @@
-<execute_bash>
-curl -s localhost:8000
