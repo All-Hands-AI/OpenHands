@@ -37,8 +37,7 @@ from openhands.events.observation import (
     ErrorObservation,
     Observation,
 )
-from openhands.events.serialization.event import event_to_dict, truncate_content
-from openhands.events.utils import get_pairs_from_events
+from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
 from openhands.runtime.utils.shutdown_listener import should_continue
 
@@ -654,20 +653,6 @@ class AgentController:
             return True
 
         return self._stuck_detector.is_stuck()
-
-    # history is now available as a filtered stream of events, rather than list of pairs of (Action, Observation)
-    # we rebuild the pairs here
-    # for compatibility with the existing output format in evaluations
-    # remove this when it's no longer necessary
-    def compatibility_for_eval_history_pairs(self) -> list[tuple[dict, dict]]:
-        history_pairs = []
-
-        for action, observation in get_pairs_from_events(
-            self.event_stream.get_events(include_delegates=True)
-        ):
-            history_pairs.append((event_to_dict(action), event_to_dict(observation)))
-
-        return history_pairs
 
     def __repr__(self):
         return (

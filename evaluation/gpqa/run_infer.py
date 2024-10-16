@@ -28,6 +28,7 @@ from datasets import load_dataset
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    compatibility_for_eval_history_pairs,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -299,7 +300,7 @@ Ok now its time to start solving the question. Good luck!
         instance_id=str(instance.instance_id),
         instruction=instruction,
         metadata=metadata,
-        history=state.history.compatibility_for_eval_history_pairs(),
+        history=compatibility_for_eval_history_pairs(state.history),
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
         test_result={
