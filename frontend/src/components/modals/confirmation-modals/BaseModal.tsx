@@ -1,5 +1,5 @@
-import React from "react";
 import ModalButton from "#/components/buttons/ModalButton";
+import React from "react";
 import ModalBody from "../ModalBody";
 
 interface ButtonConfig {

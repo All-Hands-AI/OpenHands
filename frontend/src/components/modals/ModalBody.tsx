@@ -12,7 +12,7 @@ function ModalBody({ testID, children, className }: ModalBodyProps) {
     <div
       data-testid={testID}
       className={clsx(
-        "bg-root-primary flex flex-col gap-6 items-center w-[384px] p-6 rounded-xl",
+        "relative bg-root-primary z-20 flex flex-col gap-6 items-center w-[384px] p-6 rounded-xl",
         className,
       )}
     >

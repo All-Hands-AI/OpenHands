@@ -1,3 +1,5 @@
+import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
+import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import {
   Links,
   Meta,
@@ -11,25 +13,23 @@ import {
   useLocation,
   useNavigation,
 } from "@remix-run/react";
-import "./tailwind.css";
-import "./index.css";
 import React from "react";
 import { Toaster } from "react-hot-toast";
-import CogTooth from "./assets/cog-tooth";
-import { SettingsForm } from "./components/form/settings-form";
-import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
-import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { isGitHubErrorReponse, retrieveGitHubUser } from "./api/github";
 import OpenHands from "./api/open-hands";
-import LoadingProjectModal from "./components/modals/LoadingProject";
-import { getSettings, settingsAreUpToDate } from "./services/settings";
-import AccountSettingsModal from "./components/modals/AccountSettingsModal";
-import NewProjectIcon from "./assets/new-project.svg?react";
+import CogTooth from "./assets/cog-tooth";
 import DocsIcon from "./assets/docs.svg?react";
-import i18n from "./i18n";
-import { useSocket } from "./context/socket";
-import { UserAvatar } from "./components/user-avatar";
+import NewProjectIcon from "./assets/new-project.svg?react";
+import { SettingsForm } from "./components/form/settings-form";
+import AccountSettingsModal from "./components/modals/AccountSettingsModal";
 import { DangerModal } from "./components/modals/confirmation-modals/danger-modal";
+import LoadingProjectModal from "./components/modals/LoadingProject";
+import { UserAvatar } from "./components/user-avatar";
+import { useSocket } from "./context/socket";
+import i18n from "./i18n";
+import "./index.css";
+import { getSettings, settingsAreUpToDate } from "./services/settings";
+import "./tailwind.css";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
