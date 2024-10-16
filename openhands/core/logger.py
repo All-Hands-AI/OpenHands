@@ -92,6 +92,8 @@ class SensitiveDataFilter(logging.Filter):
             'e2b_api_key',
             'github_token',
             'jwt_secret',
+            'modal_api_token_id',
+            'modal_api_token_secret',
         ]
 
         # add env var names

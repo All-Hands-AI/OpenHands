@@ -152,7 +152,7 @@ def make_metadata(
     details: dict[str, Any] | None = None,
 ) -> EvalMetadata:
     model_name = llm_config.model.split('/')[-1]
-    model_path = model_name.replace(':', '_')
+    model_path = model_name.replace(':', '_').replace('@', '-')
     eval_note = f'_N_{eval_note}' if eval_note else ''
 
     eval_output_path = os.path.join(
@@ -248,7 +248,7 @@ def update_progress(
     """Update the progress bar and write the result to the output file."""
     pbar.update(1)
     pbar.set_description(f'Instance {result.instance_id}')
-    pbar.set_postfix_str(f'Test Result: {result.test_result}')
+    pbar.set_postfix_str(f'Test Result: {str(result.test_result)[:300]}...')
     logger.info(
         f'Finished evaluation for instance {result.instance_id}: {str(result.test_result)[:300]}...\n'
     )
