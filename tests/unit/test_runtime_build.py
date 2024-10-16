@@ -259,6 +259,7 @@ def test_build_runtime_image_from_scratch(temp_dir):
                 f'{get_runtime_image_repo()}:{from_scratch_hash}',
                 f'{get_runtime_image_repo()}:{OH_VERSION}_image_debian_tag_11',
             ],
+            platform=None,
         )
         assert image_name == f'{get_runtime_image_repo()}:{from_scratch_hash}'
 
@@ -340,6 +341,7 @@ def test_build_runtime_image_exact_hash_not_exist(mock_build_sandbox_image, temp
                 target_image_repo=repo,
                 target_image_hash_tag=from_scratch_hash,
                 target_image_tag=latest_image_tag,
+                platform=None,
             )
             assert image_name == f'{repo}:{from_scratch_hash}'
 
