@@ -7,6 +7,7 @@ import {
   json,
   ClientActionFunctionArgs,
   useRouteLoaderData,
+  redirect,
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import WebSocket from "ws";
@@ -42,6 +43,7 @@ import { base64ToBlob } from "#/utils/base64-to-blob";
 import { clientLoader as rootClientLoader } from "#/root";
 import { clearJupyter } from "#/state/jupyterSlice";
 import { FilesProvider } from "#/context/files";
+import { isAuthorized } from "#/utils/is-authorized";
 
 const isAgentStateChange = (
   data: object,
@@ -51,6 +53,12 @@ const isAgentStateChange = (
   "agent_state" in data.extras;
 
 export const clientLoader = async () => {
+  const ghToken = localStorage.getItem("ghToken");
+  const isSaas = import.meta.env.VITE_APP_MODE === "saas";
+
+  const userIsAuthorized = await isAuthorized(isSaas, ghToken);
+  if (!userIsAuthorized) return redirect("/waitlist");
+
   const q = store.getState().initalQuery.initialQuery;
   const repo =
     store.getState().initalQuery.selectedRepository ||
@@ -59,7 +67,6 @@ export const clientLoader = async () => {
 
   const settings = getSettings();
   const token = localStorage.getItem("token");
-  const ghToken = localStorage.getItem("ghToken");
 
   if (token && importedProject) {
     const blob = base64ToBlob(importedProject);
