@@ -27,7 +27,7 @@ numpy = "*"
 json-repair = "*"
 browsergym = "0.8.0" # integrate browsergym as the browsing interface
 html2text = "*"
-e2b = "^0.17.1"
+e2b = ">=0.17.1,<1.1.0"
 pexpect = "*"
 jinja2 = "^3.1.3"
 python-multipart = "*"
