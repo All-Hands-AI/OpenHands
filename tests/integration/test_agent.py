@@ -61,7 +61,7 @@ def validate_final_state(final_state: State | None, test_name: str):
     assert num_of_conversations > 0
     # we mock the cost of every conversation to be 1 USD
     # assert int(final_state.metrics.accumulated_cost) == num_of_conversations
-    if final_state.history.has_delegation():
+    if final_state.has_delegation():
         assert final_state.iteration > final_state.local_iteration
     else:
         assert final_state.local_iteration == final_state.iteration
