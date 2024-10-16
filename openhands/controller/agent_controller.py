@@ -1,7 +1,7 @@
 import asyncio
 import copy
 import traceback
-from typing import Type
+from typing import ClassVar, Type
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State, TrafficControlState
@@ -35,6 +35,7 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
     ErrorObservation,
+    NullObservation,
     Observation,
 )
 from openhands.events.serialization.event import truncate_content
@@ -60,6 +61,12 @@ class AgentController:
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
     _pending_action: Action | None = None
+    filter_out: ClassVar[tuple[type[Event], ...]] = (
+        NullAction,
+        NullObservation,
+        ChangeAgentStateAction,
+        AgentStateChangedObservation,
+    )
 
     def __init__(
         self,
@@ -132,7 +139,8 @@ class AgentController:
         self.state.iteration += 1
         self.state.local_iteration += 1
 
-        # get the history from the event stream
+        # get the history from the event stream, filtering out event types
+        # that should not be sent to the agent, and hidden events
         start_id = self.state.start_id if self.state.start_id != -1 else 0
         end_id = (
             self.state.end_id
@@ -144,6 +152,8 @@ class AgentController:
                 start_id=start_id,
                 end_id=end_id,
                 reverse=False,
+                filter_out_type=self.filter_out,
+                filter_hidden=True,
             )
         )
 
