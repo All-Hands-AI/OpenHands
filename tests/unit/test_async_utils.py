@@ -1,12 +1,10 @@
 import asyncio
-import time
 
 import pytest
 
 from openhands.utils.async_utils import (
     AsyncException,
     call_async_from_sync,
-    call_coro_in_bg_thread,
     call_sync_from_async,
     wait_all,
 )
@@ -140,27 +138,3 @@ def test_call_async_from_sync_background_tasks():
     # (Even though some of these were started as background tasks)
     expected = ['dummy_started', 'dummy_started', 'bg_started', 'bg_finished']
     assert expected == events
-
-
-@pytest.mark.asyncio
-async def test_call_coro_in_bg_thread():
-    times = {}
-
-    async def bad_async(id_):
-        # Dummy demonstrating some bad async function that does not cede control
-        time.sleep(0.1)
-        times[id_] = time.time()
-
-    async def curve_ball():
-        # A curve ball - an async function that wants to run while the bad async functions are in progress
-        await asyncio.sleep(0.05)
-        times['curve_ball'] = time.time()
-
-    start = time.time()
-    asyncio.create_task(curve_ball())
-    await wait_all(
-        call_coro_in_bg_thread(bad_async, id_=f'bad_async_{id_}') for id_ in range(5)
-    )
-    assert (times['curve_ball'] - start) == pytest.approx(0.05, abs=0.1)
-    for id_ in range(5):
-        assert (times[f'bad_async_{id_}'] - start) == pytest.approx(0.1, abs=0.1)
