@@ -30,7 +30,7 @@ from fastapi import (
     status,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -798,9 +798,4 @@ def github_callback(auth_code: AuthCode):
     )
 
 
-@app.get('/config.json')
-def get_config():
-    return FileResponse('./openhands/server/static/config.json')
-
-
-app.mount('/', StaticFiles(directory='./frontend/build', html=True), name='dist')
+app.mount('/', StaticFiles(directory='./frontend/build/client', html=True), name='dist')
