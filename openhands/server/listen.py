@@ -798,4 +798,8 @@ def github_callback(auth_code: AuthCode):
     )
 
 
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    return FileResponse("./frontend/build/index.html")
+
 app.mount('/', StaticFiles(directory='./frontend/build', html=True), name='dist')
