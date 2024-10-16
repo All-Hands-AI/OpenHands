@@ -203,7 +203,7 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
 def build_runtime_image(
     base_image: str,
     runtime_builder: RuntimeBuilder,
-    platform: str = 'linux/amd64',
+    platform: str | None = None,
     extra_deps: str | None = None,
     docker_build_folder: str | None = None,
     dry_run: bool = False,
@@ -348,7 +348,7 @@ def _build_sandbox_image(
     target_image_repo: str,
     target_image_hash_tag: str,
     target_image_tag: str,
-    platform: str = 'linux/amd64',
+    platform: str | None = None,
 ) -> str:
     """Build and tag the sandbox image.
     The image will be tagged as both:
@@ -378,8 +378,11 @@ def _build_sandbox_image(
         tags_to_add.append(target_image_generic_name)
 
     try:
+        # Pass platform to the builder
         image_name = runtime_builder.build(
-            path=docker_folder, tags=tags_to_add, platform=platform
+            path=docker_folder,
+            tags=tags_to_add,
+            platform=platform,
         )
         if not image_name:
             raise RuntimeError(f'Build failed for image {target_image_hash_name}')
