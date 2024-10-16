@@ -29,6 +29,7 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import (
+    Action,
     CmdRunAction,
     MessageAction,
 )
@@ -45,7 +46,10 @@ def codeact_user_response_mint(state: State, task: Task, task_config: dict[str, 
         task=task,
         task_config=task_config,
     )
-    last_action = state.history.get_last_action()
+    last_action = next(
+        (event for event in reversed(state.history) if isinstance(event, Action)),
+        None,
+    )
     result_state: TaskState = env.step(last_action.message or '')
 
     state.extra_data['task_state'] = result_state

@@ -9,7 +9,12 @@ from openhands.controller.state.state import State
 from openhands.core.config import load_app_config
 from openhands.core.main import run_controller
 from openhands.core.schema import AgentState
-from openhands.events.action import AgentFinishAction, AgentRejectAction, MessageAction
+from openhands.events.action import (
+    Action,
+    AgentFinishAction,
+    AgentRejectAction,
+    MessageAction,
+)
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.delegate import AgentDelegateObservation
 from openhands.runtime import get_runtime_cls
@@ -185,7 +190,12 @@ def test_simple_task_rejection(current_test_name: str):
         run_controller(CONFIG, MessageAction(content=task), exit_on_message=True)
     )
     validate_final_state(final_state, current_test_name)
-    assert isinstance(final_state.history.get_last_action(), AgentRejectAction)
+    # get last action
+    last_action = next(
+        (event for event in reversed(final_state.history) if isinstance(event, Action)),
+        None,
+    )
+    assert isinstance(last_action, AgentRejectAction)
 
 
 @pytest.mark.skipif(
