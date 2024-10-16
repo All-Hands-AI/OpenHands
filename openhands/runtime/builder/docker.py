@@ -59,9 +59,6 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         target_image_repo, target_image_hash_tag = target_image_hash_name.split(':')
         target_image_tag = tags[1].split(':')[1] if len(tags) > 1 else None
 
-        # Check if the image exists and pull if necessary
-        self.image_exists(target_image_hash_name)
-
         buildx_cmd = [
             'docker',
             'buildx',
