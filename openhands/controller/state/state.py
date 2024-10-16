@@ -133,7 +133,7 @@ class State:
         state.agent_state = AgentState.LOADING
         return state
 
-    def get_current_user_intent(self):
+    def get_current_user_intent(self) -> tuple[str | None, list[str] | None]:
         """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""
         last_user_message = None
         last_user_message_image_urls: list[str] | None = []
@@ -143,7 +143,7 @@ class State:
                 last_user_message_image_urls = event.images_urls
             elif isinstance(event, AgentFinishAction):
                 if last_user_message is not None:
-                    return last_user_message
+                    return last_user_message, None
 
         return last_user_message, last_user_message_image_urls
 

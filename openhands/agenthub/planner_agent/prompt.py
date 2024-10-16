@@ -117,7 +117,7 @@ def get_hint(latest_action_id: str) -> str:
 
 def get_prompt_and_images(
     state: State, max_message_chars: int
-) -> tuple[str, list[str]]:
+) -> tuple[str, list[str] | None]:
     """Gets the prompt for the planner agent.
 
     Formatted with the most recent action-observation pairs, current task, and hint based on last action
