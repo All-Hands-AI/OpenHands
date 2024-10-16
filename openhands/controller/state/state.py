@@ -94,7 +94,7 @@ class State:
     start_id: int = -1
     end_id: int = -1
     almost_stuck: int = 0
-    delegates_ids: dict[tuple[int, int], tuple[str, str]] = field(default_factory=dict)
+    delegates: dict[tuple[int, int], tuple[str, str]] = field(default_factory=dict)
     # NOTE: This will never be used by the controller, but it can be used by different
     # evaluation tasks to store extra data needed to track the progress/state of the task.
     extra_data: dict[str, Any] = field(default_factory=dict)
@@ -136,7 +136,7 @@ class State:
         """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""
         last_user_message = None
         last_user_message_image_urls: list[str] | None = []
-        for event in self.history.get_events(reverse=True):
+        for event in reversed(self.history):
             if isinstance(event, MessageAction) and event.source == 'user':
                 last_user_message = event.content
                 last_user_message_image_urls = event.images_urls

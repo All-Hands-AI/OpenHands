@@ -136,7 +136,7 @@ def get_prompt_and_images(
     latest_action: Action = NullAction()
 
     # retrieve the latest HISTORY_SIZE events
-    for event_count, event in enumerate(state.history.get_events(reverse=True)):
+    for event_count, event in enumerate(reversed(state.history)):
         if event_count >= HISTORY_SIZE:
             break
         if latest_action == NullAction() and isinstance(event, Action):

@@ -1,16 +1,13 @@
 from typing import ClassVar, Iterable
 
-from openhands.events.action.action import Action
 from openhands.events.action.agent import (
     ChangeAgentStateAction,
 )
 from openhands.events.action.empty import NullAction
-from openhands.events.action.message import MessageAction
-from openhands.events.event import Event, EventSource
+from openhands.events.event import Event
 from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.observation.delegate import AgentDelegateObservation
 from openhands.events.observation.empty import NullObservation
-from openhands.events.observation.observation import Observation
 from openhands.events.stream import EventStream
 
 
@@ -82,85 +79,6 @@ class ShortTermHistory(list[Event]):
                 yield event
             elif include_delegates:
                 yield event
-
-    def get_last_action(self, end_id: int = -1) -> Action | None:
-        """Return the last action from the event stream, filtered to exclude unwanted events."""
-        # from end_id in reverse, find the first action
-        end_id = self._event_stream.get_latest_event_id() if end_id == -1 else end_id
-
-        last_action = next(
-            (
-                event
-                for event in self._event_stream.get_events(
-                    end_id=end_id, reverse=True, filter_out_type=self.filter_out
-                )
-                if isinstance(event, Action)
-            ),
-            None,
-        )
-
-        return last_action
-
-    def get_last_observation(self, end_id: int = -1) -> Observation | None:
-        """Return the last observation from the event stream, filtered to exclude unwanted events."""
-        # from end_id in reverse, find the first observation
-        end_id = self._event_stream.get_latest_event_id() if end_id == -1 else end_id
-
-        last_observation = next(
-            (
-                event
-                for event in self._event_stream.get_events(
-                    end_id=end_id, reverse=True, filter_out_type=self.filter_out
-                )
-                if isinstance(event, Observation)
-            ),
-            None,
-        )
-
-        return last_observation
-
-    def get_last_user_message(self) -> str:
-        """Return the content of the last user message from the event stream."""
-        last_user_message = next(
-            (
-                event.content
-                for event in self._event_stream.get_events(reverse=True)
-                if isinstance(event, MessageAction) and event.source == EventSource.USER
-            ),
-            None,
-        )
-
-        return last_user_message if last_user_message is not None else ''
-
-    def get_last_agent_message(self) -> str:
-        """Return the content of the last agent message from the event stream."""
-        last_agent_message = next(
-            (
-                event.content
-                for event in self._event_stream.get_events(reverse=True)
-                if isinstance(event, MessageAction)
-                and event.source == EventSource.AGENT
-            ),
-            None,
-        )
-
-        return last_agent_message if last_agent_message is not None else ''
-
-    def get_last_events(self, n: int) -> list[Event]:
-        """Return the last n events from the event stream."""
-        # dummy agent is using this
-        # it should work, but it's not great to store temporary lists now just for a test
-        end_id = self._event_stream.get_latest_event_id()
-        start_id = max(0, end_id - n + 1)
-
-        return list(
-            event
-            for event in self._event_stream.get_events(
-                start_id=start_id,
-                end_id=end_id,
-                filter_out_type=self.filter_out,
-            )
-        )
 
     def has_delegation(self) -> bool:
         for event in self._event_stream.get_events():

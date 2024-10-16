@@ -149,11 +149,11 @@ class AgentController:
 
         # do not include events between delegate actions and observations:
         # include in history the delegate action and observation themselves
-        if self.state.delegates_ids:
+        if self.state.delegates:
             for (start_id, end_id), (
                 delegate_agent,
                 delegate_task,
-            ) in self.state.delegates_ids.items():
+            ) in self.state.delegates.items():
                 # sanity checks
                 if (
                     start_id < 0
@@ -349,7 +349,7 @@ class AgentController:
             )
             return
 
-        self.state.delegates_ids[(delegate_start, delegate_end)] = (
+        self.state.delegates[(delegate_start, delegate_end)] = (
             delegate_agent,
             delegate_task,
         )
@@ -669,7 +669,7 @@ class AgentController:
 
         # FIXME when restored from a previous session, the State object needs to have:
         # - history? let's go with nope
-        # - start_id, and end_id
+        # - start_id, end_id
         # - delegates_ids
 
         # if start_id was not set in State, we're starting fresh, at the top of the stream
