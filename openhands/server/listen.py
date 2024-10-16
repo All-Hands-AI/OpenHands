@@ -14,7 +14,7 @@ from pathspec.patterns import GitWildMatchPattern
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
 from openhands.storage import get_file_store
-from openhands.utils.async_utils import sync_from_async
+from openhands.utils.async_utils import call_sync_from_async
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -211,8 +211,8 @@ async def attach_session(request: Request, call_next):
             content={'error': 'Invalid token'},
         )
 
-    request.state.conversation = session_manager.attach_to_conversation(
-        request.state.sid
+    request.state.conversation = await call_sync_from_async(
+        session_manager.attach_to_conversation, request.state.sid
     )
     if request.state.conversation is None:
         return JSONResponse(
@@ -441,7 +441,9 @@ async def list_files(request: Request, path: str | None = None):
         )
 
     runtime: Runtime = request.state.conversation.runtime
-    file_list = await sync_from_async(runtime.list_files, path)
+    file_list = await asyncio.create_task(
+        call_sync_from_async(runtime.list_files, path)
+    )
     if path:
         file_list = [os.path.join(path, f) for f in file_list]
 
@@ -490,7 +492,7 @@ async def select_file(file: str, request: Request):
 
     file = os.path.join(runtime.config.workspace_mount_path_in_sandbox, file)
     read_action = FileReadAction(file)
-    observation = await sync_from_async(runtime.run_action, read_action)
+    observation = await call_sync_from_async(runtime.run_action, read_action)
 
     if isinstance(observation, FileReadObservation):
         content = observation.content
@@ -687,7 +689,7 @@ async def save_file(request: Request):
             runtime.config.workspace_mount_path_in_sandbox, file_path
         )
         write_action = FileWriteAction(file_path, content)
-        observation = await sync_from_async(runtime.run_action, write_action)
+        observation = await call_sync_from_async(runtime.run_action, write_action)
 
         if isinstance(observation, FileWriteObservation):
             return JSONResponse(
