@@ -348,6 +348,8 @@ def complete_runtime(
         else:
             assert_and_raise(False, f'Unexpected observation type: {type(obs)}')
 
+    assert_and_raise(git_patch is not None, 'Failed to get git diff (None)')
+
     logger.info('-' * 30)
     logger.info('END Runtime Completion Fn')
     logger.info('-' * 30)
