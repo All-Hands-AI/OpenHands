@@ -398,6 +398,12 @@ async def get_security_analyzers():
     curl http://localhost:3000/api/security-analyzers
     ```
 
+
+@app.get('/api/events/history')
+async def get_event_history():
+    """Get all events in the history of the event stream."""
+    events = session_manager.get_all_events()
+    return [event_to_dict(event) for event in events]
     Returns:
         list: A sorted list of security analyzer names.
     """
