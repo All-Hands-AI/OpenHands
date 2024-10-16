@@ -128,9 +128,25 @@ class AgentController:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream."""
         await self.set_agent_state_to(AgentState.STOPPED)
 
-        # save trajectories if applicable
-
-        # make sure the history in state is complete (with delegates)
+        # we made history, now is the time to rewrite it!
+        # in the final state, history will need to be complete WITH delegates events
+        # like a regular agent history, it does not include 'hidden' events nor the default filtered out types (backend events)
+        # the final state.history will be used by external scripts like evals, tests, etc.
+        start_id = self.state.start_id if self.state.start_id != -1 else 0
+        end_id = (
+            self.state.end_id
+            if self.state.end_id != -1
+            else self.event_stream.get_latest_event_id()
+        )
+        self.state.history = list(
+            self.event_stream.get_events(
+                start_id=start_id,
+                end_id=end_id,
+                reverse=False,
+                filter_out_type=self.filter_out,
+                filter_hidden=True,
+            )
+        )
 
         # unsubscribe from the event stream
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)

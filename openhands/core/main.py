@@ -199,6 +199,7 @@ async def run_controller(
     # save session when we're about to close
     if config.enable_cli_session:
         end_state = controller.get_state()
+        # NOTE: the saved state does not include delegates events
         end_state.save_to_session(event_stream.sid, event_stream.file_store)
 
     # close when done
@@ -209,10 +210,7 @@ async def run_controller(
     if config.trajectories_path is not None:
         file_path = os.path.join(config.trajectories_path, sid + '.json')
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        histories = [
-            event_to_trajectory(event)
-            for event in state.history.get_events(include_delegates=True)
-        ]
+        histories = [event_to_trajectory(event) for event in state.history]
         with open(file_path, 'w') as f:
             json.dump(histories, f)
 
