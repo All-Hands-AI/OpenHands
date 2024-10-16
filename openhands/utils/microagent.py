@@ -4,14 +4,13 @@ import frontmatter
 import pydantic
 
 from openhands.controller.agent import Agent
-from openhands.core.exceptions import MicroAgentValidationError
 from openhands.core.logger import openhands_logger as logger
 
 
 class MicroAgentMetadata(pydantic.BaseModel):
     name: str
     agent: str
-    require_env_var: dict[str, str]
+    triggers: list[str] = []
 
 
 class MicroAgent:
@@ -25,9 +24,31 @@ class MicroAgent:
             self._metadata = MicroAgentMetadata(**self._loaded.metadata)
         self._validate_micro_agent()
 
+    def should_trigger(self, message: str) -> bool:
+        for trigger in self.triggers:
+            if trigger in message:
+                return True
+        return False
+
     @property
     def content(self) -> str:
         return self._content
+
+    @property
+    def metadata(self) -> MicroAgentMetadata:
+        return self._metadata
+
+    @property
+    def name(self) -> str:
+        return self._metadata.name
+
+    @property
+    def triggers(self) -> list[str]:
+        return self._metadata.triggers
+
+    @property
+    def agent(self) -> str:
+        return self._metadata.agent
 
     def _validate_micro_agent(self):
         logger.info(
@@ -36,9 +57,3 @@ class MicroAgent:
         # Make sure the agent is registered
         agent_cls = Agent.get_cls(self._metadata.agent)
         assert agent_cls is not None
-        # Make sure the environment variables are set
-        for env_var, instruction in self._metadata.require_env_var.items():
-            if env_var not in os.environ:
-                raise MicroAgentValidationError(
-                    f'Environment variable [{env_var}] is required by micro agent [{self._metadata.name}] but not set. {instruction}'
-                )

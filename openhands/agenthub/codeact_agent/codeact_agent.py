@@ -29,7 +29,6 @@ from openhands.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
 )
-from openhands.utils.microagent import MicroAgent
 from openhands.utils.prompt import PromptManager
 
 
@@ -77,20 +76,9 @@ class CodeActAgent(Agent):
         super().__init__(llm, config)
         self.reset()
 
-        self.micro_agent = (
-            MicroAgent(
-                os.path.join(
-                    os.path.dirname(__file__), 'micro', f'{config.micro_agent_name}.md'
-                )
-            )
-            if config.micro_agent_name
-            else None
-        )
-
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__)),
             agent_skills_docs=AgentSkillsRequirement.documentation,
-            micro_agent=self.micro_agent,
         )
 
     def action_to_str(self, action: Action) -> str:
@@ -209,26 +197,7 @@ class CodeActAgent(Agent):
         return self.action_parser.parse(response)
 
     def _get_messages(self, state: State) -> list[Message]:
-        messages: list[Message] = [
-            Message(
-                role='system',
-                content=[
-                    TextContent(
-                        text=self.prompt_manager.system_message,
-                        cache_prompt=self.llm.is_caching_prompt_active(),  # Cache system prompt
-                    )
-                ],
-            ),
-            Message(
-                role='user',
-                content=[
-                    TextContent(
-                        text=self.prompt_manager.initial_user_message,
-                        cache_prompt=self.llm.is_caching_prompt_active(),  # if the user asks the same query,
-                    )
-                ],
-            ),
-        ]
+        messages: list[Message] = []
 
         for event in state.history.get_events():
             # create a regular message from an event
@@ -239,7 +208,6 @@ class CodeActAgent(Agent):
             else:
                 raise ValueError(f'Unknown event type: {type(event)}')
 
-            # add regular message
             if message:
                 # handle error if the message is the SAME role as the previous message
                 # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
@@ -249,18 +217,6 @@ class CodeActAgent(Agent):
                 else:
                     messages.append(message)
 
-        # Add caching to the last 2 user messages
-        if self.llm.is_caching_prompt_active():
-            user_turns_processed = 0
-            for message in reversed(messages):
-                if message.role == 'user' and user_turns_processed < 2:
-                    message.content[
-                        -1
-                    ].cache_prompt = True  # Last item inside the message content
-                    user_turns_processed += 1
-
-        # The latest user message is important:
-        # we want to remind the agent of the environment constraints
         latest_user_message = next(
             islice(
                 (
@@ -273,8 +229,43 @@ class CodeActAgent(Agent):
             ),
             None,
         )
+        messages = (
+            [
+                Message(
+                    role='system',
+                    content=[
+                        TextContent(
+                            text=self.prompt_manager.get_system_message(),
+                            cache_prompt=self.llm.is_caching_prompt_active(),  # Cache system prompt
+                        )
+                    ],
+                ),
+                Message(
+                    role='user',
+                    content=[
+                        TextContent(
+                            text=self.prompt_manager.get_example_user_message(
+                                ''
+                                if latest_user_message is None
+                                else latest_user_message.content[-1].text
+                            ),
+                            cache_prompt=self.llm.is_caching_prompt_active(),  # if the user asks the same query,
+                        )
+                    ],
+                ),
+            ]
+            + messages
+        )
+
         if latest_user_message:
             reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
             latest_user_message.content.append(TextContent(text=reminder_text))
+
+        if self.llm.is_caching_prompt_active():
+            user_turns_processed = 0
+            for message in reversed(messages):
+                if message.role == 'user' and user_turns_processed < 2:
+                    message.content[-1].cache_prompt = True
+                    user_turns_processed += 1
 
         return messages

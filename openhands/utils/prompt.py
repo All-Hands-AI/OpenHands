@@ -16,21 +16,29 @@ class PromptManager:
     Attributes:
         prompt_dir (str): Directory containing prompt templates.
         agent_skills_docs (str): Documentation of agent skills.
-        micro_agent (MicroAgent | None): Micro-agent, if specified.
     """
 
     def __init__(
         self,
         prompt_dir: str,
         agent_skills_docs: str,
-        micro_agent: MicroAgent | None = None,
     ):
         self.prompt_dir: str = prompt_dir
         self.agent_skills_docs: str = agent_skills_docs
 
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
-        self.micro_agent: MicroAgent | None = micro_agent
+        self.microagents: dict = {}
+
+        micro_agent_dir = os.path.join(prompt_dir, 'micro')
+        micro_agent_files = [
+            os.path.join(micro_agent_dir, f)
+            for f in os.listdir(micro_agent_dir)
+            if f.endswith('.md')
+        ]
+        for micro_agent_file in micro_agent_files:
+            micro_agent = MicroAgent(micro_agent_file)
+            self.microagents[micro_agent.name] = micro_agent
 
     def _load_template(self, template_name: str) -> Template:
         template_path = os.path.join(self.prompt_dir, f'{template_name}.j2')
@@ -39,15 +47,13 @@ class PromptManager:
         with open(template_path, 'r') as file:
             return Template(file.read())
 
-    @property
-    def system_message(self) -> str:
+    def get_system_message(self) -> str:
         rendered = self.system_template.render(
             agent_skills_docs=self.agent_skills_docs,
         ).strip()
         return rendered
 
-    @property
-    def initial_user_message(self) -> str:
+    def get_example_user_message(self, latest_user_message: str) -> str:
         """This is the initial user message provided to the agent
         before *actual* user instructions are provided.
 
@@ -57,7 +63,11 @@ class PromptManager:
         These additional context will convert the current generic agent
         into a more specialized agent that is tailored to the user's task.
         """
+        micro_agent_prompts = []
+        for micro_agent in self.microagents.values():
+            if micro_agent.should_trigger(latest_user_message):
+                micro_agent_prompts.append(micro_agent.content)
         rendered = self.user_template.render(
-            micro_agent=self.micro_agent.content if self.micro_agent else None
+            micro_agents=micro_agent_prompts,
         )
         return rendered.strip()
