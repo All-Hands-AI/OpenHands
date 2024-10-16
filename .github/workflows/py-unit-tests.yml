@@ -19,7 +19,7 @@ jobs:
   # Run python unit tests on macOS
   test-on-macos:
     name: Python Unit Tests on macOS
-    runs-on: macos-12
+    runs-on: macos-14
     env:
       INSTALL_DOCKER: '1' # Set to '0' to skip Docker installation
     strategy:
