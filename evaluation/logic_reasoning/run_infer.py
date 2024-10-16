@@ -224,7 +224,7 @@ def process_instance(
         raise ValueError('State should not be None.')
 
     final_message = ''
-    for event in state.history.get_events(reverse=True):
+    for event in reversed(state.history):
         if isinstance(event, AgentFinishAction):
             final_message = event.thought
             break

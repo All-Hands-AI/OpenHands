@@ -125,7 +125,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
         raise ValueError('State should not be None.')
 
     # retrieve the last message from the agent
-    model_answer_raw = state.history.get_last_agent_message()
+    model_answer_raw = state.get_last_agent_message()
 
     # attempt to parse model_answer
     correct = eval_answer(str(model_answer_raw), str(answer))

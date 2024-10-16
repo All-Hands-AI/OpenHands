@@ -165,7 +165,7 @@ def process_instance(
 
     model_answer_raw = ''
     # get the last message or thought from the agent
-    for event in state.history.get_events(reverse=True):
+    for event in reversed(state.history):
         if event.source == 'agent':
             if isinstance(event, AgentFinishAction):
                 model_answer_raw = event.thought

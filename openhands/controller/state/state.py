@@ -152,3 +152,9 @@ class State:
             if isinstance(event, AgentDelegateObservation):
                 return True
         return False
+
+    def get_last_agent_message(self) -> str | None:
+        for event in reversed(self.history):
+            if isinstance(event, MessageAction) and event.source == 'agent':
+                return event.content
+        return None

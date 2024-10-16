@@ -244,7 +244,7 @@ Ok now its time to start solving the question. Good luck!
         'C': False,
         'D': False,
     }
-    for event in state.history.get_events(reverse=True):
+    for event in reversed(state.history):
         if (
             isinstance(event, AgentFinishAction)
             and event.source != 'user'
