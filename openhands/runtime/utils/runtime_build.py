@@ -155,7 +155,7 @@ def build_runtime_image_in_folder(
 
     if force_rebuild:
         logger.info(
-            f'Force rebuild: [{runtime_image_repo}:{runtime_image_tag}] from scratch.'
+            f'Force rebuild: [{runtime_image_repo}:{hash_tag}] from scratch.'
         )
         prep_build_folder(build_folder, base_image, True, extra_deps)
         if not dry_run:
