@@ -26,6 +26,7 @@ import store, { RootState } from "#/store";
 import { removeFile, setInitialQuery } from "#/state/initial-query-slice";
 import { clientLoader as rootClientLoader } from "#/root";
 import { UploadedFilePreview } from "./uploaded-file-preview";
+import config from "#/../public/config.json";
 
 interface AttachedFilesSliderProps {
   files: string[];
@@ -113,7 +114,7 @@ function Home() {
   const { files } = useSelector((state: RootState) => state.initalQuery);
 
   const handleConnectToGitHub = () => {
-    const isSaas = import.meta.env.VITE_APP_MODE === "saas";
+    const isSaas = config.VITE_APP_MODE === "saas";
 
     if (isSaas) {
       window.location.href = githubAuthUrl;
