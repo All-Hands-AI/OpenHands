@@ -13,6 +13,7 @@ import OpenHands from "#/api/open-hands";
 import { useSocket } from "#/context/socket";
 import CodeEditorCompoonent from "./code-editor-component";
 import { useFiles } from "#/context/files";
+import { EditorActions } from "#/components/editor-actions";
 
 export const clientLoader = async () => {
   const token = localStorage.getItem("token");
@@ -48,7 +49,13 @@ export function ErrorBoundary() {
 function CodeEditor() {
   const { token } = useLoaderData<typeof clientLoader>();
   const { runtimeActive } = useSocket();
-  const { setPaths } = useFiles();
+  const {
+    setPaths,
+    selectedPath,
+    modifiedFiles,
+    saveFileContent: saveNewFileContent,
+    discardChanges,
+  } = useFiles();
 
   const agentState = useSelector(
     (state: RootState) => state.agent.curAgentState,
@@ -68,10 +75,38 @@ function CodeEditor() {
     [agentState],
   );
 
+  const handleSave = async () => {
+    if (selectedPath) {
+      const content = saveNewFileContent(selectedPath);
+
+      if (content && token) {
+        try {
+          await OpenHands.saveFile(token, selectedPath, content);
+        } catch (error) {
+          // handle error
+        }
+      }
+    }
+  };
+
+  const handleDiscard = () => {
+    if (selectedPath) discardChanges(selectedPath);
+  };
+
   return (
     <div className="flex h-full w-full bg-neutral-900 relative">
       <FileExplorer />
-      <div className="flex flex-col min-h-0 w-full pt-3">
+      <div className="flex flex-col min-h-0 w-full">
+        {selectedPath && (
+          <div className="flex w-full items-center justify-between self-end p-2">
+            <span className="text-sm text-neutral-500">{selectedPath}</span>
+            <EditorActions
+              onSave={handleSave}
+              onDiscard={handleDiscard}
+              isDisabled={!isEditingAllowed || !modifiedFiles[selectedPath]}
+            />
+          </div>
+        )}
         <div className="flex grow items-center justify-center">
           <CodeEditorCompoonent isReadOnly={!isEditingAllowed} />
         </div>
