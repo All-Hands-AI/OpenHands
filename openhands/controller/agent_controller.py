@@ -123,12 +123,52 @@ class AgentController:
 
         # save trajectories if applicable
 
+        # make sure the history in state is complete (with delegates)
+
         # unsubscribe from the event stream
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
 
     def update_state_before_step(self):
         self.state.iteration += 1
         self.state.local_iteration += 1
+
+        # get the history from the event stream
+        start_id = self.state.start_id if self.state.start_id != -1 else 0
+        end_id = (
+            self.state.end_id
+            if self.state.end_id != -1
+            else self.event_stream.get_latest_event_id()
+        )
+        self.state.history = list(
+            self.event_stream.get_events(
+                start_id=start_id,
+                end_id=end_id,
+                reverse=False,
+            )
+        )
+
+        # do not include events between delegate actions and observations:
+        # include in history the delegate action and observation themselves
+        if self.state.delegates_ids:
+            for (start_id, end_id), (
+                delegate_agent,
+                delegate_task,
+            ) in self.state.delegates_ids.items():
+                # sanity checks
+                if (
+                    start_id < 0
+                    or end_id < 1
+                    or start_id >= end_id
+                    or end_id >= len(self.state.history)
+                ):
+                    logger.error(
+                        f'Invalid delegate ids: {start_id}, {end_id}. Skipping...'
+                    )
+                    continue
+                self.state.history = (
+                    self.state.history[: start_id + 1]
+                    + self.state.history[end_id - 1 :]
+                )
 
     async def update_state_after_step(self):
         # update metrics especially for cost. Use deepcopy to avoid it being modified by agent.reset()
@@ -285,6 +325,11 @@ class AgentController:
         # and save their ids as start and end ids
         # in order to use later to exclude them from parent stream or summarize them instead
         delegate_end = observation.id
+        if delegate_end <= 0:
+            logger.error(
+                f'The id of the AgentDelegateObservation is not valid: {delegate_end}'
+            )
+            return
         delegate_start = -1
         delegate_agent: str = ''
         delegate_task: str = ''
@@ -304,7 +349,7 @@ class AgentController:
             )
             return
 
-        self.state.delegates[(delegate_start, delegate_end)] = (
+        self.state.delegates_ids[(delegate_start, delegate_end)] = (
             delegate_agent,
             delegate_task,
         )
@@ -622,25 +667,18 @@ class AgentController:
         else:
             self.state = state
 
-        # when restored from a previous session, the State object will have history, start_id, and end_id
-        # connect it to the event stream
-        self.state.history.set_event_stream(self.event_stream)
+        # FIXME when restored from a previous session, the State object needs to have:
+        # - history? let's go with nope
+        # - start_id, and end_id
+        # - delegates_ids
 
         # if start_id was not set in State, we're starting fresh, at the top of the stream
-        start_id = self.state.start_id
-        if start_id == -1:
-            start_id = self.event_stream.get_latest_event_id() + 1
+        if self.state.start_id <= -1:
+            self.state.start_id = self.event_stream.get_latest_event_id() + 1
         else:
-            logger.debug(f'AgentController {self.id} restoring from event {start_id}')
-
-        # make sure history is in sync
-        self.state.start_id = start_id
-        self.state.history.start_id = start_id
-
-        # if there was an end_id saved in State, set it in history
-        # currently not used, later useful for delegates
-        if self.state.end_id > -1:
-            self.state.history.end_id = self.state.end_id
+            logger.debug(
+                f'AgentController {self.id} restoring from event {self.state.start_id}'
+            )
 
     def _is_stuck(self):
         """Checks if the agent or its delegate is stuck in a loop.

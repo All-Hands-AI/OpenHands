@@ -51,8 +51,6 @@ class ShortTermHistory(list[Event]):
         include_hidden=False,
     ) -> Iterable[Event]:
         """Return the events as a stream of Event objects."""
-        # TODO handle AgentRejectAction, if it's not part of a chunk ending with an AgentDelegateObservation
-        # or even if it is, because currently we don't add it to the summary
 
         # iterate from start_id to end_id, or reverse
         start_id = self.start_id if self.start_id != -1 else 0
