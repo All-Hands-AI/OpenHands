@@ -165,7 +165,7 @@ def process_instance(
 
     # Instruction is the first message from the USER
     instruction = ''
-    for event in state.history.get_events():
+    for event in state.history:
         if isinstance(event, MessageAction):
             instruction = event.content
             break

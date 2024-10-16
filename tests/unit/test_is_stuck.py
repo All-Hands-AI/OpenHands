@@ -170,7 +170,7 @@ class TestStuckDetector:
         # 10 events
 
         assert len(collect_events(event_stream)) == 10
-        assert len(list(stuck_detector.state.history.get_events())) == 8
+        assert len(list(stuck_detector.state.history)) == 8
         assert (
             len(
                 get_pairs_from_events(
@@ -195,7 +195,7 @@ class TestStuckDetector:
         # 12 events
 
         assert len(collect_events(event_stream)) == 12
-        assert len(list(stuck_detector.state.history.get_events())) == 10
+        assert len(list(stuck_detector.state.history)) == 10
         assert (
             len(
                 get_pairs_from_events(

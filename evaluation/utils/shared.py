@@ -124,7 +124,7 @@ def codeact_user_response(
         # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
         user_msgs = [
             event
-            for event in state.history.get_events()
+            for event in state.history
             if isinstance(event, MessageAction) and event.source == 'user'
         ]
         if len(user_msgs) >= 2:
