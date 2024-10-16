@@ -24,7 +24,7 @@ import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { LoadingSpinner } from "#/components/modals/LoadingProject";
 import store, { RootState } from "#/store";
 import { removeFile, setInitialQuery } from "#/state/initial-query-slice";
-import { clientLoader as rootClientLoader } from "#/root";
+import { clientLoader as rootClientLoader } from "#/routes/_oh";
 import { UploadedFilePreview } from "./uploaded-file-preview";
 
 interface AttachedFilesSliderProps {
@@ -87,7 +87,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
   const requestUrl = new URL(request.url);
   const redirectUri = `${requestUrl.origin}/oauth/github/callback`;
-  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user`;
+  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user,workflow`;
 
   return json({ repositories, githubAuthUrl });
 };
@@ -101,7 +101,7 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 };
 
 function Home() {
-  const rootData = useRouteLoaderData<typeof rootClientLoader>("root");
+  const rootData = useRouteLoaderData<typeof rootClientLoader>("routes/_oh");
   const navigation = useNavigation();
   const { repositories, githubAuthUrl } = useLoaderData<typeof clientLoader>();
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
