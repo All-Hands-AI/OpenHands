@@ -59,14 +59,6 @@ else
   fi
 
   usermod -aG $DOCKER_SOCKET_GID enduser
-
-  echo "Generating runtime config.json for frontend..."
-  cat <<EOF > /app/frontend/build/config.json
-{
-  "VITE_APP_MODE"= "${APP_MODE}"
-}
-EOF
-
   echo "Running as enduser"
   su enduser /bin/bash -c "${*@Q}" # This magically runs any arguments passed to the script as a command
 fi
