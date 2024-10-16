@@ -6,7 +6,38 @@ This directory implements integration tests that [was running in CI](https://git
 
 ## To add new tests
 
-Check [./tests](./tests) folder and follow existing pattern to write test. Make sure to name the file for each test to start with `t` and ends with `.py`.
+Each test is a file named like `tXX_testname.py` where `XX` is a number.
+Make sure to name the file for each test to start with `t` and ends with `.py`.
+
+Each test should be structured as a subclass of [`BaseIntegrationTest`](./tests/base.py), where you need to implement `initialize_runtime` that setup the runtime enviornment before test, and `verify_result` that takes in a `Runtime` and history of `Event` and return a `TestResult`. See [t01_fix_simple_typo.py](./tests/t01_fix_simple_typo.py) and [t05_simple_browsing.py](./tests/t05_simple_browsing.py) for two representative examples.
+
+```python
+class TestResult(BaseModel):
+    success: bool
+    reason: str | None = None
+
+
+class BaseIntegrationTest(ABC):
+    """Base class for integration tests."""
+
+    INSTRUCTION: str
+
+    @classmethod
+    @abstractmethod
+    def initialize_runtime(cls, runtime: Runtime) -> None:
+        """Initialize the runtime for the test to run."""
+        pass
+
+    @classmethod
+    @abstractmethod
+    def verify_result(cls, runtime: Runtime, histories: list[Event]) -> TestResult:
+        """Verify the result of the test.
+
+        This method will be called after the agent performs the task on the runtime.
+        """
+        pass
+```
+
 
 ## Setup Environment and LLM Configuration
 
