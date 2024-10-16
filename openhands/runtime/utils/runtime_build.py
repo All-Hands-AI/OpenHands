@@ -400,7 +400,7 @@ if __name__ == '__main__':
     )
     parser.add_argument('--build_folder', type=str, default=None)
     parser.add_argument('--force_rebuild', action='store_true', default=False)
-    parser.add_argument('--platform', type=str, default='linux/amd64')
+    parser.add_argument('--platform', type=str, default=None)
     args = parser.parse_args()
 
     if args.build_folder is not None:
