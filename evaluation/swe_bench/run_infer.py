@@ -478,6 +478,9 @@ if __name__ == '__main__':
         details['in_context_example'] = _agent_cls.in_context_example
 
     dataset_descrption = args.dataset.replace("/", "__") + "-" + args.split.replace("/", "__")
+    dataset_descrption = (
+        args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
+    )
     metadata = make_metadata(
         llm_config,
         dataset_descrption,
