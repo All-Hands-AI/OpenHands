@@ -24,7 +24,7 @@ There are many ways that you can contribute:
 3. **Improve the Codebase** by sending PRs (see details below). In particular, we have some [good first issues](https://github.com/All-Hands-AI/OpenHands/labels/good%20first%20issue) that may be ones to start on.
 
 ## What can I build?
-Here are a few ways folks have helped us improve the codebase.
+Here are a few ways you can help improve the codebase.
 
 #### UI/UX
 We're always looking to improve the look and feel of the application. If you've got a small fix
