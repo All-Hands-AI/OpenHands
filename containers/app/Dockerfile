@@ -8,7 +8,7 @@ RUN npm install -g npm@10.5.1
 RUN npm ci
 
 COPY ./frontend ./
-RUN npm run make-i18n && npm run build
+RUN npm run build
 
 FROM python:3.12.3-slim AS backend-builder
 

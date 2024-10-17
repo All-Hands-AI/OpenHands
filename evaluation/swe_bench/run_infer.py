@@ -477,9 +477,12 @@ if __name__ == '__main__':
     if hasattr(_agent_cls, 'in_context_example'):
         details['in_context_example'] = _agent_cls.in_context_example
 
+    dataset_descrption = (
+        args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
+    )
     metadata = make_metadata(
         llm_config,
-        'swe-bench-lite',
+        dataset_descrption,
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
