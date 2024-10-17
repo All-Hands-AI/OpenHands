@@ -449,7 +449,19 @@ class AgentController:
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
-            self.event_stream.add_event(action, EventSource.AGENT)
+            
+            if isinstance(action, CmdRunAction) and '\n' in action.command:
+                # Split the command into multiple CmdRunAction instances
+                commands = action.command.split('\n')
+                for i, cmd in enumerate(commands):
+                    new_action = CmdRunAction(command=cmd)
+                    if i < len(commands) - 1:
+                        new_action.thought = ''
+                    else:
+                        new_action.thought = action.thought
+                    self.event_stream.add_event(new_action, EventSource.AGENT)
+            else:
+                self.event_stream.add_event(action, EventSource.AGENT)
 
         await self.update_state_after_step()
         logger.info(action, extra={'msg_type': 'ACTION'})
