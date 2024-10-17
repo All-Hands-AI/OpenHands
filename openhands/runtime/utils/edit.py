@@ -175,11 +175,18 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             )
 
             if len(updated_lint_error) > 0:
+                _obs = FileEditObservation(
+                    content=diff,
+                    path=filepath,
+                    prev_exist=True,
+                    old_content=old_content,
+                    new_content=new_content,
+                )
                 error_message = (
                     (
                         f'\n[Linting failed for edited file {filepath}. {len(updated_lint_error)} lint errors found.]\n'
                         '[begin attempted changes]\n'
-                        f'{diff}\n'
+                        f'{_obs.visualize_diff(change_applied=False)}\n'
                         '[end attempted changes]\n'
                     )
                     + '-' * 40
@@ -200,6 +207,9 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             isinstance(obs, ErrorObservation)
             and 'File not found'.lower() in obs.content.lower()
         ):
+            logger.debug(
+                f'Agent attempted to edit a file that does not exist. Creating the file. Error msg: {obs.content}'
+            )
             # directly write the new content
             obs = self.write(
                 FileWriteAction(path=action.path, content=action.content.strip())

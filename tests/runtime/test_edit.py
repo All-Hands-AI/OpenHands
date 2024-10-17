@@ -204,12 +204,12 @@ def test_edit_obs_insert_only():
         == """
 [Existing file /workspace/app.py is edited with 1 changes.]
 [begin of edit 1 / 1]
-(content before edits)
+(content before edit)
   98|This is line 98
   99|This is line 99
  100|This is line 100
  101|This is line 101
-(content after edits)
+(content after edit)
   98|This is line 98
   99|This is line 99
 +100|This is line 100 + 10
@@ -242,14 +242,14 @@ def test_edit_obs_replace():
         == """
 [Existing file /workspace/app.py is edited with 1 changes.]
 [begin of edit 1 / 1]
-(content before edits)
+(content before edit)
   98|This is line 98
   99|This is line 99
 -100|This is line 100
 -101|This is line 101
  102|This is line 102
  103|This is line 103
-(content after edits)
+(content after edit)
   98|This is line 98
   99|This is line 99
 +100|This is line 100 + 10
@@ -283,14 +283,14 @@ def test_edit_obs_replace_with_empty_line():
         == """
 [Existing file /workspace/app.py is edited with 1 changes.]
 [begin of edit 1 / 1]
-(content before edits)
+(content before edit)
   98|This is line 98
   99|This is line 99
 -100|This is line 100
 -101|This is line 101
  102|This is line 102
  103|This is line 103
-(content after edits)
+(content after edit)
   98|This is line 98
   99|This is line 99
 +100|
@@ -325,12 +325,12 @@ def test_edit_obs_multiple_edits():
         == """
 [Existing file /workspace/app.py is edited with 2 changes.]
 [begin of edit 1 / 2]
-(content before edits)
+(content before edit)
  48|This is line 48
  49|This is line 49
  50|This is line 50
  51|This is line 51
-(content after edits)
+(content after edit)
  48|This is line 48
  49|This is line 49
 +50|balabala
@@ -339,14 +339,14 @@ def test_edit_obs_multiple_edits():
 [end of edit 1 / 2]
 -------------------------
 [begin of edit 2 / 2]
-(content before edits)
+(content before edit)
   98|This is line 98
   99|This is line 99
 -100|This is line 100
 -101|This is line 101
  102|This is line 102
  103|This is line 103
-(content after edits)
+(content after edit)
   99|This is line 98
  100|This is line 99
 +101|This is line 100 + 10
@@ -354,5 +354,60 @@ def test_edit_obs_multiple_edits():
  103|This is line 102
  104|This is line 103
 [end of edit 2 / 2]
+""".strip()
+    )
+
+
+def test_edit_visualize_failed_edit():
+    _new_content = (
+        '\n'.join([f'This is line {i}' for i in range(1, 50)])
+        + '\nbalabala\n'
+        + '\n'.join([f'This is line {i}' for i in range(50, 100)])
+        + EDIT_LONG
+        + '\n'.join([f'This is line {i}' for i in range(102, 1000)])
+    )
+
+    diff = get_diff(ORIGINAL_LONG, _new_content, '/workspace/app.py')
+    obs = FileEditObservation(
+        content=diff,
+        path='/workspace/app.py',
+        prev_exist=True,
+        old_content=ORIGINAL_LONG,
+        new_content=_new_content,
+    )
+    assert (
+        obs.visualize_diff(change_applied=False).strip()
+        == """
+[Changes are NOT applied to /workspace/app.py - Here's how the file looks like if changes are applied.]
+[begin of ATTEMPTED edit 1 / 2]
+(content before ATTEMPTED edit)
+ 48|This is line 48
+ 49|This is line 49
+ 50|This is line 50
+ 51|This is line 51
+(content after ATTEMPTED edit)
+ 48|This is line 48
+ 49|This is line 49
++50|balabala
+ 51|This is line 50
+ 52|This is line 51
+[end of ATTEMPTED edit 1 / 2]
+-------------------------
+[begin of ATTEMPTED edit 2 / 2]
+(content before ATTEMPTED edit)
+  98|This is line 98
+  99|This is line 99
+-100|This is line 100
+-101|This is line 101
+ 102|This is line 102
+ 103|This is line 103
+(content after ATTEMPTED edit)
+  99|This is line 98
+ 100|This is line 99
++101|This is line 100 + 10
++102|This is line 101 + 10
+ 103|This is line 102
+ 104|This is line 103
+[end of ATTEMPTED edit 2 / 2]
 """.strip()
     )

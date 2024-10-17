@@ -44,19 +44,8 @@ class FileEditObservation(Observation):
     def message(self) -> str:
         return f'I edited the file {self.path}.'
 
-    def visualize_diff(self, n_context_lines: int = 2) -> str:
-        """Visualize the diff of the file edit.
-
-        Instead of showing the diff line by line, this function
-        shows each hunk of changes as a separate entity.
-
-        Args:
-            n_context_lines: The number of lines of context to show before and after the changes.
-        """
-        if self.content.strip() == '':
-            # diff patch is empty
-            return '(no changes detected. Please make sure your edits changes the content of the existing file.)\n'
-
+    def get_edit_groups(self, n_context_lines: int = 2) -> list[dict[str, list[str]]]:
+        """Get the edit groups of the file edit."""
         old_lines = self.old_content.split('\n')
         new_lines = self.new_content.split('\n')
         # Borrowed from difflib.unified_diff to directly parse into structured format.
@@ -92,20 +81,44 @@ class FileEditObservation(Observation):
                             f'+{j1+idx+1:>{_indent_pad_size-1}}|{line}'
                         )
             edit_groups.append(cur_group)
+        return edit_groups
+
+    def visualize_diff(
+        self,
+        n_context_lines: int = 2,
+        change_applied: bool = True,
+    ) -> str:
+        """Visualize the diff of the file edit.
+
+        Instead of showing the diff line by line, this function
+        shows each hunk of changes as a separate entity.
+
+        Args:
+            n_context_lines: The number of lines of context to show before and after the changes.
+            change_applied: Whether the changes are applied to the file. If true, the file have been modified. If not, the file is not modified (due to linting errors).
+        """
+        if change_applied and self.content.strip() == '':
+            # diff patch is empty
+            return '(no changes detected. Please make sure your edits changes the content of the existing file.)\n'
+
+        edit_groups = self.get_edit_groups(n_context_lines=n_context_lines)
 
         result = [
             f'[Existing file {self.path} is edited with {len(edit_groups)} changes.]'
+            if change_applied
+            else f"[Changes are NOT applied to {self.path} - Here's how the file looks like if changes are applied.]"
         ]
 
+        op_type = 'edit' if change_applied else 'ATTEMPTED edit'
         for i, cur_edit_group in enumerate(edit_groups):
             if i != 0:
                 result.append('-------------------------')
-            result.append(f'[begin of edit {i+1} / {len(edit_groups)}]')
-            result.append('(content before edits)')
+            result.append(f'[begin of {op_type} {i+1} / {len(edit_groups)}]')
+            result.append(f'(content before {op_type})')
             result.extend(cur_edit_group['before_edits'])
-            result.append('(content after edits)')
+            result.append(f'(content after {op_type})')
             result.extend(cur_edit_group['after_edits'])
-            result.append(f'[end of edit {i+1} / {len(edit_groups)}]')
+            result.append(f'[end of {op_type} {i+1} / {len(edit_groups)}]')
         return '\n'.join(result)
 
     def __str__(self) -> str:
