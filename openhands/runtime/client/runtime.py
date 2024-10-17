@@ -126,7 +126,13 @@ class EventStreamRuntime(Runtime):
         attach_to_existing: bool = False,
     ):
         super().__init__(
-            config, event_stream, sid, plugins, env_vars, status_message_callback, attach_to_existing
+            config,
+            event_stream,
+            sid,
+            plugins,
+            env_vars,
+            status_message_callback,
+            attach_to_existing,
         )
 
     def __init__(
@@ -177,6 +183,7 @@ class EventStreamRuntime(Runtime):
             self.runtime_container_image = build_runtime_image(
                 self.base_container_image,
                 self.runtime_builder,
+                platform=self.config.sandbox.platform,
                 extra_deps=self.config.sandbox.runtime_extra_deps,
                 force_rebuild=self.config.sandbox.force_rebuild_runtime,
             )
@@ -192,7 +199,13 @@ class EventStreamRuntime(Runtime):
 
         # Will initialize both the event stream and the env vars
         self.init_base_runtime(
-            config, event_stream, sid, plugins, env_vars, status_message_callback, attach_to_existing
+            config,
+            event_stream,
+            sid,
+            plugins,
+            env_vars,
+            status_message_callback,
+            attach_to_existing,
         )
 
         logger.info('Waiting for client to become ready...')
