@@ -1,18 +1,18 @@
-import { ModalBackdrop } from "#/components/modals/modal-backdrop";
-import { ModelSelector } from "#/components/modals/settings/ModelSelector";
-import { clientAction } from "#/routes/settings";
-import { Settings } from "#/services/settings";
-import { extractModelAndProvider } from "#/utils/extractModelAndProvider";
-import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
+import React from "react";
+import { useLocation, useNavigate, useFetcher } from "@remix-run/react";
 import {
   Autocomplete,
   AutocompleteItem,
   Input,
   Switch,
 } from "@nextui-org/react";
-import { useFetcher, useLocation, useNavigate } from "@remix-run/react";
 import clsx from "clsx";
-import React from "react";
+import { ModalBackdrop } from "#/components/modals/modal-backdrop";
+import { ModelSelector } from "#/components/modals/settings/ModelSelector";
+import { clientAction } from "#/routes/settings";
+import { Settings } from "#/services/settings";
+import { extractModelAndProvider } from "#/utils/extractModelAndProvider";
+import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
 import ModalButton from "../buttons/ModalButton";
 import { DangerModal } from "../modals/confirmation-modals/danger-modal";
 
@@ -44,7 +44,7 @@ export function SettingsForm({
       navigate("/");
       onClose();
     }
-  }, [fetcher.data]);
+  }, [fetcher.data, navigate, onClose]);
 
   // Figure out if the advanced options should be enabled by default
   const advancedAlreadyInUse = React.useMemo(() => {
@@ -73,18 +73,15 @@ export function SettingsForm({
     return false;
   }, [settings, models]);
 
-  const [showAdvancedOptions, setShowAdvancedOptions] =
-    React.useState(advancedAlreadyInUse);
-  const [confirmResetDefaultsModalOpen, setConfirmResetDefaultsModalOpen] =
-    React.useState(false);
-  const [confirmEndSessionModalOpen, setConfirmEndSessionModalOpen] =
-    React.useState(false);
-    const [showWarningModal, setShowWarningModal] = React.useState(false);
-const [hasEnteredKey, setHasEnteredKey] = React.useState(!!settings.LLM_API_KEY);
+  const [showAdvancedOptions, setShowAdvancedOptions] = React.useState(advancedAlreadyInUse);
+  const [confirmResetDefaultsModalOpen, setConfirmResetDefaultsModalOpen] = React.useState(false);
+  const [confirmEndSessionModalOpen, setConfirmEndSessionModalOpen] = React.useState(false);
+  const [showWarningModal, setShowWarningModal] = React.useState(false);
+  const [hasEnteredKey, setHasEnteredKey] = React.useState(!!settings.LLM_API_KEY);
 
-React.useEffect(() => {
-  setHasEnteredKey(!!settings.LLM_API_KEY);
-}, [settings.LLM_API_KEY]);
+  React.useEffect(() => {
+    setHasEnteredKey(!!settings.LLM_API_KEY);
+  }, [settings.LLM_API_KEY]);
 
   const submitForm = (formData: FormData) => {
     if (location.pathname === "/app") formData.set("end-session", "true");
@@ -112,13 +109,11 @@ React.useEffect(() => {
       submitForm(formData);
     }
   };
+
   const handleCloseClick = () => {
-    console.log("Close clicked, hasEnteredKey:", hasEnteredKey);
     if (!hasEnteredKey) {
-      console.log("Showing warning modal");
       setShowWarningModal(true);
     } else {
-      console.log("Closing settings");
       onClose();
     }
   };
@@ -134,9 +129,9 @@ React.useEffect(() => {
 
   const handleApiKeyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = !!event.target.value;
-    console.log("API key changed, new value:", newValue);
     setHasEnteredKey(newValue);
   };
+
   return (
     <div>
       <fetcher.Form
@@ -227,17 +222,17 @@ React.useEffect(() => {
               API Key
             </label>
             <Input
-          isDisabled={disabled}
-          id="api-key"
-          name="api-key"
-          aria-label="API Key"
-          type="password"
-          defaultValue={settings.LLM_API_KEY}
-          onChange={handleApiKeyChange}
-          classNames={{
-            inputWrapper: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
-          }}
-        />
+              isDisabled={disabled}
+              id="api-key"
+              name="api-key"
+              aria-label="API Key"
+              type="password"
+              defaultValue={settings.LLM_API_KEY}
+              onChange={handleApiKeyChange}
+              classNames={{
+                inputWrapper: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
+              }}
+            />
             <p className="text-sm text-[#A3A3A3]">
               Don&apos;t know your API key?{" "}
               <a
@@ -354,10 +349,10 @@ React.useEffect(() => {
               className="bg-[#4465DB] w-full"
             />
             <ModalButton
-          text="Close"
-          className="bg-[#737373] w-full"
-          onClick={handleCloseClick}
-        />
+              text="Close"
+              className="bg-[#737373] w-full"
+              onClick={handleCloseClick}
+            />
           </div>
           <ModalButton
             disabled={disabled}
