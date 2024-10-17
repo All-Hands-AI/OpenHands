@@ -3,9 +3,6 @@ import os
 import frontmatter
 import pydantic
 
-from openhands.controller.agent import Agent
-from openhands.core.logger import openhands_logger as logger
-
 
 class MicroAgentMetadata(pydantic.BaseModel):
     name: str
@@ -22,11 +19,13 @@ class MicroAgent:
             self._loaded = frontmatter.load(file)
             self._content = self._loaded.content
             self._metadata = MicroAgentMetadata(**self._loaded.metadata)
-        self._validate_micro_agent()
 
     def should_trigger(self, message: str) -> bool:
+        message = message.lower()
         for trigger in self.triggers:
-            if trigger in message:
+            if trigger.lower() in message:
+                print(f'Triggered {self.name} with {trigger}')
+                print(f'Message: {message}')
                 return True
         return False
 
@@ -49,11 +48,3 @@ class MicroAgent:
     @property
     def agent(self) -> str:
         return self._metadata.agent
-
-    def _validate_micro_agent(self):
-        logger.info(
-            f'Loading and validating micro agent [{self._metadata.name}] based on [{self._metadata.agent}]'
-        )
-        # Make sure the agent is registered
-        agent_cls = Agent.get_cls(self._metadata.agent)
-        assert agent_cls is not None
