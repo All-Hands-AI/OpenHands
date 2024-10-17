@@ -449,7 +449,7 @@ class AgentController:
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
-            
+
             if isinstance(action, CmdRunAction) and '\n' in action.command:
                 # Split the command into multiple CmdRunAction instances
                 commands = action.command.split('\n')
