@@ -384,6 +384,15 @@ def process_instance(
             )
         )
 
+        # if fatal error, throw EvalError to trigger re-run
+        assert_and_raise(
+            not (
+                state.last_error
+                and 'fatal error during agent execution' in state.last_error
+            ),
+            'Fatal error detected: ' + state.last_error,
+        )
+
         # ======= THIS IS SWE-Bench specific =======
         # Get git patch
         return_val = complete_runtime(runtime, instance)

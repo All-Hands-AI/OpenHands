@@ -21,7 +21,7 @@ from openhands.events.action import (
 )
 from openhands.events.action.action import Action
 from openhands.events.observation import (
-    ErrorObservation,
+    FatalErrorObservation,
     NullObservation,
     Observation,
 )
@@ -348,16 +348,15 @@ class RemoteRuntime(Runtime):
                 return NullObservation('')
             action_type = action.action  # type: ignore[attr-defined]
             if action_type not in ACTION_TYPE_TO_CLASS:
-                return ErrorObservation(f'Action {action_type} does not exist.')
+                return FatalErrorObservation(f'Action {action_type} does not exist.')
             if not hasattr(self, action_type):
-                return ErrorObservation(
+                return FatalErrorObservation(
                     f'Action {action_type} is not supported in the current runtime.'
                 )
 
             assert action.timeout is not None
 
             try:
-                logger.info('Executing action')
                 request_body = {'action': event_to_dict(action)}
                 logger.debug(f'Request body: {request_body}')
                 response = send_request_with_retry(
@@ -375,13 +374,15 @@ class RemoteRuntime(Runtime):
                 else:
                     error_message = response.text
                     logger.error(f'Error from server: {error_message}')
-                    obs = ErrorObservation(f'Action execution failed: {error_message}')
+                    obs = FatalErrorObservation(
+                        f'Action execution failed: {error_message}'
+                    )
             except Timeout:
                 logger.error('No response received within the timeout period.')
-                obs = ErrorObservation('Action execution timed out')
+                obs = FatalErrorObservation('Action execution timed out')
             except Exception as e:
                 logger.error(f'Error during action execution: {e}')
-                obs = ErrorObservation(f'Action execution failed: {str(e)}')
+                obs = FatalErrorObservation(f'Action execution failed: {str(e)}')
             return obs
 
     def run(self, action: CmdRunAction) -> Observation:
