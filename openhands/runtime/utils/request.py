@@ -38,6 +38,13 @@ def is_503_error(exception):
     )
 
 
+def is_502_error(exception):
+    return (
+        isinstance(exception, requests.HTTPError)
+        and exception.response.status_code == 502
+    )
+
+
 DEFAULT_RETRY_EXCEPTIONS = [
     ConnectionError,
     IncompleteRead,
@@ -55,7 +62,9 @@ def send_request_with_retry(
     **kwargs: Any,
 ) -> requests.Response:
     exceptions_to_catch = retry_exceptions or DEFAULT_RETRY_EXCEPTIONS
-    retry_condition = retry_if_exception_type(tuple(exceptions_to_catch))
+    retry_condition = retry_if_exception_type(
+        tuple(exceptions_to_catch)
+    ) | retry_if_exception(is_502_error)
     if retry_fns is not None:
         for fn in retry_fns:
             retry_condition |= retry_if_exception(fn)
