@@ -198,7 +198,7 @@ class EventStreamRuntime(Runtime):
     @staticmethod
     def _init_docker_client() -> docker.DockerClient:
         try:
-            return docker.from_env()
+            return docker.from_env(timeout=300)
         except Exception as ex:
             logger.error(
                 'Launch docker client failed. Please make sure you have installed docker and started docker desktop/daemon.'
