@@ -106,7 +106,7 @@ def test_get_hash_for_lock_files():
         md5.update('some_base_image'.encode())
         for _ in range(2):
             md5.update('mock-data'.encode())
-        assert hash == md5.hexdigest()[:16]
+        assert hash == truncate_hash(md5.hexdigest())
 
 
 def test_get_hash_for_source_files():
@@ -114,7 +114,7 @@ def test_get_hash_for_source_files():
     dirhash_mock.return_value = '1f69bd20d68d9e3874d5bf7f7459709b'
     with patch(f'{get_hash_for_source_files.__module__}.dirhash', dirhash_mock):
         result = get_hash_for_source_files()
-        assert result == dirhash_mock.return_value[:16]
+        assert result == truncate_hash(dirhash_mock.return_value)
         dirhash_mock.assert_called_once_with(
             Path(openhands.__file__).parent,
             'md5',
