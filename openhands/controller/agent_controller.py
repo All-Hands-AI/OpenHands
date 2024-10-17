@@ -129,9 +129,9 @@ class AgentController:
         await self.set_agent_state_to(AgentState.STOPPED)
 
         # we made history, now is the time to rewrite it!
-        # in the final state, history will need to be complete WITH delegates events
-        # like a regular agent history, it does not include 'hidden' events nor the default filtered out types (backend events)
         # the final state.history will be used by external scripts like evals, tests, etc.
+        # history will need to be complete WITH delegates events
+        # like the regular agent history, it does not include 'hidden' events nor the default filtered out types (backend events)
         start_id = self.state.start_id if self.state.start_id != -1 else 0
         end_id = (
             self.state.end_id
@@ -599,12 +599,21 @@ class AgentController:
             # update iteration that shall be shared across agents
             self.state.iteration = self.delegate.state.iteration
 
+            # emit AgentDelegateObservation to mark delegate termination due to error
+            delegate_outputs = (
+                self.delegate.state.outputs if self.delegate.state else {}
+            )
+            content = (
+                f'{self.delegate.agent.name} encountered an error during execution.'
+            )
+            obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
+            self.event_stream.add_event(obs, EventSource.AGENT)
+
             # close the delegate upon error
             await self.delegate.close()
             self.delegate = None
             self.delegateAction = None
 
-            await self.report_error('Delegate agent encountered an error')
         elif delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
             logger.info(
                 f'[Agent Controller {self.id}] Delegate agent has finished execution'
@@ -626,9 +635,7 @@ class AgentController:
             content = (
                 f'{self.delegate.agent.name} finishes task with {formatted_output}'
             )
-            obs: Observation = AgentDelegateObservation(
-                outputs=outputs, content=content
-            )
+            obs = AgentDelegateObservation(outputs=outputs, content=content)
 
             # clean up delegate status
             self.delegate = None
