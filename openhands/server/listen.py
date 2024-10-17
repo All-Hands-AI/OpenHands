@@ -828,4 +828,4 @@ def authenticate(user: Optional[User] = None):
     )
 
 
-app.mount('/', StaticFiles(directory='./frontend/build/client', html=True), name='dist')
+app.mount('/', StaticFiles(directory='./frontend/build', html=True), name='dist')
