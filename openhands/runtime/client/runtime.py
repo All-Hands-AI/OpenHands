@@ -17,6 +17,7 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    FileEditAction,
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
@@ -126,7 +127,13 @@ class EventStreamRuntime(Runtime):
         attach_to_existing: bool = False,
     ):
         super().__init__(
-            config, event_stream, sid, plugins, env_vars, status_message_callback, attach_to_existing
+            config,
+            event_stream,
+            sid,
+            plugins,
+            env_vars,
+            status_message_callback,
+            attach_to_existing,
         )
 
     def __init__(
@@ -192,7 +199,13 @@ class EventStreamRuntime(Runtime):
 
         # Will initialize both the event stream and the env vars
         self.init_base_runtime(
-            config, event_stream, sid, plugins, env_vars, status_message_callback, attach_to_existing
+            config,
+            event_stream,
+            sid,
+            plugins,
+            env_vars,
+            status_message_callback,
+            attach_to_existing,
         )
 
         logger.info('Waiting for client to become ready...')
@@ -416,6 +429,9 @@ class EventStreamRuntime(Runtime):
             self.docker_client.close()
 
     def run_action(self, action: Action) -> Observation:
+        if isinstance(action, FileEditAction):
+            return self.edit(action)
+
         # set timeout to default if not set
         if action.timeout is None:
             action.timeout = self.config.sandbox.timeout

@@ -80,8 +80,10 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
             instruction += f'# Hints\n{instance.hints_text}\n\n'
         instruction += (
             'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-            'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
-            'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
+            'You should NOT modify any existing test case files. You SHOULD add new test in a NEW file to reproduce the issue.\n'
+            'You should verify that the issue is resolved and any new tests you create pass successfully.\n'
+            'You should NEVER use web browsing or any other web-based tools.\n'
+            'You should ALWAYS use the default Python interpreter available in the <execute_bash> environment to run code related to the provided issue and/or repository.\n'
         )
 
     # NOTE: You can actually set slightly different instruction for different agents
@@ -122,7 +124,6 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        max_budget_per_task=4,
         max_iterations=metadata.max_iterations,
         runtime=os.environ.get('RUNTIME', 'eventstream'),
         sandbox=SandboxConfig(
@@ -222,6 +223,8 @@ def initialize_runtime(
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        if isinstance(obs, ErrorObservation):
+            logger.error(f'Failed to source ~/.bashrc: {obs.content}')
         assert_and_raise(
             obs.exit_code == 0, f'Failed to source ~/.bashrc: {obs.content}'
         )
@@ -344,6 +347,8 @@ def complete_runtime(
             sleep_if_should_continue(10)
         else:
             assert_and_raise(False, f'Unexpected observation type: {type(obs)}')
+
+    assert_and_raise(git_patch is not None, 'Failed to get git diff (None)')
 
     logger.info('-' * 30)
     logger.info('END Runtime Completion Fn')
@@ -472,10 +477,6 @@ if __name__ == '__main__':
 
     details = {}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
-    if hasattr(_agent_cls, 'system_message'):
-        details['system_message'] = _agent_cls.system_message
-    if hasattr(_agent_cls, 'in_context_example'):
-        details['in_context_example'] = _agent_cls.in_context_example
 
     dataset_descrption = (
         args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
