@@ -54,7 +54,6 @@ class LongTermMemory:
 
         # instantiate the index
         self.index = VectorStoreIndex.from_vector_store(vector_store, self.embed_model)
-        self.thought_idx = 0
 
         # initialize the event stream
         self.event_stream = event_stream
@@ -85,18 +84,17 @@ class LongTermMemory:
             event_type = 'observation'
             event_id = event_data['observation']
 
-        # create a Document instance for the event
+        # create a Document instance for the event using event.id
         doc = Document(
             text=json.dumps(event_data),
-            doc_id=str(self.thought_idx),
+            doc_id=event.id,
             extra_info={
                 'type': event_type,
                 'id': event_id,
-                'idx': self.thought_idx,
+                'event_id': event.id,
             },
         )
-        self.thought_idx += 1
-        logger.debug('Adding %s event to memory: %d', event_type, self.thought_idx)
+        logger.debug('Adding %s event to memory with doc_id: %s', event_type, event.id)
         self._add_document(document=doc)
 
     def _add_document(self, document: 'Document'):
@@ -159,18 +157,17 @@ class LongTermMemory:
                     event_type = 'observation'
                     event_id = event_data['observation']
 
-                # create a Document instance for the event
+                # create a Document instance for the event using event.id
                 doc = Document(
                     text=json.dumps(event_data),
-                    doc_id=str(self.thought_idx),
+                    doc_id=event.id,
                     extra_info={
                         'type': event_type,
                         'id': event_id,
-                        'idx': self.thought_idx,
+                        'event_id': event.id,
                     },
                 )
                 documents.append(doc)
-                self.thought_idx += 1
             except (json.JSONDecodeError, KeyError, ValueError) as e:
                 logger.warning(f'Failed to process event: {e}')
                 continue
