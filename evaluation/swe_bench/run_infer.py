@@ -41,11 +41,13 @@ USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false').lower() == 't
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
     'CodeActSWEAgent': codeact_user_response,
+    'SupervisorAgent': codeact_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
     'CodeActAgent': 'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n',
     'CodeActSWEAgent': 'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n',
+    'SupervisorAgent': 'When you think you have fixed the issue, please run the following command: <execute_bash> exit </execute_bash>.\n',
 }
 
 
