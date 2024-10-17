@@ -23,6 +23,7 @@ from openhands.runtime.utils.runtime_build import (
     get_runtime_image_repo,
     get_runtime_image_repo_and_tag,
     prep_build_folder,
+    truncate_hash,
 )
 
 OH_VERSION = f'oh_v{oh_version}'
@@ -522,3 +523,10 @@ def test_image_exists_not_found():
     mock_client.api.pull.assert_called_once_with(
         'nonexistent', tag='image', stream=True, decode=True
     )
+
+
+def test_truncate_hash():
+    truncated = truncate_hash('b08f254d76b1c6a7ad924708c0032251')
+    assert truncated == 'pma2wc71uq3c9a85'
+    truncated = truncate_hash('102aecc0cea025253c0278f54ebef078')
+    assert truncated == '4titk6gquia3taj5'

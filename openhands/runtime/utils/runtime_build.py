@@ -2,8 +2,10 @@ import argparse
 import hashlib
 import os
 import shutil
+import string
 import tempfile
 from pathlib import Path
+from typing import List
 
 import docker
 from dirhash import dirhash
@@ -236,6 +238,19 @@ def prep_build_folder(
     )
     with open(Path(build_folder, 'Dockerfile'), 'w') as file:  # type: ignore
         file.write(dockerfile_content)  # type: ignore
+
+
+_ALPHABET = string.digits + string.ascii_lowercase
+
+
+def truncate_hash(hash: str) -> str:
+    """Convert the base16 hash to base36 and truncate at 16 characters."""
+    value = int(hash, 16)
+    result: List[str] = []
+    while value > 0 and len(result) < 16:
+        value, remainder = divmod(value, len(_ALPHABET))
+        result.append(_ALPHABET[remainder])
+    return ''.join(result)
 
 
 def get_hash_for_lock_files(base_image: str):
