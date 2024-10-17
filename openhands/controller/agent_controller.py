@@ -155,14 +155,19 @@ class AgentController:
         self.state.iteration += 1
         self.state.local_iteration += 1
 
-        # get the history from the event stream, filtering out event types
-        # that should not be sent to the agent, and hidden events
+        # get the history from the event stream
+        # first define the range of events to fetch
         start_id = self.state.start_id if self.state.start_id != -1 else 0
         end_id = (
             self.state.end_id
             if self.state.end_id != -1
             else self.event_stream.get_latest_event_id()
         )
+
+        # fetch events directly from the event stream
+        # filtering out what an agent history should not include:
+        # - "backend" event types that should not be sent to the agent
+        # - hidden events
         self.state.history = list(
             self.event_stream.get_events(
                 start_id=start_id,
@@ -173,28 +178,32 @@ class AgentController:
             )
         )
 
-        # do not include events between delegate actions and observations:
-        # include in history the delegate action and observation themselves
+        # also, we exclude finished delegates from the parent agent's history:
+        # - do not include events between delegate actions and observations
+        # - include the delegate action and observation themselves
         if self.state.delegates:
-            for (start_id, end_id), (
+            for (delegate_start_id, delegate_end_id), (
                 delegate_agent,
                 delegate_task,
             ) in self.state.delegates.items():
                 # sanity checks
                 if (
-                    start_id < 0
-                    or end_id < 1
-                    or start_id >= end_id
-                    or end_id >= len(self.state.history)
+                    delegate_start_id < 0
+                    or delegate_end_id < 1
+                    or delegate_start_id >= delegate_end_id
+                    or delegate_end_id >= len(self.state.history)
                 ):
                     logger.error(
-                        f'Invalid delegate ids: {start_id}, {end_id}. Skipping...'
+                        f'Invalid delegate ids: {delegate_start_id}, {delegate_end_id}. Skipping...'
                     )
                     continue
-                self.state.history = (
-                    self.state.history[: start_id + 1]
-                    + self.state.history[end_id - 1 :]
-                )
+
+                # exclude delegate events from history
+                self.state.history = [
+                    event
+                    for event in self.state.history
+                    if not (delegate_start_id < event.id < delegate_end_id)
+                ]
 
     async def update_state_after_step(self):
         # update metrics especially for cost. Use deepcopy to avoid it being modified by agent.reset()
@@ -208,8 +217,9 @@ class AgentController:
         """Reports an error to the user and sends the exception to the LLM next step, in the hope it can self-correct.
 
         This method should be called for a particular type of errors, which have:
-        - a user-friendly message, which will be shown in the chat box. This should not be a raw exception message.
-        - an ErrorObservation that can be sent to the LLM by the user role, with the exception message, so it can self-correct next time.
+        - message: a user-friendly message, which will be shown in the chat box. This should not be a raw exception message.
+        - an ErrorObservation that can be sent to the LLM, with the exception message, so it can self-correct next time.
+        - exception: the underlying exception, which is used by evals and tests to check what error the agent encountered.
         """
         self.state.last_error = message
         if exception:
@@ -346,19 +356,20 @@ class AgentController:
 
         logger.debug('AgentDelegateObservation received')
 
-        # figure out what this delegate's actions were
-        # from the last AgentDelegateAction to this AgentDelegateObservation
-        # and save their ids as start and end ids
-        # in order to use later to exclude them from parent stream or summarize them instead
+        # define the end_id based on the current observation
         delegate_end = observation.id
         if delegate_end <= 0:
             logger.error(
                 f'The id of the AgentDelegateObservation is not valid: {delegate_end}'
             )
             return
+
+        # define the start_id by searching for the corresponding AgentDelegateAction
         delegate_start = -1
         delegate_agent: str = ''
         delegate_task: str = ''
+
+        # search through events in reverse to find the AgentDelegateAction
         for prev_event in self.event_stream.get_events(
             end_id=observation.id - 1, reverse=True
         ):
@@ -375,6 +386,7 @@ class AgentController:
             )
             return
 
+        # add the event ids to the delegates dictionary
         self.state.delegates[(delegate_start, delegate_end)] = (
             delegate_agent,
             delegate_task,
@@ -579,9 +591,7 @@ class AgentController:
 
     async def _delegate_step(self):
         """Executes a single step of the delegate agent."""
-        logger.debug(f'[Agent Controller {self.id}] Delegate not none, awaiting...')
         await self.delegate._step()  # type: ignore[union-attr]
-        logger.debug(f'[Agent Controller {self.id}] Delegate step done')
         assert self.delegate is not None
         delegate_state = self.delegate.get_agent_state()
         logger.debug(f'[Agent Controller {self.id}] Delegate state: {delegate_state}')
@@ -594,7 +604,7 @@ class AgentController:
             self.delegate = None
             self.delegateAction = None
 
-            await self.report_error('Delegator agent encountered an error')
+            await self.report_error('Delegate agent encountered an error')
         elif delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
             logger.info(
                 f'[Agent Controller {self.id}] Delegate agent has finished execution'
