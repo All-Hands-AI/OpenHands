@@ -46,7 +46,7 @@
     "dev": "npm run make-i18n && VITE_MOCK_API=false remix vite:dev",
     "dev:mock": "npm run make-i18n && VITE_MOCK_API=true remix vite:dev",
     "build": "npm run make-i18n && tsc && remix vite:build",
-    "start": "npx sirv-cli build/client/ --single",
+    "start": "npx sirv-cli build/ --single",
     "test": "vitest run",
     "test:coverage": "npm run make-i18n && vitest run --coverage",
     "dev_wsl": "VITE_WATCH_USE_POLLING=true vite",
