@@ -1,0 +1,47 @@
+[core]
+workspace_base="./workspace"
+debug = true
+
+[sandbox]
+base_container_image="custom-sandbox"
+
+# runtime_extra_options
+# https://docker-py.readthedocs.io/en/stable/containers.html#docker.models.containers.ContainerCollection.run
+
+# minimum config required for dind
+runtime_extra_options={privileged=true}
+
+# # dockerd in container
+# [sandbox.runtime_extra_options]
+# privileged=true
+# remove=true
+# entrypoint="/entrypoint.sh"
+# # network_mode="bridge"
+# # ports={"3000"="3000","9000"="9000"}
+# # environment={"EXPERIMENTAL_DOCKER_DESKTOP_FORCE_QEMU"="1"}
+
+# [sandbox.runtime_extra_options.volumes]
+# "./"={bind = "/app", mode = "rw"}
+# "./containers/custom-sandbox/entrypoint.sh"={bind = "/entrypoint.sh", mode = "rw"}
+
+# # dockerd via docker.sock on host
+# [sandbox.runtime_extra_options]
+# privileged=true
+# remove=true
+# # network_mode="bridge"
+# # ports={"3000"="3000","9000"="9000"}
+# # environment={"EXPERIMENTAL_DOCKER_DESKTOP_FORCE_QEMU"="1"}
+
+# [sandbox.runtime_extra_options.volumes]
+# "/var/run/docker.sock"={bind = "/var/run/docker.sock", mode = "rw"}
+# #
+# "./"={bind = "/app", mode = "rw"}
+# "$HOME/.git-credentials" = { bind = "/root/.git-credentials", mode = "ro" }
+# "$HOME/.gitconfig" = { bind = "/root/.gitconfig", mode = "ro" }
+# "$HOME/.npmrc" = { bind = "/root/.npmrc", mode = "ro" }
+# #
+
+[llm]
+model="openai/gpt-4o"
+api_key=""
+embedding_model=""

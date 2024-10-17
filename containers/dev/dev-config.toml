@@ -1,0 +1,9 @@
+[core]
+workspace_base="/opt/workspace_base"
+debug=true
+
+[sandbox]
+base_container_image="openhands-dev"
+
+# minimum config required for dind
+runtime_extra_options={privileged=true}

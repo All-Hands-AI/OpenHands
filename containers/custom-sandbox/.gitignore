@@ -1,0 +1,5 @@
+#
+local/
+
+# ignore the default override file for convenience of local development
+*compose.override.y*ml
