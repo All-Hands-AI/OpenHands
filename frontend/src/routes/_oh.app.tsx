@@ -7,6 +7,7 @@ import {
   json,
   ClientActionFunctionArgs,
   useRouteLoaderData,
+  redirect,
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import WebSocket from "ws";
@@ -35,13 +36,18 @@ import {
   clearFiles,
   clearSelectedRepository,
 } from "#/state/initial-query-slice";
-import { isGitHubErrorReponse, retrieveLatestGitHubCommit } from "#/api/github";
+import {
+  isGitHubErrorReponse,
+  retrieveGitHubUser,
+  retrieveLatestGitHubCommit,
+} from "#/api/github";
 import OpenHands from "#/api/open-hands";
 import AgentState from "#/types/AgentState";
 import { base64ToBlob } from "#/utils/base64-to-blob";
 import { clientLoader as rootClientLoader } from "#/routes/_oh";
 import { clearJupyter } from "#/state/jupyterSlice";
 import { FilesProvider } from "#/context/files";
+import { clearSession } from "#/utils/clear-session";
 
 const isAgentStateChange = (
   data: object,
@@ -51,6 +57,23 @@ const isAgentStateChange = (
   "agent_state" in data.extras;
 
 export const clientLoader = async () => {
+  const ghToken = localStorage.getItem("ghToken");
+
+  let user: GitHubUser | GitHubErrorReponse | null = null;
+  if (ghToken) user = await retrieveGitHubUser(ghToken);
+
+  if (!isGitHubErrorReponse(user)) {
+    if (!user) {
+      clearSession();
+      return redirect("/");
+    }
+    const userIsAuthenticated = await OpenHands.isAuthenticated(user.login);
+    if (!userIsAuthenticated) {
+      clearSession();
+      return redirect("/waitlist");
+    }
+  }
+
   const q = store.getState().initalQuery.initialQuery;
   const repo =
     store.getState().initalQuery.selectedRepository ||
@@ -59,7 +82,6 @@ export const clientLoader = async () => {
 
   const settings = getSettings();
   const token = localStorage.getItem("token");
-  const ghToken = localStorage.getItem("ghToken");
 
   if (token && importedProject) {
     const blob = base64ToBlob(importedProject);
