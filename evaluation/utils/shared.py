@@ -18,9 +18,9 @@ from openhands.core.logger import get_console_handler
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import Action
 from openhands.events.action.message import MessageAction
+from openhands.events.event import Event
 from openhands.events.serialization.event import event_to_dict
-from openhands.memory.history import ShortTermHistory
-from openhands.utils import get_pairs_from_events
+from openhands.events.utils import get_pairs_from_events
 
 
 class EvalMetadata(BaseModel):
@@ -416,18 +416,17 @@ def reset_logger_for_multiprocessing(
     file_handler.setLevel(logging.INFO)
     logger.addHandler(file_handler)
 
-    # history is now available as a filtered stream of events, rather than list of pairs of (Action, Observation)
-    # we rebuild the pairs here
-    # for compatibility with the existing output format in evaluations
-    # remove this when it's no longer necessary
-    def compatibility_for_eval_history_pairs(
-        history: ShortTermHistory,
-    ) -> list[tuple[dict, dict]]:
-        history_pairs = []
 
-        for action, observation in get_pairs_from_events(
-            history.get_events(include_delegates=True)
-        ):
-            history_pairs.append((event_to_dict(action), event_to_dict(observation)))
+# history is now available as a filtered stream of events, rather than list of pairs of (Action, Observation)
+# we rebuild the pairs here
+# for compatibility with the existing output format in evaluations
+# remove this when it's no longer necessary
+def compatibility_for_eval_history_pairs(
+    history: list[Event],
+) -> list[tuple[dict, dict]]:
+    history_pairs = []
 
-        return history_pairs
+    for action, observation in get_pairs_from_events(history):
+        history_pairs.append((event_to_dict(action), event_to_dict(observation)))
+
+    return history_pairs
