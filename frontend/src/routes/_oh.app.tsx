@@ -36,11 +36,7 @@ import {
   clearFiles,
   clearSelectedRepository,
 } from "#/state/initial-query-slice";
-import {
-  isGitHubErrorReponse,
-  retrieveGitHubUser,
-  retrieveLatestGitHubCommit,
-} from "#/api/github";
+import { isGitHubErrorReponse, retrieveLatestGitHubCommit } from "#/api/github";
 import OpenHands from "#/api/open-hands";
 import AgentState from "#/types/AgentState";
 import { base64ToBlob } from "#/utils/base64-to-blob";
@@ -48,6 +44,7 @@ import { clientLoader as rootClientLoader } from "#/routes/_oh";
 import { clearJupyter } from "#/state/jupyterSlice";
 import { FilesProvider } from "#/context/files";
 import { clearSession } from "#/utils/clear-session";
+import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 
 const isAgentStateChange = (
   data: object,
@@ -59,19 +56,10 @@ const isAgentStateChange = (
 export const clientLoader = async () => {
   const ghToken = localStorage.getItem("ghToken");
 
-  let user: GitHubUser | GitHubErrorReponse | null = null;
-  if (ghToken) user = await retrieveGitHubUser(ghToken);
-
-  if (!isGitHubErrorReponse(user)) {
-    if (!user) {
-      clearSession();
-      return redirect("/");
-    }
-    const userIsAuthenticated = await OpenHands.isAuthenticated(user.login);
-    if (!userIsAuthenticated) {
-      clearSession();
-      return redirect("/waitlist");
-    }
+  const isAuthed = await userIsAuthenticated(ghToken);
+  if (!isAuthed) {
+    clearSession();
+    return redirect("/waitlist");
   }
 
   const q = store.getState().initalQuery.initialQuery;
