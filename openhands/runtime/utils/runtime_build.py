@@ -266,7 +266,7 @@ def get_hash_for_lock_files(base_image: str):
                 md5.update(chunk)
     # We get away with truncation because we want something that is unique
     # rather than something that is cryptographically secure
-    result = md5.hexdigest()[:16]
+    result = truncate_hash(md5.hexdigest())
     return result
 
 
@@ -283,7 +283,7 @@ def get_hash_for_source_files():
     )
     # We get away with truncation because we want something that is unique
     # rather than something that is cryptographically secure
-    result = dir_hash[:16]
+    result = truncate_hash(dir_hash)
     return result
 
 
