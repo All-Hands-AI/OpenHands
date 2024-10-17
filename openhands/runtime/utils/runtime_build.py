@@ -28,7 +28,7 @@ def _generate_dockerfile(
 
     Parameters:
     - base_image (str): The base image provided for the runtime image
-    - build_from_scratch (boolean):
+    - build_from_scratch (boolean): False implies most steps can be skipped (Base image is another openhands instance)
     - extra_deps (str):
 
     Returns:
@@ -154,9 +154,7 @@ def build_runtime_image_in_folder(
     hash_image_name = f'{runtime_image_repo}:{hash_tag}'
 
     if force_rebuild:
-        logger.info(
-            f'Force rebuild: [{runtime_image_repo}:{hash_tag}] from scratch.'
-        )
+        logger.info(f'Force rebuild: [{runtime_image_repo}:{hash_tag}] from scratch.')
         prep_build_folder(build_folder, base_image, True, extra_deps)
         if not dry_run:
             _build_sandbox_image(
