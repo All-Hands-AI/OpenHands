@@ -11,6 +11,7 @@ from datasets import load_dataset
 import openhands.agenthub
 from evaluation.swe_bench.prompt import CODEACT_SWE_PROMPT
 from evaluation.utils.shared import (
+    EvalException,
     EvalMetadata,
     EvalOutput,
     assert_and_raise,
@@ -390,13 +391,11 @@ def process_instance(
         )
 
         # if fatal error, throw EvalError to trigger re-run
-        assert_and_raise(
-            not (
-                state.last_error
-                and 'fatal error during agent execution' in state.last_error
-            ),
-            'Fatal error detected: ' + state.last_error,
-        )
+        if (
+            state.last_error
+            and 'fatal error during agent execution' in state.last_error
+        ):
+            raise EvalException('Fatal error detected: ' + state.last_error)
 
         # ======= THIS IS SWE-Bench specific =======
         # Get git patch
