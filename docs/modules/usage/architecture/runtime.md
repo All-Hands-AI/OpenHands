@@ -70,74 +70,46 @@ Check out the [relevant code](https://github.com/All-Hands-AI/OpenHands/blob/mai
 
 ### Image Tagging System
 
-OpenHands uses a dual-tagging system for its runtime images to balance reproducibility with flexibility:
+OpenHands uses a dual-tagging system for its runtime images to balance reproducibility with flexibility.
+Tags may be in one of 2 formats:
 
-1. Hash-based tag: `{target_image_repo}:{target_image_hash_tag}`.
-   Example: `runtime:abc123def456`
+- **Generic**: `oh_v{openhands_version}_{16_digit_lock_hash}` (e.g.: `oh_v0.9.9_1234567890abcdef`)
+- **Specific**: `oh_v{openhands_version}_{16_digit_lock_hash}_{16_digit_source_hash}`
+  (e.g.: `oh_v0.9.9_1234567890abcdef_1234567890abcdef`)
 
-   - This tag is based on the MD5 hash of the Docker build folder, which includes the source code (of runtime client and related dependencies) and Dockerfile
-   - Identical hash tags guarantee that the images were built with exactly the same source code and Dockerfile
-   - This ensures reproducibility; the same hash always means the same image contents
+#### Lock Hash
 
-2. Generic tag: `{target_image_repo}:{target_image_tag}`.
-   Example: `runtime:oh_v0.9.3_ubuntu_tag_22.04`
+This hash is built from the first 16 digits of the MD5 of:
+- The name of the base image upon which the image was built (e.g.: `nikolaik/python-nodejs:python3.12-nodejs22`)
+- The content of the `pyproject.toml` included in the image.
+- The content of the `poetry.lock` included in the image.
 
-   - This tag follows the format: `runtime:oh_v{OH_VERSION}_{BASE_IMAGE_NAME}_tag_{BASE_IMAGE_TAG}`
-   - It represents the latest build for a particular base image and OpenHands version combination
-   - This tag is updated whenever a new image is built from the same base image, even if the source code changes
+This effectively gives a hash for the dependencies of Openhands independent of the source code.
 
-The hash-based tag ensures reproducibility, while the generic tag provides a stable reference to the latest version of a particular configuration. This dual-tagging approach allows OpenHands to efficiently manage both development and production environments.
+#### Source Hash
 
-### Build Process
+This is the first 16 digits of the MD5 of the directory hash for the source directory. This gives a hash
+for only the openhands source
 
-1. Image Naming Convention:
-   - Hash-based tag: `{target_image_repo}:{target_image_hash_tag}`.
-     Example: `runtime:abc123def456`
-   - Generic tag: `{target_image_repo}:{target_image_tag}`.
-     Example: `runtime:oh_v0.9.3_ubuntu_tag_22.04`
+#### Build Process
 
-2. Build Process:
-   - a. Convert the base image name to an OH runtime image name
-      Example: `ubuntu:22.04` -> `runtime:oh_v0.9.3_ubuntu_tag_22.04`
-   - b. Generate a build context (Dockerfile and OpenHands source code) and calculate its hash
-   - c. Check for an existing image with the calculated hash
-   - d. If not found, check for a recent compatible image to use as a base
-   - e. If no compatible image exists, build from scratch using the original base image
-   - f. Tag the new image with both hash-based and generic tags
+When generating an image...
 
-3. Image Reuse and Rebuilding Logic:
-   The system follows these steps to determine whether to build a new image or use an existing one from a user-provided (base) image (e.g., `ubuntu:22.04`):
-   - a. If an image exists with the same hash (e.g., `runtime:abc123def456`), it will be reused as is
-   - b. If the exact hash is not found, the system will try to rebuild using the latest generic image (e.g., `runtime:oh_v0.9.3_ubuntu_tag_22.04`) as a base. This saves time by leveraging existing dependencies
-   - c. If neither the hash-tagged nor the generic-tagged image is found, the system will build the image completely from scratch
+- OpenHands first checks whether an image with the same **Specific** tag exists. If there is such an image,
+  no build is performed - the existing image is used.
+- OpenHands next checks whether an image with the **Generic** tag exists. If there is such an image,
+  OpenHands builds a new image based upon it, bypassing all installation steps (like `poetry install` and
+  `apt-get`) except a final operation to copy the current source code. The new image is tagged with a
+  **Specific** tag only.
+- If neither a **Specific** nor **Generic** tag exists, a brand new image is built based upon the base
+  image (Which is a slower operation). This new image is tagged with both the **Generic** and **Specific**
+  tags.
 
-4. Caching and Efficiency:
-   - The system attempts to reuse existing images when possible to save build time
-   - If an exact match (by hash) is found, it's used without rebuilding
-   - If a compatible image is found, it's used as a base for rebuilding, saving time on dependency installation
-
-Here's a flowchart illustrating the build process:
-
-```mermaid
-flowchart TD
-    A[Start] --> B{Convert base image name}
-    B --> |ubuntu:22.04 -> runtime:oh_v0.9.3_ubuntu_tag_22.04| C[Generate build context and hash]
-    C --> D{Check for existing image with hash}
-    D -->|Found runtime:abc123def456| E[Use existing image]
-    D -->|Not found| F{Check for runtime:oh_v0.9.3_ubuntu_tag_22.04}
-    F -->|Found| G[Rebuild based on recent image]
-    F -->|Not found| H[Build from scratch]
-    G --> I[Tag with hash and generic tags]
-    H --> I
-    E --> J[End]
-    I --> J
-```
-
-This approach ensures that:
+This dual-tagging approach allows OpenHands to efficiently manage both development and production environments.
 
 1. Identical source code and Dockerfile always produce the same image (via hash-based tags)
 2. The system can quickly rebuild images when minor changes occur (by leveraging recent compatible images)
-3. The generic tag (e.g., `runtime:oh_v0.9.3_ubuntu_tag_22.04`) always points to the latest build for a particular base image and OpenHands version combination
+3. The generic tag (e.g., `runtime:oh_v0.9.3_1234567890abcdef`) always points to the latest build for a particular base image and OpenHands version combination
 
 ## Runtime Plugin System
 

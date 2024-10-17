@@ -60,6 +60,15 @@ class OpenHands {
     return response.json();
   }
 
+  static async getConfig(): Promise<{ APP_MODE: "saas" | "oss" }> {
+    const response = await fetch(`${OpenHands.BASE_URL}/config.json`, {
+      headers: {
+        "Cache-Control": "no-cache",
+      },
+    });
+    return response.json();
+  }
+
   /**
    * Retrieve the list of files available in the workspace
    * @param token User token provided by the server
