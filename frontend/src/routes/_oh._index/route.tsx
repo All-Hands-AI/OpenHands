@@ -113,7 +113,7 @@ function Home() {
   const { files } = useSelector((state: RootState) => state.initalQuery);
 
   const handleConnectToGitHub = () => {
-    const isSaas = import.meta.env.VITE_APP_MODE === "saas";
+    const isSaas = window.__APP_MODE__ === "saas";
 
     if (isSaas) {
       window.location.href = githubAuthUrl;
