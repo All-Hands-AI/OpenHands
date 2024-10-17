@@ -87,7 +87,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
   const requestUrl = new URL(request.url);
   const redirectUri = `${requestUrl.origin}/oauth/github/callback`;
-  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user`;
+  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user,workflow`;
 
   return json({ repositories, githubAuthUrl });
 };
@@ -113,7 +113,7 @@ function Home() {
   const { files } = useSelector((state: RootState) => state.initalQuery);
 
   const handleConnectToGitHub = () => {
-    const isSaas = import.meta.env.VITE_APP_MODE === "saas";
+    const isSaas = window.__APP_MODE__ === "saas";
 
     if (isSaas) {
       window.location.href = githubAuthUrl;

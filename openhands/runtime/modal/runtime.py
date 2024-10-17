@@ -2,6 +2,7 @@ import os
 import tempfile
 import threading
 import uuid
+from pathlib import Path
 from typing import Callable, Generator
 
 import modal
@@ -14,7 +15,7 @@ from openhands.events import EventStream
 from openhands.runtime.client.runtime import EventStreamRuntime, LogBuffer
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.runtime_build import (
-    prep_docker_build_folder,
+    prep_build_folder,
 )
 
 
@@ -148,9 +149,10 @@ class ModalRuntime(EventStreamRuntime):
             base_runtime_image = modal.Image.from_registry(runtime_container_image_id)
         elif base_container_image_id:
             build_folder = tempfile.mkdtemp()
-            prep_docker_build_folder(
-                build_folder,
-                base_container_image_id,
+            prep_build_folder(
+                build_folder=Path(build_folder),
+                base_image=base_container_image_id,
+                build_from_scratch=True,
                 extra_deps=runtime_extra_deps,
             )
 
