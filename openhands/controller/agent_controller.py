@@ -454,6 +454,8 @@ class AgentController:
                 # Split the command into multiple CmdRunAction instances
                 commands = action.command.split('\n')
                 for i, cmd in enumerate(commands):
+                    if not cmd:
+                        continue
                     new_action = CmdRunAction(command=cmd)
                     if i < len(commands) - 1:
                         new_action.thought = ''
