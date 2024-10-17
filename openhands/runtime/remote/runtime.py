@@ -31,8 +31,8 @@ from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime import Runtime
 from openhands.runtime.utils.request import (
-    DEFAULT_RETRY_EXCEPTIONS,
     is_404_error,
+    is_503_error,
     send_request_with_retry,
 )
 from openhands.runtime.utils.runtime_build import build_runtime_image
@@ -90,7 +90,6 @@ class RemoteRuntime(Runtime):
             status_message_callback,
             attach_to_existing,
         )
-        self._wait_until_alive()
         self.setup_initial_env()
 
     def _start_or_attach_to_runtime(
@@ -307,10 +306,10 @@ class RemoteRuntime(Runtime):
             self.session,
             'GET',
             f'{self.runtime_url}/alive',
-            # Retry 404 errors for the /alive endpoint
+            # Retry 404 & 503 errors for the /alive endpoint
             # because the runtime might just be starting up
             # and have not registered the endpoint yet
-            retry_fns=[is_404_error],
+            retry_fns=[is_404_error, is_503_error],
             # leave enough time for the runtime to start up
             timeout=600,
         )
@@ -367,13 +366,6 @@ class RemoteRuntime(Runtime):
                     f'{self.runtime_url}/execute_action',
                     json=request_body,
                     timeout=action.timeout,
-                    retry_exceptions=list(
-                        filter(lambda e: e != TimeoutError, DEFAULT_RETRY_EXCEPTIONS)
-                    ),
-                    # Retry 404 errors for the /execute_action endpoint
-                    # because the runtime might just be starting up
-                    # and have not registered the endpoint yet
-                    retry_fns=[is_404_error],
                 )
                 if response.status_code == 200:
                     output = response.json()
@@ -444,9 +436,6 @@ class RemoteRuntime(Runtime):
                 f'{self.runtime_url}/upload_file',
                 files=upload_data,
                 params=params,
-                retry_exceptions=list(
-                    filter(lambda e: e != TimeoutError, DEFAULT_RETRY_EXCEPTIONS)
-                ),
                 timeout=300,
             )
             if response.status_code == 200:
@@ -477,9 +466,6 @@ class RemoteRuntime(Runtime):
                 'POST',
                 f'{self.runtime_url}/list_files',
                 json=data,
-                retry_exceptions=list(
-                    filter(lambda e: e != TimeoutError, DEFAULT_RETRY_EXCEPTIONS)
-                ),
                 timeout=30,
             )
             if response.status_code == 200:
@@ -496,7 +482,6 @@ class RemoteRuntime(Runtime):
 
     def copy_from(self, path: str) -> bytes:
         """Zip all files in the sandbox and return as a stream of bytes."""
-        self._wait_until_alive()
         try:
             params = {'path': path}
             response = send_request_with_retry(
@@ -505,9 +490,6 @@ class RemoteRuntime(Runtime):
                 f'{self.runtime_url}/download_files',
                 params=params,
                 timeout=30,
-                retry_exceptions=list(
-                    filter(lambda e: e != TimeoutError, DEFAULT_RETRY_EXCEPTIONS)
-                ),
             )
             if response.status_code == 200:
                 return response.content
