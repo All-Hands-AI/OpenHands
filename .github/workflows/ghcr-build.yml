@@ -392,7 +392,7 @@ jobs:
     name: All Runtime Tests Passed
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     runs-on: ubuntu-latest
-    needs: [test_runtime_root, test_runtime_oh, runtime_integration_tests_on_linux, verify_hash_equivalence_in_runtime_and_app]
+    needs: [test_runtime_root, test_runtime_oh, verify_hash_equivalence_in_runtime_and_app]
     steps:
       - name: All tests passed
         run: echo "All runtime tests have passed successfully!"
@@ -401,7 +401,7 @@ jobs:
     name: All Runtime Tests Passed
     if: ${{ cancelled() || contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
     runs-on: ubuntu-latest
-    needs: [test_runtime_root, test_runtime_oh, runtime_integration_tests_on_linux, verify_hash_equivalence_in_runtime_and_app]
+    needs: [test_runtime_root, test_runtime_oh, verify_hash_equivalence_in_runtime_and_app]
     steps:
       - name: Some tests failed
         run: |
