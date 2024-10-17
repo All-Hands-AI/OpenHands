@@ -26,8 +26,12 @@ import NewProjectIcon from "#/assets/new-project.svg?react";
 import DocsIcon from "#/assets/docs.svg?react";
 
 export const clientLoader = async () => {
-  const config = await OpenHands.getConfig();
-  window.__APP_MODE__ = config.APP_MODE;
+  try {
+    const config = await OpenHands.getConfig();
+    window.__APP_MODE__ = config.APP_MODE;
+  } catch (error) {
+    window.__APP_MODE__ = "oss";
+  }
 
   let token = localStorage.getItem("token");
   const ghToken = localStorage.getItem("ghToken");
