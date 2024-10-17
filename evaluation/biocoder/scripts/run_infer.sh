@@ -32,7 +32,6 @@ COMMAND="poetry run python evaluation/biocoder/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 10 \
-  --max-chars 10000000 \
   --eval-num-workers $NUM_WORKERS \
   --eval-note ${AGENT_VERSION}_${DATASET}"
 

@@ -60,6 +60,15 @@ class OpenHands {
     return response.json();
   }
 
+  static async getConfig(): Promise<{ APP_MODE: "saas" | "oss" }> {
+    const response = await fetch(`${OpenHands.BASE_URL}/config.json`, {
+      headers: {
+        "Cache-Control": "no-cache",
+      },
+    });
+    return response.json();
+  }
+
   /**
    * Retrieve the list of files available in the workspace
    * @param token User token provided by the server
@@ -71,7 +80,9 @@ class OpenHands {
     if (path) url.searchParams.append("path", path);
 
     const response = await fetch(url.toString(), {
-      headers: OpenHands.generateHeaders(token),
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     return response.json();
@@ -87,7 +98,9 @@ class OpenHands {
     const url = new URL(`${OpenHands.BASE_URL}/api/select-file`);
     url.searchParams.append("file", path);
     const response = await fetch(url.toString(), {
-      headers: OpenHands.generateHeaders(token),
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     const data = await response.json();
@@ -109,7 +122,10 @@ class OpenHands {
     const response = await fetch(`${OpenHands.BASE_URL}/api/save-file`, {
       method: "POST",
       body: JSON.stringify({ filePath: path, content }),
-      headers: OpenHands.generateHeaders(token),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     });
 
     return response.json();
@@ -130,8 +146,10 @@ class OpenHands {
 
     const response = await fetch(`${OpenHands.BASE_URL}/api/upload-files`, {
       method: "POST",
-      headers: OpenHands.generateHeaders(token),
       body: formData,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     return response.json();
@@ -144,8 +162,11 @@ class OpenHands {
    */
   static async getWorkspaceZip(token: string): Promise<Blob> {
     const response = await fetch(`${OpenHands.BASE_URL}/api/zip-directory`, {
-      headers: OpenHands.generateHeaders(token),
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
+
     return response.blob();
   }
 
@@ -158,12 +179,14 @@ class OpenHands {
   static async sendFeedback(
     token: string,
     data: Feedback,
-    // TODO: Type the response
   ): Promise<FeedbackResponse> {
     const response = await fetch(`${OpenHands.BASE_URL}/api/submit-feedback`, {
       method: "POST",
-      headers: OpenHands.generateHeaders(token),
       body: JSON.stringify(data),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     });
 
     return response.json();
@@ -180,20 +203,12 @@ class OpenHands {
     const response = await fetch(`${OpenHands.BASE_URL}/github/callback`, {
       method: "POST",
       body: JSON.stringify({ code }),
+      headers: {
+        "Content-Type": "application/json",
+      },
     });
 
     return response.json();
-  }
-
-  /**
-   * Generate the headers for the request
-   * @param token User token provided by the server
-   * @returns Headers for the request
-   */
-  private static generateHeaders(token: string) {
-    return {
-      Authorization: `Bearer ${token}`,
-    };
   }
 }
 

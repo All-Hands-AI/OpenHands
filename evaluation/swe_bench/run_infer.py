@@ -407,7 +407,8 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    histories = [event_to_dict(event) for event in state.history.get_events()]
+    # NOTE: this is NO LONGER the event stream, but an agent history that includes delegate agent's events
+    histories = [event_to_dict(event) for event in state.history]
     metrics = state.metrics.get() if state.metrics else None
 
     # Save the output
@@ -477,9 +478,12 @@ if __name__ == '__main__':
     if hasattr(_agent_cls, 'in_context_example'):
         details['in_context_example'] = _agent_cls.in_context_example
 
+    dataset_descrption = (
+        args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
+    )
     metadata = make_metadata(
         llm_config,
-        'swe-bench-lite',
+        dataset_descrption,
         args.agent_cls,
         args.max_iterations,
         args.eval_note,

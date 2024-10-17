@@ -13,6 +13,10 @@
 # API key for E2B
 #e2b_api_key = ""
 
+# API key for Modal
+#modal_api_token_id = ""
+#modal_api_token_secret = ""
+
 # Base path for the workspace
 workspace_base = "./workspace"
 
@@ -27,6 +31,9 @@ workspace_base = "./workspace"
 
 # Enable saving and restoring the session when run from CLI
 #enable_cli_session = false
+
+# Path to store trajectories
+#trajectories_path="./trajectories"
 
 # File store path
 #file_store_path = "/tmp/file_store"

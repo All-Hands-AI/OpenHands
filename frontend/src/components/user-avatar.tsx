@@ -23,6 +23,10 @@ export function UserAvatar({
 
   const validUser = user && !isGitHubErrorReponse(user);
 
+  const handleClickUserAvatar = () => {
+    setAccountContextMenuIsVisible((prev) => !prev);
+  };
+
   return (
     <div className="w-8 h-8 relative">
       <button
@@ -31,15 +35,7 @@ export function UserAvatar({
           "bg-white w-8 h-8 rounded-full flex items-center justify-center",
           isLoading && "bg-transparent",
         )}
-        onClick={() => {
-          if (!user) {
-            // If the user is not logged in, opening the modal is the only option,
-            // so we do that instead of toggling the context menu.
-            handleOpenAccountSettingsModal();
-            return;
-          }
-          setAccountContextMenuIsVisible((prev) => !prev);
-        }}
+        onClick={handleClickUserAvatar}
       >
         {!validUser && !isLoading && (
           <DefaultUserAvatar width={20} height={20} />
