@@ -3,7 +3,12 @@ name: SWE-Bench Evaluation
 on:
   schedule:
     - cron: '0 1 * * *'  # Run daily at 1 AM UTC
-  workflow_dispatch:  # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual trigger'
+        required: true
+        default: ''
 
 jobs:
   run-evaluation:
