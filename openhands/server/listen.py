@@ -798,4 +798,33 @@ def github_callback(auth_code: AuthCode):
     )
 
 
+class User(BaseModel):
+    login: str  # GitHub login handle
+
+
+@app.post('/authenticate')
+def authenticate(user: User | None = None):
+    waitlist = os.getenv('GITHUB_USER_LIST_FILE')
+
+    # Only check if waitlist is provided
+    if waitlist is not None:
+        try:
+            with open(waitlist, 'r') as f:
+                users = f.read().splitlines()
+                if user is None or user.login not in users:
+                    return JSONResponse(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        content={'error': 'User not on waitlist'},
+                    )
+        except FileNotFoundError:
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={'error': 'Waitlist file not found'},
+            )
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, content={'message': 'User authenticated'}
+    )
+
+
 app.mount('/', StaticFiles(directory='./frontend/build', html=True), name='dist')
