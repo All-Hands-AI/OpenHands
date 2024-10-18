@@ -1,5 +1,5 @@
 # Workflow that runs python unit tests on mac
-name: Run Python Unit Tests
+name: Run Python Unit Tests Mac
 
 # This job is flaky so only run it nightly
 on:
