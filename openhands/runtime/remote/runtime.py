@@ -232,10 +232,12 @@ class RemoteRuntime(Runtime):
             timeout=300,
         )
         if response.status_code != 201:
-            raise RuntimeError(f'Failed to start sandbox: {response.text}')
+            raise RuntimeError(
+                f'[Runtime (ID={self.runtime_id})] Failed to start runtime: {response.text}'
+            )
         self._parse_runtime_response(response)
         logger.info(
-            f'Sandbox started. Runtime ID: {self.runtime_id}, URL: {self.runtime_url}'
+            f'[Runtime (ID={self.runtime_id})] Runtime started. URL: {self.runtime_url}'
         )
 
     def _resume_runtime(self):
@@ -247,8 +249,10 @@ class RemoteRuntime(Runtime):
             timeout=30,
         )
         if response.status_code != 200:
-            raise RuntimeError(f'Failed to resume sandbox: {response.text}')
-        logger.info(f'Sandbox resumed. Runtime ID: {self.runtime_id}')
+            raise RuntimeError(
+                f'[Runtime (ID={self.runtime_id})] Failed to resume runtime: {response.text}'
+            )
+        logger.info(f'[Runtime (ID={self.runtime_id})] Runtime resumed.')
 
     def _parse_runtime_response(self, response: requests.Response):
         start_response = response.json()
@@ -298,7 +302,7 @@ class RemoteRuntime(Runtime):
                 # clean up the runtime
                 self.close()
                 raise RuntimeError(
-                    f'Runtime pod failed to start. Current status: {pod_status}'
+                    f'Runtime (ID={self.runtime_id}) failed to start. Current status: {pod_status}'
                 )
             # Pending otherwise - add proper sleep
             time.sleep(10)
@@ -315,7 +319,7 @@ class RemoteRuntime(Runtime):
             timeout=600,
         )
         if response.status_code != 200:
-            msg = f'Runtime is not alive yet (id={self.runtime_id}). Status: {response.status_code}.'
+            msg = f'Runtime (ID={self.runtime_id}) is not alive yet. Status: {response.status_code}.'
             logger.warning(msg)
             raise RuntimeError(msg)
 
@@ -333,9 +337,11 @@ class RemoteRuntime(Runtime):
                     timeout=timeout,
                 )
                 if response.status_code != 200:
-                    logger.error(f'Failed to stop sandbox: {response.text}')
+                    logger.error(
+                        f'[Runtime (ID={self.runtime_id})] Failed to stop runtime: {response.text}'
+                    )
                 else:
-                    logger.info(f'Sandbox stopped. Runtime ID: {self.runtime_id}')
+                    logger.info(f'[Runtime (ID={self.runtime_id})] Runtime stopped.')
             except Exception as e:
                 raise e
             finally:
@@ -351,10 +357,12 @@ class RemoteRuntime(Runtime):
                 return NullObservation('')
             action_type = action.action  # type: ignore[attr-defined]
             if action_type not in ACTION_TYPE_TO_CLASS:
-                return FatalErrorObservation(f'Action {action_type} does not exist.')
+                return FatalErrorObservation(
+                    f'[Runtime (ID={self.runtime_id})] Action {action_type} does not exist.'
+                )
             if not hasattr(self, action_type):
                 return FatalErrorObservation(
-                    f'Action {action_type} is not supported in the current runtime.'
+                    f'[Runtime (ID={self.runtime_id})] Action {action_type} is not supported in the current runtime.'
                 )
 
             assert action.timeout is not None
@@ -382,10 +390,14 @@ class RemoteRuntime(Runtime):
                     )
             except Timeout:
                 logger.error('No response received within the timeout period.')
-                obs = FatalErrorObservation('Action execution timed out')
+                obs = FatalErrorObservation(
+                    f'[Runtime (ID={self.runtime_id})] Action execution timed out'
+                )
             except Exception as e:
                 logger.error(f'Error during action execution: {e}')
-                obs = FatalErrorObservation(f'Action execution failed: {str(e)}')
+                obs = FatalErrorObservation(
+                    f'[Runtime (ID={self.runtime_id})] Action execution failed: {str(e)}'
+                )
             return obs
 
     def run(self, action: CmdRunAction) -> Observation:
@@ -449,11 +461,17 @@ class RemoteRuntime(Runtime):
                 return
             else:
                 error_message = response.text
-                raise Exception(f'Copy operation failed: {error_message}')
+                raise Exception(
+                    f'[Runtime (ID={self.runtime_id})] Copy operation failed: {error_message}'
+                )
         except TimeoutError:
-            raise TimeoutError('Copy operation timed out')
+            raise TimeoutError(
+                f'[Runtime (ID={self.runtime_id})] Copy operation timed out'
+            )
         except Exception as e:
-            raise RuntimeError(f'Copy operation failed: {str(e)}')
+            raise RuntimeError(
+                f'[Runtime (ID={self.runtime_id})] Copy operation failed: {str(e)}'
+            )
         finally:
             if recursive:
                 os.unlink(temp_zip_path)
@@ -478,11 +496,17 @@ class RemoteRuntime(Runtime):
                 return response_json
             else:
                 error_message = response.text
-                raise Exception(f'List files operation failed: {error_message}')
+                raise Exception(
+                    f'[Runtime (ID={self.runtime_id})] List files operation failed: {error_message}'
+                )
         except TimeoutError:
-            raise TimeoutError('List files operation timed out')
+            raise TimeoutError(
+                f'[Runtime (ID={self.runtime_id})] List files operation timed out'
+            )
         except Exception as e:
-            raise RuntimeError(f'List files operation failed: {str(e)}')
+            raise RuntimeError(
+                f'[Runtime (ID={self.runtime_id})] List files operation failed: {str(e)}'
+            )
 
     def copy_from(self, path: str) -> bytes:
         """Zip all files in the sandbox and return as a stream of bytes."""
@@ -499,11 +523,17 @@ class RemoteRuntime(Runtime):
                 return response.content
             else:
                 error_message = response.text
-                raise Exception(f'Copy operation failed: {error_message}')
+                raise Exception(
+                    f'[Runtime (ID={self.runtime_id})] Copy operation failed: {error_message}'
+                )
         except requests.Timeout:
-            raise TimeoutError('Copy operation timed out')
+            raise TimeoutError(
+                f'[Runtime (ID={self.runtime_id})] Copy operation timed out'
+            )
         except Exception as e:
-            raise RuntimeError(f'Copy operation failed: {str(e)}')
+            raise RuntimeError(
+                f'[Runtime (ID={self.runtime_id})] Copy operation failed: {str(e)}'
+            )
 
     def send_status_message(self, message: str):
         """Sends a status message if the callback function was provided."""
