@@ -44,9 +44,8 @@ export function SettingsForm({
       navigate("/");
       onClose();
     }
-  }, [fetcher.data]);
+  }, [fetcher.data, navigate, onClose]);
 
-  // Figure out if the advanced options should be enabled by default
   const advancedAlreadyInUse = React.useMemo(() => {
     if (models.length > 0) {
       const organizedModels = organizeModelsAndProviders(models);
@@ -80,13 +79,6 @@ export function SettingsForm({
   const [confirmEndSessionModalOpen, setConfirmEndSessionModalOpen] =
     React.useState(false);
   const [showWarningModal, setShowWarningModal] = React.useState(false);
-  const [hasEnteredKey, setHasEnteredKey] = React.useState(
-    !!settings.LLM_API_KEY,
-  );
-
-  React.useEffect(() => {
-    setHasEnteredKey(!!settings.LLM_API_KEY);
-  }, [settings.LLM_API_KEY]);
 
   const submitForm = (formData: FormData) => {
     if (location.pathname === "/app") formData.set("end-session", "true");
@@ -106,21 +98,25 @@ export function SettingsForm({
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const apiKey = formData.get("api-key");
 
-    if (location.pathname === "/app") {
+    if (!apiKey) {
+      setShowWarningModal(true);
+    } else if (location.pathname === "/app") {
       setConfirmEndSessionModalOpen(true);
     } else {
-      const formData = new FormData(event.currentTarget);
       submitForm(formData);
     }
   };
+
   const handleCloseClick = () => {
-    console.log("Close clicked, hasEnteredKey:", hasEnteredKey);
-    if (!hasEnteredKey) {
-      console.log("Showing warning modal");
+    const formData = new FormData(formRef.current ?? undefined);
+    const apiKey = formData.get("api-key");
+
+    if (!apiKey) {
       setShowWarningModal(true);
     } else {
-      console.log("Closing settings");
       onClose();
     }
   };
@@ -134,11 +130,6 @@ export function SettingsForm({
     setShowWarningModal(false);
   };
 
-  const handleApiKeyChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = !!event.target.value;
-    console.log("API key changed, new value:", newValue);
-    setHasEnteredKey(newValue);
-  };
   return (
     <div>
       <fetcher.Form
@@ -235,7 +226,6 @@ export function SettingsForm({
               aria-label="API Key"
               type="password"
               defaultValue={settings.LLM_API_KEY}
-              onChange={handleApiKeyChange}
               classNames={{
                 inputWrapper: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
               }}
