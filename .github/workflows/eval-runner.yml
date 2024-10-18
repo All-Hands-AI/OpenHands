@@ -8,6 +8,9 @@ on:
 jobs:
   run-evaluation:
     runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
     strategy:
       matrix:
         python-version: ['3.12']
@@ -43,7 +46,18 @@ jobs:
       run: |
         poetry run ./evaluation/swe_bench/scripts/cleanup_remote_runtime.sh
 
-    - name: Upload evaluation results
+    - name: Authenticate to Google Cloud
+      uses: 'google-github-actions/auth@v2'
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Upload evaluation results to Google Cloud Storage
+      uses: 'google-github-actions/upload-cloud-storage@v2'
+      with:
+        path: 'evaluation/evaluation_outputs'
+        destination: 'openhands-oss-eval-results/${{ github.repository_owner }}__${{ github.event.repository.name }}/${{ github.run_id }}/${{ github.sha }}'
+
+    - name: Upload evaluation results as artifact
       uses: actions/upload-artifact@v2
       with:
         name: swe-bench-evaluation-results
