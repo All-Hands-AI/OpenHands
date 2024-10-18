@@ -1,5 +1,6 @@
 # 🛰️ DiscoveryBench with 🙌 OpenHands
 
+TODO: This is sample description, need to update it before upstream PR.
 DiscoveryBench is designed to systematically assess current model capabilities in data-driven discovery tasks and provide a useful resource for improving them. Each DiscoveryBench task consists of a goal and dataset(s). Solving the task requires both statistical analysis and semantic reasoning. A faceted evaluation allows open-ended final answers to be rigorously evaluated.
 
 
