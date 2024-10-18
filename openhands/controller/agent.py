@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Type
 
-from openhands.memory.conversation_memory import ConversationMemory
-
 if TYPE_CHECKING:
     from openhands.controller.state.state import State
     from openhands.core.config import AgentConfig
@@ -26,7 +24,6 @@ class Agent(ABC):
 
     _registry: dict[str, Type['Agent']] = {}
     sandbox_plugins: list[PluginRequirement] = []
-    memory: ConversationMemory
 
     def __init__(
         self,

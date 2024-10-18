@@ -26,7 +26,10 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
-from openhands.memory.conversation_memory import ConversationMemory
+from openhands.memory.base_memory import Memory
+from openhands.memory.chat_memory import ChatMemory
+from openhands.memory.core_memory import CoreMemory
+from openhands.memory.memory import LongTermMemory
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -67,6 +70,9 @@ class MemCodeActAgent(Agent):
 
     action_parser = MemCodeActResponseParser()
 
+    # NOTE: memory includes 'chat', 'core', and 'long_term' memory modules
+    memory: dict[str, Memory] = {}
+
     def __init__(
         self,
         llm: LLM,
@@ -83,7 +89,19 @@ class MemCodeActAgent(Agent):
 
         self.memory_config = memory_config
 
-        self.conversation_memory = ConversationMemory(self.memory_config)
+        # Initialize the memory modules
+        chat_memory = ChatMemory(
+            persona='Default Persona', human='Default Human', limit=2000
+        )
+        core_memory = CoreMemory(
+            system_message=self.prompt_manager.system_message, limit=1500
+        )
+        long_term_memory = LongTermMemory(agent_state=self.agent_state, top_k=100)
+        self.memory = {
+            'chat': chat_memory,
+            'core': core_memory,
+            'long_term': long_term_memory,
+        }
 
         self.micro_agent = (
             MicroAgent(
@@ -183,8 +201,11 @@ class MemCodeActAgent(Agent):
         """Resets the MemCodeAct Agent."""
         super().reset()
 
-        # clean its history
-        self.conversation_memory.reset()
+        # Reset the memory modules
+        self.memory['chat'].persona = ''
+        self.memory['chat'].human = ''
+        self.memory['core'].system_message = self.prompt_manager.system_message
+        self.memory['long_term'].cache = {}
 
     def step(self, state: State) -> Action:
         """Performs one step using the MemCodeAct Agent.
@@ -295,3 +316,15 @@ class MemCodeActAgent(Agent):
             latest_user_message.content.append(TextContent(text=reminder_text))
 
         return messages
+
+    def summarize_messages_inplace(self):
+        """Summarizes the messages stored in the agent's memory to reduce token usage."""
+        if len(self.memory['chat'].messages) <= 2:
+            return
+
+        # Summarize the chat memory
+        summary = self.llm.summarize_messages(self.memory['chat'].messages)
+        self.memory['chat'].messages = [
+            Message(role='system', content=[TextContent(text=summary)])
+        ]
+        logger.debug(f'Summarized chat memory to: {summary}')

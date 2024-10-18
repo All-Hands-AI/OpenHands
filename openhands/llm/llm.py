@@ -402,3 +402,29 @@ class LLM(RetryMixin, DebugMixin):
 
         # let pydantic handle the serialization
         return [message.model_dump() for message in messages]
+
+    def summarize_messages(self, messages: list[Message]) -> str:
+        """Summarizes a list of messages using the LLM."""
+        token_counts = [self.get_token_count(m) for m in messages]
+        max_tokens = (
+            self.model_info.get('max_tokens', 4096)
+            if self.model_info is not None
+            else 4096
+        )
+        desired_token_count_to_summarize = max_tokens // 4
+        tokens_so_far = 0
+        cutoff = 0
+        for i, msg in enumerate(messages):
+            cutoff = i
+            tokens_so_far += token_counts[i]
+            if tokens_so_far > desired_token_count_to_summarize:
+                break
+        cutoff += 1
+        message_sequence_to_summarize = messages[1:cutoff]
+        if len(message_sequence_to_summarize) <= 1:
+            return ''
+        prompt = 'Please summarize the following conversation:\n\n'
+        for message in message_sequence_to_summarize:
+            prompt += f'{message.role.capitalize()}: {message.content}\n'
+        response = self._completion(messages=[{'role': 'user', 'content': prompt}])
+        return response['choices'][0]['message']['content']
