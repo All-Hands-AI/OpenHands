@@ -19,9 +19,9 @@ from litellm.exceptions import (
     RateLimitError,
     ServiceUnavailableError,
 )
-from openhands.exceptions import CloudFlareBlockageError
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
 
+from openhands.core.exceptions import CloudFlareBlockageError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.core.metrics import Metrics
@@ -213,8 +213,10 @@ class LLM(RetryMixin, DebugMixin):
 
                 return resp
             except APIError as e:
-                if "Attention Required! | Cloudflare" in str(e):
-                    raise CloudFlareBlockageError("Request blocked by CloudFlare") from e
+                if 'Attention Required! | Cloudflare' in str(e):
+                    raise CloudFlareBlockageError(
+                        'Request blocked by CloudFlare'
+                    ) from e
                 raise
 
         self._completion = wrapper
