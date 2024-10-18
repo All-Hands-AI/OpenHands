@@ -37,6 +37,16 @@ EVALUATION_LLM = 'gpt-4-1106-preview'
 
 DATA_FILES = {}
 
+LIBRARIES = [
+    'pandas',
+    'numpy',
+    'scipy',
+    'matplotlib',
+    'seaborn',
+    'scikit-learn',
+    'statsmodels',
+]
+
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
 }
@@ -128,6 +138,12 @@ def initialize_runtime(runtime: Runtime, csv_file: list[str]):
             file,
             '/workspace',
         )
+
+    for lib in LIBRARIES:
+        action = CmdRunAction(command=f'pip install {lib}')
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        assert obs.exit_code == 0
 
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
