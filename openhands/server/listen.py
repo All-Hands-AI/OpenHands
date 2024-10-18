@@ -798,4 +798,4 @@ def github_callback(auth_code: AuthCode):
     )
 
 
-app.mount('/', StaticFiles(directory='./frontend/build/client', html=True), name='dist')
+app.mount('/', StaticFiles(directory='./frontend/build', html=True), name='dist')
