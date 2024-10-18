@@ -23,7 +23,7 @@ from openhands.events.action import (
 )
 from openhands.events.action.action import Action
 from openhands.events.observation import (
-    ErrorObservation,
+    FatalErrorObservation,
     NullObservation,
     Observation,
     UserRejectObservation,
@@ -126,7 +126,13 @@ class EventStreamRuntime(Runtime):
         attach_to_existing: bool = False,
     ):
         super().__init__(
-            config, event_stream, sid, plugins, env_vars, status_message_callback, attach_to_existing
+            config,
+            event_stream,
+            sid,
+            plugins,
+            env_vars,
+            status_message_callback,
+            attach_to_existing,
         )
 
     def __init__(
@@ -192,7 +198,13 @@ class EventStreamRuntime(Runtime):
 
         # Will initialize both the event stream and the env vars
         self.init_base_runtime(
-            config, event_stream, sid, plugins, env_vars, status_message_callback, attach_to_existing
+            config,
+            event_stream,
+            sid,
+            plugins,
+            env_vars,
+            status_message_callback,
+            attach_to_existing,
         )
 
         logger.info('Waiting for client to become ready...')
@@ -431,9 +443,9 @@ class EventStreamRuntime(Runtime):
                 return NullObservation('')
             action_type = action.action  # type: ignore[attr-defined]
             if action_type not in ACTION_TYPE_TO_CLASS:
-                return ErrorObservation(f'Action {action_type} does not exist.')
+                return FatalErrorObservation(f'Action {action_type} does not exist.')
             if not hasattr(self, action_type):
-                return ErrorObservation(
+                return FatalErrorObservation(
                     f'Action {action_type} is not supported in the current runtime.'
                 )
             if (
@@ -465,15 +477,17 @@ class EventStreamRuntime(Runtime):
                     logger.debug(f'response: {response}')
                     error_message = response.text
                     logger.error(f'Error from server: {error_message}')
-                    obs = ErrorObservation(f'Action execution failed: {error_message}')
+                    obs = FatalErrorObservation(
+                        f'Action execution failed: {error_message}'
+                    )
             except requests.Timeout:
                 logger.error('No response received within the timeout period.')
-                obs = ErrorObservation(
+                obs = FatalErrorObservation(
                     f'Action execution timed out after {action.timeout} seconds.'
                 )
             except Exception as e:
                 logger.error(f'Error during action execution: {e}')
-                obs = ErrorObservation(f'Action execution failed: {str(e)}')
+                obs = FatalErrorObservation(f'Action execution failed: {str(e)}')
             self._refresh_logs()
             return obs
 
