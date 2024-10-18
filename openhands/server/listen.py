@@ -741,7 +741,7 @@ async def zip_current_workspace(request: Request):
         runtime: Runtime = request.state.conversation.runtime
 
         path = runtime.config.workspace_mount_path_in_sandbox
-        zip_file_bytes = runtime.copy_from(path)
+        zip_file_bytes = await call_sync_from_async(runtime.copy_from, path)
         zip_stream = io.BytesIO(zip_file_bytes)  # Wrap to behave like a file stream
         response = StreamingResponse(
             zip_stream,
