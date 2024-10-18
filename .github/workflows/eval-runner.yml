@@ -37,10 +37,12 @@ jobs:
       run: poetry install
 
     - name: Configure config.toml for evaluation
+      env:
+        DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_LLM_API_KEY }}
       run: |
         echo "[llm.eval]" > config.toml
         echo "model = \"deepseek/deepseek-chat\"" >> config.toml
-        echo "api_key = \"${{ secrets.DEEPSEEK_LLM_API_KEY }}\"" >> config.toml
+        echo "api_key = \"$DEEPSEEK_API_KEY\"" >> config.toml
         echo "temperature = 0.0" >> config.toml
 
     - name: Run intergration test evaluation
