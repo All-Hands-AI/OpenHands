@@ -72,7 +72,7 @@
     "@remix-run/dev": "^2.11.2",
     "@remix-run/testing": "^2.11.2",
     "@tailwindcss/typography": "^0.5.15",
-    "@testing-library/jest-dom": "^6.6.1",
+    "@testing-library/jest-dom": "^6.6.2",
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.5.2",
     "@types/node": "^22.7.6",
