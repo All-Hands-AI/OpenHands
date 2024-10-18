@@ -46,12 +46,11 @@ export function SettingsForm({
     }
   }, [fetcher.data, navigate, onClose]);
 
-  // Figure out if the advanced options should be enabled by default
   const advancedAlreadyInUse = React.useMemo(() => {
     if (models.length > 0) {
       const organizedModels = organizeModelsAndProviders(models);
       const { provider, model } = extractModelAndProvider(
-        settings.LLM_MODEL || "",
+        settings.LLM_MODEL || ""
       );
       const isKnownModel =
         provider in organizedModels &&
@@ -73,11 +72,17 @@ export function SettingsForm({
     return false;
   }, [settings, models]);
 
-  const [showAdvancedOptions, setShowAdvancedOptions] = React.useState(advancedAlreadyInUse);
-  const [confirmResetDefaultsModalOpen, setConfirmResetDefaultsModalOpen] = React.useState(false);
-  const [confirmEndSessionModalOpen, setConfirmEndSessionModalOpen] = React.useState(false);
+  const [showAdvancedOptions, setShowAdvancedOptions] = React.useState(
+    advancedAlreadyInUse
+  );
+  const [confirmResetDefaultsModalOpen, setConfirmResetDefaultsModalOpen] =
+    React.useState(false);
+  const [confirmEndSessionModalOpen, setConfirmEndSessionModalOpen] =
+    React.useState(false);
   const [showWarningModal, setShowWarningModal] = React.useState(false);
-  const [hasEnteredKey, setHasEnteredKey] = React.useState(!!settings.LLM_API_KEY);
+  const [hasEnteredKey, setHasEnteredKey] = React.useState(
+    !!settings.LLM_API_KEY
+  );
 
   React.useEffect(() => {
     setHasEnteredKey(!!settings.LLM_API_KEY);
@@ -151,11 +156,11 @@ export function SettingsForm({
             classNames={{
               thumb: clsx(
                 "bg-[#5D5D5D] w-3 h-3 z-0",
-                "group-data-[selected=true]:bg-white",
+                "group-data-[selected=true]:bg-white"
               ),
               wrapper: clsx(
                 "border border-[#D4D4D4] bg-white px-[6px] w-12 h-6",
-                "group-data-[selected=true]:border-transparent group-data-[selected=true]:bg-[#4465DB]",
+                "group-data-[selected=true]:border-transparent group-data-[selected=true]:bg-[#4465DB]"
               ),
               label: "text-[#A3A3A3] text-xs",
             }}
@@ -325,11 +330,11 @@ export function SettingsForm({
                 classNames={{
                   thumb: clsx(
                     "bg-[#5D5D5D] w-3 h-3",
-                    "group-data-[selected=true]:bg-white",
+                    "group-data-[selected=true]:bg-white"
                   ),
                   wrapper: clsx(
                     "border border-[#D4D4D4] bg-white px-[6px] w-12 h-6",
-                    "group-data-[selected=true]:border-transparent group-data-[selected=true]:bg-[#4465DB]",
+                    "group-data-[selected=true]:border-transparent group-data-[selected=true]:bg-[#4465DB]"
                   ),
                   label: "text-[#A3A3A3] text-xs",
                 }}
