@@ -6,7 +6,6 @@ import tempfile
 import uuid
 import warnings
 from contextlib import asynccontextmanager
-from typing import Optional
 
 import requests
 from pathspec import PathSpec
@@ -804,7 +803,7 @@ class User(BaseModel):
 
 
 @app.post('/authenticate')
-def authenticate(user: Optional[User] = None):
+def authenticate(user: User | None = None):
     waitlist = os.getenv('GITHUB_USER_LIST_FILE')
 
     # Only check if waitlist is provided
