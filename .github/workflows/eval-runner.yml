@@ -74,8 +74,12 @@ jobs:
     #     path: 'evaluation/evaluation_outputs'
     #     destination: 'openhands-oss-eval-results/${{ github.repository_owner }}__${{ github.event.repository.name }}/${{ github.run_id }}/${{ github.sha }}'
 
+    - name: Create tar.gz of evaluation outputs
+      run: tar -czvf evaluation_outputs.tar.gz evaluation/evaluation_outputs
+
+
     - name: Upload evaluation results as artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: swe-bench-evaluation-results
-        path: evaluation/evaluation_outputs/output.jsonl
+        path: evaluation_outputs.tar.gz
