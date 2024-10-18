@@ -6,6 +6,7 @@ import tempfile
 import uuid
 import warnings
 from contextlib import asynccontextmanager
+from typing import Optional
 
 import requests
 from pathspec import PathSpec
@@ -795,6 +796,35 @@ def github_callback(auth_code: AuthCode):
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={'access_token': token_response['access_token']},
+    )
+
+
+class User(BaseModel):
+    login: str  # GitHub login handle
+
+
+@app.post('/authenticate')
+def authenticate(user: Optional[User] = None):
+    waitlist = os.getenv('GITHUB_USER_LIST_FILE')
+
+    # Only check if waitlist is provided
+    if waitlist is not None:
+        try:
+            with open(waitlist, 'r') as f:
+                users = f.read().splitlines()
+                if user is None or user.login not in users:
+                    return JSONResponse(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        content={'error': 'User not on waitlist'},
+                    )
+        except FileNotFoundError:
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={'error': 'Waitlist file not found'},
+            )
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, content={'message': 'User authenticated'}
     )
 
 
