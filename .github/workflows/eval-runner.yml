@@ -1,6 +1,7 @@
-name: SWE-Bench Evaluation
+name: Run Evaluation
 
 on:
+  pull_request: # for debugging
   schedule:
     - cron: '0 1 * * *'  # Run daily at 1 AM UTC
   workflow_dispatch:
@@ -35,32 +36,43 @@ jobs:
     - name: Install Python dependencies using Poetry
       run: poetry install
 
-    - name: Run SWE-Bench evaluation
+    - name: Configure config.toml for evaluation
+      run: |
+        echo "[llm.eval]" > config.toml
+        echo "model = \"deepseek/deepseek-chat\"" >> config.toml
+        echo "api_key = \"${{ secrets.DEEPSEEK_LLM_API_KEY }}\"" >> config.toml
+        echo "temperature = 0.0" >> config.toml
+
+    - name: Run intergration test evaluation
       env:
-        ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_API_KEY }}
+        ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
         RUNTIME: remote
-        SANDBOX_REMOTE_RUNTIME_API_URL: ${{ secrets.SANDBOX_REMOTE_RUNTIME_API_URL }}
-        EVAL_DOCKER_IMAGE_PREFIX: ${{ secrets.EVAL_DOCKER_IMAGE_PREFIX }}
+        SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
+        EVAL_DOCKER_IMAGE_PREFIX: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images
+
       run: |
-        poetry run ./evaluation/swe_bench/scripts/run_infer.sh llm.eval HEAD CodeActAgent 300 30 16 "princeton-nlp/SWE-bench_Lite" test
+        poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD
 
-    - name: Clean up remote runtime
-      if: always()
-      env:
-        ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_API_KEY }}
-      run: |
-        poetry run ./evaluation/swe_bench/scripts/cleanup_remote_runtime.sh
+    # - name: Run SWE-Bench evaluation
+    #   env:
+    #     ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
+    #     RUNTIME: remote
+    #     SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
+    #     EVAL_DOCKER_IMAGE_PREFIX: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images
 
-    - name: Authenticate to Google Cloud
-      uses: 'google-github-actions/auth@v2'
-      with:
-        credentials_json: ${{ secrets.GCP_SA_KEY }}
+    #   run: |
+    #     poetry run ./evaluation/swe_bench/scripts/run_infer.sh llm.eval HEAD CodeActAgent 300 30 16 "princeton-nlp/SWE-bench_Lite" test
 
-    - name: Upload evaluation results to Google Cloud Storage
-      uses: 'google-github-actions/upload-cloud-storage@v2'
-      with:
-        path: 'evaluation/evaluation_outputs'
-        destination: 'openhands-oss-eval-results/${{ github.repository_owner }}__${{ github.event.repository.name }}/${{ github.run_id }}/${{ github.sha }}'
+    # - name: Authenticate to Google Cloud
+    #   uses: 'google-github-actions/auth@v2'
+    #   with:
+    #     credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+    # - name: Upload evaluation results to Google Cloud Storage
+    #   uses: 'google-github-actions/upload-cloud-storage@v2'
+    #   with:
+    #     path: 'evaluation/evaluation_outputs'
+    #     destination: 'openhands-oss-eval-results/${{ github.repository_owner }}__${{ github.event.repository.name }}/${{ github.run_id }}/${{ github.sha }}'
 
     - name: Upload evaluation results as artifact
       uses: actions/upload-artifact@v2
