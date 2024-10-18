@@ -36,12 +36,12 @@ minio = "^7.2.8"
 gevent = "^24.2.1"
 pyarrow = "17.0.0" # transitive dependency, pinned here to avoid conflicts
 tenacity = "^8.5.0"
-zope-interface = "7.0.3"
+zope-interface = "7.1.0"
 pathspec = "^0.12.1"
 google-cloud-aiplatform = "*"
 anthropic = {extras = ["vertex"], version = "*"}
 grep-ast = "0.3.3"
-tree-sitter = "0.21.3"
+tree-sitter = "0.22.3"
 bashlex = "^0.18"
 pyjwt = "^2.9.0"
 dirhash = "*"
@@ -68,7 +68,7 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.6.9"
+ruff = "0.7.0"
 mypy = "1.12.0"
 pre-commit = "4.0.1"
 build = "*"
