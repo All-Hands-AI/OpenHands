@@ -8,20 +8,24 @@ on:
 jobs:
   run-evaluation:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.12']
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
+
+    - name: Install poetry via pipx
+      run: pipx install poetry
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
-        python-version: '3.12'
+        python-version: ${{ matrix.python-version }}
+        cache: 'poetry'
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install poetry
-        poetry install
+    - name: Install Python dependencies using Poetry
+      run: poetry install
 
     - name: Run SWE-Bench evaluation
       env:
