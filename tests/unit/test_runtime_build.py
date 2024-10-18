@@ -1,25 +1,29 @@
+import hashlib
 import os
 import tempfile
 import uuid
 from importlib.metadata import version
-from unittest import mock
-from unittest.mock import ANY, MagicMock, call, patch
+from pathlib import Path
+from unittest.mock import ANY, MagicMock, mock_open, patch
 
 import docker
 import pytest
 import toml
 from pytest import TempPathFactory
 
+import openhands
 from openhands import __version__ as oh_version
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder.docker import DockerRuntimeBuilder
 from openhands.runtime.utils.runtime_build import (
     _generate_dockerfile,
-    _put_source_code_to_dir,
     build_runtime_image,
+    get_hash_for_lock_files,
+    get_hash_for_source_files,
     get_runtime_image_repo,
     get_runtime_image_repo_and_tag,
-    prep_docker_build_folder,
+    prep_build_folder,
+    truncate_hash,
 )
 
 OH_VERSION = f'oh_v{oh_version}'
@@ -73,39 +77,19 @@ def _check_source_code_in_dir(temp_dir):
     assert _pyproject_version == version('openhands-ai')
 
 
-def test_put_source_code_to_dir(temp_dir):
+def test_prep_build_folder(temp_dir):
     shutil_mock = MagicMock()
-    with patch(f'{_put_source_code_to_dir.__module__}.shutil', shutil_mock):
-        _put_source_code_to_dir(temp_dir)
-    shutil_mock.copytree.assert_called_once_with(
-        os.path.join(os.getcwd(), 'openhands'),
-        os.path.join(temp_dir, 'code', 'openhands'),
-    )
-    shutil_mock.copy2.assert_has_calls(
-        [
-            mock.call(
-                os.path.join(os.getcwd(), 'pyproject.toml'),
-                os.path.join(temp_dir, 'code', 'pyproject.toml'),
-            ),
-            mock.call(
-                os.path.join(os.getcwd(), 'poetry.lock'),
-                os.path.join(temp_dir, 'code', 'poetry.lock'),
-            ),
-        ]
-    )
-
-
-def test_docker_build_folder(temp_dir):
-    mock = MagicMock()
-    with patch(f'{_put_source_code_to_dir.__module__}._put_source_code_to_dir', mock):
-        prep_docker_build_folder(
+    with patch(f'{prep_build_folder.__module__}.shutil', shutil_mock):
+        prep_build_folder(
             temp_dir,
             base_image=DEFAULT_BASE_IMAGE,
-            skip_init=False,
+            build_from_scratch=True,
+            extra_deps=None,
         )
 
     # make sure that the code was copied
-    mock.assert_called_once_with(temp_dir)
+    shutil_mock.copytree.assert_called_once()
+    assert shutil_mock.copy2.call_count == 2
 
     # Now check dockerfile is in the folder
     dockerfile_path = os.path.join(temp_dir, 'Dockerfile')
@@ -113,71 +97,40 @@ def test_docker_build_folder(temp_dir):
     assert os.path.isfile(dockerfile_path)
 
 
-def test_hash_folder_same(temp_dir):
-    mock = (
-        MagicMock()
-    )  # We don't actually need to copy the rest of the files to perform this check
-    with patch(f'{_put_source_code_to_dir.__module__}._put_source_code_to_dir', mock):
-        dir_hash_1 = prep_docker_build_folder(
-            temp_dir,
-            base_image=DEFAULT_BASE_IMAGE,
-            skip_init=False,
+def test_get_hash_for_lock_files():
+    with patch('builtins.open', mock_open(read_data='mock-data'.encode())):
+        hash = get_hash_for_lock_files('some_base_image')
+        # Since we mocked open to always return "mock_data", the hash is the result
+        # of hashing the name of the base image followed by "mock-data" twice
+        md5 = hashlib.md5()
+        md5.update('some_base_image'.encode())
+        for _ in range(2):
+            md5.update('mock-data'.encode())
+        assert hash == truncate_hash(md5.hexdigest())
+
+
+def test_get_hash_for_source_files():
+    dirhash_mock = MagicMock()
+    dirhash_mock.return_value = '1f69bd20d68d9e3874d5bf7f7459709b'
+    with patch(f'{get_hash_for_source_files.__module__}.dirhash', dirhash_mock):
+        result = get_hash_for_source_files()
+        assert result == truncate_hash(dirhash_mock.return_value)
+        dirhash_mock.assert_called_once_with(
+            Path(openhands.__file__).parent,
+            'md5',
+            ignore=[
+                '.*/',  # hidden directories
+                '__pycache__/',
+                '*.pyc',
+            ],
         )
 
-        with tempfile.TemporaryDirectory() as temp_dir_2:
-            dir_hash_2 = prep_docker_build_folder(
-                temp_dir_2,
-                base_image=DEFAULT_BASE_IMAGE,
-                skip_init=False,
-            )
-        assert dir_hash_1 == dir_hash_2
 
-
-def test_hash_folder_diff_init(temp_dir):
-    mock = (
-        MagicMock()
-    )  # We don't actually need to copy the all of the files to perform this check
-    with patch(f'{_put_source_code_to_dir.__module__}._put_source_code_to_dir', mock):
-        dir_hash_1 = prep_docker_build_folder(
-            temp_dir,
-            base_image=DEFAULT_BASE_IMAGE,
-            skip_init=False,
-        )
-
-        with tempfile.TemporaryDirectory() as temp_dir_2:
-            dir_hash_2 = prep_docker_build_folder(
-                temp_dir_2,
-                base_image=DEFAULT_BASE_IMAGE,
-                skip_init=True,
-            )
-    assert dir_hash_1 != dir_hash_2
-
-
-def test_hash_folder_diff_image(temp_dir):
-    mock = (
-        MagicMock()
-    )  # We don't actually need to copy all of the files to perform this check
-    with patch(f'{_put_source_code_to_dir.__module__}._put_source_code_to_dir', mock):
-        dir_hash_1 = prep_docker_build_folder(
-            temp_dir,
-            base_image=DEFAULT_BASE_IMAGE,
-            skip_init=False,
-        )
-
-        with tempfile.TemporaryDirectory() as temp_dir_2:
-            dir_hash_2 = prep_docker_build_folder(
-                temp_dir_2,
-                base_image='debian:11',
-                skip_init=False,
-            )
-    assert dir_hash_1 != dir_hash_2
-
-
-def test_generate_dockerfile_scratch():
+def test_generate_dockerfile_build_from_scratch():
     base_image = 'debian:11'
     dockerfile_content = _generate_dockerfile(
         base_image,
-        skip_init=False,
+        build_from_scratch=True,
     )
     assert base_image in dockerfile_content
     assert 'apt-get update' in dockerfile_content
@@ -186,29 +139,29 @@ def test_generate_dockerfile_scratch():
     assert 'python=3.12' in dockerfile_content
 
     # Check the update command
-    assert 'COPY ./code /openhands/code' in dockerfile_content
+    assert 'COPY ./code/openhands /openhands/code/openhands' in dockerfile_content
     assert (
         '/openhands/micromamba/bin/micromamba run -n openhands poetry install'
         in dockerfile_content
     )
 
 
-def test_generate_dockerfile_skip_init():
+def test_generate_dockerfile_build_from_existing():
     base_image = 'debian:11'
     dockerfile_content = _generate_dockerfile(
         base_image,
-        skip_init=True,
+        build_from_scratch=False,
     )
 
-    # These commands SHOULD NOT include in the dockerfile if skip_init is True
+    # These commands SHOULD NOT include in the dockerfile if build_from_scratch is False
     assert 'RUN apt update && apt install -y wget sudo' not in dockerfile_content
     assert '-c conda-forge' not in dockerfile_content
     assert 'python=3.12' not in dockerfile_content
     assert 'https://micro.mamba.pm/install.sh' not in dockerfile_content
+    assert 'poetry install' not in dockerfile_content
 
     # These update commands SHOULD still in the dockerfile
-    assert 'COPY ./code /openhands/code' in dockerfile_content
-    assert 'poetry install' in dockerfile_content
+    assert 'COPY ./code/openhands /openhands/code/openhands' in dockerfile_content
 
 
 def test_get_runtime_image_repo_and_tag_eventstream():
@@ -234,114 +187,96 @@ def test_get_runtime_image_repo_and_tag_eventstream():
     )
 
 
-def test_build_runtime_image_from_scratch(temp_dir):
+def test_build_runtime_image_from_scratch():
     base_image = 'debian:11'
-    mock = (
-        MagicMock()
-    )  # We don't actually need to copy all of the files to perform this check
-    with patch(f'{_put_source_code_to_dir.__module__}._put_source_code_to_dir', mock):
-        from_scratch_hash = prep_docker_build_folder(
-            temp_dir,
-            base_image,
-            skip_init=False,
-        )
-
-        mock_runtime_builder = MagicMock()
-        mock_runtime_builder.image_exists.return_value = False
-        mock_runtime_builder.build.return_value = (
-            f'{get_runtime_image_repo()}:{from_scratch_hash}'
-        )
-
+    mock_lock_hash = MagicMock()
+    mock_lock_hash.return_value = 'mock-lock-hash'
+    mock_source_hash = MagicMock()
+    mock_source_hash.return_value = 'mock-source-hash'
+    mock_runtime_builder = MagicMock()
+    mock_runtime_builder.image_exists.return_value = False
+    mock_runtime_builder.build.return_value = (
+        f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-hash'
+    )
+    mock_prep_build_folder = MagicMock()
+    mod = build_runtime_image.__module__
+    with (
+        patch(f'{mod}.get_hash_for_lock_files', mock_lock_hash),
+        patch(f'{mod}.get_hash_for_source_files', mock_source_hash),
+        patch(
+            f'{build_runtime_image.__module__}.prep_build_folder',
+            mock_prep_build_folder,
+        ),
+    ):
         image_name = build_runtime_image(base_image, mock_runtime_builder)
         mock_runtime_builder.build.assert_called_once_with(
             path=ANY,
             tags=[
-                f'{get_runtime_image_repo()}:{from_scratch_hash}',
-                f'{get_runtime_image_repo()}:{OH_VERSION}_image_debian_tag_11',
+                f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-hash_mock-source-hash',
+                f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-hash',
             ],
         )
-        assert image_name == f'{get_runtime_image_repo()}:{from_scratch_hash}'
+        assert (
+            image_name
+            == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-hash_mock-source-hash'
+        )
+        mock_prep_build_folder.assert_called_once_with(ANY, base_image, True, None)
 
 
-def test_build_runtime_image_exact_hash_exist(temp_dir):
+def test_build_runtime_image_exact_hash_exist():
     base_image = 'debian:11'
-    mock = (
-        MagicMock()
-    )  # We don't actually need to copy all of the files to perform this check
-    with patch(f'{_put_source_code_to_dir.__module__}._put_source_code_to_dir', mock):
-        from_scratch_hash = prep_docker_build_folder(
-            temp_dir,
-            base_image,
-            skip_init=False,
-        )
-
-        mock_runtime_builder = MagicMock()
-        mock_runtime_builder.image_exists.return_value = True
-        mock_runtime_builder.build.return_value = (
-            f'{get_runtime_image_repo()}:{from_scratch_hash}'
-        )
-
+    mock_lock_hash = MagicMock()
+    mock_lock_hash.return_value = 'mock-lock-hash'
+    mock_source_hash = MagicMock()
+    mock_source_hash.return_value = 'mock-source-hash'
+    mock_runtime_builder = MagicMock()
+    mock_runtime_builder.image_exists.return_value = True
+    mock_prep_build_folder = MagicMock()
+    mod = build_runtime_image.__module__
+    with (
+        patch(f'{mod}.get_hash_for_lock_files', mock_lock_hash),
+        patch(f'{mod}.get_hash_for_source_files', mock_source_hash),
+        patch(
+            f'{build_runtime_image.__module__}.prep_build_folder',
+            mock_prep_build_folder,
+        ),
+    ):
         image_name = build_runtime_image(base_image, mock_runtime_builder)
-        assert image_name == f'{get_runtime_image_repo()}:{from_scratch_hash}'
-        mock_runtime_builder.build.assert_not_called()
-
-
-@patch('openhands.runtime.utils.runtime_build._build_sandbox_image')
-def test_build_runtime_image_exact_hash_not_exist(mock_build_sandbox_image, temp_dir):
-    base_image = 'debian:11'
-    repo, latest_image_tag = get_runtime_image_repo_and_tag(base_image)
-    latest_image_name = f'{repo}:{latest_image_tag}'
-
-    mock = (
-        MagicMock()
-    )  # We don't actually need to copy all of the files to perform this check
-    with patch(f'{_put_source_code_to_dir.__module__}._put_source_code_to_dir', mock):
-        from_scratch_hash = prep_docker_build_folder(
-            temp_dir,
-            base_image,
-            skip_init=False,
+        assert (
+            image_name
+            == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-hash_mock-source-hash'
         )
-        with tempfile.TemporaryDirectory() as temp_dir_2:
-            non_from_scratch_hash = prep_docker_build_folder(
-                temp_dir_2,
-                base_image,
-                skip_init=True,
-            )
+        mock_runtime_builder.build.assert_not_called()
+        mock_prep_build_folder.assert_not_called()
 
-        mock_runtime_builder = MagicMock()
-        # Set up mock_runtime_builder.image_exists to return False then True
-        mock_runtime_builder.image_exists.side_effect = [False, True]
 
-        with patch(
-            'openhands.runtime.utils.runtime_build.prep_docker_build_folder'
-        ) as mock_prep_docker_build_folder:
-            mock_prep_docker_build_folder.side_effect = [
-                from_scratch_hash,
-                non_from_scratch_hash,
-            ]
-
-            image_name = build_runtime_image(base_image, mock_runtime_builder)
-
-            mock_prep_docker_build_folder.assert_has_calls(
-                [
-                    call(ANY, base_image=base_image, skip_init=False, extra_deps=None),
-                    call(
-                        ANY,
-                        base_image=latest_image_name,
-                        skip_init=True,
-                        extra_deps=None,
-                    ),
-                ]
-            )
-
-            mock_build_sandbox_image.assert_called_once_with(
-                docker_folder=ANY,
-                runtime_builder=mock_runtime_builder,
-                target_image_repo=repo,
-                target_image_hash_tag=from_scratch_hash,
-                target_image_tag=latest_image_tag,
-            )
-            assert image_name == f'{repo}:{from_scratch_hash}'
+def test_build_runtime_image_exact_hash_not_exist():
+    base_image = 'debian:11'
+    mock_lock_hash = MagicMock()
+    mock_lock_hash.return_value = 'mock-lock-hash'
+    mock_source_hash = MagicMock()
+    mock_source_hash.return_value = 'mock-source-hash'
+    mock_runtime_builder = MagicMock()
+    mock_runtime_builder.image_exists.side_effect = [False, True, False, True]
+    mock_prep_build_folder = MagicMock()
+    mod = build_runtime_image.__module__
+    with (
+        patch(f'{mod}.get_hash_for_lock_files', mock_lock_hash),
+        patch(f'{mod}.get_hash_for_source_files', mock_source_hash),
+        patch(
+            f'{build_runtime_image.__module__}.prep_build_folder',
+            mock_prep_build_folder,
+        ),
+    ):
+        image_name = build_runtime_image(base_image, mock_runtime_builder)
+        assert (
+            image_name
+            == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-hash_mock-source-hash'
+        )
+        mock_runtime_builder.build.assert_called_once()
+        mock_prep_build_folder.assert_called_once_with(
+            ANY, f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-hash', False, None
+        )
 
 
 # ==============================
@@ -588,3 +523,10 @@ def test_image_exists_not_found():
     mock_client.api.pull.assert_called_once_with(
         'nonexistent', tag='image', stream=True, decode=True
     )
+
+
+def test_truncate_hash():
+    truncated = truncate_hash('b08f254d76b1c6a7ad924708c0032251')
+    assert truncated == 'pma2wc71uq3c9a85'
+    truncated = truncate_hash('102aecc0cea025253c0278f54ebef078')
+    assert truncated == '4titk6gquia3taj5'
