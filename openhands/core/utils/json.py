@@ -6,6 +6,7 @@ from json_repair import repair_json
 from openhands.core.exceptions import LLMResponseError
 from openhands.events.event import Event
 from openhands.events.serialization import event_to_dict
+from openhands.llm.metrics import Metrics
 
 
 def my_default_encoder(obj):
@@ -14,6 +15,8 @@ def my_default_encoder(obj):
         return obj.isoformat()
     if isinstance(obj, Event):
         return event_to_dict(obj)
+    if isinstance(obj, Metrics):
+        return obj.get()
     return json.JSONEncoder().default(obj)
 
 

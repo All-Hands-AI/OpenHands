@@ -46,7 +46,7 @@ RUN \
     if [ -d /openhands/code ]; then rm -rf /openhands/code; fi && \
     mkdir -p /openhands/code/openhands && \
     touch /openhands/code/openhands/__init__.py
-COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code
+COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 
 # Install all dependencies
 WORKDIR /openhands/code
@@ -81,7 +81,7 @@ RUN \
 # Copy Project source files
 # ================================================================
 RUN if [ -d /openhands/code/openhands ]; then rm -rf /openhands/code/openhands; fi
-COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code
+COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 COPY ./code/openhands /openhands/code/openhands
 
 # Install extra dependencies if specified

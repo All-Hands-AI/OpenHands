@@ -1,3 +1,4 @@
+import copy
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -10,8 +11,8 @@ from litellm.exceptions import (
 
 from openhands.core.config import LLMConfig
 from openhands.core.exceptions import OperationCancelled
-from openhands.core.metrics import Metrics
 from openhands.llm.llm import LLM
+from openhands.llm.metrics import Metrics
 
 
 @pytest.fixture(autouse=True)
@@ -39,6 +40,7 @@ def test_llm_init_with_default_config(default_config):
     assert llm.config.model == 'gpt-4o'
     assert llm.config.api_key == 'test_key'
     assert isinstance(llm.metrics, Metrics)
+    assert llm.metrics.model_name == 'gpt-4o'
 
 
 @patch('openhands.llm.llm.litellm.get_model_info')
@@ -83,13 +85,18 @@ def test_llm_init_with_metrics():
     metrics = Metrics()
     llm = LLM(config, metrics=metrics)
     assert llm.metrics is metrics
+    assert (
+        llm.metrics.model_name == 'default'
+    )  # because we didn't specify model_name in Metrics init
 
 
 def test_llm_reset():
     llm = LLM(LLMConfig(model='gpt-4o-mini', api_key='test_key'))
-    initial_metrics = llm.metrics
+    initial_metrics = copy.deepcopy(llm.metrics)
+    initial_metrics.add_cost(1.0)
     llm.reset()
-    assert llm.metrics is not initial_metrics
+    assert llm.metrics._accumulated_cost != initial_metrics._accumulated_cost
+    assert llm.metrics._costs != initial_metrics._costs
     assert isinstance(llm.metrics, Metrics)
 
 
