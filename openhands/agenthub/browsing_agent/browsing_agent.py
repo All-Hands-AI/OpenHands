@@ -335,10 +335,6 @@ class BrowsingAgent(Agent):
                     TextContent(text='IMAGES: (1) current page screenshot')
                 )
                 user_content.append(ImageContent(image_urls=[last_obs.set_of_marks]))
-            else:
-                raise AssertionError(
-                    'Set-of-Marks annotated screenshot not present in BrowserOutputObservation'
-                )
             try:
                 cur_axtree_txt = flatten_axtree_to_str(
                     last_obs.axtree_object,

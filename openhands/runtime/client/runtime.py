@@ -246,10 +246,9 @@ class EventStreamRuntime(Runtime):
                 )
 
             # Combine environment variables
-            environment = {
-                'port': str(self._container_port),
-                'PYTHONUNBUFFERED': 1,
-            }
+            environment = self.config.sandbox.runtime_startup_env_vars
+            environment['port'] = str(self._container_port)
+            environment['PYTHONUNBUFFERED'] = '1'
             if self.config.debug or DEBUG:
                 environment['DEBUG'] = 'true'
 

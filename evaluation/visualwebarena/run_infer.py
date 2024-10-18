@@ -62,14 +62,14 @@ def get_config(
             runtime_startup_env_vars={
                 'BASE_URL': base_url,
                 'OPENAI_API_KEY': openai_api_key,
-                'CLASSIFIEDS': f'{base_url}:9980',
-                'SHOPPING': f'{base_url}:7770',
-                # 'SHOPPING_ADMIN': f'{base_url}:7780/admin',
-                'REDDIT': f'{base_url}:9999/',
-                # 'GITLAB': f'{base_url}:8023',
-                # 'WIKIPEDIA': f'{base_url}:8888/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing',
-                # 'MAP': f'{base_url}:3000',
-                # 'HOMEPAGE': f'{base_url}:4399', #TODO: is homepage important?
+                'VWA_CLASSIFIEDS': f'{base_url}:9980',
+                'VWA_CLASSIFIEDS_RESET_TOKEN': '4b61655535e7ed388f0d40a93600254c',
+                'VWA_SHOPPING': f'{base_url}:7770',
+                'VWA_SHOPPING_ADMIN': f'{base_url}:7780/admin',
+                'VWA_REDDIT': f'{base_url}:9999',
+                'VWA_GITLAB': f'{base_url}:8023',
+                'VWA_WIKIPEDIA': f'{base_url}:8888/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing',
+                'VWA_HOMEPAGE': f'{base_url}:4399',
             },
         ),
         # do not mount workspace
@@ -146,15 +146,14 @@ def process_instance(
         reset_logger_for_multiprocessing(logger, env_id, log_dir)
     else:
         logger.info(f'Starting evaluation for instance {env_id}.')
-    runtime = create_runtime(config, sid=env_id)
+    runtime_sid = env_id.replace('/', '_')
+    runtime = create_runtime(config, sid=runtime_sid)
     task_str, goal_image_urls = initialize_runtime(runtime)
-
+    initial_user_action = MessageAction(content=task_str, images_urls=goal_image_urls)
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            initial_user_action=MessageAction(
-                content=task_str, image_urls=goal_image_urls
-            ),
+            initial_user_action=initial_user_action,
             runtime=runtime,
         )
     )

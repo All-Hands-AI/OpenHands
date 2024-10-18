@@ -77,6 +77,9 @@ class BrowserEnv:
                 self.browsergym_eval_env = 'browsergym/' + self.browsergym_eval_env
             if 'visualwebarena' in self.browsergym_eval_env:
                 import browsergym.visualwebarena  # noqa F401 register visualwebarena tasks as gym environments
+                import nltk
+
+                nltk.download('punkt_tab')
             elif 'webarena' in self.browsergym_eval_env:
                 import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
             elif 'miniwob' in self.browsergym_eval_env:
@@ -86,6 +89,7 @@ class BrowserEnv:
                     f'Unsupported browsergym eval env: {self.browsergym_eval_env}'
                 )
             env = gym.make(self.browsergym_eval_env)
+            logger.info('Successfully created browsergym environment for evaluation')
         else:
             env = gym.make(
                 'browsergym/openended',
@@ -94,18 +98,26 @@ class BrowserEnv:
                 headless=True,
                 disable_env_checker=True,
             )
-
         obs, info = env.reset()
 
+        logger.info('Successfully called env.reset')
         # EVAL ONLY: save the goal into file for evaluation
         self.eval_goal = None
-        self.goal_image_urls = None
+        self.goal_image_urls = []
         self.eval_rewards: list[float] = []
         if self.eval_mode:
-            logger.info(f"Browsing goal: {obs['goal']}")
             self.eval_goal = obs['goal']
-            self.goal_image_urls = obs.get('goal_image_urls', [])
-
+            if 'goal_object' in obs:
+                if len(obs['goal_object']) > 0:
+                    self.eval_goal = obs['goal_object'][0]['text']
+                for message in obs['goal_object']:
+                    if message['type'] == 'image_url':
+                        image_src = message['image_url']
+                        if isinstance(image_src, dict):
+                            image_src = image_src['url']
+                        self.goal_image_urls.append(image_src)
+                logger.info(f'Browsing goal: {self.eval_goal}')
+                logger.info(f'Images: {self.goal_image_urls}')
         logger.info('Browser env started.')
         while should_continue():
             try:
