@@ -12,7 +12,7 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.action.agent import AgentFinishAction
-from openhands.events.event import Event
+from openhands.events.event import Event, EventSource
 from openhands.events.observation import AgentDelegateObservation
 from openhands.storage.files import FileStore
 
@@ -155,6 +155,12 @@ class State:
 
     def get_last_agent_message(self) -> str | None:
         for event in reversed(self.history):
-            if isinstance(event, MessageAction) and event.source == 'agent':
+            if isinstance(event, MessageAction) and event.source == EventSource.AGENT:
+                return event.content
+        return None
+
+    def get_last_user_message(self) -> str | None:
+        for event in reversed(self.history):
+            if isinstance(event, MessageAction) and event.source == EventSource.USER:
                 return event.content
         return None
