@@ -1,0 +1,46 @@
+name: SWE-Bench Evaluation
+
+on:
+  schedule:
+    - cron: '0 1 * * *'  # Run daily at 1 AM UTC
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  run-evaluation:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install poetry
+        poetry install
+
+    - name: Run SWE-Bench evaluation
+      env:
+        ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_API_KEY }}
+        RUNTIME: remote
+        SANDBOX_REMOTE_RUNTIME_API_URL: ${{ secrets.SANDBOX_REMOTE_RUNTIME_API_URL }}
+        EVAL_DOCKER_IMAGE_PREFIX: ${{ secrets.EVAL_DOCKER_IMAGE_PREFIX }}
+      run: |
+        poetry run ./evaluation/swe_bench/scripts/run_infer.sh llm.eval HEAD CodeActAgent 300 30 16 "princeton-nlp/SWE-bench_Lite" test
+
+    - name: Clean up remote runtime
+      if: always()
+      env:
+        ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_API_KEY }}
+      run: |
+        poetry run ./evaluation/swe_bench/scripts/cleanup_remote_runtime.sh
+
+    - name: Upload evaluation results
+      uses: actions/upload-artifact@v2
+      with:
+        name: swe-bench-evaluation-results
+        path: evaluation/evaluation_outputs/output.jsonl
