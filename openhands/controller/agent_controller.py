@@ -40,6 +40,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
+from openhands.runtime.utils.bash import split_bash_commands
 from openhands.runtime.utils.shutdown_listener import should_continue
 
 # note: RESUME is only available on web GUI
@@ -456,7 +457,21 @@ class AgentController:
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
-            self.event_stream.add_event(action, EventSource.AGENT)
+
+            if isinstance(action, CmdRunAction):
+                # Split the command into multiple CmdRunAction instances
+                commands = split_bash_commands(action.command)
+                for i, cmd in enumerate(commands):
+                    if not cmd:
+                        continue
+                    new_action = CmdRunAction(command=cmd)
+                    if i < len(commands) - 1:
+                        new_action.thought = ''
+                    else:
+                        new_action.thought = action.thought
+                    self.event_stream.add_event(new_action, EventSource.AGENT)
+            else:
+                self.event_stream.add_event(action, EventSource.AGENT)
 
         await self.update_state_after_step()
         logger.info(action, extra={'msg_type': 'ACTION'})
