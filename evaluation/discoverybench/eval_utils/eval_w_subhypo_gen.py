@@ -3,8 +3,8 @@ import logging
 
 from openai import OpenAI
 
-from evaluation.discoverybench.eval_utils.lm_utils import run_chatgpt_query_multi_turn
-from evaluation.discoverybench.eval_utils.openai_helpers import get_response
+from .lm_utils import run_chatgpt_query_multi_turn
+from .openai_helpers import get_response
 
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
@@ -49,7 +49,7 @@ def get_score_from_answer(type, answer):
             }
             print(f'var_eval: {eval_rec}')
             return eval_rec
-        except Exception:  # COMMENT: added "Exception"
+        except Exception:  # COMMENT: added Exception
             return {'p': -1.0, 'r': -1.0, 'f1': -1.0}
     elif type == 'rel':
         print(answer)
@@ -229,19 +229,17 @@ def get_sub_hypotheses(
 ):
     client = OpenAI()
     extraction_prompt = """\
-        Given a set of dataset columns, a ground-truth hypothesis, and the analysis workflow used, your task is to extract the \
-        set of sub-hypotheses that are present in the hypothesis such that each sub-hypothesis covers a separate context, is \
-        self-sufficient, and operates on a coherent set of 3 dimensions: Context, Variables, and Relations. \
+        Given a set of dataset columns, a ground-truth hypothesis, and the analysis workflow used, your task is to extract three dimensions that define the hypothesis: Context, Variables, and Relations. \
         Here are the definitions for these dimensions:
-        - Contexts: Boundary conditions that limit the scope of a sub-hypothesis. E.g., “for men over \
+        - Contexts: Boundary conditions that limit the scope of a hypothesis. E.g., “for men over \
         the age of 30”, “in Asia and Europe”. If the context applies to the full dataset, then extract the context from the dataset_descrption.
         - Variables: Known concepts that interact in a meaningful way under a given context to \
-        produce the sub-hypothesis. E.g., gender, age, income, or "None" if there is no interacting variable.
+        produce the hypothesis. E.g., gender, age, income, or "None" if there is no interacting variable.
         - Relations: Interactions between a given set of variables under a given context to produce \
-        the sub-hypothesis. E.g., “quadratic relationship”, “inversely proportional”, piecewise conditionals, \
+        the hypothesis. E.g., “quadratic relationship”, “inversely proportional”, piecewise conditionals, \
         or "None" if there is no interacting relationship.
         Make sure to only use the information present in the hypothesis and the workflow. Do not add any new information. \
-        If no sub-hypotheses can be extracted, return an empty list.
+        For each dimension, be specific, and do not omit any important details.
 
         Here is the metadata for the task:
         ```json
@@ -257,11 +255,10 @@ def get_sub_hypotheses(
         {
         "sub_hypo": [
             {
-                "text": the sub-hypothesis in natural language,
-                "context": a short text description of the context of the sub-hypothesis,
-                "variables": a list of columns involved in the sub-hypothesis,
-                "relations": a short text description of the relationship between the variables of the sub-hypothesis,
-                "explanation": a short text explanation for the breakdown of the sub-hypothesis
+                "text": the hypothesis in natural language,
+                "context": a short text description of the context of the hypothesis,
+                "variables": a list of columns involved in the hypothesis,
+                "relations": a short text description of the relationship between the variables of the hypothesis
             },
             ...
         ]
@@ -391,11 +388,11 @@ def run_eval_gold_vs_gen_NL_hypo_workflow(
     use_column_metadata=True,
 ):
     # Input: Dataset Metadata, Query, Gold {Hg, Wg}, Predicted {Hp, Wp}
-    # Output: score
+    # Output: eval_rec json includes final_score
 
     # Procedure:
     # Dataset Metadata, Query, Gold {Hg, Wg}, Pred {Hg, Wg}
-    # Gold: [Hg1, Hg2] (pre-store) Hg1 is a NL form of subhypothesis
+    # Gold: [Hg1, Hg2] (compute on the fly) Hg1 is a NL form of subhypothesis
     # Predicted: [Hp1, Hp2] (compute on the fly)
 
     # Compute Intersection: [(Hg_i, Hp_j), …]  # tuples of (gold,pred) that matched with context (do this w/o explicit extraction)
@@ -409,6 +406,7 @@ def run_eval_gold_vs_gen_NL_hypo_workflow(
     # 	r_v_list ← f1_v * score_r
     # accuracy_score = mean(r_v_list)
     # score =   [ recall_context * mean over predicted context(context_score * var_score *rel_score )]
+
     # recall_context = 1.0  # COMMENT: never used
     eval_rec = {
         'query': query,
@@ -486,10 +484,6 @@ def run_eval_gold_vs_gen_NL_hypo_workflow(
                 context_score = 1.0
             else:
                 context_score = 0.0
-
-            # question, answer, context_score = ask_dimension_question(query, gold_subh, gold_workflow,
-            #                    gen_subh, gen_workflow, dataset_meta, llm_used,
-            #                    dimension="context")
 
             if context_score == 1.0:  # match only when context_score = 1.0
                 gen_subh_to_gold_subh[p_id] = g_id
