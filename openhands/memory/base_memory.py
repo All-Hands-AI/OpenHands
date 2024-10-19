@@ -19,3 +19,8 @@ class Memory(ABC):
     def __str__(self) -> str:
         """String representation of the memory module."""
         pass
+
+    @abstractmethod
+    def reset(self) -> None:
+        """Reset the memory module."""
+        pass

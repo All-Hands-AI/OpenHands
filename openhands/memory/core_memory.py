@@ -1,8 +1,8 @@
 from openhands.memory.base_memory import Memory
+from openhands.utils.prompt import PromptManager
 
-
-class CoreMemory(Memory):
-    """Holds essential system messages and foundational context."""
+class CoreMemory(PromptManager, Memory):
+    """Memory contents to be inserted in the prompt. This includes summaries and other information that the LLM thought was important."""
 
     def __init__(self, system_message: str, limit: int = 1500):
         self.system_message = system_message

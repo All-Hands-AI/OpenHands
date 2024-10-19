@@ -5,7 +5,7 @@ from openhands.agenthub.memcodeact_agent.action_parser import MemCodeActResponse
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
-from openhands.core.config.memory_config import MemoryConfig
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
@@ -30,6 +30,7 @@ from openhands.memory.base_memory import Memory
 from openhands.memory.chat_memory import ChatMemory
 from openhands.memory.core_memory import CoreMemory
 from openhands.memory.memory import LongTermMemory
+from openhands.memory.recall_memory import ConversationMemory
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -42,21 +43,38 @@ from openhands.utils.prompt import PromptManager
 class MemCodeActAgent(Agent):
     VERSION = '1.9'
     """
-    The MemCode Act Agent is a minimalist agent.
+    The MemCode Act Agent is a memory-enabled version of the CodeAct agent.
+
+    Its memory modules are:
+    - conversation: recall memory (history)
+    - core: core system messages
+    - long_term: long-term memory
+
+    Its memory actions are:
+        - "core_memory_append"
+        - "core_memory_replace"
+        - "conversation_search"
+        - "long_term_memory_insert"
+        - "long_term_memory_search"
+        - "summarize_conversation"
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
 
     ### Overview
 
-    This agent implements the MemCodeAct idea ([paper](https://arxiv.org/abs/2402.01030), [tweet](https://twitter.com/xingyaow_/status/1754556835703751087)) that consolidates LLM agents’ **act**ions into a unified **code** action space for both *simplicity* and *performance* (see paper for more details).
-
+    This agent implements:
+    - the CodeAct idea ([paper](https://arxiv.org/abs/2402.01030), [tweet](https://twitter.com/xingyaow_/status/1754556835703751087)) that consolidates LLM agents’ **act**ions into a unified **code** action space for both *simplicity* and *performance* (see paper for more details).
+    - inspired by the Generative Agents idea([paper](https://arxiv.org/abs/2304.03442)) and the MemGPT idea ([paper](https://arxiv.org/abs/2310.08560))
+    
     The conceptual idea is illustrated below. At each turn, the agent can:
 
     1. **Converse**: Communicate with humans in natural language to ask for clarification, confirmation, etc.
-    2. **MemCodeAct**: Choose to perform the task by executing code
-    - Execute any valid Linux `bash` command
-    - Execute any valid `Python` code with [an interactive Python interpreter](https://ipython.org/). This is simulated through `bash` command, see plugin system below for more details.
-
-    ![image](https://github.com/All-Hands-AI/OpenHands/assets/38853559/92b622e3-72ad-4a61-8f41-8c040b6d5fb3)
+    2. **CodeAct**: Choose to perform the task by executing code
+        - Execute any valid Linux `bash` command
+        - Execute any valid `Python` code with [an interactive Python interpreter](https://ipython.org/). This is simulated through `bash` command, see plugin system below for more details.
+    3. **MemGPT**: Manage its own memory
+        - truncate its history and replace it with a summary
+        - store information in its long-term memory
+        - search for information relevant to the task.
 
     """
 
@@ -77,28 +95,33 @@ class MemCodeActAgent(Agent):
         self,
         llm: LLM,
         config: AgentConfig,
-        memory_config: MemoryConfig = None,
+        memory_config: LLMConfig = None,
     ) -> None:
         """Initializes a new instance of the MemCodeActAgent class.
 
         Parameters:
-        - llm (LLM): The llm to be used by this agent
+        - llm: The LLM to be used by this agent
+        - config: The agent configuration
+        - memory_config: The memory configuration
         """
         super().__init__(llm, config)
         self.reset()
 
         self.memory_config = memory_config
 
-        # Initialize the memory modules
-        chat_memory = ChatMemory(
-            persona='Default Persona', human='Default Human', limit=2000
-        )
+        # initialize the memory modules
+        # stores and recalls the whole agent's history
+        conversation_memory = ConversationMemory(agent_state=self.agent_state, top_k=100)
+
         core_memory = CoreMemory(
             system_message=self.prompt_manager.system_message, limit=1500
         )
+
+        # stores and searches the agent's long-term memory (vector store)
         long_term_memory = LongTermMemory(agent_state=self.agent_state, top_k=100)
+        
         self.memory = {
-            'chat': chat_memory,
+            'conversation': conversation_memory,
             'core': core_memory,
             'long_term': long_term_memory,
         }
@@ -201,15 +224,14 @@ class MemCodeActAgent(Agent):
         """Resets the MemCodeAct Agent."""
         super().reset()
 
-        # Reset the memory modules
-        self.memory['chat'].persona = ''
-        self.memory['chat'].human = ''
+        # reset the memory modules
         self.memory['core'].system_message = self.prompt_manager.system_message
         self.memory['long_term'].cache = {}
+        self.memory['conversation'].reset()
 
     def step(self, state: State) -> Action:
         """Performs one step using the MemCodeAct Agent.
-        This includes gathering info on previous steps and prompting the model to make a command to execute.
+        This includes gathering info on previous steps and prompting the model to make an action to execute.
 
         Parameters:
         - state (State): used to get updated info
@@ -219,6 +241,10 @@ class MemCodeActAgent(Agent):
         - IPythonRunCellAction(code) - IPython code to run
         - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
+        - SummarizeAction() - summarize the conversation
+        - RecallAction() - search the agent's history
+        - LongTermMemoryInsertAction() - archive information in the long-term memory
+        - LongTermMemorySearchAction() - search the agent's long-term memory
         - AgentFinishAction() - end the interaction
         """
         # if we're done, go back

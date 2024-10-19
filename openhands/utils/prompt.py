@@ -17,6 +17,7 @@ class PromptManager:
         prompt_dir (str): Directory containing prompt templates.
         agent_skills_docs (str): Documentation of agent skills.
         micro_agent (MicroAgent | None): Micro-agent, if specified.
+        
     """
 
     def __init__(
@@ -29,13 +30,17 @@ class PromptManager:
         self.agent_skills_docs: str = agent_skills_docs
 
         self.system_template: Template = self._load_template('system_prompt')
+        self.summarize_template: Template = self._load_template('summarize_prompt')
+        self.memory_template: Template = self._load_template('memory_prompt')
         self.user_template: Template = self._load_template('user_prompt')
         self.micro_agent: MicroAgent | None = micro_agent
 
     def _load_template(self, template_name: str) -> Template:
         template_path = os.path.join(self.prompt_dir, f'{template_name}.j2')
         if not os.path.exists(template_path):
-            raise FileNotFoundError(f'Prompt file {template_path} not found')
+            #raise FileNotFoundError(f'Prompt file {template_path} not found')
+            print(f'Prompt file {template_path} not found')
+            return Template('')
         with open(template_path, 'r') as file:
             return Template(file.read())
 
@@ -43,6 +48,7 @@ class PromptManager:
     def system_message(self) -> str:
         rendered = self.system_template.render(
             agent_skills_docs=self.agent_skills_docs,
+            memory_template=self.memory_template.render(),
         ).strip()
         return rendered
 
@@ -60,4 +66,9 @@ class PromptManager:
         rendered = self.user_template.render(
             micro_agent=self.micro_agent.content if self.micro_agent else None
         )
+        return rendered.strip()
+
+    @property
+    def summarize_message(self) -> str:
+        rendered = self.summarize_template.render()
         return rendered.strip()

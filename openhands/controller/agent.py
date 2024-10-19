@@ -55,7 +55,7 @@ class Agent(ABC):
         to prepare the agent for restarting the instruction or cleaning up before destruction.
 
         """
-        self.memory.reset()
+        #self.memory.reset()
         self._complete = False
 
         if self.llm:
