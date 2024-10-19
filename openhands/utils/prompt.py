@@ -17,7 +17,7 @@ class PromptManager:
         prompt_dir (str): Directory containing prompt templates.
         agent_skills_docs (str): Documentation of agent skills.
         micro_agent (MicroAgent | None): Micro-agent, if specified.
-        
+
     """
 
     def __init__(
@@ -38,11 +38,15 @@ class PromptManager:
     def _load_template(self, template_name: str) -> Template:
         template_path = os.path.join(self.prompt_dir, f'{template_name}.j2')
         if not os.path.exists(template_path):
-            #raise FileNotFoundError(f'Prompt file {template_path} not found')
+            # raise FileNotFoundError(f'Prompt file {template_path} not found')
             print(f'Prompt file {template_path} not found')
             return Template('')
         with open(template_path, 'r') as file:
-            return Template(file.read())
+            content = file.read()
+            print(
+                f'Loaded template {template_name}: {content[:100]}...'
+            )  # og first 100 chars
+            return Template(content)
 
     @property
     def system_message(self) -> str:

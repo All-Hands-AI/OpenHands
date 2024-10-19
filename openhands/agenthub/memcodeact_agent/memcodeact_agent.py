@@ -27,8 +27,8 @@ from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
 from openhands.memory.base_memory import Memory
+from openhands.memory.conversation_memory import ConversationMemory
 from openhands.memory.core_memory import CoreMemory
-from openhands.memory.recall_memory import ConversationMemory
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -44,7 +44,7 @@ class MemCodeActAgent(Agent):
     The MemCode Act Agent is a memory-enabled version of the CodeAct agent.
 
     Its memory modules are:
-    - conversation: recall memory (history)
+    - conversation: easy to recall memory (history)
     - core: core system messages
     - long_term: long-term memory
 
@@ -205,8 +205,7 @@ class MemCodeActAgent(Agent):
         super().reset()
 
         # reset the memory modules
-        self.memory['core'].system_message = self.prompt_manager.system_message
-        self.memory['long_term'].cache = {}
+        self.memory['core'].reset()
         self.memory['conversation'].reset()
 
     def step(self, state: State) -> Action:
@@ -242,9 +241,7 @@ class MemCodeActAgent(Agent):
             memory_config=self.memory_config, history=state.history
         )
 
-        core_memory = CoreMemory(
-            system_message=self.prompt_manager.system_message, limit=1500
-        )
+        core_memory = CoreMemory(limit=1500)
 
         self.memory = {
             'conversation': conversation_memory,
