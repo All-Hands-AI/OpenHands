@@ -22,6 +22,7 @@ jobs:
     permissions:
       contents: 'read'
       id-token: 'write'
+      pull-requests: 'write'
     strategy:
       matrix:
         python-version: ['3.12']
