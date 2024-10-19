@@ -187,8 +187,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                     (
                         f'\n[Linting failed for edited file {filepath}. {len(updated_lint_error)} lint errors found.]\n'
                         '[begin attempted changes]\n'
-                        # f'{_obs.visualize_diff(change_applied=False)}\n'
-                        f'{diff}\n'
+                        f'{_obs.visualize_diff(change_applied=False)}\n'
                         '[end attempted changes]\n'
                     )
                     + '-' * 40
