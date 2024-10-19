@@ -191,13 +191,8 @@ class CodeActAgent(Agent):
         - AgentFinishAction() - end the interaction
         """
         # if we're done, go back
-        last_user_message_content = None
-        for event in reversed(state.history):
-            if isinstance(event, MessageAction) and event.source == 'user':
-                last_user_message_content = event.content
-                break
-
-        if last_user_message_content and last_user_message_content.strip() == '/exit':
+        last_user_message = state.get_last_user_message()
+        if last_user_message and last_user_message.strip() == '/exit':
             return AgentFinishAction()
 
         # prepare what we want to send to the LLM
