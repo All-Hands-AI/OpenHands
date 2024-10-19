@@ -44,11 +44,11 @@ jobs:
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
         script: |
-          github.rest.pulls.createReview({
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
             owner: context.repo.owner,
-            repo: context.repo.name,
-            pull_number: context.issue.number,
-            body: 'Hi! I started running the evaluation on your PR. You will receive a comment with the results shortly.'
+            repo: context.repo.repo,
+            body: 'Hi! I started running the evaluation on your PR. You will receive a comment with the results shortly.',
           })
 
 
@@ -108,11 +108,11 @@ jobs:
         github-token: ${{secrets.GITHUB_TOKEN}}
         script: |
           const artifactUrl = `https://github.com/${context.repo.owner}/${context.repo.name}/actions/runs/${context.runId}/artifacts/evaluation-outputs`;
-          github.rest.pulls.createReview({
-            pull_number: context.issue.number,
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
             owner: context.repo.owner,
-            repo: context.repo.name,
-            body: `Evaluation outputs:\n\n\`\`\`\n${process.env.SUMMARY_OUTPUT}\n\`\`\`\n\nYou can download the full evaluation outputs [here](${artifactUrl}).`
+            repo: context.repo.repo,
+            body: `**Evaluation outputs:**\n\n\`\`\`\n${process.env.SUMMARY_OUTPUT}\n\`\`\`\n\nYou can download the full evaluation outputs [here](${artifactUrl}).`
           })
 
     - name: Remove 'eval-this' label
