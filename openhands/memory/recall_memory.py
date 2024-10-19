@@ -1,14 +1,18 @@
-from .base_memory import Memory
-from .memory import LongTermMemory
 from openhands.core.config.llm_config import LLMConfig
+from openhands.memory.base_memory import Memory
+from openhands.memory.memory import LongTermMemory
 
 TOP_K = 10
+
 
 class RecallMemory(Memory):
     """Facilitates retrieval of information from LongTermMemory."""
 
     def __init__(
-        self, long_term_memory: LongTermMemory, llm_config: LLMConfig, top_k: int = TOP_K
+        self,
+        long_term_memory: LongTermMemory,
+        llm_config: LLMConfig,
+        top_k: int = TOP_K,
     ):
         """
         Initialize RecallMemory with a reference to LongTermMemory.

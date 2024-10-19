@@ -1,4 +1,4 @@
-from .base_memory import Memory
+from openhands.memory.base_memory import Memory
 
 
 class CoreMemory(Memory):
