@@ -84,3 +84,9 @@ class OperationCancelled(Exception):
 
     def __init__(self, message='Operation was cancelled'):
         super().__init__(message)
+
+
+class CloudFlareBlockageError(Exception):
+    """Exception raised when a request is blocked by CloudFlare."""
+
+    pass

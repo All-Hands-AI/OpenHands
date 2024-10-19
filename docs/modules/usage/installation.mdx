@@ -14,10 +14,10 @@ existing code that you'd like to modify.
 ```bash
 export WORKSPACE_BASE=$(pwd)/workspace
 
-docker pull ghcr.io/all-hands-ai/runtime:0.9-nikolaik
+docker pull ghcr.io/all-hands-ai/runtime:0.10-nikolaik
 
 docker run -it --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.9-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.10-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
     -v $WORKSPACE_BASE:/opt/workspace_base \
@@ -25,7 +25,7 @@ docker run -it --pull=always \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/all-hands-ai/openhands:0.9
+    ghcr.io/all-hands-ai/openhands:0.10
 ```
 
 You can also run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode), as an [interactive CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode), or using the [OpenHands GitHub Action](https://docs.all-hands.dev/modules/usage/how-to/github-action).
