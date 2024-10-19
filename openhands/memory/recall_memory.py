@@ -1,17 +1,17 @@
-from typing import List, Optional, Tuple
-
 from .base_memory import Memory
 from .memory import LongTermMemory
+from openhands.core.config.llm_config import LLMConfig
 
+TOP_K = 10
 
 class RecallMemory(Memory):
-    """Facilitates retrieval of information from ArchivalMemory."""
+    """Facilitates retrieval of information from LongTermMemory."""
 
     def __init__(
-        self, long_term_memory: LongTermMemory, embedding_model: any, top_k: int = 10
+        self, long_term_memory: LongTermMemory, llm_config: LLMConfig, top_k: int = TOP_K
     ):
         """
-        Initialize RecallMemory with a reference to ArchivalMemory.
+        Initialize RecallMemory with a reference to LongTermMemory.
 
         Args:
             archival_memory (LongTermMemory): The archival memory instance to query.
@@ -19,7 +19,7 @@ class RecallMemory(Memory):
             top_k (int): Number of top results to retrieve.
         """
         self.long_term_memory = long_term_memory
-        self.embedding_model = embedding_model
+        self.llm_config = llm_config
         self.top_k = top_k
 
     def to_dict(self) -> dict:
@@ -36,10 +36,10 @@ class RecallMemory(Memory):
         return f'RecallMemory with top_k={self.top_k}'
 
     def text_search(
-        self, query: str, count: Optional[int] = None, start: Optional[int] = None
-    ) -> Tuple[List[str], int]:
+        self, query: str, count: int | None = None, start: int | None = None
+    ) -> tuple[list[str], int]:
         """
-        Perform a text-based search on ArchivalMemory.
+        Perform a text-based search on LongTermMemory.
 
         Args:
             query (str): The text query to search for.
@@ -55,11 +55,11 @@ class RecallMemory(Memory):
         self,
         start_date: str,
         end_date: str,
-        count: Optional[int] = None,
-        start: Optional[int] = None,
-    ) -> Tuple[List[str], int]:
+        count: int | None = None,
+        start: int | None = None,
+    ) -> tuple[list[str], int]:
         """
-        Perform a date-based search on ArchivalMemory.
+        Perform a date-based search on LongTermMemory.
 
         Args:
             start_date (str): Start date in YYYY-MM-DD format.
@@ -73,10 +73,10 @@ class RecallMemory(Memory):
         return self.long_term_memory.date_search(start_date, end_date, count, start)
 
     def embedding_search(
-        self, query: str, count: Optional[int] = None, start: Optional[int] = None
-    ) -> Tuple[List[str], int]:
+        self, query: str, count: int | None = None, start: int | None = None
+    ) -> tuple[list[str], int]:
         """
-        Perform an embedding-based semantic search on ArchivalMemory.
+        Perform an embedding-based semantic search on LongTermMemory.
 
         Args:
             query (str): The query string for semantic search.
