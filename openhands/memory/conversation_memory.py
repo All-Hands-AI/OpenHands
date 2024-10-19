@@ -1,7 +1,7 @@
 from openhands.core.config.llm_config import LLMConfig
-from openhands.memory.base_memory import Memory
-from openhands.memory.memory import LongTermMemory
 from openhands.events.event import Event
+from openhands.events.serialization.event import event_from_dict, event_to_dict
+from openhands.memory.base_memory import Memory
 
 TOP_K = 10
 
@@ -28,10 +28,10 @@ class ConversationMemory(Memory):
 
     def to_dict(self) -> dict:
         # return a dict with key = event.id, value = event.to_dict()
-        return {event.id: event.to_dict() for event in self.history}
+        return {event.id: event_to_dict(event) for event in self.history}
 
     def from_dict(self, data: dict) -> None:
-        self.history = [Event.from_dict(event) for event in data.values()]
+        self.history = [event_from_dict(event) for event in data.values()]
 
     def __str__(self) -> str:
         return f'ConversationMemory with {len(self.history)} events'

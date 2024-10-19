@@ -26,7 +26,6 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
-from openhands.memory.base_memory import Memory
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.memory.core_memory import CoreMemory
 from openhands.runtime.plugins import (
@@ -86,8 +85,9 @@ class MemCodeActAgent(Agent):
 
     action_parser = MemCodeActResponseParser()
 
-    # NOTE: memory includes 'chat', 'core', and 'long_term' memory
-    memory: dict[str, Memory] = {}
+    # NOTE: memory includes 'conversation' and 'core' memory
+    conversation_memory: ConversationMemory
+    core_memory: CoreMemory
 
     def __init__(
         self,
@@ -205,8 +205,8 @@ class MemCodeActAgent(Agent):
         super().reset()
 
         # reset the memory modules
-        self.memory['core'].reset()
-        self.memory['conversation'].reset()
+        self.core_memory.reset()
+        self.conversation_memory.reset()
 
     def step(self, state: State) -> Action:
         """Performs one step using the MemCodeAct Agent.
@@ -237,16 +237,12 @@ class MemCodeActAgent(Agent):
         # long_term_memory = LongTermMemory(llm_config=memory_config, agent_config=config, event_stream=self.event_stream)
 
         # stores and recalls the whole agent's history
-        conversation_memory = ConversationMemory(
+        assert self.memory_config is not None
+        self.conversation_memory = ConversationMemory(
             memory_config=self.memory_config, history=state.history
         )
 
-        core_memory = CoreMemory(limit=1500)
-
-        self.memory = {
-            'conversation': conversation_memory,
-            'core': core_memory,
-        }
+        self.core_memory = CoreMemory(limit=1500)
 
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
@@ -336,12 +332,12 @@ class MemCodeActAgent(Agent):
 
     def summarize_messages_inplace(self):
         """Summarizes the messages stored in the agent's memory to reduce token usage."""
-        if len(self.memory['chat'].messages) <= 2:
+        if len(self.conversation_memory.history) <= 2:
             return
 
-        # Summarize the chat memory
-        summary = self.llm.summarize_messages(self.memory['chat'].messages)
-        self.memory['chat'].messages = [
+        # Summarize the conversation history
+        summary = self.llm.summarize_messages(self.conversation_memory.history)
+        self.conversation_memory.history = [
             Message(role='system', content=[TextContent(text=summary)])
         ]
-        logger.debug(f'Summarized chat memory to: {summary}')
+        logger.debug(f'Summarized conversation history to: {summary}')

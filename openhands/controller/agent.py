@@ -5,6 +5,7 @@ if TYPE_CHECKING:
     from openhands.controller.state.state import State
     from openhands.core.config import AgentConfig
     from openhands.events.action import Action
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.exceptions import (
     AgentAlreadyRegisteredError,
     AgentNotRegisteredError,
@@ -29,9 +30,11 @@ class Agent(ABC):
         self,
         llm: LLM,
         config: 'AgentConfig',
+        memory_config: LLMConfig | None = None,
     ):
         self.llm = llm
         self.config = config
+        self.memory_config = memory_config
         self._complete = False
 
     @property
@@ -55,7 +58,7 @@ class Agent(ABC):
         to prepare the agent for restarting the instruction or cleaning up before destruction.
 
         """
-        #self.memory.reset()
+        # self.memory.reset()
         self._complete = False
 
         if self.llm:
