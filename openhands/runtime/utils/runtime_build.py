@@ -130,6 +130,7 @@ def build_runtime_image(
                 extra_deps=extra_deps,
                 dry_run=dry_run,
                 force_rebuild=force_rebuild,
+                platform=platform,
             )
             return result
 
@@ -140,6 +141,7 @@ def build_runtime_image(
         extra_deps=extra_deps,
         dry_run=dry_run,
         force_rebuild=force_rebuild,
+        platform=platform,
     )
     return result
 
@@ -151,6 +153,7 @@ def build_runtime_image_in_folder(
     extra_deps: str | None,
     dry_run: bool,
     force_rebuild: bool,
+    platform: str | None = None,
 ) -> str:
     runtime_image_repo, _ = get_runtime_image_repo_and_tag(base_image)
     lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image)}'
@@ -167,6 +170,7 @@ def build_runtime_image_in_folder(
                 runtime_image_repo,
                 hash_tag,
                 lock_tag,
+                platform,
             )
         return hash_image_name
 
@@ -196,6 +200,7 @@ def build_runtime_image_in_folder(
             runtime_image_repo,
             hash_tag,
             lock_tag,
+            platform,
         )
 
     return hash_image_name
@@ -295,6 +300,7 @@ def _build_sandbox_image(
     runtime_image_repo: str,
     hash_tag: str,
     lock_tag: str,
+    platform: str | None = None,
 ):
     """Build and tag the sandbox image. The image will be tagged with all tags that do not yet exist"""
 
@@ -307,7 +313,9 @@ def _build_sandbox_image(
         if not runtime_builder.image_exists(name, False)
     ]
 
-    image_name = runtime_builder.build(path=str(build_folder), tags=names)
+    image_name = runtime_builder.build(
+        path=str(build_folder), tags=names, platform=platform
+    )
     if not image_name:
         raise RuntimeError(f'Build failed for image {names}')
 
