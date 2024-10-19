@@ -105,28 +105,16 @@ jobs:
     - name: Comment PR with evaluation results and artifact link
       uses: actions/github-script@v6
       if: github.event_name == 'pull_request'
+      env:
+        ARTIFACT_URL: ${{ steps.upload-artifact.outputs.artifact_url }}
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
         script: |
-          const artifactUrl = `https://github.com/${context.repo.owner}/${context.repo.name}/actions/runs/${context.runId}/artifacts/evaluation-outputs`;
           github.rest.issues.createComment({
-            issue_number: context.issue.number,
+            issue_number: github.event.pull_request.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: `**Evaluation outputs:**\n\n\`\`\`\n${process.env.SUMMARY_OUTPUT}\n\`\`\`\n\nYou can download the full evaluation outputs [here](${artifactUrl}).`
-          })
-
-    - name: Remove 'eval-this' label
-      if: github.event_name == 'pull_request'
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
-        script: |
-          github.rest.issues.removeLabel({
-            owner: context.repo.owner,
-            repo: context.repo.name,
-            issue_number: context.issue.number,
-            name: 'eval-this'
+            body: `**Evaluation outputs:**\n\n\`\`\`\n${process.env.SUMMARY_OUTPUT}\n\`\`\`\n\nYou can download the full evaluation outputs [here](${process.env.ARTIFACT_URL}).`
           })
 
 # - name: Authenticate to Google Cloud
