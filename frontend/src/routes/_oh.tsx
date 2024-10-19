@@ -15,7 +15,7 @@ import CogTooth from "#/assets/cog-tooth";
 import { SettingsForm } from "#/components/form/settings-form";
 import AccountSettingsModal from "#/components/modals/AccountSettingsModal";
 import { DangerModal } from "#/components/modals/confirmation-modals/danger-modal";
-import LoadingProjectModal from "#/components/modals/LoadingProject";
+import { LoadingSpinner } from "#/components/modals/LoadingProject";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { UserAvatar } from "#/components/user-avatar";
 import { useSocket } from "#/context/socket";
@@ -173,16 +173,22 @@ export default function MainApp() {
 
   return (
     <div className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3">
-      <aside className="px-1 flex flex-col gap-[15px]">
-        <button
-          type="button"
-          aria-label="All Hands Logo"
-          onClick={() => {
-            if (location.pathname !== "/") setStartNewProjectModalIsOpen(true);
-          }}
-        >
-          <AllHandsLogo width={34} height={23} />
-        </button>
+      <aside className="px-1 flex flex-col gap-1">
+        <div className="w-[34px] h-[34px] flex items-center justify-center">
+          {navigation.state === "loading" && <LoadingSpinner size="small" />}
+          {navigation.state !== "loading" && (
+            <button
+              type="button"
+              aria-label="All Hands Logo"
+              onClick={() => {
+                if (location.pathname !== "/")
+                  setStartNewProjectModalIsOpen(true);
+              }}
+            >
+              <AllHandsLogo width={34} height={23} />
+            </button>
+          )}
+        </div>
         <nav className="py-[18px] flex flex-col items-center gap-[18px]">
           <UserAvatar
             user={user}
@@ -222,17 +228,6 @@ export default function MainApp() {
       </aside>
       <div className="h-full w-full relative">
         <Outlet />
-        {navigation.state === "loading" && location.pathname !== "/" && (
-          <ModalBackdrop>
-            <LoadingProjectModal
-              message={
-                endSessionFetcher.state === "loading"
-                  ? "Ending session, please wait..."
-                  : undefined
-              }
-            />
-          </ModalBackdrop>
-        )}
         {(!settingsIsUpdated || settingsModalIsOpen) && (
           <ModalBackdrop onClose={() => setSettingsModalIsOpen(false)}>
             <div className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2">
