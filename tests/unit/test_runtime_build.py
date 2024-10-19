@@ -215,6 +215,7 @@ def test_build_runtime_image_from_scratch():
                 f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-hash_mock-source-hash',
                 f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-hash',
             ],
+            platform=None,
         )
         assert (
             image_name
