@@ -1,7 +1,8 @@
 name: Run Evaluation
 
 on:
-  pull_request: # for debugging
+  pull_request:
+    types: [labeled]
   schedule:
     - cron: '0 1 * * *'  # Run daily at 1 AM UTC
   workflow_dispatch:
@@ -16,6 +17,7 @@ env:
 
 jobs:
   run-evaluation:
+    if: github.event.label.name == 'eval-this' || github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
@@ -35,6 +37,20 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'poetry'
+
+    - name: Comment on PR if 'eval-this' label is present
+      uses: actions/github-script@v6
+      if: github.event_name == 'pull_request' && github.event.label.name == 'eval-this'
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.name,
+            body: 'Hi! I started running the evaluation on your PR. You will receive a comment with the results shortly.'
+          })
+
 
     - name: Install Python dependencies using Poetry
       run: poetry install
@@ -76,49 +92,49 @@ jobs:
         cat summarize_outputs.log >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
 
-    - name: Comment PR
+    - name: Create tar.gz of evaluation outputs
+      run: tar -czvf evaluation_outputs.tar.gz evaluation/evaluation_outputs
+
+    - name: Upload evaluation results as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: evaluation-outputs
+        path: evaluation_outputs.tar.gz
+
+    - name: Comment PR with evaluation results and artifact link
       uses: actions/github-script@v6
       if: github.event_name == 'pull_request'
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
         script: |
+          const artifactUrl = `https://github.com/${context.repo.owner}/${context.repo.name}/actions/runs/${context.runId}/artifacts/evaluation-outputs`;
           github.rest.issues.createComment({
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.name,
-            body: 'Evaluation outputs:\n\n```\n' + process.env.SUMMARY_OUTPUT + '\n```'
+            body: `Evaluation outputs:\n\n\`\`\`\n${process.env.SUMMARY_OUTPUT}\n\`\`\`\n\nYou can download the full evaluation outputs [here](${artifactUrl}).`
           })
 
-    - name: Comment Issue
+    - name: Remove 'eval-this' label
+      if: github.event_name == 'pull_request'
       uses: actions/github-script@v6
-      if: github.event_name == 'workflow_dispatch' && github.event.inputs.reason != ''
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
         script: |
-          const issueNumber = github.event.inputs.reason.match(/\d+/)[0];
-          github.rest.issues.createComment({
-            issue_number: issueNumber,
+          github.rest.issues.removeLabel({
             owner: context.repo.owner,
             repo: context.repo.name,
-            body: 'Evaluation outputs:\n\n```\n' + process.env.SUMMARY_OUTPUT + '\n```'
+            issue_number: context.issue.number,
+            name: 'eval-this'
           })
 
-    - name: Create tar.gz of evaluation outputs
-      run: tar -czvf evaluation_outputs.tar.gz evaluation/evaluation_outputs
+# - name: Authenticate to Google Cloud
+#   uses: 'google-github-actions/auth@v2'
+#   with:
+#     credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-    # - name: Authenticate to Google Cloud
-    #   uses: 'google-github-actions/auth@v2'
-    #   with:
-    #     credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-    # - name: Upload evaluation results to Google Cloud Storage
-    #   uses: 'google-github-actions/upload-cloud-storage@v2'
-    #   with:
-    #     path: 'evaluation/evaluation_outputs'
-    #     destination: 'openhands-oss-eval-results/${{ github.repository_owner }}__${{ github.event.repository.name }}/${{ github.run_id }}/${{ github.sha }}'
-
-    - name: Upload evaluation results as artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: swe-bench-evaluation-results
-        path: evaluation_outputs.tar.gz
+# - name: Upload evaluation results to Google Cloud Storage
+#   uses: 'google-github-actions/upload-cloud-storage@v2'
+#   with:
+#     path: 'evaluation/evaluation_outputs'
+#     destination: 'openhands-oss-eval-results/${{ github.repository_owner }}__${{ github.event.repository.name }}/${{ github.run_id }}/${{ github.sha }}'
