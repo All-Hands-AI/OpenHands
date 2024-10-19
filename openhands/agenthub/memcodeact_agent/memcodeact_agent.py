@@ -27,9 +27,7 @@ from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
 from openhands.memory.base_memory import Memory
-from openhands.memory.chat_memory import ChatMemory
 from openhands.memory.core_memory import CoreMemory
-from openhands.memory.memory import LongTermMemory
 from openhands.memory.recall_memory import ConversationMemory
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
@@ -64,7 +62,7 @@ class MemCodeActAgent(Agent):
     This agent implements:
     - the CodeAct idea ([paper](https://arxiv.org/abs/2402.01030), [tweet](https://twitter.com/xingyaow_/status/1754556835703751087)) that consolidates LLM agents’ **act**ions into a unified **code** action space for both *simplicity* and *performance* (see paper for more details).
     - inspired by the Generative Agents idea([paper](https://arxiv.org/abs/2304.03442)) and the MemGPT idea ([paper](https://arxiv.org/abs/2310.08560))
-    
+
     The conceptual idea is illustrated below. At each turn, the agent can:
 
     1. **Converse**: Communicate with humans in natural language to ask for clarification, confirmation, etc.
@@ -105,26 +103,8 @@ class MemCodeActAgent(Agent):
         - memory_config: The memory configuration
         """
         super().__init__(llm, config)
-        self.reset()
 
         self.memory_config = memory_config
-
-        # initialize the memory modules
-        # stores and recalls the whole agent's history
-        conversation_memory = ConversationMemory(agent_state=self.agent_state, top_k=100)
-
-        core_memory = CoreMemory(
-            system_message=self.prompt_manager.system_message, limit=1500
-        )
-
-        # stores and searches the agent's long-term memory (vector store)
-        long_term_memory = LongTermMemory(agent_state=self.agent_state, top_k=100)
-        
-        self.memory = {
-            'conversation': conversation_memory,
-            'core': core_memory,
-            'long_term': long_term_memory,
-        }
 
         self.micro_agent = (
             MicroAgent(
@@ -251,6 +231,25 @@ class MemCodeActAgent(Agent):
         last_user_message = state.get_last_user_message()
         if last_user_message and last_user_message.strip() == '/exit':
             return AgentFinishAction()
+
+        # initialize the memory modules
+
+        # stores and searches the agent's long-term memory (vector store)
+        # long_term_memory = LongTermMemory(llm_config=memory_config, agent_config=config, event_stream=self.event_stream)
+
+        # stores and recalls the whole agent's history
+        conversation_memory = ConversationMemory(
+            memory_config=self.memory_config, history=state.history
+        )
+
+        core_memory = CoreMemory(
+            system_message=self.prompt_manager.system_message, limit=1500
+        )
+
+        self.memory = {
+            'conversation': conversation_memory,
+            'core': core_memory,
+        }
 
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
