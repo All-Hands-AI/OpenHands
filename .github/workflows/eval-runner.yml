@@ -71,6 +71,38 @@ jobs:
         echo "OUTPUT_FOLDER for SWE-bench evaluation: $OUTPUT_FOLDER"
         poetry run ./evaluation/swe_bench/scripts/eval_infer_remote.sh $OUTPUT_FOLDER/output.jsonl $N_PROCESSES "princeton-nlp/SWE-bench_Lite" test
 
+        poetry run ./evaluation/swe_bench/scripts/eval/summarize_outputs.py $OUTPUT_FOLDER/output.jsonl > summarize_outputs.log 2>&1
+        echo "SUMMARY_OUTPUT<<EOF" >> $GITHUB_ENV
+        cat summarize_outputs.log >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
+    - name: Comment PR
+      uses: actions/github-script@v6
+      if: github.event_name == 'pull_request'
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.name,
+            body: 'Evaluation outputs:\n\n```\n' + process.env.SUMMARY_OUTPUT + '\n```'
+          })
+
+    - name: Comment Issue
+      uses: actions/github-script@v6
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.reason != ''
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const issueNumber = github.event.inputs.reason.match(/\d+/)[0];
+          github.rest.issues.createComment({
+            issue_number: issueNumber,
+            owner: context.repo.owner,
+            repo: context.repo.name,
+            body: 'Evaluation outputs:\n\n```\n' + process.env.SUMMARY_OUTPUT + '\n```'
+          })
+
     - name: Create tar.gz of evaluation outputs
       run: tar -czvf evaluation_outputs.tar.gz evaluation/evaluation_outputs
 
