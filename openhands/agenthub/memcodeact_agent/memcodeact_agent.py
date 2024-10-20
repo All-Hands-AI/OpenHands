@@ -257,6 +257,8 @@ class MemCodeActAgent(Agent):
                 '</execute_ipython>',
                 '</execute_bash>',
                 '</execute_browse>',
+                '</memory_summarize>',
+                '</memory_recall>',
             ],
         }
 
@@ -329,6 +331,14 @@ class MemCodeActAgent(Agent):
             ),
             None,
         )
+
+        # information about the conversation history
+        hidden_message_count = self.conversation_memory.hidden_message_count
+        if latest_user_message and hidden_message_count > 0:
+            recall_text = f'\n\nRECALL: Note: {hidden_message_count} prior messages with the user have been hidden from view due to conversation memory constraints. Older messages are stored in your history storage. You can search your conversation history using the <memory_recall> action.'
+            latest_user_message.content.append(TextContent(text=recall_text))
+
+        # iterations reminder
         if latest_user_message:
             reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
             latest_user_message.content.append(TextContent(text=reminder_text))

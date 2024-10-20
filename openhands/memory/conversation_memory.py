@@ -1,3 +1,5 @@
+from enum import Enum
+
 from openhands.controller.state.state import State
 from openhands.core.config.llm_config import LLMConfig
 from openhands.events.action.agent import AgentSummarizeAction
@@ -5,6 +7,11 @@ from openhands.events.serialization.event import event_to_dict
 from openhands.memory.base_memory import Memory
 
 TOP_K = 10
+
+
+class StorageType(Enum):
+    IN_MEMORY = 'in-memory'
+    VECTOR_DATABASE = 'vector'
 
 
 class ConversationMemory(Memory):
@@ -31,12 +38,17 @@ class ConversationMemory(Memory):
         self.llm_config = memory_config
         self.top_k = TOP_K
 
+        # the number of messages that are hidden from the user
+        self.hidden_message_count = 0
+
+        self.storage_type = StorageType.IN_MEMORY
+
     def to_dict(self) -> dict:
         # return a dict with key = event.id, value = event.to_dict()
         return {event.id: event_to_dict(event) for event in self.state.history}
 
     def __str__(self) -> str:
-        return f'ConversationMemory with {len(self.history)} events'
+        return f'ConversationMemory with {len(self.state.history)} total events'
 
     def text_search(
         self, query: str, count: int | None = None, start: int | None = None
@@ -110,9 +122,15 @@ class ConversationMemory(Memory):
         else:
             self.temporary_history = state.history
 
+        # the number of messages that are hidden from the user
+        self.hidden_message_count = len(state.history) - len(self.temporary_history)
+
     def _has_summary(self) -> bool:
-        """Check if the conversation memory has a summary."""
-        return any(isinstance(event, AgentSummarizeAction) for event in self.history)
+        """Check if the conversation has a summary."""
+        return any(
+            isinstance(event, AgentSummarizeAction) for event in self.state.history
+        )
 
     def reset(self) -> None:
-        self.history = []
+        # self.state.history = []
+        pass

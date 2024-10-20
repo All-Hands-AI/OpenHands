@@ -20,8 +20,10 @@ class ChangeAgentStateAction(Action):
 
 @dataclass
 class AgentSummarizeAction(Action):
-    summary: str  # summary to be inserted as a memory block
+    summary: str = ''  # summary to be inserted as a memory block
     action: str = ActionType.SUMMARIZE
+    start_id: int = -1
+    end_id: int = -1
 
     @property
     def message(self) -> str:
@@ -30,6 +32,20 @@ class AgentSummarizeAction(Action):
     def __str__(self) -> str:
         ret = '**AgentSummarizeAction**\n'
         ret += f'SUMMARY: {self.summary}'
+        return ret
+
+
+# FIXME delete this if we don't do this
+@dataclass
+class AgentTriggerSummarizeAction(Action):
+    action: str = ActionType.TRIGGER_SUMMARIZE
+
+    @property
+    def message(self) -> str:
+        return 'Triggering a summary of the conversation history'
+
+    def __str__(self) -> str:
+        ret = '**AgentTriggerSummarizeAction**\n'
         return ret
 
 
@@ -78,3 +94,14 @@ class AgentDelegateAction(Action):
     @property
     def message(self) -> str:
         return f"I'm asking {self.agent} for help with this task."
+
+
+@dataclass
+class AgentRecallAction(Action):
+    query: str
+    thought: str = ''
+    action: str = ActionType.RECALL
+
+    @property
+    def message(self) -> str:
+        return f'Recalling "{self.query[:10]}..."'

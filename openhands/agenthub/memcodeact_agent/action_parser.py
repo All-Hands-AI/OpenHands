@@ -9,7 +9,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from openhands.events.action.agent import AgentSummarizeAction
+from openhands.events.action.agent import AgentRecallAction, AgentTriggerSummarizeAction
 
 
 class MemCodeActResponseParser(ResponseParser):
@@ -19,6 +19,8 @@ class MemCodeActResponseParser(ResponseParser):
     - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
     - MessageAction(content) - Message action to run (e.g. ask for clarification)
     - AgentFinishAction() - end the interaction
+    - AgentSummarizeAction() - summarize the conversation history
+    - RecallAction(query) - recall information from memory
     """
 
     def __init__(self):
@@ -28,6 +30,8 @@ class MemCodeActResponseParser(ResponseParser):
             MemCodeActActionParserCmdRun(),
             MemCodeActActionParserIPythonRunCell(),
             MemCodeActActionParserAgentDelegate(),
+            MemCodeActActionParserMemorySummarize(),
+            MemCodeActActionParserMemoryRecall(),
         ]
         self.default_parser = MemCodeActActionParserMessage()
 
@@ -212,14 +216,27 @@ class MemCodeActActionParserMemoryRecall(ActionParser):
             self.query is not None
         ), 'self.query should not be None when parse is called'
 
-        # <memory_recall>query</memory_recall>
+        # thought <memory_recall>query</memory_recall>
+        # Note: the thought is optional
         thought = action_str.replace(self.query.group(0), '').strip()
-        return RecallAction(query=self.query.group(1).strip(), thought=thought)
+        return AgentRecallAction(query=self.query.group(1).strip(), thought=thought)
+
+
+class MemCodeActActionParserMemorySummarize(ActionParser):
+    """Parser action:
+    - <memory_summarize></memory_summarize> - The LLM wants to trigger a summarization of the conversation history
+    """
+
+    def check_condition(self, action_str: str) -> bool:
+        return '<memory_summarize></memory_summarize>' in action_str
+
+    def parse(self, action_str: str) -> Action:
+        return AgentTriggerSummarizeAction()
 
 
 class MemCodeActActionParserMemoryAdd(ActionParser):
     """Parser action:
-    - AddAction(content) - memory action to run
+    - MemoryAddAction(content) - add text to core memory
     """
 
     def __init__(self):
@@ -238,52 +255,5 @@ class MemCodeActActionParserMemoryAdd(ActionParser):
 
         # <memory_add>content</memory_add>
         thought = action_str.replace(self.content.group(0), '').strip()
-        return AddAction(content=self.content.group(1).strip(), thought=thought)
-
-
-class MemCodeActActionParserMemorySummarize(ActionParser):
-    """Parser action:
-    - SummarizeAction(query) - memory action to run
-    """
-
-    def __init__(self):
-        self.query = None
-
-    def check_condition(self, action_str: str) -> bool:
-        self.query = re.search(
-            r'<memory_summarize>(.*?)</memory_summarize>', action_str, re.DOTALL
-        )
-        return self.query is not None
-
-    def parse(self, action_str: str) -> Action:
-        assert (
-            self.query is not None
-        ), 'self.query should not be None when parse is called'
-
-        # <memory_summarize>query</memory_summarize>
-        thought = action_str.replace(self.query.group(0), '').strip()
-        return AgentSummarizeAction(query=self.query.group(1).strip(), thought=thought)
-
-
-def parse_summary_response(response: str) -> AgentSummarizeAction:
-    """
-    Parses a JSON summary of events.
-    Parameters:
-    - response: The response string to be parsed
-    Returns:
-    - The summary action output by the model
-    """
-    try:
-        action_dict = json.loads(response)
-        action = action_from_dict(action_dict)
-        if action is None or not isinstance(action, AgentSummarizeAction):
-            error_message = f'Expected a summarize action, but the response got {str(type(action)) if action else None}'
-            logger.error(error_message)
-            raise InvalidSummaryResponseError(error_message)
-        action._source = EventSource.AGENT  # type: ignore
-    except (LLMResponseError, LLMMalformedActionError) as e:
-        logger.error(f'Failed to parse summary response: {str(e)}')
-        raise InvalidSummaryResponseError(
-            f'Failed to parse the response: {str(e)}'
-        ) from e
-    return action
+        return Action()
+        # return MemoryAddAction(content=self.content.group(1).strip(), thought=thought)
