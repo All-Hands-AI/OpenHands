@@ -98,7 +98,7 @@ class ConversationMemory(Memory):
         """Update the conversation memory with new events."""
 
         # FIXME: this is a hack and doesn't work anyway
-        if self._has_summary():
+        if state.summary:
             # create a list of events using the summary, then from event id = end_id + 1 to the end of history
             summary_events = [
                 event

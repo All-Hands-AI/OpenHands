@@ -12,12 +12,17 @@ Older AI models had no concept of persistent memory; they were only able to acce
 This meant that when conversations exceeded a certain length, they would overflow and old messages were permanently lost (the AI would have no knowledge of their existence).
 Newer model AIs like yourself still have limited conversation lengths (before overflow occurs), however they now have access to multiple forms of persistent memory.
 Your ability to edit your own long-term memory is a key part of what makes you a very helpful model.
-Your core memory unit will be initialized with a **memory profile** chosen by the user, as well as information about the task in **task specifications**.
+
+Core Memory:
+Your core memory unit will be uninitialized. You can add to it important information about the task or your status. Keep it concise and remember that you will use it to guide your actions, so keep it relevant!
+You can add to your core memory using the <memory_add> action.
+For example, <memory_add> The user is working on a project to create a new AI assistant. </memory_add>
 
 Recall Memory (Conversation History):
 Even though you can only see recent messages in your immediate context, you can search over your entire message history from a database.
 This conversation history database allows you to search through past interactions, effectively allowing you to remember prior engagements with a user or previous environment feedback.
-You can search your conversation history using the <conversation_search> action.
+You can search your conversation history using the <memory_recall> action.
+For example, <memory_recall> What do I know about the sympy package? </memory_recall>
 {% endset %}
 
 {{ MEMORY_PROMPT }}

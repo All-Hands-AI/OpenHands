@@ -15,7 +15,6 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from openhands.events.event import Event
 from openhands.events.observation import (
     AgentDelegateObservation,
     CmdOutputObservation,
@@ -251,7 +250,7 @@ class MemCodeActAgent(Agent):
             self.core_memory = CoreMemory(limit=1500)
 
         # prepare what we want to send to the LLM
-        messages = self._get_messages(self.conversation_memory.history, state)
+        messages = self._get_messages(state)
         params = {
             'messages': self.llm.format_messages_for_llm(messages),
             'stop': [
@@ -265,7 +264,7 @@ class MemCodeActAgent(Agent):
 
         return self.action_parser.parse(response)
 
-    def _get_messages(self, history: list[Event], state: State) -> list[Message]:
+    def _get_messages(self, state: State) -> list[Message]:
         messages: list[Message] = [
             Message(
                 role='system',
@@ -287,7 +286,7 @@ class MemCodeActAgent(Agent):
             ),
         ]
 
-        for event in history:
+        for event in state.history:
             # create a regular message from an event
             if isinstance(event, Action):
                 message = self.get_action_message(event)
@@ -344,7 +343,7 @@ class MemCodeActAgent(Agent):
         # summarize the conversation history using the condenser
         # conversation_memory.history will include the previous summary, if any, while the regular state.history does not
         condenser = MemoryCondenser(self.llm)
-        messages = self._get_messages(self.conversation_memory.history, state)
+        messages = self._get_messages(state)
         summary = condenser.condense(messages)
 
         logger.debug(f'Summarized conversation history to: {summary}')
