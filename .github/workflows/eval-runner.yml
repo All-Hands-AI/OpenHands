@@ -111,7 +111,7 @@ jobs:
         github-token: ${{secrets.GITHUB_TOKEN}}
         script: |
           github.rest.issues.createComment({
-            issue_number: github.event.pull_request.number,
+            issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
             body: `**Evaluation outputs:**\n\n\`\`\`\n${process.env.SUMMARY_OUTPUT}\n\`\`\`\n\nYou can download the full evaluation outputs [here](${process.env.ARTIFACT_URL}).`
