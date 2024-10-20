@@ -4,6 +4,8 @@ from openhands.core.message import Message, TextContent
 from openhands.events.action import AgentSummarizeAction
 from openhands.llm.llm import LLM
 
+WORD_LIMIT = 200
+MESSAGE_SUMMARY_WARNING_FRAC = 0.75
 
 class MemoryCondenser:
     def __init__(self, llm: LLM):
