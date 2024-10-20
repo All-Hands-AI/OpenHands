@@ -83,6 +83,8 @@ def verify_api_key(api_key: str = Depends(api_key_header)):
     if SESSION_API_KEY and api_key != SESSION_API_KEY:
         raise HTTPException(status_code=403, detail='Invalid API Key')
     return api_key
+
+
 HEAD = '<<<<<<< SEARCH'
 DIVIDER = '======='
 TAIL = '>>>>>>> REPLACE'
@@ -605,7 +607,7 @@ class RuntimeClient:
         )
         if not diff_blocks or len(diff_blocks.groups()) < 3:
             return ErrorObservation(
-                'Could not resolve diff block into search/replace blocks.'
+                'Could NOT resolve diff block into search/replace blocks.'
             )
 
         path = diff_blocks.group(1)
@@ -616,29 +618,49 @@ class RuntimeClient:
         if replace_block:
             replace_block = replace_block[1:]
 
+        ret_str = ''
+
         working_dir = self._get_working_directory()
         filepath = self._resolve_path(path, working_dir)
         if not search_block:
             create_file(filename=filepath)
-            append_file(
-                file_name=filepath,
-                content=replace_block,
+            ret_str = (
+                append_file(
+                    file_name=filepath,
+                    content=replace_block,
+                )
+                or 'Could NOT append to file.'
             )
         else:
-            if search_block == replace_block:
-                return ErrorObservation(
-                    'Search block should not be same as Replace block.'
+            common_lines_count = len(
+                set(search_block.split('\n')).intersection(
+                    set(replace_block.split('\n'))
                 )
-            edit_file_by_replace(
-                file_name=filepath,
-                to_replace=search_block,
-                new_content=replace_block,
+            )
+            replace_block_lines_count = len(replace_block.split('\n'))
+            if (
+                replace_block_lines_count > 10
+                and common_lines_count > replace_block_lines_count * 0.5
+            ):
+                return ErrorObservation(
+                    'Changes were NOT applied. '
+                    'There are too many overlapping lines between search & replace blocks. '
+                    'Please try to break the search & replace blocks into smaller and concrete chunks.'
+                )
+            ret_str = (
+                edit_file_by_replace(
+                    file_name=filepath,
+                    to_replace=search_block,
+                    new_content=replace_block,
+                )
+                or 'Could NOT edit file.'
             )
         return FileEditObservation(
             content=action.diff_block,
             path=filepath,
             search_block=search_block,
             replace_block=replace_block,
+            ret_str=ret_str,
         )
 
     async def browse(self, action: BrowseURLAction) -> Observation:

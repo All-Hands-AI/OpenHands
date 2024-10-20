@@ -35,6 +35,7 @@ class FileEditObservation(Observation):
     path: str
     search_block: str
     replace_block: str
+    ret_str: str
     observation: str = ObservationType.EDIT
 
     @property
@@ -52,4 +53,4 @@ class FileEditObservation(Observation):
             )
 
     def __str__(self) -> str:
-        return f'**FileEditObservation**\n' f'DIFF BLOCK: {self.content}\n'
+        return f'**FileEditObservation**\n' f'{self.ret_str}'

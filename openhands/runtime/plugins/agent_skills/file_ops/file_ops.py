@@ -635,7 +635,9 @@ def _edit_file_impl(
     return ret_str
 
 
-def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> None:
+def edit_file_by_replace(
+    file_name: str, to_replace: str, new_content: str
+) -> None | str:
     """Edit an existing file. This will search for non-empty `to_replace` in the given file and replace it with non-empty `new_content`.
     `to_replace` and `new_content` must be different! Split large edits into multiple smaller edits if necessary!
     Use `append_file` method for writing after `create_file`!
@@ -686,11 +688,11 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
     # FIXME: support replacing *all* occurrences
     if to_replace is None or to_replace.strip() == '':
         _output_error('`to_replace` must not be empty.')
-        return
+        return None
 
     if to_replace == new_content:
         _output_error('`to_replace` and `new_content` must be different.')
-        return
+        return None
 
     if not os.path.isfile(file_name):
         _output_error(f'File {file_name} not found.')
@@ -706,7 +708,7 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
         _output_error(
             '`to_replace` appears more than once, please include enough lines to make code in `to_replace` unique.'
         )
-        return
+        return None
 
     start = file_content.find(to_replace)
     if start != -1:
@@ -728,7 +730,7 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
             print(
                 f'[No exact match found in {file_name} for\n```\n{to_replace}\n```\n]'
             )
-            return
+            return None
         # Convert start from index to line number for fuzzy match
         start_line_number = file_content_fuzzy[:start].count('\n') + 1
         end_line_number = start_line_number + len(to_replace.splitlines()) - 1
@@ -742,8 +744,9 @@ def edit_file_by_replace(file_name: str, to_replace: str, new_content: str) -> N
     )
     # lint_error = bool(LINTER_ERROR_MSG in ret_str)
     # TODO: automatically tries to fix linter error (maybe involve some static analysis tools on the location near the edit to figure out indentation)
-    if ret_str is not None:
-        print(ret_str)
+    # if ret_str is not None:
+    #     print(ret_str)
+    return ret_str
 
 
 def insert_content_at_line(file_name: str, line_number: int, content: str) -> None:
@@ -781,7 +784,7 @@ def insert_content_at_line(file_name: str, line_number: int, content: str) -> No
         print(ret_str)
 
 
-def append_file(file_name: str, content: str) -> None:
+def append_file(file_name: str, content: str) -> str | None:
     """Append content to the given file.
     It appends text `content` to the end of the specified file, ideal after a `create_file`!
 
@@ -797,8 +800,9 @@ def append_file(file_name: str, content: str) -> None:
         is_insert=False,
         is_append=True,
     )
-    if ret_str is not None:
-        print(ret_str)
+    # if ret_str is not None:
+    #     print(ret_str)
+    return ret_str
 
 
 def search_dir(search_term: str, dir_path: str = './') -> None:
