@@ -203,6 +203,10 @@ class CodeActAgent(Agent):
                 '</execute_browse>',
             ],
         }
+        # DEBUG: save llm messages to a file
+        with open("/home/logs/llm_messages.json", "w") as f:
+            import json
+            json.dump(params["messages"], f, indent=2)
 
         response = self.llm.completion(**params)
 
