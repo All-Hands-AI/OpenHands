@@ -9,6 +9,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.events.action.agent import AgentSummarizeAction
 
 
 class MemCodeActResponseParser(ResponseParser):
@@ -38,13 +39,25 @@ class MemCodeActResponseParser(ResponseParser):
         action = response.choices[0].message.content
         if action is None:
             return ''
+
+        # execute actions
         for lang in ['bash', 'ipython', 'browse']:
-            # special handling for DeepSeek: it has stop-word bug and returns </execute_ipython instead of </execute_ipython>
+            # special handling for DeepSeek: it has the stop-word bug and returns </execute_ipython instead of </execute_ipython>
             if f'</execute_{lang}' in action and f'</execute_{lang}>' not in action:
                 action = action.replace(f'</execute_{lang}', f'</execute_{lang}>')
 
             if f'<execute_{lang}>' in action and f'</execute_{lang}>' not in action:
                 action += f'</execute_{lang}>'
+
+        # memory actions
+        for action in ['summarize', 'recall', 'add']:
+            # the stop-word bug
+            if f'<memory_{action}>' in action and f'</memory_{action}>' not in action:
+                action += f'</memory_{action}>'
+
+            if f'<memory_{action}>' in action and f'</memory_{action}>' not in action:
+                action += f'</memory_{action}>'
+
         return action
 
     def parse_action(self, action_str: str) -> Action:
@@ -178,3 +191,75 @@ class MemCodeActActionParserMessage(ActionParser):
 
     def parse(self, action_str: str) -> Action:
         return MessageAction(content=action_str, wait_for_response=True)
+
+
+class MemCodeActActionParserMemoryRecall(ActionParser):
+    """Parser action:
+    - RecallAction(query) - memory action to run
+    """
+
+    def __init__(self):
+        self.query = None
+
+    def check_condition(self, action_str: str) -> bool:
+        self.query = re.search(
+            r'<memory_recall>(.*?)</memory_recall>', action_str, re.DOTALL
+        )
+        return self.query is not None
+
+    def parse(self, action_str: str) -> Action:
+        assert (
+            self.query is not None
+        ), 'self.query should not be None when parse is called'
+
+        # <memory_recall>query</memory_recall>
+        thought = action_str.replace(self.query.group(0), '').strip()
+        return RecallAction(query=self.query.group(1).strip(), thought=thought)
+
+
+class MemCodeActActionParserMemoryAdd(ActionParser):
+    """Parser action:
+    - AddAction(content) - memory action to run
+    """
+
+    def __init__(self):
+        self.content = None
+
+    def check_condition(self, action_str: str) -> bool:
+        self.content = re.search(
+            r'<memory_add>(.*?)</memory_add>', action_str, re.DOTALL
+        )
+        return self.content is not None
+
+    def parse(self, action_str: str) -> Action:
+        assert (
+            self.content is not None
+        ), 'self.content should not be None when parse is called'
+
+        # <memory_add>content</memory_add>
+        thought = action_str.replace(self.content.group(0), '').strip()
+        return AddAction(content=self.content.group(1).strip(), thought=thought)
+
+
+class MemCodeActActionParserMemorySummarize(ActionParser):
+    """Parser action:
+    - SummarizeAction(query) - memory action to run
+    """
+
+    def __init__(self):
+        self.query = None
+
+    def check_condition(self, action_str: str) -> bool:
+        self.query = re.search(
+            r'<memory_summarize>(.*?)</memory_summarize>', action_str, re.DOTALL
+        )
+        return self.query is not None
+
+    def parse(self, action_str: str) -> Action:
+        assert (
+            self.query is not None
+        ), 'self.query should not be None when parse is called'
+
+        # <memory_summarize>query</memory_summarize>
+        thought = action_str.replace(self.query.group(0), '').strip()
+        return AgentSummarizeAction(query=self.query.group(1).strip(), thought=thought)
