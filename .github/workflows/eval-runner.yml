@@ -102,11 +102,12 @@ jobs:
         name: evaluation-outputs
         path: evaluation_outputs.tar.gz
 
+    - name: Get artifact URL
+      run: echo "ARTIFACT_URL=${{ steps.upload-artifact.outputs.artifact_url }}" >> $GITHUB_ENV
+
     - name: Comment PR with evaluation results and artifact link
       uses: actions/github-script@v6
       if: github.event_name == 'pull_request'
-      env:
-        ARTIFACT_URL: ${{ steps.upload-artifact.outputs.artifact_url }}
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
         script: |
