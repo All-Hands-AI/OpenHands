@@ -9,7 +9,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from openhands.events.action.agent import AgentRecallAction, AgentTriggerSummarizeAction
+from openhands.events.action.agent import AgentRecallAction, AgentSummarizeAction
 
 
 class MemCodeActResponseParser(ResponseParser):
@@ -231,7 +231,8 @@ class MemCodeActActionParserMemorySummarize(ActionParser):
         return '<memory_summarize></memory_summarize>' in action_str
 
     def parse(self, action_str: str) -> Action:
-        return AgentTriggerSummarizeAction()
+        # let the agent trigger the summarization
+        return AgentSummarizeAction(summary='')
 
 
 class MemCodeActActionParserMemoryAdd(ActionParser):

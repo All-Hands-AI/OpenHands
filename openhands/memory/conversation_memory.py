@@ -107,23 +107,11 @@ class ConversationMemory(Memory):
         pass
 
     def update(self, state: State) -> None:
-        """Update the conversation memory with new events."""
-
-        # FIXME: this is a hack and doesn't work anyway
-        if state.summary:
-            # create a list of events using the summary, then from event id = end_id + 1 to the end of history
-            summary_events = [
-                event
-                for event in state.history
-                if event.id
-                not in range(state.summary['start_id'], state.summary['end_id'] + 1)
-            ]
-            self.temporary_history = state.summary + summary_events
-        else:
-            self.temporary_history = state.history
+        """Update the conversation memory with information from the new events."""
 
         # the number of messages that are hidden from the user
-        self.hidden_message_count = len(state.history) - len(self.temporary_history)
+        # is the number of events in summary
+        self.hidden_message_count = state.summary.end_id - state.summary.start_id
 
     def _has_summary(self) -> bool:
         """Check if the conversation has a summary."""

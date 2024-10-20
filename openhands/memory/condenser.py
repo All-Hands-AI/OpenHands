@@ -81,7 +81,7 @@ class MemoryCondenser:
             message_sequence_to_summarize=message_sequence_to_summarize
         )
         summary_action: AgentSummarizeAction = parse_summary_response(action_response)
-        summary_action.last_summarized_event_id = (
+        summary_action.end_id = (
             last_summarized_event_id if last_summarized_event_id else -1
         )
         return summary_action

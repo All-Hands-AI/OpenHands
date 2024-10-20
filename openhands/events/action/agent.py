@@ -35,20 +35,6 @@ class AgentSummarizeAction(Action):
         return ret
 
 
-# FIXME delete this if we don't do this
-@dataclass
-class AgentTriggerSummarizeAction(Action):
-    action: str = ActionType.TRIGGER_SUMMARIZE
-
-    @property
-    def message(self) -> str:
-        return 'Triggering a summary of the conversation history'
-
-    def __str__(self) -> str:
-        ret = '**AgentTriggerSummarizeAction**\n'
-        return ret
-
-
 @dataclass
 class AgentFinishAction(Action):
     """An action where the agent finishes the task.
