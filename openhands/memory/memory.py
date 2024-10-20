@@ -57,6 +57,7 @@ class LongTermMemory:
 
         # initialize the event stream
         self.event_stream = event_stream
+        self._events_to_docs()
 
         # max of threads to run the pipeline
         self.memory_max_threads = agent_config.memory_max_threads

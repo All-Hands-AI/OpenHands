@@ -113,7 +113,8 @@ class ConversationMemory(Memory):
 
         # the number of messages that are hidden from the user
         # is the number of events in summary
-        self.hidden_message_count = state.summary.end_id - state.summary.start_id
+        if state.summary:
+            self.hidden_message_count = state.summary.end_id - state.summary.start_id
 
     def _has_summary(self) -> bool:
         """Check if the conversation has a summary."""
