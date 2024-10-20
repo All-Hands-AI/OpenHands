@@ -98,12 +98,13 @@ jobs:
 
     - name: Upload evaluation results as artifact
       uses: actions/upload-artifact@v4
+      id: upload_results_artifact
       with:
         name: evaluation-outputs
         path: evaluation_outputs.tar.gz
 
     - name: Get artifact URL
-      run: echo "ARTIFACT_URL=${{ steps.upload-artifact.outputs.artifact_url }}" >> $GITHUB_ENV
+      run: echo "ARTIFACT_URL=${{ steps.upload_results_artifact.outputs.artifact_url }}" >> $GITHUB_ENV
 
     - name: Comment PR with evaluation results and artifact link
       uses: actions/github-script@v6
