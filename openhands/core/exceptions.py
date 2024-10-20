@@ -84,3 +84,15 @@ class OperationCancelled(Exception):
 
     def __init__(self, message='Operation was cancelled'):
         super().__init__(message)
+
+
+class SummarizeError(Exception):
+    """Exception raised when message can't be summarized."""
+
+    def __init__(self, message='Error summarizing the memory'):
+        super().__init__(message)
+
+
+class InvalidSummaryResponseError(Exception):
+    def __init__(self, message='Invalid summary response'):
+        super().__init__(message)
