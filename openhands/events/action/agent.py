@@ -20,7 +20,7 @@ class ChangeAgentStateAction(Action):
 
 @dataclass
 class AgentSummarizeAction(Action):
-    summary: str
+    summary: str  # summary to be inserted as a memory block
     action: str = ActionType.SUMMARIZE
 
     @property

@@ -1,12 +1,11 @@
+from openhands.core.exceptions import SummarizeError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
-from openhands.llm.llm import LLM
 from openhands.events.action import AgentSummarizeAction
-from openhands.core.exceptions import SummarizeError
+from openhands.llm.llm import LLM
 
 
 class MemoryCondenser:
-
     def __init__(self, llm: LLM):
         self.llm = llm
 
@@ -61,8 +60,6 @@ class MemoryCondenser:
             raise SummarizeError(
                 f"Summarize error: tried to run summarize, but couldn't find enough messages to compress [len={len(messages)}]"
             )
-
-        # TODO: Try to make an assistant message come after the cutoff
 
         message_sequence_to_summarize = candidate_messages_to_summarize
 

@@ -1,18 +1,23 @@
+from openhands.controller.state.state import State
 from openhands.core.config.llm_config import LLMConfig
-from openhands.events.event import Event
-from openhands.events.serialization.event import event_from_dict, event_to_dict
+from openhands.events.action.agent import AgentSummarizeAction
+from openhands.events.serialization.event import event_to_dict
 from openhands.memory.base_memory import Memory
 
 TOP_K = 10
 
 
 class ConversationMemory(Memory):
-    """Allows the agent to recall events from its entire history."""
+    """Allows the agent to recall events from its entire history.
+
+    This class handles the summarized events (from state.summary['start_id] to state.summary['end_id'])
+    and slices the history to include only the events after the summary.
+    """
 
     def __init__(
         self,
         memory_config: LLMConfig,
-        history: list[Event],
+        state: State,
     ):
         """
         Initialize ConversationMemory with a reference to history and long-term memory.
@@ -22,16 +27,13 @@ class ConversationMemory(Memory):
         - llm_config: The LLM configuration.
         - top_k: Number of top results to retrieve.
         """
-        self.history = history or []
+        self.state = state
         self.llm_config = memory_config
         self.top_k = TOP_K
 
     def to_dict(self) -> dict:
         # return a dict with key = event.id, value = event.to_dict()
-        return {event.id: event_to_dict(event) for event in self.history}
-
-    def from_dict(self, data: dict) -> None:
-        self.history = [event_from_dict(event) for event in data.values()]
+        return {event.id: event_to_dict(event) for event in self.state.history}
 
     def __str__(self) -> str:
         return f'ConversationMemory with {len(self.history)} events'
@@ -91,6 +93,26 @@ class ConversationMemory(Memory):
         """
         # return self.long_term_memory.search(query, count, start)
         pass
+
+    def update(self, state: State) -> None:
+        """Update the conversation memory with new events."""
+
+        # FIXME: this is a hack and doesn't work anyway
+        if self._has_summary():
+            # create a list of events using the summary, then from event id = end_id + 1 to the end of history
+            summary_events = [
+                event
+                for event in state.history
+                if event.id
+                not in range(state.summary['start_id'], state.summary['end_id'] + 1)
+            ]
+            self.temporary_history = state.summary + summary_events
+        else:
+            self.temporary_history = state.history
+
+    def _has_summary(self) -> bool:
+        """Check if the conversation memory has a summary."""
+        return any(isinstance(event, AgentSummarizeAction) for event in self.history)
 
     def reset(self) -> None:
         self.history = []

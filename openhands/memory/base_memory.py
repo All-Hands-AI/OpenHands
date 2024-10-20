@@ -10,10 +10,10 @@ class Memory(ABC):
         """Convert the memory module to a dictionary of individual memories."""
         pass
 
-    @abstractmethod
-    def from_dict(self, data: dict[str, Any]) -> None:
-        """Load the memory module from a dictionary of individual memories."""
-        pass
+    # @abstractmethod
+    # def from_dict(self, data: dict[str, Any]) -> None:
+    #    """Load the memory module from a dictionary of individual memories."""
+    #    pass
 
     @abstractmethod
     def __str__(self) -> str:

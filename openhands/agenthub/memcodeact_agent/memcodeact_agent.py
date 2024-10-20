@@ -5,7 +5,6 @@ from openhands.agenthub.memcodeact_agent.action_parser import MemCodeActResponse
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
-from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
@@ -16,6 +15,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.events.event import Event
 from openhands.events.observation import (
     AgentDelegateObservation,
     CmdOutputObservation,
@@ -26,6 +26,7 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
+from openhands.memory.condenser import MemoryCondenser
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.memory.core_memory import CoreMemory
 from openhands.runtime.plugins import (
@@ -85,7 +86,7 @@ class MemCodeActAgent(Agent):
 
     action_parser = MemCodeActResponseParser()
 
-    # NOTE: memory includes 'conversation' and 'core' memory
+    # NOTE: memory includes 'conversation' and 'core' memory blocks
     conversation_memory: ConversationMemory
     core_memory: CoreMemory
 
@@ -93,18 +94,16 @@ class MemCodeActAgent(Agent):
         self,
         llm: LLM,
         config: AgentConfig,
-        memory_config: LLMConfig = None,
     ) -> None:
         """Initializes a new instance of the MemCodeActAgent class.
 
         Parameters:
         - llm: The LLM to be used by this agent
         - config: The agent configuration
-        - memory_config: The memory configuration
         """
         super().__init__(llm, config)
 
-        self.memory_config = memory_config
+        self.memory_config = llm.config  # TODO this should be MemoryConfig
 
         self.micro_agent = (
             MicroAgent(
@@ -238,14 +237,21 @@ class MemCodeActAgent(Agent):
 
         # stores and recalls the whole agent's history
         assert self.memory_config is not None
-        self.conversation_memory = ConversationMemory(
-            memory_config=self.memory_config, history=state.history
-        )
 
-        self.core_memory = CoreMemory(limit=1500)
+        # update conversation memory for this step
+        if not hasattr(self, 'conversation_memory') or not self.conversation_memory:
+            self.conversation_memory = ConversationMemory(
+                memory_config=self.memory_config, state=state
+            )
+        else:
+            self.conversation_memory.update(state)
+
+        # initialize core memory
+        if not hasattr(self, 'core_memory') or not self.core_memory:
+            self.core_memory = CoreMemory(limit=1500)
 
         # prepare what we want to send to the LLM
-        messages = self._get_messages(state)
+        messages = self._get_messages(self.conversation_memory.history, state)
         params = {
             'messages': self.llm.format_messages_for_llm(messages),
             'stop': [
@@ -259,7 +265,7 @@ class MemCodeActAgent(Agent):
 
         return self.action_parser.parse(response)
 
-    def _get_messages(self, state: State) -> list[Message]:
+    def _get_messages(self, history: list[Event], state: State) -> list[Message]:
         messages: list[Message] = [
             Message(
                 role='system',
@@ -281,7 +287,7 @@ class MemCodeActAgent(Agent):
             ),
         ]
 
-        for event in state.history:
+        for event in history:
             # create a regular message from an event
             if isinstance(event, Action):
                 message = self.get_action_message(event)
@@ -330,14 +336,15 @@ class MemCodeActAgent(Agent):
 
         return messages
 
-    def summarize_messages_inplace(self):
-        """Summarizes the messages stored in the agent's memory to reduce token usage."""
+    def summarize_messages_inplace(self, state: State):
+        """Summarizes the earlier messages in the agent's memory to reduce token usage. Uses memGPT's algorithm for in-place summarization."""
         if len(self.conversation_memory.history) <= 2:
             return
 
-        # Summarize the conversation history
-        summary = self.llm.summarize_messages(self.conversation_memory.history)
-        self.conversation_memory.history = [
-            Message(role='system', content=[TextContent(text=summary)])
-        ]
+        # summarize the conversation history using the condenser
+        # conversation_memory.history will include the previous summary, if any, while the regular state.history does not
+        condenser = MemoryCondenser(self.llm)
+        messages = self._get_messages(self.conversation_memory.history, state)
+        summary = condenser.condense(messages)
+
         logger.debug(f'Summarized conversation history to: {summary}')

@@ -11,7 +11,7 @@ from openhands.core.schema import AgentState
 from openhands.events.action import (
     MessageAction,
 )
-from openhands.events.action.agent import AgentFinishAction
+from openhands.events.action.agent import AgentFinishAction, AgentSummarizeAction
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import AgentDelegateObservation
 from openhands.storage.files import FileStore
@@ -96,6 +96,7 @@ class State:
     end_id: int = -1
     almost_stuck: int = 0
     delegates: dict[tuple[int, int], tuple[str, str]] = field(default_factory=dict)
+    summary: AgentSummarizeAction | None = None
     # NOTE: This will never be used by the controller, but it can be used by different
     # evaluation tasks to store extra data needed to track the progress/state of the task.
     extra_data: dict[str, Any] = field(default_factory=dict)
