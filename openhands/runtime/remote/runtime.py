@@ -181,6 +181,7 @@ class RemoteRuntime(Runtime):
         self.container_image = build_runtime_image(
             self.config.sandbox.base_container_image,
             self.runtime_builder,
+            platform=self.config.sandbox.platform,
             extra_deps=self.config.sandbox.runtime_extra_deps,
             force_rebuild=self.config.sandbox.force_rebuild_runtime,
         )

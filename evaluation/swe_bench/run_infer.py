@@ -132,6 +132,8 @@ def get_config(
             use_host_network=False,
             # large enough timeout, since some testcases take very long to run
             timeout=300,
+            # Add platform to the sandbox config to solve issue 4401
+            platform='linux/amd64',
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
             keep_remote_runtime_alive=False,
