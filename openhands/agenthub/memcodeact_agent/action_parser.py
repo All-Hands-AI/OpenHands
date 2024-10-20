@@ -263,3 +263,27 @@ class MemCodeActActionParserMemorySummarize(ActionParser):
         # <memory_summarize>query</memory_summarize>
         thought = action_str.replace(self.query.group(0), '').strip()
         return AgentSummarizeAction(query=self.query.group(1).strip(), thought=thought)
+
+
+def parse_summary_response(response: str) -> AgentSummarizeAction:
+    """
+    Parses a JSON summary of events.
+    Parameters:
+    - response: The response string to be parsed
+    Returns:
+    - The summary action output by the model
+    """
+    try:
+        action_dict = json.loads(response)
+        action = action_from_dict(action_dict)
+        if action is None or not isinstance(action, AgentSummarizeAction):
+            error_message = f'Expected a summarize action, but the response got {str(type(action)) if action else None}'
+            logger.error(error_message)
+            raise InvalidSummaryResponseError(error_message)
+        action._source = EventSource.AGENT  # type: ignore
+    except (LLMResponseError, LLMMalformedActionError) as e:
+        logger.error(f'Failed to parse summary response: {str(e)}')
+        raise InvalidSummaryResponseError(
+            f'Failed to parse the response: {str(e)}'
+        ) from e
+    return action
