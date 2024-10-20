@@ -40,6 +40,8 @@ class ConversationMemory(Memory):
 
         # the number of messages that are hidden from the user
         self.hidden_message_count = 0
+        # total messages in the conversation
+        self.total_message_count = 0
 
         self.storage_type = StorageType.IN_MEMORY
 

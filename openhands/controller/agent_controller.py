@@ -29,6 +29,7 @@ from openhands.events.action import (
     ModifyTaskAction,
     NullAction,
 )
+from openhands.events.action.agent import AgentSummarizeAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentDelegateObservation,
@@ -287,6 +288,8 @@ class AgentController:
             self.state.outputs = action.outputs
             self.state.metrics.merge(self.state.local_metrics)
             await self.set_agent_state_to(AgentState.REJECTED)
+        elif isinstance(action, AgentSummarizeAction):
+            self.state.summary = action
 
     async def _handle_observation(self, observation: Observation):
         """Handles observation from the event stream.

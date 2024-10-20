@@ -15,12 +15,14 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.events.action.agent import AgentRecallAction, AgentSummarizeAction
 from openhands.events.observation import (
     AgentDelegateObservation,
     CmdOutputObservation,
     IPythonRunCellObservation,
     UserRejectObservation,
 )
+from openhands.events.observation.agent import AgentRecallObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
@@ -133,6 +135,17 @@ class MemCodeActAgent(Agent):
             return action.content
         elif isinstance(action, AgentFinishAction) and action.source == 'agent':
             return action.thought
+        elif isinstance(action, AgentSummarizeAction):
+            # information about the conversation history
+            hidden_message_count = self.conversation_memory.hidden_message_count
+            if hidden_message_count > 0:
+                summary_message = (
+                    f"\n\nENVIRONMENT REMINDER: prior messages ({hidden_message_count} of {self.conversation_memory.total_message_count} total messages) have been hidden from view due to conversation memory constraints.\n"
+                    + f"The following is a summary of the first {hidden_message_count} messages:\n {action.summary}"
+                )
+                return summary_message
+        elif isinstance(action, AgentRecallAction):
+            return f'{action.thought}\n<memory_recall>\n{action.query[:10]}...\n</memory_recall>'
         return ''
 
     def get_action_message(self, action: Action) -> Message | None:
@@ -142,6 +155,8 @@ class MemCodeActAgent(Agent):
             or isinstance(action, IPythonRunCellAction)
             or isinstance(action, MessageAction)
             or (isinstance(action, AgentFinishAction) and action.source == 'agent')
+            or isinstance(action, AgentSummarizeAction)
+            or isinstance(action, AgentRecallAction)
         ):
             content = [TextContent(text=self.action_to_str(action))]
 
@@ -159,7 +174,7 @@ class MemCodeActAgent(Agent):
 
     def get_observation_message(self, obs: Observation) -> Message | None:
         max_message_chars = self.llm.config.max_message_chars
-        obs_prefix = 'OBSERVATION:\n'
+        obs_prefix = 'ENVIRONMENT OBSERVATION:\n'
         if isinstance(obs, CmdOutputObservation):
             text = obs_prefix + truncate_content(obs.content, max_message_chars)
             text += (
@@ -189,8 +204,13 @@ class MemCodeActAgent(Agent):
             text += '\n[Error occurred in processing last action]'
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, UserRejectObservation):
-            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text = obs_prefix + truncate_content(
+                obs.content, max_message_chars
+            )
             text += '\n[Last action has been rejected by the user]'
+            return Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, AgentRecallObservation):
+            text = 'MEMORY RECALL:\n' + obs.memory
             return Message(role='user', content=[TextContent(text=text)])
         else:
             # If an observation message is not returned, it will cause an error
@@ -331,12 +351,6 @@ class MemCodeActAgent(Agent):
             ),
             None,
         )
-
-        # information about the conversation history
-        hidden_message_count = self.conversation_memory.hidden_message_count
-        if latest_user_message and hidden_message_count > 0:
-            recall_text = f'\n\nRECALL: Note: {hidden_message_count} prior messages with the user have been hidden from view due to conversation memory constraints. Older messages are stored in your history storage. You can search your conversation history using the <memory_recall> action.'
-            latest_user_message.content.append(TextContent(text=recall_text))
 
         # iterations reminder
         if latest_user_message:

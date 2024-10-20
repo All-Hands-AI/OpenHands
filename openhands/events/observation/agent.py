@@ -14,3 +14,14 @@ class AgentStateChangedObservation(Observation):
     @property
     def message(self) -> str:
         return ''
+
+
+@dataclass
+class AgentRecallObservation(Observation):
+    query: str
+    memory: str
+    observation: str = ObservationType.AGENT_RECALL
+
+    @property
+    def message(self) -> str:
+        return f'Memory:\n{self.memory}'
