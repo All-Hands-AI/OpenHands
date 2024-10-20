@@ -5,12 +5,15 @@ from functools import partial
 from typing import Any
 
 from openhands.core.config import LLMConfig
+from openhands.events.event import Event
+from openhands.events.serialization.event import event_to_memory
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
 from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
+from litellm import embedding as litellm_embedding
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
     APIConnectionError,
@@ -20,6 +23,8 @@ from litellm.exceptions import (
     ServiceUnavailableError,
 )
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
@@ -428,3 +433,100 @@ class LLM(RetryMixin, DebugMixin):
             prompt += f'{message.role.capitalize()}: {message.content}\n'
         response = self._completion(messages=[{'role': 'user', 'content': prompt}])
         return response['choices'][0]['message']['content']
+
+    def embed_event(self, event: Event) -> np.ndarray:
+        """
+        Embeds a single event using the embedding model.
+
+        Args:
+            event (Event): The event to embed.
+
+        Returns:
+            np.ndarray: The embedding vector of the event.
+        """
+        # Convert the event to a string representation
+        event_str = event_to_memory(event)
+        # Get the embedding
+        embedding_response = litellm_embedding(
+            model=self.config.embedding_model,
+            input=event_str,
+            custom_llm_provider=self.config.custom_llm_provider,
+            api_key=self.config.api_key,
+            base_url=self.config.base_url,
+            api_version=self.config.api_version,
+            input_cost_per_token=self.config.input_cost_per_token,
+            output_cost_per_token=self.config.output_cost_per_token,
+        )
+        embedding = embedding_response['data'][0]['embedding']
+        return np.array(embedding)
+
+    def embed_history(self, history: list[Event]) -> list[np.ndarray]:
+        """
+        Embeds a list of events.
+
+        Args:
+            history (list[Event]): The list of events to embed.
+
+        Returns:
+            list[np.ndarray]: A list of embedding vectors.
+        """
+        embeddings = []
+        for event in history:
+            embedding = self.embed_event(event)
+            embeddings.append(embedding)
+        return embeddings
+
+
+    def recall_memory(self, query: str, embeddings: list[np.ndarray], history: list[Event], top_k: int = 5) -> list[Event]:
+        """
+        Recalls the most similar events based on the query.
+
+        Args:
+            query (str): The query string.
+            embeddings (list[np.ndarray]): The list of embedded vectors.
+            history (list[Event]): The corresponding list of events.
+            top_k (int, optional): The number of top similar events to retrieve. Defaults to 5.
+
+        Returns:
+            list[Event]: The list of recalled events.
+        """
+
+        # make sure history has been embedded
+        if not embeddings:
+            embeddings = self.embed_history(history)
+
+        # Embed the query
+        query_embedding_response = litellm_embedding(
+            model=self.config.embedding_model,
+            input=query,
+            custom_llm_provider=self.config.custom_llm_provider,
+            api_key=self.config.api_key,
+            base_url=self.config.base_url,
+            api_version=self.config.api_version,
+            input_cost_per_token=self.config.input_cost_per_token,
+            output_cost_per_token=self.config.output_cost_per_token,
+        )
+        query_embedding = np.array(query_embedding_response['data'][0]['embedding']).reshape(1, -1)
+
+        # Compute cosine similarity
+        similarity_scores = cosine_similarity(query_embedding, embeddings)[0]
+
+        # Get the top_k indices
+        top_indices = similarity_scores.argsort()[-top_k:][::-1]
+
+        # Retrieve the corresponding events
+        recalled_events = [history[i] for i in top_indices]
+        return recalled_events
+
+    def summarize_events(self, events: list[Event]) -> str:
+        """
+        Summarizes a list of events.
+
+        Args:
+            events (list[Event]): The list of events to summarize.
+
+        Returns:
+            str: The summary of the events.
+        """
+        summary = self.summarize_messages(events)
+        return summary
