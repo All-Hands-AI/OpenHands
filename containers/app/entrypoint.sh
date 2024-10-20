@@ -50,17 +50,22 @@ else
 
   # Get the user group of /var/run/docker.sock and set enduser to that group
   DOCKER_SOCKET_GID=$(stat -c '%g' /var/run/docker.sock)
-  DOCKER_SOCKER_GROUP=$(stat -c '%G' /var/run/docker.sock)
-  echo "Docker socket group $DOCKER_SOCKER_GROUP with group ID $DOCKER_SOCKET_GID"
+  DOCKER_SOCKET_GROUP=$(stat -c '%G' /var/run/docker.sock)
 
-  if getent group $DOCKER_SOCKER_GROUP; then
-    echo "Group $DOCKER_SOCKER_GROUP already exists"
+  GROUP_FROM_GID=$(getent group | grep ":$DOCKER_SOCKET_GID:" | awk -F: '{print $1}')
+
+  echo "Docker socket group $DOCKER_SOCKET_GROUP with group ID $DOCKER_SOCKET_GID"
+  echo "Group associated with GID is: $GROUP_FROM_GID"
+
+  if getent group $DOCKER_SOCKET_GROUP || getent group $DOCKER_SOCKET_GID; then
+    echo "Group $DOCKER_SOCKET_GROUP already exists"
   else
-    echo "Creating group $DOCKER_SOCKER_GROUP with id $DOCKER_SOCKET_GID"
+    echo "Creating group $DOCKER_SOCKET_GROUP with id $DOCKER_SOCKET_GID"
     groupadd -g $DOCKER_SOCKET_GID docker
   fi
 
-  usermod -aG $DOCKER_SOCKER_GROUP enduser
+  echo "Adding group $GROUP_FROM_GID to enduser"
+  usermod -aG $GROUP_FROM_GID enduser
 
   mkdir -p /home/enduser/.cache/huggingface/hub/
   mkdir -p /home/enduser/.cache/ms-playwright/
