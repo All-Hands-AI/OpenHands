@@ -132,6 +132,7 @@ class MemCodeActAgent(Agent):
         elif isinstance(action, AgentDelegateAction):
             return f'{action.thought}\n<execute_browse>\n{action.inputs["task"]}\n</execute_browse>'
         elif isinstance(action, MessageAction):
+            logger.debug(f'MessageAction.content: {action.content}')
             return action.content
         elif isinstance(action, AgentFinishAction) and action.source == 'agent':
             return action.thought
@@ -371,3 +372,4 @@ class MemCodeActAgent(Agent):
         summary = condenser.condense(messages)
 
         logger.debug(f'Summarized conversation history to: {summary}')
+

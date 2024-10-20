@@ -1,9 +1,6 @@
 import os
-
-from jinja2 import Template
-
+from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 from openhands.utils.microagent import MicroAgent
-
 
 class PromptManager:
     """
@@ -17,7 +14,6 @@ class PromptManager:
         prompt_dir (str): Directory containing prompt templates.
         agent_skills_docs (str): Documentation of agent skills.
         micro_agent (MicroAgent | None): Micro-agent, if specified.
-
     """
 
     def __init__(
@@ -28,28 +24,45 @@ class PromptManager:
     ):
         self.prompt_dir: str = prompt_dir
         self.agent_skills_docs: str = agent_skills_docs
+        self.micro_agent: MicroAgent | None = micro_agent
 
+        # initialize Jinja2 Environment with FileSystemLoader
+        self.env = Environment(
+            loader=FileSystemLoader(self.prompt_dir),
+            autoescape=select_autoescape(['j2','md'])
+        )
+
+        # load templates using the environment
         self.system_template: Template = self._load_template('system_prompt')
         self.summarize_template: Template = self._load_template('summarize_prompt')
         self.memory_template: Template = self._load_template('memory_prompt')
         self.user_template: Template = self._load_template('user_prompt')
-        self.micro_agent: MicroAgent | None = micro_agent
 
-    def _load_template(self, template_name: str) -> Template:
-        template_path = os.path.join(self.prompt_dir, f'{template_name}.j2')
-        if not os.path.exists(template_path):
-            # raise FileNotFoundError(f'Prompt file {template_path} not found')
-            print(f'Prompt file {template_path} not found')
-            return Template('')
-        with open(template_path, 'r') as file:
-            content = file.read()
-            print(
-                f'Loaded template {template_name}: {content[:100]}...'
-            )  # og first 100 chars
-            return Template(content)
-
+    def _load_template(self, template_name: str):
+        """
+        Loads a Jinja2 template using the configured environment.
+        
+        Args:
+            template_name: The base name of the template file
+        
+        Returns:
+            Template: The loaded Jinja2 template.
+        """
+        try:
+            template = self.env.get_template(f'{template_name}.j2')
+            print(f'Loaded template {template_name}: {template.render()[:100]}...')
+            return template
+        except Exception as e:
+            print(f'Error loading template {template_name}: {e}')
+            return Template('') 
     @property
     def system_message(self) -> str:
+        """
+        Renders the system message template with the necessary variables.
+        
+        Returns:
+            str: The rendered system message.
+        """
         rendered = self.system_template.render(
             agent_skills_docs=self.agent_skills_docs,
             memory_template=self.memory_template.render(),
@@ -58,14 +71,11 @@ class PromptManager:
 
     @property
     def initial_user_message(self) -> str:
-        """This is the initial user message provided to the agent
-        before *actual* user instructions are provided.
-
-        It is used to provide a demonstration of how the agent
-        should behave in order to solve the user's task. And it may
-        optionally contain some additional context about the user's task.
-        These additional context will convert the current generic agent
-        into a more specialized agent that is tailored to the user's task.
+        """
+        Renders the initial user message template.
+        
+        Returns:
+            str: The rendered initial user message.
         """
         rendered = self.user_template.render(
             micro_agent=self.micro_agent.content if self.micro_agent else None
@@ -74,5 +84,11 @@ class PromptManager:
 
     @property
     def summarize_message(self) -> str:
+        """
+        Renders the summarize message template.
+        
+        Returns:
+            str: The rendered summarize message.
+        """
         rendered = self.summarize_template.render()
         return rendered.strip()

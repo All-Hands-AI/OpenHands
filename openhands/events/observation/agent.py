@@ -20,7 +20,7 @@ class AgentStateChangedObservation(Observation):
 class AgentRecallObservation(Observation):
     query: str
     memory: str
-    observation: str = ObservationType.AGENT_RECALL
+    observation: str = ObservationType.RECALL
 
     @property
     def message(self) -> str:

@@ -1,4 +1,4 @@
-from openhands.agenthub.memcodeact_agent.utils import parse_summary_response
+from openhands.memory.utils import parse_summary_response
 from openhands.core.exceptions import SummarizeError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
