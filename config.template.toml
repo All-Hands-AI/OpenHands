@@ -171,6 +171,24 @@ model = "gpt-4o"
 # If model is vision capable, this option allows to disable image processing (useful for cost reduction).
 #disable_vision = true
 
+# maximum number of messages in a conversation, after which they are truncated or summarized
+# max_conversation_window = 10
+
+# number of results when recalling message history
+# conversation_top_k = 5
+
+# fraction of the conversation window to summarize
+# message_summary_trunc_tokens_fraction = 0.75
+
+# summary LLM
+[llm.summary]
+model = "deepseek"
+
+# default LLM
+[llm.default]
+model = "claude"
+
+
 [llm.gpt4o-mini]
 # API key to use
 api_key = "your-api-key"

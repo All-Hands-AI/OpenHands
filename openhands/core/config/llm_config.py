@@ -41,6 +41,7 @@ class LLMConfig:
         log_completions: Whether to log LLM completions to the state.
         max_conversation_window: The maximum number of messages to include in the conversation window (context), after which old messages are truncated or summarized.
         conversation_top_k: The number of top results to retrieve from the conversation history.
+        message_summary_trunc_tokens_fraction: The fraction of the conversation window to summarize (e.g. 0.75 for 75% of the tokens).
     """
 
     model: str = 'gpt-4o'
@@ -75,6 +76,7 @@ class LLMConfig:
     log_completions: bool = False
     max_conversation_window: int = 10
     conversation_top_k: int = 5
+    message_summary_trunc_tokens_fraction: float = 0.75
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
