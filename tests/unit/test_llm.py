@@ -82,7 +82,7 @@ def test_llm_init_with_custom_config():
 
 def test_llm_init_with_metrics():
     config = LLMConfig(model='gpt-4o', api_key='test_key')
-    metrics = Metrics()
+    metrics = Metrics(model_name='gpt-4o')
     llm = LLM(config, metrics=metrics)
     assert llm.metrics is metrics
     assert (
