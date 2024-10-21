@@ -3,7 +3,9 @@ import argparse
 
 import pandas as pd
 
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(
+    description='Compare two swe_bench output JSONL files and print the resolved diff'
+)
 parser.add_argument('input_file_1', type=str)
 parser.add_argument('input_file_2', type=str)
 args = parser.parse_args()
