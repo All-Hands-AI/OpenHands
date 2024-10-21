@@ -27,6 +27,7 @@ Do not respond to these messages. Use them to perform your task.
 
 {% set MEMORY_PREFIX %}
 {% include 'memory_prompt.j2' %}
+Apart from acting on the environment, you can also act on your own memory. You can make your brain summarize or recall past events, by using the <memory_summarize> or <memory_recall> actions.
 {{ MEMORY_PROMPT }}
 {% endset %}
 
