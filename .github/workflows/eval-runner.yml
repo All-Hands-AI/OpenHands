@@ -75,6 +75,13 @@ jobs:
       run: |
         poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES
 
+        # get evaluation report
+        REPORT_FILE=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/deepseek-chat_maxiter_10_N* -name "report.md" -type f | head -n 1)
+        echo "REPORT_FILE: $REPORT_FILE"
+        echo "REPORT_FILE<<EOF" >> $GITHUB_ENV
+        cat $REPORT_FILE >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
     - name: Run SWE-Bench evaluation
       env:
         ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
@@ -116,7 +123,19 @@ jobs:
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            body: `**Evaluation outputs:**\n\n\`\`\`\n${process.env.SUMMARY_OUTPUT}\n\`\`\`\n\nYou can download the full evaluation outputs [here](${process.env.ARTIFACT_URL}).`
+            body: `
+              **Integration Tests Evaluation Report:**
+
+              ${process.env.REPORT_FILE}
+
+              ---
+              **SWE-Bench Evaluation outputs:**
+
+              ${process.env.SUMMARY_OUTPUT}
+
+              ---
+              You can download the full evaluation outputs [here](${process.env.ARTIFACT_URL}).
+            `
           })
 
 # - name: Authenticate to Google Cloud

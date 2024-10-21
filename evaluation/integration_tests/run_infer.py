@@ -202,3 +202,10 @@ if __name__ == '__main__':
         + df[['instance_id', 'success', 'reason']].to_string(index=False)
     )
     logger.info('-' * 100)
+
+    report_file = os.path.join(metadata.eval_output_dir, 'report.md')
+    with open(report_file, 'w') as f:
+        f.write(
+            f'Success rate: {df["success"].mean():.2%} ({df["success"].sum()}/{len(df)})\n\n'
+        )
+        f.write(df[['instance_id', 'success', 'reason']].to_markdown(index=False))
