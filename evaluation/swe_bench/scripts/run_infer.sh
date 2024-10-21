@@ -25,8 +25,8 @@ if [ -z "$AGENT" ]; then
 fi
 
 if [ -z "$MAX_ITER" ]; then
-  echo "MAX_ITER not specified, use default 30"
-  MAX_ITER=30
+  echo "MAX_ITER not specified, use default 100"
+  MAX_ITER=100
 fi
 
 if [ -z "$USE_INSTANCE_IMAGE" ]; then

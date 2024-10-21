@@ -15,6 +15,7 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    FileEditAction,
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
@@ -350,6 +351,8 @@ class RemoteRuntime(Runtime):
     def run_action(self, action: Action) -> Observation:
         if action.timeout is None:
             action.timeout = self.config.sandbox.timeout
+        if isinstance(action, FileEditAction):
+            return self.edit(action)
         with self.action_semaphore:
             if not action.runnable:
                 return NullObservation('')

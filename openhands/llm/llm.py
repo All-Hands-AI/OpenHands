@@ -24,8 +24,8 @@ from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from openhands.core.exceptions import CloudFlareBlockageError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
-from openhands.core.metrics import Metrics
 from openhands.llm.debug_mixin import DebugMixin
+from openhands.llm.metrics import Metrics
 from openhands.llm.retry_mixin import RetryMixin
 
 __all__ = ['LLM']
@@ -73,7 +73,9 @@ class LLM(RetryMixin, DebugMixin):
             config: The LLM configuration.
             metrics: The metrics to use.
         """
-        self.metrics: Metrics = metrics if metrics is not None else Metrics()
+        self.metrics: Metrics = (
+            metrics if metrics is not None else Metrics(model_name=config.model)
+        )
         self.cost_metric_supported: bool = True
         self.config: LLMConfig = copy.deepcopy(config)
 
@@ -396,7 +398,7 @@ class LLM(RetryMixin, DebugMixin):
         return str(self)
 
     def reset(self):
-        self.metrics = Metrics()
+        self.metrics.reset()
         self.llm_completions = []
 
     def format_messages_for_llm(self, messages: Message | list[Message]) -> list[dict]:
