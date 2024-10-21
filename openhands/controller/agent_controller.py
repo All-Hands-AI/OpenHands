@@ -624,21 +624,23 @@ class AgentController:
         )
 
     def _add_agent_action_to_stream(self, action: Action):
+        # self.event_stream.add_event(action, EventSource.AGENT)
         if (
             isinstance(action, CmdRunAction)
             and action.is_confirmed != ActionConfirmationStatus.AWAITING_CONFIRMATION
         ):
+            # The pending action needs to be reset - we have already confirmed that the action is not awaiting confirmation
+            self._pending_action = None
             # Split the command into multiple CmdRunAction instances
             commands = split_bash_commands(action.command)
             for i, cmd in enumerate(commands):
                 if not cmd:
                     continue
-                new_action = CmdRunAction(command=cmd)
-                # When we split a command, only the last instance should have the thought
-                if i < len(commands) - 1:
-                    new_action.thought = ''
-                else:
-                    new_action.thought = action.thought
+                new_action = CmdRunAction(
+                    command=cmd,
+                    # When we split a command, only the last instance should have the thought
+                    thought='' if i < len(commands) else action.thought,
+                )
                 self.event_stream.add_event(new_action, EventSource.AGENT)
         else:
             self.event_stream.add_event(action, EventSource.AGENT)
