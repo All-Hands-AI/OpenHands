@@ -465,6 +465,8 @@ class AgentController:
                     if not cmd:
                         continue
                     new_action = CmdRunAction(command=cmd)
+                    # When we split a command, only the last instance should have the thought
+                    # to prevent duplicates in the UI.
                     if i < len(commands) - 1:
                         new_action.thought = ''
                     else:
