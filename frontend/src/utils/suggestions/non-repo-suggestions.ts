@@ -1,6 +1,6 @@
 const KEY_1 = "Build an app to view pull requests";
-const VALUE_1 = `I want to create a React app to view all of the open pull 
-requests that exist on all of my team's github repos. Here 
+const VALUE_1 = `I want to create a React app to view all of the open pull
+requests that exist on all of my team's github repos. Here
 are some details:
 
 1. Please initialize the app using vite and react-ts.
