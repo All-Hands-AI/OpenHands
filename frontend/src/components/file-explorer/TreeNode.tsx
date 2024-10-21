@@ -1,5 +1,6 @@
 import React from "react";
 import { useSelector } from "react-redux";
+import toast from "react-hot-toast";
 import { RootState } from "#/store";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
@@ -60,8 +61,12 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
 
     const token = localStorage.getItem("token");
     if (token) {
-      const newChildren = await OpenHands.getFiles(token, path);
-      setChildren(newChildren);
+      try {
+        const newChildren = await OpenHands.getFiles(token, path);
+        setChildren(newChildren);
+      } catch (error) {
+        toast.error("Failed to fetch files");
+      }
     }
   };
 
@@ -77,12 +82,16 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
     if (isDirectory) {
       setIsOpen((prev) => !prev);
     } else if (token) {
-      setSelectedPath(path);
       const code = modifiedFiles[path] || files[path];
-      const fetchedCode = await OpenHands.getFile(token, path);
 
-      if (!code || fetchedCode !== files[path]) {
-        setFileContent(path, fetchedCode);
+      try {
+        const fetchedCode = await OpenHands.getFile(token, path);
+        setSelectedPath(path);
+        if (!code || fetchedCode !== files[path]) {
+          setFileContent(path, fetchedCode);
+        }
+      } catch (error) {
+        toast.error("Failed to fetch file");
       }
     }
   };
