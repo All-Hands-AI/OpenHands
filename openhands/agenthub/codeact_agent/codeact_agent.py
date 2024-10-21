@@ -205,8 +205,31 @@ class CodeActAgent(Agent):
         }
 
         response = self.llm.completion(**params)
+        parsed_action = self.action_parser.parse(response)
 
-        return self.action_parser.parse(response)
+        # DEBUG: save llm messages to a file
+        # we'll also add the parsed response to the end of the messages
+        parsed_str = self.action_parser.parse_response(response)
+        response_message = {
+            "role": "assistant",
+            "content": [
+                {
+                    "type": "text",
+                    "text": parsed_str,
+                }
+            ]
+        }
+        messages = params["messages"] + [response_message]
+        with open("/home/logs/llm_messages.json", "w") as f:
+            import json
+            json.dump(messages, f, indent=2)
+        with open("/home/logs/llm_messages.txt", "w") as f:
+            for message in messages:
+                f.write("-" * 100 + message["role"] + "\n")
+                for content in message["content"]:
+                    f.write(content["text"] + "\n")
+
+        return parsed_action
 
     def _get_messages(self, state: State) -> list[Message]:
         messages: list[Message] = [
