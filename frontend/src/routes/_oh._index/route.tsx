@@ -82,10 +82,13 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
     }
   }
 
-  const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
-  const requestUrl = new URL(request.url);
-  const redirectUri = `${requestUrl.origin}/oauth/github/callback`;
-  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user,workflow`;
+  let githubAuthUrl: string | null = null;
+  if (window.__APP_MODE__ === "saas") {
+    const clientId = window.__GITHUB_CLIENT_ID__;
+    const requestUrl = new URL(request.url);
+    const redirectUri = `${requestUrl.origin}/oauth/github/callback`;
+    githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user,workflow`;
+  }
 
   return json({ repositories, githubAuthUrl });
 };
@@ -110,9 +113,7 @@ function Home() {
   const { files } = useSelector((state: RootState) => state.initalQuery);
 
   const handleConnectToGitHub = () => {
-    const isSaas = window.__APP_MODE__ === "saas";
-
-    if (isSaas) {
+    if (githubAuthUrl) {
       window.location.href = githubAuthUrl;
     } else {
       setConnectToGitHubModalOpen(true);
