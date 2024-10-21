@@ -10,8 +10,9 @@ interface UserAvatarProps {
 
 export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
   return (
-    <div
+    <button
       data-testid="user-avatar"
+      type="button"
       onClick={onClick}
       className={cn(
         "bg-white w-8 h-8 rounded-full flex items-center justify-center",
@@ -33,6 +34,6 @@ export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
         />
       )}
       {isLoading && <LoadingSpinner size="small" />}
-    </div>
+    </button>
   );
 }

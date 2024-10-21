@@ -95,7 +95,6 @@ export default function MainApp() {
   const location = useLocation();
   const { token, user, settingsIsUpdated, settings } =
     useLoaderData<typeof clientLoader>();
-  const loginFetcher = useFetcher({ key: "login" });
   const logoutFetcher = useFetcher({ key: "logout" });
   const endSessionFetcher = useFetcher({ key: "end-session" });
 
@@ -191,12 +190,13 @@ export default function MainApp() {
         </div>
         <nav className="py-[18px] flex flex-col items-center gap-[18px]">
           <UserActions
-            user={user}
-            isLoading={loginFetcher.state !== "idle"}
-            onLogout={handleUserLogout}
-            handleOpenAccountSettingsModal={() =>
-              setAccountSettingsModalOpen(true)
+            user={
+              user && !isGitHubErrorReponse(user)
+                ? { avatar_url: user.avatar_url }
+                : undefined
             }
+            onLogout={handleUserLogout}
+            onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
           />
           <button
             type="button"

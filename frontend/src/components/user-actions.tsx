@@ -1,66 +1,56 @@
-import { cn } from "@nextui-org/react";
 import React from "react";
-import { isGitHubErrorReponse } from "#/api/github";
+import { useFetcher } from "@remix-run/react";
 import { AccountSettingsContextMenu } from "./context-menu/account-settings-context-menu";
-import { LoadingSpinner } from "./modals/LoadingProject";
-import DefaultUserAvatar from "#/assets/default-user.svg?react";
+import { UserAvatar } from "./user-avatar";
 
 interface UserActionsProps {
-  isLoading: boolean;
-  user: GitHubUser | GitHubErrorReponse | null;
+  onClickAccountSettings: () => void;
   onLogout: () => void;
-  handleOpenAccountSettingsModal: () => void;
+  user?: { avatar_url: string };
 }
 
 export function UserActions({
-  isLoading,
-  user,
+  onClickAccountSettings,
   onLogout,
-  handleOpenAccountSettingsModal,
+  user,
 }: UserActionsProps) {
+  const loginFetcher = useFetcher({ key: "login" });
+
   const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
     React.useState(false);
 
-  const validUser = user && !isGitHubErrorReponse(user);
-
-  const handleClickUserAvatar = () => {
+  const toggleAccountMenu = () => {
     setAccountContextMenuIsVisible((prev) => !prev);
   };
 
+  const closeAccountMenu = () => {
+    setAccountContextMenuIsVisible(false);
+  };
+
+  const handleClickAccountSettings = () => {
+    onClickAccountSettings();
+    closeAccountMenu();
+  };
+
+  const handleLogout = () => {
+    onLogout();
+    closeAccountMenu();
+  };
+
   return (
-    <div className="w-8 h-8 relative">
-      <button
-        type="button"
-        className={cn(
-          "bg-white w-8 h-8 rounded-full flex items-center justify-center",
-          isLoading && "bg-transparent",
-        )}
-        onClick={handleClickUserAvatar}
-      >
-        {!validUser && !isLoading && (
-          <DefaultUserAvatar width={20} height={20} />
-        )}
-        {!validUser && isLoading && <LoadingSpinner size="small" />}
-        {validUser && (
-          <img
-            src={user.avatar_url}
-            alt="User avatar"
-            className="w-full h-full rounded-full"
-          />
-        )}
-      </button>
+    <div data-testid="user-actions" className="w-8 h-8 relative">
+      <UserAvatar
+        isLoading={loginFetcher.state !== "idle"}
+        avatarUrl={user?.avatar_url}
+        onClick={toggleAccountMenu}
+      />
+
       {accountContextMenuIsVisible && (
         <AccountSettingsContextMenu
           isLoggedIn={!!user}
-          onClose={() => setAccountContextMenuIsVisible(false)}
-          onClickAccountSettings={() => {
-            setAccountContextMenuIsVisible(false);
-            handleOpenAccountSettingsModal();
-          }}
-          onLogout={() => {
-            onLogout();
-            setAccountContextMenuIsVisible(false);
-          }}
+          onClickAccountSettings={handleClickAccountSettings}
+          onLogout={handleLogout}
+          onClose={closeAccountMenu}
         />
       )}
     </div>

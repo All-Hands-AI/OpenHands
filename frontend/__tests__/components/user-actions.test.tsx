@@ -1,66 +1,22 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, test, vi, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
-import React from "react";
-import { UserAvatar } from "#/components/user-avatar";
-import { AccountSettingsContextMenu } from "#/components/context-menu/account-settings-context-menu";
-
-interface UserActionsProps {
-  onClickAccountSettings: () => void;
-  onLogout: () => void;
-  user?: { avatar_url: string };
-}
-
-function UserActions({
-  onClickAccountSettings,
-  onLogout,
-  user,
-}: UserActionsProps) {
-  const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
-    React.useState(false);
-
-  const toggleAccountMenu = () => {
-    setAccountContextMenuIsVisible((prev) => !prev);
-  };
-
-  const closeAccountMenu = () => {
-    setAccountContextMenuIsVisible(false);
-  };
-
-  const handleClickAccountSettings = () => {
-    onClickAccountSettings();
-    closeAccountMenu();
-  };
-
-  const handleLogout = () => {
-    onLogout();
-    closeAccountMenu();
-  };
-
-  return (
-    <div data-testid="user-actions" className="w-8 h-8 relative">
-      <UserAvatar avatarUrl={user?.avatar_url} onClick={toggleAccountMenu} />
-
-      {accountContextMenuIsVisible && (
-        <AccountSettingsContextMenu
-          isLoggedIn={!!user}
-          onClickAccountSettings={handleClickAccountSettings}
-          onLogout={handleLogout}
-          onClose={closeAccountMenu}
-        />
-      )}
-    </div>
-  );
-}
+import * as Remix from "@remix-run/react";
+import { UserActions } from "#/components/user-actions";
 
 describe("UserActions", () => {
   const user = userEvent.setup();
   const onClickAccountSettingsMock = vi.fn();
   const onLogoutMock = vi.fn();
 
+  const useFetcherSpy = vi.spyOn(Remix, "useFetcher");
+  // @ts-expect-error - Only returning the relevant properties for the test
+  useFetcherSpy.mockReturnValue({ state: "idle" });
+
   afterEach(() => {
     onClickAccountSettingsMock.mockClear();
     onLogoutMock.mockClear();
+    useFetcherSpy.mockClear();
   });
 
   it("should render", () => {
@@ -153,5 +109,24 @@ describe("UserActions", () => {
     await user.click(logoutOption);
 
     expect(onLogoutMock).not.toHaveBeenCalled();
+  });
+
+  it("should display the loading spinner", () => {
+    // @ts-expect-error - Only returning the relevant properties for the test
+    useFetcherSpy.mockReturnValue({ state: "loading" });
+
+    render(
+      <UserActions
+        onClickAccountSettings={onClickAccountSettingsMock}
+        onLogout={onLogoutMock}
+        user={{ avatar_url: "https://example.com/avatar.png" }}
+      />,
+    );
+
+    const userAvatar = screen.getByTestId("user-avatar");
+    user.click(userAvatar);
+
+    expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
+    expect(screen.queryByAltText("user avatar")).not.toBeInTheDocument();
   });
 });
