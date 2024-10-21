@@ -1,5 +1,3 @@
-import clsx from "clsx";
-import React from "react";
 import {
   Autocomplete,
   AutocompleteItem,
@@ -7,6 +5,8 @@ import {
   Switch,
 } from "@nextui-org/react";
 import { useFetcher, useLocation, useNavigate } from "@remix-run/react";
+import clsx from "clsx";
+import React from "react";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { ModelSelector } from "#/components/modals/settings/ModelSelector";
 import { clientAction } from "#/routes/settings";
@@ -123,6 +123,9 @@ export function SettingsForm({
 
   const handleWarningConfirm = () => {
     setShowWarningModal(false);
+    const formData = new FormData(formRef.current ?? undefined);
+    formData.set("api-key", ""); // Set null value for API key
+    submitForm(formData);
     onClose();
   };
 
