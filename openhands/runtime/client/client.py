@@ -297,7 +297,7 @@ class RuntimeClient:
         self.pwd = os.path.expanduser(working_dir)
 
         # re-assemble the prompt
-        # ignore the hostanme AND use 'openhands-workspace'
+        # ignore the hostname AND use 'openhands-workspace'
         prompt = f'{other_info.strip()}\n{username}@openhands-workspace:{working_dir} '
         if username == 'root':
             prompt += '#'
