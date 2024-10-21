@@ -28,29 +28,44 @@ if [[ "$SANDBOX_USER_ID" -eq 0 ]]; then
   "$@"
 else
   echo "Setting up enduser with id $SANDBOX_USER_ID"
+
   if id "enduser" &>/dev/null; then
     echo "User enduser already exists. Skipping creation."
   else
+    echo "Creating enduser with ID $SANDBOX_USER_ID"
+
     if ! useradd -l -m -u $SANDBOX_USER_ID -s /bin/bash enduser; then
-      echo "Failed to create user enduser with id $SANDBOX_USER_ID. Moving openhands user."
+      echo "Failed to create user enduser with id $SANDBOX_USER_ID. Incrementing openhands user id."
       incremented_id=$(($SANDBOX_USER_ID + 1))
       usermod -u $incremented_id openhands
+
       if ! useradd -l -m -u $SANDBOX_USER_ID -s /bin/bash enduser; then
         echo "Failed to create user enduser with id $SANDBOX_USER_ID for a second time. Exiting."
         exit 1
       fi
     fi
   fi
+
   usermod -aG app enduser
-  # get the user group of /var/run/docker.sock and set openhands to that group
+
+  # Get the user group of /var/run/docker.sock and set enduser to that group
   DOCKER_SOCKET_GID=$(stat -c '%g' /var/run/docker.sock)
-  echo "Docker socket group id: $DOCKER_SOCKET_GID"
-  if getent group $DOCKER_SOCKET_GID; then
-    echo "Group with id $DOCKER_SOCKET_GID already exists"
+  DOCKER_SOCKET_GROUP=$(stat -c '%G' /var/run/docker.sock)
+
+  GROUP_FROM_GID=$(getent group | grep ":$DOCKER_SOCKET_GID:" | awk -F: '{print $1}')
+
+  echo "Docker socket group $DOCKER_SOCKET_GROUP with group ID $DOCKER_SOCKET_GID"
+  echo "Group associated with GID is: $GROUP_FROM_GID"
+
+  if getent group $DOCKER_SOCKET_GROUP || getent group $DOCKER_SOCKET_GID; then
+    echo "Group $DOCKER_SOCKET_GROUP already exists"
   else
-    echo "Creating group with id $DOCKER_SOCKET_GID"
+    echo "Creating group $DOCKER_SOCKET_GROUP with id $DOCKER_SOCKET_GID"
     groupadd -g $DOCKER_SOCKET_GID docker
   fi
+
+  echo "Adding group $GROUP_FROM_GID to enduser"
+  usermod -aG $GROUP_FROM_GID enduser
 
   mkdir -p /home/enduser/.cache/huggingface/hub/
   mkdir -p /home/enduser/.cache/ms-playwright/
@@ -58,7 +73,6 @@ else
     mv /home/openhands/.cache/ms-playwright/ /home/enduser/.cache/
   fi
 
-  usermod -aG $DOCKER_SOCKET_GID enduser
   echo "Running as enduser"
   su enduser /bin/bash -c "${*@Q}" # This magically runs any arguments passed to the script as a command
 fi
