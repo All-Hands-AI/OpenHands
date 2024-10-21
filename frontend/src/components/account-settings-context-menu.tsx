@@ -4,27 +4,27 @@ import { ContextMenuSeparator } from "./context-menu/context-menu-separator";
 import { useClickOutsideElement } from "#/hooks/useClickOutsideElement";
 
 interface AccountSettingsContextMenuProps {
-  isLoggedIn: boolean;
   onClickAccountSettings: () => void;
   onLogout: () => void;
   onClose: () => void;
+  isLoggedIn: boolean;
 }
 
 export function AccountSettingsContextMenu({
-  isLoggedIn,
   onClickAccountSettings,
   onLogout,
   onClose,
+  isLoggedIn,
 }: AccountSettingsContextMenuProps) {
-  const menuRef = useClickOutsideElement<HTMLUListElement>(onClose);
+  const ref = useClickOutsideElement<HTMLUListElement>(onClose);
 
   return (
-    <ContextMenu ref={menuRef} className="absolute left-full -top-1 z-10">
+    <ContextMenu ref={ref} className="absolute left-full -top-1 z-10">
       <ContextMenuListItem onClick={onClickAccountSettings}>
         Account Settings
       </ContextMenuListItem>
       <ContextMenuSeparator />
-      <ContextMenuListItem isDisabled={!isLoggedIn} onClick={onLogout}>
+      <ContextMenuListItem onClick={onLogout} isDisabled={!isLoggedIn}>
         Logout
       </ContextMenuListItem>
     </ContextMenu>
