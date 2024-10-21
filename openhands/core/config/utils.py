@@ -23,19 +23,6 @@ from openhands.core.config.sandbox_config import SandboxConfig
 load_dotenv()
 
 
-def create_llm_config(llm_config_dict: dict) -> LLMConfig:
-    """Create an LLMConfig object from a dictionary.
-
-    This function is used to create an LLMConfig object from a dictionary,
-    with the exception of the 'draft_editor' key, which is a nested LLMConfig object.
-    """
-    args = {k: v for k, v in llm_config_dict.items() if not isinstance(v, dict)}
-    if 'draft_editor' in llm_config_dict:
-        draft_editor_config = LLMConfig(**llm_config_dict['draft_editor'])
-        args['draft_editor'] = draft_editor_config
-    return LLMConfig(**args)
-
-
 def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, str]):
     """Reads the env-style vars and sets config attributes based on env vars or a config.toml dict.
     Compatibility with vars like LLM_BASE_URL, AGENT_MEMORY_ENABLED, SANDBOX_TIMEOUT and others.
@@ -149,14 +136,14 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     logger.openhands_logger.debug(
                         'Attempt to load default LLM config from config toml'
                     )
-                    llm_config = create_llm_config(value)
+                    llm_config = LLMConfig.from_dict(value)
                     cfg.set_llm_config(llm_config, 'llm')
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
                             logger.openhands_logger.debug(
                                 f'Attempt to load group {nested_key} from config toml as llm config'
                             )
-                            llm_config = create_llm_config(nested_value)
+                            llm_config = LLMConfig.from_dict(nested_value)
                             cfg.set_llm_config(llm_config, nested_key)
                 elif not key.startswith('sandbox') and key.lower() != 'core':
                     logger.openhands_logger.warning(
@@ -282,7 +269,7 @@ def get_llm_config_arg(
 
     # update the llm config with the specified section
     if 'llm' in toml_config and llm_config_arg in toml_config['llm']:
-        return create_llm_config(toml_config['llm'][llm_config_arg])
+        return LLMConfig.from_dict(toml_config['llm'][llm_config_arg])
     logger.openhands_logger.debug(f'Loading from toml failed for {llm_config_arg}')
     return None
 

@@ -119,3 +119,16 @@ class LLMConfig:
             elif isinstance(v, LLMConfig):
                 ret[k] = v.to_safe_dict()
         return ret
+
+    @classmethod
+    def from_dict(cls, llm_config_dict: dict) -> 'LLMConfig':
+        """Create an LLMConfig object from a dictionary.
+
+        This function is used to create an LLMConfig object from a dictionary,
+        with the exception of the 'draft_editor' key, which is a nested LLMConfig object.
+        """
+        args = {k: v for k, v in llm_config_dict.items() if not isinstance(v, dict)}
+        if 'draft_editor' in llm_config_dict:
+            draft_editor_config = LLMConfig(**llm_config_dict['draft_editor'])
+            args['draft_editor'] = draft_editor_config
+        return cls(**args)
