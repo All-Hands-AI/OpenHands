@@ -210,7 +210,8 @@ class CodeActAgent(Agent):
         with open("/home/logs/llm_messages.txt", "w") as f:
             for message in params["messages"]:
                 f.write("-" * 100 + message["role"] + "\n")
-                f.write(message["content"][0]["text"] + "\n")
+                for content in message["content"]:
+                    f.write(content["text"] + "\n")
 
         response = self.llm.completion(**params)
 
