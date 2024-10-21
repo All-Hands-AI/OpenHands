@@ -80,6 +80,7 @@ jobs:
         echo "REPORT_FILE: $REPORT_FILE"
         echo "REPORT_CONTENT<<EOF" >> $GITHUB_ENV
         cat $REPORT_FILE >> $GITHUB_ENV
+        echo >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
 
     - name: Run SWE-Bench evaluation
