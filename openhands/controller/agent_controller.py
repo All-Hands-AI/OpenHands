@@ -29,7 +29,7 @@ from openhands.events.action import (
     ModifyTaskAction,
     NullAction,
 )
-from openhands.events.action.agent import AgentSummarizeAction
+from openhands.events.action.agent import AgentRecallAction, AgentSummarizeAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentDelegateObservation,
@@ -121,6 +121,9 @@ class AgentController:
         self.agent_configs = agent_configs if agent_configs else {}
         self._initial_max_iterations = max_iterations
         self._initial_max_budget_per_task = max_budget_per_task
+
+        # use long term memory
+        # self.long_term_memory = LongTermMemory(self.agent.llm.config, self.agent.config, self.event_stream)
 
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
@@ -290,6 +293,13 @@ class AgentController:
             await self.set_agent_state_to(AgentState.REJECTED)
         elif isinstance(action, AgentSummarizeAction):
             self.state.summary = action
+        elif isinstance(action, AgentRecallAction):
+            # llama_index_list = self.long_term_memory.search(action.query, action.history)
+            # logger.info(f'llama-index list: {llama_index_list}')
+            litellm_list = self.agent.llm.recall_memory(
+                action.query, self.state.history
+            )
+            logger.info(f'litellm list: {litellm_list}')
 
     async def _handle_observation(self, observation: Observation):
         """Handles observation from the event stream.
@@ -318,12 +328,20 @@ class AgentController:
             self.agent.llm.metrics.merge(observation.llm_metrics)
 
         if self._pending_action and self._pending_action.id == observation.cause:
+            # FIXME we may want each of these with the other's context
+            # self.long_term_memory.add_event(self._pending_action)
+            # self.long_term_memory.add_event(observation)
+
+            # the runtime has handled the action, so we can clear it
             self._pending_action = None
-            if self.state.agent_state == AgentState.USER_CONFIRMED:
-                await self.set_agent_state_to(AgentState.RUNNING)
-            if self.state.agent_state == AgentState.USER_REJECTED:
-                await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
-            return
+
+            # set the right state when the user confirms or rejects, if we're otherwise good to go (not an error)
+            if not isinstance(observation, ErrorObservation):
+                if self.state.agent_state == AgentState.USER_CONFIRMED:
+                    await self.set_agent_state_to(AgentState.RUNNING)
+                elif self.state.agent_state == AgentState.USER_REJECTED:
+                    await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+                return
 
         if isinstance(observation, CmdOutputObservation):
             return
@@ -347,6 +365,9 @@ class AgentController:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
             await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+
+        # add to long term memory
+        # self.long_term_memory.add_event(action)
 
     def _handle_delegate_observation(self, observation: Observation):
         """Handles delegate observations from the event stream.

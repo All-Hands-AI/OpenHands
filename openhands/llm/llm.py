@@ -11,10 +11,11 @@ from openhands.events.serialization.event import event_to_memory
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
+import numpy as np
 from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
-from litellm import embedding as litellm_embedding
 from litellm import completion_cost as litellm_completion_cost
+from litellm import embedding as litellm_embedding
 from litellm.exceptions import (
     APIConnectionError,
     APIError,
@@ -23,8 +24,7 @@ from litellm.exceptions import (
     ServiceUnavailableError,
 )
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
-import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
+from numpy import dot
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
@@ -445,7 +445,7 @@ class LLM(RetryMixin, DebugMixin):
             np.ndarray: The embedding vector of the event.
         """
         # Convert the event to a string representation
-        event_str = event_to_memory(event)
+        event_str = event_to_memory(event, -1)
         # Get the embedding
         embedding_response = litellm_embedding(
             model=self.config.embedding_model,
@@ -476,8 +476,9 @@ class LLM(RetryMixin, DebugMixin):
             embeddings.append(embedding)
         return embeddings
 
-
-    def recall_memory(self, query: str, embeddings: list[np.ndarray], history: list[Event], top_k: int = 5) -> list[Event]:
+    def recall_memory(
+        self, query: str, history: list[Event], top_k: int = 5
+    ) -> list[Event]:
         """
         Recalls the most similar events based on the query.
 
@@ -492,8 +493,7 @@ class LLM(RetryMixin, DebugMixin):
         """
 
         # make sure history has been embedded
-        if not embeddings:
-            embeddings = self.embed_history(history)
+        embeddings = self.embed_history(history)
 
         # Embed the query
         query_embedding_response = litellm_embedding(
@@ -506,10 +506,12 @@ class LLM(RetryMixin, DebugMixin):
             input_cost_per_token=self.config.input_cost_per_token,
             output_cost_per_token=self.config.output_cost_per_token,
         )
-        query_embedding = np.array(query_embedding_response['data'][0]['embedding']).reshape(1, -1)
+        query_embedding = np.array(
+            query_embedding_response['data'][0]['embedding']
+        ).reshape(1, -1)
 
         # Compute cosine similarity
-        similarity_scores = cosine_similarity(query_embedding, embeddings)[0]
+        similarity_scores = dot(query_embedding, embeddings.T)
 
         # Get the top_k indices
         top_indices = similarity_scores.argsort()[-top_k:][::-1]
@@ -517,16 +519,3 @@ class LLM(RetryMixin, DebugMixin):
         # Retrieve the corresponding events
         recalled_events = [history[i] for i in top_indices]
         return recalled_events
-
-    def summarize_events(self, events: list[Event]) -> str:
-        """
-        Summarizes a list of events.
-
-        Args:
-            events (list[Event]): The list of events to summarize.
-
-        Returns:
-            str: The summary of the events.
-        """
-        summary = self.summarize_messages(events)
-        return summary

@@ -40,7 +40,7 @@ from openhands.utils.prompt import PromptManager
 
 
 class MemCodeActAgent(Agent):
-    VERSION = '1.9'
+    VERSION = '0.1'
     """
     The MemCode Act Agent is a memory-enabled version of the CodeAct agent.
 
@@ -141,8 +141,8 @@ class MemCodeActAgent(Agent):
             hidden_message_count = self.conversation_memory.hidden_message_count
             if hidden_message_count > 0:
                 summary_message = (
-                    f"\n\nENVIRONMENT REMINDER: prior messages ({hidden_message_count} of {self.conversation_memory.total_message_count} total messages) have been hidden from view due to conversation memory constraints.\n"
-                    + f"The following is a summary of the first {hidden_message_count} messages:\n {action.summary}"
+                    f'\n\nENVIRONMENT REMINDER: prior messages ({hidden_message_count} of {self.conversation_memory.total_message_count} total messages) have been hidden from view due to conversation memory constraints.\n'
+                    + f'The following is a summary of the first {hidden_message_count} messages:\n {action.summary}'
                 )
                 return summary_message
         elif isinstance(action, AgentRecallAction):
@@ -205,9 +205,7 @@ class MemCodeActAgent(Agent):
             text += '\n[Error occurred in processing last action]'
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, UserRejectObservation):
-            text = obs_prefix + truncate_content(
-                obs.content, max_message_chars
-            )
+            text = obs_prefix + truncate_content(obs.content, max_message_chars)
             text += '\n[Last action has been rejected by the user]'
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentRecallObservation):
@@ -367,9 +365,8 @@ class MemCodeActAgent(Agent):
 
         # summarize the conversation history using the condenser
         # conversation_memory.history will include the previous summary, if any, while the regular state.history does not
-        condenser = MemoryCondenser(self.llm)
+        condenser = MemoryCondenser(self.llm, self.prompt_manager)
         messages = self._get_messages(state)
         summary = condenser.condense(messages)
 
         logger.debug(f'Summarized conversation history to: {summary}')
-

@@ -1,17 +1,19 @@
-from openhands.memory.utils import parse_summary_response
 from openhands.core.exceptions import SummarizeError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
 from openhands.events.action import AgentSummarizeAction
 from openhands.llm.llm import LLM
+from openhands.memory.utils import parse_summary_response
+from openhands.utils.prompt import PromptManager
 
 WORD_LIMIT = 200
 MESSAGE_SUMMARY_WARNING_FRAC = 0.75
 
 
 class MemoryCondenser:
-    def __init__(self, llm: LLM):
+    def __init__(self, llm: LLM, prompt_manager: PromptManager):
         self.llm = llm
+        self.prompt_manager = prompt_manager
 
     def condense(
         self,
@@ -93,9 +95,9 @@ class MemoryCondenser:
     def summarize_messages(self, message_sequence_to_summarize: list[Message]):
         """Summarize a message sequence using LLM"""
         context_window = self.config.max_input_tokens  # type: ignore
-        summary_prompt = SUMMARY_PROMPT_SYSTEM
+        summary_prompt = self.prompt_manager.summarize_template.render()
         summary_input = self._format_summary_history(
-            self.get_text_messages(message_sequence_to_summarize)  # type: ignore
+            self.llm.format_messages_for_llm(message_sequence_to_summarize)  # type: ignore
         )
         summary_input_tkns = self.get_token_count(summary_input)  # type: ignore
         if context_window is None:
@@ -119,7 +121,9 @@ class MemoryCondenser:
             input = [
                 Message({'role': 'assistant', 'content': curr_summary_message})
             ] + message_sequence_to_summarize[cutoff:]
-            summary_input = self._format_summary_history(self.get_text_messages(input))  # type: ignore
+            summary_input = self._format_summary_history(
+                self.llm.format_messages_for_llm(input)
+            )  # type: ignore
 
         message_sequence = []
         message_sequence.append(
