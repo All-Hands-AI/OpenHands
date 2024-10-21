@@ -218,11 +218,12 @@ class CodeActAgent(Agent):
                 }
             ]
         }
+        messages = params["messages"] + [response_message]
         with open("/home/logs/llm_messages.json", "w") as f:
             import json
-            json.dump(params["messages"], f, indent=2)
+            json.dump(messages, f, indent=2)
         with open("/home/logs/llm_messages.txt", "w") as f:
-            for message in params["messages"]:
+            for message in messages:
                 f.write("-" * 100 + message["role"] + "\n")
                 for content in message["content"]:
                     f.write(content["text"] + "\n")
