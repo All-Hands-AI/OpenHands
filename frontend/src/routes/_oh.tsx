@@ -17,7 +17,7 @@ import AccountSettingsModal from "#/components/modals/AccountSettingsModal";
 import { DangerModal } from "#/components/modals/confirmation-modals/danger-modal";
 import { LoadingSpinner } from "#/components/modals/LoadingProject";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
-import { UserAvatar } from "#/components/user-avatar";
+import { UserActions } from "#/components/user-actions";
 import { useSocket } from "#/context/socket";
 import i18n from "#/i18n";
 import { getSettings, settingsAreUpToDate } from "#/services/settings";
@@ -190,7 +190,7 @@ export default function MainApp() {
           )}
         </div>
         <nav className="py-[18px] flex flex-col items-center gap-[18px]">
-          <UserAvatar
+          <UserActions
             user={user}
             isLoading={loginFetcher.state !== "idle"}
             onLogout={handleUserLogout}

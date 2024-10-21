@@ -1,22 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-interface UserAvatarProps {
-  onClick: () => void;
-  avatarUrl?: string;
-  isLoading?: boolean;
-}
-
-function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
-  return (
-    <div data-testid="user-avatar" onClick={onClick}>
-      {!isLoading && avatarUrl && <img src={avatarUrl} alt="user avatar" />}
-      {!isLoading && !avatarUrl && <img src="" alt="user avatar placeholder" />}
-      {isLoading && <div data-testid="loading-spinner" />}
-    </div>
-  );
-}
+import { UserAvatar } from "#/components/user-avatar";
 
 describe("UserAvatar", () => {
   const onClickMock = vi.fn();
@@ -28,7 +13,9 @@ describe("UserAvatar", () => {
   it("should render the placeholder avatar when the user is logged out (default)", () => {
     render(<UserAvatar onClick={onClickMock} />);
     expect(screen.getByTestId("user-avatar")).toBeInTheDocument();
-    expect(screen.getByAltText("user avatar placeholder")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("user avatar placeholder"),
+    ).toBeInTheDocument();
   });
 
   it("should call onClick when clicked", async () => {
@@ -51,19 +38,21 @@ describe("UserAvatar", () => {
 
     expect(screen.getByAltText("user avatar")).toBeInTheDocument();
     expect(
-      screen.queryByAltText("user avatar placeholder"),
+      screen.queryByLabelText("user avatar placeholder"),
     ).not.toBeInTheDocument();
   });
 
   it("should display a loading spinner instead of an avatar when isLoading is true", () => {
     const { rerender } = render(<UserAvatar onClick={onClickMock} />);
     expect(screen.queryByTestId("loading-spinner")).not.toBeInTheDocument();
-    expect(screen.getByAltText("user avatar placeholder")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("user avatar placeholder"),
+    ).toBeInTheDocument();
 
     rerender(<UserAvatar onClick={onClickMock} isLoading />);
     expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
     expect(
-      screen.queryByAltText("user avatar placeholder"),
+      screen.queryByLabelText("user avatar placeholder"),
     ).not.toBeInTheDocument();
 
     rerender(
