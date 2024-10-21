@@ -327,7 +327,7 @@ class AgentController:
                 self._pending_action.is_confirmed = ActionConfirmationStatus.CONFIRMED  # type: ignore[attr-defined]
             else:
                 self._pending_action.is_confirmed = ActionConfirmationStatus.REJECTED  # type: ignore[attr-defined]
-            self.event_stream.add_event(self._pending_action, EventSource.AGENT)
+            self._add_agent_action_to_stream(self._pending_action)
 
         self.state.agent_state = new_state
         self.event_stream.add_event(
@@ -457,23 +457,7 @@ class AgentController:
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
-
-            if isinstance(action, CmdRunAction):
-                # Split the command into multiple CmdRunAction instances
-                commands = split_bash_commands(action.command)
-                for i, cmd in enumerate(commands):
-                    if not cmd:
-                        continue
-                    new_action = CmdRunAction(command=cmd)
-                    # When we split a command, only the last instance should have the thought
-                    # to prevent duplicates in the UI.
-                    if i < len(commands) - 1:
-                        new_action.thought = ''
-                    else:
-                        new_action.thought = action.thought
-                    self.event_stream.add_event(new_action, EventSource.AGENT)
-            else:
-                self.event_stream.add_event(action, EventSource.AGENT)
+            self._add_agent_action_to_stream(action)
 
         await self.update_state_after_step()
         logger.info(action, extra={'msg_type': 'ACTION'})
@@ -638,3 +622,23 @@ class AgentController:
             f'state={self.state!r}, agent_task={self.agent_task!r}, '
             f'delegate={self.delegate!r}, _pending_action={self._pending_action!r})'
         )
+
+    def _add_agent_action_to_stream(self, action: Action):
+        if (
+            isinstance(action, CmdRunAction)
+            and action.is_confirmed != ActionConfirmationStatus.AWAITING_CONFIRMATION
+        ):
+            # Split the command into multiple CmdRunAction instances
+            commands = split_bash_commands(action.command)
+            for i, cmd in enumerate(commands):
+                if not cmd:
+                    continue
+                new_action = CmdRunAction(command=cmd)
+                # When we split a command, only the last instance should have the thought
+                if i < len(commands) - 1:
+                    new_action.thought = ''
+                else:
+                    new_action.thought = action.thought
+                self.event_stream.add_event(new_action, EventSource.AGENT)
+        else:
+            self.event_stream.add_event(action, EventSource.AGENT)
