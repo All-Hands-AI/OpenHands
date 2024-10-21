@@ -19,7 +19,11 @@ export function AccountSettingsContextMenu({
   const ref = useClickOutsideElement<HTMLUListElement>(onClose);
 
   return (
-    <ContextMenu ref={ref} className="absolute left-full -top-1 z-10">
+    <ContextMenu
+      testId="account-settings-context-menu"
+      ref={ref}
+      className="absolute left-full -top-1 z-10"
+    >
       <ContextMenuListItem onClick={onClickAccountSettings}>
         Account Settings
       </ContextMenuListItem>

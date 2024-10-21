@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, test, vi } from "vitest";
-import { AccountSettingsContextMenu } from "#/components/account-settings-context-menu";
+import { AccountSettingsContextMenu } from "#/components/context-menu/account-settings-context-menu";
 
 describe("AccountSettingsContextMenu", () => {
   const user = userEvent.setup();
@@ -25,6 +25,9 @@ describe("AccountSettingsContextMenu", () => {
       />,
     );
 
+    expect(
+      screen.getByTestId("account-settings-context-menu"),
+    ).toBeInTheDocument();
     expect(screen.getByText("Account Settings")).toBeInTheDocument();
     expect(screen.getByText("Logout")).toBeInTheDocument();
   });
