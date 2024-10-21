@@ -1,7 +1,7 @@
 import { cn } from "@nextui-org/react";
 import React from "react";
 import { isGitHubErrorReponse } from "#/api/github";
-import { AccountSettingsContextMenu } from "./account-settings-context-menu";
+import { AccountSettingsContextMenu } from "./context-menu/account-settings-context-menu";
 import { LoadingSpinner } from "./modals/LoadingProject";
 import DefaultUserAvatar from "#/assets/default-user.svg?react";
 
