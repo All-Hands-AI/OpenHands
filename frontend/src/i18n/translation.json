@@ -1510,5 +1510,9 @@
     "ar": "في انتظار جاهزية العميل...",
     "fr": "En attente que le client soit prêt...",
     "tr": "İstemcinin hazır olması bekleniyor..."
+  },
+  "LOADING_PROJECT$LOADING": {
+    "en": "Loading...",
+    "es": "Cargando..."
   }
 }
