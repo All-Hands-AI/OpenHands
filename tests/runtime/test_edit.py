@@ -126,6 +126,10 @@ This is line 101 + 10
 """
 
 
+@pytest.mark.skipif(
+    TEST_IN_CI != 'True',
+    reason='This test requires LLM to run.',
+)
 def test_edit_long_file(temp_dir, box_class, run_as_openhands):
     runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
     try:
