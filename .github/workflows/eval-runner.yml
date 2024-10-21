@@ -77,7 +77,7 @@ jobs:
           # get evaluation report
           REPORT_FILE=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/deepseek-chat_maxiter_10_N* -name "report.md" -type f | head -n 1)
           echo "REPORT_FILE: $REPORT_FILE"
-          echo "REPORT_CONTENT<<EOF" >> $GITHUB_ENV
+          echo "INTEGRATION_TEST_REPORT<<EOF" >> $GITHUB_ENV
           cat $REPORT_FILE >> $GITHUB_ENV
           echo >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
@@ -96,19 +96,22 @@ jobs:
           poetry run ./evaluation/swe_bench/scripts/eval_infer_remote.sh $OUTPUT_FOLDER/output.jsonl $N_PROCESSES "princeton-nlp/SWE-bench_Lite" test
 
           poetry run ./evaluation/swe_bench/scripts/eval/summarize_outputs.py $OUTPUT_FOLDER/output.jsonl > summarize_outputs.log 2>&1
-          echo "SUMMARY_OUTPUT<<EOF" >> $GITHUB_ENV
+          echo "SWEBENCH_REPORT<<EOF" >> $GITHUB_ENV
           cat summarize_outputs.log >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
       - name: Create tar.gz of evaluation outputs
-        run: tar -czvf evaluation_outputs.tar.gz evaluation/evaluation_outputs
+        run: |
+          TIMESTAMP=$(date +'%y-%m-%d-%H-%M')
+          tar -czvf evaluation_outputs_${TIMESTAMP}.tar.gz evaluation/evaluation_outputs/outputs
+          echo "ARTIFACT_NAME=evaluation-outputs-${TIMESTAMP}" >> $GITHUB_ENV
 
       - name: Upload evaluation results as artifact
         uses: actions/upload-artifact@v4
         id: upload_results_artifact
         with:
           name: evaluation-outputs
-          path: evaluation_outputs.tar.gz
+          path: evaluation_outputs_*.tar.gz
 
       - name: Get artifact URL
         run: echo "ARTIFACT_URL=${{ steps.upload_results_artifact.outputs.artifact-url }}" >> $GITHUB_ENV
@@ -124,21 +127,63 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: `
-                **Integration Tests Evaluation Report:**
+                **Integration Tests Evaluation Report**
 
                 \`\`\`json
-                ${process.env.REPORT_CONTENT}
+                ${process.env.INTEGRATION_TEST_REPORT}
                 \`\`\`
 
                 ---
-                **SWE-Bench Evaluation outputs:**
+                **SWE-Bench Evaluation Report**
 
-                ${process.env.SUMMARY_OUTPUT}
+                ${process.env.SWEBENCH_REPORT}
 
                 ---
                 You can download the full evaluation outputs [here](${process.env.ARTIFACT_URL}).
               `
             })
+
+      - name: Post to a Slack channel
+        id: slack
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          channel-id: 'C07SVQSCR6F'
+          payload: |
+            {
+              "text": "Evaluation Results",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Evaluation Trigger:* ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Integration Tests Evaluation Report*\n```\n${{ env.INTEGRATION_TEST_REPORT }}\n```"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*SWE-Bench Evaluation Report*\n${{ env.SWEBENCH_REPORT }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "You can download the full evaluation outputs <${{ env.ARTIFACT_URL }}|here>."
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.EVAL_NOTIF_SLACK_BOT_TOKEN }}
 
 # - name: Authenticate to Google Cloud
 #   uses: 'google-github-actions/auth@v2'
