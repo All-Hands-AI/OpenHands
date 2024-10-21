@@ -1,5 +1,6 @@
 import asyncio
 import importlib.util
+import json
 import os
 
 import pandas as pd
@@ -37,13 +38,15 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='eventstream',
+        runtime=os.environ.get('RUNTIME', 'eventstream'),
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             # use default base_container_image
             enable_auto_lint=True,
             use_host_network=False,
             timeout=100,
+            api_key=os.environ.get('ALLHANDS_API_KEY', None),
+            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
         ),
         # do not mount workspace
         workspace_base=None,
@@ -200,3 +203,14 @@ if __name__ == '__main__':
         + df[['instance_id', 'success', 'reason']].to_string(index=False)
     )
     logger.info('-' * 100)
+
+    # New code to dump results to JSON
+    json_report = {
+        'success_rate': df['success'].mean(),
+        'instances': df[['instance_id', 'success', 'reason']].to_dict(orient='records'),
+    }
+    json_report_file = os.path.join(metadata.eval_output_dir, 'report.json')
+    with open(json_report_file, 'w') as f:
+        json.dump(json_report, f, indent=2)
+
+    logger.info(f'JSON report saved to {json_report_file}')
