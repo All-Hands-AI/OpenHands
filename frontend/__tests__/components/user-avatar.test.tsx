@@ -10,7 +10,7 @@ describe("UserAvatar", () => {
     onClickMock.mockClear();
   });
 
-  it("should render the placeholder avatar when the user is logged out (default)", () => {
+  it("(default) should render the placeholder avatar when the user is logged out", () => {
     render(<UserAvatar onClick={onClickMock} />);
     expect(screen.getByTestId("user-avatar")).toBeInTheDocument();
     expect(
