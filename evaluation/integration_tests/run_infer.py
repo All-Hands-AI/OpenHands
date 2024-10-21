@@ -1,6 +1,5 @@
 import asyncio
 import importlib.util
-import json
 import os
 
 import pandas as pd
@@ -204,13 +203,9 @@ if __name__ == '__main__':
     )
     logger.info('-' * 100)
 
-    # New code to dump results to JSON
-    json_report = {
-        'success_rate': df['success'].mean(),
-        'instances': df[['instance_id', 'success', 'reason']].to_dict(orient='records'),
-    }
-    json_report_file = os.path.join(metadata.eval_output_dir, 'report.json')
-    with open(json_report_file, 'w') as f:
-        json.dump(json_report, f, indent=2)
-
-    logger.info(f'JSON report saved to {json_report_file}')
+    report_file = os.path.join(metadata.eval_output_dir, 'report.md')
+    with open(report_file, 'w') as f:
+        f.write(
+            f'Success rate: {df["success"].mean():.2%} ({df["success"].sum()}/{len(df)})\n'
+        )
+        f.write(df[['instance_id', 'success', 'reason']].to_markdown(index=False))
