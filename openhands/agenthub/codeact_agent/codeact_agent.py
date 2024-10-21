@@ -205,16 +205,17 @@ class CodeActAgent(Agent):
         }
 
         response = self.llm.completion(**params)
-        parsed_response = self.action_parser.parse(response)
+        parsed_action = self.action_parser.parse(response)
 
         # DEBUG: save llm messages to a file
         # we'll also add the parsed response to the end of the messages
+        parsed_str = self.action_parser.parse_response(response)
         response_message = {
             "role": "assistant",
             "content": [
                 {
                     "type": "text",
-                    "text": parsed_response,
+                    "text": parsed_str,
                 }
             ]
         }
@@ -228,7 +229,7 @@ class CodeActAgent(Agent):
                 for content in message["content"]:
                     f.write(content["text"] + "\n")
 
-        return parsed_response
+        return parsed_action
 
     def _get_messages(self, state: State) -> list[Message]:
         messages: list[Message] = [
