@@ -19,8 +19,8 @@ class MemCodeActResponseParser(ResponseParser):
     - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
     - MessageAction(content) - Message action to run (e.g. ask for clarification)
     - AgentFinishAction() - end the interaction
-    - AgentSummarizeAction() - summarize the conversation history
-    - RecallAction(query) - recall information from memory
+    - AgentSummarizeAction() - trigger a summarization of the conversation history
+    - AgentRecallAction(query) - recall information from memory
     """
 
     def __init__(self):
@@ -32,6 +32,7 @@ class MemCodeActResponseParser(ResponseParser):
             MemCodeActActionParserAgentDelegate(),
             MemCodeActActionParserMemorySummarize(),
             MemCodeActActionParserMemoryRecall(),
+            # MemCodeActActionParserMemoryAdd(),
         ]
         self.default_parser = MemCodeActActionParserMessage()
 
@@ -54,13 +55,13 @@ class MemCodeActResponseParser(ResponseParser):
                 action += f'</execute_{lang}>'
 
         # memory actions
-        for action in ['summarize', 'recall', 'add']:
+        for mem in ['summarize', 'recall', 'add']:
             # the stop-word bug
-            if f'<memory_{action}>' in action and f'</memory_{action}>' not in action:
-                action += f'</memory_{action}>'
+            if f'<memory_{mem}>' in action and f'</memory_{mem}>' not in action:
+                action = action.replace(f'</memory_{mem}', f'</memory_{mem}>')
 
-            if f'<memory_{action}>' in action and f'</memory_{action}>' not in action:
-                action += f'</memory_{action}>'
+            if f'<memory_{mem}>' in action and f'</memory_{mem}>' not in action:
+                action += f'</memory_{mem}>'
 
         return action
 
@@ -203,32 +204,33 @@ class MemCodeActActionParserMemoryRecall(ActionParser):
     """
 
     def __init__(self):
-        self.query = None
+        self.recall_query = None
 
     def check_condition(self, action_str: str) -> bool:
-        self.query = re.search(
+        self.recall_query = re.search(
             r'<memory_recall>(.*?)</memory_recall>', action_str, re.DOTALL
         )
-        return self.query is not None
+        return self.recall_query is not None
 
     def parse(self, action_str: str) -> Action:
         assert (
-            self.query is not None
+            self.recall_query is not None
         ), 'self.query should not be None when parse is called'
 
         # thought <memory_recall>query</memory_recall>
         # Note: the thought is optional
-        thought = action_str.replace(self.query.group(0), '').strip()
-        return AgentRecallAction(query=self.query.group(1).strip(), thought=thought)
+        thought = action_str.replace(self.recall_query.group(0), '').strip()
+        query = self.recall_query.group(1).strip()
+        return AgentRecallAction(query=query, thought=thought)
 
 
 class MemCodeActActionParserMemorySummarize(ActionParser):
     """Parser action:
-    - <memory_summarize></memory_summarize> - The LLM wants to trigger a summarization of the conversation history
+    - <memory_summarize> - The LLM wants to trigger a summarization of its context
     """
 
     def check_condition(self, action_str: str) -> bool:
-        return '<memory_summarize></memory_summarize>' in action_str
+        return '<memory_summarize>' in action_str
 
     def parse(self, action_str: str) -> Action:
         # let the agent trigger the summarization

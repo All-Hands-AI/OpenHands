@@ -276,8 +276,6 @@ class MemCodeActAgent(Agent):
                 '</execute_ipython>',
                 '</execute_bash>',
                 '</execute_browse>',
-                '</memory_summarize>',
-                '</memory_recall>',
             ],
         }
 
