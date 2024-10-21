@@ -24,7 +24,7 @@ export function AccountSettingsContextMenu({
         Account Settings
       </ContextMenuListItem>
       <ContextMenuSeparator />
-      <ContextMenuListItem disabled={!isLoggedIn} onClick={onLogout}>
+      <ContextMenuListItem isDisabled={!isLoggedIn} onClick={onLogout}>
         Logout
       </ContextMenuListItem>
     </ContextMenu>
