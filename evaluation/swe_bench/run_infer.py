@@ -11,6 +11,7 @@ from datasets import load_dataset
 import openhands.agenthub
 from evaluation.swe_bench.prompt import CODEACT_SWE_PROMPT
 from evaluation.utils.shared import (
+    EvalException,
     EvalMetadata,
     EvalOutput,
     assert_and_raise,
@@ -131,6 +132,8 @@ def get_config(
             use_host_network=False,
             # large enough timeout, since some testcases take very long to run
             timeout=300,
+            # Add platform to the sandbox config to solve issue 4401
+            platform='linux/amd64',
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
             keep_remote_runtime_alive=False,
@@ -384,6 +387,13 @@ def process_instance(
             )
         )
 
+        # if fatal error, throw EvalError to trigger re-run
+        if (
+            state.last_error
+            and 'fatal error during agent execution' in state.last_error
+        ):
+            raise EvalException('Fatal error detected: ' + state.last_error)
+
         # ======= THIS IS SWE-Bench specific =======
         # Get git patch
         return_val = complete_runtime(runtime, instance)
@@ -477,9 +487,12 @@ if __name__ == '__main__':
     if hasattr(_agent_cls, 'in_context_example'):
         details['in_context_example'] = _agent_cls.in_context_example
 
+    dataset_descrption = (
+        args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
+    )
     metadata = make_metadata(
         llm_config,
-        'swe-bench-lite',
+        dataset_descrption,
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
