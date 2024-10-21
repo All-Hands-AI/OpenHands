@@ -21,7 +21,7 @@ jobs:
     if: |
       (github.event_name == 'pull_request' &&
        github.event.label.name == 'eval-this' &&
-       contains(fromJson(env.ALLOWED_USERS), github.event.sender.login)) ||
+       contains(fromJson(env.ALLOWED_USERS), github.event.actor.login)) ||
       github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
