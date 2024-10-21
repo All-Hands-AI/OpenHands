@@ -116,30 +116,32 @@ jobs:
       - name: Get artifact URL
         run: echo "ARTIFACT_URL=${{ steps.upload_results_artifact.outputs.artifact-url }}" >> $GITHUB_ENV
 
-      - name: Comment PR with evaluation results and artifact link
+      - name: Comment with evaluation results and artifact link
         uses: actions/github-script@v6
-        if: github.event_name == 'pull_request'
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
+            const issueNumber = github.event_name === 'pull_request' ? context.issue.number : 4504;
             github.rest.issues.createComment({
-              issue_number: context.issue.number,
+              issue_number: issueNumber,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: `
+                Trigger by: ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}
+
                 **Integration Tests Evaluation Report**
 
-                \`\`\`json
-                ${process.env.INTEGRATION_TEST_REPORT}
-                \`\`\`
+                ```json
+                ${{ env.INTEGRATION_TEST_REPORT }}
+                ```
 
                 ---
                 **SWE-Bench Evaluation Report**
 
-                ${process.env.SWEBENCH_REPORT}
+                ${{ env.SWEBENCH_REPORT }}
 
                 ---
-                You can download the full evaluation outputs [here](${process.env.ARTIFACT_URL}).
+                You can download the full evaluation outputs [here](${{ env.ARTIFACT_URL }}).
               `
             })
 
