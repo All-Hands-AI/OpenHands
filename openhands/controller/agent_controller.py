@@ -423,6 +423,8 @@ class AgentController:
         """Resets the agent's task."""
 
         self.almost_stuck = 0
+
+        # FIXME: wipe out the memory
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState):

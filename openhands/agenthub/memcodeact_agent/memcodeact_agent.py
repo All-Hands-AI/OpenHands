@@ -5,6 +5,7 @@ from openhands.agenthub.memcodeact_agent.action_parser import MemCodeActResponse
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
+from openhands.core.exceptions import TokenLimitExceededError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
@@ -279,8 +280,17 @@ class MemCodeActAgent(Agent):
             ],
         }
 
-        response = self.llm.completion(**params)
+        # catch ContextWindowExceededError and TokenLimitExceededError
+        try:
+            response = self.llm.completion(**params)
+        except TokenLimitExceededError as e:
+            logger.error(e, exc_info=False)
 
+            # run condenser directly; the alternative is to delegate to the microagent
+            summary_action = self.summarize_messages_inplace(state)
+
+            # just return for now
+            return summary_action
         return self.action_parser.parse(response)
 
     def _get_messages(self, state: State) -> list[Message]:
@@ -290,18 +300,20 @@ class MemCodeActAgent(Agent):
                 content=[
                     TextContent(
                         text=self.prompt_manager.system_message,
-                        cache_prompt=self.llm.is_caching_prompt_active(),  # Cache system prompt
+                        cache_prompt=self.llm.is_caching_prompt_active(),  # cache system prompt
                     )
                 ],
+                condensable=False,
             ),
             Message(
                 role='user',
                 content=[
                     TextContent(
                         text=self.prompt_manager.initial_user_message,
-                        cache_prompt=self.llm.is_caching_prompt_active(),  # if the user asks the same query,
+                        cache_prompt=self.llm.is_caching_prompt_active(),  # the user asks the same query
                     )
                 ],
+                condensable=False,
             ),
         ]
 
@@ -325,14 +337,14 @@ class MemCodeActAgent(Agent):
                     messages.append(message)
 
         # Add caching to the last 2 user messages
-        if self.llm.is_caching_prompt_active():
-            user_turns_processed = 0
-            for message in reversed(messages):
-                if message.role == 'user' and user_turns_processed < 2:
-                    message.content[
-                        -1
-                    ].cache_prompt = True  # Last item inside the message content
-                    user_turns_processed += 1
+        # if self.llm.is_caching_prompt_active():
+        #    user_turns_processed = 0
+        #    for message in reversed(messages):
+        #        if message.role == 'user' and user_turns_processed < 2:
+        #            message.content[
+        #                -1
+        #            ].cache_prompt = True  # Last item inside the message content
+        #            user_turns_processed += 1
 
         # The latest user message is important:
         # we want to remind the agent of the environment constraints
@@ -349,6 +361,11 @@ class MemCodeActAgent(Agent):
             None,
         )
 
+        # set the last 4 messages to be non-condensable
+        # TODO make this configurable for experimentation
+        for message in messages[-4:]:
+            message.condensable = False
+
         # iterations reminder
         if latest_user_message:
             reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
@@ -364,6 +381,8 @@ class MemCodeActAgent(Agent):
         # summarize the conversation history using the condenser
         # conversation_memory.history will include the previous summary, if any, while the regular state.history does not
         condenser = MemoryCondenser(self.llm, self.prompt_manager)
+
+        # send all messages and let it sort it out
         messages = self._get_messages(state)
         summary = condenser.condense(messages)
 

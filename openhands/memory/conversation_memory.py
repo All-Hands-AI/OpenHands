@@ -2,6 +2,7 @@ from enum import Enum
 
 from openhands.controller.state.state import State
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import AgentSummarizeAction
 from openhands.events.serialization.event import event_to_dict
 from openhands.memory.base_memory import Memory
@@ -113,6 +114,8 @@ class ConversationMemory(Memory):
 
         # the number of messages that are hidden from the user
         # is the number of events in summary
+        logger.info(f'state: {state}')
+        logger.info(f'self.state: {self.state}')
         if state.summary:
             self.hidden_message_count = state.summary.end_id - state.summary.start_id
 

@@ -5,6 +5,7 @@ from functools import partial
 from typing import Any
 
 from openhands.core.config import LLMConfig
+from openhands.core.exceptions import TokenLimitExceededError
 from openhands.events.event import Event
 from openhands.events.serialization.event import event_to_memory
 
@@ -184,6 +185,14 @@ class LLM(RetryMixin, DebugMixin):
 
             # log the entire LLM prompt
             self.log_prompt(messages)
+
+            # find out if we have too many tokens
+            token_count = self.get_token_count(messages)
+            max_input_tokens = self.config.max_input_tokens
+            if token_count > max_input_tokens:
+                raise TokenLimitExceededError(
+                    f'Token limit exceeded: {token_count} > {max_input_tokens}'
+                )
 
             if self.is_caching_prompt_active():
                 # Anthropic-specific prompt caching

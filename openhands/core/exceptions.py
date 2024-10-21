@@ -96,3 +96,8 @@ class SummarizeError(Exception):
 class InvalidSummaryResponseError(Exception):
     def __init__(self, message='Invalid summary response'):
         super().__init__(message)
+
+
+class TokenLimitExceededError(Exception):
+    def __init__(self, message='Token limit exceeded'):
+        super().__init__(message)
