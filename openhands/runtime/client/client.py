@@ -297,7 +297,8 @@ class RuntimeClient:
         self.pwd = os.path.expanduser(working_dir)
 
         # re-assemble the prompt
-        prompt = f'{other_info.strip()}\n{username}@{hostname}:{working_dir} '
+        # ignore the hostname AND use 'openhands-workspace'
+        prompt = f'{other_info.strip()}\n{username}@openhands-workspace:{working_dir} '
         if username == 'root':
             prompt += '#'
         else:
@@ -504,7 +505,9 @@ class RuntimeClient:
         # NOTE: this is part of initialization, so we hard code the timeout
         result, exit_code = self._execute_bash('pwd', timeout=60, keep_prompt=False)
         if exit_code != 0:
-            raise RuntimeError('Failed to get working directory')
+            raise RuntimeError(
+                f'Failed to get working directory (exit code: {exit_code}): {result}'
+            )
         return result.strip()
 
     def _resolve_path(self, path: str, working_dir: str) -> str:
