@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openhands-ai"
-version = "0.9.8"
+version = "0.10.0"
 description = "OpenHands: Code Less, Make More"
 authors = ["OpenHands"]
 license = "MIT"
@@ -63,7 +63,7 @@ llama-index = "*"
 llama-index-vector-stores-chroma = "*"
 chromadb = "*"
 llama-index-embeddings-huggingface = "*"
-torch = "2.2.2"
+torch = "2.5.0"
 llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
@@ -87,7 +87,6 @@ reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
-
 
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
@@ -118,7 +117,6 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
-
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
