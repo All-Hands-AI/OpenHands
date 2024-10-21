@@ -207,6 +207,10 @@ class CodeActAgent(Agent):
         with open("/home/logs/llm_messages.json", "w") as f:
             import json
             json.dump(params["messages"], f, indent=2)
+        with open("/home/logs/llm_messages.txt", "w") as f:
+            for message in params["messages"]:
+                f.write("-" * 100 + message["role"] + "\n")
+                f.write(message["content"][0]["text"] + "\n")
 
         response = self.llm.completion(**params)
 
