@@ -29,8 +29,10 @@ export const clientLoader = async () => {
   try {
     const config = await OpenHands.getConfig();
     window.__APP_MODE__ = config.APP_MODE;
+    window.__GITHUB_CLIENT_ID__ = config.GITHUB_CLIENT_ID;
   } catch (error) {
     window.__APP_MODE__ = "oss";
+    window.__GITHUB_CLIENT_ID__ = null;
   }
 
   let token = localStorage.getItem("token");
