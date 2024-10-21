@@ -104,10 +104,6 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         llm_config = self.config.get_llm_config()
 
         if llm_config.draft_editor is None:
-            logger.warning(
-                f'Draft editor LLM is not set. Fallback to use the LLM (model: {llm_config.model}) for the main agent. '
-                'Note that this may incur high costs for editing actions.'
-            )
             llm_config.draft_editor = copy.deepcopy(llm_config)
 
         # manually set the model name for the draft editor LLM to distinguish token costs
