@@ -34,9 +34,9 @@ class PromptManager:
 
         # load templates using the environment
         self.system_template: Template = self._load_template('system_prompt')
-        self.summarize_template: Template = self._load_template('summarize_prompt')
         self.memory_template: Template = self._load_template('memory_prompt')
         self.user_template: Template = self._load_template('user_prompt')
+        self.summarize_template: Template = self._load_template('summarize_prompt')
 
     def _load_template(self, template_name: str):
         """
@@ -50,7 +50,7 @@ class PromptManager:
         """
         try:
             template = self.env.get_template(f'{template_name}.j2')
-            print(f'Loaded template {template_name}: {template.render()[:100]}...')
+            print(f'Loaded template {template_name}')
             return template
         except Exception as e:
             print(f'Error loading template {template_name}: {e}')
