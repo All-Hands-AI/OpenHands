@@ -83,23 +83,23 @@ jobs:
           echo >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
-      - name: Run SWE-Bench evaluation
-        env:
-          ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
-          RUNTIME: remote
-          SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
-          EVAL_DOCKER_IMAGE_PREFIX: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images
+      # - name: Run SWE-Bench evaluation
+      #   env:
+      #     ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
+      #     RUNTIME: remote
+      #     SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
+      #     EVAL_DOCKER_IMAGE_PREFIX: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images
 
-        run: |
-          poetry run ./evaluation/swe_bench/scripts/run_infer.sh llm.eval HEAD CodeActAgent 10 50 $N_PROCESSES "princeton-nlp/SWE-bench_Lite" test
-          OUTPUT_FOLDER=$(find evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Lite-test/CodeActAgent -name "deepseek-chat_maxiter_50_N_*-no-hint-run_1" -type d | head -n 1)
-          echo "OUTPUT_FOLDER for SWE-bench evaluation: $OUTPUT_FOLDER"
-          poetry run ./evaluation/swe_bench/scripts/eval_infer_remote.sh $OUTPUT_FOLDER/output.jsonl $N_PROCESSES "princeton-nlp/SWE-bench_Lite" test
+      #   run: |
+      #     poetry run ./evaluation/swe_bench/scripts/run_infer.sh llm.eval HEAD CodeActAgent 10 50 $N_PROCESSES "princeton-nlp/SWE-bench_Lite" test
+      #     OUTPUT_FOLDER=$(find evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Lite-test/CodeActAgent -name "deepseek-chat_maxiter_50_N_*-no-hint-run_1" -type d | head -n 1)
+      #     echo "OUTPUT_FOLDER for SWE-bench evaluation: $OUTPUT_FOLDER"
+      #     poetry run ./evaluation/swe_bench/scripts/eval_infer_remote.sh $OUTPUT_FOLDER/output.jsonl $N_PROCESSES "princeton-nlp/SWE-bench_Lite" test
 
-          poetry run ./evaluation/swe_bench/scripts/eval/summarize_outputs.py $OUTPUT_FOLDER/output.jsonl > summarize_outputs.log 2>&1
-          echo "SWEBENCH_REPORT<<EOF" >> $GITHUB_ENV
-          cat summarize_outputs.log >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+      #     poetry run ./evaluation/swe_bench/scripts/eval/summarize_outputs.py $OUTPUT_FOLDER/output.jsonl > summarize_outputs.log 2>&1
+      #     echo "SWEBENCH_REPORT<<EOF" >> $GITHUB_ENV
+      #     cat summarize_outputs.log >> $GITHUB_ENV
+      #     echo "EOF" >> $GITHUB_ENV
 
       - name: Create tar.gz of evaluation outputs
         run: |
