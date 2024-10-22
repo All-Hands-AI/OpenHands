@@ -117,48 +117,6 @@ jobs:
       - name: Get artifact URL
         run: echo "ARTIFACT_URL=${{ steps.upload_results_artifact.outputs.artifact-url }}" >> $GITHUB_ENV
 
-      - name: Post to a Slack channel
-        id: slack
-        uses: slackapi/slack-github-action@v1.27.0
-        with:
-          channel-id: 'C07SVQSCR6F'
-          payload: |
-            {
-              "text": "Evaluation Results",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Evaluation Trigger:* ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Integration Tests Evaluation Report*\n${{ env.INTEGRATION_TEST_REPORT }}"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*SWE-Bench Evaluation Report*\n${{ env.SWEBENCH_REPORT }}"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "You can download the full evaluation outputs <${{ env.ARTIFACT_URL }}|here>."
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.EVAL_NOTIF_SLACK_BOT_TOKEN }}
-
       - name: Comment with evaluation results and artifact link
         uses: actions/github-script@v6
         with:
@@ -185,6 +143,48 @@ jobs:
                 You can download the full evaluation outputs [here](${{ env.ARTIFACT_URL }}).
               `
             })
+
+      - name: Post to a Slack channel
+        id: slack
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          channel-id: 'C07SVQSCR6F'
+          payload: |
+            {
+              "text": "Evaluation Results",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Evaluation Trigger:* ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Integration Tests Evaluation Report*\n${{ toJson(env.INTEGRATION_TEST_REPORT) }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*SWE-Bench Evaluation Report*\n${{ toJson(env.SWEBENCH_REPORT) }}"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "You can download the full evaluation outputs <${{ toJson(env.ARTIFACT_URL) }}|here>."
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.EVAL_NOTIF_SLACK_BOT_TOKEN }}
 
 # - name: Authenticate to Google Cloud
 #   uses: 'google-github-actions/auth@v2'
