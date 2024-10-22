@@ -62,7 +62,7 @@ class OpenHands {
   }
 
   static async getConfig(): Promise<GetConfigResponse> {
-    const response = await fetch(`${OpenHands.BASE_URL}/config.json`, {
+    const response = await fetch("config.json", {
       headers: {
         "Cache-Control": "no-cache",
       },
