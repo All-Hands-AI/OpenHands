@@ -56,13 +56,6 @@ const messageActions = {
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
-    if (
-      !message.args.is_confirmed ||
-      message.args.is_confirmed !== "rejected"
-    ) {
-      // We only add this later
-      // store.dispatch(appendInput(message.args.command));
-    }
   },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
     if (message.args.thought) {
