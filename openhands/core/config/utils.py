@@ -136,17 +136,14 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     logger.openhands_logger.debug(
                         'Attempt to load default LLM config from config toml'
                     )
-                    non_dict_fields = {
-                        k: v for k, v in value.items() if not isinstance(v, dict)
-                    }
-                    llm_config = LLMConfig(**non_dict_fields)
+                    llm_config = LLMConfig.from_dict(value)
                     cfg.set_llm_config(llm_config, 'llm')
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
                             logger.openhands_logger.debug(
                                 f'Attempt to load group {nested_key} from config toml as llm config'
                             )
-                            llm_config = LLMConfig(**nested_value)
+                            llm_config = LLMConfig.from_dict(nested_value)
                             cfg.set_llm_config(llm_config, nested_key)
                 elif not key.startswith('sandbox') and key.lower() != 'core':
                     logger.openhands_logger.warning(
@@ -272,7 +269,7 @@ def get_llm_config_arg(
 
     # update the llm config with the specified section
     if 'llm' in toml_config and llm_config_arg in toml_config['llm']:
-        return LLMConfig(**toml_config['llm'][llm_config_arg])
+        return LLMConfig.from_dict(toml_config['llm'][llm_config_arg])
     logger.openhands_logger.debug(f'Loading from toml failed for {llm_config_arg}')
     return None
 
