@@ -1,5 +1,6 @@
 import React from "react";
 import { useDispatch } from "react-redux";
+import toast from "react-hot-toast";
 import EllipsisH from "#/assets/ellipsis-h.svg?react";
 import { ModalBackdrop } from "../modals/modal-backdrop";
 import { ConnectToGitHubModal } from "../modals/connect-to-github-modal";
@@ -64,7 +65,13 @@ Finally, open up a pull request using the GitHub API and the token in the GITHUB
           isConnectedToGitHub={isConnectedToGitHub}
           onConnectToGitHub={() => setConnectToGitHubModalOpen(true)}
           onPushToGitHub={handlePushToGitHub}
-          onDownloadWorkspace={downloadWorkspace}
+          onDownloadWorkspace={() => {
+            try {
+              downloadWorkspace();
+            } catch (error) {
+              toast.error("Failed to download workspace");
+            }
+          }}
           onClose={() => setContextMenuIsOpen(false)}
         />
       )}
