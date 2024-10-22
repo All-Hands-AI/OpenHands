@@ -1,6 +1,7 @@
-import os
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
+
 from openhands.utils.microagent import MicroAgent
+
 
 class PromptManager:
     """
@@ -25,11 +26,12 @@ class PromptManager:
         self.prompt_dir: str = prompt_dir
         self.agent_skills_docs: str = agent_skills_docs
         self.micro_agent: MicroAgent | None = micro_agent
+        self.conversation_history: str = ''
 
         # initialize Jinja2 Environment with FileSystemLoader
         self.env = Environment(
             loader=FileSystemLoader(self.prompt_dir),
-            autoescape=select_autoescape(['j2','md'])
+            autoescape=select_autoescape(['j2', 'md']),
         )
 
         # load templates using the environment
@@ -41,10 +43,10 @@ class PromptManager:
     def _load_template(self, template_name: str):
         """
         Loads a Jinja2 template using the configured environment.
-        
+
         Args:
             template_name: The base name of the template file
-        
+
         Returns:
             Template: The loaded Jinja2 template.
         """
@@ -54,12 +56,13 @@ class PromptManager:
             return template
         except Exception as e:
             print(f'Error loading template {template_name}: {e}')
-            return Template('') 
+            return Template('')
+
     @property
     def system_message(self) -> str:
         """
         Renders the system message template with the necessary variables.
-        
+
         Returns:
             str: The rendered system message.
         """
@@ -73,7 +76,7 @@ class PromptManager:
     def initial_user_message(self) -> str:
         """
         Renders the initial user message template.
-        
+
         Returns:
             str: The rendered initial user message.
         """
@@ -86,9 +89,11 @@ class PromptManager:
     def summarize_message(self) -> str:
         """
         Renders the summarize message template.
-        
+
         Returns:
             str: The rendered summarize message.
         """
-        rendered = self.summarize_template.render()
+        rendered = self.summarize_template.render(
+            conversation_history=self.conversation_history
+        )
         return rendered.strip()

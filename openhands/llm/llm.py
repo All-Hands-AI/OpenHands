@@ -126,6 +126,15 @@ class LLM(RetryMixin, DebugMixin):
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
+        # if using a custom tokenizer, make sure it's loaded and accessible in the format expected by litellm
+        if self.config.custom_tokenizer is not None:
+            # FIXME: transformers is not a regular dependency, but we need it here
+            from transformers import AutoTokenizer
+
+            tokenizer = AutoTokenizer.from_pretrained(self.config.custom_tokenizer)
+            self.tokenizer = {'type': 'huggingface_tokenizer', 'tokenizer': tokenizer}
+
+        # set up the completion function
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
@@ -327,15 +336,32 @@ class LLM(RetryMixin, DebugMixin):
         """Get the number of tokens in a list of messages.
 
         Args:
-            messages (list): A list of messages.
+            messages (list): A list of messages, either as a list of dicts or as a list of Message objects.
 
         Returns:
             int: The number of tokens.
         """
+        # convert Message objects to dicts, litellm expects dicts
+        if (
+            isinstance(messages, list)
+            and len(messages) > 0
+            and isinstance(messages[0], Message)
+        ):
+            messages = self.format_messages_for_llm(messages)
+
+        # try to get the token count with the default litellm tokenizers
+        # or the custom tokenizer attribute if set for this LLM configuration
         try:
-            return litellm.token_counter(model=self.config.model, messages=messages)
-        except Exception:
+            return litellm.token_counter(
+                model=self.config.model,
+                messages=messages,
+                custom_tokenizer=self.tokenizer,
+            )
+        except Exception as e:
             # TODO: this is to limit logspam in case token count is not supported
+            logger.error(
+                f'Error getting token count for\n model {self.config.model}\ncustom_tokenizer: {self.config.custom_tokenizer}\n{e}'
+            )
             return 0
 
     def _is_local(self):

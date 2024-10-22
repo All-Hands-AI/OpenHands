@@ -373,10 +373,10 @@ class MemCodeActAgent(Agent):
 
         return messages
 
-    def summarize_messages_inplace(self, state: State):
+    def summarize_messages_inplace(self, state: State) -> AgentSummarizeAction:
         """Summarizes the earlier messages in the agent's memory to reduce token usage. Uses memGPT's algorithm for in-place summarization."""
         if len(state.history) <= 2:
-            return
+            return None  # ignore
 
         # summarize the conversation history using the condenser
         # conversation_memory.history will include the previous summary, if any, while the regular state.history does not
@@ -387,3 +387,5 @@ class MemCodeActAgent(Agent):
         summary = condenser.condense(messages)
 
         logger.debug(f'Summarized conversation history to: {summary}')
+
+        return summary
