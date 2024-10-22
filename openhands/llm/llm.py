@@ -25,7 +25,6 @@ from litellm.exceptions import (
     ServiceUnavailableError,
 )
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
-from numpy import dot
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
@@ -520,7 +519,7 @@ class LLM(RetryMixin, DebugMixin):
         ).reshape(1, -1)
 
         # Compute cosine similarity
-        similarity_scores = dot(query_embedding, embeddings.T)
+        similarity_scores = np.dot(query_embedding, embeddings)
 
         # Get the top_k indices
         top_indices = similarity_scores.argsort()[-top_k:][::-1]
