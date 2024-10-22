@@ -115,8 +115,6 @@ class AgentController:
         self.agent_configs = agent_configs if agent_configs else {}
         self._initial_max_iterations = max_iterations
         self._initial_max_budget_per_task = max_budget_per_task
-
-        # stuck helper
         self._stuck_detector = StuckDetector(self.state)
 
     async def close(self):
@@ -218,8 +216,7 @@ class AgentController:
         """
         if (
             self._pending_action
-            and hasattr(self._pending_action, 'is_confirmed')
-            and self._pending_action.is_confirmed
+            and getattr(self._pending_action, 'is_confirmed', None)
             == ActionConfirmationStatus.AWAITING_CONFIRMATION
         ):
             return
@@ -317,9 +314,8 @@ class AgentController:
             ):
                 if self.state.metrics.accumulated_cost >= self.max_budget_per_task:
                     self.max_budget_per_task += self._initial_max_budget_per_task
-        elif self._pending_action is not None and (
-            new_state == AgentState.USER_CONFIRMED
-            or new_state == AgentState.USER_REJECTED
+        elif self._pending_action and (
+            new_state in (AgentState.USER_CONFIRMED, AgentState.USER_REJECTED)
         ):
             if hasattr(self._pending_action, 'thought'):
                 self._pending_action.thought = ''  # type: ignore[union-attr]
@@ -399,7 +395,11 @@ class AgentController:
             await asyncio.sleep(1)
             return
 
-        if self._pending_action:
+        if (
+            self._pending_action
+            and getattr(self._pending_action, 'is_confirmed', None)
+            == ActionConfirmationStatus.AWAITING_CONFIRMATION
+        ):
             await asyncio.sleep(1)
             return
 
@@ -448,12 +448,11 @@ class AgentController:
                 type(action) is CmdRunAction or type(action) is IPythonRunCellAction
             ):
                 action.is_confirmed = ActionConfirmationStatus.AWAITING_CONFIRMATION
-            self._pending_action = action
+                self._pending_action = action
 
         if not isinstance(action, NullAction):
             if (
-                hasattr(action, 'is_confirmed')
-                and action.is_confirmed
+                getattr(action, 'is_confirmed', None)
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
@@ -629,18 +628,14 @@ class AgentController:
             isinstance(action, CmdRunAction)
             and action.is_confirmed != ActionConfirmationStatus.AWAITING_CONFIRMATION
         ):
-            # The pending action needs to be reset - we have already confirmed that the action is not awaiting confirmation
-            self._pending_action = None
             # Split the command into multiple CmdRunAction instances
-            commands = split_bash_commands(action.command)
-            for i, cmd in enumerate(commands):
-                if not cmd:
-                    continue
-                new_action = CmdRunAction(
-                    command=cmd,
-                    # When we split a command, only the last instance should have the thought
-                    thought='' if i < len(commands) else action.thought,
-                )
-                self.event_stream.add_event(new_action, EventSource.AGENT)
+            actions = [
+                CmdRunAction(command=command, thought='')
+                for command in split_bash_commands(action.command)
+            ]
+            # When we split a command, only the last instance should have the thought
+            actions[-1].thought = action.thought
+            for action in actions:
+                self.event_stream.add_event(action, EventSource.AGENT)
         else:
             self.event_stream.add_event(action, EventSource.AGENT)
