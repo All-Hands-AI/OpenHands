@@ -158,7 +158,7 @@ function Home() {
                   className="w-full flex justify-center"
                 >
                   <span className="border-2 border-dashed border-neutral-600 rounded px-2 py-1 cursor-pointer">
-                    Click here to load
+                    Upload a .zip
                   </span>
                   <input
                     hidden
