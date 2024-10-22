@@ -141,7 +141,8 @@ class Runtime(FileEditRuntimeMixin):
             return NullObservation('')
         if (
             hasattr(action, 'confirmation_state')
-            and action.confirmation_state == ActionConfirmationStatus.AWAITING_CONFIRMATION
+            and action.confirmation_state
+            == ActionConfirmationStatus.AWAITING_CONFIRMATION
         ):
             return NullObservation('')
         action_type = action.action  # type: ignore[attr-defined]
