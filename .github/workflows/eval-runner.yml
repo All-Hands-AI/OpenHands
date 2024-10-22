@@ -117,33 +117,6 @@ jobs:
       - name: Get artifact URL
         run: echo "ARTIFACT_URL=${{ steps.upload_results_artifact.outputs.artifact-url }}" >> $GITHUB_ENV
 
-      - name: Comment with evaluation results and artifact link
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            const issueNumber = ${{ github.event_name == 'pull_request' && github.event.label.name == 'eval-this' && github.event.pull_request.number || 4504 }};
-            github.rest.issues.createComment({
-              issue_number: issueNumber,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `
-                Trigger by: ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}
-
-                **Integration Tests Evaluation Report**
-
-                ${{ env.INTEGRATION_TEST_REPORT }}
-
-                ---
-                **SWE-Bench Evaluation Report**
-
-                ${{ env.SWEBENCH_REPORT }}
-
-                ---
-                You can download the full evaluation outputs [here](${{ env.ARTIFACT_URL }}).
-              `
-            })
-
       - name: Post to a Slack channel
         id: slack
         uses: slackapi/slack-github-action@v1.27.0
@@ -185,6 +158,33 @@ jobs:
             }
         env:
           SLACK_BOT_TOKEN: ${{ secrets.EVAL_NOTIF_SLACK_BOT_TOKEN }}
+
+      - name: Comment with evaluation results and artifact link
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const issueNumber = ${{ github.event_name == 'pull_request' && github.event.label.name == 'eval-this' && github.event.pull_request.number || 4504 }};
+            github.rest.issues.createComment({
+              issue_number: issueNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `
+                Trigger by: ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}
+
+                **Integration Tests Evaluation Report**
+
+                ${{ env.INTEGRATION_TEST_REPORT }}
+
+                ---
+                **SWE-Bench Evaluation Report**
+
+                ${{ env.SWEBENCH_REPORT }}
+
+                ---
+                You can download the full evaluation outputs [here](${{ env.ARTIFACT_URL }}).
+              `
+            })
 
 # - name: Authenticate to Google Cloud
 #   uses: 'google-github-actions/auth@v2'
