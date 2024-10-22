@@ -150,7 +150,7 @@ function Home() {
             }
           />
           <SuggestionBox
-            title={importedFile ? "Project Loaded" : "+ Import Project"}
+            title={importedFile ? "Project Loaded" : "+ Import Project (.zip)"}
             content={
               importedFile?.name ?? (
                 <label
