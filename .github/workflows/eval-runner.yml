@@ -131,9 +131,7 @@ jobs:
 
                 **Integration Tests Evaluation Report**
 
-                ```json
                 ${{ env.INTEGRATION_TEST_REPORT }}
-                ```
 
                 ---
                 **SWE-Bench Evaluation Report**
