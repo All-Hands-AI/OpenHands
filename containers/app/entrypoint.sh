@@ -58,7 +58,7 @@ else
   echo "Docker socket group $DOCKER_SOCKET_GROUP with group ID $DOCKER_SOCKET_GID"
 
   if getent group $DOCKER_SOCKET_GID; then
-    echo "Group $DOCKER_SOCKET_GROUP already exists"
+    echo "Group $DOCKER_SOCKET_GID already exists"
   else
     echo "Could not find group $DOCKER_SOCKET_GROUP with id $DOCKER_SOCKET_GID. Adding enduser to docker group"
     DOCKER_SOCKET_GROUP="docker"
