@@ -137,7 +137,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Integration Tests Evaluation Report*\n```\n${{ env.INTEGRATION_TEST_REPORT }}\n```"
+                    "text": "*Integration Tests Evaluation Report*\n${{ env.INTEGRATION_TEST_REPORT }}"
                   }
                 },
                 {
