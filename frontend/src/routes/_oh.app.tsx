@@ -20,7 +20,11 @@ import store, { RootState } from "#/store";
 import { Container } from "#/components/container";
 import ActionType from "#/types/ActionType";
 import { handleAssistantMessage } from "#/services/actions";
-import { addUserMessage, clearMessages } from "#/state/chatSlice";
+import {
+  addErrorMessage,
+  addUserMessage,
+  clearMessages,
+} from "#/state/chatSlice";
 import { useSocket } from "#/context/socket";
 import {
   getGitHubTokenCommand,
@@ -45,6 +49,13 @@ import { clearJupyter } from "#/state/jupyterSlice";
 import { FilesProvider } from "#/context/files";
 import { clearSession } from "#/utils/clear-session";
 import { userIsAuthenticated } from "#/utils/user-is-authenticated";
+
+interface ErrorEvent {
+  error: boolean;
+  [key: string]: string | number | boolean;
+}
+
+const isErrorEvent = (data: object): data is ErrorEvent => "error" in data;
 
 const isAgentStateChange = (
   data: object,
@@ -165,6 +176,21 @@ function App() {
     if (q) addIntialQueryToChat(q, files);
   }, [settings]);
 
+  const handleError = (message: string) => {
+    const [error, ...rest] = message.split(":");
+    const details = rest.join(":");
+    if (!details) {
+      dispatch(
+        addErrorMessage({
+          error: "An error has occured",
+          message: error,
+        }),
+      );
+    } else {
+      dispatch(addErrorMessage({ error, message: details }));
+    }
+  };
+
   const handleMessage = React.useCallback(
     (message: MessageEvent<WebSocket.Data>) => {
       // set token received from the server
@@ -174,9 +200,13 @@ function App() {
         return;
       }
 
-      if ("error" in parsed) {
-        toast.error(parsed.error);
-        fetcher.submit({}, { method: "POST", action: "/end-session" });
+      if (isErrorEvent(parsed)) {
+        if (parsed.error_code === 401) {
+          toast.error("Session expired.");
+          fetcher.submit({}, { method: "POST", action: "/end-session" });
+        } else if (typeof parsed.message === "string") {
+          handleError(parsed.message);
+        }
         return;
       }
 

@@ -17,6 +17,7 @@ from openhands.events.observation import (
     CmdOutputObservation,
     NullObservation,
 )
+from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
@@ -141,6 +142,8 @@ class Session:
             event, CmdOutputObservation
         ):
             await self.send(event_to_dict(event))
+        elif isinstance(event, ErrorObservation):
+            await self.send_error(event.message)
 
     async def dispatch(self, data: dict):
         action = data.get('action', '')
