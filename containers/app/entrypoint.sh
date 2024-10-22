@@ -50,12 +50,14 @@ else
         exit 1
       fi
     fi
+
+    echo "Created enduser with ID $SANDBOX_USER_ID"
   fi
 
   # Get the user group of /var/run/docker.sock and set enduser to that group
   DOCKER_SOCKET_GID=$(stat -c '%g' /var/run/docker.sock)
   DOCKER_SOCKET_GROUP=$(stat -c '%G' /var/run/docker.sock)
-  echo "Docker socket group $DOCKER_SOCKET_GROUP with group ID $DOCKER_SOCKET_GID"
+  echo "Docker socket has group $DOCKER_SOCKET_GROUP with group ID $DOCKER_SOCKET_GID"
 
   if getent group $DOCKER_SOCKET_GID; then
     echo "Group $DOCKER_SOCKET_GID already exists"
@@ -64,7 +66,7 @@ else
     DOCKER_SOCKET_GROUP="docker"
   fi
 
-  echo "Adding group app, $DOCKER_SOCKET_GROUP to enduser"
+  echo "Adding group app and $DOCKER_SOCKET_GROUP to enduser"
   usermod -aG app enduser
   usermod -aG $DOCKER_SOCKET_GROUP enduser
 
