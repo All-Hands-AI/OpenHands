@@ -217,11 +217,9 @@ function App() {
   });
 
   React.useEffect(() => {
-    if (runtimeActive) {
+    if (runtimeActive && userId && ghToken) {
       // Export if the user valid, this could happen mid-session so it is handled here
-      if (userId && ghToken) {
-        send(getGitHubTokenCommand(ghToken));
-      }
+      send(getGitHubTokenCommand(ghToken));
     }
   }, [userId, ghToken, runtimeActive]);
 
@@ -229,17 +227,15 @@ function App() {
     (async () => {
       if (runtimeActive && token && importedProjectZip) {
         // upload files action
-        if (token && importedProjectZip) {
-          try {
-            const blob = base64ToBlob(importedProjectZip);
-            const file = new File([blob], "imported-project.zip", {
-              type: blob.type,
-            });
-            await OpenHands.uploadFiles(token, [file]);
-            dispatch(setImportedProjectZip(null));
-          } catch (error) {
-            toast.error("Failed to upload project files.");
-          }
+        try {
+          const blob = base64ToBlob(importedProjectZip);
+          const file = new File([blob], "imported-project.zip", {
+            type: blob.type,
+          });
+          await OpenHands.uploadFiles(token, [file]);
+          dispatch(setImportedProjectZip(null));
+        } catch (error) {
+          toast.error("Failed to upload project files.");
         }
       }
     })();
