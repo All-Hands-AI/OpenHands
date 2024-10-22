@@ -23,6 +23,7 @@ jobs:
       contents: "read"
       id-token: "write"
       pull-requests: "write"
+      issues: "write"
     strategy:
       matrix:
         python-version: ["3.12"]
