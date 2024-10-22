@@ -157,20 +157,6 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Integration Tests Evaluation Report*\n${{ toJson(env.INTEGRATION_TEST_REPORT) }}"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*SWE-Bench Evaluation Report*\n${{ toJson(env.SWEBENCH_REPORT) }}"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
                     "text": "You can download the full evaluation outputs <${{ toJson(env.ARTIFACT_URL) }}|here>."
                   }
                 }
