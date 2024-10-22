@@ -6,6 +6,7 @@ import {
   FeedbackResponse,
   GitHubAccessTokenResponse,
   ErrorResponse,
+  GetConfigResponse,
 } from "./open-hands.types";
 
 /**
@@ -60,7 +61,7 @@ class OpenHands {
     return response.json();
   }
 
-  static async getConfig(): Promise<{ APP_MODE: "saas" | "oss" }> {
+  static async getConfig(): Promise<GetConfigResponse> {
     const response = await fetch(`${OpenHands.BASE_URL}/config.json`, {
       headers: {
         "Cache-Control": "no-cache",
