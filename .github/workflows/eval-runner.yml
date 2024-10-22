@@ -126,15 +126,21 @@ jobs:
               issue_number: issueNumber,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body:
-                "Trigger by: ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}\n\n" +
-                "**Integration Tests Evaluation Report**\n\n" +
-                "${{ env.INTEGRATION_TEST_REPORT }}\n\n" +
-                "---\n" +
-                "**SWE-Bench Evaluation Report**\n\n" +
-                "${{ env.SWEBENCH_REPORT }}\n\n" +
-                "---\n" +
-                "You can download the full evaluation outputs [here](${{ env.ARTIFACT_URL }})."
+              body: `
+                Trigger by: ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}
+
+                **Integration Tests Evaluation Report**
+
+                ${{ env.INTEGRATION_TEST_REPORT }}
+
+                ---
+                **SWE-Bench Evaluation Report**
+
+                ${{ env.SWEBENCH_REPORT }}
+
+                ---
+                You can download the full evaluation outputs [here](${{ env.ARTIFACT_URL }}).
+              `
             })
 
       - name: Post to a Slack channel
@@ -151,13 +157,6 @@ jobs:
                   "text": {
                     "type": "mrkdwn",
                     "text": "*Evaluation Trigger:* ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "You can download the full evaluation outputs <${{ toJson(env.ARTIFACT_URL) }}|here>."
                   }
                 }
               ]
