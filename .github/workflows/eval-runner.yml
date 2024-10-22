@@ -156,7 +156,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Evaluation Trigger:* ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}\n\n**Integration Tests Evaluation Report**\n\n${{ env.INTEGRATION_TEST_REPORT }}\n\n---\n\n**SWE-Bench Evaluation Report**\n\n${{ env.SWEBENCH_REPORT }}\n\n---"
+                    "text": "*Evaluation Trigger:* ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}\n\n**Integration Tests Evaluation Report**\n\n${{ toJSON(env.INTEGRATION_TEST_REPORT) }}\n\n---\n\n**SWE-Bench Evaluation Report**\n\n${{ toJSON(env.SWEBENCH_REPORT) }}\n\n---"
                   }
                 }
               ]
