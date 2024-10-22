@@ -60,7 +60,8 @@ const messageActions = {
       !message.args.is_confirmed ||
       message.args.is_confirmed !== "rejected"
     ) {
-      store.dispatch(appendInput(message.args.command));
+      // We only add this later
+      // store.dispatch(appendInput(message.args.command));
     }
   },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {

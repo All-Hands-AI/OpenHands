@@ -37,6 +37,7 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from openhands.events.event import EventSource
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
@@ -454,13 +455,17 @@ class RuntimeClient:
                         keep_prompt=action.keep_prompt,
                         kill_on_timeout=False if not action.blocking else True,
                     )
+                    # Get rid of the python interpreter string from the output...
+                    output = output.rsplit('[Python Interpreter: ', 1)[0]
                 if all_output:
-                    # previous output already exists with prompt "user@hostname:working_dir #""
-                    # we need to add the command to the previous output,
-                    # so model knows the following is the output of another action)
-                    all_output = all_output.rstrip() + ' ' + command + '\r\n'
+                    # previous output already exists so we add a newline
+                    all_output += '\r\n'
 
-                all_output += str(output) + '\r\n'
+                # If the command originated with the agent, append the command that was run...
+                if action.source == EventSource.AGENT:
+                    all_output += command + '\r\n'
+
+                all_output += str(output)
                 if exit_code != 0:
                     break
             return CmdOutputObservation(

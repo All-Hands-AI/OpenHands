@@ -1,8 +1,7 @@
 import asyncio
 import copy
 import traceback
-from collections import deque
-from typing import Deque, Type
+from typing import Type
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State, TrafficControlState
@@ -41,7 +40,6 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
-from openhands.runtime.utils.bash import split_bash_commands
 from openhands.runtime.utils.shutdown_listener import should_continue
 
 # note: RESUME is only available on web GUI
@@ -62,7 +60,7 @@ class AgentController:
     agent_task: asyncio.Future | None = None
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
-    _pending_actions: Deque[Action]
+    _pending_action: Action | None = None
 
     def __init__(
         self,
@@ -116,8 +114,9 @@ class AgentController:
         self.agent_configs = agent_configs if agent_configs else {}
         self._initial_max_iterations = max_iterations
         self._initial_max_budget_per_task = max_budget_per_task
+
+        # stuck helper
         self._stuck_detector = StuckDetector(self.state)
-        self._pending_actions = deque()
 
     async def close(self):
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream."""
@@ -216,16 +215,10 @@ class AgentController:
         Args:
             observation (observation): The observation to handle.
         """
-
-        # If there is a pending action requiring confirmation, skip...
-        if next(
-            (
-                True
-                for a in self._pending_actions
-                if getattr(a, 'is_confirmed', None)
-                == ActionConfirmationStatus.AWAITING_CONFIRMATION
-            ),
-            False,
+        if (
+            self._pending_action
+            and getattr(self._pending_action, 'is_confirmed', None)
+            == ActionConfirmationStatus.AWAITING_CONFIRMATION
         ):
             return
 
@@ -241,20 +234,12 @@ class AgentController:
         if observation.llm_metrics is not None:
             self.agent.llm.metrics.merge(observation.llm_metrics)
 
-        pending_action = next(
-            (a for a in self._pending_actions if a.id == observation.cause), None
-        )
-        if pending_action:
-            self._pending_actions.remove(pending_action)
+        if self._pending_action and self._pending_action.id == observation.cause:
+            self._pending_action = None
             if self.state.agent_state == AgentState.USER_CONFIRMED:
                 await self.set_agent_state_to(AgentState.RUNNING)
             if self.state.agent_state == AgentState.USER_REJECTED:
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
-            # This is new - I dunno about this..
-            if self._pending_actions:
-                self.event_stream.add_event(
-                    self._pending_actions.popleft(), EventSource.AGENT
-                )
             return
 
         if isinstance(observation, CmdOutputObservation):
@@ -330,17 +315,17 @@ class AgentController:
             ):
                 if self.state.metrics.accumulated_cost >= self.max_budget_per_task:
                     self.max_budget_per_task += self._initial_max_budget_per_task
-        elif self._pending_actions and (
-            new_state in (AgentState.USER_CONFIRMED, AgentState.USER_REJECTED)
+        elif self._pending_action is not None and (
+            new_state == AgentState.USER_CONFIRMED
+            or new_state == AgentState.USER_REJECTED
         ):
-            pending_action = self._pending_actions.popleft()
-            if hasattr(pending_action, 'thought'):
-                pending_action.thought = ''  # type: ignore[union-attr]
+            if hasattr(self._pending_action, 'thought'):
+                self._pending_action.thought = ''  # type: ignore[union-attr]
             if new_state == AgentState.USER_CONFIRMED:
-                pending_action.is_confirmed = ActionConfirmationStatus.CONFIRMED  # type: ignore[attr-defined]
+                self._pending_action.is_confirmed = ActionConfirmationStatus.CONFIRMED  # type: ignore[attr-defined]
             else:
-                pending_action.is_confirmed = ActionConfirmationStatus.REJECTED  # type: ignore[attr-defined]
-            self.event_stream.add_event(pending_action, EventSource.AGENT)
+                self._pending_action.is_confirmed = ActionConfirmationStatus.REJECTED  # type: ignore[attr-defined]
+            self.event_stream.add_event(self._pending_action, EventSource.AGENT)
 
         self.state.agent_state = new_state
         self.event_stream.add_event(
@@ -412,11 +397,7 @@ class AgentController:
             await asyncio.sleep(1)
             return
 
-        if (
-            self._pending_actions
-            and getattr(self._pending_actions[0], 'is_confirmed', None)
-            == ActionConfirmationStatus.AWAITING_CONFIRMATION
-        ):
+        if self._pending_action:
             await asyncio.sleep(1)
             return
 
@@ -465,7 +446,7 @@ class AgentController:
                 type(action) is CmdRunAction or type(action) is IPythonRunCellAction
             ):
                 action.is_confirmed = ActionConfirmationStatus.AWAITING_CONFIRMATION
-                self._pending_actions.append(action)
+            self._pending_action = action
 
         if not isinstance(action, NullAction):
             if (
@@ -473,7 +454,7 @@ class AgentController:
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
-            self._add_agent_action_to_stream(action)
+            self.event_stream.add_event(action, EventSource.AGENT)
 
         await self.update_state_after_step()
         logger.info(action, extra={'msg_type': 'ACTION'})
@@ -636,22 +617,5 @@ class AgentController:
             f'AgentController(id={self.id}, agent={self.agent!r}, '
             f'event_stream={self.event_stream!r}, '
             f'state={self.state!r}, agent_task={self.agent_task!r}, '
-            f'delegate={self.delegate!r}, _pending_actions={self._pending_actions!r})'
+            f'delegate={self.delegate!r}, _pending_action={self._pending_action!r})'
         )
-
-    def _add_agent_action_to_stream(self, action: Action):
-        if (
-            isinstance(action, CmdRunAction)
-            and action.is_confirmed != ActionConfirmationStatus.AWAITING_CONFIRMATION
-        ):
-            # Split the command into multiple CmdRunAction instances
-            actions = [
-                CmdRunAction(command=command, thought='')
-                for command in split_bash_commands(action.command)
-            ]
-            # When we split a command, only the last instance should have the thought
-            actions[-1].thought = action.thought
-            self._pending_actions.extend(actions[1:])
-            self.event_stream.add_event(actions[0], EventSource.AGENT)
-        else:
-            self.event_stream.add_event(action, EventSource.AGENT)
