@@ -2,18 +2,11 @@
 
 ## Introduction
 
-`memcodeact_agent` is a memory-enabled experimental agent built upon the foundation of the existing `codeact_agent`. Designed to enhance the capabilities of autonomous agents, `memcodeact_agent` incorporates advanced memory functionalities inspired by recent advancements in generative AI research. This agent leverages memory to improve task execution, context retention, and overall performance, making it more adept at handling complex and extended interactions.
-
-## Features
-
-- **Memory Integration:** Retains context across multiple interactions, allowing for more coherent and contextually aware responses.
-- **Enhanced Action Parsing:** Utilizes a memory-augmented action parser to interpret and execute complex commands effectively.
-- **Improved Task Management:** Manages and retrieves past actions and observations to inform current decision-making processes.
-- **Experimental Capabilities:** Serves as a platform for testing and refining memory-related functionalities in AI agents.
+`memcodeact_agent` is a memory-enabled experimental agent built upon the foundation of the existing `codeact_agent`, incorporating memory functionalities.
 
 ## Inspiration and Research
 
-The development of `memcodeact_agent` is inspired by two pivotal research papers in the field of generative AI and memory-augmented models:
+The development of `memcodeact_agent` is inspired by two research papers in the field of generative AI and memory-augmented models:
 
 1. **Extending Generative AI with Memory**
    - **Paper:** [Extending Generative AI with Memory](https://arxiv.org/pdf/2304.03442)
@@ -21,7 +14,7 @@ The development of `memcodeact_agent` is inspired by two pivotal research papers
 
 2. **MemGPT: Memory-Enhanced GPT Models**
    - **Paper:** [MemGPT: Memory-Enhanced GPT Models](https://arxiv.org/pdf/2310.08560)
-   - **Summary:** MemGPT introduces a novel architecture that incorporates external memory modules into GPT models. This integration allows the model to access and update its memory dynamically during interactions. The paper details the implementation of memory layers, attention mechanisms for memory retrieval, and training methodologies that enable the model to learn from both its internal parameters and external memory. The results demonstrate significant improvements in tasks requiring long-term dependency understanding and information recall.
+   - **Summary:** MemGPT introduces a novel architecture that incorporates external memory modules into GPT models. This integration allows the model to access and update its memory dynamically during interactions. The results demonstrate significant improvements in tasks requiring information recall.
 
 ## Getting Started
 

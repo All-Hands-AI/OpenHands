@@ -4,7 +4,9 @@ from openhands.controller.state.state import State
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import AgentSummarizeAction
+from openhands.events.event import Event
 from openhands.events.serialization.event import event_to_dict
+from openhands.llm.llm import LLM
 from openhands.memory.base_memory import Memory
 
 TOP_K = 10
@@ -67,55 +69,30 @@ class ConversationMemory(Memory):
         Returns:
             A tuple containing the list of matching messages and the total number of matches.
         """
-        # return self.long_term_memory.text_search(query, count, start)
-        pass
+        return self.long_term_memory.text_search(query, count, start)
 
-    def date_search(
-        self,
-        start_date: str,
-        end_date: str,
-        count: int | None = None,
-        start: int | None = None,
-    ) -> tuple[list[str], int]:
+    def recall_memory(
+        self, llm: LLM, query: str, top_k: int = 5
+    ) -> list[Event]:
         """
-        Perform a date-based search on LongTermMemory.
-
-        Args:
-            start_date: Start date in YYYY-MM-DD format.
-            end_date: End date in YYYY-MM-DD format.
-            count: Number of results to return.
-            start: Pagination start index.
-
-        Returns:
-            A tuple containing the list of matching messages and the total number of matches.
-        """
-        # return self.long_term_memory.date_search(start_date, end_date, count, start)
-        pass
-
-    def embedding_search(
-        self, query: str, count: int | None = None, start: int | None = None
-    ) -> tuple[list[str], int]:
-        """
-        Perform an embedding-based semantic search on LongTermMemory.
+        Get the most similar events based on the query.
 
         Args:
             query: The query string for semantic search.
-            count: Number of results to return.
-            start: Pagination start index.
+            top_k: Number of top results to retrieve.
 
         Returns:
-            A tuple containing the list of semantically similar messages and the total number of matches.
+            A list of semantically similar events.
         """
-        # return self.long_term_memory.search(query, count, start)
-        pass
+        # get the most similar events based on the query
+        # for testing recall with litellm
+        return llm.search(query, self.state.history, top_k)
 
     def update(self, state: State) -> None:
         """Update the conversation memory with information from the new events."""
 
         # the number of messages that are hidden from the user
         # is the number of events in summary
-        logger.info(f'state: {state}')
-        logger.info(f'self.state: {self.state}')
         if state.summary:
             self.hidden_message_count = state.summary.end_id - state.summary.start_id
 

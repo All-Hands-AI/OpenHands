@@ -107,19 +107,11 @@ class MemoryCondenser:
 
         return summary_action
 
-    def _format_summary_history(self, message_history: list[dict]) -> str:
-        # TODO use existing prompt formatters for this (eg ChatML)
-        return '\n'.join([f'{m["role"]}: {m["content"]}' for m in message_history])
-
     def _summarize_messages(self, message_sequence_to_summarize: list[Message]):
         """Summarize a message sequence using LLM"""
 
         assert self.context_window is not None, 'context window must be set'
 
-        # we have a template to fill in with:
-        # - message history
-
-        # FIXME: Render the template with the message history
         token_count = self.llm.get_token_count(message_sequence_to_summarize)
 
         # check if the token count exceeds the allowed summary level

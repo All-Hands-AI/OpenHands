@@ -52,9 +52,9 @@ class PromptManager:
         """
         try:
             template = self.env.get_template(f'{template_name}.j2')
-            print(f'Loaded template {template_name}')
             return template
         except Exception as e:
+            # FIXME let it fail without crashing
             print(f'Error loading template {template_name}: {e}')
             return Template('')
 
@@ -74,8 +74,14 @@ class PromptManager:
 
     @property
     def initial_user_message(self) -> str:
-        """
-        Renders the initial user message template.
+        """This is the initial user message provided to the agent
+        before *actual* user instructions are provided.
+
+        It is used to provide a demonstration of how the agent
+        should behave in order to solve the user's task. And it may
+        optionally contain some additional context about the user's task.
+        This additional context will convert the current generic agent
+        into a more specialized agent that is tailored to the user's task.
 
         Returns:
             str: The rendered initial user message.
