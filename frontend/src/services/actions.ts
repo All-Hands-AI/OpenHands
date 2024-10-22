@@ -57,8 +57,8 @@ const messageActions = {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
     if (
-      !message.args.is_confirmed ||
-      message.args.is_confirmed !== "rejected"
+      !message.args.confirmation_state ||
+      message.args.confirmation_state !== "rejected"
     ) {
       store.dispatch(appendInput(message.args.command));
     }
@@ -68,8 +68,8 @@ const messageActions = {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
     if (
-      !message.args.is_confirmed ||
-      message.args.is_confirmed !== "rejected"
+      !message.args.confirmation_state ||
+      message.args.confirmation_state !== "rejected"
     ) {
       store.dispatch(appendJupyterInput(message.args.code));
     }
@@ -98,7 +98,7 @@ export function handleActionMessage(message: ActionMessage) {
   if (
     (message.action === ActionType.RUN ||
       message.action === ActionType.RUN_IPYTHON) &&
-    message.args.is_confirmed === "awaiting_confirmation"
+    message.args.confirmation_state === "awaiting_confirmation"
   ) {
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));

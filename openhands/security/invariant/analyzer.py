@@ -137,8 +137,8 @@ class InvariantAnalyzer(SecurityAnalyzer):
         return (
             risk is not None
             and risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM)
-            and hasattr(event, 'is_confirmed')
-            and event.is_confirmed == 'awaiting_confirmation'
+            and hasattr(event, 'confirmation_state')
+            and event.confirmation_state == 'awaiting_confirmation'
         )
 
     async def confirm(self, event: Event) -> None:
