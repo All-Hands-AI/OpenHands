@@ -1,4 +1,3 @@
-import json
 import os
 import tempfile
 import time
@@ -378,6 +377,3 @@ if __name__ == '__main__':
         logger.info(
             f'# {field}: {count} / {len(evaluated_predictions)}. ({count / len(evaluated_predictions):.2%})'
         )
-    output_report_file = output_file.replace('.jsonl', '.report.json')
-    with open(output_report_file, 'w') as f:
-        json.dump(report, f)
