@@ -25,6 +25,7 @@ from litellm.exceptions import (
     ServiceUnavailableError,
 )
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
+from litellm.utils import create_pretrained_tokenizer
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
@@ -128,11 +129,7 @@ class LLM(RetryMixin, DebugMixin):
 
         # if using a custom tokenizer, make sure it's loaded and accessible in the format expected by litellm
         if self.config.custom_tokenizer is not None:
-            # FIXME: transformers is not a regular dependency, but we need it here
-            from transformers import AutoTokenizer
-
-            tokenizer = AutoTokenizer.from_pretrained(self.config.custom_tokenizer)
-            self.tokenizer = {'type': 'huggingface_tokenizer', 'tokenizer': tokenizer}
+            self.tokenizer = create_pretrained_tokenizer(self.config.custom_tokenizer)
 
         # set up the completion function
         self._completion = partial(

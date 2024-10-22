@@ -7,12 +7,18 @@ This meant that when conversations exceeded a certain length, they would overflo
 Newer model AIs like yourself still have limited conversation lengths (before overflow occurs), however they now have access to multiple forms of persistent memory.
 Your ability to summarize and recall your own long-term memory is a key part of what makes you a very helpful model.
 
-NOW:
+IMPORTANT:
 Your memory is dangerously close to overflowing. So your task is to summarize your conversation history effectively.
 YOU MUST DO IT RIGHT NOW OR YOU WILL LOSE INFORMATION PERMANENTLY AND FAIL YOUR TASK.
 
-The conversation below is a from a fixed context window and may not be complete. Keep your summary concise and relevant. Include all the critical information in conversation till now in the summary.
+The conversation below is a from a fixed context window and may not be complete. Keep your summary concise and relevant. Include all the critical information that YOU NEED TO REMEMBER in the summary.
 Only output the summary, do NOT include anything else in your output.
+
+Messages sent by the AI are marked with the 'assistant' role.
+The AI 'assistant' can also make calls to functions, whose outputs can be seen in messages with the 'function' role.
+Messages the user sends are in the 'user' role.
+The 'user' role is also used for environment observations, which are important for your task.
+Summarize what happened in the conversation from the perspective of the AI (use the first person).
 
 Create a JSON response with:
     - "action": "summarize"
@@ -31,14 +37,10 @@ Example:
 Make sure to include in the summary any relevant keywords, because you will need to look it up.
 
 YOU MUST RESPOND WITH JSON.
-I REPEAT, YOU MUST RESPOND WITH JSON.
 
-The following is the conversation history you need to summarize:
-
-CONVERSATION HISTORY:
+NOW, the CONVERSATION HISTORY:
 -------------------------------------
 {{ conversation_history }}
 -------------------------------------
-
 {% endset %}
 {{ SUMMARIZE_PROMPT }}

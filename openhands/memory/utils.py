@@ -28,6 +28,9 @@ def parse_summary_response(response: str) -> AgentSummarizeAction:
             logger.error(error_message)
             raise InvalidSummaryResponseError(error_message)
         action._source = EventSource.AGENT  # type: ignore
+        action.summary = (
+            action.summarized_actions + '\n' + action.summarized_observations
+        )
     except (LLMResponseError, LLMMalformedActionError) as e:
         logger.error(f'Failed to parse summary response: {str(e)}')
         raise InvalidSummaryResponseError(

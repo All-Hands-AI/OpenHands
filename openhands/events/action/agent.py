@@ -24,6 +24,8 @@ class AgentSummarizeAction(Action):
     action: str = ActionType.SUMMARIZE
     start_id: int = -1
     end_id: int = -1
+    summarized_actions: str = ''
+    summarized_observations: str = ''
 
     @property
     def message(self) -> str:
