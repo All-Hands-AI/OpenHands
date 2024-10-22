@@ -1,7 +1,8 @@
 import asyncio
 import copy
 import traceback
-from typing import Type
+from collections import deque
+from typing import Deque, Type
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State, TrafficControlState
@@ -61,7 +62,7 @@ class AgentController:
     agent_task: asyncio.Future | None = None
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
-    _pending_action: Action | None = None
+    _pending_actions: Deque[Action]
 
     def __init__(
         self,
@@ -116,6 +117,7 @@ class AgentController:
         self._initial_max_iterations = max_iterations
         self._initial_max_budget_per_task = max_budget_per_task
         self._stuck_detector = StuckDetector(self.state)
+        self._pending_actions = deque()
 
     async def close(self):
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream."""
@@ -214,10 +216,16 @@ class AgentController:
         Args:
             observation (observation): The observation to handle.
         """
-        if (
-            self._pending_action
-            and getattr(self._pending_action, 'is_confirmed', None)
-            == ActionConfirmationStatus.AWAITING_CONFIRMATION
+
+        # If there is a pending action requiring confirmation, skip...
+        if next(
+            (
+                True
+                for a in self._pending_actions
+                if getattr(a, 'is_confirmed', None)
+                == ActionConfirmationStatus.AWAITING_CONFIRMATION
+            ),
+            False,
         ):
             return
 
@@ -233,12 +241,20 @@ class AgentController:
         if observation.llm_metrics is not None:
             self.agent.llm.metrics.merge(observation.llm_metrics)
 
-        if self._pending_action and self._pending_action.id == observation.cause:
-            self._pending_action = None
+        pending_action = next(
+            (a for a in self._pending_actions if a.id == observation.cause), None
+        )
+        if pending_action:
+            self._pending_actions.remove(pending_action)
             if self.state.agent_state == AgentState.USER_CONFIRMED:
                 await self.set_agent_state_to(AgentState.RUNNING)
             if self.state.agent_state == AgentState.USER_REJECTED:
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+            # This is new - I dunno about this..
+            if self._pending_actions:
+                self.event_stream.add_event(
+                    self._pending_actions.popleft(), EventSource.AGENT
+                )
             return
 
         if isinstance(observation, CmdOutputObservation):
@@ -314,16 +330,17 @@ class AgentController:
             ):
                 if self.state.metrics.accumulated_cost >= self.max_budget_per_task:
                     self.max_budget_per_task += self._initial_max_budget_per_task
-        elif self._pending_action and (
+        elif self._pending_actions and (
             new_state in (AgentState.USER_CONFIRMED, AgentState.USER_REJECTED)
         ):
-            if hasattr(self._pending_action, 'thought'):
-                self._pending_action.thought = ''  # type: ignore[union-attr]
+            pending_action = self._pending_actions.popleft()
+            if hasattr(pending_action, 'thought'):
+                pending_action.thought = ''  # type: ignore[union-attr]
             if new_state == AgentState.USER_CONFIRMED:
-                self._pending_action.is_confirmed = ActionConfirmationStatus.CONFIRMED  # type: ignore[attr-defined]
+                pending_action.is_confirmed = ActionConfirmationStatus.CONFIRMED  # type: ignore[attr-defined]
             else:
-                self._pending_action.is_confirmed = ActionConfirmationStatus.REJECTED  # type: ignore[attr-defined]
-            self._add_agent_action_to_stream(self._pending_action)
+                pending_action.is_confirmed = ActionConfirmationStatus.REJECTED  # type: ignore[attr-defined]
+            self.event_stream.add_event(pending_action, EventSource.AGENT)
 
         self.state.agent_state = new_state
         self.event_stream.add_event(
@@ -396,8 +413,8 @@ class AgentController:
             return
 
         if (
-            self._pending_action
-            and getattr(self._pending_action, 'is_confirmed', None)
+            self._pending_actions
+            and getattr(self._pending_actions[0], 'is_confirmed', None)
             == ActionConfirmationStatus.AWAITING_CONFIRMATION
         ):
             await asyncio.sleep(1)
@@ -448,7 +465,7 @@ class AgentController:
                 type(action) is CmdRunAction or type(action) is IPythonRunCellAction
             ):
                 action.is_confirmed = ActionConfirmationStatus.AWAITING_CONFIRMATION
-                self._pending_action = action
+                self._pending_actions.append(action)
 
         if not isinstance(action, NullAction):
             if (
@@ -619,11 +636,10 @@ class AgentController:
             f'AgentController(id={self.id}, agent={self.agent!r}, '
             f'event_stream={self.event_stream!r}, '
             f'state={self.state!r}, agent_task={self.agent_task!r}, '
-            f'delegate={self.delegate!r}, _pending_action={self._pending_action!r})'
+            f'delegate={self.delegate!r}, _pending_actions={self._pending_actions!r})'
         )
 
     def _add_agent_action_to_stream(self, action: Action):
-        # self.event_stream.add_event(action, EventSource.AGENT)
         if (
             isinstance(action, CmdRunAction)
             and action.is_confirmed != ActionConfirmationStatus.AWAITING_CONFIRMATION
@@ -635,7 +651,7 @@ class AgentController:
             ]
             # When we split a command, only the last instance should have the thought
             actions[-1].thought = action.thought
-            for action in actions:
-                self.event_stream.add_event(action, EventSource.AGENT)
+            self._pending_actions.extend(actions[1:])
+            self.event_stream.add_event(actions[0], EventSource.AGENT)
         else:
             self.event_stream.add_event(action, EventSource.AGENT)
