@@ -118,11 +118,12 @@ jobs:
 
       - name: Comment with evaluation results and artifact link
         uses: actions/github-script@v6
+        id: create_comment
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             const issueNumber = ${{ github.event_name == 'pull_request' && github.event.label.name == 'eval-this' && github.event.pull_request.number || 4504 }};
-            github.rest.issues.createComment({
+            const comment = await github.rest.issues.createComment({
               issue_number: issueNumber,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -141,7 +142,12 @@ jobs:
                 ---
                 You can download the full evaluation outputs [here](${{ env.ARTIFACT_URL }}).
               `
-            })
+            });
+            return comment.data.id;
+
+      - name: Set comment URL
+        run: |
+          echo "COMMENT_URL=https://github.com/${{ github.repository }}/issues/${{ github.event_name == 'pull_request' && github.event.pull_request.number || 4504 }}#issuecomment-${{ steps.create_comment.outputs.result }}" >> $GITHUB_ENV
 
       - name: Post to a Slack channel
         id: slack
@@ -156,7 +162,8 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*Evaluation Trigger:* ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}\n\n**Integration Tests Evaluation Report**\n\n${{ toJSON(env.INTEGRATION_TEST_REPORT) }}\n\n---\n\n**SWE-Bench Evaluation Report**\n\n${{ toJSON(env.SWEBENCH_REPORT) }}\n\n---"
+                    "text": "*Evaluation Trigger:* ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}\n
+                    \nLink to summary: ${{ env.COMMENT_URL }}\n
                   }
                 }
               ]
