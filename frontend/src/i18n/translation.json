@@ -385,7 +385,7 @@
     "fr": "Sélectionnez un analyseur de sécurité (facultatif)",
     "tr": "Bir güvenlik analizörü seçin (isteğe bağlı)"
   },
-  "CONFIGURATION$MODAL_CLOSE_BUTTON_LABEL": {
+  "CLOSE": {
     "en": "Close",
     "zh-CN": "关闭",
     "de": "Schließen",
@@ -1873,6 +1873,12 @@
     "ar": "في انتظار جاهزية العميل...",
     "fr": "En attente que le client soit prêt...",
     "tr": "İstemcinin hazır olması bekleniyor..."
+  },
+  "ACTION_BUTTON$RESUME": {
+    "en": "Resume the agent task"
+  },
+  "ACTION_BUTTON$PAUSE": {
+    "en": "Pause the current task"
   },
   "ACCOUNT_SETTINGS_MODAL$DISCONNECT":{
     "en": "Disconnect",
