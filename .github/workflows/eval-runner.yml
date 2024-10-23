@@ -145,10 +145,6 @@ jobs:
             });
             return comment.data.id;
 
-      - name: Set comment URL
-        run: |
-          echo "COMMENT_URL=https://github.com/${{ github.repository }}/issues/${{ github.event_name == 'pull_request' && github.event.pull_request.number || 4504 }}#issuecomment-${{ steps.create_comment.outputs.result }}" >> $GITHUB_ENV
-
       - name: Post to a Slack channel
         id: slack
         uses: slackapi/slack-github-action@v1.27.0
@@ -163,7 +159,7 @@ jobs:
                   "text": {
                     "type": "mrkdwn",
                     "text": "*Evaluation Trigger:* ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}\n
-                    \nLink to summary: ${{ env.COMMENT_URL }}\n
+                    \nLink to summary: https://github.com/${{ github.repository }}/issues/${{ github.event_name == 'pull_request' && github.event.pull_request.number || 4504 }}#issuecomment-${{ steps.create_comment.outputs.result }}\n
                   }
                 }
               ]
