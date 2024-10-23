@@ -84,7 +84,7 @@ def send_request_with_retry(
         wait=wait_exponential(multiplier=1, min=4, max=20),
         retry=retry_condition,
         reraise=True,
-        before_sleep=lambda retry_state: logger.warning(
+        before_sleep=lambda retry_state: logger.debug(
             f'Retrying {method} request to {url} due to {retry_state.outcome.exception()}. Attempt {retry_state.attempt_number}'
         ),
     )
