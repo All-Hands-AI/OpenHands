@@ -435,6 +435,7 @@ class ActionExecutor:
             ), f'Timeout argument is required for CmdRunAction: {action}'
             commands = split_bash_commands(action.command)
             all_output = ''
+            python_interpreter = ''
             for command in commands:
                 if command == '':
                     output, exit_code = self._continue_bash(
@@ -455,8 +456,11 @@ class ActionExecutor:
                         keep_prompt=action.keep_prompt,
                         kill_on_timeout=False if not action.blocking else True,
                     )
-                    # Get rid of the python interpreter string from the output...
-                    output = output.rsplit('[Python Interpreter: ', 1)[0]
+                    # Get rid of the python interpreter string from each line of the output.
+                    # We need it only once at the end.
+                    parts = output.rsplit('[Python Interpreter: ', 1)
+                    output = parts[0]
+                    python_interpreter = '[Python Interpreter: ' + parts[1]
                 if all_output:
                     # previous output already exists so we add a newline
                     all_output += '\r\n'
@@ -468,6 +472,8 @@ class ActionExecutor:
                 all_output += str(output)
                 if exit_code != 0:
                     break
+
+            all_output += python_interpreter
             return CmdOutputObservation(
                 command_id=-1,
                 content=all_output.rstrip('\r\n'),
