@@ -111,6 +111,28 @@ jobs:
       - name: Get artifact URL
         run: echo "ARTIFACT_URL=${{ steps.upload_results_artifact.outputs.artifact-url }}" >> $GITHUB_ENV
 
+      - name: Authenticate to Google Cloud
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: ${{ secrets.GCP_RESEARCH_OBJECT_CREATOR_SA_KEY }}
+
+      - name: Set timestamp and trigger reason
+        run: |
+          echo "TIMESTAMP=$(date +'%Y-%m-%d-%H-%M')" >> $GITHUB_ENV
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "TRIGGER_REASON=pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+          elif [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "TRIGGER_REASON=schedule" >> $GITHUB_ENV
+          else
+            echo "TRIGGER_REASON=manual-${{ github.event.inputs.reason }}" >> $GITHUB_ENV
+          fi
+
+      - name: Upload evaluation results to Google Cloud Storage
+        uses: 'google-github-actions/upload-cloud-storage@v2'
+        with:
+          path: 'evaluation/evaluation_outputs/outputs'
+          destination: 'openhands-oss-eval-results/${{ env.TIMESTAMP }}-${{ env.TRIGGER_REASON }}'
+
       - name: Comment with evaluation results and artifact link
         id: create_comment
         uses: KeisukeYamashita/create-comment@v1
@@ -135,14 +157,3 @@ jobs:
           slack-message: "*Evaluation Trigger:* ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}\n\nLink to summary: [here](https://github.com/${{ github.repository }}/issues/${{ github.event_name == 'pull_request' && github.event.pull_request.number || 4504 }}#issuecomment-${{ steps.create_comment.outputs.comment-id }})"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.EVAL_NOTIF_SLACK_BOT_TOKEN }}
-
-# - name: Authenticate to Google Cloud
-#   uses: 'google-github-actions/auth@v2'
-#   with:
-#     credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-# - name: Upload evaluation results to Google Cloud Storage
-#   uses: 'google-github-actions/upload-cloud-storage@v2'
-#   with:
-#     path: 'evaluation/evaluation_outputs'
-#     destination: 'openhands-oss-eval-results/${{ github.repository_owner }}__${{ github.event.repository.name }}/${{ github.run_id }}/${{ github.sha }}'
