@@ -460,7 +460,8 @@ class ActionExecutor:
                     # We need it only once at the end.
                     parts = output.rsplit('[Python Interpreter: ', 1)
                     output = parts[0]
-                    python_interpreter = '[Python Interpreter: ' + parts[1]
+                    if len(parts) == 2:
+                        python_interpreter = '[Python Interpreter: ' + parts[1]
                 if all_output:
                     # previous output already exists so we add a newline
                     all_output += '\r\n'
