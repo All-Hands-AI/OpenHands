@@ -150,20 +150,7 @@ jobs:
         uses: slackapi/slack-github-action@v1.27.0
         with:
           channel-id: 'C07SVQSCR6F'
-          payload: |
-            {
-              "text": "Evaluation Results",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Evaluation Trigger:* ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}\n
-                    \nLink to summary: [here](https://github.com/${{ github.repository }}/issues/${{ github.event_name == 'pull_request' && github.event.pull_request.number || 4504 }}#issuecomment-${{ steps.create_comment.outputs.result }})"
-                  }
-                }
-              ]
-            }
+          slack-message: "*Evaluation Trigger:* ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}\n\nLink to summary: [here](https://github.com/${{ github.repository }}/issues/${{ github.event_name == 'pull_request' && github.event.pull_request.number || 4504 }}#issuecomment-${{ steps.create_comment.outputs.result }})"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.EVAL_NOTIF_SLACK_BOT_TOKEN }}
 
