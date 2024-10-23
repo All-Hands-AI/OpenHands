@@ -6,7 +6,7 @@ from evaluation.utils.shared import assert_and_raise
 from openhands.events.action import AgentFinishAction, CmdRunAction, MessageAction
 from openhands.events.event import Event
 from openhands.events.observation import AgentDelegateObservation
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
 
 HTML_FILE = """
 <!DOCTYPE html>

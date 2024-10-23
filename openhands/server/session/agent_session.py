@@ -11,7 +11,7 @@ from openhands.events.action.agent import ChangeAgentStateAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_sync_from_async

@@ -30,11 +30,11 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.observation import CmdOutputObservation
+from openhands.runtime.base import Runtime
 from openhands.runtime.browser.browser_env import (
     BROWSER_EVAL_GET_GOAL_ACTION,
     BROWSER_EVAL_GET_REWARDS_ACTION,
 )
-from openhands.runtime.runtime import Runtime
 
 SUPPORTED_AGENT_CLS = {'BrowsingAgent'}
 
