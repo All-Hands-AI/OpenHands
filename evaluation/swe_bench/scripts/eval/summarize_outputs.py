@@ -90,30 +90,29 @@ if __name__ == '__main__':
                 break
 
     # print the error counter (with percentage)
-    print('-' * 100)
     print(
-        f'# of resolved: {num_resolved} / {num_lines} ({num_resolved / num_lines * 100:.2f}%)'
+        f'Number of resolved: {num_resolved} / {num_lines} ({num_resolved / num_lines * 100:.2f}%)'
     )
     print(
-        f'# of empty patch: {num_empty_patch} / {num_lines} ({num_empty_patch / num_lines * 100:.2f}%)'
+        f'Number of empty patch: {num_empty_patch} / {num_lines} ({num_empty_patch / num_lines * 100:.2f}%)'
     )
     print(
-        f'# of error lines: {num_error_lines} / {num_lines} ({num_error_lines / num_lines * 100:.2f}%)'
+        f'Number of error lines: {num_error_lines} / {num_lines} ({num_error_lines / num_lines * 100:.2f}%)'
     )
     print(
-        f'# of loop: {num_agent_stuck_in_loop} / {num_lines} ({num_agent_stuck_in_loop / num_lines * 100:.2f}%)'
+        f'Number of agent stuck in loop: {num_agent_stuck_in_loop} / {num_lines} ({num_agent_stuck_in_loop / num_lines * 100:.2f}%)'
     )
     assert len(num_turns) == num_lines
     assert len(main_agent_cost) == num_lines
     assert len(editor_cost) == num_lines
+    print('## Statistics')
     print(f'Avg. num of turns per instance: {sum(num_turns) / num_lines:.2f}')
     print(f'Avg. agent cost per instance: {sum(main_agent_cost) / num_lines:.2f} USD')
     print(f'Avg. editor cost per instance: {sum(editor_cost) / num_lines:.2f} USD')
     print(
         f'Avg. total cost per instance: {(sum(main_agent_cost) + sum(editor_cost)) / num_lines:.2f} USD'
     )
-    print('-' * 100)
-    print('Detailed error breakdown:')
+
+    print('## Detailed error breakdown:')
     for error, count in error_counter.items():
         print(f'{error}: {count} ({count / num_lines * 100:.2f}%)')
-    print('-' * 100)
