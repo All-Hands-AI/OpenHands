@@ -212,7 +212,7 @@ class RemoteRuntime(Runtime):
             'command': (
                 f'/openhands/micromamba/bin/micromamba run -n openhands '
                 'poetry run '
-                f'python -u -m openhands.runtime.server {self.port} '
+                f'python -u -m openhands.runtime.action_execution_server {self.port} '
                 f'--working-dir {self.config.workspace_mount_path_in_sandbox} '
                 f'{plugin_arg}'
                 f'--username {"openhands" if self.config.run_as_openhands else "root"} '
