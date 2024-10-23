@@ -9,7 +9,7 @@ You can learn more about how the runtime works in the [EventStream Runtime](http
 
 ### 1. impl/*runtime.py
 
-The `impl/*runtime.py` file defines the `Runtime` class, which serves as the primary [interface](./runtime.py) for agent interactions with the external environment. It handles various operations including:
+The `impl/*runtime.py` file defines the `Runtime` class, which serves as the primary [interface](./base.py) for agent interactions with the external environment. It handles various operations including:
 
 - Bash sandbox execution
 - Browser interactions
