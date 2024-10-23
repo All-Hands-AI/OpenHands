@@ -143,7 +143,7 @@ class Session:
         ):
             await self.send(event_to_dict(event))
         elif isinstance(event, ErrorObservation):
-            await self.send_error(event.message)
+            await self.send(event_to_dict(event))
 
     async def dispatch(self, data: dict):
         action = data.get('action', '')

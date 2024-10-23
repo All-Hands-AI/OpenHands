@@ -50,13 +50,18 @@ import { clearJupyter } from "#/state/jupyterSlice";
 import { FilesProvider } from "#/context/files";
 import { clearSession } from "#/utils/clear-session";
 import { userIsAuthenticated } from "#/utils/user-is-authenticated";
+import { ErrorObservation } from "#/types/core/observations";
 
-interface ErrorEvent {
-  error: boolean;
-  [key: string]: string | number | boolean;
+interface ServerError {
+  error: boolean | string;
+  message: string;
+  [key: string]: unknown;
 }
 
-const isErrorEvent = (data: object): data is ErrorEvent => "error" in data;
+const isServerError = (data: object): data is ServerError => "error" in data;
+
+const isErrorObservation = (data: object): data is ErrorObservation =>
+  "observation" in data && data.observation === "error";
 
 const isAgentStateChange = (
   data: object,
@@ -194,13 +199,23 @@ function App() {
         return;
       }
 
-      if (isErrorEvent(parsed)) {
+      if (isServerError(parsed)) {
         if (parsed.error_code === 401) {
           toast.error("Session expired.");
           fetcher.submit({}, { method: "POST", action: "/end-session" });
-        } else if (typeof parsed.message === "string") {
-          handleError(parsed.message);
+          return;
         }
+
+        if (typeof parsed.error === "string") {
+          toast.error(parsed.error);
+        } else {
+          toast.error(parsed.message);
+        }
+
+        return;
+      }
+      if (isErrorObservation(parsed)) {
+        handleError(parsed.message);
         return;
       }
 
