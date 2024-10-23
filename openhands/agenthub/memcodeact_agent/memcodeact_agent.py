@@ -26,7 +26,7 @@ from openhands.events.observation import (
 from openhands.events.observation.agent import AgentRecallObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
-from openhands.events.serialization.event import truncate_content
+from openhands.events.serialization.event import event_to_memory, truncate_content
 from openhands.llm.llm import LLM
 from openhands.memory.condenser import MemoryCondenser
 from openhands.memory.conversation_memory import ConversationMemory
@@ -118,7 +118,7 @@ class MemCodeActAgent(Agent):
         )
 
         self.prompt_manager = PromptManager(
-            prompt_dir=os.path.join(os.path.dirname(__file__)),
+            prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
             agent_skills_docs=AgentSkillsRequirement.documentation,
             micro_agent=self.micro_agent,
         )
@@ -286,21 +286,24 @@ class MemCodeActAgent(Agent):
         except TokenLimitExceededError as e:
             logger.error(e, exc_info=False)
 
-            # run condenser directly; the alternative is to delegate to the microagent
-            summary_action = self.summarize_messages_inplace(state)
+            # run condenser directly
+            summary_action = self.summarize_messages(state)
 
             # just return for now
             return summary_action
         return self.action_parser.parse(response)
 
     def _get_messages(self, state: State) -> list[Message]:
+        # update prompt manager with current core memory
+        self.prompt_manager.core_memory = self.core_memory.format_blocks()
+
         messages: list[Message] = [
             Message(
                 role='system',
                 content=[
                     TextContent(
                         text=self.prompt_manager.system_message,
-                        cache_prompt=self.llm.is_caching_prompt_active(),  # cache system prompt
+                        cache_prompt=self.llm.is_caching_prompt_active(),
                     )
                 ],
                 condensable=False,
@@ -317,14 +320,22 @@ class MemCodeActAgent(Agent):
             ),
         ]
 
-        for event in state.history:
-            # create a regular message from an event
-            if isinstance(event, Action):
+        for event in self.conversation_memory.memory:
+            # if it is a summary or recall, it will not have event_id for now
+            if isinstance(event, AgentSummarizeAction):
                 message = self.get_action_message(event)
-            elif isinstance(event, Observation):
+            elif isinstance(event, AgentRecallAction):
+                message = self.get_action_message(event)
+            elif isinstance(event, AgentRecallObservation):
                 message = self.get_observation_message(event)
             else:
-                raise ValueError(f'Unknown event type: {type(event)}')
+                # create a regular message from an event
+                if isinstance(event, Action):
+                    message = self.get_action_message(event)
+                elif isinstance(event, Observation):
+                    message = self.get_observation_message(event)
+                else:
+                    raise ValueError(f'Unknown event type: {type(event)}')
 
             # add regular message
             if message:
@@ -373,19 +384,36 @@ class MemCodeActAgent(Agent):
 
         return messages
 
-    def summarize_messages_inplace(self, state: State) -> AgentSummarizeAction:
-        """Summarizes the earlier messages in the agent's memory to reduce token usage. Uses memGPT's algorithm for in-place summarization."""
+    def summarize_messages(self, state: State) -> AgentSummarizeAction | None:
+        """Summarizes the earlier messages in the agent's memory to reduce token usage. Roughly uses memGPT's algorithm for in-place summarization."""
         if len(state.history) <= 2:
             return None  # ignore
 
         # summarize the conversation history using the condenser
-        # conversation_memory.history will include the previous summary, if any, while the regular state.history does not
         condenser = MemoryCondenser(self.llm, self.prompt_manager)
 
         # send all messages and let it sort it out
         messages = self._get_messages(state)
-        summary = condenser.condense(messages)
+        summary_action = condenser.condense(messages)
 
-        logger.debug(f'Summarized conversation history to: {summary}')
+        # update conversation memory with the summary
+        if summary_action and summary_action.summary:
+            self.conversation_memory.update_summary(
+                summary_action.summary, summary_action.end_id
+            )
 
-        return summary
+        return summary_action
+
+    def recall_from_memory(self, query: str, top_k: int = 5) -> AgentRecallObservation:
+        """Searches the conversation memory for relevant information."""
+        # note: pairs are better than events for this
+        recalled_events = self.conversation_memory.search(self.llm, query, top_k)
+
+        # format the recalled events into a readable format
+        recalled_text = '\n'.join(
+            [f'- {event_to_memory(event, -1)}' for event in recalled_events]
+        )
+
+        return AgentRecallObservation(
+            content=f'Searching memory for: {query}', query=query, memory=recalled_text
+        )

@@ -100,20 +100,31 @@ def main(condenser: MemoryCondenser, file_path: str | None = None):
         with target_log.open('r', encoding='utf-8') as f:
             messages_data = json.load(f)
 
-            # Deserialize messages using Pydantic's parse_obj
+            # convert string content to list of TextContent if necessary
+            for msg in messages_data:
+                if isinstance(msg['content'], str):
+                    msg['content'] = [{'type': 'text', 'text': msg['content']}]
+
             messages: list[Message] = [
-                Message.parse_obj(msg_dict) for msg_dict in messages_data
+                Message.model_validate(msg, strict=False) for msg in messages_data
             ]
 
             print(f'Successfully loaded {len(messages)} messages:')
             # for msg in messages:
             #    print(f'{msg.role}:\n {msg.content[50:]}')
+
+            # run condense on these messages
+            summary_action = condenser.condense(messages)
+            print(f'summary_action: {summary_action}')
+
+            # save the summary action to a file named with the same name as the log file + summary
+            summary_file_path = target_log.with_suffix('.summary.json')
+            with summary_file_path.open('w', encoding='utf-8') as f:
+                json.dump(summary_action.model_dump(), f, ensure_ascii=False, indent=4)
+
     except Exception as e:
         print(f'An error occurred while reading {target_log}: {e}')
-
-    # run them through hell
-    summary_action = condenser.condense(messages)
-    print(f'summary_action: {summary_action}')
+        return
 
 
 if __name__ == '__main__':
@@ -125,12 +136,20 @@ if __name__ == '__main__':
     else:
         llm = LLM(app_config.get_llm_config('llm'))
 
+    prompt_dir = os.path.join(
+        os.path.dirname(__file__),
+        '..',
+        '..',
+        'openhands',
+        'agenthub',
+        'memcodeact_agent',
+        'prompts',
+    )
     prompt_manager = PromptManager(
-        prompt_dir=os.path.join(
-            os.path.dirname(__file__), '..', 'agenthub', 'memcodeact_agent', 'prompts'
-        ),
+        prompt_dir=prompt_dir,
         agent_skills_docs='',
     )
+
     condenser = MemoryCondenser(llm=llm, prompt_manager=prompt_manager)
 
     # attach on fly the save_messages_for_debugging method to the condenser

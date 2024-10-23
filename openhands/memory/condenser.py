@@ -8,8 +8,6 @@ from openhands.llm.llm import LLM
 from openhands.memory.utils import parse_summary_response
 from openhands.utils.prompt import PromptManager
 
-WORD_LIMIT = 200
-
 
 class MemoryCondenser:
     def __init__(self, llm: LLM, prompt_manager: PromptManager):
@@ -18,9 +16,6 @@ class MemoryCondenser:
 
         # just easier to read
         self.context_window = llm.config.max_input_tokens
-        assert (
-            self.context_window is not None and self.context_window > 2000
-        ), 'context window must be a number over 2000'
 
     def condense(
         self,
@@ -35,6 +30,10 @@ class MemoryCondenser:
         Returns:
             AgentSummarizeAction: The summary action containing the condensed summary.
         """
+        assert (
+            self.context_window is not None and self.context_window > 2000
+        ), 'context window must be a number over 2000'
+
         # don't condense if under the token limit
         total_token_count = self.llm.get_token_count(messages)
         if total_token_count < self.context_window:
@@ -43,111 +42,80 @@ class MemoryCondenser:
             )
             return AgentSummarizeAction(end_id=-1)
 
-        # the system message and example messages are not condensable
-        # collect messages for summarization until we reach the desired truncation token fraction
-        token_counts = [
-            self.llm.get_token_count([message.model_dump()])
-            for message in messages
-            if message.condensable
+        # calculate safe token limit for processing (e.g. 80% of context window)
+        safe_token_limit = int(
+            self.context_window * self.llm.config.message_summary_warning_level
+        )
+
+        # collect condensable messages with their IDs and token counts
+        condensable_messages: list[tuple[Message, int]] = [
+            (msg, self.llm.get_token_count([msg.model_dump()]))
+            for msg in messages
+            if msg.condensable
         ]
-        message_buffer_token_count = sum(token_counts)
 
-        desired_token_count_to_summarize = int(
-            message_buffer_token_count * self.llm.config.message_summary_warning_level
-        )
-
-        # log status
-        logger.debug(
-            f'{len(messages)} messages in buffer: {message_buffer_token_count} tokens >> '
-            f'{desired_token_count_to_summarize} tokens'
-        )
-
-        candidate_messages_to_summarize: list[Message] = []
-        tokens_so_far = 0
-        last_summarized_event_id = -1
-
-        # collect messages until we reach the desired size
-        for message in messages:
-            if message.condensable:
-                logger.debug(
-                    f'condensable message: {message.event_id}: {str(message.content)[:30]}'
-                )
-                tokens_so_far += self.llm.get_token_count([message.model_dump()])
-            if tokens_so_far <= desired_token_count_to_summarize:
-                candidate_messages_to_summarize.append(message)
-                last_summarized_event_id = message.event_id
-            else:
-                break
-
-        logger.debug(
-            f'len(candidate_messages_to_summarize)={len(candidate_messages_to_summarize)}'
-        )
-
-        if len(candidate_messages_to_summarize) <= 1:
-            # Prevents potential infinite loop of summarizing the same message repeatedly
+        if len(condensable_messages) <= 1:
+            # prevents potential infinite loop of summarizing the same message repeatedly
             raise SummarizeError(
-                f"Summarize error: tried to run summarize, but couldn't find enough messages to compress [len={len(candidate_messages_to_summarize)} <= 1]"
-            )
-        else:
-            logger.debug(
-                f'Attempting to summarize with last summarized event id = {last_summarized_event_id}'
+                f"Summarize error: tried to run summarize, but couldn't find enough messages to compress [len={len(condensable_messages)} <= 1]"
             )
 
-        # perform the operation
-        action_response = self._summarize_messages(
-            message_sequence_to_summarize=candidate_messages_to_summarize
+        # track the very first message's id - this will be our start_id
+        first_message_id = condensable_messages[0][0].event_id
+
+        # create chunks that fit within safe_token_limit
+        chunks: list[list[Message]] = []
+        current_chunk: list[Message] = []
+        current_chunk_tokens = 0
+
+        for msg, token_count in condensable_messages:
+            if current_chunk_tokens + token_count > safe_token_limit:
+                if current_chunk:  # save current chunk if not empty, it's done
+                    chunks.append(current_chunk)
+
+                # start a new chunk
+                current_chunk = [msg]
+                current_chunk_tokens = token_count
+            else:
+                # add to current chunk
+                current_chunk.append(msg)
+                current_chunk_tokens += token_count
+
+        # add the last chunk
+        if current_chunk:
+            chunks.append(current_chunk)
+
+        # process chunks
+        final_summary = None
+        # track the last real message id (note: not summary actions)
+        last_real_message_id = condensable_messages[-1][0].event_id
+
+        for i, chunk in enumerate(chunks):
+            if final_summary:
+                # prepend previous summary to next chunk
+                summary_message = Message(
+                    role='user',
+                    content=[TextContent(text=f'Previous summary:\n{final_summary}')],
+                    condensable=True,
+                    # Note: summary messages don't have an event_id
+                    event_id=-1,
+                )
+                chunk.insert(0, summary_message)
+
+            action_response = self._summarize_messages(chunk)
+            summary_action = parse_summary_response(action_response)
+            final_summary = summary_action.summary
+
+        # create final summary action
+        assert final_summary is not None, 'final summary must not be None here'
+        return AgentSummarizeAction(
+            summary=final_summary,
+            start_id=first_message_id,
+            end_id=last_real_message_id,
         )
 
-        # we get an AgentSummarizeAction
-        summary_action: AgentSummarizeAction = parse_summary_response(action_response)
-        summary_action.end_id = last_summarized_event_id
-
-        # Serialize and save messages along with the summary action for debugging
-        self._save_messages_for_debugging(messages, summary_action)
-
-        return summary_action
-
-    def _summarize_messages(self, message_sequence_to_summarize: list[Message]):
+    def _summarize_messages(self, message_sequence_to_summarize: list[Message]) -> str:
         """Summarize a message sequence using LLM"""
-
-        assert self.context_window is not None, 'context window must be set'
-
-        token_count = self.llm.get_token_count(message_sequence_to_summarize)
-
-        # check if the token count exceeds the allowed summary level
-        if (
-            token_count
-            > self.llm.config.message_summary_warning_level * self.context_window
-        ):
-            trunc_ratio = (
-                self.llm.config.message_summary_warning_level
-                * self.context_window
-                / token_count
-            ) * 0.8  # For good measure...
-            cutoff = int(len(message_sequence_to_summarize) * trunc_ratio)
-
-            # recursively summarize the first part to fit within the context window
-            curr_summary: AgentSummarizeAction = parse_summary_response(
-                self._summarize_messages(
-                    message_sequence_to_summarize=message_sequence_to_summarize[:cutoff]
-                )
-            )
-
-            # prepare for the next round
-            curr_summary_message = (
-                'Summary of all Action and Observations till now: \n'
-                + curr_summary.summary
-            )
-            logger.debug(f'curr_summary_message: {curr_summary_message}')
-
-            # the rest of the messages
-            message_sequence_to_summarize = message_sequence_to_summarize[cutoff:]
-
-            curr_summary_message = [TextContent(text=curr_summary_message)]
-            message_sequence_to_summarize.insert(
-                0, Message(role='user', content=curr_summary_message)
-            )
-
         # build the message to send
         self.prompt_manager.conversation_history = self.llm.format_messages_for_llm(
             message_sequence_to_summarize
@@ -163,6 +131,4 @@ class MemoryCondenser:
 
         print(f'summarize_messages got response: {response}')
         assert isinstance(response, ModelResponse), 'response must be a ModelResponse'
-
-        action_response = response.choices[0].message.content
-        return action_response
+        return response.choices[0].message.content

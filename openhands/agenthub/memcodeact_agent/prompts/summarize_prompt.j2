@@ -15,7 +15,7 @@ The conversation below is a from a fixed context window and may not be complete.
 Only output the summary, do NOT include anything else in your output.
 
 Messages sent by the AI are marked with the 'assistant' role.
-The AI 'assistant' can also make calls to functions, whose outputs can be seen in messages with the 'function' role.
+The AI 'assistant' can also make tool calls, whose outputs can be seen in messages with the 'tool' role.
 Messages the user sends are in the 'user' role.
 The 'user' role is also used for environment observations, which are important for your task.
 Summarize what happened in the conversation from the perspective of the AI (use the first person).
@@ -34,7 +34,7 @@ Example:
         "summarized_observations": "The agent encountered a UnicodeDecodeError when initially searching the PDF text, but was able to resolve this by installing the PyPDF2 library and successfully extracting relevant information about sequence diagrams."
     }
 }
-Make sure to include in the summary any relevant keywords, because you will need to look it up.
+Include in the summary any relevant keywords, because you will need to look it up.
 
 YOU MUST RESPOND WITH JSON.
 
