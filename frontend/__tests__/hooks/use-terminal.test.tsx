@@ -70,21 +70,31 @@ describe("useTerminal", () => {
 
   it("should hide secrets in the terminal", () => {
     const secret = "super_secret_github_token";
+    const anotherSecret = "super_secret_another_token";
     const commands: Command[] = [
-      { content: `export GITHUB_TOKEN ${secret}`, type: "input" },
+      {
+        content: `export GITHUB_TOKEN=${secret},${anotherSecret}`,
+        type: "input",
+      },
       { content: secret, type: "output" },
     ];
 
-    render(<TestTerminalComponent commands={commands} secrets={[secret]} />, {
-      wrapper: SocketProvider,
-    });
+    render(
+      <TestTerminalComponent
+        commands={commands}
+        secrets={[secret, anotherSecret]}
+      />,
+      {
+        wrapper: SocketProvider,
+      },
+    );
 
     // BUG: `vi.clearAllMocks()` does not clear the number of calls
     // therefore, we need to assume the order of the calls based
     // on the test order
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(
       3,
-      `export GITHUB_TOKEN ${"*".repeat(10)}`,
+      `export GITHUB_TOKEN=${"*".repeat(10)},${"*".repeat(10)}`,
     );
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(4, "*".repeat(10));
   });
