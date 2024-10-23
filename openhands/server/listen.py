@@ -54,7 +54,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict
 from openhands.llm import bedrock
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
 from openhands.server.auth import get_sid_from_token, sign_token
 from openhands.server.session import SessionManager
 

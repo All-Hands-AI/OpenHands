@@ -11,10 +11,10 @@ from pytest import TempPathFactory
 from openhands.core.config import load_app_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
-from openhands.runtime.client.runtime import EventStreamRuntime
+from openhands.runtime.base import Runtime
+from openhands.runtime.impl.eventstream.eventstream_runtime import EventStreamRuntime
+from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
-from openhands.runtime.remote.runtime import RemoteRuntime
-from openhands.runtime.runtime import Runtime
 from openhands.storage import get_file_store
 
 TEST_IN_CI = os.getenv('TEST_IN_CI', 'False').lower() in ['true', '1', 'yes']

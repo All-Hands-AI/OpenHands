@@ -21,7 +21,7 @@ The OpenHands Runtime system uses a client-server architecture implemented with 
 graph TD
     A[User-provided Custom Docker Image] --> B[OpenHands Backend]
     B -->|Builds| C[OH Runtime Image]
-    C -->|Launches| D[Runtime Client]
+    C -->|Launches| D[Action Executor]
     D -->|Initializes| E[Browser]
     D -->|Initializes| F[Bash Shell]
     D -->|Initializes| G[Plugins]
@@ -49,10 +49,10 @@ graph TD
 1. User Input: The user provides a custom base Docker image
 2. Image Building: OpenHands builds a new Docker image (the "OH runtime image") based on the user-provided image. This new image includes OpenHands-specific code, primarily the "runtime client"
 3. Container Launch: When OpenHands starts, it launches a Docker container using the OH runtime image
-4. Client Initialization: The runtime client initializes inside the container, setting up necessary components like a bash shell and loading any specified plugins
-5. Communication: The OpenHands backend (`runtime.py`) communicates with the runtime client over RESTful API, sending actions and receiving observations
+4. Action Execution Server Initialization: The action execution server initializes an `ActionExecutor` inside the container, setting up necessary components like a bash shell and loading any specified plugins
+5. Communication: The OpenHands backend (`openhands/runtime/impl/eventstream/eventstream_runtime.py`) communicates with the action execution server over RESTful API, sending actions and receiving observations
 6. Action Execution: The runtime client receives actions from the backend, executes them in the sandboxed environment, and sends back observations
-7. Observation Return: The client sends execution results back to the OpenHands backend as observations
+7. Observation Return: The action execution server sends execution results back to the OpenHands backend as observations
 
 
 The role of the client:
