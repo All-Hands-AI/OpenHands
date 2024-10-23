@@ -1,6 +1,9 @@
 import os
 from itertools import islice
 
+from litellm import ModelResponse
+
+import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.agenthub.codeact_agent.action_parser import CodeActResponseParser
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -36,7 +39,7 @@ from openhands.utils.prompt import PromptManager
 
 
 class CodeActAgent(Agent):
-    VERSION = '2.0'
+    VERSION = '2.1'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
@@ -64,8 +67,6 @@ class CodeActAgent(Agent):
         JupyterRequirement(),
     ]
 
-    action_parser = CodeActResponseParser()
-
     def __init__(
         self,
         llm: LLM,
@@ -89,49 +90,66 @@ class CodeActAgent(Agent):
             else None
         )
 
-        self.prompt_manager = PromptManager(
-            prompt_dir=os.path.join(os.path.dirname(__file__)),
-            agent_skills_docs=AgentSkillsRequirement.documentation,
-            micro_agent=self.micro_agent,
-        )
-
-    def action_to_str(self, action: Action) -> str:
-        if isinstance(action, CmdRunAction):
-            return (
-                f'{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>'
+        if self.config.function_calling:
+            # Function calling mode
+            self.tools = codeact_function_calling.get_tools(
+                include_browsing_delegate=self.config.codeact_include_browsing_delegate
             )
-        elif isinstance(action, IPythonRunCellAction):
-            return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
-        elif isinstance(action, AgentDelegateAction):
-            return f'{action.thought}\n<execute_browse>\n{action.inputs["task"]}\n</execute_browse>'
-        elif isinstance(action, FileEditAction):
-            return f'{action.thought}\n<file_edit path={action.path}>\n{action.content}\n</file_edit>'
-        elif isinstance(action, MessageAction):
-            return action.content
-        elif isinstance(action, AgentFinishAction) and action.source == 'agent':
-            return action.thought
-        return ''
+        else:
+            # Non-function-calling mode
+            self.action_parser = CodeActResponseParser()
+            self.prompt_manager = PromptManager(
+                prompt_dir=os.path.join(os.path.dirname(__file__)),
+                agent_skills_docs=AgentSkillsRequirement.documentation,
+                micro_agent=self.micro_agent,
+            )
+            self.system_prompt = self.prompt_manager.system_message
+            self.initial_user_message = self.prompt_manager.initial_user_message
 
     def get_action_message(self, action: Action) -> Message | None:
+        """Convert an action to a message sent to the LLM."""
         if (
             isinstance(action, AgentDelegateAction)
             or isinstance(action, CmdRunAction)
             or isinstance(action, IPythonRunCellAction)
-            or isinstance(action, MessageAction)
             or isinstance(action, FileEditAction)
             or (isinstance(action, AgentFinishAction) and action.source == 'agent')
         ):
-            content = [TextContent(text=self.action_to_str(action))]
+            if self.config.function_calling:
+                # FIXME
+                # Add assistant's response (i.e., tool call)
+                llm_response: ModelResponse = action.raw_llm_response
+                assert llm_response is not None
+                assistant_msg = llm_response.choices[0].message
+                return Message(
+                    role=assistant_msg.role,
+                    # tool call content SHOULD BE a string
+                    content=[TextContent(text=assistant_msg.content)],
+                    tool_calls=assistant_msg.tool_calls,
+                )
+            else:
+                content = [TextContent(text=self.action_parser.action_to_str(action))]
+                return Message(
+                    role='user' if action.source == 'user' else 'assistant',
+                    content=content,
+                )
+        elif isinstance(action, MessageAction):
+            # message from LLM to user
+            if action.raw_llm_response is not None:
+                # it could be "assistant" or "tool"
+                _msg = action.raw_llm_response.choices[0].message
+                return Message(
+                    role=_msg.role,
+                    content=_msg.content,
+                )
 
-            if (
-                self.llm.vision_is_active()
-                and isinstance(action, MessageAction)
-                and action.images_urls
-            ):
+            role = 'user' if action.source == 'user' else 'assistant'
+            content = [TextContent(text=action.content)]
+            if self.llm.vision_is_active() and action.images_urls:
                 content.append(ImageContent(image_urls=action.images_urls))
-
             return Message(
-                role='user' if action.source == 'user' else 'assistant', content=content
+                role=role,
+                content=content,
             )
         return None
 
@@ -203,19 +221,25 @@ class CodeActAgent(Agent):
 
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
-        params = {
+        params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
-            'stop': [
+        }
+        if self.config.function_calling:
+            params['tools'] = self.tools
+        else:
+            params['stop'] = [
                 '</execute_ipython>',
                 '</execute_bash>',
                 '</execute_browse>',
                 '</file_edit>',
-            ],
-        }
+            ]
 
         response = self.llm.completion(**params)
 
-        return self.action_parser.parse(response)
+        if self.config.function_calling:
+            return codeact_function_calling.response_to_action(response)
+        else:
+            return self.action_parser.parse(response)
 
     def _get_messages(self, state: State) -> list[Message]:
         messages: list[Message] = [
@@ -223,21 +247,24 @@ class CodeActAgent(Agent):
                 role='system',
                 content=[
                     TextContent(
-                        text=self.prompt_manager.system_message,
+                        text=self.system_prompt,
                         cache_prompt=self.llm.is_caching_prompt_active(),  # Cache system prompt
                     )
                 ],
-            ),
-            Message(
-                role='user',
-                content=[
-                    TextContent(
-                        text=self.prompt_manager.initial_user_message,
-                        cache_prompt=self.llm.is_caching_prompt_active(),  # if the user asks the same query,
-                    )
-                ],
-            ),
+            )
         ]
+        if self.initial_user_message:
+            messages.append(
+                Message(
+                    role='user',
+                    content=[
+                        TextContent(
+                            text=self.initial_user_message,
+                            cache_prompt=self.llm.is_caching_prompt_active(),  # if the user asks the same query,
+                        )
+                    ],
+                )
+            )
 
         for event in state.history.get_events():
             # create a regular message from an event
@@ -258,32 +285,34 @@ class CodeActAgent(Agent):
                 else:
                     messages.append(message)
 
-        # Add caching to the last 2 user messages
+        # Add caching to the last 2 non-assistant messages
         if self.llm.is_caching_prompt_active():
             user_turns_processed = 0
             for message in reversed(messages):
-                if message.role == 'user' and user_turns_processed < 2:
+                if message.role != 'assistant' and user_turns_processed < 2:
                     message.content[
                         -1
                     ].cache_prompt = True  # Last item inside the message content
                     user_turns_processed += 1
 
-        # The latest user message is important:
-        # we want to remind the agent of the environment constraints
-        latest_user_message = next(
-            islice(
-                (
-                    m
-                    for m in reversed(messages)
-                    if m.role == 'user'
-                    and any(isinstance(c, TextContent) for c in m.content)
+        if not self.config.function_calling:
+            # The latest user message is important:
+            # we want to remind the agent of the environment constraints
+            latest_user_message = next(
+                islice(
+                    (
+                        m
+                        for m in reversed(messages)
+                        if m.role == 'user'
+                        and any(isinstance(c, TextContent) for c in m.content)
+                    ),
+                    1,
                 ),
-                1,
-            ),
-            None,
-        )
-        if latest_user_message:
-            reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
-            latest_user_message.content.append(TextContent(text=reminder_text))
+                None,
+            )
+            # do not add this for function calling
+            if latest_user_message:
+                reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
+                latest_user_message.content.append(TextContent(text=reminder_text))
 
         return messages

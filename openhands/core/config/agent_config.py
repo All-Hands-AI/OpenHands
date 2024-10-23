@@ -8,12 +8,16 @@ class AgentConfig:
     """Configuration for the agent.
 
     Attributes:
+        function_calling: Whether function calling is enabled. Default is True.
+        codeact_include_browsing_delegate: Whether browsing delegate is enabled. Default is False. Only works with function calling.
         micro_agent_name: The name of the micro agent to use for this agent.
         memory_enabled: Whether long-term memory (embeddings) is enabled.
         memory_max_threads: The maximum number of threads indexing at the same time for embeddings.
         llm_config: The name of the llm config to use. If specified, this will override global llm config.
     """
 
+    function_calling: bool = True
+    codeact_include_browsing_delegate: bool = False
     micro_agent_name: str | None = None
     memory_enabled: bool = False
     memory_max_threads: int = 3

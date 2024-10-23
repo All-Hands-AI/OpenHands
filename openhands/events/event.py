@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 
+from litellm import ModelResponse
+
 from openhands.llm.metrics import Metrics
 
 
@@ -71,3 +73,14 @@ class Event:
     @llm_metrics.setter
     def llm_metrics(self, value: Metrics) -> None:
         self._llm_metrics = value
+
+    # optional field
+    @property
+    def raw_llm_response(self) -> ModelResponse | None:
+        if hasattr(self, '_raw_llm_response'):
+            return self._raw_llm_response  # type: ignore[attr-defined]
+        return None
+
+    @raw_llm_response.setter
+    def raw_llm_response(self, value: ModelResponse) -> None:
+        self._raw_llm_response = value
