@@ -1,50 +1,7 @@
 import userEvent from "@testing-library/user-event";
 import { render, screen } from "@testing-library/react";
 import { describe, afterEach, vi, it, expect } from "vitest";
-import React from "react";
-
-interface ChatInputProps {
-  disabled?: boolean;
-  placeholder?: string;
-  onSubmit: (message: string) => void;
-}
-
-function ChatInput({ disabled, placeholder, onSubmit }: ChatInputProps) {
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-
-  const handleSubmitMessage = () => {
-    if (textareaRef.current?.value) {
-      onSubmit(textareaRef.current.value);
-      textareaRef.current.value = "";
-    }
-  };
-
-  const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      handleSubmitMessage();
-    }
-  };
-
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    handleSubmitMessage();
-  };
-
-  return (
-    <form data-testid="chat-input" onSubmit={handleSubmit}>
-      <textarea
-        ref={textareaRef}
-        name="message"
-        placeholder={placeholder}
-        onKeyDown={handleKeyPress}
-      />
-      <button disabled={disabled} type="submit">
-        Send
-      </button>
-    </form>
-  );
-}
+import { ChatInput } from "#/components/chat-input";
 
 describe("ChatInput", () => {
   const onSubmitMock = vi.fn();

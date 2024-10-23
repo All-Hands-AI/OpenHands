@@ -4,7 +4,6 @@ import { RiArrowRightDoubleLine } from "react-icons/ri";
 import { useTranslation } from "react-i18next";
 import { VscArrowDown } from "react-icons/vsc";
 import { useDisclosure } from "@nextui-org/react";
-import ChatInput from "./ChatInput";
 import Chat from "./Chat";
 import TypingIndicator from "./TypingIndicator";
 import { RootState } from "#/store";
@@ -18,6 +17,7 @@ import { useSocket } from "#/context/socket";
 import ThumbsUpIcon from "#/assets/thumbs-up.svg?react";
 import ThumbsDownIcon from "#/assets/thumbs-down.svg?react";
 import { cn } from "#/utils/utils";
+import { ChatInput } from "../chat-input";
 
 interface ScrollButtonProps {
   onClick: () => void;
@@ -100,7 +100,7 @@ function ChatInterface() {
         <Chat messages={messages} curAgentState={curAgentState} />
       </div>
 
-      <div>
+      <div className="px-4 pb-4">
         <div className="relative">
           {feedbackShared !== messages.length && messages.length > 3 && (
             <div
@@ -161,7 +161,8 @@ function ChatInterface() {
             curAgentState === AgentState.LOADING ||
             curAgentState === AgentState.AWAITING_USER_CONFIRMATION
           }
-          onSendMessage={handleSendMessage}
+          placeholder="What do you want to build?"
+          onSubmit={handleSendMessage}
         />
       </div>
       <FeedbackModal
