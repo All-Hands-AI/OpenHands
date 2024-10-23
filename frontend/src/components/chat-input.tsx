@@ -10,6 +10,7 @@ interface ChatInputProps {
 
 export function ChatInput({ disabled, placeholder, onSubmit }: ChatInputProps) {
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const [isFocused, setIsFocused] = React.useState(false);
 
   const handleSubmitMessage = () => {
     if (textareaRef.current?.value) {
@@ -36,7 +37,8 @@ export function ChatInput({ disabled, placeholder, onSubmit }: ChatInputProps) {
       onSubmit={handleSubmit}
       className={cn(
         "bg-neutral-700 border border-neutral-600 rounded-lg px-2 py-[10px]",
-        "flex items-end justify-end",
+        "flex items-center justify-end",
+        isFocused && "ring-2 ring-offset-2",
       )}
     >
       <textarea
@@ -44,8 +46,10 @@ export function ChatInput({ disabled, placeholder, onSubmit }: ChatInputProps) {
         name="message"
         placeholder={placeholder}
         onKeyDown={handleKeyPress}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         rows={1}
-        className="grow text-sm placeholder:text-neutral-400 text-white resize-none bg-transparent"
+        className="grow text-sm placeholder:text-neutral-400 text-white resize-none bg-transparent outline-none ring-0"
       />
       <button
         disabled={disabled}
