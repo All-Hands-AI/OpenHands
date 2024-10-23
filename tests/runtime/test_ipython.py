@@ -1,4 +1,4 @@
-"""Test the EventStreamRuntime, which connects to the RuntimeClient running in the sandbox."""
+"""Test the EventStreamRuntime, which connects to the ActionExecutor running in the sandbox."""
 
 import pytest
 from conftest import (

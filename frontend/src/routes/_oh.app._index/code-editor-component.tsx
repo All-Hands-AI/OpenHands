@@ -3,6 +3,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { VscCode } from "react-icons/vsc";
 import { type editor } from "monaco-editor";
+import toast from "react-hot-toast";
 import { I18nKey } from "#/i18n/declaration";
 import { useFiles } from "#/context/files";
 import OpenHands from "#/api/open-hands";
@@ -51,7 +52,7 @@ function CodeEditorCompoonent({ isReadOnly }: CodeEditorCompoonentProps) {
             const token = localStorage.getItem("token")?.toString();
             if (token) await OpenHands.saveFile(token, selectedPath, content);
           } catch (error) {
-            // handle error
+            toast.error("Failed to save file");
           }
         }
       }
