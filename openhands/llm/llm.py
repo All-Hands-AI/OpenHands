@@ -130,6 +130,8 @@ class LLM(RetryMixin, DebugMixin):
         # if using a custom tokenizer, make sure it's loaded and accessible in the format expected by litellm
         if self.config.custom_tokenizer is not None:
             self.tokenizer = create_pretrained_tokenizer(self.config.custom_tokenizer)
+        else:
+            self.tokenizer = None
 
         # set up the completion function
         self._completion = partial(
