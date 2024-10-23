@@ -117,40 +117,26 @@ jobs:
         run: echo "ARTIFACT_URL=${{ steps.upload_results_artifact.outputs.artifact-url }}" >> $GITHUB_ENV
 
       - name: Comment with evaluation results and artifact link
-        uses: actions/github-script@v6
         id: create_comment
+        uses: KeisukeYamashita/create-comment@v1
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            const issueNumber = ${{ github.event_name == 'pull_request' && github.event.label.name == 'eval-this' && github.event.pull_request.number || 4504 }};
-            const comment = await github.rest.issues.createComment({
-              issue_number: issueNumber,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `
-                Trigger by: ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}
-
-                **Integration Tests Evaluation Report**
-
-                ${{ env.INTEGRATION_TEST_REPORT }}
-
-                ---
-                **SWE-Bench Evaluation Report**
-
-                ${{ env.SWEBENCH_REPORT }}
-
-                ---
-                You can download the full evaluation outputs [here](${{ env.ARTIFACT_URL }}).
-              `
-            });
-            return comment.data.id;
+          number: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || 4504 }}
+          comment: |
+              Trigger by: ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}
+              **Integration Tests Evaluation Report**
+              ${{ env.INTEGRATION_TEST_REPORT }}
+              ---
+              **SWE-Bench Evaluation Report**
+              ${{ env.SWEBENCH_REPORT }}
+              ---
+              You can download the full evaluation outputs [here](${{ env.ARTIFACT_URL }}).
 
       - name: Post to a Slack channel
         id: slack
         uses: slackapi/slack-github-action@v1.27.0
         with:
           channel-id: 'C07SVQSCR6F'
-          slack-message: "*Evaluation Trigger:* ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}\n\nLink to summary: [here](https://github.com/${{ github.repository }}/issues/${{ github.event_name == 'pull_request' && github.event.pull_request.number || 4504 }}#issuecomment-${{ steps.create_comment.outputs.result }})"
+          slack-message: "*Evaluation Trigger:* ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}\n\nLink to summary: [here](https://github.com/${{ github.repository }}/issues/${{ github.event_name == 'pull_request' && github.event.pull_request.number || 4504 }}#issuecomment-${{ steps.create_comment.outputs.comment-id }})"
         env:
           SLACK_BOT_TOKEN: ${{ secrets.EVAL_NOTIF_SLACK_BOT_TOKEN }}
 
