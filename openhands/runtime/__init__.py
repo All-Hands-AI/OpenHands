@@ -20,7 +20,7 @@ def get_runtime_cls(name: str):
         return RemoteRuntime
     elif name == 'modal':
         logger.info('Using ModalRuntime')
-        from openhands.runtime.modal.runtime import ModalRuntime
+        from openhands.runtime.impl.modal.modal_runtime import ModalRuntime
 
         return ModalRuntime
     else:
