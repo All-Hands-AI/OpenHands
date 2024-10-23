@@ -45,7 +45,7 @@ def display_command(command: str):
 def display_command_output(output: str):
     lines = output.split('\n')
     for line in lines:
-        if line.startswith('openhands@'):
+        if line.startswith('[Python Interpreter') or line.startswith('openhands@'):
             # TODO: clean this up once we clean up terminal output
             continue
         print(colored(line, 'blue'))
