@@ -74,10 +74,6 @@ const config: Config = {
           label: "Python API",
         },
         {
-          type: 'localeDropdown',
-          position: 'left',
-        },
-        {
           href: "https://all-hands.dev",
           label: "Company",
           position: "right",
