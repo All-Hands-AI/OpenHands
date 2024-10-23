@@ -41,17 +41,12 @@ jobs:
           cache: "poetry"
 
       - name: Comment on PR if 'eval-this' label is present
-        uses: actions/github-script@v6
         if: github.event_name == 'pull_request' && github.event.label.name == 'eval-this'
+        uses: KeisukeYamashita/create-comment@v1
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: 'Hi! I started running the evaluation on your PR. You will receive a comment with the results shortly.',
-            })
+          unique: false
+          comment: |
+            Hi! I started running the evaluation on your PR. You will receive a comment with the results shortly.
 
       - name: Install Python dependencies using Poetry
         run: poetry install
