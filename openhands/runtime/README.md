@@ -7,9 +7,9 @@ You can learn more about how the runtime works in the [EventStream Runtime](http
 
 ## Main Components
 
-### 1. runtime.py
+### 1. impl/*runtime.py
 
-The `runtime.py` file defines the `Runtime` class, which serves as the primary interface for agent interactions with the external environment. It handles various operations including:
+The `impl/*runtime.py` file defines the `Runtime` class, which serves as the primary [interface](./runtime.py) for agent interactions with the external environment. It handles various operations including:
 
 - Bash sandbox execution
 - Browser interactions
@@ -23,9 +23,9 @@ Key features of the `Runtime` class:
 - Action execution methods for different types of actions (run, read, write, browse, etc.)
 - Abstract methods for file operations (to be implemented by subclasses)
 
-### 2. client/client.py
+### 2. server.py
 
-The `client.py` file contains the `RuntimeClient` class, which is responsible for executing actions received from the OpenHands backend and producing observations. This client runs inside a Docker sandbox.
+The `server.py` file contains the `RuntimeClient` class, which is responsible for executing actions received from the OpenHands backend and producing observations. This client runs inside a Docker sandbox.
 
 Key features of the `RuntimeClient` class:
 - Initialization of user environment and bash shell
