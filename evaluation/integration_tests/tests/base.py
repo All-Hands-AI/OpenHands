@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from pydantic import BaseModel
 
 from openhands.events.event import Event
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
 
 
 class TestResult(BaseModel):

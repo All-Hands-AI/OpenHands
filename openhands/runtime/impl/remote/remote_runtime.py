@@ -28,9 +28,9 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.runtime.base import Runtime
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
-from openhands.runtime.runtime import Runtime
 from openhands.runtime.utils.request import (
     is_404_error,
     is_503_error,

@@ -32,7 +32,7 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.observation import CmdOutputObservation
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
 
 
 def codeact_user_response_mint(state: State, task: Task, task_config: dict[str, int]):

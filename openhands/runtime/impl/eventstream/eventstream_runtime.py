@@ -31,9 +31,9 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.runtime.base import Runtime
 from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
-from openhands.runtime.runtime import Runtime
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.request import send_request_with_retry
 from openhands.runtime.utils.runtime_build import build_runtime_image

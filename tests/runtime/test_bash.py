@@ -13,7 +13,7 @@ from conftest import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
 
 # ============================================================================================================================
 # Bash-specific tests
