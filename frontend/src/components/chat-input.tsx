@@ -36,9 +36,8 @@ export function ChatInput({ disabled, placeholder, onSubmit }: ChatInputProps) {
       data-testid="chat-input"
       onSubmit={handleSubmit}
       className={cn(
-        "bg-neutral-700 border border-neutral-600 rounded-lg px-2 py-[10px]",
-        "flex items-center justify-end",
-        isFocused && "ring-2 ring-offset-2",
+        "flex items-center justify-end grow",
+        // isFocused && "ring-2 ring-offset-2",
       )}
     >
       <textarea

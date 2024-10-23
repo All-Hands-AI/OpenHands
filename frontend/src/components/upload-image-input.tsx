@@ -1,3 +1,5 @@
+import Clip from "#/assets/clip.svg?react";
+
 interface UploadImageInputProps {
   onUpload: (files: File[]) => void;
 }
@@ -8,13 +10,16 @@ export function UploadImageInput({ onUpload }: UploadImageInputProps) {
   };
 
   return (
-    <input
-      data-testid="upload-image-input"
-      type="file"
-      accept="image/*"
-      multiple
-      hidden
-      onChange={handleUpload}
-    />
+    <label className="cursor-pointer">
+      <Clip width={24} height={24} />
+      <input
+        data-testid="upload-image-input"
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        onChange={handleUpload}
+      />
+    </label>
   );
 }

@@ -18,7 +18,7 @@ import ThumbsUpIcon from "#/assets/thumbs-up.svg?react";
 import ThumbsDownIcon from "#/assets/thumbs-down.svg?react";
 import { cn } from "#/utils/utils";
 import { ChatInput } from "../chat-input";
-import { ImagePreview } from "../image-preview";
+import { InteractiveChatBox } from "../interactive-chat-box";
 
 interface ScrollButtonProps {
   onClick: () => void;
@@ -157,29 +157,13 @@ function ChatInterface() {
           </div>
         </div>
 
-        <div className="flex flex-col gap-[10px]">
-          <div className="flex gap-2 overflow-x-scroll">
-            <ImagePreview src="https://placehold.co/62" onRemove={() => {}} />
-            <ImagePreview
-              src="https://placehold.co/600x400"
-              onRemove={() => {}}
-            />
-            <ImagePreview src="https://placehold.co/62" onRemove={() => {}} />
-            <ImagePreview src="https://placehold.co/62" onRemove={() => {}} />
-            <ImagePreview src="https://placehold.co/62" onRemove={() => {}} />
-            <ImagePreview src="https://placehold.co/62" onRemove={() => {}} />
-            <ImagePreview src="https://placehold.co/62" onRemove={() => {}} />
-            <ImagePreview src="https://placehold.co/62" onRemove={() => {}} />
-          </div>
-          <ChatInput
-            disabled={
-              curAgentState === AgentState.LOADING ||
-              curAgentState === AgentState.AWAITING_USER_CONFIRMATION
-            }
-            placeholder="What do you want to build?"
-            onSubmit={handleSendMessage}
-          />
-        </div>
+        <InteractiveChatBox
+          isDisabled={
+            curAgentState === AgentState.LOADING ||
+            curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+          }
+          onSubmit={handleSendMessage}
+        />
       </div>
       <FeedbackModal
         polarity={feedbackPolarity}
