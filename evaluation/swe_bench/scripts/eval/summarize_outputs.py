@@ -116,4 +116,3 @@ if __name__ == '__main__':
     print('## Detailed error breakdown:')
     for error, count in error_counter.items():
         print(f'{error}: {count} ({count / num_lines * 100:.2f}%)')
-    print('-' * 100)
