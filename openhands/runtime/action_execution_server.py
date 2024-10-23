@@ -473,13 +473,13 @@ class ActionExecutor:
                 if exit_code != 0:
                     break
 
-            all_output += python_interpreter
             return CmdOutputObservation(
                 command_id=-1,
                 content=all_output.rstrip('\r\n'),
                 command=action.command,
                 hidden=action.hidden,
                 exit_code=exit_code,
+                meta=python_interpreter,
             )
         except UnicodeDecodeError:
             raise RuntimeError('Command output could not be decoded as utf-8')
