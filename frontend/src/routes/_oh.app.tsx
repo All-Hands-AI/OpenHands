@@ -39,6 +39,7 @@ import { createChatMessage } from "#/services/chatService";
 import {
   clearFiles,
   clearSelectedRepository,
+  setImportedProjectZip,
 } from "#/state/initial-query-slice";
 import { isGitHubErrorReponse, retrieveLatestGitHubCommit } from "#/api/github";
 import OpenHands from "#/api/open-hands";
@@ -77,18 +78,9 @@ export const clientLoader = async () => {
   const repo =
     store.getState().initalQuery.selectedRepository ||
     localStorage.getItem("repo");
-  const importedProject = store.getState().initalQuery.importedProjectZip;
 
   const settings = getSettings();
   const token = localStorage.getItem("token");
-
-  if (token && importedProject) {
-    const blob = base64ToBlob(importedProject);
-    const file = new File([blob], "imported-project.zip", {
-      type: blob.type,
-    });
-    await OpenHands.uploadFiles(token, [file]);
-  }
 
   if (repo) localStorage.setItem("repo", repo);
 
@@ -127,7 +119,9 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 
 function App() {
   const dispatch = useDispatch();
-  const { files } = useSelector((state: RootState) => state.initalQuery);
+  const { files, importedProjectZip } = useSelector(
+    (state: RootState) => state.initalQuery,
+  );
   const { start, send, setRuntimeIsInitialized, runtimeActive } = useSocket();
   const { settings, token, ghToken, repo, q, lastCommit } =
     useLoaderData<typeof clientLoader>();
@@ -253,11 +247,29 @@ function App() {
   });
 
   React.useEffect(() => {
-    // Export if the user valid, this could happen mid-session so it is handled here
-    if (userId && ghToken && runtimeActive) {
+    if (runtimeActive && userId && ghToken) {
+      // Export if the user valid, this could happen mid-session so it is handled here
       send(getGitHubTokenCommand(ghToken));
     }
   }, [userId, ghToken, runtimeActive]);
+
+  React.useEffect(() => {
+    (async () => {
+      if (runtimeActive && token && importedProjectZip) {
+        // upload files action
+        try {
+          const blob = base64ToBlob(importedProjectZip);
+          const file = new File([blob], "imported-project.zip", {
+            type: blob.type,
+          });
+          await OpenHands.uploadFiles(token, [file]);
+          dispatch(setImportedProjectZip(null));
+        } catch (error) {
+          toast.error("Failed to upload project files.");
+        }
+      }
+    })();
+  }, [runtimeActive, token, importedProjectZip]);
 
   const {
     isOpen: securityModalIsOpen,
