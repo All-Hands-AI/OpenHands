@@ -78,8 +78,8 @@ def verify_api_key(api_key: str = Depends(api_key_header)):
     return api_key
 
 
-class RuntimeClient:
-    """RuntimeClient is running inside docker sandbox.
+class ActionExecutor:
+    """ActionExecutor is running inside docker sandbox.
     It is responsible for executing actions received from OpenHands backend and producing observations.
     """
 
@@ -629,12 +629,12 @@ if __name__ == '__main__':
                 raise ValueError(f'Plugin {plugin} not found')
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
 
-    client: RuntimeClient | None = None
+    client: ActionExecutor | None = None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         global client
-        client = RuntimeClient(
+        client = ActionExecutor(
             plugins_to_load,
             work_dir=args.working_dir,
             username=args.username,
