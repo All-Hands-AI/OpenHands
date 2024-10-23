@@ -24,40 +24,18 @@ You'll need to be sure to set your model, API key, and other settings via enviro
 
 ## With Docker
 
-To run OpenHands in CLI mode with Docker, follow these steps:
-
-1. Set `WORKSPACE_BASE` to the directory you want OpenHands to edit:
-
-```bash
-WORKSPACE_BASE=$(pwd)/workspace
-```
-
-2. Set `LLM_MODEL` to the model you want to use:
+To run OpenHands in CLI mode with Docker, set your LLM options, then run
+the Docker command from the README, followed by the command
+`python -m openhands.core.cli`.
 
 ```bash
-LLM_MODEL="anthropic/claude-3-5-sonnet-20240620"
-```
+export LLM_MODEL="anthropic/claude-3-5-sonnet-20240620"
+export LLM_API_KEY="sk_test_12345"
 
-3. Set `LLM_API_KEY` to your API key:
-
-```bash
-LLM_API_KEY="sk_test_12345"
-```
-
-4. Run the following Docker command:
-
-```bash
-docker run -it \
-    --pull=always \
-    -e SANDBOX_USER_ID=$(id -u) \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+docker run # ...
     -e LLM_API_KEY=$LLM_API_KEY \
     -e LLM_MODEL=$LLM_MODEL \
-    -v $WORKSPACE_BASE:/opt/workspace_base \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    --add-host host.docker.internal:host-gateway \
-    --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/all-hands-ai/openhands:0.11 \
+    # ...
     python -m openhands.core.cli
 ```
 
