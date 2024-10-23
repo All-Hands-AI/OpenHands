@@ -25,7 +25,7 @@ Key features of the `Runtime` class:
 
 ### 2. action_execution_server.py
 
-The `server.py` file contains the `ActionExecutor` class, which is responsible for executing actions received from the OpenHands backend and producing observations. This client runs inside a Docker sandbox.
+The `action_executor_server.py` file contains the `ActionExecutor` class, which is responsible for executing actions received from the OpenHands backend and producing observations. This client runs inside a Docker sandbox.
 
 Key features of the `ActionExecutor` class:
 - Initialization of user environment and bash shell
