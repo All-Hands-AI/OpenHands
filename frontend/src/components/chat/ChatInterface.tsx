@@ -17,8 +17,8 @@ import { useSocket } from "#/context/socket";
 import ThumbsUpIcon from "#/assets/thumbs-up.svg?react";
 import ThumbsDownIcon from "#/assets/thumbs-down.svg?react";
 import { cn } from "#/utils/utils";
-import { ChatInput } from "../chat-input";
 import { InteractiveChatBox } from "../interactive-chat-box";
+import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 
 interface ScrollButtonProps {
   onClick: () => void;
@@ -64,7 +64,10 @@ function ChatInterface() {
     onOpenChange: onFeedbackModalOpenChange,
   } = useDisclosure();
 
-  const handleSendMessage = (content: string, imageUrls: string[]) => {
+  const handleSendMessage = async (content: string, files: File[]) => {
+    const promises = files.map((file) => convertImageToBase64(file));
+    const imageUrls = await Promise.all(promises);
+
     const timestamp = new Date().toISOString();
     dispatch(addUserMessage({ content, imageUrls, timestamp }));
     send(createChatMessage(content, imageUrls, timestamp));

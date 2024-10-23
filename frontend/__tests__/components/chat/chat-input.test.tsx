@@ -103,4 +103,7 @@ describe("ChatInput", () => {
     await user.click(button);
     expect(textarea).toHaveValue("");
   });
+
+  // NOTE: Functionality is already implemented but the test is not written
+  it.todo("should dynamically increase the height of the textarea");
 });

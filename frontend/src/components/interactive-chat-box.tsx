@@ -51,7 +51,7 @@ export function InteractiveChatBox({
 
       <div
         className={cn(
-          "flex items-center gap-1",
+          "flex items-end gap-1",
           "bg-neutral-700 border border-neutral-600 rounded-lg px-2 py-[10px]",
         )}
       >
