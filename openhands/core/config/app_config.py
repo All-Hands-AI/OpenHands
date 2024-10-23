@@ -28,6 +28,7 @@ class AppConfig:
         runtime: The runtime environment.
         file_store: The file store to use.
         file_store_path: The path to the file store.
+        trajectories_path: The folder path to store trajectories.
         workspace_base: The base path for the workspace. Defaults to ./workspace as an absolute path.
         workspace_mount_path: The path to mount the workspace. This is set to the workspace base by default.
         workspace_mount_path_in_sandbox: The path to mount the workspace in the sandbox. Defaults to /workspace.
@@ -53,6 +54,7 @@ class AppConfig:
     runtime: str = 'eventstream'
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
+    trajectories_path: str | None = None
     # TODO: clean up workspace path after the removal of ServerRuntime
     workspace_base: str = os.path.join(os.getcwd(), 'workspace')
     workspace_mount_path: str | None = (
@@ -65,6 +67,8 @@ class AppConfig:
     max_iterations: int = OH_MAX_ITERATIONS
     max_budget_per_task: float | None = None
     e2b_api_key: str = ''
+    modal_api_token_id: str = ''
+    modal_api_token_secret: str = ''
     disable_color: bool = False
     jwt_secret: str = uuid.uuid4().hex
     debug: bool = False
@@ -140,6 +144,8 @@ class AppConfig:
                 'e2b_api_key',
                 'github_token',
                 'jwt_secret',
+                'modal_api_token_id',
+                'modal_api_token_secret',
             ]:
                 attr_value = '******' if attr_value else None
 

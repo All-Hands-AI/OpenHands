@@ -229,6 +229,7 @@ class RuntimeClient:
         self.shell = pexpect.spawn(
             f'su {username}',
             encoding='utf-8',
+            codec_errors='replace',
             echo=False,
         )
         self.__bash_PS1 = (
@@ -296,7 +297,8 @@ class RuntimeClient:
         self.pwd = os.path.expanduser(working_dir)
 
         # re-assemble the prompt
-        prompt = f'{other_info.strip()}\n{username}@{hostname}:{working_dir} '
+        # ignore the hostname AND use 'openhands-workspace'
+        prompt = f'{other_info.strip()}\n{username}@openhands-workspace:{working_dir} '
         if username == 'root':
             prompt += '#'
         else:
@@ -322,12 +324,11 @@ class RuntimeClient:
         interrupt_timeout: int | None = None,
         max_retries: int = 2,
     ) -> tuple[str, int]:
-        self.shell.sendintr()  # send SIGINT to the shell
-        logger.debug('Sent SIGINT to bash. Waiting for output...')
-
         interrupt_timeout = interrupt_timeout or 1  # default timeout for SIGINT
         # try to interrupt the bash shell use SIGINT
         while max_retries > 0:
+            self.shell.sendintr()  # send SIGINT to the shell
+            logger.debug('Sent SIGINT to bash. Waiting for output...')
             try:
                 self.shell.expect(self.__bash_expect_regex, timeout=interrupt_timeout)
                 output = self.shell.before
@@ -466,6 +467,7 @@ class RuntimeClient:
                 command_id=-1,
                 content=all_output.rstrip('\r\n'),
                 command=action.command,
+                hidden=action.hidden,
                 exit_code=exit_code,
             )
         except UnicodeDecodeError:
@@ -481,7 +483,9 @@ class RuntimeClient:
                 logger.debug(f'{self.pwd} != {jupyter_pwd} -> reset Jupyter PWD')
                 reset_jupyter_pwd_code = f'import os; os.chdir("{self.pwd}")'
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_pwd_code)
-                _reset_obs = await _jupyter_plugin.run(_aux_action)
+                _reset_obs: IPythonRunCellObservation = await _jupyter_plugin.run(
+                    _aux_action
+                )
                 logger.debug(
                     f'Changed working directory in IPython to: {self.pwd}. Output: {_reset_obs}'
                 )
@@ -501,7 +505,9 @@ class RuntimeClient:
         # NOTE: this is part of initialization, so we hard code the timeout
         result, exit_code = self._execute_bash('pwd', timeout=60, keep_prompt=False)
         if exit_code != 0:
-            raise RuntimeError('Failed to get working directory')
+            raise RuntimeError(
+                f'Failed to get working directory (exit code: {exit_code}): {result}'
+            )
         return result.strip()
 
     def _resolve_path(self, path: str, working_dir: str) -> str:

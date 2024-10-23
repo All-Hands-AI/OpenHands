@@ -1,7 +1,6 @@
 import os
 import tempfile
 import threading
-import uuid
 from typing import Callable
 from zipfile import ZipFile
 
@@ -18,13 +17,14 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    FileEditAction,
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
 )
 from openhands.events.action.action import Action
 from openhands.events.observation import (
-    ErrorObservation,
+    FatalErrorObservation,
     NullObservation,
     Observation,
     UserRejectObservation,
@@ -71,8 +71,7 @@ class LogBuffer:
             return logs
 
     def stream_logs(self):
-        """
-        Stream logs from the Docker container in a separate thread.
+        """Stream logs from the Docker container in a separate thread.
 
         This method runs in its own thread to handle the blocking
         operation of reading log lines from the Docker SDK's synchronous generator.
@@ -104,7 +103,6 @@ class LogBuffer:
 class EventStreamRuntime(Runtime):
     """This runtime will subscribe the event stream.
     When receive an event, it will send the event to runtime-client which run inside the docker environment.
-    From the sid also an instance_id is generated in combination with a UID.
 
     Args:
         config (AppConfig): The application configuration.
@@ -114,7 +112,29 @@ class EventStreamRuntime(Runtime):
         env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
     """
 
-    container_name_prefix = 'openhands-sandbox-'
+    container_name_prefix = 'openhands-runtime-'
+
+    # Need to provide this method to allow inheritors to init the Runtime
+    # without initting the EventStreamRuntime.
+    def init_base_runtime(
+        self,
+        config: AppConfig,
+        event_stream: EventStream,
+        sid: str = 'default',
+        plugins: list[PluginRequirement] | None = None,
+        env_vars: dict[str, str] | None = None,
+        status_message_callback: Callable | None = None,
+        attach_to_existing: bool = False,
+    ):
+        super().__init__(
+            config,
+            event_stream,
+            sid,
+            plugins,
+            env_vars,
+            status_message_callback,
+            attach_to_existing,
+        )
 
     def __init__(
         self,
@@ -124,27 +144,24 @@ class EventStreamRuntime(Runtime):
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_message_callback: Callable | None = None,
+        attach_to_existing: bool = False,
     ):
         self.config = config
         self._host_port = 30000  # initial dummy value
         self._container_port = 30001  # initial dummy value
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.session = requests.Session()
-        self.instance_id = (
-            sid + '_' + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
-        )
         self.status_message_callback = status_message_callback
 
         self.send_status_message('STATUS$STARTING_RUNTIME')
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
-        self.container_name = self.container_name_prefix + self.instance_id
+        self.container_name = self.container_name_prefix + sid
         self.container = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
         self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
-        logger.debug(f'EventStreamRuntime `{self.instance_id}`')
 
         # Buffer for container logs
         self.log_buffer: LogBuffer | None = None
@@ -167,25 +184,35 @@ class EventStreamRuntime(Runtime):
             self.runtime_container_image = build_runtime_image(
                 self.base_container_image,
                 self.runtime_builder,
+                platform=self.config.sandbox.platform,
                 extra_deps=self.config.sandbox.runtime_extra_deps,
                 force_rebuild=self.config.sandbox.force_rebuild_runtime,
             )
-        self.container = self._init_container(
-            sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,  # e.g. /workspace
-            mount_dir=self.config.workspace_mount_path,  # e.g. /opt/openhands/_test_workspace
-            plugins=plugins,
-        )
 
-        # will initialize both the event stream and the env vars
-        super().__init__(
-            config, event_stream, sid, plugins, env_vars, status_message_callback
+        if not attach_to_existing:
+            self._init_container(
+                sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,  # e.g. /workspace
+                mount_dir=self.config.workspace_mount_path,  # e.g. /opt/openhands/_test_workspace
+                plugins=plugins,
+            )
+        else:
+            self._attach_to_container()
+
+        # Will initialize both the event stream and the env vars
+        self.init_base_runtime(
+            config,
+            event_stream,
+            sid,
+            plugins,
+            env_vars,
+            status_message_callback,
+            attach_to_existing,
         )
 
         logger.info('Waiting for client to become ready...')
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
 
         self._wait_until_alive()
-
         self.setup_initial_env()
 
         logger.info(
@@ -272,7 +299,7 @@ class EventStreamRuntime(Runtime):
             else:
                 browsergym_arg = ''
 
-            container = self.docker_client.containers.run(
+            self.container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=(
                     f'/openhands/micromamba/bin/micromamba run -n openhands '
@@ -292,17 +319,30 @@ class EventStreamRuntime(Runtime):
                 environment=environment,
                 volumes=volumes,
             )
-            self.log_buffer = LogBuffer(container)
+            self.log_buffer = LogBuffer(self.container)
             logger.info(f'Container started. Server url: {self.api_url}')
             self.send_status_message('STATUS$CONTAINER_STARTED')
-            return container
         except Exception as e:
             logger.error(
-                f'Error: Instance {self.instance_id} FAILED to start container!\n'
+                f'Error: Instance {self.container_name} FAILED to start container!\n'
             )
             logger.exception(e)
             self.close(close_client=False)
             raise e
+
+    def _attach_to_container(self):
+        container = self.docker_client.containers.get(self.container_name)
+        self.log_buffer = LogBuffer(container)
+        self.container = container
+        self._container_port = 0
+        for port in container.attrs['NetworkSettings']['Ports']:
+            self._container_port = int(port.split('/')[0])
+            break
+        self._host_port = self._container_port
+        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
+        logger.info(
+            f'attached to container: {self.container_name} {self._container_port} {self.api_url}'
+        )
 
     def _refresh_logs(self):
         logger.debug('Getting container logs...')
@@ -390,6 +430,9 @@ class EventStreamRuntime(Runtime):
             self.docker_client.close()
 
     def run_action(self, action: Action) -> Observation:
+        if isinstance(action, FileEditAction):
+            return self.edit(action)
+
         # set timeout to default if not set
         if action.timeout is None:
             action.timeout = self.config.sandbox.timeout
@@ -405,9 +448,9 @@ class EventStreamRuntime(Runtime):
                 return NullObservation('')
             action_type = action.action  # type: ignore[attr-defined]
             if action_type not in ACTION_TYPE_TO_CLASS:
-                return ErrorObservation(f'Action {action_type} does not exist.')
+                return FatalErrorObservation(f'Action {action_type} does not exist.')
             if not hasattr(self, action_type):
-                return ErrorObservation(
+                return FatalErrorObservation(
                     f'Action {action_type} is not supported in the current runtime.'
                 )
             if (
@@ -439,15 +482,17 @@ class EventStreamRuntime(Runtime):
                     logger.debug(f'response: {response}')
                     error_message = response.text
                     logger.error(f'Error from server: {error_message}')
-                    obs = ErrorObservation(f'Action execution failed: {error_message}')
+                    obs = FatalErrorObservation(
+                        f'Action execution failed: {error_message}'
+                    )
             except requests.Timeout:
                 logger.error('No response received within the timeout period.')
-                obs = ErrorObservation(
+                obs = FatalErrorObservation(
                     f'Action execution timed out after {action.timeout} seconds.'
                 )
             except Exception as e:
                 logger.error(f'Error during action execution: {e}')
-                obs = ErrorObservation(f'Action execution failed: {str(e)}')
+                obs = FatalErrorObservation(f'Action execution failed: {str(e)}')
             self._refresh_logs()
             return obs
 

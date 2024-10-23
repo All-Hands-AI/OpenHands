@@ -1,4 +1,5 @@
 import ast
+import re
 
 from openhands.controller.action_parser import ActionParser, ResponseParser
 from openhands.core.logger import openhands_logger as logger
@@ -24,8 +25,13 @@ class BrowsingResponseParser(ResponseParser):
         if action_str is None:
             return ''
         action_str = action_str.strip()
-        if action_str and not action_str.endswith('```'):
-            action_str = action_str + ')```'
+        # Ensure action_str ends with ')```'
+        if action_str:
+            if not action_str.endswith('```'):
+                if action_str.endswith(')'):
+                    action_str += '```'  # prevent duplicate ending paranthesis, e.g. send_msg_to_user('Done'))
+                else:
+                    action_str += ')```'  # expected format
         logger.debug(action_str)
         return action_str
 
@@ -96,9 +102,19 @@ class BrowsingActionParserBrowseInteractive(ActionParser):
         msg_content = ''
         for sub_action in browser_actions.split('\n'):
             if 'send_msg_to_user(' in sub_action:
-                tree = ast.parse(sub_action)
-                args = tree.body[0].value.args  # type: ignore
-                msg_content = args[0].value
+                try:
+                    tree = ast.parse(sub_action)
+                    args = tree.body[0].value.args  # type: ignore
+                    msg_content = args[0].value
+                except SyntaxError:
+                    logger.error(f'Error parsing action: {sub_action}')
+                    # the syntax was not correct, but we can still try to get the message
+                    # e.g. send_msg_to_user("Hello, world!") or send_msg_to_user('Hello, world!'
+                    match = re.search(r'send_msg_to_user\((["\'])(.*?)\1\)', sub_action)
+                    if match:
+                        msg_content = match.group(2)
+                    else:
+                        msg_content = ''
 
         return BrowseInteractiveAction(
             browser_actions=browser_actions,

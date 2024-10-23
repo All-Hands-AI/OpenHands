@@ -10,12 +10,12 @@ from openhands.events.action.empty import NullAction
 from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.observation.agent import AgentStateChangedObservation
-from openhands.events.observation.commands import CmdOutputObservation
 from openhands.events.observation.delegate import AgentDelegateObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import event_to_dict
 from openhands.events.stream import EventStream
+from openhands.events.utils import get_pairs_from_events
 
 
 class ShortTermHistory(list[Event]):
@@ -49,7 +49,10 @@ class ShortTermHistory(list[Event]):
         return list(self.get_events(include_delegates=include_delegates))
 
     def get_events(
-        self, reverse: bool = False, include_delegates: bool = False
+        self,
+        reverse: bool = False,
+        include_delegates: bool = False,
+        include_hidden=False,
     ) -> Iterable[Event]:
         """Return the events as a stream of Event objects."""
         # TODO handle AgentRejectAction, if it's not part of a chunk ending with an AgentDelegateObservation
@@ -69,6 +72,8 @@ class ShortTermHistory(list[Event]):
             reverse=reverse,
             filter_out_type=self.filter_out,
         ):
+            if not include_hidden and hasattr(event, 'hidden') and event.hidden:
+                continue
             # TODO add summaries
             # and filter out events that were included in a summary
 
@@ -211,55 +216,9 @@ class ShortTermHistory(list[Event]):
     def compatibility_for_eval_history_pairs(self) -> list[tuple[dict, dict]]:
         history_pairs = []
 
-        for action, observation in self.get_pairs():
+        for action, observation in get_pairs_from_events(
+            self.get_events_as_list(include_delegates=True)
+        ):
             history_pairs.append((event_to_dict(action), event_to_dict(observation)))
 
         return history_pairs
-
-    def get_pairs(self) -> list[tuple[Action, Observation]]:
-        """Return the history as a list of tuples (action, observation)."""
-        tuples: list[tuple[Action, Observation]] = []
-        action_map: dict[int, Action] = {}
-        observation_map: dict[int, Observation] = {}
-
-        # runnable actions are set as cause of observations
-        # (MessageAction, NullObservation) for source=USER
-        # (MessageAction, NullObservation) for source=AGENT
-        # (other_action?, NullObservation)
-        # (NullAction, CmdOutputObservation) background CmdOutputObservations
-
-        for event in self.get_events_as_list(include_delegates=True):
-            if event.id is None or event.id == -1:
-                logger.debug(f'Event {event} has no ID')
-
-            if isinstance(event, Action):
-                action_map[event.id] = event
-
-            if isinstance(event, Observation):
-                if event.cause is None or event.cause == -1:
-                    logger.debug(f'Observation {event} has no cause')
-
-                if event.cause is None:
-                    # runnable actions are set as cause of observations
-                    # NullObservations have no cause
-                    continue
-
-                observation_map[event.cause] = event
-
-        for action_id, action in action_map.items():
-            observation = observation_map.get(action_id)
-            if observation:
-                # observation with a cause
-                tuples.append((action, observation))
-            else:
-                tuples.append((action, NullObservation('')))
-
-        for cause_id, observation in observation_map.items():
-            if cause_id not in action_map:
-                if isinstance(observation, NullObservation):
-                    continue
-                if not isinstance(observation, CmdOutputObservation):
-                    logger.debug(f'Observation {observation} has no cause')
-                tuples.append((NullAction(), observation))
-
-        return tuples.copy()

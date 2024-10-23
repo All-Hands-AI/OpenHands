@@ -23,7 +23,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
         self.session = requests.Session()
         self.session.headers.update({'X-API-Key': self.api_key})
 
-    def build(self, path: str, tags: list[str]) -> str:
+    def build(self, path: str, tags: list[str], platform: str | None = None) -> str:
         """Builds a Docker image using the Runtime API's /build endpoint."""
         # Create a tar archive of the build context
         tar_buffer = io.BytesIO()
@@ -98,7 +98,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
                 'EXPIRED',
             ]:
                 error_message = status_data.get(
-                    'error', f'Build failed with status: {status}'
+                    'error', f'Build failed with status: {status}. Build ID: {build_id}'
                 )
                 logger.error(error_message)
                 raise RuntimeError(error_message)

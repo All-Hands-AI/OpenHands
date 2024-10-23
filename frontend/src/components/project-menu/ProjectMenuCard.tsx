@@ -1,5 +1,6 @@
 import React from "react";
 import { useDispatch } from "react-redux";
+import toast from "react-hot-toast";
 import EllipsisH from "#/assets/ellipsis-h.svg?react";
 import { ModalBackdrop } from "../modals/modal-backdrop";
 import { ConnectToGitHubModal } from "../modals/connect-to-github-modal";
@@ -37,8 +38,12 @@ export function ProjectMenuCard({
 
   const handlePushToGitHub = () => {
     const rawEvent = {
-      content:
-        "Please create a new branch and commit the changes. Then push them to the remote repository, and open up a pull request using the GitHub API and the token in the GITHUB_TOKEN environment variable",
+      content: `
+Let's push the code to GitHub.
+If we're currently on the openhands-workspace branch, please create a new branch with a descriptive name.
+Commit any changes and push them to the remote repository.
+Finally, open up a pull request using the GitHub API and the token in the GITHUB_TOKEN environment variable, then show me the URL of the pull request.
+`,
       imageUrls: [],
       timestamp: new Date().toISOString(),
     };
@@ -60,7 +65,13 @@ export function ProjectMenuCard({
           isConnectedToGitHub={isConnectedToGitHub}
           onConnectToGitHub={() => setConnectToGitHubModalOpen(true)}
           onPushToGitHub={handlePushToGitHub}
-          onDownloadWorkspace={downloadWorkspace}
+          onDownloadWorkspace={() => {
+            try {
+              downloadWorkspace();
+            } catch (error) {
+              toast.error("Failed to download workspace");
+            }
+          }}
           onClose={() => setContextMenuIsOpen(false)}
         />
       )}

@@ -28,7 +28,8 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.plugins import JupyterRequirement, PluginRequirement
-from openhands.utils.async_utils import sync_from_async
+from openhands.runtime.utils.edit import FileEditRuntimeMixin
+from openhands.utils.async_utils import call_sync_from_async
 
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
@@ -42,7 +43,7 @@ def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
     return ret
 
 
-class Runtime:
+class Runtime(FileEditRuntimeMixin):
     """The runtime is how the agent interacts with the external environment.
     This includes a bash sandbox, a browser, and filesystem interactions.
 
@@ -52,6 +53,7 @@ class Runtime:
     sid: str
     config: AppConfig
     initial_env_vars: dict[str, str]
+    attach_to_existing: bool
 
     def __init__(
         self,
@@ -61,12 +63,14 @@ class Runtime:
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_message_callback: Callable | None = None,
+        attach_to_existing: bool = False,
     ):
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
         self.plugins = plugins if plugins is not None and len(plugins) > 0 else []
         self.status_message_callback = status_message_callback
+        self.attach_to_existing = attach_to_existing
 
         self.config = copy.deepcopy(config)
         atexit.register(self.close)
@@ -75,7 +79,12 @@ class Runtime:
         if env_vars is not None:
             self.initial_env_vars.update(env_vars)
 
+        # Load mixins
+        FileEditRuntimeMixin.__init__(self)
+
     def setup_initial_env(self) -> None:
+        if self.attach_to_existing:
+            return
         logger.debug(f'Adding env vars: {self.initial_env_vars}')
         self.add_env_vars(self.initial_env_vars)
         if self.config.sandbox.runtime_startup_env_vars:
@@ -118,7 +127,7 @@ class Runtime:
             if event.timeout is None:
                 event.timeout = self.config.sandbox.timeout
             assert event.timeout is not None
-            observation = await sync_from_async(self.run_action, event)
+            observation = await call_sync_from_async(self.run_action, event)
             observation._cause = event.id  # type: ignore[attr-defined]
             source = event.source if event.source else EventSource.AGENT
             await self.event_stream.async_add_event(observation, source)  # type: ignore[arg-type]
