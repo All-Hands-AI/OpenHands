@@ -28,7 +28,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import AgentFinishAction, CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
 
 DATASET_CACHE_DIR = os.path.join(os.path.dirname(__file__), 'data')
 

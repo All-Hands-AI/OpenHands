@@ -1,4 +1,4 @@
-"""Browsing-related tests for the EventStreamRuntime, which connects to the RuntimeClient running in the sandbox."""
+"""Browsing-related tests for the EventStreamRuntime, which connects to the ActionExecutor running in the sandbox."""
 
 import json
 

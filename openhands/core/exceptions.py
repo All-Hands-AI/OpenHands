@@ -52,7 +52,11 @@ class BrowserUnavailableException(Exception):
 # It might be malformed JSON
 class LLMMalformedActionError(Exception):
     def __init__(self, message='Malformed response'):
+        self.message = message
         super().__init__(message)
+
+    def __str__(self):
+        return self.message
 
 
 # This exception gets sent back to the LLM
@@ -84,3 +88,9 @@ class OperationCancelled(Exception):
 
     def __init__(self, message='Operation was cancelled'):
         super().__init__(message)
+
+
+class CloudFlareBlockageError(Exception):
+    """Exception raised when a request is blocked by CloudFlare."""
+
+    pass

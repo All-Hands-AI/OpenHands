@@ -41,7 +41,6 @@ COMMAND="poetry run python ./evaluation/gaia/run_infer.py \
   --max-iterations 30 \
   --level $LEVELS \
   --data-split validation \
-  --max-chars 10000000 \
   --eval-num-workers $NUM_WORKERS \
   --eval-note ${AGENT_VERSION}_${LEVELS}"
 

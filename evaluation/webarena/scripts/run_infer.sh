@@ -39,7 +39,6 @@ COMMAND="poetry run python evaluation/webarena/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 15 \
-  --max-chars 10000000 \
   --eval-num-workers $NUM_WORKERS \
   --eval-note $EVAL_NOTE"
 

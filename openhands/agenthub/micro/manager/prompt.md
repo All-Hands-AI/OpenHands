@@ -1,6 +1,7 @@
 # Task
 You are in charge of accomplishing the following task:
-{{ latest_user_message }}
+{% set goal = latest_user_message if latest_user_message is not none else state.inputs.task %}
+{{ goal }}
 
 In order to accomplish this goal, you must delegate tasks to one or more agents, who
 can do the actual work. A description of each agent is provided below. You MUST

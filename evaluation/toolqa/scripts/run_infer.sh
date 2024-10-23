@@ -55,7 +55,6 @@ COMMAND="poetry run python evaluation/toolqa/run_infer.py \
   --hardness $HARDNESS \
   --wolfram_alpha_appid $WOLFRAM_APPID\
   --data-split validation \
-  --max-chars 10000000 \
   --eval-num-workers $NUM_WORKERS \
   --eval-note ${AGENT_VERSION}_${LEVELS}"
 

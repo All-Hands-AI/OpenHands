@@ -39,7 +39,6 @@ COMMAND="poetry run python evaluation/logic_reasoning/run_infer.py \
   --llm-config $MODEL_CONFIG \
   --dataset $DATASET \
   --max-iterations 10 \
-  --max-chars 10000000 \
   --eval-num-workers $NUM_WORKERS \
   --eval-note $AGENT_VERSION"
 

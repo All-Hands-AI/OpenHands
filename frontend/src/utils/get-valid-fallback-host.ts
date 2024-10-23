@@ -11,8 +11,7 @@
  */
 export const getValidFallbackHost = () => {
   if (typeof window !== "undefined") {
-    const { hostname, host } = window.location;
-    if (hostname !== "localhost") return host;
+    return window.location.host;
   }
 
   // Fallback is localhost:3000 because that is the default port for the server

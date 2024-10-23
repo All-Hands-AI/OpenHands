@@ -477,15 +477,25 @@ def test_api_keys_repr_str():
         agents={'agent': agent_config},
         e2b_api_key='my_e2b_api_key',
         jwt_secret='my_jwt_secret',
+        modal_api_token_id='my_modal_api_token_id',
+        modal_api_token_secret='my_modal_api_token_secret',
     )
     assert "e2b_api_key='******'" in repr(app_config)
     assert "e2b_api_key='******'" in str(app_config)
     assert "jwt_secret='******'" in repr(app_config)
     assert "jwt_secret='******'" in str(app_config)
+    assert "modal_api_token_id='******'" in repr(app_config)
+    assert "modal_api_token_id='******'" in str(app_config)
+    assert "modal_api_token_secret='******'" in repr(app_config)
+    assert "modal_api_token_secret='******'" in str(app_config)
 
     # Check that no other attrs in AppConfig have 'key' or 'token' in their name
     # This will fail when new attrs are added, and attract attention
-    known_key_token_attrs_app = ['e2b_api_key']
+    known_key_token_attrs_app = [
+        'e2b_api_key',
+        'modal_api_token_id',
+        'modal_api_token_secret',
+    ]
     for attr_name in dir(AppConfig):
         if (
             not attr_name.startswith('__')

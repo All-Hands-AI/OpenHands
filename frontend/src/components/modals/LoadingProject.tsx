@@ -11,7 +11,7 @@ export function LoadingSpinner({ size }: LoadingSpinnerProps) {
     size === "small" ? "w-[25px] h-[25px]" : "w-[50px] h-[50px]";
 
   return (
-    <div className={cn("relative", sizeStyle)}>
+    <div data-testid="loading-spinner" className={cn("relative", sizeStyle)}>
       <div
         className={cn(
           "rounded-full border-4 border-[#525252] absolute",

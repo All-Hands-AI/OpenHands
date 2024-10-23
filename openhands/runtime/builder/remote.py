@@ -7,7 +7,7 @@ import requests
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import RuntimeBuilder
-from openhands.runtime.utils.request import send_request_with_retry
+from openhands.runtime.utils.request import is_429_error, send_request_with_retry
 from openhands.runtime.utils.shutdown_listener import (
     should_continue,
     sleep_if_should_continue,
@@ -23,7 +23,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
         self.session = requests.Session()
         self.session.headers.update({'X-API-Key': self.api_key})
 
-    def build(self, path: str, tags: list[str]) -> str:
+    def build(self, path: str, tags: list[str], platform: str | None = None) -> str:
         """Builds a Docker image using the Runtime API's /build endpoint."""
         # Create a tar archive of the build context
         tar_buffer = io.BytesIO()
@@ -51,6 +51,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
             f'{self.api_url}/build',
             files=files,
             timeout=30,
+            retry_fns=[is_429_error],
         )
 
         if response.status_code != 202:
@@ -98,7 +99,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
                 'EXPIRED',
             ]:
                 error_message = status_data.get(
-                    'error', f'Build failed with status: {status}'
+                    'error', f'Build failed with status: {status}. Build ID: {build_id}'
                 )
                 logger.error(error_message)
                 raise RuntimeError(error_message)

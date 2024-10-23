@@ -30,7 +30,6 @@ COMMAND="export PYTHONPATH=evaluation/agent_bench:\$PYTHONPATH && poetry run pyt
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 30 \
-  --max-chars 10000000 \
   --eval-num-workers $NUM_WORKERS \
   --eval-note $AGENT_VERSION"
 

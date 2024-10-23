@@ -39,7 +39,6 @@ COMMAND="poetry run python evaluation/gorilla/run_infer.py \
   --max-iterations 30 \
   --hubs $HUBS \
   --data-split validation \
-  --max-chars 10000000 \
   --eval-num-workers $NUM_WORKERS \
   --eval-note ${AGENT_VERSION}_${LEVELS}"
 

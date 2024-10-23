@@ -92,6 +92,8 @@ class SensitiveDataFilter(logging.Filter):
             'e2b_api_key',
             'github_token',
             'jwt_secret',
+            'modal_api_token_id',
+            'modal_api_token_secret',
         ]
 
         # add env var names
@@ -117,11 +119,14 @@ class SensitiveDataFilter(logging.Filter):
         return True
 
 
-def get_console_handler(log_level=logging.INFO):
+def get_console_handler(log_level=logging.INFO, extra_info: str | None = None):
     """Returns a console handler for logging."""
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level)
-    console_handler.setFormatter(console_formatter)
+    formatter_str = '%(asctime)s - %(levelname)s - %(message)s'
+    if extra_info:
+        formatter_str = f'{extra_info} - ' + formatter_str
+    console_handler.setFormatter(logging.Formatter(formatter_str))
     return console_handler
 
 

@@ -178,7 +178,6 @@ evaluation/toolqa/data
 # frontend
 
 # dependencies
-frontend/node_modules
 frontend/.pnp
 frontend/bun.lockb
 frontend/yarn.lock
@@ -228,3 +227,4 @@ runtime_*.tar
 containers/runtime/Dockerfile
 containers/runtime/project.tar.gz
 containers/runtime/code
+**/node_modules/

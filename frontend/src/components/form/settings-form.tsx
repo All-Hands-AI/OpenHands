@@ -4,16 +4,16 @@ import {
   Input,
   Switch,
 } from "@nextui-org/react";
-import React from "react";
-import clsx from "clsx";
 import { useFetcher, useLocation, useNavigate } from "@remix-run/react";
-import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
-import { ModelSelector } from "#/components/modals/settings/ModelSelector";
-import { Settings } from "#/services/settings";
+import clsx from "clsx";
+import React from "react";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
-import ModalButton from "../buttons/ModalButton";
+import { ModelSelector } from "#/components/modals/settings/ModelSelector";
 import { clientAction } from "#/routes/settings";
+import { Settings } from "#/services/settings";
 import { extractModelAndProvider } from "#/utils/extractModelAndProvider";
+import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
+import ModalButton from "../buttons/ModalButton";
 import { DangerModal } from "../modals/confirmation-modals/danger-modal";
 
 interface SettingsFormProps {
@@ -44,9 +44,8 @@ export function SettingsForm({
       navigate("/");
       onClose();
     }
-  }, [fetcher.data]);
+  }, [fetcher.data, navigate, onClose]);
 
-  // Figure out if the advanced options should be enabled by default
   const advancedAlreadyInUse = React.useMemo(() => {
     if (models.length > 0) {
       const organizedModels = organizeModelsAndProviders(models);
@@ -79,6 +78,7 @@ export function SettingsForm({
     React.useState(false);
   const [confirmEndSessionModalOpen, setConfirmEndSessionModalOpen] =
     React.useState(false);
+  const [showWarningModal, setShowWarningModal] = React.useState(false);
 
   const submitForm = (formData: FormData) => {
     if (location.pathname === "/app") formData.set("end-session", "true");
@@ -98,13 +98,39 @@ export function SettingsForm({
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const apiKey = formData.get("api-key");
 
-    if (location.pathname === "/app") {
+    if (!apiKey) {
+      setShowWarningModal(true);
+    } else if (location.pathname === "/app") {
       setConfirmEndSessionModalOpen(true);
     } else {
-      const formData = new FormData(event.currentTarget);
       submitForm(formData);
     }
+  };
+
+  const handleCloseClick = () => {
+    const formData = new FormData(formRef.current ?? undefined);
+    const apiKey = formData.get("api-key");
+
+    if (!apiKey) {
+      setShowWarningModal(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleWarningConfirm = () => {
+    setShowWarningModal(false);
+    const formData = new FormData(formRef.current ?? undefined);
+    formData.set("api-key", ""); // Set null value for API key
+    submitForm(formData);
+    onClose();
+  };
+
+  const handleWarningCancel = () => {
+    setShowWarningModal(false);
   };
 
   return (
@@ -125,7 +151,7 @@ export function SettingsForm({
             onValueChange={setShowAdvancedOptions}
             classNames={{
               thumb: clsx(
-                "bg-[#5D5D5D] w-3 h-3",
+                "bg-[#5D5D5D] w-3 h-3 z-0",
                 "group-data-[selected=true]:bg-white",
               ),
               wrapper: clsx(
@@ -325,7 +351,7 @@ export function SettingsForm({
             <ModalButton
               text="Close"
               className="bg-[#737373] w-full"
-              onClick={onClose}
+              onClick={handleCloseClick}
             />
           </div>
           <ModalButton
@@ -368,6 +394,24 @@ export function SettingsForm({
               cancel: {
                 text: "Cancel",
                 onClick: () => setConfirmEndSessionModalOpen(false),
+              },
+            }}
+          />
+        </ModalBackdrop>
+      )}
+      {showWarningModal && (
+        <ModalBackdrop>
+          <DangerModal
+            title="Are you sure?"
+            description="You haven't set an API key. Without an API key, you won't be able to use the AI features. Are you sure you want to close the settings?"
+            buttons={{
+              danger: {
+                text: "Yes, close settings",
+                onClick: handleWarningConfirm,
+              },
+              cancel: {
+                text: "Cancel",
+                onClick: handleWarningCancel,
               },
             }}
           />
