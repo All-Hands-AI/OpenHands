@@ -1,14 +1,25 @@
 import React from "react";
-import { Form, useFetcher, useNavigation } from "@remix-run/react";
+import { Form, useNavigation } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import Send from "#/assets/send.svg?react";
 import Clip from "#/assets/clip.svg?react";
 import { cn } from "#/utils/utils";
 import { RootState } from "#/store";
-import { addFile } from "#/state/initial-query-slice";
+import { addFile, setImportedProjectZip } from "#/state/initial-query-slice";
 import { SuggestionBubble } from "#/components/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
+
+const convertZipToBase64 = async (file: File) => {
+  const reader = new FileReader();
+
+  return new Promise<string>((resolve) => {
+    reader.onload = () => {
+      resolve(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  });
+};
 
 interface MainTextareaInputProps {
   disabled: boolean;
@@ -88,7 +99,6 @@ interface TaskFormProps {
 export function TaskForm({ importedProjectZip, textareaRef }: TaskFormProps) {
   const dispatch = useDispatch();
   const navigation = useNavigation();
-  const fetcher = useFetcher();
 
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initalQuery,
@@ -134,16 +144,12 @@ export function TaskForm({ importedProjectZip, textareaRef }: TaskFormProps) {
     setText(e.target.value);
   };
 
-  const handleSubmitForm = () => {
-    // This is submitted on top of the form submission
-    const formData = new FormData();
+  const handleSubmitForm = async () => {
+    // This is handled on top of the form submission
     if (importedProjectZip) {
-      formData.append("imported-project", importedProjectZip);
-      fetcher.submit(formData, {
-        method: "POST",
-        action: "/upload-initial-files",
-        encType: "multipart/form-data",
-      });
+      dispatch(
+        setImportedProjectZip(await convertZipToBase64(importedProjectZip)),
+      );
     }
   };
 
