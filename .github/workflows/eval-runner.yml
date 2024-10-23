@@ -119,11 +119,11 @@ jobs:
           unique: false
           comment: |
               Trigger by: ${{ github.event_name == 'pull_request' && format('Pull Request (eval-this label on PR #{0})', github.event.pull_request.number) || github.event_name == 'schedule' && 'Daily Schedule' || format('Manual Trigger: {0}', github.event.inputs.reason) }}
-              **Integration Tests Evaluation Report**
-              ${{ env.INTEGRATION_TEST_REPORT }}
-              ---
               **SWE-Bench Evaluation Report**
               ${{ env.SWEBENCH_REPORT }}
+              ---
+              **Integration Tests Evaluation Report**
+              ${{ env.INTEGRATION_TEST_REPORT }}
               ---
               You can download the full evaluation outputs [here](${{ env.ARTIFACT_URL }}).
 
