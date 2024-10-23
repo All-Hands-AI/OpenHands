@@ -480,7 +480,7 @@ class ActionExecutor:
                 command=action.command,
                 hidden=action.hidden,
                 exit_code=exit_code,
-                meta=python_interpreter,
+                interpreter_details=python_interpreter,
             )
         except UnicodeDecodeError:
             raise RuntimeError('Command output could not be decoded as utf-8')

@@ -13,7 +13,7 @@ class CmdOutputObservation(Observation):
     exit_code: int = 0
     hidden: bool = False
     observation: str = ObservationType.RUN
-    meta: str = ''
+    interpreter_details: str = ''
 
     @property
     def error(self) -> bool:
