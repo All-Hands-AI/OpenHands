@@ -95,7 +95,9 @@ class CodeActAgent(Agent):
         if self.config.function_calling:
             # Function calling mode
             self.tools = codeact_function_calling.get_tools(
-                include_browsing_delegate=self.config.codeact_include_browsing_delegate
+                codeact_enable_browsing_delegate=self.config.codeact_enable_browsing_delegate,
+                codeact_enable_jupyter=self.config.codeact_enable_jupyter,
+                codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
             )
             logger.info(
                 f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'

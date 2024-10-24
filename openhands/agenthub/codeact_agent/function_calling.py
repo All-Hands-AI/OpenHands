@@ -349,16 +349,16 @@ def response_to_action(response: ModelResponse) -> Action:
 
 
 def get_tools(
-    include_browsing_delegate: bool = False,
-    codeact_use_llm_editor: bool = False,
+    codeact_enable_browsing_delegate: bool = False,
+    codeact_enable_llm_editor: bool = False,
     codeact_enable_jupyter: bool = False,
 ) -> list[ChatCompletionToolParam]:
     tools = [CmdRunTool, FinishTool]
-    if include_browsing_delegate:
+    if codeact_enable_browsing_delegate:
         tools.append(BrowserDelegationTool)
     if codeact_enable_jupyter:
         tools.append(IPythonTool)
-    if codeact_use_llm_editor:
+    if codeact_enable_llm_editor:
         tools.append(LLMBasedFileEditTool)
     else:
         tools.append(StrReplaceEditorTool)
