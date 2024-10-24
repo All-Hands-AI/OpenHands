@@ -108,7 +108,7 @@ def event_to_memory(event: 'Event', max_message_chars: int) -> dict:
     if 'args' in d:
         d['args'].pop('blocking', None)
         d['args'].pop('keep_prompt', None)
-        d['args'].pop('is_confirmed', None)
+        d['args'].pop('confirmation_state', None)
 
     if 'extras' in d:
         remove_fields(d['extras'], DELETE_FROM_MEMORY_EXTRAS)
