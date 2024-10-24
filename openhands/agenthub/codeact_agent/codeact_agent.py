@@ -95,6 +95,7 @@ class CodeActAgent(Agent):
             self.tools = codeact_function_calling.get_tools(
                 include_browsing_delegate=self.config.codeact_include_browsing_delegate
             )
+            self.system_prompt = codeact_function_calling.SYSTEM_PROMPT
         else:
             # Non-function-calling mode
             self.action_parser = CodeActResponseParser()
