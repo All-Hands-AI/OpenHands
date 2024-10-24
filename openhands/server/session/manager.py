@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import Optional
+from typing import Dict, Optional
 
 from fastapi import WebSocket
 
@@ -18,10 +18,12 @@ class SessionManager:
     cleanup_interval: int = 300
     session_timeout: int = 600
     _session_cleanup_task: Optional[asyncio.Task] = None
+    _conversations: Dict[str, Conversation]
 
     def __init__(self, config: AppConfig, file_store: FileStore):
         self.config = config
         self.file_store = file_store
+        self._conversations = {}
 
     async def __aenter__(self):
         if not self._session_cleanup_task:
@@ -49,7 +51,12 @@ class SessionManager:
     def attach_to_conversation(self, sid: str) -> Conversation | None:
         if not session_exists(sid, self.file_store):
             return None
-        return Conversation(sid, file_store=self.file_store, config=self.config)
+        conversation = self._conversations.get(sid)
+        if not conversation:
+            self._conversations[sid] = conversation = Conversation(
+                sid, file_store=self.file_store, config=self.config
+            )
+        return conversation
 
     async def send(self, sid: str, data: dict[str, object]) -> bool:
         """Sends data to the client."""
