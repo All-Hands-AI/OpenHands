@@ -1,0 +1,25 @@
+# Main template settings
+template:
+  base: "system_prompt.j2"  # Path to the base template file
+
+# Optional custom blocks to override or extend the base template
+# If null, the default from system_prompt.j2 is used
+custom_blocks:
+  system_prefix: null
+  execute_python: null
+  execute_bash: null
+  execute_browse: null
+  pip_install: null
+  agent_skills: null
+  general_rules: null
+
+# Agent-specific variables (can be accessed within templates)
+agent_variables:
+  use_tools: false  # whether to use tool-based implementations
+  #tools:  # list of available tools
+  #  - name: "EditTool"
+  #    description: "Edits a file."
+  #    usage: "Use the following format: <file_edit> [file_path] [new_file_content] </file_edit>"
+  # agent skills
+  agent_skills:
+    docs_file: "agent_skills.md"
