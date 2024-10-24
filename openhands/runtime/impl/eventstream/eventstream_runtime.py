@@ -1,6 +1,7 @@
 import os
 import tempfile
 import threading
+import traceback
 from typing import Callable
 from zipfile import ZipFile
 
@@ -492,7 +493,9 @@ class EventStreamRuntime(Runtime):
                 )
             except Exception as e:
                 logger.error(f'Error during action execution: {e}')
-                obs = FatalErrorObservation(f'Action execution failed: {str(e)}')
+                obs = FatalErrorObservation(
+                    f'Action execution failed: {str(e)}.\n{traceback.format_exc()}'
+                )
             self._refresh_logs()
             return obs
 
