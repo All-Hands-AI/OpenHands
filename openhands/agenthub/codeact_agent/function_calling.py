@@ -21,7 +21,6 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from openhands.runtime.plugins import AgentSkillsRequirement
 
 SYSTEM_PROMPT = """You are a helpful assistant that have the ability to interact with a computer to solve tasks."""
 
@@ -53,12 +52,12 @@ CmdRunTool = ChatCompletionToolParam(
     ),
 )
 
-_IPYTHON_DESCRIPTION = f"""Run a cell of Python code in an IPython environment.
+_IPYTHON_DESCRIPTION = """Run a cell of Python code in an IPython environment.
 * The assistant should define variables and import packages before using them.
 * The variable defined in the IPython environment will not be available outside the IPython environment (e.g., in terminal).
-* Apart from the standard Python library, the assistant can also use the following functions (already imported):
-{AgentSkillsRequirement.documentation}
 """
+# """* Apart from the standard Python library, the assistant can also use the following functions (already imported):
+# {AgentSkillsRequirement.documentation}"""
 
 IPythonTool = ChatCompletionToolParam(
     type='function',
