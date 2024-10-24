@@ -1,2 +1,12 @@
 {{ examples }}
+
+{% if micro_agent %}
+--- BEGIN OF GUIDELINE ---
+The following information may assist you in completing your task:
+
+{{ micro_agent }}
+--- END OF GUIDELINE ---
+{% endif %}
+
+
 NOW, LET'S START!

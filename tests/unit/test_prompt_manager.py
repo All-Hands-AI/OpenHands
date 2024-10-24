@@ -14,7 +14,7 @@ def prompt_dir(tmp_path):
     shutil.copytree('openhands/agenthub/codeact_agent', tmp_path, dirs_exist_ok=True)
 
     # Return the temporary directory path
-    return tmp_path
+    return str(tmp_path)  # Return string path
 
 
 SAMPLE_AGENT_SKILLS_DOCS = """Sample agent skills documentation"""
@@ -26,10 +26,10 @@ def agent_skills_docs():
 
 
 def test_prompt_manager_without_micro_agent(prompt_dir, agent_skills_docs):
-    manager = PromptManager(prompt_dir, agent_skills_docs)
+    manager = PromptManager(prompt_dir)
 
     assert manager.prompt_dir == prompt_dir
-    assert manager.agent_skills_docs == agent_skills_docs
+    # assert manager.agent_skills_docs == agent_skills_docs
     assert manager.micro_agent is None
 
     assert isinstance(manager.system_message, str)
@@ -37,7 +37,7 @@ def test_prompt_manager_without_micro_agent(prompt_dir, agent_skills_docs):
         "A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed answers to the user's questions."
         in manager.system_message
     )
-    assert SAMPLE_AGENT_SKILLS_DOCS in manager.system_message
+    # assert SAMPLE_AGENT_SKILLS_DOCS in manager.system_message
     assert isinstance(manager.initial_user_message, str)
     assert '--- BEGIN OF GUIDELINE ---' not in manager.initial_user_message
     assert '--- END OF GUIDELINE ---' not in manager.initial_user_message
@@ -64,12 +64,11 @@ def test_prompt_manager_with_micro_agent(prompt_dir, agent_skills_docs):
 
     manager = PromptManager(
         prompt_dir=prompt_dir,
-        agent_skills_docs=agent_skills_docs,
         micro_agent=mock_micro_agent,
     )
 
     assert manager.prompt_dir == prompt_dir
-    assert manager.agent_skills_docs == agent_skills_docs
+    # assert manager.agent_skills_docs == agent_skills_docs
     assert manager.micro_agent == mock_micro_agent
 
     assert isinstance(manager.system_message, str)
@@ -77,7 +76,7 @@ def test_prompt_manager_with_micro_agent(prompt_dir, agent_skills_docs):
         "A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed answers to the user's questions."
         in manager.system_message
     )
-    assert SAMPLE_AGENT_SKILLS_DOCS in manager.system_message
+    # assert SAMPLE_AGENT_SKILLS_DOCS in manager.system_message
 
     assert isinstance(manager.initial_user_message, str)
     assert (
@@ -106,11 +105,19 @@ def test_prompt_manager_template_rendering(prompt_dir, agent_skills_docs):
     with open(os.path.join(prompt_dir, 'user_prompt.j2'), 'w') as f:
         f.write('User prompt: {{ micro_agent }}')
 
-    manager = PromptManager(prompt_dir, agent_skills_docs)
+    manager = PromptManager(prompt_dir)
 
-    assert manager.system_message == f'System prompt: {agent_skills_docs}'
+    # assert manager.system_message == f'System prompt: {agent_skills_docs}'
     assert manager.initial_user_message == 'User prompt: None'
 
     # Clean up temporary files
     os.remove(os.path.join(prompt_dir, 'system_prompt.j2'))
     os.remove(os.path.join(prompt_dir, 'user_prompt.j2'))
+
+
+def test_prompt_manager_loads_agent_skill(prompt_dir):
+    manager = PromptManager(prompt_dir)
+    assert (
+        'open_file(path: str, line_number: int | None = 1, context_lines: int | None = 100) -> None'
+        in manager.system_message
+    )
