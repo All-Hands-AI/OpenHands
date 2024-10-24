@@ -22,7 +22,9 @@ from openhands.events.action import (
     MessageAction,
 )
 
-SYSTEM_PROMPT = """You are a helpful assistant that have the ability to interact with a computer to solve tasks."""
+SYSTEM_PROMPT = (
+    """You are a helpful assistant that can interact with a computer to solve tasks."""
+)
 
 _BASH_DESCRIPTION = """Execute a bash command in the terminal.
 * Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`.
