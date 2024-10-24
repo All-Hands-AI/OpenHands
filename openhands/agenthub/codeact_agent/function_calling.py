@@ -17,6 +17,7 @@ from openhands.events.action import (
     AgentDelegateAction,
     AgentFinishAction,
     CmdRunAction,
+    FileEditAction,
     IPythonRunCellAction,
     MessageAction,
 )
@@ -328,7 +329,17 @@ def response_to_action(response: ModelResponse) -> Action:
             ret = AgentDelegateAction(**json.loads(tool_call.function.arguments))
         elif tool_call.function.name == 'finish':
             ret = AgentFinishAction()
-        # FIXME: handle editing tools
+        elif tool_call.function.name == 'edit_file':
+            ret = FileEditAction(**json.loads(tool_call.function.arguments))
+        elif tool_call.function.name == 'str_replace_editor':
+            # We implement this in agent_skills, which can be used via Jupyter
+            # convert tool_call.function.arguments to kwargs that can be passed to file_editor
+            kwargs = json.loads(tool_call.function.arguments)
+            code = f'file_editor(**{kwargs})'
+            logger.debug(
+                f'TOOL CALL: str_replace_editor -> file_editor with code: {code}'
+            )
+            ret = IPythonRunCellAction(code=code, include_extra=False)
         else:
             raise RuntimeError(f'Unknown tool call: {tool_call.function.name}')
     else:
