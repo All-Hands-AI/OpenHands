@@ -11,6 +11,7 @@ from litellm import (
     ModelResponse,
 )
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -218,30 +219,6 @@ FileEditTool = ChatCompletionToolParam(
     ),
 )
 
-_MESSAGE_DESCRIPTION = """Send a message to the user.
-It is used for, but not limited to:
-* ask for clarification or provide additional information.
-* inform the user that the assistant have completed the task.
-"""
-
-MessageTool = ChatCompletionToolParam(
-    type='function',
-    function=ChatCompletionToolParamFunctionChunk(
-        name='message_user',
-        description=_MESSAGE_DESCRIPTION,
-        parameters={
-            'type': 'object',
-            'properties': {
-                'content': {
-                    'type': 'string',
-                    'description': 'The message content to send to the user. Ideally formatted in markdown.',
-                },
-            },
-            'required': ['message'],
-        },
-    ),
-)
-
 _BROWSER_DELEGATION = """Delegate the task to another browsing agent.
 The assistant should delegate the task if it needs to browse the Internet.
 """
@@ -297,7 +274,8 @@ def response_to_action(response: ModelResponse) -> Action:
         else:
             raise RuntimeError(f'Unknown tool call: {tool_call.function.name}')
     else:
-        raise RuntimeError(f'No tool call found in the response: {assistant_msg}')
+        logger.warning(f'No tool call found in the response: {assistant_msg}')
+        ret = MessageAction(content=assistant_msg.content)
 
     assert ret is not None
     ret.raw_llm_response = response
@@ -305,7 +283,7 @@ def response_to_action(response: ModelResponse) -> Action:
 
 
 def get_tools(include_browsing_delegate: bool = False) -> list[ChatCompletionToolParam]:
-    tools = [CmdRunTool, IPythonTool, FileEditTool, MessageTool, FinishTool]
+    tools = [CmdRunTool, IPythonTool, FileEditTool, FinishTool]
     if include_browsing_delegate:
         tools.append(BrowserDelegationTool)
     return tools
