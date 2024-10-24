@@ -421,7 +421,14 @@ jobs:
         run: |
           DOCKER_RUN_COMMAND="docker run -it --rm -p 3000:3000 -v \$(pwd):/workspace -w /workspace ghcr.io/all-hands-ai/runtime:$SHORT_SHA-nikolaik python3 -m openhands.runtime.app"
           PR_BODY=$(gh pr view $PR_NUMBER --json body --jq .body)
-          UPDATED_PR_BODY="${PR_BODY}
+          
+          # Check if the docker run command already exists in the PR description
+          if echo "$PR_BODY" | grep -q "To run this PR locally, use the following command:"; then
+            # Replace the existing command
+            UPDATED_PR_BODY=$(echo "$PR_BODY" | sed -E "s|To run this PR locally, use the following command:\n\`\`\`\n.*\n\`\`\`|To run this PR locally, use the following command:\n\`\`\`\n$DOCKER_RUN_COMMAND\n\`\`\`|")
+          else
+            # Add the new command
+            UPDATED_PR_BODY="${PR_BODY}
 
           ---
           
@@ -429,5 +436,7 @@ jobs:
           \`\`\`
           $DOCKER_RUN_COMMAND
           \`\`\`"
+          fi
+          
           gh pr edit $PR_NUMBER --body "$UPDATED_PR_BODY"
 
