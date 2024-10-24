@@ -51,12 +51,15 @@ function GitHubAuth({
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   let isSaas = false;
+  let githubClientId: string | null = null;
 
   try {
     const config = await OpenHands.getConfig();
     isSaas = config.APP_MODE === "saas";
+    githubClientId = config.GITHUB_CLIENT_ID;
   } catch (error) {
     isSaas = false;
+    githubClientId = null;
   }
 
   const token = localStorage.getItem("token");
@@ -73,10 +76,9 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
 
   let githubAuthUrl: string | null = null;
   if (isSaas) {
-    const clientId = window.__GITHUB_CLIENT_ID__;
     const requestUrl = new URL(request.url);
     const redirectUri = `${requestUrl.origin}/oauth/github/callback`;
-    githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user,workflow`;
+    githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${githubClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user`;
   }
 
   return json({ repositories, githubAuthUrl });
