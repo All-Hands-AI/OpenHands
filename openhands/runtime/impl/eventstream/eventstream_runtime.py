@@ -1,7 +1,6 @@
 import os
 import tempfile
 import threading
-from functools import lru_cache
 from typing import Callable
 from zipfile import ZipFile
 
@@ -222,7 +221,6 @@ class EventStreamRuntime(Runtime):
         self.send_status_message(' ')
 
     @staticmethod
-    @lru_cache(maxsize=1)
     def _init_docker_client() -> docker.DockerClient:
         try:
             return docker.from_env()
