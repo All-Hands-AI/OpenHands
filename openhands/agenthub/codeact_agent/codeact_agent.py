@@ -1,3 +1,4 @@
+import json
 import os
 from itertools import islice
 
@@ -8,6 +9,7 @@ from openhands.agenthub.codeact_agent.action_parser import CodeActResponseParser
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
+from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
     Action,
@@ -95,7 +97,11 @@ class CodeActAgent(Agent):
             self.tools = codeact_function_calling.get_tools(
                 include_browsing_delegate=self.config.codeact_include_browsing_delegate
             )
+            logger.info(
+                f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
+            )
             self.system_prompt = codeact_function_calling.SYSTEM_PROMPT
+            self.initial_user_message = None
         else:
             # Non-function-calling mode
             self.action_parser = CodeActResponseParser()
@@ -151,9 +157,7 @@ class CodeActAgent(Agent):
         obs_prefix = 'OBSERVATION:\n'
         if isinstance(obs, CmdOutputObservation):
             text = obs_prefix + truncate_content(obs.content, max_message_chars)
-            text += (
-                f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
-            )
+            text += f'\n[Command finished with exit code {obs.exit_code}]'
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs_prefix + obs.content
@@ -193,15 +197,16 @@ class CodeActAgent(Agent):
         if self.config.function_calling:
             # Update the message as tool response properly
             llm_response: ModelResponse = obs.trigger_by_llm_response
-            tool_call = llm_response.tool_calls[0]
-            assert len(llm_response.tool_calls) == 1
-            if llm_response is not None:
-                message = Message(
-                    role='tool',
-                    content=message.content,
-                    tool_call_id=tool_call.id,
-                    name=tool_call.function.name,
-                )
+            assert len(llm_response.choices) == 1
+            _llm_message = llm_response.choices[0].message
+            tool_call = _llm_message.tool_calls[0]
+            assert len(_llm_message.tool_calls) == 1
+            message = Message(
+                role='tool',
+                content=message.content,
+                tool_call_id=tool_call.id,
+                name=tool_call.function.name,
+            )
         return message
 
     def reset(self) -> None:
@@ -241,7 +246,6 @@ class CodeActAgent(Agent):
                 '</execute_browse>',
                 '</file_edit>',
             ]
-
         response = self.llm.completion(**params)
 
         if self.config.function_calling:
