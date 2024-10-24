@@ -65,6 +65,9 @@ config = load_app_config()
 file_store = get_file_store(config.file_store, config.file_store_path)
 session_manager = SessionManager(config, file_store)
 
+GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', '').strip()
+GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '').strip()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -791,12 +794,12 @@ class AuthCode(BaseModel):
 def github_callback(auth_code: AuthCode):
     # Prepare data for the token exchange request
     data = {
-        'client_id': os.getenv('GITHUB_CLIENT_ID'),
-        'client_secret': os.getenv('GITHUB_CLIENT_SECRET'),
+        'client_id': GITHUB_CLIENT_ID,
+        'client_secret': GITHUB_CLIENT_SECRET,
         'code': auth_code.code,
     }
 
-    logger.info(f'Exchanging code for token: {data}')
+    logger.info('Exchanging code for GitHub token')
 
     headers = {'Accept': 'application/json'}
     response = requests.post(
@@ -804,6 +807,7 @@ def github_callback(auth_code: AuthCode):
     )
 
     if response.status_code != 200:
+        logger.error(f'Failed to exchange code for token: {response.text}')
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={'error': 'Failed to exchange code for token'},
