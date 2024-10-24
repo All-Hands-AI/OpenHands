@@ -21,8 +21,8 @@ export const selectedFilesSlice = createSlice({
     addFile(state, action: PayloadAction<string>) {
       state.files.push(action.payload);
     },
-    removeFile(state, action: PayloadAction<string>) {
-      state.files = state.files.filter((file) => file !== action.payload);
+    removeFile(state, action: PayloadAction<number>) {
+      state.files.splice(action.payload, 1);
     },
     clearFiles(state) {
       state.files = [];
