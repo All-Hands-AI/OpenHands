@@ -304,9 +304,7 @@ class AgentController:
         elif isinstance(action, AgentRecallAction):
             # llama_index_list = self.long_term_memory.search(action.query, action.history)
             # logger.info(f'llama-index list: {llama_index_list}')
-            litellm_list = self.agent.llm.search(
-                action.query, self.state.history
-            )
+            litellm_list = self.agent.llm.search(action.query, self.state.history)
             logger.info(f'litellm list: {litellm_list}')
 
     async def _handle_observation(self, observation: Observation):

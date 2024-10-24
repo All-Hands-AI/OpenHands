@@ -11,9 +11,9 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.action.agent import AgentFinishAction, AgentSummarizeAction
-from openhands.llm.metrics import Metrics
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import AgentDelegateObservation
+from openhands.llm.metrics import Metrics
 from openhands.storage.files import FileStore
 
 
