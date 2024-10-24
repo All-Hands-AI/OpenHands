@@ -172,12 +172,8 @@ Apart from the standard Python library, the assistant can also use the following
 
 IMPORTANT:
 - `open_file` only returns the first 100 lines of the file by default! The assistant MUST use `scroll_down` repeatedly to read the full file BEFORE making edits!
-- The assistant shall adhere to THE `edit_file_by_replace`, `append_file` and `insert_content_at_line` FUNCTIONS REQUIRING PROPER INDENTATION.
 - Indentation is important and code that is not indented correctly will fail and require fixing before it can be run.
 - Any code issued should be less than 50 lines to avoid context being cut off!
-- After EVERY `create_file` the method `append_file` shall be used to write the FIRST content!
-- For `edit_file_by_replace` NEVER provide empty parameters!
-- For `edit_file_by_replace` the file must be read fully before any replacements!
 {% endif %}
 {% endset %}
 
