@@ -141,7 +141,6 @@ class LLM(RetryMixin, DebugMixin):
             temperature=self.config.temperature,
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
-            parallel_tool_calls=self.config.parallel_tool_calls,
         )
 
         if self.vision_is_active():

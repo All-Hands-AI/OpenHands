@@ -74,7 +74,6 @@ class LLMConfig:
     disable_vision: bool | None = None
     caching_prompt: bool = True
     log_completions: bool = False
-    parallel_tool_calls: bool = False
     draft_editor: Optional['LLMConfig'] = None
     supports_function_calling: bool = False
 
