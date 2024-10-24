@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import logging
 import traceback
 from typing import Type
 
@@ -63,6 +64,7 @@ class AgentController:
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
     _pending_action: Action | None = None
+    logger: logging.Logger
 
     def __init__(
         self,
@@ -98,6 +100,7 @@ class AgentController:
         self.id = sid
         self.agent = agent
         self.headless_mode = headless_mode
+        self.logger = logging.getLogger(f'AgentController-{sid}')
 
         # subscribe to the event stream
         self.event_stream = event_stream

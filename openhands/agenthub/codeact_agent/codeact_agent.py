@@ -284,7 +284,12 @@ class CodeActAgent(Agent):
             ),
             None,
         )
+
         if latest_user_message:
+            # Enables AgentDelegation
+            task: str = state.inputs.get('task', '')
+            if task:
+                latest_user_message.content.append(TextContent(text=task))
             reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
             latest_user_message.content.append(TextContent(text=reminder_text))
 
