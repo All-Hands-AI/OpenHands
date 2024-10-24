@@ -827,9 +827,9 @@ def authenticate(user: User | None = None):
     )
 
 
+app.mount('/', StaticFiles(directory='./frontend/build', html=True), name='dist')
+
+
 @app.get('/{full_path:path}')
 async def serve_spa(full_path: str):
     return FileResponse('./frontend/build/index.html')
-
-
-app.mount('/', StaticFiles(directory='./frontend/build', html=True), name='dist')
