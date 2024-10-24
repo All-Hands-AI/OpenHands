@@ -151,6 +151,9 @@ class ModalRuntime(EventStreamRuntime):
             self.send_status_message('STATUS$CONTAINER_STARTED')
 
         self.log_buffer = ModalLogBuffer(self.sandbox)
+        tunnel = self.sandbox.tunnels()[self.container_port]  # type: ignore
+        self.api_url = tunnel.url
+        logger.info(f'Container started. Server url: {self.api_url}')
 
         if not self.attach_to_existing:
             logger.info('Waiting for client to become ready...')
@@ -256,10 +259,6 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
             MODAL_RUNTIME_IDS[self.sid] = sandbox.object_id
             logger.info('Container started')
 
-            tunnel = sandbox.tunnels()[self.container_port]
-            self.api_url = tunnel.url
-
-            logger.info(f'Container started. Server url: {self.api_url}')
             return sandbox
         except Exception as e:
             logger.error(f'Error: Instance {self.sid} FAILED to start container!\n')
