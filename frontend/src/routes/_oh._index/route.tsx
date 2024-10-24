@@ -7,7 +7,6 @@ import {
   useRouteLoaderData,
 } from "@remix-run/react";
 import React from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { SuggestionBox } from "./suggestion-box";
 import { TaskForm } from "./task-form";
 import { HeroHeading } from "./hero-heading";
@@ -20,29 +19,9 @@ import ModalButton from "#/components/buttons/ModalButton";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import { ConnectToGitHubModal } from "#/components/modals/connect-to-github-modal";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
-import store, { RootState } from "#/store";
-import { removeFile, setInitialQuery } from "#/state/initial-query-slice";
+import store from "#/store";
+import { setInitialQuery } from "#/state/initial-query-slice";
 import { clientLoader as rootClientLoader } from "#/routes/_oh";
-import { UploadedFilePreview } from "./uploaded-file-preview";
-
-interface AttachedFilesSliderProps {
-  files: string[];
-  onRemove: (file: string) => void;
-}
-
-function AttachedFilesSlider({ files, onRemove }: AttachedFilesSliderProps) {
-  return (
-    <div className="flex gap-2 overflow-auto">
-      {files.map((file, index) => (
-        <UploadedFilePreview
-          key={index}
-          file={file}
-          onRemove={() => onRemove(file)}
-        />
-      ))}
-    </div>
-  );
-}
 
 interface GitHubAuthProps {
   onConnectToGitHub: () => void;
@@ -107,10 +86,6 @@ function Home() {
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
     React.useState(false);
   const [importedFile, setImportedFile] = React.useState<File | null>(null);
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-
-  const dispatch = useDispatch();
-  const { files } = useSelector((state: RootState) => state.initalQuery);
 
   const handleConnectToGitHub = () => {
     if (githubAuthUrl) {
@@ -125,16 +100,7 @@ function Home() {
       <HeroHeading />
       <div className="flex flex-col gap-16 w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
-          <TaskForm
-            importedProjectZip={importedFile}
-            textareaRef={textareaRef}
-          />
-          {files.length > 0 && (
-            <AttachedFilesSlider
-              files={files}
-              onRemove={(file) => dispatch(removeFile(file))}
-            />
-          )}
+          <TaskForm importedProjectZip={importedFile} />
         </div>
         <div className="flex gap-4 w-full">
           <SuggestionBox
@@ -170,8 +136,6 @@ function Home() {
                       if (event.target.files) {
                         const zip = event.target.files[0];
                         setImportedFile(zip);
-                        // focus on the task form
-                        textareaRef.current?.focus();
                       } else {
                         // TODO: handle error
                       }
