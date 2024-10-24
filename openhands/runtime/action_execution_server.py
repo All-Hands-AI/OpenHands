@@ -37,6 +37,7 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from openhands.events.event import EventSource
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
@@ -78,8 +79,8 @@ def verify_api_key(api_key: str = Depends(api_key_header)):
     return api_key
 
 
-class RuntimeClient:
-    """RuntimeClient is running inside docker sandbox.
+class ActionExecutor:
+    """ActionExecutor is running inside docker sandbox.
     It is responsible for executing actions received from OpenHands backend and producing observations.
     """
 
@@ -434,6 +435,7 @@ class RuntimeClient:
             ), f'Timeout argument is required for CmdRunAction: {action}'
             commands = split_bash_commands(action.command)
             all_output = ''
+            python_interpreter = ''
             for command in commands:
                 if command == '':
                     output, exit_code = self._continue_bash(
@@ -454,21 +456,31 @@ class RuntimeClient:
                         keep_prompt=action.keep_prompt,
                         kill_on_timeout=False if not action.blocking else True,
                     )
+                    # Get rid of the python interpreter string from each line of the output.
+                    # We need it only once at the end.
+                    parts = output.rsplit('[Python Interpreter: ', 1)
+                    output = parts[0]
+                    if len(parts) == 2:
+                        python_interpreter = '[Python Interpreter: ' + parts[1]
                 if all_output:
-                    # previous output already exists with prompt "user@hostname:working_dir #""
-                    # we need to add the command to the previous output,
-                    # so model knows the following is the output of another action)
-                    all_output = all_output.rstrip() + ' ' + command + '\r\n'
+                    # previous output already exists so we add a newline
+                    all_output += '\r\n'
 
-                all_output += str(output) + '\r\n'
+                # If the command originated with the agent, append the command that was run...
+                if action.source == EventSource.AGENT:
+                    all_output += command + '\r\n'
+
+                all_output += str(output)
                 if exit_code != 0:
                     break
+
             return CmdOutputObservation(
                 command_id=-1,
                 content=all_output.rstrip('\r\n'),
                 command=action.command,
                 hidden=action.hidden,
                 exit_code=exit_code,
+                interpreter_details=python_interpreter,
             )
         except UnicodeDecodeError:
             raise RuntimeError('Command output could not be decoded as utf-8')
@@ -629,12 +641,12 @@ if __name__ == '__main__':
                 raise ValueError(f'Plugin {plugin} not found')
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
 
-    client: RuntimeClient | None = None
+    client: ActionExecutor | None = None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         global client
-        client = RuntimeClient(
+        client = ActionExecutor(
             plugins_to_load,
             work_dir=args.working_dir,
             username=args.username,

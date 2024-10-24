@@ -17,7 +17,7 @@ import AccountSettingsModal from "#/components/modals/AccountSettingsModal";
 import { DangerModal } from "#/components/modals/confirmation-modals/danger-modal";
 import { LoadingSpinner } from "#/components/modals/LoadingProject";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
-import { UserAvatar } from "#/components/user-avatar";
+import { UserActions } from "#/components/user-actions";
 import { useSocket } from "#/context/socket";
 import i18n from "#/i18n";
 import { getSettings, settingsAreUpToDate } from "#/services/settings";
@@ -91,13 +91,18 @@ export function ErrorBoundary() {
   );
 }
 
+type SettingsFormData = {
+  models: string[];
+  agents: string[];
+  securityAnalyzers: string[];
+};
+
 export default function MainApp() {
   const { stop, isConnected } = useSocket();
   const navigation = useNavigation();
   const location = useLocation();
   const { token, user, settingsIsUpdated, settings } =
     useLoaderData<typeof clientLoader>();
-  const loginFetcher = useFetcher({ key: "login" });
   const logoutFetcher = useFetcher({ key: "logout" });
   const endSessionFetcher = useFetcher({ key: "end-session" });
 
@@ -106,28 +111,31 @@ export default function MainApp() {
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
   const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
     React.useState(false);
-  const [data, setData] = React.useState<{
-    models: string[];
-    agents: string[];
-    securityAnalyzers: string[];
-  }>({
-    models: [],
-    agents: [],
-    securityAnalyzers: [],
-  });
+  const [settingsFormData, setSettingsFormData] =
+    React.useState<SettingsFormData>({
+      models: [],
+      agents: [],
+      securityAnalyzers: [],
+    });
+  const [settingsFormError, setSettingsFormError] = React.useState<
+    string | null
+  >(null);
 
   React.useEffect(() => {
     // We fetch this here instead of the data loader because the server seems to block
     // the retrieval when the session is closing -- preventing the screen from rendering until
     // the fetch is complete
     (async () => {
-      const [models, agents, securityAnalyzers] = await Promise.all([
-        OpenHands.getModels(),
-        OpenHands.getAgents(),
-        OpenHands.getSecurityAnalyzers(),
-      ]);
-
-      setData({ models, agents, securityAnalyzers });
+      try {
+        const [models, agents, securityAnalyzers] = await Promise.all([
+          OpenHands.getModels(),
+          OpenHands.getAgents(),
+          OpenHands.getSecurityAnalyzers(),
+        ]);
+        setSettingsFormData({ models, agents, securityAnalyzers });
+      } catch (error) {
+        setSettingsFormError("Failed to load settings, please reload the page");
+      }
     })();
   }, []);
 
@@ -192,13 +200,14 @@ export default function MainApp() {
           )}
         </div>
         <nav className="py-[18px] flex flex-col items-center gap-[18px]">
-          <UserAvatar
-            user={user}
-            isLoading={loginFetcher.state !== "idle"}
-            onLogout={handleUserLogout}
-            handleOpenAccountSettingsModal={() =>
-              setAccountSettingsModalOpen(true)
+          <UserActions
+            user={
+              user && !isGitHubErrorReponse(user)
+                ? { avatar_url: user.avatar_url }
+                : undefined
             }
+            onLogout={handleUserLogout}
+            onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
           />
           <button
             type="button"
@@ -233,6 +242,9 @@ export default function MainApp() {
         {(!settingsIsUpdated || settingsModalIsOpen) && (
           <ModalBackdrop onClose={() => setSettingsModalIsOpen(false)}>
             <div className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2">
+              {settingsFormError && (
+                <p className="text-danger text-xs">{settingsFormError}</p>
+              )}
               <span className="text-xl leading-6 font-semibold -tracking-[0.01em">
                 AI Provider Configuration
               </span>
@@ -247,9 +259,9 @@ export default function MainApp() {
               )}
               <SettingsForm
                 settings={settings}
-                models={data.models}
-                agents={data.agents}
-                securityAnalyzers={data.securityAnalyzers}
+                models={settingsFormData.models}
+                agents={settingsFormData.agents}
+                securityAnalyzers={settingsFormData.securityAnalyzers}
                 onClose={() => setSettingsModalIsOpen(false)}
               />
             </div>

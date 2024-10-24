@@ -3,6 +3,8 @@ import copy
 import traceback
 from typing import Type
 
+import litellm
+
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
@@ -145,7 +147,12 @@ class AgentController:
         self.state.last_error = message
         if exception:
             self.state.last_error += f': {exception}'
-        self.event_stream.add_event(ErrorObservation(message), EventSource.USER)
+        detail = str(exception) if exception is not None else ''
+        if exception is not None and isinstance(exception, litellm.AuthenticationError):
+            detail = 'Please check your credentials. Is your API key correct?'
+        self.event_stream.add_event(
+            ErrorObservation(f'{message}:{detail}'), EventSource.USER
+        )
 
     async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
@@ -323,13 +330,13 @@ class AgentController:
             if hasattr(self._pending_action, 'thought'):
                 self._pending_action.thought = ''  # type: ignore[union-attr]
             if new_state == AgentState.USER_CONFIRMED:
-                self._pending_action.confirmation_state = (
+                self._pending_action.confirmation_state = (  # type: ignore[attr-defined]
                     ActionConfirmationStatus.CONFIRMED
-                ) # type: ignore[attr-defined]
+                )
             else:
-                self._pending_action.confirmation_state = (
+                self._pending_action.confirmation_state = (  # type: ignore[attr-defined]
                     ActionConfirmationStatus.REJECTED
-                ) # type: ignore[attr-defined]
+                )
             self.event_stream.add_event(self._pending_action, EventSource.AGENT)
 
         self.state.agent_state = new_state
@@ -450,7 +457,9 @@ class AgentController:
             if self.state.confirmation_mode and (
                 type(action) is CmdRunAction or type(action) is IPythonRunCellAction
             ):
-                action.confirmation_state = ActionConfirmationStatus.AWAITING_CONFIRMATION
+                action.confirmation_state = (
+                    ActionConfirmationStatus.AWAITING_CONFIRMATION
+                )
             self._pending_action = action
 
         if not isinstance(action, NullAction):
