@@ -77,10 +77,25 @@ def get_config(
     return config
 
 
-# TODO: add docstring
 def get_dv_query_for_real(
     datasets, question, domain_knowledge=None, workflow_tags=None
 ):
+    """
+    Prepare a structured query for the agent to execute on the specified datasets.
+
+    This function constructs a query by compiling metadata from the provided datasets, along with any relevant domain knowledge and workflow tags.
+
+    Args:
+        datasets: List of datasets
+        question: Query to be answered
+        domain_knowledge: Domain knowledge if any
+        workflow_tags: Workflow tags if any
+
+    Returns:
+        query_to_dv: Query to be run on the dataset
+        dataset_meta: Metadata of the dataset
+    """
+
     dataset_meta = ''
     for dataset_metadata in datasets:
         dataset_meta += 'Dataset name: ' + dataset_metadata['name']
@@ -205,12 +220,28 @@ def complete_runtime(
     return test_result
 
 
-# TODO: add docstring
 def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ) -> EvalOutput:
+    """
+    Process and evaluate a single instance of the dataset.
+
+    This function executes the OpenHands agent
+    for a specific instance of the dataset. It retrieves
+    the agent's results and evaluates them against the gold
+    hypothesis.
+
+    Args:
+        instance: A single row of the dataset
+        metadata: Metadata for the evaluation
+        reset_logger: Whether to reset the logger
+
+    Returns:
+        output: EvalOutput object
+    """
+
     config = get_config(metadata)
 
     # use a session id for concurrent evaluation
@@ -297,13 +328,20 @@ def process_instance(
     )
     return output
 
-# TODO: add docstring
+
 def create_dataset(repo_location: str, split: str = 'test'):
-    # walk through the repository for test split
-    # as soon as a metadata_{}.json file is found, load
-    # it and extract domain knowledge, workflow tags, queries, datasets, gold_hypothesis,
-    # and gold_workflow
-    # add all these to a pandas dataframe
+    """
+    Create a dataset from the discoverybench repository
+    by walking through the repository and extracting metadata
+    from the metadata_{}.json files
+
+    Args:
+        repo_location: Location of the repository
+        split: Split of the dataset to use
+
+    Returns:
+        df: DataFrame containing the dataset instances
+    """
 
     data_dict = {}
 
