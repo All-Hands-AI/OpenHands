@@ -44,5 +44,7 @@ class ObservationTypeSchema(BaseModel):
 
     USER_REJECTED: str = Field(default='user_rejected')
 
+    RECALL: str = Field(default='recall')
+
 
 ObservationType = ObservationTypeSchema()

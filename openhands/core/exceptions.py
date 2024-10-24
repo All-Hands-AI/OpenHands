@@ -94,3 +94,20 @@ class CloudFlareBlockageError(Exception):
     """Exception raised when a request is blocked by CloudFlare."""
 
     pass
+
+
+class SummarizeError(Exception):
+    """Exception raised when message can't be summarized."""
+
+    def __init__(self, message='Error summarizing the memory'):
+        super().__init__(message)
+
+
+class InvalidSummaryResponseError(Exception):
+    def __init__(self, message='Invalid summary response'):
+        super().__init__(message)
+
+
+class TokenLimitExceededError(Exception):
+    def __init__(self, message='Token limit exceeded'):
+        super().__init__(message)

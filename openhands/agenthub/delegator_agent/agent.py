@@ -2,7 +2,7 @@ from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.events.action import Action, AgentDelegateAction, AgentFinishAction
-from openhands.events.observation import AgentDelegateObservation
+from openhands.events.observation import AgentDelegateObservation, Observation
 from openhands.llm.llm import LLM
 
 
@@ -27,7 +27,7 @@ class DelegatorAgent(Agent):
         Otherwise, delegates the task to the next agent in the pipeline.
 
         Parameters:
-        - state (State): The current state given the previous actions and observations
+        - state: The current state given the previous actions and observations
 
         Returns:
         - AgentFinishAction: If the last state was 'completed', 'verified', or 'abandoned'
@@ -41,7 +41,11 @@ class DelegatorAgent(Agent):
             )
 
         # last observation in history should be from the delegate
-        last_observation = state.history.get_last_observation()
+        last_observation = None
+        for event in reversed(state.history):
+            if isinstance(event, Observation):
+                last_observation = event
+                break
 
         if not isinstance(last_observation, AgentDelegateObservation):
             raise Exception('Last observation is not an AgentDelegateObservation')

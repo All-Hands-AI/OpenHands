@@ -20,7 +20,9 @@ class PlannerAgent(Agent):
         """Initialize the Planner Agent with an LLM
 
         Parameters:
-        - llm (LLM): The llm to be used by this agent
+        - llm: The llm to be used by this agent
+        - config: The agent config
+        - memory: The memory for this agent
         """
         super().__init__(llm, config)
 

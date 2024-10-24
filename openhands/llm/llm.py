@@ -5,13 +5,18 @@ from functools import partial
 from typing import Any
 
 from openhands.core.config import LLMConfig
+from openhands.core.exceptions import TokenLimitExceededError
+from openhands.events.event import Event
+from openhands.events.serialization.event import event_to_memory
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
+import numpy as np
 from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
+from litellm import embedding as litellm_embedding
 from litellm.exceptions import (
     APIConnectionError,
     APIError,
@@ -20,6 +25,7 @@ from litellm.exceptions import (
     ServiceUnavailableError,
 )
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
+from litellm.utils import create_pretrained_tokenizer
 
 from openhands.core.exceptions import CloudFlareBlockageError
 from openhands.core.logger import openhands_logger as logger
@@ -124,6 +130,13 @@ class LLM(RetryMixin, DebugMixin):
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
+        # if using a custom tokenizer, make sure it's loaded and accessible in the format expected by litellm
+        if self.config.custom_tokenizer is not None:
+            self.tokenizer = create_pretrained_tokenizer(self.config.custom_tokenizer)
+        else:
+            self.tokenizer = None
+
+        # set up the completion function
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
@@ -182,6 +195,14 @@ class LLM(RetryMixin, DebugMixin):
 
             # log the entire LLM prompt
             self.log_prompt(messages)
+
+            # find out if we have too many tokens
+            token_count = self.get_token_count(messages)
+            max_input_tokens = self.config.max_input_tokens
+            if token_count > max_input_tokens:
+                raise TokenLimitExceededError(
+                    f'Token limit exceeded: {token_count} > {max_input_tokens}'
+                )
 
             if self.is_caching_prompt_active():
                 # Anthropic-specific prompt caching
@@ -324,15 +345,32 @@ class LLM(RetryMixin, DebugMixin):
         """Get the number of tokens in a list of messages.
 
         Args:
-            messages (list): A list of messages.
+            messages (list): A list of messages, either as a list of dicts or as a list of Message objects.
 
         Returns:
             int: The number of tokens.
         """
+        # convert Message objects to dicts, litellm expects dicts
+        if (
+            isinstance(messages, list)
+            and len(messages) > 0
+            and isinstance(messages[0], Message)
+        ):
+            messages = self.format_messages_for_llm(messages)
+
+        # try to get the token count with the default litellm tokenizers
+        # or the custom tokenizer attribute if set for this LLM configuration
         try:
-            return litellm.token_counter(model=self.config.model, messages=messages)
-        except Exception:
+            return litellm.token_counter(
+                model=self.config.model,
+                messages=messages,
+                custom_tokenizer=self.tokenizer,
+            )
+        except Exception as e:
             # TODO: this is to limit logspam in case token count is not supported
+            logger.error(
+                f'Error getting token count for\n model {self.config.model}\ncustom_tokenizer: {self.config.custom_tokenizer}\n{e}'
+            )
             return 0
 
     def _is_local(self):
@@ -412,3 +450,87 @@ class LLM(RetryMixin, DebugMixin):
 
         # let pydantic handle the serialization
         return [message.model_dump() for message in messages]
+
+    def embed_event(self, event: Event) -> np.ndarray:
+        """
+        Embeds a single event using the embedding model.
+
+        Args:
+            event (Event): The event to embed.
+
+        Returns:
+            np.ndarray: The embedding vector of the event.
+        """
+        # Convert the event to a string representation
+        event_str = event_to_memory(event, -1)
+        # Get the embedding
+        embedding_response = litellm_embedding(
+            model=self.config.embedding_model,
+            input=event_str,
+            custom_llm_provider=self.config.custom_llm_provider,
+            api_key=self.config.api_key,
+            base_url=self.config.base_url,
+            api_version=self.config.api_version,
+            input_cost_per_token=self.config.input_cost_per_token,
+            output_cost_per_token=self.config.output_cost_per_token,
+        )
+        embedding = embedding_response['data'][0]['embedding']
+        return np.array(embedding)
+
+    def embed_history(self, history: list[Event]) -> list[np.ndarray]:
+        """
+        Embeds a list of events.
+
+        Args:
+            history (list[Event]): The list of events to embed.
+
+        Returns:
+            list[np.ndarray]: A list of embedding vectors.
+        """
+        embeddings = []
+        for event in history:
+            embedding = self.embed_event(event)
+            embeddings.append(embedding)
+        return embeddings
+
+    def search(self, query: str, history: list[Event], top_k: int = 5) -> list[Event]:
+        """
+        Recalls the most similar events based on the query.
+
+        Args:
+            query (str): The query string.
+            embeddings (list[np.ndarray]): The list of embedded vectors.
+            history (list[Event]): The corresponding list of events.
+            top_k (int, optional): The number of top similar events to retrieve. Defaults to 5.
+
+        Returns:
+            list[Event]: The list of recalled events.
+        """
+
+        # make sure history has been embedded
+        embeddings = self.embed_history(history)
+
+        # Embed the query
+        query_embedding_response = litellm_embedding(
+            model=self.config.embedding_model,
+            input=query,
+            custom_llm_provider=self.config.custom_llm_provider,
+            api_key=self.config.api_key,
+            base_url=self.config.base_url,
+            api_version=self.config.api_version,
+            input_cost_per_token=self.config.input_cost_per_token,
+            output_cost_per_token=self.config.output_cost_per_token,
+        )
+        query_embedding = np.array(
+            query_embedding_response['data'][0]['embedding']
+        ).reshape(1, -1)
+
+        # Compute cosine similarity
+        similarity_scores = np.dot(query_embedding, embeddings)
+
+        # Get the top_k indices
+        top_indices = similarity_scores.argsort()[-top_k:][::-1]
+
+        # Retrieve the corresponding events
+        recalled_events = [history[i] for i in top_indices]
+        return recalled_events

@@ -111,7 +111,7 @@ def process_instance(
     # # result evaluation
     # # =============================================
 
-    histories = state.history.get_events()
+    histories = state.history
     test_result: TestResult = test_class.verify_result(runtime, histories)
     metrics = state.metrics.get() if state.metrics else None
 

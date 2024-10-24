@@ -20,8 +20,12 @@ class ChangeAgentStateAction(Action):
 
 @dataclass
 class AgentSummarizeAction(Action):
-    summary: str
+    summary: str = ''  # summary to be inserted as a memory block
     action: str = ActionType.SUMMARIZE
+    start_id: int = -1
+    end_id: int = -1
+    summarized_actions: str = ''
+    summarized_observations: str = ''
 
     @property
     def message(self) -> str:
@@ -78,3 +82,14 @@ class AgentDelegateAction(Action):
     @property
     def message(self) -> str:
         return f"I'm asking {self.agent} for help with this task."
+
+
+@dataclass
+class AgentRecallAction(Action):
+    query: str
+    thought: str = ''
+    action: str = ActionType.RECALL
+
+    @property
+    def message(self) -> str:
+        return f'Recalling "{self.query[:10]}..."'

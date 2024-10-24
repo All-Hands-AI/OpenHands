@@ -52,6 +52,8 @@ class Message(BaseModel):
     content: list[TextContent | ImageContent] = Field(default=list)
     cache_enabled: bool = False
     vision_enabled: bool = False
+    condensable: bool = True
+    event_id: int = -1
 
     @property
     def contains_image(self) -> bool:

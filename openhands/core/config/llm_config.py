@@ -41,6 +41,10 @@ class LLMConfig:
         caching_prompt: Use the prompt caching feature if provided by the LLM and supported by the provider.
         log_completions: Whether to log LLM completions to the state.
         draft_editor: A more efficient LLM to use for file editing. Introduced in [PR 3985](https://github.com/All-Hands-AI/OpenHands/pull/3985).
+        max_conversation_window: The maximum number of messages to include in the conversation window (context), after which old messages are truncated or summarized.
+        conversation_top_k: The number of top results to retrieve from the conversation history.
+        message_summary_warning_level: The fraction of the conversation window for warning about context overflow (e.g. 0.75 for 75% of the tokens).
+        custom_tokenizer: tokenizer to use for computing token size. Not necessary for Open AI, Anthropic. LiteLLM will check HuggingFace for this (e.g. 'deepseek-ai/deepseek-V2.5')
     """
 
     model: str = 'gpt-4o'
@@ -74,6 +78,10 @@ class LLMConfig:
     caching_prompt: bool = True
     log_completions: bool = False
     draft_editor: Optional['LLMConfig'] = None
+    max_conversation_window: int = 10
+    conversation_top_k: int = 5
+    message_summary_warning_level: float = 0.75
+    custom_tokenizer: str | None = None
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""

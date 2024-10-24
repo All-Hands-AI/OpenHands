@@ -5,6 +5,7 @@ from openhands.agenthub.codeact_agent.action_parser import CodeActResponseParser
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
+from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
     Action,
@@ -91,7 +92,6 @@ class CodeActAgent(Agent):
 
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__)),
-            agent_skills_docs=AgentSkillsRequirement.documentation,
             micro_agent=self.micro_agent,
         )
 
@@ -178,7 +178,8 @@ class CodeActAgent(Agent):
         else:
             # If an observation message is not returned, it will cause an error
             # when the LLM tries to return the next message
-            raise ValueError(f'Unknown observation type: {type(obs)}')
+            logger.warning(f'Unknown observation type: {type(obs)}')
+            return None
 
     def reset(self) -> None:
         """Resets the CodeAct Agent."""
@@ -199,8 +200,8 @@ class CodeActAgent(Agent):
         - AgentFinishAction() - end the interaction
         """
         # if we're done, go back
-        latest_user_message = state.history.get_last_user_message()
-        if latest_user_message and latest_user_message.strip() == '/exit':
+        last_user_message = state.get_last_user_message()
+        if last_user_message and last_user_message.strip() == '/exit':
             return AgentFinishAction()
 
         # prepare what we want to send to the LLM
@@ -241,7 +242,7 @@ class CodeActAgent(Agent):
             ),
         ]
 
-        for event in state.history.get_events():
+        for event in state.history:
             # create a regular message from an event
             if isinstance(event, Action):
                 message = self.get_action_message(event)
