@@ -40,19 +40,33 @@ class PromptManager:
         self.env = Environment(loader=FileSystemLoader('.'))
 
         # load available skills from YAML
-        with open('agent.yaml', 'r') as f:
-            config = yaml.safe_load(f)
+        yaml_path = os.path.join(prompt_dir, 'agent.yaml')
+        if os.path.exists(yaml_path):
+            with open(yaml_path, 'r') as f:
+                config = yaml.safe_load(f)
+            self._system_template = self._load_template(
+                config['template']['system_prompt']
+            )
+            self._agent_skills_template = self._load_template(
+                config['template']['agent_skills']
+            )
+            self._user_template = self._load_template(config['template']['user_prompt'])
+            self._examples_template = self._load_template(
+                config['template']['examples']
+            )
 
-        self._system_template = self._load_template(config['template']['system_prompt'])
-        self._agent_skills_template = self._load_template(
-            config['template']['agent_skills']
-        )
-        self._user_template = self._load_template(config['template']['user_prompt'])
-        self._examples_template = self._load_template(config['template']['examples'])
+            self.available_skills = config['agent_variables']['agent_skills'][
+                'available_skills'
+            ]
+        else:
+            self._system_template = self._load_template('system_prompt')
+            self._agent_skills_template = self._load_template('agent_skills')
+            self._user_template = self._load_template('user_prompt')
+            self._examples_template = self._load_template('examples')
+            self.available_skills = []  # default to empty list if YAML not found
 
-        self.available_skills = config['agent_variables']['agent_skills'][
-            'available_skills'
-        ]
+        # TODO: agent config should have a tool use enabled or disabled
+        # and we can use that to conditionally load the tools variant of agentskills
 
     def _load_template(self, template_name: str) -> Template:
         template_path = os.path.join(self.prompt_dir, f'{template_name}.j2')
@@ -66,8 +80,9 @@ class PromptManager:
         # render the agent_skills.j2 template
 
         self.env.globals['get_skill_docstring'] = self._get_skill_docstring
-        template = self.env.get_template('agent_skills.j2')
-        rendered_docs = template.render(available_skills=self.available_skills)
+        rendered_docs = self._agent_skills_template.render(
+            available_skills=self.available_skills
+        )
 
         rendered = self._system_template.render(
             agent_skills_docs=rendered_docs,
@@ -85,26 +100,13 @@ class PromptManager:
         These additional context will convert the current generic agent
         into a more specialized agent that is tailored to the user's task.
         """
+        # this should render the examples.j2 template first, then the user_prompt.j2 template
+        rendered_examples = self._examples_template.render()
         rendered = self._user_template.render(
-            micro_agent=self.micro_agent.content if self.micro_agent else None
+            examples=rendered_examples,
+            micro_agent=self.micro_agent.content if self.micro_agent else None,
         )
         return rendered.strip()
-
-    def _filter_agent_skills_docs(self, docs: str, available_skills: list[str]) -> str:
-        """Filters the agent skills documentation to only include available skills."""
-        filtered_lines = []
-        capture = False
-
-        for line in docs.splitlines():
-            for skill in available_skills:
-                if f'{skill}(' in line:
-                    capture = True
-            if capture:
-                filtered_lines.append(line)
-            if line.strip() == '' and capture:
-                capture = False
-
-        return '\n'.join(filtered_lines)
 
     def _get_skill_docstring(self, skill_name: str) -> str:
         """Retrieves the docstring of a skill function."""

@@ -2,10 +2,10 @@ name: CodeActAgent
 
 # main templates
 template:
-  system_prompt: "system_prompt.j2"  # path to the base template file
-  agent_skills: "agent_skills.j2"  # path to the agent skills template file
-  examples: "examples.j2"  # path to the examples template file
-  user_prompt: "user_prompt.j2"  # path to the initial user prompt template file
+  system_prompt: "system_prompt"  # path to the base template file
+  agent_skills: "agent_skills"  # path to the agent skills template file
+  examples: "examples"  # path to the examples template file
+  user_prompt: "user_prompt"  # path to the initial user prompt template file
 
 # Optional custom blocks to override or extend the base template
 # If null, the default from system_prompt.j2 is used
