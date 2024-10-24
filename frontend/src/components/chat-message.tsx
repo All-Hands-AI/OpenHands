@@ -4,10 +4,12 @@ import React from "react";
 import { cn } from "#/utils/utils";
 
 interface ChatMessageProps {
+  type: "user" | "assistant";
   message: string;
 }
 
 export function ChatMessage({
+  type,
   message,
   children,
 }: React.PropsWithChildren<ChatMessageProps>) {
@@ -35,9 +37,14 @@ export function ChatMessage({
 
   return (
     <article
+      data-testid={`${type}-message`}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
-      className="bg-neutral-700 p-4 rounded-xl max-w-[305px] relative"
+      className={cn(
+        "p-4 rounded-xl max-w-[305px] relative",
+        type === "user" && "bg-neutral-700",
+        type === "assistant" && "bg-tranparent",
+      )}
     >
       <p className="text-sm">{message}</p>
       <button

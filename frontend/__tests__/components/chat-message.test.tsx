@@ -4,14 +4,21 @@ import { describe, it, expect, test } from "vitest";
 import { ChatMessage } from "#/components/chat-message";
 
 describe("ChatMessage", () => {
-  it("should display the message content", () => {
-    render(<ChatMessage message="Hello, World!" />);
+  it("should render a user message", () => {
+    render(<ChatMessage type="user" message="Hello, World!" />);
+    expect(screen.getByTestId("user-message")).toBeInTheDocument();
+    expect(screen.getByText("Hello, World!")).toBeInTheDocument();
+  });
+
+  it("should render an assistant message", () => {
+    render(<ChatMessage type="assistant" message="Hello, World!" />);
+    expect(screen.getByTestId("assistant-message")).toBeInTheDocument();
     expect(screen.getByText("Hello, World!")).toBeInTheDocument();
   });
 
   it.skip("should support code syntax highlighting", () => {
     const code = "```js\nconsole.log('Hello, World!')\n```";
-    render(<ChatMessage message={code} />);
+    render(<ChatMessage type="user" message={code} />);
 
     // SyntaxHighlighter breaks the code blocks into "tokens"
     expect(screen.getByText("console")).toBeInTheDocument();
@@ -23,7 +30,7 @@ describe("ChatMessage", () => {
 
   it("should render the copy to clipboard button when the user hovers over the message", async () => {
     const user = userEvent.setup();
-    render(<ChatMessage message="Hello, World!" />);
+    render(<ChatMessage type="user" message="Hello, World!" />);
     const message = screen.getByText("Hello, World!");
 
     expect(screen.getByTestId("copy-to-clipboard")).not.toBeVisible();
@@ -35,7 +42,7 @@ describe("ChatMessage", () => {
 
   it("should copy content to clipboard", async () => {
     const user = userEvent.setup();
-    render(<ChatMessage message="Hello, World!" />);
+    render(<ChatMessage type="user" message="Hello, World!" />);
     const copyToClipboardButton = screen.getByTestId("copy-to-clipboard");
 
     await user.click(copyToClipboardButton);
@@ -57,7 +64,7 @@ describe("ChatMessage", () => {
       return <div data-testid="custom-component">Custom Component</div>;
     }
     render(
-      <ChatMessage message="Hello, World">
+      <ChatMessage type="user" message="Hello, World">
         <Component />
       </ChatMessage>,
     );
