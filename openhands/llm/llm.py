@@ -483,9 +483,7 @@ class LLM(RetryMixin, DebugMixin):
             embeddings.append(embedding)
         return embeddings
 
-    def search(
-        self, query: str, history: list[Event], top_k: int = 5
-    ) -> list[Event]:
+    def search(self, query: str, history: list[Event], top_k: int = 5) -> list[Event]:
         """
         Recalls the most similar events based on the query.
 
