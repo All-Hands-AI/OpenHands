@@ -5,6 +5,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import beep from "#/utils/beep";
+import { useSocket } from "#/context/socket";
 
 enum IndicatorColor {
   BLUE = "bg-blue-500",
@@ -19,6 +20,7 @@ function AgentStatusBar() {
   const { t } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const { curStatusMessage } = useSelector((state: RootState) => state.status);
+  const socket = useSocket();
 
   const AgentStatusMap: {
     [k: string]: { message: string; indicator: IndicatorColor };
@@ -92,8 +94,15 @@ function AgentStatusBar() {
   }, [curAgentState]);
 
   const [statusMessage, setStatusMessage] = React.useState<string>("");
+  const indicator = socket.isConnected
+    ? AgentStatusMap[curAgentState].indicator
+    : IndicatorColor.RED;
 
   React.useEffect(() => {
+    if (!socket.isConnected) {
+      setStatusMessage("Disconnected");
+      return;
+    }
     if (curAgentState === AgentState.LOADING) {
       const trimmedCustomMessage = curStatusMessage.status.trim();
       if (trimmedCustomMessage) {
@@ -102,14 +111,12 @@ function AgentStatusBar() {
       }
     }
     setStatusMessage(AgentStatusMap[curAgentState].message);
-  }, [curAgentState, curStatusMessage.status]);
+  }, [curAgentState, curStatusMessage.status, socket.isConnected]);
 
   return (
     <div className="flex flex-col items-center">
       <div className="flex items-center bg-neutral-800 px-2 py-1 text-gray-400 rounded-[100px] text-sm gap-[6px]">
-        <div
-          className={`w-2 h-2 rounded-full animate-pulse ${AgentStatusMap[curAgentState].indicator}`}
-        />
+        <div className={`w-2 h-2 rounded-full animate-pulse ${indicator}`} />
         <span className="text-sm text-stone-400">{statusMessage}</span>
       </div>
     </div>

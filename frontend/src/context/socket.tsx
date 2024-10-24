@@ -92,6 +92,7 @@ function SocketProvider({ children }: SocketProviderProps) {
   const send = React.useCallback(
     (data: string | ArrayBufferLike | Blob | ArrayBufferView) => {
       if (!wsRef.current) {
+        // maybe reconnect with exponential backoff here?
         EventLogger.error("WebSocket is not connected.");
         return;
       }

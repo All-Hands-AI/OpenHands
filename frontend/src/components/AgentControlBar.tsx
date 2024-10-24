@@ -3,6 +3,7 @@ import React from "react";
 import { useSelector } from "react-redux";
 import PauseIcon from "#/assets/pause";
 import PlayIcon from "#/assets/play";
+import Refresh from "#/assets/refresh.svg?react";
 import { generateAgentStateChangeEvent } from "#/services/agentStateService";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
@@ -36,23 +37,21 @@ const IgnoreTaskStateMap: Record<string, AgentState[]> = {
 interface ActionButtonProps {
   isDisabled?: boolean;
   content: string;
-  action: AgentState;
-  handleAction: (action: AgentState) => void;
+  handleClick: () => void;
   large?: boolean;
 }
 
 function ActionButton({
   isDisabled = false,
   content,
-  action,
-  handleAction,
+  handleClick,
   children,
   large = false,
 }: React.PropsWithChildren<ActionButtonProps>) {
   return (
     <Tooltip content={content} closeDelay={100}>
       <button
-        onClick={() => handleAction(action)}
+        onClick={handleClick}
         disabled={isDisabled}
         className={`
           relative overflow-visible cursor-default hover:cursor-pointer group
@@ -74,15 +73,32 @@ function ActionButton({
 function AgentControlBar() {
   const { send } = useSocket();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const socket = useSocket();
 
-  const handleAction = (action: AgentState) => {
+  const handleAction = () => {
+    const action =
+      curAgentState === AgentState.PAUSED
+        ? AgentState.RUNNING
+        : AgentState.PAUSED;
     if (!IgnoreTaskStateMap[action].includes(curAgentState)) {
       send(generateAgentStateChangeEvent(action));
     }
   };
 
-  return (
-    <div className="flex justify-between items-center gap-20">
+  const renderButton = () => {
+    if (!socket.isConnected) {
+      return (
+        <ActionButton
+          content="Reconnect"
+          handleClick={() => window.location.reload()}
+          large
+        >
+          <Refresh width={20} height={20} />
+        </ActionButton>
+      );
+    }
+
+    return (
       <ActionButton
         isDisabled={
           curAgentState !== AgentState.RUNNING &&
@@ -93,16 +109,17 @@ function AgentControlBar() {
             ? "Resume the agent task"
             : "Pause the current task"
         }
-        action={
-          curAgentState === AgentState.PAUSED
-            ? AgentState.RUNNING
-            : AgentState.PAUSED
-        }
-        handleAction={handleAction}
+        handleClick={handleAction}
         large
       >
         {curAgentState === AgentState.PAUSED ? <PlayIcon /> : <PauseIcon />}
       </ActionButton>
+    );
+  };
+
+  return (
+    <div className="flex justify-between items-center gap-20">
+      {renderButton()}
     </div>
   );
 }
