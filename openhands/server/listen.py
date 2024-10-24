@@ -29,7 +29,8 @@ from fastapi import (
     WebSocket,
     status,
 )
-from fastapi.middleware.cors import BaseHTTPMiddleware, CORSMiddleware
+from fastapi.middleware.base import BaseHTTPMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
