@@ -55,7 +55,7 @@ class Message(BaseModel):
     vision_enabled: bool = False
     # function calling
     # - tool calls (from LLM)
-    tool_calls: list[ChatCompletionMessageToolCall] = Field(default=list)
+    tool_calls: list[ChatCompletionMessageToolCall] | None = None
     # - tool execution result (to LLM)
     tool_call_id: str | None = None
     name: str | None = None  # name of the tool
