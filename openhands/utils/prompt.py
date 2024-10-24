@@ -1,5 +1,6 @@
 import importlib
 import os
+from inspect import signature
 
 import yaml
 from jinja2 import Environment, FileSystemLoader, Template, TemplateNotFound
@@ -118,7 +119,20 @@ class PromptManager:
             module = importlib.import_module(
                 f'openhands.runtime.plugins.agent_skills.{module_name}'
             )
+
+            # find the function
             function = getattr(module, function_name)
+
+            # get the function signature with parameter names, types and return type
+            params = signature(function).parameters
+            param_str = ', '.join(
+                [
+                    f'{name}: {param.annotation.__name__}'
+                    for name, param in params.items()
+                ]
+            )
+            fn_signature = f'{function.__name__}({param_str}) -> {signature(function).return_annotation.__name__}'
+
             cur_doc = function.__doc__
             # remove indentation from docstring and extra empty lines
             cur_doc = '\n'.join(
@@ -126,6 +140,6 @@ class PromptManager:
             )
             # now add a consistent 4 indentation
             cur_doc = '\n'.join(map(lambda x: ' ' * 4 + x, cur_doc.split('\n')))
-            return f'{function.__name__}\n{cur_doc}'
+            return f'{fn_signature}\n{cur_doc}'
         except (ImportError, AttributeError):
             return f'Documentation not found for skill: {skill_name}'
