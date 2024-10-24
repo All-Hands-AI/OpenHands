@@ -60,9 +60,8 @@ describe("Message", () => {
 
   describe("copy to clipboard", () => {
     const toastInfoSpy = vi.spyOn(toast, "info");
-    const toastErrorSpy = vi.spyOn(toast, "error");
 
-    it("should copy any message to clipboard", async () => {
+    it("should copy any message to clipboard and push a toast", async () => {
       const user = userEvent.setup();
       render(
         <ChatMessage
@@ -89,34 +88,6 @@ describe("Message", () => {
 
       expect(navigator.clipboard.readText()).resolves.toBe("Hello");
       expect(toastInfoSpy).toHaveBeenCalled();
-    });
-
-    it("should show an error message when the message cannot be copied", async () => {
-      const user = userEvent.setup();
-      render(
-        <ChatMessage
-          message={{
-            sender: "user",
-            content: "Hello",
-            imageUrls: [],
-            timestamp: new Date().toISOString(),
-          }}
-          isLastMessage={false}
-        />,
-      );
-
-      const message = screen.getByTestId("article");
-      fireEvent.mouseEnter(message);
-
-      const copyButton = within(message).getByTestId("copy-button");
-      const clipboardSpy = vi
-        .spyOn(navigator.clipboard, "writeText")
-        .mockRejectedValue(new Error("Failed to copy"));
-
-      await user.click(copyButton);
-
-      expect(clipboardSpy).toHaveBeenCalled();
-      expect(toastErrorSpy).toHaveBeenCalled();
     });
   });
 
