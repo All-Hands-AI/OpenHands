@@ -804,6 +804,7 @@ def github_callback(auth_code: AuthCode):
     )
 
     if response.status_code != 200:
+        logger.error(f'Failed to exchange code for token: {response.text}')
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={'error': 'Failed to exchange code for token'},
