@@ -12,6 +12,7 @@ from openhands.runtime.utils.shutdown_listener import should_continue
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import Session
 from openhands.storage.files import FileStore
+from openhands.utils.async_utils import call_coro_in_bg_thread
 
 
 @dataclass
@@ -21,7 +22,7 @@ class SessionManager:
     cleanup_interval: int = 300
     session_timeout: int = 600
     _sessions: Dict[str, Session] = field(default_factory=dict)
-    _conversations: Dict[str, Conversation] = field(default_factory=dict)
+    _create_conversation_tasks: Dict[str, asyncio.Task] = field(default_factory=dict)
     _session_cleanup_task: Optional[asyncio.Task] = None
 
     async def __aenter__(self):
@@ -47,16 +48,20 @@ class SessionManager:
             return None
         return self._sessions.get(sid)
 
-    def attach_to_conversation(self, sid: str) -> Conversation | None:
+    async def attach_to_conversation(self, sid: str) -> Conversation | None:
         if not session_exists(sid, self.file_store):
             return None
-        conversation = self._conversations.get(sid)
-        if not conversation:
-            logger.info(f'CREATING_NEW_CONVERSATION:{sid}')
-            self._conversations[sid] = conversation = Conversation(
-                sid, file_store=self.file_store, config=self.config
+        create_conversation_task = self._create_conversation_tasks.get(sid)
+        if not create_conversation_task:
+            create_conversation_task = asyncio.create_task(
+                call_coro_in_bg_thread(self._create_conversation, sid=sid)
             )
-        return conversation
+            self._create_conversation_tasks[sid] = create_conversation_task
+        return await create_conversation_task
+
+    async def _create_conversation(self, sid: str) -> Conversation:
+        logger.info(f'CREATING_NEW_CONVERSATION:{sid}')
+        return Conversation(sid, file_store=self.file_store, config=self.config)
 
     async def send(self, sid: str, data: dict[str, object]) -> bool:
         """Sends data to the client."""
@@ -88,6 +93,7 @@ class SessionManager:
 
             for sid in session_ids_to_remove:
                 to_del_session: Session | None = self._sessions.pop(sid, None)
+                self._create_conversation_tasks.pop(sid, None)
                 if to_del_session is not None:
                     await to_del_session.close()
                     logger.info(

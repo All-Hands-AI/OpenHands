@@ -55,7 +55,9 @@ async def call_coro_in_bg_thread(
     corofn: Callable, timeout: float = GENERAL_TIMEOUT, *args, **kwargs
 ):
     """Function for running a coroutine in a background thread."""
-    await call_sync_from_async(call_async_from_sync, corofn, timeout, *args, **kwargs)
+    return await call_sync_from_async(
+        call_async_from_sync, corofn, timeout, *args, **kwargs
+    )
 
 
 async def wait_all(
