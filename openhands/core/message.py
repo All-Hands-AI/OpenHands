@@ -90,9 +90,15 @@ class Message(BaseModel):
         # https://github.com/BerriAI/litellm/issues/6422
         if self.tool_call_id is not None and isinstance(content, list):
             # assert no image content in the list
-            assert all(
-                isinstance(item, TextContent) for item in self.content
-            ), f'Expected all text content in tool calls due to https://github.com/BerriAI/litellm/issues/6422. Got: {self.content}'
+            if not all(isinstance(item, TextContent) for item in self.content):
+                raise RuntimeError(
+                    f'Expected all text content in tool calls due to https://github.com/BerriAI/litellm/issues/6422. Got: {self.content}'
+                )
+            if self.cache_enabled:
+                raise RuntimeError(
+                    'Tool calls are not cacheable yet: https://github.com/All-Hands-AI/OpenHands/pull/4537#issuecomment-2436395005'
+                )
+
             # merge the content list into a single string
             content = '\n'.join(item.text for item in self.content)
 
