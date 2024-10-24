@@ -333,7 +333,7 @@ def response_to_action(response: ModelResponse) -> Action:
             # We implement this in agent_skills, which can be used via Jupyter
             # convert tool_call.function.arguments to kwargs that can be passed to file_editor
             kwargs = json.loads(tool_call.function.arguments)
-            code = f'file_editor(**{kwargs})'
+            code = f'print(file_editor(**{kwargs}))'
             logger.debug(
                 f'TOOL CALL: str_replace_editor -> file_editor with code: {code}'
             )
