@@ -1,6 +1,7 @@
 import os
 import tempfile
 import threading
+from functools import lru_cache
 from typing import Callable
 from zipfile import ZipFile
 
@@ -174,22 +175,22 @@ class EventStreamRuntime(Runtime):
         self.skip_container_logs = (
             os.environ.get('SKIP_CONTAINER_LOGS', 'false').lower() == 'true'
         )
-        if self.runtime_container_image is None:
-            if self.base_container_image is None:
-                raise ValueError(
-                    'Neither runtime container image nor base container image is set'
-                )
-            logger.info('Preparing container, this might take a few minutes...')
-            self.send_status_message('STATUS$STARTING_CONTAINER')
-            self.runtime_container_image = build_runtime_image(
-                self.base_container_image,
-                self.runtime_builder,
-                platform=self.config.sandbox.platform,
-                extra_deps=self.config.sandbox.runtime_extra_deps,
-                force_rebuild=self.config.sandbox.force_rebuild_runtime,
-            )
-
         if not attach_to_existing:
+            if self.runtime_container_image is None:
+                if self.base_container_image is None:
+                    raise ValueError(
+                        'Neither runtime container image nor base container image is set'
+                    )
+                logger.info('Preparing container, this might take a few minutes...')
+                self.send_status_message('STATUS$STARTING_CONTAINER')
+                self.runtime_container_image = build_runtime_image(
+                    self.base_container_image,
+                    self.runtime_builder,
+                    platform=self.config.sandbox.platform,
+                    extra_deps=self.config.sandbox.runtime_extra_deps,
+                    force_rebuild=self.config.sandbox.force_rebuild_runtime,
+                )
+
             self._init_container(
                 sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,  # e.g. /workspace
                 mount_dir=self.config.workspace_mount_path,  # e.g. /opt/openhands/_test_workspace
@@ -221,6 +222,7 @@ class EventStreamRuntime(Runtime):
         self.send_status_message(' ')
 
     @staticmethod
+    @lru_cache(maxsize=1)
     def _init_docker_client() -> docker.DockerClient:
         try:
             return docker.from_env()
