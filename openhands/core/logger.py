@@ -129,7 +129,7 @@ def get_console_handler(log_level=logging.INFO, extra_info: str | None = None):
     formatter_str = '%(asctime)s - %(levelname)s - %(message)s'
     if extra_info:
         formatter_str = f'{extra_info} - ' + formatter_str
-    console_handler.setFormatter(logging.Formatter(formatter_str))
+    console_handler.setFormatter(ColoredFormatter(formatter_str, datefmt='%H:%M:%S'))
     return console_handler
 
 
