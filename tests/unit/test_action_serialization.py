@@ -49,7 +49,7 @@ def serialization_deserialization(
     if 'args' in original_memory_dict:
         original_memory_dict['args'].pop('keep_prompt', None)
         original_memory_dict['args'].pop('blocking', None)
-        original_memory_dict['args'].pop('is_confirmed', None)
+        original_memory_dict['args'].pop('confirmation_state', None)
 
     # the rest should match
     assert (
@@ -103,7 +103,7 @@ def test_cmd_run_action_serialization_deserialization():
             'thought': '',
             'keep_prompt': True,
             'hidden': False,
-            'is_confirmed': ActionConfirmationStatus.CONFIRMED,
+            'confirmation_state': ActionConfirmationStatus.CONFIRMED,
         },
     }
     serialization_deserialization(original_action_dict, CmdRunAction)
