@@ -18,11 +18,11 @@ from openhands.storage.files import FileStore
 class SessionManager:
     config: AppConfig
     file_store: FileStore
-    _sessions: Dict[str, Session] = field(default_factory=dict)
     cleanup_interval: int = 300
     session_timeout: int = 600
-    _session_cleanup_task: Optional[asyncio.Task] = None
+    _sessions: Dict[str, Session] = field(default_factory=dict)
     _conversations: Dict[str, Conversation] = field(default_factory=dict)
+    _session_cleanup_task: Optional[asyncio.Task] = None
 
     async def __aenter__(self):
         if not self._session_cleanup_task:
