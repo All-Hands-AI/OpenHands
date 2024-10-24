@@ -1,6 +1,6 @@
 """This file contains a global singleton of the `EditTool` class as well as raw functions that expose its __call__."""
 
-from .base import CLIResult, ToolResult
+from .base import CLIResult, ToolError, ToolResult
 from .impl import Command, EditTool
 
 _GLOBAL_EDITOR = EditTool()
@@ -8,37 +8,23 @@ _GLOBAL_EDITOR = EditTool()
 
 def _make_api_tool_result(
     result: ToolResult,
-) -> dict:
+) -> str:
     """Convert an agent ToolResult to an API ToolResultBlockParam."""
-    tool_result_content: list[dict] | str = []
+    tool_result_content: str = ''
     is_error = False
     if result.error:
         is_error = True
         tool_result_content = _maybe_prepend_system_tool_result(result, result.error)
     else:
-        assert isinstance(tool_result_content, list)
-        if result.output:
-            tool_result_content.append(
-                {
-                    'type': 'text',
-                    'text': _maybe_prepend_system_tool_result(result, result.output),
-                }
-            )
-        if result.base64_image:
-            tool_result_content.append(
-                {
-                    'type': 'image',
-                    'source': {
-                        'type': 'base64',
-                        'media_type': 'image/png',
-                        'data': result.base64_image,
-                    },
-                }
-            )
-    return {
-        'content': tool_result_content,
-        'is_error': is_error,
-    }
+        assert result.output, 'Expecting output in file_editor'
+        tool_result_content = _maybe_prepend_system_tool_result(result, result.output)
+        assert (
+            not result.base64_image
+        ), 'Not expecting base64_image as output in file_editor'
+    if is_error:
+        return f'ERROR:\n{tool_result_content}'
+    else:
+        return tool_result_content
 
 
 def _maybe_prepend_system_tool_result(result: ToolResult, result_text: str) -> str:
@@ -55,16 +41,19 @@ def file_editor(
     old_str: str | None = None,
     new_str: str | None = None,
     insert_line: int | None = None,
-):
-    result: CLIResult = _GLOBAL_EDITOR(
-        command=command,
-        path=path,
-        file_text=file_text,
-        view_range=view_range,
-        old_str=old_str,
-        new_str=new_str,
-        insert_line=insert_line,
-    )
+) -> str:
+    try:
+        result: CLIResult = _GLOBAL_EDITOR(
+            command=command,
+            path=path,
+            file_text=file_text,
+            view_range=view_range,
+            old_str=old_str,
+            new_str=new_str,
+            insert_line=insert_line,
+        )
+    except ToolError as e:
+        return _make_api_tool_result(ToolResult(error=e.message))
     return _make_api_tool_result(result)
 
 
