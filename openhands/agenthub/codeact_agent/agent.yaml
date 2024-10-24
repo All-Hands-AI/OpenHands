@@ -1,6 +1,11 @@
-# Main template settings
+name: CodeActAgent
+
+# main templates
 template:
-  base: "system_prompt.j2"  # Path to the base template file
+  system_prompt: "system_prompt.j2"  # path to the base template file
+  agent_skills: "agent_skills.j2"  # path to the agent skills template file
+  examples: "examples.j2"  # path to the examples template file
+  user_prompt: "user_prompt.j2"  # path to the initial user prompt template file
 
 # Optional custom blocks to override or extend the base template
 # If null, the default from system_prompt.j2 is used
@@ -23,3 +28,15 @@ agent_variables:
   # agent skills
   agent_skills:
     docs_file: "agent_skills.md"
+    available_skills:
+      - "file_ops:open_file"
+      - "file_ops:goto_line"
+      - "file_ops:scroll_down"
+      - "file_ops:scroll_up"
+      - "file_ops:search_dir"
+      - "file_ops:search_file"
+      - "file_ops:find_file"
+      - "parsers:parse_pdf"
+      - "parsers:parse_docx"
+      - "parsers:parse_latex"
+      - "parsers:parse_pptx"
