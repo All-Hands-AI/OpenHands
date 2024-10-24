@@ -849,7 +849,6 @@ def authenticate(user: User | None = None):
 
 class SPAStaticFiles(StaticFiles):
     async def get_response(self, path: str, scope):
-        print('spa static, path: ', path)
         try:
             return await super().get_response(path, scope)
         except Exception:
