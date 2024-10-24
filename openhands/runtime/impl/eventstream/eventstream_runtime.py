@@ -454,8 +454,8 @@ class EventStreamRuntime(Runtime):
                     f'Action {action_type} is not supported in the current runtime.'
                 )
             if (
-                hasattr(action, 'confirmation_state')
-                and action.confirmation_state == ActionConfirmationStatus.REJECTED
+                getattr(action, 'confirmation_state', None)
+                == ActionConfirmationStatus.REJECTED
             ):
                 return UserRejectObservation(
                     'Action has been rejected by the user! Waiting for further user input.'
