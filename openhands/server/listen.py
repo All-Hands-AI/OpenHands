@@ -200,9 +200,14 @@ async def attach_session(request: Request, call_next):
     Returns:
         Response: The response from the next middleware or route handler.
     """
-    if request.url.path.startswith('/api/options/') or not request.url.path.startswith(
-        '/api/'
-    ):
+    non_authed_paths = [
+        '/api/options/',
+        '/api/github/callback',
+        '/api/authenticate',
+    ]
+    if any(
+        request.url.path.startswith(path) for path in non_authed_paths
+    ) or not request.url.path.startswith('/api/'):
         response = await call_next(request)
         return response
 
