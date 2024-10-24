@@ -133,7 +133,9 @@ class CodeActAgent(Agent):
                 return Message(
                     role=assistant_msg.role,
                     # tool call content SHOULD BE a string
-                    content=[TextContent(text=assistant_msg.content)],
+                    content=[TextContent(text=assistant_msg.content)]
+                    if assistant_msg.content is not None
+                    else [],
                     tool_calls=assistant_msg.tool_calls,
                 )
             else:

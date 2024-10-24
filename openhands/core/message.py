@@ -50,7 +50,7 @@ class ImageContent(Content):
 
 class Message(BaseModel):
     role: Literal['user', 'system', 'assistant', 'tool']
-    content: list[TextContent | ImageContent] = Field(default=list)
+    content: list[TextContent | ImageContent] = Field(default_factory=list)
     cache_enabled: bool = False
     vision_enabled: bool = False
     # function calling
