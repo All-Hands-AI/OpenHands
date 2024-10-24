@@ -6,6 +6,7 @@ import {
   FeedbackResponse,
   GitHubAccessTokenResponse,
   ErrorResponse,
+  GetConfigResponse,
 } from "./open-hands.types";
 
 /**
@@ -57,6 +58,15 @@ class OpenHands {
     const response = await fetch(
       `${OpenHands.BASE_URL}/api/options/security-analyzers`,
     );
+    return response.json();
+  }
+
+  static async getConfig(): Promise<GetConfigResponse> {
+    const response = await fetch("config.json", {
+      headers: {
+        "Cache-Control": "no-cache",
+      },
+    });
     return response.json();
   }
 
@@ -200,6 +210,23 @@ class OpenHands {
     });
 
     return response.json();
+  }
+
+  /**
+   * Check if the user is authenticated
+   * @param login The user's GitHub login handle
+   * @returns Whether the user is authenticated
+   */
+  static async isAuthenticated(login: string): Promise<boolean> {
+    const response = await fetch(`${OpenHands.BASE_URL}/authenticate`, {
+      method: "POST",
+      body: JSON.stringify({ login }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    return response.status === 200;
   }
 }
 

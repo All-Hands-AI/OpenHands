@@ -1,7 +1,10 @@
 from typing import Any, Callable, Type
 
 import requests
-from requests.exceptions import ConnectionError, Timeout
+from requests.exceptions import (
+    ChunkedEncodingError,
+    ConnectionError,
+)
 from tenacity import (
     retry,
     retry_if_exception,
@@ -9,6 +12,7 @@ from tenacity import (
     stop_after_delay,
     wait_exponential,
 )
+from urllib3.exceptions import IncompleteRead
 
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
@@ -27,9 +31,24 @@ def is_404_error(exception):
     )
 
 
+def is_503_error(exception):
+    return (
+        isinstance(exception, requests.HTTPError)
+        and exception.response.status_code == 503
+    )
+
+
+def is_502_error(exception):
+    return (
+        isinstance(exception, requests.HTTPError)
+        and exception.response.status_code == 502
+    )
+
+
 DEFAULT_RETRY_EXCEPTIONS = [
     ConnectionError,
-    Timeout,
+    IncompleteRead,
+    ChunkedEncodingError,
 ]
 
 
@@ -45,7 +64,7 @@ def send_request_with_retry(
     exceptions_to_catch = retry_exceptions or DEFAULT_RETRY_EXCEPTIONS
     retry_condition = retry_if_exception_type(
         tuple(exceptions_to_catch)
-    ) | retry_if_exception(is_server_error)
+    ) | retry_if_exception(is_502_error)
     if retry_fns is not None:
         for fn in retry_fns:
             retry_condition |= retry_if_exception(fn)
