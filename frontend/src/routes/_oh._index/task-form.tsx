@@ -106,7 +106,7 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
             placeholder={placeholder}
             value={text}
             maxRows={15}
-            showSubmitButton={!!text}
+            showButton={!!text}
             className="text-[17px] leading-5"
             disabled={navigation.state === "submitting"}
           />

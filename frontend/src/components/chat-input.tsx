@@ -5,24 +5,28 @@ import { cn } from "#/utils/utils";
 
 interface ChatInputProps {
   name?: string;
+  button?: "submit" | "stop";
   disabled?: boolean;
   placeholder?: string;
-  showSubmitButton?: boolean;
+  showButton?: boolean;
   value?: string;
   maxRows?: number;
   onSubmit: (message: string) => void;
+  onStop?: () => void;
   onChange?: (message: string) => void;
   className?: React.HTMLAttributes<HTMLDivElement>["className"];
 }
 
 export function ChatInput({
   name,
+  button = "submit",
   disabled,
   placeholder,
-  showSubmitButton = true,
+  showButton = true,
   value,
   maxRows,
   onSubmit,
+  onStop,
   onChange,
   className,
 }: ChatInputProps) {
@@ -49,7 +53,7 @@ export function ChatInput({
   return (
     <div
       data-testid="chat-input"
-      className="flex items-end justify-end grow gap-1"
+      className="flex items-end justify-end grow gap-1 min-h-6"
     >
       <TextareaAutosize
         ref={textareaRef}
@@ -66,15 +70,32 @@ export function ChatInput({
           className,
         )}
       />
-      {showSubmitButton && (
-        <button
-          disabled={disabled}
-          onClick={handleSubmitMessage}
-          type="submit"
-          className="border border-white rounded-lg w-6 h-6 hover:bg-neutral-500 flex items-center justify-center"
-        >
-          <ArrowSendIcon />
-        </button>
+      {showButton && (
+        <>
+          {button === "submit" && (
+            <button
+              aria-label="Send"
+              disabled={disabled}
+              onClick={handleSubmitMessage}
+              type="submit"
+              className="border border-white rounded-lg w-6 h-6 hover:bg-neutral-500 flex items-center justify-center"
+            >
+              <ArrowSendIcon />
+            </button>
+          )}
+          {button === "stop" && (
+            <button
+              data-testid="stop-button"
+              aria-label="Stop"
+              disabled={disabled}
+              onClick={onStop}
+              type="button"
+              className="border border-white rounded-lg w-6 h-6 hover:bg-neutral-500 flex items-center justify-center"
+            >
+              <div className="w-[10px] h-[10px] bg-white" />
+            </button>
+          )}
+        </>
       )}
     </div>
   );

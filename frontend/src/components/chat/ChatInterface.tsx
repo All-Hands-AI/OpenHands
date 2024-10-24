@@ -19,6 +19,7 @@ import ThumbsDownIcon from "#/assets/thumbs-down.svg?react";
 import { cn } from "#/utils/utils";
 import { InteractiveChatBox } from "../interactive-chat-box";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
+import { generateAgentStateChangeEvent } from "#/services/agentStateService";
 
 interface ScrollButtonProps {
   onClick: () => void;
@@ -71,6 +72,10 @@ function ChatInterface() {
     const timestamp = new Date().toISOString();
     dispatch(addUserMessage({ content, imageUrls, timestamp }));
     send(createChatMessage(content, imageUrls, timestamp));
+  };
+
+  const handleStop = () => {
+    send(generateAgentStateChangeEvent(AgentState.STOPPED));
   };
 
   const shareFeedback = async (polarity: "positive" | "negative") => {
@@ -165,7 +170,9 @@ function ChatInterface() {
             curAgentState === AgentState.LOADING ||
             curAgentState === AgentState.AWAITING_USER_CONFIRMATION
           }
+          mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
           onSubmit={handleSendMessage}
+          onStop={handleStop}
         />
       </div>
       <FeedbackModal

@@ -5,6 +5,7 @@ import { InteractiveChatBox } from "#/components/interactive-chat-box";
 
 describe("InteractiveChatBox", () => {
   const onSubmitMock = vi.fn();
+  const onStopMock = vi.fn();
 
   beforeAll(() => {
     global.URL.createObjectURL = vi
@@ -17,7 +18,7 @@ describe("InteractiveChatBox", () => {
   });
 
   it("should render", () => {
-    render(<InteractiveChatBox onSubmit={onSubmitMock} />);
+    render(<InteractiveChatBox onSubmit={onSubmitMock} onStop={onStopMock} />);
 
     const chatBox = screen.getByTestId("interactive-chat-box");
     within(chatBox).getByTestId("chat-input");
@@ -26,7 +27,7 @@ describe("InteractiveChatBox", () => {
 
   it("should display the image previews when images are uploaded", async () => {
     const user = userEvent.setup();
-    render(<InteractiveChatBox onSubmit={onSubmitMock} />);
+    render(<InteractiveChatBox onSubmit={onSubmitMock} onStop={onStopMock} />);
 
     const file = new File(["(⌐□_□)"], "chucknorris.png", { type: "image/png" });
     const input = screen.getByTestId("upload-image-input");
@@ -47,7 +48,7 @@ describe("InteractiveChatBox", () => {
 
   it("should remove the image preview when the close button is clicked", async () => {
     const user = userEvent.setup();
-    render(<InteractiveChatBox onSubmit={onSubmitMock} />);
+    render(<InteractiveChatBox onSubmit={onSubmitMock} onStop={onStopMock} />);
 
     const file = new File(["(⌐□_□)"], "chucknorris.png", { type: "image/png" });
     const input = screen.getByTestId("upload-image-input");
@@ -64,7 +65,7 @@ describe("InteractiveChatBox", () => {
 
   it("should call onSubmit with the message and images", async () => {
     const user = userEvent.setup();
-    render(<InteractiveChatBox onSubmit={onSubmitMock} />);
+    render(<InteractiveChatBox onSubmit={onSubmitMock} onStop={onStopMock} />);
 
     const textarea = within(screen.getByTestId("chat-input")).getByRole(
       "textbox",
@@ -84,12 +85,35 @@ describe("InteractiveChatBox", () => {
 
   it("should disable the submit button", async () => {
     const user = userEvent.setup();
-    render(<InteractiveChatBox isDisabled onSubmit={onSubmitMock} />);
+    render(
+      <InteractiveChatBox
+        isDisabled
+        onSubmit={onSubmitMock}
+        onStop={onStopMock}
+      />,
+    );
 
     const button = screen.getByRole("button");
     expect(button).toBeDisabled();
 
     await user.click(button);
     expect(onSubmitMock).not.toHaveBeenCalled();
+  });
+
+  it("should display the stop button if set and call onStop when clicked", async () => {
+    const user = userEvent.setup();
+    render(
+      <InteractiveChatBox
+        mode="stop"
+        onSubmit={onSubmitMock}
+        onStop={onStopMock}
+      />,
+    );
+
+    const stopButton = screen.getByTestId("stop-button");
+    expect(stopButton).toBeInTheDocument();
+
+    await user.click(stopButton);
+    expect(onStopMock).toHaveBeenCalledOnce();
   });
 });

@@ -105,7 +105,7 @@ describe("ChatInput", () => {
   });
 
   it("should hide the submit button", () => {
-    render(<ChatInput onSubmit={onSubmitMock} showSubmitButton={false} />);
+    render(<ChatInput onSubmit={onSubmitMock} showButton={false} />);
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
@@ -127,6 +127,15 @@ describe("ChatInput", () => {
     expect(textarea).toHaveValue("Hello, world!");
   });
 
-  // NOTE: Functionality is already implemented but the test is not written
-  it.todo("should dynamically increase the height of the textarea");
+  it("should display the stop button and trigger the callback", async () => {
+    const user = userEvent.setup();
+    const onStopMock = vi.fn();
+    render(
+      <ChatInput onSubmit={onSubmitMock} button="stop" onStop={onStopMock} />,
+    );
+    const stopButton = screen.getByTestId("stop-button");
+
+    await user.click(stopButton);
+    expect(onStopMock).toHaveBeenCalledOnce();
+  });
 });

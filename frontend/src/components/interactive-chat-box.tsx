@@ -6,12 +6,16 @@ import { ImageCarousel } from "./image-carousel";
 
 interface InteractiveChatBoxProps {
   isDisabled?: boolean;
+  mode?: "stop" | "submit";
   onSubmit: (message: string, images: File[]) => void;
+  onStop: () => void;
 }
 
 export function InteractiveChatBox({
   isDisabled,
+  mode = "submit",
   onSubmit,
+  onStop,
 }: InteractiveChatBoxProps) {
   const [images, setImages] = React.useState<File[]>([]);
 
@@ -54,8 +58,10 @@ export function InteractiveChatBox({
         <UploadImageInput onUpload={handleUpload} />
         <ChatInput
           disabled={isDisabled}
+          button={mode}
           placeholder="What do you want to build?"
           onSubmit={handleSubmit}
+          onStop={onStop}
         />
       </div>
     </div>
