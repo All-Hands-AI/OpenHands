@@ -22,6 +22,7 @@ import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import store from "#/store";
 import { setInitialQuery } from "#/state/initial-query-slice";
 import { clientLoader as rootClientLoader } from "#/routes/_oh";
+import OpenHands from "#/api/open-hands";
 
 interface GitHubAuthProps {
   onConnectToGitHub: () => void;
@@ -49,6 +50,15 @@ function GitHubAuth({
 }
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
+  let isSaas = false;
+
+  try {
+    const config = await OpenHands.getConfig();
+    isSaas = config.APP_MODE === "saas";
+  } catch (error) {
+    isSaas = false;
+  }
+
   const token = localStorage.getItem("token");
   if (token) return redirect("/app");
 
@@ -62,7 +72,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   }
 
   let githubAuthUrl: string | null = null;
-  if (window.__APP_MODE__ === "saas") {
+  if (isSaas) {
     const clientId = window.__GITHUB_CLIENT_ID__;
     const requestUrl = new URL(request.url);
     const redirectUri = `${requestUrl.origin}/oauth/github/callback`;
