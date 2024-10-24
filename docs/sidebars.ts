@@ -92,6 +92,11 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: 'doc',
+          label: 'Runtime Configuration',
+          id: 'usage/runtimes',
+        },
+        {
+          type: 'doc',
           label: 'Custom Sandbox',
           id: 'usage/how-to/custom-sandbox-guide',
         },

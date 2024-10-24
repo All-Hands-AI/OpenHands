@@ -8,23 +8,17 @@
 
 ## Start the app
 
-The easiest way to run OpenHands is in Docker. You can change `WORKSPACE_BASE` below to point OpenHands to
-existing code that you'd like to modify.
+The easiest way to run OpenHands is in Docker.
 
 ```bash
-export WORKSPACE_BASE=$(pwd)/workspace
-
 docker pull ghcr.io/all-hands-ai/runtime:0.11-nikolaik
 
 docker run -it --pull=always \
     -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.11-nikolaik \
-    -e SANDBOX_USER_ID=$(id -u) \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
-    -v $WORKSPACE_BASE:/opt/workspace_base \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
-    --name openhands-app-$(date +%Y%m%d%H%M%S) \
+    --name openhands-app \
     ghcr.io/all-hands-ai/openhands:0.11
 ```
 
@@ -33,9 +27,6 @@ You can also run OpenHands in a scriptable [headless mode](https://docs.all-hand
 ## Setup
 
 After running the command above, you'll find OpenHands running at [http://localhost:3000](http://localhost:3000).
-
-The agent will have access to the `./workspace` folder to do its work. You can copy existing code here, or change `WORKSPACE_BASE` in the
-command to point to an existing folder.
 
 Upon launching OpenHands, you'll see a settings modal. You **must** select an `LLM Provider` and `LLM Model` and enter a corresponding `API Key`.
 These can be changed at any time by selecting the `Settings` button (gear icon) in the UI.
