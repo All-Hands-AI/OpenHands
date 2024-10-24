@@ -26,7 +26,7 @@ export function ChatInput({
   placeholder,
   showButton = true,
   value,
-  maxRows,
+  maxRows = 4,
   onSubmit,
   onStop,
   onChange,
