@@ -782,7 +782,7 @@ class AuthCode(BaseModel):
     code: str
 
 
-@app.post('/github/callback')
+@app.post('/api/github/callback')
 def github_callback(auth_code: AuthCode):
     # Prepare data for the token exchange request
     data = {
@@ -822,7 +822,7 @@ class User(BaseModel):
     login: str  # GitHub login handle
 
 
-@app.post('/authenticate')
+@app.post('/api/authenticate')
 def authenticate(user: User | None = None):
     waitlist = os.getenv('GITHUB_USER_LIST_FILE')
 
@@ -852,4 +852,5 @@ app.mount('/', StaticFiles(directory='./frontend/build', html=True), name='dist'
 
 @app.get('/{full_path:path}')
 async def serve_spa(full_path: str):
+    logger.info(f'Serving SPA for path: {full_path}')
     return FileResponse('./frontend/build/index.html')
