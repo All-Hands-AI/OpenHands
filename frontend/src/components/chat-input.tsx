@@ -14,6 +14,8 @@ interface ChatInputProps {
   onSubmit: (message: string) => void;
   onStop?: () => void;
   onChange?: (message: string) => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
   className?: React.HTMLAttributes<HTMLDivElement>["className"];
 }
 
@@ -28,6 +30,8 @@ export function ChatInput({
   onSubmit,
   onStop,
   onChange,
+  onFocus,
+  onBlur,
   className,
 }: ChatInputProps) {
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -61,6 +65,8 @@ export function ChatInput({
         placeholder={placeholder}
         onKeyDown={handleKeyPress}
         onChange={handleChange}
+        onFocus={onFocus}
+        onBlur={onBlur}
         value={value}
         minRows={1}
         maxRows={maxRows}
@@ -78,7 +84,7 @@ export function ChatInput({
               disabled={disabled}
               onClick={handleSubmitMessage}
               type="submit"
-              className="border border-white rounded-lg w-6 h-6 hover:bg-neutral-500 flex items-center justify-center"
+              className="border border-white rounded-lg w-6 h-6 hover:bg-neutral-500 focus:bg-neutral-500 flex items-center justify-center"
             >
               <ArrowSendIcon />
             </button>
@@ -90,7 +96,7 @@ export function ChatInput({
               disabled={disabled}
               onClick={onStop}
               type="button"
-              className="border border-white rounded-lg w-6 h-6 hover:bg-neutral-500 flex items-center justify-center"
+              className="border border-white rounded-lg w-6 h-6 hover:bg-neutral-500 focus:bg-neutral-500 flex items-center justify-center"
             >
               <div className="w-[10px] h-[10px] bg-white" />
             </button>

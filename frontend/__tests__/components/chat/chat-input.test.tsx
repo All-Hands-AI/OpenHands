@@ -138,4 +138,24 @@ describe("ChatInput", () => {
     await user.click(stopButton);
     expect(onStopMock).toHaveBeenCalledOnce();
   });
+
+  it("should call onFocus and onBlur when the textarea is focused and blurred", async () => {
+    const user = userEvent.setup();
+    const onFocusMock = vi.fn();
+    const onBlurMock = vi.fn();
+    render(
+      <ChatInput
+        onSubmit={onSubmitMock}
+        onFocus={onFocusMock}
+        onBlur={onBlurMock}
+      />,
+    );
+    const textarea = screen.getByRole("textbox");
+
+    await user.click(textarea);
+    expect(onFocusMock).toHaveBeenCalledOnce();
+
+    await user.tab();
+    expect(onBlurMock).toHaveBeenCalledOnce();
+  });
 });

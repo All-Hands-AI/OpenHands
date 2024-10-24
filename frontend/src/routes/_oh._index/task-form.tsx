@@ -16,6 +16,7 @@ import { ImageCarousel } from "#/components/image-carousel";
 import { getRandomKey } from "#/utils/get-random-key";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { AttachImageLabel } from "#/components/attach-image-label";
+import { cn } from "#/utils/utils";
 
 interface TaskFormProps {
   importedProjectZip: File | null;
@@ -39,6 +40,7 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
   const [suggestion, setSuggestion] = React.useState(
     getRandomKey(hasLoadedProject ? SUGGESTIONS.repo : SUGGESTIONS["non-repo"]),
   );
+  const [inputIsFocused, setInputIsFocused] = React.useState(false);
 
   React.useEffect(() => {
     // Display a suggestion based on whether a repository is selected
@@ -96,13 +98,20 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
           onClick={onClickSuggestion}
           onRefresh={onRefreshSuggestion}
         />
-        <div className="bg-neutral-700 border border-neutral-600 px-4 py-[17px] rounded-lg text-[17px] leading-5 w-full">
+        <div
+          className={cn(
+            "border border-neutral-600 px-4 py-[17px] rounded-lg text-[17px] leading-5 w-full",
+            inputIsFocused ? "bg-neutral-600" : "bg-neutral-700",
+          )}
+        >
           <ChatInput
             name="q"
             onSubmit={() => {
               formRef.current?.requestSubmit();
             }}
             onChange={(message) => setText(message)}
+            onFocus={() => setInputIsFocused(true)}
+            onBlur={() => setInputIsFocused(false)}
             placeholder={placeholder}
             value={text}
             maxRows={15}
