@@ -324,8 +324,6 @@ def response_to_action(response: ModelResponse) -> Action:
             ret = CmdRunAction(**json.loads(tool_call.function.arguments))
         elif tool_call.function.name == 'execute_ipython_cell':
             ret = IPythonRunCellAction(**json.loads(tool_call.function.arguments))
-        elif tool_call.function.name == 'message_user':
-            ret = MessageAction(**json.loads(tool_call.function.arguments)['content'])
         elif tool_call.function.name == 'delegate_to_browsing_agent':
             ret = AgentDelegateAction(**json.loads(tool_call.function.arguments))
         elif tool_call.function.name == 'finish':
