@@ -34,6 +34,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from starlette.middleware.base import BaseHTTPMiddleware
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller.agent import Agent
@@ -80,6 +81,25 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
+
+
+class NoCacheMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware to disable caching for all routes by adding appropriate headers
+    """
+
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        if not request.url.path.startswith('/assets'):
+            response.headers['Cache-Control'] = (
+                'no-cache, no-store, must-revalidate, max-age=0'
+            )
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+        return response
+
+
+app.add_middleware(NoCacheMiddleware)
 
 security_scheme = HTTPBearer()
 
@@ -180,9 +200,14 @@ async def attach_session(request: Request, call_next):
     Returns:
         Response: The response from the next middleware or route handler.
     """
-    if request.url.path.startswith('/api/options/') or not request.url.path.startswith(
-        '/api/'
-    ):
+    non_authed_paths = [
+        '/api/options/',
+        '/api/github/callback',
+        '/api/authenticate',
+    ]
+    if any(
+        request.url.path.startswith(path) for path in non_authed_paths
+    ) or not request.url.path.startswith('/api/'):
         response = await call_next(request)
         return response
 
@@ -762,7 +787,7 @@ class AuthCode(BaseModel):
     code: str
 
 
-@app.post('/github/callback')
+@app.post('/api/github/callback')
 def github_callback(auth_code: AuthCode):
     # Prepare data for the token exchange request
     data = {
@@ -802,7 +827,7 @@ class User(BaseModel):
     login: str  # GitHub login handle
 
 
-@app.post('/authenticate')
+@app.post('/api/authenticate')
 def authenticate(user: User | None = None):
     waitlist = os.getenv('GITHUB_USER_LIST_FILE')
 
@@ -827,4 +852,13 @@ def authenticate(user: User | None = None):
     )
 
 
-app.mount('/', StaticFiles(directory='./frontend/build', html=True), name='dist')
+class SPAStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        try:
+            return await super().get_response(path, scope)
+        except Exception:
+            # FIXME: just making this HTTPException doesn't work for some reason
+            return await super().get_response('index.html', scope)
+
+
+app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist')
