@@ -30,7 +30,7 @@ from fastapi import (
     status,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -825,6 +825,11 @@ def authenticate(user: User | None = None):
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={'message': 'User authenticated'}
     )
+
+
+@app.get('/{full_path:path}')
+async def serve_spa(full_path: str):
+    return FileResponse('./frontend/build/index.html')
 
 
 app.mount('/', StaticFiles(directory='./frontend/build', html=True), name='dist')
