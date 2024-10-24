@@ -2,7 +2,7 @@ import importlib
 import os
 
 import yaml
-from jinja2 import Environment, FileSystemLoader, Template
+from jinja2 import Environment, FileSystemLoader, Template, TemplateNotFound
 
 from openhands.utils.microagent import MicroAgent
 
@@ -37,7 +37,7 @@ class PromptManager:
         self.prompt_dir = prompt_dir
         self.micro_agent = micro_agent
 
-        self.env = Environment(loader=FileSystemLoader('.'))
+        self.env = Environment(loader=FileSystemLoader(prompt_dir))
 
         # load available skills from YAML
         yaml_path = os.path.join(prompt_dir, 'agent.yaml')
@@ -69,11 +69,16 @@ class PromptManager:
         # and we can use that to conditionally load the tools variant of agentskills
 
     def _load_template(self, template_name: str) -> Template:
-        template_path = os.path.join(self.prompt_dir, f'{template_name}.j2')
-        if not os.path.exists(template_path):
-            raise FileNotFoundError(f'Prompt file {template_path} not found')
-        with open(template_path, 'r') as file:
-            return Template(file.read())
+        # use the jinja2 environment to load the template
+        try:
+            return self.env.get_template(f'{template_name}.j2')
+        except TemplateNotFound:
+            # try to load from the prompt_dir
+            template_path = os.path.join(self.prompt_dir, f'{template_name}.j2')
+            if not os.path.exists(template_path):
+                raise FileNotFoundError(f'Prompt file {template_path} not found')
+            with open(template_path, 'r') as file:
+                return Template(file.read())
 
     @property
     def system_message(self) -> str:
@@ -112,8 +117,17 @@ class PromptManager:
         """Retrieves the docstring of a skill function."""
         module_name, function_name = skill_name.split(':')
         try:
-            module = importlib.import_module(f'openhands.runtime.skills.{module_name}')
+            module = importlib.import_module(
+                f'openhands.runtime.plugins.agent_skills.{module_name}'
+            )
             function = getattr(module, function_name)
-            return function.__doc__
+            cur_doc = function.__doc__
+            # remove indentation from docstring and extra empty lines
+            cur_doc = '\n'.join(
+                filter(None, map(lambda x: x.strip(), cur_doc.split('\n')))
+            )
+            # now add a consistent 4 indentation
+            cur_doc = '\n'.join(map(lambda x: ' ' * 4 + x, cur_doc.split('\n')))
+            return f'{function.__name__}\n{cur_doc}'
         except (ImportError, AttributeError):
             return f'Documentation not found for skill: {skill_name}'
