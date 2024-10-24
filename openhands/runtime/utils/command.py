@@ -16,7 +16,7 @@ def get_remote_startup_command(
         'python',
         '-u',
         '-m',
-        'openhands.runtime.client.client',
+        'openhands.runtime.action_execution_server',
         str(port),
         '--working-dir',
         sandbox_workspace_dir,
