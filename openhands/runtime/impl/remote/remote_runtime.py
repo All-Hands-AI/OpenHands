@@ -287,7 +287,7 @@ class RemoteRuntime(Runtime):
             logger.info(
                 f'Waiting for runtime pod to be active. Current status: {pod_status}'
             )
-            if pod_status == 'Ready':
+            if pod_status in ('Ready', 'Running'):
                 pod_running = True
                 break
             elif pod_status == 'Not Found' and not_found_count < max_not_found_count:
@@ -295,11 +295,7 @@ class RemoteRuntime(Runtime):
                 logger.info(
                     f'Runtime pod not found. Count: {not_found_count} / {max_not_found_count}'
                 )
-            elif (
-                pod_status == 'Failed'
-                or pod_status == 'Unknown'
-                or pod_status == 'Not Found'
-            ):
+            elif pod_status in ('Failed', 'Unknown', 'Not Found'):
                 # clean up the runtime
                 self.close()
                 raise RuntimeError(
