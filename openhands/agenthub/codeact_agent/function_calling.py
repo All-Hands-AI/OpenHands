@@ -278,7 +278,7 @@ def response_to_action(response: ModelResponse) -> Action:
         ret = MessageAction(content=assistant_msg.content)
 
     assert ret is not None
-    ret.raw_llm_response = response
+    ret.trigger_by_llm_response = response
     return ret
 
 

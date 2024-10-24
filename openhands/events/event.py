@@ -76,11 +76,11 @@ class Event:
 
     # optional field
     @property
-    def raw_llm_response(self) -> ModelResponse | None:
-        if hasattr(self, '_raw_llm_response'):
-            return self._raw_llm_response  # type: ignore[attr-defined]
+    def trigger_by_llm_response(self) -> ModelResponse | None:
+        if hasattr(self, '_trigger_by_llm_response'):
+            return self._trigger_by_llm_response  # type: ignore[attr-defined]
         return None
 
-    @raw_llm_response.setter
-    def raw_llm_response(self, value: ModelResponse) -> None:
-        self._raw_llm_response = value
+    @trigger_by_llm_response.setter
+    def trigger_by_llm_response(self, value: ModelResponse) -> None:
+        self._trigger_by_llm_response = value

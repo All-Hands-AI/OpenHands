@@ -118,7 +118,7 @@ class CodeActAgent(Agent):
             if self.config.function_calling:
                 # FIXME
                 # Add assistant's response (i.e., tool call)
-                llm_response: ModelResponse = action.raw_llm_response
+                llm_response: ModelResponse = action.trigger_by_llm_response
                 assert llm_response is not None
                 assistant_msg = llm_response.choices[0].message
                 return Message(
@@ -134,15 +134,6 @@ class CodeActAgent(Agent):
                     content=content,
                 )
         elif isinstance(action, MessageAction):
-            # message from LLM to user
-            if action.raw_llm_response is not None:
-                # it could be "assistant" or "tool"
-                _msg = action.raw_llm_response.choices[0].message
-                return Message(
-                    role=_msg.role,
-                    content=_msg.content,
-                )
-
             role = 'user' if action.source == 'user' else 'assistant'
             content = [TextContent(text=action.content)]
             if self.llm.vision_is_active() and action.images_urls:
