@@ -78,8 +78,6 @@ class RemoteRuntime(Runtime):
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
 
-        self.sid = sid
-
         super().__init__(
             config,
             event_stream,

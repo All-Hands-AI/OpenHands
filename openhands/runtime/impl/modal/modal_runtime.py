@@ -1,7 +1,6 @@
 import os
 import tempfile
 import threading
-import uuid
 from pathlib import Path
 from typing import Callable, Generator
 
@@ -21,6 +20,9 @@ from openhands.runtime.utils.command import get_remote_startup_command
 from openhands.runtime.utils.runtime_build import (
     prep_build_folder,
 )
+
+# FIXME: this will not work in HA mode. We need a better way to track IDs
+MODAL_RUNTIME_IDS: dict[str, str] = {}
 
 
 # Modal's log generator returns strings, but the upstream LogBuffer expects bytes.
@@ -98,9 +100,6 @@ class ModalRuntime(EventStreamRuntime):
         self.container_port = 3000
 
         self.session = requests.Session()
-        self.instance_id = (
-            sid + '_' + str(uuid.uuid4()) if sid is not None else str(uuid.uuid4())
-        )
         self.status_message_callback = status_message_callback
         self.base_container_image_id = self.config.sandbox.base_container_image
         self.runtime_container_image_id = self.config.sandbox.runtime_container_image
@@ -127,7 +126,7 @@ class ModalRuntime(EventStreamRuntime):
     async def connect(self):
         self.send_status_message('STATUS$STARTING_RUNTIME')
 
-        logger.info(f'ModalRuntime `{self.instance_id}`')
+        logger.info(f'ModalRuntime `{self.sid}`')
 
         self.image = self._get_image_definition(
             self.base_container_image_id,
@@ -135,21 +134,33 @@ class ModalRuntime(EventStreamRuntime):
             self.config.sandbox.runtime_extra_deps,
         )
 
-        self.sandbox = self._init_sandbox(
-            sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,
-            plugins=self.plugins,
-        )
+        if self.attach_to_existing:
+            if self.sid in MODAL_RUNTIME_IDS:
+                sandbox_id = MODAL_RUNTIME_IDS[self.sid]
+                logger.info(f'Attaching to existing Modal sandbox: {sandbox_id}')
+                self.sandbox = modal.Sandbox.from_id(
+                    sandbox_id, client=self.modal_client
+                )
+        else:
+            self.send_status_message('STATUS$PREPARING_CONTAINER')
+            self.sandbox = self._init_sandbox(
+                sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,
+                plugins=self.plugins,
+            )
 
-        logger.info('Waiting for client to become ready...')
-        self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+            self.send_status_message('STATUS$CONTAINER_STARTED')
+
+        self.log_buffer = ModalLogBuffer(self.sandbox)
+
+        if not self.attach_to_existing:
+            logger.info('Waiting for client to become ready...')
+            self.send_status_message('STATUS$WAITING_FOR_CLIENT')
 
         self._wait_until_alive()
         self.setup_initial_env()
 
-        logger.info(
-            f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
-        )
-        self.send_status_message(' ')
+        if not self.attach_to_existing:
+            self.send_status_message(' ')
 
     def _get_image_definition(
         self,
@@ -200,7 +211,6 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
     ) -> modal.Sandbox:
         try:
             logger.info('Preparing to start container...')
-            self.send_status_message('STATUS$PREPARING_CONTAINER')
             plugin_args = []
             if plugins is not None and len(plugins) > 0:
                 plugin_args.append('--plugins')
@@ -243,19 +253,16 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
                 client=self.modal_client,
                 timeout=60 * 60,
             )
+            MODAL_RUNTIME_IDS[self.sid] = sandbox.object_id
             logger.info('Container started')
 
             tunnel = sandbox.tunnels()[self.container_port]
             self.api_url = tunnel.url
 
-            self.log_buffer = ModalLogBuffer(sandbox)
             logger.info(f'Container started. Server url: {self.api_url}')
-            self.send_status_message('STATUS$CONTAINER_STARTED')
             return sandbox
         except Exception as e:
-            logger.error(
-                f'Error: Instance {self.instance_id} FAILED to start container!\n'
-            )
+            logger.error(f'Error: Instance {self.sid} FAILED to start container!\n')
             logger.exception(e)
             self.close()
             raise e
@@ -271,5 +278,5 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
         if self.session:
             self.session.close()
 
-        if self.sandbox:
+        if not self.attach_to_existing and self.sandbox:
             self.sandbox.terminate()  # type: ignore
