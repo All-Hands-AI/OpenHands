@@ -319,17 +319,17 @@ def response_to_action(response: ModelResponse) -> Action:
     if assistant_msg.tool_calls:
         tool_call = assistant_msg.tool_calls[0]
         assert len(assistant_msg.tool_calls) == 1
-        ret: Action | None = None
+        action: Action | None = None
         if tool_call.function.name == 'execute_bash':
-            ret = CmdRunAction(**json.loads(tool_call.function.arguments))
+            action = CmdRunAction(**json.loads(tool_call.function.arguments))
         elif tool_call.function.name == 'execute_ipython_cell':
-            ret = IPythonRunCellAction(**json.loads(tool_call.function.arguments))
+            action = IPythonRunCellAction(**json.loads(tool_call.function.arguments))
         elif tool_call.function.name == 'delegate_to_browsing_agent':
-            ret = AgentDelegateAction(**json.loads(tool_call.function.arguments))
+            action = AgentDelegateAction(**json.loads(tool_call.function.arguments))
         elif tool_call.function.name == 'finish':
-            ret = AgentFinishAction()
+            action = AgentFinishAction()
         elif tool_call.function.name == 'edit_file':
-            ret = FileEditAction(**json.loads(tool_call.function.arguments))
+            action = FileEditAction(**json.loads(tool_call.function.arguments))
         elif tool_call.function.name == 'str_replace_editor':
             # We implement this in agent_skills, which can be used via Jupyter
             # convert tool_call.function.arguments to kwargs that can be passed to file_editor
@@ -338,16 +338,16 @@ def response_to_action(response: ModelResponse) -> Action:
             logger.debug(
                 f'TOOL CALL: str_replace_editor -> file_editor with code: {code}'
             )
-            ret = IPythonRunCellAction(code=code, include_extra=False)
+            action = IPythonRunCellAction(code=code, include_extra=False)
         else:
             raise RuntimeError(f'Unknown tool call: {tool_call.function.name}')
     else:
         logger.warning(f'No tool call found in the response: {assistant_msg}')
-        ret = MessageAction(content=assistant_msg.content)
+        action = MessageAction(content=assistant_msg.content)
 
-    assert ret is not None
-    ret.trigger_by_llm_response = response
-    return ret
+    assert action is not None
+    action.trigger_by_llm_response = response
+    return action
 
 
 def get_tools(
