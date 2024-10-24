@@ -302,10 +302,7 @@ BrowserDelegationTool = ChatCompletionToolParam(
     ),
 )
 
-_FINISH_DESCRIPTION = """Finish the interaction.
-* Do this if the task is complete.
-* Do this if the assistant cannot proceed further with the task.
-"""
+_FINISH_DESCRIPTION = """Finish the interaction when the task is complete OR if the assistant cannot proceed further with the task."""
 
 FinishTool = ChatCompletionToolParam(
     type='function',
