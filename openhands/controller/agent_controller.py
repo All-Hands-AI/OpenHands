@@ -224,8 +224,7 @@ class AgentController:
         """
         if (
             self._pending_action
-            and hasattr(self._pending_action, 'is_confirmed')
-            and self._pending_action.is_confirmed
+            and getattr(self._pending_action, 'is_confirmed', None)
             == ActionConfirmationStatus.AWAITING_CONFIRMATION
         ):
             return
@@ -458,8 +457,7 @@ class AgentController:
 
         if not isinstance(action, NullAction):
             if (
-                hasattr(action, 'is_confirmed')
-                and action.is_confirmed
+                getattr(action, 'is_confirmed', None)
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)

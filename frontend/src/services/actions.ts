@@ -1,6 +1,5 @@
 import { addAssistantMessage, addUserMessage } from "#/state/chatSlice";
 import { setCode, setActiveFilepath } from "#/state/codeSlice";
-import { appendInput } from "#/state/commandSlice";
 import { appendJupyterInput } from "#/state/jupyterSlice";
 import {
   ActionSecurityRisk,
@@ -55,12 +54,6 @@ const messageActions = {
     if (message.args.hidden) return;
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
-    }
-    if (
-      !message.args.is_confirmed ||
-      message.args.is_confirmed !== "rejected"
-    ) {
-      store.dispatch(appendInput(message.args.command));
     }
   },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
