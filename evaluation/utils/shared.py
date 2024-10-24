@@ -95,6 +95,7 @@ def codeact_user_response(
     encapsulate_solution: bool = False,
     try_parse: Callable[[Action], str] | None = None,
 ) -> str:
+    # FIXME: for function calling
     encaps_str = (
         (
             'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
