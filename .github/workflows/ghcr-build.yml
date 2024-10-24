@@ -399,3 +399,35 @@ jobs:
         run: |
           echo "Some runtime tests failed or were cancelled"
           exit 1
+  update_pr_description:
+    name: Update PR Description
+    if: github.event_name == 'pull_request'
+    needs: [ghcr_build_runtime]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get short SHA
+        id: short_sha
+        run: echo "SHORT_SHA=$(echo ${{ github.event.pull_request.head.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
+      - name: Update PR Description
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          SHORT_SHA: ${{ steps.short_sha.outputs.SHORT_SHA }}
+        run: |
+          DOCKER_RUN_COMMAND="docker run -it --rm -p 3000:3000 -v \$(pwd):/workspace -w /workspace ghcr.io/all-hands-ai/runtime:$SHORT_SHA-nikolaik python3 -m openhands.runtime.app"
+          PR_BODY=$(gh pr view $PR_NUMBER --json body --jq .body)
+          UPDATED_PR_BODY="${PR_BODY}
+
+          ---
+          
+          To run this PR locally, use the following command:
+          \`\`\`
+          $DOCKER_RUN_COMMAND
+          \`\`\`"
+          gh pr edit $PR_NUMBER --body "$UPDATED_PR_BODY"
+
