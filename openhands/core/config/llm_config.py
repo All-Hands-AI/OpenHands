@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass, fields
+from typing import Optional
 
 from openhands.core.config.config_utils import get_field_info
 
@@ -39,6 +40,7 @@ class LLMConfig:
         disable_vision: If model is vision capable, this option allows to disable image processing (useful for cost reduction).
         caching_prompt: Use the prompt caching feature if provided by the LLM and supported by the provider.
         log_completions: Whether to log LLM completions to the state.
+        draft_editor: A more efficient LLM to use for file editing. Introduced in [PR 3985](https://github.com/All-Hands-AI/OpenHands/pull/3985).
         max_conversation_window: The maximum number of messages to include in the conversation window (context), after which old messages are truncated or summarized.
         conversation_top_k: The number of top results to retrieve from the conversation history.
         message_summary_warning_level: The fraction of the conversation window for warning about context overflow (e.g. 0.75 for 75% of the tokens).
@@ -75,6 +77,7 @@ class LLMConfig:
     disable_vision: bool | None = None
     caching_prompt: bool = True
     log_completions: bool = False
+    draft_editor: Optional['LLMConfig'] = None
     max_conversation_window: int = 10
     conversation_top_k: int = 5
     message_summary_warning_level: float = 0.75
@@ -121,4 +124,19 @@ class LLMConfig:
         for k, v in ret.items():
             if k in LLM_SENSITIVE_FIELDS:
                 ret[k] = '******' if v else None
+            elif isinstance(v, LLMConfig):
+                ret[k] = v.to_safe_dict()
         return ret
+
+    @classmethod
+    def from_dict(cls, llm_config_dict: dict) -> 'LLMConfig':
+        """Create an LLMConfig object from a dictionary.
+
+        This function is used to create an LLMConfig object from a dictionary,
+        with the exception of the 'draft_editor' key, which is a nested LLMConfig object.
+        """
+        args = {k: v for k, v in llm_config_dict.items() if not isinstance(v, dict)}
+        if 'draft_editor' in llm_config_dict:
+            draft_editor_config = LLMConfig(**llm_config_dict['draft_editor'])
+            args['draft_editor'] = draft_editor_config
+        return cls(**args)

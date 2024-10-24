@@ -119,7 +119,6 @@ class MemCodeActAgent(Agent):
 
         self.prompt_manager = PromptManager(
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
-            agent_skills_docs=AgentSkillsRequirement.documentation,
             micro_agent=self.micro_agent,
         )
 

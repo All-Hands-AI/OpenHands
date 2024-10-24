@@ -140,7 +140,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     generic_llm_fields = {
                         k: v for k, v in value.items() if not isinstance(v, dict)
                     }
-                    generic_llm_config = LLMConfig(**generic_llm_fields)
+                    generic_llm_config = LLMConfig.from_dict(generic_llm_fields)
                     cfg.set_llm_config(generic_llm_config, 'llm')
 
                     # Process custom named LLM configs
@@ -158,7 +158,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                             # results in num_retries APPLIED to claude-3-5-sonnet
                             merged_llm_dict = generic_llm_config.__dict__.copy()
                             merged_llm_dict.update(nested_value)
-                            custom_llm_config = LLMConfig(**merged_llm_dict)
+                            custom_llm_config = LLMConfig.from_dict(merged_llm_dict)
                             cfg.set_llm_config(custom_llm_config, nested_key)
                 elif not key.startswith('sandbox') and key.lower() != 'core':
                     logger.openhands_logger.warning(
@@ -284,7 +284,7 @@ def get_llm_config_arg(
 
     # update the llm config with the specified section
     if 'llm' in toml_config and llm_config_arg in toml_config['llm']:
-        return LLMConfig(**toml_config['llm'][llm_config_arg])
+        return LLMConfig.from_dict(toml_config['llm'][llm_config_arg])
     logger.openhands_logger.debug(f'Loading from toml failed for {llm_config_arg}')
     return None
 

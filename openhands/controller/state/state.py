@@ -6,12 +6,12 @@ from typing import Any
 
 from openhands.controller.state.task import RootTask
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.metrics import Metrics
 from openhands.core.schema import AgentState
 from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.action.agent import AgentFinishAction, AgentSummarizeAction
+from openhands.llm.metrics import Metrics
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import AgentDelegateObservation
 from openhands.storage.files import FileStore

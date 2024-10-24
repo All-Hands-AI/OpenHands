@@ -17,22 +17,23 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    FileEditAction,
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
 )
 from openhands.events.action.action import Action
 from openhands.events.observation import (
-    ErrorObservation,
+    FatalErrorObservation,
     NullObservation,
     Observation,
     UserRejectObservation,
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.runtime.base import Runtime
 from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
-from openhands.runtime.runtime import Runtime
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.request import send_request_with_retry
 from openhands.runtime.utils.runtime_build import build_runtime_image
@@ -183,6 +184,7 @@ class EventStreamRuntime(Runtime):
             self.runtime_container_image = build_runtime_image(
                 self.base_container_image,
                 self.runtime_builder,
+                platform=self.config.sandbox.platform,
                 extra_deps=self.config.sandbox.runtime_extra_deps,
                 force_rebuild=self.config.sandbox.force_rebuild_runtime,
             )
@@ -302,7 +304,7 @@ class EventStreamRuntime(Runtime):
                 command=(
                     f'/openhands/micromamba/bin/micromamba run -n openhands '
                     f'poetry run '
-                    f'python -u -m openhands.runtime.client.client {self._container_port} '
+                    f'python -u -m openhands.runtime.action_execution_server {self._container_port} '
                     f'--working-dir "{sandbox_workspace_dir}" '
                     f'{plugin_arg}'
                     f'--username {"openhands" if self.config.run_as_openhands else "root"} '
@@ -428,6 +430,9 @@ class EventStreamRuntime(Runtime):
             self.docker_client.close()
 
     def run_action(self, action: Action) -> Observation:
+        if isinstance(action, FileEditAction):
+            return self.edit(action)
+
         # set timeout to default if not set
         if action.timeout is None:
             action.timeout = self.config.sandbox.timeout
@@ -443,9 +448,9 @@ class EventStreamRuntime(Runtime):
                 return NullObservation('')
             action_type = action.action  # type: ignore[attr-defined]
             if action_type not in ACTION_TYPE_TO_CLASS:
-                return ErrorObservation(f'Action {action_type} does not exist.')
+                return FatalErrorObservation(f'Action {action_type} does not exist.')
             if not hasattr(self, action_type):
-                return ErrorObservation(
+                return FatalErrorObservation(
                     f'Action {action_type} is not supported in the current runtime.'
                 )
             if (
@@ -477,15 +482,17 @@ class EventStreamRuntime(Runtime):
                     logger.debug(f'response: {response}')
                     error_message = response.text
                     logger.error(f'Error from server: {error_message}')
-                    obs = ErrorObservation(f'Action execution failed: {error_message}')
+                    obs = FatalErrorObservation(
+                        f'Action execution failed: {error_message}'
+                    )
             except requests.Timeout:
                 logger.error('No response received within the timeout period.')
-                obs = ErrorObservation(
+                obs = FatalErrorObservation(
                     f'Action execution timed out after {action.timeout} seconds.'
                 )
             except Exception as e:
                 logger.error(f'Error during action execution: {e}')
-                obs = ErrorObservation(f'Action execution failed: {str(e)}')
+                obs = FatalErrorObservation(f'Action execution failed: {str(e)}')
             self._refresh_logs()
             return obs
 

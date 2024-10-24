@@ -4,7 +4,6 @@ import {
   json,
   redirect,
   useLoaderData,
-  useNavigation,
   useRouteLoaderData,
 } from "@remix-run/react";
 import React from "react";
@@ -21,7 +20,6 @@ import ModalButton from "#/components/buttons/ModalButton";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import { ConnectToGitHubModal } from "#/components/modals/connect-to-github-modal";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
-import { LoadingSpinner } from "#/components/modals/LoadingProject";
 import store, { RootState } from "#/store";
 import { removeFile, setInitialQuery } from "#/state/initial-query-slice";
 import { clientLoader as rootClientLoader } from "#/routes/_oh";
@@ -84,10 +82,13 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
     }
   }
 
-  const clientId = import.meta.env.VITE_GITHUB_CLIENT_ID;
-  const requestUrl = new URL(request.url);
-  const redirectUri = `${requestUrl.origin}/oauth/github/callback`;
-  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user,workflow`;
+  let githubAuthUrl: string | null = null;
+  if (window.__APP_MODE__ === "saas") {
+    const clientId = window.__GITHUB_CLIENT_ID__;
+    const requestUrl = new URL(request.url);
+    const redirectUri = `${requestUrl.origin}/oauth/github/callback`;
+    githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user,workflow`;
+  }
 
   return json({ repositories, githubAuthUrl });
 };
@@ -102,7 +103,6 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 
 function Home() {
   const rootData = useRouteLoaderData<typeof rootClientLoader>("routes/_oh");
-  const navigation = useNavigation();
   const { repositories, githubAuthUrl } = useLoaderData<typeof clientLoader>();
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
     React.useState(false);
@@ -113,9 +113,7 @@ function Home() {
   const { files } = useSelector((state: RootState) => state.initalQuery);
 
   const handleConnectToGitHub = () => {
-    const isSaas = window.__APP_MODE__ === "saas";
-
-    if (isSaas) {
+    if (githubAuthUrl) {
       window.location.href = githubAuthUrl;
     } else {
       setConnectToGitHubModalOpen(true);
@@ -124,11 +122,6 @@ function Home() {
 
   return (
     <div className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto">
-      {navigation.state === "loading" && (
-        <div className="absolute top-8 right-8">
-          <LoadingSpinner size="small" />
-        </div>
-      )}
       <HeroHeading />
       <div className="flex flex-col gap-16 w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
@@ -165,7 +158,7 @@ function Home() {
                   className="w-full flex justify-center"
                 >
                   <span className="border-2 border-dashed border-neutral-600 rounded px-2 py-1 cursor-pointer">
-                    Click here to load
+                    Upload a .zip
                   </span>
                   <input
                     hidden

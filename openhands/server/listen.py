@@ -54,7 +54,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict
 from openhands.llm import bedrock
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
 from openhands.server.auth import get_sid_from_token, sign_token
 from openhands.server.session import SessionManager
 
@@ -741,7 +741,7 @@ async def zip_current_workspace(request: Request):
         runtime: Runtime = request.state.conversation.runtime
 
         path = runtime.config.workspace_mount_path_in_sandbox
-        zip_file_bytes = runtime.copy_from(path)
+        zip_file_bytes = await call_sync_from_async(runtime.copy_from, path)
         zip_stream = io.BytesIO(zip_file_bytes)  # Wrap to behave like a file stream
         response = StreamingResponse(
             zip_stream,
@@ -798,4 +798,33 @@ def github_callback(auth_code: AuthCode):
     )
 
 
-app.mount('/', StaticFiles(directory='./frontend/build/client', html=True), name='dist')
+class User(BaseModel):
+    login: str  # GitHub login handle
+
+
+@app.post('/authenticate')
+def authenticate(user: User | None = None):
+    waitlist = os.getenv('GITHUB_USER_LIST_FILE')
+
+    # Only check if waitlist is provided
+    if waitlist is not None:
+        try:
+            with open(waitlist, 'r') as f:
+                users = f.read().splitlines()
+                if user is None or user.login not in users:
+                    return JSONResponse(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        content={'error': 'User not on waitlist'},
+                    )
+        except FileNotFoundError:
+            return JSONResponse(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                content={'error': 'Waitlist file not found'},
+            )
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK, content={'message': 'User authenticated'}
+    )
+
+
+app.mount('/', StaticFiles(directory='./frontend/build', html=True), name='dist')

@@ -26,7 +26,7 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
             <span>
               Get your token{" "}
               <a
-                href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user"
+                href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
                 target="_blank"
                 rel="noreferrer noopener"
                 className="text-[#791B80] underline"

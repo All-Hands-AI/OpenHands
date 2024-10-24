@@ -98,6 +98,7 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
 def build_runtime_image(
     base_image: str,
     runtime_builder: RuntimeBuilder,
+    platform: str | None = None,
     extra_deps: str | None = None,
     build_folder: str | None = None,
     dry_run: bool = False,
@@ -109,6 +110,7 @@ def build_runtime_image(
     Parameters:
     - base_image (str): The name of the base Docker image to use
     - runtime_builder (RuntimeBuilder): The runtime builder to use
+    - platform (str): The target platform for the build (e.g. linux/amd64, linux/arm64)
     - extra_deps (str):
     - build_folder (str): The directory to use for the build. If not provided a temporary directory will be used
     - dry_run (bool): if True, it will only ready the build folder. It will not actually build the Docker image
@@ -128,6 +130,7 @@ def build_runtime_image(
                 extra_deps=extra_deps,
                 dry_run=dry_run,
                 force_rebuild=force_rebuild,
+                platform=platform,
             )
             return result
 
@@ -138,6 +141,7 @@ def build_runtime_image(
         extra_deps=extra_deps,
         dry_run=dry_run,
         force_rebuild=force_rebuild,
+        platform=platform,
     )
     return result
 
@@ -149,6 +153,7 @@ def build_runtime_image_in_folder(
     extra_deps: str | None,
     dry_run: bool,
     force_rebuild: bool,
+    platform: str | None = None,
 ) -> str:
     runtime_image_repo, _ = get_runtime_image_repo_and_tag(base_image)
     lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image)}'
@@ -165,6 +170,7 @@ def build_runtime_image_in_folder(
                 runtime_image_repo,
                 hash_tag,
                 lock_tag,
+                platform,
             )
         return hash_image_name
 
@@ -194,6 +200,7 @@ def build_runtime_image_in_folder(
             runtime_image_repo,
             hash_tag,
             lock_tag,
+            platform,
         )
 
     return hash_image_name
@@ -293,6 +300,7 @@ def _build_sandbox_image(
     runtime_image_repo: str,
     hash_tag: str,
     lock_tag: str,
+    platform: str | None = None,
 ):
     """Build and tag the sandbox image. The image will be tagged with all tags that do not yet exist"""
 
@@ -305,7 +313,9 @@ def _build_sandbox_image(
         if not runtime_builder.image_exists(name, False)
     ]
 
-    image_name = runtime_builder.build(path=str(build_folder), tags=names)
+    image_name = runtime_builder.build(
+        path=str(build_folder), tags=names, platform=platform
+    )
     if not image_name:
         raise RuntimeError(f'Build failed for image {names}')
 
@@ -319,6 +329,7 @@ if __name__ == '__main__':
     )
     parser.add_argument('--build_folder', type=str, default=None)
     parser.add_argument('--force_rebuild', action='store_true', default=False)
+    parser.add_argument('--platform', type=str, default=None)
     args = parser.parse_args()
 
     if args.build_folder is not None:
@@ -349,6 +360,7 @@ if __name__ == '__main__':
                 build_folder=temp_dir,
                 dry_run=True,
                 force_rebuild=args.force_rebuild,
+                platform=args.platform,
             )
 
             _runtime_image_repo, runtime_image_hash_tag = runtime_image_hash_name.split(
@@ -382,5 +394,7 @@ if __name__ == '__main__':
         # Dockerfile, we actually build the Docker image
         logger.info('Building image in a temporary folder')
         docker_builder = DockerRuntimeBuilder(docker.from_env())
-        image_name = build_runtime_image(args.base_image, docker_builder)
+        image_name = build_runtime_image(
+            args.base_image, docker_builder, platform=args.platform
+        )
         print(f'\nBUILT Image: {image_name}\n')

@@ -3,6 +3,8 @@ import copy
 import traceback
 from typing import ClassVar, Type
 
+import litellm
+
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
@@ -36,6 +38,7 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
     ErrorObservation,
+    FatalErrorObservation,
     NullObservation,
     Observation,
 )
@@ -228,7 +231,12 @@ class AgentController:
         self.state.last_error = message
         if exception:
             self.state.last_error += f': {exception}'
-        self.event_stream.add_event(ErrorObservation(message), EventSource.USER)
+        detail = str(exception) if exception is not None else ''
+        if exception is not None and isinstance(exception, litellm.AuthenticationError):
+            detail = 'Please check your credentials. Is your API key correct?'
+        self.event_stream.add_event(
+            ErrorObservation(f'{message}:{detail}'), EventSource.USER
+        )
 
     async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
@@ -350,6 +358,12 @@ class AgentController:
         elif isinstance(observation, ErrorObservation):
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
+        elif isinstance(observation, FatalErrorObservation):
+            await self.report_error(
+                'There was a fatal error during agent execution: ' + str(observation)
+            )
+            await self.set_agent_state_to(AgentState.ERROR)
+            self.state.metrics.merge(self.state.local_metrics)
 
     async def _handle_message_action(self, action: MessageAction):
         """Handles message actions from the event stream.

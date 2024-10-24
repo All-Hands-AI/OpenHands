@@ -24,7 +24,7 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import MessageAction
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
 
 FAKE_RESPONSES = {
     'CodeActAgent': codeact_user_response,
