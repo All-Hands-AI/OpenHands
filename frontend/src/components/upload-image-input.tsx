@@ -2,16 +2,17 @@ import Clip from "#/assets/clip.svg?react";
 
 interface UploadImageInputProps {
   onUpload: (files: File[]) => void;
+  label?: React.ReactNode;
 }
 
-export function UploadImageInput({ onUpload }: UploadImageInputProps) {
+export function UploadImageInput({ onUpload, label }: UploadImageInputProps) {
   const handleUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) onUpload(Array.from(event.target.files));
   };
 
   return (
     <label className="cursor-pointer">
-      <Clip width={24} height={24} />
+      {label || <Clip data-testid="default-label" width={24} height={24} />}
       <input
         data-testid="upload-image-input"
         type="file"

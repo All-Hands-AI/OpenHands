@@ -53,4 +53,19 @@ describe("UploadImageInput", () => {
 
     expect(onUploadMock).not.toHaveBeenCalled();
   });
+
+  it("should render custom labels", () => {
+    const { rerender } = render(<UploadImageInput onUpload={onUploadMock} />);
+    expect(screen.getByTestId("default-label")).toBeInTheDocument();
+
+    function CustomLabel() {
+      return <span>Custom label</span>;
+    }
+    rerender(
+      <UploadImageInput onUpload={onUploadMock} label={<CustomLabel />} />,
+    );
+
+    expect(screen.getByText("Custom label")).toBeInTheDocument();
+    expect(screen.queryByTestId("default-label")).not.toBeInTheDocument();
+  });
 });

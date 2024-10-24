@@ -1,8 +1,8 @@
 import React from "react";
-import { ImagePreview } from "./image-preview";
 import { UploadImageInput } from "./upload-image-input";
 import { ChatInput } from "./chat-input";
 import { cn } from "#/utils/utils";
+import { ImageCarousel } from "./image-carousel";
 
 interface InteractiveChatBoxProps {
   isDisabled?: boolean;
@@ -38,15 +38,11 @@ export function InteractiveChatBox({
       className="flex flex-col gap-[10px]"
     >
       {images.length > 0 && (
-        <div className="flex gap-2 overflow-x-scroll">
-          {images.map((image, index) => (
-            <ImagePreview
-              key={index}
-              src={URL.createObjectURL(image)}
-              onRemove={() => handleRemoveImage(index)}
-            />
-          ))}
-        </div>
+        <ImageCarousel
+          size="small"
+          images={images.map((image) => URL.createObjectURL(image))}
+          onRemove={handleRemoveImage}
+        />
       )}
 
       <div
