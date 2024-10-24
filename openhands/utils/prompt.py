@@ -55,9 +55,7 @@ class PromptManager:
                 config['template']['examples']
             )
 
-            self.available_skills = config['agent_variables']['agent_skills'][
-                'available_skills'
-            ]
+            self.available_skills = config['agent_skills']['available_skills']
         else:
             self._system_template = self._load_template('system_prompt')
             self._agent_skills_template = self._load_template('agent_skills')

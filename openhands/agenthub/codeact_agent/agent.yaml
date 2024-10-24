@@ -19,24 +19,22 @@ custom_blocks:
   general_rules: null
 
 # Agent-specific variables (can be accessed within templates)
-agent_variables:
-  use_tools: false  # whether to use tool-based implementations
-  #tools:  # list of available tools
-  #  - name: "EditTool"
-  #    description: "Edits a file."
-  #    usage: "Use the following format: <file_edit> [file_path] [new_file_content] </file_edit>"
-  # agent skills
-  agent_skills:
-    docs_file: "agent_skills.md"
-    available_skills:
-      - "file_ops:open_file"
-      - "file_ops:goto_line"
-      - "file_ops:scroll_down"
-      - "file_ops:scroll_up"
-      - "file_ops:search_dir"
-      - "file_ops:search_file"
-      - "file_ops:find_file"
-      - "parsers:parse_pdf"
-      - "parsers:parse_docx"
-      - "parsers:parse_latex"
-      - "parsers:parse_pptx"
+use_tools: false  # whether to use tool-based implementations
+# tools:  # list of available tools
+#  - name: "EditTool"
+#    description: "Edits a file."
+#    usage: "Use the following format: <file_edit> [file_path] [new_file_content] </file_edit>"
+# agent skills
+agent_skills:
+  available_skills:
+    - "file_ops:open_file"
+    - "file_ops:goto_line"
+    - "file_ops:scroll_down"
+    - "file_ops:scroll_up"
+    - "file_ops:search_dir"
+    - "file_ops:search_file"
+    - "file_ops:find_file"
+    - "file_reader:parse_pdf"
+    - "file_reader:parse_docx"
+    - "file_reader:parse_latex"
+    - "file_reader:parse_pptx"
