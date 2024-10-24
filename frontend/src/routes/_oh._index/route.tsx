@@ -78,7 +78,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   if (isSaas) {
     const requestUrl = new URL(request.url);
     const redirectUri = `${requestUrl.origin}/oauth/github/callback`;
-    githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${githubClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user`;
+    githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${githubClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user,workflow`;
   }
 
   return json({ repositories, githubAuthUrl });
