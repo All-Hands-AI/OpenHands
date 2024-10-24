@@ -30,7 +30,7 @@ from fastapi import (
     status,
 )
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -847,10 +847,14 @@ def authenticate(user: User | None = None):
     )
 
 
-app.mount('/', StaticFiles(directory='./frontend/build', html=True), name='dist')
+class SPAStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        print('spa static, path: ', path)
+        try:
+            return await super().get_response(path, scope)
+        except Exception:
+            # FIXME: just making this HTTPException doesn't work for some reason
+            return await super().get_response('index.html', scope)
 
 
-@app.get('/{full_path:path}')
-async def serve_spa(full_path: str):
-    logger.info(f'Serving SPA for path: {full_path}')
-    return FileResponse('./frontend/build/index.html')
+app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist')
