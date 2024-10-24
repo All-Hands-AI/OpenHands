@@ -298,11 +298,20 @@ class CodeActAgent(Agent):
                 else:
                     messages.append(message)
 
-        # Add caching to the last 2 non-assistant messages
+        # Add caching to the last K non-assistant messages
         if self.llm.is_caching_prompt_active():
+            # For non-function calling, we cache everything up-to the last 2 non-assistant messages
+            # due to the added environment reminder is not cacheable
+            # For function calling, we cache everything up-to the LAST user message
+            user_turns_threshold = 2 if not self.config.function_calling else 1
             user_turns_processed = 0
             for message in reversed(messages):
-                if message.role != 'assistant' and user_turns_processed < 2:
+                if (
+                    message.role == 'user'
+                    and user_turns_processed < user_turns_threshold
+                ):
+                    # FIXME: add role == 'tool' when anthropic supports prompt caching for tool calls
+                    # https://github.com/All-Hands-AI/OpenHands/pull/4537#issuecomment-2436395005
                     message.content[
                         -1
                     ].cache_prompt = True  # Last item inside the message content
