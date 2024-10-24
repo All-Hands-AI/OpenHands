@@ -104,6 +104,29 @@ describe("ChatInput", () => {
     expect(textarea).toHaveValue("");
   });
 
+  it("should hide the submit button", () => {
+    render(<ChatInput onSubmit={onSubmitMock} showSubmitButton={false} />);
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("should call onChange when the user types", async () => {
+    const user = userEvent.setup();
+    const onChangeMock = vi.fn();
+    render(<ChatInput onSubmit={onSubmitMock} onChange={onChangeMock} />);
+    const textarea = screen.getByRole("textbox");
+
+    await user.type(textarea, "Hello, world!");
+
+    expect(onChangeMock).toHaveBeenCalledTimes("Hello, world!".length);
+  });
+
+  it("should have set the passed value", () => {
+    render(<ChatInput value="Hello, world!" onSubmit={onSubmitMock} />);
+    const textarea = screen.getByRole("textbox");
+
+    expect(textarea).toHaveValue("Hello, world!");
+  });
+
   // NOTE: Functionality is already implemented but the test is not written
   it.todo("should dynamically increase the height of the textarea");
 });

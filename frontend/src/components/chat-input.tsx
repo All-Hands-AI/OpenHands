@@ -1,5 +1,6 @@
 import React from "react";
 import ArrowSendIcon from "#/assets/arrow-send.svg?react";
+import { cn } from "#/utils/utils";
 
 /**
  * Adjust the height of a textarea element based on its content
@@ -29,24 +30,40 @@ const adjustHeight = (
 };
 
 interface ChatInputProps {
+  name?: string;
   disabled?: boolean;
   placeholder?: string;
+  showSubmitButton?: boolean;
+  value?: string;
+  maxRows?: number;
   onSubmit: (message: string) => void;
+  onChange?: (message: string) => void;
+  className?: React.HTMLAttributes<HTMLDivElement>["className"];
 }
 
-export function ChatInput({ disabled, placeholder, onSubmit }: ChatInputProps) {
+export function ChatInput({
+  name,
+  disabled,
+  placeholder,
+  showSubmitButton = true,
+  value,
+  maxRows,
+  onSubmit,
+  onChange,
+  className,
+}: ChatInputProps) {
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-  const [value, setValue] = React.useState("");
+  const [text, setText] = React.useState("");
 
   React.useEffect(() => {
-    adjustHeight(textareaRef);
-  }, [value]);
+    adjustHeight(textareaRef, maxRows);
+  }, [text, value]);
 
   const handleSubmitMessage = () => {
     if (textareaRef.current?.value) {
       onSubmit(textareaRef.current.value);
       textareaRef.current.value = "";
-      setValue("");
+      setText("");
     }
   };
 
@@ -57,6 +74,11 @@ export function ChatInput({ disabled, placeholder, onSubmit }: ChatInputProps) {
     }
   };
 
+  const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setText(event.target.value);
+    onChange?.(event.target.value);
+  };
+
   return (
     <div
       data-testid="chat-input"
@@ -64,21 +86,27 @@ export function ChatInput({ disabled, placeholder, onSubmit }: ChatInputProps) {
     >
       <textarea
         ref={textareaRef}
-        name="message"
+        name={name}
         placeholder={placeholder}
         onKeyDown={handleKeyPress}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={handleChange}
+        value={value}
         rows={1}
-        className="grow text-sm self-center placeholder:text-neutral-400 text-white resize-none bg-transparent outline-none ring-0"
+        className={cn(
+          "grow text-sm self-center placeholder:text-neutral-400 text-white resize-none bg-transparent outline-none ring-0",
+          className,
+        )}
       />
-      <button
-        disabled={disabled}
-        onClick={handleSubmitMessage}
-        type="submit"
-        className="border border-white rounded-lg w-6 h-6 hover:bg-neutral-500 flex items-center justify-center"
-      >
-        <ArrowSendIcon />
-      </button>
+      {showSubmitButton && (
+        <button
+          disabled={disabled}
+          onClick={handleSubmitMessage}
+          type="submit"
+          className="border border-white rounded-lg w-6 h-6 hover:bg-neutral-500 flex items-center justify-center"
+        >
+          <ArrowSendIcon />
+        </button>
+      )}
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import React from "react";
 import { Form, useNavigation } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
-import Send from "#/assets/send.svg?react";
 import Clip from "#/assets/clip.svg?react";
 import { cn } from "#/utils/utils";
 import { RootState } from "#/store";
@@ -9,6 +8,7 @@ import { addFile, setImportedProjectZip } from "#/state/initial-query-slice";
 import { SuggestionBubble } from "#/components/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
+import { ChatInput } from "#/components/chat-input";
 
 const convertZipToBase64 = async (file: File) => {
   const reader = new FileReader();
@@ -140,10 +140,6 @@ export function TaskForm({ importedProjectZip, textareaRef }: TaskFormProps) {
     setText(value);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setText(e.target.value);
-  };
-
   const handleSubmitForm = async () => {
     // This is handled on top of the form submission
     if (importedProjectZip) {
@@ -152,6 +148,14 @@ export function TaskForm({ importedProjectZip, textareaRef }: TaskFormProps) {
       );
     }
   };
+
+  const placeholder = React.useMemo(() => {
+    if (selectedRepository) {
+      return `What would you like to change in ${selectedRepository}?`;
+    }
+
+    return "What do you want to build?";
+  }, [selectedRepository]);
 
   return (
     <div className="flex flex-col gap-2 w-full">
@@ -167,29 +171,20 @@ export function TaskForm({ importedProjectZip, textareaRef }: TaskFormProps) {
           onClick={onClickSuggestion}
           onRefresh={onRefreshSuggestion}
         />
-        <div className="relative w-full">
-          <MainTextareaInput
-            ref={textareaRef}
-            disabled={navigation.state === "submitting"}
-            placeholder={
-              selectedRepository
-                ? `What would you like to change in ${selectedRepository}?`
-                : "What do you want to build?"
-            }
-            onChange={handleChange}
+        <div className="bg-neutral-700 border border-neutral-600 px-4 py-[17px] rounded-lg text-[17px] leading-5 w-full">
+          <ChatInput
+            name="q"
+            onSubmit={() => {
+              formRef.current?.requestSubmit();
+            }}
+            onChange={(message) => setText(message)}
+            placeholder={placeholder}
             value={text}
-            formRef={formRef}
+            maxRows={15}
+            showSubmitButton={!!text}
+            className="text-[17px] leading-5"
+            disabled={navigation.state === "submitting"}
           />
-          {!!text && (
-            <button
-              type="submit"
-              aria-label="Submit"
-              className="absolute right-4 top-4"
-              disabled={navigation.state === "loading"}
-            >
-              <Send width={24} height={24} />
-            </button>
-          )}
         </div>
       </Form>
       <label className="flex self-start items-center text-[#A3A3A3] text-xs leading-[18px] -tracking-[0.08px] cursor-pointer">
