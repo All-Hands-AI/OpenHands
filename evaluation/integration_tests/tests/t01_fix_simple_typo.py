@@ -8,7 +8,7 @@ from openhands.runtime.base import Runtime
 
 
 class Test(BaseIntegrationTest):
-    INSTRUCTION = 'Fix typos in bad.txt.'
+    INSTRUCTION = 'Fix typos in /workspace/bad.txt.'
 
     @classmethod
     def initialize_runtime(cls, runtime: Runtime) -> None:

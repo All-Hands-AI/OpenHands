@@ -95,6 +95,7 @@ def codeact_user_response(
     encapsulate_solution: bool = False,
     try_parse: Callable[[Action], str] | None = None,
 ) -> str:
+    # FIXME: for function calling
     encaps_str = (
         (
             'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
@@ -105,7 +106,7 @@ def codeact_user_response(
     )
     msg = (
         'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have solved the task, please first send your answer to user through message and then <execute_bash> exit </execute_bash>.\n'
+        'If you think you have solved the task, please first send your answer to user through message and then finish the interaction.\n'
         f'{encaps_str}'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
     )

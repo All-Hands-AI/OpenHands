@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Literal
 
+from litellm import ChatCompletionMessageToolCall
 from pydantic import BaseModel, Field, model_serializer
 
 
@@ -48,10 +49,16 @@ class ImageContent(Content):
 
 
 class Message(BaseModel):
-    role: Literal['user', 'system', 'assistant']
-    content: list[TextContent | ImageContent] = Field(default=list)
+    role: Literal['user', 'system', 'assistant', 'tool']
+    content: list[TextContent | ImageContent] = Field(default_factory=list)
     cache_enabled: bool = False
     vision_enabled: bool = False
+    # function calling
+    # - tool calls (from LLM)
+    tool_calls: list[ChatCompletionMessageToolCall] | None = None
+    # - tool execution result (to LLM)
+    tool_call_id: str | None = None
+    name: str | None = None  # name of the tool
 
     @property
     def contains_image(self) -> bool:
@@ -78,4 +85,31 @@ class Message(BaseModel):
             content = '\n'.join(
                 item.text for item in self.content if isinstance(item, TextContent)
             )
-        return {'content': content, 'role': self.role}
+
+        # FIXME: temporary workaround for LiteLLM tool output bug
+        # https://github.com/BerriAI/litellm/issues/6422
+        if self.tool_call_id is not None and isinstance(content, list):
+            # assert no image content in the list
+            if not all(isinstance(item, TextContent) for item in self.content):
+                raise RuntimeError(
+                    f'Expected all text content in tool calls due to https://github.com/BerriAI/litellm/issues/6422. Got: {self.content}'
+                )
+            if any(item.cache_prompt for item in self.content):
+                raise RuntimeError(
+                    'Tool calls are not cacheable yet: https://github.com/All-Hands-AI/OpenHands/pull/4537#issuecomment-2436395005'
+                )
+
+            # merge the content list into a single string
+            content = '\n'.join(item.text for item in self.content)
+
+        ret = {'content': content, 'role': self.role}
+
+        if self.tool_call_id is not None:
+            assert (
+                self.name is not None
+            ), 'name is required when tool_call_id is not None'
+            ret['tool_call_id'] = self.tool_call_id
+            ret['name'] = self.name
+        if self.tool_calls:
+            ret['tool_calls'] = self.tool_calls
+        return ret

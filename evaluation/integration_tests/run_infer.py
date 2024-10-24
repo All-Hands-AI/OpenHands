@@ -16,6 +16,7 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
+    AgentConfig,
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
@@ -24,6 +25,7 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import MessageAction
+from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
 
 FAKE_RESPONSES = {
@@ -50,6 +52,12 @@ def get_config(
         workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
+    agent_config = AgentConfig(
+        codeact_enable_jupyter=True,
+        codeact_enable_browsing_delegate=True,
+        codeact_enable_llm_editor=False,
+    )
+    config.set_agent_config(agent_config)
     return config
 
 
@@ -111,7 +119,7 @@ def process_instance(
     # # result evaluation
     # # =============================================
 
-    histories = state.history.get_events()
+    histories = [event_to_dict(event) for event in state.history.get_events()]
     test_result: TestResult = test_class.verify_result(runtime, histories)
     metrics = state.metrics.get() if state.metrics else None
 
@@ -125,6 +133,7 @@ def process_instance(
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
         test_result=test_result.model_dump(),
+        llm_completions=state.extra_data.get('llm_completions', []),
     )
     return output
 
