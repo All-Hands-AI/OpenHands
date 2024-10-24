@@ -17,6 +17,7 @@ from openhands.runtime.impl.eventstream.eventstream_runtime import (
     LogBuffer,
 )
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.utils.command import get_remote_startup_command
 from openhands.runtime.utils.runtime_build import (
     prep_build_folder,
 )
@@ -77,6 +78,7 @@ class ModalRuntime(EventStreamRuntime):
         assert config.modal_api_token_secret, 'Modal API token secret is required'
 
         self.config = config
+        self.sandbox = None
 
         self.modal_client = modal.Client.from_credentials(
             config.modal_api_token_id, config.modal_api_token_secret
@@ -215,28 +217,15 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
             env_secret = modal.Secret.from_dict(environment)
 
             logger.debug(f'Sandbox workspace: {sandbox_workspace_dir}')
-            sandbox_start_cmd: list[str] = [
-                '/openhands/micromamba/bin/micromamba',
-                'run',
-                '-n',
-                'openhands',
-                'poetry',
-                'run',
-                'python',
-                '-u',
-                '-m',
-                'openhands.runtime.client.client',
-                str(self.container_port),
-                '--working-dir',
+            sandbox_start_cmd = get_remote_startup_command(
+                self.container_port,
                 sandbox_workspace_dir,
-                *plugin_args,
-                '--username',
                 'openhands' if self.config.run_as_openhands else 'root',
-                '--user-id',
-                str(self.config.sandbox.user_id),
-                *browsergym_args,
-            ]
-
+                self.config.sandbox.user_id,
+                plugin_args,
+                browsergym_args,
+            )
+            logger.debug(f'Starting container with command: {sandbox_start_cmd}')
             sandbox = modal.Sandbox.create(
                 *sandbox_start_cmd,
                 secrets=[env_secret],
@@ -247,6 +236,7 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
                 client=self.modal_client,
                 timeout=60 * 60,
             )
+            logger.info('Container started')
 
             tunnel = sandbox.tunnels()[self.container_port]
             self.api_url = tunnel.url
@@ -275,4 +265,4 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
             self.session.close()
 
         if self.sandbox:
-            self.sandbox.terminate()
+            self.sandbox.terminate()  # type: ignore

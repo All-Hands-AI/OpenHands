@@ -31,6 +31,7 @@ from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.base import Runtime
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.utils.command import get_remote_startup_command
 from openhands.runtime.utils.request import (
     is_404_error,
     is_503_error,
@@ -208,18 +209,17 @@ class RemoteRuntime(Runtime):
             if self.config.sandbox.browsergym_eval_env is not None
             else ''
         )
+        command = get_remote_startup_command(
+            self.port,
+            self.config.workspace_mount_path_in_sandbox,
+            'openhands' if self.config.run_as_openhands else 'root',
+            self.config.sandbox.user_id,
+            plugin_arg.split(' '),
+            browsergym_arg.split(' '),
+        )
         start_request = {
             'image': self.container_image,
-            'command': (
-                f'/openhands/micromamba/bin/micromamba run -n openhands '
-                'poetry run '
-                f'python -u -m openhands.runtime.action_execution_server {self.port} '
-                f'--working-dir {self.config.workspace_mount_path_in_sandbox} '
-                f'{plugin_arg}'
-                f'--username {"openhands" if self.config.run_as_openhands else "root"} '
-                f'--user-id {self.config.sandbox.user_id} '
-                f'{browsergym_arg}'
-            ),
+            'command': command,
             'working_dir': '/openhands/code/',
             'environment': {'DEBUG': 'true'} if self.config.debug else {},
             'runtime_id': self.sid,
