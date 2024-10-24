@@ -140,8 +140,9 @@ class Runtime(FileEditRuntimeMixin):
         if not action.runnable:
             return NullObservation('')
         if (
-            hasattr(action, 'is_confirmed')
-            and action.is_confirmed == ActionConfirmationStatus.AWAITING_CONFIRMATION
+            hasattr(action, 'confirmation_state')
+            and action.confirmation_state
+            == ActionConfirmationStatus.AWAITING_CONFIRMATION
         ):
             return NullObservation('')
         action_type = action.action  # type: ignore[attr-defined]
@@ -152,8 +153,8 @@ class Runtime(FileEditRuntimeMixin):
                 f'Action {action_type} is not supported in the current runtime.'
             )
         if (
-            hasattr(action, 'is_confirmed')
-            and action.is_confirmed == ActionConfirmationStatus.REJECTED
+            getattr(action, 'confirmation_state', None)
+            == ActionConfirmationStatus.REJECTED
         ):
             return UserRejectObservation(
                 'Action has been rejected by the user! Waiting for further user input.'
