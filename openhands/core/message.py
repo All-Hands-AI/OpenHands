@@ -94,7 +94,7 @@ class Message(BaseModel):
                 raise RuntimeError(
                     f'Expected all text content in tool calls due to https://github.com/BerriAI/litellm/issues/6422. Got: {self.content}'
                 )
-            if self.cache_enabled:
+            if any(item.cache_prompt for item in self.content):
                 raise RuntimeError(
                     'Tool calls are not cacheable yet: https://github.com/All-Hands-AI/OpenHands/pull/4537#issuecomment-2436395005'
                 )
