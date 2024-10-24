@@ -73,6 +73,7 @@ class ModalRuntime(EventStreamRuntime):
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_message_callback: Callable | None = None,
+        attach_to_existing: bool = False,
     ):
         assert config.modal_api_token_id, 'Modal API token id is required'
         assert config.modal_api_token_secret, 'Modal API token secret is required'
@@ -114,7 +115,13 @@ class ModalRuntime(EventStreamRuntime):
             )
 
         self.init_base_runtime(
-            config, event_stream, sid, plugins, env_vars, status_message_callback
+            config,
+            event_stream,
+            sid,
+            plugins,
+            env_vars,
+            status_message_callback,
+            attach_to_existing,
         )
 
     async def connect(self):
