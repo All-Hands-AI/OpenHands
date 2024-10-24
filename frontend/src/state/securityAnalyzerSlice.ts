@@ -11,7 +11,7 @@ export type SecurityAnalyzerLog = {
   id: number;
   content: string;
   security_risk: ActionSecurityRisk;
-  is_confirmed?: "awaiting_confirmation" | "confirmed" | "rejected";
+  confirmation_state?: "awaiting_confirmation" | "confirmed" | "rejected";
   confirmed_changed: boolean;
 };
 
@@ -32,20 +32,20 @@ export const securityAnalyzerSlice = createSlice({
           action.payload.args.content ||
           action.payload.message,
         security_risk: action.payload.args.security_risk as ActionSecurityRisk,
-        is_confirmed: action.payload.args.is_confirmed,
+        confirmation_state: action.payload.args.confirmation_state,
         confirmed_changed: false,
       };
 
       const existingLog = state.logs.find(
         (stateLog) =>
           stateLog.id === log.id ||
-          (stateLog.is_confirmed === "awaiting_confirmation" &&
+          (stateLog.confirmation_state === "awaiting_confirmation" &&
             stateLog.content === log.content),
       );
 
       if (existingLog) {
-        if (existingLog.is_confirmed !== log.is_confirmed) {
-          existingLog.is_confirmed = log.is_confirmed;
+        if (existingLog.confirmation_state !== log.confirmation_state) {
+          existingLog.confirmation_state = log.confirmation_state;
           existingLog.confirmed_changed = true;
         }
       } else {
