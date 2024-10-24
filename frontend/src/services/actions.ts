@@ -60,9 +60,7 @@ const messageActions = {
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
-    if (
-      message.args.confirmation_state !== "rejected"
-    ) {
+    if (message.args.confirmation_state !== "rejected") {
       store.dispatch(appendJupyterInput(message.args.code));
     }
   },
