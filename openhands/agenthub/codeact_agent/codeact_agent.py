@@ -146,7 +146,7 @@ class CodeActAgent(Agent):
         return None
 
     def get_observation_message(self, obs: Observation) -> Message | None:
-        ret: Message | None = None
+        message: Message | None = None
         max_message_chars = self.llm.config.max_message_chars
         obs_prefix = 'OBSERVATION:\n'
         if isinstance(obs, CmdOutputObservation):
@@ -154,7 +154,7 @@ class CodeActAgent(Agent):
             text += (
                 f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
             )
-            ret = Message(role='user', content=[TextContent(text=text)])
+            message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs_prefix + obs.content
             # replace base64 images with a placeholder
@@ -166,29 +166,29 @@ class CodeActAgent(Agent):
                     )
             text = '\n'.join(splitted)
             text = truncate_content(text, max_message_chars)
-            ret = Message(role='user', content=[TextContent(text=text)])
+            message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, FileEditObservation):
             text = obs_prefix + truncate_content(str(obs), max_message_chars)
-            ret = Message(role='user', content=[TextContent(text=text)])
+            message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentDelegateObservation):
             text = obs_prefix + truncate_content(
                 obs.outputs['content'] if 'content' in obs.outputs else '',
                 max_message_chars,
             )
-            ret = Message(role='user', content=[TextContent(text=text)])
+            message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, ErrorObservation):
             text = obs_prefix + truncate_content(obs.content, max_message_chars)
             text += '\n[Error occurred in processing last action]'
-            ret = Message(role='user', content=[TextContent(text=text)])
+            message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, UserRejectObservation):
             text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
             text += '\n[Last action has been rejected by the user]'
-            ret = Message(role='user', content=[TextContent(text=text)])
+            message = Message(role='user', content=[TextContent(text=text)])
         else:
             # If an observation message is not returned, it will cause an error
             # when the LLM tries to return the next message
             raise ValueError(f'Unknown observation type: {type(obs)}')
-        assert ret is not None
+        assert message is not None
 
         if self.config.function_calling:
             # Update the message as tool response properly
@@ -196,13 +196,13 @@ class CodeActAgent(Agent):
             tool_call = llm_response.tool_calls[0]
             assert len(llm_response.tool_calls) == 1
             if llm_response is not None:
-                ret = Message(
+                message = Message(
                     role='tool',
-                    content=ret.content,
+                    content=message.content,
                     tool_call_id=tool_call.id,
                     name=tool_call.function.name,
                 )
-        return ret
+        return message
 
     def reset(self) -> None:
         """Resets the CodeAct Agent."""
