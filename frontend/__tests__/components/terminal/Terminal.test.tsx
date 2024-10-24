@@ -25,7 +25,7 @@ vi.mock("@xterm/xterm", async (importOriginal) => ({
 }));
 
 const renderTerminal = (commands: Command[] = []) =>
-  renderWithProviders(<Terminal />, {
+  renderWithProviders(<Terminal secrets={[]} />, {
     preloadedState: {
       cmd: {
         commands,
@@ -121,7 +121,7 @@ describe.skip("Terminal", () => {
 
   // This test fails because it expects `disposeMock` to have been called before the component is unmounted.
   it.skip("should dispose the terminal on unmount", () => {
-    const { unmount } = renderWithProviders(<Terminal />);
+    const { unmount } = renderWithProviders(<Terminal secrets={[]} />);
 
     expect(mockTerminal.dispose).not.toHaveBeenCalled();
 
