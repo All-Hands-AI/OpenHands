@@ -6,6 +6,7 @@ import pexpect
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
+from openhands.events.event import EventSource
 from openhands.events.observation import (
     CmdOutputObservation,
     FatalErrorObservation,
@@ -281,6 +282,7 @@ class BashSession:
             ), f'Timeout argument is required for CmdRunAction: {action}'
             commands = split_bash_commands(action.command)
             all_output = ''
+            python_interpreter = ''
             for command in commands:
                 if command == '':
                     output, exit_code = self._continue_bash(
@@ -301,13 +303,21 @@ class BashSession:
                         keep_prompt=action.keep_prompt,
                         kill_on_timeout=False if not action.blocking else True,
                     )
+                    # Get rid of the python interpreter string from each line of the output.
+                    # We need it only once at the end.
+                    parts = output.rsplit('[Python Interpreter: ', 1)
+                    output = parts[0]
+                    if len(parts) == 2:
+                        python_interpreter = '[Python Interpreter: ' + parts[1]
                 if all_output:
-                    # previous output already exists with prompt "user@hostname:working_dir #""
-                    # we need to add the command to the previous output,
-                    # so model knows the following is the output of another action)
-                    all_output = all_output.rstrip() + ' ' + command + '\r\n'
+                    # previous output already exists so we add a newline
+                    all_output += '\r\n'
 
-                all_output += str(output) + '\r\n'
+                # If the command originated with the agent, append the command that was run...
+                if action.source == EventSource.AGENT:
+                    all_output += command + '\r\n'
+
+                all_output += str(output)
                 if exit_code != 0:
                     break
             return CmdOutputObservation(
@@ -316,6 +326,7 @@ class BashSession:
                 command=action.command,
                 hidden=action.hidden,
                 exit_code=exit_code,
+                interpreter_details=python_interpreter,
             )
         except UnicodeDecodeError as e:
             return FatalErrorObservation(
