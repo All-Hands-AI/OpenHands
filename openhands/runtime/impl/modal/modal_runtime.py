@@ -20,6 +20,7 @@ from openhands.runtime.utils.command import get_remote_startup_command
 from openhands.runtime.utils.runtime_build import (
     prep_build_folder,
 )
+from openhands.utils.async_utils import call_sync_from_async
 
 # FIXME: this will not work in HA mode. We need a better way to track IDs
 MODAL_RUNTIME_IDS: dict[str, str] = {}
@@ -66,6 +67,7 @@ class ModalRuntime(EventStreamRuntime):
     """
 
     container_name_prefix = 'openhands-sandbox-'
+    sandbox: modal.Sandbox | None
 
     def __init__(
         self,
@@ -143,7 +145,8 @@ class ModalRuntime(EventStreamRuntime):
                 )
         else:
             self.send_status_message('STATUS$PREPARING_CONTAINER')
-            self.sandbox = self._init_sandbox(
+            await call_sync_from_async(
+                self._init_sandbox,
                 sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,
                 plugins=self.plugins,
             )
@@ -211,7 +214,7 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
         self,
         sandbox_workspace_dir: str,
         plugins: list[PluginRequirement] | None = None,
-    ) -> modal.Sandbox:
+    ):
         try:
             logger.info('Preparing to start container...')
             plugin_args = []
@@ -246,7 +249,7 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
                 browsergym_args,
             )
             logger.debug(f'Starting container with command: {sandbox_start_cmd}')
-            sandbox = modal.Sandbox.create(
+            self.sandbox = modal.Sandbox.create(
                 *sandbox_start_cmd,
                 secrets=[env_secret],
                 workdir='/openhands/code',
@@ -256,10 +259,9 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
                 client=self.modal_client,
                 timeout=60 * 60,
             )
-            MODAL_RUNTIME_IDS[self.sid] = sandbox.object_id
+            MODAL_RUNTIME_IDS[self.sid] = self.sandbox.object_id
             logger.info('Container started')
 
-            return sandbox
         except Exception as e:
             logger.error(f'Error: Instance {self.sid} FAILED to start container!\n')
             logger.exception(e)
