@@ -38,31 +38,44 @@ class PromptManager:
         self.prompt_dir = prompt_dir
         self.micro_agent = micro_agent
 
-        self.env = Environment(loader=FileSystemLoader(prompt_dir))
-
         # load available skills from YAML
         yaml_path = os.path.join(prompt_dir, 'agent.yaml')
         if os.path.exists(yaml_path):
             with open(yaml_path, 'r') as f:
                 config = yaml.safe_load(f)
+
+            custom_templates_dir = config.get('custom_templates_dir', None)
+            if custom_templates_dir:
+                # custom templates directory is an absolute path or relative to the script location
+                custom_templates_dir = os.path.abspath(custom_templates_dir)
+
+                # prioritize custom_templates_dir over the default templates directory
+                self.env = Environment(
+                    loader=FileSystemLoader([custom_templates_dir, self.prompt_dir])
+                )
+
             self._system_template = self._load_template(
                 config['template']['system_prompt']
             )
             self._agent_skills_template = self._load_template(
                 config['template']['agent_skills']
             )
-            self._user_template = self._load_template(config['template']['user_prompt'])
             self._examples_template = self._load_template(
                 config['template']['examples']
             )
+            self._user_template = self._load_template(config['template']['user_prompt'])
 
             self.available_skills = config['agent_skills']['available_skills']
         else:
+            # no agent.yaml file found, use the default templates
+            self.env = Environment(loader=FileSystemLoader(prompt_dir))
+
             self._system_template = self._load_template('system_prompt')
             self._agent_skills_template = self._load_template('agent_skills')
             self._user_template = self._load_template('user_prompt')
             self._examples_template = self._load_template('examples')
-            self.available_skills = []  # default to empty list if YAML not found
+
+            self.available_skills = []  # FIXME: default to empty list if YAML not found
 
         # TODO: agent config should have a tool use enabled or disabled
         # and we can use that to conditionally load the tools variant of agentskills
@@ -121,25 +134,19 @@ class PromptManager:
             )
 
             # find the function
-            function = getattr(module, function_name)
+            agent_skill_fn = getattr(module, function_name)
 
             # get the function signature with parameter names, types and return type
-            params = signature(function).parameters
-            param_str = ', '.join(
-                [
-                    f'{name}: {param.annotation.__name__}'
-                    for name, param in params.items()
-                ]
-            )
-            fn_signature = f'{function.__name__}({param_str}) -> {signature(function).return_annotation.__name__}'
+            fn_signature = f'{agent_skill_fn.__name__}' + str(signature(agent_skill_fn))
 
-            cur_doc = function.__doc__
+            doc = agent_skill_fn.__doc__
+
             # remove indentation from docstring and extra empty lines
-            cur_doc = '\n'.join(
-                filter(None, map(lambda x: x.strip(), cur_doc.split('\n')))
-            )
+            doc = '\n'.join(filter(None, map(lambda x: x.strip(), doc.split('\n'))))
+
             # now add a consistent 4 indentation
-            cur_doc = '\n'.join(map(lambda x: ' ' * 4 + x, cur_doc.split('\n')))
-            return f'{fn_signature}\n{cur_doc}'
-        except (ImportError, AttributeError):
+            doc = '\n'.join(map(lambda x: ' ' * 4 + x, doc.split('\n')))
+            return f'{fn_signature}\n{doc}'
+        except (ImportError, AttributeError) as e:
+            print(e)
             return f'Documentation not found for skill: {skill_name}'

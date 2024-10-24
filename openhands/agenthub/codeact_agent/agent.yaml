@@ -1,24 +1,17 @@
 name: CodeActAgent
 
+# custom templates directory
+# .j2 templates will be loaded from this directory if found, if not, the default will be used
+custom_templates_dir: "user_templates"
+
 # main templates
 template:
-  system_prompt: "system_prompt"  # path to the base template file
+  system_prompt: "system_prompt"  # path to the system template file
   agent_skills: "agent_skills"  # path to the agent skills template file
   examples: "examples"  # path to the examples template file
   user_prompt: "user_prompt"  # path to the initial user prompt template file
 
-# Optional custom blocks to override or extend the base template
-# If null, the default from system_prompt.j2 is used
-custom_blocks:
-  system_prefix: null
-  execute_python: null
-  execute_bash: null
-  execute_browse: null
-  pip_install: null
-  agent_skills: null
-  general_rules: null
-
-# Agent-specific variables (can be accessed within templates)
+# agent-specific variables (can be accessed within templates)
 use_tools: false  # whether to use tool-based implementations
 # tools:  # list of available tools
 #  - name: "EditTool"
