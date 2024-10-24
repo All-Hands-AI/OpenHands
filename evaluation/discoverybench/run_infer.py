@@ -77,6 +77,7 @@ def get_config(
     return config
 
 
+# TODO: add docstring
 def get_dv_query_for_real(
     datasets, question, domain_knowledge=None, workflow_tags=None
 ):
@@ -204,6 +205,7 @@ def complete_runtime(
     return test_result
 
 
+# TODO: add docstring
 def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
@@ -295,7 +297,7 @@ def process_instance(
     )
     return output
 
-
+# TODO: add docstring
 def create_dataset(repo_location: str, split: str = 'test'):
     # walk through the repository for test split
     # as soon as a metadata_{}.json file is found, load
