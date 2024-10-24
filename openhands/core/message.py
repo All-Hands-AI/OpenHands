@@ -85,6 +85,17 @@ class Message(BaseModel):
             content = '\n'.join(
                 item.text for item in self.content if isinstance(item, TextContent)
             )
+
+        # FIXME: temporary workaround for LiteLLM tool output bug
+        # https://github.com/BerriAI/litellm/issues/6422
+        if self.tool_calls and isinstance(content, list):
+            # assert no image content in the list
+            assert all(
+                isinstance(item, TextContent) for item in self.content
+            ), f'Expected all text content in tool calls due to https://github.com/BerriAI/litellm/issues/6422. Got: {self.content}'
+            # merge the content list into a single string
+            content = '\n'.join(item.text for item in self.content)
+
         ret = {'content': content, 'role': self.role}
 
         if self.tool_call_id is not None:
