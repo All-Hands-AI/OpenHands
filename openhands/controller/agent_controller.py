@@ -3,6 +3,8 @@ import copy
 import traceback
 from typing import Type
 
+import litellm
+
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
@@ -35,6 +37,7 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
     ErrorObservation,
+    FatalErrorObservation,
     Observation,
 )
 from openhands.events.serialization.event import truncate_content
@@ -144,7 +147,12 @@ class AgentController:
         self.state.last_error = message
         if exception:
             self.state.last_error += f': {exception}'
-        self.event_stream.add_event(ErrorObservation(message), EventSource.USER)
+        detail = str(exception) if exception is not None else ''
+        if exception is not None and isinstance(exception, litellm.AuthenticationError):
+            detail = 'Please check your credentials. Is your API key correct?'
+        self.event_stream.add_event(
+            ErrorObservation(f'{message}:{detail}'), EventSource.USER
+        )
 
     async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
@@ -216,8 +224,7 @@ class AgentController:
         """
         if (
             self._pending_action
-            and hasattr(self._pending_action, 'is_confirmed')
-            and self._pending_action.is_confirmed
+            and getattr(self._pending_action, 'is_confirmed', None)
             == ActionConfirmationStatus.AWAITING_CONFIRMATION
         ):
             return
@@ -249,6 +256,12 @@ class AgentController:
         elif isinstance(observation, ErrorObservation):
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
+        elif isinstance(observation, FatalErrorObservation):
+            await self.report_error(
+                'There was a fatal error during agent execution: ' + str(observation)
+            )
+            await self.set_agent_state_to(AgentState.ERROR)
+            self.state.metrics.merge(self.state.local_metrics)
 
     async def _handle_message_action(self, action: MessageAction):
         """Handles message actions from the event stream.
@@ -444,8 +457,7 @@ class AgentController:
 
         if not isinstance(action, NullAction):
             if (
-                hasattr(action, 'is_confirmed')
-                and action.is_confirmed
+                getattr(action, 'is_confirmed', None)
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)

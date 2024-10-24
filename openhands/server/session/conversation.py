@@ -1,7 +1,7 @@
 from openhands.core.config import AppConfig
 from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 

@@ -16,7 +16,7 @@ vi.mock("../../services/fileService", async () => ({
 }));
 
 const renderFileExplorerWithRunningAgentState = () =>
-  renderWithProviders(<FileExplorer />, {
+  renderWithProviders(<FileExplorer error={null} />, {
     preloadedState: {
       agent: {
         curAgentState: AgentState.RUNNING,

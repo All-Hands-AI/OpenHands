@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 
-from openhands.core.metrics import Metrics
+from openhands.llm.metrics import Metrics
 
 
 class EventSource(str, Enum):
