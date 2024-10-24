@@ -341,7 +341,6 @@ def response_to_action(response: ModelResponse) -> Action:
         else:
             raise RuntimeError(f'Unknown tool call: {tool_call.function.name}')
     else:
-        logger.warning(f'No tool call found in the response: {assistant_msg}')
         action = MessageAction(content=assistant_msg.content, wait_for_response=True)
 
     assert action is not None
