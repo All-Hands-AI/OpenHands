@@ -20,7 +20,11 @@ import store, { RootState } from "#/store";
 import { Container } from "#/components/container";
 import ActionType from "#/types/ActionType";
 import { handleAssistantMessage } from "#/services/actions";
-import { addUserMessage, clearMessages } from "#/state/chatSlice";
+import {
+  addErrorMessage,
+  addUserMessage,
+  clearMessages,
+} from "#/state/chatSlice";
 import { useSocket } from "#/context/socket";
 import {
   getGitHubTokenCommand,
@@ -46,6 +50,18 @@ import { clearJupyter } from "#/state/jupyterSlice";
 import { FilesProvider } from "#/context/files";
 import { clearSession } from "#/utils/clear-session";
 import { userIsAuthenticated } from "#/utils/user-is-authenticated";
+import { ErrorObservation } from "#/types/core/observations";
+
+interface ServerError {
+  error: boolean | string;
+  message: string;
+  [key: string]: unknown;
+}
+
+const isServerError = (data: object): data is ServerError => "error" in data;
+
+const isErrorObservation = (data: object): data is ErrorObservation =>
+  "observation" in data && data.observation === "error";
 
 const isAgentStateChange = (
   data: object,
@@ -159,6 +175,21 @@ function App() {
     if (q) addIntialQueryToChat(q, files);
   }, [settings]);
 
+  const handleError = (message: string) => {
+    const [error, ...rest] = message.split(":");
+    const details = rest.join(":");
+    if (!details) {
+      dispatch(
+        addErrorMessage({
+          error: "An error has occured",
+          message: error,
+        }),
+      );
+    } else {
+      dispatch(addErrorMessage({ error, message: details }));
+    }
+  };
+
   const handleMessage = React.useCallback(
     (message: MessageEvent<WebSocket.Data>) => {
       // set token received from the server
@@ -168,9 +199,23 @@ function App() {
         return;
       }
 
-      if ("error" in parsed) {
-        toast.error(parsed.error);
-        fetcher.submit({}, { method: "POST", action: "/end-session" });
+      if (isServerError(parsed)) {
+        if (parsed.error_code === 401) {
+          toast.error("Session expired.");
+          fetcher.submit({}, { method: "POST", action: "/end-session" });
+          return;
+        }
+
+        if (typeof parsed.error === "string") {
+          toast.error(parsed.error);
+        } else {
+          toast.error(parsed.message);
+        }
+
+        return;
+      }
+      if (isErrorObservation(parsed)) {
+        handleError(parsed.message);
         return;
       }
 

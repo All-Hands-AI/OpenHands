@@ -7,7 +7,7 @@ import requests
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import RuntimeBuilder
-from openhands.runtime.utils.request import send_request_with_retry
+from openhands.runtime.utils.request import is_429_error, send_request_with_retry
 from openhands.runtime.utils.shutdown_listener import (
     should_continue,
     sleep_if_should_continue,
@@ -51,6 +51,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
             f'{self.api_url}/build',
             files=files,
             timeout=30,
+            retry_fns=[is_429_error],
         )
 
         if response.status_code != 202:
