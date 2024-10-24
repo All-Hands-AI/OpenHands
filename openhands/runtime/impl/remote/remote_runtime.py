@@ -197,23 +197,21 @@ class RemoteRuntime(Runtime):
 
     def _start_runtime(self):
         # Prepare the request body for the /start endpoint
-        plugin_arg = ''
+        plugin_args = []
         if self.plugins is not None and len(self.plugins) > 0:
-            plugin_arg = (
-                f'--plugins {" ".join([plugin.name for plugin in self.plugins])} '
-            )
-        browsergym_arg = (
-            f'--browsergym-eval-env {self.config.sandbox.browsergym_eval_env}'
-            if self.config.sandbox.browsergym_eval_env is not None
-            else ''
-        )
+            plugin_args = ['--plugins'] + [plugin.name for plugin in self.plugins]
+        browsergym_args = []
+        if self.config.sandbox.browsergym_eval_env is not None:
+            browsergym_args = [
+                '--browsergym-eval-env'
+            ] + self.config.sandbox.browsergym_eval_env.split(' ')
         command = get_remote_startup_command(
             self.port,
             self.config.workspace_mount_path_in_sandbox,
             'openhands' if self.config.run_as_openhands else 'root',
             self.config.sandbox.user_id,
-            plugin_arg.split(' '),
-            browsergym_arg.split(' '),
+            plugin_args,
+            browsergym_args,
         )
         start_request = {
             'image': self.container_image,
