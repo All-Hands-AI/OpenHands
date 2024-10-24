@@ -154,7 +154,9 @@ class ModalRuntime(EventStreamRuntime):
             self.send_status_message('STATUS$CONTAINER_STARTED')
 
         self.log_buffer = ModalLogBuffer(self.sandbox)
-        tunnel = self.sandbox.tunnels()[self.container_port]  # type: ignore
+        if self.sandbox is None:
+            raise Exception('Sandbox not initialized')
+        tunnel = self.sandbox.tunnels()[self.container_port]
         self.api_url = tunnel.url
         logger.info(f'Container started. Server url: {self.api_url}')
 
@@ -280,4 +282,4 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
             self.session.close()
 
         if not self.attach_to_existing and self.sandbox:
-            self.sandbox.terminate()  # type: ignore
+            self.sandbox.terminate()
