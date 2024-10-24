@@ -419,7 +419,7 @@ jobs:
           REPO: ${{ github.repository }}
           SHORT_SHA: ${{ steps.short_sha.outputs.SHORT_SHA }}
         run: |
-          DOCKER_RUN_COMMAND="docker run -it --rm -p 3000:3000 -v \$(pwd):/workspace -w /workspace ghcr.io/all-hands-ai/runtime:$SHORT_SHA-nikolaik python3 -m openhands.runtime.app"
+          DOCKER_RUN_COMMAND="docker run -it --rm -p 3000:3000 -v \${PWD}:/workspace -w /workspace ghcr.io/all-hands-ai/runtime:$SHORT_SHA-nikolaik python3 -m openhands.runtime.app --host 0.0.0.0"
           PR_BODY=$(gh pr view $PR_NUMBER --json body --jq .body)
           
           # Check if the docker run command already exists in the PR description
