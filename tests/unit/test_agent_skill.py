@@ -715,3 +715,34 @@ def test_parse_pptx(tmp_path):
         'Hello, this is the second test PPTX slide.\n\n'
     )
     assert output == expected_output, f'Expected output does not match. Got: {output}'
+
+
+# =============================================================================
+
+
+def test_strreplace_editor_view(tmp_path):
+    # generate a random directory
+    random_dir = tmp_path / 'dir_1'
+    random_dir.mkdir()
+    # create a file in the directory
+    random_file = random_dir / 'a.txt'
+    random_file.write_text('Line 1\nLine 2\nLine 3\nLine 4\nLine 5')
+    random_dir_2 = tmp_path / 'dir_2'
+    random_dir_2.mkdir()
+    random_file_2 = random_dir_2 / 'b.txt'
+    random_file_2.write_text('Line 1\nLine 2\nLine 3\nLine 4\nLine 5')
+
+    from openhands.runtime.plugins.agent_skills.agentskills import file_editor
+
+    result = file_editor(command='view', path=str(random_file))
+    print(result)
+    assert result is not None
+    assert result == {
+        'content': [
+            {
+                'type': 'text',
+                'text': f"Here's the result of running `cat -n` on {random_file}:\n     1\tLine 1\n     2\tLine 2\n     3\tLine 3\n     4\tLine 4\n     5\tLine 5\n",
+            }
+        ],
+        'is_error': False,
+    }
