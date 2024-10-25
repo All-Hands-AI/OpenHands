@@ -286,7 +286,7 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Run an IPython command:
         ```json
-        {"action": "run_ipython", "args": {"command": "print('Hello, IPython!')"}}
+        {"action": "run_ipython", "args": {"command": "logger.debug('Hello, IPython!')"}}
         ```
     - Open a web page:
         ```json
@@ -486,7 +486,7 @@ async def list_files(request: Request, path: str | None = None):
                 GitWildMatchPattern, observation.content.splitlines()
             )
         except Exception as e:
-            print(e)
+            logger.warning(e)
             return file_list
         file_list = [entry for entry in file_list if not spec.match_file(entry)]
         return file_list
