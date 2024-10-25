@@ -1,5 +1,6 @@
 import asyncio
 import time
+from dataclasses import dataclass, field
 from typing import Optional
 
 from fastapi import WebSocket
@@ -13,15 +14,14 @@ from openhands.server.session.session import Session
 from openhands.storage.files import FileStore
 
 
+@dataclass
 class SessionManager:
-    _sessions: dict[str, Session] = {}
+    config: AppConfig
+    file_store: FileStore
     cleanup_interval: int = 300
     session_timeout: int = 600
+    _sessions: dict[str, Session] = field(default_factory=dict)
     _session_cleanup_task: Optional[asyncio.Task] = None
-
-    def __init__(self, config: AppConfig, file_store: FileStore):
-        self.config = config
-        self.file_store = file_store
 
     async def __aenter__(self):
         if not self._session_cleanup_task:

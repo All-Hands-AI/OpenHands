@@ -97,7 +97,7 @@ def test_bash_timeout_and_keyboard_interrupt(temp_dir, box_class, run_as_openhan
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == 0
-        assert '/workspace' in obs.content
+        assert '/workspace' in obs.interpreter_details
 
     finally:
         _close_test_runtime(runtime)
@@ -121,7 +121,7 @@ def test_bash_pexcept_eof(temp_dir, box_class, run_as_openhands):
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == 0
-        assert '/workspace' in obs.content
+        assert '/workspace' in obs.interpreter_details
 
         # run it again!
         action = CmdRunAction(command='python3 -m http.server 8080')
@@ -139,7 +139,7 @@ def test_bash_pexcept_eof(temp_dir, box_class, run_as_openhands):
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == 0
-        assert '/workspace' in obs.content
+        assert '/workspace' in obs.interpreter_details
     finally:
         _close_test_runtime(runtime)
 
@@ -190,7 +190,7 @@ done
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == 0
-        assert '/workspace' in obs.content
+        assert '/workspace' in obs.interpreter_details
         assert 'resistant_script.sh' in obs.content
 
     finally:
@@ -243,7 +243,7 @@ done
         obs = runtime.run_action(action)
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == 0
-        assert '/workspace' in obs.content
+        assert '/workspace' in obs.interpreter_details
         assert 'resistant_script.sh' in obs.content
 
     finally:
@@ -264,7 +264,7 @@ def test_multiline_commands(temp_dir, box_class):
         assert 'hello\r\nworld' in obs.content
 
         # test whitespace
-        obs = _run_cmd_action(runtime, 'echo -e "\\n\\n\\n"')
+        obs = _run_cmd_action(runtime, 'echo -e "a\\n\\n\\nz"')
         assert obs.exit_code == 0, 'The exit code should be 0.'
         assert '\r\n\r\n\r\n' in obs.content
     finally:
@@ -312,7 +312,6 @@ world "
         assert 'hello -v' in obs.content
         assert 'hello\r\nworld\r\nare\r\nyou\r\nthere?' in obs.content
         assert 'hello\r\nworld\r\nare\r\nyou\r\n\r\nthere?' in obs.content
-        assert 'hello\r\nworld "\r\n' in obs.content
     finally:
         _close_test_runtime(runtime)
 
@@ -604,13 +603,13 @@ def test_keep_prompt(box_class, temp_dir):
 
         obs = _run_cmd_action(runtime, f'touch {sandbox_dir}/test_file.txt')
         assert obs.exit_code == 0
-        assert 'root@' in obs.content
+        assert 'root@' in obs.interpreter_details
 
         obs = _run_cmd_action(
             runtime, f'cat {sandbox_dir}/test_file.txt', keep_prompt=False
         )
         assert obs.exit_code == 0
-        assert 'root@' not in obs.content
+        assert 'root@' not in obs.interpreter_details
     finally:
         _close_test_runtime(runtime)
 

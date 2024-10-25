@@ -222,7 +222,7 @@ def test_unsafe_bash_command(temp_dir: str):
                         arguments={
                             'code': "print('hello')",
                             'kernel_init_code': '',
-                            'is_confirmed': ActionConfirmationStatus.CONFIRMED,
+                            'confirmation_state': ActionConfirmationStatus.CONFIRMED,
                         },
                     ),
                 ),
@@ -267,7 +267,7 @@ def test_unsafe_bash_command(temp_dir: str):
                             'command': 'ls',
                             'hidden': False,
                             'keep_prompt': True,
-                            'is_confirmed': ActionConfirmationStatus.CONFIRMED,
+                            'confirmation_state': ActionConfirmationStatus.CONFIRMED,
                         },
                     ),
                 ),
