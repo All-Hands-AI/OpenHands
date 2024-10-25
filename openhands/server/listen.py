@@ -239,16 +239,18 @@ async def attach_session(request: Request, call_next):
             content={'error': 'Invalid token'},
         )
 
-    request.state.conversation = await call_sync_from_async(
-        session_manager.attach_to_conversation, request.state.sid
+    request.state.conversation = await session_manager.attach_to_conversation(
+        request.state.sid
     )
     if request.state.conversation is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Session not found'},
         )
-
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+    finally:
+        await session_manager.detach_from_conversation(request.state.conversation)
     return response
 
 
