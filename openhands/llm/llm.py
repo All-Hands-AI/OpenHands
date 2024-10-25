@@ -3,7 +3,7 @@ import os
 import time
 import warnings
 from functools import partial
-from typing import Any, Callable
+from typing import Any
 
 from openhands.core.config import LLMConfig
 
@@ -439,46 +439,3 @@ class LLM(RetryMixin, DebugMixin):
 
         # let pydantic handle the serialization
         return [message.model_dump() for message in messages]
-
-    def register_functions(
-        self,
-        function_schemas: list[dict[str, Any]],
-        function_implementations: dict[str, Callable],
-    ) -> None:
-        """Register function schemas and their implementations for function calling.
-
-        Args:
-            function_schemas: List of function schemas in OpenAI format
-            function_implementations: Dictionary mapping function names to their implementations
-
-        Raises:
-            ValueError: If function calling is not supported by the model
-            ValueError: If schema names don't match implementation names
-        """
-        if not self.config.supports_function_calling:
-            raise ValueError(
-                f'Function calling not supported for model {self.config.model}'
-            )
-
-        # Validate that all schema names have implementations
-        schema_names = {schema['name'] for schema in function_schemas}
-        implementation_names = set(function_implementations.keys())
-
-        if schema_names != implementation_names:
-            missing = schema_names - implementation_names
-            extra = implementation_names - schema_names
-            error_msg = []
-            if missing:
-                error_msg.append(f'Missing implementations for: {missing}')
-            if extra:
-                error_msg.append(f'Extra implementations without schemas: {extra}')
-            raise ValueError('. '.join(error_msg))
-
-        # Store the schemas and implementations
-        self.function_schemas = function_schemas
-        self.function_implementations = function_implementations
-
-        # Update the completion partial to include functions
-        self._completion = partial(
-            self._completion, functions=self.function_schemas, function_call='auto'
-        )
