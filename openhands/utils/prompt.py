@@ -2,6 +2,8 @@ import os
 
 from jinja2 import Template
 
+from openhands.controller.state.state import State
+from openhands.core.message import Message, TextContent
 from openhands.utils.microagent import MicroAgent
 
 
@@ -53,7 +55,7 @@ class PromptManager:
         ).strip()
         return rendered
 
-    def get_example_user_message(self, latest_user_message: str) -> str:
+    def get_example_user_message(self) -> str:
         """This is the initial user message provided to the agent
         before *actual* user instructions are provided.
 
@@ -63,11 +65,23 @@ class PromptManager:
         These additional context will convert the current generic agent
         into a more specialized agent that is tailored to the user's task.
         """
+        return self.user_template.render().strip()
+
+    def enhance_message(self, message: Message, state: State) -> None:
+        """Enhance the user message with additional context.
+
+        This method is used to enhance the user message with additional context
+        about the user's task. The additional context will convert the current
+        generic agent into a more specialized agent that is tailored to the user's task.
+        """
         micro_agent_prompts = []
         for micro_agent in self.microagents.values():
-            if micro_agent.should_trigger(latest_user_message):
+            if micro_agent.should_trigger(message):
                 micro_agent_prompts.append(micro_agent.content)
-        rendered = self.user_template.render(
-            micro_agents=micro_agent_prompts,
-        )
-        return rendered.strip()
+        if len(micro_agent_prompts) > 0:
+            micro_text = "EXTRA INFO: the following information has been included based on a keyword match. It may or may not be relevant to the user's request.\n\n"
+            for micro_agent_prompt in micro_agent_prompts:
+                micro_text += micro_agent_prompt + '\n\n'
+            message.content.append(TextContent(text=micro_text))
+        reminder_text = f'ENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
+        message.content.append(TextContent(text=reminder_text))
