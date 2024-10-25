@@ -419,13 +419,15 @@ jobs:
           REPO: ${{ github.repository }}
           SHORT_SHA: ${{ steps.short_sha.outputs.SHORT_SHA }}
         run: |
+          echo "updating PR description"
           DOCKER_RUN_COMMAND="docker run -it --rm \
-          -p 3000:3000 \
-          -v /var/run/docker.sock:/var/run/docker.sock \
-          --add-host host.docker.internal:host-gateway \
-          -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:$SHORT_SHA-nikolaik \
-          --name openhands-app-$SHORT_SHA \
-          ghcr.io/all-hands-ai/runtime:$SHORT_SHA"
+            -p 3000:3000 \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            --add-host host.docker.internal:host-gateway \
+            -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:$SHORT_SHA-nikolaik \
+            --name openhands-app-$SHORT_SHA \
+            ghcr.io/all-hands-ai/runtime:$SHORT_SHA"
+
           PR_BODY=$(gh pr view $PR_NUMBER --json body --jq .body)
 
           # Check if the docker run command already exists in the PR description
@@ -444,4 +446,5 @@ jobs:
           \`\`\`"
           fi
 
+          echo "updated body: $UPDATED_PR_BODY"
           gh pr edit $PR_NUMBER --body "$UPDATED_PR_BODY"
