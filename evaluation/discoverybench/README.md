@@ -23,7 +23,7 @@ Replace `[YOUR MODEL CONFIG]` with any model the model that you have set up in `
 
 ## Run Inference on DiscoveryBench Instances
 
-When the run_infer.sh script is started, it will automatically pull the latest DiscoveryBench & set up the agent environment. The OpenHands agent is invoked to process the task within this environment, producing a hypothesis. We then evaluate it against the “gold” hypothesis provided by DiscoveryBench.
+When the `run_infer.sh` script is started, it will automatically pull the latest DiscoveryBench instances & set up the agent environment. The OpenHands agent is invoked to process the task within this environment, producing a hypothesis. We then evaluate it against the “gold” hypothesis provided by DiscoveryBench. The evaluation result, along with the agent chat history is logged to `output.jsonl` under `evaluation_outputs`.
 
 
 ```
@@ -36,9 +36,3 @@ When the run_infer.sh script is started, it will automatically pull the latest D
 - `EVAL_LIMIT`: This should be the number of samples to evaluate, e.g., num_samples_eval.
 - `NUM_WORKERS`: This would be the number of workers to parallelize the evaluation process.
 
-## Overview
-
-- A DiscoveryBench instance is a scientific discovery task in natural language.
-- In each iteration, OpenHands' agent try to solve the problem provided to it using python.
-- After the iteration is complete, we evaluate the agent result based on our gold hypothesis.
-- The evaluation result, along with the agent chat history is logged to `output.jsonl` under `evaluation_outputs`
