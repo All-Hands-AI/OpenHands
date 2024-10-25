@@ -42,6 +42,7 @@ from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
 config = load_app_config()
 
@@ -233,6 +234,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
     runtime = create_runtime(config)
+    call_async_from_sync(runtime.connect)
     initialize_runtime(runtime, instance)
 
     # Run the agent
