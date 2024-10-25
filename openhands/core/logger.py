@@ -97,7 +97,7 @@ class RollingLogger:
 
     def start(self, message=''):
         if message:
-            self._write(message)
+            print(message)
         self._write('\n' * self.max_lines)
         self._flush()
 
