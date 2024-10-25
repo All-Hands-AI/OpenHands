@@ -193,9 +193,6 @@ class EventStreamRuntime(Runtime):
                     raise ValueError(
                         'Neither runtime container image nor base container image is set'
                     )
-                self.log(
-                    'debug', 'Preparing container, this might take a few minutes...'
-                )
                 self.send_status_message('STATUS$STARTING_CONTAINER')
                 self.runtime_container_image = build_runtime_image(
                     self.base_container_image,
@@ -205,19 +202,25 @@ class EventStreamRuntime(Runtime):
                     force_rebuild=self.config.sandbox.force_rebuild_runtime,
                 )
 
+            self.log(
+                'info', f'Starting runtime with image: {self.runtime_container_image}'
+            )
             self._init_container(
                 sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,  # e.g. /workspace
                 mount_dir=self.config.workspace_mount_path,  # e.g. /opt/openhands/_test_workspace
                 plugins=self.plugins,
             )
+            self.log('info', f'Container started: {self.container_name}')
 
         else:
             self._attach_to_container()
 
-        self.log('debug', f'Waiting for client to become ready at {self.api_url}...')
+        if not self.attach_to_existing:
+            self.log('info', f'Waiting for client to become ready at {self.api_url}...')
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
         self._wait_until_alive()
-        self.log('debug', 'Runtime is ready.')
+        if not self.attach_to_existing:
+            self.log('info', 'Runtime is ready.')
 
         if not self.attach_to_existing:
             self.setup_initial_env()

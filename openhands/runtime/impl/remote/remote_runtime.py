@@ -121,9 +121,11 @@ class RemoteRuntime(Runtime):
             self.runtime_url is not None
         ), 'Runtime URL is not set. This should never happen.'
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
-        self.log('debug', f'Waiting for runtime {self.runtime_id} to be alive...')
+        if not self.attach_to_existing:
+            self.log('info', 'Waiting for runtime to be alive...')
         self._wait_until_alive()
-        self.log('debug', f'Runtime {self.runtime_id} is ready.')
+        if not self.attach_to_existing:
+            self.log('info', 'Runtime is ready.')
         self.send_status_message(' ')
 
     def _check_existing_runtime(self) -> bool:
@@ -160,7 +162,7 @@ class RemoteRuntime(Runtime):
             return False
 
     def _build_runtime(self):
-        self.log('debug', f'Building RemoteRuntime `{self.sid}` config:\n{self.config}')
+        self.log('debug', f'Building RemoteRuntime config:\n{self.config}')
         response = send_request_with_retry(
             self.session,
             'GET',
@@ -243,7 +245,7 @@ class RemoteRuntime(Runtime):
         self._parse_runtime_response(response)
         self.log(
             'debug',
-            f'[Runtime (ID={self.runtime_id})] Runtime started. URL: {self.runtime_url}',
+            f'Runtime started. URL: {self.runtime_url}',
         )
 
     def _resume_runtime(self):
@@ -258,7 +260,7 @@ class RemoteRuntime(Runtime):
             raise RuntimeError(
                 f'[Runtime (ID={self.runtime_id})] Failed to resume runtime: {response.text}'
             )
-        self.log('debug', f'[Runtime (ID={self.runtime_id})] Runtime resumed.')
+        self.log('debug', 'Runtime resumed.')
 
     def _parse_runtime_response(self, response: requests.Response):
         start_response = response.json()
@@ -343,12 +345,10 @@ class RemoteRuntime(Runtime):
                 if response.status_code != 200:
                     self.log(
                         'error',
-                        f'[Runtime (ID={self.runtime_id})] Failed to stop runtime: {response.text}',
+                        f'Failed to stop runtime: {response.text}',
                     )
                 else:
-                    self.log(
-                        'debug', f'[Runtime (ID={self.runtime_id})] Runtime stopped.'
-                    )
+                    self.log('debug', 'Runtime stopped.')
             except Exception as e:
                 raise e
             finally:
