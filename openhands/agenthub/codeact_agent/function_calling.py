@@ -316,6 +316,7 @@ FinishTool = ChatCompletionToolParam(
 def response_to_action(response: ModelResponse) -> Action:
     assistant_msg = response.choices[0].message
     if assistant_msg.tool_calls:
+        # FIXME: check if there's assistant_msg.content. If so, add it to the thought
         tool_call = assistant_msg.tool_calls[0]
         assert len(assistant_msg.tool_calls) == 1
         action: Action | None = None
