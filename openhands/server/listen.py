@@ -78,7 +78,7 @@ def load_github_user_list():
     if waitlist:
         with open(waitlist, 'r') as f:
             GITHUB_USER_LIST = [line.strip() for line in f if line.strip()]
-
+load_github_user_list()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global session_manager
