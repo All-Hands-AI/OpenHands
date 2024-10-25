@@ -1,4 +1,5 @@
 import os
+from itertools import islice
 
 from jinja2 import Template
 
@@ -67,7 +68,7 @@ class PromptManager:
         """
         return self.user_template.render().strip()
 
-    def enhance_message(self, message: Message, state: State) -> None:
+    def enhance_message(self, message: Message) -> None:
         """Enhance the user message with additional context.
 
         This method is used to enhance the user message with additional context
@@ -80,8 +81,23 @@ class PromptManager:
         for micro_agent in self.microagents.values():
             trigger = micro_agent.get_trigger(message_content)
             if trigger:
-                micro_text = f'EXTRA INFO: the following information has been included based on a keyword match for "{trigger}". It may or may not be relevant to the user\'s request.\n\n'
+                micro_text = f'### EXTRA INFO:\n> The following information has been included based on a keyword match for "{trigger}". It may or may not be relevant to the user\'s request.'
                 micro_text += '\n\n' + micro_agent.content
                 message.content.append(TextContent(text=micro_text))
-        reminder_text = f'ENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
-        message.content.append(TextContent(text=reminder_text))
+
+    def add_turns_left_reminder(self, messages: list[Message], state: State) -> None:
+        latest_user_message = next(
+            islice(
+                (
+                    m
+                    for m in reversed(messages)
+                    if m.role == 'user'
+                    and any(isinstance(c, TextContent) for c in m.content)
+                ),
+                1,
+            ),
+            None,
+        )
+        if latest_user_message:
+            reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
+            latest_user_message.content.append(TextContent(text=reminder_text))

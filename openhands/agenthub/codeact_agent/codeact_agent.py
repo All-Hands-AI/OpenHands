@@ -242,7 +242,7 @@ class CodeActAgent(Agent):
 
             if message:
                 if latest_user_message and event.id == latest_user_message.id:
-                    self.prompt_manager.enhance_message(message, state)
+                    self.prompt_manager.enhance_message(message)
 
                 # handle error if the message is the SAME role as the previous message
                 # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
@@ -262,4 +262,5 @@ class CodeActAgent(Agent):
                     ].cache_prompt = True  # Last item inside the message content
                     user_turns_processed += 1
 
+        self.prompt_manager.add_turns_left_reminder(messages, state)
         return messages
