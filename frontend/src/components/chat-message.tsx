@@ -1,7 +1,11 @@
-import CopyIcon from "public/icons/copy.svg?react";
-import CheckmarkIcon from "public/icons/checkmark.svg?react";
 import React from "react";
+import Markdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import CheckmarkIcon from "#/icons/checkmark.svg?react";
+import CopyIcon from "#/icons/copy.svg?react";
+import { code } from "./markdown/code";
 import { cn } from "#/utils/utils";
+import { ul, ol } from "./markdown/list";
 
 interface ChatMessageProps {
   type: "user" | "assistant";
@@ -41,10 +45,10 @@ export function ChatMessage({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
       className={cn(
-        "p-4 rounded-xl max-w-[305px] relative",
+        "p-4 rounded-xl relative",
         "flex flex-col gap-2",
-        type === "user" && "bg-neutral-700 self-end",
-        type === "assistant" && "bg-tranparent",
+        type === "user" && "max-w-[305px] bg-neutral-700 self-end",
+        type === "assistant" && "max-w-full bg-tranparent",
       )}
     >
       <button
@@ -64,7 +68,18 @@ export function ChatMessage({
           <CheckmarkIcon width={15} height={15} />
         )}
       </button>
-      <p className="text-sm overflow-auto">{message}</p>
+      <p className="text-sm overflow-auto">
+        <Markdown
+          components={{
+            code,
+            ul,
+            ol,
+          }}
+          remarkPlugins={[remarkGfm]}
+        >
+          {message}
+        </Markdown>
+      </p>
       {children}
     </article>
   );

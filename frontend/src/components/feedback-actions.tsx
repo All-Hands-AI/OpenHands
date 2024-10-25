@@ -1,5 +1,5 @@
-import ThumbsUpIcon from "public/icons/thumbs-up.svg?react";
-import ThumbDownIcon from "public/icons/thumbs-down.svg?react";
+import ThumbsUpIcon from "#/icons/thumbs-up.svg?react";
+import ThumbDownIcon from "#/icons/thumbs-down.svg?react";
 
 interface FeedbackActionButtonProps {
   testId?: string;

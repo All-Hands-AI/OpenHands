@@ -18,9 +18,11 @@ import { getToken } from "#/services/auth";
 import { cn, removeApiKey, removeUnwantedKeys } from "#/utils/utils";
 import { clientAction } from "#/routes/submit-feedback";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
-import ArrowSendIcon from "#/assets/arrow-send.svg?react";
-import ChevronDoubleRight from "#/icons/chevron-double-right.svg?react";
 import TypingIndicator from "./chat/TypingIndicator";
+import ConfirmationButtons from "./chat/ConfirmationButtons";
+import { ErrorMessage } from "./error-message";
+import { ContinueButton } from "./continue-button";
+import { ScrollToBottomButton } from "./scroll-to-bottom-button";
 
 const FEEDBACK_VERSION = "1.0";
 
@@ -102,10 +104,11 @@ export function ChatInterface() {
       >
         {messages.map((message, index) =>
           isErrorMessage(message) ? (
-            <div key={index} data-testid="error-message">
-              <span>{message.error}</span>
-              <p>{message.message}</p>
-            </div>
+            <ErrorMessage
+              key={index}
+              error={message.error}
+              message={message.message}
+            />
           ) : (
             <ChatMessage
               key={index}
@@ -115,6 +118,11 @@ export function ChatInterface() {
               {message.imageUrls.length > 0 && (
                 <ImageCarousel size="small" images={message.imageUrls} />
               )}
+              {messages.length - 1 === index &&
+                message.sender === "assistant" &&
+                curAgentState === AgentState.AWAITING_USER_CONFIRMATION && (
+                  <ConfirmationButtons />
+                )}
             </ChatMessage>
           ),
         )}
@@ -135,31 +143,11 @@ export function ChatInterface() {
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
             {messages.length > 2 &&
               curAgentState === AgentState.AWAITING_USER_INPUT && (
-                <button
-                  type="button"
-                  onClick={handleSendContinueMsg}
-                  className={cn(
-                    "px-2 py-1 bg-neutral-700 border border-neutral-600 rounded",
-                    "text-[11px] leading-4 tracking-[0.01em] font-[500]",
-                    "flex items-center gap-2",
-                  )}
-                >
-                  <ChevronDoubleRight width={12} height={12} />
-                  Continue
-                </button>
+                <ContinueButton onClick={handleSendContinueMsg} />
               )}
             {curAgentState === AgentState.RUNNING && <TypingIndicator />}
           </div>
-          {!hitBottom && (
-            <button
-              type="button"
-              onClick={scrollDomToBottom}
-              data-testid="scroll-to-bottom"
-              className="p-1 bg-neutral-700 border border-neutral-600 rounded hover:bg-neutral-500 rotate-180"
-            >
-              <ArrowSendIcon width={15} height={15} />
-            </button>
-          )}
+          {!hitBottom && <ScrollToBottomButton onClick={scrollDomToBottom} />}
         </div>
         <InteractiveChatBox
           onSubmit={handleSendMessage}
