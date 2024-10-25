@@ -9,16 +9,13 @@ import argparse
 import asyncio
 import io
 import os
-import re
 import shutil
-import subprocess
 import tempfile
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
 
-import pexpect
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -37,10 +34,10 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from openhands.events.event import EventSource
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
+    FatalErrorObservation,
     FileReadObservation,
     FileWriteObservation,
     IPythonRunCellObservation,
@@ -54,8 +51,9 @@ from openhands.runtime.plugins import (
     JupyterPlugin,
     Plugin,
 )
-from openhands.runtime.utils import split_bash_commands
+from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
+from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.utils.async_utils import wait_all
 
 
@@ -67,7 +65,6 @@ ROOT_GID = 0
 INIT_COMMANDS = [
     'git config --global user.name "openhands" && git config --global user.email "openhands@all-hands.dev" && alias git="git --no-pager"',
 ]
-SOFT_TIMEOUT_SECONDS = 5
 
 SESSION_API_KEY = os.environ.get('SESSION_API_KEY')
 api_key_header = APIKeyHeader(name='X-Session-API-Key', auto_error=False)
@@ -93,12 +90,20 @@ class ActionExecutor:
         browsergym_eval_env: str | None,
     ) -> None:
         self.plugins_to_load = plugins_to_load
+        self._initial_pwd = work_dir
         self.username = username
         self.user_id = user_id
-        self.pwd = work_dir  # current PWD
-        self._initial_pwd = work_dir
-        self._init_user(self.username, self.user_id)
-        self._init_bash_shell(self.pwd, self.username)
+        _updated_user_id = init_user_and_working_directory(
+            username=username, user_id=self.user_id, initial_pwd=work_dir
+        )
+        if _updated_user_id is not None:
+            self.user_id = _updated_user_id
+
+        self.bash_session = BashSession(
+            work_dir=work_dir,
+            username=username,
+        )
+
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.browser = BrowserEnv(browsergym_eval_env)
@@ -133,129 +138,10 @@ class ActionExecutor:
 
         if isinstance(plugin, JupyterPlugin):
             await self.run_ipython(
-                IPythonRunCellAction(code=f'import os; os.chdir("{self.pwd}")')
-            )
-
-    def _init_user(self, username: str, user_id: int) -> None:
-        """Create working directory and user if not exists.
-        It performs the following steps effectively:
-        * Creates the Working Directory:
-            - Uses mkdir -p to create the directory.
-            - Sets ownership to username:root.
-            - Adjusts permissions to be readable and writable by group and others.
-        * User Verification and Creation:
-            - Checks if the user exists using id -u.
-            - If the user exists with the correct UID, it skips creation.
-            - If the UID differs, it logs a warning and updates self.user_id.
-            - If the user doesn't exist, it proceeds to create the user.
-        * Sudo Configuration:
-            - Appends %sudo ALL=(ALL) NOPASSWD:ALL to /etc/sudoers to grant
-              passwordless sudo access to the sudo group.
-            - Adds the user to the sudo group with the useradd command, handling
-              UID conflicts by incrementing the UID if necessary.
-        """
-
-        # First create the working directory, independent of the user
-        logger.info(f'Client working directory: {self.initial_pwd}')
-        command = f'umask 002; mkdir -p {self.initial_pwd}'
-        output = subprocess.run(command, shell=True, capture_output=True)
-        out_str = output.stdout.decode()
-
-        command = f'chown -R {username}:root {self.initial_pwd}'
-        output = subprocess.run(command, shell=True, capture_output=True)
-        out_str += output.stdout.decode()
-
-        command = f'chmod g+rw {self.initial_pwd}'
-        output = subprocess.run(command, shell=True, capture_output=True)
-        out_str += output.stdout.decode()
-        logger.debug(f'Created working directory. Output: [{out_str}]')
-
-        # Skip root since it is already created
-        if username == 'root':
-            return
-
-        # Check if the username already exists
-        existing_user_id = -1
-        try:
-            result = subprocess.run(
-                f'id -u {username}', shell=True, check=True, capture_output=True
-            )
-            existing_user_id = int(result.stdout.decode().strip())
-
-            # The user ID already exists, skip setup
-            if existing_user_id == user_id:
-                logger.debug(
-                    f'User `{username}` already has the provided UID {user_id}. Skipping user setup.'
+                IPythonRunCellAction(
+                    code=f'import os; os.chdir("{self.bash_session.pwd}")'
                 )
-            else:
-                logger.warning(
-                    f'User `{username}` already exists with UID {existing_user_id}. Skipping user setup.'
-                )
-                self.user_id = existing_user_id
-            return
-        except subprocess.CalledProcessError as e:
-            # Returncode 1 indicates, that the user does not exist yet
-            if e.returncode == 1:
-                logger.debug(
-                    f'User `{username}` does not exist. Proceeding with user creation.'
-                )
-            else:
-                logger.error(
-                    f'Error checking user `{username}`, skipping setup:\n{e}\n'
-                )
-                raise
-
-        # Add sudoer
-        sudoer_line = r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
-        output = subprocess.run(sudoer_line, shell=True, capture_output=True)
-        if output.returncode != 0:
-            raise RuntimeError(f'Failed to add sudoer: {output.stderr.decode()}')
-        logger.debug(f'Added sudoer successfully. Output: [{output.stdout.decode()}]')
-
-        command = (
-            f'useradd -rm -d /home/{username} -s /bin/bash '
-            f'-g root -G sudo -u {user_id} {username}'
-        )
-        output = subprocess.run(command, shell=True, capture_output=True)
-        if output.returncode == 0:
-            logger.debug(
-                f'Added user `{username}` successfully with UID {user_id}. Output: [{output.stdout.decode()}]'
             )
-        else:
-            raise RuntimeError(
-                f'Failed to create user `{username}` with UID {user_id}. Output: [{output.stderr.decode()}]'
-            )
-
-    def _init_bash_shell(self, work_dir: str, username: str) -> None:
-        self.shell = pexpect.spawn(
-            f'su {username}',
-            encoding='utf-8',
-            codec_errors='replace',
-            echo=False,
-        )
-        self.__bash_PS1 = (
-            r'[PEXPECT_BEGIN]\n'
-            r'$(which python >/dev/null 2>&1 && echo "[Python Interpreter: $(which python)]\n")'
-            r'\u@\h:\w\n'
-            r'[PEXPECT_END]'
-        )
-
-        # This should NOT match "PS1=\u@\h:\w [PEXPECT]$" when `env` is executed
-        self.__bash_expect_regex = r'\[PEXPECT_BEGIN\]\s*(.*?)\s*([a-z0-9_-]*)@([a-zA-Z0-9.-]*):(.+)\s*\[PEXPECT_END\]'
-        # Set umask to allow group write permissions
-        self.shell.sendline(f'umask 002; export PS1="{self.__bash_PS1}"; export PS2=""')
-        self.shell.expect(self.__bash_expect_regex)
-
-        self.shell.sendline(
-            f'if [ ! -d "{work_dir}" ]; then mkdir -p "{work_dir}"; fi && cd "{work_dir}"'
-        )
-        self.shell.expect(self.__bash_expect_regex)
-        logger.debug(
-            f'Bash initialized. Working directory: {work_dir}. Output: [{self.shell.before}]'
-        )
-        # Ensure the group has write permissions on the working directory
-        self.shell.sendline(f'chmod g+rw "{work_dir}"')
-        self.shell.expect(self.__bash_expect_regex)
 
     async def _init_bash_commands(self):
         logger.info(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
@@ -263,163 +149,14 @@ class ActionExecutor:
             action = CmdRunAction(command=command)
             action.timeout = 300
             logger.debug(f'Executing init command: {command}')
-            obs: CmdOutputObservation = await self.run(action)
+            obs = await self.run(action)
+            assert isinstance(obs, CmdOutputObservation)
             logger.debug(
                 f'Init command outputs (exit code: {obs.exit_code}): {obs.content}'
             )
             assert obs.exit_code == 0
 
         logger.info('Bash init commands completed')
-
-    def _get_bash_prompt_and_update_pwd(self):
-        ps1 = self.shell.after
-        if ps1 == pexpect.EOF:
-            logger.error(f'Bash shell EOF! {self.shell.after=}, {self.shell.before=}')
-            raise RuntimeError('Bash shell EOF')
-        if ps1 == pexpect.TIMEOUT:
-            logger.warning('Bash shell timeout')
-            return ''
-
-        # begin at the last occurrence of '[PEXPECT_BEGIN]'.
-        # In multi-line bash commands, the prompt will be repeated
-        # and the matched regex captures all of them
-        # - we only want the last one (newest prompt)
-        _begin_pos = ps1.rfind('[PEXPECT_BEGIN]')
-        if _begin_pos != -1:
-            ps1 = ps1[_begin_pos:]
-
-        # parse the ps1 to get username, hostname, and working directory
-        matched = re.match(self.__bash_expect_regex, ps1)
-        assert (
-            matched is not None
-        ), f'Failed to parse bash prompt: {ps1}. This should not happen.'
-        other_info, username, hostname, working_dir = matched.groups()
-        working_dir = working_dir.rstrip()
-        self.pwd = os.path.expanduser(working_dir)
-
-        # re-assemble the prompt
-        # ignore the hostname AND use 'openhands-workspace'
-        prompt = f'{other_info.strip()}\n{username}@openhands-workspace:{working_dir} '
-        if username == 'root':
-            prompt += '#'
-        else:
-            prompt += '$'
-        return prompt + ' '
-
-    def _execute_bash(
-        self,
-        command: str,
-        timeout: int,
-        keep_prompt: bool = True,
-        kill_on_timeout: bool = True,
-    ) -> tuple[str, int]:
-        logger.debug(f'Executing command: {command}')
-        self.shell.sendline(command)
-        return self._continue_bash(
-            timeout=timeout, keep_prompt=keep_prompt, kill_on_timeout=kill_on_timeout
-        )
-
-    def _interrupt_bash(
-        self,
-        action_timeout: int | None,
-        interrupt_timeout: int | None = None,
-        max_retries: int = 2,
-    ) -> tuple[str, int]:
-        interrupt_timeout = interrupt_timeout or 1  # default timeout for SIGINT
-        # try to interrupt the bash shell use SIGINT
-        while max_retries > 0:
-            self.shell.sendintr()  # send SIGINT to the shell
-            logger.debug('Sent SIGINT to bash. Waiting for output...')
-            try:
-                self.shell.expect(self.__bash_expect_regex, timeout=interrupt_timeout)
-                output = self.shell.before
-                logger.debug(f'Received output after SIGINT: {output}')
-                exit_code = 130  # SIGINT
-
-                _additional_msg = ''
-                if action_timeout is not None:
-                    _additional_msg = (
-                        f'Command timed out after {action_timeout} seconds. '
-                    )
-                output += (
-                    '\r\n\r\n'
-                    + f'[{_additional_msg}SIGINT was sent to interrupt the command.]'
-                )
-                return output, exit_code
-            except pexpect.TIMEOUT as e:
-                logger.warning(f'Bash pexpect.TIMEOUT while waiting for SIGINT: {e}')
-                max_retries -= 1
-
-        # fall back to send control-z
-        logger.error(
-            'Failed to get output after SIGINT. Max retries reached. Sending control-z...'
-        )
-        self.shell.sendcontrol('z')
-        self.shell.expect(self.__bash_expect_regex)
-        output = self.shell.before
-        logger.debug(f'Received output after control-z: {output}')
-        # Try to kill the job
-        self.shell.sendline('kill -9 %1')
-        self.shell.expect(self.__bash_expect_regex)
-        logger.debug(f'Received output after killing job %1: {self.shell.before}')
-        output += self.shell.before
-
-        _additional_msg = ''
-        if action_timeout is not None:
-            _additional_msg = f'Command timed out after {action_timeout} seconds. '
-        output += (
-            '\r\n\r\n'
-            + f'[{_additional_msg}SIGINT was sent to interrupt the command, but failed. The command was killed.]'
-        )
-
-        # Try to get the exit code again
-        self.shell.sendline('echo $?')
-        self.shell.expect(self.__bash_expect_regex)
-        _exit_code_output = self.shell.before
-        exit_code = self._parse_exit_code(_exit_code_output)
-
-        return output, exit_code
-
-    def _parse_exit_code(self, output: str) -> int:
-        try:
-            exit_code = int(output.strip().split()[0])
-        except Exception:
-            logger.error('Error getting exit code from bash script')
-            # If we try to run an invalid shell script the output sometimes includes error text
-            # rather than the error code - we assume this is an error
-            exit_code = 2
-        return exit_code
-
-    def _continue_bash(
-        self,
-        timeout: int,
-        keep_prompt: bool = True,
-        kill_on_timeout: bool = True,
-    ) -> tuple[str, int]:
-        logger.debug(f'Continuing bash with timeout={timeout}')
-        try:
-            self.shell.expect(self.__bash_expect_regex, timeout=timeout)
-
-            output = self.shell.before
-
-            # Get exit code
-            self.shell.sendline('echo $?')
-            logger.debug('Requesting exit code...')
-            self.shell.expect(self.__bash_expect_regex, timeout=timeout)
-            _exit_code_output = self.shell.before
-            exit_code = self._parse_exit_code(_exit_code_output)
-        except pexpect.TIMEOUT as e:
-            logger.warning(f'Bash pexpect.TIMEOUT while executing bash command: {e}')
-            if kill_on_timeout:
-                output, exit_code = self._interrupt_bash(action_timeout=timeout)
-            else:
-                output = self.shell.before or ''
-                exit_code = -1
-        finally:
-            bash_prompt = self._get_bash_prompt_and_update_pwd()
-            if keep_prompt:
-                output += '\r\n' + bash_prompt
-        return output, exit_code
 
     async def run_action(self, action) -> Observation:
         action_type = action.action
@@ -428,62 +165,10 @@ class ActionExecutor:
         logger.debug(f'Action output:\n{observation}')
         return observation
 
-    async def run(self, action: CmdRunAction) -> CmdOutputObservation:
-        try:
-            assert (
-                action.timeout is not None
-            ), f'Timeout argument is required for CmdRunAction: {action}'
-            commands = split_bash_commands(action.command)
-            all_output = ''
-            python_interpreter = ''
-            for command in commands:
-                if command == '':
-                    output, exit_code = self._continue_bash(
-                        timeout=SOFT_TIMEOUT_SECONDS,
-                        keep_prompt=action.keep_prompt,
-                        kill_on_timeout=False,
-                    )
-                elif command.lower() == 'ctrl+c':
-                    output, exit_code = self._interrupt_bash(
-                        action_timeout=None,  # intentionally None
-                    )
-                else:
-                    output, exit_code = self._execute_bash(
-                        command,
-                        timeout=SOFT_TIMEOUT_SECONDS
-                        if not action.blocking
-                        else action.timeout,
-                        keep_prompt=action.keep_prompt,
-                        kill_on_timeout=False if not action.blocking else True,
-                    )
-                    # Get rid of the python interpreter string from each line of the output.
-                    # We need it only once at the end.
-                    parts = output.rsplit('[Python Interpreter: ', 1)
-                    output = parts[0]
-                    if len(parts) == 2:
-                        python_interpreter = '[Python Interpreter: ' + parts[1]
-                if all_output:
-                    # previous output already exists so we add a newline
-                    all_output += '\r\n'
-
-                # If the command originated with the agent, append the command that was run...
-                if action.source == EventSource.AGENT:
-                    all_output += command + '\r\n'
-
-                all_output += str(output)
-                if exit_code != 0:
-                    break
-
-            return CmdOutputObservation(
-                command_id=-1,
-                content=all_output.rstrip('\r\n'),
-                command=action.command,
-                hidden=action.hidden,
-                exit_code=exit_code,
-                interpreter_details=python_interpreter,
-            )
-        except UnicodeDecodeError:
-            raise RuntimeError('Command output could not be decoded as utf-8')
+    async def run(
+        self, action: CmdRunAction
+    ) -> CmdOutputObservation | FatalErrorObservation:
+        return self.bash_session.run(action)
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         if 'jupyter' in self.plugins:
@@ -491,36 +176,33 @@ class ActionExecutor:
             # This is used to make AgentSkills in Jupyter aware of the
             # current working directory in Bash
             jupyter_pwd = getattr(self, '_jupyter_pwd', None)
-            if self.pwd != jupyter_pwd:
-                logger.debug(f'{self.pwd} != {jupyter_pwd} -> reset Jupyter PWD')
-                reset_jupyter_pwd_code = f'import os; os.chdir("{self.pwd}")'
+            if self.bash_session.pwd != jupyter_pwd:
+                logger.debug(
+                    f'{self.bash_session.pwd} != {jupyter_pwd} -> reset Jupyter PWD'
+                )
+                reset_jupyter_pwd_code = (
+                    f'import os; os.chdir("{self.bash_session.pwd}")'
+                )
                 _aux_action = IPythonRunCellAction(code=reset_jupyter_pwd_code)
                 _reset_obs: IPythonRunCellObservation = await _jupyter_plugin.run(
                     _aux_action
                 )
                 logger.debug(
-                    f'Changed working directory in IPython to: {self.pwd}. Output: {_reset_obs}'
+                    f'Changed working directory in IPython to: {self.bash_session.pwd}. Output: {_reset_obs}'
                 )
-                self._jupyter_pwd = self.pwd
+                self._jupyter_pwd = self.bash_session.pwd
 
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
             obs.content = obs.content.rstrip()
-            obs.content += f'\n[Jupyter current working directory: {self.pwd}]'
+            obs.content += (
+                f'\n[Jupyter current working directory: {self.bash_session.pwd}]'
+            )
             obs.content += f'\n[Jupyter Python interpreter: {_jupyter_plugin.python_interpreter_path}]'
             return obs
         else:
             raise RuntimeError(
                 'JupyterRequirement not found. Unable to run IPython action.'
             )
-
-    def _get_working_directory(self):
-        # NOTE: this is part of initialization, so we hard code the timeout
-        result, exit_code = self._execute_bash('pwd', timeout=60, keep_prompt=False)
-        if exit_code != 0:
-            raise RuntimeError(
-                f'Failed to get working directory (exit code: {exit_code}): {result}'
-            )
-        return result.strip()
 
     def _resolve_path(self, path: str, working_dir: str) -> str:
         filepath = Path(path)
@@ -531,7 +213,7 @@ class ActionExecutor:
     async def read(self, action: FileReadAction) -> Observation:
         # NOTE: the client code is running inside the sandbox,
         # so there's no need to check permission
-        working_dir = self._get_working_directory()
+        working_dir = self.bash_session.workdir
         filepath = self._resolve_path(action.path, working_dir)
         try:
             with open(filepath, 'r', encoding='utf-8') as file:
@@ -551,7 +233,7 @@ class ActionExecutor:
         return FileReadObservation(path=filepath, content=code_view)
 
     async def write(self, action: FileWriteAction) -> Observation:
-        working_dir = self._get_working_directory()
+        working_dir = self.bash_session.workdir
         filepath = self._resolve_path(action.path, working_dir)
 
         insert = action.content.split('\n')
@@ -612,7 +294,7 @@ class ActionExecutor:
         return await browse(action, self.browser)
 
     def close(self):
-        self.shell.close()
+        self.bash_session.close()
         self.browser.close()
 
 
