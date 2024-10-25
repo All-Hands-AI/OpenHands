@@ -361,8 +361,8 @@ def live_docker_image():
 
 def test_init(docker_runtime_builder):
     assert isinstance(docker_runtime_builder.docker_client, docker.DockerClient)
-    assert docker_runtime_builder.max_lines == 10
-    assert docker_runtime_builder.log_lines == [''] * 10
+    assert docker_runtime_builder.rolling_logger.max_lines == 10
+    assert docker_runtime_builder.rolling_logger.log_lines == [''] * 10
 
 
 def test_build_image_from_scratch(docker_runtime_builder, tmp_path):
