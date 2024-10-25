@@ -28,6 +28,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation
+from openhands.utils.async_utils import call_async_from_sync
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
 DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/')
@@ -128,7 +129,7 @@ def process_instance(
         )
 
     runtime = create_runtime(config)
-
+    call_async_from_sync(runtime.connect)
     # Get patch and save it to /tmp/patch.diff
     with tempfile.TemporaryDirectory() as temp_dir:
         # Patch file

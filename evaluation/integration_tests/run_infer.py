@@ -25,6 +25,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import MessageAction
 from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
 FAKE_RESPONSES = {
     'CodeActAgent': codeact_user_response,
@@ -101,6 +102,7 @@ def process_instance(
     # =============================================
 
     runtime: Runtime = create_runtime(config)
+    call_async_from_sync(runtime.connect)
 
     test_class.initialize_runtime(runtime)
 
