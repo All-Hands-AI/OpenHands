@@ -69,7 +69,7 @@ GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', '').strip()
 GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '').strip()
 
 # New global variable to store the user list
-GITHUB_USER_LIST = []
+GITHUB_USER_LIST = None
 
 # New function to load the user list
 def load_github_user_list():
