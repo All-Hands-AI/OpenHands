@@ -34,3 +34,6 @@ class Conversation:
             sid=self.sid,
             attach_to_existing=True,
         )
+
+    async def connect(self):
+        await self.runtime.connect()
