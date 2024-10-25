@@ -259,7 +259,7 @@ def _load_runtime(
         sid=sid,
         plugins=plugins,
     )
-    call_async_from_sync(runtime.connect, 30, runtime)
+    call_async_from_sync(runtime.connect)
     time.sleep(2)
     return runtime
 
