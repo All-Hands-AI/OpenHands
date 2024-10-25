@@ -1,9 +1,12 @@
+import asyncio
+
 from openhands.core.config import AppConfig
 from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
+from openhands.utils.async_utils import call_sync_from_async
 
 
 class Conversation:
@@ -37,3 +40,6 @@ class Conversation:
 
     async def connect(self):
         await self.runtime.connect()
+
+    async def disconnect(self):
+        asyncio.create_task(call_sync_from_async(self.runtime.close))
