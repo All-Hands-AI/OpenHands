@@ -28,6 +28,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.plugins import JupyterRequirement, PluginRequirement
+from openhands.runtime.utils.edit import FileEditRuntimeMixin
 from openhands.utils.async_utils import call_sync_from_async
 
 
@@ -42,7 +43,7 @@ def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
     return ret
 
 
-class Runtime:
+class Runtime(FileEditRuntimeMixin):
     """The runtime is how the agent interacts with the external environment.
     This includes a bash sandbox, a browser, and filesystem interactions.
 
@@ -77,6 +78,9 @@ class Runtime:
         self.initial_env_vars = _default_env_vars(config.sandbox)
         if env_vars is not None:
             self.initial_env_vars.update(env_vars)
+
+        # Load mixins
+        FileEditRuntimeMixin.__init__(self)
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
@@ -136,8 +140,9 @@ class Runtime:
         if not action.runnable:
             return NullObservation('')
         if (
-            hasattr(action, 'is_confirmed')
-            and action.is_confirmed == ActionConfirmationStatus.AWAITING_CONFIRMATION
+            hasattr(action, 'confirmation_state')
+            and action.confirmation_state
+            == ActionConfirmationStatus.AWAITING_CONFIRMATION
         ):
             return NullObservation('')
         action_type = action.action  # type: ignore[attr-defined]
@@ -148,8 +153,8 @@ class Runtime:
                 f'Action {action_type} is not supported in the current runtime.'
             )
         if (
-            hasattr(action, 'is_confirmed')
-            and action.is_confirmed == ActionConfirmationStatus.REJECTED
+            getattr(action, 'confirmation_state', None)
+            == ActionConfirmationStatus.REJECTED
         ):
             return UserRejectObservation(
                 'Action has been rejected by the user! Waiting for further user input.'
@@ -166,6 +171,10 @@ class Runtime:
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         self.close()
+
+    @abstractmethod
+    async def connect(self) -> None:
+        pass
 
     # ====================================================================
     # Action execution

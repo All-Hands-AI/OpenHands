@@ -1,5 +1,6 @@
 import React from "react";
 import { useDispatch } from "react-redux";
+import toast from "react-hot-toast";
 import EllipsisH from "#/assets/ellipsis-h.svg?react";
 import { ModalBackdrop } from "../modals/modal-backdrop";
 import { ConnectToGitHubModal } from "../modals/connect-to-github-modal";
@@ -61,7 +62,13 @@ Please push the changes to GitHub, and open a pull request.
           isConnectedToGitHub={isConnectedToGitHub}
           onConnectToGitHub={() => setConnectToGitHubModalOpen(true)}
           onPushToGitHub={handlePushToGitHub}
-          onDownloadWorkspace={downloadWorkspace}
+          onDownloadWorkspace={() => {
+            try {
+              downloadWorkspace();
+            } catch (error) {
+              toast.error("Failed to download workspace");
+            }
+          }}
           onClose={() => setContextMenuIsOpen(false)}
         />
       )}

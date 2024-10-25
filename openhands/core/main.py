@@ -26,7 +26,7 @@ from openhands.events.observation import AgentStateChangedObservation
 from openhands.events.serialization.event import event_to_trajectory
 from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
 from openhands.storage import get_file_store
 
 
@@ -122,6 +122,7 @@ async def run_controller(
 
     if runtime is None:
         runtime = create_runtime(config, sid=sid)
+        await runtime.connect()
 
     event_stream = runtime.event_stream
     # restore cli session if enabled

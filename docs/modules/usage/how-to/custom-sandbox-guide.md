@@ -38,19 +38,7 @@ This will produce a new image called `custom-image`, which will be available in 
 > Note that in the configuration described in this document, OpenHands will run as user "openhands" inside the
 > sandbox and thus all packages installed via the docker file should be available to all users on the system, not just root.
 
-## Option 1: Using the Docker Command
-
-[In the docker command](https://docs.all-hands.dev/modules/usage/installation#start-the-app), replace
-`SANDBOX_RUNTIME_CONTAINER_IMAGE` with `SANDBOX_BASE_CONTAINER_IMAGE` and set it to the desired image.
-This can be an image you’ve already pulled or one you’ve built:
-
-```bash
-docker run -it --pull=always \
-    -e SANDBOX_BASE_CONTAINER_IMAGE=custom-image \
-    ...
-```
-
-## Option 2: Using the Development Workflow
+## Using the Development Workflow
 
 ### Setup
 

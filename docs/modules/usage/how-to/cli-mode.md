@@ -57,7 +57,7 @@ docker run -it \
     -v /var/run/docker.sock:/var/run/docker.sock \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    ghcr.io/all-hands-ai/openhands:0.10 \
+    ghcr.io/all-hands-ai/openhands:0.11 \
     python -m openhands.core.cli
 ```
 

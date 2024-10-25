@@ -32,7 +32,8 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import AgentFinishAction, CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
 
 def get_config(
@@ -210,6 +211,7 @@ def process_instance(
     # =============================================
 
     runtime: Runtime = create_runtime(config)
+    call_async_from_sync(runtime.connect)
 
     initialize_runtime(runtime, instance=instance)
 
