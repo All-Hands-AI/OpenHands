@@ -3880,31 +3880,35 @@ types-tqdm = "*"
 
 [[package]]
 name = "litellm"
-version = "1.50.2"
+version = "1.50.4"
 description = "Library to easily interface with LLM API providers"
 optional = false
-python-versions = "!=2.7.*,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*,!=3.7.*,>=3.8"
-files = [
-    {file = "litellm-1.50.2-py3-none-any.whl", hash = "sha256:99cac60c78037946ab809b7cfbbadad53507bb2db8ae39391b4be215a0869fdd"},
-    {file = "litellm-1.50.2.tar.gz", hash = "sha256:b244c9a0e069cc626b85fb9f5cc252114aaff1225500da30ce0940f841aef8ea"},
-]
+python-versions = ">=3.8.1,<4.0, !=3.9.7"
+files = []
+develop = false
 
 [package.dependencies]
 aiohttp = "*"
 click = "*"
 importlib-metadata = ">=6.8.0"
-jinja2 = ">=3.1.2,<4.0.0"
-jsonschema = ">=4.22.0,<5.0.0"
+jinja2 = "^3.1.2"
+jsonschema = "^4.22.0"
 openai = ">=1.52.0"
-pydantic = ">=2.0.0,<3.0.0"
+pydantic = "^2.0.0"
 python-dotenv = ">=0.2.0"
-requests = ">=2.31.0,<3.0.0"
+requests = "^2.31.0"
 tiktoken = ">=0.7.0"
 tokenizers = "*"
 
 [package.extras]
 extra-proxy = ["azure-identity (>=1.15.0,<2.0.0)", "azure-keyvault-secrets (>=4.8.0,<5.0.0)", "google-cloud-kms (>=2.21.3,<3.0.0)", "prisma (==0.11.0)", "resend (>=0.8.0,<0.9.0)"]
 proxy = ["PyJWT (>=2.8.0,<3.0.0)", "apscheduler (>=3.10.4,<4.0.0)", "backoff", "cryptography (>=42.0.5,<43.0.0)", "fastapi (>=0.111.0,<0.112.0)", "fastapi-sso (>=0.10.0,<0.11.0)", "gunicorn (>=22.0.0,<23.0.0)", "orjson (>=3.9.7,<4.0.0)", "pynacl (>=1.5.0,<2.0.0)", "python-multipart (>=0.0.9,<0.0.10)", "pyyaml (>=6.0.1,<7.0.0)", "rq", "uvicorn (>=0.22.0,<0.23.0)"]
+
+[package.source]
+type = "git"
+url = "https://github.com/xingyaoww/litellm.git"
+reference = "xw/fix-fn-call"
+resolved_reference = "5ae233535860cdc95af349615ab88227ec70333d"
 
 [[package]]
 name = "llama-index"
@@ -10077,4 +10081,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "a49f87851aeffcff101ee23015674a9879472c8099dfcc258f46f599861f49b4"
+content-hash = "41ed86e2197a477266006991e41532845a6050d4d898c9a11989586ea9ce21fe"

@@ -66,43 +66,14 @@ class Message(BaseModel):
 
     @model_serializer
     def serialize_model(self) -> dict:
-        content: list[dict] | str
-        # two kinds of serializer:
-        # 1. vision serializer: when prompt caching or vision is enabled
-        # 2. single text serializer: for other cases
-        # remove this when liteLLM or providers support this format translation
-        if self.cache_enabled or self.vision_enabled:
-            # when prompt caching or vision is enabled, use vision serializer
-            content = []
-            for item in self.content:
-                if isinstance(item, TextContent):
-                    content.append(item.model_dump())
-                elif isinstance(item, ImageContent):
-                    content.extend(item.model_dump())
-        else:
-            # for other cases, concatenate all text content
-            # into a single string per message
-            content = '\n'.join(
-                item.text for item in self.content if isinstance(item, TextContent)
-            )
+        content: list[dict] = []
+        for item in self.content:
+            if isinstance(item, TextContent):
+                content.append(item.model_dump())
+            elif isinstance(item, ImageContent):
+                content.extend(item.model_dump())
 
-        # FIXME: temporary workaround for LiteLLM tool output bug
-        # https://github.com/BerriAI/litellm/issues/6422
-        if self.tool_call_id is not None and isinstance(content, list):
-            # assert no image content in the list
-            if not all(isinstance(item, TextContent) for item in self.content):
-                raise RuntimeError(
-                    f'Expected all text content in tool calls due to https://github.com/BerriAI/litellm/issues/6422. Got: {self.content}'
-                )
-            if any(item.cache_prompt for item in self.content):
-                raise RuntimeError(
-                    'Tool calls are not cacheable yet: https://github.com/All-Hands-AI/OpenHands/pull/4537#issuecomment-2436395005'
-                )
-
-            # merge the content list into a single string
-            content = '\n'.join(item.text for item in self.content)
-
-        ret = {'content': content, 'role': self.role}
+        ret: dict = {'content': content, 'role': self.role}
 
         if self.tool_call_id is not None:
             assert (

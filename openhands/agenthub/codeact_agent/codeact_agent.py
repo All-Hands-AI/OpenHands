@@ -311,11 +311,8 @@ class CodeActAgent(Agent):
             user_turns_processed = 0
             for message in reversed(messages):
                 if (
-                    message.role == 'user'
-                    and user_turns_processed < user_turns_threshold
-                ):
-                    # FIXME: add role == 'tool' when anthropic supports prompt caching for tool calls
-                    # https://github.com/All-Hands-AI/OpenHands/pull/4537#issuecomment-2436395005
+                    message.role == 'user' or message.role == 'tool'
+                ) and user_turns_processed < user_turns_threshold:
                     message.content[
                         -1
                     ].cache_prompt = True  # Last item inside the message content
