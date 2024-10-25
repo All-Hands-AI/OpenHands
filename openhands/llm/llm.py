@@ -78,9 +78,6 @@ class LLM(RetryMixin, DebugMixin):
         self.cost_metric_supported: bool = True
         self.config: LLMConfig = copy.deepcopy(config)
 
-        self.function_schemas: list[dict[str, Any]] = []
-        self.function_implementations: dict[str, Callable] = {}
-
         # litellm actually uses base Exception here for unknown model
         self.model_info: ModelInfo | None = None
         try:
