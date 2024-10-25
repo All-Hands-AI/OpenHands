@@ -68,10 +68,40 @@ session_manager = SessionManager(config, file_store)
 GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', '').strip()
 GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '').strip()
 
+# New global variable to store the user list
+GITHUB_USER_LIST = []
+
+# New function to load the user list
+def load_github_user_list():
+    global GITHUB_USER_LIST
+    waitlist = os.getenv('GITHUB_USER_LIST_FILE')
+    if waitlist and os.path.exists(waitlist):
+        with open(waitlist, 'r') as f:
+            GITHUB_USER_LIST = [line.strip() for line in f if line.strip()]
+    else:
+        logger.warning("GitHub user list file not found or not specified.")
+
+GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', '').strip()
+GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '').strip()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global session_manager
+    load_github_user_list()  # Load the GitHub user list at startup
+    async with session_manager:
+        yield
+
+
+app = FastAPI(lifespan=lifespan)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['http://localhost:3001', 'http://127.0.0.1:3001'],
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
+
     async with session_manager:
         yield
 
@@ -833,23 +863,17 @@ class User(BaseModel):
 
 @app.post('/api/authenticate')
 def authenticate(user: User | None = None):
-    waitlist = os.getenv('GITHUB_USER_LIST_FILE')
+    global GITHUB_USER_LIST
 
     # Only check if waitlist is provided
-    if waitlist is not None:
-        try:
-            with open(waitlist, 'r') as f:
-                users = f.read().splitlines()
-                if user is None or user.login not in users:
-                    return JSONResponse(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        content={'error': 'User not on waitlist'},
-                    )
-        except FileNotFoundError:
+    if GITHUB_USER_LIST:
+        if user is None or user.login not in GITHUB_USER_LIST:
             return JSONResponse(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={'error': 'Waitlist file not found'},
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={'error': 'User not on waitlist'},
             )
+    else:
+        logger.warning("No GitHub user list available for authentication.")
 
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={'message': 'User authenticated'}
@@ -866,3 +890,19 @@ class SPAStaticFiles(StaticFiles):
 
 
 app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist')
+
+
+
+class SPAStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        try:
+            return await super().get_response(path, scope)
+        except Exception:
+            # FIXME: just making this HTTPException doesn't work for some reason
+            return await super().get_response('index.html', scope)
+
+
+app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist')
+
+
+
