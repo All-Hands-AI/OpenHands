@@ -22,6 +22,7 @@ import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import store from "#/store";
 import { setInitialQuery } from "#/state/initial-query-slice";
 import { clientLoader as rootClientLoader } from "#/routes/_oh";
+import OpenHands from "#/api/open-hands";
 
 interface GitHubAuthProps {
   onConnectToGitHub: () => void;
@@ -49,6 +50,18 @@ function GitHubAuth({
 }
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
+  let isSaas = false;
+  let githubClientId: string | null = null;
+
+  try {
+    const config = await OpenHands.getConfig();
+    isSaas = config.APP_MODE === "saas";
+    githubClientId = config.GITHUB_CLIENT_ID;
+  } catch (error) {
+    isSaas = false;
+    githubClientId = null;
+  }
+
   const token = localStorage.getItem("token");
   if (token) return redirect("/app");
 
@@ -62,11 +75,10 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   }
 
   let githubAuthUrl: string | null = null;
-  if (window.__APP_MODE__ === "saas") {
-    const clientId = window.__GITHUB_CLIENT_ID__;
+  if (isSaas) {
     const requestUrl = new URL(request.url);
     const redirectUri = `${requestUrl.origin}/oauth/github/callback`;
-    githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user,workflow`;
+    githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${githubClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user,workflow`;
   }
 
   return json({ repositories, githubAuthUrl });

@@ -117,13 +117,15 @@ class CodeActAgent(Agent):
 
     def get_action_message(self, action: Action) -> Message | None:
         """Convert an action to a message sent to the LLM."""
-        if (
-            isinstance(action, AgentDelegateAction)
-            or isinstance(action, CmdRunAction)
-            or isinstance(action, IPythonRunCellAction)
-            or isinstance(action, FileEditAction)
-            or (isinstance(action, AgentFinishAction) and action.source == 'agent')
-        ):
+        if isinstance(
+            action,
+            (
+                AgentDelegateAction,
+                CmdRunAction,
+                IPythonRunCellAction,
+                FileEditAction,
+            ),
+        ) or (isinstance(action, AgentFinishAction) and action.source == 'agent'):
             if self.config.function_calling:
                 # FIXME
                 # Add assistant's response (i.e., tool call)
