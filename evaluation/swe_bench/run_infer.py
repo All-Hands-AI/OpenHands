@@ -316,7 +316,7 @@ def complete_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(
-        obs.exit_code == 0,
+        isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
         f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
     )
 
@@ -326,7 +326,7 @@ def complete_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(
-        obs.exit_code == 0,
+        isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
         f'Failed to git config --global core.pager "": {str(obs)}',
     )
 
@@ -335,7 +335,10 @@ def complete_runtime(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(obs.exit_code == 0, f'Failed to git add -A: {str(obs)}')
+    assert_and_raise(
+        isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
+        f'Failed to git add -A: {str(obs)}',
+    )
 
     n_retries = 0
     git_patch = None
