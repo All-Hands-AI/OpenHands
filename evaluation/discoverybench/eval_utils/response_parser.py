@@ -37,7 +37,6 @@ def extract_between(content, start_markers, end_markers=None):
 def extract_gen_hypo_from_logs(content):
     error = ''
 
-    # extract workflow
     gen_workflow = extract_between(
         content, workflow_summary_markers, final_answer_markers
     )
@@ -45,7 +44,6 @@ def extract_gen_hypo_from_logs(content):
     if not gen_workflow:
         error += 'No Workflow Summary found in the line. | '
 
-    # extract final answer
     gen_hypothesis = extract_between(content, final_answer_markers, next_agent_markers)
 
     if not gen_hypothesis:

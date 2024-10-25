@@ -393,19 +393,12 @@ def create_dataset(repo_location: str, split: str = 'test'):
 
     df = pd.DataFrame.from_dict(data_dict, orient='index')
 
-    # add a column called instance_id to the dataset
     df['instance_id'] = df.index
 
-    # add csv_file column to the dataset
     df['data_files'] = df['datasets'].apply(lambda x: list_csv_files(x))
-
-    # load 'eval/answer_key_real.csv' from the repo
-    # this file contains 'gold_hypo'
-    # merge this file with the dataset with three columns: 'dataset', 'qid', 'metadata_id'
 
     answer_key = pd.read_csv(answer_key_location)
 
-    # rename columns
     answer_key = answer_key.rename(
         columns={
             'metadataid': 'metadata_id',
