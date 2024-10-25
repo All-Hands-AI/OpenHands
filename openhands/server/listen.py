@@ -78,9 +78,6 @@ def load_github_user_list():
     if waitlist:
         with open(waitlist, 'r') as f:
             GITHUB_USER_LIST = [line.strip() for line in f if line.strip()]
-    else:
-        logger.warning("GitHub user list file not found or not specified.")
-load_github_user_list()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
