@@ -32,7 +32,7 @@ When the `run_infer.sh` script is started, it will automatically pull the latest
 
 - `MODEL_CONFIG`: Name of the model you want to evaluate with
 - `GIT_COMMIT`: This should be the git commit hash or release tag for OpenHands, e.g., HEAD or a specific tag like 0.6.2.
-- `AGENT`: For the agent, it appears you're using CodeActAgent. Replace [AGENT] with CodeActAgent.
-- `EVAL_LIMIT`: This should be the number of samples to evaluate, e.g., num_samples_eval.
-- `NUM_WORKERS`: This would be the number of workers to parallelize the evaluation process.
+- `AGENT`: Use CoderActAgent, right now it only supports that.
+- `EVAL_LIMIT`: Number of samples to evaluate.
+- `NUM_WORKERS`: Number of workers to parallelize the evaluation process.
 
