@@ -7,7 +7,7 @@ import { cn } from "#/utils/utils";
 interface ImageCarouselProps {
   size: "small" | "large";
   images: string[];
-  onRemove: (index: number) => void;
+  onRemove?: (index: number) => void;
 }
 
 export function ImageCarousel({
@@ -60,7 +60,7 @@ export function ImageCarousel({
             key={index}
             size={size}
             src={src}
-            onRemove={() => onRemove(index)}
+            onRemove={onRemove && (() => onRemove(index))}
           />
         ))}
       </div>

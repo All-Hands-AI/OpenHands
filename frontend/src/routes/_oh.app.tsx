@@ -127,7 +127,6 @@ function App() {
   const { files, importedProjectZip } = useSelector(
     (state: RootState) => state.initalQuery,
   );
-  const { messages } = useSelector((state: RootState) => state.chat);
   const { start, send, setRuntimeIsInitialized, runtimeActive } = useSocket();
   const { settings, token, ghToken, repo, q, lastCommit } =
     useLoaderData<typeof clientLoader>();
@@ -297,7 +296,7 @@ function App() {
     <div className="flex flex-col h-full gap-3">
       <div className="flex h-full overflow-auto gap-3">
         <Container className="grow max-h-full">
-          <ChatInterface messages={messages} />
+          <ChatInterface />
         </Container>
 
         <div className="flex flex-col basis-3/4 gap-3">
