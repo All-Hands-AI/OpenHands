@@ -39,7 +39,7 @@ export function ProjectMenuCard({
   const handlePushToGitHub = () => {
     const rawEvent = {
       content: `
-Please push the changes to GitHub, and open a pull request.
+Please push the changes to GitHub and open a pull request.
 `,
       imageUrls: [],
       timestamp: new Date().toISOString(),
