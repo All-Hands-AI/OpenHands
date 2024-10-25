@@ -4,9 +4,11 @@ A Runtime is an environment where the OpenHands agent can edit files and run
 commands.
 
 By default, OpenHands uses a Docker-based runtime, running on your local computer.
-But this can be tricky to set up and manage, so we also offer support for "remote" runtimes.
-In these cases, you'll generally need to set up an account with a runtime provider
-and get an API key to use their runtime.
+This keeps OpenHands free and keeps your information private.
+
+We also offer support for "remote" runtimes, which are typically managed by third-parties.
+They can make setup a bit simpler and more scalable, especially
+if you're running many OpenHands conversations in parallel (e.g. to do evaluation).
 
 ## Docker Runtime
 This is the default Runtime that's used when you start OpenHands. You might notice
@@ -25,8 +27,6 @@ You can also [build your own runtime image](how-to/custom-sandbox-guide).
 
 ### Connecting to your filesystem
 One useful feature here is the ability to connect to your local filesystem.
-This functionality can be tricky, so we don't recommend it by default. But
-it allows OpenHands to work directly on files on your computer.
 
 To mount your filesystem into the runtime, add the following options to
 the `docker run` command:
@@ -41,9 +41,11 @@ docker run # ...
     # ...
 ```
 
-Note that this can cause some issues with file permissions (hence the `SANDBOX_USER_ID` variable)
-but seems to work well on most systems.
+Be careful! There's nothing stopping the OpenHands agent from deleting or modifying
+any files that are mounted into its workspace.
 
+This setup can cause some issues with file permissions (hence the `SANDBOX_USER_ID` variable)
+but seems to work well on most systems.
 
 ## All Hands Runtime
 The All Hands Runtime is currently in beta. You can request access by joining
