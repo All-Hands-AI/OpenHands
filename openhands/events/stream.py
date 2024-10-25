@@ -3,7 +3,7 @@ import threading
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Dict, Iterable
+from typing import Callable, Iterable
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.utils import json
@@ -36,7 +36,7 @@ class EventStream:
     file_store: FileStore
     # For each subscriber ID, there is a stack of callback functions - useful
     # when there are agent delegates
-    _subscribers: Dict[str, list[Callable]] = field(default_factory=dict)
+    _subscribers: dict[str, list[Callable]] = field(default_factory=dict)
     _cur_id: int = 0
     _lock: threading.Lock = field(default_factory=threading.Lock)
 
