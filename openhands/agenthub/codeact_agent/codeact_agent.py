@@ -136,8 +136,6 @@ class CodeActAgent(Agent):
             ),
         ) or (isinstance(action, AgentFinishAction) and action.source == 'agent'):
             if self.config.function_calling:
-                # FIXME
-                # Add assistant's response (i.e., tool call)
                 llm_response: ModelResponse = action.trigger_by_llm_response
                 assert llm_response is not None
                 assistant_msg = llm_response.choices[0].message
