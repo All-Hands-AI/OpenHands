@@ -224,7 +224,8 @@ class AgentController:
         """
         if (
             self._pending_action
-            and getattr(self._pending_action, 'is_confirmed', None)
+            and hasattr(self._pending_action, 'confirmation_state')
+            and self._pending_action.confirmation_state
             == ActionConfirmationStatus.AWAITING_CONFIRMATION
         ):
             return
@@ -329,9 +330,10 @@ class AgentController:
             if hasattr(self._pending_action, 'thought'):
                 self._pending_action.thought = ''  # type: ignore[union-attr]
             if new_state == AgentState.USER_CONFIRMED:
-                self._pending_action.is_confirmed = ActionConfirmationStatus.CONFIRMED  # type: ignore[attr-defined]
+                confirmation_state = ActionConfirmationStatus.CONFIRMED
             else:
-                self._pending_action.is_confirmed = ActionConfirmationStatus.REJECTED  # type: ignore[attr-defined]
+                confirmation_state = ActionConfirmationStatus.REJECTED
+            self._pending_action.confirmation_state = confirmation_state  # type: ignore[attr-defined]
             self.event_stream.add_event(self._pending_action, EventSource.AGENT)
 
         self.state.agent_state = new_state
@@ -452,12 +454,15 @@ class AgentController:
             if self.state.confirmation_mode and (
                 type(action) is CmdRunAction or type(action) is IPythonRunCellAction
             ):
-                action.is_confirmed = ActionConfirmationStatus.AWAITING_CONFIRMATION
+                action.confirmation_state = (
+                    ActionConfirmationStatus.AWAITING_CONFIRMATION
+                )
             self._pending_action = action
 
         if not isinstance(action, NullAction):
             if (
-                getattr(action, 'is_confirmed', None)
+                hasattr(action, 'confirmation_state')
+                and action.confirmation_state
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
