@@ -46,9 +46,9 @@ export function ChatMessage({
       onMouseLeave={() => setIsHovering(false)}
       className={cn(
         "p-4 rounded-xl relative",
-        "flex flex-col gap-2",
-        type === "user" && "max-w-[305px] bg-neutral-700 self-end",
-        type === "assistant" && "max-w-full bg-tranparent",
+        "flex flex-col gap-2 max-w-[305px]",
+        type === "user" && "bg-neutral-700 self-end",
+        type === "assistant" && "bg-tranparent",
       )}
     >
       <button
