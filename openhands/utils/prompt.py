@@ -74,8 +74,11 @@ class PromptManager:
         about the user's task. The additional context will convert the current
         generic agent into a more specialized agent that is tailored to the user's task.
         """
+        if not message.content:
+            return
+        message_content = message.content[0].text
         for micro_agent in self.microagents.values():
-            trigger = micro_agent.get_trigger(message)
+            trigger = micro_agent.get_trigger(message_content)
             if trigger:
                 micro_text = f'EXTRA INFO: the following information has been included based on a keyword match for "{trigger}". It may or may not be relevant to the user\'s request.\n\n'
                 micro_text += '\n\n' + micro_agent.content
