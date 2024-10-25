@@ -1,7 +1,12 @@
 # DiscoveryBench with OpenHands
 
-TODO: This is sample description, need to update it before upstream PR.
-DiscoveryBench is designed to systematically assess current model capabilities in data-driven discovery tasks and provide a useful resource for improving them. Each DiscoveryBench task consists of a goal and dataset(s). Solving the task requires both statistical analysis and semantic reasoning. A faceted evaluation allows open-ended final answers to be rigorously evaluated.
+[DiscoveryBench](https://github.com/allenai/discoverybench/) [(Paper)](https://arxiv.org/abs/2407.01725v1) contains 264 tasks collected across 6 diverse domains, such as biology, economics, and sociology. It incorporates discovery workflows from published papers to approximate the real-world challenges faced by researchers.  
+
+<p align="center">
+  <a href="[https://github.com/allenai/discoverybench](https://github.com/allenai/discoverybench)">
+    <img src="https://raw.githubusercontent.com/allenai/discoverybench/refs/heads/main/assets/discoverybench-openhands-teaser.png" width="100%" alt="DiscoveryBench Background" />
+  </a>
+</p>
 
 
 ## Setup Environment and LLM Configuration
