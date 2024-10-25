@@ -20,14 +20,12 @@ class MicroAgent:
             self._content = self._loaded.content
             self._metadata = MicroAgentMetadata(**self._loaded.metadata)
 
-    def should_trigger(self, message: str) -> bool:
+    def get_trigger(self, message: str) -> str | None:
         message = message.lower()
         for trigger in self.triggers:
             if trigger.lower() in message:
-                print(f'Triggered {self.name} with {trigger}')
-                print(f'Message: {message}')
-                return True
-        return False
+                return trigger
+        return None
 
     @property
     def content(self) -> str:
