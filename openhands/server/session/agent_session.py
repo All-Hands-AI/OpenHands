@@ -28,6 +28,7 @@ class AgentSession:
     event_stream: EventStream
     file_store: FileStore
     controller: AgentController | None = None
+    secondary_event_stream: EventStream | None = None
     runtime: Runtime | None = None
     security_analyzer: SecurityAnalyzer | None = None
     _closed: bool = False
@@ -43,6 +44,7 @@ class AgentSession:
 
         self.sid = sid
         self.event_stream = EventStream(sid, file_store)
+        self.secondary_event_stream = EventStream(sid + '-secondary', file_store)
         self.file_store = file_store
 
     async def start(
@@ -182,6 +184,7 @@ class AgentSession:
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
+                secondary_event_stream=self.secondary_event_stream,
                 sid=self.sid,
                 plugins=agent.sandbox_plugins,
                 status_message_callback=status_message_callback,
@@ -245,6 +248,7 @@ class AgentSession:
         self.controller = AgentController(
             sid=self.sid,
             event_stream=self.event_stream,
+            secondary_event_stream=self.secondary_event_stream,
             agent=agent,
             max_iterations=int(max_iterations),
             max_budget_per_task=max_budget_per_task,

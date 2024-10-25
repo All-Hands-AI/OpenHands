@@ -32,6 +32,7 @@ class IPythonRunCellObservation(Observation):
 
     code: str
     observation: str = ObservationType.RUN_IPYTHON
+    is_secondary: bool = False
 
     @property
     def error(self) -> bool:

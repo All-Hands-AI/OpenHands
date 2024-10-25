@@ -94,6 +94,7 @@ class CodeActAgent(Agent):
             agent_skills_docs=AgentSkillsRequirement.documentation,
             micro_agent=self.micro_agent,
         )
+        self.is_get_repomap_step = True
 
     def action_to_str(self, action: Action) -> str:
         if isinstance(action, CmdRunAction):
@@ -201,6 +202,21 @@ class CodeActAgent(Agent):
         if latest_user_message and latest_user_message.strip() == '/exit':
             return AgentFinishAction()
 
+        if self.is_get_repomap_step:
+            self.is_get_repomap_step = False
+            messages = self._get_messages(state, include_repomap=False)
+            concat_text_content = self._get_concatenated_text_content(messages[1:])
+            get_repomap_code = f""" get_repomap(repo_path='./', messages_history='''{concat_text_content}''') """
+            action = IPythonRunCellAction(
+                code=get_repomap_code,
+                thought='',
+                kernel_init_code='from agentskills import *',
+            )
+            action.is_secondary = True
+            return action
+        else:
+            self.is_get_repomap_step = True
+
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
         params = {
@@ -217,7 +233,22 @@ class CodeActAgent(Agent):
 
         return self.action_parser.parse(response)
 
-    def _get_messages(self, state: State) -> list[Message]:
+    def _get_concatenated_text_content(self, messages: list[Message]) -> str:
+        text_messages = [
+            content.text
+            for message in messages
+            for content in message.content
+            if isinstance(content, TextContent)
+        ]
+        first_message = text_messages[0]
+        start_marker = '--- END OF EXAMPLE ---'
+        extracted_message = first_message.split(start_marker)[1].strip()
+        text_messages[0] = extracted_message
+        return '\n'.join(text_messages)
+
+    def _get_messages(
+        self, state: State, include_repomap: bool = True
+    ) -> list[Message]:
         messages: list[Message] = [
             Message(
                 role='system',
@@ -240,8 +271,13 @@ class CodeActAgent(Agent):
         ]
 
         for event in state.history.get_events():
+            print(f'event: {event}')
             # create a regular message from an event
             if isinstance(event, Action):
+                if hasattr(event, 'is_secondary'):
+                    print(f'action.is_secondary: {event.is_secondary}')
+                    if event.is_secondary:
+                        continue
                 message = self.get_action_message(event)
             elif isinstance(event, Observation):
                 message = self.get_observation_message(event)
@@ -285,5 +321,26 @@ class CodeActAgent(Agent):
         if latest_user_message:
             reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
             latest_user_message.content.append(TextContent(text=reminder_text))
+            # Insert RepoMap code
+            repo_map = state.indexing
+            if repo_map and include_repomap:
+                latest_user_message.content.append(
+                    TextContent(text=f'\n{self._extract_repomap_content(repo_map)}')
+                )
 
         return messages
+
+    def _extract_repomap_content(self, output: str) -> str:
+        import re
+
+        # Regex to extract IPythonRunCellObservation content
+        ipython_obs_pattern = r'\*\*IPythonRunCellObservation\*\*\n(.*?)\n\[Jupyter current working directory:'
+
+        # Perform the extraction
+        match = re.search(ipython_obs_pattern, output, re.DOTALL)
+
+        if match:
+            ipython_obs_content = match.group(1)
+            return ipython_obs_content
+
+        return ''

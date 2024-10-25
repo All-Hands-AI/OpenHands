@@ -17,6 +17,7 @@ class EventStreamSubscriber(str, Enum):
     SECURITY_ANALYZER = 'security_analyzer'
     SERVER = 'server'
     RUNTIME = 'runtime'
+    SECONDARY = 'secondary'
     MAIN = 'main'
     TEST = 'test'
 

@@ -7,9 +7,7 @@ from typing import Any
 from openhands.controller.state.task import RootTask
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
-from openhands.events.action import (
-    MessageAction,
-)
+from openhands.events.action import MessageAction
 from openhands.events.action.agent import AgentFinishAction
 from openhands.llm.metrics import Metrics
 from openhands.memory.history import ShortTermHistory
@@ -97,6 +95,7 @@ class State:
     # NOTE: This will never be used by the controller, but it can be used by different
     # evaluation tasks to store extra data needed to track the progress/state of the task.
     extra_data: dict[str, Any] = field(default_factory=dict)
+    indexing: str | None = None
 
     def save_to_session(self, sid: str, file_store: FileStore):
         pickled = pickle.dumps(self)

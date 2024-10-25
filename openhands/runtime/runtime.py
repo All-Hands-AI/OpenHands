@@ -64,10 +64,16 @@ class Runtime(FileEditRuntimeMixin):
         env_vars: dict[str, str] | None = None,
         status_message_callback: Callable | None = None,
         attach_to_existing: bool = False,
+        secondary_event_stream: EventStream | None = None,
     ):
         self.sid = sid
         self.event_stream = event_stream
+        self.secondary_event_stream = secondary_event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
+        if self.secondary_event_stream:
+            self.secondary_event_stream.subscribe(
+                EventStreamSubscriber.RUNTIME, self.on_event
+            )
         self.plugins = plugins if plugins is not None and len(plugins) > 0 else []
         self.status_message_callback = status_message_callback
         self.attach_to_existing = attach_to_existing
@@ -130,7 +136,16 @@ class Runtime(FileEditRuntimeMixin):
             observation = await call_sync_from_async(self.run_action, event)
             observation._cause = event.id  # type: ignore[attr-defined]
             source = event.source if event.source else EventSource.AGENT
-            await self.event_stream.async_add_event(observation, source)  # type: ignore[arg-type]
+            # await self.event_stream.async_add_event(observation, source)  # type: ignore[arg-type]
+            if (
+                self.secondary_event_stream
+                and hasattr(event, 'is_secondary')
+                and event.is_secondary
+            ):
+                observation.is_secondary = True  # type: ignore[attr-defined]
+                await self.secondary_event_stream.async_add_event(observation, source)
+            else:
+                await self.event_stream.async_add_event(observation, source)  # type: ignore[arg-type]
 
     def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.

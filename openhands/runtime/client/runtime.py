@@ -125,6 +125,7 @@ class EventStreamRuntime(Runtime):
         env_vars: dict[str, str] | None = None,
         status_message_callback: Callable | None = None,
         attach_to_existing: bool = False,
+        secondary_event_stream: EventStream | None = None,
     ):
         super().__init__(
             config,
@@ -134,6 +135,7 @@ class EventStreamRuntime(Runtime):
             env_vars,
             status_message_callback,
             attach_to_existing,
+            secondary_event_stream,
         )
 
     def __init__(
@@ -145,6 +147,7 @@ class EventStreamRuntime(Runtime):
         env_vars: dict[str, str] | None = None,
         status_message_callback: Callable | None = None,
         attach_to_existing: bool = False,
+        secondary_event_stream: EventStream | None = None,
     ):
         self.config = config
         self._host_port = 30000  # initial dummy value
@@ -207,6 +210,7 @@ class EventStreamRuntime(Runtime):
             env_vars,
             status_message_callback,
             attach_to_existing,
+            secondary_event_stream,
         )
 
         logger.info('Waiting for client to become ready...')

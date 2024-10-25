@@ -52,6 +52,7 @@ class IPythonRunCellAction(Action):
     is_confirmed: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
     security_risk: ActionSecurityRisk | None = None
     kernel_init_code: str = ''  # code to run in the kernel (if the kernel is restarted)
+    is_secondary: bool = False
 
     def __str__(self) -> str:
         ret = '**IPythonRunCellAction**\n'

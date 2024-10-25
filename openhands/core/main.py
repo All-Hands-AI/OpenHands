@@ -67,6 +67,7 @@ def create_runtime(
     # set up the event stream
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(session_id, file_store)
+    secondary_event_stream = EventStream(session_id + '-secondary', file_store)
 
     # agent class
     agent_cls = openhands.agenthub.Agent.get_cls(config.default_agent)
@@ -77,6 +78,7 @@ def create_runtime(
     runtime: Runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
+        secondary_event_stream=secondary_event_stream,
         sid=session_id,
         plugins=agent_cls.sandbox_plugins,
     )
@@ -124,6 +126,7 @@ async def run_controller(
         runtime = create_runtime(config, sid=sid)
 
     event_stream = runtime.event_stream
+    secondary_event_stream = runtime.secondary_event_stream
     # restore cli session if enabled
     initial_state = None
     if config.enable_cli_session:
@@ -142,6 +145,7 @@ async def run_controller(
         max_budget_per_task=config.max_budget_per_task,
         agent_to_llm_config=config.get_agent_to_llm_config_map(),
         event_stream=event_stream,
+        secondary_event_stream=secondary_event_stream,
         initial_state=initial_state,
         headless_mode=headless_mode,
     )
