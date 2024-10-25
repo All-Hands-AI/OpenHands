@@ -291,7 +291,7 @@ class AgentController:
         Args:
             new_state (AgentState): The new state to set for the agent.
         """
-        logger.debug(
+        logger.info(
             f'[Agent Controller {self.id}] Setting agent({self.agent.name}) state from {self.state.agent_state} to {new_state}'
         )
 
