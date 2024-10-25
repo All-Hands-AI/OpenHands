@@ -275,12 +275,7 @@ class CodeActAgent(Agent):
             messages.append(
                 Message(
                     role='user',
-                    content=[
-                        TextContent(
-                            text=self.initial_user_message,
-                            cache_prompt=self.llm.is_caching_prompt_active(),  # if the user asks the same query,
-                        )
-                    ],
+                    content=[TextContent(text=self.initial_user_message)],
                 )
             )
         for event in state.history.get_events():
@@ -302,21 +297,20 @@ class CodeActAgent(Agent):
                 else:
                     messages.append(message)
 
-        # Add caching to the last K non-assistant messages
         if self.llm.is_caching_prompt_active():
-            # For non-function calling, we cache everything up-to the last 2 non-assistant messages
-            # due to the added environment reminder is not cacheable
-            # For function calling, we cache everything up-to the LAST user message
-            user_turns_threshold = 2 if not self.config.function_calling else 1
-            user_turns_processed = 0
+            # NOTE: this is only needed for anthropic
+            # following logic here:
+            # https://github.com/anthropics/anthropic-quickstarts/blob/8f734fd08c425c6ec91ddd613af04ff87d70c5a0/computer-use-demo/computer_use_demo/loop.py#L241-L262
+            breakpoints_remaining = 3  # remaining 1 for system/tool
             for message in reversed(messages):
-                if (
-                    message.role == 'user' or message.role == 'tool'
-                ) and user_turns_processed < user_turns_threshold:
-                    message.content[
-                        -1
-                    ].cache_prompt = True  # Last item inside the message content
-                    user_turns_processed += 1
+                if message.role == 'user' or message.role == 'tool':
+                    if breakpoints_remaining > 0:
+                        message.content[
+                            -1
+                        ].cache_prompt = True  # Last item inside the message content
+                        breakpoints_remaining -= 1
+                    else:
+                        break
 
         if not self.config.function_calling:
             # The latest user message is important:
