@@ -80,28 +80,11 @@ def load_github_user_list():
             GITHUB_USER_LIST = [line.strip() for line in f if line.strip()]
     else:
         logger.warning("GitHub user list file not found or not specified.")
-
-GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', '').strip()
-GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '').strip()
-
+load_github_user_list()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global session_manager
-    load_github_user_list()  # Load the GitHub user list at startup
-    async with session_manager:
-        yield
-
-
-app = FastAPI(lifespan=lifespan)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=['http://localhost:3001', 'http://127.0.0.1:3001'],
-    allow_credentials=True,
-    allow_methods=['*'],
-    allow_headers=['*'],
-)
-
     async with session_manager:
         yield
 
