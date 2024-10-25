@@ -172,6 +172,10 @@ class Runtime(FileEditRuntimeMixin):
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         self.close()
 
+    @abstractmethod
+    async def connect(self) -> None:
+        pass
+
     # ====================================================================
     # Action execution
     # ====================================================================
