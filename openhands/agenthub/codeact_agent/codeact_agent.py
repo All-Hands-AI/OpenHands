@@ -113,14 +113,16 @@ class CodeActAgent(Agent):
         return ''
 
     def get_action_message(self, action: Action) -> Message | None:
-        if (
-            isinstance(action, AgentDelegateAction)
-            or isinstance(action, CmdRunAction)
-            or isinstance(action, IPythonRunCellAction)
-            or isinstance(action, MessageAction)
-            or isinstance(action, FileEditAction)
-            or (isinstance(action, AgentFinishAction) and action.source == 'agent')
-        ):
+        if isinstance(
+            action,
+            (
+                AgentDelegateAction,
+                CmdRunAction,
+                IPythonRunCellAction,
+                MessageAction,
+                FileEditAction,
+            ),
+        ) or (isinstance(action, AgentFinishAction) and action.source == 'agent'):
             content = [TextContent(text=self.action_to_str(action))]
 
             if (
@@ -139,7 +141,9 @@ class CodeActAgent(Agent):
         max_message_chars = self.llm.config.max_message_chars
         obs_prefix = 'OBSERVATION:\n'
         if isinstance(obs, CmdOutputObservation):
-            text = obs_prefix + truncate_content(obs.content, max_message_chars)
+            text = obs_prefix + truncate_content(
+                obs.content + obs.interpreter_details, max_message_chars
+            )
             text += (
                 f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
             )
