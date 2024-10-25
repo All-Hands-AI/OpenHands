@@ -13,10 +13,8 @@ Functions:
 """
 
 import os
-from pathlib import Path
 
-from locify import FullMapStrategy, RepoMapStrategy
-from locify.utils.file import GitRepoUtils
+from locify import RepoMapStrategy
 
 from openhands.linter import DefaultLinter, LintResult
 
@@ -374,41 +372,11 @@ def find_file(file_name: str, dir_path: str = './') -> None:
         print(f'[No matches found for "{file_name}" in {dir_path}]')
 
 
-def get_directory_file_skeleton(depth: int = 3, dir_path: str | None = None) -> None:
-    """Get a skeleton of files with a depth in the specified directory.
-    This includes classes, methods, and functions in individual files with line numbers,
-    which can be used to navigate through a large codebase.
-
-    Args:
-        depth: int = 2: The depth of the directory to get the file skeleton.
-        dir_path: str | None: The path to the subdirectory. Defaults to current directory.
-    """
-    full_map = FullMapStrategy()
-    map_result = full_map.get_map(depth, dir_path)
-    print(map_result)
-
-
-def get_repo_file_tree(repo_path: str = './', depth: int = 3) -> None:
-    """Get the file tree of the repository at the specified path.
-    The output is similar to the `tree` command in Unix-like systems.
-    This command is useful for understanding the structure of a repository
-    and is encouraged to be executed as the first step.
-
-    Args:
-        abs_repo_path: str: The absolute path to the repository.
-        depth: int = 3: The depth of the directory to get the file tree.
-    """
-    if not Path(repo_path).is_absolute():
-        repo_path = str(Path(repo_path).resolve())
-    repo = GitRepoUtils(abs_repo_path=repo_path)
-    tree = repo.get_tracked_files_tree(depth=depth)
-    print(tree)
-
-
 def get_repomap(depth: int = 4, repo_path: str = './', messages_history='') -> None:
     """Gets the `RepoMap` for the given directory and print it.
-    `RepoMap` is a concise map of the directory that includes the most relevant
-    classes and functions along with their types and call signatures.
+    `RepoMap` is a concise map of the directory that includes
+    classes and functions along with their signatures, chosen based on
+    heuristics.
 
     Args:
         depth: int = 4: The depth of the directory to get the repository map.
@@ -429,7 +397,5 @@ __all__ = [
     'search_dir',
     'search_file',
     'find_file',
-    'get_directory_file_skeleton',
-    'get_repo_file_tree',
     'get_repomap',
 ]

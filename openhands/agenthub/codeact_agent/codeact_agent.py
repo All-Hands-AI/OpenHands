@@ -274,10 +274,6 @@ class CodeActAgent(Agent):
             print(f'event: {event}')
             # create a regular message from an event
             if isinstance(event, Action):
-                if hasattr(event, 'is_secondary'):
-                    print(f'action.is_secondary: {event.is_secondary}')
-                    if event.is_secondary:
-                        continue
                 message = self.get_action_message(event)
             elif isinstance(event, Observation):
                 message = self.get_observation_message(event)
