@@ -216,7 +216,11 @@ class LLM(RetryMixin, DebugMixin):
                                     'messages': messages,
                                     'response': resp,
                                     'args': args,
-                                    'kwargs': kwargs,
+                                    'kwargs': {
+                                        k: v
+                                        for k, v in kwargs.items()
+                                        if k != 'messages'
+                                    },
                                     'timestamp': time.time(),
                                     'cost': self._completion_cost(resp),
                                 },
