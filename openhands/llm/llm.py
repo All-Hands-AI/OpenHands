@@ -1,5 +1,4 @@
 import copy
-import json
 import os
 import time
 import warnings
@@ -211,17 +210,20 @@ class LLM(RetryMixin, DebugMixin):
                         # use the metric model name (for draft editor)
                         f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
                     )
+                    from openhands.core.utils import json
+
                     with open(log_file, 'w') as f:
-                        json.dump(
-                            {
-                                'messages': messages,
-                                'response': resp,
-                                'args': args,
-                                'kwargs': kwargs,
-                                'timestamp': time.time(),
-                                'cost': self._completion_cost(resp),
-                            },
-                            f,
+                        f.write(
+                            json.dumps(
+                                {
+                                    'messages': messages,
+                                    'response': resp,
+                                    'args': args,
+                                    'kwargs': kwargs,
+                                    'timestamp': time.time(),
+                                    'cost': self._completion_cost(resp),
+                                },
+                            )
                         )
 
                 message_back: str = resp['choices'][0]['message']['content']
