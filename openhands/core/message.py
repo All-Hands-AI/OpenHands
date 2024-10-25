@@ -70,7 +70,7 @@ class Message(BaseModel):
         for item in self.content:
             if isinstance(item, TextContent):
                 content.append(item.model_dump())
-            elif isinstance(item, ImageContent):
+            elif isinstance(item, ImageContent) and self.vision_enabled:
                 content.extend(item.model_dump())
 
         ret: dict = {'content': content, 'role': self.role}
