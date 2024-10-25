@@ -71,6 +71,7 @@ GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '').strip()
 # New global variable to store the user list
 GITHUB_USER_LIST = None
 
+
 # New function to load the user list
 def load_github_user_list():
     global GITHUB_USER_LIST
@@ -78,7 +79,11 @@ def load_github_user_list():
     if waitlist:
         with open(waitlist, 'r') as f:
             GITHUB_USER_LIST = [line.strip() for line in f if line.strip()]
+
+
 load_github_user_list()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global session_manager
