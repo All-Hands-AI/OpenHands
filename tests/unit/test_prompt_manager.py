@@ -32,12 +32,12 @@ def test_prompt_manager_without_micro_agent(prompt_dir, agent_skills_docs):
     assert manager.agent_skills_docs == agent_skills_docs
     assert manager.micro_agent is None
 
-    assert isinstance(manager.system_message, str)
+    assert isinstance(manager.get_system_message(), str)
     assert (
         "A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed answers to the user's questions."
-        in manager.system_message
+        in manager.get_system_message()
     )
-    assert SAMPLE_AGENT_SKILLS_DOCS in manager.system_message
+    assert SAMPLE_AGENT_SKILLS_DOCS in manager.get_system_message()
     assert isinstance(manager.initial_user_message, str)
     assert '--- BEGIN OF GUIDELINE ---' not in manager.initial_user_message
     assert '--- END OF GUIDELINE ---' not in manager.initial_user_message
@@ -72,12 +72,12 @@ def test_prompt_manager_with_micro_agent(prompt_dir, agent_skills_docs):
     assert manager.agent_skills_docs == agent_skills_docs
     assert manager.micro_agent == mock_micro_agent
 
-    assert isinstance(manager.system_message, str)
+    assert isinstance(manager.get_system_message(), str)
     assert (
         "A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed answers to the user's questions."
-        in manager.system_message
+        in manager.get_system_message()
     )
-    assert SAMPLE_AGENT_SKILLS_DOCS in manager.system_message
+    assert SAMPLE_AGENT_SKILLS_DOCS in manager.get_system_message()
 
     assert isinstance(manager.initial_user_message, str)
     assert (
@@ -108,7 +108,7 @@ def test_prompt_manager_template_rendering(prompt_dir, agent_skills_docs):
 
     manager = PromptManager(prompt_dir, agent_skills_docs)
 
-    assert manager.system_message == f'System prompt: {agent_skills_docs}'
+    assert manager.get_system_message() == f'System prompt: {agent_skills_docs}'
     assert manager.initial_user_message == 'User prompt: None'
 
     # Clean up temporary files
