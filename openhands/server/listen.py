@@ -288,7 +288,7 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Run an IPython command:
         ```json
-        {"action": "run_ipython", "args": {"command": "logger.debug('Hello, IPython!')"}}
+        {"action": "run_ipython", "args": {"command": "print('Hello, IPython!')"}}
         ```
     - Open a web page:
         ```json

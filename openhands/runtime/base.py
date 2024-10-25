@@ -108,7 +108,7 @@ class Runtime(FileEditRuntimeMixin):
                 code += f'os.environ["{key}"] = {json.dumps(value)}\n'
             code += '\n'
             obs = self.run_ipython(IPythonRunCellAction(code))
-            logger.debug(f'Added env vars to IPython: code={code}, obs={obs}')
+            self.log('debug', f'Added env vars to IPython: code={code}, obs={obs}')
 
         # Add env vars to the Bash shell
         cmd = ''
