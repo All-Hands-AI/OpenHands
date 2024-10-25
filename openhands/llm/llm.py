@@ -93,7 +93,7 @@ class LLM(RetryMixin, DebugMixin):
                 )
         # noinspection PyBroadException
         except Exception as e:
-            logger.warning(f'Could not get model info for {config.model}:\n{e}')
+            logger.debug(f'Could not get model info for {config.model}:\n{e}')
 
         # Set the max tokens in an LM-specific way if not set
         if self.config.max_input_tokens is None:
@@ -385,7 +385,7 @@ class LLM(RetryMixin, DebugMixin):
                 return cost
             except Exception:
                 self.cost_metric_supported = False
-                logger.warning('Cost calculation not supported for this model.')
+                logger.debug('Cost calculation not supported for this model.')
         return 0.0
 
     def __str__(self):
