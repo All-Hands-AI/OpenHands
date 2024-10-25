@@ -90,7 +90,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         buildx_cmd.append(path)  # must be last!
 
-        print('================ DOCKER BUILD STARTED ================')
+        logger.debug('================ DOCKER BUILD STARTED ================')
         if sys.stdout.isatty():
             sys.stdout.write('\n' * self.max_lines)
             sys.stdout.flush()
@@ -280,11 +280,11 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                     status = layer_data['status']
                     progress = layer_data['progress']
                     if status == 'Download complete':
-                        print(f'Layer {lid}: Download complete')
+                        logger.debug(f'Layer {lid}: Download complete')
                     elif status == 'Already exists':
-                        print(f'Layer {lid}: Already exists')
+                        logger.debug(f'Layer {lid}: Already exists')
                     else:
-                        print(f'Layer {lid}: {progress} {status}')
+                        logger.debug(f'Layer {lid}: {progress} {status}')
                 sys.stdout.flush()
             elif percentage != 0 and (
                 percentage - layers[layer_id]['last_logged'] >= 10 or percentage == 100
