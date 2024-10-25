@@ -93,11 +93,9 @@ class RollingLogger:
         self.log_lines = [''] * self.max_lines
 
     def is_enabled(self):
-        return sys.stdout.isatty()
+        return DEBUG and sys.stdout.isatty()
 
     def start(self, message=''):
-        if not self.is_enabled():
-            return
         if message:
             self._write(message)
         self._write('\n' * self.max_lines)
