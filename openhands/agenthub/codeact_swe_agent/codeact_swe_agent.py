@@ -155,7 +155,7 @@ class CodeActSWEAgent(Agent):
         """
         # if we're done, go back
         latest_user_message = state.history.get_last_user_message()
-        if latest_user_message and latest_user_message.strip() == '/exit':
+        if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
         # prepare what we want to send to the LLM

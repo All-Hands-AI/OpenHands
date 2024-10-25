@@ -1,5 +1,4 @@
 import os
-from itertools import islice
 
 from openhands.agenthub.codeact_agent.action_parser import CodeActResponseParser
 from openhands.controller.agent import Agent
@@ -190,7 +189,7 @@ class CodeActAgent(Agent):
         """
         # if we're done, go back
         latest_user_message = state.history.get_last_user_message()
-        if latest_user_message and latest_user_message.strip() == '/exit':
+        if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
         # prepare what we want to send to the LLM
@@ -231,6 +230,7 @@ class CodeActAgent(Agent):
             ),
         ]
 
+        latest_user_message = state.history.get_last_user_message()
         for event in state.history.get_events():
             # create a regular message from an event
             if isinstance(event, Action):
@@ -240,8 +240,10 @@ class CodeActAgent(Agent):
             else:
                 raise ValueError(f'Unknown event type: {type(event)}')
 
-            # add regular message
             if message:
+                if latest_user_message and event.id == latest_user_message.id:
+                    self.prompt_manager.enhance_message(message, state)
+
                 # handle error if the message is the SAME role as the previous message
                 # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
                 # there shouldn't be two consecutive messages from the same role
@@ -259,22 +261,5 @@ class CodeActAgent(Agent):
                         -1
                     ].cache_prompt = True  # Last item inside the message content
                     user_turns_processed += 1
-
-        # The latest user message is important:
-        # we want to remind the agent of the environment constraints
-        latest_user_message = next(
-            islice(
-                (
-                    m
-                    for m in reversed(messages)
-                    if m.role == 'user'
-                    and any(isinstance(c, TextContent) for c in m.content)
-                ),
-                1,
-            ),
-            None,
-        )
-        if latest_user_message:
-            self.prompt_manager.enhance_message(latest_user_message, state)
 
         return messages
