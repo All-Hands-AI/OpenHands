@@ -24,6 +24,7 @@ export function FeedbackModal({
   isSubmitting,
 }: FeedbackModalProps) {
   const fetcher = useFetcher<typeof clientAction>({ key: "feedback" });
+  const isInitialRender = React.useRef(true);
 
   const copiedToClipboardToast = () => {
     hotToast("Password copied to clipboard", {
@@ -64,6 +65,11 @@ export function FeedbackModal({
   };
 
   React.useEffect(() => {
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
+
     // Handle feedback submission
     if (fetcher.state === "idle" && fetcher.data) {
       if (!fetcher.data.success) {
