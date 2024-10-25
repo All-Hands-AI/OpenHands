@@ -25,7 +25,7 @@ uvicorn = "*"
 types-toml = "*"
 numpy = "*"
 json-repair = "*"
-browsergym = "0.9.0" # integrate browsergym as the browsing interface
+browsergym = "0.10.2" # integrate browsergym as the browsing interface
 html2text = "*"
 e2b = "^0.17.1"
 pexpect = "*"
@@ -36,7 +36,7 @@ minio = "^7.2.8"
 gevent = "^24.2.1"
 pyarrow = "17.0.0" # transitive dependency, pinned here to avoid conflicts
 tenacity = "^8.5.0"
-zope-interface = "7.1.0"
+zope-interface = "7.1.1"
 pathspec = "^0.12.1"
 google-cloud-aiplatform = "*"
 anthropic = {extras = ["vertex"], version = "*"}
@@ -69,7 +69,7 @@ llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.7.0"
+ruff = "0.7.1"
 mypy = "1.13.0"
 pre-commit = "4.0.1"
 build = "*"
