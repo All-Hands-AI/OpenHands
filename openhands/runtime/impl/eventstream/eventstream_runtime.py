@@ -332,7 +332,7 @@ class EventStreamRuntime(Runtime):
                 f'Error: Instance {self.container_name} FAILED to start container!\n'
             )
             logger.exception(e)
-            self.close(close_client=False)
+            self.close()
             raise e
 
     def _attach_to_container(self):
@@ -393,11 +393,10 @@ class EventStreamRuntime(Runtime):
             logger.error(msg)
             raise RuntimeError(msg)
 
-    def close(self, close_client: bool = True, rm_all_containers: bool = True):
+    def close(self, rm_all_containers: bool = True):
         """Closes the EventStreamRuntime and associated objects
 
         Parameters:
-        - close_client (bool): Whether to close the DockerClient
         - rm_all_containers (bool): Whether to remove all containers with the 'openhands-sandbox-' prefix
         """
 
@@ -406,6 +405,9 @@ class EventStreamRuntime(Runtime):
 
         if self.session:
             self.session.close()
+
+        if self.attach_to_existing:
+            return
 
         try:
             containers = self.docker_client.containers.list(all=True)
@@ -430,9 +432,6 @@ class EventStreamRuntime(Runtime):
                     pass
         except docker.errors.NotFound:  # yes, this can happen!
             pass
-
-        if close_client:
-            self.docker_client.close()
 
     def run_action(self, action: Action) -> Observation:
         if isinstance(action, FileEditAction):
