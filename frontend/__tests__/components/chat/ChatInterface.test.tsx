@@ -5,7 +5,7 @@ import { renderWithProviders } from "test-utils";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { addAssistantMessage } from "#/state/chatSlice";
 import AgentState from "#/types/AgentState";
-import ChatInterface from "#/components/chat/ChatInterface";
+import { ChatInterface } from "#/components/chat/ChatInterface";
 
 const router = createMemoryRouter([
   {

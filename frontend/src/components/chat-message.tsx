@@ -42,11 +42,11 @@ export function ChatMessage({
       onMouseLeave={() => setIsHovering(false)}
       className={cn(
         "p-4 rounded-xl max-w-[305px] relative",
-        type === "user" && "bg-neutral-700",
+        "flex flex-col gap-2",
+        type === "user" && "bg-neutral-700 self-end",
         type === "assistant" && "bg-tranparent",
       )}
     >
-      <p className="text-sm">{message}</p>
       <button
         hidden={!isHovering}
         disabled={isCopy}
@@ -64,6 +64,7 @@ export function ChatMessage({
           <CheckmarkIcon width={15} height={15} />
         )}
       </button>
+      <p className="text-sm overflow-auto">{message}</p>
       {children}
     </article>
   );

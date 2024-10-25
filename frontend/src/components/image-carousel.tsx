@@ -40,7 +40,7 @@ export function ImageCarousel({
   };
 
   return (
-    <div className="relative">
+    <div data-testid="image-carousel" className="relative">
       {isScrollable && (
         <div className="absolute right-full transform top-1/2 -translate-y-1/2">
           <ChevronLeft active={!isAtStart} />
