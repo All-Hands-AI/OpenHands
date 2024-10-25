@@ -12,7 +12,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import WebSocket from "ws";
 import toast from "react-hot-toast";
-import ChatInterface from "#/components/chat/ChatInterface";
+import { ChatInterface } from "#/components/chat/ChatInterface";
 import { getSettings } from "#/services/settings";
 import Security from "../components/modals/security/Security";
 import { Controls } from "#/components/controls";

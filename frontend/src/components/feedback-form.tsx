@@ -1,7 +1,7 @@
 import ModalButton from "./buttons/ModalButton";
 
 interface FeedbackFormProps {
-  onSubmit: (polarity: "private" | "public", email: string) => void;
+  onSubmit: (permissions: "private" | "public", email: string) => void;
   onClose: () => void;
   isSubmitting?: boolean;
 }
@@ -38,7 +38,7 @@ export function FeedbackForm({
       </label>
 
       <div className="flex gap-4 text-neutral-400">
-        <label className="flex gap-2">
+        <label className="flex gap-2 cursor-pointer">
           <input
             name="permissions"
             value="private"
@@ -47,7 +47,7 @@ export function FeedbackForm({
           />
           Private
         </label>
-        <label className="flex gap-2">
+        <label className="flex gap-2 cursor-pointer">
           <input name="permissions" value="public" type="radio" />
           Public
         </label>

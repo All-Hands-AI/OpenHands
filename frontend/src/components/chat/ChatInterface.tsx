@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RiArrowRightDoubleLine } from "react-icons/ri";
 import { useTranslation } from "react-i18next";
 import { VscArrowDown } from "react-icons/vsc";
-import { useDisclosure } from "@nextui-org/react";
+import { useFetcher } from "@remix-run/react";
 import Chat from "./Chat";
 import TypingIndicator from "./TypingIndicator";
 import { RootState } from "#/store";
@@ -12,57 +12,37 @@ import { createChatMessage } from "#/services/chatService";
 import { addUserMessage, addAssistantMessage } from "#/state/chatSlice";
 import { I18nKey } from "#/i18n/declaration";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
-import FeedbackModal from "../modals/feedback/FeedbackModal";
 import { useSocket } from "#/context/socket";
-import { cn } from "#/utils/utils";
+import { cn, removeApiKey, removeUnwantedKeys } from "#/utils/utils";
 import { InteractiveChatBox } from "../interactive-chat-box";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { generateAgentStateChangeEvent } from "#/services/agentStateService";
 import { FeedbackActions } from "../feedback-actions";
+import { Feedback } from "#/api/open-hands.types";
+import { getToken } from "#/services/auth";
+import { clientAction } from "#/routes/submit-feedback";
+import { FeedbackModal } from "../feedback-modal";
+import { ScrollButton } from "../scroll-button";
 
-interface ScrollButtonProps {
-  onClick: () => void;
-  icon: JSX.Element;
-  label: string;
-  disabled?: boolean;
-}
+const FEEDBACK_VERSION = "1.0";
 
-function ScrollButton({
-  onClick,
-  icon,
-  label,
-  disabled = false,
-}: ScrollButtonProps): JSX.Element {
-  return (
-    <button
-      type="button"
-      className="relative border-1 text-xs rounded px-2 py-1 border-neutral-600 bg-neutral-700 cursor-pointer select-none"
-      onClick={onClick}
-      disabled={disabled}
-    >
-      <div className="flex items-center">
-        {icon} <span className="inline-block">{label}</span>
-      </div>
-    </button>
-  );
-}
-
-function ChatInterface() {
+export function ChatInterface() {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
-  const { send } = useSocket();
+  const { send, events } = useSocket();
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const fetcher = useFetcher<typeof clientAction>({ key: "feedback" });
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
   >("positive");
   const [feedbackShared, setFeedbackShared] = React.useState(0);
+  const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
 
-  const {
-    isOpen: feedbackModalIsOpen,
-    onOpen: onFeedbackModalOpen,
-    onOpenChange: onFeedbackModalOpenChange,
-  } = useDisclosure();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
+    useScrollToBottom(scrollRef);
 
   const handleSendMessage = async (content: string, files: File[]) => {
     const promises = files.map((file) => convertImageToBase64(file));
@@ -77,26 +57,46 @@ function ChatInterface() {
     send(generateAgentStateChangeEvent(AgentState.STOPPED));
   };
 
-  const shareFeedback = async (polarity: "positive" | "negative") => {
-    onFeedbackModalOpen();
+  const onClickShareFeedbackActionButton = async (
+    polarity: "positive" | "negative",
+  ) => {
+    setFeedbackModalIsOpen(true);
     setFeedbackPolarity(polarity);
   };
 
-  const { t } = useTranslation();
   const handleSendContinueMsg = () => {
     handleSendMessage(t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE), []);
   };
-
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
-    useScrollToBottom(scrollRef);
 
   React.useEffect(() => {
     if (curAgentState === AgentState.INIT && messages.length === 0) {
       dispatch(addAssistantMessage(t(I18nKey.CHAT_INTERFACE$INITIAL_MESSAGE)));
     }
   }, [curAgentState, dispatch, messages.length, t]);
+
+  const handleSubmitFeedback = (
+    permissions: "private" | "public",
+    email: string,
+  ) => {
+    const feedback: Feedback = {
+      version: FEEDBACK_VERSION,
+      feedback: feedbackPolarity,
+      email,
+      permissions,
+      token: getToken(),
+      trajectory: removeApiKey(removeUnwantedKeys(events)),
+    };
+
+    const formData = new FormData();
+    formData.append("feedback", JSON.stringify(feedback));
+
+    fetcher.submit(formData, {
+      action: "/submit-feedback",
+      method: "POST",
+    });
+
+    setFeedbackShared(messages.length);
+  };
 
   return (
     <div className="flex flex-col h-full justify-between">
@@ -111,8 +111,12 @@ function ChatInterface() {
       <div className="px-4 pb-4">
         {feedbackShared !== messages.length && messages.length > 3 && (
           <FeedbackActions
-            onPositiveFeedback={() => shareFeedback("positive")}
-            onNegativeFeedback={() => shareFeedback("negative")}
+            onPositiveFeedback={() =>
+              onClickShareFeedbackActionButton("positive")
+            }
+            onNegativeFeedback={() =>
+              onClickShareFeedbackActionButton("negative")
+            }
           />
         )}
         <div className="relative">
@@ -157,13 +161,11 @@ function ChatInterface() {
         />
       </div>
       <FeedbackModal
-        polarity={feedbackPolarity}
         isOpen={feedbackModalIsOpen}
-        onOpenChange={onFeedbackModalOpenChange}
-        onSendFeedback={() => setFeedbackShared(messages.length)}
+        isSubmitting={fetcher.state === "submitting"}
+        onClose={() => setFeedbackModalIsOpen(false)}
+        onSubmit={handleSubmitFeedback}
       />
     </div>
   );
 }
-
-export default ChatInterface;
