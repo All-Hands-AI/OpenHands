@@ -214,10 +214,10 @@ class EventStreamRuntime(Runtime):
         else:
             self._attach_to_container()
 
-        self.log('info', f'Waiting for client to become ready at {self.api_url}...')
+        self.log('debug', f'Waiting for client to become ready at {self.api_url}...')
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
         self._wait_until_alive()
-        self.log('info', 'Runtime is ready.')
+        self.log('debug', 'Runtime is ready.')
 
         if not self.attach_to_existing:
             self.setup_initial_env()
