@@ -60,7 +60,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
 
         build_data = response.json()
         build_id = build_data['build_id']
-        logger.debug(f'Build initiated with ID: {build_id}')
+        logger.info(f'Build initiated with ID: {build_id}')
 
         # Poll /build_status until the build is complete
         start_time = time.time()
@@ -86,7 +86,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
 
             status_data = status_response.json()
             status = status_data['status']
-            logger.debug(f'Build status: {status}')
+            logger.info(f'Build status: {status}')
 
             if status == 'SUCCESS':
                 logger.debug(f"Successfully built {status_data['image']}")
