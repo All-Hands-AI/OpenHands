@@ -18,6 +18,8 @@ Replace `[YOUR MODEL CONFIG]` with any model the model that you have set up in `
 
 ## Run Inference on DiscoveryBench Instances
 
+When the run_infer.sh script is started, it will automatically pull the latest DiscoveryBench & set up the agent environment. The OpenHands agent is invoked to process the task within this environment, producing a hypothesis. We then evaluate it against the “gold” hypothesis provided by DiscoveryBench.
+
 
 ```
 ./evaluation/discoverybench/scripts/run_infer.sh [MODEL_CONFIG] [GIT_COMMIT] [AGENT] [EVAL_LIMIT] [NUM_WORKERS]
