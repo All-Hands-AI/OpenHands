@@ -69,6 +69,7 @@ class AgentController:
         NullObservation,
         ChangeAgentStateAction,
         AgentStateChangedObservation,
+        FatalErrorObservation,
     )
 
     def __init__(
@@ -134,7 +135,9 @@ class AgentController:
         # we made history, now is the time to rewrite it!
         # the final state.history will be used by external scripts like evals, tests, etc.
         # history will need to be complete WITH delegates events
-        # like the regular agent history, it does not include 'hidden' events nor the default filtered out types (backend events)
+        # like the regular agent history, it does not include:
+        # - 'hidden' events, events with hidden=True
+        # - backend events (the default 'filtered out' types, types in self.filter_out)
         start_id = self.state.start_id if self.state.start_id != -1 else 0
         end_id = (
             self.state.end_id
@@ -157,56 +160,6 @@ class AgentController:
     def update_state_before_step(self):
         self.state.iteration += 1
         self.state.local_iteration += 1
-
-        # get the history from the event stream
-        # first define the range of events to fetch
-        start_id = self.state.start_id if self.state.start_id != -1 else 0
-        end_id = (
-            self.state.end_id
-            if self.state.end_id != -1
-            else self.event_stream.get_latest_event_id()
-        )
-
-        # fetch events directly from the event stream
-        # filtering out what an agent history should not include:
-        # - "backend" event types that should not be sent to the agent
-        # - hidden events
-        self.state.history = list(
-            self.event_stream.get_events(
-                start_id=start_id,
-                end_id=end_id,
-                reverse=False,
-                filter_out_type=self.filter_out,
-                filter_hidden=True,
-            )
-        )
-
-        # also, we exclude finished delegates from the parent agent's history:
-        # - do not include events between delegate actions and observations
-        # - include the delegate action and observation themselves
-        if self.state.delegates:
-            for (delegate_start_id, delegate_end_id), (
-                delegate_agent,
-                delegate_task,
-            ) in self.state.delegates.items():
-                # sanity checks
-                if (
-                    delegate_start_id < 0
-                    or delegate_end_id < 1
-                    or delegate_start_id >= delegate_end_id
-                    or delegate_end_id >= len(self.state.history)
-                ):
-                    logger.error(
-                        f'Invalid delegate ids: {delegate_start_id}, {delegate_end_id}. Skipping...'
-                    )
-                    continue
-
-                # exclude delegate events from history
-                self.state.history = [
-                    event
-                    for event in self.state.history
-                    if not (delegate_start_id < event.id < delegate_end_id)
-                ]
 
     async def update_state_after_step(self):
         # update metrics especially for cost. Use deepcopy to avoid it being modified by agent.reset()
@@ -264,6 +217,11 @@ class AgentController:
         """
         if hasattr(event, 'hidden') and event.hidden:
             return
+
+        # if the event is not filtered out, add it to the history
+        if not any(isinstance(event, filter_type) for filter_type in self.filter_out):
+            self.state.history.append(event)
+
         if isinstance(event, Action):
             await self._handle_action(event)
         elif isinstance(event, Observation):
@@ -733,6 +691,7 @@ class AgentController:
         # - delegates_ids
 
         # if start_id was not set in State, we're starting fresh, at the top of the stream
+        # does this still happen?
         if self.state.start_id <= -1:
             self.state.start_id = self.event_stream.get_latest_event_id() + 1
         else:
