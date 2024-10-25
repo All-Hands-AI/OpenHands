@@ -42,10 +42,6 @@ CmdRunTool = ChatCompletionToolParam(
         parameters={
             'type': 'object',
             'properties': {
-                'thought': {
-                    'type': 'string',
-                    'description': 'Reasoning about the action to take.',
-                },
                 'command': {
                     'type': 'string',
                     'description': 'The bash command to execute. Can be empty to view additional logs when previous exit code is `-1`. Can be `ctrl+c` to interrupt the currently running process.',
@@ -72,10 +68,6 @@ IPythonTool = ChatCompletionToolParam(
         parameters={
             'type': 'object',
             'properties': {
-                'thought': {
-                    'type': 'string',
-                    'description': 'Reasoning about the action to take.',
-                },
                 'code': {
                     'type': 'string',
                     'description': 'The Python code to execute. Supports magic commands like %pip.',
@@ -200,10 +192,6 @@ LLMBasedFileEditTool = ChatCompletionToolParam(
         parameters={
             'type': 'object',
             'properties': {
-                'thought': {
-                    'type': 'string',
-                    'description': 'Reasoning about the file edit action.',
-                },
                 'path': {
                     'type': 'string',
                     'description': 'The absolute path to the file to be edited.',
@@ -319,9 +307,7 @@ FinishTool = ChatCompletionToolParam(
 def combine_thought(action: Action, thought: str) -> Action:
     if not hasattr(action, 'thought'):
         return action
-    if action.thought:
-        action.thought = thought + '\n' + action.thought
-    else:
+    if thought:
         action.thought = thought
     return action
 
