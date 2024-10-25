@@ -209,7 +209,7 @@ class LLM(RetryMixin, DebugMixin):
                     log_file = os.path.join(
                         self.config.log_completions_folder,
                         # use the metric model name (for draft editor)
-                        f'{self.metrics.model_name}-{time.time()}.json',
+                        f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
                     )
                     with open(log_file, 'w') as f:
                         json.dump(
