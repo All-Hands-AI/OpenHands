@@ -1,4 +1,4 @@
-## 📝 Evaluation File Descriptions
+## Evaluation Utils
 
 - **`eval_w_subhypo_gen.py`**: Implements the DiscoveryBench logic for evaluating agent-generated hypotheses.
 - **`lm_utils.py`**: Provides utility functions necessary for the evaluation process.
