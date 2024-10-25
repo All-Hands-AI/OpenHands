@@ -54,8 +54,15 @@ class RemoteRuntime(Runtime):
         status_message_callback: Optional[Callable] = None,
         attach_to_existing: bool = False,
     ):
-        self.config = config
-        self.status_message_callback = status_message_callback
+        super().__init__(
+            config,
+            event_stream,
+            sid,
+            plugins,
+            env_vars,
+            status_message_callback,
+            attach_to_existing,
+        )
 
         if self.config.sandbox.api_key is None:
             raise ValueError(
@@ -77,16 +84,6 @@ class RemoteRuntime(Runtime):
         )
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
-
-        super().__init__(
-            config,
-            event_stream,
-            sid,
-            plugins,
-            env_vars,
-            status_message_callback,
-            attach_to_existing,
-        )
 
     async def connect(self):
         self._start_or_attach_to_runtime()
