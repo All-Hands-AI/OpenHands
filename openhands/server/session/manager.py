@@ -54,7 +54,7 @@ class SessionManager:
         return c
 
     async def detach_from_conversation(self, conversation: Conversation):
-        conversation.disconnect()
+        await conversation.disconnect()
 
     async def send(self, sid: str, data: dict[str, object]) -> bool:
         """Sends data to the client."""
