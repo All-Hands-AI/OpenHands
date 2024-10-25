@@ -96,7 +96,7 @@ class RemoteRuntime(Runtime):
     def _start_or_attach_to_runtime(self):
         existing_runtime = self._check_existing_runtime()
         if existing_runtime:
-            logger.debug(f'Using existing runtime with ID: {self.runtime_id}')
+            logger.info(f'Using existing runtime with ID: {self.runtime_id}')
         elif self.attach_to_existing:
             raise RuntimeError('Could not find existing runtime to attach to.')
         else:
@@ -119,7 +119,10 @@ class RemoteRuntime(Runtime):
             self.runtime_url is not None
         ), 'Runtime URL is not set. This should never happen.'
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+        logger.info(f'Waiting for runtime {self.runtime_id} to be alive...')
         self._wait_until_alive()
+        logger.info(f'Runtime {self.runtime_id} is ready.')
+        self.send_status_message(' ')
 
     def _check_existing_runtime(self) -> bool:
         try:
@@ -155,7 +158,7 @@ class RemoteRuntime(Runtime):
             return False
 
     def _build_runtime(self):
-        logger.debug(f'RemoteRuntime `{self.sid}` config:\n{self.config}')
+        logger.info(f'Building RemoteRuntime `{self.sid}` config:\n{self.config}')
         response = send_request_with_retry(
             self.session,
             'GET',
