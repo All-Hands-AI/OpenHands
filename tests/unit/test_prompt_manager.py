@@ -38,11 +38,11 @@ def test_prompt_manager_without_micro_agent(prompt_dir, agent_skills_docs):
         in manager.get_system_message()
     )
     assert SAMPLE_AGENT_SKILLS_DOCS in manager.get_system_message()
-    assert isinstance(manager.initial_user_message, str)
-    assert '--- BEGIN OF GUIDELINE ---' not in manager.initial_user_message
-    assert '--- END OF GUIDELINE ---' not in manager.initial_user_message
-    assert "NOW, LET'S START!" in manager.initial_user_message
-    assert 'micro_agent' not in manager.initial_user_message
+    assert isinstance(manager.get_example_user_message(), str)
+    assert '--- BEGIN OF GUIDELINE ---' not in manager.get_example_user_message()
+    assert '--- END OF GUIDELINE ---' not in manager.get_example_user_message()
+    assert "NOW, LET'S START!" in manager.get_example_user_message()
+    assert 'micro_agent' not in manager.get_example_user_message()
 
 
 def test_prompt_manager_with_micro_agent(prompt_dir, agent_skills_docs):
@@ -79,7 +79,7 @@ def test_prompt_manager_with_micro_agent(prompt_dir, agent_skills_docs):
     )
     assert SAMPLE_AGENT_SKILLS_DOCS in manager.get_system_message()
 
-    assert isinstance(manager.initial_user_message, str)
+    assert isinstance(manager.get_example_user_message(), str)
     assert (
         '--- BEGIN OF GUIDELINE ---\n'
         + 'The following information may assist you in completing your task:\n\n'
@@ -87,8 +87,8 @@ def test_prompt_manager_with_micro_agent(prompt_dir, agent_skills_docs):
         + '\n'
         + '--- END OF GUIDELINE ---\n'
         + "\n\nNOW, LET'S START!"
-    ) in manager.initial_user_message
-    assert micro_agent_content in manager.initial_user_message
+    ) in manager.get_example_user_message()
+    assert micro_agent_content in manager.get_example_user_message()
 
     # Clean up the temporary file
     os.remove(os.path.join(prompt_dir, 'micro', f'{micro_agent_name}.md'))
@@ -109,7 +109,7 @@ def test_prompt_manager_template_rendering(prompt_dir, agent_skills_docs):
     manager = PromptManager(prompt_dir, agent_skills_docs)
 
     assert manager.get_system_message() == f'System prompt: {agent_skills_docs}'
-    assert manager.initial_user_message == 'User prompt: None'
+    assert manager.get_example_user_message() == 'User prompt: None'
 
     # Clean up temporary files
     os.remove(os.path.join(prompt_dir, 'system_prompt.j2'))
