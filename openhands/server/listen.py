@@ -75,7 +75,7 @@ GITHUB_USER_LIST = None
 def load_github_user_list():
     global GITHUB_USER_LIST
     waitlist = os.getenv('GITHUB_USER_LIST_FILE')
-    if waitlist and os.path.exists(waitlist):
+    if waitlist:
         with open(waitlist, 'r') as f:
             GITHUB_USER_LIST = [line.strip() for line in f if line.strip()]
     else:
