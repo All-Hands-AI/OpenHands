@@ -143,6 +143,14 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
+    if metadata.llm_config.log_completions:
+        metadata.llm_config.log_completions_folder = os.path.join(
+            metadata.eval_output_dir, 'llm_completions', instance['instance_id']
+        )
+        logger.info(
+            f'Logging LLM completions for instance {instance["instance_id"]} to '
+            f'{metadata.llm_config.log_completions_folder}'
+        )
     config.set_llm_config(metadata.llm_config)
     return config
 
@@ -432,7 +440,6 @@ def process_instance(
         metadata=metadata,
         history=histories,
         metrics=metrics,
-        llm_completions=state.extra_data.get('llm_completions', []),
         error=state.last_error if state and state.last_error else None,
     )
     return output
