@@ -45,10 +45,10 @@ export function ChatMessage({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
       className={cn(
-        "p-4 rounded-xl relative",
-        "flex flex-col gap-2 max-w-[305px]",
-        type === "user" && "bg-neutral-700 self-end",
-        type === "assistant" && "bg-tranparent",
+        "rounded-xl relative",
+        "flex flex-col gap-2",
+        type === "user" && " max-w-[305px] p-4 bg-neutral-700 self-end",
+        type === "assistant" && "pb-4 max-w-full bg-tranparent",
       )}
     >
       <button
@@ -68,18 +68,17 @@ export function ChatMessage({
           <CheckmarkIcon width={15} height={15} />
         )}
       </button>
-      <p className="text-sm overflow-auto">
-        <Markdown
-          components={{
-            code,
-            ul,
-            ol,
-          }}
-          remarkPlugins={[remarkGfm]}
-        >
-          {message}
-        </Markdown>
-      </p>
+      <Markdown
+        className="text-sm overflow-auto"
+        components={{
+          code,
+          ul,
+          ol,
+        }}
+        remarkPlugins={[remarkGfm]}
+      >
+        {message}
+      </Markdown>
       {children}
     </article>
   );

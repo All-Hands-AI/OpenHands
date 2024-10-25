@@ -15,7 +15,7 @@ import { generateAgentStateChangeEvent } from "#/services/agentStateService";
 import { FeedbackModal } from "./feedback-modal";
 import { Feedback } from "#/api/open-hands.types";
 import { getToken } from "#/services/auth";
-import { cn, removeApiKey, removeUnwantedKeys } from "#/utils/utils";
+import { removeApiKey, removeUnwantedKeys } from "#/utils/utils";
 import { clientAction } from "#/routes/submit-feedback";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import TypingIndicator from "./chat/TypingIndicator";
@@ -100,7 +100,7 @@ export function ChatInterface() {
       <div
         ref={scrollRef}
         onScroll={(e) => onChatBodyScroll(e.currentTarget)}
-        className="flex flex-col grow overflow-y-auto overflow-x-hidden px-4 pt-4"
+        className="flex flex-col grow overflow-y-auto overflow-x-hidden px-4 pt-4 gap-2"
       >
         {messages.map((message, index) =>
           isErrorMessage(message) ? (
@@ -129,7 +129,7 @@ export function ChatInterface() {
       </div>
 
       <div className="flex flex-col gap-[6px] px-4 pb-4">
-        <div className={cn("flex justify-between relative")}>
+        <div className="flex justify-between relative">
           {feedbackShared !== messages.length && messages.length > 3 && (
             <FeedbackActions
               onPositiveFeedback={() =>
@@ -149,6 +149,7 @@ export function ChatInterface() {
           </div>
           {!hitBottom && <ScrollToBottomButton onClick={scrollDomToBottom} />}
         </div>
+
         <InteractiveChatBox
           onSubmit={handleSendMessage}
           onStop={handleStop}
