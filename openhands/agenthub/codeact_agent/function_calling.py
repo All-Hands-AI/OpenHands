@@ -22,9 +22,11 @@ from openhands.events.action import (
     MessageAction,
 )
 
-SYSTEM_PROMPT = (
-    """You are a helpful assistant that can interact with a computer to solve tasks."""
-)
+SYSTEM_PROMPT = """You are a helpful assistant that can interact with a computer to solve tasks.
+<IMPORTANT>
+* If user provides a path, you should NOT assume it's relative to the current working directory. Instead, you should explore the file system to find the file before working on it.
+</IMPORTANT>
+"""
 
 _BASH_DESCRIPTION = """Execute a bash command in the terminal.
 * Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`.
@@ -314,10 +316,28 @@ FinishTool = ChatCompletionToolParam(
 )
 
 
+def combine_thought(action: Action, thought: str) -> Action:
+    if not hasattr(action, 'thought'):
+        return action
+    if action.thought:
+        action.thought = thought + '\n' + action.thought
+    else:
+        action.thought = thought
+    return action
+
+
 def response_to_action(response: ModelResponse) -> Action:
     assistant_msg = response.choices[0].message
     if assistant_msg.tool_calls:
-        # FIXME: check if there's assistant_msg.content. If so, add it to the thought
+        # Check if there's assistant_msg.content. If so, add it to the thought
+        thought = ''
+        if isinstance(assistant_msg.content, str):
+            thought = assistant_msg.content
+        elif isinstance(assistant_msg.content, list):
+            for msg in assistant_msg.content:
+                if msg['type'] == 'text':
+                    thought += msg['text']
+
         tool_call = assistant_msg.tool_calls[0]
         assert len(assistant_msg.tool_calls) == 1
         action: Action | None = None
@@ -328,7 +348,6 @@ def response_to_action(response: ModelResponse) -> Action:
         elif tool_call.function.name == 'delegate_to_browsing_agent':
             action = AgentDelegateAction(
                 agent='BrowsingAgent',
-                thought='',
                 inputs=json.loads(tool_call.function.arguments),
             )
         elif tool_call.function.name == 'finish':
@@ -346,6 +365,7 @@ def response_to_action(response: ModelResponse) -> Action:
             action = IPythonRunCellAction(code=code, include_extra=False)
         else:
             raise RuntimeError(f'Unknown tool call: {tool_call.function.name}')
+        action = combine_thought(action, thought)
     else:
         action = MessageAction(content=assistant_msg.content, wait_for_response=True)
 
