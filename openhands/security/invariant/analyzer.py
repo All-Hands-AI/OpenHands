@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import (
     Action,
+    ActionConfirmationStatus,
     ActionSecurityRisk,
 )
 from openhands.events.event import Event, EventSource
@@ -19,7 +20,7 @@ from openhands.runtime.utils import find_available_tcp_port
 from openhands.security.analyzer import SecurityAnalyzer
 from openhands.security.invariant.client import InvariantClient
 from openhands.security.invariant.parser import TraceElement, parse_element
-from openhands.utils.async_utils import sync_from_async
+from openhands.utils.async_utils import call_sync_from_async
 
 
 class InvariantAnalyzer(SecurityAnalyzer):
@@ -137,8 +138,9 @@ class InvariantAnalyzer(SecurityAnalyzer):
         return (
             risk is not None
             and risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM)
-            and hasattr(event, 'is_confirmed')
-            and event.is_confirmed == 'awaiting_confirmation'
+            and hasattr(event, 'confirmation_state')
+            and event.confirmation_state
+            == ActionConfirmationStatus.AWAITING_CONFIRMATION
         )
 
     async def confirm(self, event: Event) -> None:
@@ -146,7 +148,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
             {'action': 'change_agent_state', 'args': {'agent_state': 'user_confirmed'}}
         )
         event_source = event.source if event.source else EventSource.AGENT
-        await sync_from_async(self.event_stream.add_event, new_event, event_source)
+        await call_sync_from_async(self.event_stream.add_event, new_event, event_source)
 
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         logger.info('Calling security_risk on InvariantAnalyzer')

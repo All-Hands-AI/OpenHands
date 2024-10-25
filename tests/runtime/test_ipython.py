@@ -1,4 +1,4 @@
-"""Test the EventStreamRuntime, which connects to the RuntimeClient running in the sandbox."""
+"""Test the EventStreamRuntime, which connects to the ActionExecutor running in the sandbox."""
 
 import pytest
 from conftest import (
@@ -22,15 +22,14 @@ from openhands.events.observation import (
     FileWriteObservation,
     IPythonRunCellObservation,
 )
-from openhands.runtime.client.runtime import EventStreamRuntime
 
 # ============================================================================================================================
 # ipython-specific tests
 # ============================================================================================================================
 
 
-def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_openhands):
-    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
+def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     sandbox_dir = _get_sandbox_folder(runtime)
 
@@ -103,8 +102,8 @@ def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_openhands):
     TEST_IN_CI != 'True',
     reason='This test is not working in WSL (file ownership)',
 )
-def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
-    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
+def test_ipython_multi_user(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     # Test run ipython
     # get username
@@ -175,8 +174,8 @@ def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
     _close_test_runtime(runtime)
 
 
-def test_ipython_simple(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
+def test_ipython_simple(temp_dir, runtime_cls):
+    runtime = _load_runtime(temp_dir, runtime_cls)
     sandbox_dir = _get_sandbox_folder(runtime)
 
     # Test run ipython
@@ -199,218 +198,9 @@ def test_ipython_simple(temp_dir, box_class):
     _close_test_runtime(runtime)
 
 
-def _test_ipython_agentskills_fileop_pwd_impl(
-    runtime: EventStreamRuntime, enable_auto_lint: bool
-):
-    sandbox_dir = _get_sandbox_folder(runtime)
-    # remove everything in /workspace
-    action = CmdRunAction(command=f'rm -rf {sandbox_dir}/*')
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.exit_code == 0
-
-    action = CmdRunAction(command='mkdir test')
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(obs, CmdOutputObservation)
-    assert obs.exit_code == 0
-
-    action = IPythonRunCellAction(code="create_file('hello.py')")
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(obs, IPythonRunCellObservation)
-    assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
-        f'[File: {sandbox_dir}/hello.py (1 lines total)]\n'
-        '(this is the beginning of the file)\n'
-        '1|\n'
-        '(this is the end of the file)\n'
-        '[File hello.py created.]\n'
-        f'[Jupyter current working directory: {sandbox_dir}]\n'
-        '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python]'
-    ).strip().split('\n')
-
-    action = CmdRunAction(command='cd test')
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(obs, CmdOutputObservation)
-    assert obs.exit_code == 0
-
-    # This should create a file in the current working directory
-    # i.e., /workspace/test/hello.py instead of /workspace/hello.py
-    action = IPythonRunCellAction(code="create_file('hello.py')")
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(obs, IPythonRunCellObservation)
-    assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
-        f'[File: {sandbox_dir}/test/hello.py (1 lines total)]\n'
-        '(this is the beginning of the file)\n'
-        '1|\n'
-        '(this is the end of the file)\n'
-        '[File hello.py created.]\n'
-        f'[Jupyter current working directory: {sandbox_dir}/test]\n'
-        '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python]'
-    ).strip().split('\n')
-
-    if enable_auto_lint:
-        # edit file, but make a mistake in indentation
-        action = IPythonRunCellAction(
-            code="insert_content_at_line('hello.py', 1, '  print(\"hello world\")')"
-        )
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, IPythonRunCellObservation)
-        assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
-            f"""
-[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]
-ERRORS:
-{sandbox_dir}/test/hello.py:1:3: E999 IndentationError: unexpected indent
-[This is how your edit would have looked if applied]
--------------------------------------------------
-(this is the beginning of the file)
-1|  print("hello world")
-(this is the end of the file)
--------------------------------------------------
-
-[This is the original code before your edit]
--------------------------------------------------
-(this is the beginning of the file)
-1|
-(this is the end of the file)
--------------------------------------------------
-Your changes have NOT been applied. Please fix your edit command and try again.
-You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.
-DO NOT re-run the same failed edit command. Running it again will lead to the same error.
-[Jupyter current working directory: {sandbox_dir}/test]
-[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python]
-"""
-        ).strip().split('\n')
-
-    # edit file with correct indentation
-    action = IPythonRunCellAction(
-        code="insert_content_at_line('hello.py', 1, 'print(\"hello world\")')"
-    )
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(obs, IPythonRunCellObservation)
-    assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
-        f"""
-[File: {sandbox_dir}/test/hello.py (1 lines total after edit)]
-(this is the beginning of the file)
-1|print("hello world")
-(this is the end of the file)
-[File updated (edited at line 1). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]
-[Jupyter current working directory: {sandbox_dir}/test]
-[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python]
-"""
-    ).strip().split('\n')
-
-    action = CmdRunAction(command=f'rm -rf {sandbox_dir}/*')
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.exit_code == 0
-
-
-def test_ipython_agentskills_fileop_pwd_with_lint(
-    temp_dir, box_class, run_as_openhands
-):
-    runtime = _load_runtime(
-        temp_dir, box_class, run_as_openhands, enable_auto_lint=True
-    )
-    _test_ipython_agentskills_fileop_pwd_impl(runtime, True)
-
-    _close_test_runtime(runtime)
-
-
-def test_ipython_agentskills_fileop_pwd_without_lint(
-    temp_dir, box_class, run_as_openhands
-):
-    runtime = _load_runtime(
-        temp_dir, box_class, run_as_openhands, enable_auto_lint=False
-    )
-    _test_ipython_agentskills_fileop_pwd_impl(runtime, False)
-
-    _close_test_runtime(runtime)
-
-
-def test_ipython_agentskills_fileop_pwd_with_userdir(temp_dir, box_class):
-    """Make sure that cd in bash also update the current working directory in ipython.
-
-    Handle special case where the pwd is provided as "~", which should be expanded using os.path.expanduser
-    on the client side.
-    """
-
-    runtime = _load_runtime(
-        temp_dir,
-        box_class,
-        run_as_openhands=False,
-    )
-
-    action = CmdRunAction(command='cd ~')
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.exit_code == 0
-
-    action = CmdRunAction(command='mkdir test && ls -la')
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(obs, CmdOutputObservation)
-    assert obs.exit_code == 0
-
-    action = IPythonRunCellAction(code="create_file('hello.py')")
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(obs, IPythonRunCellObservation)
-    assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
-        '[File: /root/hello.py (1 lines total)]\n'
-        '(this is the beginning of the file)\n'
-        '1|\n'
-        '(this is the end of the file)\n'
-        '[File hello.py created.]\n'
-        '[Jupyter current working directory: /root]\n'
-        '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python]'
-    ).strip().split('\n')
-
-    action = CmdRunAction(command='cd test')
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(obs, CmdOutputObservation)
-    assert obs.exit_code == 0
-
-    # This should create a file in the current working directory
-    # i.e., /workspace/test/hello.py instead of /workspace/hello.py
-    action = IPythonRunCellAction(code="create_file('hello.py')")
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert isinstance(obs, IPythonRunCellObservation)
-    assert obs.content.replace('\r\n', '\n').strip().split('\n') == (
-        '[File: /root/test/hello.py (1 lines total)]\n'
-        '(this is the beginning of the file)\n'
-        '1|\n'
-        '(this is the end of the file)\n'
-        '[File hello.py created.]\n'
-        '[Jupyter current working directory: /root/test]\n'
-        '[Jupyter Python interpreter: /openhands/poetry/openhands-ai-5O4_aCHf-py3.12/bin/python]'
-    ).strip().split('\n')
-
-    _close_test_runtime(runtime)
-
-
-def test_ipython_package_install(temp_dir, box_class, run_as_openhands):
+def test_ipython_package_install(temp_dir, runtime_cls, run_as_openhands):
     """Make sure that cd in bash also update the current working directory in ipython."""
-    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     sandbox_dir = _get_sandbox_folder(runtime)
 
     # It should error out since pymsgbox is not installed

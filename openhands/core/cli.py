@@ -19,16 +19,18 @@ from openhands.events.action import (
     Action,
     ChangeAgentStateAction,
     CmdRunAction,
+    FileEditAction,
     MessageAction,
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
+    FileEditObservation,
 )
 from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
 from openhands.storage import get_file_store
 
 
@@ -50,6 +52,10 @@ def display_command_output(output: str):
     print('\n')
 
 
+def display_file_edit(event: FileEditAction | FileEditObservation):
+    print(colored(str(event), 'green'))
+
+
 def display_event(event: Event):
     if isinstance(event, Action):
         if hasattr(event, 'thought'):
@@ -61,6 +67,10 @@ def display_event(event: Event):
         display_command(event.command)
     if isinstance(event, CmdOutputObservation):
         display_command_output(event.content)
+    if isinstance(event, FileEditAction):
+        display_file_edit(event)
+    if isinstance(event, FileEditObservation):
+        display_file_edit(event)
 
 
 async def main():
@@ -104,6 +114,7 @@ async def main():
         sid=sid,
         plugins=agent_cls.sandbox_plugins,
     )
+    await runtime.connect()
 
     controller = AgentController(
         agent=agent,

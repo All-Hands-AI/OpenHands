@@ -1,5 +1,4 @@
 import { useFetcher, useRouteLoaderData } from "@remix-run/react";
-import React from "react";
 import ModalBody from "./ModalBody";
 import { CustomInput } from "../form/custom-input";
 import ModalButton from "../buttons/ModalButton";
@@ -7,7 +6,7 @@ import {
   BaseModalDescription,
   BaseModalTitle,
 } from "./confirmation-modals/BaseModal";
-import { clientLoader } from "#/root";
+import { clientLoader } from "#/routes/_oh";
 import { clientAction } from "#/routes/login";
 
 interface ConnectToGitHubModalProps {
@@ -15,7 +14,7 @@ interface ConnectToGitHubModalProps {
 }
 
 export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
-  const data = useRouteLoaderData<typeof clientLoader>("root");
+  const data = useRouteLoaderData<typeof clientLoader>("routes/_oh");
   const fetcher = useFetcher<typeof clientAction>({ key: "login" });
 
   return (
@@ -27,7 +26,7 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
             <span>
               Get your token{" "}
               <a
-                href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user"
+                href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
                 target="_blank"
                 rel="noreferrer noopener"
                 className="text-[#791B80] underline"

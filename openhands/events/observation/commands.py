@@ -11,7 +11,9 @@ class CmdOutputObservation(Observation):
     command_id: int
     command: str
     exit_code: int = 0
+    hidden: bool = False
     observation: str = ObservationType.RUN
+    interpreter_details: str = ''
 
     @property
     def error(self) -> bool:

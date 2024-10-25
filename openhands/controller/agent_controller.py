@@ -3,6 +3,8 @@ import copy
 import traceback
 from typing import Type
 
+import litellm
+
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
@@ -35,6 +37,7 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputObservation,
     ErrorObservation,
+    FatalErrorObservation,
     Observation,
 )
 from openhands.events.serialization.event import truncate_content
@@ -127,8 +130,8 @@ class AgentController:
         self.state.local_iteration += 1
 
     async def update_state_after_step(self):
-        # update metrics especially for cost
-        self.state.local_metrics = self.agent.llm.metrics
+        # update metrics especially for cost. Use deepcopy to avoid it being modified by agent.reset()
+        self.state.local_metrics = copy.deepcopy(self.agent.llm.metrics)
         if 'llm_completions' not in self.state.extra_data:
             self.state.extra_data['llm_completions'] = []
         self.state.extra_data['llm_completions'].extend(self.agent.llm.llm_completions)
@@ -139,12 +142,17 @@ class AgentController:
 
         This method should be called for a particular type of errors, which have:
         - a user-friendly message, which will be shown in the chat box. This should not be a raw exception message.
-        - an ErrorObservation that can be sent to the LLM by the agent, with the exception message, so it can self-correct next time.
+        - an ErrorObservation that can be sent to the LLM by the user role, with the exception message, so it can self-correct next time.
         """
         self.state.last_error = message
         if exception:
             self.state.last_error += f': {exception}'
-        self.event_stream.add_event(ErrorObservation(message), EventSource.AGENT)
+        detail = str(exception) if exception is not None else ''
+        if exception is not None and isinstance(exception, litellm.AuthenticationError):
+            detail = 'Please check your credentials. Is your API key correct?'
+        self.event_stream.add_event(
+            ErrorObservation(f'{message}:{detail}'), EventSource.USER
+        )
 
     async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
@@ -174,6 +182,8 @@ class AgentController:
         Args:
             event (Event): The incoming event to process.
         """
+        if hasattr(event, 'hidden') and event.hidden:
+            return
         if isinstance(event, Action):
             await self._handle_action(event)
         elif isinstance(event, Observation):
@@ -214,8 +224,8 @@ class AgentController:
         """
         if (
             self._pending_action
-            and hasattr(self._pending_action, 'is_confirmed')
-            and self._pending_action.is_confirmed
+            and hasattr(self._pending_action, 'confirmation_state')
+            and self._pending_action.confirmation_state
             == ActionConfirmationStatus.AWAITING_CONFIRMATION
         ):
             return
@@ -227,6 +237,11 @@ class AgentController:
                 observation_to_print.content, self.agent.llm.config.max_message_chars
             )
         logger.info(observation_to_print, extra={'msg_type': 'OBSERVATION'})
+
+        # Merge with the metrics from the LLM - it will to synced to the controller's local metrics in update_state_after_step()
+        if observation.llm_metrics is not None:
+            self.agent.llm.metrics.merge(observation.llm_metrics)
+
         if self._pending_action and self._pending_action.id == observation.cause:
             self._pending_action = None
             if self.state.agent_state == AgentState.USER_CONFIRMED:
@@ -242,6 +257,12 @@ class AgentController:
         elif isinstance(observation, ErrorObservation):
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
+        elif isinstance(observation, FatalErrorObservation):
+            await self.report_error(
+                'There was a fatal error during agent execution: ' + str(observation)
+            )
+            await self.set_agent_state_to(AgentState.ERROR)
+            self.state.metrics.merge(self.state.local_metrics)
 
     async def _handle_message_action(self, action: MessageAction):
         """Handles message actions from the event stream.
@@ -309,9 +330,10 @@ class AgentController:
             if hasattr(self._pending_action, 'thought'):
                 self._pending_action.thought = ''  # type: ignore[union-attr]
             if new_state == AgentState.USER_CONFIRMED:
-                self._pending_action.is_confirmed = ActionConfirmationStatus.CONFIRMED  # type: ignore[attr-defined]
+                confirmation_state = ActionConfirmationStatus.CONFIRMED
             else:
-                self._pending_action.is_confirmed = ActionConfirmationStatus.REJECTED  # type: ignore[attr-defined]
+                confirmation_state = ActionConfirmationStatus.REJECTED
+            self._pending_action.confirmation_state = confirmation_state  # type: ignore[attr-defined]
             self.event_stream.add_event(self._pending_action, EventSource.AGENT)
 
         self.state.agent_state = new_state
@@ -432,13 +454,15 @@ class AgentController:
             if self.state.confirmation_mode and (
                 type(action) is CmdRunAction or type(action) is IPythonRunCellAction
             ):
-                action.is_confirmed = ActionConfirmationStatus.AWAITING_CONFIRMATION
+                action.confirmation_state = (
+                    ActionConfirmationStatus.AWAITING_CONFIRMATION
+                )
             self._pending_action = action
 
         if not isinstance(action, NullAction):
             if (
-                hasattr(action, 'is_confirmed')
-                and action.is_confirmed
+                hasattr(action, 'confirmation_state')
+                and action.confirmation_state
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
@@ -448,8 +472,9 @@ class AgentController:
         logger.info(action, extra={'msg_type': 'ACTION'})
 
         if self._is_stuck():
-            await self.report_error('Agent got stuck in a loop')
+            # This need to go BEFORE report_error to sync metrics
             await self.set_agent_state_to(AgentState.ERROR)
+            await self.report_error('Agent got stuck in a loop')
 
     async def _delegate_step(self):
         """Executes a single step of the delegate agent."""
@@ -517,20 +542,21 @@ class AgentController:
         else:
             self.state.traffic_control_state = TrafficControlState.THROTTLING
             if self.headless_mode:
+                # This need to go BEFORE report_error to sync metrics
+                await self.set_agent_state_to(AgentState.ERROR)
                 # set to ERROR state if running in headless mode
                 # since user cannot resume on the web interface
                 await self.report_error(
                     f'Agent reached maximum {limit_type} in headless mode, task stopped. '
                     f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}'
                 )
-                await self.set_agent_state_to(AgentState.ERROR)
             else:
+                await self.set_agent_state_to(AgentState.PAUSED)
                 await self.report_error(
                     f'Agent reached maximum {limit_type}, task paused. '
                     f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}. '
                     f'{TRAFFIC_CONTROL_REMINDER}'
                 )
-                await self.set_agent_state_to(AgentState.PAUSED)
             stop_step = True
         return stop_step
 

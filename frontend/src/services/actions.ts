@@ -1,19 +1,16 @@
 import { addAssistantMessage, addUserMessage } from "#/state/chatSlice";
 import { setCode, setActiveFilepath } from "#/state/codeSlice";
-import { appendInput } from "#/state/commandSlice";
 import { appendJupyterInput } from "#/state/jupyterSlice";
 import {
   ActionSecurityRisk,
   appendSecurityAnalyzerInput,
 } from "#/state/securityAnalyzerSlice";
 import { setCurStatusMessage } from "#/state/statusSlice";
-import { setRootTask } from "#/state/taskSlice";
 import store from "#/store";
 import ActionType from "#/types/ActionType";
 import { ActionMessage, StatusMessage } from "#/types/Message";
 import { SocketMessage } from "#/types/ResponseType";
 import { handleObservationMessage } from "./observations";
-import { getRootTask } from "./taskService";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -54,36 +51,18 @@ const messageActions = {
     store.dispatch(addAssistantMessage(message.message));
   },
   [ActionType.RUN]: (message: ActionMessage) => {
+    if (message.args.hidden) return;
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
-    }
-    if (
-      !message.args.is_confirmed ||
-      message.args.is_confirmed !== "rejected"
-    ) {
-      store.dispatch(appendInput(message.args.command));
     }
   },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
-    if (
-      !message.args.is_confirmed ||
-      message.args.is_confirmed !== "rejected"
-    ) {
+    if (message.args.confirmation_state !== "rejected") {
       store.dispatch(appendJupyterInput(message.args.code));
     }
-  },
-  [ActionType.ADD_TASK]: () => {
-    getRootTask().then((fetchedRootTask) =>
-      store.dispatch(setRootTask(fetchedRootTask)),
-    );
-  },
-  [ActionType.MODIFY_TASK]: () => {
-    getRootTask().then((fetchedRootTask) =>
-      store.dispatch(setRootTask(fetchedRootTask)),
-    );
   },
 };
 
@@ -109,7 +88,7 @@ export function handleActionMessage(message: ActionMessage) {
   if (
     (message.action === ActionType.RUN ||
       message.action === ActionType.RUN_IPYTHON) &&
-    message.args.is_confirmed === "awaiting_confirmation"
+    message.args.confirmation_state === "awaiting_confirmation"
   ) {
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));

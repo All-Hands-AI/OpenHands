@@ -30,6 +30,7 @@ class SandboxConfig:
             For example, for specifying the base url of website for browsergym evaluation.
         browsergym_eval_env: The BrowserGym environment to use for evaluation.
             Default is None for general purpose browsing. Check evaluation/miniwob and evaluation/webarena for examples.
+        platform: The platform on which the image should be built. Default is None.
     """
 
     remote_runtime_api_url: str = 'http://localhost:8000'
@@ -49,6 +50,7 @@ class SandboxConfig:
     runtime_extra_deps: str | None = None
     runtime_startup_env_vars: dict[str, str] = field(default_factory=dict)
     browsergym_eval_env: str | None = None
+    platform: str | None = None
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""

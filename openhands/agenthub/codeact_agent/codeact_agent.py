@@ -11,12 +11,14 @@ from openhands.events.action import (
     AgentDelegateAction,
     AgentFinishAction,
     CmdRunAction,
+    FileEditAction,
     IPythonRunCellAction,
     MessageAction,
 )
 from openhands.events.observation import (
     AgentDelegateObservation,
     CmdOutputObservation,
+    FileEditObservation,
     IPythonRunCellObservation,
     UserRejectObservation,
 )
@@ -34,7 +36,7 @@ from openhands.utils.prompt import PromptManager
 
 
 class CodeActAgent(Agent):
-    VERSION = '1.9'
+    VERSION = '2.0'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
@@ -102,6 +104,8 @@ class CodeActAgent(Agent):
             return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
         elif isinstance(action, AgentDelegateAction):
             return f'{action.thought}\n<execute_browse>\n{action.inputs["task"]}\n</execute_browse>'
+        elif isinstance(action, FileEditAction):
+            return f'{action.thought}\n<file_edit path={action.path}>\n{action.content}\n</file_edit>'
         elif isinstance(action, MessageAction):
             return action.content
         elif isinstance(action, AgentFinishAction) and action.source == 'agent':
@@ -109,13 +113,16 @@ class CodeActAgent(Agent):
         return ''
 
     def get_action_message(self, action: Action) -> Message | None:
-        if (
-            isinstance(action, AgentDelegateAction)
-            or isinstance(action, CmdRunAction)
-            or isinstance(action, IPythonRunCellAction)
-            or isinstance(action, MessageAction)
-            or (isinstance(action, AgentFinishAction) and action.source == 'agent')
-        ):
+        if isinstance(
+            action,
+            (
+                AgentDelegateAction,
+                CmdRunAction,
+                IPythonRunCellAction,
+                MessageAction,
+                FileEditAction,
+            ),
+        ) or (isinstance(action, AgentFinishAction) and action.source == 'agent'):
             content = [TextContent(text=self.action_to_str(action))]
 
             if (
@@ -134,7 +141,9 @@ class CodeActAgent(Agent):
         max_message_chars = self.llm.config.max_message_chars
         obs_prefix = 'OBSERVATION:\n'
         if isinstance(obs, CmdOutputObservation):
-            text = obs_prefix + truncate_content(obs.content, max_message_chars)
+            text = obs_prefix + truncate_content(
+                obs.content + obs.interpreter_details, max_message_chars
+            )
             text += (
                 f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
             )
@@ -150,6 +159,9 @@ class CodeActAgent(Agent):
                     )
             text = '\n'.join(splitted)
             text = truncate_content(text, max_message_chars)
+            return Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, FileEditObservation):
+            text = obs_prefix + truncate_content(str(obs), max_message_chars)
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentDelegateObservation):
             text = obs_prefix + truncate_content(
@@ -201,6 +213,7 @@ class CodeActAgent(Agent):
                 '</execute_ipython>',
                 '</execute_bash>',
                 '</execute_browse>',
+                '</file_edit>',
             ],
         }
 

@@ -11,11 +11,12 @@ from pytest import TempPathFactory
 from openhands.core.config import load_app_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
-from openhands.runtime.client.runtime import EventStreamRuntime
+from openhands.runtime.base import Runtime
+from openhands.runtime.impl.eventstream.eventstream_runtime import EventStreamRuntime
+from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
-from openhands.runtime.remote.runtime import RemoteRuntime
-from openhands.runtime.runtime import Runtime
 from openhands.storage import get_file_store
+from openhands.utils.async_utils import call_async_from_sync
 
 TEST_IN_CI = os.getenv('TEST_IN_CI', 'False').lower() in ['true', '1', 'yes']
 TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'eventstream').lower()
@@ -124,7 +125,7 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
 
 
 # Depending on TEST_RUNTIME, feed the appropriate box class(es) to the test.
-def get_box_classes():
+def get_runtime_classes():
     runtime = TEST_RUNTIME
     if runtime.lower() == 'eventstream':
         return [EventStreamRuntime]
@@ -161,8 +162,8 @@ def runtime_setup_session():
 
 # This assures that all tests run together per runtime, not alternating between them,
 # which cause errors (especially outside GitHub actions).
-@pytest.fixture(scope='module', params=get_box_classes())
-def box_class(request):
+@pytest.fixture(scope='module', params=get_runtime_classes())
+def runtime_cls(request):
     time.sleep(1)
     return request.param
 
@@ -202,7 +203,7 @@ def base_container_image(request):
 
 def _load_runtime(
     temp_dir,
-    box_class,
+    runtime_cls,
     run_as_openhands: bool = True,
     enable_auto_lint: bool = False,
     base_container_image: str | None = None,
@@ -252,12 +253,13 @@ def _load_runtime(
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(sid, file_store)
 
-    runtime = box_class(
+    runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
         sid=sid,
         plugins=plugins,
     )
+    call_async_from_sync(runtime.connect)
     time.sleep(2)
     return runtime
 

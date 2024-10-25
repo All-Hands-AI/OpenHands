@@ -50,7 +50,6 @@ COMMAND="poetry run python evaluation/EDA/run_infer.py \
   --data-split test \
   --max-iterations 20 \
   --OPENAI_API_KEY $OPENAI_API_KEY \
-  --max-chars 10000000 \
   --eval-num-workers $NUM_WORKERS \
   --eval-note ${AGENT_VERSION}_${DATASET}"
 
