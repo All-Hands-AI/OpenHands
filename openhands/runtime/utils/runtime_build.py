@@ -397,4 +397,4 @@ if __name__ == '__main__':
         image_name = build_runtime_image(
             args.base_image, docker_builder, platform=args.platform
         )
-        print(f'\nBUILT Image: {image_name}\n')
+        logger.debug(f'\nBuilt image: {image_name}\n')
