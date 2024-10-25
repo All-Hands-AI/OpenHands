@@ -24,6 +24,7 @@ def agent() -> CodeActAgent:
 
 
 def test_cmd_output_observation_message(agent: CodeActAgent):
+    agent.config.function_calling = False
     obs = CmdOutputObservation(
         command='echo hello', content='Command output', command_id=1, exit_code=0
     )
@@ -36,10 +37,11 @@ def test_cmd_output_observation_message(agent: CodeActAgent):
     assert isinstance(result.content[0], TextContent)
     assert 'OBSERVATION:' in result.content[0].text
     assert 'Command output' in result.content[0].text
-    assert 'Command 1 finished with exit code 0' in result.content[0].text
+    assert 'Command finished with exit code 0' in result.content[0].text
 
 
 def test_ipython_run_cell_observation_message(agent: CodeActAgent):
+    agent.config.function_calling = False
     obs = IPythonRunCellObservation(
         code='plt.plot()',
         content='IPython output\n![image](data:image/png;base64,ABC123)',
@@ -61,6 +63,7 @@ def test_ipython_run_cell_observation_message(agent: CodeActAgent):
 
 
 def test_agent_delegate_observation_message(agent: CodeActAgent):
+    agent.config.function_calling = False
     obs = AgentDelegateObservation(
         content='Content', outputs={'content': 'Delegated agent output'}
     )
@@ -76,6 +79,7 @@ def test_agent_delegate_observation_message(agent: CodeActAgent):
 
 
 def test_error_observation_message(agent: CodeActAgent):
+    agent.config.function_calling = False
     obs = ErrorObservation('Error message')
 
     result = agent.get_observation_message(obs)
