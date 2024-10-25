@@ -93,6 +93,10 @@ class Runtime(FileEditRuntimeMixin):
     def close(self) -> None:
         pass
 
+    def log(self, level: str, message: str) -> None:
+        message = f'[runtime {self.sid}] {message}'
+        getattr(logger, level)(message)
+
     # ====================================================================
 
     def add_env_vars(self, env_vars: dict[str, str]) -> None:

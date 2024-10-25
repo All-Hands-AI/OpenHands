@@ -9,7 +9,6 @@ import requests
 from requests.exceptions import Timeout
 
 from openhands.core.config import AppConfig
-from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
     BrowseInteractiveAction,
@@ -68,8 +67,9 @@ class RemoteRuntime(Runtime):
         self.action_semaphore = threading.Semaphore(1)
 
         if self.config.workspace_base is not None:
-            logger.warning(
-                'Setting workspace_base is not supported in the remote runtime.'
+            self.log(
+                'warning',
+                'Setting workspace_base is not supported in the remote runtime.',
             )
 
         self.runtime_builder = RemoteRuntimeBuilder(
@@ -96,19 +96,21 @@ class RemoteRuntime(Runtime):
     def _start_or_attach_to_runtime(self):
         existing_runtime = self._check_existing_runtime()
         if existing_runtime:
-            logger.info(f'Using existing runtime with ID: {self.runtime_id}')
+            self.log('info', f'Using existing runtime with ID: {self.runtime_id}')
         elif self.attach_to_existing:
             raise RuntimeError('Could not find existing runtime to attach to.')
         else:
             self.send_status_message('STATUS$STARTING_CONTAINER')
             if self.config.sandbox.runtime_container_image is None:
-                logger.debug(
-                    f'Building remote runtime with base image: {self.config.sandbox.base_container_image}'
+                self.log(
+                    'debug',
+                    f'Building remote runtime with base image: {self.config.sandbox.base_container_image}',
                 )
                 self._build_runtime()
             else:
-                logger.debug(
-                    f'Running remote runtime with image: {self.config.sandbox.runtime_container_image}'
+                self.log(
+                    'debug',
+                    f'Running remote runtime with image: {self.config.sandbox.runtime_container_image}',
                 )
                 self.container_image = self.config.sandbox.runtime_container_image
             self._start_runtime()
@@ -119,9 +121,9 @@ class RemoteRuntime(Runtime):
             self.runtime_url is not None
         ), 'Runtime URL is not set. This should never happen.'
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
-        logger.info(f'Waiting for runtime {self.runtime_id} to be alive...')
+        self.log('info', f'Waiting for runtime {self.runtime_id} to be alive...')
         self._wait_until_alive()
-        logger.info(f'Runtime {self.runtime_id} is ready.')
+        self.log('info', f'Runtime {self.runtime_id} is ready.')
         self.send_status_message(' ')
 
     def _check_existing_runtime(self) -> bool:
@@ -133,7 +135,7 @@ class RemoteRuntime(Runtime):
                 timeout=5,
             )
         except Exception as e:
-            logger.debug(f'Error while looking for remote runtime: {e}')
+            self.log('debug', f'Error while looking for remote runtime: {e}')
             return False
 
         if response.status_code == 200:
@@ -143,22 +145,22 @@ class RemoteRuntime(Runtime):
                 self._parse_runtime_response(response)
                 return True
             elif status == 'stopped':
-                logger.debug('Found existing remote runtime, but it is stopped')
+                self.log('debug', 'Found existing remote runtime, but it is stopped')
                 return False
             elif status == 'paused':
-                logger.debug('Found existing remote runtime, but it is paused')
+                self.log('debug', 'Found existing remote runtime, but it is paused')
                 self._parse_runtime_response(response)
                 self._resume_runtime()
                 return True
             else:
-                logger.error(f'Invalid response from runtime API: {data}')
+                self.log('error', f'Invalid response from runtime API: {data}')
                 return False
         else:
-            logger.debug('Could not find existing remote runtime')
+            self.log('debug', 'Could not find existing remote runtime')
             return False
 
     def _build_runtime(self):
-        logger.info(f'Building RemoteRuntime `{self.sid}` config:\n{self.config}')
+        self.log('info', f'Building RemoteRuntime `{self.sid}` config:\n{self.config}')
         response = send_request_with_retry(
             self.session,
             'GET',
@@ -170,13 +172,15 @@ class RemoteRuntime(Runtime):
         os.environ['OH_RUNTIME_RUNTIME_IMAGE_REPO'] = (
             registry_prefix.rstrip('/') + '/runtime'
         )
-        logger.debug(
-            f'Runtime image repo: {os.environ["OH_RUNTIME_RUNTIME_IMAGE_REPO"]}'
+        self.log(
+            'debug',
+            f'Runtime image repo: {os.environ["OH_RUNTIME_RUNTIME_IMAGE_REPO"]}',
         )
 
         if self.config.sandbox.runtime_extra_deps:
-            logger.debug(
-                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
+            self.log(
+                'debug',
+                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
             )
 
         # Build the container image
@@ -237,8 +241,9 @@ class RemoteRuntime(Runtime):
                 f'[Runtime (ID={self.runtime_id})] Failed to start runtime: {response.text}'
             )
         self._parse_runtime_response(response)
-        logger.debug(
-            f'[Runtime (ID={self.runtime_id})] Runtime started. URL: {self.runtime_url}'
+        self.log(
+            'debug',
+            f'[Runtime (ID={self.runtime_id})] Runtime started. URL: {self.runtime_url}',
         )
 
     def _resume_runtime(self):
@@ -253,7 +258,7 @@ class RemoteRuntime(Runtime):
             raise RuntimeError(
                 f'[Runtime (ID={self.runtime_id})] Failed to resume runtime: {response.text}'
             )
-        logger.debug(f'[Runtime (ID={self.runtime_id})] Runtime resumed.')
+        self.log('debug', f'[Runtime (ID={self.runtime_id})] Runtime resumed.')
 
     def _parse_runtime_response(self, response: requests.Response):
         start_response = response.json()
@@ -265,7 +270,7 @@ class RemoteRuntime(Runtime):
             )
 
     def _wait_until_alive(self):
-        logger.debug(f'Waiting for runtime to be alive at url: {self.runtime_url}')
+        self.log('debug', f'Waiting for runtime to be alive at url: {self.runtime_url}')
         # send GET request to /runtime/<id>
         pod_running = False
         max_not_found_count = 12  # 2 minutes
@@ -284,16 +289,18 @@ class RemoteRuntime(Runtime):
             runtime_data = runtime_info_response.json()
             assert runtime_data['runtime_id'] == self.runtime_id
             pod_status = runtime_data['pod_status']
-            logger.debug(
-                f'Waiting for runtime pod to be active. Current status: {pod_status}'
+            self.log(
+                'debug',
+                f'Waiting for runtime pod to be active. Current status: {pod_status}',
             )
             if pod_status == 'Ready':
                 pod_running = True
                 break
             elif pod_status == 'Not Found' and not_found_count < max_not_found_count:
                 not_found_count += 1
-                logger.debug(
-                    f'Runtime pod not found. Count: {not_found_count} / {max_not_found_count}'
+                self.log(
+                    'debug',
+                    f'Runtime pod not found. Count: {not_found_count} / {max_not_found_count}',
                 )
             elif pod_status in ('Failed', 'Unknown', 'Not Found'):
                 # clean up the runtime
@@ -317,7 +324,7 @@ class RemoteRuntime(Runtime):
         )
         if response.status_code != 200:
             msg = f'Runtime (ID={self.runtime_id}) is not alive yet. Status: {response.status_code}.'
-            logger.warning(msg)
+            self.log('warning', msg)
             raise RuntimeError(msg)
 
     def close(self, timeout: int = 10):
@@ -334,11 +341,14 @@ class RemoteRuntime(Runtime):
                     timeout=timeout,
                 )
                 if response.status_code != 200:
-                    logger.error(
-                        f'[Runtime (ID={self.runtime_id})] Failed to stop runtime: {response.text}'
+                    self.log(
+                        'error',
+                        f'[Runtime (ID={self.runtime_id})] Failed to stop runtime: {response.text}',
                     )
                 else:
-                    logger.debug(f'[Runtime (ID={self.runtime_id})] Runtime stopped.')
+                    self.log(
+                        'debug', f'[Runtime (ID={self.runtime_id})] Runtime stopped.'
+                    )
             except Exception as e:
                 raise e
             finally:
@@ -366,7 +376,7 @@ class RemoteRuntime(Runtime):
 
             try:
                 request_body = {'action': event_to_dict(action)}
-                logger.debug(f'Request body: {request_body}')
+                self.log('debug', f'Request body: {request_body}')
                 response = send_request_with_retry(
                     self.session,
                     'POST',
@@ -381,17 +391,17 @@ class RemoteRuntime(Runtime):
                     return obs
                 else:
                     error_message = response.text
-                    logger.error(f'Error from server: {error_message}')
+                    self.log('error', f'Error from server: {error_message}')
                     obs = FatalErrorObservation(
                         f'Action execution failed: {error_message}'
                     )
             except Timeout:
-                logger.error('No response received within the timeout period.')
+                self.log('error', 'No response received within the timeout period.')
                 obs = FatalErrorObservation(
                     f'[Runtime (ID={self.runtime_id})] Action execution timed out'
                 )
             except Exception as e:
-                logger.error(f'Error during action execution: {e}')
+                self.log('error', f'Error during action execution: {e}')
                 obs = FatalErrorObservation(
                     f'[Runtime (ID={self.runtime_id})] Action execution failed: {str(e)}'
                 )
@@ -452,8 +462,9 @@ class RemoteRuntime(Runtime):
                 timeout=300,
             )
             if response.status_code == 200:
-                logger.debug(
-                    f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}'
+                self.log(
+                    'debug',
+                    f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}',
                 )
                 return
             else:
@@ -472,7 +483,9 @@ class RemoteRuntime(Runtime):
         finally:
             if recursive:
                 os.unlink(temp_zip_path)
-            logger.debug(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
+            self.log(
+                'debug', f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}'
+            )
 
     def list_files(self, path: str | None = None) -> list[str]:
         try:
