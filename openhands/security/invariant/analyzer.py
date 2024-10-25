@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import (
     Action,
+    ActionConfirmationStatus,
     ActionSecurityRisk,
 )
 from openhands.events.event import Event, EventSource
@@ -137,8 +138,9 @@ class InvariantAnalyzer(SecurityAnalyzer):
         return (
             risk is not None
             and risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM)
-            and hasattr(event, 'is_confirmed')
-            and event.is_confirmed == 'awaiting_confirmation'
+            and hasattr(event, 'confirmation_state')
+            and event.confirmation_state
+            == ActionConfirmationStatus.AWAITING_CONFIRMATION
         )
 
     async def confirm(self, event: Event) -> None:

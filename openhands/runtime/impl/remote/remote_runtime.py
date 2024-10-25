@@ -31,6 +31,7 @@ from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.base import Runtime
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.utils.command import get_remote_startup_command
 from openhands.runtime.utils.request import (
     is_404_error,
     is_503_error,
@@ -77,11 +78,6 @@ class RemoteRuntime(Runtime):
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
 
-        self.sid = sid
-
-        self._start_or_attach_to_runtime(plugins, attach_to_existing)
-
-        # Initialize the eventstream and env vars
         super().__init__(
             config,
             event_stream,
@@ -91,15 +87,17 @@ class RemoteRuntime(Runtime):
             status_message_callback,
             attach_to_existing,
         )
+
+    async def connect(self):
+        self._start_or_attach_to_runtime()
+        self._wait_until_alive()
         self.setup_initial_env()
 
-    def _start_or_attach_to_runtime(
-        self, plugins: list[PluginRequirement] | None, attach_to_existing: bool = False
-    ):
+    def _start_or_attach_to_runtime(self):
         existing_runtime = self._check_existing_runtime()
         if existing_runtime:
             logger.info(f'Using existing runtime with ID: {self.runtime_id}')
-        elif attach_to_existing:
+        elif self.attach_to_existing:
             raise RuntimeError('Could not find existing runtime to attach to.')
         else:
             self.send_status_message('STATUS$STARTING_CONTAINER')
@@ -113,7 +111,7 @@ class RemoteRuntime(Runtime):
                     f'Running remote runtime with image: {self.config.sandbox.runtime_container_image}'
                 )
                 self.container_image = self.config.sandbox.runtime_container_image
-            self._start_runtime(plugins)
+            self._start_runtime()
         assert (
             self.runtime_id is not None
         ), 'Runtime ID is not set. This should never happen.'
@@ -197,28 +195,27 @@ class RemoteRuntime(Runtime):
         if response.status_code != 200 or not response.json()['exists']:
             raise RuntimeError(f'Container image {self.container_image} does not exist')
 
-    def _start_runtime(self, plugins: list[PluginRequirement] | None):
+    def _start_runtime(self):
         # Prepare the request body for the /start endpoint
-        plugin_arg = ''
-        if plugins is not None and len(plugins) > 0:
-            plugin_arg = f'--plugins {" ".join([plugin.name for plugin in plugins])} '
-        browsergym_arg = (
-            f'--browsergym-eval-env {self.config.sandbox.browsergym_eval_env}'
-            if self.config.sandbox.browsergym_eval_env is not None
-            else ''
+        plugin_args = []
+        if self.plugins is not None and len(self.plugins) > 0:
+            plugin_args = ['--plugins'] + [plugin.name for plugin in self.plugins]
+        browsergym_args = []
+        if self.config.sandbox.browsergym_eval_env is not None:
+            browsergym_args = [
+                '--browsergym-eval-env'
+            ] + self.config.sandbox.browsergym_eval_env.split(' ')
+        command = get_remote_startup_command(
+            self.port,
+            self.config.workspace_mount_path_in_sandbox,
+            'openhands' if self.config.run_as_openhands else 'root',
+            self.config.sandbox.user_id,
+            plugin_args,
+            browsergym_args,
         )
         start_request = {
             'image': self.container_image,
-            'command': (
-                f'/openhands/micromamba/bin/micromamba run -n openhands '
-                'poetry run '
-                f'python -u -m openhands.runtime.action_execution_server {self.port} '
-                f'--working-dir {self.config.workspace_mount_path_in_sandbox} '
-                f'{plugin_arg}'
-                f'--username {"openhands" if self.config.run_as_openhands else "root"} '
-                f'--user-id {self.config.sandbox.user_id} '
-                f'{browsergym_arg}'
-            ),
+            'command': command,
             'working_dir': '/openhands/code/',
             'environment': {'DEBUG': 'true'} if self.config.debug else {},
             'runtime_id': self.sid,
@@ -295,11 +292,7 @@ class RemoteRuntime(Runtime):
                 logger.info(
                     f'Runtime pod not found. Count: {not_found_count} / {max_not_found_count}'
                 )
-            elif (
-                pod_status == 'Failed'
-                or pod_status == 'Unknown'
-                or pod_status == 'Not Found'
-            ):
+            elif pod_status in ('Failed', 'Unknown', 'Not Found'):
                 # clean up the runtime
                 self.close()
                 raise RuntimeError(
@@ -325,7 +318,7 @@ class RemoteRuntime(Runtime):
             raise RuntimeError(msg)
 
     def close(self, timeout: int = 10):
-        if self.config.sandbox.keep_remote_runtime_alive:
+        if self.config.sandbox.keep_remote_runtime_alive or self.attach_to_existing:
             self.session.close()
             return
         if self.runtime_id:

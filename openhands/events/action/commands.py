@@ -28,7 +28,7 @@ class CmdRunAction(Action):
     hidden: bool = False
     action: str = ActionType.RUN
     runnable: ClassVar[bool] = True
-    is_confirmed: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
+    confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
     security_risk: ActionSecurityRisk | None = None
 
     @property
@@ -49,7 +49,7 @@ class IPythonRunCellAction(Action):
     thought: str = ''
     action: str = ActionType.RUN_IPYTHON
     runnable: ClassVar[bool] = True
-    is_confirmed: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
+    confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
     security_risk: ActionSecurityRisk | None = None
     kernel_init_code: str = ''  # code to run in the kernel (if the kernel is restarted)
 
