@@ -35,6 +35,7 @@ FAKE_RESPONSES = {
 
 def get_config(
     metadata: EvalMetadata,
+    instance_id: str,
 ) -> AppConfig:
     config = AppConfig(
         default_agent=metadata.agent_class,
@@ -51,6 +52,14 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
+    if metadata.llm_config.log_completions:
+        metadata.llm_config.log_completions_folder = os.path.join(
+            metadata.eval_output_dir, 'llm_completions', instance_id
+        )
+        logger.info(
+            f'Logging LLM completions for instance {instance_id} to '
+            f'{metadata.llm_config.log_completions_folder}'
+        )
     config.set_llm_config(metadata.llm_config)
     agent_config = AgentConfig(
         codeact_enable_jupyter=True,
@@ -66,7 +75,7 @@ def process_instance(
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ) -> EvalOutput:
-    config = get_config(metadata)
+    config = get_config(metadata, instance.instance_id)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
@@ -133,7 +142,6 @@ def process_instance(
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
         test_result=test_result.model_dump(),
-        llm_completions=state.extra_data.get('llm_completions', []),
     )
     return output
 
