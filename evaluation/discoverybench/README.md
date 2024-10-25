@@ -1,10 +1,10 @@
-# 🛰️ DiscoveryBench with 🙌 OpenHands
+# DiscoveryBench with OpenHands
 
 TODO: This is sample description, need to update it before upstream PR.
 DiscoveryBench is designed to systematically assess current model capabilities in data-driven discovery tasks and provide a useful resource for improving them. Each DiscoveryBench task consists of a goal and dataset(s). Solving the task requires both statistical analysis and semantic reasoning. A faceted evaluation allows open-ended final answers to be rigorously evaluated.
 
 
-## ⚙️ Setup Environment and LLM Configuration
+## Setup Environment and LLM Configuration
 
 1. Please follow instructions mentioned [here](https://github.com/openlocus/OpenHands/blob/discoverybench-openhands-integration/evaluation/README.md#setup) to setup OpenHands development environment and LLMs locally
 
@@ -15,7 +15,10 @@ DiscoveryBench is designed to systematically assess current model capabilities i
 ```
 Replace `[YOUR MODEL CONFIG]` with any model the model that you have set up in `config.toml`
 
-3. Other configurations
+
+## Run Inference on DiscoveryBench Instances
+
+
 ```
 ./evaluation/discoverybench/scripts/run_infer.sh [MODEL_CONFIG] [GIT_COMMIT] [AGENT] [EVAL_LIMIT] [NUM_WORKERS]
 ```
@@ -26,7 +29,7 @@ Replace `[YOUR MODEL CONFIG]` with any model the model that you have set up in `
 - `EVAL_LIMIT`: This should be the number of samples to evaluate, e.g., num_samples_eval.
 - `NUM_WORKERS`: This would be the number of workers to parallelize the evaluation process.
 
-## ✨ Overview
+## Overview
 
 - A DiscoveryBench instance is a scientific discovery task in natural language.
 - In each iteration, OpenHands' agent try to solve the problem provided to it using python.
