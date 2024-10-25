@@ -91,9 +91,6 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         buildx_cmd.append(path)  # must be last!
 
         logger.debug('================ DOCKER BUILD STARTED ================')
-        if sys.stdout.isatty():
-            sys.stdout.write('\n' * self.max_lines)
-            sys.stdout.flush()
 
         try:
             process = subprocess.Popen(
@@ -239,12 +236,8 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         self.log_lines.pop(0)
         self.log_lines.append(new_line[:80])
 
-        sys.stdout.write('\033[F' * (self.max_lines))
-        sys.stdout.flush()
-
         for line in self.log_lines:
-            sys.stdout.write('\033[2K' + line + '\n')
-            sys.stdout.flush()
+            logger.debug(line)
 
     def _output_build_progress(
         self, current_line: dict, layers: dict, previous_layer_count: int
@@ -273,20 +266,16 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                         100 if layers[layer_id]['status'] == 'Download complete' else 0
                     )
 
-            if sys.stdout.isatty():
-                sys.stdout.write('\033[F' * previous_layer_count)
-                for lid, layer_data in sorted(layers.items()):
-                    sys.stdout.write('\033[2K\r')
-                    status = layer_data['status']
-                    progress = layer_data['progress']
-                    if status == 'Download complete':
-                        logger.debug(f'Layer {lid}: Download complete')
-                    elif status == 'Already exists':
-                        logger.debug(f'Layer {lid}: Already exists')
-                    else:
-                        logger.debug(f'Layer {lid}: {progress} {status}')
-                sys.stdout.flush()
-            elif percentage != 0 and (
+            for lid, layer_data in sorted(layers.items()):
+                status = layer_data['status']
+                progress = layer_data['progress']
+                if status == 'Download complete':
+                    logger.debug(f'Layer {lid}: Download complete')
+                elif status == 'Already exists':
+                    logger.debug(f'Layer {lid}: Already exists')
+                else:
+                    logger.debug(f'Layer {lid}: {progress} {status}')
+            if percentage != 0 and (
                 percentage - layers[layer_id]['last_logged'] >= 10 or percentage == 100
             ):
                 logger.debug(

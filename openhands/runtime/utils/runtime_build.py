@@ -160,6 +160,7 @@ def build_runtime_image_in_folder(
     hash_tag = f'{lock_tag}_{get_hash_for_source_files()}'
     hash_image_name = f'{runtime_image_repo}:{hash_tag}'
 
+    logger.info(f'Building image: {hash_image_name}')
     if force_rebuild:
         logger.debug(f'Force rebuild: [{runtime_image_repo}:{hash_tag}] from scratch.')
         prep_build_folder(build_folder, base_image, True, extra_deps)
