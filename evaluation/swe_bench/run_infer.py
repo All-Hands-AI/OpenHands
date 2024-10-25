@@ -35,6 +35,7 @@ from openhands.events.observation import CmdOutputObservation, ErrorObservation
 from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
 from openhands.runtime.utils.shutdown_listener import sleep_if_should_continue
+from openhands.utils.async_utils import call_async_from_sync
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false').lower() == 'true'
@@ -143,6 +144,14 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
+    if metadata.llm_config.log_completions:
+        metadata.llm_config.log_completions_folder = os.path.join(
+            metadata.eval_output_dir, 'llm_completions', instance['instance_id']
+        )
+        logger.info(
+            f'Logging LLM completions for instance {instance["instance_id"]} to '
+            f'{metadata.llm_config.log_completions_folder}'
+        )
     config.set_llm_config(metadata.llm_config)
     return config
 
@@ -372,6 +381,7 @@ def process_instance(
         logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
     runtime = create_runtime(config)
+    call_async_from_sync(runtime.connect)
 
     try:
         initialize_runtime(runtime, instance)
@@ -432,7 +442,6 @@ def process_instance(
         metadata=metadata,
         history=histories,
         metrics=metrics,
-        llm_completions=state.extra_data.get('llm_completions', []),
         error=state.last_error if state and state.last_error else None,
     )
     return output
