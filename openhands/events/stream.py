@@ -1,11 +1,9 @@
 import asyncio
 import threading
-from dataclasses import field
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from typing import Callable, Iterable
-
-from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.utils import json
@@ -32,7 +30,8 @@ def session_exists(sid: str, file_store: FileStore) -> bool:
         return False
 
 
-class EventStream(BaseModel):
+@dataclass
+class EventStream:
     sid: str
     file_store: FileStore
     # For each subscriber ID, there is a stack of callback functions - useful
