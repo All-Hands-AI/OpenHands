@@ -1,6 +1,7 @@
 import os
 import tempfile
 import threading
+from functools import lru_cache
 from typing import Callable
 from zipfile import ZipFile
 
@@ -153,7 +154,6 @@ class EventStreamRuntime(Runtime):
         self.session = requests.Session()
         self.status_message_callback = status_message_callback
 
-        self.send_status_message('STATUS$STARTING_RUNTIME')
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
@@ -174,31 +174,7 @@ class EventStreamRuntime(Runtime):
         self.skip_container_logs = (
             os.environ.get('SKIP_CONTAINER_LOGS', 'false').lower() == 'true'
         )
-        if self.runtime_container_image is None:
-            if self.base_container_image is None:
-                raise ValueError(
-                    'Neither runtime container image nor base container image is set'
-                )
-            logger.info('Preparing container, this might take a few minutes...')
-            self.send_status_message('STATUS$STARTING_CONTAINER')
-            self.runtime_container_image = build_runtime_image(
-                self.base_container_image,
-                self.runtime_builder,
-                platform=self.config.sandbox.platform,
-                extra_deps=self.config.sandbox.runtime_extra_deps,
-                force_rebuild=self.config.sandbox.force_rebuild_runtime,
-            )
 
-        if not attach_to_existing:
-            self._init_container(
-                sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,  # e.g. /workspace
-                mount_dir=self.config.workspace_mount_path,  # e.g. /opt/openhands/_test_workspace
-                plugins=plugins,
-            )
-        else:
-            self._attach_to_container()
-
-        # Will initialize both the event stream and the env vars
         self.init_base_runtime(
             config,
             event_stream,
@@ -209,11 +185,39 @@ class EventStreamRuntime(Runtime):
             attach_to_existing,
         )
 
+    async def connect(self):
+        self.send_status_message('STATUS$STARTING_RUNTIME')
+        if not self.attach_to_existing:
+            if self.runtime_container_image is None:
+                if self.base_container_image is None:
+                    raise ValueError(
+                        'Neither runtime container image nor base container image is set'
+                    )
+                logger.info('Preparing container, this might take a few minutes...')
+                self.send_status_message('STATUS$STARTING_CONTAINER')
+                self.runtime_container_image = build_runtime_image(
+                    self.base_container_image,
+                    self.runtime_builder,
+                    platform=self.config.sandbox.platform,
+                    extra_deps=self.config.sandbox.runtime_extra_deps,
+                    force_rebuild=self.config.sandbox.force_rebuild_runtime,
+                )
+
+            self._init_container(
+                sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,  # e.g. /workspace
+                mount_dir=self.config.workspace_mount_path,  # e.g. /opt/openhands/_test_workspace
+                plugins=self.plugins,
+            )
+
+        else:
+            self._attach_to_container()
+
         logger.info('Waiting for client to become ready...')
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
-
         self._wait_until_alive()
-        self.setup_initial_env()
+
+        if not self.attach_to_existing:
+            self.setup_initial_env()
 
         logger.info(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
@@ -221,6 +225,7 @@ class EventStreamRuntime(Runtime):
         self.send_status_message(' ')
 
     @staticmethod
+    @lru_cache(maxsize=1)
     def _init_docker_client() -> docker.DockerClient:
         try:
             return docker.from_env()
@@ -327,7 +332,7 @@ class EventStreamRuntime(Runtime):
                 f'Error: Instance {self.container_name} FAILED to start container!\n'
             )
             logger.exception(e)
-            self.close(close_client=False)
+            self.close()
             raise e
 
     def _attach_to_container(self):
@@ -388,11 +393,10 @@ class EventStreamRuntime(Runtime):
             logger.error(msg)
             raise RuntimeError(msg)
 
-    def close(self, close_client: bool = True, rm_all_containers: bool = True):
+    def close(self, rm_all_containers: bool = True):
         """Closes the EventStreamRuntime and associated objects
 
         Parameters:
-        - close_client (bool): Whether to close the DockerClient
         - rm_all_containers (bool): Whether to remove all containers with the 'openhands-sandbox-' prefix
         """
 
@@ -401,6 +405,9 @@ class EventStreamRuntime(Runtime):
 
         if self.session:
             self.session.close()
+
+        if self.attach_to_existing:
+            return
 
         try:
             containers = self.docker_client.containers.list(all=True)
@@ -426,9 +433,6 @@ class EventStreamRuntime(Runtime):
         except docker.errors.NotFound:  # yes, this can happen!
             pass
 
-        if close_client:
-            self.docker_client.close()
-
     def run_action(self, action: Action) -> Observation:
         if isinstance(action, FileEditAction):
             return self.edit(action)
@@ -441,8 +445,8 @@ class EventStreamRuntime(Runtime):
             if not action.runnable:
                 return NullObservation('')
             if (
-                hasattr(action, 'is_confirmed')
-                and action.is_confirmed
+                hasattr(action, 'confirmation_state')
+                and action.confirmation_state
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 return NullObservation('')
@@ -454,8 +458,8 @@ class EventStreamRuntime(Runtime):
                     f'Action {action_type} is not supported in the current runtime.'
                 )
             if (
-                hasattr(action, 'is_confirmed')
-                and action.is_confirmed == ActionConfirmationStatus.REJECTED
+                getattr(action, 'confirmation_state', None)
+                == ActionConfirmationStatus.REJECTED
             ):
                 return UserRejectObservation(
                     'Action has been rejected by the user! Waiting for further user input.'

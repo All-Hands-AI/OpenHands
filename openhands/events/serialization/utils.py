@@ -11,7 +11,7 @@ def remove_fields(obj, fields: set[str]):
                 del obj[field]
         for _, value in obj.items():
             remove_fields(value, fields)
-    elif isinstance(obj, list) or isinstance(obj, tuple):
+    elif isinstance(obj, (list, tuple)):
         for item in obj:
             remove_fields(item, fields)
     elif hasattr(obj, '__dataclass_fields__'):

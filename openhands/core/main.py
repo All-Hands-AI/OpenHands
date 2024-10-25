@@ -122,6 +122,7 @@ async def run_controller(
 
     if runtime is None:
         runtime = create_runtime(config, sid=sid)
+        await runtime.connect()
 
     event_stream = runtime.event_stream
     # restore cli session if enabled
