@@ -71,7 +71,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
         instruction = (
             '<uploaded_files>\n'
-            f'{workspace_dir_name}\n'
+            f'/workspace/{workspace_dir_name}\n'
             '</uploaded_files>\n'
             f"I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following PR description:\n\n"
             f'<pr_description>\n'
