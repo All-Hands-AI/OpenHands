@@ -124,16 +124,18 @@ async def run_controller(
         runtime = create_runtime(config, sid=sid)
 
     event_stream = runtime.event_stream
-    # restore cli session if enabled
+
+    # restore cli session if available
     initial_state = None
-    if config.enable_cli_session:
-        try:
-            logger.info(f'Restoring agent state from cli session {event_stream.sid}')
-            initial_state = State.restore_from_session(
-                event_stream.sid, event_stream.file_store
-            )
-        except Exception as e:
-            logger.info(f'Error restoring state: {e}')
+    try:
+        logger.debug(
+            f'Trying to restore agent state from cli session {event_stream.sid} if available'
+        )
+        initial_state = State.restore_from_session(
+            event_stream.sid, event_stream.file_store
+        )
+    except Exception as e:
+        logger.debug(f'Cannot restore agent state: {e}')
 
     # init controller with this initial state
     controller = AgentController(
@@ -159,7 +161,7 @@ async def run_controller(
     )
 
     # start event is a MessageAction with the task, either resumed or new
-    if config.enable_cli_session and initial_state is not None:
+    if initial_state is not None:
         # we're resuming the previous session
         event_stream.add_event(
             MessageAction(
@@ -170,7 +172,7 @@ async def run_controller(
             ),
             EventSource.USER,
         )
-    elif initial_state is None:
+    else:
         # init with the provided actions
         event_stream.add_event(initial_user_action, EventSource.USER)
 
@@ -197,7 +199,7 @@ async def run_controller(
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
 
     # save session when we're about to close
-    if config.enable_cli_session:
+    if config.file_store is not None and config.file_store != 'memory':
         end_state = controller.get_state()
         # NOTE: the saved state does not include delegates events
         end_state.save_to_session(event_stream.sid, event_stream.file_store)
