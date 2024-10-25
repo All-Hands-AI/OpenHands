@@ -41,7 +41,6 @@ class ModalLogBuffer(LogBuffer):
     """
 
     def __init__(self, sandbox: modal.Sandbox):
-        self.client_ready = False
         self.init_msg = 'Runtime client initialized.'
 
         self.buffer: list[str] = []

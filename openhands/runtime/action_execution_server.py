@@ -586,7 +586,5 @@ if __name__ == '__main__':
             logger.error(f'Error listing files: {e}', exc_info=True)
             return []
 
-    logger.debug('Runtime client initialized.')
-
     logger.debug(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)

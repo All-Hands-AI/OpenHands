@@ -50,7 +50,6 @@ class LogBuffer:
     """
 
     def __init__(self, container: docker.models.containers.Container):
-        self.client_ready = False
         self.init_msg = 'Runtime client initialized.'
 
         self.buffer: list[str] = []
@@ -84,8 +83,6 @@ class LogBuffer:
                 if log_line:
                     decoded_line = log_line.decode('utf-8').rstrip()
                     self.append(decoded_line)
-                    if self.init_msg in decoded_line:
-                        self.client_ready = True
         except Exception as e:
             logger.error(f'Error streaming docker logs: {e}')
 
@@ -212,7 +209,7 @@ class EventStreamRuntime(Runtime):
         else:
             self._attach_to_container()
 
-        logger.info('Waiting for client to become ready...')
+        logger.info(f'Waiting for client to become ready at {self.api_url}...')
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
         self._wait_until_alive()
         logger.info('Runtime is ready.')
@@ -377,7 +374,7 @@ class EventStreamRuntime(Runtime):
     )
     def _wait_until_alive(self):
         self._refresh_logs()
-        if not (self.log_buffer and self.log_buffer.client_ready):
+        if not self.log_buffer:
             raise RuntimeError('Runtime client is not ready.')
 
         response = send_request_with_retry(
