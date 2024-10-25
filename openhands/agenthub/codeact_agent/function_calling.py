@@ -326,7 +326,11 @@ def response_to_action(response: ModelResponse) -> Action:
         elif tool_call.function.name == 'execute_ipython_cell':
             action = IPythonRunCellAction(**json.loads(tool_call.function.arguments))
         elif tool_call.function.name == 'delegate_to_browsing_agent':
-            action = AgentDelegateAction(**json.loads(tool_call.function.arguments))
+            action = AgentDelegateAction(
+                agent='BrowsingAgent',
+                thought='',
+                inputs=json.loads(tool_call.function.arguments),
+            )
         elif tool_call.function.name == 'finish':
             action = AgentFinishAction()
         elif tool_call.function.name == 'edit_file':
