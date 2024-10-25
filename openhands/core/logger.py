@@ -82,6 +82,71 @@ file_formatter = logging.Formatter(
 llm_formatter = logging.Formatter('%(message)s')
 
 
+class RollingLogger:
+    max_lines: int
+    char_limit: int
+    log_lines: list[str]
+
+    def __init__(self, max_lines=10, char_limit=80):
+        self.max_lines = max_lines
+        self.char_limit = char_limit
+        self.log_lines = [''] * self.max_lines
+
+    def is_enabled(self):
+        return sys.stdout.isatty()
+
+    def start(self, message=''):
+        if not self.is_enabled():
+            return
+        if message:
+            self._write(message)
+        self._write('\n' * self.max_lines)
+        self._flush()
+
+    def add_line(self, line):
+        self.log_lines.pop(0)
+        self.log_lines.append(line[: self.char_limit])
+        self.print_lines()
+
+    def write_immediately(self, line):
+        self._write(line)
+        self._flush()
+
+    def print_lines(self):
+        """Display the last n log_lines in the console (not for file logging).
+        This will create the effect of a rolling display in the console.
+        """
+        self.move_back()
+        for line in self.log_lines:
+            self.replace_current_line(line)
+
+    def move_back(self, amount=-1):
+        """
+        '\033[F'    moves the cursor up one line.
+        """
+        if amount == -1:
+            amount = self.max_lines
+        self._write('\033[F' * (self.max_lines))
+        self._flush()
+
+    def replace_current_line(self, line=''):
+        """
+        '\033[2K\r' clears the line and moves the cursor to the beginning of the line.
+        """
+        self._write('\033[2K' + line + '\n')
+        self._flush()
+
+    def _write(self, line):
+        if not self.is_enabled():
+            return
+        sys.stdout.write(line)
+
+    def _flush(self):
+        if not self.is_enabled():
+            return
+        sys.stdout.flush()
+
+
 class SensitiveDataFilter(logging.Filter):
     def filter(self, record):
         # start with attributes

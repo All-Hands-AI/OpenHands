@@ -1,12 +1,12 @@
 import datetime
 import os
 import subprocess
-import sys
 import time
 
 import docker
 
 from openhands import __version__ as oh_version
+from openhands.core.logger import RollingLogger
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder.base import RuntimeBuilder
 
@@ -20,8 +20,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         if tuple(map(int, server_version.split('.'))) < (18, 9):
             raise RuntimeError('Docker server version must be >= 18.09 to use BuildKit')
 
-        self.max_lines = 10
-        self.log_lines = [''] * self.max_lines
+        self.rolling_logger = RollingLogger(max_lines=10)
 
     def build(
         self,
@@ -90,7 +89,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         buildx_cmd.append(path)  # must be last!
 
-        logger.debug('================ DOCKER BUILD STARTED ================')
+        self.rolling_logger.start(
+            '================ DOCKER BUILD STARTED ================'
+        )
 
         try:
             process = subprocess.Popen(
@@ -140,12 +141,12 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             logger.error(f'An unexpected error occurred during the build process: {e}')
             raise
 
-        logger.debug(f'Image [{target_image_hash_name}] build finished.')
+        logger.info(f'Image [{target_image_hash_name}] build finished.')
 
         if target_image_tag:
             image = self.docker_client.images.get(target_image_hash_name)
             image.tag(target_image_repo, target_image_tag)
-            logger.debug(
+            logger.info(
                 f'Re-tagged image [{target_image_hash_name}] with more generic tag [{target_image_tag}]'
             )
 
@@ -161,7 +162,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             if target_image_tag
             else target_image_hash_tag
         )
-        logger.debug(
+        logger.info(
             f'Image {target_image_repo} with tags [{tags_str}] built successfully'
         )
         return target_image_hash_name
@@ -223,21 +224,10 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 return False
 
     def _output_logs(self, new_line: str) -> None:
-        """Display the last 10 log_lines in the console (not for file logging).
-        This will create the effect of a rolling display in the console.
-
-        '\033[F'    moves the cursor up one line.
-        '\033[2K\r' clears the line and moves the cursor to the beginning of the line.
-        """
-        if not sys.stdout.isatty():
+        if not self.rolling_logger.is_enabled():
             logger.debug(new_line)
-            return
-
-        self.log_lines.pop(0)
-        self.log_lines.append(new_line[:80])
-
-        for line in self.log_lines:
-            logger.debug(line)
+        else:
+            self.rolling_logger.add_line(new_line)
 
     def _output_build_progress(
         self, current_line: dict, layers: dict, previous_layer_count: int
@@ -266,16 +256,25 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                         100 if layers[layer_id]['status'] == 'Download complete' else 0
                     )
 
-            for lid, layer_data in sorted(layers.items()):
-                status = layer_data['status']
-                progress = layer_data['progress']
-                if status == 'Download complete':
-                    logger.debug(f'Layer {lid}: Download complete')
-                elif status == 'Already exists':
-                    logger.debug(f'Layer {lid}: Already exists')
-                else:
-                    logger.debug(f'Layer {lid}: {progress} {status}')
-            if percentage != 0 and (
+            if self.rolling_logger.is_enabled():
+                self.rolling_logger.move_back(previous_layer_count)
+                for lid, layer_data in sorted(layers.items()):
+                    self.rolling_logger.replace_current_line()
+                    status = layer_data['status']
+                    progress = layer_data['progress']
+                    if status == 'Download complete':
+                        self.rolling_logger.write_immediately(
+                            f'Layer {lid}: Download complete'
+                        )
+                    elif status == 'Already exists':
+                        self.rolling_logger.write_immediately(
+                            f'Layer {lid}: Already exists'
+                        )
+                    else:
+                        self.rolling_logger.write_immediately(
+                            f'Layer {lid}: {progress} {status}'
+                        )
+            elif percentage != 0 and (
                 percentage - layers[layer_id]['last_logged'] >= 10 or percentage == 100
             ):
                 logger.debug(
