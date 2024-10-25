@@ -765,7 +765,7 @@ async def security_api(request: Request):
 @app.get('/api/zip-directory')
 async def zip_current_workspace(request: Request):
     try:
-        logger.info('Zipping workspace')
+        logger.debug('Zipping workspace')
         runtime: Runtime = request.state.conversation.runtime
 
         path = runtime.config.workspace_mount_path_in_sandbox
@@ -799,7 +799,7 @@ def github_callback(auth_code: AuthCode):
         'code': auth_code.code,
     }
 
-    logger.info('Exchanging code for GitHub token')
+    logger.debug('Exchanging code for GitHub token')
 
     headers = {'Accept': 'application/json'}
     response = requests.post(

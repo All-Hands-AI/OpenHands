@@ -62,7 +62,7 @@ def get_runtime_image_repo_and_tag(base_image: str) -> tuple[str, str]:
     """
 
     if get_runtime_image_repo() in base_image:
-        logger.info(
+        logger.debug(
             f'The provided image [{base_image}] is already a valid runtime image.\n'
             f'Will try to reuse it as is.'
         )
@@ -161,7 +161,7 @@ def build_runtime_image_in_folder(
     hash_image_name = f'{runtime_image_repo}:{hash_tag}'
 
     if force_rebuild:
-        logger.info(f'Force rebuild: [{runtime_image_repo}:{hash_tag}] from scratch.')
+        logger.debug(f'Force rebuild: [{runtime_image_repo}:{hash_tag}] from scratch.')
         prep_build_folder(build_folder, base_image, True, extra_deps)
         if not dry_run:
             _build_sandbox_image(
@@ -179,18 +179,18 @@ def build_runtime_image_in_folder(
 
     # If the exact image already exists, we do not need to build it
     if runtime_builder.image_exists(hash_image_name, False):
-        logger.info(f'Reusing Image [{hash_image_name}]')
+        logger.debug(f'Reusing Image [{hash_image_name}]')
         return hash_image_name
 
     # We look for an existing image that shares the same lock_tag. If such an image exists, we
     # can use it as the base image for the build and just copy source files. This makes the build
     # much faster.
     if runtime_builder.image_exists(lock_image_name):
-        logger.info(f'Build [{hash_image_name}] from [{lock_image_name}]')
+        logger.debug(f'Build [{hash_image_name}] from [{lock_image_name}]')
         build_from_scratch = False
         base_image = lock_image_name
     else:
-        logger.info(f'Build [{hash_image_name}] from scratch')
+        logger.debug(f'Build [{hash_image_name}] from scratch')
 
     prep_build_folder(build_folder, base_image, build_from_scratch, extra_deps)
     if not dry_run:
@@ -216,7 +216,7 @@ def prep_build_folder(
     # If package is not found, build from source code
     openhands_source_dir = Path(openhands.__file__).parent
     project_root = openhands_source_dir.parent
-    logger.info(f'Building source distribution using project root: {project_root}')
+    logger.debug(f'Building source distribution using project root: {project_root}')
 
     # Copy the 'openhands' directory (Source code)
     shutil.copytree(
@@ -340,14 +340,14 @@ if __name__ == '__main__':
         assert os.path.exists(
             build_folder
         ), f'Build folder {build_folder} does not exist'
-        logger.info(
+        logger.debug(
             f'Copying the source code and generating the Dockerfile in the build folder: {build_folder}'
         )
 
         runtime_image_repo, runtime_image_tag = get_runtime_image_repo_and_tag(
             args.base_image
         )
-        logger.info(
+        logger.debug(
             f'Runtime image repo: {runtime_image_repo} and runtime image tag: {runtime_image_tag}'
         )
 
@@ -369,7 +369,7 @@ if __name__ == '__main__':
 
             # Move contents of temp_dir to build_folder
             shutil.copytree(temp_dir, build_folder, dirs_exist_ok=True)
-        logger.info(
+        logger.debug(
             f'Build folder [{build_folder}] is ready: {os.listdir(build_folder)}'
         )
 
@@ -383,16 +383,16 @@ if __name__ == '__main__':
                     f'DOCKER_IMAGE_HASH_TAG={runtime_image_hash_tag}\n'
                 )
             )
-        logger.info(
+        logger.debug(
             f'`config.sh` is updated with the image repo[{runtime_image_repo}] and tags [{runtime_image_tag}, {runtime_image_hash_tag}]'
         )
-        logger.info(
+        logger.debug(
             f'Dockerfile, source code and config.sh are ready in {build_folder}'
         )
     else:
         # If a build_folder is not provided, after copying the required source code and dynamically creating the
         # Dockerfile, we actually build the Docker image
-        logger.info('Building image in a temporary folder')
+        logger.debug('Building image in a temporary folder')
         docker_builder = DockerRuntimeBuilder(docker.from_env())
         image_name = build_runtime_image(
             args.base_image, docker_builder, platform=args.platform

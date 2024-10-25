@@ -157,12 +157,12 @@ class AgentController:
     async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
 
-        logger.info(f'[Agent Controller {self.id}] Starting step loop...')
+        logger.debug(f'[Agent Controller {self.id}] Starting step loop...')
         while should_continue():
             try:
                 await self._step()
             except asyncio.CancelledError:
-                logger.info('AgentController task was cancelled')
+                logger.debug('AgentController task was cancelled')
                 break
             except Exception as e:
                 traceback.print_exc()
@@ -236,7 +236,7 @@ class AgentController:
             observation_to_print.content = truncate_content(
                 observation_to_print.content, self.agent.llm.config.max_message_chars
             )
-        logger.info(observation_to_print, extra={'msg_type': 'OBSERVATION'})
+        logger.debug(observation_to_print, extra={'msg_type': 'OBSERVATION'})
 
         # Merge with the metrics from the LLM - it will to synced to the controller's local metrics in update_state_after_step()
         if observation.llm_metrics is not None:
@@ -271,7 +271,7 @@ class AgentController:
             action (MessageAction): The message action to handle.
         """
         if action.source == EventSource.USER:
-            logger.info(
+            logger.debug(
                 action, extra={'msg_type': 'ACTION', 'event_source': EventSource.USER}
             )
             if self.get_agent_state() != AgentState.RUNNING:
@@ -383,7 +383,7 @@ class AgentController:
             # global metrics should be shared between parent and child
             metrics=self.state.metrics,
         )
-        logger.info(
+        logger.debug(
             f'[Agent Controller {self.id}]: start delegate, creating agent {delegate_agent.name} using LLM {llm}'
         )
         self.delegate = AgentController(
@@ -418,7 +418,7 @@ class AgentController:
                 await self._delegate_step()
             return
 
-        logger.info(
+        logger.debug(
             f'{self.agent.name} LEVEL {self.state.delegate_level} LOCAL STEP {self.state.local_iteration} GLOBAL STEP {self.state.iteration}',
             extra={'msg_type': 'STEP'},
         )
@@ -469,7 +469,7 @@ class AgentController:
             self.event_stream.add_event(action, EventSource.AGENT)
 
         await self.update_state_after_step()
-        logger.info(action, extra={'msg_type': 'ACTION'})
+        logger.debug(action, extra={'msg_type': 'ACTION'})
 
         if self._is_stuck():
             # This need to go BEFORE report_error to sync metrics
@@ -495,7 +495,7 @@ class AgentController:
 
             await self.report_error('Delegator agent encountered an error')
         elif delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
-            logger.info(
+            logger.debug(
                 f'[Agent Controller {self.id}] Delegate agent has finished execution'
             )
             # retrieve delegate result
@@ -537,7 +537,9 @@ class AgentController:
         """
         stop_step = False
         if self.state.traffic_control_state == TrafficControlState.PAUSED:
-            logger.info('Hitting traffic control, temporarily resume upon user request')
+            logger.debug(
+                'Hitting traffic control, temporarily resume upon user request'
+            )
             self.state.traffic_control_state = TrafficControlState.NORMAL
         else:
             self.state.traffic_control_state = TrafficControlState.THROTTLING

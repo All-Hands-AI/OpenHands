@@ -170,7 +170,7 @@ openhands_logger.setLevel(current_log_level)
 
 if current_log_level == logging.DEBUG:
     LOG_TO_FILE = True
-    openhands_logger.info('DEBUG mode enabled.')
+    openhands_logger.debug('DEBUG mode enabled.')
 
 openhands_logger.addHandler(get_console_handler(current_log_level))
 openhands_logger.addFilter(SensitiveDataFilter(openhands_logger.name))
@@ -187,7 +187,7 @@ if LOG_TO_FILE:
     openhands_logger.addHandler(
         get_file_handler(LOG_DIR, current_log_level)
     )  # default log to project root
-    openhands_logger.info(f'Logging to file in: {LOG_DIR}')
+    openhands_logger.debug(f'Logging to file in: {LOG_DIR}')
 
 # Exclude LiteLLM from logging output
 logging.getLogger('LiteLLM').disabled = True

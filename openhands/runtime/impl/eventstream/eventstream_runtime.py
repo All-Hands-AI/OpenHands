@@ -193,7 +193,7 @@ class EventStreamRuntime(Runtime):
                     raise ValueError(
                         'Neither runtime container image nor base container image is set'
                     )
-                logger.info('Preparing container, this might take a few minutes...')
+                logger.debug('Preparing container, this might take a few minutes...')
                 self.send_status_message('STATUS$STARTING_CONTAINER')
                 self.runtime_container_image = build_runtime_image(
                     self.base_container_image,
@@ -212,14 +212,14 @@ class EventStreamRuntime(Runtime):
         else:
             self._attach_to_container()
 
-        logger.info('Waiting for client to become ready...')
+        logger.debug('Waiting for client to become ready...')
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
         self._wait_until_alive()
 
         if not self.attach_to_existing:
             self.setup_initial_env()
 
-        logger.info(
+        logger.debug(
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
         )
         self.send_status_message(' ')
@@ -246,7 +246,7 @@ class EventStreamRuntime(Runtime):
         plugins: list[PluginRequirement] | None = None,
     ):
         try:
-            logger.info('Preparing to start container...')
+            logger.debug('Preparing to start container...')
             self.send_status_message('STATUS$PREPARING_CONTAINER')
             plugin_arg = ''
             if plugins is not None and len(plugins) > 0:
@@ -325,7 +325,7 @@ class EventStreamRuntime(Runtime):
                 volumes=volumes,
             )
             self.log_buffer = LogBuffer(self.container)
-            logger.info(f'Container started. Server url: {self.api_url}')
+            logger.debug(f'Container started. Server url: {self.api_url}')
             self.send_status_message('STATUS$CONTAINER_STARTED')
         except Exception as e:
             logger.error(
@@ -345,7 +345,7 @@ class EventStreamRuntime(Runtime):
             break
         self._host_port = self._container_port
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
-        logger.info(
+        logger.debug(
             f'attached to container: {self.container_name} {self._container_port} {self.api_url}'
         )
 
@@ -359,7 +359,7 @@ class EventStreamRuntime(Runtime):
         logs = self.log_buffer.get_and_clear()
         if logs:
             formatted_logs = '\n'.join([f'    |{log}' for log in logs])
-            logger.info(
+            logger.debug(
                 '\n'
                 + '-' * 35
                 + 'Container logs:'
@@ -575,7 +575,7 @@ class EventStreamRuntime(Runtime):
         finally:
             if recursive:
                 os.unlink(temp_zip_path)
-            logger.info(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
+            logger.debug(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
             self._refresh_logs()
 
     def list_files(self, path: str | None = None) -> list[str]:

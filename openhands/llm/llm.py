@@ -319,7 +319,7 @@ class LLM(RetryMixin, DebugMixin):
 
         # log the stats
         if stats:
-            logger.info(stats)
+            logger.debug(stats)
 
     def get_token_count(self, messages):
         """Get the number of tokens in a list of messages.
@@ -373,7 +373,7 @@ class LLM(RetryMixin, DebugMixin):
                 input_cost_per_token=self.config.input_cost_per_token,
                 output_cost_per_token=self.config.output_cost_per_token,
             )
-            logger.info(f'Using custom cost per token: {cost_per_token}')
+            logger.debug(f'Using custom cost per token: {cost_per_token}')
             extra_kwargs['custom_cost_per_token'] = cost_per_token
 
         if not self._is_local():

@@ -143,12 +143,12 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             logger.error(f'An unexpected error occurred during the build process: {e}')
             raise
 
-        logger.info(f'Image [{target_image_hash_name}] build finished.')
+        logger.debug(f'Image [{target_image_hash_name}] build finished.')
 
         if target_image_tag:
             image = self.docker_client.images.get(target_image_hash_name)
             image.tag(target_image_repo, target_image_tag)
-            logger.info(
+            logger.debug(
                 f'Re-tagged image [{target_image_hash_name}] with more generic tag [{target_image_tag}]'
             )
 
@@ -164,7 +164,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             if target_image_tag
             else target_image_hash_tag
         )
-        logger.info(
+        logger.debug(
             f'Image {target_image_repo} with tags [{tags_str}] built successfully'
         )
         return target_image_hash_name

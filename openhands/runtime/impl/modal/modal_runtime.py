@@ -128,7 +128,7 @@ class ModalRuntime(EventStreamRuntime):
     async def connect(self):
         self.send_status_message('STATUS$STARTING_RUNTIME')
 
-        logger.info(f'ModalRuntime `{self.sid}`')
+        logger.debug(f'ModalRuntime `{self.sid}`')
 
         self.image = self._get_image_definition(
             self.base_container_image_id,
@@ -139,7 +139,7 @@ class ModalRuntime(EventStreamRuntime):
         if self.attach_to_existing:
             if self.sid in MODAL_RUNTIME_IDS:
                 sandbox_id = MODAL_RUNTIME_IDS[self.sid]
-                logger.info(f'Attaching to existing Modal sandbox: {sandbox_id}')
+                logger.debug(f'Attaching to existing Modal sandbox: {sandbox_id}')
                 self.sandbox = modal.Sandbox.from_id(
                     sandbox_id, client=self.modal_client
                 )
@@ -158,10 +158,10 @@ class ModalRuntime(EventStreamRuntime):
             raise Exception('Sandbox not initialized')
         tunnel = self.sandbox.tunnels()[self.container_port]
         self.api_url = tunnel.url
-        logger.info(f'Container started. Server url: {self.api_url}')
+        logger.debug(f'Container started. Server url: {self.api_url}')
 
         if not self.attach_to_existing:
-            logger.info('Waiting for client to become ready...')
+            logger.debug('Waiting for client to become ready...')
             self.send_status_message('STATUS$WAITING_FOR_CLIENT')
 
         self._wait_until_alive()
@@ -218,7 +218,7 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
         plugins: list[PluginRequirement] | None = None,
     ):
         try:
-            logger.info('Preparing to start container...')
+            logger.debug('Preparing to start container...')
             plugin_args = []
             if plugins is not None and len(plugins) > 0:
                 plugin_args.append('--plugins')
@@ -262,7 +262,7 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
                 timeout=60 * 60,
             )
             MODAL_RUNTIME_IDS[self.sid] = self.sandbox.object_id
-            logger.info('Container started')
+            logger.debug('Container started')
 
         except Exception as e:
             logger.error(f'Error: Instance {self.sid} FAILED to start container!\n')
