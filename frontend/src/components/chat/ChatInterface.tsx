@@ -14,12 +14,11 @@ import { I18nKey } from "#/i18n/declaration";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import FeedbackModal from "../modals/feedback/FeedbackModal";
 import { useSocket } from "#/context/socket";
-import ThumbsUpIcon from "#/assets/thumbs-up.svg?react";
-import ThumbsDownIcon from "#/assets/thumbs-down.svg?react";
 import { cn } from "#/utils/utils";
 import { InteractiveChatBox } from "../interactive-chat-box";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { generateAgentStateChangeEvent } from "#/services/agentStateService";
+import { FeedbackActions } from "../feedback-actions";
 
 interface ScrollButtonProps {
   onClick: () => void;
@@ -110,31 +109,13 @@ function ChatInterface() {
       </div>
 
       <div className="px-4 pb-4">
+        {feedbackShared !== messages.length && messages.length > 3 && (
+          <FeedbackActions
+            onPositiveFeedback={() => shareFeedback("positive")}
+            onNegativeFeedback={() => shareFeedback("negative")}
+          />
+        )}
         <div className="relative">
-          {feedbackShared !== messages.length && messages.length > 3 && (
-            <div
-              className={cn(
-                "flex justify-start gap-[7px]",
-                "absolute left-3 bottom-[6.5px]",
-              )}
-            >
-              <button
-                type="button"
-                onClick={() => shareFeedback("positive")}
-                className="p-1 bg-neutral-700 border border-neutral-600 rounded"
-              >
-                <ThumbsUpIcon width={15} height={15} />
-              </button>
-              <button
-                type="button"
-                onClick={() => shareFeedback("negative")}
-                className="p-1 bg-neutral-700 border border-neutral-600 rounded"
-              >
-                <ThumbsDownIcon width={15} height={15} />
-              </button>
-            </div>
-          )}
-
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-[6.5px]">
             {!hitBottom && (
               <ScrollButton
