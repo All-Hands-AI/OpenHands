@@ -855,8 +855,6 @@ def authenticate(user: User | None = None):
                 status_code=status.HTTP_403_FORBIDDEN,
                 content={'error': 'User not on waitlist'},
             )
-    else:
-        logger.warning("No GitHub user list available for authentication.")
 
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={'message': 'User authenticated'}
