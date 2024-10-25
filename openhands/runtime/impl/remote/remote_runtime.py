@@ -318,7 +318,7 @@ class RemoteRuntime(Runtime):
             raise RuntimeError(msg)
 
     def close(self, timeout: int = 10):
-        if self.config.sandbox.keep_remote_runtime_alive:
+        if self.config.sandbox.keep_remote_runtime_alive or self.attach_to_existing:
             self.session.close()
             return
         if self.runtime_id:

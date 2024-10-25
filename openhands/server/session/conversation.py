@@ -37,3 +37,6 @@ class Conversation:
 
     async def connect(self):
         await self.runtime.connect()
+
+    async def disconnect(self):
+        self.runtime.close()
