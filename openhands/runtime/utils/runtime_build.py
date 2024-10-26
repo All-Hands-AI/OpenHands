@@ -167,14 +167,14 @@ def build_runtime_image_in_folder(
     lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image)}'
     versioned_tag = (
         # truncate the base image to 96 characters to fit in the tag max length (128 characters)
-        f"oh_v{oh_version}_{base_image.replace('/', '_s_').replace(':', '_t_').lower()[-96:]}"
+        f'oh_v{oh_version}_{get_tag_for_versioned_image(base_image)}'
     )
     versioned_image_name = f'{runtime_image_repo}:{versioned_tag}'
-    hash_tag = f'{lock_tag}_{get_hash_for_source_files()}'
-    hash_image_name = f'{runtime_image_repo}:{hash_tag}'
+    source_tag = f'{lock_tag}_{get_hash_for_source_files()}'
+    hash_image_name = f'{runtime_image_repo}:{source_tag}'
 
     if force_rebuild:
-        logger.info(f'Force rebuild: [{runtime_image_repo}:{hash_tag}] from scratch.')
+        logger.info(f'Force rebuild: [{runtime_image_repo}:{source_tag}] from scratch.')
         prep_build_folder(
             build_folder,
             base_image,
@@ -186,7 +186,7 @@ def build_runtime_image_in_folder(
                 build_folder,
                 runtime_builder,
                 runtime_image_repo,
-                hash_tag,
+                source_tag,
                 lock_tag,
                 versioned_tag,
                 platform,
@@ -223,7 +223,7 @@ def build_runtime_image_in_folder(
             build_folder,
             runtime_builder,
             runtime_image_repo,
-            hash_tag=hash_tag,
+            source_tag=source_tag,
             lock_tag=lock_tag,
             # Only tag the versioned image if we are building from scratch.
             # This avoids too much layers when you lay one image on top of another multiple times
@@ -307,6 +307,10 @@ def get_hash_for_lock_files(base_image: str):
     return result
 
 
+def get_tag_for_versioned_image(base_image: str):
+    return base_image.replace('/', '_s_').replace(':', '_t_').lower()[-96:]
+
+
 def get_hash_for_source_files():
     openhands_source_dir = Path(openhands.__file__).parent
     dir_hash = dirhash(
@@ -328,14 +332,14 @@ def _build_sandbox_image(
     build_folder: Path,
     runtime_builder: RuntimeBuilder,
     runtime_image_repo: str,
-    hash_tag: str,
+    source_tag: str,
     lock_tag: str,
     versioned_tag: str | None,
     platform: str | None = None,
 ):
     """Build and tag the sandbox image. The image will be tagged with all tags that do not yet exist"""
     names = [
-        f'{runtime_image_repo}:{hash_tag}',
+        f'{runtime_image_repo}:{source_tag}',
         f'{runtime_image_repo}:{lock_tag}',
     ]
     if versioned_tag is not None:
@@ -392,8 +396,8 @@ if __name__ == '__main__':
                 platform=args.platform,
             )
 
-            _runtime_image_repo, runtime_image_hash_tag = runtime_image_hash_name.split(
-                ':'
+            _runtime_image_repo, runtime_image_source_tag = (
+                runtime_image_hash_name.split(':')
             )
 
             # Move contents of temp_dir to build_folder
@@ -409,11 +413,11 @@ if __name__ == '__main__':
                 (
                     f'\n'
                     f'DOCKER_IMAGE_TAG={runtime_image_tag}\n'
-                    f'DOCKER_IMAGE_HASH_TAG={runtime_image_hash_tag}\n'
+                    f'DOCKER_IMAGE_SOURCE_TAG={runtime_image_source_tag}\n'
                 )
             )
         logger.info(
-            f'`config.sh` is updated with the image repo[{runtime_image_repo}] and tags [{runtime_image_tag}, {runtime_image_hash_tag}]'
+            f'`config.sh` is updated with the image repo[{runtime_image_repo}] and tags [{runtime_image_tag}, {runtime_image_source_tag}]'
         )
         logger.info(
             f'Dockerfile, source code and config.sh are ready in {build_folder}'
