@@ -165,7 +165,9 @@ def build_runtime_image_in_folder(
 ) -> str:
     runtime_image_repo, _ = get_runtime_image_repo_and_tag(base_image)
     lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image)}'
-    versioned_tag = f'oh_v{oh_version}_{base_image.replace('/', '_s_').lower()}'
+    versioned_tag = (
+        f'oh_v{oh_version}_{base_image.replace('/', '_s_').replace(':', '_t_').lower()}'
+    )
     versioned_image_name = f'{runtime_image_repo}:{versioned_tag}'
     hash_tag = f'{lock_tag}_{get_hash_for_source_files()}'
     hash_image_name = f'{runtime_image_repo}:{hash_tag}'
