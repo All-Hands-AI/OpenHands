@@ -11,7 +11,7 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.action.agent import AgentFinishAction
-from openhands.events.observation import ErrorObservation, FatalErrorObservation
+from openhands.events.observation import ErrorObservation
 from openhands.llm.metrics import Metrics
 from openhands.memory.history import ShortTermHistory
 from openhands.storage.files import FileStore
@@ -156,9 +156,7 @@ class State:
 
     def get_last_error(self) -> str:
         for event in self.history.get_events(reverse=True):
-            if isinstance(event, ErrorObservation) or isinstance(
-                event, FatalErrorObservation
-            ):
+            if isinstance(event, ErrorObservation):
                 return event.content
         return ''
 

@@ -13,7 +13,6 @@ from openhands.events.action import (
 )
 from openhands.events.observation import (
     ErrorObservation,
-    FatalErrorObservation,
     FileEditObservation,
     FileReadObservation,
     FileWriteObservation,
@@ -214,8 +213,9 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             if isinstance(obs, ErrorObservation):
                 return obs
             if not isinstance(obs, FileWriteObservation):
-                return FatalErrorObservation(
-                    f'Fatal Runtime in editing: Expected FileWriteObservation, got {type(obs)}: {str(obs)}'
+                return ErrorObservation(
+                    f'Fatal Runtime in editing: Expected FileWriteObservation, got {type(obs)}: {str(obs)}',
+                    fatal=True,
                 )
             return FileEditObservation(
                 content=get_diff('', action.content, action.path),
@@ -225,8 +225,9 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 new_content=action.content,
             )
         if not isinstance(obs, FileReadObservation):
-            return FatalErrorObservation(
-                f'Fatal Runtime in editing: Expected FileReadObservation, got {type(obs)}: {str(obs)}'
+            return ErrorObservation(
+                f'Fatal Runtime in editing: Expected FileReadObservation, got {type(obs)}: {str(obs)}',
+                fatal=True,
             )
 
         original_file_content = obs.content

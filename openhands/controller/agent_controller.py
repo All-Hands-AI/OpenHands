@@ -36,7 +36,6 @@ from openhands.events.observation import (
     AgentDelegateObservation,
     AgentStateChangedObservation,
     ErrorObservation,
-    FatalErrorObservation,
     Observation,
 )
 from openhands.events.serialization.event import truncate_content
@@ -237,11 +236,10 @@ class AgentController:
         if isinstance(observation, AgentDelegateObservation):
             self.state.history.on_event(observation)
         elif isinstance(observation, ErrorObservation):
+            if observation.fatal:
+                await self.set_agent_state_to(AgentState.ERROR)
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
-        elif isinstance(observation, FatalErrorObservation):
-            await self.set_agent_state_to(AgentState.ERROR)
-            self.state.metrics.merge(self.state.local_metrics)
 
     async def _handle_message_action(self, action: MessageAction):
         """Handles message actions from the event stream.

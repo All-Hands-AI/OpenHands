@@ -22,7 +22,7 @@ from openhands.events.action import (
 )
 from openhands.events.action.action import Action
 from openhands.events.observation import (
-    FatalErrorObservation,
+    ErrorObservation,
     NullObservation,
     Observation,
 )
@@ -351,12 +351,14 @@ class RemoteRuntime(Runtime):
                 return NullObservation('')
             action_type = action.action  # type: ignore[attr-defined]
             if action_type not in ACTION_TYPE_TO_CLASS:
-                return FatalErrorObservation(
-                    f'[Runtime (ID={self.runtime_id})] Action {action_type} does not exist.'
+                return ErrorObservation(
+                    f'[Runtime (ID={self.runtime_id})] Action {action_type} does not exist.',
+                    fatal=True,
                 )
             if not hasattr(self, action_type):
-                return FatalErrorObservation(
-                    f'[Runtime (ID={self.runtime_id})] Action {action_type} is not supported in the current runtime.'
+                return ErrorObservation(
+                    f'[Runtime (ID={self.runtime_id})] Action {action_type} is not supported in the current runtime.',
+                    fatal=True,
                 )
 
             assert action.timeout is not None
@@ -379,18 +381,20 @@ class RemoteRuntime(Runtime):
                 else:
                     error_message = response.text
                     logger.error(f'Error from server: {error_message}')
-                    obs = FatalErrorObservation(
-                        f'Action execution failed: {error_message}'
+                    obs = ErrorObservation(
+                        f'Action execution failed: {error_message}', fatal=True
                     )
             except Timeout:
                 logger.error('No response received within the timeout period.')
-                obs = FatalErrorObservation(
-                    f'[Runtime (ID={self.runtime_id})] Action execution timed out'
+                obs = ErrorObservation(
+                    f'[Runtime (ID={self.runtime_id})] Action execution timed out',
+                    fatal=True,
                 )
             except Exception as e:
                 logger.error(f'Error during action execution: {e}')
-                obs = FatalErrorObservation(
-                    f'[Runtime (ID={self.runtime_id})] Action execution failed: {str(e)}'
+                obs = ErrorObservation(
+                    f'[Runtime (ID={self.runtime_id})] Action execution failed: {str(e)}',
+                    fatal=True,
                 )
             return obs
 
