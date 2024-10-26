@@ -146,7 +146,6 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
 
     fatal_error_obs = FatalErrorObservation('Fatal error detected')
     fatal_error_obs._cause = event.id
-    fatal_error_obs.trigger_by_llm_response = event.trigger_by_llm_response
 
     runtime = MagicMock(spec=Runtime)
 
