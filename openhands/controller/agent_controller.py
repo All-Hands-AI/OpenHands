@@ -286,8 +286,6 @@ class AgentController:
 
         if isinstance(observation, CmdOutputObservation):
             return
-        elif isinstance(observation, AgentDelegateObservation):
-            self._handle_delegate_observation(observation)
         elif isinstance(observation, ErrorObservation):
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
@@ -312,56 +310,6 @@ class AgentController:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
             await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
-
-    def _handle_delegate_observation(self, observation: Observation):
-        """Handles delegate observations from the event stream.
-
-        Args:
-            observation (Observation): The observation to handle.
-        """
-        if not isinstance(observation, AgentDelegateObservation):
-            return
-
-        logger.debug('AgentDelegateObservation received')
-
-        # define the end_id based on the current observation
-        delegate_end = observation.id
-        if delegate_end <= 0:
-            logger.error(
-                f'The id of the AgentDelegateObservation is not valid: {delegate_end}'
-            )
-            return
-
-        # define the start_id by searching for the corresponding AgentDelegateAction
-        delegate_start = -1
-        delegate_agent: str = ''
-        delegate_task: str = ''
-
-        # search through events in reverse to find the AgentDelegateAction
-        for prev_event in self.event_stream.get_events(
-            end_id=observation.id - 1, reverse=True
-        ):
-            # retrieve the last AgentDelegateAction before this observation
-            if isinstance(prev_event, AgentDelegateAction):
-                delegate_start = prev_event.id
-                delegate_agent = prev_event.agent
-                delegate_task = prev_event.inputs.get('task', '')
-                break
-
-        if delegate_start == -1:
-            logger.error(
-                f'No AgentDelegateAction found for AgentDelegateObservation with id={delegate_end}'
-            )
-            return
-
-        # add the event ids to the delegates dictionary
-        self.state.delegates[(delegate_start, delegate_end)] = (
-            delegate_agent,
-            delegate_task,
-        )
-        logger.debug(
-            f'Delegate {delegate_agent} with task {delegate_task} ran from id={delegate_start} to id={delegate_end}'
-        )
 
     def reset_task(self):
         """Resets the agent's task."""
