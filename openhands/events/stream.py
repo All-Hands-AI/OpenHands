@@ -138,6 +138,10 @@ class EventStream:
             asyncio.run(self.async_add_event(event, source))
 
     async def async_add_event(self, event: Event, source: EventSource):
+        if event._id is not None:  # type: ignore [attr-defined]
+            raise ValueError(
+                'Event already has an ID. It was probably added back to the EventStream from inside a handler, trigging a loop.'
+            )
         with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1
