@@ -11,6 +11,7 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.action.agent import AgentFinishAction
+from openhands.events.observation import ErrorObservation, FatalErrorObservation
 from openhands.llm.metrics import Metrics
 from openhands.memory.history import ShortTermHistory
 from openhands.storage.files import FileStore
@@ -80,7 +81,6 @@ class State:
     history: ShortTermHistory = field(default_factory=ShortTermHistory)
     inputs: dict = field(default_factory=dict)
     outputs: dict = field(default_factory=dict)
-    last_error: str | None = None
     agent_state: AgentState = AgentState.LOADING
     resume_state: AgentState | None = None
     traffic_control_state: TrafficControlState = TrafficControlState.NORMAL
@@ -124,9 +124,6 @@ class State:
         else:
             state.resume_state = None
 
-        # don't carry last_error anymore after restore
-        state.last_error = None
-
         # first state after restore
         state.agent_state = AgentState.LOADING
         return state
@@ -156,6 +153,14 @@ class State:
         self.history.end_id = self.end_id
 
         # remove the restored data from the state if any
+
+    def get_last_error(self) -> str:
+        for event in self.history.get_events(reverse=True):
+            if isinstance(event, ErrorObservation) or isinstance(
+                event, FatalErrorObservation
+            ):
+                return event.content
+        return ''
 
     def get_current_user_intent(self):
         """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""

@@ -402,10 +402,10 @@ def process_instance(
 
         # if fatal error, throw EvalError to trigger re-run
         if (
-            state.last_error
-            and 'fatal error during agent execution' in state.last_error
+            state.get_last_error()
+            and 'fatal error during agent execution' in state.get_last_error()
         ):
-            raise EvalException('Fatal error detected: ' + state.last_error)
+            raise EvalException('Fatal error detected: ' + state.get_last_error())
 
         # ======= THIS IS SWE-Bench specific =======
         # Get git patch
@@ -442,7 +442,7 @@ def process_instance(
         metadata=metadata,
         history=histories,
         metrics=metrics,
-        error=state.last_error if state and state.last_error else None,
+        error=state.get_last_error() if state and state.get_last_error() else None,
     )
     return output
 

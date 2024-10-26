@@ -212,7 +212,7 @@ def process_instance(
         metadata=metadata,
         history=histories,
         metrics=metrics,
-        error=state.last_error if state and state.last_error else None,
+        error=state.get_last_error() if state and state.get_last_error() else None,
         test_result={
             'success': task_state.success if task_state else False,
         },
