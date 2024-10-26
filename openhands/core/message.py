@@ -67,13 +67,23 @@ class Message(BaseModel):
     @model_serializer
     def serialize_model(self) -> dict:
         content: list[dict] = []
+        role_tool_with_prompt_caching = False
         for item in self.content:
+            d = item.model_dump()
+            # We have to remove cache_prompt for tool content and move it up to the message level
+            # See discussion here for details: https://github.com/BerriAI/litellm/issues/6422#issuecomment-2438765472
+            if self.role == 'tool' and item.cache_prompt:
+                role_tool_with_prompt_caching = True
+                d.pop('cache_control')
             if isinstance(item, TextContent):
-                content.append(item.model_dump())
+                content.append(d)
             elif isinstance(item, ImageContent) and self.vision_enabled:
-                content.extend(item.model_dump())
+                content.extend(d)
 
         ret: dict = {'content': content, 'role': self.role}
+
+        if role_tool_with_prompt_caching:
+            ret['cache_control'] = {'type': 'ephemeral'}
 
         if self.tool_call_id is not None:
             assert (
