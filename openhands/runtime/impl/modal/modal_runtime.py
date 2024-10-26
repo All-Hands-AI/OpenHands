@@ -18,6 +18,7 @@ from openhands.runtime.impl.eventstream.eventstream_runtime import (
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
 from openhands.runtime.utils.runtime_build import (
+    BuildFromImageType,
     prep_build_folder,
 )
 from openhands.utils.async_utils import call_sync_from_async
@@ -183,7 +184,7 @@ class ModalRuntime(EventStreamRuntime):
             prep_build_folder(
                 build_folder=Path(build_folder),
                 base_image=base_container_image_id,
-                build_from_scratch=True,
+                build_from=BuildFromImageType.SCRATCH,
                 extra_deps=runtime_extra_deps,
             )
 
