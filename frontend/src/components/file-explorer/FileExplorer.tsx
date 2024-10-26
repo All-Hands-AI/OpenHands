@@ -20,6 +20,7 @@ import { I18nKey } from "#/i18n/declaration";
 import OpenHands from "#/api/open-hands";
 import { useFiles } from "#/context/files";
 import { isOpenHandsErrorResponse } from "#/api/open-hands.utils";
+import { debounce } from "lodash";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
@@ -97,7 +98,7 @@ interface FileExplorerProps {
 function FileExplorer({ error }: FileExplorerProps) {
   const { revalidate } = useRevalidator();
 
-  const { paths, setPaths } = useFiles();
+  const { paths, setPaths, setSelectedPath } = useFiles();
   const [isHidden, setIsHidden] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
 
@@ -175,6 +176,11 @@ function FileExplorer({ error }: FileExplorerProps) {
   React.useEffect(() => {
     refreshWorkspace();
   }, [curAgentState]);
+
+  const debouncedSetSelectedPath = React.useMemo(
+    () => debounce(setSelectedPath, 300),
+    [setSelectedPath]
+  );
 
   return (
     <div

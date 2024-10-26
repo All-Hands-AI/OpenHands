@@ -10,6 +10,7 @@ import { useSocket } from "#/context/socket";
 import CodeEditorCompoonent from "./code-editor-component";
 import { useFiles } from "#/context/files";
 import { EditorActions } from "#/components/editor-actions";
+import { debounce } from "lodash";
 
 export const clientLoader = async () => {
   const token = localStorage.getItem("token");
@@ -36,6 +37,7 @@ function CodeEditor() {
     modifiedFiles,
     saveFileContent: saveNewFileContent,
     discardChanges,
+    setSelectedPath,
   } = useFiles();
 
   const [errors, setErrors] = React.useState<{ getFiles: string | null }>({
@@ -83,6 +85,11 @@ function CodeEditor() {
   const handleDiscard = () => {
     if (selectedPath) discardChanges(selectedPath);
   };
+
+  const debouncedSetSelectedPath = React.useMemo(
+    () => debounce(setSelectedPath, 300),
+    [setSelectedPath]
+  );
 
   return (
     <div className="flex h-full w-full bg-neutral-900 relative">

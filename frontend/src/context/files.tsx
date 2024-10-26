@@ -1,4 +1,5 @@
 import React from "react";
+import { debounce } from "lodash";
 
 interface FilesContextType {
   /**
@@ -84,6 +85,11 @@ function FilesProvider({ children }: FilesProviderProps) {
     [files, modifiedFiles, selectedPath, discardChanges],
   );
 
+  const debouncedSetSelectedPath = React.useMemo(
+    () => debounce(setSelectedPath, 300),
+    [setSelectedPath]
+  );
+
   const value = React.useMemo(
     () => ({
       paths,
@@ -91,7 +97,7 @@ function FilesProvider({ children }: FilesProviderProps) {
       files,
       setFileContent,
       selectedPath,
-      setSelectedPath,
+      setSelectedPath: debouncedSetSelectedPath,
       modifiedFiles,
       modifyFileContent,
       saveFileContent,
@@ -103,7 +109,7 @@ function FilesProvider({ children }: FilesProviderProps) {
       files,
       setFileContent,
       selectedPath,
-      setSelectedPath,
+      debouncedSetSelectedPath,
       modifiedFiles,
       modifyFileContent,
       saveFileContent,
