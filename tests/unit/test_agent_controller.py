@@ -87,7 +87,7 @@ async def test_on_event_change_agent_state_action(mock_agent, mock_event_stream)
 
 
 @pytest.mark.asyncio
-async def test_report_error(mock_agent, mock_event_stream):
+async def test__react_to_error(mock_agent, mock_event_stream):
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
@@ -97,7 +97,7 @@ async def test_report_error(mock_agent, mock_event_stream):
         headless_mode=True,
     )
     error_message = 'Test error'
-    await controller.report_error(error_message)
+    await controller._react_to_error(error_message)
     assert controller.state.last_error == error_message
     controller.event_stream.add_event.assert_called_once()
     await controller.close()
@@ -114,12 +114,12 @@ async def test_step_with_exception(mock_agent, mock_event_stream):
         headless_mode=True,
     )
     controller.state.agent_state = AgentState.RUNNING
-    controller.report_error = AsyncMock()
+    controller._react_to_error = AsyncMock()
     controller.agent.step.side_effect = LLMMalformedActionError('Malformed action')
     await controller._step()
 
-    # Verify that report_error was called with the correct error message
-    controller.report_error.assert_called_once_with('Malformed action')
+    # Verify that _react_to_error was called with the correct error message
+    controller._react_to_error.assert_called_once_with('Malformed action')
     await controller.close()
 
 
