@@ -167,7 +167,7 @@ def build_runtime_image_in_folder(
     lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image)}'
     versioned_tag = (
         # truncate the base image to 96 characters to fit in the tag max length (128 characters)
-        f'oh_v{oh_version}_{base_image.replace('/', '_s_').replace(':', '_t_').lower()[-96:]}'
+        f"oh_v{oh_version}_{base_image.replace('/', '_s_').replace(':', '_t_').lower()[-96:]}"
     )
     versioned_image_name = f'{runtime_image_repo}:{versioned_tag}'
     hash_tag = f'{lock_tag}_{get_hash_for_source_files()}'
