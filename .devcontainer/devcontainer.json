@@ -1,6 +1,7 @@
 {
 	"name": "OpenHands Codespaces",
 	"image": "mcr.microsoft.com/devcontainers/universal",
+	"user": "root",
 	"customizations":{
         "vscode":{
             "extensions": [
