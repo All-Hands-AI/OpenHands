@@ -35,7 +35,6 @@ from openhands.events.event import Event
 from openhands.events.observation import (
     AgentDelegateObservation,
     AgentStateChangedObservation,
-    CmdOutputObservation,
     ErrorObservation,
     FatalErrorObservation,
     Observation,
@@ -245,9 +244,7 @@ class AgentController:
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
             return
 
-        if isinstance(observation, CmdOutputObservation):
-            return
-        elif isinstance(observation, AgentDelegateObservation):
+        if isinstance(observation, AgentDelegateObservation):
             self.state.history.on_event(observation)
         elif isinstance(observation, ErrorObservation):
             if self.state.agent_state == AgentState.ERROR:
