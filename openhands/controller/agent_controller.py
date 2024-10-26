@@ -133,7 +133,7 @@ class AgentController:
         # update metrics especially for cost. Use deepcopy to avoid it being modified by agent.reset()
         self.state.local_metrics = copy.deepcopy(self.agent.llm.metrics)
 
-    async def send_error_to_event_stream(
+    async def _send_error_to_event_stream(
         self, message: str, exception: Exception | None = None
     ):
         detail = str(exception) if exception is not None else ''
@@ -157,7 +157,7 @@ class AgentController:
                 traceback.print_exc()
                 logger.error(f'Error while running the agent: {e}')
                 logger.error(traceback.format_exc())
-                await self.send_error_to_event_stream(
+                await self._send_error_to_event_stream(
                     'There was an unexpected error while running the agent', exception=e
                 )
                 await self.set_agent_state_to(AgentState.ERROR)
@@ -433,7 +433,7 @@ class AgentController:
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
             # report to the user
             # and send the underlying exception to the LLM for self-correction
-            await self.send_error_to_event_stream(str(e))
+            await self._send_error_to_event_stream(str(e))
             return
 
         if action.runnable:
@@ -458,9 +458,9 @@ class AgentController:
         logger.info(action, extra={'msg_type': 'ACTION'})
 
         if self._is_stuck():
-            # This need to go BEFORE send_error_to_event_stream to sync metrics
+            # This need to go BEFORE _send_error_to_event_stream to sync metrics
             await self.set_agent_state_to(AgentState.ERROR)
-            await self.send_error_to_event_stream('Agent got stuck in a loop')
+            await self._send_error_to_event_stream('Agent got stuck in a loop')
 
     async def _delegate_step(self):
         """Executes a single step of the delegate agent."""
@@ -479,7 +479,7 @@ class AgentController:
             self.delegate = None
             self.delegateAction = None
 
-            await self.send_error_to_event_stream(
+            await self._send_error_to_event_stream(
                 'Delegator agent encountered an error'
             )
         elif delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
@@ -530,17 +530,17 @@ class AgentController:
         else:
             self.state.traffic_control_state = TrafficControlState.THROTTLING
             if self.headless_mode:
-                # This need to go BEFORE send_error_to_event_stream to sync metrics
+                # This need to go BEFORE _send_error_to_event_stream to sync metrics
                 await self.set_agent_state_to(AgentState.ERROR)
                 # set to ERROR state if running in headless mode
                 # since user cannot resume on the web interface
-                await self.send_error_to_event_stream(
+                await self._send_error_to_event_stream(
                     f'Agent reached maximum {limit_type} in headless mode, task stopped. '
                     f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}'
                 )
             else:
                 await self.set_agent_state_to(AgentState.PAUSED)
-                await self.send_error_to_event_stream(
+                await self._send_error_to_event_stream(
                     f'Agent reached maximum {limit_type}, task paused. '
                     f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}. '
                     f'{TRAFFIC_CONTROL_REMINDER}'
