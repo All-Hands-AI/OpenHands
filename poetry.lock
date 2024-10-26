@@ -4314,6 +4314,29 @@ httpx = ">=0.20.0"
 pydantic = ">=1.10"
 
 [[package]]
+name = "locify"
+version = "0.0.6"
+description = "A library for LLM-based agents to navigate large codebases efficiently."
+optional = false
+python-versions = "<4.0,>=3.12"
+files = [
+    {file = "locify-0.0.6-py3-none-any.whl", hash = "sha256:3d49cc8dbdb187c3f8006b0f6ab0ff9b83d990c0515e35dc463bbc41900e03a4"},
+    {file = "locify-0.0.6.tar.gz", hash = "sha256:0b794f8799252bc65e4f781adc0cf19d5cfa337a7348c9e3f834b360507bc097"},
+]
+
+[package.dependencies]
+diskcache = ">=5.6.3,<6.0.0"
+fire = "*"
+gitpython = "*"
+grep-ast = "0.3.3"
+litellm = "*"
+networkx = "*"
+numpy = "*"
+pandas = "*"
+scipy = "*"
+tree-sitter = "0.21.3"
+
+[[package]]
 name = "lxml"
 version = "5.3.0"
 description = "Powerful and Pythonic XML processing library combining libxml2/libxslt with the ElementTree API."
@@ -10119,4 +10142,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "aeb09e429a789c3f8ced605e7e1a5932fd6cce7f7f4ce30a960da77fba18b9a3"
+content-hash = "3710f5517a822fa6a5da1414227b59cbb4e59183b706747acc7ed1dd6ae03452"
