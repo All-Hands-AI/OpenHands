@@ -440,9 +440,9 @@ class TestStuckDetector:
         read_observation_2._cause = read_action_2._id
         event_stream.add_event(read_observation_2, EventSource.USER)
 
-        # one more message to break the pattern
-        message_null_observation = NullObservation(content='')
+        message_action = MessageAction(content='Come on', wait_for_response=False)
         event_stream.add_event(message_action, EventSource.USER)
+        message_null_observation = NullObservation(content='')
         event_stream.add_event(message_null_observation, EventSource.USER)
 
         cmd_action_3 = CmdRunAction(command='ls')
