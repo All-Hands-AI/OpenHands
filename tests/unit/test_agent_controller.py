@@ -165,7 +165,7 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
         fake_user_response_fn=lambda _: 'repeat',
     )
     print(f'state: {state}')
-    print(f'event_stream: {len(list(event_stream.get_events()))}')
+    print(f'event_stream: {list(event_stream.get_events())}')
     assert state.iteration == 1
     # it will first become AgentState.ERROR, then become AgentState.STOPPED
     # in side run_controller (since the while loop + sleep no longer loop)
