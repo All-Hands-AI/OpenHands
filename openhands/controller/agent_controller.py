@@ -216,15 +216,6 @@ class AgentController:
         Args:
             observation (observation): The observation to handle.
         """
-        if (
-            self._pending_action
-            and hasattr(self._pending_action, 'confirmation_state')
-            and self._pending_action.confirmation_state
-            == ActionConfirmationStatus.AWAITING_CONFIRMATION
-        ):
-            return
-
-        # Make sure we print the observation in the same way as the LLM sees it
         observation_to_print = copy.deepcopy(observation)
         if len(observation_to_print.content) > self.agent.llm.config.max_message_chars:
             observation_to_print.content = truncate_content(
@@ -232,7 +223,6 @@ class AgentController:
             )
         logger.info(observation_to_print, extra={'msg_type': 'OBSERVATION'})
 
-        # Merge with the metrics from the LLM - it will to synced to the controller's local metrics in update_state_after_step()
         if observation.llm_metrics is not None:
             self.agent.llm.metrics.merge(observation.llm_metrics)
 
