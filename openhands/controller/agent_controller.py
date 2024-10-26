@@ -143,6 +143,10 @@ class AgentController:
         self.state.iteration += 1
         self.state.local_iteration += 1
 
+    def revert_update_state_before_step(self):
+        self.state.iteration -= 1
+        self.state.local_iteration -= 1
+
     async def update_state_after_step(self):
         # update metrics especially for cost. Use deepcopy to avoid it being modified by agent.reset()
         self.state.local_metrics = copy.deepcopy(self.agent.llm.metrics)
@@ -200,15 +204,6 @@ class AgentController:
             event, Observation
         ):  # elif isinstance(event, Observation) and not (isinstance(event, IPythonRunCellObservation) and event.is_secondary):
             await self._handle_observation(event)
-
-    async def on_secondary_event(self, event: Event):
-        """Callback from the secondary event stream. Notifies the controller of incoming events.
-        Args:
-            event (Event): The incoming event to process.
-        """
-        logger.info(
-            f'[🔥 Agent Controller {self.id}] Received secondary event: {event}, message: {event.message}'
-        )
 
     async def _handle_action(self, action: Action):
         """Handles actions from the event stream.
@@ -498,6 +493,7 @@ class AgentController:
                 and isinstance(action, IPythonRunCellAction)
                 and action.is_secondary
             ):
+                self.revert_update_state_before_step()
                 self.secondary_event_stream.add_event(action, EventSource.AGENT)
             else:
                 self.event_stream.add_event(action, EventSource.AGENT)
