@@ -133,12 +133,7 @@ class AgentController:
         # update metrics especially for cost. Use deepcopy to avoid it being modified by agent.reset()
         self.state.local_metrics = copy.deepcopy(self.agent.llm.metrics)
 
-    async def report_error(
-        self,
-        message: str,
-        exception: Exception | None = None,
-        add_to_eventstream: bool = True,
-    ):
+    async def report_error(self, message: str, exception: Exception | None = None):
         """Reports an error to the user and sends the exception to the LLM next step, in the hope it can self-correct.
 
         This method should be called for a particular type of errors, which have:
@@ -151,10 +146,9 @@ class AgentController:
         detail = str(exception) if exception is not None else ''
         if exception is not None and isinstance(exception, litellm.AuthenticationError):
             detail = 'Please check your credentials. Is your API key correct?'
-        if add_to_eventstream:
-            self.event_stream.add_event(
-                ErrorObservation(f'{message}:{detail}'), EventSource.USER
-            )
+        self.event_stream.add_event(
+            ErrorObservation(f'{message}:{detail}'), EventSource.USER
+        )
 
     async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
@@ -260,12 +254,11 @@ class AgentController:
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
         elif isinstance(observation, FatalErrorObservation):
-            await self.report_error(
-                'There was a fatal error during agent execution: ' + str(observation),
-                add_to_eventstream=False,
+            self.state.last_error = (
+                f'There was a fatal error during agent execution: {str(observation)}'
             )
-            await self.set_agent_state_to(AgentState.ERROR)
             self.state.metrics.merge(self.state.local_metrics)
+            await self.set_agent_state_to(AgentState.ERROR)
 
     async def _handle_message_action(self, action: MessageAction):
         """Handles message actions from the event stream.
