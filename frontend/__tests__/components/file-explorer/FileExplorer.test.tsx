@@ -24,7 +24,7 @@ const renderFileExplorerWithRunningAgentState = () =>
     },
   });
 
-describe.skip("FileExplorer", () => {
+describe("FileExplorer", () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
@@ -37,7 +37,12 @@ describe.skip("FileExplorer", () => {
     expect(getFilesSpy).toHaveBeenCalledTimes(1); // once for root
   });
 
-  it.todo("should render an empty workspace");
+  it("should render an empty workspace", async () => {
+    getFilesSpy.mockResolvedValueOnce([]);
+    renderFileExplorerWithRunningAgentState();
+
+    expect(await screen.findByText("No files found")).toBeInTheDocument();
+  });
 
   it("should refetch the workspace when clicking the refresh button", async () => {
     const user = userEvent.setup();
@@ -87,13 +92,31 @@ describe.skip("FileExplorer", () => {
     expect(getFilesSpy).toHaveBeenCalled();
   });
 
-  it.todo("should upload files when dragging them to the explorer", () => {
-    // It will require too much work to mock drag logic, especially for our case
-    // https://github.com/testing-library/user-event/issues/440#issuecomment-685010755
-    // TODO: should be tested in an e2e environment such as Cypress/Playwright
+  it("should upload files when dragging them to the explorer", async () => {
+    const user = userEvent.setup();
+    renderFileExplorerWithRunningAgentState();
+
+    const file = new File([""], "file-name");
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+
+    const dropzone = await screen.findByTestId("dropzone");
+    await user.dragEnter(dropzone);
+    await user.drop(dropzone, { dataTransfer });
+
+    expect(uploadFilesSpy).toHaveBeenCalledOnce();
+    expect(getFilesSpy).toHaveBeenCalled();
   });
 
-  it.todo("should download a file");
+  it("should download a file", async () => {
+    const user = userEvent.setup();
+    renderFileExplorerWithRunningAgentState();
+
+    const file = await screen.findByText("file1.ts");
+    await user.click(file);
+
+    expect(getFilesSpy).toHaveBeenCalledWith("file1.ts");
+  });
 
   it("should display an error toast if file upload fails", async () => {
     (uploadFilesSpy as Mock).mockRejectedValue(new Error());
@@ -110,5 +133,22 @@ describe.skip("FileExplorer", () => {
       expect.stringContaining("upload-error"),
       expect.any(String),
     );
+  });
+
+  it("should display correct file content when switching files quickly", async () => {
+    const user = userEvent.setup();
+    renderFileExplorerWithRunningAgentState();
+
+    const file1 = await screen.findByText("file1.ts");
+    const file2 = await screen.findByText("file2.ts");
+
+    await user.click(file1);
+    expect(getFilesSpy).toHaveBeenCalledWith("file1.ts");
+
+    await user.click(file2);
+    expect(getFilesSpy).toHaveBeenCalledWith("file2.ts");
+
+    expect(await screen.findByText("file1.ts content")).toBeInTheDocument();
+    expect(await screen.findByText("file2.ts content")).toBeInTheDocument();
   });
 });
