@@ -211,17 +211,17 @@ class CodeActAgent(Agent):
 
         if self.config.function_calling:
             # Update the message as tool response properly
-            llm_response: ModelResponse = obs.trigger_by_llm_response
-            assert len(llm_response.choices) == 1
-            _llm_message = llm_response.choices[0].message
-            tool_call = _llm_message.tool_calls[0]
-            assert len(_llm_message.tool_calls) == 1
-            message = Message(
-                role='tool',
-                content=message.content,
-                tool_call_id=tool_call.id,
-                name=tool_call.function.name,
-            )
+            if (llm_response := obs.trigger_by_llm_response) is not None:
+                assert len(llm_response.choices) == 1
+                _llm_message = llm_response.choices[0].message
+                tool_call = _llm_message.tool_calls[0]
+                assert len(_llm_message.tool_calls) == 1
+                message = Message(
+                    role='tool',
+                    content=message.content,
+                    tool_call_id=tool_call.id,
+                    name=tool_call.function.name,
+                )
         return message
 
     def reset(self) -> None:
