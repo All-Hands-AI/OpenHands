@@ -134,16 +134,13 @@ class AgentController:
     async def _react_to_error(
         self,
         message: str,
-        exception: Exception | None = None,
         new_state: AgentState | None = None,
     ):
         if new_state is not None:
+            # it's important to set the state before adding the error event, so that metrics sync properly
             await self.set_agent_state_to(new_state)
-        detail = str(exception) if exception is not None else ''
-        if exception is not None and isinstance(exception, litellm.AuthenticationError):
-            detail += '\nPlease check your credentials. Is your API key correct?'
         await self.event_stream.async_add_event(
-            ErrorObservation(f'{message}:{detail}'), EventSource.AGENT
+            ErrorObservation(message), EventSource.AGENT
         )
 
     async def start_step_loop(self):
@@ -160,9 +157,13 @@ class AgentController:
                 traceback.print_exc()
                 logger.error(f'Error while running the agent: {e}')
                 logger.error(traceback.format_exc())
+                detail = str(e)
+                if isinstance(e, litellm.AuthenticationError):
+                    detail += (
+                        '\nPlease check your credentials. Is your API key correct?'
+                    )
                 await self._react_to_error(
-                    'There was an unexpected error while running the agent',
-                    exception=e,
+                    detail,
                     new_state=AgentState.ERROR,
                 )
                 break
