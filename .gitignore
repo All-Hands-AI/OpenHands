@@ -211,6 +211,7 @@ logs
 /_test_workspace
 /debug
 cache
+.cache*
 
 # configuration
 config.toml

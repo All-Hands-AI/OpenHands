@@ -21,6 +21,7 @@ from openhands.linter import DefaultLinter, LintResult
 CURRENT_FILE: str | None = None
 CURRENT_LINE = 1
 WINDOW = 100
+REPO_MAP: RepoMapStrategy | None = None
 
 # This is also used in unit tests!
 MSG_FILE_UPDATED = '[File updated (edited at line {line_number}). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]'
@@ -372,20 +373,21 @@ def find_file(file_name: str, dir_path: str = './') -> None:
         print(f'[No matches found for "{file_name}" in {dir_path}]')
 
 
-def get_repomap(depth: int = 4, repo_path: str = './', messages_history='') -> None:
+def get_repomap(repo_path: str = './', message_history='') -> None:
     """Gets the `RepoMap` for the given directory and print it.
     `RepoMap` is a concise map of the directory that includes
     classes and functions along with their signatures, chosen based on
     heuristics.
 
     Args:
-        depth: int = 4: The depth of the directory to get the repository map.
         repo_path: str = "./": The path to the repository
-        messages_history: str = '': The messages history, which can be used to emphasize more on the
+        message_history: str = '': The messages history, which can be used to emphasize more on the
         files and identifiers mentioned in the messages.
     """
-    repo_map = RepoMapStrategy()
-    map_result = repo_map.get_map(depth)
+    global REPO_MAP
+    if REPO_MAP is None:
+        REPO_MAP = RepoMapStrategy(repo_path)
+    map_result = REPO_MAP.get_map(message_history=message_history)
     print(map_result)
 
 

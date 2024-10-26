@@ -1546,6 +1546,17 @@ files = [
 ]
 
 [[package]]
+name = "diskcache"
+version = "5.6.3"
+description = "Disk Cache -- Disk and file backed persistent cache."
+optional = false
+python-versions = ">=3"
+files = [
+    {file = "diskcache-5.6.3-py3-none-any.whl", hash = "sha256:5e31b2d5fbad117cc363ebaf6b689474db18a1f6438bc82358b024abd4c2ca19"},
+    {file = "diskcache-5.6.3.tar.gz", hash = "sha256:2c3a3fa2743d8535d832ec61c2054a1641f41775aa7c556758a109941e33e4fc"},
+]
+
+[[package]]
 name = "distlib"
 version = "0.3.9"
 description = "Distribution utilities"
@@ -4287,16 +4298,17 @@ llama-index-core = ">=0.11.0"
 
 [[package]]
 name = "locify"
-version = "0.0.3"
+version = "0.0.5"
 description = "A library for LLM-based agents to navigate large codebases efficiently."
 optional = false
 python-versions = "<4.0,>=3.12"
 files = [
-    {file = "locify-0.0.3-py3-none-any.whl", hash = "sha256:50cbf0dd3ec7f6e90805b1033ae5b67677bc926b067653138797ca19a7df6eba"},
-    {file = "locify-0.0.3.tar.gz", hash = "sha256:4b23763b4771e9e81c95f37fe549ac3b8457b0a440d4a73ff9ca7d16d2bd9049"},
+    {file = "locify-0.0.5-py3-none-any.whl", hash = "sha256:98a77932ed67b37a117c1632dac633c162952d89270a394c4ec63c13685baf46"},
+    {file = "locify-0.0.5.tar.gz", hash = "sha256:bd1e2db3ad83a52673be04c4c40fd1e6b7e04180616a6bfc578611e728c58ddb"},
 ]
 
 [package.dependencies]
+diskcache = ">=5.6.3,<6.0.0"
 fire = "*"
 gitpython = "*"
 grep-ast = "0.3.3"
@@ -10100,4 +10112,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "f3bae2bb8d9f94709e2632d132e788e68a970a1942dceea68ec715d8f0d6a6fc"
+content-hash = "132a7315da62b3ba57be70f984e1370f562392b0d1171debaf298c5b98e25ee1"

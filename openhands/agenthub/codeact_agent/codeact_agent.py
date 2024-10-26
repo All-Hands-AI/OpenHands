@@ -206,7 +206,9 @@ class CodeActAgent(Agent):
             self.is_get_repomap_step = False
             messages = self._get_messages(state, include_repomap=False)
             concat_text_content = self._get_concatenated_text_content(messages[1:])
-            get_repomap_code = f""" get_repomap(repo_path='./', messages_history='''{concat_text_content}''') """
+            get_repomap_code = (
+                f""" get_repomap(message_history='''{concat_text_content}''') """
+            )
             action = IPythonRunCellAction(
                 code=get_repomap_code,
                 thought='',
