@@ -208,8 +208,10 @@ class CodeActAgent(Agent):
 
         if self.is_get_repomap_step:
             self.is_get_repomap_step = False
-            messages = self._get_messages(state, include_repomap=False)
-            concat_text_content = self._get_concatenated_text_content(messages[1:])
+            messages, action_messages = self._get_messages(state, include_repomap=False)
+            concat_text_content = self._get_concatenated_text_content(
+                action_messages[1:]
+            )
             get_repomap_code = (
                 f""" get_repomap(message_history='''{concat_text_content}''') """
             )
@@ -224,7 +226,7 @@ class CodeActAgent(Agent):
             self.is_get_repomap_step = True
 
         # prepare what we want to send to the LLM
-        messages = self._get_messages(state)
+        messages, _ = self._get_messages(state)
         params = {
             'messages': self.llm.format_messages_for_llm(messages),
             'stop': [
@@ -254,7 +256,7 @@ class CodeActAgent(Agent):
 
     def _get_messages(
         self, state: State, include_repomap: bool = True
-    ) -> list[Message]:
+    ) -> tuple[list[Message], list[Message]]:
         messages: list[Message] = [
             Message(
                 role='system',
@@ -275,12 +277,14 @@ class CodeActAgent(Agent):
                 ],
             ),
         ]
+        action_messages = messages[:2]
 
         for event in state.history.get_events():
-            print(f'event: {event}')
             # create a regular message from an event
             if isinstance(event, Action):
                 message = self.get_action_message(event)
+                if message:
+                    action_messages.append(message)
             elif isinstance(event, Observation):
                 message = self.get_observation_message(event)
             else:
@@ -330,7 +334,7 @@ class CodeActAgent(Agent):
                     TextContent(text=f'\n{self._extract_repomap_content(repo_map)}')
                 )
 
-        return messages
+        return messages, action_messages
 
     def _extract_repomap_content(self, output: str) -> str:
         import re
