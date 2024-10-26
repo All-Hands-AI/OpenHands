@@ -133,13 +133,18 @@ class AgentController:
         # update metrics especially for cost. Use deepcopy to avoid it being modified by agent.reset()
         self.state.local_metrics = copy.deepcopy(self.agent.llm.metrics)
 
-    async def _send_error_to_event_stream(
-        self, message: str, exception: Exception | None = None
+    async def _react_to_error(
+        self,
+        message: str,
+        exception: Exception | None = None,
+        new_state: AgentState | None = None,
     ):
+        if new_state is not None:
+            await self.set_agent_state_to(new_state)
         detail = str(exception) if exception is not None else ''
         if exception is not None and isinstance(exception, litellm.AuthenticationError):
             detail += '\nPlease check your credentials. Is your API key correct?'
-        self.event_stream.add_event(
+        await self.event_stream.async_add_event(
             ErrorObservation(f'{message}:{detail}'), EventSource.AGENT
         )
 
@@ -157,10 +162,11 @@ class AgentController:
                 traceback.print_exc()
                 logger.error(f'Error while running the agent: {e}')
                 logger.error(traceback.format_exc())
-                await self._send_error_to_event_stream(
-                    'There was an unexpected error while running the agent', exception=e
+                await self._react_to_error(
+                    'There was an unexpected error while running the agent',
+                    exception=e,
+                    new_state=AgentState.ERROR,
                 )
-                await self.set_agent_state_to(AgentState.ERROR)
                 break
 
             await asyncio.sleep(0.1)
@@ -320,7 +326,9 @@ class AgentController:
             else:
                 confirmation_state = ActionConfirmationStatus.REJECTED
             self._pending_action.confirmation_state = confirmation_state  # type: ignore[attr-defined]
-            self.event_stream.add_event(self._pending_action, EventSource.AGENT)
+            await self.event_stream.async_add_event(
+                self._pending_action, EventSource.AGENT
+            )
 
         self.state.agent_state = new_state
         self.event_stream.add_event(
@@ -433,7 +441,7 @@ class AgentController:
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
             # report to the user
             # and send the underlying exception to the LLM for self-correction
-            await self._send_error_to_event_stream(str(e))
+            await self._react_to_error(str(e))
             return
 
         if action.runnable:
@@ -452,15 +460,15 @@ class AgentController:
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
-            self.event_stream.add_event(action, EventSource.AGENT)
+            await self.event_stream.async_add_event(action, EventSource.AGENT)
 
         await self.update_state_after_step()
         logger.info(action, extra={'msg_type': 'ACTION'})
 
         if self._is_stuck():
-            # This need to go BEFORE _send_error_to_event_stream to sync metrics
-            await self.set_agent_state_to(AgentState.ERROR)
-            await self._send_error_to_event_stream('Agent got stuck in a loop')
+            await self._react_to_error(
+                'Agent got stuck in a loop', new_state=AgentState.ERROR
+            )
 
     async def _delegate_step(self):
         """Executes a single step of the delegate agent."""
@@ -479,9 +487,7 @@ class AgentController:
             self.delegate = None
             self.delegateAction = None
 
-            await self._send_error_to_event_stream(
-                'Delegator agent encountered an error'
-            )
+            await self._react_to_error('Delegator agent encountered an error')
         elif delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
             logger.info(
                 f'[Agent Controller {self.id}] Delegate agent has finished execution'
@@ -510,7 +516,7 @@ class AgentController:
             # clean up delegate status
             self.delegate = None
             self.delegateAction = None
-            self.event_stream.add_event(obs, EventSource.AGENT)
+            await self.event_stream.async_add_event(obs, EventSource.AGENT)
         return
 
     async def _handle_traffic_control(
@@ -530,20 +536,17 @@ class AgentController:
         else:
             self.state.traffic_control_state = TrafficControlState.THROTTLING
             if self.headless_mode:
-                # This need to go BEFORE _send_error_to_event_stream to sync metrics
-                await self.set_agent_state_to(AgentState.ERROR)
-                # set to ERROR state if running in headless mode
-                # since user cannot resume on the web interface
-                await self._send_error_to_event_stream(
+                await self._react_to_error(
                     f'Agent reached maximum {limit_type} in headless mode, task stopped. '
-                    f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}'
+                    f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}',
+                    new_state=AgentState.ERROR,
                 )
             else:
-                await self.set_agent_state_to(AgentState.PAUSED)
-                await self._send_error_to_event_stream(
+                await self._react_to_error(
                     f'Agent reached maximum {limit_type}, task paused. '
                     f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}. '
-                    f'{TRAFFIC_CONTROL_REMINDER}'
+                    f'{TRAFFIC_CONTROL_REMINDER}',
+                    new_state=AgentState.PAUSED,
                 )
             stop_step = True
         return stop_step
