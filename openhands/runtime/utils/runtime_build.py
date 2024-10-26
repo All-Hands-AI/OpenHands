@@ -4,6 +4,7 @@ import os
 import shutil
 import string
 import tempfile
+from enum import Enum
 from pathlib import Path
 from typing import List
 
@@ -17,20 +18,26 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
 
 
+class BuildFromImageType(Enum):
+    SCRATCH = 'scratch'  # Slowest: Build from base image (no dependencies are reused)
+    VERSIONED = 'versioned'  # Medium speed: Reuse the most recent image with the same base image & OH version (a lot of dependencies are already installed)
+    LOCK = 'lock'  # Fastest: Reuse the most recent image with the exact SAME dependencies (lock files)
+
+
 def get_runtime_image_repo():
     return os.getenv('OH_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/all-hands-ai/runtime')
 
 
 def _generate_dockerfile(
     base_image: str,
-    build_from_scratch: bool = True,
+    build_from: BuildFromImageType = BuildFromImageType.SCRATCH,
     extra_deps: str | None = None,
 ) -> str:
     """Generate the Dockerfile content for the runtime image based on the base image.
 
     Parameters:
     - base_image (str): The base image provided for the runtime image
-    - build_from_scratch (boolean): False implies most steps can be skipped (Base image is another openhands instance)
+    - build_from (BuildFromImageType): The build method for the runtime image.
     - extra_deps (str):
 
     Returns:
@@ -45,7 +52,8 @@ def _generate_dockerfile(
 
     dockerfile_content = template.render(
         base_image=base_image,
-        build_from_scratch=build_from_scratch,
+        build_from_scratch=build_from == BuildFromImageType.SCRATCH,
+        build_from_versioned=build_from == BuildFromImageType.VERSIONED,
         extra_deps=extra_deps if extra_deps is not None else '',
     )
     return dockerfile_content
@@ -157,12 +165,19 @@ def build_runtime_image_in_folder(
 ) -> str:
     runtime_image_repo, _ = get_runtime_image_repo_and_tag(base_image)
     lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image)}'
+    versioned_tag = f'oh_v{oh_version}_{base_image.replace('/', '_s_').lower()}'
+    versioned_image_name = f'{runtime_image_repo}:{versioned_tag}'
     hash_tag = f'{lock_tag}_{get_hash_for_source_files()}'
     hash_image_name = f'{runtime_image_repo}:{hash_tag}'
 
     if force_rebuild:
         logger.info(f'Force rebuild: [{runtime_image_repo}:{hash_tag}] from scratch.')
-        prep_build_folder(build_folder, base_image, True, extra_deps)
+        prep_build_folder(
+            build_folder,
+            base_image,
+            build_from=BuildFromImageType.SCRATCH,
+            extra_deps=extra_deps,
+        )
         if not dry_run:
             _build_sandbox_image(
                 build_folder,
@@ -170,12 +185,13 @@ def build_runtime_image_in_folder(
                 runtime_image_repo,
                 hash_tag,
                 lock_tag,
+                versioned_tag,
                 platform,
             )
         return hash_image_name
 
     lock_image_name = f'{runtime_image_repo}:{lock_tag}'
-    build_from_scratch = True
+    build_from = BuildFromImageType.SCRATCH
 
     # If the exact image already exists, we do not need to build it
     if runtime_builder.image_exists(hash_image_name, False):
@@ -186,13 +202,19 @@ def build_runtime_image_in_folder(
     # can use it as the base image for the build and just copy source files. This makes the build
     # much faster.
     if runtime_builder.image_exists(lock_image_name):
-        logger.info(f'Build [{hash_image_name}] from [{lock_image_name}]')
-        build_from_scratch = False
+        logger.info(f'Build [{hash_image_name}] from lock image [{lock_image_name}]')
+        build_from = BuildFromImageType.LOCK
         base_image = lock_image_name
+    elif runtime_builder.image_exists(versioned_image_name):
+        logger.info(
+            f'Build [{hash_image_name}] from versioned image [{versioned_image_name}]'
+        )
+        build_from = BuildFromImageType.VERSIONED
+        base_image = versioned_image_name
     else:
         logger.info(f'Build [{hash_image_name}] from scratch')
 
-    prep_build_folder(build_folder, base_image, build_from_scratch, extra_deps)
+    prep_build_folder(build_folder, base_image, build_from, extra_deps)
     if not dry_run:
         _build_sandbox_image(
             build_folder,
@@ -200,6 +222,7 @@ def build_runtime_image_in_folder(
             runtime_image_repo,
             hash_tag,
             lock_tag,
+            versioned_tag,
             platform,
         )
 
@@ -209,7 +232,7 @@ def build_runtime_image_in_folder(
 def prep_build_folder(
     build_folder: Path,
     base_image: str,
-    build_from_scratch: bool,
+    build_from: BuildFromImageType,
     extra_deps: str | None,
 ):
     # Copy the source code to directory. It will end up in build_folder/code
@@ -240,7 +263,7 @@ def prep_build_folder(
     # Create a Dockerfile and write it to build_folder
     dockerfile_content = _generate_dockerfile(
         base_image,
-        build_from_scratch=build_from_scratch,
+        build_from=build_from,
         extra_deps=extra_deps,
     )
     with open(Path(build_folder, 'Dockerfile'), 'w') as file:  # type: ignore
@@ -300,6 +323,7 @@ def _build_sandbox_image(
     runtime_image_repo: str,
     hash_tag: str,
     lock_tag: str,
+    versioned_tag: str,
     platform: str | None = None,
 ):
     """Build and tag the sandbox image. The image will be tagged with all tags that do not yet exist"""
@@ -309,6 +333,7 @@ def _build_sandbox_image(
         for name in [
             f'{runtime_image_repo}:{hash_tag}',
             f'{runtime_image_repo}:{lock_tag}',
+            f'{runtime_image_repo}:{versioned_tag}',
         ]
         if not runtime_builder.image_exists(name, False)
     ]
