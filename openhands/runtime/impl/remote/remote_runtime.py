@@ -54,6 +54,7 @@ class RemoteRuntime(Runtime):
         env_vars: dict[str, str] | None = None,
         status_message_callback: Optional[Callable] = None,
         attach_to_existing: bool = False,
+        secondary_event_stream: EventStream | None = None,
     ):
         self.config = config
         self.status_message_callback = status_message_callback
@@ -86,6 +87,7 @@ class RemoteRuntime(Runtime):
             env_vars,
             status_message_callback,
             attach_to_existing,
+            secondary_event_stream,
         )
 
     async def connect(self):
