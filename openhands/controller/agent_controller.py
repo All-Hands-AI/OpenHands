@@ -425,9 +425,9 @@ class AgentController:
             if action is None:
                 raise LLMNoActionError('No action was returned')
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
-            # report to the user
-            # and send the underlying exception to the LLM for self-correction
-            await self._react_to_error(str(e))
+            await self._react_to_error(
+                str(e), new_state=None
+            )  # don't change state, LLM can correct itself
             return
 
         if action.runnable:
@@ -473,7 +473,9 @@ class AgentController:
             self.delegate = None
             self.delegateAction = None
 
-            await self._react_to_error('Delegator agent encountered an error')
+            await self._react_to_error(
+                'Delegator agent encountered an error', new_state=None
+            )
         elif delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
             logger.info(
                 f'[Agent Controller {self.id}] Delegate agent has finished execution'
