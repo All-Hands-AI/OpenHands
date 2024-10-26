@@ -254,11 +254,11 @@ class AgentController:
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
         elif isinstance(observation, FatalErrorObservation):
-            await self.report_error(
-                'There was a fatal error during agent execution: ' + str(observation)
+            self.state.last_error = (
+                f'There was a fatal error during agent execution: {str(observation)}'
             )
-            await self.set_agent_state_to(AgentState.ERROR)
             self.state.metrics.merge(self.state.local_metrics)
+            await self.set_agent_state_to(AgentState.ERROR)
 
     async def _handle_message_action(self, action: MessageAction):
         """Handles message actions from the event stream.
