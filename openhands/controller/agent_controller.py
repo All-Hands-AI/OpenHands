@@ -627,36 +627,43 @@ class AgentController:
                 confirmation_mode=confirmation_mode,
             )
         else:
+            # FIXME when restored from a previous session, the State object needs to have:
+            # - history? no, read it from the event stream
+            # - start_id, potentially end_id
+            # - delegates_ids - no, read it from the event stream if wanted
+
             # restored state or from a parent agent does not have history
             self.state = state
-            # hmm from a parent it doesn't need it, too
+
+            # if start_id was not set in State, we're starting fresh, at the top of the stream
+            # does this still happen?
+            if self.state.start_id <= -1:
+                self.state.start_id = self.event_stream.get_latest_event_id() + 1
+            else:
+                logger.debug(
+                    f'AgentController {self.id} initializing history from event {self.state.start_id}'
+                )
+
             self._init_history()
 
-        # FIXME when restored from a previous session, the State object needs to have:
-        # - history? let's go with nope
-        # - start_id, end_id
-        # - delegates_ids
-
-        # if start_id was not set in State, we're starting fresh, at the top of the stream
-        # does this still happen?
-        if self.state.start_id <= -1:
-            self.state.start_id = self.event_stream.get_latest_event_id() + 1
-        else:
-            logger.debug(
-                f'AgentController {self.id} restoring from event {self.state.start_id}'
-            )
-
     def _init_history(self):
-        # old-style saved states did not save history
-        # and didn't even have history as a field
+        """Initializes the agent's history from the event stream.
+
+        The history is a list of events that:
+        - Excludes events of types listed in self.filter_out
+        - Excludes events with hidden=True attribute
+        - For delegate events (between AgentDelegateAction and AgentDelegateObservation):
+            - Excludes all events between the action and observation
+            - Includes the delegate action and observation themselves
+        """
+        # Initialize empty history if not present (for old-style saved states)
         if not hasattr(self.state, 'history'):
             logger.debug(
                 'Restored state does not have history, initializing empty history.'
             )
             self.state.history = []
 
-        # get the history from the event stream
-        # first define the range of events to fetch
+        # Define range of events to fetch
         start_id = self.state.start_id if self.state.start_id != -1 else 0
         end_id = (
             self.state.end_id
@@ -664,11 +671,8 @@ class AgentController:
             else self.event_stream.get_latest_event_id()
         )
 
-        # fetch events directly from the event stream
-        # filtering out what an agent history should not include:
-        # - "backend" event types that should not be sent to the agent
-        # - hidden events
-        history = list(
+        # Get all events, filtering out backend events and hidden events
+        events = list(
             self.event_stream.get_events(
                 start_id=start_id,
                 end_id=end_id,
@@ -678,35 +682,54 @@ class AgentController:
             )
         )
 
-        # also, we exclude finished delegates from the parent agent's history:
-        # - do not include events between delegate actions and observations
-        # - include the delegate action and observation themselves
-        if self.state.delegates:
-            for (delegate_start_id, delegate_end_id), (
-                delegate_agent,
-                delegate_task,
-            ) in self.state.delegates.items():
-                # sanity checks
-                if (
-                    delegate_start_id < 0
-                    or delegate_end_id < 1
-                    or delegate_start_id >= delegate_end_id
-                    or delegate_end_id >= len(history)
-                ):
+        # Find all delegate action/observation pairs
+        delegate_ranges: list[tuple[int, int]] = []
+        delegate_action_ids: list[int] = []  # stack of unmatched delegate action IDs
+
+        for event in events:
+            if isinstance(event, AgentDelegateAction):
+                delegate_action_ids.append(event.id)
+                # Note: we can get agent=event.agent and task=event.inputs.get('task','')
+                # if we need to track these in the future
+
+            elif isinstance(event, AgentDelegateObservation):
+                # Match with most recent unmatched delegate action
+                if not delegate_action_ids:
                     logger.error(
-                        f'Invalid delegate ids: {delegate_start_id}, {delegate_end_id}. Skipping...'
+                        f'Found AgentDelegateObservation without matching action at id={event.id}'
                     )
                     continue
 
-                # exclude delegate events from history
-                history = [
-                    event
-                    for event in history
-                    if not (delegate_start_id < event.id < delegate_end_id)
-                ]
+                action_id = delegate_action_ids.pop()
+                delegate_ranges.append((action_id, event.id))
 
-        # we figured out what the history is, now we can set it
-        self.state.history = history
+        # Filter out events between delegate action/observation pairs
+        if delegate_ranges:
+            filtered_events: list[Event] = []
+            current_idx = 0
+
+            for start_id, end_id in sorted(delegate_ranges):
+                # Add events before delegate range
+                filtered_events.extend(
+                    event for event in events[current_idx:] if event.id < start_id
+                )
+
+                # Add delegate action and observation
+                filtered_events.extend(
+                    event for event in events if event.id in (start_id, end_id)
+                )
+
+                # Update index to after delegate range
+                current_idx = next(
+                    (i for i, e in enumerate(events) if e.id > end_id), len(events)
+                )
+
+            # Add any remaining events after last delegate range
+            filtered_events.extend(events[current_idx:])
+
+            self.state.history = filtered_events
+        else:
+            self.state.history = events
 
     def _is_stuck(self):
         """Checks if the agent or its delegate is stuck in a loop.
