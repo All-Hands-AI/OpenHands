@@ -679,7 +679,10 @@ class AgentController:
                 confirmation_mode=confirmation_mode,
             )
         else:
+            # restored state or from a parent agent does not have history
             self.state = state
+            # hmm from a parent it doesn't need it, too
+            self._init_history()
 
         # FIXME when restored from a previous session, the State object needs to have:
         # - history? let's go with nope
@@ -694,6 +697,68 @@ class AgentController:
             logger.debug(
                 f'AgentController {self.id} restoring from event {self.state.start_id}'
             )
+
+    def _init_history(self):
+        # old-style saved states did not save history
+        # and didn't even have history as a field
+        if not hasattr(self.state, 'history'):
+            logger.debug(
+                'Restored state does not have history, initializing empty history.'
+            )
+            self.state.history = []
+
+        # get the history from the event stream
+        # first define the range of events to fetch
+        start_id = self.state.start_id if self.state.start_id != -1 else 0
+        end_id = (
+            self.state.end_id
+            if self.state.end_id != -1
+            else self.event_stream.get_latest_event_id()
+        )
+
+        # fetch events directly from the event stream
+        # filtering out what an agent history should not include:
+        # - "backend" event types that should not be sent to the agent
+        # - hidden events
+        history = list(
+            self.event_stream.get_events(
+                start_id=start_id,
+                end_id=end_id,
+                reverse=False,
+                filter_out_type=self.filter_out,
+                filter_hidden=True,
+            )
+        )
+
+        # also, we exclude finished delegates from the parent agent's history:
+        # - do not include events between delegate actions and observations
+        # - include the delegate action and observation themselves
+        if self.state.delegates:
+            for (delegate_start_id, delegate_end_id), (
+                delegate_agent,
+                delegate_task,
+            ) in self.state.delegates.items():
+                # sanity checks
+                if (
+                    delegate_start_id < 0
+                    or delegate_end_id < 1
+                    or delegate_start_id >= delegate_end_id
+                    or delegate_end_id >= len(history)
+                ):
+                    logger.error(
+                        f'Invalid delegate ids: {delegate_start_id}, {delegate_end_id}. Skipping...'
+                    )
+                    continue
+
+                # exclude delegate events from history
+                history = [
+                    event
+                    for event in history
+                    if not (delegate_start_id < event.id < delegate_end_id)
+                ]
+
+        # we figured out what the history is, now we can set it
+        self.state.history = history
 
     def _is_stuck(self):
         """Checks if the agent or its delegate is stuck in a loop.
