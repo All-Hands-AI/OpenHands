@@ -223,10 +223,14 @@ def build_runtime_image_in_folder(
             build_folder,
             runtime_builder,
             runtime_image_repo,
-            hash_tag,
-            lock_tag,
-            versioned_tag,
-            platform,
+            hash_tag=hash_tag,
+            lock_tag=lock_tag,
+            # Only tag the versioned image if we are building from scratch.
+            # This avoids too much layers when you lay one image on top of another multiple times
+            versioned_tag=versioned_tag
+            if build_from == BuildFromImageType.SCRATCH
+            else None,
+            platform=platform,
         )
 
     return hash_image_name
@@ -326,20 +330,17 @@ def _build_sandbox_image(
     runtime_image_repo: str,
     hash_tag: str,
     lock_tag: str,
-    versioned_tag: str,
+    versioned_tag: str | None,
     platform: str | None = None,
 ):
     """Build and tag the sandbox image. The image will be tagged with all tags that do not yet exist"""
-
     names = [
-        name
-        for name in [
-            f'{runtime_image_repo}:{hash_tag}',
-            f'{runtime_image_repo}:{lock_tag}',
-            f'{runtime_image_repo}:{versioned_tag}',
-        ]
-        if not runtime_builder.image_exists(name, False)
+        f'{runtime_image_repo}:{hash_tag}',
+        f'{runtime_image_repo}:{lock_tag}',
     ]
+    if versioned_tag is not None:
+        names.append(f'{runtime_image_repo}:{versioned_tag}')
+    names = [name for name in names if not runtime_builder.image_exists(name, False)]
 
     image_name = runtime_builder.build(
         path=str(build_folder), tags=names, platform=platform
