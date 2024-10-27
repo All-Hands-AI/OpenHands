@@ -28,8 +28,8 @@ from openhands.events.observation import (
 # ============================================================================================================================
 
 
-def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_openhands):
-    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
+def test_simple_cmd_ipython_and_fileop(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     sandbox_dir = _get_sandbox_folder(runtime)
 
@@ -102,8 +102,8 @@ def test_simple_cmd_ipython_and_fileop(temp_dir, box_class, run_as_openhands):
     TEST_IN_CI != 'True',
     reason='This test is not working in WSL (file ownership)',
 )
-def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
-    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
+def test_ipython_multi_user(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     # Test run ipython
     # get username
@@ -174,8 +174,8 @@ def test_ipython_multi_user(temp_dir, box_class, run_as_openhands):
     _close_test_runtime(runtime)
 
 
-def test_ipython_simple(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
+def test_ipython_simple(temp_dir, runtime_cls):
+    runtime = _load_runtime(temp_dir, runtime_cls)
     sandbox_dir = _get_sandbox_folder(runtime)
 
     # Test run ipython
@@ -198,9 +198,9 @@ def test_ipython_simple(temp_dir, box_class):
     _close_test_runtime(runtime)
 
 
-def test_ipython_package_install(temp_dir, box_class, run_as_openhands):
+def test_ipython_package_install(temp_dir, runtime_cls, run_as_openhands):
     """Make sure that cd in bash also update the current working directory in ipython."""
-    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     sandbox_dir = _get_sandbox_folder(runtime)
 
     # It should error out since pymsgbox is not installed

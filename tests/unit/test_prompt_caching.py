@@ -4,11 +4,9 @@ import pytest
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.core.config import AgentConfig, LLMConfig
-from openhands.events import EventStream
 from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.llm.llm import LLM
-from openhands.storage import get_file_store
 
 
 @pytest.fixture
@@ -20,25 +18,29 @@ def mock_llm():
 
 
 @pytest.fixture
-def mock_event_stream(tmp_path):
-    file_store = get_file_store('local', str(tmp_path))
-    return EventStream('test_session', file_store)
-
-
-@pytest.fixture
 def codeact_agent(mock_llm):
     config = AgentConfig()
     return CodeActAgent(mock_llm, config)
 
 
-def test_get_messages_with_reminder(codeact_agent, mock_event_stream):
-    # Add some events to the history list
+def test_get_messages_with_reminder(codeact_agent: CodeActAgent):
+    # Add some events to history
     history = list()
-    history.append(MessageAction('Initial user message'))
-    history.append(MessageAction('Sure!'))
-    history.append(MessageAction('Hello, agent!'))
-    history.append(MessageAction('Hello, user!'))
-    history.append(MessageAction('Laaaaaaaast!'))
+    message_action_1 = MessageAction('Initial user message')
+    message_action_1._source = 'user'
+    history.append(message_action_1)
+    message_action_2 = MessageAction('Sure!')
+    message_action_2._source = 'assistant'
+    history.append(message_action_2)
+    message_action_3 = MessageAction('Hello, agent!')
+    message_action_3._source = 'user'
+    history.append(message_action_3)
+    message_action_4 = MessageAction('Hello, user!')
+    message_action_4._source = 'assistant'
+    history.append(message_action_4)
+    message_action_5 = MessageAction('Laaaaaaaast!')
+    message_action_5._source = 'user'
+    history.append(message_action_5)
 
     codeact_agent.reset()
     messages = codeact_agent._get_messages(
@@ -72,12 +74,16 @@ def test_get_messages_with_reminder(codeact_agent, mock_event_stream):
     )
 
 
-def test_get_messages_prompt_caching(codeact_agent, mock_event_stream):
+def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
     history = list()
     # Add multiple user and agent messages
     for i in range(15):
-        history.append(MessageAction(f'User message {i}'))
-        history.append(MessageAction(f'Agent message {i}'))
+        message_action_user = MessageAction(f'User message {i}')
+        message_action_user._source = 'user'
+        history.append(message_action_user)
+        message_action_agent = MessageAction(f'Agent message {i}')
+        message_action_agent._source = 'assistant'
+        history.append(message_action_agent)
 
     codeact_agent.reset()
     messages = codeact_agent._get_messages(
@@ -102,12 +108,18 @@ def test_get_messages_prompt_caching(codeact_agent, mock_event_stream):
     assert cached_user_messages[3].content[0].text.startswith('User message 1')
 
 
-def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
+def test_get_messages_with_cmd_action(codeact_agent: CodeActAgent):
     history = list()
     # Add a mix of actions and observations
-    history.append(MessageAction("Let's list the contents of the current directory."))
+    message_action_1 = MessageAction(
+        "Let's list the contents of the current directory."
+    )
+    message_action_1._source = 'user'
+    history.append(message_action_1)
 
     cmd_action_1 = CmdRunAction('ls -l', thought='List files in current directory')
+    cmd_action_1._source = 'agent'
+    cmd_action_1._id = 'cmd_1'
     history.append(cmd_action_1)
 
     cmd_observation_1 = CmdOutputObservation(
@@ -116,12 +128,16 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
         command='ls -l',
         exit_code=0,
     )
+    cmd_observation_1._source = 'user'
     history.append(cmd_observation_1)
 
     message_action_2 = MessageAction("Now, let's create a new directory.")
+    message_action_2._source = 'agent'
     history.append(message_action_2)
 
     cmd_action_2 = CmdRunAction('mkdir new_directory', thought='Create a new directory')
+    cmd_action_2._source = 'agent'
+    cmd_action_2._id = 'cmd_2'
     history.append(cmd_action_2)
 
     cmd_observation_2 = CmdOutputObservation(
@@ -130,6 +146,7 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
         command='mkdir new_directory',
         exit_code=0,
     )
+    cmd_observation_2._source = 'user'
     history.append(cmd_observation_2)
 
     codeact_agent.reset()
@@ -176,7 +193,7 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
     assert 'ENVIRONMENT REMINDER: You have 5 turns' in messages[5].content[1].text
 
 
-def test_prompt_caching_headers(codeact_agent, mock_event_stream):
+def test_prompt_caching_headers(codeact_agent: CodeActAgent):
     history = list()
     # Setup
     history.append(MessageAction('Hello, agent!'))

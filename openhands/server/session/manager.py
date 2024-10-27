@@ -46,10 +46,15 @@ class SessionManager:
             return None
         return self._sessions.get(sid)
 
-    def attach_to_conversation(self, sid: str) -> Conversation | None:
+    async def attach_to_conversation(self, sid: str) -> Conversation | None:
         if not session_exists(sid, self.file_store):
             return None
-        return Conversation(sid, file_store=self.file_store, config=self.config)
+        c = Conversation(sid, file_store=self.file_store, config=self.config)
+        await c.connect()
+        return c
+
+    async def detach_from_conversation(self, conversation: Conversation):
+        await conversation.disconnect()
 
     async def send(self, sid: str, data: dict[str, object]) -> bool:
         """Sends data to the client."""

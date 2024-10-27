@@ -134,6 +134,19 @@ class State:
         state.agent_state = AgentState.LOADING
         return state
 
+    def __getstate__(self):
+        # don't pickle history, it will be restored from the event stream
+        state = self.__dict__.copy()
+        state['history'] = []
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+
+        # make sure we always have the attribute history
+        if not hasattr(self, 'history'):
+            self.history = []
+
     def get_current_user_intent(self) -> tuple[str | None, list[str] | None]:
         """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""
         last_user_message = None

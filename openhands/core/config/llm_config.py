@@ -40,6 +40,7 @@ class LLMConfig:
         disable_vision: If model is vision capable, this option allows to disable image processing (useful for cost reduction).
         caching_prompt: Use the prompt caching feature if provided by the LLM and supported by the provider.
         log_completions: Whether to log LLM completions to the state.
+        log_completions_folder: The folder to log LLM completions to. Required if log_completions is True.
         draft_editor: A more efficient LLM to use for file editing. Introduced in [PR 3985](https://github.com/All-Hands-AI/OpenHands/pull/3985).
         max_conversation_window: The maximum number of messages to include in the conversation window (context), after which old messages are truncated or summarized.
         conversation_top_k: The number of top results to retrieve from the conversation history.
@@ -77,6 +78,7 @@ class LLMConfig:
     disable_vision: bool | None = None
     caching_prompt: bool = True
     log_completions: bool = False
+    log_completions_folder: str | None = None
     draft_editor: Optional['LLMConfig'] = None
     max_conversation_window: int = 10
     conversation_top_k: int = 5

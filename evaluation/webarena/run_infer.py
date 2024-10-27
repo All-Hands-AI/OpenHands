@@ -36,6 +36,7 @@ from openhands.runtime.browser.browser_env import (
     BROWSER_EVAL_GET_GOAL_ACTION,
     BROWSER_EVAL_GET_REWARDS_ACTION,
 )
+from openhands.utils.async_utils import call_async_from_sync
 
 SUPPORTED_AGENT_CLS = {'BrowsingAgent'}
 
@@ -144,6 +145,7 @@ def process_instance(
         logger.info(f'Starting evaluation for instance {env_id}.')
 
     runtime = create_runtime(config)
+    call_async_from_sync(runtime.connect)
     task_str = initialize_runtime(runtime)
 
     state: State | None = asyncio.run(

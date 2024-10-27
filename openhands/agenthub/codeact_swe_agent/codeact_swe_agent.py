@@ -89,11 +89,7 @@ class CodeActSWEAgent(Agent):
         return ''
 
     def get_action_message(self, action: Action) -> Message | None:
-        if (
-            isinstance(action, CmdRunAction)
-            or isinstance(action, IPythonRunCellAction)
-            or isinstance(action, MessageAction)
-        ):
+        if isinstance(action, (CmdRunAction, IPythonRunCellAction, MessageAction)):
             content = [TextContent(text=self.action_to_str(action))]
 
             if (
