@@ -129,7 +129,9 @@ class AgentController:
         self._stuck_detector = StuckDetector(self.state)
 
     async def close(self):
-        """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream."""
+        """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
+
+        Note that it's fairly important that this closes properly, otherwise the state is incomplete."""
         await self.set_agent_state_to(AgentState.STOPPED)
 
         # we made history, now is the time to rewrite it!
@@ -138,10 +140,10 @@ class AgentController:
         # like the regular agent history, it does not include:
         # - 'hidden' events, events with hidden=True
         # - backend events (the default 'filtered out' types, types in self.filter_out)
-        start_id = self.state.start_id if self.state.start_id != -1 else 0
+        start_id = self.state.start_id if self.state.start_id >= 0 else 0
         end_id = (
             self.state.end_id
-            if self.state.end_id != -1
+            if self.state.end_id >= 0
             else self.event_stream.get_latest_event_id()
         )
         self.state.history = list(
@@ -414,6 +416,8 @@ class AgentController:
             delegate_level=self.state.delegate_level + 1,
             # global metrics should be shared between parent and child
             metrics=self.state.metrics,
+            # start on top of the stream
+            start_id=self.event_stream.get_latest_event_id() + 1,
         )
         logger.info(
             f'[Agent Controller {self.id}]: start delegate, creating agent {delegate_agent.name} using LLM {llm}'
@@ -624,8 +628,10 @@ class AgentController:
             max_iterations: The maximum number of iterations allowed for the task.
             confirmation_mode: Whether to enable confirmation mode.
         """
-        # state from the previous session, state from a parent agent, or a new state
-        # note that this is called twice when restoring a previous session, first with state=None
+        # state can come from:
+        # - the previous session, in which case it has history
+        # - from a parent agent, in which case it has no history
+        # - None / a new state
         if state is None:
             self.state = State(
                 inputs={},
@@ -633,21 +639,11 @@ class AgentController:
                 confirmation_mode=confirmation_mode,
             )
         else:
-            # FIXME when restored from a previous session, the State object needs to have:
-            # - history? no, read it from the event stream
-            # - start_id, potentially end_id
-            # - delegates_ids - no, read it from the event stream if wanted
-
             self.state = state
 
-            # if start_id was not set in State, we're starting fresh, at the top of the stream
-            # does this still happen?
-            if self.state.start_id <= -1:
-                self.state.start_id = self.event_stream.get_latest_event_id() + 1
-            else:
-                logger.debug(
-                    f'AgentController {self.id} initializing history from event {self.state.start_id}'
-                )
+            logger.debug(
+                f'AgentController {self.id} initializing history from event {self.state.start_id}'
+            )
 
             self._init_history()
 
@@ -662,11 +658,13 @@ class AgentController:
             - Includes the delegate action and observation themselves
         """
 
-        # Define range of events to fetch
-        start_id = self.state.start_id if self.state.start_id != -1 else 0
+        # define range of events to fetch
+        # delegates start with a start_id and initially won't find any events
+        # otherwise we're restoring a previous session
+        start_id = self.state.start_id if self.state.start_id >= 0 else 0
         end_id = (
             self.state.end_id
-            if self.state.end_id != -1
+            if self.state.end_id >= 0
             else self.event_stream.get_latest_event_id()
         )
 
