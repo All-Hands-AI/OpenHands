@@ -39,6 +39,8 @@ export function ProjectMenuCard({
     setContextMenuIsOpen((prev) => !prev);
   };
 
+  const { t } = useTranslation();
+
   const handlePushToGitHub = () => {
     posthog.capture("push_to_github_button_clicked");
     const rawEvent = {
@@ -99,7 +101,7 @@ Please push the changes to GitHub and open a pull request.
       <button
         type="button"
         onClick={toggleMenuVisibility}
-        aria-label="Open project menu"
+        aria-label={t(I18nKey.PROJECT_MENU$OPEN)}
       >
         {working ? (
           <LoadingSpinner size="small" />
