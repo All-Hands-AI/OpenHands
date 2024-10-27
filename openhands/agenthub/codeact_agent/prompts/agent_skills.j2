@@ -1,0 +1,6 @@
+{% for skill_name in available_skills %}
+{% set skill_docstring = get_skill_docstring(skill_name) %}
+{% if skill_docstring %}
+{{ skill_docstring }}
+{% endif %}
+{% endfor %}
