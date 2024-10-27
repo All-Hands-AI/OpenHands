@@ -8,6 +8,7 @@ from openhands.llm.metrics import Metrics
 class EventSource(str, Enum):
     AGENT = 'agent'
     USER = 'user'
+    ENVIRONMENT = 'environment'
 
 
 @dataclass
