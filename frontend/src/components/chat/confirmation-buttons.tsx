@@ -25,7 +25,7 @@ function ActionTooltip({ type, onClick }: ActionTooltipProps) {
       <button
         data-testid={`action-${type}-button`}
         type="button"
-        aria-label={type === "confirm" ? "Confirm action" : "Reject action"}
+        aria-label={content}
         className="bg-neutral-700 rounded-full p-1 hover:bg-neutral-800"
         onClick={onClick}
       >
