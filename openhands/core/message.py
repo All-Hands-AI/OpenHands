@@ -49,7 +49,7 @@ class ImageContent(Content):
 
 class Message(BaseModel):
     # NOTE: this is not the same as EventSource
-    # These are the roles in the assistants' APIs
+    # These are the roles in the LLM APIs
     role: Literal['user', 'system', 'assistant']
     content: list[TextContent | ImageContent] = Field(default=list)
     cache_enabled: bool = False
