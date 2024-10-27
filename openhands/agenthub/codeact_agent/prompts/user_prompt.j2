@@ -1,12 +1,7 @@
+{% block user_prompt %}
 {{ examples }}
 
-{% if micro_agent %}
---- BEGIN OF GUIDELINE ---
-The following information may assist you in completing your task:
-
-{{ micro_agent }}
---- END OF GUIDELINE ---
-{% endif %}
-
+{{ micro_agent_content }}
 
 NOW, LET'S START!
+{% endblock %}

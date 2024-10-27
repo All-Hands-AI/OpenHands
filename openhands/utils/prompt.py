@@ -32,7 +32,6 @@ class PromptManager:
 
         Args:
             prompt_dir: The directory containing the prompt templates.
-            agent_skills_docs: The documentation for the agent's skills.
             micro_agent: The micro-agent to use for generating responses.
         """
         self.prompt_dir = prompt_dir
@@ -42,43 +41,38 @@ class PromptManager:
         yaml_path = os.path.join(prompt_dir, 'agent.yaml')
         if os.path.exists(yaml_path):
             with open(yaml_path, 'r') as f:
-                config = yaml.safe_load(f)
+                self.config = yaml.safe_load(f)
 
-            custom_templates_dir = config.get('custom_templates_dir', None)
+            custom_templates_dir = self.config.get('custom_templates_dir', None)
             if custom_templates_dir:
-                # custom templates directory is an absolute path or relative to the script location
                 custom_templates_dir = os.path.abspath(custom_templates_dir)
 
                 # prioritize custom_templates_dir over the default templates directory
                 self.env = Environment(
                     loader=FileSystemLoader([custom_templates_dir, self.prompt_dir])
                 )
+            else:
+                self.env = Environment(loader=FileSystemLoader(self.prompt_dir))
 
-            self._system_template = self._load_template(
-                config['template']['system_prompt']
-            )
-            self._agent_skills_template = self._load_template(
-                config['template']['agent_skills']
-            )
-            self._examples_template = self._load_template(
-                config['template']['examples']
-            )
-            self._user_template = self._load_template(config['template']['user_prompt'])
+            # Load templates with their blocks
+            template_config = self.config['template']
+            self.templates = {}
+            for name, cfg in template_config.items():
+                template = self._load_template(cfg['file'])
+                self.templates[name] = {
+                    'template': template,
+                    'blocks': cfg.get('blocks', []),
+                }
 
-            self.available_skills = config['agent_skills']['available_skills']
+            self.available_skills = self.config['agent_skills']['available_skills']
         else:
-            # no agent.yaml file found, use the default templates
-            self.env = Environment(loader=FileSystemLoader(prompt_dir))
+            # Default setup if no yaml
+            self.env = Environment(loader=FileSystemLoader(self.prompt_dir))
+            self.templates = self._load_default_templates()
+            self.available_skills = []
 
-            self._system_template = self._load_template('system_prompt')
-            self._agent_skills_template = self._load_template('agent_skills')
-            self._user_template = self._load_template('user_prompt')
-            self._examples_template = self._load_template('examples')
-
-            self.available_skills = []  # FIXME: default to empty list if YAML not found
-
-        # TODO: agent config should have a tool use enabled or disabled
-        # and we can use that to conditionally load the tools variant of agentskills
+        # TODO: agent config will have tool use enabled or disabled
+        # to conditionally load the tools variant of agentskills
 
     def _load_template(self, template_name: str) -> Template:
         # use the jinja2 environment to load the template
@@ -92,19 +86,30 @@ class PromptManager:
             with open(template_path, 'r') as file:
                 return Template(file.read())
 
+    def _render_blocks(self, template_name: str, **kwargs) -> str:
+        """Renders all blocks for a template in order."""
+        template_info = self.templates[template_name]
+        rendered_blocks = []
+
+        for block_name in template_info['blocks']:
+            block = template_info['template'].blocks[block_name]
+            rendered = block(**kwargs)
+            rendered_blocks.append(rendered)
+
+        return ''.join(rendered_blocks)
+
     @property
     def system_message(self) -> str:
-        # render the agent_skills.j2 template
-
         self.env.globals['get_skill_docstring'] = self._get_skill_docstring
-        rendered_docs = self._agent_skills_template.render(
-            available_skills=self.available_skills
-        )
 
-        rendered = self._system_template.render(
-            agent_skills_docs=rendered_docs,
+        # Render agent skills blocks first
+        rendered_docs = self._render_blocks(
+            'agent_skills', available_skills=self.available_skills
         ).strip()
-        return rendered
+
+        # Then render system blocks
+        rendered = self._render_blocks('system_prompt', agent_skills_docs=rendered_docs)
+        return rendered.strip()
 
     @property
     def initial_user_message(self) -> str:
@@ -117,11 +122,18 @@ class PromptManager:
         These additional context will convert the current generic agent
         into a more specialized agent that is tailored to the user's task.
         """
-        # this should render the examples.j2 template first, then the user_prompt.j2 template
-        rendered_examples = self._examples_template.render()
-        rendered = self._user_template.render(
-            examples=rendered_examples,
+        # Render each component's blocks
+        rendered_examples = self._render_blocks('examples').strip()
+        rendered_micro_agent = self._render_blocks(
+            'micro_agent',
             micro_agent=self.micro_agent.content if self.micro_agent else None,
+        ).strip()
+
+        # Combine in user prompt
+        rendered = self._render_blocks(
+            'user_prompt',
+            examples=rendered_examples,
+            micro_agent_content=rendered_micro_agent,
         )
         return rendered.strip()
 
@@ -150,3 +162,52 @@ class PromptManager:
         except (ImportError, AttributeError) as e:
             print(e)
             return f'Documentation not found for skill: {skill_name}'
+
+    def _load_default_templates(self) -> dict:
+        """Provides default template configuration when no agent.yaml is present.
+
+        Returns a dictionary with the same structure as the yaml template config,
+        containing default template files and block orders.
+        """
+        # Load all default templates
+        templates = {}
+
+        # System prompt with standard block order
+        templates['system_prompt'] = {
+            'template': self._load_template('system_prompt'),
+            'blocks': [
+                'system_prefix',
+                'python_capabilities',
+                'bash_capabilities',
+                'browsing_capabilities',
+                'pip_capabilities',
+                'agent_skills',
+                'system_rules',
+            ],
+        }
+
+        # Agent skills documentation
+        templates['agent_skills'] = {
+            'template': self._load_template('agent_skills'),
+            'blocks': ['skill_docs'],
+        }
+
+        # Example interactions
+        templates['examples'] = {
+            'template': self._load_template('examples'),
+            'blocks': ['default_example', 'micro_agent_guidelines'],
+        }
+
+        # Micro-agent guidelines
+        templates['micro_agent'] = {
+            'template': self._load_template('micro_agent'),
+            'blocks': ['micro_agent_guidelines'],
+        }
+
+        # User prompt combining everything
+        templates['user_prompt'] = {
+            'template': self._load_template('user_prompt'),
+            'blocks': ['user_prompt'],
+        }
+
+        return templates
