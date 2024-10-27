@@ -293,6 +293,9 @@ BrowserDelegationTool = ChatCompletionToolParam(
     ),
 )
 
+# TODO: add back "message" tool AND force the assistant to choose ONE tool call per response
+# This allow us to select tool_use='required' to force at least ONE tool call per response, since weaker models like Deepseek may not perform as well when not forcing it to call tools. - will need to benchmark performance for this.
+
 _FINISH_DESCRIPTION = """Finish the interaction when the task is complete OR if the assistant cannot proceed further with the task."""
 
 FinishTool = ChatCompletionToolParam(

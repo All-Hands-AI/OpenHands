@@ -215,6 +215,9 @@ class CodeActAgent(Agent):
                 assert len(llm_response.choices) == 1
                 _llm_message = llm_response.choices[0].message
                 tool_call = _llm_message.tool_calls[0]
+                # FIXME
+                # The assert tool_calls is 1 is not guarantee to work all the time
+                # will need to get https://github.com/All-Hands-AI/OpenHands/pull/4587 in for better support
                 assert len(_llm_message.tool_calls) == 1
                 message = Message(
                     role='tool',
@@ -263,6 +266,7 @@ class CodeActAgent(Agent):
             ]
         response = self.llm.completion(**params)
 
+        # TODO: potentially handle MULTIPLE tool calls per response
         if self.config.function_calling:
             return codeact_function_calling.response_to_action(response)
         else:
