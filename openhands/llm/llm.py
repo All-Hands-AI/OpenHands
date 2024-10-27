@@ -431,13 +431,8 @@ class LLM(RetryMixin, DebugMixin):
 
         try:
             # try directly get response_cost from response
-            if (
-                cost := getattr(response, '_hidden_params', {}).get(
-                    'response_cost', None
-                )
-            ) is not None:
-                pass
-            else:
+            cost = getattr(response, '_hidden_params', {}).get('response_cost', None)
+            if cost is None:
                 cost = litellm_completion_cost(
                     completion_response=response, **extra_kwargs
                 )
