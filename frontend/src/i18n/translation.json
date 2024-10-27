@@ -1901,6 +1901,30 @@
   "FILE_EXPLORER$CLOSE_WORKSPACE": {
     "en": "Close workspace"
   },
+  "PROJECT_MENU$NEW_PROJECT": {
+    "en": "New Project"
+  },
+  "PROJECT_MENU$CONNECT_GITHUB": {
+    "en": "Connect to GitHub"
+  },
+  "PROJECT_MENU$PUSH_GITHUB": {
+    "en": "Push to GitHub"
+  },
+  "PROJECT_MENU$CONNECTED": {
+    "en": "Connected"
+  },
+  "PROJECT_MENU$TIME_AGO": {
+    "en": "ago"
+  },
+  "PROJECT_MENU$DOWNLOAD_AS_ZIP": {
+    "en": "Download as .zip"
+  },
+  "PROJECT_MENU$OPEN": {
+    "en": "Open project menu"
+  },
+  "PROJECT_MENU$RAW_EVENT_CONTENT": {
+    "en": "\nLet's push the code to GitHub.\nIf we're currently on the openhands-workspace branch, please create a new branch with a descriptive name.\nCommit any changes and push them to the remote repository.\nFinally, open up a pull request using the GitHub API and the token in the GITHUB_TOKEN environment variable, then show me the URL of the pull request."
+  },
   "ACCOUNT_SETTINGS_MODAL$DISCONNECT":{
     "en": "Disconnect",
     "es": "Desconectar"
