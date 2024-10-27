@@ -1,7 +1,7 @@
 import asyncio
 import copy
 import traceback
-from typing import Type
+from typing import Iterable, Type
 
 import litellm
 
@@ -435,7 +435,7 @@ class AgentController:
             return
 
         self.update_state_before_step()
-        action: Action = NullAction()
+        action: Action | Iterable[Action] = NullAction()
         try:
             action = self.agent.step(self.state)
             if action is None:
@@ -446,26 +446,29 @@ class AgentController:
             await self.report_error(str(e))
             return
 
-        if action.runnable:
-            if self.state.confirmation_mode and (
-                type(action) is CmdRunAction or type(action) is IPythonRunCellAction
-            ):
-                action.confirmation_state = (
-                    ActionConfirmationStatus.AWAITING_CONFIRMATION
-                )
-            self._pending_action = action
+        # Get actions into a list
+        actions = list(action) if isinstance(action, Iterable) else [action]
+        for action in actions:
+            if action.runnable:
+                if self.state.confirmation_mode and (
+                    type(action) is CmdRunAction or type(action) is IPythonRunCellAction
+                ):
+                    action.confirmation_state = (
+                        ActionConfirmationStatus.AWAITING_CONFIRMATION
+                    )
+                self._pending_action = action
 
-        if not isinstance(action, NullAction):
-            if (
-                hasattr(action, 'confirmation_state')
-                and action.confirmation_state
-                == ActionConfirmationStatus.AWAITING_CONFIRMATION
-            ):
-                await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
-            self.event_stream.add_event(action, EventSource.AGENT)
+            if not isinstance(action, NullAction):
+                if (
+                    hasattr(action, 'confirmation_state')
+                    and action.confirmation_state
+                    == ActionConfirmationStatus.AWAITING_CONFIRMATION
+                ):
+                    await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
+                self.event_stream.add_event(action, EventSource.AGENT)
 
+            logger.info(action, extra={'msg_type': 'ACTION'})
         await self.update_state_after_step()
-        logger.info(action, extra={'msg_type': 'ACTION'})
 
         if self._is_stuck():
             # This need to go BEFORE report_error to sync metrics

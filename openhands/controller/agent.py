@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Iterable, Type
 
 if TYPE_CHECKING:
     from openhands.controller.state.state import State
@@ -44,7 +44,7 @@ class Agent(ABC):
         return self._complete
 
     @abstractmethod
-    def step(self, state: 'State') -> 'Action':
+    def step(self, state: 'State') -> 'Action | Iterable[Action]':
         """Starts the execution of the assigned instruction. This method should
         be implemented by subclasses to define the specific execution logic.
         """
