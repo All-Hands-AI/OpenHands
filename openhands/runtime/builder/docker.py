@@ -16,7 +16,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         self.docker_client = docker_client
 
         version_info = self.docker_client.version()
-        server_version = version_info.get('Version', '')
+        server_version = version_info.get('Version', '').replace('-', '.')
         if tuple(map(int, server_version.split('.'))) < (18, 9):
             raise RuntimeError('Docker server version must be >= 18.09 to use BuildKit')
 
@@ -53,7 +53,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         """
         self.docker_client = docker.from_env()
         version_info = self.docker_client.version()
-        server_version = version_info.get('Version', '')
+        server_version = version_info.get('Version', '').replace('-', '.')
         if tuple(map(int, server_version.split('.'))) < (18, 9):
             raise RuntimeError('Docker server version must be >= 18.09 to use BuildKit')
 
