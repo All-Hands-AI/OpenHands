@@ -136,7 +136,7 @@ class State:
     def __getstate__(self):
         # don't pickle history, it will be restored from the event stream
         state = self.__dict__.copy()
-        state.pop('history', None)
+        state['history'] = []
         return state
 
     def __setstate__(self, state):

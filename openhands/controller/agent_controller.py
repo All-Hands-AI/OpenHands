@@ -632,7 +632,6 @@ class AgentController:
             # - start_id, potentially end_id
             # - delegates_ids - no, read it from the event stream if wanted
 
-            # restored state or from a parent agent does not have history
             self.state = state
 
             # if start_id was not set in State, we're starting fresh, at the top of the stream
@@ -656,12 +655,6 @@ class AgentController:
             - Excludes all events between the action and observation
             - Includes the delegate action and observation themselves
         """
-        # Initialize empty history if not present (for old-style saved states)
-        if not hasattr(self.state, 'history'):
-            logger.debug(
-                'Restored state does not have history, initializing empty history.'
-            )
-            self.state.history = []
 
         # Define range of events to fetch
         start_id = self.state.start_id if self.state.start_id != -1 else 0
@@ -670,6 +663,14 @@ class AgentController:
             if self.state.end_id != -1
             else self.event_stream.get_latest_event_id()
         )
+
+        # sanity check
+        if start_id > end_id + 1:
+            logger.debug(
+                f'start_id {start_id} is greater than end_id + 1 ({end_id + 1}). History will be empty.'
+            )
+            self.state.history = []
+            return
 
         # Get all events, filtering out backend events and hidden events
         events = list(
