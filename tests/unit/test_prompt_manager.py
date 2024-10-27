@@ -10,11 +10,19 @@ from openhands.utils.prompt import PromptManager
 
 @pytest.fixture
 def prompt_dir(tmp_path):
-    # Copy contents from "openhands/agenthub/codeact_agent" to the temp directory
-    shutil.copytree('openhands/agenthub/codeact_agent', tmp_path, dirs_exist_ok=True)
+    """Creates a temporary directory with CodeAct agent templates.
 
-    # Return the temporary directory path
-    return str(tmp_path)  # Return string path
+    Copies the entire codeact_agent directory structure to a temp location
+    to avoid modifying the original files during tests.
+    """
+    # Copy contents from "openhands/agenthub/codeact_agent" to the temp directory
+    source = 'openhands/agenthub/codeact_agent'
+    shutil.copytree(source, tmp_path, dirs_exist_ok=True)
+
+    # Return path to the prompts directory
+    return str(
+        os.path.join(tmp_path, 'prompts')
+    )  # Points to the correct prompts directory
 
 
 SAMPLE_AGENT_SKILLS_DOCS = """Sample agent skills documentation"""
