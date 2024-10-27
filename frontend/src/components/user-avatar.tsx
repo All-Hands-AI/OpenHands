@@ -1,6 +1,8 @@
-import { LoadingSpinner } from "./modals/loading-project";
-import DefaultUserAvatar from "#/icons/default-user.svg?react";
+import { useTranslation } from "react-i18next";
+import { LoadingSpinner } from "./modals/LoadingProject";
+import DefaultUserAvatar from "#/assets/default-user.svg?react";
 import { cn } from "#/utils/utils";
+import { I18nKey } from "#/i18n/declaration";
 
 interface UserAvatarProps {
   onClick: () => void;
@@ -9,6 +11,7 @@ interface UserAvatarProps {
 }
 
 export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
+  const { t } = useTranslation();
   return (
     <button
       data-testid="user-avatar"
@@ -22,13 +25,13 @@ export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
       {!isLoading && avatarUrl && (
         <img
           src={avatarUrl}
-          alt="user avatar"
+          alt={t(I18nKey.USER_AVATAR)}
           className="w-full h-full rounded-full"
         />
       )}
       {!isLoading && !avatarUrl && (
         <DefaultUserAvatar
-          aria-label="user avatar placeholder"
+          aria-label={t(I18nKey.USER_AVATAR)}
           width={20}
           height={20}
         />
