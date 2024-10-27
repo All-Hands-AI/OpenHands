@@ -1,0 +1,10 @@
+[core]
+runtime="docker"
+
+[sandbox]
+container_name="custom-sandbox"
+remote_runtime_api_url="http://host.docker.internal:8000/"
+
+docker_url="unix:///var/run/docker.sock"
+
+###

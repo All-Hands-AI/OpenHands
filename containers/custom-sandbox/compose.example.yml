@@ -1,0 +1,31 @@
+###
+name: sandbox
+services:
+  sandbox:
+    # The container_name must match the name defined in the config.toml
+    container_name: custom-sandbox
+    privileged: true
+    build:
+      context: ./local
+      dockerfile: Dockerfile
+    image: custom-sandbox
+    command: >
+      /openhands/micromamba/bin/micromamba run -n openhands
+      poetry run
+      python -u -m openhands.runtime.action_execution_server 3000
+      --working-dir /workspace
+      --plugins agent_skills jupyter
+      --username openhands
+    # the publicly exposed port 8000 must match the port in remote_runtime_api_url defined in the config.toml
+    ports:
+      - "8000:3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - workspace-data:/workspace
+    pull_policy: never
+
+##
+volumes:
+  workspace-data:
+
+###

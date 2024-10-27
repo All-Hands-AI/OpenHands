@@ -21,6 +21,11 @@ def get_runtime_cls(name: str):
         return ModalRuntime
     elif name == 'runloop':
         return RunloopRuntime
+    elif name == 'docker':
+        logger.info('Using custom DockerRuntime')
+        from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+
+        return DockerRuntime
     else:
         raise ValueError(f'Runtime {name} not supported')
 
