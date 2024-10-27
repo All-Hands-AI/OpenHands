@@ -1880,6 +1880,9 @@
   "ACTION_BUTTON$PAUSE": {
     "en": "Pause the current task"
   },
+  "USER_AVATAR": {
+    "en": "User Avatar"
+  },
   "ACCOUNT_SETTINGS_MODAL$DISCONNECT":{
     "en": "Disconnect",
     "es": "Desconectar"
