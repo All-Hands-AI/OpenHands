@@ -638,6 +638,9 @@ class AgentController:
         else:
             self.state = state
 
+            if self.state.start_id <= -1:
+                self.state.start_id = 0
+
             logger.debug(
                 f'AgentController {self.id} initializing history from event {self.state.start_id}'
             )
