@@ -118,7 +118,6 @@ class PromptManager:
         # example interactions
         templates['examples'] = {
             'template': self._load_template('examples'),
-            'blocks': ['default_example', 'micro_agent_guidelines'],
         }
 
         # micro-agent guidelines
@@ -130,7 +129,7 @@ class PromptManager:
         # user prompt combining everything
         templates['user_prompt'] = {
             'template': self._load_template('user_prompt'),
-            'blocks': ['user_prompt'],
+            'blocks': ['user_prompt', 'default_example', 'micro_agent_guidelines'],
         }
 
         return templates
@@ -156,10 +155,10 @@ class PromptManager:
         context = template_info['template'].new_context(kwargs)
 
         # render each block using the shared context
-        for block_name in template_info['blocks']:
+        for block_name in template_info.get('blocks', []):
             try:
+                logger.debug(f"Rendering block '{template_name}.{block_name}'")
                 block = template_info['template'].blocks[block_name]
-                # Convert generator to string by joining its contents
                 rendered = ''.join(block(context))
                 rendered_blocks.append(rendered)
             except KeyError:
@@ -195,14 +194,14 @@ class PromptManager:
         These additional context will convert the current generic agent
         into a more specialized agent that is tailored to the user's task.
         """
-        # Render each component's blocks
+        # render each component's blocks
         rendered_examples = self._render_blocks('examples').strip()
         rendered_micro_agent = self._render_blocks(
             'micro_agent',
             micro_agent=self.micro_agent.content if self.micro_agent else None,
         ).strip()
 
-        # Combine in user prompt
+        # combine in user prompt
         rendered = self._render_blocks(
             'user_prompt',
             examples=rendered_examples,

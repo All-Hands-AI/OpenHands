@@ -9,34 +9,33 @@ template:
   system_prompt:
     file: "system_prompt"  # path to the system template file
     blocks:
-      - system_prefix
-      - python_capabilities
-      - bash_capabilities
-      - browsing_capabilities
-      - pip_capabilities
-      - agent_skills
-      - system_rules
+      - SYSTEM_PREFIX
+      - PYTHON_CAPABILITIES
+      - BASH_CAPABILITIES
+      - BROWSING_CAPABILITIES
+      - PIP_CAPABILITIES
+      - AGENT_SKILLS
+      - SYSTEM_RULES
 
   agent_skills:
     file: "agent_skills"
     blocks:
-      - skill_docs
-
-  examples:
-    file: "examples"
-    blocks:
-      - default_example
-      - micro_agent_guidelines
-
-  micro_agent:
-    file: "micro_agent"
-    blocks:
-      - micro_agent_guidelines
+      - SKILL_DOCS
 
   user_prompt:
     file: "user_prompt"
     blocks:
-      - user_prompt
+      - USER_PROMPT
+
+  examples:
+    file: "examples"
+    blocks:
+      - DEFAULT_EXAMPLE
+
+  micro_agent:
+    file: "micro_agent"
+    blocks:
+      - MICRO_AGENT_GUIDELINES
 
 # agent-specific variables (can be accessed within templates)
 use_tools: false  # whether to use tool-based implementations
