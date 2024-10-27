@@ -143,12 +143,12 @@ class Session:
         elif event.source == EventSource.ENVIRONMENT and isinstance(
             event, CmdOutputObservation
         ):
-            # events originating from the agent actions are understood as agent events
+            # feedback from the environment to agent actions is understood as agent events by the UI
             event_dict = event_to_dict(event)
             event_dict['source'] = EventSource.AGENT
             await self.send(event_dict)
         elif isinstance(event, ErrorObservation):
-            # send error events as agent events
+            # send error events as agent events to the UI
             event_dict = event_to_dict(event)
             event_dict['source'] = EventSource.AGENT
             await self.send(event_dict)

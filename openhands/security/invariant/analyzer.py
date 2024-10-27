@@ -147,6 +147,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
         new_event = action_from_dict(
             {'action': 'change_agent_state', 'args': {'agent_state': 'user_confirmed'}}
         )
+        # we should confirm only on agent actions
         event_source = event.source if event.source else EventSource.AGENT
         await call_sync_from_async(self.event_stream.add_event, new_event, event_source)
 

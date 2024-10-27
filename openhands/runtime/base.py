@@ -129,6 +129,8 @@ class Runtime(FileEditRuntimeMixin):
             assert event.timeout is not None
             observation = await call_sync_from_async(self.run_action, event)
             observation._cause = event.id  # type: ignore[attr-defined]
+
+            # this might be unnecessary, since source should be set by the event stream when we're here
             source = event.source if event.source else EventSource.AGENT
             await self.event_stream.async_add_event(observation, source)  # type: ignore[arg-type]
 
