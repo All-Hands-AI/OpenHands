@@ -11,8 +11,14 @@ from openhands.core.exceptions import LLMMalformedActionError
 from openhands.core.main import run_controller
 from openhands.core.schema import AgentState
 from openhands.events import Event, EventSource, EventStream, EventStreamSubscriber
-from openhands.events.action import ChangeAgentStateAction, CmdRunAction, MessageAction
-from openhands.events.observation import FatalErrorObservation
+from openhands.events.action import (
+    AgentFinishAction,
+    ChangeAgentStateAction,
+    CmdRunAction,
+    MessageAction,
+)
+from openhands.events.observation import ErrorObservation, FatalErrorObservation
+from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.runtime.base import Runtime
@@ -175,6 +181,72 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
         == 'There was a fatal error during agent execution: **FatalErrorObservation**\nFatal error detected'
     )
     assert len(list(event_stream.get_events())) == 5
+
+
+@pytest.mark.asyncio
+async def test_run_controller_exec_multi_actions(mock_agent, mock_event_stream):
+    config = AppConfig()
+    file_store = get_file_store(config.file_store, config.file_store_path)
+    event_stream = EventStream(sid='test', file_store=file_store)
+
+    # Mock agent behavior to return 3 different CmdRunActions every time
+    agent = MagicMock(spec=Agent)
+    counter = 0
+
+    def agent_step_fn(state):
+        nonlocal counter
+        print(f'agent_step_fn received state: {state}')
+        # return 3 different CmdRunActions every time
+        ret = [CmdRunAction(command=f'ls {counter+i}') for i in range(3)]
+        counter += 3
+        if counter == 9:
+            return AgentFinishAction()
+        return ret
+
+    agent.step = agent_step_fn
+    agent.llm = MagicMock(spec=LLM)
+    agent.llm.metrics = Metrics()
+    agent.llm.config = config.get_llm_config()
+
+    # Mock runtime behavior to reply for EACH
+    runtime = MagicMock(spec=Runtime)
+    prev_event_id = 0
+    prev_command_id = -1
+
+    async def on_event(event: Event):
+        nonlocal prev_event_id, prev_command_id
+        if isinstance(event, CmdRunAction):
+            non_fatal_error_obs = ErrorObservation(
+                f'An observation for {event.command}'
+            )
+            non_fatal_error_obs._cause = event.id
+            # CmdRunAction should have a greater id than the previous event
+            # i.e., the runtime receives events in order
+            cur_command_id = int(event.command.removeprefix('ls '))
+            assert cur_command_id > prev_command_id
+            prev_command_id = cur_command_id
+            assert event.id > prev_event_id
+            prev_event_id = event.id
+            await event_stream.async_add_event(non_fatal_error_obs, EventSource.USER)
+
+    event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event)
+    runtime.event_stream = event_stream
+
+    state = await run_controller(
+        config=config,
+        initial_user_action=MessageAction(content='Test message'),
+        runtime=runtime,
+        sid='test',
+        agent=agent,
+        fake_user_response_fn=lambda _: 'repeat',
+    )
+    events = list(event_stream.get_events())
+    print(f'state: {state}')
+    for i, event in enumerate(events):
+        print(f'event {i}: {event_to_dict(event)}')
+
+    assert state.iteration == 3
+    assert len(events) == 16
 
 
 @pytest.mark.asyncio
