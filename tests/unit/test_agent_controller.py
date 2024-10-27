@@ -18,7 +18,6 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.observation import ErrorObservation, FatalErrorObservation
-from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.runtime.base import Runtime
@@ -198,9 +197,9 @@ async def test_run_controller_exec_multi_actions(mock_agent, mock_event_stream):
         print(f'agent_step_fn received state: {state}')
         # return 3 different CmdRunActions every time
         ret = [CmdRunAction(command=f'ls {counter+i}') for i in range(3)]
-        counter += 3
         if counter == 9:
             return AgentFinishAction()
+        counter += 3
         return ret
 
     agent.step = agent_step_fn
@@ -213,20 +212,34 @@ async def test_run_controller_exec_multi_actions(mock_agent, mock_event_stream):
     prev_event_id = 0
     prev_command_id = -1
 
+    # Track all received commands and their order
+    received_commands = []
+    event_ids = []
+
     async def on_event(event: Event):
         nonlocal prev_event_id, prev_command_id
         if isinstance(event, CmdRunAction):
+            received_commands.append(event.command)
+            event_ids.append(event.id)
+
             non_fatal_error_obs = ErrorObservation(
                 f'An observation for {event.command}'
             )
             non_fatal_error_obs._cause = event.id
-            # CmdRunAction should have a greater id than the previous event
-            # i.e., the runtime receives events in order
+
+            # Verify command ordering
             cur_command_id = int(event.command.removeprefix('ls '))
-            assert cur_command_id > prev_command_id
+            assert (
+                cur_command_id > prev_command_id
+            ), f'Commands received out of order: {cur_command_id} <= {prev_command_id}'
             prev_command_id = cur_command_id
-            assert event.id > prev_event_id
+
+            # Verify event ID ordering
+            assert (
+                event.id > prev_event_id
+            ), f'Event IDs not monotonically increasing: {event.id} <= {prev_event_id}'
             prev_event_id = event.id
+
             await event_stream.async_add_event(non_fatal_error_obs, EventSource.USER)
 
     event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event)
@@ -241,12 +254,43 @@ async def test_run_controller_exec_multi_actions(mock_agent, mock_event_stream):
         fake_user_response_fn=lambda _: 'repeat',
     )
     events = list(event_stream.get_events())
-    print(f'state: {state}')
-    for i, event in enumerate(events):
-        print(f'event {i}: {event_to_dict(event)}')
 
-    assert state.iteration == 3
-    assert len(events) == 16
+    # Additional assertions
+    expected_commands = [
+        'ls 0',
+        'ls 1',
+        'ls 2',
+        'ls 3',
+        'ls 4',
+        'ls 5',
+        'ls 6',
+        'ls 7',
+        'ls 8',
+    ]
+    assert (
+        received_commands == expected_commands
+    ), f'Commands received in wrong order: {received_commands}'
+
+    # Verify event IDs are strictly increasing
+    assert all(
+        event_ids[i] < event_ids[i + 1] for i in range(len(event_ids) - 1)
+    ), f'Event IDs not strictly increasing: {event_ids}'
+
+    # Verify total number of events (including initial message, observations, and finish action)
+    assert state.iteration == 4
+    assert len(events) == 22
+
+    # Verify the sequence of events
+    event_types = [type(event).__name__ for event in events]
+    assert (
+        event_types.count('CmdRunAction') == 9
+    ), f"Expected 9 CmdRunActions, got {event_types.count('CmdRunAction')}"
+    assert (
+        event_types.count('ErrorObservation') == 9
+    ), f"Expected 9 ErrorObservations, got {event_types.count('ErrorObservation')}"
+    assert (
+        event_types.count('AgentFinishAction') == 1
+    ), f"Expected 1 AgentFinishAction, got {event_types.count('AgentFinishAction')}"
 
 
 @pytest.mark.asyncio
