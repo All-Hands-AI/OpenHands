@@ -255,7 +255,7 @@ def process_instance(
     else:
         logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
-    problem_statement = get_dv_query_for_real(
+    problem_statement, dataset_metadata = get_dv_query_for_real(
         datasets=instance.datasets,
         question=instance.query,
         domain_knowledge=instance.domain_knowledge,
