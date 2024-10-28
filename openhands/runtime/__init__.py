@@ -23,6 +23,10 @@ def get_runtime_cls(name: str):
         from openhands.runtime.impl.modal.modal_runtime import ModalRuntime
 
         return ModalRuntime
+    elif name == 'runloop':
+        from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
+
+        return RunloopRuntime
     else:
         raise ValueError(f'Runtime {name} not supported')
 
