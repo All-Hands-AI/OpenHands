@@ -306,26 +306,6 @@ FinishTool = ChatCompletionToolParam(
     ),
 )
 
-_MESSAGE_DESCRIPTION = """Send a message to the user to ask for clarification or provide additional information."""
-
-MessageTool = ChatCompletionToolParam(
-    type='function',
-    function=ChatCompletionToolParamFunctionChunk(
-        name='message_user',
-        description=_MESSAGE_DESCRIPTION,
-        parameters={
-            'type': 'object',
-            'properties': {
-                'content': {
-                    'type': 'string',
-                    'description': 'The message content to send to the user. Ideally formatted in markdown.',
-                },
-            },
-            'required': ['content'],
-        },
-    ),
-)
-
 
 def combine_thought(action: Action, thought: str) -> Action:
     if not hasattr(action, 'thought'):
@@ -372,18 +352,11 @@ def response_to_action(response: ModelResponse) -> Action:
                 f'TOOL CALL: str_replace_editor -> file_editor with code: {code}'
             )
             action = IPythonRunCellAction(code=code, include_extra=False)
-        elif tool_call.function.name == 'message_user':
-            action = MessageAction(
-                content=json.loads(tool_call.function.arguments)['content'],
-                wait_for_response=True,
-            )
         else:
             raise RuntimeError(f'Unknown tool call: {tool_call.function.name}')
         action = combine_thought(action, thought)
     else:
-        raise RuntimeError(
-            f'No tool call found in the response. This should not happen. Response: {response}'
-        )
+        action = MessageAction(content=assistant_msg.content, wait_for_response=True)
 
     assert action is not None
     action.trigger_by_llm_response = response
@@ -395,7 +368,7 @@ def get_tools(
     codeact_enable_llm_editor: bool = False,
     codeact_enable_jupyter: bool = False,
 ) -> list[ChatCompletionToolParam]:
-    tools = [CmdRunTool, FinishTool, MessageTool]
+    tools = [CmdRunTool, FinishTool]
     if codeact_enable_browsing_delegate:
         tools.append(BrowserDelegationTool)
     if codeact_enable_jupyter:
