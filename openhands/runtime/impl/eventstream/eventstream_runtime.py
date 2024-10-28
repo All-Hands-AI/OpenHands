@@ -235,12 +235,7 @@ class EventStreamRuntime(Runtime):
         stop=tenacity.stop_after_attempt(5) | stop_if_should_exit(),
         wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
     )
-    def _init_container(
-        self,
-        sandbox_workspace_dir: str,
-        mount_dir: str | None = None,
-        plugins: list[PluginRequirement] | None = None,
-    ):
+    def _init_container(self):
         try:
             logger.info('Preparing to start container...')
             self.send_status_message('STATUS$PREPARING_CONTAINER')
