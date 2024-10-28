@@ -107,7 +107,6 @@ class RunloopRuntime(EventStreamRuntime):
         status_message_callback: Callable | None = None,
         attach_to_existing: bool = False,
     ):
-        # Initialize runloop api client
         assert config.runloop_api_key is not None, 'Runloop API key is required'
         self.devbox: DevboxView | None = None
         self.config = config
