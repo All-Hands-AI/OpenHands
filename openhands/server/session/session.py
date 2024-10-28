@@ -72,10 +72,10 @@ class Session:
             logger.exception('Error in loop_recv: %s', e)
 
     async def _initialize_agent(self, data: dict):
-        self.agent_session.event_stream.add_event(
+        await self.agent_session.event_stream.async_add_event(
             ChangeAgentStateAction(AgentState.LOADING), EventSource.USER
         )
-        self.agent_session.event_stream.add_event(
+        await self.agent_session.event_stream.async_add_event(
             AgentStateChangedObservation('', AgentState.LOADING), EventSource.AGENT
         )
         # Extract the agent-relevant arguments from the request
@@ -171,7 +171,7 @@ class Session:
             )  # type: ignore
 
     async def _add_event(self, event, event_source):
-        self.agent_session.event_stream.add_event(event, EventSource.USER)
+        await self.agent_session.event_stream.async_add_event(event, event_source)
 
     async def send(self, data: dict[str, object]) -> bool:
         try:

@@ -117,7 +117,7 @@ class AgentSession:
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
         )
-        self.event_stream.add_event(
+        await self.event_stream.async_add_event(
             ChangeAgentStateAction(AgentState.INIT), EventSource.USER
         )
         if self.controller:

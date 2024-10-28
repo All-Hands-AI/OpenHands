@@ -130,12 +130,12 @@ async def main():
     async def prompt_for_next_task():
         next_message = input('How can I help? >> ')
         if next_message == 'exit':
-            event_stream.add_event(
+            await event_stream.async_add_event(
                 ChangeAgentStateAction(AgentState.STOPPED), EventSource.USER
             )
             return
         action = MessageAction(content=next_message)
-        event_stream.add_event(action, EventSource.USER)
+        await event_stream.async_add_event(action, EventSource.USER)
 
     async def on_event(event: Event):
         display_event(event)

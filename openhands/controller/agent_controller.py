@@ -146,7 +146,7 @@ class AgentController:
         detail = str(exception) if exception is not None else ''
         if exception is not None and isinstance(exception, litellm.AuthenticationError):
             detail = 'Please check your credentials. Is your API key correct?'
-        self.event_stream.add_event(
+        await self.event_stream.async_add_event(
             ErrorObservation(f'{message}:{detail}'), EventSource.USER
         )
 
@@ -330,10 +330,12 @@ class AgentController:
             else:
                 confirmation_state = ActionConfirmationStatus.REJECTED
             self._pending_action.confirmation_state = confirmation_state  # type: ignore[attr-defined]
-            self.event_stream.add_event(self._pending_action, EventSource.AGENT)
+            await self.event_stream.async_add_event(
+                self._pending_action, EventSource.AGENT
+            )
 
         self.state.agent_state = new_state
-        self.event_stream.add_event(
+        await self.event_stream.async_add_event(
             AgentStateChangedObservation('', self.state.agent_state), EventSource.AGENT
         )
 
@@ -409,7 +411,7 @@ class AgentController:
         # check if agent got stuck before taking any action
         if self._is_stuck():
             # This need to go BEFORE report_error to sync metrics
-            self.event_stream.add_event(
+            await self.event_stream.async_add_event(
                 FatalErrorObservation('Agent got stuck in a loop'), EventSource.USER
             )
             return
@@ -473,7 +475,7 @@ class AgentController:
                     == ActionConfirmationStatus.AWAITING_CONFIRMATION
                 ):
                     await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
-                self.event_stream.add_event(action, EventSource.AGENT)
+                await self.event_stream.async_add_event(action, EventSource.AGENT)
 
             logger.info(action, extra={'msg_type': 'ACTION'})
         await self.update_state_after_step()
@@ -524,7 +526,7 @@ class AgentController:
             # clean up delegate status
             self.delegate = None
             self.delegateAction = None
-            self.event_stream.add_event(obs, EventSource.AGENT)
+            await self.event_stream.async_add_event(obs, EventSource.AGENT)
         return
 
     async def _handle_traffic_control(
