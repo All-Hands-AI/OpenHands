@@ -6,7 +6,6 @@ import { ChatMessage } from "./chat-message";
 import { FeedbackActions } from "./feedback-actions";
 import { ImageCarousel } from "./image-carousel";
 import { createChatMessage } from "#/services/chatService";
-import { request } from '#/services/api';
 import { InteractiveChatBox } from "./interactive-chat-box";
 import { addUserMessage } from "#/state/chatSlice";
 import { RootState } from "#/store";
@@ -16,15 +15,12 @@ import { FeedbackModal } from "./feedback-modal";
 import { Feedback } from "#/api/open-hands.types";
 import { getToken } from "#/services/auth";
 import { removeApiKey, removeUnwantedKeys } from "#/utils/utils";
-import { clientAction } from "#/routes/submit-feedback";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import TypingIndicator from "./chat/TypingIndicator";
 import ConfirmationButtons from "./chat/ConfirmationButtons";
 import { ErrorMessage } from "./error-message";
 import { ContinueButton } from "./continue-button";
 import { ScrollToBottomButton } from "./scroll-to-bottom-button";
-
-const FEEDBACK_VERSION = "1.0";
 
 const isErrorMessage = (
   message: Message | ErrorMessage,
@@ -43,7 +39,6 @@ export function ChatInterface() {
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
   >("positive");
-  const [feedbackShared, setFeedbackShared] = React.useState(0);
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
 
   const handleSendMessage = async (content: string, files: File[]) => {
@@ -70,27 +65,6 @@ export function ChatInterface() {
     setFeedbackPolarity(polarity);
   };
 
-  const handleSubmitFeedback = async (
-    permissions: "private" | "public",
-    email: string,
-  ) => {
-    const feedback: Feedback = {
-      version: FEEDBACK_VERSION,
-      feedback: feedbackPolarity,
-      email,
-      permissions,
-    };
-
-    const response = await request('/api/submit-feedback', {
-      method: 'POST',
-      body: JSON.stringify(feedback),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    setFeedbackShared(messages.length);
-  };
 
   return (
     <div className="h-full flex flex-col justify-between">
@@ -127,16 +101,14 @@ export function ChatInterface() {
 
       <div className="flex flex-col gap-[6px] px-4 pb-4">
         <div className="flex justify-between relative">
-          {feedbackShared !== messages.length && messages.length > 3 && (
-            <FeedbackActions
-              onPositiveFeedback={() =>
-                onClickShareFeedbackActionButton("positive")
-              }
-              onNegativeFeedback={() =>
-                onClickShareFeedbackActionButton("negative")
-              }
-            />
-          )}
+          <FeedbackActions
+            onPositiveFeedback={() =>
+              onClickShareFeedbackActionButton("positive")
+            }
+            onNegativeFeedback={() =>
+              onClickShareFeedbackActionButton("negative")
+            }
+          />
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
             {messages.length > 2 &&
               curAgentState === AgentState.AWAITING_USER_INPUT && (
@@ -161,7 +133,7 @@ export function ChatInterface() {
       <FeedbackModal
         isOpen={feedbackModalIsOpen}
         onClose={() => setFeedbackModalIsOpen(false)}
-        onSubmit={handleSubmitFeedback}
+        polarity={feedbackPolarity}
       />
     </div>
   );
