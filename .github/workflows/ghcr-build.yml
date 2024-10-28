@@ -430,12 +430,9 @@ jobs:
 
           PR_BODY=$(gh pr view $PR_NUMBER --json body --jq .body)
 
-          # Check if the docker run command already exists in the PR description
           if echo "$PR_BODY" | grep -q "To run this PR locally, use the following command:"; then
-            # Replace the existing command
-            UPDATED_PR_BODY=$(echo "$PR_BODY" | sed -E "s|To run this PR locally, use the following command:\n\`\`\`\n.*\n\`\`\`|To run this PR locally, use the following command:\n\`\`\`\n$DOCKER_RUN_COMMAND\n\`\`\`|")
+            UPDATED_PR_BODY=$(echo "${PR_BODY}" | sed -E "s|docker run -it --rm.*|$DOCKER_RUN_COMMAND|")
           else
-            # Add the new command
             UPDATED_PR_BODY="${PR_BODY}
 
           ---
