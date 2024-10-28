@@ -1,6 +1,6 @@
 import json
 import os
-from collections import defaultdict, deque
+from collections import deque
 from itertools import islice
 
 from litellm import ModelResponse
@@ -131,10 +131,37 @@ class CodeActAgent(Agent):
     def get_action_message(
         self,
         action: Action,
-        response_id_tool_call_counter: dict[str, int],
-        tool_call_id_to_message: dict[str, Message],
+        pending_tool_call_action_messages: dict[str, Message],
     ) -> list[Message]:
-        """Convert an action to a message sent to the LLM."""
+        """Converts an action into a message format that can be sent to the LLM.
+
+        This method handles different types of actions and formats them appropriately:
+        1. For tool-based actions (AgentDelegate, CmdRun, IPythonRunCell, FileEdit) and agent-sourced AgentFinish:
+            - In function calling mode: Stores the LLM's response in pending_tool_call_action_messages
+            - In non-function calling mode: Creates a message with the action string
+        2. For MessageActions: Creates a message with the text content and optional image content
+
+        Args:
+            action (Action): The action to convert. Can be one of:
+                - AgentDelegateAction: For delegating tasks to other agents
+                - CmdRunAction: For executing bash commands
+                - IPythonRunCellAction: For running IPython code
+                - FileEditAction: For editing files
+                - AgentFinishAction: For ending the interaction
+                - MessageAction: For sending messages
+            pending_tool_call_action_messages (dict[str, Message]): Dictionary mapping response IDs
+                to their corresponding messages. Used in function calling mode to track tool calls
+                that are waiting for their results.
+
+        Returns:
+            list[Message]: A list containing the formatted message(s) for the action.
+                May be empty if the action is handled as a tool call in function calling mode.
+
+        Note:
+            In function calling mode, tool-based actions are stored in pending_tool_call_action_messages
+            rather than being returned immediately. They will be processed later when all corresponding
+            tool call results are available.
+        """
         # create a regular message from an event
         if isinstance(
             action,
@@ -146,44 +173,25 @@ class CodeActAgent(Agent):
             ),
         ) or (isinstance(action, AgentFinishAction) and action.source == 'agent'):
             if self.config.function_calling:
-                messages_to_add: list[Message] = []
                 tool_metadata = action.tool_call_metadata
                 assert tool_metadata is not None, (
                     'Tool call metadata should NOT be None when function calling is enabled. Action: '
                     + str(action)
                 )
 
-                # Check if all tool calls are processed
-                if (
-                    response_id_tool_call_counter[tool_metadata.model_response.id]
-                    < tool_metadata.total_calls_in_response
-                ):
-                    response_id_tool_call_counter[tool_metadata.model_response.id] += 1
-                    pass
-                elif (
-                    response_id_tool_call_counter[tool_metadata.model_response.id]
-                    == tool_metadata.total_calls_in_response
-                ):
-                    # all tool calls are processed
-                    llm_response: ModelResponse = tool_metadata.model_response
-                    assistant_msg = llm_response.choices[0].message
-                    # Add the LLM message (assistant) that initiated the tool calls
-                    messages_to_add.append(
-                        Message(
-                            role=assistant_msg.role,
-                            # tool call content SHOULD BE a string
-                            content=[TextContent(text=assistant_msg.content)]
-                            if assistant_msg.content is not None
-                            else [],
-                            tool_calls=assistant_msg.tool_calls,
-                        )
-                    )
-                    # Add the tool calls **results***
-                    for tool_call in assistant_msg.tool_calls:
-                        messages_to_add.append(tool_call_id_to_message[tool_call.id])
-                else:
-                    raise ValueError('This should not happen')
-                return messages_to_add
+                llm_response: ModelResponse = tool_metadata.model_response
+                assistant_msg = llm_response.choices[0].message
+                # Add the LLM message (assistant) that initiated the tool calls
+                # (overwrites any previous message with the same response_id)
+                pending_tool_call_action_messages[llm_response.id] = Message(
+                    role=assistant_msg.role,
+                    # tool call content SHOULD BE a string
+                    content=[TextContent(text=assistant_msg.content)]
+                    if assistant_msg.content is not None
+                    else [],
+                    tool_calls=assistant_msg.tool_calls,
+                )
+                return []
             else:
                 content = [TextContent(text=self.action_parser.action_to_str(action))]
                 return [
@@ -210,6 +218,31 @@ class CodeActAgent(Agent):
         obs: Observation,
         tool_call_id_to_message: dict[str, Message],
     ) -> list[Message]:
+        """Converts an observation into a message format that can be sent to the LLM.
+
+        This method handles different types of observations and formats them appropriately:
+        - CmdOutputObservation: Formats command execution results with exit codes
+        - IPythonRunCellObservation: Formats IPython cell execution results, replacing base64 images
+        - FileEditObservation: Formats file editing results
+        - AgentDelegateObservation: Formats results from delegated agent tasks
+        - ErrorObservation: Formats error messages from failed actions
+        - UserRejectObservation: Formats user rejection messages
+
+        In function calling mode, observations with tool_call_metadata are stored in
+        tool_call_id_to_message for later processing instead of being returned immediately.
+
+        Args:
+            obs (Observation): The observation to convert
+            tool_call_id_to_message (dict[str, Message]): Dictionary mapping tool call IDs
+                to their corresponding messages (used in function calling mode)
+
+        Returns:
+            list[Message]: A list containing the formatted message(s) for the observation.
+                May be empty if the observation is handled as a tool response in function calling mode.
+
+        Raises:
+            ValueError: If the observation type is unknown
+        """
         message: Message
         max_message_chars = self.llm.config.max_message_chars
         obs_prefix = 'OBSERVATION:\n'
@@ -303,7 +336,6 @@ class CodeActAgent(Agent):
         }
         if self.config.function_calling:
             params['tools'] = self.tools
-            params['parallel_tool_calls'] = False
         else:
             params['stop'] = [
                 '</execute_ipython>',
@@ -323,6 +355,37 @@ class CodeActAgent(Agent):
             return self.action_parser.parse(response)
 
     def _get_messages(self, state: State) -> list[Message]:
+        """Constructs the message history for the LLM conversation.
+
+        This method builds a structured conversation history by processing events from the state
+        and formatting them into messages that the LLM can understand. It handles both regular
+        message flow and function-calling scenarios.
+
+        The method performs the following steps:
+        1. Initializes with system prompt and optional initial user message
+        2. Processes events (Actions and Observations) into messages
+        3. Handles tool calls and their responses in function-calling mode
+        4. Manages message role alternation (user/assistant/tool)
+        5. Applies caching for specific LLM providers (e.g., Anthropic)
+        6. Adds environment reminders for non-function-calling mode
+
+        Args:
+            state (State): The current state object containing conversation history and other metadata
+
+        Returns:
+            list[Message]: A list of formatted messages ready for LLM consumption, including:
+                - System message with prompt
+                - Initial user message (if configured)
+                - Action messages (from both user and assistant)
+                - Observation messages (including tool responses)
+                - Environment reminders (in non-function-calling mode)
+
+        Note:
+            - In function-calling mode, tool calls and their responses are carefully tracked
+              to maintain proper conversation flow
+            - Messages from the same role are combined to prevent consecutive same-role messages
+            - For Anthropic models, specific messages are cached according to their documentation
+        """
         messages: list[Message] = [
             Message(
                 role='system',
@@ -342,15 +405,15 @@ class CodeActAgent(Agent):
                 )
             )
 
-        response_id_tool_call_counter: dict[str, int] = defaultdict(int)
+        pending_tool_call_action_messages: dict[str, Message] = {}
         tool_call_id_to_message: dict[str, Message] = {}
-        for event in state.history.get_events():
+        events = list(state.history.get_events())
+        for event in events:
             # create a regular message from an event
             if isinstance(event, Action):
                 messages_to_add = self.get_action_message(
                     action=event,
-                    response_id_tool_call_counter=response_id_tool_call_counter,
-                    tool_call_id_to_message=tool_call_id_to_message,
+                    pending_tool_call_action_messages=pending_tool_call_action_messages,
                 )
             elif isinstance(event, Observation):
                 messages_to_add = self.get_observation_message(
@@ -359,6 +422,32 @@ class CodeActAgent(Agent):
                 )
             else:
                 raise ValueError(f'Unknown event type: {type(event)}')
+
+            # Check pending tool call action messages and see if they are complete
+            _response_ids_to_remove = []
+            for (
+                response_id,
+                pending_message,
+            ) in pending_tool_call_action_messages.items():
+                assert pending_message.tool_calls is not None, (
+                    'Tool calls should NOT be None when function calling is enabled & the message is considered pending tool call. '
+                    f'Pending message: {pending_message}'
+                )
+                if all(
+                    tool_call.id in tool_call_id_to_message
+                    for tool_call in pending_message.tool_calls
+                ):
+                    # If complete:
+                    # -- 1. Add the message that **initiated** the tool calls
+                    messages_to_add.append(pending_message)
+                    # -- 2. Add the tool calls **results***
+                    for tool_call in pending_message.tool_calls:
+                        messages_to_add.append(tool_call_id_to_message[tool_call.id])
+                        tool_call_id_to_message.pop(tool_call.id)
+                    _response_ids_to_remove.append(response_id)
+            # Cleanup the processed pending tool messages
+            for response_id in _response_ids_to_remove:
+                pending_tool_call_action_messages.pop(response_id)
 
             for message in messages_to_add:
                 # add regular message
