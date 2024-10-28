@@ -293,30 +293,35 @@ BrowserDelegationTool = ChatCompletionToolParam(
     ),
 )
 
+# TODO: add back "message" tool AND force the assistant to choose ONE tool call per response
+# This allow us to select tool_use='required' to force at least ONE tool call per response, since weaker models like Deepseek may not perform as well when not forcing it to call tools. - will need to benchmark performance for this.
 
-_COMMUNICATE_DESCRIPTION = """Communicate with the user to:
-* Ask questions or request clarification
-* Signal task completion and provide final results
-* Explain why a task cannot be completed"""
+_FINISH_DESCRIPTION = """Finish the interaction when the task is complete OR if the assistant cannot proceed further with the task."""
 
-CommunicateTool = ChatCompletionToolParam(
+FinishTool = ChatCompletionToolParam(
     type='function',
     function=ChatCompletionToolParamFunctionChunk(
-        name='communicate',
-        description=_COMMUNICATE_DESCRIPTION,
+        name='finish',
+        description=_FINISH_DESCRIPTION,
+    ),
+)
+
+_MESSAGE_DESCRIPTION = """Send a message to the user to ask for clarification or provide additional information."""
+
+MessageTool = ChatCompletionToolParam(
+    type='function',
+    function=ChatCompletionToolParamFunctionChunk(
+        name='message_user',
+        description=_MESSAGE_DESCRIPTION,
         parameters={
             'type': 'object',
             'properties': {
-                'message': {
+                'content': {
                     'type': 'string',
-                    'description': 'The message to send to the user, formatted in markdown.',
-                },
-                'finished': {
-                    'type': 'boolean',
-                    'description': 'Whether this is the final message. Set to true when task is complete or cannot proceed, false when asking questions.',
+                    'description': 'The message content to send to the user. Ideally formatted in markdown.',
                 },
             },
-            'required': ['message', 'finished'],
+            'required': ['content'],
         },
     ),
 )
@@ -354,6 +359,8 @@ def response_to_action(response: ModelResponse) -> Action:
                 agent='BrowsingAgent',
                 inputs=json.loads(tool_call.function.arguments),
             )
+        elif tool_call.function.name == 'finish':
+            action = AgentFinishAction()
         elif tool_call.function.name == 'edit_file':
             action = FileEditAction(**json.loads(tool_call.function.arguments))
         elif tool_call.function.name == 'str_replace_editor':
@@ -365,15 +372,11 @@ def response_to_action(response: ModelResponse) -> Action:
                 f'TOOL CALL: str_replace_editor -> file_editor with code: {code}'
             )
             action = IPythonRunCellAction(code=code, include_extra=False)
-        elif tool_call.function.name == 'communicate':
-            kwargs = json.loads(tool_call.function.arguments)
-            if kwargs['finished']:
-                action = AgentFinishAction(outputs={'content': kwargs['message']})
-            else:
-                action = MessageAction(
-                    content=f'THOUGHT: {thought}\nMESSAGE: {kwargs["message"]}',
-                    wait_for_response=True,
-                )
+        elif tool_call.function.name == 'message_user':
+            action = MessageAction(
+                content=json.loads(tool_call.function.arguments)['content'],
+                wait_for_response=True,
+            )
         else:
             raise RuntimeError(f'Unknown tool call: {tool_call.function.name}')
         action = combine_thought(action, thought)
@@ -392,7 +395,7 @@ def get_tools(
     codeact_enable_llm_editor: bool = False,
     codeact_enable_jupyter: bool = False,
 ) -> list[ChatCompletionToolParam]:
-    tools = [CmdRunTool, CommunicateTool]
+    tools = [CmdRunTool, FinishTool, MessageTool]
     if codeact_enable_browsing_delegate:
         tools.append(BrowserDelegationTool)
     if codeact_enable_jupyter:
