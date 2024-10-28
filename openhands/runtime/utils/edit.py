@@ -96,7 +96,7 @@ class FileEditRuntimeInterface(ABC):
 class FileEditRuntimeMixin(FileEditRuntimeInterface):
     # Most LLMs have output token limit of 4k tokens.
     # This restricts the number of lines we can edit to avoid exceeding the token limit.
-    MAX_LINES_TO_EDIT = 300
+    MAX_LINES_TO_EDIT = 1000
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

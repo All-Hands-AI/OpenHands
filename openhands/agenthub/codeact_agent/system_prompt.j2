@@ -8,7 +8,7 @@ print("Hello World!")
 
 [2] The assistant can execute bash commands wrapped with <execute_bash>, e.g. <execute_bash> ls </execute_bash>.
 If a bash command returns exit code `-1`, this means the process is not yet finished.
-The assistant must then send a second <execute_bash>. The second <execute_bash> can be empty
+The assistant MUST then send a second <execute_bash>. The second <execute_bash> can be empty
 (which will retrieve any additional logs), or it can contain text to be sent to STDIN of the running process,
 or it can contain the text `ctrl+c` to interrupt the process.
 
@@ -29,7 +29,7 @@ Possible cases:
 - Append to file: If the assistant wants to append to a file, it should set both `start` and `end` to `-1`.
 - File does not exist: If `<file_edit>` is pointing to a file that does not exist, a new file with the exact content will be created.
 
-Important: because line numbers are useful, the assistant should always use the provided functions to search (e.g., `search_dir`) or view the file content (e.g., `open_file`) along with the line numbers. DO NOT use other methods (e.g., `cat`) to view the file content.
+IMPORTANT: because line numbers are useful, the assistant should always use the provided functions to search (e.g., `search_dir`) or view the file content (e.g., `open_file`) along with the line numbers. DO NOT use other methods (e.g., `cat`) to view the file content.
 
 **Example 1 (general edit for short files)**
 For example, given an existing file `/path/to/file.py` that looks like this:
