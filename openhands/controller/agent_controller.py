@@ -254,11 +254,11 @@ class AgentController:
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
         elif isinstance(observation, FatalErrorObservation):
-            await self.report_error(
-                'There was a fatal error during agent execution: ' + str(observation)
+            self.state.last_error = (
+                f'There was a fatal error during agent execution: {str(observation)}'
             )
-            await self.set_agent_state_to(AgentState.ERROR)
             self.state.metrics.merge(self.state.local_metrics)
+            await self.set_agent_state_to(AgentState.ERROR)
 
     async def _handle_message_action(self, action: MessageAction):
         """Handles message actions from the event stream.
@@ -406,6 +406,14 @@ class AgentController:
             await asyncio.sleep(1)
             return
 
+        # check if agent got stuck before taking any action
+        if self._is_stuck():
+            # This need to go BEFORE report_error to sync metrics
+            self.event_stream.add_event(
+                FatalErrorObservation('Agent got stuck in a loop'), EventSource.USER
+            )
+            return
+
         if self.delegate is not None:
             assert self.delegate != self
             if self.delegate.get_agent_state() == AgentState.PAUSED:
@@ -466,11 +474,6 @@ class AgentController:
 
         await self.update_state_after_step()
         logger.info(action, extra={'msg_type': 'ACTION'})
-
-        if self._is_stuck():
-            # This need to go BEFORE report_error to sync metrics
-            await self.set_agent_state_to(AgentState.ERROR)
-            await self.report_error('Agent got stuck in a loop')
 
     async def _delegate_step(self):
         """Executes a single step of the delegate agent."""
