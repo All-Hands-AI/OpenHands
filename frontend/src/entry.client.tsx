@@ -18,7 +18,7 @@ function PosthogInit() {
   React.useEffect(() => {
     posthog.init("phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA", {
       api_host: "https://us.i.posthog.com",
-      person_profiles: "identified_only", // or 'always' to create profiles for anonymous users as well
+      person_profiles: "identified_only",
     });
   }, []);
 
@@ -46,6 +46,7 @@ prepareApp().then(() =>
         <SocketProvider>
           <Provider store={store}>
             <RemixBrowser />
+            <PosthogInit />
           </Provider>
         </SocketProvider>
       </StrictMode>,
