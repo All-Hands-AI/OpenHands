@@ -290,8 +290,8 @@ class EventStreamRuntime(Runtime):
                 }
                 logger.debug(f'Mount dir: {self.config.workspace_mount_path}')
             else:
-                logger.warn(
-                    'Warning: Mount dir is not set, will not mount the workspace directory to the container!\n'
+                logger.debug(
+                    'Mount dir is not set, will not mount the workspace directory to the container'
                 )
                 volumes = None
             logger.debug(
