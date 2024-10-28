@@ -7,7 +7,7 @@ import { cn } from "#/utils/utils";
 interface ImageCarouselProps {
   size: "small" | "large";
   images: string[];
-  onRemove: (index: number) => void;
+  onRemove?: (index: number) => void;
 }
 
 export function ImageCarousel({
@@ -40,7 +40,7 @@ export function ImageCarousel({
   };
 
   return (
-    <div className="relative">
+    <div data-testid="image-carousel" className="relative">
       {isScrollable && (
         <div className="absolute right-full transform top-1/2 -translate-y-1/2">
           <ChevronLeft active={!isAtStart} />
@@ -60,7 +60,7 @@ export function ImageCarousel({
             key={index}
             size={size}
             src={src}
-            onRemove={() => onRemove(index)}
+            onRemove={onRemove && (() => onRemove(index))}
           />
         ))}
       </div>
