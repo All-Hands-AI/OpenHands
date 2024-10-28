@@ -73,7 +73,7 @@ describe("useTerminal", () => {
     const anotherSecret = "super_secret_another_token";
     const commands: Command[] = [
       {
-        content: `export GITHUB_TOKEN=${secret},${anotherSecret}`,
+        content: `export GITHUB_TOKEN=${secret},${anotherSecret},${secret}`,
         type: "input",
       },
       { content: secret, type: "output" },
@@ -94,7 +94,7 @@ describe("useTerminal", () => {
     // on the test order
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(
       3,
-      `export GITHUB_TOKEN=${"*".repeat(10)},${"*".repeat(10)}`,
+      `export GITHUB_TOKEN=${"*".repeat(10)},${"*".repeat(10)},${"*".repeat(10)}`,
     );
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(4, "*".repeat(10));
   });

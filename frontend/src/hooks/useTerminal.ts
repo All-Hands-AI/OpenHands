@@ -137,10 +137,9 @@ export const useTerminal = (
         // eslint-disable-next-line prefer-const
         let { content, type } = commands[i];
 
-        if (secrets.length > 0) {
-          const secretRegex = new RegExp(secrets.join("|"), "g");
-          content = content.replace(secretRegex, "*".repeat(10));
-        }
+        secrets.forEach((secret) => {
+          content = content.replaceAll(secret, "*".repeat(10));
+        });
 
         terminal.current?.writeln(parseTerminalOutput(content));
 
