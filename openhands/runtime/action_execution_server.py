@@ -374,9 +374,12 @@ if __name__ == '__main__':
     @app.middleware('http')
     async def one_request_at_a_time(request: Request, call_next):
         assert client is not None
-        async with client.lock:
-            response = await call_next(request)
-        return response
+        # Only apply lock for execute_action endpoint
+        if request.url.path == '/execute_action':
+            async with client.lock:
+                response = await call_next(request)
+            return response
+        return await call_next(request)
 
     @app.middleware('http')
     async def authenticate_requests(request: Request, call_next):
