@@ -31,7 +31,8 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import AgentFinishAction, CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
 EVALUATION_LLM = 'gpt-4-1106-preview'
 
@@ -278,6 +279,7 @@ def process_instance(
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     runtime = create_runtime(config, sid=sid)
+    call_async_from_sync(runtime.connect)
     initialize_runtime(runtime, instance.data_files)
 
     state: State | None = asyncio.run(
