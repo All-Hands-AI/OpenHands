@@ -257,7 +257,7 @@ class CodeActAgent(Agent):
         }
         if self.config.function_calling:
             params['tools'] = self.tools
-            params['parallel_tool_calls'] = False
+            params['tool_choice'] = 'required'
         else:
             params['stop'] = [
                 '</execute_ipython>',
