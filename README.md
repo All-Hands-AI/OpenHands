@@ -53,7 +53,9 @@ docker run -it --rm --pull=always \
 
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
 
-You'll need a model provider and API key. One option that works well: [Claude 3.5 Sonnet](https://www.anthropic.com/api), but you have [many options](https://docs.all-hands.dev/modules/usage/llms).
+You'll need a model provider and API key.
+[Anthropic's Claude 3.5 Sonnet](https://www.anthropic.com/api)
+works best, but you have [many options](https://docs.all-hands.dev/modules/usage/llms).
 
 ---
 
