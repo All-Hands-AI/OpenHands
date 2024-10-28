@@ -1,5 +1,6 @@
 import json
 import os
+from collections import defaultdict, deque
 from itertools import islice
 
 from litellm import ModelResponse
@@ -68,6 +69,7 @@ class CodeActAgent(Agent):
         AgentSkillsRequirement(),
         JupyterRequirement(),
     ]
+    obs_prefix = 'OBSERVATION:\n'
 
     def __init__(
         self,
@@ -124,8 +126,16 @@ class CodeActAgent(Agent):
             self.system_prompt = self.prompt_manager.system_message
             self.initial_user_message = self.prompt_manager.initial_user_message
 
-    def get_action_message(self, action: Action) -> Message | None:
+        self.pending_actions: deque[Action] = deque()
+
+    def get_action_message(
+        self,
+        action: Action,
+        response_id_tool_call_counter: dict[str, int],
+        tool_call_id_to_message: dict[str, Message],
+    ) -> list[Message]:
         """Convert an action to a message sent to the LLM."""
+        # create a regular message from an event
         if isinstance(
             action,
             (
@@ -136,36 +146,71 @@ class CodeActAgent(Agent):
             ),
         ) or (isinstance(action, AgentFinishAction) and action.source == 'agent'):
             if self.config.function_calling:
-                llm_response: ModelResponse = action.trigger_by_llm_response
-                assert llm_response is not None
-                assistant_msg = llm_response.choices[0].message
-                return Message(
-                    role=assistant_msg.role,
-                    # tool call content SHOULD BE a string
-                    content=[TextContent(text=assistant_msg.content)]
-                    if assistant_msg.content is not None
-                    else [],
-                    tool_calls=assistant_msg.tool_calls,
+                messages_to_add: list[Message] = []
+                tool_metadata = action.tool_call_metadata
+                assert tool_metadata is not None, (
+                    'Tool call metadata should NOT be None when function calling is enabled. Action: '
+                    + str(action)
                 )
+
+                # Check if all tool calls are processed
+                if (
+                    response_id_tool_call_counter[tool_metadata.model_response.id]
+                    < tool_metadata.total_calls_in_response
+                ):
+                    response_id_tool_call_counter[tool_metadata.model_response.id] += 1
+                    pass
+                elif (
+                    response_id_tool_call_counter[tool_metadata.model_response.id]
+                    == tool_metadata.total_calls_in_response
+                ):
+                    # all tool calls are processed
+                    llm_response: ModelResponse = tool_metadata.model_response
+                    assistant_msg = llm_response.choices[0].message
+                    # Add the LLM message (assistant) that initiated the tool calls
+                    messages_to_add.append(
+                        Message(
+                            role=assistant_msg.role,
+                            # tool call content SHOULD BE a string
+                            content=[TextContent(text=assistant_msg.content)]
+                            if assistant_msg.content is not None
+                            else [],
+                            tool_calls=assistant_msg.tool_calls,
+                        )
+                    )
+                    # Add the tool calls **results***
+                    for tool_call in assistant_msg.tool_calls:
+                        messages_to_add.append(tool_call_id_to_message[tool_call.id])
+                else:
+                    raise ValueError('This should not happen')
+                return messages_to_add
             else:
                 content = [TextContent(text=self.action_parser.action_to_str(action))]
-                return Message(
-                    role='user' if action.source == 'user' else 'assistant',
-                    content=content,
-                )
+                return [
+                    Message(
+                        role='user' if action.source == 'user' else 'assistant',
+                        content=content,
+                    )
+                ]
         elif isinstance(action, MessageAction):
             role = 'user' if action.source == 'user' else 'assistant'
             content = [TextContent(text=action.content)]
             if self.llm.vision_is_active() and action.images_urls:
                 content.append(ImageContent(image_urls=action.images_urls))
-            return Message(
-                role=role,
-                content=content,
-            )
-        return None
+            return [
+                Message(
+                    role=role,
+                    content=content,
+                )
+            ]
+        return []
 
-    def get_observation_message(self, obs: Observation) -> Message | None:
-        message: Message | None = None
+    def get_observation_message(
+        self,
+        obs: Observation,
+        tool_call_id_to_message: dict[str, Message],
+    ) -> list[Message]:
+        message: Message
         max_message_chars = self.llm.config.max_message_chars
         obs_prefix = 'OBSERVATION:\n'
         if isinstance(obs, CmdOutputObservation):
@@ -207,25 +252,22 @@ class CodeActAgent(Agent):
             # If an observation message is not returned, it will cause an error
             # when the LLM tries to return the next message
             raise ValueError(f'Unknown observation type: {type(obs)}')
-        assert message is not None
 
         if self.config.function_calling:
             # Update the message as tool response properly
-            if (llm_response := obs.trigger_by_llm_response) is not None:
-                assert len(llm_response.choices) == 1
-                _llm_message = llm_response.choices[0].message
-                tool_call = _llm_message.tool_calls[0]
-                # FIXME
-                # The assert tool_calls is 1 is not guarantee to work all the time
-                # will need to get https://github.com/All-Hands-AI/OpenHands/pull/4587 in for better support
-                assert len(_llm_message.tool_calls) == 1
-                message = Message(
+            if (tool_call_metadata := obs.tool_call_metadata) is not None:
+                tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(
                     role='tool',
                     content=message.content,
-                    tool_call_id=tool_call.id,
-                    name=tool_call.function.name,
+                    tool_call_id=tool_call_metadata.tool_call_id,
+                    name=tool_call_metadata.function_name,
                 )
-        return message
+                # No need to return the observation message
+                # because it will be added by get_action_message when all the corresponding
+                # tool calls in the SAME request are processed
+                return []
+
+        return [message]
 
     def reset(self) -> None:
         """Resets the CodeAct Agent."""
@@ -245,6 +287,10 @@ class CodeActAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
+        # Continue with pending actions if any
+        if self.pending_actions:
+            return self.pending_actions.popleft()
+
         # if we're done, go back
         latest_user_message = state.history.get_last_user_message()
         if latest_user_message and latest_user_message.strip() == '/exit':
@@ -269,7 +315,10 @@ class CodeActAgent(Agent):
 
         # TODO: potentially handle MULTIPLE tool calls per response
         if self.config.function_calling:
-            return codeact_function_calling.response_to_action(response)
+            actions = codeact_function_calling.response_to_actions(response)
+            for action in actions:
+                self.pending_actions.append(action)
+            return self.pending_actions.popleft()
         else:
             return self.action_parser.parse(response)
 
@@ -292,24 +341,35 @@ class CodeActAgent(Agent):
                     content=[TextContent(text=self.initial_user_message)],
                 )
             )
+
+        response_id_tool_call_counter: dict[str, int] = defaultdict(int)
+        tool_call_id_to_message: dict[str, Message] = {}
         for event in state.history.get_events():
             # create a regular message from an event
             if isinstance(event, Action):
-                message = self.get_action_message(event)
+                messages_to_add = self.get_action_message(
+                    action=event,
+                    response_id_tool_call_counter=response_id_tool_call_counter,
+                    tool_call_id_to_message=tool_call_id_to_message,
+                )
             elif isinstance(event, Observation):
-                message = self.get_observation_message(event)
+                messages_to_add = self.get_observation_message(
+                    obs=event,
+                    tool_call_id_to_message=tool_call_id_to_message,
+                )
             else:
                 raise ValueError(f'Unknown event type: {type(event)}')
 
-            # add regular message
-            if message:
-                # handle error if the message is the SAME role as the previous message
-                # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
-                # there shouldn't be two consecutive messages from the same role
-                if messages and messages[-1].role == message.role:
-                    messages[-1].content.extend(message.content)
-                else:
-                    messages.append(message)
+            for message in messages_to_add:
+                # add regular message
+                if message:
+                    # handle error if the message is the SAME role as the previous message
+                    # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
+                    # there shouldn't be two consecutive messages from the same role
+                    if messages and messages[-1].role == message.role:
+                        messages[-1].content.extend(message.content)
+                    else:
+                        messages.append(message)
 
         if self.llm.is_caching_prompt_active():
             # NOTE: this is only needed for anthropic

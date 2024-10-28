@@ -1,13 +1,12 @@
 from dataclasses import asdict
 from datetime import datetime
 
-from litellm.types.utils import ModelResponse
-
 from openhands.events import Event, EventSource
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.action import action_from_dict
 from openhands.events.serialization.observation import observation_from_dict
 from openhands.events.serialization.utils import remove_fields
+from openhands.events.tool import ToolCallMetadata
 
 # TODO: move `content` into `extras`
 TOP_KEYS = [
@@ -18,9 +17,9 @@ TOP_KEYS = [
     'cause',
     'action',
     'observation',
-    'trigger_by_llm_response',
+    'tool_call_metadata',
 ]
-UNDERSCORE_KEYS = ['id', 'timestamp', 'source', 'cause', 'trigger_by_llm_response']
+UNDERSCORE_KEYS = ['id', 'timestamp', 'source', 'cause', 'tool_call_metadata']
 
 DELETE_FROM_TRAJECTORY_EXTRAS = {
     'screenshot',
@@ -51,8 +50,8 @@ def event_from_dict(data) -> 'Event':
                 value = value.isoformat()
             if key == 'source':
                 value = EventSource(value)
-            if key == 'trigger_by_llm_response':
-                value = ModelResponse.model_validate(value)
+            if key == 'tool_call_metadata':
+                value = ToolCallMetadata(**value)
             setattr(evt, '_' + key, value)
     return evt
 
@@ -72,8 +71,8 @@ def event_to_dict(event: 'Event') -> dict:
                 d['timestamp'] = d['timestamp'].isoformat()
         if key == 'source' and 'source' in d:
             d['source'] = d['source'].value
-        if key == 'trigger_by_llm_response' and 'trigger_by_llm_response' in d:
-            d['trigger_by_llm_response'] = d['trigger_by_llm_response'].model_dump()
+        if key == 'tool_call_metadata' and 'tool_call_metadata' in d:
+            d['tool_call_metadata'] = d['tool_call_metadata'].model_dump()
         props.pop(key, None)
     if 'security_risk' in props and props['security_risk'] is None:
         props.pop('security_risk')

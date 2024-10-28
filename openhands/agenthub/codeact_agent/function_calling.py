@@ -21,6 +21,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.events.tool import ToolCallMetadata
 
 SYSTEM_PROMPT = """You are a helpful assistant that can interact with a computer to solve tasks.
 <IMPORTANT>
@@ -312,7 +313,9 @@ def combine_thought(action: Action, thought: str) -> Action:
     return action
 
 
-def response_to_action(response: ModelResponse) -> Action:
+def response_to_actions(response: ModelResponse) -> list[Action]:
+    actions: list[Action] = []
+    assert len(response.choices) == 1, 'Only one choice is supported for now'
     assistant_msg = response.choices[0].message
     if assistant_msg.tool_calls:
         # Check if there's assistant_msg.content. If so, add it to the thought
@@ -324,40 +327,54 @@ def response_to_action(response: ModelResponse) -> Action:
                 if msg['type'] == 'text':
                     thought += msg['text']
 
-        tool_call = assistant_msg.tool_calls[0]
-        assert len(assistant_msg.tool_calls) == 1
-        action: Action | None = None
-        if tool_call.function.name == 'execute_bash':
-            action = CmdRunAction(**json.loads(tool_call.function.arguments))
-        elif tool_call.function.name == 'execute_ipython_cell':
-            action = IPythonRunCellAction(**json.loads(tool_call.function.arguments))
-        elif tool_call.function.name == 'delegate_to_browsing_agent':
-            action = AgentDelegateAction(
-                agent='BrowsingAgent',
-                inputs=json.loads(tool_call.function.arguments),
-            )
-        elif tool_call.function.name == 'finish':
-            action = AgentFinishAction()
-        elif tool_call.function.name == 'edit_file':
-            action = FileEditAction(**json.loads(tool_call.function.arguments))
-        elif tool_call.function.name == 'str_replace_editor':
-            # We implement this in agent_skills, which can be used via Jupyter
-            # convert tool_call.function.arguments to kwargs that can be passed to file_editor
-            kwargs = json.loads(tool_call.function.arguments)
-            code = f'print(file_editor(**{kwargs}))'
-            logger.debug(
-                f'TOOL CALL: str_replace_editor -> file_editor with code: {code}'
-            )
-            action = IPythonRunCellAction(code=code, include_extra=False)
-        else:
-            raise RuntimeError(f'Unknown tool call: {tool_call.function.name}')
-        action = combine_thought(action, thought)
-    else:
-        action = MessageAction(content=assistant_msg.content, wait_for_response=True)
+        # Process each tool call to OpenHands action
+        for i, tool_call in enumerate(assistant_msg.tool_calls):
+            action: Action
+            if tool_call.function.name == 'execute_bash':
+                action = CmdRunAction(**json.loads(tool_call.function.arguments))
+            elif tool_call.function.name == 'execute_ipython_cell':
+                action = IPythonRunCellAction(
+                    **json.loads(tool_call.function.arguments)
+                )
+            elif tool_call.function.name == 'delegate_to_browsing_agent':
+                action = AgentDelegateAction(
+                    agent='BrowsingAgent',
+                    inputs=json.loads(tool_call.function.arguments),
+                )
+            elif tool_call.function.name == 'finish':
+                action = AgentFinishAction()
+            elif tool_call.function.name == 'edit_file':
+                action = FileEditAction(**json.loads(tool_call.function.arguments))
+            elif tool_call.function.name == 'str_replace_editor':
+                # We implement this in agent_skills, which can be used via Jupyter
+                # convert tool_call.function.arguments to kwargs that can be passed to file_editor
+                kwargs = json.loads(tool_call.function.arguments)
+                code = f'print(file_editor(**{kwargs}))'
+                logger.debug(
+                    f'TOOL CALL: str_replace_editor -> file_editor with code: {code}'
+                )
+                action = IPythonRunCellAction(code=code, include_extra=False)
+            else:
+                raise RuntimeError(f'Unknown tool call: {tool_call.function.name}')
 
-    assert action is not None
-    action.trigger_by_llm_response = response
-    return action
+            # We only add thought to the first action
+            if i == 0:
+                action = combine_thought(action, thought)
+            # Add metadata for tool calling
+            action.tool_call_metadata = ToolCallMetadata(
+                tool_call_id=tool_call.id,
+                function_name=tool_call.function.name,
+                model_response=response,
+                total_calls_in_response=len(assistant_msg.tool_calls),
+            )
+            actions.append(action)
+    else:
+        actions.append(
+            MessageAction(content=assistant_msg.content, wait_for_response=True)
+        )
+
+    assert len(actions) >= 1
+    return actions
 
 
 def get_tools(

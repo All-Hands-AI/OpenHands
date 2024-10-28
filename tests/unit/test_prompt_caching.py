@@ -144,8 +144,6 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
     mock_event_stream.add_event(message_action_1, EventSource.USER)
 
     cmd_action_1 = CmdRunAction('ls -l', thought='List files in current directory')
-    if codeact_agent.config.function_calling:
-        cmd_action_1.trigger_by_llm_response = response_mock('')
     mock_event_stream.add_event(cmd_action_1, EventSource.AGENT)
 
     cmd_observation_1 = CmdOutputObservation(
@@ -154,18 +152,12 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
         command='ls -l',
         exit_code=0,
     )
-    if codeact_agent.config.function_calling:
-        cmd_observation_1.trigger_by_llm_response = cmd_action_1.trigger_by_llm_response
     mock_event_stream.add_event(cmd_observation_1, EventSource.USER)
 
     message_action_2 = MessageAction("Now, let's create a new directory.")
-    if codeact_agent.config.function_calling:
-        message_action_2.trigger_by_llm_response = response_mock('')
     mock_event_stream.add_event(message_action_2, EventSource.AGENT)
 
     cmd_action_2 = CmdRunAction('mkdir new_directory', thought='Create a new directory')
-    if codeact_agent.config.function_calling:
-        cmd_action_2.trigger_by_llm_response = response_mock('')
     mock_event_stream.add_event(cmd_action_2, EventSource.AGENT)
 
     cmd_observation_2 = CmdOutputObservation(
@@ -174,8 +166,6 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
         command='mkdir new_directory',
         exit_code=0,
     )
-    if codeact_agent.config.function_calling:
-        cmd_observation_2.trigger_by_llm_response = cmd_action_2.trigger_by_llm_response
     mock_event_stream.add_event(cmd_observation_2, EventSource.USER)
 
     codeact_agent.reset()

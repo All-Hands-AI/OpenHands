@@ -131,7 +131,7 @@ class Runtime(FileEditRuntimeMixin):
                 self.run_action, event
             )
             observation._cause = event.id  # type: ignore[attr-defined]
-            observation.trigger_by_llm_response = event.trigger_by_llm_response
+            observation.tool_call_metadata = event.tool_call_metadata
             source = event.source if event.source else EventSource.AGENT
             await self.event_stream.async_add_event(observation, source)  # type: ignore[arg-type]
 

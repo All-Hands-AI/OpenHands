@@ -2,8 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 
-from litellm import ModelResponse
-
+from openhands.events.tool import ToolCallMetadata
 from openhands.llm.metrics import Metrics
 
 
@@ -76,11 +75,11 @@ class Event:
 
     # optional field
     @property
-    def trigger_by_llm_response(self) -> ModelResponse | None:
-        if hasattr(self, '_trigger_by_llm_response'):
-            return self._trigger_by_llm_response  # type: ignore[attr-defined]
+    def tool_call_metadata(self) -> ToolCallMetadata | None:
+        if hasattr(self, '_tool_call_metadata'):
+            return self._tool_call_metadata  # type: ignore[attr-defined]
         return None
 
-    @trigger_by_llm_response.setter
-    def trigger_by_llm_response(self, value: ModelResponse) -> None:
-        self._trigger_by_llm_response = value
+    @tool_call_metadata.setter
+    def tool_call_metadata(self, value: ToolCallMetadata) -> None:
+        self._tool_call_metadata = value
