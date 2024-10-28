@@ -203,11 +203,7 @@ class EventStreamRuntime(Runtime):
                     force_rebuild=self.config.sandbox.force_rebuild_runtime,
                 )
 
-            self._init_container(
-                sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,  # e.g. /workspace
-                mount_dir=self.config.workspace_mount_path,  # e.g. /opt/openhands/_test_workspace
-                plugins=self.plugins,
-            )
+            self._init_container()
 
         else:
             self._attach_to_container()
@@ -249,9 +245,9 @@ class EventStreamRuntime(Runtime):
             logger.info('Preparing to start container...')
             self.send_status_message('STATUS$PREPARING_CONTAINER')
             plugin_arg = ''
-            if plugins is not None and len(plugins) > 0:
+            if self.plugins is not None and len(self.plugins) > 0:
                 plugin_arg = (
-                    f'--plugins {" ".join([plugin.name for plugin in plugins])} '
+                    f'--plugins {" ".join([plugin.name for plugin in self.plugins])} '
                 )
 
             self._host_port = self._find_available_port()
@@ -286,16 +282,26 @@ class EventStreamRuntime(Runtime):
                 environment['DEBUG'] = 'true'
 
             logger.debug(f'Workspace Base: {self.config.workspace_base}')
-            if mount_dir is not None and sandbox_workspace_dir is not None:
+            if (
+                self.config.workspace_mount_path is not None
+                and self.config.workspace_mount_path_in_sandbox is not None
+            ):
                 # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
-                volumes = {mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}}
-                logger.debug(f'Mount dir: {mount_dir}')
+                volumes = {
+                    self.config.workspace_mount_path: {
+                        'bind': self.config.workspace_mount_path_in_sandbox,
+                        'mode': 'rw',
+                    }
+                }
+                logger.debug(f'Mount dir: {self.config.workspace_mount_path}')
             else:
                 logger.warn(
                     'Warning: Mount dir is not set, will not mount the workspace directory to the container!\n'
                 )
                 volumes = None
-            logger.debug(f'Sandbox workspace: {sandbox_workspace_dir}')
+            logger.debug(
+                f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}'
+            )
 
             if self.config.sandbox.browsergym_eval_env is not None:
                 browsergym_arg = (
@@ -310,7 +316,7 @@ class EventStreamRuntime(Runtime):
                     f'/openhands/micromamba/bin/micromamba run -n openhands '
                     f'poetry run '
                     f'python -u -m openhands.runtime.action_execution_server {self._container_port} '
-                    f'--working-dir "{sandbox_workspace_dir}" '
+                    f'--working-dir "{self.config.workspace_mount_path_in_sandbox}" '
                     f'{plugin_arg}'
                     f'--username {"openhands" if self.config.run_as_openhands else "root"} '
                     f'--user-id {self.config.sandbox.user_id} '
