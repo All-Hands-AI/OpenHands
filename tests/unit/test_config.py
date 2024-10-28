@@ -368,16 +368,15 @@ def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
 def test_finalize_config(default_config):
     # Test finalize config
     assert default_config.workspace_mount_path is None
+    default_config.workspace_base = None
     finalize_config(default_config)
 
-    assert default_config.workspace_mount_path == os.path.abspath(
-        default_config.workspace_base
-    )
+    assert default_config.workspace_mount_path is None
 
 
-# tests for workspace, mount path, path in sandbox, cache dir
 def test_workspace_mount_path_default(default_config):
     assert default_config.workspace_mount_path is None
+    default_config.workspace_base = '/home/user/project'
     finalize_config(default_config)
     assert default_config.workspace_mount_path == os.path.abspath(
         default_config.workspace_base
