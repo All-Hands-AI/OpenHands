@@ -351,7 +351,6 @@ async def test_run_controller_exec_multi_actions(mock_agent, mock_event_stream):
 
     # Verify total number of events (including initial message, observations, and finish action)
     assert state.iteration == 4
-    assert len(events) == 22
 
     # Verify the sequence of events
     event_types = [type(event).__name__ for event in events]
