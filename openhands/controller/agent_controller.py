@@ -403,9 +403,6 @@ class AgentController:
             return
 
         if self._pending_action:
-            logger.debug(
-                f'{self.agent.name} LEVEL {self.state.delegate_level} LOCAL STEP {self.state.local_iteration} GLOBAL STEP {self.state.iteration} awaiting pending action to get executed: {self._pending_action}'
-            )
             await asyncio.sleep(1)
             return
 
