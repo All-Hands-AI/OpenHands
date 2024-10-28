@@ -345,7 +345,6 @@ class CodeActAgent(Agent):
             ]
         response = self.llm.completion(**params)
 
-        # TODO: potentially handle MULTIPLE tool calls per response
         if self.config.function_calling:
             actions = codeact_function_calling.response_to_actions(response)
             for action in actions:
