@@ -21,6 +21,7 @@ export function FeedbackForm({
       | "public"
       | undefined;
 
+    console.log('submitting');
     if (email) onSubmit(permissions || "private", email);
   };
 

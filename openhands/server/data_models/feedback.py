@@ -10,7 +10,6 @@ from openhands.core.logger import openhands_logger as logger
 class FeedbackDataModel(BaseModel):
     version: str
     email: str
-    token: str
     feedback: Literal['positive', 'negative']
     permissions: Literal['public', 'private']
     trajectory: list[dict[str, Any]]

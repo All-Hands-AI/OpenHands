@@ -1,12 +1,12 @@
 import { useDispatch, useSelector } from "react-redux";
 import React from "react";
-import { useFetcher } from "@remix-run/react";
 import { useSocket } from "#/context/socket";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { ChatMessage } from "./chat-message";
 import { FeedbackActions } from "./feedback-actions";
 import { ImageCarousel } from "./image-carousel";
 import { createChatMessage } from "#/services/chatService";
+import { request } from '#/services/api';
 import { InteractiveChatBox } from "./interactive-chat-box";
 import { addUserMessage } from "#/state/chatSlice";
 import { RootState } from "#/store";
@@ -33,7 +33,6 @@ const isErrorMessage = (
 export function ChatInterface() {
   const { send, events } = useSocket();
   const dispatch = useDispatch();
-  const fetcher = useFetcher<typeof clientAction>({ key: "feedback" });
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
@@ -71,7 +70,7 @@ export function ChatInterface() {
     setFeedbackPolarity(polarity);
   };
 
-  const handleSubmitFeedback = (
+  const handleSubmitFeedback = async (
     permissions: "private" | "public",
     email: string,
   ) => {
@@ -80,16 +79,14 @@ export function ChatInterface() {
       feedback: feedbackPolarity,
       email,
       permissions,
-      token: getToken(),
-      trajectory: removeApiKey(removeUnwantedKeys(events)),
     };
 
-    const formData = new FormData();
-    formData.append("feedback", JSON.stringify(feedback));
-
-    fetcher.submit(formData, {
-      action: "/submit-feedback",
-      method: "POST",
+    const response = await request('/api/submit-feedback', {
+      method: 'POST',
+      body: JSON.stringify(feedback),
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
 
     setFeedbackShared(messages.length);
@@ -163,7 +160,6 @@ export function ChatInterface() {
 
       <FeedbackModal
         isOpen={feedbackModalIsOpen}
-        isSubmitting={fetcher.state === "submitting"}
         onClose={() => setFeedbackModalIsOpen(false)}
         onSubmit={handleSubmitFeedback}
       />
