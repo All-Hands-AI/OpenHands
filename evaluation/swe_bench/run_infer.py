@@ -411,7 +411,7 @@ def process_instance(
         if (
             state.last_error
             and 'fatal error during agent execution' in state.last_error
-            and 'stuck in loop' not in state.last_error
+            and 'stuck in a loop' not in state.last_error
         ):
             raise EvalException('Fatal error detected: ' + state.last_error)
 
