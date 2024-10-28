@@ -12,7 +12,6 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import WebSocket from "ws";
 import toast from "react-hot-toast";
-import ChatInterface from "#/components/chat/ChatInterface";
 import { getSettings } from "#/services/settings";
 import Security from "../components/modals/security/Security";
 import { Controls } from "#/components/controls";
@@ -51,6 +50,7 @@ import { FilesProvider } from "#/context/files";
 import { clearSession } from "#/utils/clear-session";
 import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 import { ErrorObservation } from "#/types/core/observations";
+import { ChatInterface } from "#/components/chat-interface";
 
 interface ServerError {
   error: boolean | string;
@@ -295,11 +295,11 @@ function App() {
   return (
     <div className="flex flex-col h-full gap-3">
       <div className="flex h-full overflow-auto gap-3">
-        <Container className="w-1/4 max-h-full">
+        <Container className="w-[375px] max-h-full">
           <ChatInterface />
         </Container>
 
-        <div className="flex flex-col w-3/4 gap-3">
+        <div className="flex flex-col grow gap-3">
           <Container
             className="h-2/3"
             labels={[
