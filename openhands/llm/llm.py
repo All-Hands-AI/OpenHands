@@ -83,7 +83,9 @@ class LLM(RetryMixin, DebugMixin):
         # litellm actually uses base Exception here for unknown model
         self.model_info: ModelInfo | None = None
 
-        if self.config.model.startswith('litellm_proxy/'):
+        if self.config.model.startswith('openrouter'):
+            self.model_info = litellm.get_model_info(self.config.model)
+        elif self.config.model.startswith('litellm_proxy/'):
             # IF we are using LiteLLM proxy, get model info from LiteLLM proxy
             # GET {base_url}/v1/model/info with litellm_model_id as path param
             response = requests.get(
