@@ -57,6 +57,15 @@ const openHandsHandlers = [
 
     return HttpResponse.json(null, { status: 404 });
   }),
+
+  http.post("http://localhost:3000/api/submit-feedback", async () => {
+    await delay(1200);
+
+    return HttpResponse.json({
+      statusCode: 200,
+      body: { message: "Success", link: "fake-url.com", password: "abc123" },
+    });
+  }),
 ];
 
 export const handlers = [
