@@ -82,40 +82,44 @@ class LLM(RetryMixin, DebugMixin):
 
         # litellm actually uses base Exception here for unknown model
         self.model_info: ModelInfo | None = None
-        try:
-            if self.config.model.startswith('openrouter'):
-                self.model_info = litellm.get_model_info(self.config.model)
-            elif self.config.model.startswith('litellm_proxy/'):
-                # IF we are using LiteLLM proxy, get model info from LiteLLM proxy
-                # GET {base_url}/v1/model/info with litellm_model_id as path param
-                response = requests.get(
-                    f'{self.config.base_url}/v1/model/info',
-                    headers={'Authorization': f'Bearer {self.config.api_key}'},
-                )
-                all_model_info = response.json()['data']
-                current_model_info = next(
-                    (
-                        info
-                        for info in all_model_info
-                        if info['model_name']
-                        == self.config.model.removeprefix('litellm_proxy/')
-                    ),
-                    None,
-                )
-                if current_model_info:
-                    self.model_info = current_model_info['model_info']
-            # Last two attempts to get model info from NAME
-            if not self.model_info:
+
+        if self.config.model.startswith('litellm_proxy/'):
+            # IF we are using LiteLLM proxy, get model info from LiteLLM proxy
+            # GET {base_url}/v1/model/info with litellm_model_id as path param
+            response = requests.get(
+                f'{self.config.base_url}/v1/model/info',
+                headers={'Authorization': f'Bearer {self.config.api_key}'},
+            )
+            all_model_info = response.json()['data']
+            current_model_info = next(
+                (
+                    info
+                    for info in all_model_info
+                    if info['model_name']
+                    == self.config.model.removeprefix('litellm_proxy/')
+                ),
+                None,
+            )
+            if current_model_info:
+                self.model_info = current_model_info['model_info']
+
+        # Last two attempts to get model info from NAME
+        if not self.model_info:
+            try:
                 self.model_info = litellm.get_model_info(
                     self.config.model.split(':')[0]
                 )
-            if not self.model_info:
+            # noinspection PyBroadException
+            except Exception:
+                pass
+        if not self.model_info:
+            try:
                 self.model_info = litellm.get_model_info(
                     self.config.model.split('/')[-1]
                 )
-        # noinspection PyBroadException
-        except Exception as e:
-            logger.warning(f'Could not get model info for {config.model}:\n{e}')
+            # noinspection PyBroadException
+            except Exception:
+                pass
         logger.info(f'Model info: {self.model_info}')
 
         if self.config.log_completions:
