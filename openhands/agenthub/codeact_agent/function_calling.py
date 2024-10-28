@@ -330,26 +330,29 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
         # Process each tool call to OpenHands action
         for i, tool_call in enumerate(assistant_msg.tool_calls):
             action: Action
+            try:
+                arguments = json.loads(tool_call.function.arguments)
+            except json.decoder.JSONDecodeError as e:
+                raise RuntimeError(
+                    f'Failed to parse tool call arguments: {tool_call.function.arguments}'
+                ) from e
             if tool_call.function.name == 'execute_bash':
-                action = CmdRunAction(**json.loads(tool_call.function.arguments))
+                action = CmdRunAction(**arguments)
             elif tool_call.function.name == 'execute_ipython_cell':
-                action = IPythonRunCellAction(
-                    **json.loads(tool_call.function.arguments)
-                )
+                action = IPythonRunCellAction(**arguments)
             elif tool_call.function.name == 'delegate_to_browsing_agent':
                 action = AgentDelegateAction(
                     agent='BrowsingAgent',
-                    inputs=json.loads(tool_call.function.arguments),
+                    inputs=arguments,
                 )
             elif tool_call.function.name == 'finish':
                 action = AgentFinishAction()
             elif tool_call.function.name == 'edit_file':
-                action = FileEditAction(**json.loads(tool_call.function.arguments))
+                action = FileEditAction(**arguments)
             elif tool_call.function.name == 'str_replace_editor':
                 # We implement this in agent_skills, which can be used via Jupyter
                 # convert tool_call.function.arguments to kwargs that can be passed to file_editor
-                kwargs = json.loads(tool_call.function.arguments)
-                code = f'print(file_editor(**{kwargs}))'
+                code = f'print(file_editor(**{arguments}))'
                 logger.debug(
                     f'TOOL CALL: str_replace_editor -> file_editor with code: {code}'
                 )
