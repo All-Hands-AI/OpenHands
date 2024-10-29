@@ -4,7 +4,7 @@ A Runtime is an environment where the OpenHands agent can edit files and run
 commands.
 
 By default, OpenHands uses a Docker-based runtime, running on your local computer.
-This keeps OpenHands free and keeps your information private.
+This means you only have to pay for the LLM you're using, and your code is only ever sent to the LLM.
 
 We also offer support for "remote" runtimes, which are typically managed by third-parties.
 They can make setup a bit simpler and more scalable, especially
