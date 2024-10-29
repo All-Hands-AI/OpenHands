@@ -144,8 +144,11 @@ class AgentController:
         if exception:
             self.state.last_error += f': {exception}'
         detail = str(exception) if exception is not None else ''
+
         if exception is not None and isinstance(exception, litellm.AuthenticationError):
             detail = 'Please check your credentials. Is your API key correct?'
+        if exception is not None and isinstance(exception, litellm.NotFoundError):
+            detail = 'The current selected model does not exist or you do not have access to it'
         self.event_stream.add_event(
             ErrorObservation(f'{message}:{detail}'), EventSource.USER
         )
