@@ -40,7 +40,7 @@ export const removeUnwantedKeys = (
   return data
     .filter((item) => {
       // Skip items that have a status key
-      if ('status' in item) {
+      if ("status" in item) {
         return false;
       }
       return true;
