@@ -16,7 +16,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         self.docker_client = docker_client
 
         version_info = self.docker_client.version()
-        server_version = version_info.get('Version', '')
+        server_version = version_info.get('Version', '').replace('-', '.')
         if tuple(map(int, server_version.split('.'))) < (18, 9):
             raise RuntimeError('Docker server version must be >= 18.09 to use BuildKit')
 
@@ -53,12 +53,12 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         """
         self.docker_client = docker.from_env()
         version_info = self.docker_client.version()
-        server_version = version_info.get('Version', '')
+        server_version = version_info.get('Version', '').replace('-', '.')
         if tuple(map(int, server_version.split('.'))) < (18, 9):
             raise RuntimeError('Docker server version must be >= 18.09 to use BuildKit')
 
         target_image_hash_name = tags[0]
-        target_image_repo, target_image_hash_tag = target_image_hash_name.split(':')
+        target_image_repo, target_image_source_tag = target_image_hash_name.split(':')
         target_image_tag = tags[1].split(':')[1] if len(tags) > 1 else None
 
         buildx_cmd = [
@@ -160,9 +160,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             )
 
         tags_str = (
-            f'{target_image_hash_tag}, {target_image_tag}'
+            f'{target_image_source_tag}, {target_image_tag}'
             if target_image_tag
-            else target_image_hash_tag
+            else target_image_source_tag
         )
         logger.info(
             f'Image {target_image_repo} with tags [{tags_str}] built successfully'

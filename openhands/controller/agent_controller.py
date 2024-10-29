@@ -404,9 +404,6 @@ class AgentController:
             return
 
         if self._pending_action:
-            logger.debug(
-                f'{self.agent.name} LEVEL {self.state.delegate_level} LOCAL STEP {self.state.local_iteration} GLOBAL STEP {self.state.iteration} awaiting pending action to get executed: {self._pending_action}'
-            )
             await asyncio.sleep(1)
             return
 
@@ -457,6 +454,12 @@ class AgentController:
             # report to the user
             # and send the underlying exception to the LLM for self-correction
             await self.report_error(str(e))
+            return
+        # FIXME: more graceful handling of litellm.exceptions.ContextWindowExceededError
+        # e.g. try to condense the memory and try again
+        except litellm.exceptions.ContextWindowExceededError as e:
+            self.state.last_error = str(e)
+            await self.set_agent_state_to(AgentState.ERROR)
             return
 
         if action.runnable:

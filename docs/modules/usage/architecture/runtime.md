@@ -70,14 +70,22 @@ Check out the [relevant code](https://github.com/All-Hands-AI/OpenHands/blob/mai
 
 ### Image Tagging System
 
-OpenHands uses a dual-tagging system for its runtime images to balance reproducibility with flexibility.
+OpenHands uses a three-tag system for its runtime images to balance reproducibility with flexibility.
 Tags may be in one of 2 formats:
 
-- **Generic**: `oh_v{openhands_version}_{16_digit_lock_hash}` (e.g.: `oh_v0.9.9_1234567890abcdef`)
-- **Specific**: `oh_v{openhands_version}_{16_digit_lock_hash}_{16_digit_source_hash}`
+- **Versioned Tag**: `oh_v{openhands_version}_{base_image}` (e.g.: `oh_v0.9.9_nikolaik_s_python-nodejs_t_python3.12-nodejs22`)
+- **Lock Tag**: `oh_v{openhands_version}_{16_digit_lock_hash}` (e.g.: `oh_v0.9.9_1234567890abcdef`)
+- **Source Tag**: `oh_v{openhands_version}_{16_digit_lock_hash}_{16_digit_source_hash}`
   (e.g.: `oh_v0.9.9_1234567890abcdef_1234567890abcdef`)
 
-#### Lock Hash
+
+#### Source Tag - Most Specific
+
+This is the first 16 digits of the MD5 of the directory hash for the source directory. This gives a hash
+for only the openhands source
+
+
+#### Lock Tag
 
 This hash is built from the first 16 digits of the MD5 of:
 - The name of the base image upon which the image was built (e.g.: `nikolaik/python-nodejs:python3.12-nodejs22`)
@@ -86,30 +94,30 @@ This hash is built from the first 16 digits of the MD5 of:
 
 This effectively gives a hash for the dependencies of Openhands independent of the source code.
 
-#### Source Hash
+#### Versioned Tag - Most Generic
 
-This is the first 16 digits of the MD5 of the directory hash for the source directory. This gives a hash
-for only the openhands source
+This tag is a concatenation of openhands version and the base image name (transformed to fit in tag standard).
 
 #### Build Process
 
 When generating an image...
 
-- OpenHands first checks whether an image with the same **Specific** tag exists. If there is such an image,
+- **No re-build**: OpenHands first checks whether an image with the same **most specific source tag** exists. If there is such an image,
   no build is performed - the existing image is used.
-- OpenHands next checks whether an image with the **Generic** tag exists. If there is such an image,
+- **Fastest re-build**: OpenHands next checks whether an image with the **generic lock tag** exists. If there is such an image,
   OpenHands builds a new image based upon it, bypassing all installation steps (like `poetry install` and
   `apt-get`) except a final operation to copy the current source code. The new image is tagged with a
-  **Specific** tag only.
-- If neither a **Specific** nor **Generic** tag exists, a brand new image is built based upon the base
-  image (Which is a slower operation). This new image is tagged with both the **Generic** and **Specific**
-  tags.
+  **source** tag only.
+- **Ok-ish re-build**: If neither a **source** nor **lock** tag exists, an image will be built based upon the **versioned** tag image.
+  In versioned tag image, most dependencies should already been installed hence saving time.
+- **Slowest re-build**: If all of the three tags don't exists, a brand new image is built based upon the base
+  image (Which is a slower operation). This new image is tagged with all the **source**, **lock**, and **versioned** tags.
 
-This dual-tagging approach allows OpenHands to efficiently manage both development and production environments.
+This tagging approach allows OpenHands to efficiently manage both development and production environments.
 
 1. Identical source code and Dockerfile always produce the same image (via hash-based tags)
 2. The system can quickly rebuild images when minor changes occur (by leveraging recent compatible images)
-3. The generic tag (e.g., `runtime:oh_v0.9.3_1234567890abcdef`) always points to the latest build for a particular base image and OpenHands version combination
+3. The **lock** tag (e.g., `runtime:oh_v0.9.3_1234567890abcdef`) always points to the latest build for a particular base image, dependency, and OpenHands version combination
 
 ## Runtime Plugin System
 
