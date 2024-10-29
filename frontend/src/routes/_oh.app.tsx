@@ -133,6 +133,11 @@ function App() {
   const fetcher = useFetcher();
   const data = useRouteLoaderData<typeof rootClientLoader>("routes/_oh");
 
+  const secrets = React.useMemo(
+    () => [ghToken, token].filter((secret) => secret !== null),
+    [ghToken, token],
+  );
+
   // To avoid re-rendering the component when the user object changes, we memoize the user ID.
   // We use this to ensure the github token is valid before exporting it to the terminal.
   const userId = React.useMemo(() => {
@@ -321,7 +326,7 @@ function App() {
            * that it loads only in the client-side. */}
           <Container className="h-1/3 overflow-scroll" label="Terminal">
             <React.Suspense fallback={<div className="h-full" />}>
-              <Terminal />
+              <Terminal secrets={secrets} />
             </React.Suspense>
           </Container>
         </div>
