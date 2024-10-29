@@ -127,8 +127,11 @@ class Runtime(FileEditRuntimeMixin):
             if event.timeout is None:
                 event.timeout = self.config.sandbox.timeout
             assert event.timeout is not None
-            observation = await call_sync_from_async(self.run_action, event)
+            observation: Observation = await call_sync_from_async(
+                self.run_action, event
+            )
             observation._cause = event.id  # type: ignore[attr-defined]
+            observation.tool_call_metadata = event.tool_call_metadata
             source = event.source if event.source else EventSource.AGENT
             await self.event_stream.async_add_event(observation, source)  # type: ignore[arg-type]
 

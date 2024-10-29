@@ -453,6 +453,12 @@ class AgentController:
             # and send the underlying exception to the LLM for self-correction
             await self.report_error(str(e))
             return
+        # FIXME: more graceful handling of litellm.exceptions.ContextWindowExceededError
+        # e.g. try to condense the memory and try again
+        except litellm.exceptions.ContextWindowExceededError as e:
+            self.state.last_error = str(e)
+            await self.set_agent_state_to(AgentState.ERROR)
+            return
 
         if action.runnable:
             if self.state.confirmation_mode and (

@@ -14,7 +14,7 @@ packages = [
 python = "^3.12"
 datasets = "*"
 pandas = "*"
-litellm = "*"
+litellm = { git = "https://github.com/BerriAI/litellm.git", rev = "58fe6610601297c5a90367fd4583469e2df3fcf9" }
 google-generativeai = "*" # To use litellm with Gemini Pro API
 termcolor = "*"
 seaborn = "*"
@@ -89,6 +89,7 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -118,6 +119,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
