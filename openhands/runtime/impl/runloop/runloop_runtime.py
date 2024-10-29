@@ -17,6 +17,7 @@ from openhands.runtime.impl.eventstream.eventstream_runtime import (
     LogBuffer,
 )
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.utils.command import get_remote_startup_command
 from openhands.runtime.utils.request import send_request_with_retry
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
@@ -153,30 +154,27 @@ class RunloopRuntime(EventStreamRuntime):
         self.send_status_message('STATUS$STARTING_RUNTIME')
 
         # Note: Runloop connect
-        sandbox_workspace_dir = (
-            self.config.workspace_mount_path_in_sandbox
-        )  # e.g. /workspace
-        plugins = self.plugins
-        plugin_arg = ''
-        if plugins is not None and len(plugins) > 0:
-            plugin_arg = f'--plugins {" ".join([plugin.name for plugin in plugins])} '
+        sandbox_workspace_dir = self.config.workspace_mount_path_in_sandbox
+        plugin_args = []
+        if self.plugins is not None and len(self.plugins) > 0:
+            plugin_args.append('--plugins')
+            plugin_args.extend([plugin.name for plugin in self.plugins])
+
+        browsergym_args = []
         if self.config.sandbox.browsergym_eval_env is not None:
-            browsergym_arg = (
-                f'--browsergym-eval-env {self.config.sandbox.browsergym_eval_env}'
-            )
-        else:
-            browsergym_arg = ''
+            browsergym_args = [
+                '-browsergym-eval-env',
+                self.config.sandbox.browsergym_eval_env,
+            ]
 
         # Copied from EventstreamRuntime
-        start_command = (
-            f'/openhands/micromamba/bin/micromamba run -n openhands '
-            f'poetry run '
-            f'python -u -m openhands.runtime.action_execution_server {self._sandbox_port} '
-            f'--working-dir "{sandbox_workspace_dir}" '
-            f'{plugin_arg}'
-            f'--username {"openhands" if self.config.run_as_openhands else "root"} '
-            f'--user-id {self.config.sandbox.user_id} '
-            f'{browsergym_arg}'
+        start_command = get_remote_startup_command(
+            self._sandbox_port,
+            sandbox_workspace_dir,
+            'openhands' if self.config.run_as_openhands else 'root',
+            self.config.sandbox.user_id,
+            plugin_args,
+            browsergym_args,
         )
 
         # Add some additional commands based on our image
@@ -186,7 +184,7 @@ class RunloopRuntime(EventStreamRuntime):
             'export MAMBA_ROOT_PREFIX=/openhands/micromamba && '
             'cd /openhands/code && '
             + '/openhands/micromamba/bin/micromamba run -n openhands poetry config virtualenvs.path /openhands/poetry && '
-            + start_command
+            + ' '.join(start_command)
         )
 
         entrypoint = f"sudo bash -c '{start_command}'"
@@ -194,13 +192,14 @@ class RunloopRuntime(EventStreamRuntime):
         self.devbox = self.runloop_api_client.devboxes.create(
             entrypoint=entrypoint,
             setup_commands=[f'mkdir -p {self.config.workspace_mount_path_in_sandbox}'],
-            name=self.container_name,
+            name=self.sid,
             environment_variables={'DEBUG': 'true'} if self.config.debug else {},
             prebuilt='openhands',
             launch_parameters=LaunchParameters(
                 keep_alive_time_seconds=self.config.sandbox.timeout,
                 available_ports=[self._sandbox_port],
             ),
+            metadata={'container-name': self.container_name},
         )
         self._wait_for_devbox()
 
