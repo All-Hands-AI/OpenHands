@@ -9,7 +9,6 @@ import requests
 import tenacity
 
 from openhands.core.config import AppConfig
-from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.impl.eventstream.eventstream_runtime import (
     EventStreamRuntime,
@@ -42,7 +41,6 @@ class ModalLogBuffer(LogBuffer):
     """
 
     def __init__(self, sandbox: modal.Sandbox):
-        self.client_ready = False
         self.init_msg = 'Runtime client initialized.'
 
         self.buffer: list[str] = []
@@ -95,8 +93,9 @@ class ModalRuntime(EventStreamRuntime):
 
         # workspace_base cannot be used because we can't bind mount into a sandbox.
         if self.config.workspace_base is not None:
-            logger.warning(
-                'Setting workspace_base is not supported in the modal runtime.'
+            self.log(
+                'warning',
+                'Setting workspace_base is not supported in the modal runtime.',
             )
 
         # This value is arbitrary as it's private to the container
@@ -112,8 +111,9 @@ class ModalRuntime(EventStreamRuntime):
         self.log_buffer: LogBuffer | None = None
 
         if self.config.sandbox.runtime_extra_deps:
-            logger.debug(
-                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
+            self.log(
+                'debug',
+                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
             )
 
         self.init_base_runtime(
@@ -129,7 +129,7 @@ class ModalRuntime(EventStreamRuntime):
     async def connect(self):
         self.send_status_message('STATUS$STARTING_RUNTIME')
 
-        logger.info(f'ModalRuntime `{self.sid}`')
+        self.log('debug', f'ModalRuntime `{self.sid}`')
 
         self.image = self._get_image_definition(
             self.base_container_image_id,
@@ -140,7 +140,7 @@ class ModalRuntime(EventStreamRuntime):
         if self.attach_to_existing:
             if self.sid in MODAL_RUNTIME_IDS:
                 sandbox_id = MODAL_RUNTIME_IDS[self.sid]
-                logger.info(f'Attaching to existing Modal sandbox: {sandbox_id}')
+                self.log('debug', f'Attaching to existing Modal sandbox: {sandbox_id}')
                 self.sandbox = modal.Sandbox.from_id(
                     sandbox_id, client=self.modal_client
                 )
@@ -159,10 +159,10 @@ class ModalRuntime(EventStreamRuntime):
             raise Exception('Sandbox not initialized')
         tunnel = self.sandbox.tunnels()[self.container_port]
         self.api_url = tunnel.url
-        logger.info(f'Container started. Server url: {self.api_url}')
+        self.log('debug', f'Container started. Server url: {self.api_url}')
 
         if not self.attach_to_existing:
-            logger.info('Waiting for client to become ready...')
+            self.log('debug', 'Waiting for client to become ready...')
             self.send_status_message('STATUS$WAITING_FOR_CLIENT')
 
         self._wait_until_alive()
@@ -219,7 +219,7 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
         plugins: list[PluginRequirement] | None = None,
     ):
         try:
-            logger.info('Preparing to start container...')
+            self.log('debug', 'Preparing to start container...')
             plugin_args = []
             if plugins is not None and len(plugins) > 0:
                 plugin_args.append('--plugins')
@@ -242,7 +242,7 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
 
             env_secret = modal.Secret.from_dict(environment)
 
-            logger.debug(f'Sandbox workspace: {sandbox_workspace_dir}')
+            self.log('debug', f'Sandbox workspace: {sandbox_workspace_dir}')
             sandbox_start_cmd = get_remote_startup_command(
                 self.container_port,
                 sandbox_workspace_dir,
@@ -251,7 +251,7 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
                 plugin_args,
                 browsergym_args,
             )
-            logger.debug(f'Starting container with command: {sandbox_start_cmd}')
+            self.log('debug', f'Starting container with command: {sandbox_start_cmd}')
             self.sandbox = modal.Sandbox.create(
                 *sandbox_start_cmd,
                 secrets=[env_secret],
@@ -263,11 +263,13 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
                 timeout=60 * 60,
             )
             MODAL_RUNTIME_IDS[self.sid] = self.sandbox.object_id
-            logger.info('Container started')
+            self.log('debug', 'Container started')
 
         except Exception as e:
-            logger.error(f'Error: Instance {self.sid} FAILED to start container!\n')
-            logger.exception(e)
+            self.log(
+                'error', f'Error: Instance {self.sid} FAILED to start container!\n'
+            )
+            self.log('error', str(e))
             self.close()
             raise e
 
