@@ -178,7 +178,6 @@ class Session:
         try:
             if self.websocket is None or not self.is_alive:
                 return False
-            print('SEND JSON', data)
             await self.websocket.send_json(data)
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
@@ -200,7 +199,6 @@ class Session:
 
     async def send_status_message(self, msg_type: str, id: str, message: str) -> bool:
         """Sends a status message to the client."""
-        print('SEND STATUS BACK TO CLIENT')
         return await self.send(
             {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
         )
@@ -220,7 +218,6 @@ class Session:
     def queue_status_message(self, msg_type: str, id: str, message: str):
         """Queues a status message to be sent asynchronously."""
         # Ensure the coroutine runs in the main event loop
-        print('QUEUE STATUS MESSAGE')
         asyncio.run_coroutine_threadsafe(
             self.send_status_message(msg_type, id, message), self.loop
         )
