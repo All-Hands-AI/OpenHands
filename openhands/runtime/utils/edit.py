@@ -214,8 +214,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 return obs
             if not isinstance(obs, FileWriteObservation):
                 return ErrorObservation(
-                    f'Fatal Runtime in editing: Expected FileWriteObservation, got {type(obs)}: {str(obs)}',
-                    fatal=True,
+                    f'Expected FileWriteObservation, got {type(obs)}: {str(obs)}',
                 )
             return FileEditObservation(
                 content=get_diff('', action.content, action.path),
@@ -226,8 +225,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             )
         if not isinstance(obs, FileReadObservation):
             return ErrorObservation(
-                f'Fatal Runtime in editing: Expected FileReadObservation, got {type(obs)}: {str(obs)}',
-                fatal=True,
+                f'Expected FileReadObservation, got {type(obs)}: {str(obs)}',
             )
 
         original_file_content = obs.content

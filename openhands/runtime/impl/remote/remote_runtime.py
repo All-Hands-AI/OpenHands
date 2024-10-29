@@ -363,12 +363,10 @@ class RemoteRuntime(Runtime):
             if action_type not in ACTION_TYPE_TO_CLASS:
                 return ErrorObservation(
                     f'[Runtime (ID={self.runtime_id})] Action {action_type} does not exist.',
-                    fatal=True,
                 )
             if not hasattr(self, action_type):
                 return ErrorObservation(
                     f'[Runtime (ID={self.runtime_id})] Action {action_type} is not supported in the current runtime.',
-                    fatal=True,
                 )
 
             assert action.timeout is not None
@@ -391,20 +389,16 @@ class RemoteRuntime(Runtime):
                 else:
                     error_message = response.text
                     self.log('error', f'Error from server: {error_message}')
-                    obs = ErrorObservation(
-                        f'Action execution failed: {error_message}', fatal=True
-                    )
+                    obs = ErrorObservation(f'Action execution failed: {error_message}')
             except Timeout:
                 self.log('error', 'No response received within the timeout period.')
                 obs = ErrorObservation(
                     f'[Runtime (ID={self.runtime_id})] Action execution timed out',
-                    fatal=True,
                 )
             except Exception as e:
                 self.log('error', f'Error during action execution: {e}')
                 obs = ErrorObservation(
                     f'[Runtime (ID={self.runtime_id})] Action execution failed: {str(e)}',
-                    fatal=True,
                 )
             return obs
 

@@ -331,5 +331,4 @@ class BashSession:
         except UnicodeDecodeError as e:
             return ErrorObservation(
                 f'Runtime bash execution failed: Command output could not be decoded as utf-8. {str(e)}',
-                fatal=True,
             )

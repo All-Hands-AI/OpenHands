@@ -466,12 +466,11 @@ class EventStreamRuntime(Runtime):
             action_type = action.action  # type: ignore[attr-defined]
             if action_type not in ACTION_TYPE_TO_CLASS:
                 return ErrorObservation(
-                    f'Action {action_type} does not exist.', fatal=True
+                    f'Action {action_type} does not exist.',
                 )
             if not hasattr(self, action_type):
                 return ErrorObservation(
                     f'Action {action_type} is not supported in the current runtime.',
-                    fatal=True,
                 )
             if (
                 getattr(action, 'confirmation_state', None)
@@ -503,17 +502,16 @@ class EventStreamRuntime(Runtime):
                     error_message = response.text
                     self.log('error', f'Error from server: {error_message}')
                     obs = ErrorObservation(
-                        f'Action execution failed: {error_message}', fatal=True
+                        f'Action execution failed: {error_message}',
                     )
             except requests.Timeout:
                 self.log('error', 'No response received within the timeout period.')
                 obs = ErrorObservation(
                     f'Action execution timed out after {action.timeout} seconds.',
-                    fatal=True,
                 )
             except Exception as e:
                 self.log('error', f'Error during action execution: {e}')
-                obs = ErrorObservation(f'Action execution failed: {str(e)}', fatal=True)
+                obs = ErrorObservation(f'Action execution failed: {str(e)}')
             self._refresh_logs()
             return obs
 

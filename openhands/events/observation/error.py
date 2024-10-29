@@ -12,7 +12,6 @@ class ErrorObservation(Observation):
     E.g., Linter error after editing a file.
     """
 
-    fatal: bool = False
     observation: str = ObservationType.ERROR
 
     @property

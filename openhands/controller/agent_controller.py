@@ -246,8 +246,6 @@ class AgentController:
         if isinstance(observation, AgentDelegateObservation):
             self.state.history.on_event(observation)
         elif isinstance(observation, ErrorObservation):
-            if observation.fatal:
-                await self.set_agent_state_to(AgentState.ERROR)
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
 

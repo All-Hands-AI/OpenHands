@@ -157,12 +157,7 @@ class State:
     def get_last_error(self) -> str:
         for event in self.history.get_events(reverse=True):
             if isinstance(event, ErrorObservation):
-                return (
-                    event.content
-                    if not event.fatal
-                    else 'There was a fatal error during agent execution: '
-                    + event.content
-                )
+                return event.content
         return ''
 
     def get_current_user_intent(self):
