@@ -132,6 +132,7 @@ sympy = "*"
 gdown = "*"
 matplotlib = "*"
 seaborn = "*"
+tabulate = "*"
 
 [tool.poetry-dynamic-versioning]
 enable = true
