@@ -141,7 +141,7 @@ class AgentController:
     async def _react_to_exception(
         self,
         e: Exception,
-        new_state: AgentState | None = None,
+        new_state: AgentState = AgentState.ERROR,
     ):
         if new_state is not None:
             # it's important to set the state before adding the error event, so that metrics sync properly
@@ -161,10 +161,7 @@ class AgentController:
             except Exception as e:
                 traceback.print_exc()
                 self.log('error', f'Error while running the agent: {e}')
-                await self._react_to_exception(
-                    exception=e,
-                    new_state=AgentState.ERROR,
-                )
+                await self._react_to_exception(e)
                 break
 
             await asyncio.sleep(0.1)
@@ -430,9 +427,8 @@ class AgentController:
             await self.event_stream.async_add_event(
                 ErrorObservation(
                     content=str(e),
-                    cause=action.id,
-                    agent_state=self.get_agent_state(),
-                )
+                ),
+                EventSource.AGENT,
             )
             return
 
@@ -459,9 +455,7 @@ class AgentController:
         self.log('debug', str(action), extra={'msg_type': 'ACTION'})
 
         if self._is_stuck():
-            await self._react_to_exception(
-                'Agent got stuck in a loop', new_state=AgentState.ERROR
-            )
+            await self._react_to_exception(RuntimeError('Agent got stuck in a loop'))
 
     async def _delegate_step(self):
         """Executes a single step of the delegate agent."""
@@ -480,8 +474,9 @@ class AgentController:
             self.delegate = None
             self.delegateAction = None
 
-            await self._react_to_exception(
-                'Delegator agent encountered an error', new_state=None
+            await self.event_stream.async_add_event(
+                ErrorObservation('Delegate agent encountered an error'),
+                EventSource.AGENT,
             )
         elif delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
             self.log('debug', 'Delegate agent has finished execution')
@@ -531,16 +526,18 @@ class AgentController:
         else:
             self.state.traffic_control_state = TrafficControlState.THROTTLING
             if self.headless_mode:
-                await self._react_to_exception(
-                    f'Agent reached maximum {limit_type} in headless mode, task stopped. '
-                    f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}',
-                    new_state=AgentState.ERROR,
+                e = RuntimeError(
+                    f'Agent reached maximum {limit_type} in headless mode. '
+                    f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}'
                 )
+                await self._react_to_exception(e)
             else:
-                await self._react_to_exception(
+                e = RuntimeError(
                     f'Agent reached maximum {limit_type}, task paused. '
                     f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}. '
-                    f'{TRAFFIC_CONTROL_REMINDER}',
+                )
+                await self._react_to_exception(
+                    e,
                     new_state=AgentState.PAUSED,
                 )
             stop_step = True
