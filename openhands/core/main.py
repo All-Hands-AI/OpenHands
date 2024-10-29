@@ -73,7 +73,7 @@ def create_runtime(
 
     # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)
-    logger.info(f'Initializing runtime: {runtime_cls.__name__}')
+    logger.debug(f'Initializing runtime: {runtime_cls.__name__}')
     runtime: Runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
@@ -156,7 +156,7 @@ async def run_controller(
         initial_user_action, Action
     ), f'initial user actions must be an Action, got {type(initial_user_action)}'
     # Logging
-    logger.info(
+    logger.debug(
         f'Agent Controller Initialized: Running agent {agent.name}, model '
         f'{agent.llm.config.model}, with actions: {initial_user_action}'
     )

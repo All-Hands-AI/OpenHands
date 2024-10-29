@@ -93,6 +93,10 @@ class Runtime(FileEditRuntimeMixin):
     def close(self) -> None:
         pass
 
+    def log(self, level: str, message: str) -> None:
+        message = f'[runtime {self.sid}] {message}'
+        getattr(logger, level)(message)
+
     # ====================================================================
 
     def add_env_vars(self, env_vars: dict[str, str]) -> None:
@@ -104,7 +108,7 @@ class Runtime(FileEditRuntimeMixin):
                 code += f'os.environ["{key}"] = {json.dumps(value)}\n'
             code += '\n'
             obs = self.run_ipython(IPythonRunCellAction(code))
-            logger.info(f'Added env vars to IPython: code={code}, obs={obs}')
+            self.log('debug', f'Added env vars to IPython: code={code}, obs={obs}')
 
         # Add env vars to the Bash shell
         cmd = ''

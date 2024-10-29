@@ -122,7 +122,7 @@ class LLM(RetryMixin, DebugMixin):
             # noinspection PyBroadException
             except Exception:
                 pass
-        logger.info(f'Model info: {self.model_info}')
+        logger.debug(f'Model info: {self.model_info}')
 
         if self.config.log_completions:
             if self.config.log_completions_folder is None:
@@ -378,7 +378,7 @@ class LLM(RetryMixin, DebugMixin):
 
         # log the stats
         if stats:
-            logger.info(stats)
+            logger.debug(stats)
 
     def get_token_count(self, messages):
         """Get the number of tokens in a list of messages.
@@ -432,7 +432,7 @@ class LLM(RetryMixin, DebugMixin):
                 input_cost_per_token=self.config.input_cost_per_token,
                 output_cost_per_token=self.config.output_cost_per_token,
             )
-            logger.info(f'Using custom cost per token: {cost_per_token}')
+            logger.debug(f'Using custom cost per token: {cost_per_token}')
             extra_kwargs['custom_cost_per_token'] = cost_per_token
 
         try:
@@ -446,7 +446,7 @@ class LLM(RetryMixin, DebugMixin):
             return cost
         except Exception:
             self.cost_metric_supported = False
-            logger.warning('Cost calculation not supported for this model.')
+            logger.debug('Cost calculation not supported for this model.')
         return 0.0
 
     def __str__(self):
