@@ -60,7 +60,7 @@ jobs:
           echo "api_key = \"$DEEPSEEK_API_KEY\"" >> config.toml
           echo "temperature = 0.0" >> config.toml
 
-      - name: Run intergration test evaluation
+      - name: Run integration test evaluation
         env:
           ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
           RUNTIME: remote
