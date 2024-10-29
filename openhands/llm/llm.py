@@ -92,7 +92,8 @@ class LLM(RetryMixin, DebugMixin):
                 f'{self.config.base_url}/v1/model/info',
                 headers={'Authorization': f'Bearer {self.config.api_key}'},
             )
-            all_model_info = response.json()['data']
+            resp_json = response.json()
+            all_model_info = resp_json.get('data', [])
             current_model_info = next(
                 (
                     info
