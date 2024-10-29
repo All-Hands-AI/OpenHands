@@ -169,6 +169,7 @@ followed by the a stack trace containing messages like:
 If Docker Engine is installed rather than Docker Desktop, the main command will not work as expected.
 Docker Desktop includes easy DNS configuration for connecting processes running in different containers
 which OpenHands makes use of when the main server is running inside a docker container.
+(Further details: https://forums.docker.com/t/difference-between-docker-desktop-and-docker-engine/124612)
 
 **Workarounds**
 * Install Docker Desktop: https://www.docker.com/products/docker-desktop/
