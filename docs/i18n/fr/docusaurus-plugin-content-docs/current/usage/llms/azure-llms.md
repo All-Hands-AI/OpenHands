@@ -1,4 +1,4 @@
-Voici la traduction en français, en préservant le formatage Markdown, les blocs de code, le front matter et les balises {% jsx %} :
+
 
 # Azure
 

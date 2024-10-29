@@ -1,4 +1,4 @@
-Voici la traduction en français du contenu, en préservant le formatage Markdown, les blocs de code et le front matter. Les balises {% jsx %} et similaires sont conservées intactes. Les exemples de code, les URLs et les termes techniques ne sont pas traduits.
+
 
 # Kubernetes
 

@@ -1,4 +1,4 @@
-Voici la traduction en français du contenu fourni :
+
 
 # 🧠 Agent Principal et Capacités
 

@@ -1,4 +1,4 @@
-Voici la traduction en français :
+
 
 # Notes pour les utilisateurs de WSL sur Windows
 

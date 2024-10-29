@@ -1,4 +1,4 @@
-Voici la traduction en français, en préservant le formatage Markdown, les blocs de code et le front matter, ainsi que les balises {% jsx %} et similaires. Les exemples de code, les URL et les termes techniques n'ont pas été traduits.
+
 
 # OpenAI
 
