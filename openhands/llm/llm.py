@@ -166,8 +166,14 @@ class LLM(RetryMixin, DebugMixin):
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
+        # Check if model name is in supported list before checking model_info
+        model_name_supported = (
+            self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
+            or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
+        )
         self.config.supports_function_calling = (
-            self.model_info is not None
+            model_name_supported
+            and self.model_info is not None
             and self.model_info.get('supports_function_calling', False)
         )
 
