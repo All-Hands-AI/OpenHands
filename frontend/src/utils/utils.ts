@@ -37,7 +37,14 @@ export const removeUnwantedKeys = (
     "focused_element_bid",
   ];
 
-  return data.map((item) => {
+  return data.filter(item => {
+    // Skip items that only have a status key
+    const keys = Object.keys(item);
+    if (keys.length === 1 && keys[0] === "status") {
+      return false;
+    }
+    return true;
+  }).map((item) => {
     // Create a shallow copy of item
     const newItem = { ...item };
 
