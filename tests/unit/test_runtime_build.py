@@ -16,6 +16,7 @@ from openhands import __version__ as oh_version
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder.docker import DockerRuntimeBuilder
 from openhands.runtime.utils.runtime_build import (
+    BuildFromImageType,
     _generate_dockerfile,
     build_runtime_image,
     get_hash_for_lock_files,
@@ -83,7 +84,7 @@ def test_prep_build_folder(temp_dir):
         prep_build_folder(
             temp_dir,
             base_image=DEFAULT_BASE_IMAGE,
-            build_from_scratch=True,
+            build_from=BuildFromImageType.SCRATCH,
             extra_deps=None,
         )
 
@@ -130,7 +131,7 @@ def test_generate_dockerfile_build_from_scratch():
     base_image = 'debian:11'
     dockerfile_content = _generate_dockerfile(
         base_image,
-        build_from_scratch=True,
+        build_from=BuildFromImageType.SCRATCH,
     )
     assert base_image in dockerfile_content
     assert 'apt-get update' in dockerfile_content
@@ -146,11 +147,11 @@ def test_generate_dockerfile_build_from_scratch():
     )
 
 
-def test_generate_dockerfile_build_from_existing():
+def test_generate_dockerfile_build_from_lock():
     base_image = 'debian:11'
     dockerfile_content = _generate_dockerfile(
         base_image,
-        build_from_scratch=False,
+        build_from=BuildFromImageType.LOCK,
     )
 
     # These commands SHOULD NOT include in the dockerfile if build_from_scratch is False
@@ -161,6 +162,24 @@ def test_generate_dockerfile_build_from_existing():
     assert 'poetry install' not in dockerfile_content
 
     # These update commands SHOULD still in the dockerfile
+    assert 'COPY ./code/openhands /openhands/code/openhands' in dockerfile_content
+
+
+def test_generate_dockerfile_build_from_versioned():
+    base_image = 'debian:11'
+    dockerfile_content = _generate_dockerfile(
+        base_image,
+        build_from=BuildFromImageType.VERSIONED,
+    )
+
+    # these commands should not exist when build from versioned
+    assert 'RUN apt update && apt install -y wget sudo' not in dockerfile_content
+    assert '-c conda-forge' not in dockerfile_content
+    assert 'python=3.12' not in dockerfile_content
+    assert 'https://micro.mamba.pm/install.sh' not in dockerfile_content
+
+    # this SHOULD exist when build from versioned
+    assert 'poetry install' in dockerfile_content
     assert 'COPY ./code/openhands /openhands/code/openhands' in dockerfile_content
 
 
@@ -190,19 +209,22 @@ def test_get_runtime_image_repo_and_tag_eventstream():
 def test_build_runtime_image_from_scratch():
     base_image = 'debian:11'
     mock_lock_hash = MagicMock()
-    mock_lock_hash.return_value = 'mock-lock-hash'
+    mock_lock_hash.return_value = 'mock-lock-tag'
+    mock_versioned_tag = MagicMock()
+    mock_versioned_tag.return_value = 'mock-versioned-tag'
     mock_source_hash = MagicMock()
-    mock_source_hash.return_value = 'mock-source-hash'
+    mock_source_hash.return_value = 'mock-source-tag'
     mock_runtime_builder = MagicMock()
     mock_runtime_builder.image_exists.return_value = False
     mock_runtime_builder.build.return_value = (
-        f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-hash'
+        f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
     )
     mock_prep_build_folder = MagicMock()
     mod = build_runtime_image.__module__
     with (
         patch(f'{mod}.get_hash_for_lock_files', mock_lock_hash),
         patch(f'{mod}.get_hash_for_source_files', mock_source_hash),
+        patch(f'{mod}.get_tag_for_versioned_image', mock_versioned_tag),
         patch(
             f'{build_runtime_image.__module__}.prep_build_folder',
             mock_prep_build_folder,
@@ -212,31 +234,40 @@ def test_build_runtime_image_from_scratch():
         mock_runtime_builder.build.assert_called_once_with(
             path=ANY,
             tags=[
-                f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-hash_mock-source-hash',
-                f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-hash',
+                f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag',
+                f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag',
+                f'{get_runtime_image_repo()}:{OH_VERSION}_mock-versioned-tag',
             ],
             platform=None,
         )
         assert (
             image_name
-            == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-hash_mock-source-hash'
+            == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
         )
-        mock_prep_build_folder.assert_called_once_with(ANY, base_image, True, None)
+        mock_prep_build_folder.assert_called_once_with(
+            ANY, base_image, BuildFromImageType.SCRATCH, None
+        )
 
 
 def test_build_runtime_image_exact_hash_exist():
     base_image = 'debian:11'
     mock_lock_hash = MagicMock()
-    mock_lock_hash.return_value = 'mock-lock-hash'
+    mock_lock_hash.return_value = 'mock-lock-tag'
     mock_source_hash = MagicMock()
-    mock_source_hash.return_value = 'mock-source-hash'
+    mock_source_hash.return_value = 'mock-source-tag'
+    mock_versioned_tag = MagicMock()
+    mock_versioned_tag.return_value = 'mock-versioned-tag'
     mock_runtime_builder = MagicMock()
     mock_runtime_builder.image_exists.return_value = True
+    mock_runtime_builder.build.return_value = (
+        f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
+    )
     mock_prep_build_folder = MagicMock()
     mod = build_runtime_image.__module__
     with (
         patch(f'{mod}.get_hash_for_lock_files', mock_lock_hash),
         patch(f'{mod}.get_hash_for_source_files', mock_source_hash),
+        patch(f'{mod}.get_tag_for_versioned_image', mock_versioned_tag),
         patch(
             f'{build_runtime_image.__module__}.prep_build_folder',
             mock_prep_build_folder,
@@ -245,25 +276,45 @@ def test_build_runtime_image_exact_hash_exist():
         image_name = build_runtime_image(base_image, mock_runtime_builder)
         assert (
             image_name
-            == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-hash_mock-source-hash'
+            == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
         )
         mock_runtime_builder.build.assert_not_called()
         mock_prep_build_folder.assert_not_called()
 
 
-def test_build_runtime_image_exact_hash_not_exist():
+def test_build_runtime_image_exact_hash_not_exist_and_lock_exist():
     base_image = 'debian:11'
     mock_lock_hash = MagicMock()
-    mock_lock_hash.return_value = 'mock-lock-hash'
+    mock_lock_hash.return_value = 'mock-lock-tag'
     mock_source_hash = MagicMock()
-    mock_source_hash.return_value = 'mock-source-hash'
+    mock_source_hash.return_value = 'mock-source-tag'
+    mock_versioned_tag = MagicMock()
+    mock_versioned_tag.return_value = 'mock-versioned-tag'
     mock_runtime_builder = MagicMock()
-    mock_runtime_builder.image_exists.side_effect = [False, True, False, True]
+
+    def image_exists_side_effect(image_name, *args):
+        if 'mock-lock-tag_mock-source-tag' in image_name:
+            return False
+        elif 'mock-lock-tag' in image_name:
+            return True
+        elif 'mock-versioned-tag' in image_name:
+            # just to test we should never include versioned tag in a non-from-scratch build
+            # in real case it should be True when lock exists
+            return False
+        else:
+            raise ValueError(f'Unexpected image name: {image_name}')
+
+    mock_runtime_builder.image_exists.side_effect = image_exists_side_effect
+    mock_runtime_builder.build.return_value = (
+        f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
+    )
+
     mock_prep_build_folder = MagicMock()
     mod = build_runtime_image.__module__
     with (
         patch(f'{mod}.get_hash_for_lock_files', mock_lock_hash),
         patch(f'{mod}.get_hash_for_source_files', mock_source_hash),
+        patch(f'{mod}.get_tag_for_versioned_image', mock_versioned_tag),
         patch(
             f'{build_runtime_image.__module__}.prep_build_folder',
             mock_prep_build_folder,
@@ -272,11 +323,80 @@ def test_build_runtime_image_exact_hash_not_exist():
         image_name = build_runtime_image(base_image, mock_runtime_builder)
         assert (
             image_name
-            == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-hash_mock-source-hash'
+            == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
         )
-        mock_runtime_builder.build.assert_called_once()
+        mock_runtime_builder.build.assert_called_once_with(
+            path=ANY,
+            tags=[
+                f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag',
+                # lock tag will NOT be included - since it already exists
+                # VERSION tag will NOT be included except from scratch
+            ],
+            platform=None,
+        )
         mock_prep_build_folder.assert_called_once_with(
-            ANY, f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-hash', False, None
+            ANY,
+            f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag',
+            BuildFromImageType.LOCK,
+            None,
+        )
+
+
+def test_build_runtime_image_exact_hash_not_exist_and_lock_not_exist_and_versioned_exist():
+    base_image = 'debian:11'
+    mock_lock_hash = MagicMock()
+    mock_lock_hash.return_value = 'mock-lock-tag'
+    mock_source_hash = MagicMock()
+    mock_source_hash.return_value = 'mock-source-tag'
+    mock_versioned_tag = MagicMock()
+    mock_versioned_tag.return_value = 'mock-versioned-tag'
+    mock_runtime_builder = MagicMock()
+
+    def image_exists_side_effect(image_name, *args):
+        if 'mock-lock-tag_mock-source-tag' in image_name:
+            return False
+        elif 'mock-lock-tag' in image_name:
+            return False
+        elif 'mock-versioned-tag' in image_name:
+            return True
+        else:
+            raise ValueError(f'Unexpected image name: {image_name}')
+
+    mock_runtime_builder.image_exists.side_effect = image_exists_side_effect
+    mock_runtime_builder.build.return_value = (
+        f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
+    )
+
+    mock_prep_build_folder = MagicMock()
+    mod = build_runtime_image.__module__
+    with (
+        patch(f'{mod}.get_hash_for_lock_files', mock_lock_hash),
+        patch(f'{mod}.get_hash_for_source_files', mock_source_hash),
+        patch(f'{mod}.get_tag_for_versioned_image', mock_versioned_tag),
+        patch(
+            f'{build_runtime_image.__module__}.prep_build_folder',
+            mock_prep_build_folder,
+        ),
+    ):
+        image_name = build_runtime_image(base_image, mock_runtime_builder)
+        assert (
+            image_name
+            == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
+        )
+        mock_runtime_builder.build.assert_called_once_with(
+            path=ANY,
+            tags=[
+                f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag',
+                f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag',
+                # VERSION tag will NOT be included except from scratch
+            ],
+            platform=None,
+        )
+        mock_prep_build_folder.assert_called_once_with(
+            ANY,
+            f'{get_runtime_image_repo()}:{OH_VERSION}_mock-versioned-tag',
+            BuildFromImageType.VERSIONED,
+            None,
         )
 
 
