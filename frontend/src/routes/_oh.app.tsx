@@ -235,13 +235,23 @@ function App() {
 
         // handle new session
         if (!token) {
+          let additional_info = "";
           if (ghToken && repo) {
             send(getCloneRepoCommand(ghToken, repo));
+            additional_info = `Repository ${repo} has been cloned to /workspace. Please check the /workspace for files.`;
             dispatch(clearSelectedRepository()); // reset selected repository; maybe better to move this to '/'?
+          }
+          // if there's uploaded project zip, add it to the chat
+          else if (importedProjectZip) {
+            additional_info = `Files have been uploaded. Please check the /workspace for files.`;
           }
 
           if (q) {
-            sendInitialQuery(q, files);
+            if (additional_info) {
+              sendInitialQuery(`${q}\n\n${additional_info}`, files);
+            } else {
+              sendInitialQuery(q, files);
+            }
             dispatch(clearFiles()); // reset selected files
           }
         }
