@@ -194,10 +194,11 @@ class ActionExecutor:
 
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
             obs.content = obs.content.rstrip()
-            obs.content += (
-                f'\n[Jupyter current working directory: {self.bash_session.pwd}]'
-            )
-            obs.content += f'\n[Jupyter Python interpreter: {_jupyter_plugin.python_interpreter_path}]'
+            if action.include_extra:
+                obs.content += (
+                    f'\n[Jupyter current working directory: {self.bash_session.pwd}]'
+                )
+                obs.content += f'\n[Jupyter Python interpreter: {_jupyter_plugin.python_interpreter_path}]'
             return obs
         else:
             raise RuntimeError(
