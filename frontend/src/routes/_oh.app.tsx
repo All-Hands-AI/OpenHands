@@ -241,7 +241,7 @@ function App() {
             additionalInfo = `Repository ${repo} has been cloned to /workspace. Please check the /workspace for files.`;
             dispatch(clearSelectedRepository()); // reset selected repository; maybe better to move this to '/'?
           }
-          // if there's uploaded project zip, add it to the chat
+          // if there's an uploaded project zip, add it to the chat
           else if (importedProjectZip) {
             additionalInfo = `Files have been uploaded. Please check the /workspace for files.`;
           }
