@@ -49,7 +49,7 @@ but seems to work well on most systems.
 
 ## All Hands Runtime
 The All Hands Runtime is currently in beta. You can request access by joining
-the  #remote-runtime-limited-beta channel on Slack (see the README for an invite).
+the #remote-runtime-limited-beta channel on Slack (see the README for an invite).
 
 To use the All Hands Runtime, set the following environment variables when
 starting OpenHands:
