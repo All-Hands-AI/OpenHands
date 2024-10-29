@@ -156,7 +156,7 @@ EXPORT JWT_SECRET=A_CONST_VALUE
 ```
 
 ---
-### Connection to host.docker.internal timed out
+### Connection to host docker internal timed out
 
 **Symptoms**
 When you start the server using the docker command from the main README, you get a long timeout
