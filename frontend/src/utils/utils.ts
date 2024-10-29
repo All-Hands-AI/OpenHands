@@ -39,9 +39,8 @@ export const removeUnwantedKeys = (
 
   return data
     .filter((item) => {
-      // Skip items that only have a status key
-      const keys = Object.keys(item);
-      if (keys.length === 1 && keys[0] === "status") {
+      // Skip items that have a status key
+      if ('status' in item) {
         return false;
       }
       return true;
