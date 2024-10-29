@@ -90,7 +90,11 @@ class LLMConfig:
         """
         Post-initialization hook to assign OpenRouter-related variables to environment variables.
         This ensures that these values are accessible to litellm at runtime.
+        Also sets model-specific capabilities.
         """
+        # Set function calling support for DeepSeek models
+        if 'deepseek' in self.model.lower():
+            self.supports_function_calling = True
 
         # Assign OpenRouter-specific variables to environment variables
         if self.openrouter_site_url:
@@ -136,3 +140,4 @@ class LLMConfig:
             draft_editor_config = LLMConfig(**llm_config_dict['draft_editor'])
             args['draft_editor'] = draft_editor_config
         return cls(**args)
+

@@ -159,11 +159,12 @@ class LLM(RetryMixin, DebugMixin):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
         self.config.supports_function_calling = (
-            self.model_info is not None
-            and self.model_info.get('supports_function_calling', False)
+            (self.model_info is not None and self.model_info.get('supports_function_calling', False))
+            or 'deepseek' in self.config.model.lower()  # DeepSeek models support function calling
         )
 
         self._completion = partial(
+
             litellm_completion,
             model=self.config.model,
             api_key=self.config.api_key,
@@ -473,3 +474,9 @@ class LLM(RetryMixin, DebugMixin):
 
         # let pydantic handle the serialization
         return [message.model_dump() for message in messages]
+
+
+
+
+
+

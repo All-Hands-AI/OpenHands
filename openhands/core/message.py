@@ -80,17 +80,32 @@ class Message(BaseModel):
             elif isinstance(item, ImageContent) and self.vision_enabled:
                 content.extend(d)
 
+        # For DeepSeek, we need to ensure content is a string when using tool calls
+        if len(content) == 1 and isinstance(content[0], dict) and 'text' in content[0]:
+            content = content[0]['text']
+
         ret: dict = {'content': content, 'role': self.role}
 
         if role_tool_with_prompt_caching:
             ret['cache_control'] = {'type': 'ephemeral'}
 
+        # Handle tool calls for DeepSeek compatibility
         if self.tool_call_id is not None:
-            assert (
-                self.name is not None
-            ), 'name is required when tool_call_id is not None'
+            assert self.name is not None, 'name is required when tool_call_id is not None'
             ret['tool_call_id'] = self.tool_call_id
             ret['name'] = self.name
         if self.tool_calls:
-            ret['tool_calls'] = self.tool_calls
+            # Ensure tool_calls is properly serialized for DeepSeek
+            ret['tool_calls'] = [
+                {
+                    'id': tc.id,
+                    'type': tc.type,
+                    'function': {
+                        'name': tc.function.name,
+                        'arguments': tc.function.arguments
+                    }
+                } for tc in self.tool_calls
+            ]
         return ret
+
+
