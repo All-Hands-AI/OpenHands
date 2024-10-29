@@ -128,6 +128,7 @@ class AgentSession:
 
     async def close(self):
         """Closes the Agent session"""
+        print('CLOSING AGENT SESSION')
 
         if self._closed:
             return

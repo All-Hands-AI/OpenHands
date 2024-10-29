@@ -170,7 +170,6 @@ class AgentController:
                 traceback.print_exc()
                 self.log('error', f'Error while running the agent: {e}')
                 await self._react_to_exception(e)
-                break
 
             await asyncio.sleep(0.1)
 
@@ -256,6 +255,7 @@ class AgentController:
                 str(action),
                 extra={'msg_type': 'ACTION', 'event_source': EventSource.USER},
             )
+            print('GOT MESSAGE ACTION, RESTARTING')
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
