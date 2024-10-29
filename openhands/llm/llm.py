@@ -170,6 +170,7 @@ class LLM(RetryMixin, DebugMixin):
         model_name_supported = (
             self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
             or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
+            or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
         )
         self.config.supports_function_calling = (
             model_name_supported
