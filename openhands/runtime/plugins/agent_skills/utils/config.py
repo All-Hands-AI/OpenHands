@@ -18,7 +18,7 @@ def _get_openai_base_url():
 
 
 def _get_openai_model():
-    return os.getenv('OPENAI_MODEL', 'claude-3-5-sonnet-20241022')
+    return os.getenv('OPENAI_MODEL', 'gpt-4o')
 
 
 def _get_max_token():
