@@ -4,6 +4,7 @@ This module monitors the app for shutdown signals
 
 import asyncio
 import signal
+import threading
 import time
 from types import FrameType
 
@@ -29,8 +30,11 @@ def _register_signal_handlers():
     if _should_exit is not None:
         return
     _should_exit = False
-    for sig in HANDLED_SIGNALS:
-        _register_signal_handler(sig)
+
+    # Check if we're in the main thread of the main interpreter
+    if threading.current_thread() is threading.main_thread():
+        for sig in HANDLED_SIGNALS:
+            _register_signal_handler(sig)
 
 
 def should_exit() -> bool:

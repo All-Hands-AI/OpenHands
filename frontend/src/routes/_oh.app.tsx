@@ -12,7 +12,6 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import WebSocket from "ws";
 import toast from "react-hot-toast";
-import ChatInterface from "#/components/chat/ChatInterface";
 import { getSettings } from "#/services/settings";
 import Security from "../components/modals/security/Security";
 import { Controls } from "#/components/controls";
@@ -20,7 +19,11 @@ import store, { RootState } from "#/store";
 import { Container } from "#/components/container";
 import ActionType from "#/types/ActionType";
 import { handleAssistantMessage } from "#/services/actions";
-import { addUserMessage, clearMessages } from "#/state/chatSlice";
+import {
+  addErrorMessage,
+  addUserMessage,
+  clearMessages,
+} from "#/state/chatSlice";
 import { useSocket } from "#/context/socket";
 import {
   getGitHubTokenCommand,
@@ -46,6 +49,19 @@ import { clearJupyter } from "#/state/jupyterSlice";
 import { FilesProvider } from "#/context/files";
 import { clearSession } from "#/utils/clear-session";
 import { userIsAuthenticated } from "#/utils/user-is-authenticated";
+import { ErrorObservation } from "#/types/core/observations";
+import { ChatInterface } from "#/components/chat-interface";
+
+interface ServerError {
+  error: boolean | string;
+  message: string;
+  [key: string]: unknown;
+}
+
+const isServerError = (data: object): data is ServerError => "error" in data;
+
+const isErrorObservation = (data: object): data is ErrorObservation =>
+  "observation" in data && data.observation === "error";
 
 const isAgentStateChange = (
   data: object,
@@ -159,6 +175,21 @@ function App() {
     if (q) addIntialQueryToChat(q, files);
   }, [settings]);
 
+  const handleError = (message: string) => {
+    const [error, ...rest] = message.split(":");
+    const details = rest.join(":");
+    if (!details) {
+      dispatch(
+        addErrorMessage({
+          error: "An error has occured",
+          message: error,
+        }),
+      );
+    } else {
+      dispatch(addErrorMessage({ error, message: details }));
+    }
+  };
+
   const handleMessage = React.useCallback(
     (message: MessageEvent<WebSocket.Data>) => {
       // set token received from the server
@@ -168,9 +199,23 @@ function App() {
         return;
       }
 
-      if ("error" in parsed) {
-        toast.error(parsed.error);
-        fetcher.submit({}, { method: "POST", action: "/end-session" });
+      if (isServerError(parsed)) {
+        if (parsed.error_code === 401) {
+          toast.error("Session expired.");
+          fetcher.submit({}, { method: "POST", action: "/end-session" });
+          return;
+        }
+
+        if (typeof parsed.error === "string") {
+          toast.error(parsed.error);
+        } else {
+          toast.error(parsed.message);
+        }
+
+        return;
+      }
+      if (isErrorObservation(parsed)) {
+        handleError(parsed.message);
         return;
       }
 
@@ -250,11 +295,11 @@ function App() {
   return (
     <div className="flex flex-col h-full gap-3">
       <div className="flex h-full overflow-auto gap-3">
-        <Container className="w-1/4 max-h-full">
+        <Container className="w-[375px] max-h-full">
           <ChatInterface />
         </Container>
 
-        <div className="flex flex-col w-3/4 gap-3">
+        <div className="flex flex-col grow gap-3">
           <Container
             className="h-2/3"
             labels={[

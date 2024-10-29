@@ -1,5 +1,6 @@
 import asyncio
 import time
+from dataclasses import dataclass, field
 from typing import Optional
 
 from fastapi import WebSocket
@@ -13,15 +14,14 @@ from openhands.server.session.session import Session
 from openhands.storage.files import FileStore
 
 
+@dataclass
 class SessionManager:
-    _sessions: dict[str, Session] = {}
+    config: AppConfig
+    file_store: FileStore
     cleanup_interval: int = 300
     session_timeout: int = 600
+    _sessions: dict[str, Session] = field(default_factory=dict)
     _session_cleanup_task: Optional[asyncio.Task] = None
-
-    def __init__(self, config: AppConfig, file_store: FileStore):
-        self.config = config
-        self.file_store = file_store
 
     async def __aenter__(self):
         if not self._session_cleanup_task:
@@ -46,10 +46,15 @@ class SessionManager:
             return None
         return self._sessions.get(sid)
 
-    def attach_to_conversation(self, sid: str) -> Conversation | None:
+    async def attach_to_conversation(self, sid: str) -> Conversation | None:
         if not session_exists(sid, self.file_store):
             return None
-        return Conversation(sid, file_store=self.file_store, config=self.config)
+        c = Conversation(sid, file_store=self.file_store, config=self.config)
+        await c.connect()
+        return c
+
+    async def detach_from_conversation(self, conversation: Conversation):
+        await conversation.disconnect()
 
     async def send(self, sid: str, data: dict[str, object]) -> bool:
         """Sends data to the client."""
@@ -83,7 +88,7 @@ class SessionManager:
                 to_del_session: Session | None = self._sessions.pop(sid, None)
                 if to_del_session is not None:
                     await to_del_session.close()
-                    logger.info(
+                    logger.debug(
                         f'Session {sid} and related resource have been removed due to inactivity.'
                     )
 

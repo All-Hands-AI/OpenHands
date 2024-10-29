@@ -1,8 +1,11 @@
 import copy
+import os
 import time
 import warnings
 from functools import partial
 from typing import Any
+
+import requests
 
 from openhands.core.config import LLMConfig
 
@@ -45,11 +48,9 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
 # remove this when we gemini and deepseek are supported
 CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-3-5-sonnet-20240620',
+    'claude-3-5-sonnet-20241022',
     'claude-3-haiku-20240307',
     'claude-3-opus-20240229',
-    'anthropic/claude-3-opus-20240229',
-    'anthropic/claude-3-haiku-20240307',
-    'anthropic/claude-3-5-sonnet-20240620',
 ]
 
 
@@ -79,23 +80,56 @@ class LLM(RetryMixin, DebugMixin):
         self.cost_metric_supported: bool = True
         self.config: LLMConfig = copy.deepcopy(config)
 
-        # list of LLM completions (for logging purposes). Each completion is a dict with the following keys:
-        # - 'messages': list of messages
-        # - 'response': response from the LLM
-        self.llm_completions: list[dict[str, Any]] = []
-
         # litellm actually uses base Exception here for unknown model
         self.model_info: ModelInfo | None = None
-        try:
-            if self.config.model.startswith('openrouter'):
-                self.model_info = litellm.get_model_info(self.config.model)
-            else:
+
+        if self.config.model.startswith('openrouter'):
+            self.model_info = litellm.get_model_info(self.config.model)
+        elif self.config.model.startswith('litellm_proxy/'):
+            # IF we are using LiteLLM proxy, get model info from LiteLLM proxy
+            # GET {base_url}/v1/model/info with litellm_model_id as path param
+            response = requests.get(
+                f'{self.config.base_url}/v1/model/info',
+                headers={'Authorization': f'Bearer {self.config.api_key}'},
+            )
+            all_model_info = response.json()['data']
+            current_model_info = next(
+                (
+                    info
+                    for info in all_model_info
+                    if info['model_name']
+                    == self.config.model.removeprefix('litellm_proxy/')
+                ),
+                None,
+            )
+            if current_model_info:
+                self.model_info = current_model_info['model_info']
+
+        # Last two attempts to get model info from NAME
+        if not self.model_info:
+            try:
                 self.model_info = litellm.get_model_info(
                     self.config.model.split(':')[0]
                 )
-        # noinspection PyBroadException
-        except Exception as e:
-            logger.warning(f'Could not get model info for {config.model}:\n{e}')
+            # noinspection PyBroadException
+            except Exception:
+                pass
+        if not self.model_info:
+            try:
+                self.model_info = litellm.get_model_info(
+                    self.config.model.split('/')[-1]
+                )
+            # noinspection PyBroadException
+            except Exception:
+                pass
+        logger.debug(f'Model info: {self.model_info}')
+
+        if self.config.log_completions:
+            if self.config.log_completions_folder is None:
+                raise RuntimeError(
+                    'log_completions_folder is required when log_completions is enabled'
+                )
+            os.makedirs(self.config.log_completions_folder, exist_ok=True)
 
         # Set the max tokens in an LM-specific way if not set
         if self.config.max_input_tokens is None:
@@ -124,6 +158,11 @@ class LLM(RetryMixin, DebugMixin):
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
+        self.config.supports_function_calling = (
+            self.model_info is not None
+            and self.model_info.get('supports_function_calling', False)
+        )
+
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
@@ -142,6 +181,8 @@ class LLM(RetryMixin, DebugMixin):
             logger.debug('LLM: model has vision enabled')
         if self.is_caching_prompt_active():
             logger.debug('LLM: caching prompt enabled')
+        if self.config.supports_function_calling:
+            logger.debug('LLM: model supports function calling')
 
         completion_unwrapped = self._completion
 
@@ -193,17 +234,33 @@ class LLM(RetryMixin, DebugMixin):
             try:
                 # we don't support streaming here, thus we get a ModelResponse
                 resp: ModelResponse = completion_unwrapped(*args, **kwargs)
-
                 # log for evals or other scripts that need the raw completion
                 if self.config.log_completions:
-                    self.llm_completions.append(
-                        {
-                            'messages': messages,
-                            'response': resp,
-                            'timestamp': time.time(),
-                            'cost': self._completion_cost(resp),
-                        }
+                    assert self.config.log_completions_folder is not None
+                    log_file = os.path.join(
+                        self.config.log_completions_folder,
+                        # use the metric model name (for draft editor)
+                        f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
                     )
+                    from openhands.core.utils import json
+
+                    with open(log_file, 'w') as f:
+                        f.write(
+                            json.dumps(
+                                {
+                                    'messages': messages,
+                                    'response': resp,
+                                    'args': args,
+                                    'kwargs': {
+                                        k: v
+                                        for k, v in kwargs.items()
+                                        if k != 'messages'
+                                    },
+                                    'timestamp': time.time(),
+                                    'cost': self._completion_cost(resp),
+                                },
+                            )
+                        )
 
                 message_back: str = resp['choices'][0]['message']['content']
 
@@ -259,7 +316,10 @@ class LLM(RetryMixin, DebugMixin):
             self.config.caching_prompt is True
             and self.model_info is not None
             and self.model_info.get('supports_prompt_caching', False)
-            and self.config.model in CACHE_PROMPT_SUPPORTED_MODELS
+            and (
+                self.config.model in CACHE_PROMPT_SUPPORTED_MODELS
+                or self.config.model.split('/')[-1] in CACHE_PROMPT_SUPPORTED_MODELS
+            )
         )
 
     def _post_completion(self, response: ModelResponse) -> None:
@@ -318,7 +378,7 @@ class LLM(RetryMixin, DebugMixin):
 
         # log the stats
         if stats:
-            logger.info(stats)
+            logger.debug(stats)
 
     def get_token_count(self, messages):
         """Get the number of tokens in a list of messages.
@@ -372,19 +432,21 @@ class LLM(RetryMixin, DebugMixin):
                 input_cost_per_token=self.config.input_cost_per_token,
                 output_cost_per_token=self.config.output_cost_per_token,
             )
-            logger.info(f'Using custom cost per token: {cost_per_token}')
+            logger.debug(f'Using custom cost per token: {cost_per_token}')
             extra_kwargs['custom_cost_per_token'] = cost_per_token
 
-        if not self._is_local():
-            try:
+        try:
+            # try directly get response_cost from response
+            cost = getattr(response, '_hidden_params', {}).get('response_cost', None)
+            if cost is None:
                 cost = litellm_completion_cost(
                     completion_response=response, **extra_kwargs
                 )
-                self.metrics.add_cost(cost)
-                return cost
-            except Exception:
-                self.cost_metric_supported = False
-                logger.warning('Cost calculation not supported for this model.')
+            self.metrics.add_cost(cost)
+            return cost
+        except Exception:
+            self.cost_metric_supported = False
+            logger.debug('Cost calculation not supported for this model.')
         return 0.0
 
     def __str__(self):
@@ -399,7 +461,6 @@ class LLM(RetryMixin, DebugMixin):
 
     def reset(self):
         self.metrics.reset()
-        self.llm_completions = []
 
     def format_messages_for_llm(self, messages: Message | list[Message]) -> list[dict]:
         if isinstance(messages, Message):

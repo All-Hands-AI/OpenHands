@@ -62,7 +62,7 @@ class OpenHands {
   }
 
   static async getConfig(): Promise<GetConfigResponse> {
-    const response = await fetch(`${OpenHands.BASE_URL}/config.json`, {
+    const response = await fetch("config.json", {
       headers: {
         "Cache-Control": "no-cache",
       },
@@ -201,7 +201,7 @@ class OpenHands {
   static async getGitHubAccessToken(
     code: string,
   ): Promise<GitHubAccessTokenResponse> {
-    const response = await fetch(`${OpenHands.BASE_URL}/github/callback`, {
+    const response = await fetch(`${OpenHands.BASE_URL}/api/github/callback`, {
       method: "POST",
       body: JSON.stringify({ code }),
       headers: {
@@ -218,7 +218,7 @@ class OpenHands {
    * @returns Whether the user is authenticated
    */
   static async isAuthenticated(login: string): Promise<boolean> {
-    const response = await fetch(`${OpenHands.BASE_URL}/authenticate`, {
+    const response = await fetch(`${OpenHands.BASE_URL}/api/authenticate`, {
       method: "POST",
       body: JSON.stringify({ login }),
       headers: {

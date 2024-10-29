@@ -16,6 +16,7 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
+    AgentConfig,
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
@@ -24,7 +25,9 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import MessageAction
-from openhands.runtime.runtime import Runtime
+from openhands.events.serialization.event import event_to_dict
+from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
 FAKE_RESPONSES = {
     'CodeActAgent': codeact_user_response,
@@ -33,6 +36,7 @@ FAKE_RESPONSES = {
 
 def get_config(
     metadata: EvalMetadata,
+    instance_id: str,
 ) -> AppConfig:
     config = AppConfig(
         default_agent=metadata.agent_class,
@@ -51,7 +55,21 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
+    if metadata.llm_config.log_completions:
+        metadata.llm_config.log_completions_folder = os.path.join(
+            metadata.eval_output_dir, 'llm_completions', instance_id
+        )
+        logger.info(
+            f'Logging LLM completions for instance {instance_id} to '
+            f'{metadata.llm_config.log_completions_folder}'
+        )
     config.set_llm_config(metadata.llm_config)
+    agent_config = AgentConfig(
+        codeact_enable_jupyter=True,
+        codeact_enable_browsing_delegate=True,
+        codeact_enable_llm_editor=False,
+    )
+    config.set_agent_config(agent_config)
     return config
 
 
@@ -60,7 +78,7 @@ def process_instance(
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ) -> EvalOutput:
-    config = get_config(metadata)
+    config = get_config(metadata, instance.instance_id)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
@@ -94,6 +112,7 @@ def process_instance(
     # =============================================
 
     runtime: Runtime = create_runtime(config)
+    call_async_from_sync(runtime.connect)
 
     test_class.initialize_runtime(runtime)
 
@@ -113,7 +132,7 @@ def process_instance(
     # # result evaluation
     # # =============================================
 
-    histories = state.history.get_events()
+    histories = [event_to_dict(event) for event in state.history.get_events()]
     test_result: TestResult = test_class.verify_result(runtime, histories)
     metrics = state.metrics.get() if state.metrics else None
 

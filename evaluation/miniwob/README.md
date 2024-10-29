@@ -1,4 +1,4 @@
-# WebArena Evaluation with OpenHands Browsing Agents
+# Mini-World of Bits Evaluation with OpenHands Browsing Agents
 
 This folder contains evaluation for [MiniWoB++](https://miniwob.farama.org/) benchmark, powered by [BrowserGym](https://github.com/ServiceNow/BrowserGym) for easy evaluation of how well an agent capable of browsing can perform on synthetic web browsing tasks.
 

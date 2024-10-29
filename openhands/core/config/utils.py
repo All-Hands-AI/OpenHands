@@ -252,7 +252,7 @@ def get_llm_config_arg(
     if llm_config_arg.startswith('llm.'):
         llm_config_arg = llm_config_arg[4:]
 
-    logger.openhands_logger.info(f'Loading llm config from {llm_config_arg}')
+    logger.openhands_logger.debug(f'Loading llm config from {llm_config_arg}')
 
     # load the toml file
     try:

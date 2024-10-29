@@ -9,6 +9,7 @@ from fastapi.responses import JSONResponse
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import (
     Action,
+    ActionConfirmationStatus,
     ActionSecurityRisk,
 )
 from openhands.events.event import Event, EventSource
@@ -81,7 +82,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
         while self.container.status != 'running':
             self.container = self.docker_client.containers.get(self.container_name)
             elapsed += 1
-            logger.info(
+            logger.debug(
                 f'waiting for container to start: {elapsed}, container status: {self.container.status}'
             )
             if elapsed > self.timeout:
@@ -108,7 +109,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
             self.trace.extend(element)
             self.input.extend([e.model_dump(exclude_none=True) for e in element])  # type: ignore [call-overload]
         else:
-            logger.info('Invariant skipping element: event')
+            logger.debug('Invariant skipping element: event')
 
     def get_risk(self, results: list[str]) -> ActionSecurityRisk:
         mapping = {
@@ -137,8 +138,9 @@ class InvariantAnalyzer(SecurityAnalyzer):
         return (
             risk is not None
             and risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM)
-            and hasattr(event, 'is_confirmed')
-            and event.is_confirmed == 'awaiting_confirmation'
+            and hasattr(event, 'confirmation_state')
+            and event.confirmation_state
+            == ActionConfirmationStatus.AWAITING_CONFIRMATION
         )
 
     async def confirm(self, event: Event) -> None:
@@ -149,7 +151,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
         await call_sync_from_async(self.event_stream.add_event, new_event, event_source)
 
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
-        logger.info('Calling security_risk on InvariantAnalyzer')
+        logger.debug('Calling security_risk on InvariantAnalyzer')
         new_elements = parse_element(self.trace, event)
         input = [e.model_dump(exclude_none=True) for e in new_elements]  # type: ignore [call-overload]
         self.trace.extend(new_elements)

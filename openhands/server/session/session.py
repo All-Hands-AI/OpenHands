@@ -17,6 +17,7 @@ from openhands.events.observation import (
     CmdOutputObservation,
     NullObservation,
 )
+from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
@@ -65,7 +66,7 @@ class Session:
                 await self.dispatch(data)
         except WebSocketDisconnect:
             await self.close()
-            logger.info('WebSocket disconnected, sid: %s', self.sid)
+            logger.debug('WebSocket disconnected, sid: %s', self.sid)
         except RuntimeError as e:
             await self.close()
             logger.exception('Error in loop_recv: %s', e)
@@ -140,6 +141,8 @@ class Session:
         elif event.source == EventSource.USER and isinstance(
             event, CmdOutputObservation
         ):
+            await self.send(event_to_dict(event))
+        elif isinstance(event, ErrorObservation):
             await self.send(event_to_dict(event))
 
     async def dispatch(self, data: dict):

@@ -7,7 +7,7 @@ import requests
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import RuntimeBuilder
-from openhands.runtime.utils.request import send_request_with_retry
+from openhands.runtime.utils.request import is_429_error, send_request_with_retry
 from openhands.runtime.utils.shutdown_listener import (
     should_continue,
     sleep_if_should_continue,
@@ -51,6 +51,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
             f'{self.api_url}/build',
             files=files,
             timeout=30,
+            retry_fns=[is_429_error],
         )
 
         if response.status_code != 202:
@@ -88,7 +89,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
             logger.info(f'Build status: {status}')
 
             if status == 'SUCCESS':
-                logger.info(f"Successfully built {status_data['image']}")
+                logger.debug(f"Successfully built {status_data['image']}")
                 return status_data['image']
             elif status in [
                 'FAILURE',
@@ -126,12 +127,12 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
         result = response.json()
 
         if result['exists']:
-            logger.info(
+            logger.debug(
                 f"Image {image_name} exists. "
                 f"Uploaded at: {result['image']['upload_time']}, "
                 f"Size: {result['image']['image_size_bytes'] / 1024 / 1024:.2f} MB"
             )
         else:
-            logger.info(f'Image {image_name} does not exist.')
+            logger.debug(f'Image {image_name} does not exist.')
 
         return result['exists']

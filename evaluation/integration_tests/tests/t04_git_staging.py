@@ -2,7 +2,7 @@ from evaluation.integration_tests.tests.base import BaseIntegrationTest, TestRes
 from evaluation.utils.shared import assert_and_raise
 from openhands.events.action import CmdRunAction
 from openhands.events.event import Event
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
 
 
 class Test(BaseIntegrationTest):

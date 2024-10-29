@@ -61,7 +61,6 @@ class EvalOutput(BaseModel):
     history: (
         list[dict[str, Any]] | list[tuple[dict[str, Any], dict[str, Any]]] | None
     ) = None
-    llm_completions: list[dict[str, Any]] | None = None
     metrics: dict[str, Any] | None = None
     error: str | None = None
 
@@ -105,7 +104,7 @@ def codeact_user_response(
     )
     msg = (
         'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have solved the task, please first send your answer to user through message and then <execute_bash> exit </execute_bash>.\n'
+        'If you think you have solved the task, please first send your answer to user through message and then finish the interaction.\n'
         f'{encaps_str}'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
     )
