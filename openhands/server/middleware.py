@@ -1,8 +1,8 @@
 from urllib.parse import urlparse
 
-from engineio import ASGIApp
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp
 
 
 class CustomCORSMiddleware(CORSMiddleware):
