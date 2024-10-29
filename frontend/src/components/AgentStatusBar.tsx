@@ -95,18 +95,14 @@ function AgentStatusBar() {
   const [statusMessage, setStatusMessage] = React.useState<string>("");
 
   React.useEffect(() => {
-    console.log('cur status message', curStatusMessage);
     let message = curStatusMessage.message || '';
     if (curStatusMessage?.id) {
       const id = curStatusMessage.id.trim();
-      console.log('status message id', id);
       if (i18n.exists(id)) {
-        console.log('exists');
         message = t(curStatusMessage.id.trim()) || message;
       }
     }
     if (curStatusMessage?.type === "error") {
-      console.log('error', message);
       toast.error(message);
       return;
     }
