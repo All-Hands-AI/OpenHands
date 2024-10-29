@@ -221,8 +221,9 @@ def test_unsafe_bash_command(temp_dir: str):
                         name=ActionType.RUN_IPYTHON,
                         arguments={
                             'code': "print('hello')",
-                            'kernel_init_code': '',
+                            'include_extra': True,
                             'confirmation_state': ActionConfirmationStatus.CONFIRMED,
+                            'kernel_init_code': '',
                         },
                     ),
                 ),

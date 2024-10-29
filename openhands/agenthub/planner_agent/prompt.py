@@ -160,7 +160,7 @@ def get_prompt_and_images(
 
     # the hint, based on the last action
     hint = get_hint(event_to_memory(latest_action, max_message_chars).get('action', ''))
-    logger.info('HINT:\n' + hint, extra={'msg_type': 'DETAIL'})
+    logger.debug('HINT:\n' + hint, extra={'msg_type': 'DETAIL'})
 
     # the last relevant user message (the task)
     message, image_urls = state.get_current_user_intent()

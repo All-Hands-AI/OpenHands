@@ -8,6 +8,8 @@ import pylcs
 from pydantic import BaseModel
 from tree_sitter_languages import get_parser
 
+from openhands.core.logger import openhands_logger as logger
+
 
 class Chunk(BaseModel):
     text: str
@@ -43,7 +45,7 @@ def create_chunks(
     try:
         parser = get_parser(language) if language is not None else None
     except AttributeError:
-        # print(f"Language {language} not supported. Falling back to raw string.")
+        logger.debug(f'Language {language} not supported. Falling back to raw string.')
         parser = None
 
     if parser is None:

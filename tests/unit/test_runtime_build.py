@@ -405,32 +405,20 @@ def test_build_runtime_image_exact_hash_not_exist_and_lock_not_exist_and_version
 # ==============================
 
 
-def test_output_progress(docker_runtime_builder):
-    with patch('sys.stdout.isatty', return_value=True):
-        with patch('sys.stdout.write') as mock_write, patch('sys.stdout.flush'):
-            docker_runtime_builder._output_logs('new log line')
-            mock_write.assert_any_call('\033[F' * 10)
-            mock_write.assert_any_call('\033[2Knew log line\n')
-
-
 def test_output_build_progress(docker_runtime_builder):
-    with patch('sys.stdout.isatty', return_value=True):
-        with patch('sys.stdout.write') as mock_write, patch('sys.stdout.flush'):
-            layers = {}
-            docker_runtime_builder._output_build_progress(
-                {
-                    'id': 'layer1',
-                    'status': 'Downloading',
-                    'progressDetail': {'current': 50, 'total': 100},
-                },
-                layers,
-                0,
-            )
-            mock_write.assert_any_call('\033[F' * 0)
-            mock_write.assert_any_call('\033[2K\r')
-            assert layers['layer1']['status'] == 'Downloading'
-            assert layers['layer1']['progress'] == ''
-            assert layers['layer1']['last_logged'] == 50.0
+    layers = {}
+    docker_runtime_builder._output_build_progress(
+        {
+            'id': 'layer1',
+            'status': 'Downloading',
+            'progressDetail': {'current': 50, 'total': 100},
+        },
+        layers,
+        0,
+    )
+    assert layers['layer1']['status'] == 'Downloading'
+    assert layers['layer1']['progress'] == ''
+    assert layers['layer1']['last_logged'] == 50.0
 
 
 @pytest.fixture(scope='function')
@@ -493,8 +481,8 @@ def live_docker_image():
 
 def test_init(docker_runtime_builder):
     assert isinstance(docker_runtime_builder.docker_client, docker.DockerClient)
-    assert docker_runtime_builder.max_lines == 10
-    assert docker_runtime_builder.log_lines == [''] * 10
+    assert docker_runtime_builder.rolling_logger.max_lines == 10
+    assert docker_runtime_builder.rolling_logger.log_lines == [''] * 10
 
 
 def test_build_image_from_scratch(docker_runtime_builder, tmp_path):
@@ -510,17 +498,16 @@ CMD ["sh", "-c", "echo 'Hello, World!'"]
     container = None
     client = docker.from_env()
     try:
-        with patch('sys.stdout.isatty', return_value=False):
-            built_image_name = docker_runtime_builder.build(
-                context_path,
-                tags,
-                use_local_cache=False,
-            )
-            assert built_image_name == f'{tags[0]}'
+        built_image_name = docker_runtime_builder.build(
+            context_path,
+            tags,
+            use_local_cache=False,
+        )
+        assert built_image_name == f'{tags[0]}'
 
-            # Verify the image was created
-            image = client.images.get(tags[0])
-            assert image is not None
+        # Verify the image was created
+        image = client.images.get(tags[0])
+        assert image is not None
 
     except docker.errors.ImageNotFound:
         pytest.fail('test_build_image_from_scratch: test image not found!')
@@ -583,16 +570,15 @@ CMD ["sh", "-c", "echo 'Hello, World!'"]
     container = None
     client = docker.from_env()
     try:
-        with patch('sys.stdout.isatty', return_value=False):
-            built_image_name = docker_runtime_builder.build(
-                context_path,
-                tags,
-                use_local_cache=False,
-            )
-            assert built_image_name == f'{tags[0]}'
+        built_image_name = docker_runtime_builder.build(
+            context_path,
+            tags,
+            use_local_cache=False,
+        )
+        assert built_image_name == f'{tags[0]}'
 
-            image = client.images.get(tags[0])
-            assert image is not None
+        image = client.images.get(tags[0])
+        assert image is not None
 
     except docker.errors.ImageNotFound:
         pytest.fail('test_build_image_from_repo: test image not found!')

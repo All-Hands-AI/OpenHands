@@ -28,7 +28,7 @@ def store_feedback(feedback: FeedbackDataModel) -> dict[str, str]:
         )
     if 'token' in display_feedback:
         display_feedback['token'] = 'elided'
-    logger.info(f'Got feedback: {display_feedback}')
+    logger.debug(f'Got feedback: {display_feedback}')
     # Start actual request
     response = requests.post(
         FEEDBACK_URL,
@@ -38,5 +38,5 @@ def store_feedback(feedback: FeedbackDataModel) -> dict[str, str]:
     if response.status_code != 200:
         raise ValueError(f'Failed to store feedback: {response.text}')
     response_data = json.loads(response.text)
-    logger.info(f'Stored feedback: {response.text}')
+    logger.debug(f'Stored feedback: {response.text}')
     return response_data
