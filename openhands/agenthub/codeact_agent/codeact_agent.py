@@ -284,9 +284,9 @@ class CodeActAgent(Agent):
         else:
             # If an observation message is not returned, it will cause an error
             # when the LLM tries to return the next message
-            logger.warning(f'Unknown observation type: {type(obs)}')
+            raise ValueError(f'Unknown observation type: {type(obs)}')
 
-        if self.config.function_calling:
+        if message and self.config.function_calling:
             # Update the message as tool response properly
             if (tool_call_metadata := obs.tool_call_metadata) is not None:
                 tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(

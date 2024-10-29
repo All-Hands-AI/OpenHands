@@ -104,4 +104,5 @@ def test_error_observation_message(agent: CodeActAgent):
 def test_unknown_observation_message(agent: CodeActAgent):
     obs = Mock()
 
-    assert agent.get_observation_message(obs, tool_call_id_to_message={}) is None
+    with pytest.raises(ValueError, match='Unknown observation type'):
+        agent.get_observation_message(obs, tool_call_id_to_message={})
