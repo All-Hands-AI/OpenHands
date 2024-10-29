@@ -1,7 +1,9 @@
 import asyncio
 import copy
 import traceback
-from typing import Type
+from typing import Callable, Optional, Type
+
+import litellm
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State, TrafficControlState
@@ -73,6 +75,7 @@ class AgentController:
         initial_state: State | None = None,
         is_delegate: bool = False,
         headless_mode: bool = True,
+        status_callback: Optional[Callable] = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -115,6 +118,7 @@ class AgentController:
 
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
+        self._status_callback = status_callback
 
     async def close(self):
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream."""
@@ -146,7 +150,11 @@ class AgentController:
         if new_state is not None:
             # it's important to set the state before adding the error event, so that metrics sync properly
             await self.set_agent_state_to(new_state)
-        raise e
+        if self._status_callback is not None:
+            err_id = ''
+            if isinstance(e, litellm.AuthenticationError):
+                err_id = 'llm_authentication_error'
+            await self._status_callback('error', err_id, str(e))
 
     async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""

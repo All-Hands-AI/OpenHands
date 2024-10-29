@@ -123,7 +123,7 @@ class EventStreamRuntime(Runtime):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_message_callback: Callable | None = None,
+        status_callback: Callable | None = None,
         attach_to_existing: bool = False,
     ):
         super().__init__(
@@ -132,7 +132,7 @@ class EventStreamRuntime(Runtime):
             sid,
             plugins,
             env_vars,
-            status_message_callback,
+            status_callback,
             attach_to_existing,
         )
 
@@ -143,7 +143,7 @@ class EventStreamRuntime(Runtime):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_message_callback: Callable | None = None,
+        status_callback: Callable | None = None,
         attach_to_existing: bool = False,
     ):
         self.config = config
@@ -151,7 +151,7 @@ class EventStreamRuntime(Runtime):
         self._container_port = 30001  # initial dummy value
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.session = requests.Session()
-        self.status_message_callback = status_message_callback
+        self.status_callback = status_callback
 
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.base_container_image = self.config.sandbox.base_container_image
@@ -181,7 +181,7 @@ class EventStreamRuntime(Runtime):
             sid,
             plugins,
             env_vars,
-            status_message_callback,
+            status_callback,
             attach_to_existing,
         )
 
@@ -664,8 +664,3 @@ class EventStreamRuntime(Runtime):
                 return port
         # If no port is found after max_attempts, return the last tried port
         return port
-
-    def send_status_message(self, message: str):
-        """Sends a status message if the callback function was provided."""
-        if self.status_message_callback:
-            self.status_message_callback(message)

@@ -51,7 +51,7 @@ class RemoteRuntime(Runtime):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_message_callback: Optional[Callable] = None,
+        status_callback: Optional[Callable] = None,
         attach_to_existing: bool = False,
     ):
         super().__init__(
@@ -60,7 +60,7 @@ class RemoteRuntime(Runtime):
             sid,
             plugins,
             env_vars,
-            status_message_callback,
+            status_callback,
             attach_to_existing,
         )
 
@@ -539,8 +539,3 @@ class RemoteRuntime(Runtime):
             raise RuntimeError(
                 f'[Runtime (ID={self.runtime_id})] Copy operation failed: {str(e)}'
             )
-
-    def send_status_message(self, message: str):
-        """Sends a status message if the callback function was provided."""
-        if self.status_message_callback:
-            self.status_message_callback(message)

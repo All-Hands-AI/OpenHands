@@ -119,11 +119,11 @@ export function handleActionMessage(message: ActionMessage) {
 }
 
 export function handleStatusMessage(message: StatusMessage) {
-  const msg = message.status == null ? "" : message.status.trim();
+  const msg_id = message.id;
   store.dispatch(
     setCurStatusMessage({
       ...message,
-      status: msg,
+      status: msg_id,
     }),
   );
 }
@@ -139,9 +139,11 @@ export function handleAssistantMessage(data: string | SocketMessage) {
 
   if ("action" in socketMessage) {
     handleActionMessage(socketMessage);
-  } else if ("status" in socketMessage) {
+  } else if ("observation" in socketMessage) {
+    handleObservationMessage(socketMessage);
+  } else if ("status_update" in socketMessage) {
     handleStatusMessage(socketMessage);
   } else {
-    handleObservationMessage(socketMessage);
+    console.error("Unknown message type", socketMessage);
   }
 }
