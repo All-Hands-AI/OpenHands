@@ -95,6 +95,7 @@ function SocketProvider({ children }: SocketProviderProps) {
         EventLogger.error("WebSocket is not connected.");
         return;
       }
+      setEvents((prevEvents) => [...prevEvents, JSON.parse(data.toString())]);
       wsRef.current.send(data);
     },
     [],

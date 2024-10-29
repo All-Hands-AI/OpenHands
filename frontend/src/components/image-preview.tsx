@@ -3,7 +3,7 @@ import { cn } from "#/utils/utils";
 
 interface ImagePreviewProps {
   src: string;
-  onRemove: () => void;
+  onRemove?: () => void;
   size?: "small" | "large";
 }
 
@@ -24,16 +24,18 @@ export function ImagePreview({
           size === "large" && "w-[100px] h-[100px]",
         )}
       />
-      <button
-        type="button"
-        onClick={onRemove}
-        className={cn(
-          "bg-neutral-400 rounded-full w-3 h-3 flex items-center justify-center",
-          "absolute right-[3px] top-[3px]",
-        )}
-      >
-        <CloseIcon width={10} height={10} />
-      </button>
+      {onRemove && (
+        <button
+          type="button"
+          onClick={onRemove}
+          className={cn(
+            "bg-neutral-400 rounded-full w-3 h-3 flex items-center justify-center",
+            "absolute right-[3px] top-[3px]",
+          )}
+        >
+          <CloseIcon width={10} height={10} />
+        </button>
+      )}
     </div>
   );
 }
