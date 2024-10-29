@@ -160,7 +160,7 @@ EXPORT JWT_SECRET=A_CONST_VALUE
 
 **Symptoms**
 
-When you start the server using the docker command from the main README, you get a long timeout
+When you start the server using the docker command from the main [README](https://github.com/All-Hands-AI/OpenHands/README.md), you get a long timeout
 followed by the a stack trace containing messages like:
 
 * `Connection to host.docker.internal timed out. (connect timeout=310)`
@@ -175,6 +175,6 @@ which OpenHands makes use of when the main server is running inside a docker con
 
 **Workarounds**
 
-* Install Docker Desktop: https://www.docker.com/products/docker-desktop/
-* Run OpenHands in (Development Mode)[https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md],
+* [Install Docker Desktop](https://www.docker.com/products/docker-desktop/)
+* Run OpenHands in [Development Mode](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md),
   So that the main server is not run inside a container, but still creates dockerized runtime sandboxes.
