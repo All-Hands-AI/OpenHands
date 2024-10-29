@@ -322,9 +322,10 @@ class AgentController:
             )
 
         self.state.agent_state = new_state
-        self.event_stream.add_event(
+        await self.event_stream.async_add_event(
             AgentStateChangedObservation('', self.state.agent_state), EventSource.AGENT
         )
+        print('sent state change obs')
 
         if new_state == AgentState.INIT and self.state.resume_state:
             await self.set_agent_state_to(self.state.resume_state)

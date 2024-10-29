@@ -95,6 +95,7 @@ function AgentStatusBar() {
   const [statusMessage, setStatusMessage] = React.useState<string>("");
 
   React.useEffect(() => {
+    console.log('cur status message', curStatusMessage);
     let message = curStatusMessage.message || '';
     if (curStatusMessage?.id) {
       const id = curStatusMessage.id.trim();
@@ -114,7 +115,11 @@ function AgentStatusBar() {
     } else {
       setStatusMessage(AgentStatusMap[curAgentState].message);
     }
-  }, [curAgentState, curStatusMessage.id]);
+  }, [curStatusMessage.id]);
+
+  React.useEffect(() => {
+      setStatusMessage(AgentStatusMap[curAgentState].message);
+  }, [curAgentState]);
 
   return (
     <div className="flex flex-col items-center">
