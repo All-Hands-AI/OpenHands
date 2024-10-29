@@ -37,28 +37,30 @@ export const removeUnwantedKeys = (
     "focused_element_bid",
   ];
 
-  return data.filter(item => {
-    // Skip items that only have a status key
-    const keys = Object.keys(item);
-    if (keys.length === 1 && keys[0] === "status") {
-      return false;
-    }
-    return true;
-  }).map((item) => {
-    // Create a shallow copy of item
-    const newItem = { ...item };
+  return data
+    .filter((item) => {
+      // Skip items that only have a status key
+      const keys = Object.keys(item);
+      if (keys.length === 1 && keys[0] === "status") {
+        return false;
+      }
+      return true;
+    })
+    .map((item) => {
+      // Create a shallow copy of item
+      const newItem = { ...item };
 
-    // Check if extras exists and delete it from a new extras object
-    if (newItem.extras) {
-      const newExtras = { ...newItem.extras };
-      UNDESIRED_KEYS.forEach((key) => {
-        delete newExtras[key as keyof typeof newExtras];
-      });
-      newItem.extras = newExtras;
-    }
+      // Check if extras exists and delete it from a new extras object
+      if (newItem.extras) {
+        const newExtras = { ...newItem.extras };
+        UNDESIRED_KEYS.forEach((key) => {
+          delete newExtras[key as keyof typeof newExtras];
+        });
+        newItem.extras = newExtras;
+      }
 
-    return newItem;
-  });
+      return newItem;
+    });
 };
 
 export const removeApiKey = (
