@@ -2,7 +2,6 @@ import hashlib
 import json
 import os
 import sys
-import time
 
 import anthropic
 import frontmatter
@@ -15,6 +14,9 @@ if not ANTHROPIC_API_KEY:
 
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
+DOCS_DIR = 'docs/'
+CACHE_FILE = os.path.join(DOCS_DIR, 'translation_cache.json')
+
 # Supported languages and their codes
 LANGUAGES = {'fr': 'French', 'zh-Hans': 'Simplified Chinese'}
 
@@ -25,17 +27,17 @@ def get_file_hash(filepath):
         return hashlib.md5(f.read()).hexdigest()
 
 
-def load_file_hashes(cache_file):
+def load_file_hashes():
     """Load previously saved file hashes."""
-    if os.path.exists(cache_file):
-        with open(cache_file, 'r') as f:
+    if os.path.exists(CACHE_FILE):
+        with open(CACHE_FILE, 'r') as f:
             return json.load(f)
     return {}
 
 
-def save_file_hashes(hashes, cache_file):
+def save_file_hashes(hashes):
     """Save current file hashes."""
-    with open(cache_file, 'w') as f:
+    with open(CACHE_FILE, 'w') as f:
         json.dump(hashes, f)
 
 
@@ -107,35 +109,30 @@ def process_file(source_path, lang):
 
 
 def main():
-    cache_file = 'translation_cache.json'
-    previous_hashes = load_file_hashes(cache_file)
+    previous_hashes = load_file_hashes()
 
-    while True:
-        current_hashes = {}
+    current_hashes = {}
 
-        # Walk through all files in docs/modules
-        for root, _, files in os.walk('docs/modules'):
-            for file in files:
-                if file.endswith(('.md', '.mdx')):
-                    filepath = os.path.join(root, file)
-                    current_hash = get_file_hash(filepath)
-                    current_hashes[filepath] = current_hash
+    # Walk through all files in docs/modules
+    for root, _, files in os.walk('docs/modules'):
+        for file in files:
+            if file.endswith(('.md', '.mdx')):
+                filepath = os.path.join(root, file)
+                current_hash = get_file_hash(filepath)
+                current_hashes[filepath] = current_hash
 
-                    # Check if file is new or modified
-                    if (
-                        filepath not in previous_hashes
-                        or previous_hashes[filepath] != current_hash
-                    ):
-                        print(f'Change detected in {filepath}')
-                        for lang in LANGUAGES:
-                            process_file(filepath, lang)
+                # Check if file is new or modified
+                if (
+                    filepath not in previous_hashes
+                    or previous_hashes[filepath] != current_hash
+                ):
+                    print(f'Change detected in {filepath}')
+                    for lang in LANGUAGES:
+                        process_file(filepath, lang)
 
-        # Update hash cache
-        save_file_hashes(current_hashes, cache_file)
-        previous_hashes = current_hashes
-
-        # Wait before next check
-        time.sleep(60)  # Check every minute
+    print('all files up to date, saving hashes')
+    save_file_hashes(current_hashes)
+    previous_hashes = current_hashes
 
 
 if __name__ == '__main__':
