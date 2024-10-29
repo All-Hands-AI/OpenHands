@@ -19,9 +19,17 @@ const config: Config = {
   onBrokenLinks: "throw",
   onBrokenMarkdownLinks: "warn",
 
+  // Even if you don't use internationalization, you can use this field to set
+  // useful metadata like html lang. For example, if your site is Chinese, you
+  // may want to replace "en" with "zh-Hans".
   i18n: {
     defaultLocale: 'en',
-    locales: ['en'],
+    locales: ['en', 'fr', 'zh-Hans'],
+    localeConfigs: {
+      en: {
+        htmlLang: 'en-GB',
+      },
+    },
   },
 
   markdown: {
@@ -72,6 +80,10 @@ const config: Config = {
           sidebarId: "apiSidebar",
           position: "left",
           label: "Python API",
+        },
+        {
+          type: 'localeDropdown',
+          position: 'left',
         },
         {
           href: "https://all-hands.dev",

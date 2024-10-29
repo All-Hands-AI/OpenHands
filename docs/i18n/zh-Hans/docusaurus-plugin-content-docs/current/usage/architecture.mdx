@@ -1,0 +1,49 @@
+---
+sidebar_position: 4
+---
+
+# 🏛️ 系统架构概览
+
+这是系统架构的高层概览。系统分为两个主要组件：前端和后端。前端负责处理用户交互并显示结果。后端负责处理业务逻辑并执行代理。
+
+![system_architecture.svg](/img/system_architecture.svg)
+
+此概览简化显示了主要组件及其交互。有关后端架构的更详细视图，请参见[后端架构](#backend-architecture-zh-Hans)部分。
+
+# 后端架构 {#backend-architecture-zh-Hans}
+
+_**免责声明**：后端架构正在进行中，可能会有所变化。下图显示了基于图表页脚中的提交内容的当前后端架构。_
+
+![backend_architecture.svg](/img/backend_architecture.svg)
+
+<details>
+  <summary>更新此图表</summary>
+  <div>
+    后端架构图的生成部分是自动化的。
+    图表是使用 py2puml 工具从代码中的类型提示生成的。
+    然后人工审核、调整并导出为 PNG 和 SVG。
+
+    ## 前提条件
+
+    - 能运行 python 环境，其中 openhands 可以执行（根据存储库根目录中的 README.md 文件中的说明）
+    - 安装了 [py2puml](https://github.com/lucsorel/py2puml)
+
+## 步骤
+
+1.  通过从存储库根目录运行以下命令自动生成图表：
+    `py2puml openhands openhands > docs/architecture/backend_architecture.puml`
+
+2.  在 PlantUML 编辑器中打开生成的文件，例如使用 PlantUML 扩展的 Visual Studio Code 或 [PlantText](https://www.planttext.com/)
+
+3.  审查生成的 PUML 并对图表进行所有必要的调整（添加缺失部分、修正错误、改进定位）。
+    _py2puml 根据代码中的类型提示创建图表，因此缺失或不正确的类型提示可能导致图表不完整或不正确。_
+
+4.  审查新旧图表之间的差异，并手动检查更改是否正确。
+    _确保不移除过去手动添加到图表中的和仍然相关的部分。_
+
+5.  将用于生成图表的提交哈希添加到图表页脚。
+
+6.  将图表导出为 PNG 和 SVG 文件，并替换 `docs/architecture` 目录中的现有图表。这可以通过（例如 [PlantText](https://www.planttext.com/)）完成。
+
+  </div>
+</details>
