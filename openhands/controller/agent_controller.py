@@ -154,7 +154,7 @@ class AgentController:
             err_id = ''
             if isinstance(e, litellm.AuthenticationError):
                 err_id = 'llm_authentication_error'
-            await self._status_callback('error', err_id, str(e))
+            self._status_callback('error', err_id, str(e))
 
     async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
