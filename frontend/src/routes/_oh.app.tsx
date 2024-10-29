@@ -248,7 +248,7 @@ function App() {
 
           if (q) {
             if (additional_info) {
-              sendInitialQuery(`${q}\n\n${additional_info}`, files);
+              sendInitialQuery(`${q}\n\n[${additional_info}]`, files);
             } else {
               sendInitialQuery(q, files);
             }
