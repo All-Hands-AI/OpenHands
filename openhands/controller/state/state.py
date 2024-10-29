@@ -115,7 +115,7 @@ class State:
             pickled = base64.b64decode(encoded)
             state = pickle.loads(pickled)
         except Exception as e:
-            logger.error(f'Failed to restore state from session: {e}')
+            logger.warning(f'Failed to restore state from session: {e}')
             raise e
 
         # update state
@@ -157,7 +157,12 @@ class State:
     def get_last_error(self) -> str:
         for event in self.history.get_events(reverse=True):
             if isinstance(event, ErrorObservation):
-                return event.content if not event.fatal else 'There was a fatal error during agent execution: ' + event.content
+                return (
+                    event.content
+                    if not event.fatal
+                    else 'There was a fatal error during agent execution: '
+                    + event.content
+                )
         return ''
 
     def get_current_user_intent(self):

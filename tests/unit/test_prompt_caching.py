@@ -25,10 +25,36 @@ def mock_event_stream(tmp_path):
     return EventStream('test_session', file_store)
 
 
-@pytest.fixture
-def codeact_agent(mock_llm):
+@pytest.fixture(params=[False, True])
+def codeact_agent(mock_llm, request):
     config = AgentConfig()
+    config.function_calling = request.param
     return CodeActAgent(mock_llm, config)
+
+
+def response_mock(content: str):
+    class MockModelResponse:
+        def __init__(self, content):
+            self.choices = [
+                {
+                    'message': {
+                        'content': content,
+                        'tool_calls': [
+                            {
+                                'function': {
+                                    'name': 'execute_bash',
+                                    'arguments': '{}',
+                                }
+                            }
+                        ],
+                    }
+                }
+            ]
+
+        def model_dump(self):
+            return {'choices': self.choices}
+
+    return MockModelResponse(content)
 
 
 def test_get_messages_with_reminder(codeact_agent, mock_event_stream):
@@ -49,9 +75,13 @@ def test_get_messages_with_reminder(codeact_agent, mock_event_stream):
     )  # System, initial user + user message, agent message, last user message
     assert messages[0].content[0].cache_prompt  # system message
     assert messages[1].role == 'user'
-    assert messages[1].content[0].text.endswith("LET'S START!")
-    assert messages[1].content[1].text.endswith('Initial user message')
-    assert messages[1].content[0].cache_prompt
+    if not codeact_agent.config.function_calling:
+        assert messages[1].content[0].text.endswith("LET'S START!")
+        assert messages[1].content[1].text.endswith('Initial user message')
+    else:
+        assert messages[1].content[0].text.endswith('Initial user message')
+    # we add cache breakpoint to the last 3 user messages
+    assert messages[1].content[-1].cache_prompt
 
     assert messages[3].role == 'user'
     assert messages[3].content[0].text == ('Hello, agent!')
@@ -62,13 +92,14 @@ def test_get_messages_with_reminder(codeact_agent, mock_event_stream):
     assert messages[5].role == 'user'
     assert messages[5].content[0].text.startswith('Laaaaaaaast!')
     assert messages[5].content[0].cache_prompt
-    assert (
-        messages[5]
-        .content[1]
-        .text.endswith(
-            'ENVIRONMENT REMINDER: You have 5 turns left to complete the task. When finished reply with <finish></finish>.'
+    if not codeact_agent.config.function_calling:
+        assert (
+            messages[5]
+            .content[1]
+            .text.endswith(
+                'ENVIRONMENT REMINDER: You have 5 turns left to complete the task. When finished reply with <finish></finish>.'
+            )
         )
-    )
 
 
 def test_get_messages_prompt_caching(codeact_agent, mock_event_stream):
@@ -97,9 +128,10 @@ def test_get_messages_prompt_caching(codeact_agent, mock_event_stream):
     )  # Including the initial system+user + 2 last user message
 
     # Verify that these are indeed the last two user messages (from start)
-    assert (
-        cached_user_messages[0].content[0].text.startswith('A chat between')
-    )  # system message
+    if not codeact_agent.config.function_calling:
+        assert (
+            cached_user_messages[0].content[0].text.startswith('A chat between')
+        )  # system message
     assert cached_user_messages[2].content[0].text.startswith('User message 1')
     assert cached_user_messages[3].content[0].text.startswith('User message 1')
 
@@ -144,14 +176,15 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
     # Assert the presence of key elements in the messages
     assert (
         messages[1]
-        .content[1]
+        .content[-1]
         .text.startswith("Let's list the contents of the current directory.")
     )  # user, included in the initial message
-    assert any(
-        'List files in current directory\n<execute_bash>\nls -l\n</execute_bash>'
-        in msg.content[0].text
-        for msg in messages
-    )  # agent
+    if not codeact_agent.config.function_calling:
+        assert any(
+            'List files in current directory\n<execute_bash>\nls -l\n</execute_bash>'
+            in msg.content[0].text
+            for msg in messages
+        )  # agent
     assert any(
         'total 0\n-rw-r--r-- 1 user group 0 Jan 1 00:00 file1.txt\n-rw-r--r-- 1 user group 0 Jan 1 00:00 file2.txt'
         in msg.content[0].text
@@ -160,7 +193,8 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
     assert any(
         "Now, let's create a new directory." in msg.content[0].text for msg in messages
     )  # agent
-    assert messages[4].content[1].text.startswith('Create a new directory')  # agent
+    if not codeact_agent.config.function_calling:
+        assert messages[4].content[1].text.startswith('Create a new directory')  # agent
     assert any(
         'finished with exit code 0' in msg.content[0].text for msg in messages
     )  # user, observation
@@ -171,16 +205,20 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
     # prompt cache is added to the system message
     assert messages[0].content[0].cache_prompt
     # and the first initial user message
-    assert messages[1].content[0].cache_prompt
+    assert messages[1].content[-1].cache_prompt
     # and to the last two user messages
     assert messages[3].content[0].cache_prompt
     assert messages[5].content[0].cache_prompt
 
     # reminder is added to the last user message
-    assert 'ENVIRONMENT REMINDER: You have 5 turns' in messages[5].content[1].text
+    if not codeact_agent.config.function_calling:
+        assert 'ENVIRONMENT REMINDER: You have 5 turns' in messages[5].content[1].text
 
 
 def test_prompt_caching_headers(codeact_agent, mock_event_stream):
+    if codeact_agent.config.function_calling:
+        pytest.skip('Skipping this test for function calling')
+
     # Setup
     mock_event_stream.add_event(MessageAction('Hello, agent!'), EventSource.USER)
     mock_event_stream.add_event(MessageAction('Hello, user!'), EventSource.AGENT)

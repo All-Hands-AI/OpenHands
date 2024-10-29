@@ -88,7 +88,7 @@ class AgentSession:
             asyncio.run(self._start(*args), debug=True)
         except RuntimeError:
             logger.error(f'Error starting session: {RuntimeError}', exc_info=True)
-            logger.info('Session Finished')
+            logger.debug('Session Finished')
 
     async def _start(
         self,
@@ -174,7 +174,7 @@ class AgentSession:
         if self.runtime is not None:
             raise RuntimeError('Runtime already created')
 
-        logger.info(f'Initializing runtime `{runtime_name}` now...')
+        logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
         self.runtime = runtime_cls(
             config=config,
@@ -240,7 +240,7 @@ class AgentSession:
             f'Plugins: {agent.sandbox_plugins}\n'
             '-------------------------------------------------------------------------------------------'
         )
-        logger.info(msg)
+        logger.debug(msg)
 
         self.controller = AgentController(
             sid=self.sid,
@@ -260,7 +260,7 @@ class AgentSession:
             self.controller.set_initial_state(
                 agent_state, max_iterations, confirmation_mode
             )
-            logger.info(f'Restored agent state from session, sid: {self.sid}')
+            logger.debug(f'Restored agent state from session, sid: {self.sid}')
         except Exception as e:
-            logger.info(f'State could not be restored: {e}')
-        logger.info('Agent controller initialized.')
+            logger.debug(f'State could not be restored: {e}')
+        logger.debug('Agent controller initialized.')

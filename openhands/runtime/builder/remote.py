@@ -89,7 +89,7 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
             logger.info(f'Build status: {status}')
 
             if status == 'SUCCESS':
-                logger.info(f"Successfully built {status_data['image']}")
+                logger.debug(f"Successfully built {status_data['image']}")
                 return status_data['image']
             elif status in [
                 'FAILURE',
@@ -127,12 +127,12 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
         result = response.json()
 
         if result['exists']:
-            logger.info(
+            logger.debug(
                 f"Image {image_name} exists. "
                 f"Uploaded at: {result['image']['upload_time']}, "
                 f"Size: {result['image']['image_size_bytes'] / 1024 / 1024:.2f} MB"
             )
         else:
-            logger.info(f'Image {image_name} does not exist.')
+            logger.debug(f'Image {image_name} does not exist.')
 
         return result['exists']
