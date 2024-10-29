@@ -14,7 +14,6 @@ from openhands.events import Event, EventSource, EventStream, EventStreamSubscri
 from openhands.events.action import ChangeAgentStateAction, CmdRunAction, MessageAction
 from openhands.events.observation import (
     ErrorObservation,
-    FatalErrorObservation,
 )
 from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
@@ -148,7 +147,7 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
 
-    fatal_error_obs = FatalErrorObservation('Fatal error detected')
+    fatal_error_obs = ErrorObservation('Fatal error detected', fatal=True)
     fatal_error_obs._cause = event.id
 
     runtime = MagicMock(spec=Runtime)
@@ -175,8 +174,8 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
     # in side run_controller (since the while loop + sleep no longer loop)
     assert state.agent_state == AgentState.STOPPED
     assert (
-        state.last_error
-        == 'There was a fatal error during agent execution: **FatalErrorObservation**\nFatal error detected'
+        state.get_last_error()
+        == 'There was a fatal error during agent execution: **ErrorObservation**\nFatal error detected'
     )
     assert len(list(event_stream.get_events())) == 5
 
