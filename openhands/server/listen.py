@@ -29,11 +29,12 @@ from fastapi import (
     WebSocket,
     status,
 )
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from openhands.server.middleware import NoCacheMiddleware, LocalhostCORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller.agent import Agent
@@ -77,12 +78,28 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
-    LocalhostCORSMiddleware,
-    allow_origins=['http://localhost:3001', 'http://127.0.0.1:3001'],  # Fallback origins for non-localhost domains
+    CORSMiddleware,
+    allow_origins=['http://localhost:3001', 'http://127.0.0.1:3001'],
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
 )
+
+
+class NoCacheMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware to disable caching for all routes by adding appropriate headers
+    """
+
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        if not request.url.path.startswith('/assets'):
+            response.headers['Cache-Control'] = (
+                'no-cache, no-store, must-revalidate, max-age=0'
+            )
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+        return response
 
 
 app.add_middleware(NoCacheMiddleware)
