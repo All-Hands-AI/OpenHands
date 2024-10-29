@@ -126,15 +126,15 @@ class ActionExecutor:
                     code='from openhands.runtime.plugins.agent_skills.agentskills import *\n'
                 )
             )
-            logger.info(f'AgentSkills initialized: {obs}')
+            logger.debug(f'AgentSkills initialized: {obs}')
 
         await self._init_bash_commands()
-        logger.info('Runtime client initialized.')
+        logger.debug('Runtime client initialized.')
 
     async def _init_plugin(self, plugin: Plugin):
         await plugin.initialize(self.username)
         self.plugins[plugin.name] = plugin
-        logger.info(f'Initializing plugin: {plugin.name}')
+        logger.debug(f'Initializing plugin: {plugin.name}')
 
         if isinstance(plugin, JupyterPlugin):
             await self.run_ipython(
@@ -144,7 +144,7 @@ class ActionExecutor:
             )
 
     async def _init_bash_commands(self):
-        logger.info(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
+        logger.debug(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
         for command in INIT_COMMANDS:
             action = CmdRunAction(command=command)
             action.timeout = 300
@@ -156,7 +156,7 @@ class ActionExecutor:
             )
             assert obs.exit_code == 0
 
-        logger.info('Bash init commands completed')
+        logger.debug('Bash init commands completed')
 
     async def run_action(self, action) -> Observation:
         action_type = action.action
@@ -194,10 +194,11 @@ class ActionExecutor:
 
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
             obs.content = obs.content.rstrip()
-            obs.content += (
-                f'\n[Jupyter current working directory: {self.bash_session.pwd}]'
-            )
-            obs.content += f'\n[Jupyter Python interpreter: {_jupyter_plugin.python_interpreter_path}]'
+            if action.include_extra:
+                obs.content += (
+                    f'\n[Jupyter current working directory: {self.bash_session.pwd}]'
+                )
+                obs.content += f'\n[Jupyter Python interpreter: {_jupyter_plugin.python_interpreter_path}]'
             return obs
         else:
             raise RuntimeError(
@@ -444,7 +445,7 @@ if __name__ == '__main__':
                 shutil.unpack_archive(zip_path, full_dest_path)
                 os.remove(zip_path)  # Remove the zip file after extraction
 
-                logger.info(
+                logger.debug(
                     f'Uploaded file {file.filename} and extracted to {destination}'
                 )
             else:
@@ -452,7 +453,7 @@ if __name__ == '__main__':
                 file_path = os.path.join(full_dest_path, file.filename)
                 with open(file_path, 'wb') as buffer:
                     shutil.copyfileobj(file.file, buffer)
-                logger.info(f'Uploaded file {file.filename} to {destination}')
+                logger.debug(f'Uploaded file {file.filename} to {destination}')
 
             return JSONResponse(
                 content={
@@ -468,7 +469,7 @@ if __name__ == '__main__':
 
     @app.get('/download_files')
     async def download_file(path: str):
-        logger.info('Downloading files')
+        logger.debug('Downloading files')
         try:
             if not os.path.isabs(path):
                 raise HTTPException(
@@ -586,7 +587,5 @@ if __name__ == '__main__':
             logger.error(f'Error listing files: {e}', exc_info=True)
             return []
 
-    logger.info('Runtime client initialized.')
-
-    logger.info(f'Starting action execution API on port {args.port}')
+    logger.debug(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)

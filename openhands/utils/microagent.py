@@ -30,7 +30,7 @@ class MicroAgent:
         return self._content
 
     def _validate_micro_agent(self):
-        logger.info(
+        logger.debug(
             f'Loading and validating micro agent [{self._metadata.name}] based on [{self._metadata.agent}]'
         )
         # Make sure the agent is registered

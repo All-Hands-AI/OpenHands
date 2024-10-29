@@ -23,6 +23,7 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
+    AgentConfig,
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
@@ -43,11 +44,6 @@ USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false').lower() == 't
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
     'CodeActSWEAgent': codeact_user_response,
-}
-
-AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': 'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n',
-    'CodeActSWEAgent': 'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n',
 }
 
 
@@ -71,25 +67,27 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
             )
         instruction += CODEACT_SWE_PROMPT.format(workspace_dir_name=workspace_dir_name)
     else:
-        # Testing general agents
+        # Instruction based on Anthropic's official trajectory
+        # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
         instruction = (
-            f'Please fix the following issue for the repository in /workspace/{workspace_dir_name}.\n'
-            'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
-            '# Problem Statement\n'
-            f'{instance.problem_statement}\n\n'
+            '<uploaded_files>\n'
+            f'/workspace/{workspace_dir_name}\n'
+            '</uploaded_files>\n'
+            f"I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following PR description:\n\n"
+            f'<pr_description>\n'
+            f'{instance.problem_statement}\n'
+            '</pr_description>\n\n'
+            'Can you help me implement the necessary changes to the repository so that the requirements specified in the <pr_description> are met?\n'
+            "I've already taken care of all changes to any of the test files described in the <pr_description>. This means you DON'T have to modify the testing logic or any of the tests in any way!\n"
+            'Your task is to make the minimal changes to non-tests files in the /repo directory to ensure the <pr_description> is satisfied.\n'
+            'Follow these steps to resolve the issue:\n'
+            '1. As a first step, it might be a good idea to explore the repo to familiarize yourself with its structure.\n'
+            '2. Create a script to reproduce the error and execute it with `python <filename.py>` using the BashTool, to confirm the error\n'
+            '3. Edit the sourcecode of the repo to resolve the issue\n'
+            '4. Rerun your reproduce script and confirm that the error is fixed!\n'
+            '5. Think about edgecases and make sure your fix handles them as well\n'
+            "Your thinking should be thorough and so it's fine if it's very long.\n"
         )
-        if USE_HINT_TEXT and instance.hints_text:
-            instruction += f'# Hints\n{instance.hints_text}\n\n'
-        instruction += (
-            'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-            'You should NOT modify any existing test case files. You SHOULD add new test in a NEW file to reproduce the issue.\n'
-            'You should verify that the issue is resolved and any new tests you create pass successfully.\n'
-            'You should NEVER use web browsing or any other web-based tools.\n'
-            'You should ALWAYS use the default Python interpreter available in the <execute_bash> environment to run code related to the provided issue and/or repository.\n'
-        )
-
-    # NOTE: You can actually set slightly different instruction for different agents
-    instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
     return instruction
 
 
@@ -153,6 +151,12 @@ def get_config(
             f'{metadata.llm_config.log_completions_folder}'
         )
     config.set_llm_config(metadata.llm_config)
+    agent_config = AgentConfig(
+        codeact_enable_jupyter=False,
+        codeact_enable_browsing_delegate=False,
+        codeact_enable_llm_editor=False,
+    )
+    config.set_agent_config(agent_config)
     return config
 
 
@@ -312,7 +316,7 @@ def complete_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(
-        obs.exit_code == 0,
+        isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
         f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
     )
 
@@ -322,7 +326,7 @@ def complete_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(
-        obs.exit_code == 0,
+        isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
         f'Failed to git config --global core.pager "": {str(obs)}',
     )
 
@@ -331,7 +335,10 @@ def complete_runtime(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(obs.exit_code == 0, f'Failed to git add -A: {str(obs)}')
+    assert_and_raise(
+        isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
+        f'Failed to git add -A: {str(obs)}',
+    )
 
     n_retries = 0
     git_patch = None
@@ -404,6 +411,7 @@ def process_instance(
         if (
             state.last_error
             and 'fatal error during agent execution' in state.last_error
+            and 'stuck in a loop' not in state.last_error
         ):
             raise EvalException('Fatal error detected: ' + state.last_error)
 
@@ -488,6 +496,7 @@ if __name__ == '__main__':
     llm_config = None
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
+        llm_config.log_completions = True
 
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')

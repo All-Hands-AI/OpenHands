@@ -54,6 +54,11 @@ class CodeActResponseParser(ResponseParser):
 
             if f'<execute_{lang}>' in action and f'</execute_{lang}>' not in action:
                 action += f'</execute_{lang}>'
+
+        # special handling for DeepSeek: it has stop-word bug and returns </execute_ipython instead of </execute_ipython>
+        if '</file_edit' in action and '</file_edit>' not in action:
+            action = action.replace('</file_edit', '</file_edit>')
+
         if '<file_edit' in action and '</file_edit>' not in action:
             action += '</file_edit>'
         return action
@@ -63,6 +68,23 @@ class CodeActResponseParser(ResponseParser):
             if action_parser.check_condition(action_str):
                 return action_parser.parse(action_str)
         return self.default_parser.parse(action_str)
+
+    def action_to_str(self, action: Action) -> str:
+        if isinstance(action, CmdRunAction):
+            return (
+                f'{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>'
+            )
+        elif isinstance(action, IPythonRunCellAction):
+            return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
+        elif isinstance(action, AgentDelegateAction):
+            return f'{action.thought}\n<execute_browse>\n{action.inputs["task"]}\n</execute_browse>'
+        elif isinstance(action, FileEditAction):
+            return f'{action.thought}\n<file_edit path={action.path}>\n{action.content}\n</file_edit>'
+        elif isinstance(action, MessageAction):
+            return action.content
+        elif isinstance(action, AgentFinishAction) and action.source == 'agent':
+            return action.thought
+        return ''
 
 
 class CodeActActionParserFinish(ActionParser):

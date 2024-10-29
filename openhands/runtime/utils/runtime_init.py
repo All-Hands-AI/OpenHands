@@ -33,7 +33,7 @@ def init_user_and_working_directory(
     """
 
     # First create the working directory, independent of the user
-    logger.info(f'Client working directory: {initial_pwd}')
+    logger.debug(f'Client working directory: {initial_pwd}')
     command = f'umask 002; mkdir -p {initial_pwd}'
     output = subprocess.run(command, shell=True, capture_output=True)
     out_str = output.stdout.decode()

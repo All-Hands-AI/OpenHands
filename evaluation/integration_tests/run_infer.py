@@ -16,6 +16,7 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
+    AgentConfig,
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
@@ -24,6 +25,7 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import MessageAction
+from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
@@ -39,13 +41,15 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='eventstream',
+        runtime=os.environ.get('RUNTIME', 'eventstream'),
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             # use default base_container_image
             enable_auto_lint=True,
             use_host_network=False,
             timeout=100,
+            api_key=os.environ.get('ALLHANDS_API_KEY', None),
+            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
         ),
         # do not mount workspace
         workspace_base=None,
@@ -60,6 +64,12 @@ def get_config(
             f'{metadata.llm_config.log_completions_folder}'
         )
     config.set_llm_config(metadata.llm_config)
+    agent_config = AgentConfig(
+        codeact_enable_jupyter=True,
+        codeact_enable_browsing_delegate=True,
+        codeact_enable_llm_editor=False,
+    )
+    config.set_agent_config(agent_config)
     return config
 
 
@@ -122,7 +132,7 @@ def process_instance(
     # # result evaluation
     # # =============================================
 
-    histories = state.history.get_events()
+    histories = [event_to_dict(event) for event in state.history.get_events()]
     test_result: TestResult = test_class.verify_result(runtime, histories)
     metrics = state.metrics.get() if state.metrics else None
 
@@ -211,3 +221,10 @@ if __name__ == '__main__':
         + df[['instance_id', 'success', 'reason']].to_string(index=False)
     )
     logger.info('-' * 100)
+
+    report_file = os.path.join(metadata.eval_output_dir, 'report.md')
+    with open(report_file, 'w') as f:
+        f.write(
+            f'Success rate: {df["success"].mean():.2%} ({df["success"].sum()}/{len(df)})\n'
+        )
+        f.write(df[['instance_id', 'success', 'reason']].to_markdown(index=False))
