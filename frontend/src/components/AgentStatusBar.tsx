@@ -5,6 +5,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import beep from "#/utils/beep";
+import toast from "react-hot-toast";
 
 enum IndicatorColor {
   BLUE = "bg-blue-500",
@@ -16,7 +17,7 @@ enum IndicatorColor {
 }
 
 function AgentStatusBar() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const { curStatusMessage } = useSelector((state: RootState) => state.status);
 
@@ -94,15 +95,26 @@ function AgentStatusBar() {
   const [statusMessage, setStatusMessage] = React.useState<string>("");
 
   React.useEffect(() => {
-    if (curAgentState === AgentState.LOADING) {
-      const trimmedCustomMessage = curStatusMessage.status.trim();
-      if (trimmedCustomMessage) {
-        setStatusMessage(t(trimmedCustomMessage));
-        return;
+    let message = curStatusMessage.message || '';
+    if (curStatusMessage?.id) {
+      const id = curStatusMessage.id.trim();
+      console.log('status message id', id);
+      if (i18n.exists(id)) {
+        console.log('exists');
+        message = t(curStatusMessage.id.trim()) || message;
       }
     }
-    setStatusMessage(AgentStatusMap[curAgentState].message);
-  }, [curAgentState, curStatusMessage.status]);
+    if (curStatusMessage?.type === "error") {
+      console.log('error', message);
+      toast.error(message);
+      return;
+    }
+    if (curAgentState === AgentState.LOADING && message.trim()) {
+      setStatusMessage(message);
+    } else {
+      setStatusMessage(AgentStatusMap[curAgentState].message);
+    }
+  }, [curAgentState, curStatusMessage.id]);
 
   return (
     <div className="flex flex-col items-center">

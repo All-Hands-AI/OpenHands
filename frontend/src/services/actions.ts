@@ -119,11 +119,9 @@ export function handleActionMessage(message: ActionMessage) {
 }
 
 export function handleStatusMessage(message: StatusMessage) {
-  const msg_id = message.id;
   store.dispatch(
     setCurStatusMessage({
       ...message,
-      status: msg_id,
     }),
   );
 }
