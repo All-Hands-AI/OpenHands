@@ -19,7 +19,7 @@ if [ -z "$SANDBOX_USER_ID" ]; then
 fi
 
 if [ -z "$WORKSPACE_MOUNT_PATH" ]; then
-  # This is set to /opt/workspace by default. But if the user isn't mounting, we want to unset it so that OpenHands doesn't mount at all
+  # This is set to /opt/workspace in the Dockerfile. But if the user isn't mounting, we want to unset it so that OpenHands doesn't mount at all
   unset WORKSPACE_BASE
 fi
 
