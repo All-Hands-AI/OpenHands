@@ -7,6 +7,7 @@ from e2b import Sandbox as E2BSandbox
 from e2b.sandbox.exception import (
     TimeoutException,
 )
+
 from openhands.core.config import SandboxConfig
 from openhands.core.logger import openhands_logger as logger
 
@@ -29,11 +30,11 @@ class E2BBox:
             api_key=e2b_api_key,
             template=template,
             # It's possible to stream stdout and stderr from sandbox and from each process
-            on_stderr=lambda x: logger.info(f'E2B sandbox stderr: {x}'),
-            on_stdout=lambda x: logger.info(f'E2B sandbox stdout: {x}'),
+            on_stderr=lambda x: logger.debug(f'E2B sandbox stderr: {x}'),
+            on_stdout=lambda x: logger.debug(f'E2B sandbox stdout: {x}'),
             cwd=self._cwd,  # Default workdir inside sandbox
         )
-        logger.info(f'Started E2B sandbox with ID "{self.sandbox.id}"')
+        logger.debug(f'Started E2B sandbox with ID "{self.sandbox.id}"')
 
     @property
     def filesystem(self):
@@ -68,7 +69,7 @@ class E2BBox:
         try:
             process_output = process.wait(timeout=timeout)
         except TimeoutException:
-            logger.info('Command timed out, killing process...')
+            logger.debug('Command timed out, killing process...')
             process.kill()
             return -1, f'Command: "{cmd}" timed out'
 

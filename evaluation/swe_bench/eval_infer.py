@@ -369,10 +369,12 @@ if __name__ == '__main__':
     def count_report_field(row, field):
         return row['test_result']['report'][field]
 
+    report = {}
     for field in fields:
         count = evaluated_predictions.apply(
             count_report_field, args=(field,), axis=1
         ).sum()
+        report[field] = count
         logger.info(
             f'# {field}: {count} / {len(evaluated_predictions)}. ({count / len(evaluated_predictions):.2%})'
         )

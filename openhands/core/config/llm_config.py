@@ -42,9 +42,10 @@ class LLMConfig:
         log_completions: Whether to log LLM completions to the state.
         log_completions_folder: The folder to log LLM completions to. Required if log_completions is True.
         draft_editor: A more efficient LLM to use for file editing. Introduced in [PR 3985](https://github.com/All-Hands-AI/OpenHands/pull/3985).
+        supports_function_calling: Whether the model supports function calling.
     """
 
-    model: str = 'gpt-4o'
+    model: str = 'claude-3-5-sonnet-20241022'
     api_key: str | None = None
     base_url: str | None = None
     api_version: str | None = None
@@ -61,7 +62,7 @@ class LLMConfig:
     retry_min_wait: int = 15
     retry_max_wait: int = 120
     timeout: int | None = None
-    max_message_chars: int = 10_000  # maximum number of characters in an observation's content when sent to the llm
+    max_message_chars: int = 30_000  # maximum number of characters in an observation's content when sent to the llm
     temperature: float = 0.0
     top_p: float = 1.0
     custom_llm_provider: str | None = None
@@ -76,6 +77,7 @@ class LLMConfig:
     log_completions: bool = False
     log_completions_folder: str | None = None
     draft_editor: Optional['LLMConfig'] = None
+    supports_function_calling: bool = False
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
