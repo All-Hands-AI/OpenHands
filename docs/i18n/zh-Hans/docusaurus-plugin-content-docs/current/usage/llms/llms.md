@@ -1,46 +1,81 @@
----
-sidebar_position: 2
----
+# 🤖 LLM 后端
 
-# 🤖 LLM 支持
+OpenHands 可以连接到 LiteLLM 支持的任何 LLM。但是，它需要一个强大的模型才能工作。
 
-OpenHands 可以兼容任何 LLM 后端。
-关于所有可用 LM 提供商和模型的完整列表，请参阅
-[litellm 文档](https://docs.litellm.ai/docs/providers)。
+## 模型推荐
+
+基于最近对编码任务的语言模型评估（使用 SWE-bench 数据集），我们可以为模型选择提供一些建议。完整的分析可以在[这篇博客文章](https://www.all-hands.dev/blog/evaluation-of-llms-as-coding-agents-on-swe-bench-at-30x-speed)中找到。
+
+在选择模型时，需要同时考虑输出质量和相关成本。以下是调查结果的总结：
+
+- Claude 3.5 Sonnet 是目前最好的，在 OpenHands 中使用默认 agent 可以达到 27% 的解决率。
+- GPT-4o 落后一些，而 o1-mini 的表现甚至比 GPT-4o 还要差一些。我们进行了一些分析，简单来说，o1 有时会"过度思考"，在可以直接完成任务的情况下执行额外的环境配置任务。
+- 最后，最强大的开放模型是 Llama 3.1 405 B 和 deepseek-v2.5，它们表现得相当不错，甚至超过了一些封闭模型。
+
+请参阅[完整文章](https://www.all-hands.dev/blog/evaluation-of-llms-as-coding-agents-on-swe-bench-at-30x-speed)以获取更多详细信息。
+
+基于这些发现和社区反馈，以下模型已经验证可以与 OpenHands 很好地配合使用：
+
+- claude-3-5-sonnet（推荐）
+- gpt-4 / gpt-4o
+- llama-3.1-405b
+- deepseek-v2.5
 
 :::warning
-OpenHands 将向你配置的 LLM 发出许多提示。大多数这些 LLM 都是收费的——请务必设定支出限额并监控使用情况。
+OpenHands 将向您配置的 LLM 发出许多提示。这些 LLM 中的大多数都需要付费，因此请确保设置支出限制并监控使用情况。
 :::
 
-`LLM_MODEL` 环境变量控制在编程交互中使用的模型。
-但在使用 OpenHands UI 时，你需要在设置窗口中选择你的模型（左下角的齿轮）。
+如果您已经成功地使用特定的未列出的 LLM 运行 OpenHands，请将它们添加到已验证列表中。我们也鼓励您提交 PR 分享您的设置过程，以帮助其他使用相同提供商和 LLM 的人！
 
-某些 LLM 可能需要以下环境变量：
+有关可用提供商和模型的完整列表，请查阅 [litellm 文档](https://docs.litellm.ai/docs/providers)。
 
-- `LLM_API_KEY`
-- `LLM_BASE_URL`
+:::note
+目前大多数本地和开源模型都没有那么强大。使用这些模型时，您可能会看到消息之间的长时间等待、响应不佳或有关 JSON 格式错误的错误。OpenHands 只能和驱动它的模型一样强大。但是，如果您确实找到了可以使用的模型，请将它们添加到上面的已验证列表中。
+:::
+
+## LLM 配置
+
+以下内容可以通过设置在 OpenHands UI 中设置：
+
+- `LLM Provider`
+- `LLM Model`
+- `API Key`
+- `Base URL`（通过`Advanced Settings`）
+
+有些设置可能对某些 LLM/提供商是必需的，但无法通过 UI 设置。相反，可以使用 `-e` 通过传递给 [docker run 命令](/modules/usage/installation#start-the-app)的环境变量来设置这些选项：
+
+- `LLM_API_VERSION`
 - `LLM_EMBEDDING_MODEL`
 - `LLM_EMBEDDING_DEPLOYMENT_NAME`
-- `LLM_API_VERSION`
+- `LLM_DROP_PARAMS`
+- `LLM_DISABLE_VISION`
+- `LLM_CACHING_PROMPT`
 
-我们有一些指南，介绍了如何使用特定模型提供商运行 OpenHands：
+我们有一些使用特定模型提供商运行 OpenHands 的指南：
 
-- [ollama](llms/local-llms)
 - [Azure](llms/azure-llms)
+- [Google](llms/google-llms)
+- [Groq](llms/groq)
+- [OpenAI](llms/openai-llms)
+- [OpenRouter](llms/openrouter)
 
-如果你使用其他提供商，我们鼓励你打开一个 PR 来分享你的配置！
+### API 重试和速率限制
 
-## 关于替代模型的注意事项
+LLM 提供商通常有速率限制，有时非常低，可能需要重试。如果收到速率限制错误（429 错误代码）、API 连接错误或其他瞬时错误，OpenHands 将自动重试请求。
 
-最好的模型是 GPT-4 和 Claude 3。目前的本地和开源模型
-远没有那么强大。当使用替代模型时，
-你可能会看到信息之间的长时间等待，
-糟糕的响应，或关于 JSON格式错误的错误。OpenHands
-的强大程度依赖于其驱动的模型——幸运的是，我们团队的人员
-正在积极致力于构建更好的开源模型！
+您可以根据正在使用的提供商的需要自定义这些选项。查看他们的文档，并设置以下环境变量来控制重试次数和重试之间的时间：
 
-## API 重试和速率限制
+- `LLM_NUM_RETRIES`（默认为 8）
+- `LLM_RETRY_MIN_WAIT`（默认为 15 秒）
+- `LLM_RETRY_MAX_WAIT`（默认为 120 秒）
+- `LLM_RETRY_MULTIPLIER`（默认为 2）
 
-一些 LLM 有速率限制，可能需要重试操作。OpenHands 会在收到 429 错误或 API 连接错误时自动重试请求。
-你可以设置 `LLM_NUM_RETRIES`，`LLM_RETRY_MIN_WAIT`，`LLM_RETRY_MAX_WAIT` 环境变量来控制重试次数和重试之间的时间。
-默认情况下，`LLM_NUM_RETRIES` 为 8，`LLM_RETRY_MIN_WAIT` 和 `LLM_RETRY_MAX_WAIT` 分别为 15 秒和 120 秒。
+如果您在开发模式下运行 OpenHands，也可以在 `config.toml` 文件中设置这些选项：
+
+```toml
+[llm]
+num_retries = 8
+retry_min_wait = 15
+retry_max_wait = 120
+retry_multiplier = 2
+```
