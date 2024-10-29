@@ -1,5 +1,4 @@
 import React from "react";
-import hotToast, { toast } from "react-hot-toast";
 import { FeedbackForm } from "./feedback-form";
 import {
   BaseModalTitle,
@@ -7,7 +6,6 @@ import {
 } from "./modals/confirmation-modals/BaseModal";
 import { ModalBackdrop } from "./modals/modal-backdrop";
 import ModalBody from "./modals/ModalBody";
-import { clientAction } from "#/routes/submit-feedback";
 
 interface FeedbackModalProps {
   onClose: () => void;
@@ -20,13 +18,6 @@ export function FeedbackModal({
   isOpen,
   polarity,
 }: FeedbackModalProps) {
-  const copiedToClipboardToast = () => {
-    hotToast("Password copied to clipboard", {
-      icon: "📋",
-      position: "bottom-right",
-    });
-  };
-
   if (!isOpen) return null;
 
   return (

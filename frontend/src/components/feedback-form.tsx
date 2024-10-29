@@ -17,6 +17,14 @@ export function FeedbackForm({
 }: FeedbackFormProps) {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
+  const copiedToClipboardToast = () => {
+    hotToast("Password copied to clipboard", {
+      icon: "📋",
+      position: "bottom-right",
+    });
+  };
+
+
   const onPressToast = (password: string) => {
     navigator.clipboard.writeText(password);
     copiedToClipboardToast();
