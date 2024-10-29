@@ -33,7 +33,6 @@ from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from openhands.server.middleware import NoCacheMiddleware, LocalhostCORSMiddleware
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller.agent import Agent
@@ -56,6 +55,7 @@ from openhands.events.serialization import event_to_dict
 from openhands.llm import bedrock
 from openhands.runtime.base import Runtime
 from openhands.server.auth import get_sid_from_token, sign_token
+from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware
 from openhands.server.session import SessionManager
 
 load_dotenv()
@@ -78,7 +78,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     LocalhostCORSMiddleware,
-    allow_origins=['http://localhost:3001', 'http://127.0.0.1:3001'],  # Fallback origins for non-localhost domains
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
