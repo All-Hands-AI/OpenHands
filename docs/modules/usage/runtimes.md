@@ -16,7 +16,7 @@ some flags being passed to `docker run` that make this possible:
 
 ```
 docker run # ...
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.11-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.11-nikolaik \
     -v /var/run/docker.sock:/var/run/docker.sock \
     # ...
 ```
@@ -60,7 +60,7 @@ docker run # ...
     -e SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.app.all-hands.dev" \
     -e SANDBOX_API_KEY="your-api-key" \
     -e SANDBOX_KEEP_REMOTE_RUNTIME_ALIVE="true" \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.11-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.11-nikolaik \
     # ...
 ```
 
@@ -75,5 +75,5 @@ docker run # ...
     -e RUNTIME=modal \
     -e MODAL_API_TOKEN_ID="your-id" \
     -e MODAL_API_TOKEN_SECRET="your-secret" \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.11-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.11-nikolaik \
 ```

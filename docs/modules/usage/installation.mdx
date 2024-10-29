@@ -11,15 +11,15 @@
 The easiest way to run OpenHands is in Docker.
 
 ```bash
-docker pull ghcr.io/all-hands-ai/runtime:0.11-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.11-nikolaik
 
 docker run -it --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.11-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.11-nikolaik \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    ghcr.io/all-hands-ai/openhands:0.11
+    docker.all-hands.dev/all-hands-ai/openhands:0.11
 ```
 
 You can also run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode), as an [interactive CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode), or using the [OpenHands GitHub Action](https://docs.all-hands.dev/modules/usage/how-to/github-action).
@@ -43,9 +43,9 @@ The `Advanced Options` also allow you to specify a `Base URL` if required.
 ## Versions
 
 The command above pulls the most recent stable release of OpenHands. You have other options as well:
-- For a specific release, use `ghcr.io/all-hands-ai/openhands:$VERSION`, replacing $VERSION with the version number.
+- For a specific release, use `docker.all-hands.dev/all-hands-ai/openhands:$VERSION`, replacing $VERSION with the version number.
 - We use semver, and release major, minor, and patch tags. So `0.9` will automatically point to the latest `0.9.x` release, and `0` will point to the latest `0.x.x` release.
-- For the most up-to-date development version, you can use `ghcr.io/all-hands-ai/openhands:main`. This version is unstable and is recommended for testing or development purposes only.
+- For the most up-to-date development version, you can use `docker.all-hands.dev/all-hands-ai/openhands:main`. This version is unstable and is recommended for testing or development purposes only.
 
 You can choose the tag that best suits your needs based on stability requirements and desired features.
 
