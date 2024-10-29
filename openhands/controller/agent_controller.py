@@ -3,8 +3,6 @@ import copy
 import traceback
 from typing import Type
 
-import litellm
-
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
@@ -140,17 +138,15 @@ class AgentController:
         # update metrics especially for cost. Use deepcopy to avoid it being modified by agent.reset()
         self.state.local_metrics = copy.deepcopy(self.agent.llm.metrics)
 
-    async def _react_to_error(
+    async def _react_to_exception(
         self,
-        message: str,
+        e: Exception,
         new_state: AgentState | None = None,
     ):
         if new_state is not None:
             # it's important to set the state before adding the error event, so that metrics sync properly
             await self.set_agent_state_to(new_state)
-        await self.event_stream.async_add_event(
-            ErrorObservation(message), EventSource.AGENT
-        )
+        raise e
 
     async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
@@ -165,14 +161,8 @@ class AgentController:
             except Exception as e:
                 traceback.print_exc()
                 self.log('error', f'Error while running the agent: {e}')
-                self.log('error', traceback.format_exc())
-                detail = str(e)
-                if isinstance(e, litellm.AuthenticationError):
-                    detail += (
-                        '\nPlease check your credentials. Is your API key correct?'
-                    )
-                await self._react_to_error(
-                    detail,
+                await self._react_to_exception(
+                    exception=e,
                     new_state=AgentState.ERROR,
                 )
                 break
@@ -437,9 +427,13 @@ class AgentController:
             if action is None:
                 raise LLMNoActionError('No action was returned')
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
-            await self._react_to_error(
-                str(e), new_state=None
-            )  # don't change state, LLM can correct itself
+            await self.event_stream.async_add_event(
+                ErrorObservation(
+                    content=str(e),
+                    cause=action.id,
+                    agent_state=self.get_agent_state(),
+                )
+            )
             return
 
         if action.runnable:
@@ -465,7 +459,7 @@ class AgentController:
         self.log('debug', str(action), extra={'msg_type': 'ACTION'})
 
         if self._is_stuck():
-            await self._react_to_error(
+            await self._react_to_exception(
                 'Agent got stuck in a loop', new_state=AgentState.ERROR
             )
 
@@ -486,7 +480,7 @@ class AgentController:
             self.delegate = None
             self.delegateAction = None
 
-            await self._react_to_error(
+            await self._react_to_exception(
                 'Delegator agent encountered an error', new_state=None
             )
         elif delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
@@ -537,13 +531,13 @@ class AgentController:
         else:
             self.state.traffic_control_state = TrafficControlState.THROTTLING
             if self.headless_mode:
-                await self._react_to_error(
+                await self._react_to_exception(
                     f'Agent reached maximum {limit_type} in headless mode, task stopped. '
                     f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}',
                     new_state=AgentState.ERROR,
                 )
             else:
-                await self._react_to_error(
+                await self._react_to_exception(
                     f'Agent reached maximum {limit_type}, task paused. '
                     f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}. '
                     f'{TRAFFIC_CONTROL_REMINDER}',
