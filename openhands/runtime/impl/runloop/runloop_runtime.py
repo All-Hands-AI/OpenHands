@@ -133,26 +133,20 @@ class RunloopRuntime(EventStreamRuntime):
         stop=tenacity.stop_after_attempt(90),
         wait=tenacity.wait_fixed(0.75),
     )
-    def _wait_for_devbox(self):
+    def _wait_for_devbox(self, devbox: DevboxView) -> DevboxView:
         """Pull devbox status until it is running"""
-        if self.devbox is None:
-            raise ConnectionRefusedError('Devbox has not been created')
+        if devbox == 'running':
+            return devbox
 
-        if self.devbox.status == 'running':
-            return
-
-        devbox = self.runloop_api_client.devboxes.retrieve(id=self.devbox.id)
+        devbox = self.runloop_api_client.devboxes.retrieve(id=devbox.id)
         if devbox.status != 'running':
             raise ConnectionRefusedError('Devbox is not running')
 
         # Devbox is connected and running
-        self.devbox = devbox
+        logging.debug(f'devbox.id={devbox.id} is running')
+        return devbox
 
-        logging.debug(f'devbox.id={self.devbox.id} is running')
-
-    async def connect(self):
-        self.send_status_message('STATUS$STARTING_RUNTIME')
-
+    def _create_new_devbox(self) -> DevboxView:
         # Note: Runloop connect
         sandbox_workspace_dir = self.config.workspace_mount_path_in_sandbox
         plugin_args = []
@@ -186,10 +180,9 @@ class RunloopRuntime(EventStreamRuntime):
             + '/openhands/micromamba/bin/micromamba run -n openhands poetry config virtualenvs.path /openhands/poetry && '
             + ' '.join(start_command)
         )
-
         entrypoint = f"sudo bash -c '{start_command}'"
 
-        self.devbox = self.runloop_api_client.devboxes.create(
+        devbox = self.runloop_api_client.devboxes.create(
             entrypoint=entrypoint,
             setup_commands=[f'mkdir -p {self.config.workspace_mount_path_in_sandbox}'],
             name=self.sid,
@@ -201,9 +194,23 @@ class RunloopRuntime(EventStreamRuntime):
             ),
             metadata={'container-name': self.container_name},
         )
-        self._wait_for_devbox()
+        return self._wait_for_devbox(devbox)
 
-        # Create tunnel
+    async def connect(self):
+        self.send_status_message('STATUS$STARTING_RUNTIME')
+
+        if self.attach_to_existing:
+            active_devboxes = self.runloop_api_client.devboxes.list(
+                status='running'
+            ).devboxes
+            self.devbox = next(
+                (devbox for devbox in active_devboxes if devbox.name == self.sid), None
+            )
+
+        if self.devbox is None:
+            self.devbox = self._create_new_devbox()
+
+        # Create tunnel - this will return a stable url, so is safe to call if we are attaching to existing
         tunnel = self.runloop_api_client.devboxes.create_tunnel(
             id=self.devbox.id,
             port=self._sandbox_port,
@@ -216,7 +223,6 @@ class RunloopRuntime(EventStreamRuntime):
 
         # End Runloop connect
         # NOTE: Copied from EventStreamRuntime
-
         logger.info('Waiting for client to become ready...')
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
         self._wait_until_alive()
