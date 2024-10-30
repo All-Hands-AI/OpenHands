@@ -159,11 +159,12 @@ class ActionExecutor:
         logger.debug('Bash init commands completed')
 
     async def run_action(self, action) -> Observation:
-        action_type = action.action
-        logger.debug(f'Running action:\n{action}')
-        observation = await getattr(self, action_type)(action)
-        logger.debug(f'Action output:\n{observation}')
-        return observation
+        async with self.lock:
+            action_type = action.action
+            logger.debug(f'Running action:\n{action}')
+            observation = await getattr(self, action_type)(action)
+            logger.debug(f'Action output:\n{observation}')
+            return observation
 
     async def run(
         self, action: CmdRunAction
@@ -371,13 +372,6 @@ if __name__ == '__main__':
             status_code=422,
             content={'message': 'Invalid request parameters', 'details': exc.errors()},
         )
-
-    @app.middleware('http')
-    async def one_request_at_a_time(request: Request, call_next):
-        assert client is not None
-        async with client.lock:
-            response = await call_next(request)
-        return response
 
     @app.middleware('http')
     async def authenticate_requests(request: Request, call_next):
