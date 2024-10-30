@@ -54,6 +54,7 @@ def format_task_dict(example, use_knowledge):
 
 def get_config(
     metadata: EvalMetadata,
+    instance_id: str,
 ) -> AppConfig:
     config = AppConfig(
         default_agent=metadata.agent_class,
@@ -72,6 +73,14 @@ def get_config(
         workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
+    if metadata.llm_config.log_completions:
+        metadata.llm_config.log_completions_folder = os.path.join(
+            metadata.eval_output_dir, 'llm_completions', instance_id
+        )
+        logger.info(
+            f'Logging LLM completions for instance {instance_id} to '
+            f'{metadata.llm_config.log_completions_folder}'
+        )
     return config
 
 
@@ -161,9 +170,8 @@ def process_instance(
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ) -> EvalOutput:
-    config = get_config(metadata)
-    # use session id for concurrent evaluation
     instance_id = instance.instance_id.replace('/', '__')
+    config = get_config(metadata, instance_id)
 
     # Set up the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
