@@ -4,7 +4,7 @@ import tarfile
 from glob import glob
 
 from e2b import Sandbox as E2BSandbox
-from e2b.sandbox.exception import (
+from e2b.exceptions import (
     TimeoutException,
 )
 
