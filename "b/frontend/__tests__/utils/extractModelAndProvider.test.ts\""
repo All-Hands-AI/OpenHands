@@ -1,0 +1,5 @@
+expect(extractModelAndProvider("claude-3-5-sonnet-20241022")).toEqual({
+      provider: "anthropic",
+      model: "claude-3-5-sonnet-20241022",
+      separator: "/",
+    });
