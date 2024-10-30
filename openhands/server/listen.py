@@ -7,13 +7,17 @@ import uuid
 import warnings
 from contextlib import asynccontextmanager
 
-import httpx
 import requests
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
+from openhands.server.github import (
+    GITHUB_CLIENT_ID,
+    GITHUB_CLIENT_SECRET,
+    authenticate_github_user,
+)
 from openhands.storage import get_file_store
 from openhands.utils.async_utils import call_sync_from_async
 
@@ -64,24 +68,6 @@ load_dotenv()
 config = load_app_config()
 file_store = get_file_store(config.file_store, config.file_store_path)
 session_manager = SessionManager(config, file_store)
-
-GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', '').strip()
-GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '').strip()
-
-# New global variable to store the user list
-GITHUB_USER_LIST = None
-
-
-# New function to load the user list
-def load_github_user_list():
-    global GITHUB_USER_LIST
-    waitlist = os.getenv('GITHUB_USER_LIST_FILE')
-    if waitlist:
-        with open(waitlist, 'r') as f:
-            GITHUB_USER_LIST = [line.strip() for line in f if line.strip()]
-
-
-load_github_user_list()
 
 
 @asynccontextmanager
@@ -217,36 +203,12 @@ async def attach_session(request: Request, call_next):
         response = await call_next(request)
         return response
 
-    # Check for auth cookie first
     auth_cookie = request.cookies.get('openhands_auth')
-    if not auth_cookie:
-        logger.warning('Missing authentication cookie')
+    if not await authenticate_github_user(auth_cookie):
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': 'Not authenticated'},
         )
-
-    # Only validate GitHub token if we have an allow list
-    if GITHUB_USER_LIST:
-        # Validate GitHub token from cookie and get user info
-        login, error = await get_github_user(auth_cookie)
-        if error:
-            logger.warning(f'Invalid GitHub token: {error}')
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'error': 'Invalid GitHub token'},
-            )
-
-        # Check against allow list
-        if login not in GITHUB_USER_LIST:
-            logger.warning(f'User {login} not in allow list')
-            return JSONResponse(
-                status_code=status.HTTP_403_FORBIDDEN,
-                content={'error': 'User not on waitlist'},
-            )
-
-        # Store GitHub login in request state for use in route handlers
-        request.state.github_login = login
 
     # For all other methods, validate the Authorization header
     if not request.headers.get('Authorization'):
@@ -347,24 +309,10 @@ async def websocket_endpoint(websocket: WebSocket):
         if cookie
     )
     auth_cookie = cookies.get('openhands_auth')
-    if not auth_cookie:
+
+    if not await authenticate_github_user(auth_cookie):
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
-
-    # Only validate GitHub token if we have an allow list
-    if GITHUB_USER_LIST:
-        # Validate GitHub token from cookie and get user info
-        login, error = await get_github_user(auth_cookie)
-        if error:
-            logger.warning(f'Invalid GitHub token in websocket connection: {error}')
-            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-            return
-
-        # Check against allow list
-        if login not in GITHUB_USER_LIST:
-            logger.warning(f'Websocket: User {login} not in allow list')
-            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-            return
 
     await asyncio.wait_for(websocket.accept(), 10)
 
@@ -889,66 +837,17 @@ class GitHubToken(BaseModel):
     token: str  # GitHub access token
 
 
-async def get_github_user(token: str) -> tuple[str | None, str | None]:
-    """Get GitHub user info from token.
-
-    Args:
-        token: GitHub access token
-
-    Returns:
-        Tuple of (login, error_message)
-        If successful, error_message is None
-        If failed, login is None and error_message contains the error
-    """
-    headers = {
-        'Accept': 'application/vnd.github+json',
-        'Authorization': f'Bearer {token}',
-        'X-GitHub-Api-Version': '2022-11-28',
-    }
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get('https://api.github.com/user', headers=headers)
-            if response.status_code == 200:
-                user_data = response.json()
-                return user_data.get('login'), None
-            else:
-                return (
-                    None,
-                    f'GitHub API error: {response.status_code} - {response.text}',
-                )
-    except Exception as e:
-        return None, f'Error connecting to GitHub: {str(e)}'
-
-
 @app.post('/api/authenticate')
 async def authenticate(github_token: GitHubToken):
-    global GITHUB_USER_LIST
-
-    # Only validate GitHub token if we have an allow list
-    if GITHUB_USER_LIST:
-        # Get user info from GitHub
-        login, error = await get_github_user(github_token.token)
-        if error:
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED, content={'error': error}
-            )
-
-        # Check against allow list
-        if login not in GITHUB_USER_LIST:
-            return JSONResponse(
-                status_code=status.HTTP_403_FORBIDDEN,
-                content={'error': 'User not on waitlist'},
-            )
-
-        response = JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content={'message': 'User authenticated', 'login': login},
+    if not await authenticate_github_user(github_token.token):
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={'error': 'Not authorized via GitHub waitlist'},
         )
-    else:
-        # No allow list, just accept the token without validation
-        response = JSONResponse(
-            status_code=status.HTTP_200_OK, content={'message': 'User authenticated'}
-        )
+
+    response = JSONResponse(
+        status_code=status.HTTP_200_OK, content={'message': 'User authenticated'}
+    )
 
     # Set a secure cookie with the GitHub token
     response.set_cookie(
