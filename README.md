@@ -59,8 +59,9 @@ works best, but you have [many options](https://docs.all-hands.dev/modules/usage
 
 ---
 
-You can also run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
-or as an [interactive CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode).
+You can also [connect OpenHands to your local filesystem](https://docs.all-hands.dev/modules/usage/runtimes),
+run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
+or interact with it via a [friendly CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode).
 
 Visit [Installation](https://docs.all-hands.dev/modules/usage/installation) for more information and setup instructions.
 
