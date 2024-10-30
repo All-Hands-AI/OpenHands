@@ -48,7 +48,7 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
           Password: {password} <span className="text-gray-500">(copy)</span>
         </span>
       </div>,
-      { duration: 5000 },
+      { duration: 10000 },
     );
   };
 
