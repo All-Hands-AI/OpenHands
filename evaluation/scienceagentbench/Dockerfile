@@ -9,8 +9,6 @@ FROM python:3.11-bookworm
 RUN mkdir -p /benchmark
 COPY benchmark /benchmark
 
-RUN pip install -r https://raw.githubusercontent.com/OSU-NLP-Group/ScienceAgentBench/refs/heads/main/requirements.txt
-
 RUN mkdir -p /workspace
 WORKDIR /workspace
 
