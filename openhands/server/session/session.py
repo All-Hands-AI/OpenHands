@@ -220,7 +220,6 @@ class Session:
 
     def queue_status_message(self, msg_type: str, id: str, message: str):
         """Queues a status message to be sent asynchronously."""
-        print('QUEUE STATUS MESSAGE', msg_type, id, message)
         asyncio.run_coroutine_threadsafe(
             self._send_status_message(msg_type, id, message), self.loop
         )

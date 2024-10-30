@@ -115,7 +115,6 @@ class Runtime(FileEditRuntimeMixin):
 
     def send_error_message(self, message_id: str, message: str):
         if self.status_callback:
-            print('RUNTIME STATUS CALLBACK', message_id, message)
             self.status_callback('error', message_id, message)
 
     # ====================================================================
@@ -158,7 +157,6 @@ class Runtime(FileEditRuntimeMixin):
                 )
             except Exception as e:
                 err_id = ''
-                print('e class', e.__class__)
                 if isinstance(e, ConnectionError):
                     err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
                 self.log('error', f'Unexpected error while running action {e}')
