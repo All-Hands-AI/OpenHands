@@ -25,7 +25,7 @@ export function ErrorMessage({ id, message }: ErrorMessageProps) {
       <div className="text-sm leading-4 flex flex-col gap-2">
         {(headline && <p className="text-danger font-bold">{headline}</p>)}
         <a onClick={() => setShowDetails(!showDetails)} className="cursor-pointer">
-        {(showDetails ? t('ERROR_MESSAGE$HIDE_DETAILS') : t('ERROR_MESSAGE$SHOW_DETAILS'))}
+        {(headline && (showDetails ? t('ERROR_MESSAGE$HIDE_DETAILS') : t('ERROR_MESSAGE$SHOW_DETAILS')))}
         </a>
         {(showDetails && <p className="text-neutral-300">{details}</p>)}
       </div>
