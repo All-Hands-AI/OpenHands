@@ -837,11 +837,17 @@ def authenticate(user: User | None = None):
 
     # Only check if waitlist is provided
     if GITHUB_USER_LIST:
-        if user is None or user.login not in GITHUB_USER_LIST:
+        gh_handle = '' if user is None else user.login
+        logger.info(
+            f'Checking user {gh_handle} against waitlist of {len(GITHUB_USER_LIST)} users'
+        )
+        if user is None or gh_handle not in GITHUB_USER_LIST:
+            logger.warning(f'User {gh_handle} not on waitlist')
             return JSONResponse(
                 status_code=status.HTTP_403_FORBIDDEN,
                 content={'error': 'User not on waitlist'},
             )
+        logger.info(f'User {user.login} authenticated')
 
     return JSONResponse(
         status_code=status.HTTP_200_OK, content={'message': 'User authenticated'}
