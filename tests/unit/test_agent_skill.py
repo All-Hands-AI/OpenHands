@@ -1015,3 +1015,39 @@ def test_file_editor_undo_edit_no_edits(tmp_path):
     result = file_editor(command='undo_edit', path=str(random_file))
     print(result)
     assert result == f'ERROR:\nNo edit history found for {random_file}.'
+
+
+def test_file_editor_linting(tmp_path):
+    """Test that the file editor performs linting checks on edits."""
+    # Create a Python file with valid code
+    test_file = tmp_path / 'test.py'
+    initial_content = """def greet(name):
+    print(f"Hello, {name}!")
+
+greet("World")
+"""
+    test_file.write_text(initial_content)
+
+    # Use str_replace to introduce a linting error (undefined variable)
+    result = file_editor(
+        command='str_replace',
+        path=str(test_file),
+        old_str='greet("World")',
+        new_str='greet(UNDEFINED_VARIABLE)'
+    )
+
+    # Verify that the linting error is reported
+    assert "Linting issues found in the changes:" in result
+    assert "F821 undefined name 'UNDEFINED_VARIABLE'" in result
+
+    # Test that insert also triggers linting
+    result = file_editor(
+        command='insert',
+        path=str(test_file),
+        insert_line=2,
+        new_str='    x = ANOTHER_UNDEFINED_VAR\n'
+    )
+
+    # Verify that the linting error is reported
+    assert "Linting issues found in the changes:" in result
+    assert "F821 undefined name 'ANOTHER_UNDEFINED_VAR'" in result
