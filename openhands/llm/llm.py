@@ -53,6 +53,14 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-3-opus-20240229',
 ]
 
+# function calling supporting models
+FUNCTION_CALLING_SUPPORTED_MODELS = [
+    'claude-3-5-sonnet-20240620',
+    'claude-3-5-sonnet-20241022',
+    'gpt-4o',
+    'gpt-4o-mini',
+]
+
 
 class LLM(RetryMixin, DebugMixin):
     """The LLM class represents a Language Model instance.
@@ -163,11 +171,6 @@ class LLM(RetryMixin, DebugMixin):
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
-        self.config.supports_function_calling = (
-            self.model_info is not None
-            and self.model_info.get('supports_function_calling', False)
-        )
-
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
@@ -186,7 +189,7 @@ class LLM(RetryMixin, DebugMixin):
             logger.debug('LLM: model has vision enabled')
         if self.is_caching_prompt_active():
             logger.debug('LLM: caching prompt enabled')
-        if self.config.supports_function_calling:
+        if self.is_function_calling_active():
             logger.debug('LLM: model supports function calling')
 
         completion_unwrapped = self._completion
@@ -325,6 +328,18 @@ class LLM(RetryMixin, DebugMixin):
                 self.config.model in CACHE_PROMPT_SUPPORTED_MODELS
                 or self.config.model.split('/')[-1] in CACHE_PROMPT_SUPPORTED_MODELS
             )
+        )
+
+    def is_function_calling_active(self) -> bool:
+        # Check if model name is in supported list before checking model_info
+        model_name_supported = (
+            self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
+            or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
+            or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
+        )
+        return model_name_supported and (
+            self.model_info is not None
+            and self.model_info.get('supports_function_calling', False)
         )
 
     def _post_completion(self, response: ModelResponse) -> None:
