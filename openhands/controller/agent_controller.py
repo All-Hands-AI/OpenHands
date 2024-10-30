@@ -1,7 +1,7 @@
 import asyncio
 import copy
 import traceback
-from typing import Callable, Optional, Type
+from typing import Callable, Type
 
 import litellm
 
@@ -75,7 +75,7 @@ class AgentController:
         initial_state: State | None = None,
         is_delegate: bool = False,
         headless_mode: bool = True,
-        status_callback: Optional[Callable] = None,
+        status_callback: Callable | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
