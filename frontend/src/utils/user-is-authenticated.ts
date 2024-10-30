@@ -1,4 +1,3 @@
-import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
 
 export const userIsAuthenticated = async (ghToken: string | null) => {

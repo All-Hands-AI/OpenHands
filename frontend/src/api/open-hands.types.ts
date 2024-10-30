@@ -29,7 +29,7 @@ export interface GitHubAccessTokenResponse {
 
 export interface AuthenticationResponse {
   message: string;
-  login?: string;  // Only present when allow list is enabled
+  login?: string; // Only present when allow list is enabled
 }
 
 export interface Feedback {

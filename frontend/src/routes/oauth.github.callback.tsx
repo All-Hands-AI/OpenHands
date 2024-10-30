@@ -20,7 +20,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
     if (!authResponse.ok) {
       return json(
         { error: "Failed to authenticate with GitHub" },
-        { status: authResponse.status }
+        { status: authResponse.status },
       );
     }
 
