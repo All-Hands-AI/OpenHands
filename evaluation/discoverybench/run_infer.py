@@ -5,6 +5,9 @@ import os
 import git
 import pandas as pd
 
+from evaluation.discoverybench.eval_utils.eval_w_subhypo_gen import (
+    run_eval_gold_vs_gen_NL_hypo_workflow,
+)
 from evaluation.discoverybench.eval_utils.response_parser import (
     extract_gen_hypo_from_logs,
 )
@@ -30,6 +33,8 @@ from openhands.events.action import AgentFinishAction, CmdRunAction, MessageActi
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
+
+EVALUATION_LLM = 'gpt-4-1106-preview'
 
 DATA_FILES = {}
 
@@ -297,7 +302,19 @@ def process_instance(
     # remove when it becomes unnecessary
     histories = state.history.compatibility_for_eval_history_pairs()
 
-    # TODO: add discoverybench evaluation
+    # DiscoveryBench Evaluation
+    eval_rec = run_eval_gold_vs_gen_NL_hypo_workflow(
+        query=instance.query,
+        gold_hypo=instance.gold_hypo,
+        gold_workflow='',
+        gen_hypo=test_result['gen_hypo'],
+        gen_workflow='',
+        dataset_meta=instance.dataset_metadata,
+        llm_used=EVALUATION_LLM,
+        dataset_type='real',
+    )
+
+    test_result['eval_rec'] = eval_rec
 
     output = EvalOutput(
         instance_id=str(instance.instance_id),
