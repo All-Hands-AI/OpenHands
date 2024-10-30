@@ -23,7 +23,7 @@ from openhands.core.config import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import CmdRunAction, MessageAction
+from openhands.events.action import AgentFinishAction, CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
@@ -157,7 +157,60 @@ def initialize_runtime(runtime: Runtime, data_files: list[str]):
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
-def complete_runtime(state: State): ...
+def extract_gen_hypo_from_logs(content: str): ...
+
+
+def get_last_agent_finish_action(state: State) -> AgentFinishAction:
+    for event in state.history.get_events(reverse=True):
+        if isinstance(event, AgentFinishAction):
+            return event
+    return None
+
+
+def get_last_message_action(state: State) -> MessageAction:
+    for event in state.history.get_events(reverse=True):
+        if isinstance(event, MessageAction):
+            return event
+    return None
+
+
+def complete_runtime(state: State):
+    last_agent_finish_action = get_last_agent_finish_action(state)
+    last_agent_message_action = get_last_message_action(state)
+
+    if last_agent_finish_action is not None:
+        final_message_1 = last_agent_finish_action.thought
+        gen_hypo_1, gen_workflow_1, error_1 = extract_gen_hypo_from_logs(
+            final_message_1
+        )
+    else:
+        gen_hypo_1, gen_workflow_1, error_1 = '', '', ''
+
+    if last_agent_message_action is not None:
+        final_message_2 = last_agent_message_action.content
+        gen_hypo_2, gen_workflow_2, error_2 = extract_gen_hypo_from_logs(
+            final_message_2
+        )
+    else:
+        gen_hypo_2, gen_workflow_2, error_2 = '', '', ''
+
+    if gen_hypo_1 and gen_hypo_2:
+        test_result = {
+            'gen_hypo': last_agent_finish_action.thought
+            if last_agent_finish_action
+            else last_agent_message_action.content,
+            'gen_workflow': '',
+            'error': '',
+        }
+        return test_result
+
+    test_result = {
+        'gen_hypo': gen_hypo_1 if gen_hypo_1 else gen_hypo_2,
+        'gen_workflow': gen_workflow_1 if gen_workflow_1 else gen_workflow_2,
+        'error': error_1 if error_1 else error_2,
+    }
+
+    return test_result
 
 
 def process_instance(
