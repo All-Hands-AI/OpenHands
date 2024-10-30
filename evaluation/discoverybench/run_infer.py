@@ -5,6 +5,9 @@ import os
 import git
 import pandas as pd
 
+from evaluation.discoverybench.eval_utils.response_parser import (
+    extract_gen_hypo_from_logs,
+)
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
@@ -155,9 +158,6 @@ def initialize_runtime(runtime: Runtime, data_files: list[str]):
         assert obs.exit_code == 0
 
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
-
-
-def extract_gen_hypo_from_logs(content: str): ...
 
 
 def get_last_agent_finish_action(state: State) -> AgentFinishAction:
