@@ -12,9 +12,6 @@ import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import { generateAgentStateChangeEvent } from "#/services/agentStateService";
 import { FeedbackModal } from "./feedback-modal";
-import { Feedback } from "#/api/open-hands.types";
-import { getToken } from "#/services/auth";
-import { removeApiKey, removeUnwantedKeys } from "#/utils/utils";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import TypingIndicator from "./chat/TypingIndicator";
 import ConfirmationButtons from "./chat/ConfirmationButtons";
@@ -27,7 +24,7 @@ const isErrorMessage = (
 ): message is ErrorMessage => "error" in message;
 
 export function ChatInterface() {
-  const { send, events } = useSocket();
+  const { send } = useSocket();
   const dispatch = useDispatch();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =

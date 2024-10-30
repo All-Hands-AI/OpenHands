@@ -1,5 +1,5 @@
 import React from "react";
-import hotToast, { toast } from "react-hot-toast";
+import hotToast from "react-hot-toast";
 import ModalButton from "./buttons/ModalButton";
 import { request } from "#/services/api";
 
@@ -78,7 +78,7 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
         "Content-Type": "application/json",
       },
     });
-    const { message, feedback_id, password } = response.body;
+    const { message, feedback_id, password } = response.body; // eslint-disable-line
     const link = `${VIEWER_PAGE}?share_id=${feedback_id}`;
     shareFeedbackToast(message, link, password);
     setIsSubmitting(false);
