@@ -33,7 +33,6 @@ export interface Feedback {
   token: string;
   polarity: "positive" | "negative";
   permissions: "public" | "private";
-  trajectory: unknown[];
 }
 
 export interface GetConfigResponse {
