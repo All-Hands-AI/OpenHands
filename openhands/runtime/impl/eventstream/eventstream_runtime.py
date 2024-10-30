@@ -239,10 +239,6 @@ class EventStreamRuntime(Runtime):
             )
             raise ex
 
-    @tenacity.retry(
-        stop=tenacity.stop_after_attempt(5) | stop_if_should_exit(),
-        wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
-    )
     def _init_container(self):
         try:
             self.log('debug', 'Preparing to start container...')
