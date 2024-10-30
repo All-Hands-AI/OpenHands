@@ -171,7 +171,9 @@ class Session:
                     return
         if self.agent_session.loop:
             asyncio.run_coroutine_threadsafe(
-                self.agent_session.event_stream.add_event(event, EventSource.USER),
+                self.agent_session.event_stream.async_add_event(
+                    event, EventSource.USER
+                ),
                 self.agent_session.loop,
             )  # type: ignore
 
