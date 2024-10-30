@@ -234,11 +234,9 @@ def test_ipython_package_install(temp_dir, runtime_cls, run_as_openhands):
     _close_test_runtime(runtime)
 
 
-def test_ipython_file_editor_permissions_as_openhands(
-    temp_dir, runtime_cls, run_as_openhands
-):
+def test_ipython_file_editor_permissions_as_openhands(temp_dir, runtime_cls):
     """Test file editor permission behavior when running as different users."""
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands=True)
     sandbox_dir = _get_sandbox_folder(runtime)
 
     # Create a file owned by root with restricted permissions
