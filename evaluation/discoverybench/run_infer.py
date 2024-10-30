@@ -23,10 +23,22 @@ from openhands.core.config import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
-from openhands.events.action import MessageAction
+from openhands.events.action import CmdRunAction, MessageAction
+from openhands.events.observation import CmdOutputObservation
+from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
 DATA_FILES = {}
+
+LIBRARIES = [
+    'pandas',
+    'numpy',
+    'scipy',
+    'matplotlib',
+    'seaborn',
+    'scikit-learn',
+    'statsmodels',
+]
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -111,7 +123,38 @@ def get_dv_query_for_real(
     return query_to_dv, dataset_meta
 
 
-def initialize_runtime(runtime, data_files): ...
+def initialize_runtime(runtime: Runtime, data_files: list[str]):
+    """
+    Initialize the runtime for the agent.
+
+    This function is called before the runtime is used to run the agent.
+    """
+    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    obs: CmdOutputObservation
+
+    action = CmdRunAction(command='mkdir -p /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command='cd /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    assert obs.exit_code == 0
+
+    for file in data_files:
+        runtime.copy_to(
+            file,
+            '/workspace',
+        )
+
+    for lib in LIBRARIES:
+        action = CmdRunAction(command=f'pip install {lib}')
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        assert obs.exit_code == 0
+
+    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
 def complete_runtime(state: State): ...
