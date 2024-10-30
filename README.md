@@ -33,9 +33,7 @@ Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or jump to the [
 
 ## ⚡ Quick Start
 
-The easiest way to run OpenHands is in Docker. You can change `WORKSPACE_BASE` below to
-point OpenHands to existing code that you'd like to modify.
-
+The easiest way to run OpenHands is in Docker.
 See the [Installation](https://docs.all-hands.dev/modules/usage/installation) guide for
 system requirements and more information.
 
@@ -53,8 +51,8 @@ docker run -it --rm --pull=always \
 
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
 
-You'll need a model provider and API key.
-[Anthropic's Claude 3.5 Sonnet (`anthropic/claude-3-5-sonnet-20241022`)](https://www.anthropic.com/api)
+Finally, you'll need a model provider and API key.
+[Anthropic's Claude 3.5 Sonnet](https://www.anthropic.com/api) (`anthropic/claude-3-5-sonnet-20241022`)
 works best, but you have [many options](https://docs.all-hands.dev/modules/usage/llms).
 
 ---

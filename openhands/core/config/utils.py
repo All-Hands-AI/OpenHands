@@ -200,7 +200,9 @@ def finalize_config(cfg: AppConfig):
             parts = cfg.workspace_mount_rewrite.split(':')
             cfg.workspace_mount_path = base.replace(parts[0], parts[1])
 
+    # make sure log_completions_folder is an absolute path
     for llm in cfg.llms.values():
+        llm.log_completions_folder = os.path.abspath(llm.log_completions_folder)
         if llm.embedding_base_url is None:
             llm.embedding_base_url = llm.base_url
 
