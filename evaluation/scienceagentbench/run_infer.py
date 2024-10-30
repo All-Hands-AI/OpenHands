@@ -60,7 +60,7 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='eventstream',
+        runtime=os.environ.get('RUNTIME', 'eventstream'),
         max_budget_per_task=4,
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
@@ -68,6 +68,9 @@ def get_config(
             enable_auto_lint=True,
             use_host_network=False,
             timeout=300,
+            api_key=os.environ.get('ALLHANDS_API_KEY', None),
+            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
+            keep_remote_runtime_alive=False,
         ),
         # do not mount workspace
         workspace_base=None,
