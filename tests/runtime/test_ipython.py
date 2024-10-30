@@ -234,13 +234,17 @@ def test_ipython_package_install(temp_dir, runtime_cls, run_as_openhands):
     _close_test_runtime(runtime)
 
 
-def test_ipython_file_editor_permissions(temp_dir, runtime_cls, run_as_openhands):
+def test_ipython_file_editor_permissions_as_openhands(
+    temp_dir, runtime_cls, run_as_openhands
+):
     """Test file editor permission behavior when running as different users."""
     runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     sandbox_dir = _get_sandbox_folder(runtime)
 
     # Create a file owned by root with restricted permissions
-    action = CmdRunAction(command='sudo touch /root/test.txt && sudo chmod 600 /root/test.txt')
+    action = CmdRunAction(
+        command='sudo touch /root/test.txt && sudo chmod 600 /root/test.txt'
+    )
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -263,7 +267,9 @@ def test_ipython_file_editor_permissions(temp_dir, runtime_cls, run_as_openhands
     assert 'Permission denied' in obs.content
 
     # Try to create a file in root directory - should fail with permission denied
-    test_code = "print(file_editor(command='create', path='/root/new.txt', file_text='test'))"
+    test_code = (
+        "print(file_editor(command='create', path='/root/new.txt', file_text='test'))"
+    )
     action = IPythonRunCellAction(code=test_code)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
