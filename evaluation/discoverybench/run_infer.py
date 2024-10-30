@@ -22,6 +22,7 @@ from evaluation.utils.shared import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
+    AgentConfig,
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
@@ -75,6 +76,12 @@ def get_config(
         workspace_mount_path=None,
     )
     config.set_llm_config(metadata.llm_config)
+    agent_config = AgentConfig(
+        function_calling=False,
+        codeact_enable_jupyter=True,
+        codeact_enable_browsing_delegate=True,
+    )
+    config.set_agent_config(agent_config)
     return config
 
 
