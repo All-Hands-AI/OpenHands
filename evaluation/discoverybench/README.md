@@ -1,6 +1,6 @@
 # DiscoveryBench with OpenHands
 
-[DiscoveryBench](https://github.com/allenai/discoverybench/) [(Paper)](https://arxiv.org/abs/2407.01725v1) contains 264 tasks collected across 6 diverse domains, such as biology, economics, and sociology. It incorporates discovery workflows from published papers to approximate the real-world challenges faced by researchers.  
+[DiscoveryBench](https://github.com/allenai/discoverybench/) [(Paper)](https://arxiv.org/abs/2407.01725v1) contains 264 tasks collected across 6 diverse domains, such as biology, economics, and sociology. It incorporates discovery workflows from published papers to approximate the real-world challenges faced by researchers.
 
 <p align="center">
   <a href="[https://github.com/allenai/discoverybench](https://github.com/allenai/discoverybench)">
@@ -35,4 +35,3 @@ When the `run_infer.sh` script is started, it will automatically pull the latest
 - `AGENT`: Use CoderActAgent, right now it only supports that.
 - `EVAL_LIMIT`: Number of samples to evaluate.
 - `NUM_WORKERS`: Number of workers to parallelize the evaluation process.
-
