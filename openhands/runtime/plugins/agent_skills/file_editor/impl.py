@@ -2,6 +2,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Literal, get_args
 
+from openhands.linter import DefaultLinter, LintResult
 from .base import CLIResult, ToolError, ToolResult
 from .run import maybe_truncate, run
 
@@ -27,6 +28,7 @@ class EditTool:
 
     def __init__(self):
         self._file_history = defaultdict(list)
+        self._linter = DefaultLinter()
         super().__init__()
 
     def __call__(
@@ -175,6 +177,9 @@ class EditTool:
         # Save the content to history
         self._file_history[path].append(file_content)
 
+        # Run linting on the changes
+        lint_results = self._run_linting(file_content, new_file_content, path)
+
         # Create a snippet of the edited section
         replacement_line = file_content.split(old_str)[0].count('\n')
         start_line = max(0, replacement_line - SNIPPET_LINES)
@@ -186,6 +191,7 @@ class EditTool:
         success_msg += self._make_output(
             snippet, f'a snippet of {path}', start_line + 1
         )
+        success_msg += '\n' + lint_results + '\n'
         success_msg += 'Review the changes and make sure they are as expected. Edit the file again if necessary.'
 
         return CLIResult(output=success_msg)
@@ -217,6 +223,9 @@ class EditTool:
         new_file_text = '\n'.join(new_file_text_lines)
         snippet = '\n'.join(snippet_lines)
 
+        # Run linting on the changes
+        lint_results = self._run_linting(file_text, new_file_text, path)
+
         self.write_file(path, new_file_text)
         self._file_history[path].append(file_text)
 
@@ -226,6 +235,7 @@ class EditTool:
             'a snippet of the edited file',
             max(1, insert_line - SNIPPET_LINES + 1),
         )
+        success_msg += '\n' + lint_results + '\n'
         success_msg += 'Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary.'
         return CLIResult(output=success_msg)
 
@@ -254,6 +264,33 @@ class EditTool:
             path.write_text(file)
         except Exception as e:
             raise ToolError(f'Ran into {e} while trying to write to {path}') from None
+
+    def _run_linting(self, old_content: str, new_content: str, path: Path) -> str:
+        """Run linting on file changes and return formatted results."""
+        # Create temporary files for linting
+        old_path = path.parent / f"{path.name}.old"
+        new_path = path.parent / f"{path.name}.new"
+        try:
+            old_path.write_text(old_content)
+            new_path.write_text(new_content)
+            
+            # Run linting on the changes
+            results: list[LintResult] = self._linter.lint_file_diff(str(old_path), str(new_path))
+            
+            if not results:
+                return "No linting issues found in the changes."
+            
+            # Format results
+            output = ["Linting issues found in the changes:"]
+            for result in results:
+                output.append(f"Line {result.line}, Column {result.column}: {result.message}")
+            return "\n".join(output)
+        finally:
+            # Clean up temporary files
+            if old_path.exists():
+                old_path.unlink()
+            if new_path.exists():
+                new_path.unlink()
 
     def _make_output(
         self,
