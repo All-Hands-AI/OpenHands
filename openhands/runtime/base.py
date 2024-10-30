@@ -5,6 +5,8 @@ import os
 from abc import abstractmethod
 from typing import Callable
 
+from requests.exceptions import ConnectionError
+
 from openhands.core.config import AppConfig, SandboxConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
@@ -111,6 +113,11 @@ class Runtime(FileEditRuntimeMixin):
             msg = STATUS_MESSAGES.get(message_id, '')
             self.status_callback('info', message_id, msg)
 
+    def send_error_message(self, message_id: str, message: str):
+        if self.status_callback:
+            print('RUNTIME STATUS CALLBACK', message_id, message)
+            self.status_callback('error', message_id, message)
+
     # ====================================================================
 
     def add_env_vars(self, env_vars: dict[str, str]) -> None:
@@ -145,9 +152,21 @@ class Runtime(FileEditRuntimeMixin):
             if event.timeout is None:
                 event.timeout = self.config.sandbox.timeout
             assert event.timeout is not None
-            observation: Observation = await call_sync_from_async(
-                self.run_action, event
-            )
+            try:
+                observation: Observation = await call_sync_from_async(
+                    self.run_action, event
+                )
+            except Exception as e:
+                err_id = ''
+                print('e class', e.__class__)
+                if isinstance(e, ConnectionError):
+                    err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
+                self.log('error', f'Unexpected error while running action {e}')
+                self.log('error', f'Problematic action: {str(event)}')
+                self.send_error_message(err_id, str(e))
+                self.close()
+                return
+
             observation._cause = event.id  # type: ignore[attr-defined]
             observation.tool_call_metadata = event.tool_call_metadata
             source = event.source if event.source else EventSource.AGENT

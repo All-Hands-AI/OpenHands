@@ -145,6 +145,10 @@ class AgentSession:
 
         self._closed = True
 
+    async def stop_agent_loop_for_error(self):
+        if self.controller is not None:
+            await self.controller.set_agent_state_to(AgentState.ERROR)
+
     def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
 
@@ -189,6 +193,10 @@ class AgentSession:
             await self.runtime.connect()
         except Exception as e:
             logger.error(f'Runtime initialization failed: {e}', exc_info=True)
+            if self._status_callback:
+                self._status_callback(
+                    'error', 'STATUS$ERROR_RUNTIME_DISCONNECTED', str(e)
+                )
             raise
 
         if self.runtime is not None:

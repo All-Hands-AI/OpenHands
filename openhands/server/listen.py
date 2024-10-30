@@ -236,9 +236,11 @@ async def attach_session(request: Request, call_next):
             content={'error': 'Invalid token'},
         )
 
+    print('CONNECTING TO CONVO')
     request.state.conversation = await session_manager.attach_to_conversation(
         request.state.sid
     )
+    print('CONNECTED TO CONVO')
     if request.state.conversation is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -477,11 +479,13 @@ async def list_files(request: Request, path: str | None = None):
 
     file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
 
-    def filter_for_gitignore(file_list, base_path):
+    async def filter_for_gitignore(file_list, base_path):
         gitignore_path = os.path.join(base_path, '.gitignore')
         try:
             read_action = FileReadAction(gitignore_path)
-            observation = runtime.run_action(read_action)
+            observation = await asyncio.create_task(
+                call_sync_from_async(runtime.run_action, read_action)
+            )
             spec = PathSpec.from_lines(
                 GitWildMatchPattern, observation.content.splitlines()
             )
@@ -491,7 +495,7 @@ async def list_files(request: Request, path: str | None = None):
         file_list = [entry for entry in file_list if not spec.match_file(entry)]
         return file_list
 
-    file_list = filter_for_gitignore(file_list, '')
+    file_list = await filter_for_gitignore(file_list, '')
 
     return file_list
 

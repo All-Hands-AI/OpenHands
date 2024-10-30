@@ -197,8 +197,11 @@ class Session:
         """Sends a message to the client."""
         return await self.send({'message': message})
 
-    async def send_status_message(self, msg_type: str, id: str, message: str) -> bool:
+    async def _send_status_message(self, msg_type: str, id: str, message: str) -> bool:
         """Sends a status message to the client."""
+        if msg_type == 'error':
+            await self.agent_session.stop_agent_loop_for_error()
+
         return await self.send(
             {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
         )
@@ -217,7 +220,7 @@ class Session:
 
     def queue_status_message(self, msg_type: str, id: str, message: str):
         """Queues a status message to be sent asynchronously."""
-        # Ensure the coroutine runs in the main event loop
+        print('QUEUE STATUS MESSAGE', msg_type, id, message)
         asyncio.run_coroutine_threadsafe(
-            self.send_status_message(msg_type, id, message), self.loop
+            self._send_status_message(msg_type, id, message), self.loop
         )

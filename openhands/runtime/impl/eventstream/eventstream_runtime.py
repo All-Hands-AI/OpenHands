@@ -38,6 +38,7 @@ from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
+from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
@@ -205,21 +206,21 @@ class EventStreamRuntime(Runtime):
             self.log(
                 'info', f'Starting runtime with image: {self.runtime_container_image}'
             )
-            self._init_container()
+            await call_sync_from_async(self._init_container)
             self.log('info', f'Container started: {self.container_name}')
 
         else:
-            self._attach_to_container()
+            await call_sync_from_async(self._attach_to_container)
 
         if not self.attach_to_existing:
             self.log('info', f'Waiting for client to become ready at {self.api_url}...')
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
-        self._wait_until_alive()
+        await call_sync_from_async(self._wait_until_alive)
         if not self.attach_to_existing:
             self.log('info', 'Runtime is ready.')
 
         if not self.attach_to_existing:
-            self.setup_initial_env()
+            await call_sync_from_async(self.setup_initial_env)
 
         self.log(
             'debug',
@@ -384,7 +385,6 @@ class EventStreamRuntime(Runtime):
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
-        wait=tenacity.wait_exponential(multiplier=2, min=1, max=20),
         reraise=(ConnectionRefusedError,),
     )
     def _wait_until_alive(self):
@@ -509,9 +509,6 @@ class EventStreamRuntime(Runtime):
                 obs = ErrorObservation(
                     f'Action execution timed out after {action.timeout} seconds.',
                 )
-            except Exception as e:
-                self.log('error', f'Error during action execution: {e}')
-                obs = ErrorObservation(f'Action execution failed: {str(e)}')
             self._refresh_logs()
             return obs
 
