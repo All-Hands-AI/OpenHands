@@ -23,8 +23,6 @@ import store from "#/store";
 import { setInitialQuery } from "#/state/initial-query-slice";
 import { clientLoader as rootClientLoader } from "#/routes/_oh";
 import OpenHands from "#/api/open-hands";
-import { clearSession } from "#/utils/clear-session";
-import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 
 interface GitHubAuthProps {
@@ -66,12 +64,6 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   }
 
   const ghToken = localStorage.getItem("ghToken");
-  const isAuthed = await userIsAuthenticated(ghToken);
-  if (!isAuthed) {
-    clearSession();
-    return redirect("/waitlist");
-  }
-
   const token = localStorage.getItem("token");
   if (token) return redirect("/app");
 
