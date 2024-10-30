@@ -92,7 +92,7 @@ class AsyncLLM(LLM):
                 return resp
 
             except UserCancelledError:
-                logger.info('LLM request cancelled by user.')
+                logger.debug('LLM request cancelled by user.')
                 raise
             except Exception as e:
                 logger.error(f'Completion Error occurred:\n{e}')

@@ -4,9 +4,13 @@ import { useTerminal } from "../../hooks/useTerminal";
 
 import "@xterm/xterm/css/xterm.css";
 
-function Terminal() {
+interface TerminalProps {
+  secrets: string[];
+}
+
+function Terminal({ secrets }: TerminalProps) {
   const { commands } = useSelector((state: RootState) => state.cmd);
-  const ref = useTerminal(commands);
+  const ref = useTerminal(commands, secrets);
 
   return (
     <div className="h-full p-2 min-h-0">
