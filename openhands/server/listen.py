@@ -226,25 +226,27 @@ async def attach_session(request: Request, call_next):
             content={'error': 'Not authenticated'},
         )
 
-    # Validate GitHub token from cookie and get user info
-    login, error = await get_github_user(auth_cookie)
-    if error:
-        logger.warning(f'Invalid GitHub token: {error}')
-        return JSONResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': 'Invalid GitHub token'},
-        )
+    # Only validate GitHub token if we have an allow list
+    if GITHUB_USER_LIST:
+        # Validate GitHub token from cookie and get user info
+        login, error = await get_github_user(auth_cookie)
+        if error:
+            logger.warning(f'Invalid GitHub token: {error}')
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={'error': 'Invalid GitHub token'},
+            )
 
-    # Check against allow list if enabled
-    if GITHUB_USER_LIST and login not in GITHUB_USER_LIST:
-        logger.warning(f'User {login} not in allow list')
-        return JSONResponse(
-            status_code=status.HTTP_403_FORBIDDEN,
-            content={'error': 'User not on waitlist'},
-        )
+        # Check against allow list
+        if login not in GITHUB_USER_LIST:
+            logger.warning(f'User {login} not in allow list')
+            return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={'error': 'User not on waitlist'},
+            )
 
-    # Store GitHub login in request state for use in route handlers
-    request.state.github_login = login
+        # Store GitHub login in request state for use in route handlers
+        request.state.github_login = login
 
     # For all other methods, validate the Authorization header
     if not request.headers.get('Authorization'):
@@ -345,18 +347,20 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
-    # Validate GitHub token from cookie and get user info
-    login, error = await get_github_user(auth_cookie)
-    if error:
-        logger.warning(f'Invalid GitHub token in websocket connection: {error}')
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        return
+    # Only validate GitHub token if we have an allow list
+    if GITHUB_USER_LIST:
+        # Validate GitHub token from cookie and get user info
+        login, error = await get_github_user(auth_cookie)
+        if error:
+            logger.warning(f'Invalid GitHub token in websocket connection: {error}')
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+            return
 
-    # Check against allow list if enabled
-    if GITHUB_USER_LIST and login not in GITHUB_USER_LIST:
-        logger.warning(f'Websocket: User {login} not in allow list')
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        return
+        # Check against allow list
+        if login not in GITHUB_USER_LIST:
+            logger.warning(f'Websocket: User {login} not in allow list')
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+            return
 
     await asyncio.wait_for(websocket.accept(), 10)
 
@@ -913,25 +917,34 @@ async def get_github_user(token: str) -> tuple[str | None, str | None]:
 async def authenticate(github_token: GitHubToken):
     global GITHUB_USER_LIST
 
-    # Get user info from GitHub
-    login, error = await get_github_user(github_token.token)
-    if error:
-        return JSONResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': error}
+    # Only validate GitHub token if we have an allow list
+    if GITHUB_USER_LIST:
+        # Get user info from GitHub
+        login, error = await get_github_user(github_token.token)
+        if error:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={'error': error}
+            )
+
+        # Check against allow list
+        if login not in GITHUB_USER_LIST:
+            return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={'error': 'User not on waitlist'},
+            )
+
+        response = JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'User authenticated', 'login': login}
+        )
+    else:
+        # No allow list, just accept the token without validation
+        response = JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={'message': 'User authenticated'}
         )
 
-    # Check against allow list if enabled
-    if GITHUB_USER_LIST and login not in GITHUB_USER_LIST:
-        return JSONResponse(
-            status_code=status.HTTP_403_FORBIDDEN,
-            content={'error': 'User not on waitlist'},
-        )
-
-    response = JSONResponse(
-        status_code=status.HTTP_200_OK,
-        content={'message': 'User authenticated', 'login': login}
-    )
     # Set a secure cookie with the GitHub token
     response.set_cookie(
         key="openhands_auth",
