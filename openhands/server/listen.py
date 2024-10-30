@@ -216,6 +216,15 @@ async def attach_session(request: Request, call_next):
         response = await call_next(request)
         return response
 
+    # Check for auth cookie first
+    auth_cookie = request.cookies.get('openhands_auth')
+    if not auth_cookie:
+        logger.warning('Missing authentication cookie')
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={'error': 'Not authenticated'},
+        )
+
     # For all other methods, validate the Authorization header
     if not request.headers.get('Authorization'):
         logger.warning('Missing Authorization header')
@@ -308,6 +317,13 @@ async def websocket_endpoint(websocket: WebSocket):
         {"action": "finish", "args": {}}
         ```
     """
+    # Check for auth cookie first
+    cookies = dict(cookie.split('=') for cookie in websocket.headers.get('cookie', '').split('; ') if cookie)
+    auth_cookie = cookies.get('openhands_auth')
+    if not auth_cookie:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
     await asyncio.wait_for(websocket.accept(), 10)
 
     if websocket.query_params.get('token'):
@@ -843,8 +859,19 @@ def authenticate(user: User | None = None):
                 content={'error': 'User not on waitlist'},
             )
 
-    return JSONResponse(
+    response = JSONResponse(
         status_code=status.HTTP_200_OK, content={'message': 'User authenticated'}
+    )
+    # Set a secure cookie with the GitHub handle
+    response.set_cookie(
+        key="openhands_auth",
+        value=user.login if user else "authenticated",
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        max_age=3600  # 1 hour expiry
+    )
+    return response
     )
 
 
