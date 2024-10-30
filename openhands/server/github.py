@@ -21,6 +21,7 @@ load_github_user_list()
 
 
 async def authenticate_github_user(auth_token) -> bool:
+    logger.info('Checking GitHub token')
     if not GITHUB_USER_LIST:
         return True
 
@@ -33,9 +34,10 @@ async def authenticate_github_user(auth_token) -> bool:
         logger.warning(f'Invalid GitHub token: {error}')
         return False
     if login not in GITHUB_USER_LIST:
-        logger.warning(f'User {login} not in allow list')
+        logger.warning(f'GitHub user {login} not in allow list')
         return False
 
+    logger.info(f'GitHub user {login} authenticated')
     return True
 
 
