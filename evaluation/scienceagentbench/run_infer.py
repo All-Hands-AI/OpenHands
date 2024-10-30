@@ -205,7 +205,7 @@ If the program uses some packages that are incompatible, please figure out alter
 
 """
 
-    runtime = create_runtime(config, sid=instance_id)
+    runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
     initialize_runtime(runtime, instance)
 
