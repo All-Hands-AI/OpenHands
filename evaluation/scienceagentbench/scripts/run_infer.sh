@@ -21,6 +21,11 @@ if [ -z "$AGENT" ]; then
   AGENT="CodeActAgent"
 fi
 
+if [ -z "$USE_KNOWLEDGE" ]; then
+  echo "Use knowledge not specified, use default False"
+  USE_KNOWLEDGE=false
+fi
+
 get_agent_version
 
 echo "AGENT: $AGENT"
