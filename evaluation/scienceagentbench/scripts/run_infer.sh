@@ -32,7 +32,6 @@ COMMAND="poetry run python evaluation/scienceagentbench/run_infer.py \
   --llm-config $MODEL_CONFIG \
   --use_knowledge $USE_KNOWLEDGE \
   --max-iterations 30 \
-  --max-chars 10000000 \
   --eval-num-workers $NUM_WORKERS \
   --eval-note $AGENT_VERSION" \
 

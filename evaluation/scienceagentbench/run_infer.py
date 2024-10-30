@@ -32,10 +32,6 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
 }
 
-AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': 'When you think you have completed the task, please run the following command: <execute_bash> exit </execute_bash>.'
-}
-
 LOCAL_DATASET_PATH = os.path.join(os.path.dirname(__file__), 'benchmark')
 
 
@@ -69,7 +65,7 @@ def get_config(
             base_container_image='python:3.11-bookworm',
             enable_auto_lint=True,
             use_host_network=False,
-            timeout=300,  # 900
+            timeout=300,
         ),
         # do not mount workspace
         workspace_base=None,
@@ -145,11 +141,6 @@ def complete_runtime(
 
     assert obs.exit_code == 0
 
-    # try:
-    #     assert obs.exit_code == 0
-    # except Exception:
-    #     return {'program': 'ERROR'}
-
     action = CmdRunAction(
         command=f'cat pred_programs/{instance.pred_program_name}',
     )
@@ -200,9 +191,6 @@ Please do NOT run the program in the background.
 If the program uses some packages that are incompatible, please figure out alternative implementations and do NOT restart the environment.
 
 """
-
-    # NOTE: You can actually set slightly different instruction for different agents
-    instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
     runtime = create_runtime(config, sid=instance_id)
     initialize_runtime(runtime, instance)
