@@ -232,3 +232,61 @@ def test_ipython_package_install(temp_dir, runtime_cls, run_as_openhands):
     )
 
     _close_test_runtime(runtime)
+
+
+def test_ipython_file_permissions(temp_dir, runtime_cls, run_as_openhands):
+    """Test file permission behavior when running as different users."""
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    sandbox_dir = _get_sandbox_folder(runtime)
+
+    # Create a file owned by root with restricted permissions
+    action = CmdRunAction(command='sudo touch /root/test.txt && sudo chmod 600 /root/test.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
+    # Try to read the file as openhands user - should fail with permission denied
+    action = FileReadAction(path='/root/test.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, ErrorObservation)
+    assert 'Permission denied' in obs.content
+
+    # Try to write to the file as openhands user - should fail with permission denied 
+    action = FileWriteAction(path='/root/test.txt', content='test')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, ErrorObservation)
+    assert 'Permission denied' in obs.content
+
+    # Try to read/write file in openhands home directory
+    action = FileWriteAction(path=f'{sandbox_dir}/test.txt', content='test')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, FileWriteObservation)
+
+    action = FileReadAction(path=f'{sandbox_dir}/test.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert isinstance(obs, FileReadObservation)
+    assert obs.content == 'test\n'
+
+    # Clean up
+    action = CmdRunAction(command=f'rm -f {sandbox_dir}/test.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
+    action = CmdRunAction(command='sudo rm -f /root/test.txt')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.exit_code == 0
+
+    _close_test_runtime(runtime)
