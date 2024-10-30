@@ -666,6 +666,7 @@ async def submit_feedback(request: Request):
         version=body.get('version', ''),
         permissions=body.get('permissions', 'private'),
         polarity=body.get('polarity', ''),
+        feedback=body.get('polarity', ''),
         trajectory=trajectory,
     )
     try:

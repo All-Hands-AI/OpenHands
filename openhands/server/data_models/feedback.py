@@ -1,5 +1,5 @@
 import json
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 import requests
 from pydantic import BaseModel
@@ -15,7 +15,7 @@ class FeedbackDataModel(BaseModel):
         'positive', 'negative'
     ]  # TODO: remove this, its here for backward compatibility
     permissions: Literal['public', 'private']
-    trajectory: list[dict[str, Any]]
+    trajectory: Optional[list[dict[str, Any]]]
 
 
 FEEDBACK_URL = 'https://share-od-trajectory-3u9bw9tx.uc.gateway.dev/share_od_trajectory'

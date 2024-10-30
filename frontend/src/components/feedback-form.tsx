@@ -65,10 +65,10 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
 
     const feedback: Feedback = {
       version: FEEDBACK_VERSION,
-      feedback: polarity,
       email,
       polarity,
       permissions,
+      trajectory: [],
     };
 
     const response = await request("/api/submit-feedback", {
