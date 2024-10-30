@@ -36,7 +36,7 @@ from openhands.runtime.base import Runtime
 from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
-from openhands.runtime.utils.request import send_request_with_retry
+from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
@@ -304,7 +304,7 @@ class EventStreamRuntime(Runtime):
                 volumes = None
             self.log(
                 'debug',
-                f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}'
+                f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
             )
 
             if self.config.sandbox.browsergym_eval_env is not None:
@@ -392,12 +392,12 @@ class EventStreamRuntime(Runtime):
         if not self.log_buffer:
             raise RuntimeError('Runtime client is not ready.')
 
-        response = send_request_with_retry(
+        response = send_request(
             self.session,
             'GET',
             f'{self.api_url}/alive',
             retry_exceptions=[ConnectionRefusedError],
-            timeout=300,  # 5 minutes gives the container time to be alive 🧟‍♂️
+            timeout=5,
         )
         if response.status_code == 200:
             return
@@ -486,7 +486,7 @@ class EventStreamRuntime(Runtime):
             assert action.timeout is not None
 
             try:
-                response = send_request_with_retry(
+                response = send_request(
                     self.session,
                     'POST',
                     f'{self.api_url}/execute_action',
@@ -569,7 +569,7 @@ class EventStreamRuntime(Runtime):
 
             params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
 
-            response = send_request_with_retry(
+            response = send_request(
                 self.session,
                 'POST',
                 f'{self.api_url}/upload_file',
@@ -606,12 +606,12 @@ class EventStreamRuntime(Runtime):
             if path is not None:
                 data['path'] = path
 
-            response = send_request_with_retry(
+            response = send_request(
                 self.session,
                 'POST',
                 f'{self.api_url}/list_files',
                 json=data,
-                timeout=30,  # 30 seconds because the container should already be alive
+                timeout=10,
             )
             if response.status_code == 200:
                 response_json = response.json()
@@ -630,7 +630,7 @@ class EventStreamRuntime(Runtime):
         self._refresh_logs()
         try:
             params = {'path': path}
-            response = send_request_with_retry(
+            response = send_request(
                 self.session,
                 'GET',
                 f'{self.api_url}/download_files',
