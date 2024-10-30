@@ -68,6 +68,21 @@ session_manager = SessionManager(config, file_store)
 GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', '').strip()
 GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '').strip()
 
+# New global variable to store the user list
+GITHUB_USER_LIST = None
+
+
+# New function to load the user list
+def load_github_user_list():
+    global GITHUB_USER_LIST
+    waitlist = os.getenv('GITHUB_USER_LIST_FILE')
+    if waitlist:
+        with open(waitlist, 'r') as f:
+            GITHUB_USER_LIST = [line.strip() for line in f if line.strip()]
+
+
+load_github_user_list()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -836,22 +851,14 @@ class User(BaseModel):
 
 @app.post('/api/authenticate')
 def authenticate(user: User | None = None):
-    waitlist = os.getenv('GITHUB_USER_LIST_FILE')
+    global GITHUB_USER_LIST
 
     # Only check if waitlist is provided
-    if waitlist is not None:
-        try:
-            with open(waitlist, 'r') as f:
-                users = f.read().splitlines()
-                if user is None or user.login not in users:
-                    return JSONResponse(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        content={'error': 'User not on waitlist'},
-                    )
-        except FileNotFoundError:
+    if GITHUB_USER_LIST:
+        if user is None or user.login not in GITHUB_USER_LIST:
             return JSONResponse(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={'error': 'Waitlist file not found'},
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={'error': 'User not on waitlist'},
             )
 
     return JSONResponse(
