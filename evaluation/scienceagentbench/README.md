@@ -10,28 +10,6 @@ Please follow instruction [here](../README.md#setup) to setup your local develop
 
 To prevent benchmark data contamination, we only provide the annotation sheet on [Huggingface](https://huggingface.co/datasets/osunlp/ScienceAgentBench), which includes all necessary *inputs* to run an agent.
 
-For OpenHands agents to explore the dataset directories, please download the full benchmark [here](https://buckeyemailosu-my.sharepoint.com/:u:/g/personal/chen_8336_buckeyemail_osu_edu/EQuA6uJ3CtRHvRfZ2GiN1tYBRVJE4DSUD10MW61fr7HuSQ?e=sCBegG) and unzip it with password `scienceagentbench`.
-
-**Please DO NOT redistribute the unzipped data files online.**
-
-After downloading and unzipping the full benchmark under this repository, the directory structure should look like this:
-```
-|-- evaluation/scienceagentbench/
-|---- benchmark/
-|------ datasets/
-|-------- ...
-|------ eval_programs/
-|-------- ...
-|------ gold_programs/
-|-------- ...
-|------ scoring_rubrics/
-|-------- ...
-|---- scripts/
-|------ ...
-|---- run_infer.py
-|---- ...
-```
-
 ## Run Inference on ScienceAgentBench
 
 ```bash

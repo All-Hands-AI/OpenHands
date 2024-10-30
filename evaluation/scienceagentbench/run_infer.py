@@ -40,7 +40,7 @@ def format_task_dict(example, use_knowledge):
     task = {
         'instance_id': example['instance_id'],
         'task_inst': example['task_inst'],
-        'dataset_path': '/workspace/benchmark/datasets/'
+        'dataset_path': '/benchmark/datasets/'
         + example['dataset_folder_tree'].split('\n')[0][4:],
         'dataset_folder_tree': example['dataset_folder_tree'],
         'dataset_preview': example['dataset_preview'],
@@ -64,7 +64,7 @@ def get_config(
         max_budget_per_task=4,
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            base_container_image='python:3.11-bookworm',
+            base_container_image='docker.io/xingyaoww/openhands-eval-scienceagentbench',
             enable_auto_lint=True,
             use_host_network=False,
             timeout=300,
@@ -156,6 +156,7 @@ def complete_runtime(
 
     action = CmdRunAction(
         command=f'cat pred_programs/{instance.pred_program_name}',
+        keep_prompt=False,
     )
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
