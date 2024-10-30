@@ -58,10 +58,10 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
     const formData = new FormData(event.currentTarget);
     setIsSubmitting(true);
 
-    const email = formData.get("email").toString();
-    const permissions = formData.get("permissions").toString() as
-      | "private"
-      | "public";
+    const email = formData.get("email")?.toString() || "";
+    const permissions =
+      formData.get("permissions")?.toString() ||
+      ("private" as "private" | "public");
 
     const feedback: Feedback = {
       version: FEEDBACK_VERSION,

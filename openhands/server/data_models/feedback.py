@@ -11,6 +11,9 @@ class FeedbackDataModel(BaseModel):
     version: str
     email: str
     polarity: Literal['positive', 'negative']
+    feedback: Literal[
+        'positive', 'negative'
+    ]  # TODO: remove this, its here for backward compatibility
     permissions: Literal['public', 'private']
     trajectory: list[dict[str, Any]]
 
@@ -20,6 +23,7 @@ FEEDBACK_URL = 'https://share-od-trajectory-3u9bw9tx.uc.gateway.dev/share_od_tra
 
 def store_feedback(feedback: FeedbackDataModel) -> dict[str, str]:
     # Start logging
+    feedback.feedback = feedback.polarity
     display_feedback = feedback.model_dump()
     if 'trajectory' in display_feedback:
         display_feedback['trajectory'] = (
