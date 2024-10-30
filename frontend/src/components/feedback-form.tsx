@@ -2,6 +2,7 @@ import React from "react";
 import hotToast from "react-hot-toast";
 import ModalButton from "./buttons/ModalButton";
 import { request } from "#/services/api";
+import { Feedback } from "#/api/open-hands.types";
 
 const FEEDBACK_VERSION = "1.0";
 const VIEWER_PAGE = "https://www.all-hands.dev/share";
