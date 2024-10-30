@@ -35,7 +35,8 @@ WORKSPACE_BASE=$(pwd)/workspace
 2. Set `LLM_MODEL` to the model you want to use:
 
 ```bash
-LLM_MODEL="anthropic/claude-3-5-sonnet-20240620"
+LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"
+
 ```
 
 3. Set `LLM_API_KEY` to your API key:
@@ -106,3 +107,4 @@ Expected Output:
 ```bash
 🤖 An error occurred. Please try again.
 ```
+
