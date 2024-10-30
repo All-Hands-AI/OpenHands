@@ -4,6 +4,7 @@ import os
 from joblib import Parallel, delayed
 
 from openhands.core.config import LLMConfig
+from openhands.core.logger import openhands_logger as logger
 
 try:
     # check if those we need later are available using importlib
@@ -139,7 +140,7 @@ class EmbeddingsLoader:
                 torch.backends.mps.is_built = False
 
             # the device being used
-            print(f'Using device for embeddings: {device}')
+            logger.debug(f'Using device for embeddings: {device}')
 
             return local_embed_model
 

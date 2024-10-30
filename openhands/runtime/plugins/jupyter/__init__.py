@@ -48,7 +48,7 @@ class JupyterPlugin(Plugin):
             time.sleep(1)
             logger.debug('Waiting for jupyter kernel gateway to start...')
 
-        logger.info(
+        logger.debug(
             f'Jupyter kernel gateway started at port {self.kernel_gateway_port}. Output: {output}'
         )
         _obs = await self.run(

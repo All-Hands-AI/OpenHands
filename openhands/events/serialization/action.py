@@ -60,6 +60,12 @@ def action_from_dict(action: dict) -> Action:
     # Remove timestamp from args if present
     timestamp = args.pop('timestamp', None)
 
+    # compatibility for older event streams
+    # is_confirmed has been renamed to confirmation_state
+    is_confirmed = args.pop('is_confirmed', None)
+    if is_confirmed is not None:
+        args['confirmation_state'] = is_confirmed
+
     try:
         decoded_action = action_class(**args)
         if 'timeout' in action:

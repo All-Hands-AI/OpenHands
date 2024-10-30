@@ -133,6 +133,11 @@ function App() {
   const fetcher = useFetcher();
   const data = useRouteLoaderData<typeof rootClientLoader>("routes/_oh");
 
+  const secrets = React.useMemo(
+    () => [ghToken, token].filter((secret) => secret !== null),
+    [ghToken, token],
+  );
+
   // To avoid re-rendering the component when the user object changes, we memoize the user ID.
   // We use this to ensure the github token is valid before exporting it to the terminal.
   const userId = React.useMemo(() => {
@@ -230,13 +235,23 @@ function App() {
 
         // handle new session
         if (!token) {
+          let additionalInfo = "";
           if (ghToken && repo) {
             send(getCloneRepoCommand(ghToken, repo));
+            additionalInfo = `Repository ${repo} has been cloned to /workspace. Please check the /workspace for files.`;
             dispatch(clearSelectedRepository()); // reset selected repository; maybe better to move this to '/'?
+          }
+          // if there's an uploaded project zip, add it to the chat
+          else if (importedProjectZip) {
+            additionalInfo = `Files have been uploaded. Please check the /workspace for files.`;
           }
 
           if (q) {
-            sendInitialQuery(q, files);
+            if (additionalInfo) {
+              sendInitialQuery(`${q}\n\n[${additionalInfo}]`, files);
+            } else {
+              sendInitialQuery(q, files);
+            }
             dispatch(clearFiles()); // reset selected files
           }
         }
@@ -321,7 +336,7 @@ function App() {
            * that it loads only in the client-side. */}
           <Container className="h-1/3 overflow-scroll" label="Terminal">
             <React.Suspense fallback={<div className="h-full" />}>
-              <Terminal />
+              <Terminal secrets={secrets} />
             </React.Suspense>
           </Container>
         </div>

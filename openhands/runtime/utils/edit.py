@@ -111,14 +111,14 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             model_name='draft_editor:' + llm_config.draft_editor.model
         )
         if llm_config.draft_editor.caching_prompt:
-            logger.info(
+            logger.debug(
                 'It is not recommended to cache draft editor LLM prompts as it may incur high costs for the same prompt. '
                 'Automatically setting caching_prompt=false.'
             )
             llm_config.draft_editor.caching_prompt = False
 
         self.draft_editor_llm = LLM(llm_config.draft_editor, metrics=llm_metrics)
-        logger.info(
+        logger.debug(
             f'[Draft edit functionality] enabled with LLM: {self.draft_editor_llm}'
         )
 
