@@ -35,10 +35,10 @@ After downloading and unzipping the full benchmark under this repository, the di
 ## Run Inference on ScienceAgentBench
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh [model_config] [git-version] [use_knowledge] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
+./evaluation/scienceagentbench/scripts/run_infer.sh [model_config] [git-version] [use_knowledge] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
 
 # Example
-./evaluation/swe_bench/scripts/run_infer.sh llm.eval_gpt4o 0.9.3
+./evaluation/scienceagentbench/scripts/run_infer.sh llm.eval_gpt4o 0.9.3
 ```
 
 where `model_config` is mandatory, and the rest are optional.
