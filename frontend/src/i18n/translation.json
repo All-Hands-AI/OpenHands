@@ -1441,6 +1441,12 @@
     "fr": "Privé",
     "tr": "Özel"
   },
+  "ERROR_MESSAGE$SHOW_DETAILS": {
+    "en": "Show details"
+  },
+  "ERROR_MESSAGE$HIDE_DETAILS": {
+    "en": "Hide details"
+  },
   "STATUS$STARTING_RUNTIME": {
     "en": "Starting Runtime...",
     "zh-CN": "启动运行时...",

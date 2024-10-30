@@ -109,7 +109,7 @@ class Runtime(FileEditRuntimeMixin):
         """Sends a status message if the callback function was provided."""
         if self.status_callback:
             msg = STATUS_MESSAGES.get(message_id, '')
-            self.status_callback('status', message_id, msg)
+            self.status_callback('info', message_id, msg)
 
     # ====================================================================
 
