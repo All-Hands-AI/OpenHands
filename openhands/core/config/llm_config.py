@@ -45,7 +45,7 @@ class LLMConfig:
         supports_function_calling: Whether the model supports function calling.
     """
 
-    model: str = 'gpt-4o'
+    model: str = 'claude-3-5-sonnet-20241022'
     api_key: str | None = None
     base_url: str | None = None
     api_version: str | None = None
