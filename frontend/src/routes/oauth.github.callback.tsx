@@ -11,11 +11,9 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   const code = url.searchParams.get("code");
 
   if (code) {
-    // request to the server to exchange the code for a token
     const { access_token: accessToken } =
       await OpenHands.getGitHubAccessToken(code);
 
-    // Authenticate with the token to set the cookie
     const authResponse = await OpenHands.authenticate(accessToken);
     if (!authResponse.ok) {
       return json(
@@ -24,7 +22,6 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
       );
     }
 
-    // Store token in local storage for future API calls
     localStorage.setItem("ghToken", accessToken);
     return redirect("/");
   }

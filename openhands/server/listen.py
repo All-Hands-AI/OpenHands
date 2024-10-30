@@ -302,7 +302,6 @@ async def websocket_endpoint(websocket: WebSocket):
         {"action": "finish", "args": {}}
         ```
     """
-    # Check for auth cookie first
     cookies = dict(
         cookie.split('=')
         for cookie in websocket.headers.get('cookie', '').split('; ')
@@ -849,7 +848,6 @@ async def authenticate(github_token: GitHubToken):
         status_code=status.HTTP_200_OK, content={'message': 'User authenticated'}
     )
 
-    # Set a secure cookie with the GitHub token
     response.set_cookie(
         key='openhands_auth',
         value=github_token.token,
