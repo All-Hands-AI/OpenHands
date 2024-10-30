@@ -52,7 +52,6 @@ class Session:
         self.loop = asyncio.get_event_loop()
 
     async def close(self):
-        print('CLOSE SESSION')
         self.is_alive = False
         await self.agent_session.close()
 
@@ -68,11 +67,9 @@ class Session:
                     continue
                 await self.dispatch(data)
         except WebSocketDisconnect:
-            print('WebSocketDisconnect, closing!')
             await self.close()
             logger.debug('WebSocket disconnected, sid: %s', self.sid)
         except RuntimeError as e:
-            print('RuntimeError, closing!', e)
             await self.close()
             logger.exception('Error in loop_recv: %s', e)
 

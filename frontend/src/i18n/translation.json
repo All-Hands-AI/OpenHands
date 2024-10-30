@@ -1510,5 +1510,11 @@
     "ar": "في انتظار جاهزية العميل...",
     "fr": "En attente que le client soit prêt...",
     "tr": "İstemcinin hazır olması bekleniyor..."
+  },
+  "STATUS$ERROR_LLM_AUTHENTICATION": {
+    "en": "Error authenticating with the LLM provider. Please check your API key"
+  },
+  "STATUS$ERROR_RUNTIME_DISCONNECTED": {
+    "en": "There was an error while connecting to the runtime. Please refresh the page."
   }
 }

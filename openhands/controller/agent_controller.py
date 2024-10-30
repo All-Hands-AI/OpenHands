@@ -153,7 +153,7 @@ class AgentController:
         if self._status_callback is not None:
             err_id = ''
             if isinstance(e, litellm.AuthenticationError):
-                err_id = 'llm_authentication_error'
+                err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
             self._status_callback('error', err_id, str(e))
 
     async def start_step_loop(self):
