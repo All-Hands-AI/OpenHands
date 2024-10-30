@@ -12,7 +12,7 @@ Here's an example configuration file you can use to define and use multiple LLMs
 ```toml
 [llm]
 # IMPORTANT: add your API key here, and set the model to the one you want to evaluate
-model = "claude-3-5-sonnet-20240620"
+model = "claude-3-5-sonnet-20241022"
 api_key = "sk-XXX"
 
 [llm.eval_gpt4_1106_preview_llm]

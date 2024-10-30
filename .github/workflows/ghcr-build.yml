@@ -1,5 +1,5 @@
 # Workflow that builds, tests and then pushes the OpenHands and runtime docker images to the ghcr.io repository
-name: Build, Test and Publish RT Image
+name: Docker
 
 # Always run on "main"
 # Always run on tags
