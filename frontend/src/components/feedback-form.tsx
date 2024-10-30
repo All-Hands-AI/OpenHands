@@ -1,7 +1,7 @@
 import React from "react";
-import ModalButton from "./buttons/ModalButton";
-import { request } from '#/services/api';
 import hotToast, { toast } from "react-hot-toast";
+import ModalButton from "./buttons/ModalButton";
+import { request } from "#/services/api";
 
 const FEEDBACK_VERSION = "1.0";
 const VIEWER_PAGE = "https://www.all-hands.dev/share";
@@ -11,10 +11,7 @@ interface FeedbackFormProps {
   polarity: "positive" | "negative";
 }
 
-export function FeedbackForm({
-  onClose,
-  polarity,
-}: FeedbackFormProps) {
+export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const copiedToClipboardToast = () => {
@@ -23,7 +20,6 @@ export function FeedbackForm({
       position: "bottom-right",
     });
   };
-
 
   const onPressToast = (password: string) => {
     navigator.clipboard.writeText(password);
@@ -56,7 +52,6 @@ export function FeedbackForm({
     );
   };
 
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -76,11 +71,11 @@ export function FeedbackForm({
       permissions,
     };
 
-    const response = await request('/api/submit-feedback', {
-      method: 'POST',
+    const response = await request("/api/submit-feedback", {
+      method: "POST",
       body: JSON.stringify(feedback),
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
     const { message, feedback_id, password } = response.body;

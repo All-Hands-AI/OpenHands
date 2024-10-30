@@ -25,10 +25,7 @@ export function FeedbackModal({
       <ModalBody>
         <BaseModalTitle title="Feedback" />
         <BaseModalDescription description="To help us improve, we collect feedback from your interactions to improve our prompts. By submitting this form, you consent to us collecting this data." />
-        <FeedbackForm
-          onClose={onClose}
-          polarity={polarity}
-        />
+        <FeedbackForm onClose={onClose} polarity={polarity} />
       </ModalBody>
     </ModalBackdrop>
   );
