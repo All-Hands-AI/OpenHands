@@ -259,4 +259,3 @@ def test_prompt_caching_headers(codeact_agent, mock_event_stream):
     # Assert
     assert isinstance(result, MessageAction)
     assert result.content == 'Hello! How can I assist you today?'
-
