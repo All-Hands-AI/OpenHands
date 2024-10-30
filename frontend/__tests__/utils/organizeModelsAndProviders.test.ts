@@ -4,7 +4,7 @@ import { organizeModelsAndProviders } from "../../src/utils/organizeModelsAndPro
 test("organizeModelsAndProviders", () => {
   const models = [
     "azure/ada",
-    "azure/gpt-35-turbo",
+    "azure/gpt-35-turbo", 
     "azure/gpt-3-turbo",
     "azure/standard/1024-x-1024/dall-e-2",
     "vertex_ai_beta/chat-bison",
@@ -15,7 +15,7 @@ test("organizeModelsAndProviders", () => {
     "gpt-4o",
     "together-ai-21.1b-41b",
     "gpt-4o-mini",
-    "claude-3-5-sonnet-20240620",
+    "claude-3-5-sonnet-20241022",
     "claude-3-haiku-20240307",
     "claude-2",
     "claude-2.1",
@@ -51,7 +51,7 @@ test("organizeModelsAndProviders", () => {
     anthropic: {
       separator: "/",
       models: [
-        "claude-3-5-sonnet-20240620",
+        "claude-3-5-sonnet-20241022",
         "claude-3-haiku-20240307",
         "claude-2",
         "claude-2.1",
@@ -63,3 +63,4 @@ test("organizeModelsAndProviders", () => {
     },
   });
 });
+
