@@ -5,9 +5,9 @@ import re
 import tempfile
 import uuid
 import warnings
-import httpx
 from contextlib import asynccontextmanager
 
+import httpx
 import requests
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
@@ -341,7 +341,11 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     """
     # Check for auth cookie first
-    cookies = dict(cookie.split('=') for cookie in websocket.headers.get('cookie', '').split('; ') if cookie)
+    cookies = dict(
+        cookie.split('=')
+        for cookie in websocket.headers.get('cookie', '').split('; ')
+        if cookie
+    )
     auth_cookie = cookies.get('openhands_auth')
     if not auth_cookie:
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
@@ -887,10 +891,10 @@ class GitHubToken(BaseModel):
 
 async def get_github_user(token: str) -> tuple[str | None, str | None]:
     """Get GitHub user info from token.
-    
+
     Args:
         token: GitHub access token
-        
+
     Returns:
         Tuple of (login, error_message)
         If successful, error_message is None
@@ -899,7 +903,7 @@ async def get_github_user(token: str) -> tuple[str | None, str | None]:
     headers = {
         'Accept': 'application/vnd.github+json',
         'Authorization': f'Bearer {token}',
-        'X-GitHub-Api-Version': '2022-11-28'
+        'X-GitHub-Api-Version': '2022-11-28',
     }
     try:
         async with httpx.AsyncClient() as client:
@@ -908,7 +912,10 @@ async def get_github_user(token: str) -> tuple[str | None, str | None]:
                 user_data = response.json()
                 return user_data.get('login'), None
             else:
-                return None, f'GitHub API error: {response.status_code} - {response.text}'
+                return (
+                    None,
+                    f'GitHub API error: {response.status_code} - {response.text}',
+                )
     except Exception as e:
         return None, f'Error connecting to GitHub: {str(e)}'
 
@@ -923,8 +930,7 @@ async def authenticate(github_token: GitHubToken):
         login, error = await get_github_user(github_token.token)
         if error:
             return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'error': error}
+                status_code=status.HTTP_401_UNAUTHORIZED, content={'error': error}
             )
 
         # Check against allow list
@@ -936,26 +942,24 @@ async def authenticate(github_token: GitHubToken):
 
         response = JSONResponse(
             status_code=status.HTTP_200_OK,
-            content={'message': 'User authenticated', 'login': login}
+            content={'message': 'User authenticated', 'login': login},
         )
     else:
         # No allow list, just accept the token without validation
         response = JSONResponse(
-            status_code=status.HTTP_200_OK,
-            content={'message': 'User authenticated'}
+            status_code=status.HTTP_200_OK, content={'message': 'User authenticated'}
         )
 
     # Set a secure cookie with the GitHub token
     response.set_cookie(
-        key="openhands_auth",
+        key='openhands_auth',
         value=github_token.token,
         httponly=True,
         secure=True,
-        samesite="strict",
-        max_age=3600  # 1 hour expiry
+        samesite='strict',
+        max_age=3600,  # 1 hour expiry
     )
     return response
-    )
 
 
 class SPAStaticFiles(StaticFiles):
