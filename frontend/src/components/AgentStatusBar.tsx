@@ -1,11 +1,11 @@
 import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+import toast from "react-hot-toast";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import beep from "#/utils/beep";
-import toast from "react-hot-toast";
 
 enum IndicatorColor {
   BLUE = "bg-blue-500",
@@ -95,7 +95,7 @@ function AgentStatusBar() {
   const [statusMessage, setStatusMessage] = React.useState<string>("");
 
   React.useEffect(() => {
-    let message = curStatusMessage.message || '';
+    let message = curStatusMessage.message || "";
     if (curStatusMessage?.id) {
       const id = curStatusMessage.id.trim();
       if (i18n.exists(id)) {
@@ -114,7 +114,7 @@ function AgentStatusBar() {
   }, [curStatusMessage.id]);
 
   React.useEffect(() => {
-      setStatusMessage(AgentStatusMap[curAgentState].message);
+    setStatusMessage(AgentStatusMap[curAgentState].message);
   }, [curAgentState]);
 
   return (
