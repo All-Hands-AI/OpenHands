@@ -93,10 +93,7 @@ class CodeActAgent(Agent):
             if config.micro_agent_name
             else None
         )
-        if (
-            self.config.function_calling
-            and not self.llm.config.supports_function_calling
-        ):
+        if self.config.function_calling and not self.llm.is_function_calling_active():
             logger.warning(
                 f'Function calling not supported for model {self.llm.config.model}. '
                 'Disabling function calling.'
