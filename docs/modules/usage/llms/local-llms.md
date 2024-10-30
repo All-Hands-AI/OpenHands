@@ -35,32 +35,15 @@ Use the instructions [here](../getting-started) to start OpenHands using Docker.
 But when running `docker run`, you'll need to add a few more arguments:
 
 ```bash
---add-host host.docker.internal:host-gateway \
--e LLM_OLLAMA_BASE_URL="http://host.docker.internal:11434" \
-```
-
-LLM_OLLAMA_BASE_URL is optional. If you set it, it will be used to show the available installed models in the UI.
-
-Example:
-
-```bash
-# The directory you want OpenHands to modify. MUST be an absolute path!
-export WORKSPACE_BASE=$(pwd)/workspace
-
-docker run \
-    -it \
-    --pull=always \
+docker run # ...
     --add-host host.docker.internal:host-gateway \
-    -e SANDBOX_USER_ID=$(id -u) \
     -e LLM_OLLAMA_BASE_URL="http://host.docker.internal:11434" \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
-    -v $WORKSPACE_BASE:/opt/workspace_base \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -p 3000:3000 \
-    ghcr.io/all-hands-ai/openhands:main
+    # ...
 ```
 
-You should now be able to connect to `http://localhost:3000/`
+LLM_OLLAMA_BASE_URL is optional. If you set it, it will be used to show
+the available installed models in the UI.
+
 
 ### Configure the Web Application
 
@@ -176,18 +159,11 @@ CUSTOM_LLM_PROVIDER="openai"
 ### Docker
 
 ```bash
-docker run \
-    -it \
-    --pull=always \
-    -e SANDBOX_USER_ID=$(id -u) \
+docker run # ...
     -e LLM_MODEL="openai/lmstudio" \
     -e LLM_BASE_URL="http://host.docker.internal:1234/v1" \
     -e CUSTOM_LLM_PROVIDER="openai" \
-    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
-    -v $WORKSPACE_BASE:/opt/workspace_base \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    -p 3000:3000 \
-    ghcr.io/all-hands-ai/openhands:main
+    # ...
 ```
 
 You should now be able to connect to `http://localhost:3000/`

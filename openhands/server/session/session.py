@@ -66,7 +66,7 @@ class Session:
                 await self.dispatch(data)
         except WebSocketDisconnect:
             await self.close()
-            logger.info('WebSocket disconnected, sid: %s', self.sid)
+            logger.debug('WebSocket disconnected, sid: %s', self.sid)
         except RuntimeError as e:
             await self.close()
             logger.exception('Error in loop_recv: %s', e)

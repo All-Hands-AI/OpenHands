@@ -49,8 +49,7 @@ class LogBuffer:
     for appending, retrieving, and clearing logs.
     """
 
-    def __init__(self, container: docker.models.containers.Container):
-        self.client_ready = False
+    def __init__(self, container: docker.models.containers.Container, logFn: Callable):
         self.init_msg = 'Runtime client initialized.'
 
         self.buffer: list[str] = []
@@ -60,6 +59,7 @@ class LogBuffer:
         self.log_stream_thread = threading.Thread(target=self.stream_logs)
         self.log_stream_thread.daemon = True
         self.log_stream_thread.start()
+        self.log = logFn
 
     def append(self, log_line: str):
         with self.lock:
@@ -84,15 +84,14 @@ class LogBuffer:
                 if log_line:
                     decoded_line = log_line.decode('utf-8').rstrip()
                     self.append(decoded_line)
-                    if self.init_msg in decoded_line:
-                        self.client_ready = True
         except Exception as e:
-            logger.error(f'Error streaming docker logs: {e}')
+            self.log('error', f'Error streaming docker logs: {e}')
 
     def __del__(self):
         if self.log_stream_thread.is_alive():
-            logger.warn(
-                "LogBuffer was not properly closed. Use 'log_buffer.close()' for clean shutdown."
+            self.log(
+                'warn',
+                "LogBuffer was not properly closed. Use 'log_buffer.close()' for clean shutdown.",
             )
             self.close(timeout=5)
 
@@ -167,8 +166,9 @@ class EventStreamRuntime(Runtime):
         self.log_buffer: LogBuffer | None = None
 
         if self.config.sandbox.runtime_extra_deps:
-            logger.debug(
-                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
+            self.log(
+                'debug',
+                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
             )
 
         self.skip_container_logs = (
@@ -193,7 +193,6 @@ class EventStreamRuntime(Runtime):
                     raise ValueError(
                         'Neither runtime container image nor base container image is set'
                     )
-                logger.info('Preparing container, this might take a few minutes...')
                 self.send_status_message('STATUS$STARTING_CONTAINER')
                 self.runtime_container_image = build_runtime_image(
                     self.base_container_image,
@@ -203,24 +202,28 @@ class EventStreamRuntime(Runtime):
                     force_rebuild=self.config.sandbox.force_rebuild_runtime,
                 )
 
-            self._init_container(
-                sandbox_workspace_dir=self.config.workspace_mount_path_in_sandbox,  # e.g. /workspace
-                mount_dir=self.config.workspace_mount_path,  # e.g. /opt/openhands/_test_workspace
-                plugins=self.plugins,
+            self.log(
+                'info', f'Starting runtime with image: {self.runtime_container_image}'
             )
+            self._init_container()
+            self.log('info', f'Container started: {self.container_name}')
 
         else:
             self._attach_to_container()
 
-        logger.info('Waiting for client to become ready...')
+        if not self.attach_to_existing:
+            self.log('info', f'Waiting for client to become ready at {self.api_url}...')
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
         self._wait_until_alive()
+        if not self.attach_to_existing:
+            self.log('info', 'Runtime is ready.')
 
         if not self.attach_to_existing:
             self.setup_initial_env()
 
-        logger.info(
-            f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}'
+        self.log(
+            'debug',
+            f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}',
         )
         self.send_status_message(' ')
 
@@ -231,7 +234,7 @@ class EventStreamRuntime(Runtime):
             return docker.from_env()
         except Exception as ex:
             logger.error(
-                'Launch docker client failed. Please make sure you have installed docker and started docker desktop/daemon.'
+                'Launch docker client failed. Please make sure you have installed docker and started docker desktop/daemon.',
             )
             raise ex
 
@@ -239,19 +242,14 @@ class EventStreamRuntime(Runtime):
         stop=tenacity.stop_after_attempt(5) | stop_if_should_exit(),
         wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
     )
-    def _init_container(
-        self,
-        sandbox_workspace_dir: str,
-        mount_dir: str | None = None,
-        plugins: list[PluginRequirement] | None = None,
-    ):
+    def _init_container(self):
         try:
-            logger.info('Preparing to start container...')
+            self.log('debug', 'Preparing to start container...')
             self.send_status_message('STATUS$PREPARING_CONTAINER')
             plugin_arg = ''
-            if plugins is not None and len(plugins) > 0:
+            if self.plugins is not None and len(self.plugins) > 0:
                 plugin_arg = (
-                    f'--plugins {" ".join([plugin.name for plugin in plugins])} '
+                    f'--plugins {" ".join([plugin.name for plugin in self.plugins])} '
                 )
 
             self._host_port = self._find_available_port()
@@ -273,8 +271,9 @@ class EventStreamRuntime(Runtime):
             )
 
             if use_host_network:
-                logger.warn(
-                    'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop'
+                self.log(
+                    'warn',
+                    'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
                 )
 
             # Combine environment variables
@@ -285,17 +284,28 @@ class EventStreamRuntime(Runtime):
             if self.config.debug or DEBUG:
                 environment['DEBUG'] = 'true'
 
-            logger.debug(f'Workspace Base: {self.config.workspace_base}')
-            if mount_dir is not None and sandbox_workspace_dir is not None:
+            self.log('debug', f'Workspace Base: {self.config.workspace_base}')
+            if (
+                self.config.workspace_mount_path is not None
+                and self.config.workspace_mount_path_in_sandbox is not None
+            ):
                 # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
-                volumes = {mount_dir: {'bind': sandbox_workspace_dir, 'mode': 'rw'}}
-                logger.debug(f'Mount dir: {mount_dir}')
+                volumes = {
+                    self.config.workspace_mount_path: {
+                        'bind': self.config.workspace_mount_path_in_sandbox,
+                        'mode': 'rw',
+                    }
+                }
+                logger.debug(f'Mount dir: {self.config.workspace_mount_path}')
             else:
-                logger.warn(
-                    'Warning: Mount dir is not set, will not mount the workspace directory to the container!\n'
+                logger.debug(
+                    'Mount dir is not set, will not mount the workspace directory to the container'
                 )
                 volumes = None
-            logger.debug(f'Sandbox workspace: {sandbox_workspace_dir}')
+            self.log(
+                'debug',
+                f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}'
+            )
 
             if self.config.sandbox.browsergym_eval_env is not None:
                 browsergym_arg = (
@@ -310,7 +320,7 @@ class EventStreamRuntime(Runtime):
                     f'/openhands/micromamba/bin/micromamba run -n openhands '
                     f'poetry run '
                     f'python -u -m openhands.runtime.action_execution_server {self._container_port} '
-                    f'--working-dir "{sandbox_workspace_dir}" '
+                    f'--working-dir "{self.config.workspace_mount_path_in_sandbox}" '
                     f'{plugin_arg}'
                     f'--username {"openhands" if self.config.run_as_openhands else "root"} '
                     f'--user-id {self.config.sandbox.user_id} '
@@ -324,20 +334,21 @@ class EventStreamRuntime(Runtime):
                 environment=environment,
                 volumes=volumes,
             )
-            self.log_buffer = LogBuffer(self.container)
-            logger.info(f'Container started. Server url: {self.api_url}')
+            self.log_buffer = LogBuffer(self.container, self.log)
+            self.log('debug', f'Container started. Server url: {self.api_url}')
             self.send_status_message('STATUS$CONTAINER_STARTED')
         except Exception as e:
-            logger.error(
-                f'Error: Instance {self.container_name} FAILED to start container!\n'
+            self.log(
+                'error',
+                f'Error: Instance {self.container_name} FAILED to start container!\n',
             )
-            logger.exception(e)
+            self.log('error', str(e))
             self.close()
             raise e
 
     def _attach_to_container(self):
         container = self.docker_client.containers.get(self.container_name)
-        self.log_buffer = LogBuffer(container)
+        self.log_buffer = LogBuffer(container, self.log)
         self.container = container
         self._container_port = 0
         for port in container.attrs['NetworkSettings']['Ports']:
@@ -345,12 +356,13 @@ class EventStreamRuntime(Runtime):
             break
         self._host_port = self._container_port
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
-        logger.info(
-            f'attached to container: {self.container_name} {self._container_port} {self.api_url}'
+        self.log(
+            'debug',
+            f'attached to container: {self.container_name} {self._container_port} {self.api_url}',
         )
 
     def _refresh_logs(self):
-        logger.debug('Getting container logs...')
+        self.log('debug', 'Getting container logs...')
 
         assert (
             self.log_buffer is not None
@@ -359,14 +371,15 @@ class EventStreamRuntime(Runtime):
         logs = self.log_buffer.get_and_clear()
         if logs:
             formatted_logs = '\n'.join([f'    |{log}' for log in logs])
-            logger.info(
+            self.log(
+                'debug',
                 '\n'
                 + '-' * 35
                 + 'Container logs:'
                 + '-' * 35
                 + f'\n{formatted_logs}'
                 + '\n'
-                + '-' * 80
+                + '-' * 80,
             )
 
     @tenacity.retry(
@@ -376,7 +389,7 @@ class EventStreamRuntime(Runtime):
     )
     def _wait_until_alive(self):
         self._refresh_logs()
-        if not (self.log_buffer and self.log_buffer.client_ready):
+        if not self.log_buffer:
             raise RuntimeError('Runtime client is not ready.')
 
         response = send_request_with_retry(
@@ -390,7 +403,7 @@ class EventStreamRuntime(Runtime):
             return
         else:
             msg = f'Action execution API is not alive. Response: {response}'
-            logger.error(msg)
+            self.log('error', msg)
             raise RuntimeError(msg)
 
     def close(self, rm_all_containers: bool = True):
@@ -422,8 +435,9 @@ class EventStreamRuntime(Runtime):
                     elif container.name == self.container_name:
                         if not self.skip_container_logs:
                             logs = container.logs(tail=1000).decode('utf-8')
-                            logger.debug(
-                                f'==== Container logs on close ====\n{logs}\n==== End of container logs ===='
+                            self.log(
+                                'debug',
+                                f'==== Container logs on close ====\n{logs}\n==== End of container logs ====',
                             )
                         container.remove(force=True)
                 except docker.errors.APIError:
@@ -482,20 +496,20 @@ class EventStreamRuntime(Runtime):
                     obs = observation_from_dict(output)
                     obs._cause = action.id  # type: ignore[attr-defined]
                 else:
-                    logger.debug(f'action: {action}')
-                    logger.debug(f'response: {response}')
+                    self.log('debug', f'action: {action}')
+                    self.log('debug', f'response: {response}')
                     error_message = response.text
-                    logger.error(f'Error from server: {error_message}')
+                    self.log('error', f'Error from server: {error_message}')
                     obs = FatalErrorObservation(
                         f'Action execution failed: {error_message}'
                     )
             except requests.Timeout:
-                logger.error('No response received within the timeout period.')
+                self.log('error', 'No response received within the timeout period.')
                 obs = FatalErrorObservation(
                     f'Action execution timed out after {action.timeout} seconds.'
                 )
             except Exception as e:
-                logger.error(f'Error during action execution: {e}')
+                self.log('error', f'Error during action execution: {e}')
                 obs = FatalErrorObservation(f'Action execution failed: {str(e)}')
             self._refresh_logs()
             return obs
@@ -574,7 +588,9 @@ class EventStreamRuntime(Runtime):
         finally:
             if recursive:
                 os.unlink(temp_zip_path)
-            logger.info(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
+            self.log(
+                'debug', f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}'
+            )
             self._refresh_logs()
 
     def list_files(self, path: str | None = None) -> list[str]:

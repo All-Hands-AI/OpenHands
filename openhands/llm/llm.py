@@ -1,10 +1,11 @@
 import copy
-import json
 import os
 import time
 import warnings
 from functools import partial
 from typing import Any
+
+import requests
 
 from openhands.core.config import LLMConfig
 
@@ -46,10 +47,18 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
 # cache prompt supporting models
 # remove this when we gemini and deepseek are supported
 CACHE_PROMPT_SUPPORTED_MODELS = [
-    'claude-3-5-sonnet-20240620',
     'claude-3-5-sonnet-20241022',
+    'claude-3-5-sonnet-20240620',
     'claude-3-haiku-20240307',
     'claude-3-opus-20240229',
+]
+
+# function calling supporting models
+FUNCTION_CALLING_SUPPORTED_MODELS = [
+    'claude-3-5-sonnet-20240620',
+    'claude-3-5-sonnet-20241022',
+    'gpt-4o',
+    'gpt-4o-mini',
 ]
 
 
@@ -81,16 +90,52 @@ class LLM(RetryMixin, DebugMixin):
 
         # litellm actually uses base Exception here for unknown model
         self.model_info: ModelInfo | None = None
-        try:
-            if self.config.model.startswith('openrouter'):
-                self.model_info = litellm.get_model_info(self.config.model)
-            else:
+
+        if self.config.model.startswith('openrouter'):
+            self.model_info = litellm.get_model_info(self.config.model)
+        elif self.config.model.startswith('litellm_proxy/'):
+            # IF we are using LiteLLM proxy, get model info from LiteLLM proxy
+            # GET {base_url}/v1/model/info with litellm_model_id as path param
+            response = requests.get(
+                f'{self.config.base_url}/v1/model/info',
+                headers={'Authorization': f'Bearer {self.config.api_key}'},
+            )
+            resp_json = response.json()
+            if 'data' not in resp_json:
+                logger.error(
+                    f'Error getting model info from LiteLLM proxy: {resp_json}'
+                )
+            all_model_info = resp_json.get('data', [])
+            current_model_info = next(
+                (
+                    info
+                    for info in all_model_info
+                    if info['model_name']
+                    == self.config.model.removeprefix('litellm_proxy/')
+                ),
+                None,
+            )
+            if current_model_info:
+                self.model_info = current_model_info['model_info']
+
+        # Last two attempts to get model info from NAME
+        if not self.model_info:
+            try:
                 self.model_info = litellm.get_model_info(
                     self.config.model.split(':')[0]
                 )
-        # noinspection PyBroadException
-        except Exception as e:
-            logger.warning(f'Could not get model info for {config.model}:\n{e}')
+            # noinspection PyBroadException
+            except Exception:
+                pass
+        if not self.model_info:
+            try:
+                self.model_info = litellm.get_model_info(
+                    self.config.model.split('/')[-1]
+                )
+            # noinspection PyBroadException
+            except Exception:
+                pass
+        logger.debug(f'Model info: {self.model_info}')
 
         if self.config.log_completions:
             if self.config.log_completions_folder is None:
@@ -144,6 +189,8 @@ class LLM(RetryMixin, DebugMixin):
             logger.debug('LLM: model has vision enabled')
         if self.is_caching_prompt_active():
             logger.debug('LLM: caching prompt enabled')
+        if self.is_function_calling_active():
+            logger.debug('LLM: model supports function calling')
 
         completion_unwrapped = self._completion
 
@@ -195,26 +242,32 @@ class LLM(RetryMixin, DebugMixin):
             try:
                 # we don't support streaming here, thus we get a ModelResponse
                 resp: ModelResponse = completion_unwrapped(*args, **kwargs)
-
                 # log for evals or other scripts that need the raw completion
                 if self.config.log_completions:
                     assert self.config.log_completions_folder is not None
                     log_file = os.path.join(
                         self.config.log_completions_folder,
                         # use the metric model name (for draft editor)
-                        f'{self.metrics.model_name}-{time.time()}.json',
+                        f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
                     )
+                    from openhands.core.utils import json
+
                     with open(log_file, 'w') as f:
-                        json.dump(
-                            {
-                                'messages': messages,
-                                'response': resp,
-                                'args': args,
-                                'kwargs': kwargs,
-                                'timestamp': time.time(),
-                                'cost': self._completion_cost(resp),
-                            },
-                            f,
+                        f.write(
+                            json.dumps(
+                                {
+                                    'messages': messages,
+                                    'response': resp,
+                                    'args': args,
+                                    'kwargs': {
+                                        k: v
+                                        for k, v in kwargs.items()
+                                        if k != 'messages'
+                                    },
+                                    'timestamp': time.time(),
+                                    'cost': self._completion_cost(resp),
+                                },
+                            )
                         )
 
                 message_back: str = resp['choices'][0]['message']['content']
@@ -277,6 +330,18 @@ class LLM(RetryMixin, DebugMixin):
             )
         )
 
+    def is_function_calling_active(self) -> bool:
+        # Check if model name is in supported list before checking model_info
+        model_name_supported = (
+            self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
+            or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
+            or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
+        )
+        return model_name_supported and (
+            self.model_info is not None
+            and self.model_info.get('supports_function_calling', False)
+        )
+
     def _post_completion(self, response: ModelResponse) -> None:
         """Post-process the completion response.
 
@@ -333,7 +398,7 @@ class LLM(RetryMixin, DebugMixin):
 
         # log the stats
         if stats:
-            logger.info(stats)
+            logger.debug(stats)
 
     def get_token_count(self, messages):
         """Get the number of tokens in a list of messages.
@@ -387,19 +452,21 @@ class LLM(RetryMixin, DebugMixin):
                 input_cost_per_token=self.config.input_cost_per_token,
                 output_cost_per_token=self.config.output_cost_per_token,
             )
-            logger.info(f'Using custom cost per token: {cost_per_token}')
+            logger.debug(f'Using custom cost per token: {cost_per_token}')
             extra_kwargs['custom_cost_per_token'] = cost_per_token
 
-        if not self._is_local():
-            try:
+        try:
+            # try directly get response_cost from response
+            cost = getattr(response, '_hidden_params', {}).get('response_cost', None)
+            if cost is None:
                 cost = litellm_completion_cost(
                     completion_response=response, **extra_kwargs
                 )
-                self.metrics.add_cost(cost)
-                return cost
-            except Exception:
-                self.cost_metric_supported = False
-                logger.warning('Cost calculation not supported for this model.')
+            self.metrics.add_cost(cost)
+            return cost
+        except Exception:
+            self.cost_metric_supported = False
+            logger.debug('Cost calculation not supported for this model.')
         return 0.0
 
     def __str__(self):

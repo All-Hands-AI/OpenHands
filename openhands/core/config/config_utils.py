@@ -1,13 +1,8 @@
-from enum import Enum
 from types import UnionType
 from typing import get_args, get_origin
 
 OH_DEFAULT_AGENT = 'CodeActAgent'
 OH_MAX_ITERATIONS = 100
-
-
-class UndefinedString(str, Enum):
-    UNDEFINED = 'UNDEFINED'
 
 
 def get_field_info(f):
