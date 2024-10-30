@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { FeedbackForm polarity="positive" } from "#/components/feedback-form";
+import { FeedbackForm } from "#/components/feedback-form";
 
 describe("FeedbackForm", () => {
   const user = userEvent.setup();
