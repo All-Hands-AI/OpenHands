@@ -396,7 +396,6 @@ class EventStreamRuntime(Runtime):
             self.session,
             'GET',
             f'{self.api_url}/alive',
-            retry_exceptions=[ConnectionRefusedError],
             timeout=5,
         )
         if response.status_code == 200:
