@@ -1,7 +1,7 @@
 import asyncio
 import copy
 import traceback
-from typing import Callable, Optional, Type
+from typing import Callable, Type
 
 import litellm
 
