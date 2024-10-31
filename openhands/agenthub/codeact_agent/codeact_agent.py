@@ -144,10 +144,10 @@ class CodeActAgent(Agent):
 
         Args:
             action (Action): The action to convert. Can be one of:
-                - AgentDelegateAction: For delegating tasks to other agents
                 - CmdRunAction: For executing bash commands
                 - IPythonRunCellAction: For running IPython code
                 - FileEditAction: For editing files
+                - BrowseInteractiveAction: For browsing the web
                 - AgentFinishAction: For ending the interaction
                 - MessageAction: For sending messages
             pending_tool_call_action_messages (dict[str, Message]): Dictionary mapping response IDs
