@@ -277,7 +277,10 @@ class CodeActAgent(Agent):
             text = f'[Current URL: {obs.url}]\n'
             text += f'[Focused element bid: {obs.focused_element_bid}]\n\n'
             try:
-                cur_axtree_txt = obs.get_axtree_str()
+                # We do not filter visible only here because we want to show the full content
+                # of the web page to the agent for simplicity.
+                # FIXME: handle the case when the web page is too large
+                cur_axtree_txt = obs.get_axtree_str(filter_visible_only=False)
                 text += (
                     f'============== BEGIN accessibility tree ==============\n'
                     f'{cur_axtree_txt}\n'

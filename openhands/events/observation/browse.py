@@ -40,15 +40,15 @@ class BrowserOutputObservation(Observation):
             f'Last browser action: {self.last_browser_action}\n'
             f'Last browser action error: {self.last_browser_action_error}\n'
             f'Focused element bid: {self.focused_element_bid}\n'
-            f'AX tree: {self.get_axtree_str()}\n'
+            f'AX tree: {self.get_axtree_str(filter_visible_only=True)}\n'
         )
 
-    def get_axtree_str(self) -> str:
+    def get_axtree_str(self, filter_visible_only: bool = False) -> str:
         cur_axtree_txt = flatten_axtree_to_str(
             self.axtree_object,
             extra_properties=self.extra_element_properties,
             with_clickable=True,
-            filter_visible_only=True,
+            filter_visible_only=filter_visible_only,
         )
         self._axtree_str = cur_axtree_txt
         return cur_axtree_txt
