@@ -388,18 +388,12 @@ class EventStreamRuntime(Runtime):
         if not self.log_buffer:
             raise RuntimeError('Runtime client is not ready.')
 
-        response = send_request(
+        send_request(
             self.session,
             'GET',
             f'{self.api_url}/alive',
             timeout=5,
         )
-        if response.status_code == 200:
-            return
-        else:
-            msg = f'Action execution API is not alive. Response: {response}'
-            self.log('error', msg)
-            raise RuntimeError(msg)
 
     def close(self, rm_all_containers: bool = True):
         """Closes the EventStreamRuntime and associated objects
@@ -488,18 +482,9 @@ class EventStreamRuntime(Runtime):
                     json={'action': event_to_dict(action)},
                     timeout=action.timeout,
                 )
-                if response.status_code == 200:
-                    output = response.json()
-                    obs = observation_from_dict(output)
-                    obs._cause = action.id  # type: ignore[attr-defined]
-                else:
-                    self.log('debug', f'action: {action}')
-                    self.log('debug', f'response: {response}')
-                    error_message = response.text
-                    self.log('error', f'Error from server: {error_message}')
-                    obs = ErrorObservation(
-                        f'Action execution failed: {error_message}',
-                    )
+                output = response.json()
+                obs = observation_from_dict(output)
+                obs._cause = action.id  # type: ignore[attr-defined]
             except requests.Timeout:
                 self.log('error', 'No response received within the timeout period.')
                 obs = ErrorObservation(
@@ -561,7 +546,7 @@ class EventStreamRuntime(Runtime):
 
             params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
 
-            response = send_request(
+            send_request(
                 self.session,
                 'POST',
                 f'{self.api_url}/upload_file',
@@ -569,11 +554,6 @@ class EventStreamRuntime(Runtime):
                 params=params,
                 timeout=300,
             )
-            if response.status_code == 200:
-                return
-            else:
-                error_message = response.text
-                raise Exception(f'Copy operation failed: {error_message}')
 
         except requests.Timeout:
             raise TimeoutError('Copy operation timed out')
@@ -605,17 +585,11 @@ class EventStreamRuntime(Runtime):
                 json=data,
                 timeout=10,
             )
-            if response.status_code == 200:
-                response_json = response.json()
-                assert isinstance(response_json, list)
-                return response_json
-            else:
-                error_message = response.text
-                raise Exception(f'List files operation failed: {error_message}')
+            response_json = response.json()
+            assert isinstance(response_json, list)
+            return response_json
         except requests.Timeout:
             raise TimeoutError('List files operation timed out')
-        except Exception as e:
-            raise RuntimeError(f'List files operation failed: {str(e)}')
 
     def copy_from(self, path: str) -> bytes:
         """Zip all files in the sandbox and return as a stream of bytes."""
@@ -630,16 +604,10 @@ class EventStreamRuntime(Runtime):
                 stream=True,
                 timeout=30,
             )
-            if response.status_code == 200:
-                data = response.content
-                return data
-            else:
-                error_message = response.text
-                raise Exception(f'Copy operation failed: {error_message}')
+            data = response.content
+            return data
         except requests.Timeout:
             raise TimeoutError('Copy operation timed out')
-        except Exception as e:
-            raise RuntimeError(f'Copy operation failed: {str(e)}')
 
     def _is_port_in_use_docker(self, port):
         containers = self.docker_client.containers.list()
