@@ -24,16 +24,17 @@ export function ErrorMessage({ id, message }: ErrorMessageProps) {
     <div className="flex gap-2 items-center justify-start border-l-2 border-danger pl-2 my-2 py-2">
       <div className="text-sm leading-4 flex flex-col gap-2">
         {headline && <p className="text-danger font-bold">{headline}</p>}
-        <button
-          type="button"
-          onClick={() => setShowDetails(!showDetails)}
-          className="cursor-pointer text-left"
-        >
-          {headline &&
-            (showDetails
-              ? t("ERROR_MESSAGE$HIDE_DETAILS")
-              : t("ERROR_MESSAGE$SHOW_DETAILS"))}
-        </button>
+        {headline && (
+          <button
+            type="button"
+            onClick={() => setShowDetails(!showDetails)}
+            className="cursor-pointer text-left"
+          >
+          {showDetails
+            ? t("ERROR_MESSAGE$HIDE_DETAILS")
+            : t("ERROR_MESSAGE$SHOW_DETAILS")}
+          </button>
+        )}
         {showDetails && <p className="text-neutral-300">{details}</p>}
       </div>
     </div>

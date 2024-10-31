@@ -13,6 +13,7 @@ class ErrorObservation(Observation):
     """
 
     observation: str = ObservationType.ERROR
+    error_id: str = ''
 
     @property
     def message(self) -> str:
