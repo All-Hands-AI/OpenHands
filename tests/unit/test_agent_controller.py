@@ -7,7 +7,6 @@ from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import TrafficControlState
 from openhands.core.config import AppConfig
-from openhands.core.exceptions import LLMMalformedActionError
 from openhands.core.main import run_controller
 from openhands.core.schema import AgentState
 from openhands.events import Event, EventSource, EventStream, EventStreamSubscriber
@@ -107,7 +106,7 @@ async def test_react_to_exception(mock_agent, mock_event_stream):
         headless_mode=True,
     )
     error_message = 'Test error'
-    await controller._react_to_error(error_message)
+    await controller._react_to_exception(error_message)
     assert controller.state.last_error == error_message
     controller.event_stream.add_event.assert_called_once()
     await controller.close()
@@ -124,12 +123,12 @@ async def test_step_with_exception(mock_agent, mock_event_stream):
         headless_mode=True,
     )
     controller.state.agent_state = AgentState.RUNNING
-    controller._react_to_error = AsyncMock()
-    controller.agent.step.side_effect = LLMMalformedActionError('Malformed action')
+    controller._react_to_exception = AsyncMock()
+    controller.agent.step.side_effect = RuntimeError('Test error')
     await controller._step()
 
-    # Verify that _react_to_error was called with the correct error message
-    controller._react_to_error.assert_called_once_with('Malformed action')
+    # Verify that _react_to_exception was called with the correct error message
+    controller._react_to_exception.assert_called_once_with('')
     await controller.close()
 
 

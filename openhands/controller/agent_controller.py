@@ -145,11 +145,8 @@ class AgentController:
     async def _react_to_exception(
         self,
         e: Exception,
-        new_state: AgentState = AgentState.ERROR,
     ):
-        if new_state is not None:
-            # it's important to set the state before adding the error event, so that metrics sync properly
-            await self.set_agent_state_to(new_state)
+        await self.set_agent_state_to(AgentState.ERROR)
         if self._status_callback is not None:
             err_id = ''
             if isinstance(e, litellm.AuthenticationError):
@@ -541,14 +538,11 @@ class AgentController:
                 await self._react_to_exception(e)
             else:
                 e = RuntimeError(
-                    f'Agent reached maximum {limit_type}, task paused. '
+                    f'Agent reached maximum {limit_type}. '
                     f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}. '
                 )
                 # FIXME: this isn't really an exception--we should have a different path
-                await self._react_to_exception(
-                    e,
-                    new_state=AgentState.PAUSED,
-                )
+                await self._react_to_exception(e)
             stop_step = True
         return stop_step
 
