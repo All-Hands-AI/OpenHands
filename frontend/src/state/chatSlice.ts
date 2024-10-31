@@ -39,7 +39,7 @@ export const chatSlice = createSlice({
 
     addErrorMessage(
       state,
-      action: PayloadAction<{ id: string, message: string }>,
+      action: PayloadAction<{ id: string; message: string }>,
     ) {
       const { id, message } = action.payload;
       state.messages.push({ id, message, error: true });

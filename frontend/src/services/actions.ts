@@ -1,4 +1,8 @@
-import { addAssistantMessage, addUserMessage, addErrorMessage } from "#/state/chatSlice";
+import {
+  addAssistantMessage,
+  addUserMessage,
+  addErrorMessage,
+} from "#/state/chatSlice";
 import { setCode, setActiveFilepath } from "#/state/codeSlice";
 import { appendJupyterInput } from "#/state/jupyterSlice";
 import {
@@ -119,13 +123,13 @@ export function handleActionMessage(message: ActionMessage) {
 }
 
 export function handleStatusMessage(message: StatusMessage) {
-  if (message.type === 'info') {
+  if (message.type === "info") {
     store.dispatch(
       setCurStatusMessage({
         ...message,
       }),
     );
-  } else if (message.type === 'error') {
+  } else if (message.type === "error") {
     store.dispatch(
       addErrorMessage({
         ...message,
