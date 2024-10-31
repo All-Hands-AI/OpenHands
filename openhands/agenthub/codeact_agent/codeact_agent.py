@@ -274,25 +274,7 @@ class CodeActAgent(Agent):
             text = obs_prefix + truncate_content(str(obs), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, BrowserOutputObservation):
-            text = f'[Current URL: {obs.url}]\n'
-            text += f'[Focused element bid: {obs.focused_element_bid}]\n\n'
-            try:
-                # We do not filter visible only here because we want to show the full content
-                # of the web page to the agent for simplicity.
-                # FIXME: handle the case when the web page is too large
-                cur_axtree_txt = obs.get_axtree_str(filter_visible_only=False)
-                text += (
-                    f'============== BEGIN accessibility tree ==============\n'
-                    f'{cur_axtree_txt}\n'
-                    f'============== END accessibility tree ==============\n'
-                )
-            except Exception as e:
-                logger.error(
-                    'Error when trying to process the accessibility tree: %s', e
-                )
-                text += (
-                    f'\n[Error encountered when processing the accessibility tree: {e}]'
-                )
+            text = obs.get_agent_obs_text()
             message = Message(
                 role='user',
                 content=[TextContent(text=obs_prefix + text)],

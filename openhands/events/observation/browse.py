@@ -41,11 +41,29 @@ class BrowserOutputObservation(Observation):
             f'Last browser action error: {self.last_browser_action_error}\n'
             f'Focused element bid: {self.focused_element_bid}\n'
         )
-        try:
-            ret += f'AX tree: {self.get_axtree_str(filter_visible_only=True)}\n'
-        except Exception as e:
-            ret += f'Failed to get AX tree: {e}\n'
+        ret += '--- Agent Observation ---\n'
+        ret += self.get_agent_obs_text()
         return ret
+
+    def get_agent_obs_text(self) -> str:
+        """Get a concise text that will be shown to the agent."""
+        text = f'[Current URL: {self.url}]\n'
+        text += f'[Focused element bid: {self.focused_element_bid}]\n\n'
+        if self.error:
+            text += f'[Error: {self.error}. {self.last_browser_action_error}]\n'
+        try:
+            # We do not filter visible only here because we want to show the full content
+            # of the web page to the agent for simplicity.
+            # FIXME: handle the case when the web page is too large
+            cur_axtree_txt = self.get_axtree_str(filter_visible_only=False)
+            text += (
+                f'============== BEGIN accessibility tree ==============\n'
+                f'{cur_axtree_txt}\n'
+                f'============== END accessibility tree ==============\n'
+            )
+        except Exception as e:
+            text += f'\n[Error encountered when processing the accessibility tree: {e}]'
+        return text
 
     def get_axtree_str(self, filter_visible_only: bool = False) -> str:
         cur_axtree_txt = flatten_axtree_to_str(
