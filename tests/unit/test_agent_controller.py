@@ -146,14 +146,14 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
 
-    fatal_error_obs = ErrorObservation('Fatal error detected', fatal=True)
-    fatal_error_obs._cause = event.id
+    error_obs = ErrorObservation('You messed around with Jim')
+    error_obs._cause = event.id
 
     runtime = MagicMock(spec=Runtime)
 
     async def on_event(event: Event):
         if isinstance(event, CmdRunAction):
-            await event_stream.async_add_event(fatal_error_obs, EventSource.USER)
+            await event_stream.async_add_event(error_obs, EventSource.USER)
 
     event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event)
     runtime.event_stream = event_stream
@@ -172,10 +172,7 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
     # it will first become AgentState.ERROR, then become AgentState.STOPPED
     # in side run_controller (since the while loop + sleep no longer loop)
     assert state.agent_state == AgentState.STOPPED
-    assert (
-        state.get_last_error()
-        == 'There was a fatal error during agent execution: **ErrorObservation**\nFatal error detected'
-    )
+    assert state.get_last_error() == 'You messed around with Jim'
     assert len(list(event_stream.get_events())) == 5
 
 
