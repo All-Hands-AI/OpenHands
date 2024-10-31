@@ -40,6 +40,7 @@ from openhands.utils.async_utils import call_async_from_sync
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false').lower() == 'true'
+RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
@@ -87,6 +88,13 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
             '4. Rerun your reproduce script and confirm that the error is fixed!\n'
             '5. Think about edgecases and make sure your fix handles them as well\n'
             "Your thinking should be thorough and so it's fine if it's very long.\n"
+        )
+
+    if RUN_WITH_BROWSING:
+        instruction += (
+            '<IMPORTANT!>\n'
+            'You SHOULD NEVER attempt to browse the web. '
+            '</IMPORTANT!>\n'
         )
     return instruction
 
@@ -153,7 +161,7 @@ def get_config(
     config.set_llm_config(metadata.llm_config)
     agent_config = AgentConfig(
         codeact_enable_jupyter=False,
-        codeact_enable_browsing=False,
+        codeact_enable_browsing=RUN_WITH_BROWSING,
         codeact_enable_llm_editor=False,
     )
     config.set_agent_config(agent_config)
