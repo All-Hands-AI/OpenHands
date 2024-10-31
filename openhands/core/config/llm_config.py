@@ -3,6 +3,7 @@ from dataclasses import dataclass, fields
 from typing import Optional
 
 from openhands.core.config.config_utils import get_field_info
+from openhands.core.logger import LOG_DIR
 
 LLM_SENSITIVE_FIELDS = ['api_key', 'aws_access_key_id', 'aws_secret_access_key']
 
@@ -74,7 +75,7 @@ class LLMConfig:
     disable_vision: bool | None = None
     caching_prompt: bool = True
     log_completions: bool = False
-    log_completions_folder: str | None = None
+    log_completions_folder: str = os.path.join(LOG_DIR, 'completions')
     draft_editor: Optional['LLMConfig'] = None
 
     def defaults_to_dict(self) -> dict:

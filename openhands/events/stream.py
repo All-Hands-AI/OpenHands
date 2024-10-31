@@ -71,7 +71,15 @@ class EventStream:
         end_id=None,
         reverse=False,
         filter_out_type: tuple[type[Event], ...] | None = None,
+        filter_hidden=False,
     ) -> Iterable[Event]:
+        def should_filter(event: Event):
+            if filter_hidden and hasattr(event, 'hidden') and event.hidden:
+                return True
+            if filter_out_type is not None and isinstance(event, filter_out_type):
+                return True
+            return False
+
         if reverse:
             if end_id is None:
                 end_id = self._cur_id - 1
@@ -79,9 +87,7 @@ class EventStream:
             while event_id >= start_id:
                 try:
                     event = self.get_event(event_id)
-                    if filter_out_type is None or not isinstance(
-                        event, filter_out_type
-                    ):
+                    if not should_filter(event):
                         yield event
                 except FileNotFoundError:
                     logger.debug(f'No event found for ID {event_id}')
@@ -93,9 +99,7 @@ class EventStream:
                     break
                 try:
                     event = self.get_event(event_id)
-                    if filter_out_type is None or not isinstance(
-                        event, filter_out_type
-                    ):
+                    if not should_filter(event):
                         yield event
                 except FileNotFoundError:
                     break
