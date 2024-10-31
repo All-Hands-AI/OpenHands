@@ -69,7 +69,8 @@ class Session:
             await self.close()
             logger.exception('Error in loop_recv: %s', e)
 
-    async def _initialize_agent(self, data: dict):
+    def _set_loading_state(self):
+        """Set the initial loading state for the agent."""
         self.agent_session.event_stream.add_event(
             ChangeAgentStateAction(AgentState.LOADING), EventSource.ENVIRONMENT
         )
@@ -77,18 +78,25 @@ class Session:
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
         )
-        # Extract the agent-relevant arguments from the request
+
+    def _extract_config_args(self, data: dict) -> tuple[dict, str, int]:
+        """Extract and process configuration arguments from the request data."""
         args = {key: value for key, value in data.get('args', {}).items()}
         agent_cls = args.get(ConfigType.AGENT, self.config.default_agent)
+        
+        # Update security settings
         self.config.security.confirmation_mode = args.get(
             ConfigType.CONFIRMATION_MODE, self.config.security.confirmation_mode
         )
         self.config.security.security_analyzer = data.get('args', {}).get(
             ConfigType.SECURITY_ANALYZER, self.config.security.security_analyzer
         )
+        
         max_iterations = args.get(ConfigType.MAX_ITERATIONS, self.config.max_iterations)
-        # override default LLM config
-        default_llm_config = self.config.get_llm_config()
+        return args, agent_cls, max_iterations
+
+    def _configure_llm(self, args: dict, default_llm_config):
+        """Configure LLM settings from provided arguments."""
         default_llm_config.model = args.get(
             ConfigType.LLM_MODEL, default_llm_config.model
         )
@@ -98,14 +106,10 @@ class Session:
         default_llm_config.base_url = args.get(
             ConfigType.LLM_BASE_URL, default_llm_config.base_url
         )
-
         # TODO: override other LLM config & agent config groups (#2075)
 
-        llm = LLM(config=self.config.get_llm_config_from_agent(agent_cls))
-        agent_config = self.config.get_agent_config(agent_cls)
-        agent = Agent.get_cls(agent_cls)(llm, agent_config)
-
-        # Create the agent session
+    async def _start_agent_session(self, agent, max_iterations: int):
+        """Start the agent session with the configured parameters."""
         try:
             await self.agent_session.start(
                 runtime_name=self.config.runtime,
@@ -122,7 +126,46 @@ class Session:
             await self.send_error(
                 f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
             )
+            raise
+
+    async def _initialize_agent(self, data: dict):
+        """Initialize the agent with the provided configuration."""
+        self._set_loading_state()
+        
+        # Extract configuration
+        args, agent_cls, max_iterations = self._extract_config_args(data)
+        
+        # Configure LLM
+        default_llm_config = self.config.get_llm_config()
+        self._configure_llm(args, default_llm_config)
+        
+        # Create agent
+        llm = LLM(config=self.config.get_llm_config_from_agent(agent_cls))
+        agent_config = self.config.get_agent_config(agent_cls)
+        agent = Agent.get_cls(agent_cls)(llm, agent_config)
+        
+        # Start agent session
+        try:
+            await self._start_agent_session(agent, max_iterations)
+        except Exception:
             return
+
+    def _should_skip_event(self, event: Event) -> bool:
+        """Check if the event should be skipped."""
+        return isinstance(event, (NullAction, NullObservation))
+
+    def _is_environment_feedback_event(self, event: Event) -> bool:
+        """Check if the event is environment feedback that should be treated as agent event."""
+        return (
+            event.source == EventSource.ENVIRONMENT 
+            and isinstance(event, (CmdOutputObservation, AgentStateChangedObservation))
+        )
+
+    async def _send_as_agent_event(self, event: Event):
+        """Send an event to the UI marked as coming from the agent."""
+        event_dict = event_to_dict(event)
+        event_dict['source'] = EventSource.AGENT
+        await self.send(event_dict)
 
     async def on_event(self, event: Event):
         """Callback function for events that mainly come from the agent.
@@ -131,25 +174,18 @@ class Session:
         Args:
             event: The agent event (Observation or Action).
         """
-        if isinstance(event, NullAction):
+        if self._should_skip_event(event):
             return
-        if isinstance(event, NullObservation):
-            return
+
         if event.source == EventSource.AGENT:
             await self.send(event_to_dict(event))
         # NOTE: ipython observations are not sent here currently
-        elif event.source == EventSource.ENVIRONMENT and isinstance(
-            event, (CmdOutputObservation, AgentStateChangedObservation)
-        ):
+        elif self._is_environment_feedback_event(event):
             # feedback from the environment to agent actions is understood as agent events by the UI
-            event_dict = event_to_dict(event)
-            event_dict['source'] = EventSource.AGENT
-            await self.send(event_dict)
+            await self._send_as_agent_event(event)
         elif isinstance(event, ErrorObservation):
             # send error events as agent events to the UI
-            event_dict = event_to_dict(event)
-            event_dict['source'] = EventSource.AGENT
-            await self.send(event_dict)
+            await self._send_as_agent_event(event)
 
     async def dispatch(self, data: dict):
         action = data.get('action', '')
