@@ -475,6 +475,7 @@ class EventStreamRuntime(Runtime):
             assert action.timeout is not None
 
             try:
+                print('SEND ACTION', event_to_dict(action))
                 response = send_request(
                     self.session,
                     'POST',
@@ -483,13 +484,19 @@ class EventStreamRuntime(Runtime):
                     timeout=action.timeout,
                 )
                 output = response.json()
+                print('GOT OUTPUT', output)
                 obs = observation_from_dict(output)
                 obs._cause = action.id  # type: ignore[attr-defined]
             except requests.Timeout:
+                print('EXCEPTION TIMEOUT')
                 self.log('error', 'No response received within the timeout period.')
                 obs = ErrorObservation(
                     f'Action execution timed out after {action.timeout} seconds.',
                 )
+            except Exception as e:
+                print('OTHER EXCEPTION', e)
+                raise e
+
             self._refresh_logs()
             return obs
 
