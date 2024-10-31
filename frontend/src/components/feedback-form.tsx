@@ -68,6 +68,7 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
       polarity,
       permissions,
       trajectory: [],
+      token: "",
     };
 
     const response = await request("/api/submit-feedback", {
