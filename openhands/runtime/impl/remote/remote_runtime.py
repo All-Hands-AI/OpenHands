@@ -57,6 +57,10 @@ class RemoteRuntime(Runtime):
         status_callback: Optional[Callable] = None,
         attach_to_existing: bool = False,
     ):
+        # We need to set session and action_semaphore before the __init__ below, or we get odd errors
+        self.session = requests.Session()
+        self.action_semaphore = threading.Semaphore(1)
+
         super().__init__(
             config,
             event_stream,
@@ -66,15 +70,12 @@ class RemoteRuntime(Runtime):
             status_callback,
             attach_to_existing,
         )
-
         if self.config.sandbox.api_key is None:
             raise ValueError(
                 'API key is required to use the remote runtime. '
                 'Please set the API key in the config (config.toml) or as an environment variable (SANDBOX_API_KEY).'
             )
-        self.session = requests.Session()
         self.session.headers.update({'X-API-Key': self.config.sandbox.api_key})
-        self.action_semaphore = threading.Semaphore(1)
 
         if self.config.workspace_base is not None:
             self.log(
