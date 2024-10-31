@@ -27,7 +27,7 @@ export function AnalyticsConsentFormModal() {
 
           <label className="flex gap-2 items-center self-start">
             <input name="analytics" type="checkbox" defaultChecked />
-            Enable analytics
+            Send anonymous usage data
           </label>
 
           <ModalButton
