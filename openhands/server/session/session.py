@@ -25,8 +25,6 @@ from openhands.runtime.utils.shutdown_listener import should_continue
 from openhands.server.session.agent_session import AgentSession
 from openhands.storage.files import FileStore
 
-DEL_DELT_SEC = 60 * 60 * 5
-
 
 class Session:
     sid: str
@@ -200,25 +198,9 @@ class Session:
         """Sends an error message to the client."""
         return await self.send({'error': True, 'message': message})
 
-    async def send_message(self, message: str) -> bool:
-        """Sends a message to the client."""
-        return await self.send({'message': message})
-
     async def send_status_message(self, message: str) -> bool:
         """Sends a status message to the client."""
         return await self.send({'status': message})
-
-    def update_connection(self, ws: WebSocket):
-        self.websocket = ws
-        self.is_alive = True
-        self.last_active_ts = int(time.time())
-
-    def load_from_data(self, data: dict) -> bool:
-        self.last_active_ts = data.get('last_active_ts', 0)
-        if self.last_active_ts < int(time.time()) - DEL_DELT_SEC:
-            return False
-        self.is_alive = data.get('is_alive', False)
-        return True
 
     def queue_status_message(self, message: str):
         """Queues a status message to be sent asynchronously."""
