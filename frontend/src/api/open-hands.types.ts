@@ -31,7 +31,7 @@ export interface Feedback {
   version: string;
   email: string;
   token: string;
-  feedback: "positive" | "negative";
+  polarity: "positive" | "negative";
   permissions: "public" | "private";
   trajectory: unknown[];
 }
