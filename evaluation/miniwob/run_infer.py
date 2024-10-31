@@ -10,6 +10,7 @@ import pandas as pd
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    codeact_user_response,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -37,7 +38,11 @@ from openhands.runtime.browser.browser_env import (
 )
 from openhands.utils.async_utils import call_async_from_sync
 
-SUPPORTED_AGENT_CLS = {'BrowsingAgent'}
+SUPPORTED_AGENT_CLS = {'BrowsingAgent', 'CodeActAgent'}
+
+AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
+    'CodeActAgent': codeact_user_response,
+}
 
 
 def get_config(
@@ -140,6 +145,9 @@ def process_instance(
                 content=task_str
             ),  # take output from initialize_runtime
             runtime=runtime,
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
+                metadata.agent_class
+            ],
         )
     )
 
