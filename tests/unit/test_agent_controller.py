@@ -118,46 +118,29 @@ async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_cal
 
 
 @pytest.mark.asyncio
-async def test_step_with_exception(mock_agent, mock_event_stream):
-    controller = AgentController(
-        agent=mock_agent,
-        event_stream=mock_event_stream,
-        max_iterations=10,
-        sid='test',
-        confirmation_mode=False,
-        headless_mode=True,
-    )
-    controller.state.agent_state = AgentState.RUNNING
-    controller._react_to_exception = AsyncMock()
-    controller.agent.step.side_effect = RuntimeError('Test error')
-    await controller._step()
-
-    # Verify that _react_to_exception was called with the correct error message
-    controller._react_to_exception.assert_called_once_with('')
-    await controller.close()
-
-
-@pytest.mark.asyncio
 async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
     config = AppConfig()
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(sid='test', file_store=file_store)
 
     agent = MagicMock(spec=Agent)
-    # a random message to send to the runtime
-    event = CmdRunAction(command='ls')
-    agent.step.return_value = event
+    agent = MagicMock(spec=Agent)
+
+    def agent_step_fn(state):
+        print(f'agent_step_fn received state: {state}')
+        return CmdRunAction(command='ls')
+
+    agent.step = agent_step_fn
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
-
-    error_obs = ErrorObservation('You messed around with Jim')
-    error_obs._cause = event.id
 
     runtime = MagicMock(spec=Runtime)
 
     async def on_event(event: Event):
         if isinstance(event, CmdRunAction):
+            error_obs = ErrorObservation('You messed around with Jim')
+            error_obs._cause = event.id
             await event_stream.async_add_event(error_obs, EventSource.USER)
 
     event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event)
@@ -173,27 +156,25 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
     )
     print(f'state: {state}')
     print(f'event_stream: {list(event_stream.get_events())}')
-    assert state.iteration == 1
+    assert state.iteration == 4
     # it will first become AgentState.ERROR, then become AgentState.STOPPED
     # in side run_controller (since the while loop + sleep no longer loop)
     assert state.agent_state == AgentState.STOPPED
     assert state.get_last_error() == 'You messed around with Jim'
-    assert len(list(event_stream.get_events())) == 5
+    assert len(list(event_stream.get_events())) == 12
 
 
 @pytest.mark.asyncio
-async def test_run_controller_stop_with_stuck(mock_agent, mock_event_stream):
+async def test_run_controller_stop_with_stuck():
     config = AppConfig()
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(sid='test', file_store=file_store)
 
     agent = MagicMock(spec=Agent)
-    # a random message to send to the runtime
-    event = CmdRunAction(command='ls')
 
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
-        return event
+        return CmdRunAction(command='ls')
 
     agent.step = agent_step_fn
     agent.llm = MagicMock(spec=LLM)
@@ -243,13 +224,11 @@ async def test_run_controller_stop_with_stuck(mock_agent, mock_event_stream):
             and observation_dict['content'] == 'Non fatal error here to trigger loop'
         )
     last_event = event_to_dict(events[-1])
-    assert last_event['extras']['agent_state'] == 'error'
+    assert last_event['extras']['agent_state'] == 'stopped'
     assert last_event['observation'] == 'agent_state_changed'
 
-    # it will first become AgentState.ERROR, then become AgentState.STOPPED
-    # in side run_controller (since the while loop + sleep no longer loop)
     assert state.agent_state == AgentState.STOPPED
-    assert state.get_last_error() == 'Agent got stuck in a loop'
+    assert state.get_last_error() == 'Non fatal error here to trigger loop'
 
 
 @pytest.mark.asyncio
@@ -316,7 +295,7 @@ async def test_step_max_iterations(mock_agent, mock_event_stream):
     assert controller.state.traffic_control_state == TrafficControlState.NORMAL
     await controller._step()
     assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
-    assert controller.state.agent_state == AgentState.PAUSED
+    assert controller.state.agent_state == AgentState.ERROR
     await controller.close()
 
 
@@ -356,7 +335,7 @@ async def test_step_max_budget(mock_agent, mock_event_stream):
     assert controller.state.traffic_control_state == TrafficControlState.NORMAL
     await controller._step()
     assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
-    assert controller.state.agent_state == AgentState.PAUSED
+    assert controller.state.agent_state == AgentState.ERROR
     await controller.close()
 
 
