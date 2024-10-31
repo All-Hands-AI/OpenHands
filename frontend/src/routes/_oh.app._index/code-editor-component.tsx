@@ -38,7 +38,10 @@ function CodeEditorCompoonent({ isReadOnly }: CodeEditorCompoonentProps) {
       monaco.editor.setTheme("my-theme");
 
       editor.onDidChangeCursorPosition((e) => {
-        setCursorPosition({ line: e.position.lineNumber, column: e.position.column });
+        setCursorPosition({
+          line: e.position.lineNumber,
+          column: e.position.column,
+        });
       });
     },
     [],
