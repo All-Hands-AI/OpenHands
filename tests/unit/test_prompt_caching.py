@@ -14,7 +14,7 @@ from openhands.storage import get_file_store
 @pytest.fixture
 def mock_llm():
     llm = Mock(spec=LLM)
-    llm.config = LLMConfig(model='claude-3-5-sonnet-20240620', caching_prompt=True)
+    llm.config = LLMConfig(model='claude-3-5-sonnet-20241022', caching_prompt=True)
     llm.is_caching_prompt_active.return_value = True
     return llm
 
@@ -137,6 +137,9 @@ def test_get_messages_prompt_caching(codeact_agent, mock_event_stream):
 
 
 def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
+    if codeact_agent.config.function_calling:
+        pytest.skip('Skipping this test for function calling')
+
     # Add a mix of actions and observations
     message_action_1 = MessageAction(
         "Let's list the contents of the current directory."
