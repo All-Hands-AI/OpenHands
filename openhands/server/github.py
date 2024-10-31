@@ -1,30 +1,65 @@
 import os
+from typing import List, Optional
 
 import httpx
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.server.sheets_client import GoogleSheetsClient
 
 GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', '').strip()
 GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '').strip()
-GITHUB_USER_LIST = None
 
+class UserVerifier:
+    def __init__(self):
+        self.file_users: Optional[List[str]] = None
+        self.sheets_client: Optional[GoogleSheetsClient] = None
+        self.spreadsheet_id: Optional[str] = None
+        
+        # Initialize from environment variables
+        self._init_file_users()
+        self._init_sheets_client()
+    
+    def _init_file_users(self):
+        """Load users from text file if configured"""
+        waitlist = os.getenv('GITHUB_USER_LIST_FILE')
+        if waitlist and os.path.exists(waitlist):
+            with open(waitlist, 'r') as f:
+                self.file_users = [line.strip() for line in f if line.strip()]
+    
+    def _init_sheets_client(self):
+        """Initialize Google Sheets client if configured"""
+        creds_path = os.getenv('GOOGLE_CREDENTIALS_FILE')
+        sheet_id = os.getenv('GITHUB_USERS_SHEET_ID')
+        
+        if creds_path and sheet_id:
+            self.sheets_client = GoogleSheetsClient(creds_path)
+            self.spreadsheet_id = sheet_id
+    
+    def is_user_allowed(self, username: str) -> bool:
+        """Check if user is allowed based on file and/or sheet configuration"""
+        # If no verification sources are configured, allow all users
+        if not self.file_users and not self.sheets_client:
+            return True
+            
+        # Check file-based users
+        if self.file_users and username in self.file_users:
+            return True
+            
+        # Check Google Sheets users
+        if self.sheets_client and self.spreadsheet_id:
+            sheet_users = self.sheets_client.get_usernames(self.spreadsheet_id)
+            if username in sheet_users:
+                return True
+                
+        return False
 
-def load_github_user_list():
-    global GITHUB_USER_LIST
-    waitlist = os.getenv('GITHUB_USER_LIST_FILE')
-    if waitlist:
-        with open(waitlist, 'r') as f:
-            GITHUB_USER_LIST = [line.strip() for line in f if line.strip()]
-
-
-load_github_user_list()
+# Global instance of user verifier
+user_verifier = UserVerifier()
 
 
 async def authenticate_github_user(auth_token) -> bool:
     logger.info('Checking GitHub token')
-    if not GITHUB_USER_LIST:
-        return True
-
+    
     if not auth_token:
         logger.warning('No GitHub token provided')
         return False
@@ -33,7 +68,8 @@ async def authenticate_github_user(auth_token) -> bool:
     if error:
         logger.warning(f'Invalid GitHub token: {error}')
         return False
-    if login not in GITHUB_USER_LIST:
+        
+    if not user_verifier.is_user_allowed(login):
         logger.warning(f'GitHub user {login} not in allow list')
         return False
 
