@@ -43,6 +43,11 @@ def mock_event_stream():
     return MagicMock(spec=EventStream)
 
 
+@pytest.fixture
+def mock_status_callback():
+    return AsyncMock()
+
+
 @pytest.mark.asyncio
 async def test_set_agent_state(mock_agent, mock_event_stream):
     controller = AgentController(
@@ -96,19 +101,19 @@ async def test_on_event_change_agent_state_action(mock_agent, mock_event_stream)
 
 
 @pytest.mark.asyncio
-async def test_react_to_exception(mock_agent, mock_event_stream):
+async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_callback):
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
+        status_callback=mock_status_callback,
         max_iterations=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
     )
     error_message = 'Test error'
-    await controller._react_to_exception(error_message)
-    assert controller.state.last_error == error_message
-    controller.event_stream.add_event.assert_called_once()
+    await controller._react_to_exception(RuntimeError(error_message))
+    controller._status_callback.assert_called_once()
     await controller.close()
 
 
@@ -242,7 +247,7 @@ async def test_run_controller_stop_with_stuck(mock_agent, mock_event_stream):
     # it will first become AgentState.ERROR, then become AgentState.STOPPED
     # in side run_controller (since the while loop + sleep no longer loop)
     assert state.agent_state == AgentState.STOPPED
-    assert state.last_error == 'Agent got stuck in a loop'
+    assert state.get_last_error() == 'Agent got stuck in a loop'
 
 
 @pytest.mark.asyncio
