@@ -634,14 +634,14 @@ async def upload_file(request: Request, files: list[UploadFile]):
 
 
 @app.post('/api/submit-feedback')
-async def submit_feedback(request: Request, feedback: FeedbackDataModel):
+async def submit_feedback(request: Request):
     """Submit user feedback.
 
     This function stores the provided feedback data.
 
     To submit feedback:
     ```sh
-    curl -X POST -F "email=test@example.com" -F "token=abc" -F "feedback=positive" -F "permissions=private" -F "trajectory={}" http://localhost:3000/api/submit-feedback
+    curl -X POST -d '{"email": "test@example.com"}' -H "Authorization:"
     ```
 
     Args:
@@ -656,6 +656,19 @@ async def submit_feedback(request: Request, feedback: FeedbackDataModel):
     """
     # Assuming the storage service is already configured in the backend
     # and there is a function to handle the storage.
+    body = await request.json()
+    events = request.state.conversation.event_stream.get_events(filter_hidden=True)
+    trajectory = []
+    for event in events:
+        trajectory.append(event_to_dict(event))
+    feedback = FeedbackDataModel(
+        email=body.get('email', ''),
+        version=body.get('version', ''),
+        permissions=body.get('permissions', 'private'),
+        polarity=body.get('polarity', ''),
+        feedback=body.get('polarity', ''),
+        trajectory=trajectory,
+    )
     try:
         feedback_data = store_feedback(feedback)
         return JSONResponse(status_code=200, content=feedback_data)
