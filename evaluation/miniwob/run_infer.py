@@ -67,6 +67,14 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
+    if metadata.llm_config.log_completions:
+        metadata.llm_config.log_completions_folder = os.path.join(
+            metadata.eval_output_dir, 'llm_completions', env_id
+        )
+        logger.info(
+            f'Logging LLM completions for instance {env_id} to '
+            f'{metadata.llm_config.log_completions_folder}'
+        )
     config.set_llm_config(metadata.llm_config)
     return config
 
