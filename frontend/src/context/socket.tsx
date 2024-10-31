@@ -49,8 +49,8 @@ function SocketProvider({ children }: SocketProviderProps) {
     const fallback = getValidFallbackHost();
     const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || fallback;
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const sessionToken = options?.token || '';
-    const ghToken = localStorage.getItem("ghToken");
+    const sessionToken = options?.token || 'NO_JWT'; // not allowed to be empty or duplicated
+    const ghToken = localStorage.getItem("ghToken") || 'NO_GITHUB';
 
     const ws = new WebSocket(
       `${protocol}//${baseUrl}/ws`,

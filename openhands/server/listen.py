@@ -3,6 +3,7 @@ import io
 import os
 import re
 import tempfile
+import uuid
 import warnings
 from contextlib import asynccontextmanager
 
@@ -58,7 +59,7 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict
 from openhands.llm import bedrock
 from openhands.runtime.base import Runtime
-from openhands.server.auth import get_sid_from_token
+from openhands.server.auth import get_sid_from_token, sign_token
 from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware
 from openhands.server.session import SessionManager
 
@@ -311,8 +312,8 @@ async def websocket_endpoint(websocket: WebSocket):
         return
 
     real_protocol = protocols[0]
-    auth_token = protocols[1]
-    github_token = protocols[2]
+    jwt_token = protocols[1] if protocols[1] != 'NO_JWT' else ''
+    github_token = protocols[2] if protocols[2] != 'NO_GITHUB' else ''
 
     if not await authenticate_github_user(github_token):
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
@@ -320,15 +321,20 @@ async def websocket_endpoint(websocket: WebSocket):
 
     await asyncio.wait_for(websocket.accept(subprotocol=real_protocol), 10)
 
-    sid = get_sid_from_token(auth_token, config.jwt_secret)
-    if sid == '':
-        await websocket.send_json({'error': 'Invalid token', 'error_code': 401})
-        await websocket.close()
-        return
+    if jwt_token:
+        sid = get_sid_from_token(jwt_token, config.jwt_secret)
+
+        if sid == '':
+            await websocket.send_json({'error': 'Invalid token', 'error_code': 401})
+            await websocket.close()
+            return
+    else:
+        sid = str(uuid.uuid4())
+        jwt_token = sign_token({'sid': sid}, config.jwt_secret)
 
     logger.info(f'New session: {sid}')
     session = session_manager.add_or_restart_session(sid, websocket)
-    await websocket.send_json({'token': auth_token, 'status': 'ok'})
+    await websocket.send_json({'token': jwt_token, 'status': 'ok'})
 
     latest_event_id = -1
     if websocket.query_params.get('latest_event_id'):

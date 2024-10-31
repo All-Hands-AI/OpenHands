@@ -220,11 +220,10 @@ class OpenHands {
   static async authenticate(token: string): Promise<Response> {
     return fetch(`${OpenHands.BASE_URL}/api/authenticate`, {
       method: "POST",
-      body: JSON.stringify({ token }),
       headers: {
         "Content-Type": "application/json",
+        "X-GitHub-Token": token,
       },
-      credentials: "include", // Important: needed to allow cookie to be set
     });
   }
 }
