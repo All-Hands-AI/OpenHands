@@ -50,7 +50,8 @@ function SocketProvider({ children }: SocketProviderProps) {
     const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || fallback;
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(
-      `${protocol}//${baseUrl}/ws${options?.token ? `?token=${options.token}` : ""}`,
+      `${protocol}//${baseUrl}/ws`,
+      ["openhands", options?.token || ""] // First protocol is our real protocol, second is the auth token
     );
 
     ws.addEventListener("open", (event) => {
