@@ -1,8 +1,10 @@
+import tempfile
 from collections import defaultdict
 from pathlib import Path
 from typing import Literal, get_args
 
 from openhands.linter import DefaultLinter, LintResult
+
 from .base import CLIResult, ToolError, ToolResult
 from .run import maybe_truncate, run
 
@@ -267,30 +269,31 @@ class EditTool:
 
     def _run_linting(self, old_content: str, new_content: str, path: Path) -> str:
         """Run linting on file changes and return formatted results."""
-        # Create temporary files for linting
-        old_path = path.parent / f"{path.name}.old"
-        new_path = path.parent / f"{path.name}.new"
-        try:
-            old_path.write_text(old_content)
-            new_path.write_text(new_content)
-            
+        # Create a temporary directory
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Create paths with exact filenames in temp directory
+            temp_old = Path(temp_dir) / f'old.{path.name}'
+            temp_new = Path(temp_dir) / f'new.{path.name}'
+
+            # Write content to temporary files
+            temp_old.write_text(old_content)
+            temp_new.write_text(new_content)
+
             # Run linting on the changes
-            results: list[LintResult] = self._linter.lint_file_diff(str(old_path), str(new_path))
-            
+            results: list[LintResult] = self._linter.lint_file_diff(
+                str(temp_old), str(temp_new)
+            )
+
             if not results:
-                return "No linting issues found in the changes."
-            
+                return 'No linting issues found in the changes.'
+
             # Format results
-            output = ["Linting issues found in the changes:"]
+            output = ['Linting issues found in the changes:']
             for result in results:
-                output.append(f"Line {result.line}, Column {result.column}: {result.message}")
-            return "\n".join(output)
-        finally:
-            # Clean up temporary files
-            if old_path.exists():
-                old_path.unlink()
-            if new_path.exists():
-                new_path.unlink()
+                output.append(
+                    f'Line {result.line}, Column {result.column}: {result.message}'
+                )
+            return '\n'.join(output)
 
     def _make_output(
         self,
