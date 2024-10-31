@@ -401,7 +401,7 @@ jobs:
           exit 1
   update_pr_description:
     name: Update PR Description
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork
     needs: [ghcr_build_runtime]
     runs-on: ubuntu-latest
     steps:
