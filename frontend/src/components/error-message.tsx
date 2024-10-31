@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 interface ErrorMessageProps {
-  id: string;
+  id?: string;
   message: string;
 }
 
@@ -13,7 +13,7 @@ export function ErrorMessage({ id, message }: ErrorMessageProps) {
   const [details, setDetails] = useState(message);
 
   useEffect(() => {
-    if (i18n.exists(id)) {
+    if (id && i18n.exists(id)) {
       setHeadline(t(id));
       setDetails(message);
       setShowDetails(false);

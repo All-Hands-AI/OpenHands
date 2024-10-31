@@ -191,7 +191,6 @@ function App() {
     if (!details) {
       dispatch(
         addErrorMessage({
-          error: "An error has occured",
           message: error,
         }),
       );
