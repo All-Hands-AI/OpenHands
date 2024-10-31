@@ -320,7 +320,8 @@ class AgentController:
 
         self.state.agent_state = new_state
         await self.event_stream.async_add_event(
-            AgentStateChangedObservation('', self.state.agent_state), EventSource.AGENT
+            AgentStateChangedObservation('', self.state.agent_state),
+            EventSource.ENVIRONMENT,
         )
 
         if new_state == AgentState.INIT and self.state.resume_state:
@@ -393,6 +394,10 @@ class AgentController:
             await asyncio.sleep(1)
             return
 
+        if self._is_stuck():
+            await self._react_to_exception(RuntimeError('Agent got stuck in a loop'))
+            return
+
         if self.delegate is not None:
             assert self.delegate != self
             if self.delegate.get_agent_state() == AgentState.PAUSED:
@@ -458,9 +463,6 @@ class AgentController:
         await self.update_state_after_step()
 
         self.log('debug', str(action), extra={'msg_type': 'ACTION'})
-
-        if self._is_stuck():
-            await self._react_to_exception(RuntimeError('Agent got stuck in a loop'))
 
     async def _delegate_step(self):
         """Executes a single step of the delegate agent."""

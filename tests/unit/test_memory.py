@@ -88,7 +88,7 @@ def _create_observation_event(observation: str) -> Event:
     event = Event()
     event._id = -1
     event._timestamp = datetime.now(timezone.utc).isoformat()
-    event._source = EventSource.USER
+    event._source = EventSource.ENVIRONMENT
     event.observation = observation
     return event
 

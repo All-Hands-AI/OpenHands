@@ -155,7 +155,7 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
         command='ls -l',
         exit_code=0,
     )
-    mock_event_stream.add_event(cmd_observation_1, EventSource.USER)
+    mock_event_stream.add_event(cmd_observation_1, EventSource.ENVIRONMENT)
 
     message_action_2 = MessageAction("Now, let's create a new directory.")
     mock_event_stream.add_event(message_action_2, EventSource.AGENT)
@@ -169,7 +169,7 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
         command='mkdir new_directory',
         exit_code=0,
     )
-    mock_event_stream.add_event(cmd_observation_2, EventSource.USER)
+    mock_event_stream.add_event(cmd_observation_2, EventSource.ENVIRONMENT)
 
     codeact_agent.reset()
     messages = codeact_agent._get_messages(
