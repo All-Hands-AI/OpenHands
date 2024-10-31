@@ -78,10 +78,7 @@ def test_message_with_only_text_content_and_vision_disabled():
 
     expected_serialized_message = {
         'role': 'user',
-        'content': [
-            {'type': 'text', 'text': 'This is a text message'},
-            {'type': 'text', 'text': 'This is another text message'},
-        ],
+        'content': 'This is a text message\nThis is another text message',
     }
 
     assert serialized_message == expected_serialized_message
@@ -110,10 +107,7 @@ def test_message_with_mixed_content_and_vision_disabled():
     # Expected serialization ignores images and concatenates text
     expected_serialized_message = {
         'role': 'user',
-        'content': [
-            {'type': 'text', 'text': 'This is a text message'},
-            {'type': 'text', 'text': 'This is another text message'},
-        ],
+        'content': 'This is a text message\nThis is another text message',
     }
 
     # Assert serialized message matches expectation

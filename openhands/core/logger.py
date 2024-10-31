@@ -12,9 +12,6 @@ LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
 DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
 if DEBUG:
     LOG_LEVEL = 'DEBUG'
-    import litellm
-
-    litellm.set_verbose = True
 
 LOG_TO_FILE = os.getenv('LOG_TO_FILE', 'False').lower() in ['true', '1', 'yes']
 DISABLE_COLOR_PRINTING = False
