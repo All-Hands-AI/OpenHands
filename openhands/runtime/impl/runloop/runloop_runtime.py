@@ -260,5 +260,14 @@ class RunloopRuntime(EventStreamRuntime):
             raise RuntimeError(msg)
 
     def close(self, rm_all_containers: bool = True):
+        if self.log_buffer:
+            self.log_buffer.close()
+
+        if self.session:
+            self.session.close()
+
+        if self.attach_to_existing:
+            return
+
         if self.devbox:
             self.runloop_api_client.devboxes.shutdown(self.devbox.id)
