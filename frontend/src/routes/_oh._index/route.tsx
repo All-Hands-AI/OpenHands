@@ -23,6 +23,7 @@ import store from "#/store";
 import { setInitialQuery } from "#/state/initial-query-slice";
 import { clientLoader as rootClientLoader } from "#/routes/_oh";
 import OpenHands from "#/api/open-hands";
+import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 
 interface GitHubAuthProps {
   onConnectToGitHub: () => void;
@@ -62,10 +63,10 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
     githubClientId = null;
   }
 
+  const ghToken = localStorage.getItem("ghToken");
   const token = localStorage.getItem("token");
   if (token) return redirect("/app");
 
-  const ghToken = localStorage.getItem("ghToken");
   let repositories: GitHubRepository[] = [];
   if (ghToken) {
     const data = await retrieveAllGitHubUserRepositories(ghToken);
@@ -75,10 +76,9 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   }
 
   let githubAuthUrl: string | null = null;
-  if (isSaas) {
+  if (isSaas && githubClientId) {
     const requestUrl = new URL(request.url);
-    const redirectUri = `${requestUrl.origin}/oauth/github/callback`;
-    githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${githubClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user,workflow`;
+    githubAuthUrl = generateGitHubAuthUrl(githubClientId, requestUrl);
   }
 
   return json({ repositories, githubAuthUrl });

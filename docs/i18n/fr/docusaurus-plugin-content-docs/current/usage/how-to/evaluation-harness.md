@@ -14,7 +14,8 @@ Voici un exemple de fichier de configuration que vous pouvez utiliser pour défi
 ```toml
 [llm]
 # IMPORTANT : ajoutez votre clé API ici et définissez le modèle que vous souhaitez évaluer
-model = "claude-3-5-sonnet-20240620"
+model = "claude-3-5-sonnet-20241022"
+
 api_key = "sk-XXX"
 
 [llm.eval_gpt4_1106_preview_llm]
@@ -278,3 +279,4 @@ Cette fonction fait ce qui suit :
 3. Si l'agent a fait plusieurs tentatives, il lui donne la possibilité d'abandonner
 
 En utilisant cette fonction, vous pouvez garantir un comportement cohérent sur plusieurs exécutions d'évaluation et empêcher l'agent de rester bloqué en attendant une entrée humaine.
+

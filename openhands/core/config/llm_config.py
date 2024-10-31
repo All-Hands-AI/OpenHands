@@ -3,6 +3,7 @@ from dataclasses import dataclass, fields
 from typing import Optional
 
 from openhands.core.config.config_utils import get_field_info
+from openhands.core.logger import LOG_DIR
 
 LLM_SENSITIVE_FIELDS = ['api_key', 'aws_access_key_id', 'aws_secret_access_key']
 
@@ -42,7 +43,6 @@ class LLMConfig:
         log_completions: Whether to log LLM completions to the state.
         log_completions_folder: The folder to log LLM completions to. Required if log_completions is True.
         draft_editor: A more efficient LLM to use for file editing. Introduced in [PR 3985](https://github.com/All-Hands-AI/OpenHands/pull/3985).
-        supports_function_calling: Whether the model supports function calling.
     """
 
     model: str = 'claude-3-5-sonnet-20241022'
@@ -75,9 +75,8 @@ class LLMConfig:
     disable_vision: bool | None = None
     caching_prompt: bool = True
     log_completions: bool = False
-    log_completions_folder: str | None = None
+    log_completions_folder: str = os.path.join(LOG_DIR, 'completions')
     draft_editor: Optional['LLMConfig'] = None
-    supports_function_calling: bool = False
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""

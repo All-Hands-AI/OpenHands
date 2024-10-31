@@ -93,17 +93,16 @@ class CodeActAgent(Agent):
             if config.micro_agent_name
             else None
         )
-        if (
-            self.config.function_calling
-            and not self.llm.config.supports_function_calling
-        ):
+
+        self.function_calling_active = self.config.function_calling
+        if self.function_calling_active and not self.llm.is_function_calling_active():
             logger.warning(
                 f'Function calling not supported for model {self.llm.config.model}. '
                 'Disabling function calling.'
             )
-            self.config.function_calling = False
+            self.function_calling_active = False
 
-        if self.config.function_calling:
+        if self.function_calling_active:
             # Function calling mode
             self.tools = codeact_function_calling.get_tools(
                 codeact_enable_browsing_delegate=self.config.codeact_enable_browsing_delegate,
@@ -172,7 +171,7 @@ class CodeActAgent(Agent):
                 FileEditAction,
             ),
         ) or (isinstance(action, AgentFinishAction) and action.source == 'agent'):
-            if self.config.function_calling:
+            if self.function_calling_active:
                 tool_metadata = action.tool_call_metadata
                 assert tool_metadata is not None, (
                     'Tool call metadata should NOT be None when function calling is enabled. Action: '
@@ -286,7 +285,7 @@ class CodeActAgent(Agent):
             # when the LLM tries to return the next message
             raise ValueError(f'Unknown observation type: {type(obs)}')
 
-        if self.config.function_calling:
+        if self.function_calling_active:
             # Update the message as tool response properly
             if (tool_call_metadata := obs.tool_call_metadata) is not None:
                 tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(
@@ -334,7 +333,7 @@ class CodeActAgent(Agent):
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
-        if self.config.function_calling:
+        if self.function_calling_active:
             params['tools'] = self.tools
         else:
             params['stop'] = [
@@ -345,7 +344,7 @@ class CodeActAgent(Agent):
             ]
         response = self.llm.completion(**params)
 
-        if self.config.function_calling:
+        if self.function_calling_active:
             actions = codeact_function_calling.response_to_actions(response)
             for action in actions:
                 self.pending_actions.append(action)
@@ -479,7 +478,7 @@ class CodeActAgent(Agent):
                     else:
                         break
 
-        if not self.config.function_calling:
+        if not self.function_calling_active:
             # The latest user message is important:
             # we want to remind the agent of the environment constraints
             latest_user_message = next(
