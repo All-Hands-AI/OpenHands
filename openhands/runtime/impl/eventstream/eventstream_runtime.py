@@ -457,10 +457,12 @@ class EventStreamRuntime(Runtime):
             if action_type not in ACTION_TYPE_TO_CLASS:
                 return ErrorObservation(
                     f'Action {action_type} does not exist.',
+                    error_id='AGENT_ERROR$BAD_ACTION',
                 )
             if not hasattr(self, action_type):
                 return ErrorObservation(
                     f'Action {action_type} is not supported in the current runtime.',
+                    error_id='AGENT_ERROR$BAD_ACTION',
                 )
             if (
                 getattr(action, 'confirmation_state', None)
@@ -489,6 +491,7 @@ class EventStreamRuntime(Runtime):
                 self.log('error', 'No response received within the timeout period.')
                 obs = ErrorObservation(
                     f'Action execution timed out after {action.timeout} seconds.',
+                    error_id='AGENT_ERROR$ACTION_TIMEOUT',
                 )
             self._refresh_logs()
             return obs

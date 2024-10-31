@@ -1522,5 +1522,11 @@
   },
   "STATUS$ERROR_RUNTIME_DISCONNECTED": {
     "en": "There was an error while connecting to the runtime. Please refresh the page."
+  },
+  "AGENT_ERROR$BAD_ACTION": {
+    "en": "Agent tried to execute a malformed action."
+  },
+  "AGENT_ERROR$ACTION_TIMEOUT": {
+    "en": "Action timed out."
   }
 }

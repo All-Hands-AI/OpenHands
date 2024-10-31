@@ -327,10 +327,12 @@ class RemoteRuntime(Runtime):
             if action_type not in ACTION_TYPE_TO_CLASS:
                 return ErrorObservation(
                     f'[Runtime (ID={self.runtime_id})] Action {action_type} does not exist.',
+                    error_id='AGENT_ERROR$BAD_ACTION',
                 )
             if not hasattr(self, action_type):
                 return ErrorObservation(
                     f'[Runtime (ID={self.runtime_id})] Action {action_type} is not supported in the current runtime.',
+                    error_id='AGENT_ERROR$BAD_ACTION',
                 )
 
             assert action.timeout is not None
@@ -350,6 +352,7 @@ class RemoteRuntime(Runtime):
             except requests.Timeout:
                 obs = ErrorObservation(
                     f'[Runtime (ID={self.runtime_id})] Action execution timed out',
+                    error_id='AGENT_ERROR$ACTION_TIMEOUT',
                 )
                 return obs
             return obs
