@@ -19,9 +19,9 @@ class AgentConfig:
     """
 
     function_calling: bool = True
-    codeact_enable_browsing_delegate: bool = False
+    codeact_enable_browsing_delegate: bool = True
     codeact_enable_llm_editor: bool = False
-    codeact_enable_jupyter: bool = False
+    codeact_enable_jupyter: bool = True
     micro_agent_name: str | None = None
     memory_enabled: bool = False
     memory_max_threads: int = 3

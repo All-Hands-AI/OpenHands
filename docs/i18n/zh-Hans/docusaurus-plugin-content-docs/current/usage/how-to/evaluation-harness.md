@@ -12,7 +12,7 @@
 ```toml
 [llm]
 # 重要：在此处添加您的 API 密钥，并将模型设置为您要评估的模型
-model = "claude-3-5-sonnet-20240620"
+model = "claude-3-5-sonnet-20241022"
 api_key = "sk-XXX"
 
 [llm.eval_gpt4_1106_preview_llm]
