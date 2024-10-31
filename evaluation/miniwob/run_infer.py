@@ -47,13 +47,16 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='eventstream',
+        runtime=os.environ.get('RUNTIME', 'eventstream'),
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             base_container_image='xingyaoww/od-eval-miniwob:v1.0',
             enable_auto_lint=True,
             use_host_network=False,
             browsergym_eval_env=env_id,
+            api_key=os.environ.get('ALLHANDS_API_KEY', None),
+            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
+            keep_remote_runtime_alive=False,
         ),
         # do not mount workspace
         workspace_base=None,
@@ -117,7 +120,7 @@ def process_instance(
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ) -> EvalOutput:
-    env_id = instance.id
+    env_id = instance.instance_id
     config = get_config(metadata, env_id)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
