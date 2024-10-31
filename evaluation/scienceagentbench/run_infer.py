@@ -284,8 +284,8 @@ if __name__ == '__main__':
         args.eval_output_dir,
     )
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
+    dataset['instance_id'] = dataset['instance_id'].apply(str)
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit)
-    instances['instance_id'] = instances['instance_id'].apply(str)
 
     run_evaluation(
         instances, metadata, output_file, args.eval_num_workers, process_instance
