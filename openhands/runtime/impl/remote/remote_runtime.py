@@ -130,41 +130,37 @@ class RemoteRuntime(Runtime):
 
     def _check_existing_runtime(self) -> bool:
         try:
-            response = send_request(
-                self.session,
+            response = self._send_request(
                 'GET',
                 f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.sid}',
                 timeout=5,
             )
-        except Exception as e:
+        except requests.HTTPError as e:
+            if e.response.status_code == 404:
+                return False
             self.log('debug', f'Error while looking for remote runtime: {e}')
-            return False
+            raise
 
-        if response.status_code == 200:
-            data = response.json()
-            status = data.get('status')
-            if status == 'running':
-                self._parse_runtime_response(response)
-                return True
-            elif status == 'stopped':
-                self.log('debug', 'Found existing remote runtime, but it is stopped')
-                return False
-            elif status == 'paused':
-                self.log('debug', 'Found existing remote runtime, but it is paused')
-                self._parse_runtime_response(response)
-                self._resume_runtime()
-                return True
-            else:
-                self.log('error', f'Invalid response from runtime API: {data}')
-                return False
+        data = response.json()
+        status = data.get('status')
+        if status == 'running':
+            self._parse_runtime_response(response)
+            return True
+        elif status == 'stopped':
+            self.log('debug', 'Found existing remote runtime, but it is stopped')
+            return False
+        elif status == 'paused':
+            self.log('debug', 'Found existing remote runtime, but it is paused')
+            self._parse_runtime_response(response)
+            self._resume_runtime()
+            return True
         else:
-            self.log('debug', 'Could not find existing remote runtime')
+            self.log('error', f'Invalid response from runtime API: {data}')
             return False
 
     def _build_runtime(self):
         self.log('debug', f'Building RemoteRuntime config:\n{self.config}')
-        response = send_request(
-            self.session,
+        response = self._send_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
             timeout=10,
@@ -194,14 +190,13 @@ class RemoteRuntime(Runtime):
             force_rebuild=self.config.sandbox.force_rebuild_runtime,
         )
 
-        response = send_request(
-            self.session,
+        response = self._send_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
             params={'image': self.container_image},
             timeout=10,
         )
-        if response.status_code != 200 or not response.json()['exists']:
+        if not response.json()['exists']:
             raise RuntimeError(f'Container image {self.container_image} does not exist')
 
     def _start_runtime(self):
@@ -231,16 +226,11 @@ class RemoteRuntime(Runtime):
         }
 
         # Start the sandbox using the /start endpoint
-        response = send_request(
-            self.session,
+        response = self._send_request(
             'POST',
             f'{self.config.sandbox.remote_runtime_api_url}/start',
             json=start_request,
         )
-        if response.status_code != 201:
-            raise RuntimeError(
-                f'[Runtime (ID={self.runtime_id})] Failed to start runtime: {response.text}'
-            )
         self._parse_runtime_response(response)
         self.log(
             'debug',
@@ -248,17 +238,12 @@ class RemoteRuntime(Runtime):
         )
 
     def _resume_runtime(self):
-        response = send_request(
-            self.session,
+        self._send_request(
             'POST',
             f'{self.config.sandbox.remote_runtime_api_url}/resume',
             json={'runtime_id': self.runtime_id},
             timeout=30,
         )
-        if response.status_code != 200:
-            raise RuntimeError(
-                f'[Runtime (ID={self.runtime_id})] Failed to resume runtime: {response.text}'
-            )
         self.log('debug', 'Runtime resumed.')
 
     def _parse_runtime_response(self, response: requests.Response):
@@ -277,30 +262,20 @@ class RemoteRuntime(Runtime):
     )
     def _wait_until_alive(self):
         self.log('debug', f'Waiting for runtime to be alive at url: {self.runtime_url}')
-        runtime_info_response = send_request(
-            self.session,
+        runtime_info_response = self._send_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.runtime_id}',
         )
-        if runtime_info_response.status_code != 200:
-            raise RuntimeError(
-                f'Failed to get runtime status: {runtime_info_response.status_code}. Response: {runtime_info_response.text}'
-            )
         runtime_data = runtime_info_response.json()
         assert 'runtime_id' in runtime_data
+        assert runtime_data['runtime_id'] == self.runtime_id
         assert 'pod_status' in runtime_data
-        self.runtime_id = runtime_data['runtime_id']
         pod_status = runtime_data['pod_status']
         if pod_status == 'Ready':
-            response = send_request(
-                self.session,
+            self._send_request(
                 'GET',
                 f'{self.runtime_url}/alive',
-            )
-            if response.status_code != 200:
-                msg = f'Runtime (ID={self.runtime_id}) is not alive yet, even though it reported Ready. Status: {response.status_code}.'
-                self.log('warning', msg)
-                raise RuntimeError(msg)
+            )  # will raise exception if we don't get 200 back
             return
         if pod_status in ('Failed', 'Unknown', 'Not Found'):
             # clean up the runtime
@@ -319,10 +294,9 @@ class RemoteRuntime(Runtime):
         if self.config.sandbox.keep_remote_runtime_alive or self.attach_to_existing:
             self.session.close()
             return
-        if self.runtime_id:
+        if self.runtime_id and self.session:
             try:
-                response = send_request(
-                    self.session,
+                response = self._send_request(
                     'POST',
                     f'{self.config.sandbox.remote_runtime_api_url}/stop',
                     json={'runtime_id': self.runtime_id},
@@ -363,8 +337,7 @@ class RemoteRuntime(Runtime):
             try:
                 request_body = {'action': event_to_dict(action)}
                 self.log('debug', f'Request body: {request_body}')
-                response = send_request(
-                    self.session,
+                response = self._send_request(
                     'POST',
                     f'{self.runtime_url}/execute_action',
                     json=request_body,
@@ -380,15 +353,16 @@ class RemoteRuntime(Runtime):
                 return obs
             return obs
 
-    def _send_request(self, *args, **kwargs):
+    def _send_request(self, method, url, **kwargs):
+        is_runtime_request = self.runtime_url in url
         try:
-            return send_request(self.session, *args, **kwargs)
+            return send_request(self.session, method, url, **kwargs)
         except requests.Timeout:
             self.log('error', 'No response received within the timeout period.')
             raise
         except requests.HTTPError as e:
             print('got http error', e)
-            if e.response.status_code == 404:
+            if is_runtime_request and e.response.status_code == 404:
                 raise RuntimeDisconnectedError()
             else:
                 raise e
