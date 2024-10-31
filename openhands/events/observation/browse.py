@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 
+from browsergym.utils.obs import flatten_axtree_to_str
+
 from openhands.core.schema import ObservationType
 from openhands.events.observation.observation import Observation
 
@@ -38,5 +40,15 @@ class BrowserOutputObservation(Observation):
             f'Last browser action: {self.last_browser_action}\n'
             f'Last browser action error: {self.last_browser_action_error}\n'
             f'Focused element bid: {self.focused_element_bid}\n'
-            f'CONTENT: {self.content}\n'
+            f'AX tree: {self.get_axtree_str()}\n'
         )
+
+    def get_axtree_str(self) -> str:
+        cur_axtree_txt = flatten_axtree_to_str(
+            self.axtree_object,
+            extra_properties=self.extra_element_properties,
+            with_clickable=True,
+            filter_visible_only=True,
+        )
+        self._axtree_str = cur_axtree_txt
+        return cur_axtree_txt

@@ -153,7 +153,7 @@ def get_config(
     config.set_llm_config(metadata.llm_config)
     agent_config = AgentConfig(
         codeact_enable_jupyter=False,
-        codeact_enable_browsing_delegate=False,
+        codeact_enable_browsing=False,
         codeact_enable_llm_editor=False,
     )
     config.set_agent_config(agent_config)
