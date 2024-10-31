@@ -10,6 +10,7 @@ import {
   Outlet,
   ClientLoaderFunctionArgs,
 } from "@remix-run/react";
+import posthog from "posthog-js";
 import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
 import CogTooth from "#/assets/cog-tooth";
@@ -28,6 +29,12 @@ import DocsIcon from "#/assets/docs.svg?react";
 import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { WaitlistModal } from "#/components/waitlist-modal";
+import ModalBody from "#/components/modals/ModalBody";
+import {
+  BaseModalDescription,
+  BaseModalTitle,
+} from "#/components/modals/confirmation-modals/BaseModal";
+import ModalButton from "#/components/buttons/ModalButton";
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   try {
@@ -41,6 +48,14 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
 
   let token = localStorage.getItem("token");
   const ghToken = localStorage.getItem("ghToken");
+  const analyticsConsent = localStorage.getItem("analytics-consent");
+  const userConsents = analyticsConsent === "true";
+
+  if (!userConsents) {
+    posthog.opt_out_capturing();
+  } else {
+    posthog.opt_in_capturing();
+  }
 
   let isAuthed: boolean = false;
   let githubAuthUrl: string | null = null;
@@ -79,6 +94,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
     user,
     settingsIsUpdated,
     settings,
+    analyticsConsent,
   });
 };
 
@@ -132,9 +148,11 @@ export default function MainApp() {
     githubAuthUrl,
     settingsIsUpdated,
     settings,
+    analyticsConsent,
   } = useLoaderData<typeof clientLoader>();
   const logoutFetcher = useFetcher({ key: "logout" });
   const endSessionFetcher = useFetcher({ key: "end-session" });
+  const consentFetcher = useFetcher({ key: "set-consent" });
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
@@ -304,6 +322,7 @@ export default function MainApp() {
             onClose={handleAccountSettingsModalClose}
             selectedLanguage={settings.LANGUAGE}
             gitHubError={isGitHubErrorReponse(user)}
+            analyticsConsent={analyticsConsent}
           />
         </ModalBackdrop>
       )}
@@ -327,6 +346,35 @@ export default function MainApp() {
       )}
       {!isAuthed && (
         <WaitlistModal ghToken={ghToken} githubAuthUrl={githubAuthUrl} />
+      )}
+      {!analyticsConsent && (
+        <ModalBackdrop>
+          <consentFetcher.Form
+            method="POST"
+            action="/set-consent"
+            className="flex flex-col gap-2"
+          >
+            <ModalBody>
+              <BaseModalTitle title="Your Privacy Preferences" />
+              <BaseModalDescription>
+                We use tools to understand how our application is used to
+                improve your experience. You can allow or decline analytics.
+                Your preferences will be stored and can be updated anytime.
+              </BaseModalDescription>
+
+              <label className="flex gap-2 items-center self-start">
+                <input name="analytics" type="checkbox" defaultChecked />
+                Enable analytics
+              </label>
+
+              <ModalButton
+                type="submit"
+                text="Confirm Preferences"
+                className="bg-primary text-white w-full hover:opacity-80"
+              />
+            </ModalBody>
+          </consentFetcher.Form>
+        </ModalBackdrop>
       )}
     </div>
   );
