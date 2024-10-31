@@ -869,6 +869,8 @@ def test_file_editor_str_replace(setup_file):
      1\tLine 1
      2\tNew Line 2
      3\tLine 3
+
+No linting issues found in the changes.
 Review the changes and make sure they are as expected. Edit the file again if necessary."""
     )
 
@@ -923,6 +925,8 @@ def test_file_editor_insert(setup_file):
      2\tLine 2
      3\tInserted Line
      4\tLine 3
+
+No linting issues found in the changes.
 Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary."""
     )
 
@@ -980,6 +984,8 @@ def test_file_editor_undo_edit(setup_file):
      1\tLine 1
      2\tNew Line 2
      3\tLine 3
+
+No linting issues found in the changes.
 Review the changes and make sure they are as expected. Edit the file again if necessary."""
     )
 
