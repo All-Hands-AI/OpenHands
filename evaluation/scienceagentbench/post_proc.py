@@ -4,17 +4,13 @@ from argparse import ArgumentParser
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument(
-        '--log_fname',
-        type=str,
-    )
-    parser.add_argument(
-        '--out_fname',
+        'log_fname',
         type=str,
     )
     args = parser.parse_args()
 
     fname = args.log_fname
-    out_fname = args.out_fname
+    out_fname = args.log_fname.replace('.jsonl', '.converted.jsonl')
 
     log = [json.loads(line) for line in open(fname)]
 

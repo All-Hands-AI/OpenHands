@@ -43,10 +43,11 @@ default, it is set to 1.
 After the inference is completed, you may use the following command to extract necessary information from the output log for evaluation:
 
 ```bash
-python post_proc.py --log_fname [log_fname] --out_fname [out_fname]
+python post_proc.py [log_fname]
 ```
 - `log_fname`, e.g. `evaluation/.../output.jsonl`, is the automatically saved trajectory log of an OpenHands agent.
-- `out_fname`, e.g. `gpt_4o_openhands.jsonl`, is the custom name of the simplified log with final versions of programs and agent costs.
+
+Output will be write to e.g. `evaluation/.../output.converted.jsonl`
 
 ### Run evaluation
 
