@@ -37,7 +37,7 @@ WORKSPACE_BASE=$(pwd)/workspace
 2. Définissez `LLM_MODEL` sur le modèle que vous souhaitez utiliser :
 
 ```bash
-LLM_MODEL="anthropic/claude-3-5-sonnet-20240620"
+LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"
 ```
 
 3. Définissez `LLM_API_KEY` sur votre clé API :

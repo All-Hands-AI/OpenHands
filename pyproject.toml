@@ -14,7 +14,7 @@ packages = [
 python = "^3.12"
 datasets = "*"
 pandas = "*"
-litellm = { git = "https://github.com/BerriAI/litellm.git", rev = "58fe6610601297c5a90367fd4583469e2df3fcf9" }
+litellm = "^1.51.1"
 google-generativeai = "*" # To use litellm with Gemini Pro API
 termcolor = "*"
 seaborn = "*"

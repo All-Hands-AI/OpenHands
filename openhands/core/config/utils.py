@@ -15,7 +15,6 @@ from openhands.core.config.app_config import AppConfig
 from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
-    UndefinedString,
 )
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.sandbox_config import SandboxConfig
@@ -191,18 +190,19 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
 
 def finalize_config(cfg: AppConfig):
     """More tweaks to the config after it's been loaded."""
-    cfg.workspace_base = os.path.abspath(cfg.workspace_base)
-    # Set workspace_mount_path if not set by the user
-    if cfg.workspace_mount_path is UndefinedString.UNDEFINED:
-        cfg.workspace_mount_path = cfg.workspace_base
+    if cfg.workspace_base is not None:
+        cfg.workspace_base = os.path.abspath(cfg.workspace_base)
+        if cfg.workspace_mount_path is None:
+            cfg.workspace_mount_path = cfg.workspace_base
 
-    if cfg.workspace_mount_rewrite:  # and not config.workspace_mount_path:
-        # TODO why do we need to check if workspace_mount_path is None?
-        base = cfg.workspace_base or os.getcwd()
-        parts = cfg.workspace_mount_rewrite.split(':')
-        cfg.workspace_mount_path = base.replace(parts[0], parts[1])
+        if cfg.workspace_mount_rewrite:
+            base = cfg.workspace_base or os.getcwd()
+            parts = cfg.workspace_mount_rewrite.split(':')
+            cfg.workspace_mount_path = base.replace(parts[0], parts[1])
 
+    # make sure log_completions_folder is an absolute path
     for llm in cfg.llms.values():
+        llm.log_completions_folder = os.path.abspath(llm.log_completions_folder)
         if llm.embedding_base_url is None:
             llm.embedding_base_url = llm.base_url
 

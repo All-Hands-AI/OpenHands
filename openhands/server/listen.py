@@ -29,12 +29,10 @@ from fastapi import (
     WebSocket,
     status,
 )
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from starlette.middleware.base import BaseHTTPMiddleware
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller.agent import Agent
@@ -57,6 +55,7 @@ from openhands.events.serialization import event_to_dict
 from openhands.llm import bedrock
 from openhands.runtime.base import Runtime
 from openhands.server.auth import get_sid_from_token, sign_token
+from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware
 from openhands.server.session import SessionManager
 
 load_dotenv()
@@ -68,6 +67,21 @@ session_manager = SessionManager(config, file_store)
 GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', '').strip()
 GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '').strip()
 
+# New global variable to store the user list
+GITHUB_USER_LIST = None
+
+
+# New function to load the user list
+def load_github_user_list():
+    global GITHUB_USER_LIST
+    waitlist = os.getenv('GITHUB_USER_LIST_FILE')
+    if waitlist:
+        with open(waitlist, 'r') as f:
+            GITHUB_USER_LIST = [line.strip() for line in f if line.strip()]
+
+
+load_github_user_list()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -78,28 +92,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=['http://localhost:3001', 'http://127.0.0.1:3001'],
+    LocalhostCORSMiddleware,
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
 )
-
-
-class NoCacheMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware to disable caching for all routes by adding appropriate headers
-    """
-
-    async def dispatch(self, request, call_next):
-        response = await call_next(request)
-        if not request.url.path.startswith('/assets'):
-            response.headers['Cache-Control'] = (
-                'no-cache, no-store, must-revalidate, max-age=0'
-            )
-            response.headers['Pragma'] = 'no-cache'
-            response.headers['Expires'] = '0'
-        return response
 
 
 app.add_middleware(NoCacheMiddleware)
@@ -836,22 +833,14 @@ class User(BaseModel):
 
 @app.post('/api/authenticate')
 def authenticate(user: User | None = None):
-    waitlist = os.getenv('GITHUB_USER_LIST_FILE')
+    global GITHUB_USER_LIST
 
     # Only check if waitlist is provided
-    if waitlist is not None:
-        try:
-            with open(waitlist, 'r') as f:
-                users = f.read().splitlines()
-                if user is None or user.login not in users:
-                    return JSONResponse(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        content={'error': 'User not on waitlist'},
-                    )
-        except FileNotFoundError:
+    if GITHUB_USER_LIST:
+        if user is None or user.login not in GITHUB_USER_LIST:
             return JSONResponse(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={'error': 'Waitlist file not found'},
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={'error': 'User not on waitlist'},
             )
 
     return JSONResponse(

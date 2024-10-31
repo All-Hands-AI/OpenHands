@@ -239,7 +239,7 @@ def process_instance(
                         # Create a directory structure that matches the expected format
                         # NOTE: this is a hack to make the eval report format consistent
                         # with the original SWE-Bench eval script
-                        log_dir = os.path.join(temp_dir, 'logs', instance_id)
+                        log_dir = os.path.join(temp_dir, 'logs', instance_id.lower())
                         os.makedirs(log_dir, exist_ok=True)
                         test_output_path = os.path.join(log_dir, 'test_output.txt')
                         with open(test_output_path, 'w') as f:
