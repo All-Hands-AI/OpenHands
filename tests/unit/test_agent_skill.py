@@ -1033,11 +1033,11 @@ greet("World")
         command='str_replace',
         path=str(test_file),
         old_str='greet("World")',
-        new_str='greet(UNDEFINED_VARIABLE)'
+        new_str='greet(UNDEFINED_VARIABLE)',
     )
-
+    print(result)
     # Verify that the linting error is reported
-    assert "Linting issues found in the changes:" in result
+    assert 'Linting issues found in the changes:' in result
     assert "F821 undefined name 'UNDEFINED_VARIABLE'" in result
 
     # Test that insert also triggers linting
@@ -1045,9 +1045,10 @@ greet("World")
         command='insert',
         path=str(test_file),
         insert_line=2,
-        new_str='    x = ANOTHER_UNDEFINED_VAR\n'
+        new_str='    x = ANOTHER_UNDEFINED_VAR\n',
     )
+    print(result)
 
     # Verify that the linting error is reported
-    assert "Linting issues found in the changes:" in result
+    assert 'Linting issues found in the changes:' in result
     assert "F821 undefined name 'ANOTHER_UNDEFINED_VAR'" in result

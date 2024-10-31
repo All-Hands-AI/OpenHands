@@ -291,9 +291,9 @@ class EditTool:
             output = ['Linting issues found in the changes:']
             for result in results:
                 output.append(
-                    f'Line {result.line}, Column {result.column}: {result.message}'
+                    f'- Line {result.line}, Column {result.column}: {result.message}'
                 )
-            return '\n'.join(output)
+            return '\n'.join(output) + '\n'
 
     def _make_output(
         self,
