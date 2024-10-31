@@ -196,7 +196,7 @@ function App() {
         }),
       );
     } else {
-      dispatch(addErrorMessage({ error, message: details }));
+      dispatch(addErrorMessage({ message: details }));
     }
   };
 
