@@ -32,7 +32,8 @@ WORKSPACE_BASE=$(pwd)/workspace
 2. 将 `LLM_MODEL` 设置为你要使用的模型:
 
 ```bash
-LLM_MODEL="anthropic/claude-3-5-sonnet-20240620"
+LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"
+
 ```
 
 3. 将 `LLM_API_KEY` 设置为你的 API 密钥:
@@ -57,3 +58,4 @@ docker run -it \
     ghcr.io/all-hands-ai/openhands:0.11 \
     python -m openhands.core.main -t "write a bash script that prints hi"
 ```
+

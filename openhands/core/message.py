@@ -66,6 +66,21 @@ class Message(BaseModel):
 
     @model_serializer
     def serialize_model(self) -> dict:
+        # We need two kinds of serializations:
+        # - into a single string: for providers that don't support list of content items (e.g. no vision, no tool calls)
+        # - into a list of content items: the new APIs of providers with vision/prompt caching/tool calls
+        # NOTE: remove this when litellm or providers support the new API
+        if self.cache_enabled or self.vision_enabled or self.tool_call_id is not None:
+            return self._list_serializer()
+        return self._string_serializer()
+
+    def _string_serializer(self):
+        content = '\n'.join(
+            item.text for item in self.content if isinstance(item, TextContent)
+        )
+        return {'content': content, 'role': self.role}
+
+    def _list_serializer(self):
         content: list[dict] = []
         role_tool_with_prompt_caching = False
         for item in self.content:

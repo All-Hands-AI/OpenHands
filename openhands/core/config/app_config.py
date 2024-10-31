@@ -1,4 +1,3 @@
-import os
 import uuid
 from dataclasses import dataclass, field, fields, is_dataclass
 from typing import ClassVar
@@ -8,7 +7,6 @@ from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
-    UndefinedString,
     get_field_info,
 )
 from openhands.core.config.llm_config import LLMConfig
@@ -55,11 +53,8 @@ class AppConfig:
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
     trajectories_path: str | None = None
-    # TODO: clean up workspace path after the removal of ServerRuntime
-    workspace_base: str = os.path.join(os.getcwd(), 'workspace')
-    workspace_mount_path: str | None = (
-        UndefinedString.UNDEFINED  # this path should always be set when config is fully loaded
-    )  # when set to None, do not mount the workspace
+    workspace_base: str | None = None
+    workspace_mount_path: str | None = None
     workspace_mount_path_in_sandbox: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
