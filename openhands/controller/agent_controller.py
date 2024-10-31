@@ -544,6 +544,7 @@ class AgentController:
                     f'Agent reached maximum {limit_type}, task paused. '
                     f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}. '
                 )
+                # FIXME: this isn't really an exception--we should have a different path
                 await self._react_to_exception(
                     e,
                     new_state=AgentState.PAUSED,
