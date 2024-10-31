@@ -118,7 +118,7 @@ class AgentSession:
             agent_configs=agent_configs,
         )
         self.event_stream.add_event(
-            ChangeAgentStateAction(AgentState.INIT), EventSource.USER
+            ChangeAgentStateAction(AgentState.INIT), EventSource.ENVIRONMENT
         )
         if self.controller:
             self.controller.agent_task = self.controller.start_step_loop()

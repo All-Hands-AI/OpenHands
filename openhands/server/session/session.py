@@ -73,10 +73,11 @@ class Session:
 
     async def _initialize_agent(self, data: dict):
         self.agent_session.event_stream.add_event(
-            ChangeAgentStateAction(AgentState.LOADING), EventSource.USER
+            ChangeAgentStateAction(AgentState.LOADING), EventSource.ENVIRONMENT
         )
         self.agent_session.event_stream.add_event(
-            AgentStateChangedObservation('', AgentState.LOADING), EventSource.AGENT
+            AgentStateChangedObservation('', AgentState.LOADING),
+            EventSource.ENVIRONMENT,
         )
         # Extract the agent-relevant arguments from the request
         args = {key: value for key, value in data.get('args', {}).items()}
@@ -138,12 +139,19 @@ class Session:
             return
         if event.source == EventSource.AGENT:
             await self.send(event_to_dict(event))
-        elif event.source == EventSource.USER and isinstance(
+        # NOTE: ipython observations are not sent here currently
+        elif event.source == EventSource.ENVIRONMENT and isinstance(
             event, CmdOutputObservation
         ):
-            await self.send(event_to_dict(event))
+            # feedback from the environment to agent actions is understood as agent events by the UI
+            event_dict = event_to_dict(event)
+            event_dict['source'] = EventSource.AGENT
+            await self.send(event_dict)
         elif isinstance(event, ErrorObservation):
-            await self.send(event_to_dict(event))
+            # send error events as agent events to the UI
+            event_dict = event_to_dict(event)
+            event_dict['source'] = EventSource.AGENT
+            await self.send(event_dict)
 
     async def dispatch(self, data: dict):
         action = data.get('action', '')
