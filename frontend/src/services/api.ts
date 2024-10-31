@@ -1,4 +1,4 @@
-import { getToken } from "./auth";
+import { getToken, getGitHubToken } from "./auth";
 import toast from "#/utils/toast";
 
 const WAIT_FOR_AUTH_DELAY_MS = 500;
@@ -18,6 +18,7 @@ export async function request(
 
   const needsAuth = !url.startsWith("/api/options/");
   const token = getToken();
+  const githubToken = getGitHubToken();
   if (!token && needsAuth) {
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -30,6 +31,13 @@ export async function request(
     options.headers = {
       ...(options.headers || {}),
       Authorization: `Bearer ${token}`,
+    };
+  }
+  if (githubToken) {
+    // eslint-disable-next-line no-param-reassign
+    options.headers = {
+      ...(options.headers || {}),
+      "X-GitHub-Token": githubToken,
     };
   }
 

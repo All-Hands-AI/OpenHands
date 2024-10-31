@@ -1,16 +1,9 @@
-import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
 
 export const userIsAuthenticated = async (ghToken: string | null) => {
   if (window.__APP_MODE__ !== "saas") return true;
+  if (!ghToken) return false;
 
-  let user: GitHubUser | GitHubErrorReponse | null = null;
-  if (ghToken) user = await retrieveGitHubUser(ghToken);
-
-  if (user && !isGitHubErrorReponse(user)) {
-    const isAuthed = await OpenHands.isAuthenticated(user.login);
-    return isAuthed;
-  }
-
-  return false;
+  const authResponse = await OpenHands.authenticate(ghToken);
+  return authResponse.ok;
 };

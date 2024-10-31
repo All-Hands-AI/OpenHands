@@ -207,7 +207,9 @@ async def test_run_controller_stop_with_stuck(mock_agent, mock_event_stream):
                 'Non fatal error here to trigger loop'
             )
             non_fatal_error_obs._cause = event.id
-            await event_stream.async_add_event(non_fatal_error_obs, EventSource.USER)
+            await event_stream.async_add_event(
+                non_fatal_error_obs, EventSource.ENVIRONMENT
+            )
 
     event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event)
     runtime.event_stream = event_stream
