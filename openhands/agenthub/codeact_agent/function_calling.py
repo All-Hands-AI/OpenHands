@@ -300,6 +300,13 @@ go_forward()
     Examples:
         go_forward()
 
+noop(wait_ms: float = 1000)
+    Description: Do nothing, and optionally wait for the given time (in milliseconds).
+    You can use this to get the current page content and/or wait for the page to load.
+    Examples:
+        noop()
+
+        noop(500)
 
 scroll(delta_x: float, delta_y: float)
     Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
@@ -341,13 +348,6 @@ dblclick(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifier
         dblclick('ca42', button='right')
 
         dblclick('178', button='middle', modifiers=['Shift'])
-
-noop(wait_ms: float = 1000)
-    Description: Do nothing, and optionally wait for the given time (in milliseconds).
-    Examples:
-        noop()
-
-        noop(500)
 
 hover(bid: str)
     Description: Hover over an element.
