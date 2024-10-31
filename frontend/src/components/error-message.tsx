@@ -30,9 +30,9 @@ export function ErrorMessage({ id, message }: ErrorMessageProps) {
             onClick={() => setShowDetails(!showDetails)}
             className="cursor-pointer text-left"
           >
-          {showDetails
-            ? t("ERROR_MESSAGE$HIDE_DETAILS")
-            : t("ERROR_MESSAGE$SHOW_DETAILS")}
+            {showDetails
+              ? t("ERROR_MESSAGE$HIDE_DETAILS")
+              : t("ERROR_MESSAGE$SHOW_DETAILS")}
           </button>
         )}
         {showDetails && <p className="text-neutral-300">{details}</p>}
