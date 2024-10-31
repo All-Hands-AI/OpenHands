@@ -34,6 +34,7 @@ export async function request(
     };
   }
   if (githubToken) {
+    // eslint-disable-next-line no-param-reassign
     options.headers = {
       ...(options.headers || {}),
       "X-GitHub-Token": githubToken,
