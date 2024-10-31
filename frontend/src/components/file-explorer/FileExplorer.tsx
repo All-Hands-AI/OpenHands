@@ -91,14 +91,15 @@ function ExplorerActions({
 }
 
 interface FileExplorerProps {
+  isOpen: boolean;
+  onToggle: () => void;
   error: string | null;
 }
 
-function FileExplorer({ error }: FileExplorerProps) {
+function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
   const { revalidate } = useRevalidator();
 
   const { paths, setPaths } = useFiles();
-  const [isHidden, setIsHidden] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -211,7 +212,7 @@ function FileExplorer({ error }: FileExplorerProps) {
       <div
         className={twMerge(
           "bg-neutral-800 h-full border-r-1 border-r-neutral-600 flex flex-col",
-          isHidden ? "w-12" : "w-60",
+          !isOpen ? "w-12" : "w-60",
         )}
       >
         <div className="flex flex-col relative h-full px-3 py-2">
@@ -219,17 +220,17 @@ function FileExplorer({ error }: FileExplorerProps) {
             <div
               className={twMerge(
                 "flex items-center",
-                isHidden ? "justify-center" : "justify-between",
+                !isOpen ? "justify-center" : "justify-between",
               )}
             >
-              {!isHidden && (
+              {isOpen && (
                 <div className="text-neutral-300 font-bold text-sm">
                   {t(I18nKey.EXPLORER$LABEL_WORKSPACE)}
                 </div>
               )}
               <ExplorerActions
-                isHidden={isHidden}
-                toggleHidden={() => setIsHidden((prev) => !prev)}
+                isHidden={!isOpen}
+                toggleHidden={onToggle}
                 onRefresh={refreshWorkspace}
                 onUpload={selectFileInput}
               />
@@ -237,7 +238,7 @@ function FileExplorer({ error }: FileExplorerProps) {
           </div>
           {!error && (
             <div className="overflow-auto flex-grow">
-              <div style={{ display: isHidden ? "none" : "block" }}>
+              <div style={{ display: !isOpen ? "none" : "block" }}>
                 <ExplorerTree files={paths} />
               </div>
             </div>
