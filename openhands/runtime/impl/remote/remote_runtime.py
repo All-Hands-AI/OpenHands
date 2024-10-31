@@ -1,12 +1,11 @@
 import os
 import tempfile
 import threading
-import time
 from typing import Callable, Optional
 from zipfile import ZipFile
 
 import requests
-from requests.exceptions import Timeout
+import tenacity
 
 from openhands.core.config import AppConfig
 from openhands.events import EventStream
@@ -27,7 +26,11 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.runtime.base import Runtime
+from openhands.runtime.base import (
+    Runtime,
+    RuntimeDisconnectedError,
+    RuntimeNotReadyError,
+)
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
@@ -35,6 +38,8 @@ from openhands.runtime.utils.request import (
     send_request,
 )
 from openhands.runtime.utils.runtime_build import build_runtime_image
+from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
 class RemoteRuntime(Runtime):
@@ -73,7 +78,7 @@ class RemoteRuntime(Runtime):
 
         if self.config.workspace_base is not None:
             self.log(
-                'warning',
+                'debug',
                 'Setting workspace_base is not supported in the remote runtime.',
             )
 
@@ -84,9 +89,9 @@ class RemoteRuntime(Runtime):
         self.runtime_url: str | None = None
 
     async def connect(self):
-        self._start_or_attach_to_runtime()
-        self._wait_until_alive()
-        self.setup_initial_env()
+        await call_sync_from_async(self._start_or_attach_to_runtime)
+        await call_sync_from_async(self._wait_until_alive)
+        await call_sync_from_async(self.setup_initial_env)
 
     def _start_or_attach_to_runtime(self):
         existing_runtime = self._check_existing_runtime()
@@ -265,56 +270,50 @@ class RemoteRuntime(Runtime):
                 {'X-Session-API-Key': start_response['session_api_key']}
             )
 
+    @tenacity.retry(
+        stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
+        reraise=True,
+        retry=tenacity.retry_if_exception_type(RuntimeNotReadyError),
+    )
     def _wait_until_alive(self):
         self.log('debug', f'Waiting for runtime to be alive at url: {self.runtime_url}')
-        # send GET request to /runtime/<id>
-        pod_running = False
-        max_not_found_count = 12  # 2 minutes
-        not_found_count = 0
-        while not pod_running:
-            runtime_info_response = send_request(
-                self.session,
-                'GET',
-                f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.runtime_id}',
-            )
-            if runtime_info_response.status_code != 200:
-                raise RuntimeError(
-                    f'Failed to get runtime status: {runtime_info_response.status_code}. Response: {runtime_info_response.text}'
-                )
-            runtime_data = runtime_info_response.json()
-            assert runtime_data['runtime_id'] == self.runtime_id
-            pod_status = runtime_data['pod_status']
-            self.log(
-                'debug',
-                f'Waiting for runtime pod to be active. Current status: {pod_status}',
-            )
-            if pod_status == 'Ready':
-                pod_running = True
-                break
-            elif pod_status == 'Not Found' and not_found_count < max_not_found_count:
-                not_found_count += 1
-                self.log(
-                    'debug',
-                    f'Runtime pod not found. Count: {not_found_count} / {max_not_found_count}',
-                )
-            elif pod_status in ('Failed', 'Unknown', 'Not Found'):
-                # clean up the runtime
-                self.close()
-                raise RuntimeError(
-                    f'Runtime (ID={self.runtime_id}) failed to start. Current status: {pod_status}'
-                )
-            # Pending otherwise - add proper sleep
-            time.sleep(10)
-
-        response = send_request(
+        runtime_info_response = send_request(
             self.session,
             'GET',
-            f'{self.runtime_url}/alive',
+            f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.runtime_id}',
         )
-        if response.status_code != 200:
-            msg = f'Runtime (ID={self.runtime_id}) is not alive yet. Status: {response.status_code}.'
-            self.log('warning', msg)
-            raise RuntimeError(msg)
+        if runtime_info_response.status_code != 200:
+            raise RuntimeError(
+                f'Failed to get runtime status: {runtime_info_response.status_code}. Response: {runtime_info_response.text}'
+            )
+        runtime_data = runtime_info_response.json()
+        assert 'runtime_id' in runtime_data
+        assert 'pod_status' in runtime_data
+        self.runtime_id = runtime_data['runtime_id']
+        pod_status = runtime_data['pod_status']
+        if pod_status == 'Ready':
+            response = send_request(
+                self.session,
+                'GET',
+                f'{self.runtime_url}/alive',
+            )
+            if response.status_code != 200:
+                msg = f'Runtime (ID={self.runtime_id}) is not alive yet, even though it reported Ready. Status: {response.status_code}.'
+                self.log('warning', msg)
+                raise RuntimeError(msg)
+            return
+        if pod_status in ('Failed', 'Unknown', 'Not Found'):
+            # clean up the runtime
+            self.close()
+            raise RuntimeError(
+                f'Runtime (ID={self.runtime_id}) failed to start. Current status: {pod_status}'
+            )
+
+        self.log(
+            'debug',
+            f'Waiting for runtime pod to be active. Current status: {pod_status}',
+        )
+        raise RuntimeNotReadyError()
 
     def close(self, timeout: int = 10):
         if self.config.sandbox.keep_remote_runtime_alive or self.attach_to_existing:
@@ -371,26 +370,30 @@ class RemoteRuntime(Runtime):
                     json=request_body,
                     timeout=action.timeout,
                 )
-                if response.status_code == 200:
-                    output = response.json()
-                    obs = observation_from_dict(output)
-                    obs._cause = action.id  # type: ignore[attr-defined]
-                    return obs
-                else:
-                    error_message = response.text
-                    self.log('error', f'Error from server: {error_message}')
-                    obs = ErrorObservation(f'Action execution failed: {error_message}')
-            except Timeout:
-                self.log('error', 'No response received within the timeout period.')
+                output = response.json()
+                obs = observation_from_dict(output)
+                obs._cause = action.id  # type: ignore[attr-defined]
+            except requests.Timeout:
                 obs = ErrorObservation(
                     f'[Runtime (ID={self.runtime_id})] Action execution timed out',
                 )
-            except Exception as e:
-                self.log('error', f'Error during action execution: {e}')
-                obs = ErrorObservation(
-                    f'[Runtime (ID={self.runtime_id})] Action execution failed: {str(e)}',
-                )
+                return obs
             return obs
+
+    def _send_request(self, *args, **kwargs):
+        try:
+            return send_request(self.session, *args, **kwargs)
+        except requests.Timeout:
+            self.log('error', 'No response received within the timeout period.')
+            raise
+        except requests.HTTPError as e:
+            print('got http error', e)
+            if e.response.status_code == 404:
+                raise RuntimeDisconnectedError()
+            else:
+                raise e
+        except Exception as e:
+            print('Got unknown exception', e.__class__)
 
     def run(self, action: CmdRunAction) -> Observation:
         return self.run_action(action)
@@ -438,32 +441,16 @@ class RemoteRuntime(Runtime):
 
             params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
 
-            response = send_request(
-                self.session,
+            response = self._send_request(
                 'POST',
                 f'{self.runtime_url}/upload_file',
                 files=upload_data,
                 params=params,
                 timeout=300,
             )
-            if response.status_code == 200:
-                self.log(
-                    'debug',
-                    f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}',
-                )
-                return
-            else:
-                error_message = response.text
-                raise Exception(
-                    f'[Runtime (ID={self.runtime_id})] Copy operation failed: {error_message}'
-                )
-        except TimeoutError:
-            raise TimeoutError(
-                f'[Runtime (ID={self.runtime_id})] Copy operation timed out'
-            )
-        except Exception as e:
-            raise RuntimeError(
-                f'[Runtime (ID={self.runtime_id})] Copy operation failed: {str(e)}'
+            self.log(
+                'debug',
+                f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}',
             )
         finally:
             if recursive:
@@ -473,59 +460,27 @@ class RemoteRuntime(Runtime):
             )
 
     def list_files(self, path: str | None = None) -> list[str]:
-        try:
-            data = {}
-            if path is not None:
-                data['path'] = path
+        data = {}
+        if path is not None:
+            data['path'] = path
 
-            response = send_request(
-                self.session,
-                'POST',
-                f'{self.runtime_url}/list_files',
-                json=data,
-                timeout=30,
-            )
-            if response.status_code == 200:
-                response_json = response.json()
-                assert isinstance(response_json, list)
-                return response_json
-            else:
-                error_message = response.text
-                raise Exception(
-                    f'[Runtime (ID={self.runtime_id})] List files operation failed: {error_message}'
-                )
-        except TimeoutError:
-            raise TimeoutError(
-                f'[Runtime (ID={self.runtime_id})] List files operation timed out'
-            )
-        except Exception as e:
-            raise RuntimeError(
-                f'[Runtime (ID={self.runtime_id})] List files operation failed: {str(e)}'
-            )
+        response = self._send_request(
+            'POST',
+            f'{self.runtime_url}/list_files',
+            json=data,
+            timeout=30,
+        )
+        response_json = response.json()
+        assert isinstance(response_json, list)
+        return response_json
 
     def copy_from(self, path: str) -> bytes:
         """Zip all files in the sandbox and return as a stream of bytes."""
-        try:
-            params = {'path': path}
-            response = send_request(
-                self.session,
-                'GET',
-                f'{self.runtime_url}/download_files',
-                params=params,
-                timeout=30,
-            )
-            if response.status_code == 200:
-                return response.content
-            else:
-                error_message = response.text
-                raise Exception(
-                    f'[Runtime (ID={self.runtime_id})] Copy operation failed: {error_message}'
-                )
-        except requests.Timeout:
-            raise TimeoutError(
-                f'[Runtime (ID={self.runtime_id})] Copy operation timed out'
-            )
-        except Exception as e:
-            raise RuntimeError(
-                f'[Runtime (ID={self.runtime_id})] Copy operation failed: {str(e)}'
-            )
+        params = {'path': path}
+        response = self._send_request(
+            'GET',
+            f'{self.runtime_url}/download_files',
+            params=params,
+            timeout=30,
+        )
+        return response.content

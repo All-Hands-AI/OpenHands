@@ -42,6 +42,14 @@ STATUS_MESSAGES = {
 }
 
 
+class RuntimeNotReadyError(Exception):
+    pass
+
+
+class RuntimeDisconnectedError(Exception):
+    pass
+
+
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
     ret = {}
     for key in os.environ:
@@ -157,7 +165,9 @@ class Runtime(FileEditRuntimeMixin):
                 )
             except Exception as e:
                 err_id = ''
-                if isinstance(e, ConnectionError):
+                if isinstance(e, ConnectionError) or isinstance(
+                    e, RuntimeDisconnectedError
+                ):
                     err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
                 self.log('error', f'Unexpected error while running action {e}')
                 self.log('error', f'Problematic action: {str(event)}')
