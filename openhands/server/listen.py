@@ -3,7 +3,6 @@ import io
 import os
 import re
 import tempfile
-import uuid
 import warnings
 from contextlib import asynccontextmanager
 
@@ -59,7 +58,7 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict
 from openhands.llm import bedrock
 from openhands.runtime.base import Runtime
-from openhands.server.auth import get_sid_from_token, sign_token
+from openhands.server.auth import get_sid_from_token
 from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware
 from openhands.server.session import SessionManager
 
@@ -203,14 +202,13 @@ async def attach_session(request: Request, call_next):
         response = await call_next(request)
         return response
 
-    auth_cookie = request.cookies.get('openhands_auth')
-    if not await authenticate_github_user(auth_cookie):
+    github_token = request.headers.get('X-GitHub-Token')
+    if not await authenticate_github_user(github_token):
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': 'Not authenticated'},
         )
 
-    # For all other methods, validate the Authorization header
     if not request.headers.get('Authorization'):
         logger.warning('Missing Authorization header')
         return JSONResponse(
@@ -304,25 +302,24 @@ async def websocket_endpoint(websocket: WebSocket):
     """
     # Get protocols from Sec-WebSocket-Protocol header
     protocols = websocket.headers.get('sec-websocket-protocol', '').split(', ')
-    
+
     # The first protocol should be our real protocol (e.g. 'openhands')
     # The second protocol should contain our auth token
-    if len(protocols) < 2:
+    if len(protocols) < 3:
+        logger.error('Expected 3 websocket protocols, got %d', len(protocols))
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
     real_protocol = protocols[0]
     auth_token = protocols[1]
+    github_token = protocols[2]
 
-    # Verify GitHub authentication
-    if not await authenticate_github_user(auth_token):
+    if not await authenticate_github_user(github_token):
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
-    # Accept the connection with the real protocol
     await asyncio.wait_for(websocket.accept(subprotocol=real_protocol), 10)
 
-    # Extract session ID from token
     sid = get_sid_from_token(auth_token, config.jwt_secret)
     if sid == '':
         await websocket.send_json({'error': 'Invalid token', 'error_code': 401})
@@ -834,13 +831,10 @@ def github_callback(auth_code: AuthCode):
     )
 
 
-class GitHubToken(BaseModel):
-    token: str  # GitHub access token
-
-
 @app.post('/api/authenticate')
-async def authenticate(github_token: GitHubToken):
-    if not await authenticate_github_user(github_token.token):
+async def authenticate(request: Request):
+    token = request.headers.get('X-GitHub-Token')
+    if not await authenticate_github_user(token):
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': 'Not authorized via GitHub waitlist'},
@@ -850,14 +844,6 @@ async def authenticate(github_token: GitHubToken):
         status_code=status.HTTP_200_OK, content={'message': 'User authenticated'}
     )
 
-    response.set_cookie(
-        key='openhands_auth',
-        value=github_token.token,
-        httponly=True,
-        secure=True,
-        samesite='strict',
-        max_age=3600,  # 1 hour expiry
-    )
     return response
 
 

@@ -49,9 +49,12 @@ function SocketProvider({ children }: SocketProviderProps) {
     const fallback = getValidFallbackHost();
     const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || fallback;
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const sessionToken = options?.token || '';
+    const ghToken = localStorage.getItem("ghToken");
+
     const ws = new WebSocket(
       `${protocol}//${baseUrl}/ws`,
-      ["openhands", options?.token || ""] // First protocol is our real protocol, second is the auth token
+      ["openhands", sessionToken, ghToken],
     );
 
     ws.addEventListener("open", (event) => {
