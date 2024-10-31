@@ -139,7 +139,11 @@ class AgentSession:
             await self.security_analyzer.close()
 
         if self.loop:
-            if not self.loop.is_closed():
+            if self.loop.is_closed():
+                logger.debug(
+                    'Trying to close already closed loop. (It probably never started correctly)'
+                )
+            else:
                 self.loop.stop()
             self.loop = None
 
