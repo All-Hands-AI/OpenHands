@@ -213,20 +213,18 @@ class OpenHands {
   }
 
   /**
-   * Check if the user is authenticated
-   * @param login The user's GitHub login handle
-   * @returns Whether the user is authenticated
+   * Authenticate with GitHub token
+   * @param token The GitHub access token
+   * @returns Response with authentication status and user info if successful
    */
-  static async isAuthenticated(login: string): Promise<boolean> {
-    const response = await fetch(`${OpenHands.BASE_URL}/api/authenticate`, {
+  static async authenticate(token: string): Promise<Response> {
+    return fetch(`${OpenHands.BASE_URL}/api/authenticate`, {
       method: "POST",
-      body: JSON.stringify({ login }),
       headers: {
         "Content-Type": "application/json",
+        "X-GitHub-Token": token,
       },
     });
-
-    return response.status === 200;
   }
 }
 
