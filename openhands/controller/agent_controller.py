@@ -132,7 +132,7 @@ class AgentController:
             message (str): The message to log.
         """
         message = f'[Agent Controller {self.id}] {message}'
-        getattr(logger, level)(message, extra=extra)
+        getattr(logger, level)(message, extra=extra, stacklevel=2)
 
     def update_state_before_step(self):
         self.state.iteration += 1

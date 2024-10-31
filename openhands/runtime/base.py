@@ -113,7 +113,7 @@ class Runtime(FileEditRuntimeMixin):
 
     def log(self, level: str, message: str) -> None:
         message = f'[runtime {self.sid}] {message}'
-        getattr(logger, level)(message)
+        getattr(logger, level)(message, stacklevel=2)
 
     def send_status_message(self, message_id: str):
         """Sends a status message if the callback function was provided."""
