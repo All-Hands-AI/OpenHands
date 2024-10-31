@@ -31,7 +31,7 @@ class BrowserOutputObservation(Observation):
         return 'Visited ' + self.url
 
     def __str__(self) -> str:
-        return (
+        ret = (
             '**BrowserOutputObservation**\n'
             f'URL: {self.url}\n'
             f'Error: {self.error}\n'
@@ -40,8 +40,12 @@ class BrowserOutputObservation(Observation):
             f'Last browser action: {self.last_browser_action}\n'
             f'Last browser action error: {self.last_browser_action_error}\n'
             f'Focused element bid: {self.focused_element_bid}\n'
-            f'AX tree: {self.get_axtree_str(filter_visible_only=True)}\n'
         )
+        try:
+            ret += f'AX tree: {self.get_axtree_str(filter_visible_only=True)}\n'
+        except Exception as e:
+            ret += f'Failed to get AX tree: {e}\n'
+        return ret
 
     def get_axtree_str(self, filter_visible_only: bool = False) -> str:
         cur_axtree_txt = flatten_axtree_to_str(
