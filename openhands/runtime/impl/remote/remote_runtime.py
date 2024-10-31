@@ -354,20 +354,19 @@ class RemoteRuntime(Runtime):
             return obs
 
     def _send_request(self, method, url, **kwargs):
-        is_runtime_request = self.runtime_url in url
+        is_runtime_request = self.runtime_url and self.runtime_url in url
         try:
             return send_request(self.session, method, url, **kwargs)
         except requests.Timeout:
             self.log('error', 'No response received within the timeout period.')
             raise
         except requests.HTTPError as e:
-            print('got http error', e)
             if is_runtime_request and e.response.status_code == 404:
-                raise RuntimeDisconnectedError()
+                raise RuntimeDisconnectedError(
+                    f'404 error while connecting to {self.runtime_url}'
+                )
             else:
                 raise e
-        except Exception as e:
-            print('Got unknown exception', e.__class__)
 
     def run(self, action: CmdRunAction) -> Observation:
         return self.run_action(action)
