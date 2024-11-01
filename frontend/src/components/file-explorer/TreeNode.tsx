@@ -83,11 +83,12 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
       setIsOpen((prev) => !prev);
     } else if (token) {
       const code = modifiedFiles[path] || files[path];
+      setSelectedPath(path);
 
       try {
         const fetchedCode = await OpenHands.getFile(token, path);
-        setSelectedPath(path);
-        if (!code || fetchedCode !== files[path]) {
+        // Only update the file content if this is still the selected path
+        if (selectedPath === path && (!code || fetchedCode !== files[path])) {
           setFileContent(path, fetchedCode);
         }
       } catch (error) {
