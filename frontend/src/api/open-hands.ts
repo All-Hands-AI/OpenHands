@@ -70,7 +70,6 @@ class OpenHands {
    * @returns Success message or error message
    */
   static async saveFile(
-    token: string,
     path: string,
     content: string,
   ): Promise<SaveFileSuccessResponse | ErrorResponse> {
@@ -78,7 +77,6 @@ class OpenHands {
       method: "POST",
       body: JSON.stringify({ filePath: path, content }),
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     });

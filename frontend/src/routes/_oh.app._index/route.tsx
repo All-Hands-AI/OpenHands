@@ -91,9 +91,9 @@ function CodeEditor() {
   const handleSave = async () => {
     if (selectedPath) {
       const content = modifiedFiles[selectedPath];
-      if (content && token) {
+      if (content) {
         try {
-          await OpenHands.saveFile(token, selectedPath, content);
+          await OpenHands.saveFile(selectedPath, content);
           saveNewFileContent(selectedPath);
         } catch (error) {
           toast.error("Failed to save file");
