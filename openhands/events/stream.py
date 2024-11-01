@@ -42,28 +42,31 @@ class EventStream:
 
     def __post_init__(self) -> None:
         try:
-            events = self.file_store.list(f'sessions/{self.sid}/events')
+            content = self.file_store.read(f'sessions/{self.sid}/events.json')
+            events = json.loads(content)
+            if events:
+                # Find highest ID from existing events
+                self._cur_id = max(event['id'] for event in events) + 1
+            else:
+                self._cur_id = 0
         except FileNotFoundError:
             logger.debug(f'No events found for session {self.sid}')
             self._cur_id = 0
-            return
+            # Initialize empty events file
+            self.file_store.write(f'sessions/{self.sid}/events.json', '[]')
 
-        # if we have events, we need to find the highest id to prepare for new events
-        for event_str in events:
-            id = self._get_id_from_filename(event_str)
-            if id >= self._cur_id:
-                self._cur_id = id + 1
+    def _get_events_file(self) -> str:
+        return f'sessions/{self.sid}/events.json'
 
-    def _get_filename_for_id(self, id: int) -> str:
-        return f'sessions/{self.sid}/events/{id}.json'
-
-    @staticmethod
-    def _get_id_from_filename(filename: str) -> int:
+    def _read_events(self) -> list[dict]:
         try:
-            return int(filename.split('/')[-1].split('.')[0])
-        except ValueError:
-            logger.warning(f'get id from filename ({filename}) failed.')
-            return -1
+            content = self.file_store.read(self._get_events_file())
+            return json.loads(content)
+        except FileNotFoundError:
+            return []
+
+    def _write_events(self, events: list[dict]) -> None:
+        self.file_store.write(self._get_events_file(), json.dumps(events))
 
     def get_events(
         self,
@@ -80,36 +83,33 @@ class EventStream:
                 return True
             return False
 
-        if reverse:
+        with self._lock:
+            events = self._read_events()
+            if not events:
+                return
+
             if end_id is None:
                 end_id = self._cur_id - 1
-            event_id = end_id
-            while event_id >= start_id:
-                try:
-                    event = self.get_event(event_id)
-                    if not should_filter(event):
-                        yield event
-                except FileNotFoundError:
-                    logger.debug(f'No event found for ID {event_id}')
-                event_id -= 1
-        else:
-            event_id = start_id
-            while should_continue():
-                if end_id is not None and event_id > end_id:
-                    break
-                try:
-                    event = self.get_event(event_id)
-                    if not should_filter(event):
-                        yield event
-                except FileNotFoundError:
-                    break
-                event_id += 1
+
+            # Convert events to Event objects
+            event_objects = [event_from_dict(event) for event in events]
+            # Filter by ID range
+            filtered_events = [e for e in event_objects if start_id <= e.id <= end_id]
+            # Apply additional filters
+            filtered_events = [e for e in filtered_events if not should_filter(e)]
+            
+            if reverse:
+                filtered_events.reverse()
+
+            yield from filtered_events
 
     def get_event(self, id: int) -> Event:
-        filename = self._get_filename_for_id(id)
-        content = self.file_store.read(filename)
-        data = json.loads(content)
-        return event_from_dict(data)
+        with self._lock:
+            events = self._read_events()
+            for event_data in events:
+                if event_data['id'] == id:
+                    return event_from_dict(event_data)
+            raise FileNotFoundError(f'Event with id {id} not found')
 
     def get_latest_event(self) -> Event:
         return self.get_event(self._cur_id - 1)
@@ -145,12 +145,16 @@ class EventStream:
         with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1
-        logger.debug(f'Adding {type(event).__name__} id={event.id} from {source.name}')
-        event._timestamp = datetime.now().isoformat()
-        event._source = source  # type: ignore [attr-defined]
-        data = event_to_dict(event)
-        if event.id is not None:
-            self.file_store.write(self._get_filename_for_id(event.id), json.dumps(data))
+            logger.debug(f'Adding {type(event).__name__} id={event.id} from {source.name}')
+            event._timestamp = datetime.now().isoformat()
+            event._source = source  # type: ignore [attr-defined]
+            data = event_to_dict(event)
+            
+            # Read current events, append new one, and write back
+            events = self._read_events()
+            events.append(data)
+            self._write_events(events)
+
         tasks = []
         for key in sorted(self._subscribers.keys()):
             stack = self._subscribers[key]
@@ -168,7 +172,9 @@ class EventStream:
                 yield event
 
     def clear(self):
-        self.file_store.delete(f'sessions/{self.sid}')
-        self._cur_id = 0
-        # self._subscribers = {}
-        self.__post_init__()
+        with self._lock:
+            self.file_store.delete(f'sessions/{self.sid}')
+            self._cur_id = 0
+            # Initialize empty events file
+            self.file_store.write(self._get_events_file(), '[]')
+            # self._subscribers = {}
