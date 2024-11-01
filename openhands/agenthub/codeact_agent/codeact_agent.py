@@ -185,7 +185,7 @@ class CodeActAgent(Agent):
                 pending_tool_call_action_messages[llm_response.id] = Message(
                     role=assistant_msg.role,
                     # tool call content SHOULD BE a string
-                    content=[TextContent(text=assistant_msg.content)]
+                    content=[TextContent(text=assistant_msg.content or '')]
                     if assistant_msg.content is not None
                     else [],
                     tool_calls=assistant_msg.tool_calls,
@@ -201,7 +201,7 @@ class CodeActAgent(Agent):
                 ]
         elif isinstance(action, MessageAction):
             role = 'user' if action.source == 'user' else 'assistant'
-            content = [TextContent(text=action.content)]
+            content = [TextContent(text=action.content or '')]
             if self.llm.vision_is_active() and action.images_urls:
                 content.append(ImageContent(image_urls=action.images_urls))
             return [
