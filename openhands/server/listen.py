@@ -361,20 +361,20 @@ async def websocket_endpoint(websocket: WebSocket):
 async def search_events(
     request: Request,
     query: str | None = None,
-    page: int = 1,
-    page_size: int = 20,
+    start_id: int = 0,
+    limit: int = 20,
     event_type: str | None = None,
     source: str | None = None,
     start_date: str | None = None,
     end_date: str | None = None,
 ):
-    """Search through the event stream with pagination and filtering.
+    """Search through the event stream with filtering and pagination.
 
     Args:
         request (Request): The incoming request object
         query (str, optional): Text to search for in event content
-        page (int): Page number (1-based). Defaults to 1
-        page_size (int): Number of events per page. Defaults to 20, max 100
+        start_id (int): Starting ID in the event stream. Defaults to 0
+        limit (int): Maximum number of events to return. Must be between 1 and 100. Defaults to 20
         event_type (str, optional): Filter by event type (e.g., "FileReadAction")
         source (str, optional): Filter by event source
         start_date (str, optional): Filter events after this date (ISO format)
@@ -382,70 +382,38 @@ async def search_events(
 
     Returns:
         dict: Dictionary containing:
-            - events: List of events for the current page
-            - total: Total number of matching events
-            - page: Current page number
-            - total_pages: Total number of pages
-            - has_next: Whether there are more pages
-            - has_prev: Whether there are previous pages
+            - events: List of matching events
+            - has_more: Whether there are more matching events after this batch
+
+    Raises:
+        HTTPException: If conversation is not found
+        ValueError: If limit is less than 1 or greater than 100
     """
     if not request.state.conversation:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='Conversation not found'
         )
 
-    # Validate and adjust pagination parameters
-    if page < 1:
-        page = 1
-    if page_size < 1:
-        page_size = 20
-    if page_size > 100:
-        page_size = 100
-
-    # Calculate start and end IDs for pagination
-    start_id = (page - 1) * page_size
-
-    # Get events from the stream
+    # Get matching events from the stream
     event_stream = request.state.conversation.event_stream
-    matching_events: list = []
-    total_events = 0
+    matching_events = event_stream.get_matching_events(
+        query=query,
+        event_type=event_type,
+        source=source,
+        start_date=start_date,
+        end_date=end_date,
+        start_id=start_id,
+        limit=limit + 1,  # Get one extra to check if there are more
+    )
 
-    for event in event_stream.get_events(start_id=0):  # Get all events to filter
-        # Apply filters
-        if event_type and not event.__class__.__name__ == event_type:
-            continue
-
-        if source and not event.source.name == source:
-            continue
-
-        if start_date and event.timestamp < start_date:
-            continue
-
-        if end_date and event.timestamp > end_date:
-            continue
-
-        # Text search in event content if query provided
-        if query:
-            event_dict = event_to_dict(event)
-            event_str = str(event_dict).lower()
-            if query.lower() not in event_str:
-                continue
-
-        total_events += 1
-
-        # Only keep events for current page
-        if total_events > start_id and (len(matching_events) < page_size):
-            matching_events.append(event_to_dict(event))
-
-    total_pages = (total_events + page_size - 1) // page_size
+    # Check if there are more events
+    has_more = len(matching_events) > limit
+    if has_more:
+        matching_events = matching_events[:limit]  # Remove the extra event
 
     return {
         'events': matching_events,
-        'total': total_events,
-        'page': page,
-        'total_pages': total_pages,
-        'has_next': page < total_pages,
-        'has_prev': page > 1,
+        'has_more': has_more,
     }
 
 
