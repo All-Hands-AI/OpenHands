@@ -382,6 +382,7 @@ class EventStreamRuntime(Runtime):
     @tenacity.retry(
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
         reraise=(ConnectionRefusedError,),
+        wait=tenacity.wait_fixed(2),
     )
     def _wait_until_alive(self):
         self._refresh_logs()
