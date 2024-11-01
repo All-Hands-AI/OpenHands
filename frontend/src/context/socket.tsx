@@ -45,7 +45,8 @@ function SocketProvider({ children }: SocketProviderProps) {
       );
     }
 
-    const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
+    const baseUrl =
+      import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const sessionToken = options?.token || "NO_JWT"; // not allowed to be empty or duplicated
     const ghToken = localStorage.getItem("ghToken") || "NO_GITHUB";
