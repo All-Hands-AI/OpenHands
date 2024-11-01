@@ -138,7 +138,7 @@ export default function MainApp() {
   } = useLoaderData<typeof clientLoader>();
   const logoutFetcher = useFetcher({ key: "logout" });
   const endSessionFetcher = useFetcher({ key: "end-session" });
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
