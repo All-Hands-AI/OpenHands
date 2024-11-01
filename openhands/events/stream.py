@@ -192,7 +192,7 @@ class EventStream:
         if event_type and not event.__class__.__name__ == event_type:
             return True
 
-        if source and not event.source.name == source:
+        if source and not event.source.value == source:
             return True
 
         if start_date and event.timestamp < start_date:
