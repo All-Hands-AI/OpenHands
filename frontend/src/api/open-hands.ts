@@ -35,7 +35,7 @@ class OpenHands {
   }
 
   static async getConfig(): Promise<GetConfigResponse> {
-    return request("config.json");
+    return request("/config.json");
   }
 
   /**
