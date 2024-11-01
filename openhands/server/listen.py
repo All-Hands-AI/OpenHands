@@ -391,8 +391,7 @@ async def search_events(
     """
     if not request.state.conversation:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Conversation not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail='Conversation not found'
         )
 
     # Validate and adjust pagination parameters
@@ -405,18 +404,17 @@ async def search_events(
 
     # Calculate start and end IDs for pagination
     start_id = (page - 1) * page_size
-    end_id = None  # We'll filter after getting events
 
     # Get events from the stream
     event_stream = request.state.conversation.event_stream
-    matching_events = []
+    matching_events: list = []
     total_events = 0
 
     for event in event_stream.get_events(start_id=0):  # Get all events to filter
         # Apply filters
         if event_type and not event.__class__.__name__ == event_type:
             continue
-        
+
         if source and not event.source.name == source:
             continue
 
@@ -434,7 +432,7 @@ async def search_events(
                 continue
 
         total_events += 1
-        
+
         # Only keep events for current page
         if total_events > start_id and (len(matching_events) < page_size):
             matching_events.append(event_to_dict(event))
@@ -442,13 +440,14 @@ async def search_events(
     total_pages = (total_events + page_size - 1) // page_size
 
     return {
-        "events": matching_events,
-        "total": total_events,
-        "page": page,
-        "total_pages": total_pages,
-        "has_next": page < total_pages,
-        "has_prev": page > 1
+        'events': matching_events,
+        'total': total_events,
+        'page': page,
+        'total_pages': total_pages,
+        'has_next': page < total_pages,
+        'has_prev': page > 1,
     }
+
 
 @app.get('/api/options/models')
 async def get_litellm_models() -> list[str]:
