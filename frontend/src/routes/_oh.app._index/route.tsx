@@ -1,6 +1,6 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { json, useLoaderData, useRouteError } from "@remix-run/react";
+import { json, useRouteError } from "@remix-run/react";
 import toast from "react-hot-toast";
 import { editor } from "monaco-editor";
 import { EditorProps } from "@monaco-editor/react";
@@ -30,7 +30,6 @@ export function ErrorBoundary() {
 }
 
 function CodeEditor() {
-  const { token } = useLoaderData<typeof clientLoader>();
   const { runtimeActive } = useSocket();
   const {
     setPaths,
@@ -71,14 +70,14 @@ function CodeEditor() {
 
   React.useEffect(() => {
     // only retrieve files if connected to WS to prevent requesting before runtime is ready
-    if (runtimeActive && token) {
-      OpenHands.getFiles(token)
+    if (runtimeActive) {
+      OpenHands.getFiles()
         .then(setPaths)
         .catch(() => {
           setErrors({ getFiles: "Failed to retrieve files" });
         });
     }
-  }, [runtimeActive, token]);
+  }, [runtimeActive]);
 
   // Code editing is only allowed when the agent is paused, finished, or awaiting user input (server rules)
   const isEditingAllowed = React.useMemo(

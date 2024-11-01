@@ -59,14 +59,11 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
       return;
     }
 
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const newChildren = await OpenHands.getFiles(token, path);
-        setChildren(newChildren);
-      } catch (error) {
-        toast.error("Failed to fetch files");
-      }
+    try {
+      const newChildren = await OpenHands.getFiles(path);
+      setChildren(newChildren);
+    } catch (error) {
+      toast.error("Failed to fetch files");
     }
   };
 

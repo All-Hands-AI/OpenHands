@@ -1,4 +1,5 @@
 import { getValidFallbackHost } from "#/utils/get-valid-fallback-host";
+import { request } from "#/services/api";
 import {
   SaveFileSuccessResponse,
   FileUploadSuccessResponse,
@@ -9,36 +10,13 @@ import {
   GetConfigResponse,
 } from "./open-hands.types";
 
-/**
- * Generate the base URL of the OpenHands API
- * @returns Base URL of the OpenHands API
- */
-const generateBaseURL = () => {
-  const fallback = getValidFallbackHost();
-  const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || fallback;
-
-  if (typeof window === "undefined") {
-    return `http://${baseUrl}`;
-  }
-  return `${window.location.protocol}//${baseUrl}`;
-};
-
-/**
- * Class to interact with the OpenHands API
- */
 class OpenHands {
-  /**
-   * Base URL of the OpenHands API
-   */
-  static BASE_URL = generateBaseURL();
-
   /**
    * Retrieve the list of models available
    * @returns List of models available
    */
   static async getModels(): Promise<string[]> {
-    const response = await fetch(`${OpenHands.BASE_URL}/api/options/models`);
-    return response.json();
+    return request("/api/options/models");
   }
 
   /**
@@ -46,8 +24,7 @@ class OpenHands {
    * @returns List of agents available
    */
   static async getAgents(): Promise<string[]> {
-    const response = await fetch(`${OpenHands.BASE_URL}/api/options/agents`);
-    return response.json();
+    return request(`/api/options/agents`);
   }
 
   /**
@@ -55,38 +32,24 @@ class OpenHands {
    * @returns List of security analyzers available
    */
   static async getSecurityAnalyzers(): Promise<string[]> {
-    const response = await fetch(
-      `${OpenHands.BASE_URL}/api/options/security-analyzers`,
+    return request(
+      `/api/options/security-analyzers`,
     );
-    return response.json();
   }
 
   static async getConfig(): Promise<GetConfigResponse> {
-    const response = await fetch("config.json", {
-      headers: {
-        "Cache-Control": "no-cache",
-      },
-    });
-    return response.json();
+    return request("config.json");
   }
 
   /**
    * Retrieve the list of files available in the workspace
-   * @param token User token provided by the server
    * @param path Path to list files from
    * @returns List of files available in the given path. If path is not provided, it lists all the files in the workspace
    */
-  static async getFiles(token: string, path?: string): Promise<string[]> {
-    const url = new URL(`${OpenHands.BASE_URL}/api/list-files`);
+  static async getFiles(path?: string): Promise<string[]> {
+    const url = new URL("/api/list-files");
     if (path) url.searchParams.append("path", path);
-
-    const response = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    return response.json();
+    return request(url.toString());
   }
 
   /**
@@ -96,15 +59,9 @@ class OpenHands {
    * @returns Content of the file
    */
   static async getFile(token: string, path: string): Promise<string> {
-    const url = new URL(`${OpenHands.BASE_URL}/api/select-file`);
+    const url = new URL("/api/get-file");
     url.searchParams.append("file", path);
-    const response = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    const data = await response.json();
+    const data = await request(url.toString());
     return data.code;
   }
 
@@ -120,7 +77,7 @@ class OpenHands {
     path: string,
     content: string,
   ): Promise<SaveFileSuccessResponse | ErrorResponse> {
-    const response = await fetch(`${OpenHands.BASE_URL}/api/save-file`, {
+    return request(`/api/save-file`, {
       method: "POST",
       body: JSON.stringify({ filePath: path, content }),
       headers: {
@@ -128,8 +85,6 @@ class OpenHands {
         "Content-Type": "application/json",
       },
     });
-
-    return response.json();
   }
 
   /**
@@ -145,15 +100,13 @@ class OpenHands {
     const formData = new FormData();
     file.forEach((f) => formData.append("files", f));
 
-    const response = await fetch(`${OpenHands.BASE_URL}/api/upload-files`, {
+    return request(`/api/upload-files`, {
       method: "POST",
       body: formData,
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-
-    return response.json();
   }
 
   /**
@@ -162,12 +115,7 @@ class OpenHands {
    * @returns Blob of the workspace zip
    */
   static async getWorkspaceZip(token: string): Promise<Blob> {
-    const response = await fetch(`${OpenHands.BASE_URL}/api/zip-directory`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
+    const response = await request(`/api/zip-directory`, {}, false, true);
     return response.blob();
   }
 
@@ -181,7 +129,7 @@ class OpenHands {
     token: string,
     data: Feedback,
   ): Promise<FeedbackResponse> {
-    const response = await fetch(`${OpenHands.BASE_URL}/api/submit-feedback`, {
+    return request(`/api/submit-feedback`, {
       method: "POST",
       body: JSON.stringify(data),
       headers: {
@@ -189,8 +137,6 @@ class OpenHands {
         "Content-Type": "application/json",
       },
     });
-
-    return response.json();
   }
 
   /**
@@ -201,15 +147,13 @@ class OpenHands {
   static async getGitHubAccessToken(
     code: string,
   ): Promise<GitHubAccessTokenResponse> {
-    const response = await fetch(`${OpenHands.BASE_URL}/api/github/callback`, {
+    return request(`/api/github/callback`, {
       method: "POST",
       body: JSON.stringify({ code }),
       headers: {
         "Content-Type": "application/json",
       },
     });
-
-    return response.json();
   }
 
   /**
@@ -218,7 +162,7 @@ class OpenHands {
    * @returns Response with authentication status and user info if successful
    */
   static async authenticate(token: string): Promise<Response> {
-    return fetch(`${OpenHands.BASE_URL}/api/authenticate`, {
+    return request(`/api/authenticate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

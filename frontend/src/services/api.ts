@@ -7,6 +7,7 @@ export async function request(
   url: string,
   options: RequestInit = {},
   disableToast: boolean = false,
+  returnResponse: boolean = false,
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 ): Promise<any> {
   const onFail = (msg: string) => {
@@ -54,6 +55,10 @@ export async function request(
   }
   if (!response?.ok) {
     onFail(`Error fetching ${url}: ${response?.statusText}`);
+  }
+
+  if (returnResponse) {
+    return response;
   }
 
   try {

@@ -118,9 +118,7 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
       return;
     }
     dispatch(setRefreshID(Math.random()));
-    // TODO: Get token from data loader
-    const token = localStorage.getItem("token");
-    if (token) OpenHands.getFiles(token).then(setPaths);
+    OpenHands.getFiles().then(setPaths);
     revalidate();
   };
 
