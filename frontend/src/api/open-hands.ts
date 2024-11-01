@@ -143,7 +143,7 @@ class OpenHands {
   static async authenticate(): Promise<Response> {
     return request(`/api/authenticate`, {
       method: "POST",
-    });
+    }, true);
   }
 }
 
