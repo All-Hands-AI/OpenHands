@@ -357,6 +357,99 @@ async def websocket_endpoint(websocket: WebSocket):
     await session.loop_recv()
 
 
+@app.get('/api/events/search')
+async def search_events(
+    request: Request,
+    query: str | None = None,
+    page: int = 1,
+    page_size: int = 20,
+    event_type: str | None = None,
+    source: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+):
+    """Search through the event stream with pagination and filtering.
+
+    Args:
+        request (Request): The incoming request object
+        query (str, optional): Text to search for in event content
+        page (int): Page number (1-based). Defaults to 1
+        page_size (int): Number of events per page. Defaults to 20, max 100
+        event_type (str, optional): Filter by event type (e.g., "FileReadAction")
+        source (str, optional): Filter by event source
+        start_date (str, optional): Filter events after this date (ISO format)
+        end_date (str, optional): Filter events before this date (ISO format)
+
+    Returns:
+        dict: Dictionary containing:
+            - events: List of events for the current page
+            - total: Total number of matching events
+            - page: Current page number
+            - total_pages: Total number of pages
+            - has_next: Whether there are more pages
+            - has_prev: Whether there are previous pages
+    """
+    if not request.state.conversation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found"
+        )
+
+    # Validate and adjust pagination parameters
+    if page < 1:
+        page = 1
+    if page_size < 1:
+        page_size = 20
+    if page_size > 100:
+        page_size = 100
+
+    # Calculate start and end IDs for pagination
+    start_id = (page - 1) * page_size
+    end_id = None  # We'll filter after getting events
+
+    # Get events from the stream
+    event_stream = request.state.conversation.event_stream
+    matching_events = []
+    total_events = 0
+
+    for event in event_stream.get_events(start_id=0):  # Get all events to filter
+        # Apply filters
+        if event_type and not event.__class__.__name__ == event_type:
+            continue
+        
+        if source and not event.source.name == source:
+            continue
+
+        if start_date and event.timestamp < start_date:
+            continue
+
+        if end_date and event.timestamp > end_date:
+            continue
+
+        # Text search in event content if query provided
+        if query:
+            event_dict = event_to_dict(event)
+            event_str = str(event_dict).lower()
+            if query.lower() not in event_str:
+                continue
+
+        total_events += 1
+        
+        # Only keep events for current page
+        if total_events > start_id and (len(matching_events) < page_size):
+            matching_events.append(event_to_dict(event))
+
+    total_pages = (total_events + page_size - 1) // page_size
+
+    return {
+        "events": matching_events,
+        "total": total_events,
+        "page": page,
+        "total_pages": total_pages,
+        "has_next": page < total_pages,
+        "has_prev": page > 1
+    }
+
 @app.get('/api/options/models')
 async def get_litellm_models() -> list[str]:
     """
