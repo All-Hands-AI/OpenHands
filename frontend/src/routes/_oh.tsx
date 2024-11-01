@@ -46,7 +46,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   let githubAuthUrl: string | null = null;
 
   try {
-    isAuthed = await userIsAuthenticated(ghToken);
+    isAuthed = await userIsAuthenticated();
     if (!isAuthed && window.__GITHUB_CLIENT_ID__) {
       const requestUrl = new URL(request.url);
       githubAuthUrl = generateGitHubAuthUrl(
