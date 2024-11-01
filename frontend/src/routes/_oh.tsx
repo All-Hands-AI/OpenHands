@@ -30,6 +30,7 @@ import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { WaitlistModal } from "#/components/waitlist-modal";
 import { setCurrentAgentState } from "#/state/agentSlice";
 import AgentState from "#/types/AgentState";
+import store from "#/store";
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   try {
@@ -206,7 +207,7 @@ export default function MainApp() {
 
   const handleEndSession = () => {
     setStartNewProjectModalIsOpen(false);
-    setCurrentAgentState(AgentState.LOADING);
+    store.dispatch(setCurrentAgentState(AgentState.LOADING));
     // call new session action and redirect to '/'
     endSessionFetcher.submit(new FormData(), {
       method: "POST",
