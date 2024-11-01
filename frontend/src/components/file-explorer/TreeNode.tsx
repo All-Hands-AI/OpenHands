@@ -74,15 +74,13 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   }, [refreshID, isOpen]);
 
   const handleClick = async () => {
-    const token = localStorage.getItem("token");
-
     if (isDirectory) {
       setIsOpen((prev) => !prev);
-    } else if (token) {
+    } else {
       const code = modifiedFiles[path] || files[path];
 
       try {
-        const fetchedCode = await OpenHands.getFile(token, path);
+        const fetchedCode = await OpenHands.getFile(path);
         setSelectedPath(path);
         if (!code || fetchedCode !== files[path]) {
           setFileContent(path, fetchedCode);

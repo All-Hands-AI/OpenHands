@@ -51,11 +51,10 @@ class OpenHands {
 
   /**
    * Retrieve the content of a file
-   * @param token User token provided by the server
    * @param path Full path of the file to retrieve
    * @returns Content of the file
    */
-  static async getFile(token: string, path: string): Promise<string> {
+  static async getFile(path: string): Promise<string> {
     const url = new URL("/api/get-file");
     url.searchParams.append("file", path);
     const data = await request(url.toString());
@@ -64,7 +63,6 @@ class OpenHands {
 
   /**
    * Save the content of a file
-   * @param token User token provided by the server
    * @param path Full path of the file to save
    * @param content Content to save in the file
    * @returns Success message or error message
@@ -124,7 +122,6 @@ class OpenHands {
   }
 
   /**
-   * Get the GitHub access token
    * @param code Code provided by GitHub
    * @returns GitHub access token
    */
@@ -142,7 +139,6 @@ class OpenHands {
 
   /**
    * Authenticate with GitHub token
-   * @param token The GitHub access token
    * @returns Response with authentication status and user info if successful
    */
   static async authenticate(): Promise<Response> {
