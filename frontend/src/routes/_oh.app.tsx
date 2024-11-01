@@ -290,21 +290,21 @@ function App() {
 
   React.useEffect(() => {
     (async () => {
-      if (runtimeActive && token && importedProjectZip) {
+      if (runtimeActive && importedProjectZip) {
         // upload files action
         try {
           const blob = base64ToBlob(importedProjectZip);
           const file = new File([blob], "imported-project.zip", {
             type: blob.type,
           });
-          await OpenHands.uploadFiles(token, [file]);
+          await OpenHands.uploadFiles([file]);
           dispatch(setImportedProjectZip(null));
         } catch (error) {
           toast.error("Failed to upload project files.");
         }
       }
     })();
-  }, [runtimeActive, token, importedProjectZip]);
+  }, [runtimeActive, importedProjectZip]);
 
   const {
     isOpen: securityModalIsOpen,

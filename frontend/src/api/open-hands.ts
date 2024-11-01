@@ -84,12 +84,10 @@ class OpenHands {
 
   /**
    * Upload a file to the workspace
-   * @param token User token provided by the server
    * @param file File to upload
    * @returns Success message or error message
    */
   static async uploadFiles(
-    token: string,
     file: File[],
   ): Promise<FileUploadSuccessResponse | ErrorResponse> {
     const formData = new FormData();
@@ -98,9 +96,6 @@ class OpenHands {
     return request(`/api/upload-files`, {
       method: "POST",
       body: formData,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     });
   }
 
