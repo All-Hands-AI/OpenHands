@@ -71,7 +71,7 @@ class EventStream:
         end_id: int | None = None,
         reverse: bool = False,
         filter_out_type: tuple[type[Event], ...] | None = None,
-        filter_hidden: bool = False,
+        filter_hidden=False,
     ) -> Iterable[Event]:
         """
         Retrieve events from the event stream, optionally filtering out events of a given type
@@ -87,6 +87,13 @@ class EventStream:
         Yields:
             Events from the stream that match the criteria.
         """
+        def should_filter(event: Event):
+            if filter_hidden and hasattr(event, 'hidden') and event.hidden:
+                return True
+            if filter_out_type is not None and isinstance(event, filter_out_type):
+                return True
+            return False
+
         if reverse:
             if end_id is None:
                 end_id = self._cur_id - 1
@@ -94,11 +101,7 @@ class EventStream:
             while event_id >= start_id:
                 try:
                     event = self.get_event(event_id)
-                    # apply type and 'hidden' filters
-                    if (
-                        filter_out_type is None
-                        or not isinstance(event, filter_out_type)
-                    ) and (not filter_hidden or not getattr(event, 'hidden', False)):
+                    if not should_filter(event):
                         yield event
                 except FileNotFoundError:
                     logger.debug(f'No event found for ID {event_id}')
@@ -110,11 +113,7 @@ class EventStream:
                     break
                 try:
                     event = self.get_event(event_id)
-                    # apply type and 'hidden' filters
-                    if (
-                        filter_out_type is None
-                        or not isinstance(event, filter_out_type)
-                    ) and (not filter_hidden or not getattr(event, 'hidden', False)):
+                    if not should_filter(event):
                         yield event
                 except FileNotFoundError:
                     break

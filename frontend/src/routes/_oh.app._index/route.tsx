@@ -2,6 +2,8 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { json, useLoaderData, useRouteError } from "@remix-run/react";
 import toast from "react-hot-toast";
+import { editor } from "monaco-editor";
+import { EditorProps } from "@monaco-editor/react";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import FileExplorer from "#/components/file-explorer/FileExplorer";
@@ -37,6 +39,27 @@ function CodeEditor() {
     saveFileContent: saveNewFileContent,
     discardChanges,
   } = useFiles();
+  const [fileExplorerIsOpen, setFileExplorerIsOpen] = React.useState(true);
+  const editorRef = React.useRef<editor.IStandaloneCodeEditor | null>(null);
+
+  const toggleFileExplorer = () => {
+    setFileExplorerIsOpen((prev) => !prev);
+    editorRef.current?.layout({ width: 0, height: 0 });
+  };
+
+  const handleEditorDidMount: EditorProps["onMount"] = (e, monaco) => {
+    editorRef.current = e;
+
+    monaco.editor.defineTheme("oh-dark", {
+      base: "vs-dark",
+      inherit: true,
+      rules: [],
+      colors: {
+        "editor.background": "#171717",
+      },
+    });
+    monaco.editor.setTheme("oh-dark");
+  };
 
   const [errors, setErrors] = React.useState<{ getFiles: string | null }>({
     getFiles: null,
@@ -85,9 +108,13 @@ function CodeEditor() {
   };
 
   return (
-    <div className="flex h-full w-full bg-neutral-900 relative">
-      <FileExplorer error={errors.getFiles} />
-      <div className="flex flex-col min-h-0 w-full">
+    <div className="flex h-full bg-neutral-900 relative">
+      <FileExplorer
+        isOpen={fileExplorerIsOpen}
+        onToggle={toggleFileExplorer}
+        error={errors.getFiles}
+      />
+      <div className="w-full">
         {selectedPath && (
           <div className="flex w-full items-center justify-between self-end p-2">
             <span className="text-sm text-neutral-500">{selectedPath}</span>
@@ -98,9 +125,10 @@ function CodeEditor() {
             />
           </div>
         )}
-        <div className="flex grow items-center justify-center">
-          <CodeEditorCompoonent isReadOnly={!isEditingAllowed} />
-        </div>
+        <CodeEditorCompoonent
+          onMount={handleEditorDidMount}
+          isReadOnly={!isEditingAllowed}
+        />
       </div>
     </div>
   );
