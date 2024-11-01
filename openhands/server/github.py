@@ -1,6 +1,4 @@
 import os
-from typing import List, Optional
-
 import httpx
 
 from openhands.core.logger import openhands_logger as logger
@@ -11,17 +9,17 @@ GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '').strip()
 
 
 class UserVerifier:
-    def __init__(self):
+    def __init__(self) -> None:
         logger.info('Initializing UserVerifier')
-        self.file_users: Optional[List[str]] = None
-        self.sheets_client: Optional[GoogleSheetsClient] = None
-        self.spreadsheet_id: Optional[str] = None
+        self.file_users: list[str] | None = None
+        self.sheets_client: GoogleSheetsClient | None = None
+        self.spreadsheet_id: str | None = None
 
         # Initialize from environment variables
         self._init_file_users()
         self._init_sheets_client()
 
-    def _init_file_users(self):
+    def _init_file_users(self) -> None:
         """Load users from text file if configured"""
         waitlist = os.getenv('GITHUB_USER_LIST_FILE')
         if not waitlist:
@@ -41,7 +39,7 @@ class UserVerifier:
         except Exception as e:
             logger.error(f'Error reading user list file {waitlist}: {str(e)}')
 
-    def _init_sheets_client(self):
+    def _init_sheets_client(self) -> None:
         """Initialize Google Sheets client if configured"""
         sheet_id = os.getenv('GITHUB_USERS_SHEET_ID')
 
