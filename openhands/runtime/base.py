@@ -180,7 +180,7 @@ class Runtime(FileEditRuntimeMixin):
 
             # this might be unnecessary, since source should be set by the event stream when we're here
             source = event.source if event.source else EventSource.AGENT
-            await self.event_stream.async_add_event(observation, source)  # type: ignore[arg-type]
+            self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
     def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.

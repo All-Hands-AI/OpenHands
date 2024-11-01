@@ -313,12 +313,10 @@ class AgentController:
             else:
                 confirmation_state = ActionConfirmationStatus.REJECTED
             self._pending_action.confirmation_state = confirmation_state  # type: ignore[attr-defined]
-            await self.event_stream.async_add_event(
-                self._pending_action, EventSource.AGENT
-            )
+            self.event_stream.add_event(self._pending_action, EventSource.AGENT)
 
         self.state.agent_state = new_state
-        await self.event_stream.async_add_event(
+        self.event_stream.add_event(
             AgentStateChangedObservation('', self.state.agent_state),
             EventSource.ENVIRONMENT,
         )
@@ -433,7 +431,7 @@ class AgentController:
             if action is None:
                 raise LLMNoActionError('No action was returned')
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
-            await self.event_stream.async_add_event(
+            self.event_stream.add_event(
                 ErrorObservation(
                     content=str(e),
                 ),
@@ -457,11 +455,12 @@ class AgentController:
                 == ActionConfirmationStatus.AWAITING_CONFIRMATION
             ):
                 await self.set_agent_state_to(AgentState.AWAITING_USER_CONFIRMATION)
-            await self.event_stream.async_add_event(action, EventSource.AGENT)
+            self.event_stream.add_event(action, EventSource.AGENT)
 
         await self.update_state_after_step()
 
         self.log('debug', str(action), extra={'msg_type': 'ACTION'})
+        print('FLUSH')
 
     async def _delegate_step(self):
         """Executes a single step of the delegate agent."""
@@ -480,7 +479,7 @@ class AgentController:
             self.delegate = None
             self.delegateAction = None
 
-            await self.event_stream.async_add_event(
+            self.event_stream.add_event(
                 ErrorObservation('Delegate agent encountered an error'),
                 EventSource.AGENT,
             )
@@ -510,7 +509,7 @@ class AgentController:
             # clean up delegate status
             self.delegate = None
             self.delegateAction = None
-            await self.event_stream.async_add_event(obs, EventSource.AGENT)
+            self.event_stream.add_event(obs, EventSource.AGENT)
         return
 
     async def _handle_traffic_control(

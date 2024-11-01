@@ -172,13 +172,7 @@ class Session:
                         'Model does not support image upload, change to a different model or try without an image.'
                     )
                     return
-        if self.agent_session.loop:
-            asyncio.run_coroutine_threadsafe(
-                self.agent_session.event_stream.async_add_event(
-                    event, EventSource.USER
-                ),
-                self.agent_session.loop,
-            )  # type: ignore
+        (self.agent_session.event_stream.add_event(event, EventSource.USER),)
 
     async def send(self, data: dict[str, object]) -> bool:
         try:
