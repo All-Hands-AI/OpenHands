@@ -10,6 +10,7 @@ import {
   Outlet,
   ClientLoaderFunctionArgs,
 } from "@remix-run/react";
+import { useDispatch } from "react-redux";
 import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
 import CogTooth from "#/assets/cog-tooth";
@@ -30,7 +31,6 @@ import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { WaitlistModal } from "#/components/waitlist-modal";
 import { setCurrentAgentState } from "#/state/agentSlice";
 import AgentState from "#/types/AgentState";
-import store from "#/store";
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   try {
@@ -138,6 +138,7 @@ export default function MainApp() {
   } = useLoaderData<typeof clientLoader>();
   const logoutFetcher = useFetcher({ key: "logout" });
   const endSessionFetcher = useFetcher({ key: "end-session" });
+  const dispatch = useDispatch()
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
@@ -207,7 +208,7 @@ export default function MainApp() {
 
   const handleEndSession = () => {
     setStartNewProjectModalIsOpen(false);
-    store.dispatch(setCurrentAgentState(AgentState.LOADING));
+    dispatch(setCurrentAgentState(AgentState.LOADING));
     // call new session action and redirect to '/'
     endSessionFetcher.submit(new FormData(), {
       method: "POST",
