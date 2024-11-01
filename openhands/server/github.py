@@ -28,11 +28,10 @@ class UserVerifier:
     
     def _init_sheets_client(self):
         """Initialize Google Sheets client if configured"""
-        creds_path = os.getenv('GOOGLE_CREDENTIALS_FILE')
         sheet_id = os.getenv('GITHUB_USERS_SHEET_ID')
         
-        if creds_path and sheet_id:
-            self.sheets_client = GoogleSheetsClient(creds_path)
+        if sheet_id:
+            self.sheets_client = GoogleSheetsClient()
             self.spreadsheet_id = sheet_id
     
     def is_user_allowed(self, username: str) -> bool:

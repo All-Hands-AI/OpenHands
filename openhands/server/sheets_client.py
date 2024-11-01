@@ -1,24 +1,15 @@
-from typing import List, Optional
-import os
-from google.oauth2 import service_account
+from typing import List
+from google.auth import default
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 class GoogleSheetsClient:
-    def __init__(self, credentials_path: str):
-        """Initialize Google Sheets client with service account credentials.
-        
-        Args:
-            credentials_path: Path to the service account JSON credentials file
+    def __init__(self):
+        """Initialize Google Sheets client using workload identity.
+        Uses application default credentials which supports workload identity when running in GCP.
         """
-        self.credentials = None
-        self.service = None
-        if os.path.exists(credentials_path):
-            self.credentials = service_account.Credentials.from_service_account_file(
-                credentials_path,
-                scopes=['https://www.googleapis.com/auth/spreadsheets.readonly']
-            )
-            self.service = build('sheets', 'v4', credentials=self.credentials)
+        credentials, _ = default(scopes=['https://www.googleapis.com/auth/spreadsheets.readonly'])
+        self.service = build('sheets', 'v4', credentials=credentials)
 
     def get_usernames(self, spreadsheet_id: str, range_name: str = 'A:A') -> List[str]:
         """Get list of usernames from specified Google Sheet.
