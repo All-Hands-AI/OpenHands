@@ -1,4 +1,3 @@
-import { getValidFallbackHost } from "#/utils/get-valid-fallback-host";
 import { request } from "#/services/api";
 import {
   SaveFileSuccessResponse,
@@ -32,9 +31,7 @@ class OpenHands {
    * @returns List of security analyzers available
    */
   static async getSecurityAnalyzers(): Promise<string[]> {
-    return request(
-      `/api/options/security-analyzers`,
-    );
+    return request(`/api/options/security-analyzers`);
   }
 
   static async getConfig(): Promise<GetConfigResponse> {
@@ -114,7 +111,7 @@ class OpenHands {
    * @param token User token provided by the server
    * @returns Blob of the workspace zip
    */
-  static async getWorkspaceZip(token: string): Promise<Blob> {
+  static async getWorkspaceZip(): Promise<Blob> {
     const response = await request(`/api/zip-directory`, {}, false, true);
     return response.blob();
   }
