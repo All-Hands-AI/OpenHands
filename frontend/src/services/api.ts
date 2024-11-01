@@ -28,14 +28,16 @@ export async function request(
   };
 
   const needsAuth = !UNAUTHED_ROUTE_PREFIXES.some((prefix) =>
-    url.startsWith(prefix)
+    url.startsWith(prefix),
   );
   const token = getToken();
   const githubToken = getGitHubToken();
   if (!token && needsAuth) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve(request(url, options, disableToast, returnResponse, maxRetries - 1));
+        resolve(
+          request(url, options, disableToast, returnResponse, maxRetries - 1),
+        );
       }, WAIT_FOR_AUTH_DELAY_MS);
     });
   }

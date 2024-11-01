@@ -44,7 +44,7 @@ class OpenHands {
    * @returns List of files available in the given path. If path is not provided, it lists all the files in the workspace
    */
   static async getFiles(path?: string): Promise<string[]> {
-    let url = "/api/list-files"
+    let url = "/api/list-files";
     if (path) url += `?path=${encodeURIComponent(path)}`;
     return request(url);
   }
