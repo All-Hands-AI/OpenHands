@@ -44,9 +44,9 @@ class OpenHands {
    * @returns List of files available in the given path. If path is not provided, it lists all the files in the workspace
    */
   static async getFiles(path?: string): Promise<string[]> {
-    const url = new URL("/api/list-files");
-    if (path) url.searchParams.append("path", path);
-    return request(url.toString());
+    let url = "/api/list-files"
+    if (path) url += `?path=${encodeURIComponent(path)}`;
+    return request(url);
   }
 
   /**
@@ -55,9 +55,8 @@ class OpenHands {
    * @returns Content of the file
    */
   static async getFile(path: string): Promise<string> {
-    const url = new URL("/api/get-file");
-    url.searchParams.append("file", path);
-    const data = await request(url.toString());
+    const url = `/api/select-file?file=${encodeURIComponent(path)}`;
+    const data = await request(url);
     return data.code;
   }
 
