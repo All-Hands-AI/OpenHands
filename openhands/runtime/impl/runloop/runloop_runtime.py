@@ -113,7 +113,6 @@ class RunloopRuntime(EventStreamRuntime):
         self.config = config
         self.runloop_api_client = Runloop(
             bearer_token=config.runloop_api_key,
-            base_url='https://api.runloop.pro',
         )
         self.session = requests.Session()
         self.status_message_callback = status_message_callback
