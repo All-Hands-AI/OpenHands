@@ -28,6 +28,8 @@ import DocsIcon from "#/assets/docs.svg?react";
 import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { WaitlistModal } from "#/components/waitlist-modal";
+import { setCurrentAgentState } from "#/state/agentSlice";
+import AgentState from "#/types/AgentState";
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   try {
@@ -204,6 +206,7 @@ export default function MainApp() {
 
   const handleEndSession = () => {
     setStartNewProjectModalIsOpen(false);
+    setCurrentAgentState(AgentState.LOADING);
     // call new session action and redirect to '/'
     endSessionFetcher.submit(new FormData(), {
       method: "POST",

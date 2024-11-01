@@ -8,7 +8,6 @@ import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import FileExplorer from "#/components/file-explorer/FileExplorer";
 import OpenHands from "#/api/open-hands";
-import { useSocket } from "#/context/socket";
 import CodeEditorCompoonent from "./code-editor-component";
 import { useFiles } from "#/context/files";
 import { EditorActions } from "#/components/editor-actions";
@@ -30,7 +29,7 @@ export function ErrorBoundary() {
 }
 
 function CodeEditor() {
-  const { runtimeActive } = useSocket();
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const {
     setPaths,
     selectedPath,
@@ -69,15 +68,14 @@ function CodeEditor() {
   );
 
   React.useEffect(() => {
-    // only retrieve files if connected to WS to prevent requesting before runtime is ready
-    if (runtimeActive) {
+    if (curAgentState === AgentState.INIT) {
       OpenHands.getFiles()
         .then(setPaths)
         .catch(() => {
           setErrors({ getFiles: "Failed to retrieve files" });
         });
     }
-  }, [runtimeActive]);
+  }, [curAgentState]);
 
   // Code editing is only allowed when the agent is paused, finished, or awaiting user input (server rules)
   const isEditingAllowed = React.useMemo(
