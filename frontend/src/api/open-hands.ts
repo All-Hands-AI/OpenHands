@@ -101,7 +101,6 @@ class OpenHands {
 
   /**
    * Get the blob of the workspace zip
-   * @param token User token provided by the server
    * @returns Blob of the workspace zip
    */
   static async getWorkspaceZip(): Promise<Blob> {
@@ -111,19 +110,14 @@ class OpenHands {
 
   /**
    * Send feedback to the server
-   * @param token User token provided by the server
    * @param data Feedback data
    * @returns The stored feedback data
    */
-  static async sendFeedback(
-    token: string,
-    data: Feedback,
-  ): Promise<FeedbackResponse> {
+  static async submitFeedback(data: Feedback): Promise<FeedbackResponse> {
     return request(`/api/submit-feedback`, {
       method: "POST",
       body: JSON.stringify(data),
       headers: {
-        Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
     });
