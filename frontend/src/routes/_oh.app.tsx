@@ -315,7 +315,7 @@ function App() {
   return (
     <div className="flex flex-col h-full gap-3">
       <div className="flex h-full overflow-auto gap-3">
-        <Container className="w-[375px] max-h-full">
+        <Container className="w-[390px] max-h-full">
           <ChatInterface />
         </Container>
 
