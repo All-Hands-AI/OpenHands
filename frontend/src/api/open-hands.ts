@@ -145,13 +145,9 @@ class OpenHands {
    * @param token The GitHub access token
    * @returns Response with authentication status and user info if successful
    */
-  static async authenticate(token: string): Promise<Response> {
+  static async authenticate(): Promise<Response> {
     return request(`/api/authenticate`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-GitHub-Token": token,
-      },
     });
   }
 }
