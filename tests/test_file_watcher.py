@@ -28,9 +28,10 @@ def temp_dir():
 
 @pytest.fixture
 def watcher(mock_event_stream, temp_dir):
-    """Create a FileWatcher instance with mocked components."""
+    """Create a FileWatcher instance with mocked components and debouncing disabled."""
     with patch('watchdog.observers.Observer'):
         watcher = FileWatcher(temp_dir, mock_event_stream)
+        watcher.use_debouncing = False  # Disable debouncing for basic tests
         yield watcher
 
 
@@ -294,3 +295,134 @@ def test_watch_patterns(watcher, temp_dir):
     for rel_path, should_watch in test_cases:
         abs_path = os.path.join(temp_dir, rel_path)
         assert watcher._should_watch(abs_path) == should_watch, f"Failed for {rel_path}"
+
+
+@pytest.fixture
+def watcher_with_short_delay(mock_event_stream, temp_dir):
+    """Create a FileWatcher instance with a very short debounce delay for testing."""
+    with patch('watchdog.observers.Observer'):
+        watcher = FileWatcher(temp_dir, mock_event_stream)
+        # Set a very short delay for testing
+        watcher.debounce_delay = 0.01
+        yield watcher
+
+
+def test_debounce_rapid_changes(watcher_with_short_delay, temp_dir):
+    """Test that rapid changes to a file result in a single event."""
+    import time
+    
+    file_path = os.path.join(temp_dir, "test.txt")
+    initial_content = "Initial content"
+    final_content = "Final content"
+    
+    # Create initial file
+    create_test_file(file_path, initial_content)
+    watcher_with_short_delay.file_contents[file_path] = initial_content
+    
+    # Simulate rapid changes
+    for i in range(5):
+        create_test_file(file_path, f"Content version {i}")
+        event = FileModifiedEvent(file_path)
+        watcher_with_short_delay.on_modified(event)
+    
+    # Final change
+    create_test_file(file_path, final_content)
+    event = FileModifiedEvent(file_path)
+    watcher_with_short_delay.on_modified(event)
+    
+    # Wait for debounce timer
+    time.sleep(0.02)  # Slightly longer than debounce_delay
+    
+    # Should only have one event with the final content
+    watcher_with_short_delay.event_stream.add_event.assert_called_once()
+    observation, source = watcher_with_short_delay.event_stream.add_event.call_args[0]
+    
+    assert isinstance(observation, FileEditObservation)
+    assert observation.path == "test.txt"
+    assert observation.old_content == initial_content
+    assert observation.new_content == final_content
+
+
+def test_neovim_sequence(watcher_with_short_delay, temp_dir):
+    """Test handling of neovim's sequence of file operations."""
+    import time
+    
+    file_path = os.path.join(temp_dir, "test.txt")
+    initial_content = "Initial content"
+    final_content = "Final content"
+    
+    # Create initial file
+    create_test_file(file_path, initial_content)
+    watcher_with_short_delay.file_contents[file_path] = initial_content
+    
+    # Simulate neovim's sequence of operations
+    # 1. Create swap file
+    swap_path = os.path.join(temp_dir, "4913")
+    event = FileCreatedEvent(swap_path)
+    watcher_with_short_delay.on_created(event)
+    
+    # 2. Delete swap file
+    event = FileDeletedEvent(swap_path)
+    watcher_with_short_delay.on_deleted(event)
+    
+    # 3. Create backup
+    backup_path = file_path + "~"
+    event = FileCreatedEvent(backup_path)
+    watcher_with_short_delay.on_created(event)
+    
+    # 4. Modify original file
+    create_test_file(file_path, final_content)
+    event = FileModifiedEvent(file_path)
+    watcher_with_short_delay.on_modified(event)
+    
+    # 5. Delete backup
+    event = FileDeletedEvent(backup_path)
+    watcher_with_short_delay.on_deleted(event)
+    
+    # Wait for debounce timer
+    time.sleep(0.02)  # Slightly longer than debounce_delay
+    
+    # Should only have one event with the final content
+    assert watcher_with_short_delay.event_stream.add_event.call_count == 1
+    observation, source = watcher_with_short_delay.event_stream.add_event.call_args[0]
+    
+    assert isinstance(observation, FileEditObservation)
+    assert observation.path == "test.txt"
+    assert observation.old_content == initial_content
+    assert observation.new_content == final_content
+
+
+def test_debounce_timer_cancellation(watcher_with_short_delay, temp_dir):
+    """Test that pending debounce timers are properly cancelled."""
+    import time
+    
+    file_path = os.path.join(temp_dir, "test.txt")
+    initial_content = "Initial content"
+    
+    # Create initial file
+    create_test_file(file_path, initial_content)
+    watcher_with_short_delay.file_contents[file_path] = initial_content
+    
+    # Start a change
+    event = FileModifiedEvent(file_path)
+    watcher_with_short_delay.on_modified(event)
+    
+    # Verify timer is created
+    assert file_path in watcher_with_short_delay.debounce_timers
+    assert file_path in watcher_with_short_delay.pending_changes
+    
+    # Delete the file before timer expires
+    event = FileDeletedEvent(file_path)
+    watcher_with_short_delay.on_deleted(event)
+    
+    # Timer should be cancelled and removed
+    assert file_path not in watcher_with_short_delay.debounce_timers
+    assert file_path not in watcher_with_short_delay.pending_changes
+    
+    # Wait to ensure no extra events
+    time.sleep(0.02)
+    
+    # Should only have the deletion event
+    assert watcher_with_short_delay.event_stream.add_event.call_count == 1
+    observation, source = watcher_with_short_delay.event_stream.add_event.call_args[0]
+    assert observation.new_content == ""  # Deletion event
