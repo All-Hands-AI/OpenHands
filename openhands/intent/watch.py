@@ -35,8 +35,8 @@ class FileWatcher(FileSystemEventHandler):
         self.event_stream = event_stream
         self.recursive = recursive
         self.patterns = patterns
-        # Always ignore .git directory
-        self.ignore_patterns = {".git/*"}
+        # Always ignore .git directory and its contents
+        self.ignore_patterns = {".git", ".git/*"}
         # Add any explicitly provided ignore patterns
         if ignore_patterns:
             self.ignore_patterns.update(ignore_patterns)
@@ -106,7 +106,13 @@ class FileWatcher(FileSystemEventHandler):
         # Convert Windows paths to Unix style for consistency
         rel_path = rel_path.replace(os.sep, '/')
         
-        # First check explicit ignore patterns (including .git/)
+        # First check if any part of the path contains .git
+        path_parts = rel_path.split('/')
+        for i in range(len(path_parts)):
+            if path_parts[i] == '.git':
+                return True
+        
+        # Then check explicit ignore patterns
         if any(Path(rel_path).match(pattern) for pattern in self.ignore_patterns):
             return True
             
