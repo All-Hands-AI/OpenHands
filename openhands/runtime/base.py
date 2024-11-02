@@ -173,7 +173,7 @@ class Runtime(FileEditRuntimeMixin):
                 self.log('error', f'Problematic action: {str(event)}')
                 self.send_error_message(err_id, str(e))
                 self.close()
-                return
+                raise e
 
             observation._cause = event.id  # type: ignore[attr-defined]
             observation.tool_call_metadata = event.tool_call_metadata
