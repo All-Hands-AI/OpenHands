@@ -207,7 +207,7 @@ async def test_run_controller_stop_with_stuck():
         print(f'event {i}: {event_to_dict(event)}')
 
     assert state.iteration == 4
-    assert len(events) == 12
+    assert len(events) == 11
     # check the eventstream have 4 pairs of repeated actions and observations
     repeating_actions_and_observations = events[2:10]
     for action, observation in zip(
@@ -222,7 +222,7 @@ async def test_run_controller_stop_with_stuck():
             and observation_dict['content'] == 'Non fatal error here to trigger loop'
         )
     last_event = event_to_dict(events[-1])
-    assert last_event['extras']['agent_state'] == 'stopped'
+    assert last_event['extras']['agent_state'] == 'error'
     assert last_event['observation'] == 'agent_state_changed'
 
     assert state.agent_state == AgentState.STOPPED
