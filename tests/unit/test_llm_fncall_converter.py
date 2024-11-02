@@ -513,3 +513,4 @@ def test_infer_fncall_on_noncall_model():
         all_nonfncall_messages, FNCALL_TOOLS
     )
     assert converted_fncall_messages == FNCALL_MESSAGES + [FNCALL_RESPONSE_MESSAGE]
+    assert converted_fncall_messages[-1] == FNCALL_RESPONSE_MESSAGE
