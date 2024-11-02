@@ -86,6 +86,15 @@ async def main():
         help='Show the version number and exit',
         default=None,
     )
+    # Add the watch directory argument
+    parser.add_argument(
+        '-w',
+        '--watch',
+        type=str,
+        help='Directory to watch for changes',
+        metavar='DIR',
+        default=None,
+    )
     args = parser.parse_args()
 
     if args.version:
