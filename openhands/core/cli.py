@@ -82,9 +82,6 @@ def display_event(event: Event):
         else:
             # For regular file edits, use the standard display
             display_file_edit(event)
-    else:
-        print('unknown event')
-        print(event)
 
 
 async def main():
@@ -157,6 +154,7 @@ async def main():
         max_iterations=config.max_iterations,
         max_budget_per_task=config.max_budget_per_task,
         agent_to_llm_config=config.get_agent_to_llm_config_map(),
+        agent_configs=config.get_agent_configs(),
         event_stream=event_stream,
     )
 
@@ -164,7 +162,6 @@ async def main():
         controller.agent_task = asyncio.create_task(controller.start_step_loop())
 
     async def prompt_for_next_task():
-        print('prompt for next')
         # Run input() in a thread pool to avoid blocking the event loop
         await controller.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
         loop = asyncio.get_event_loop()
@@ -189,12 +186,6 @@ async def main():
                 AgentState.FINISHED,
                 AgentState.ERROR,
             ]:
-                print(
-                    'on event, prompting',
-                    event.agent_state,
-                    controller.get_agent_state(),
-                )
-
                 await prompt_for_next_task()
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
