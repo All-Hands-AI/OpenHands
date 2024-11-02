@@ -17,6 +17,7 @@ import Security from "../components/modals/security/Security";
 import { Controls } from "#/components/controls";
 import store, { RootState } from "#/store";
 import { Container } from "#/components/container";
+import ActionType from "#/types/ActionType";
 import { handleAssistantMessage } from "#/services/actions";
 import {
   addErrorMessage,
@@ -173,6 +174,12 @@ function App() {
   };
 
   const handleOpen = React.useCallback(() => {
+    const initEvent = {
+      action: ActionType.INIT,
+      args: settings,
+    };
+    send(JSON.stringify(initEvent));
+
     // display query in UI, but don't send it to the server
     if (q) addIntialQueryToChat(q, files);
   }, [settings]);

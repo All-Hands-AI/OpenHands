@@ -11,10 +11,10 @@ import {
 } from "#/state/securityAnalyzerSlice";
 import { setCurStatusMessage } from "#/state/statusSlice";
 import store from "#/store";
+import ActionType from "#/types/ActionType";
 import { ActionMessage, StatusMessage } from "#/types/Message";
 import { SocketMessage } from "#/types/ResponseType";
 import { handleObservationMessage } from "./observations";
-import ActionType from "#/types/ActionType";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
