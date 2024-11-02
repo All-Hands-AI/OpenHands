@@ -324,13 +324,14 @@ class LLM(RetryMixin, DebugMixin):
         Returns:
             boolean: True if prompt caching is supported and enabled for the given model.
         """
-        return (
-            self.config.caching_prompt is True
-            and self.model_info is not None
-            and self.model_info.get('supports_prompt_caching', False)
-            and (
+        return self.config.caching_prompt is True and (
+            (
                 self.config.model in CACHE_PROMPT_SUPPORTED_MODELS
                 or self.config.model.split('/')[-1] in CACHE_PROMPT_SUPPORTED_MODELS
+            )
+            or (
+                self.model_info is not None
+                and self.model_info.get('supports_prompt_caching', False)
             )
         )
 
