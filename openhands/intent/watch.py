@@ -1,8 +1,9 @@
 import os
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Set
 from difflib import unified_diff
 
+import pathspec
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
@@ -34,12 +35,41 @@ class FileWatcher(FileSystemEventHandler):
         self.event_stream = event_stream
         self.recursive = recursive
         self.patterns = patterns
-        self.ignore_patterns = ignore_patterns or [".git/*", "__pycache__/*", "*.pyc"]
+        # Always ignore .git directory
+        self.ignore_patterns = {".git/*"}
+        # Add any explicitly provided ignore patterns
+        if ignore_patterns:
+            self.ignore_patterns.update(ignore_patterns)
+        
+        # Load .gitignore patterns
+        self.gitignore_spec = self._load_gitignore()
+        
         self.observer = Observer()
         # Keep track of file contents
         self.file_contents: Dict[str, str] = {}
         # Initialize file contents for existing files
         self._initialize_file_contents()
+        
+    def _load_gitignore(self) -> pathspec.PathSpec:
+        """Load .gitignore patterns from the watched directory."""
+        gitignore_patterns = []
+        
+        # Only look for .gitignore in the watched directory
+        gitignore_path = os.path.join(self.directory, '.gitignore')
+        try:
+            if os.path.isfile(gitignore_path):
+                with open(gitignore_path, 'r') as f:
+                    patterns = f.read().splitlines()
+                    # Filter out empty lines and comments
+                    patterns = [p for p in patterns if p and not p.startswith('#')]
+                    gitignore_patterns.extend(patterns)
+        except IOError:
+            pass
+            
+        return pathspec.PathSpec.from_lines(
+            pathspec.patterns.GitWildMatchPattern,
+            gitignore_patterns
+        )
 
     def _initialize_file_contents(self):
         """Initialize the content cache for existing files in the watched directory."""
@@ -65,9 +95,15 @@ class FileWatcher(FileSystemEventHandler):
         self.observer.join()
 
     def _should_ignore(self, path: str) -> bool:
-        """Check if the path should be ignored based on ignore patterns."""
+        """Check if the path should be ignored based on ignore patterns and .gitignore."""
         rel_path = os.path.relpath(path, self.directory)
-        return any(Path(rel_path).match(pattern) for pattern in self.ignore_patterns)
+        
+        # First check explicit ignore patterns (including .git/)
+        if any(Path(rel_path).match(pattern) for pattern in self.ignore_patterns):
+            return True
+            
+        # Then check .gitignore patterns
+        return self.gitignore_spec.match_file(rel_path)
 
     def _should_watch(self, path: str) -> bool:
         """Check if the path should be watched based on patterns."""
