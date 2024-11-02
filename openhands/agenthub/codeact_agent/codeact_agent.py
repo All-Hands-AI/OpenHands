@@ -21,6 +21,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
+from openhands.events.event import EventSource
 from openhands.events.observation import (
     AgentDelegateObservation,
     CmdOutputObservation,
@@ -265,6 +266,8 @@ class CodeActAgent(Agent):
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, FileEditObservation):
             text = obs_prefix + truncate_content(str(obs), max_message_chars)
+            if obs.source == EventSource.USER:
+                text = '[User has edited a file]\n' + text
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentDelegateObservation):
             text = obs_prefix + truncate_content(
