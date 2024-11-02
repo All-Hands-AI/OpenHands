@@ -57,6 +57,10 @@ class FileWatcher(FileSystemEventHandler):
         self.debounce_delay = 0.1
         # Whether to use debouncing (disabled for testing)
         self.use_debouncing = True
+        # Track recently deleted files for handling atomic renames
+        self.recent_deletes: Dict[str, tuple[str, float]] = {}
+        # Time window to consider a delete+create as a rename (in seconds)
+        self.rename_window = 0.1
         # Initialize file contents for existing files
         self._initialize_file_contents()
 
@@ -245,10 +249,22 @@ class FileWatcher(FileSystemEventHandler):
         if self._should_ignore(event.src_path) or not self._should_watch(event.src_path):
             return
 
+        # Check if this is part of an atomic rename operation
+        rel_path = os.path.relpath(event.src_path, self.directory)
+        now = time.time()
+        for old_path, (old_content, timestamp) in list(self.recent_deletes.items()):
+            if now - timestamp <= self.rename_window:
+                # This is likely a rename operation
+                new_content = self._read_file_content(event.src_path)
+                if new_content == old_content:
+                    # This is definitely a rename, don't emit any events
+                    self.file_contents[event.src_path] = new_content
+                    self.recent_deletes.pop(old_path)
+                    return
+
         if self.use_debouncing:
             self._schedule_debounced_change(event.src_path)
         else:
-            rel_path = os.path.relpath(event.src_path, self.directory)
             new_content = self._read_file_content(event.src_path)
             self.file_contents[event.src_path] = new_content
 
@@ -325,21 +341,46 @@ class FileWatcher(FileSystemEventHandler):
         if self._should_ignore(event.src_path) or not self._should_watch(event.src_path):
             return
 
-        rel_path = os.path.relpath(event.src_path, self.directory)
+        # Store the deleted file's content
         old_content = self.file_contents.get(event.src_path, '')
-
-        # For deletions, the diff will be all removals
-        diff = self._generate_diff(old_content, '', rel_path)
-
-        observation = FileEditObservation(
-            path=rel_path,
-            prev_exist=True,
-            old_content=old_content,
-            new_content='',
-            content=diff,
-        )
-        self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
         self.file_contents.pop(event.src_path, None)
+
+        if self.use_debouncing:
+            # Store the content temporarily in case this is a rename
+            self.recent_deletes[event.src_path] = (old_content, time.time())
+            # Schedule cleanup of recent_deletes after the rename window
+            timer = Timer(self.rename_window, self._handle_delayed_delete, args=[event.src_path, old_content])
+            timer.start()
+        else:
+            # Emit deletion event immediately
+            rel_path = os.path.relpath(event.src_path, self.directory)
+            diff = self._generate_diff(old_content, '', rel_path)
+
+            observation = FileEditObservation(
+                path=rel_path,
+                prev_exist=True,
+                old_content=old_content,
+                new_content='',
+                content=diff,
+            )
+            self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+
+    def _handle_delayed_delete(self, path: str, old_content: str):
+        """Handle a deletion after waiting to see if it's part of a rename."""
+        if path in self.recent_deletes:
+            # This was a real deletion, not part of a rename
+            rel_path = os.path.relpath(path, self.directory)
+            diff = self._generate_diff(old_content, '', rel_path)
+
+            observation = FileEditObservation(
+                path=rel_path,
+                prev_exist=True,
+                old_content=old_content,
+                new_content='',
+                content=diff,
+            )
+            self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+            self.recent_deletes.pop(path)
 
     def on_moved(self, event: FileSystemEvent):
         """Handle file move/rename event."""
