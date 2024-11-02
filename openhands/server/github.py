@@ -52,13 +52,15 @@ class UserVerifier:
         self.sheets_client = GoogleSheetsClient()
         self.spreadsheet_id = sheet_id
 
+    def is_active(self) -> bool:
+        return bool(self.file_users or (self.sheets_client and self.spreadsheet_id))
+
     def is_user_allowed(self, username: str) -> bool:
         """Check if user is allowed based on file and/or sheet configuration"""
-        if not self.file_users and not self.sheets_client:
-            logger.debug('No verification sources configured - allowing all users')
+        if not self.is_active():
             return True
-        logger.info(f'Checking if GitHub user {username} is allowed')
 
+        logger.info(f'Checking if GitHub user {username} is allowed')
         if self.file_users:
             if username in self.file_users:
                 logger.info(f'User {username} found in text file allowlist')
@@ -78,6 +80,10 @@ class UserVerifier:
 
 async def authenticate_github_user(auth_token) -> bool:
     user_verifier = UserVerifier()
+
+    if not user_verifier.is_active():
+        logger.info('No user verification sources configured - allowing all users')
+        return True
 
     logger.info('Checking GitHub token')
 
