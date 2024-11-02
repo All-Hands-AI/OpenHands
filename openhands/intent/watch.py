@@ -1,7 +1,9 @@
 import os
+import time
 from difflib import unified_diff
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Set
+from threading import Timer
 
 import pathspec
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
@@ -47,6 +49,12 @@ class FileWatcher(FileSystemEventHandler):
         self.observer = Observer()
         # Keep track of file contents
         self.file_contents: Dict[str, str] = {}
+        # Track files with pending changes
+        self.pending_changes: Set[str] = set()
+        # Debounce timer for each file
+        self.debounce_timers: Dict[str, Timer] = {}
+        # Debounce delay in seconds
+        self.debounce_delay = 0.1
         # Initialize file contents for existing files
         self._initialize_file_contents()
 
@@ -96,8 +104,53 @@ class FileWatcher(FileSystemEventHandler):
 
     def stop(self):
         """Stop watching the directory."""
+        # Cancel any pending timers
+        for timer in self.debounce_timers.values():
+            timer.cancel()
         self.observer.stop()
         self.observer.join()
+
+    def _handle_debounced_change(self, path: str):
+        """Handle a debounced file change event."""
+        if path not in self.pending_changes:
+            return
+
+        self.pending_changes.remove(path)
+        self.debounce_timers.pop(path, None)
+
+        # Skip if file should be ignored
+        if self._should_ignore(path) or not self._should_watch(path):
+            return
+
+        rel_path = os.path.relpath(path, self.directory)
+        old_content = self.file_contents.get(path, '')
+        new_content = self._read_file_content(path)
+
+        # Only emit event if content actually changed
+        if old_content != new_content:
+            diff = self._generate_diff(old_content, new_content, rel_path)
+            self.file_contents[path] = new_content
+
+            observation = FileEditObservation(
+                path=rel_path,
+                prev_exist=True,
+                old_content=old_content,
+                new_content=new_content,
+                content=diff,
+            )
+            self.event_stream.add_event(observation, EventSource.USER)
+
+    def _schedule_debounced_change(self, path: str):
+        """Schedule a debounced change event for a file."""
+        # Cancel existing timer if any
+        if path in self.debounce_timers:
+            self.debounce_timers[path].cancel()
+
+        # Create new timer
+        timer = Timer(self.debounce_delay, self._handle_debounced_change, args=[path])
+        timer.start()
+        self.debounce_timers[path] = timer
+        self.pending_changes.add(path)
 
     def _should_ignore(self, path: str) -> bool:
         """Check if the path should be ignored based on ignore patterns and .gitignore."""
@@ -166,68 +219,34 @@ class FileWatcher(FileSystemEventHandler):
 
     def on_created(self, event: FileSystemEvent):
         """Handle file creation event."""
-        if (
-            event.is_directory
-            or self._should_ignore(event.src_path)
-            or not self._should_watch(event.src_path)
-        ):
+        if event.is_directory:
             return
 
-        print('ON CREATE', event.src_path, flush=True)
-        rel_path = os.path.relpath(event.src_path, self.directory)
-        new_content = self._read_file_content(event.src_path)
-        self.file_contents[event.src_path] = new_content
-
-        # For new files, the diff will be all additions
-        diff = self._generate_diff('', new_content, rel_path)
-
-        observation = FileEditObservation(
-            path=rel_path,
-            prev_exist=False,
-            old_content='',
-            new_content=new_content,
-            content=diff,
-        )
-        self.event_stream.add_event(observation, EventSource.USER)
+        # Schedule a debounced change
+        self._schedule_debounced_change(event.src_path)
 
     def on_modified(self, event: FileSystemEvent):
         """Handle file modification event."""
-        if (
-            event.is_directory
-            or self._should_ignore(event.src_path)
-            or not self._should_watch(event.src_path)
-        ):
+        if event.is_directory:
             return
 
-        print('ON MODIFY', event.src_path, flush=True)
-        rel_path = os.path.relpath(event.src_path, self.directory)
-        old_content = self.file_contents.get(event.src_path, '')
-        new_content = self._read_file_content(event.src_path)
-
-        # Only emit event if content actually changed
-        if old_content != new_content:
-            diff = self._generate_diff(old_content, new_content, rel_path)
-            self.file_contents[event.src_path] = new_content
-
-            observation = FileEditObservation(
-                path=rel_path,
-                prev_exist=True,
-                old_content=old_content,
-                new_content=new_content,
-                content=diff,
-            )
-            self.event_stream.add_event(observation, EventSource.USER)
+        # Schedule a debounced change
+        self._schedule_debounced_change(event.src_path)
 
     def on_deleted(self, event: FileSystemEvent):
         """Handle file deletion event."""
-        if (
-            event.is_directory
-            or self._should_ignore(event.src_path)
-            or not self._should_watch(event.src_path)
-        ):
+        if event.is_directory:
             return
 
-        print('ON DELETE', event.src_path, flush=True)
+        # Cancel any pending changes for this file
+        if event.src_path in self.debounce_timers:
+            self.debounce_timers[event.src_path].cancel()
+            self.debounce_timers.pop(event.src_path)
+            self.pending_changes.discard(event.src_path)
+
+        if self._should_ignore(event.src_path) or not self._should_watch(event.src_path):
+            return
+
         rel_path = os.path.relpath(event.src_path, self.directory)
         old_content = self.file_contents.get(event.src_path, '')
 
@@ -246,11 +265,25 @@ class FileWatcher(FileSystemEventHandler):
 
     def on_moved(self, event: FileSystemEvent):
         """Handle file move/rename event."""
+        if event.is_directory:
+            return
+
+        # Cancel any pending changes for the source file
+        if event.src_path in self.debounce_timers:
+            self.debounce_timers[event.src_path].cancel()
+            self.debounce_timers.pop(event.src_path)
+            self.pending_changes.discard(event.src_path)
+
+        # If this is a neovim swap file or backup file, ignore it
         if (
-            event.is_directory
-            or self._should_ignore(event.src_path)
-            or not self._should_watch(event.src_path)
+            event.src_path.endswith('.swp')
+            or event.src_path.endswith('.swo')
+            or event.src_path.endswith('~')
+            or os.path.basename(event.src_path).startswith('4913')
         ):
+            return
+
+        if self._should_ignore(event.src_path) or not self._should_watch(event.src_path):
             return
 
         # Handle source file deletion
@@ -274,17 +307,6 @@ class FileWatcher(FileSystemEventHandler):
         if not self._should_ignore(event.dest_path) and self._should_watch(
             event.dest_path
         ):
-            dest_rel_path = os.path.relpath(event.dest_path, self.directory)
+            # Schedule a debounced change for the destination file
             self.file_contents[event.dest_path] = old_content
-
-            # For the destination file, generate an addition diff
-            dest_diff = self._generate_diff('', old_content, dest_rel_path)
-
-            observation = FileEditObservation(
-                path=dest_rel_path,
-                prev_exist=False,
-                old_content='',
-                new_content=old_content,
-                content=dest_diff,
-            )
-            self.event_stream.add_event(observation, EventSource.USER)
+            self._schedule_debounced_change(event.dest_path)
