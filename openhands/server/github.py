@@ -55,10 +55,13 @@ class UserVerifier:
     def is_user_allowed(self, username: str) -> bool:
         """Check if user is allowed based on file and/or sheet configuration"""
         if not self.file_users and not self.sheets_client:
-            logger.debug('No verification sources configured - allowing all users')
+            logger.info('No verification sources configured - allowing all users')
             return True
-        logger.info(f'Checking if GitHub user {username} is allowed')
 
+        if not self.file_users and not self.sheets_client:
+            return True
+
+        logger.info(f'Checking if GitHub user {username} is allowed')
         if self.file_users:
             if username in self.file_users:
                 logger.info(f'User {username} found in text file allowlist')
