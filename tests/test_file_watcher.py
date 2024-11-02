@@ -420,9 +420,55 @@ def test_debounce_timer_cancellation(watcher_with_short_delay, temp_dir):
     assert file_path not in watcher_with_short_delay.pending_changes
     
     # Wait to ensure no extra events
-    time.sleep(0.02)
+    time.sleep(0.2)  # Wait longer than rename_window
     
     # Should only have the deletion event
     assert watcher_with_short_delay.event_stream.add_event.call_count == 1
     observation, source = watcher_with_short_delay.event_stream.add_event.call_args[0]
     assert observation.new_content == ""  # Deletion event
+
+
+def test_atomic_rename_handling(watcher_with_short_delay, temp_dir):
+    """Test that atomic renames (delete+create with same content) are handled correctly."""
+    import time
+    
+    old_path = os.path.join(temp_dir, "old.txt")
+    new_path = os.path.join(temp_dir, "new.txt")
+    content = "File content"
+    
+    # Create initial file
+    create_test_file(old_path, content)
+    watcher_with_short_delay.file_contents[old_path] = content
+    
+    # Simulate atomic rename (delete + create with same content)
+    event = FileDeletedEvent(old_path)
+    watcher_with_short_delay.on_deleted(event)
+    
+    # Create the new file with the same content
+    create_test_file(new_path, content)
+    event = FileCreatedEvent(new_path)
+    watcher_with_short_delay.on_created(event)
+    
+    # Wait a bit to ensure any delayed events are processed
+    time.sleep(0.02)
+    
+    # Should have no events since it was just a rename
+    assert watcher_with_short_delay.event_stream.add_event.call_count == 0
+    assert new_path in watcher_with_short_delay.file_contents
+    assert watcher_with_short_delay.file_contents[new_path] == content
+    
+    # Now modify the file
+    new_content = "Modified content"
+    create_test_file(new_path, new_content)
+    event = FileModifiedEvent(new_path)
+    watcher_with_short_delay.on_modified(event)
+    
+    # Wait for debounce timer
+    time.sleep(0.02)
+    
+    # Should now have one event for the modification
+    assert watcher_with_short_delay.event_stream.add_event.call_count == 1
+    observation, source = watcher_with_short_delay.event_stream.add_event.call_args[0]
+    assert observation.path == "new.txt"
+    assert observation.old_content == content
+    assert observation.new_content == new_content
