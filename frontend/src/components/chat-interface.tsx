@@ -18,6 +18,7 @@ import ConfirmationButtons from "./chat/ConfirmationButtons";
 import { ErrorMessage } from "./error-message";
 import { ContinueButton } from "./continue-button";
 import { ScrollToBottomButton } from "./scroll-to-bottom-button";
+import ActionType from "#/types/ActionType";
 
 const isErrorMessage = (
   message: Message | ErrorMessage,
@@ -43,6 +44,15 @@ export function ChatInterface() {
     const imageUrls = await Promise.all(promises);
 
     const timestamp = new Date().toISOString();
+    console.log('curAgentState', curAgentState);
+    if (curAgentState === AgentState.STOPPED || curAgentState === AgentState.ERROR) {
+      const initEvent = {
+        action: ActionType.INIT,
+        args: settings,
+      };
+      send(JSON.stringify(initEvent));
+    }
+
     dispatch(addUserMessage({ content, imageUrls, timestamp }));
     send(createChatMessage(content, imageUrls, timestamp));
   };

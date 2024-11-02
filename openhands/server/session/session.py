@@ -72,6 +72,7 @@ class Session:
             logger.exception('Error in loop_recv: %s', e)
 
     async def _initialize_agent(self, data: dict):
+        self._init_data = data
         self.agent_session.event_stream.add_event(
             ChangeAgentStateAction(AgentState.LOADING), EventSource.ENVIRONMENT
         )
@@ -196,7 +197,7 @@ class Session:
     async def _send_status_message(self, msg_type: str, id: str, message: str) -> bool:
         """Sends a status message to the client."""
         if msg_type == 'error':
-            await self.agent_session.stop_agent_loop_for_error()
+            await self.agent_session.close()
 
         return await self.send(
             {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
