@@ -1,9 +1,8 @@
 import os
-import time
 from difflib import unified_diff
 from pathlib import Path
-from typing import Dict, Optional, Set
 from threading import Timer
+from typing import Dict, Optional, Set
 
 import pathspec
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
@@ -149,7 +148,7 @@ class FileWatcher(FileSystemEventHandler):
                 new_content=new_content,
                 content=diff,
             )
-            self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+            self.event_stream.add_event(observation, EventSource.USER)
 
     def _schedule_debounced_change(self, path: str):
         """Schedule a debounced change event for a file."""
@@ -242,7 +241,9 @@ class FileWatcher(FileSystemEventHandler):
         ):
             return
 
-        if self._should_ignore(event.src_path) or not self._should_watch(event.src_path):
+        if self._should_ignore(event.src_path) or not self._should_watch(
+            event.src_path
+        ):
             return
 
         if self.use_debouncing:
@@ -262,7 +263,7 @@ class FileWatcher(FileSystemEventHandler):
                 new_content=new_content,
                 content=diff,
             )
-            self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+            self.event_stream.add_event(observation, EventSource.USER)
 
     def on_modified(self, event: FileSystemEvent):
         """Handle file modification event."""
@@ -278,7 +279,9 @@ class FileWatcher(FileSystemEventHandler):
         ):
             return
 
-        if self._should_ignore(event.src_path) or not self._should_watch(event.src_path):
+        if self._should_ignore(event.src_path) or not self._should_watch(
+            event.src_path
+        ):
             return
 
         if self.use_debouncing:
@@ -300,7 +303,7 @@ class FileWatcher(FileSystemEventHandler):
                     new_content=new_content,
                     content=diff,
                 )
-                self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+                self.event_stream.add_event(observation, EventSource.USER)
 
     def on_deleted(self, event: FileSystemEvent):
         """Handle file deletion event."""
@@ -322,7 +325,9 @@ class FileWatcher(FileSystemEventHandler):
             self.debounce_timers.pop(event.src_path)
             self.pending_changes.discard(event.src_path)
 
-        if self._should_ignore(event.src_path) or not self._should_watch(event.src_path):
+        if self._should_ignore(event.src_path) or not self._should_watch(
+            event.src_path
+        ):
             return
 
         rel_path = os.path.relpath(event.src_path, self.directory)
@@ -338,7 +343,7 @@ class FileWatcher(FileSystemEventHandler):
             new_content='',
             content=diff,
         )
-        self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+        self.event_stream.add_event(observation, EventSource.USER)
         self.file_contents.pop(event.src_path, None)
 
     def on_moved(self, event: FileSystemEvent):
@@ -365,7 +370,9 @@ class FileWatcher(FileSystemEventHandler):
         ):
             return
 
-        if self._should_ignore(event.src_path) or not self._should_watch(event.src_path):
+        if self._should_ignore(event.src_path) or not self._should_watch(
+            event.src_path
+        ):
             return
 
         # Handle source file deletion
@@ -382,7 +389,7 @@ class FileWatcher(FileSystemEventHandler):
             new_content='',
             content=src_diff,
         )
-        self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+        self.event_stream.add_event(observation, EventSource.USER)
         self.file_contents.pop(event.src_path, None)
 
         # Handle destination file creation
@@ -402,4 +409,4 @@ class FileWatcher(FileSystemEventHandler):
                 new_content=old_content,
                 content=dest_diff,
             )
-            self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+            self.event_stream.add_event(observation, EventSource.USER)
