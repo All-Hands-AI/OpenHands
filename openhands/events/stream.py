@@ -154,8 +154,8 @@ class EventStream:
         tasks = []
         for key in sorted(self._subscribers.keys()):
             stack = self._subscribers[key]
-            callback = stack[-1]
-            tasks.append(asyncio.create_task(callback(event)))
+            for callback in stack:
+                tasks.append(asyncio.create_task(callback(event)))
         if tasks:
             await asyncio.wait(tasks)
 
