@@ -1,6 +1,6 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { json, useLoaderData, useRouteError } from "@remix-run/react";
+import { json, useRouteError } from "@remix-run/react";
 import toast from "react-hot-toast";
 import { editor } from "monaco-editor";
 import { EditorProps } from "@monaco-editor/react";
@@ -8,7 +8,6 @@ import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import FileExplorer from "#/components/file-explorer/FileExplorer";
 import OpenHands from "#/api/open-hands";
-import { useSocket } from "#/context/socket";
 import CodeEditorCompoonent from "./code-editor-component";
 import { useFiles } from "#/context/files";
 import { EditorActions } from "#/components/editor-actions";
@@ -30,8 +29,7 @@ export function ErrorBoundary() {
 }
 
 function CodeEditor() {
-  const { token } = useLoaderData<typeof clientLoader>();
-  const { runtimeActive } = useSocket();
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const {
     setPaths,
     selectedPath,
@@ -70,15 +68,14 @@ function CodeEditor() {
   );
 
   React.useEffect(() => {
-    // only retrieve files if connected to WS to prevent requesting before runtime is ready
-    if (runtimeActive && token) {
-      OpenHands.getFiles(token)
+    if (curAgentState === AgentState.INIT) {
+      OpenHands.getFiles()
         .then(setPaths)
         .catch(() => {
           setErrors({ getFiles: "Failed to retrieve files" });
         });
     }
-  }, [runtimeActive, token]);
+  }, [curAgentState]);
 
   // Code editing is only allowed when the agent is paused, finished, or awaiting user input (server rules)
   const isEditingAllowed = React.useMemo(
@@ -92,9 +89,9 @@ function CodeEditor() {
   const handleSave = async () => {
     if (selectedPath) {
       const content = modifiedFiles[selectedPath];
-      if (content && token) {
+      if (content) {
         try {
-          await OpenHands.saveFile(token, selectedPath, content);
+          await OpenHands.saveFile(selectedPath, content);
           saveNewFileContent(selectedPath);
         } catch (error) {
           toast.error("Failed to save file");

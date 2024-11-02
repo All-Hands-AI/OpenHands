@@ -36,8 +36,7 @@ function CodeEditorCompoonent({
 
         if (content) {
           try {
-            const token = localStorage.getItem("token")?.toString();
-            if (token) await OpenHands.saveFile(token, selectedPath, content);
+            await OpenHands.saveFile(selectedPath, content);
           } catch (error) {
             toast.error("Failed to save file");
           }
