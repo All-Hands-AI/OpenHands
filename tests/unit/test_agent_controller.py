@@ -112,7 +112,12 @@ async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_cal
         headless_mode=True,
     )
     error_message = 'Test error'
-    await controller._react_to_exception(RuntimeError(error_message))
+    exception = None
+    try:
+        await controller._react_to_exception(RuntimeError(error_message))
+    except Exception as e:
+        exception = e
+    assert exception is not None
     controller._status_callback.assert_called_once()
     await controller.close()
 
@@ -291,7 +296,12 @@ async def test_step_max_iterations(mock_agent, mock_event_stream):
     controller.state.agent_state = AgentState.RUNNING
     controller.state.iteration = 10
     assert controller.state.traffic_control_state == TrafficControlState.NORMAL
-    await controller._step()
+    exception = None
+    try:
+        await controller._step()
+    except Exception as e:
+        exception = e
+    assert exception is not None
     assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
     assert controller.state.agent_state == AgentState.ERROR
     await controller.close()
@@ -310,7 +320,12 @@ async def test_step_max_iterations_headless(mock_agent, mock_event_stream):
     controller.state.agent_state = AgentState.RUNNING
     controller.state.iteration = 10
     assert controller.state.traffic_control_state == TrafficControlState.NORMAL
-    await controller._step()
+    exception = None
+    try:
+        await controller._step()
+    except Exception as e:
+        exception = e
+    assert exception is not None
     assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
     # In headless mode, throttling results in an error
     assert controller.state.agent_state == AgentState.ERROR
@@ -331,7 +346,12 @@ async def test_step_max_budget(mock_agent, mock_event_stream):
     controller.state.agent_state = AgentState.RUNNING
     controller.state.metrics.accumulated_cost = 10.1
     assert controller.state.traffic_control_state == TrafficControlState.NORMAL
-    await controller._step()
+    exception = None
+    try:
+        await controller._step()
+    except Exception as e:
+        exception = e
+    assert exception is not None
     assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
     assert controller.state.agent_state == AgentState.ERROR
     await controller.close()
@@ -351,7 +371,12 @@ async def test_step_max_budget_headless(mock_agent, mock_event_stream):
     controller.state.agent_state = AgentState.RUNNING
     controller.state.metrics.accumulated_cost = 10.1
     assert controller.state.traffic_control_state == TrafficControlState.NORMAL
-    await controller._step()
+    exception = None
+    try:
+        await controller._step()
+    except Exception as e:
+        exception = e
+    assert exception is not None
     assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
     # In headless mode, throttling results in an error
     assert controller.state.agent_state == AgentState.ERROR
