@@ -205,6 +205,48 @@ __pycache__/
         assert watcher._should_ignore(abs_path) == should_ignore, f"Failed for {rel_path}"
 
 
+def test_git_directory_ignored(watcher, temp_dir):
+    """Test that .git directory is always ignored regardless of gitignore."""
+    # Create some files in a .git directory
+    git_files = [
+        ".git/HEAD",
+        ".git/config",
+        ".git/refs/heads/main",
+        ".git/objects/ab/cdef1234567890",
+        "subdir/.git/HEAD",  # Test nested .git directories
+        "subdir/.git/config",
+    ]
+    
+    # Create the files
+    for rel_path in git_files:
+        abs_path = os.path.join(temp_dir, rel_path)
+        create_test_file(abs_path, "test content")
+    
+    # Create some non-.git files for comparison
+    normal_files = [
+        "src/file.txt",
+        "subdir/file.txt",
+    ]
+    for rel_path in normal_files:
+        abs_path = os.path.join(temp_dir, rel_path)
+        create_test_file(abs_path, "test content")
+    
+    # Test that all .git paths are ignored
+    for rel_path in git_files:
+        abs_path = os.path.join(temp_dir, rel_path)
+        assert watcher._should_ignore(abs_path), f".git file not ignored: {rel_path}"
+        
+        # Also test the directory itself
+        dir_path = os.path.dirname(abs_path)
+        if '.git' in os.path.basename(dir_path):
+            assert watcher._should_ignore(dir_path), f".git directory not ignored: {os.path.dirname(rel_path)}"
+    
+    # Test that normal files are not ignored
+    for rel_path in normal_files:
+        abs_path = os.path.join(temp_dir, rel_path)
+        assert not watcher._should_ignore(abs_path), f"Non-.git file incorrectly ignored: {rel_path}"
+
+
 def test_explicit_ignore_patterns(watcher, temp_dir):
     """Test that explicitly provided ignore patterns work."""
     # Create watcher with custom ignore patterns
