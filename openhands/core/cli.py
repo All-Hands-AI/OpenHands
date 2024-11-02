@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from typing import Type
 
 from termcolor import colored
@@ -70,7 +71,17 @@ def display_event(event: Event):
     if isinstance(event, FileEditAction):
         display_file_edit(event)
     if isinstance(event, FileEditObservation):
-        display_file_edit(event)
+        if event.source == EventSource.ENVIRONMENT:
+            # For file watcher events, use a different color and format
+            if not event.prev_exist:
+                print(colored(f'📝 File created: {event.path}', 'cyan'))
+            elif event.new_content == "":
+                print(colored(f'🗑️  File deleted: {event.path}', 'red'))
+            else:
+                print(colored(f'✏️  File modified: {event.path}', 'yellow'))
+        else:
+            # For regular file edits, use the standard display
+            display_file_edit(event)
 
 
 async def main():
@@ -104,6 +115,17 @@ async def main():
     logger.setLevel(logging.WARNING)
     config = load_app_config(config_file=args.config_file)
     sid = 'cli'
+
+    # Set up file watcher if --watch is specified
+    if args.watch:
+        from openhands.intent.watch import FileWatcher
+        watch_dir = os.path.abspath(args.watch)
+        if not os.path.isdir(watch_dir):
+            print(f"Error: Watch directory '{args.watch}' does not exist or is not a directory")
+            return
+        print(f"Starting file watcher for directory: {watch_dir}")
+        file_watcher = FileWatcher(directory=watch_dir, event_stream=event_stream)
+        file_watcher.start()
 
     agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
@@ -169,6 +191,11 @@ async def main():
 
     print('Exiting...')
     await controller.close()
+    
+    # Stop file watcher if it was started
+    if args.watch and 'file_watcher' in locals():
+        print('Stopping file watcher...')
+        file_watcher.stop()
 
 
 if __name__ == '__main__':
