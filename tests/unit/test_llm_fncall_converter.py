@@ -374,7 +374,7 @@ NON_FNCALL_MESSAGES = [
     },
 ]
 
-FNCALL_RESPONSE = {
+FNCALL_RESPONSE_MESSAGE = {
     'content': [
         {
             'type': 'text',
@@ -389,13 +389,13 @@ FNCALL_RESPONSE = {
                 'arguments': '{"command": "grep -n \\"_format_float\\" /testbed/astropy/io/fits/card.py"}',
                 'name': 'execute_bash',
             },
-            'id': 'toolu_01KmxSLyHu4HSEBkuxUE2SCr',
+            'id': 'toolu_04',
             'type': 'function',
         }
     ],
 }
 
-NON_FNCALL_RESPONSE = {
+NON_FNCALL_RESPONSE_MESSAGE = {
     'content': [
         {
             'type': 'text',
@@ -411,7 +411,7 @@ NON_FNCALL_RESPONSE = {
     [
         # Original test case
         (
-            FNCALL_RESPONSE['tool_calls'],
+            FNCALL_RESPONSE_MESSAGE['tool_calls'],
             """<function=execute_bash>
 <parameter=command>grep -n "_format_float" /testbed/astropy/io/fits/card.py</parameter>
 </function>""",
@@ -496,3 +496,20 @@ def test_two_way_conversion_fn_to_nonfn_to_fn():
         non_fncall_copy == NON_FNCALL_MESSAGES
     )  # make sure original messages are not modified
     assert converted_fncall == FNCALL_MESSAGES
+
+
+def test_infer_fncall_on_noncall_model():
+    messages_for_llm_inference = convert_fncall_messages_to_non_fncall_messages(
+        FNCALL_MESSAGES, FNCALL_TOOLS
+    )
+    assert messages_for_llm_inference == NON_FNCALL_MESSAGES
+    # Mock LLM inference
+    response_message_from_llm_inference = NON_FNCALL_RESPONSE_MESSAGE
+
+    # Convert back to fncall messages to hand back to the agent
+    # so agent is model-agnostic
+    all_nonfncall_messages = NON_FNCALL_MESSAGES + [response_message_from_llm_inference]
+    converted_fncall_messages = convert_non_fncall_messages_to_fncall_messages(
+        all_nonfncall_messages, FNCALL_TOOLS
+    )
+    assert converted_fncall_messages == FNCALL_MESSAGES + [FNCALL_RESPONSE_MESSAGE]
