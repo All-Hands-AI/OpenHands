@@ -64,13 +64,13 @@ def display_event(event: Event):
     if isinstance(event, MessageAction):
         if event.source == EventSource.AGENT:
             display_message(event.content)
-    if isinstance(event, CmdRunAction):
+    elif isinstance(event, CmdRunAction):
         display_command(event.command)
-    if isinstance(event, CmdOutputObservation):
+    elif isinstance(event, CmdOutputObservation):
         display_command_output(event.content)
-    if isinstance(event, FileEditAction):
+    elif isinstance(event, FileEditAction):
         display_file_edit(event)
-    if isinstance(event, FileEditObservation):
+    elif isinstance(event, FileEditObservation):
         if event.source == EventSource.ENVIRONMENT:
             # For file watcher events, use a different color and format
             if not event.prev_exist:
@@ -82,6 +82,9 @@ def display_event(event: Event):
         else:
             # For regular file edits, use the standard display
             display_file_edit(event)
+    else:
+        print('unknown event')
+        print(event)
 
 
 async def main():
@@ -112,7 +115,7 @@ async def main():
         print(f'OpenHands version: {__version__}')
         return
 
-    logger.setLevel(logging.WARNING)
+    logger.setLevel(logging.DEBUG)
     config = load_app_config(config_file=args.config_file)
     sid = 'cli'
 
@@ -161,6 +164,7 @@ async def main():
         controller.agent_task = asyncio.create_task(controller.start_step_loop())
 
     async def prompt_for_next_task():
+        print('prompt for next')
         # Run input() in a thread pool to avoid blocking the event loop
         await controller.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
         loop = asyncio.get_event_loop()
@@ -185,6 +189,12 @@ async def main():
                 AgentState.FINISHED,
                 AgentState.ERROR,
             ]:
+                print(
+                    'on event, prompting',
+                    event.agent_state,
+                    controller.get_agent_state(),
+                )
+
                 await prompt_for_next_task()
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
