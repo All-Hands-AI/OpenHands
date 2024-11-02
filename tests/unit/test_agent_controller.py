@@ -141,7 +141,7 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
         if isinstance(event, CmdRunAction):
             error_obs = ErrorObservation('You messed around with Jim')
             error_obs._cause = event.id
-            await event_stream.async_add_event(error_obs, EventSource.USER)
+            event_stream.add_event(error_obs, EventSource.USER)
 
     event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event)
     runtime.event_stream = event_stream
@@ -161,7 +161,7 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
     # in side run_controller (since the while loop + sleep no longer loop)
     assert state.agent_state == AgentState.STOPPED
     assert state.get_last_error() == 'You messed around with Jim'
-    assert len(list(event_stream.get_events())) == 12
+    assert len(list(event_stream.get_events())) == 11
 
 
 @pytest.mark.asyncio
@@ -188,9 +188,7 @@ async def test_run_controller_stop_with_stuck():
                 'Non fatal error here to trigger loop'
             )
             non_fatal_error_obs._cause = event.id
-            await event_stream.async_add_event(
-                non_fatal_error_obs, EventSource.ENVIRONMENT
-            )
+            event_stream.add_event(non_fatal_error_obs, EventSource.ENVIRONMENT)
 
     event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event)
     runtime.event_stream = event_stream
