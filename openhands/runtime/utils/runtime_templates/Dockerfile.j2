@@ -71,7 +71,9 @@ RUN /openhands/micromamba/bin/micromamba create -n openhands -y && \
 RUN \
     if [ -d /openhands/code ]; then rm -rf /openhands/code; fi && \
     mkdir -p /openhands/code/openhands && \
-    touch /openhands/code/openhands/__init__.py
+    touch /openhands/code/openhands/__init__.py && \
+    chmod a+rwx /openhands/code/openhands/__init__.py
+
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 
 {{ install_dependencies() }}
