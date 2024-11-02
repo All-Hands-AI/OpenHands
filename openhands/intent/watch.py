@@ -1,7 +1,8 @@
 import os
+import time
 from difflib import unified_diff
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import pathspec
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
@@ -47,6 +48,10 @@ class FileWatcher(FileSystemEventHandler):
         self.observer = Observer()
         # Keep track of file contents
         self.file_contents: Dict[str, str] = {}
+        # Buffer for recently deleted files: path -> (content, timestamp)
+        self.recently_deleted: Dict[str, Tuple[str, float]] = {}
+        # Time window to consider a delete+create as an edit (in seconds)
+        self.edit_window = 0.1  # 100ms should be enough for most editors
         # Initialize file contents for existing files
         self._initialize_file_contents()
 
@@ -177,6 +182,31 @@ class FileWatcher(FileSystemEventHandler):
         new_content = self._read_file_content(event.src_path)
         self.file_contents[event.src_path] = new_content
 
+        # Check if this is actually a recreation of a recently deleted file
+        if event.src_path in self.recently_deleted:
+            old_content, delete_time = self.recently_deleted[event.src_path]
+            current_time = time.time()
+            
+            # If the file was deleted within our edit window, treat this as a modification
+            if current_time - delete_time <= self.edit_window:
+                # Remove from recently deleted since we're handling it
+                self.recently_deleted.pop(event.src_path)
+                
+                # Only emit if content actually changed
+                if old_content != new_content:
+                    diff = self._generate_diff(old_content, new_content, rel_path)
+                    
+                    observation = FileEditObservation(
+                        path=rel_path,
+                        prev_exist=True,
+                        old_content=old_content,
+                        new_content=new_content,
+                        content=diff,
+                    )
+                    self.event_stream.add_event(observation, EventSource.USER)
+                return
+
+        # If we get here, this is a genuine new file
         # For new files, the diff will be all additions
         diff = self._generate_diff('', new_content, rel_path)
 
@@ -228,18 +258,37 @@ class FileWatcher(FileSystemEventHandler):
         rel_path = os.path.relpath(event.src_path, self.directory)
         old_content = self.file_contents.get(event.src_path, '')
 
-        # For deletions, the diff will be all removals
-        diff = self._generate_diff(old_content, '', rel_path)
+        # Store the deleted file content and timestamp in the buffer
+        self.recently_deleted[event.src_path] = (old_content, time.time())
 
-        observation = FileEditObservation(
-            path=rel_path,
-            prev_exist=True,
-            old_content=old_content,
-            new_content='',
-            content=diff,
-        )
-        self.event_stream.add_event(observation, EventSource.USER)
+        # For deletions, we'll wait a short time before emitting the event
+        # to see if it's actually part of an edit operation
+        def emit_delete_event():
+            # For deletions, the diff will be all removals
+            diff = self._generate_diff(old_content, '', rel_path)
+
+            observation = FileEditObservation(
+                path=rel_path,
+                prev_exist=True,
+                old_content=old_content,
+                new_content='',
+                content=diff,
+            )
+            self.event_stream.add_event(observation, EventSource.USER)
+
+        # Remove from file contents immediately
         self.file_contents.pop(event.src_path, None)
+
+        # Schedule cleanup of recently_deleted buffer
+        def cleanup_deleted():
+            if event.src_path in self.recently_deleted:
+                # If the file wasn't recreated within the window, emit delete event
+                emit_delete_event()
+                self.recently_deleted.pop(event.src_path, None)
+
+        # Use a timer to schedule the cleanup
+        from threading import Timer
+        Timer(self.edit_window, cleanup_deleted).start()
 
     def on_moved(self, event: FileSystemEvent):
         """Handle file move/rename event."""
