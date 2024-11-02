@@ -12,6 +12,7 @@ from openhands.core.config import LLMConfig
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
+from litellm import Message as LitellmMessage
 from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
@@ -28,6 +29,10 @@ from openhands.core.exceptions import CloudFlareBlockageError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.llm.debug_mixin import DebugMixin
+from openhands.llm.fn_call_converter import (
+    convert_fncall_messages_to_non_fncall_messages,
+    convert_non_fncall_messages_to_fncall_messages,
+)
 from openhands.llm.metrics import Metrics
 from openhands.llm.retry_mixin import RetryMixin
 
@@ -208,6 +213,7 @@ class LLM(RetryMixin, DebugMixin):
         def wrapper(*args, **kwargs):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
             messages: list[dict[str, Any]] | dict[str, Any] = []
+            mock_function_calling = kwargs.pop('mock_function_calling', False)
 
             # some callers might send the model and messages directly
             # litellm allows positional args, like completion(model, messages, **kwargs)
@@ -226,6 +232,15 @@ class LLM(RetryMixin, DebugMixin):
 
             # ensure we work with a list of messages
             messages = messages if isinstance(messages, list) else [messages]
+
+            original_fncall_messages = copy.deepcopy(messages)
+            if mock_function_calling:
+                assert (
+                    'tools' in kwargs
+                ), "'tools' must be in kwargs when mock_function_calling is True"
+                messages = convert_fncall_messages_to_non_fncall_messages(
+                    messages, kwargs['tools']
+                )
 
             # if we have no messages, something went very wrong
             if not messages:
@@ -246,6 +261,19 @@ class LLM(RetryMixin, DebugMixin):
             try:
                 # we don't support streaming here, thus we get a ModelResponse
                 resp: ModelResponse = completion_unwrapped(*args, **kwargs)
+
+                non_fncall_response = copy.deepcopy(resp)
+                if mock_function_calling:
+                    assert len(resp.choices) == 1
+                    non_fncall_response_message = resp.choices[0].message
+                    fn_call_messages_with_response = (
+                        convert_non_fncall_messages_to_fncall_messages(
+                            messages + [non_fncall_response_message], kwargs['tools']
+                        )
+                    )
+                    fn_call_response_message = fn_call_messages_with_response[-1]
+                    resp.choices[0].message = LitellmMessage(**fn_call_response_message)
+
                 # log for evals or other scripts that need the raw completion
                 if self.config.log_completions:
                     assert self.config.log_completions_folder is not None
@@ -256,23 +284,22 @@ class LLM(RetryMixin, DebugMixin):
                     )
                     from openhands.core.utils import json
 
+                    _d = {
+                        'messages': messages,
+                        'response': resp,
+                        'args': args,
+                        'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
+                        'timestamp': time.time(),
+                        'cost': self._completion_cost(resp),
+                    }
+                    if mock_function_calling:
+                        # Overwrite response as non-fncall to be consistent with `messages``
+                        _d['response'] = non_fncall_response
+                        # Save fncall_messages/response separately
+                        _d['fncall_messages'] = original_fncall_messages
+                        _d['fncall_response'] = resp
                     with open(log_file, 'w') as f:
-                        f.write(
-                            json.dumps(
-                                {
-                                    'messages': messages,
-                                    'response': resp,
-                                    'args': args,
-                                    'kwargs': {
-                                        k: v
-                                        for k, v in kwargs.items()
-                                        if k != 'messages'
-                                    },
-                                    'timestamp': time.time(),
-                                    'cost': self._completion_cost(resp),
-                                },
-                            )
-                        )
+                        f.write(json.dumps(_d))
 
                 message_back: str = resp['choices'][0]['message']['content']
 
@@ -342,7 +369,7 @@ class LLM(RetryMixin, DebugMixin):
             or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
             or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
         )
-        return model_name_supported and (
+        return model_name_supported or (
             self.model_info is not None
             and self.model_info.get('supports_function_calling', False)
         )
