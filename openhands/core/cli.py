@@ -115,7 +115,7 @@ async def main():
         print(f'OpenHands version: {__version__}')
         return
 
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.WARNING)
     config = load_app_config(config_file=args.config_file)
     sid = 'cli'
 
