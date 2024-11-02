@@ -54,7 +54,8 @@ def display_command_output(output: str):
 
 
 def display_file_edit(event: FileEditAction | FileEditObservation):
-    print(colored(str(event), 'green'))
+    # print(colored(str(event), 'green'))
+    pass
 
 
 def display_event(event: Event):
@@ -168,6 +169,8 @@ async def main():
         next_message = await loop.run_in_executor(
             None, lambda: input('How can I help? >> ')
         )
+        if not next_message.strip():
+            await prompt_for_next_task()
         if next_message == 'exit':
             event_stream.add_event(
                 ChangeAgentStateAction(AgentState.STOPPED), EventSource.ENVIRONMENT
