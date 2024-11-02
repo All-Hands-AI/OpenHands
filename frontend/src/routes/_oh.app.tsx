@@ -72,16 +72,6 @@ const isAgentStateChange = (
 
 export const clientLoader = async () => {
   const ghToken = localStorage.getItem("ghToken");
-  try {
-    const isAuthed = await userIsAuthenticated();
-    if (!isAuthed) {
-      clearSession();
-      return redirect("/");
-    }
-  } catch (error) {
-    clearSession();
-    return redirect("/");
-  }
 
   const q = store.getState().initalQuery.initialQuery;
   const repo =
