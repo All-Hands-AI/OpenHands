@@ -141,9 +141,13 @@ class OpenHands {
    * @returns Response with authentication status and user info if successful
    */
   static async authenticate(): Promise<Response> {
-    return request(`/api/authenticate`, {
-      method: "POST",
-    });
+    return request(
+      `/api/authenticate`,
+      {
+        method: "POST",
+      },
+      true,
+    );
   }
 }
 

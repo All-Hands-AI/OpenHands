@@ -76,11 +76,9 @@ class UserVerifier:
         return False
 
 
-# Global instance of user verifier
-user_verifier = UserVerifier()
-
-
 async def authenticate_github_user(auth_token) -> bool:
+    user_verifier = UserVerifier()
+
     logger.info('Checking GitHub token')
 
     if not auth_token:
