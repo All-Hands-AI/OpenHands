@@ -73,7 +73,11 @@ class FileWatcher(FileSystemEventHandler):
 
     def _initialize_file_contents(self):
         """Initialize the content cache for existing files in the watched directory."""
-        for root, _, files in os.walk(self.directory):
+        for root, dirs, files in os.walk(self.directory, topdown=True):
+            # Filter out ignored directories to prevent walking into them
+            dirs[:] = [d for d in dirs if not self._should_ignore(os.path.join(root, d))]
+            
+            # Process files in non-ignored directories
             for file in files:
                 abs_path = os.path.join(root, file)
                 if not self._should_ignore(abs_path) and self._should_watch(abs_path):
@@ -96,13 +100,24 @@ class FileWatcher(FileSystemEventHandler):
 
     def _should_ignore(self, path: str) -> bool:
         """Check if the path should be ignored based on ignore patterns and .gitignore."""
+        # Get path relative to watched directory
         rel_path = os.path.relpath(path, self.directory)
+        
+        # Convert Windows paths to Unix style for consistency
+        rel_path = rel_path.replace(os.sep, '/')
         
         # First check explicit ignore patterns (including .git/)
         if any(Path(rel_path).match(pattern) for pattern in self.ignore_patterns):
             return True
             
-        # Then check .gitignore patterns
+        # For directories, we need to check both the directory path and path with trailing slash
+        is_dir = os.path.isdir(path)
+        if is_dir:
+            # Check directory path both with and without trailing slash
+            return (self.gitignore_spec.match_file(rel_path) or 
+                   self.gitignore_spec.match_file(rel_path + '/'))
+        
+        # For files, just check the path directly
         return self.gitignore_spec.match_file(rel_path)
 
     def _should_watch(self, path: str) -> bool:
