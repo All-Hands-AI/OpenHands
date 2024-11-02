@@ -161,7 +161,9 @@ async def main():
         controller.agent_task = asyncio.create_task(controller.start_step_loop())
 
     async def prompt_for_next_task():
-        next_message = input('How can I help? >> ')
+        # Run input() in a thread pool to avoid blocking the event loop
+        loop = asyncio.get_event_loop()
+        next_message = await loop.run_in_executor(None, lambda: input('How can I help? >> '))
         if next_message == 'exit':
             event_stream.add_event(
                 ChangeAgentStateAction(AgentState.STOPPED), EventSource.ENVIRONMENT
