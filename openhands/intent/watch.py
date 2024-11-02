@@ -173,6 +173,7 @@ class FileWatcher(FileSystemEventHandler):
         ):
             return
 
+        print('ON CREATE', event.src_path, flush=True)
         rel_path = os.path.relpath(event.src_path, self.directory)
         new_content = self._read_file_content(event.src_path)
         self.file_contents[event.src_path] = new_content
@@ -198,6 +199,7 @@ class FileWatcher(FileSystemEventHandler):
         ):
             return
 
+        print('ON MODIFY', event.src_path, flush=True)
         rel_path = os.path.relpath(event.src_path, self.directory)
         old_content = self.file_contents.get(event.src_path, '')
         new_content = self._read_file_content(event.src_path)
@@ -225,6 +227,7 @@ class FileWatcher(FileSystemEventHandler):
         ):
             return
 
+        print('ON DELETE', event.src_path, flush=True)
         rel_path = os.path.relpath(event.src_path, self.directory)
         old_content = self.file_contents.get(event.src_path, '')
 
