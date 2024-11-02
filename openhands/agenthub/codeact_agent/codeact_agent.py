@@ -69,7 +69,6 @@ class CodeActAgent(Agent):
         AgentSkillsRequirement(),
         JupyterRequirement(),
     ]
-    obs_prefix = 'OBSERVATION:\n'
 
     def __init__(
         self,
@@ -244,15 +243,14 @@ class CodeActAgent(Agent):
         """
         message: Message
         max_message_chars = self.llm.config.max_message_chars
-        obs_prefix = 'OBSERVATION:\n'
         if isinstance(obs, CmdOutputObservation):
-            text = obs_prefix + truncate_content(
+            text = truncate_content(
                 obs.content + obs.interpreter_details, max_message_chars
             )
             text += f'\n[Command finished with exit code {obs.exit_code}]'
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
-            text = obs_prefix + obs.content
+            text = obs.content
             # replace base64 images with a placeholder
             splitted = text.split('\n')
             for i, line in enumerate(splitted):
@@ -264,16 +262,16 @@ class CodeActAgent(Agent):
             text = truncate_content(text, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, FileEditObservation):
-            text = obs_prefix + truncate_content(str(obs), max_message_chars)
+            text = truncate_content(str(obs), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentDelegateObservation):
-            text = obs_prefix + truncate_content(
+            text = truncate_content(
                 obs.outputs['content'] if 'content' in obs.outputs else '',
                 max_message_chars,
             )
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, ErrorObservation):
-            text = obs_prefix + truncate_content(obs.content, max_message_chars)
+            text = truncate_content(obs.content, max_message_chars)
             text += '\n[Error occurred in processing last action]'
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, UserRejectObservation):
