@@ -1,4 +1,4 @@
-import { Editor, Monaco } from "@monaco-editor/react";
+import { Editor, Monaco, EditorProps } from "@monaco-editor/react";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { VscCode } from "react-icons/vsc";
@@ -9,10 +9,14 @@ import { useFiles } from "#/context/files";
 import OpenHands from "#/api/open-hands";
 
 interface CodeEditorCompoonentProps {
+  onMount: EditorProps["onMount"];
   isReadOnly: boolean;
 }
 
-function CodeEditorCompoonent({ isReadOnly }: CodeEditorCompoonentProps) {
+function CodeEditorCompoonent({
+  onMount,
+  isReadOnly,
+}: CodeEditorCompoonentProps) {
   const { t } = useTranslation();
   const {
     files,
@@ -58,8 +62,7 @@ function CodeEditorCompoonent({ isReadOnly }: CodeEditorCompoonentProps) {
 
         if (content) {
           try {
-            const token = localStorage.getItem("token")?.toString();
-            if (token) await OpenHands.saveFile(token, selectedPath, content);
+            await OpenHands.saveFile(selectedPath, content);
           } catch (error) {
             toast.error("Failed to save file");
           }
@@ -77,7 +80,7 @@ function CodeEditorCompoonent({ isReadOnly }: CodeEditorCompoonentProps) {
     return (
       <div
         data-testid="code-editor-empty-message"
-        className="flex flex-col items-center text-neutral-400"
+        className="flex flex-col h-full items-center justify-center text-neutral-400"
       >
         <VscCode size={100} />
         {t(I18nKey.CODE_EDITOR$EMPTY_MESSAGE)}
