@@ -211,9 +211,7 @@ class EditTool:
         snippet_lines = (
             file_text_lines[max(0, insert_line - SNIPPET_LINES) : insert_line]
             + new_str_lines
-            + file_text_lines[
-                insert_line : min(n_lines_file, insert_line + SNIPPET_LINES)
-            ]
+            + file_text_lines[insert_line : insert_line + SNIPPET_LINES]
         )
 
         new_file_text = '\n'.join(new_file_text_lines)
