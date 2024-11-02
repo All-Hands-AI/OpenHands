@@ -1,8 +1,8 @@
 import React from "react";
 import hotToast from "react-hot-toast";
 import ModalButton from "./buttons/ModalButton";
-import { request } from "#/services/api";
 import { Feedback } from "#/api/open-hands.types";
+import OpenHands from "#/api/open-hands";
 
 const FEEDBACK_VERSION = "1.0";
 const VIEWER_PAGE = "https://www.all-hands.dev/share";
@@ -71,13 +71,7 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
       token: "",
     };
 
-    const response = await request("/api/submit-feedback", {
-      method: "POST",
-      body: JSON.stringify(feedback),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await OpenHands.submitFeedback(feedback);
     const { message, feedback_id, password } = response.body; // eslint-disable-line
     const link = `${VIEWER_PAGE}?share_id=${feedback_id}`;
     shareFeedbackToast(message, link, password);
