@@ -65,7 +65,7 @@ def test_file_creation(watcher, temp_dir):
     assert observation.old_content == ""
     assert observation.new_content == content
     assert observation.content.startswith("+Hello, World!")
-    assert source == EventSource.ENVIRONMENT
+    assert source == EventSource.USER
 
 
 def test_file_modification(watcher, temp_dir):
@@ -96,7 +96,7 @@ def test_file_modification(watcher, temp_dir):
     assert observation.new_content == new_content
     assert "-Old content" in observation.content
     assert "+New content" in observation.content
-    assert source == EventSource.ENVIRONMENT
+    assert source == EventSource.USER
 
 
 def test_file_deletion(watcher, temp_dir):
@@ -125,7 +125,7 @@ def test_file_deletion(watcher, temp_dir):
     assert observation.old_content == content
     assert observation.new_content == ""
     assert "-Content to delete" in observation.content
-    assert source == EventSource.ENVIRONMENT
+    assert source == EventSource.USER
 
 
 def test_file_move(watcher, temp_dir):
@@ -156,7 +156,7 @@ def test_file_move(watcher, temp_dir):
     assert del_observation.old_content == content
     assert del_observation.new_content == ""
     assert "-Content to move" in del_observation.content
-    assert del_source == EventSource.ENVIRONMENT
+    assert del_source == EventSource.USER
     
     # Check creation event
     create_observation, create_source = watcher.event_stream.add_event.call_args_list[1][0]
@@ -166,7 +166,7 @@ def test_file_move(watcher, temp_dir):
     assert create_observation.old_content == ""
     assert create_observation.new_content == content
     assert "+Content to move" in create_observation.content
-    assert create_source == EventSource.ENVIRONMENT
+    assert create_source == EventSource.USER
 
 
 def test_gitignore_handling(watcher, temp_dir):
