@@ -1,4 +1,6 @@
 import os
+import time
+from typing import Optional
 
 import httpx
 
@@ -7,18 +9,34 @@ from openhands.server.sheets_client import GoogleSheetsClient
 
 GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', '').strip()
 GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '').strip()
+CACHE_TTL = 60  # Cache TTL in seconds
 
 
 class UserVerifier:
+    _instance: Optional['UserVerifier'] = None
+    _initialized: bool = False
+
+    def __new__(cls) -> 'UserVerifier':
+        if cls._instance is None:
+            cls._instance = super(UserVerifier, cls).__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self) -> None:
+        if self._initialized:
+            return
+
         logger.info('Initializing UserVerifier')
         self.file_users: list[str] | None = None
         self.sheets_client: GoogleSheetsClient | None = None
         self.spreadsheet_id: str | None = None
+        self.cached_sheet_users: list[str] | None = None
+        self.last_fetch_time: float = 0
 
         # Initialize from environment variables
         self._init_file_users()
         self._init_sheets_client()
+        self._initialized = True
 
     def _init_file_users(self) -> None:
         """Load users from text file if configured"""
@@ -52,6 +70,20 @@ class UserVerifier:
         self.sheets_client = GoogleSheetsClient()
         self.spreadsheet_id = sheet_id
 
+    def _refresh_sheet_cache_if_needed(self) -> None:
+        """Refresh the sheet cache if it's older than CACHE_TTL"""
+        current_time = time.time()
+        if (current_time - self.last_fetch_time) > CACHE_TTL:
+            logger.info('Sheet cache expired, refreshing...')
+            if self.sheets_client and self.spreadsheet_id:
+                self.cached_sheet_users = self.sheets_client.get_usernames(
+                    self.spreadsheet_id
+                )
+                self.last_fetch_time = current_time
+                logger.info(
+                    f'Sheet cache refreshed with {len(self.cached_sheet_users or [])} users'
+                )
+
     def is_user_allowed(self, username: str) -> bool:
         """Check if user is allowed based on file and/or sheet configuration"""
         if not self.file_users and not self.sheets_client:
@@ -66,8 +98,8 @@ class UserVerifier:
             logger.debug(f'User {username} not found in text file allowlist')
 
         if self.sheets_client and self.spreadsheet_id:
-            sheet_users = self.sheets_client.get_usernames(self.spreadsheet_id)
-            if username in sheet_users:
+            self._refresh_sheet_cache_if_needed()
+            if username in (self.cached_sheet_users or []):
                 logger.info(f'User {username} found in Google Sheets allowlist')
                 return True
             logger.debug(f'User {username} not found in Google Sheets allowlist')
