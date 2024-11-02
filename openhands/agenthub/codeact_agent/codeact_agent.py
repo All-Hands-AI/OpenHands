@@ -1,12 +1,10 @@
 import json
 import os
 from collections import deque
-from itertools import islice
 
 from litellm import ModelResponse
 
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
-from openhands.agenthub.codeact_agent.action_parser import CodeActResponseParser
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -38,11 +36,10 @@ from openhands.runtime.plugins import (
     PluginRequirement,
 )
 from openhands.utils.microagent import MicroAgent
-from openhands.utils.prompt import PromptManager
 
 
 class CodeActAgent(Agent):
-    VERSION = '2.1'
+    VERSION = '2.2'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
@@ -93,36 +90,24 @@ class CodeActAgent(Agent):
             else None
         )
 
-        self.function_calling_active = self.config.function_calling
-        if self.function_calling_active and not self.llm.is_function_calling_active():
+        self.mock_function_calling = False
+        if not self.llm.is_function_calling_active():
             logger.warning(
                 f'Function calling not supported for model {self.llm.config.model}. '
-                'Disabling function calling.'
+                'Mocking function calling via prompting.'
             )
-            self.function_calling_active = False
+            self.mock_function_calling = True
 
-        if self.function_calling_active:
-            # Function calling mode
-            self.tools = codeact_function_calling.get_tools(
-                codeact_enable_browsing_delegate=self.config.codeact_enable_browsing_delegate,
-                codeact_enable_jupyter=self.config.codeact_enable_jupyter,
-                codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
-            )
-            logger.debug(
-                f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
-            )
-            self.system_prompt = codeact_function_calling.SYSTEM_PROMPT
-            self.initial_user_message = None
-        else:
-            # Non-function-calling mode
-            self.action_parser = CodeActResponseParser()
-            self.prompt_manager = PromptManager(
-                prompt_dir=os.path.join(os.path.dirname(__file__)),
-                agent_skills_docs=AgentSkillsRequirement.documentation,
-                micro_agent=self.micro_agent,
-            )
-            self.system_prompt = self.prompt_manager.system_message
-            self.initial_user_message = self.prompt_manager.initial_user_message
+        # Function calling mode
+        self.tools = codeact_function_calling.get_tools(
+            codeact_enable_browsing_delegate=self.config.codeact_enable_browsing_delegate,
+            codeact_enable_jupyter=self.config.codeact_enable_jupyter,
+            codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
+        )
+        logger.debug(
+            f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
+        )
+        self.system_prompt = codeact_function_calling.SYSTEM_PROMPT
 
         self.pending_actions: deque[Action] = deque()
 
@@ -170,34 +155,25 @@ class CodeActAgent(Agent):
                 FileEditAction,
             ),
         ) or (isinstance(action, AgentFinishAction) and action.source == 'agent'):
-            if self.function_calling_active:
-                tool_metadata = action.tool_call_metadata
-                assert tool_metadata is not None, (
-                    'Tool call metadata should NOT be None when function calling is enabled. Action: '
-                    + str(action)
-                )
+            tool_metadata = action.tool_call_metadata
+            assert tool_metadata is not None, (
+                'Tool call metadata should NOT be None when function calling is enabled. Action: '
+                + str(action)
+            )
 
-                llm_response: ModelResponse = tool_metadata.model_response
-                assistant_msg = llm_response.choices[0].message
-                # Add the LLM message (assistant) that initiated the tool calls
-                # (overwrites any previous message with the same response_id)
-                pending_tool_call_action_messages[llm_response.id] = Message(
-                    role=assistant_msg.role,
-                    # tool call content SHOULD BE a string
-                    content=[TextContent(text=assistant_msg.content or '')]
-                    if assistant_msg.content is not None
-                    else [],
-                    tool_calls=assistant_msg.tool_calls,
-                )
-                return []
-            else:
-                content = [TextContent(text=self.action_parser.action_to_str(action))]
-                return [
-                    Message(
-                        role='user' if action.source == 'user' else 'assistant',
-                        content=content,
-                    )
-                ]
+            llm_response: ModelResponse = tool_metadata.model_response
+            assistant_msg = llm_response.choices[0].message
+            # Add the LLM message (assistant) that initiated the tool calls
+            # (overwrites any previous message with the same response_id)
+            pending_tool_call_action_messages[llm_response.id] = Message(
+                role=assistant_msg.role,
+                # tool call content SHOULD BE a string
+                content=[TextContent(text=assistant_msg.content or '')]
+                if assistant_msg.content is not None
+                else [],
+                tool_calls=assistant_msg.tool_calls,
+            )
+            return []
         elif isinstance(action, MessageAction):
             role = 'user' if action.source == 'user' else 'assistant'
             content = [TextContent(text=action.content or '')]
@@ -283,19 +259,18 @@ class CodeActAgent(Agent):
             # when the LLM tries to return the next message
             raise ValueError(f'Unknown observation type: {type(obs)}')
 
-        if self.function_calling_active:
-            # Update the message as tool response properly
-            if (tool_call_metadata := obs.tool_call_metadata) is not None:
-                tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(
-                    role='tool',
-                    content=message.content,
-                    tool_call_id=tool_call_metadata.tool_call_id,
-                    name=tool_call_metadata.function_name,
-                )
-                # No need to return the observation message
-                # because it will be added by get_action_message when all the corresponding
-                # tool calls in the SAME request are processed
-                return []
+        # Update the message as tool response properly
+        if (tool_call_metadata := obs.tool_call_metadata) is not None:
+            tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(
+                role='tool',
+                content=message.content,
+                tool_call_id=tool_call_metadata.tool_call_id,
+                name=tool_call_metadata.function_name,
+            )
+            # No need to return the observation message
+            # because it will be added by get_action_message when all the corresponding
+            # tool calls in the SAME request are processed
+            return []
 
         return [message]
 
@@ -331,24 +306,15 @@ class CodeActAgent(Agent):
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
-        if self.function_calling_active:
-            params['tools'] = self.tools
-        else:
-            params['stop'] = [
-                '</execute_ipython>',
-                '</execute_bash>',
-                '</execute_browse>',
-                '</file_edit>',
-            ]
+        params['tools'] = self.tools
+        if self.mock_function_calling:
+            params['mock_function_calling'] = True
         response = self.llm.completion(**params)
 
-        if self.function_calling_active:
-            actions = codeact_function_calling.response_to_actions(response)
-            for action in actions:
-                self.pending_actions.append(action)
-            return self.pending_actions.popleft()
-        else:
-            return self.action_parser.parse(response)
+        actions = codeact_function_calling.response_to_actions(response)
+        for action in actions:
+            self.pending_actions.append(action)
+        return self.pending_actions.popleft()
 
     def _get_messages(self, state: State) -> list[Message]:
         """Constructs the message history for the LLM conversation.
@@ -393,13 +359,6 @@ class CodeActAgent(Agent):
                 ],
             )
         ]
-        if self.initial_user_message:
-            messages.append(
-                Message(
-                    role='user',
-                    content=[TextContent(text=self.initial_user_message)],
-                )
-            )
 
         pending_tool_call_action_messages: dict[str, Message] = {}
         tool_call_id_to_message: dict[str, Message] = {}
@@ -475,25 +434,5 @@ class CodeActAgent(Agent):
                         breakpoints_remaining -= 1
                     else:
                         break
-
-        if not self.function_calling_active:
-            # The latest user message is important:
-            # we want to remind the agent of the environment constraints
-            latest_user_message = next(
-                islice(
-                    (
-                        m
-                        for m in reversed(messages)
-                        if m.role == 'user'
-                        and any(isinstance(c, TextContent) for c in m.content)
-                    ),
-                    1,
-                ),
-                None,
-            )
-            # do not add this for function calling
-            if latest_user_message:
-                reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
-                latest_user_message.content.append(TextContent(text=reminder_text))
 
         return messages
