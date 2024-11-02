@@ -150,6 +150,9 @@ class FileWatcher(FileSystemEventHandler):
         # Remove the file name headers and timestamp lines (first 2 lines)
         if len(diff_lines) > 2:
             diff_lines = diff_lines[2:]
+            
+            # Also remove the @@ lines that show line numbers
+            diff_lines = [line for line in diff_lines if not line.startswith('@@')]
         
         return ''.join(diff_lines)
 
