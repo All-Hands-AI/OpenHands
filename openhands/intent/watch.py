@@ -153,7 +153,7 @@ class FileWatcher(FileSystemEventHandler):
                 new_content=new_content,
                 content=diff,
             )
-            self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+            self.event_stream.add_event(observation, EventSource.USER)
 
     def _schedule_debounced_change(self, path: str):
         """Schedule a debounced change event for a file."""
@@ -280,7 +280,7 @@ class FileWatcher(FileSystemEventHandler):
                 new_content=new_content,
                 content=diff,
             )
-            self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+            self.event_stream.add_event(observation, EventSource.USER)
 
     def on_modified(self, event: FileSystemEvent):
         """Handle file modification event."""
@@ -320,7 +320,7 @@ class FileWatcher(FileSystemEventHandler):
                     new_content=new_content,
                     content=diff,
                 )
-                self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+                self.event_stream.add_event(observation, EventSource.USER)
 
     def on_deleted(self, event: FileSystemEvent):
         """Handle file deletion event."""
@@ -373,7 +373,7 @@ class FileWatcher(FileSystemEventHandler):
                 new_content='',
                 content=diff,
             )
-            self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+            self.event_stream.add_event(observation, EventSource.USER)
 
     def _handle_delayed_delete(self, path: str, old_content: str):
         """Handle a deletion after waiting to see if it's part of a rename."""
@@ -389,7 +389,7 @@ class FileWatcher(FileSystemEventHandler):
                 new_content='',
                 content=diff,
             )
-            self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+            self.event_stream.add_event(observation, EventSource.USER)
             self.recent_deletes.pop(path)
 
     def on_moved(self, event: FileSystemEvent):
@@ -435,7 +435,7 @@ class FileWatcher(FileSystemEventHandler):
             new_content='',
             content=src_diff,
         )
-        self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+        self.event_stream.add_event(observation, EventSource.USER)
         self.file_contents.pop(event.src_path, None)
 
         # Handle destination file creation
@@ -455,4 +455,4 @@ class FileWatcher(FileSystemEventHandler):
                 new_content=old_content,
                 content=dest_diff,
             )
-            self.event_stream.add_event(observation, EventSource.ENVIRONMENT)
+            self.event_stream.add_event(observation, EventSource.USER)
