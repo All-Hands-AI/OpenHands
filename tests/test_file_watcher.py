@@ -428,6 +428,35 @@ def test_debounce_timer_cancellation(watcher_with_short_delay, temp_dir):
     assert observation.new_content == ""  # Deletion event
 
 
+def test_concurrent_delete_handling(watcher_with_short_delay, temp_dir):
+    """Test that concurrent delete operations are handled safely."""
+    import time
+    
+    file_path = os.path.join(temp_dir, "test.txt")
+    content = "File content"
+    
+    # Create initial file
+    create_test_file(file_path, content)
+    watcher_with_short_delay.file_contents[file_path] = content
+    
+    # Simulate a delete
+    event = FileDeletedEvent(file_path)
+    watcher_with_short_delay.on_deleted(event)
+    
+    # Simulate another delete before the first one is processed
+    watcher_with_short_delay.on_deleted(event)
+    
+    # Wait for both timers
+    time.sleep(0.2)  # Longer than rename_window
+    
+    # Should only have one deletion event
+    assert watcher_with_short_delay.event_stream.add_event.call_count == 1
+    observation, source = watcher_with_short_delay.event_stream.add_event.call_args[0]
+    assert observation.path == "test.txt"
+    assert observation.old_content == content
+    assert observation.new_content == ""
+
+
 def test_atomic_rename_handling(watcher_with_short_delay, temp_dir):
     """Test that atomic renames (delete+create with same content) are handled correctly."""
     import time

@@ -352,15 +352,17 @@ class FileWatcher(FileSystemEventHandler):
         self.file_contents.pop(event.src_path, None)
 
         if self.use_debouncing:
-            # Store the content temporarily in case this is a rename
-            self.recent_deletes[event.src_path] = (old_content, time.time())
-            # Schedule cleanup of recent_deletes after the rename window
-            timer = Timer(
-                self.rename_window,
-                self._handle_delayed_delete,
-                args=[event.src_path, old_content],
-            )
-            timer.start()
+            # Only schedule a delete timer if we haven't already scheduled one
+            if event.src_path not in self.recent_deletes:
+                # Store the content temporarily in case this is a rename
+                self.recent_deletes[event.src_path] = (old_content, time.time())
+                # Schedule cleanup of recent_deletes after the rename window
+                timer = Timer(
+                    self.rename_window,
+                    self._handle_delayed_delete,
+                    args=[event.src_path, old_content],
+                )
+                timer.start()
         else:
             # Emit deletion event immediately
             rel_path = os.path.relpath(event.src_path, self.directory)
@@ -377,7 +379,10 @@ class FileWatcher(FileSystemEventHandler):
 
     def _handle_delayed_delete(self, path: str, old_content: str):
         """Handle a deletion after waiting to see if it's part of a rename."""
-        if path in self.recent_deletes:
+        # Use dict.get() to safely check if the path is still in recent_deletes
+        # and its content matches what we expect
+        stored = self.recent_deletes.get(path)
+        if stored is not None and stored[0] == old_content:
             # This was a real deletion, not part of a rename
             rel_path = os.path.relpath(path, self.directory)
             diff = self._generate_diff(old_content, '', rel_path)
@@ -390,7 +395,8 @@ class FileWatcher(FileSystemEventHandler):
                 content=diff,
             )
             self.event_stream.add_event(observation, EventSource.USER)
-            self.recent_deletes.pop(path)
+            # Use pop with a default value to avoid KeyError
+            self.recent_deletes.pop(path, None)
 
     def on_moved(self, event: FileSystemEvent):
         """Handle file move/rename event."""
