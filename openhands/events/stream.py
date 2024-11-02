@@ -87,6 +87,7 @@ class EventStream:
         Yields:
             Events from the stream that match the criteria.
         """
+
         def should_filter(event: Event):
             if filter_hidden and hasattr(event, 'hidden') and event.hidden:
                 return True
