@@ -257,7 +257,7 @@ class AgentController:
 
         print('checking observation', observation.source)
         if observation.source == EventSource.USER:
-            print("got user observation")
+            print('got user observation')
             print('agent state', self.state.agent_state)
             if self.state.agent_state == AgentState.AWAITING_USER_INPUT:
                 print('running agent')
