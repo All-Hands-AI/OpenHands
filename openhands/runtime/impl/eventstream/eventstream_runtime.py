@@ -56,14 +56,8 @@ class LogBuffer:
         self.lock = threading.Lock()
         self._stop_event = threading.Event()
         self._closed = False
-        
-        # Create log generator with timeout
-        try:
-            self.log_generator = container.logs(stream=True, follow=True, tail=100)
-        except Exception as e:
-            logFn('error', f'Failed to create log generator: {e}')
-            self.log_generator = None
-            return
+
+        self.log_generator = container.logs(stream=True, follow=True, tail=100)
 
         self.log = logFn
         self.log_stream_thread = threading.Thread(target=self.stream_logs)
