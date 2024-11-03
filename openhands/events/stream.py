@@ -24,9 +24,7 @@ class EventStreamSubscriber(str, Enum):
 
 async def session_exists(sid: str, file_store: FileStore) -> bool:
     try:
-        print("Checking if session exists")
-        call_sync_from_async(file_store.list, 10, f'sessions/{sid}')
-        print("Session exists")
+        await call_sync_from_async(file_store.list, f'sessions/{sid}')
         return True
     except FileNotFoundError:
         return False

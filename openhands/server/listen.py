@@ -667,9 +667,9 @@ async def submit_feedback(request: Request):
     # Assuming the storage service is already configured in the backend
     # and there is a function to handle the storage.
     body = await request.json()
-    events = request.state.conversation.event_stream.get_events(filter_hidden=True)
+    async_stream = AsyncEventStreamWrapper(request.state.conversation.event_stream, filter_hidden=True)
     trajectory = []
-    for event in events:
+    async for event in async_stream:
         trajectory.append(event_to_dict(event))
     feedback = FeedbackDataModel(
         email=body.get('email', ''),
@@ -680,7 +680,7 @@ async def submit_feedback(request: Request):
         trajectory=trajectory,
     )
     try:
-        feedback_data = store_feedback(feedback)
+        feedback_data = await call_sync_from_async(store_feedback, feedback)
         return JSONResponse(status_code=200, content=feedback_data)
     except Exception as e:
         logger.error(f'Error submitting feedback: {e}')

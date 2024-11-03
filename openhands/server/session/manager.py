@@ -47,7 +47,7 @@ class SessionManager:
         return self._sessions.get(sid)
 
     async def attach_to_conversation(self, sid: str) -> Conversation | None:
-        if not session_exists(sid, self.file_store):
+        if not await session_exists(sid, self.file_store):
             return None
         c = Conversation(sid, file_store=self.file_store, config=self.config)
         await c.connect()
