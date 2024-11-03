@@ -301,60 +301,100 @@ async def websocket_endpoint(websocket: WebSocket):
         {"action": "finish", "args": {}}
         ```
     """
-    # Get protocols from Sec-WebSocket-Protocol header
-    protocols = websocket.headers.get('sec-websocket-protocol', '').split(', ')
+    session = None
+    try:
+        # Get protocols from Sec-WebSocket-Protocol header
+        protocols = websocket.headers.get('sec-websocket-protocol', '').split(', ')
 
-    # The first protocol should be our real protocol (e.g. 'openhands')
-    # The second protocol should contain our auth token
-    if len(protocols) < 3:
-        logger.error('Expected 3 websocket protocols, got %d', len(protocols))
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        return
-
-    real_protocol = protocols[0]
-    jwt_token = protocols[1] if protocols[1] != 'NO_JWT' else ''
-    github_token = protocols[2] if protocols[2] != 'NO_GITHUB' else ''
-
-    if not await authenticate_github_user(github_token):
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        return
-
-    await asyncio.wait_for(websocket.accept(subprotocol=real_protocol), 10)
-
-    if jwt_token:
-        sid = get_sid_from_token(jwt_token, config.jwt_secret)
-
-        if sid == '':
-            await websocket.send_json({'error': 'Invalid token', 'error_code': 401})
-            await websocket.close()
+        # The first protocol should be our real protocol (e.g. 'openhands')
+        # The second protocol should contain our auth token
+        if len(protocols) < 3:
+            logger.error('Expected 3 websocket protocols, got %d', len(protocols))
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
             return
-    else:
-        sid = str(uuid.uuid4())
-        jwt_token = sign_token({'sid': sid}, config.jwt_secret)
 
-    logger.info(f'New session: {sid}')
-    session = session_manager.add_or_restart_session(sid, websocket)
-    await websocket.send_json({'token': jwt_token, 'status': 'ok'})
+        real_protocol = protocols[0]
+        jwt_token = protocols[1] if protocols[1] != 'NO_JWT' else ''
+        github_token = protocols[2] if protocols[2] != 'NO_GITHUB' else ''
 
-    latest_event_id = -1
-    if websocket.query_params.get('latest_event_id'):
-        latest_event_id = int(websocket.query_params.get('latest_event_id'))
-    for event in session.agent_session.event_stream.get_events(
-        start_id=latest_event_id + 1
-    ):
-        if isinstance(
-            event,
-            (
-                NullAction,
-                NullObservation,
-                ChangeAgentStateAction,
-                AgentStateChangedObservation,
-            ),
-        ):
-            continue
-        await websocket.send_json(event_to_dict(event))
+        if not await authenticate_github_user(github_token):
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+            return
 
-    await session.loop_recv()
+        try:
+            await asyncio.wait_for(websocket.accept(subprotocol=real_protocol), timeout=10)
+        except asyncio.TimeoutError:
+            logger.error("WebSocket accept timed out")
+            await websocket.close(code=status.WS_1408_REQUEST_TIMEOUT)
+            return
+
+        if jwt_token:
+            sid = get_sid_from_token(jwt_token, config.jwt_secret)
+
+            if sid == '':
+                await websocket.send_json({'error': 'Invalid token', 'error_code': 401})
+                await websocket.close()
+                return
+        else:
+            sid = str(uuid.uuid4())
+            jwt_token = sign_token({'sid': sid}, config.jwt_secret)
+
+        logger.info(f'New session: {sid}')
+        session = session_manager.add_or_restart_session(sid, websocket)
+        
+        try:
+            await asyncio.wait_for(
+                websocket.send_json({'token': jwt_token, 'status': 'ok'}),
+                timeout=5
+            )
+        except asyncio.TimeoutError:
+            logger.error("Failed to send initial response")
+            await session.close()
+            await websocket.close(code=status.WS_1408_REQUEST_TIMEOUT)
+            return
+
+        latest_event_id = -1
+        if websocket.query_params.get('latest_event_id'):
+            latest_event_id = int(websocket.query_params.get('latest_event_id'))
+        
+        # Send historical events with timeout
+        try:
+            async with asyncio.timeout(30):  # 30 second timeout for historical events
+                for event in session.agent_session.event_stream.get_events(
+                    start_id=latest_event_id + 1
+                ):
+                    if isinstance(
+                        event,
+                        (
+                            NullAction,
+                            NullObservation,
+                            ChangeAgentStateAction,
+                            AgentStateChangedObservation,
+                        ),
+                    ):
+                        continue
+                    await websocket.send_json(event_to_dict(event))
+        except asyncio.TimeoutError:
+            logger.error("Timeout sending historical events")
+            await session.close()
+            await websocket.close(code=status.WS_1408_REQUEST_TIMEOUT)
+            return
+
+        # Start the main receive loop with heartbeat
+        await session.loop_recv()
+
+    except WebSocketDisconnect:
+        logger.info("WebSocket disconnected normally")
+    except Exception as e:
+        logger.exception("Error in websocket handler: %s", str(e))
+    finally:
+        if session:
+            try:
+                await asyncio.wait_for(session.close(), timeout=5)
+            except asyncio.TimeoutError:
+                logger.error("Timeout during session cleanup")
+            except Exception as e:
+                logger.exception("Error during session cleanup: %s", str(e))
 
 
 @app.get('/api/options/models')

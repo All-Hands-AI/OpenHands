@@ -51,23 +51,70 @@ class Session:
         self.is_alive = False
         await self.agent_session.close()
 
+    async def _heartbeat(self):
+        """Send periodic heartbeat to check connection is alive"""
+        while self.is_alive and should_continue():
+            try:
+                await asyncio.wait_for(
+                    self.websocket.send_json({"type": "heartbeat"}),
+                    timeout=5
+                )
+                await asyncio.sleep(30)  # Send heartbeat every 30 seconds
+            except (asyncio.TimeoutError, WebSocketDisconnect, RuntimeError):
+                self.is_alive = False
+                break
+            except Exception as e:
+                logger.exception("Error in heartbeat: %s", e)
+                self.is_alive = False
+                break
+
     async def loop_recv(self):
+        """Main websocket receive loop with heartbeat"""
+        if self.websocket is None:
+            return
+
+        # Start heartbeat in background task
+        heartbeat_task = asyncio.create_task(self._heartbeat())
+        
         try:
-            if self.websocket is None:
-                return
-            while should_continue():
+            while self.is_alive and should_continue():
                 try:
-                    data = await self.websocket.receive_json()
+                    # Use timeout to prevent blocking forever
+                    data = await asyncio.wait_for(
+                        self.websocket.receive_json(),
+                        timeout=35  # Slightly longer than heartbeat interval
+                    )
+                    await self.dispatch(data)
+                except asyncio.TimeoutError:
+                    # No message received within timeout, check if heartbeat is still alive
+                    if not heartbeat_task.done():
+                        continue
+                    else:
+                        logger.error("Heartbeat task failed, closing connection")
+                        break
                 except ValueError:
                     await self.send_error('Invalid JSON')
                     continue
-                await self.dispatch(data)
-        except WebSocketDisconnect:
+                except WebSocketDisconnect:
+                    logger.debug('WebSocket disconnected, sid: %s', self.sid)
+                    break
+                except Exception as e:
+                    logger.exception("Error processing message: %s", e)
+                    await self.send_error(f"Error processing message: {str(e)}")
+                    continue
+
+        except Exception as e:
+            logger.exception("Fatal error in receive loop: %s", e)
+        finally:
+            # Cancel heartbeat task
+            heartbeat_task.cancel()
+            try:
+                await heartbeat_task
+            except asyncio.CancelledError:
+                pass
+            
+            # Close the session
             await self.close()
-            logger.debug('WebSocket disconnected, sid: %s', self.sid)
-        except RuntimeError as e:
-            await self.close()
-            logger.exception('Error in loop_recv: %s', e)
 
     async def _initialize_agent(self, data: dict):
         self.agent_session.event_stream.add_event(
@@ -152,29 +199,64 @@ class Session:
             await self.send(event_dict)
 
     async def dispatch(self, data: dict):
-        action = data.get('action', '')
-        if action == ActionType.INIT:
-            await self._initialize_agent(data)
-            return
-        event = event_from_dict(data.copy())
-        # This checks if the model supports images
-        if isinstance(event, MessageAction) and event.images_urls:
-            controller = self.agent_session.controller
-            if controller:
-                if controller.agent.llm.config.disable_vision:
-                    await self.send_error(
-                        'Support for images is disabled for this model, try without an image.'
+        """Dispatch incoming websocket messages to appropriate handlers"""
+        try:
+            action = data.get('action', '')
+            
+            # Handle initialization separately
+            if action == ActionType.INIT:
+                try:
+                    async with asyncio.timeout(30):  # 30 second timeout for initialization
+                        await self._initialize_agent(data)
+                except asyncio.TimeoutError:
+                    await self.send_error('Agent initialization timed out')
+                except Exception as e:
+                    logger.exception("Error initializing agent: %s", e)
+                    await self.send_error(f'Failed to initialize agent: {str(e)}')
+                return
+
+            # Convert message to event
+            try:
+                event = event_from_dict(data.copy())
+            except Exception as e:
+                logger.error("Failed to parse event: %s", e)
+                await self.send_error('Invalid event format')
+                return
+
+            # Handle image validation
+            if isinstance(event, MessageAction) and event.images_urls:
+                controller = self.agent_session.controller
+                if controller:
+                    if controller.agent.llm.config.disable_vision:
+                        await self.send_error(
+                            'Support for images is disabled for this model, try without an image.'
+                        )
+                        return
+                    if not controller.agent.llm.vision_is_active():
+                        await self.send_error(
+                            'Model does not support image upload, change to a different model or try without an image.'
+                        )
+                        return
+
+            # Add event to agent session
+            if self.agent_session.loop:
+                try:
+                    # Use asyncio.wait_for to prevent blocking indefinitely
+                    future = asyncio.run_coroutine_threadsafe(
+                        self._add_event(event, EventSource.USER), 
+                        self.agent_session.loop
                     )
-                    return
-                if not controller.agent.llm.vision_is_active():
-                    await self.send_error(
-                        'Model does not support image upload, change to a different model or try without an image.'
+                    # Wait for the event to be processed with timeout
+                    await asyncio.wait_for(
+                        asyncio.wrap_future(future),
+                        timeout=10
                     )
-                    return
-        if self.agent_session.loop:
-            asyncio.run_coroutine_threadsafe(
-                self._add_event(event, EventSource.USER), self.agent_session.loop
-            )  # type: ignore
+                except asyncio.TimeoutError:
+                    logger.error("Event processing timed out")
+                    await self.send_error('Event processing timed out')
+                except Exception as e:
+                    logger.exception("Error processing event: %s", e)
+                    await self.send_error(f'Failed to process event: {str(e)}')
 
     async def _add_event(self, event, event_source):
         self.agent_session.event_stream.add_event(event, EventSource.USER)
