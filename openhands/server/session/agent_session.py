@@ -103,7 +103,7 @@ class AgentSession:
 
         try:
             # Wait for start with timeout
-            await asyncio.wait_for(start_future, timeout=30)
+            await asyncio.wait_for(start_future, timeout=120)
         except asyncio.TimeoutError:
             logger.error("Agent session start timed out")
             # Cleanup if start times out

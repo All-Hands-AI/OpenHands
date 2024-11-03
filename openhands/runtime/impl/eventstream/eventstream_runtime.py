@@ -457,6 +457,7 @@ class EventStreamRuntime(Runtime):
         Parameters:
         - rm_all_containers (bool): Whether to remove all containers with the 'openhands-sandbox-' prefix
         """
+        print("CLOSE RUNTIME")
         # First stop any ongoing requests
         if self.session:
             try:

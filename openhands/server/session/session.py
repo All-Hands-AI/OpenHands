@@ -59,7 +59,7 @@ class Session:
                     self.websocket.send_json({"type": "heartbeat"}),
                     timeout=5
                 )
-                await asyncio.sleep(30)  # Send heartbeat every 30 seconds
+                await asyncio.sleep(1)  # Send heartbeat every 30 seconds
             except (asyncio.TimeoutError, WebSocketDisconnect, RuntimeError):
                 self.is_alive = False
                 break
@@ -205,7 +205,7 @@ class Session:
         # Handle initialization separately
         if action == ActionType.INIT:
             try:
-                async with asyncio.timeout(30):  # 30 second timeout for initialization
+                async with asyncio.timeout(120):
                     await self._initialize_agent(data)
             except asyncio.TimeoutError:
                 await self.send_error('Agent initialization timed out')
