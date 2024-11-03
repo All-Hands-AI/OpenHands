@@ -47,9 +47,9 @@ class Session:
         self.config = config
         self.loop = asyncio.get_event_loop()
 
-    async def close(self):
+    def close(self):
         self.is_alive = False
-        await self.agent_session.close()
+        self.agent_session.close()
 
     async def loop_recv(self):
         try:
@@ -64,10 +64,10 @@ class Session:
                 await self.dispatch(data)
         except WebSocketDisconnect:
             logger.info('WebSocket disconnected, sid: %s', self.sid)
-            await self.close()
+            self.close()
         except RuntimeError as e:
             logger.exception('Error in loop_recv: %s', e)
-            await self.close()
+            self.close()
 
     async def _initialize_agent(self, data: dict):
         self.agent_session.event_stream.add_event(
