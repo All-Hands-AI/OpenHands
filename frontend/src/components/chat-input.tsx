@@ -35,10 +35,9 @@ export function ChatInput({
   className,
 }: ChatInputProps) {
   const handleSubmitMessage = () => {
-    const trimmedValue = value.trim();
-    if (trimmedValue) {
-      onSubmit(trimmedValue);
-      // Only clear after submitting
+    if (value.trim()) {
+      // Pass the original value to onSubmit, not the trimmed version
+      onSubmit(value);
       onChange?.("");
     }
   };
