@@ -25,7 +25,7 @@ export function ChatInput({
   disabled,
   placeholder,
   showButton = true,
-  value,
+  value = "",
   maxRows = 4,
   onSubmit,
   onStop,
@@ -34,12 +34,11 @@ export function ChatInput({
   onBlur,
   className,
 }: ChatInputProps) {
-  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
-
   const handleSubmitMessage = () => {
-    if (textareaRef.current?.value) {
-      onSubmit(textareaRef.current.value);
-      textareaRef.current.value = "";
+    if (value.trim()) {
+      onSubmit(value);
+      // Let parent component handle clearing through onChange
+      onChange?.("");
     }
   };
 
@@ -60,7 +59,6 @@ export function ChatInput({
       className="flex items-end justify-end grow gap-1 min-h-6"
     >
       <TextareaAutosize
-        ref={textareaRef}
         name={name}
         placeholder={placeholder}
         onKeyDown={handleKeyPress}

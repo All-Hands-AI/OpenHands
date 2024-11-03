@@ -18,6 +18,7 @@ export function InteractiveChatBox({
   onStop,
 }: InteractiveChatBoxProps) {
   const [images, setImages] = React.useState<File[]>([]);
+  const [inputValue, setInputValue] = React.useState("");
 
   const handleUpload = (files: File[]) => {
     setImages((prevImages) => [...prevImages, ...files]);
@@ -34,6 +35,11 @@ export function InteractiveChatBox({
   const handleSubmit = (message: string) => {
     onSubmit(message, images);
     setImages([]);
+    setInputValue(""); // Clear input through state
+  };
+
+  const handleInputChange = (value: string) => {
+    setInputValue(value);
   };
 
   return (
@@ -60,6 +66,8 @@ export function InteractiveChatBox({
           disabled={isDisabled}
           button={mode}
           placeholder="What do you want to build?"
+          value={inputValue}
+          onChange={handleInputChange}
           onSubmit={handleSubmit}
           onStop={onStop}
         />
