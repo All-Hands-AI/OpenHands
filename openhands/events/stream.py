@@ -13,6 +13,7 @@ from openhands.runtime.utils.shutdown_listener import should_continue
 from openhands.storage import FileStore
 from openhands.utils.async_utils import call_sync_from_async
 
+
 class EventStreamSubscriber(str, Enum):
     AGENT_CONTROLLER = 'agent_controller'
     SECURITY_ANALYZER = 'security_analyzer'
@@ -35,7 +36,6 @@ class AsyncEventStreamWrapper:
         self.event_stream = event_stream
         self.args = args
         self.kwargs = kwargs
-
 
     async def __aiter__(self):
         loop = asyncio.get_running_loop()

@@ -142,6 +142,7 @@ class LLM(RetryMixin, DebugMixin):
             logger.debug('LLM: model supports function calling')
 
         completion_unwrapped = self._completion
+
         @self.retry_decorator(
             num_retries=self.config.num_retries,
             retry_exceptions=LLM_RETRY_EXCEPTIONS,
@@ -245,7 +246,6 @@ class LLM(RetryMixin, DebugMixin):
         """
         return self._completion
 
-
     def init_model_info(self):
         if self._tried_model_info:
             return
@@ -326,7 +326,6 @@ class LLM(RetryMixin, DebugMixin):
                     self.model_info['max_tokens'], int
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
-
 
     def vision_is_active(self):
         return not self.config.disable_vision and self._supports_vision()

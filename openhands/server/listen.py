@@ -43,7 +43,6 @@ import openhands.agenthub  # noqa F401 (we import this to get the agents registe
 from openhands.controller.agent import Agent
 from openhands.core.config import LLMConfig, load_app_config
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.events.action import (
     ChangeAgentStateAction,
     FileReadAction,
@@ -58,6 +57,7 @@ from openhands.events.observation import (
     NullObservation,
 )
 from openhands.events.serialization import event_to_dict
+from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.llm import bedrock
 from openhands.runtime.base import Runtime
 from openhands.server.auth import get_sid_from_token, sign_token
@@ -341,7 +341,9 @@ async def websocket_endpoint(websocket: WebSocket):
     if websocket.query_params.get('latest_event_id'):
         latest_event_id = int(websocket.query_params.get('latest_event_id'))
 
-    async_stream = AsyncEventStreamWrapper(session.agent_session.event_stream, latest_event_id + 1)
+    async_stream = AsyncEventStreamWrapper(
+        session.agent_session.event_stream, latest_event_id + 1
+    )
 
     async for event in async_stream:
         if isinstance(
@@ -667,7 +669,9 @@ async def submit_feedback(request: Request):
     # Assuming the storage service is already configured in the backend
     # and there is a function to handle the storage.
     body = await request.json()
-    async_stream = AsyncEventStreamWrapper(request.state.conversation.event_stream, filter_hidden=True)
+    async_stream = AsyncEventStreamWrapper(
+        request.state.conversation.event_stream, filter_hidden=True
+    )
     trajectory = []
     async for event in async_stream:
         trajectory.append(event_to_dict(event))
