@@ -52,17 +52,10 @@ FN_PARAM_REGEX_PATTERN = r'<parameter=([^>]+)>(.*?)</parameter>'
 TOOL_RESULT_REGEX_PATTERN = r'EXECUTION RESULT of \[(.*?)\]:\n(.*)'
 
 
-def convert_tool_calls_to_string(tool_calls: list[dict]) -> str:
-    """Convert tool calls to content in string format."""
-    if not isinstance(tool_calls, list) or len(tool_calls) != 1:
-        raise FunctionCallConversionError(
-            'Only one tool call is supported for FunctionCallingConverter.'
-        )
-    tool_call = tool_calls[0]
+def convert_tool_call_to_string(tool_call: dict) -> str:
+    """Convert tool call to content in string format."""
     if 'function' not in tool_call:
         raise FunctionCallConversionError("Tool call must contain 'function' key.")
-    if 'index' not in tool_call:
-        raise FunctionCallConversionError("Tool call must contain 'index' key.")
     if 'id' not in tool_call:
         raise FunctionCallConversionError("Tool call must contain 'id' key.")
     if 'type' not in tool_call:
@@ -78,7 +71,7 @@ def convert_tool_calls_to_string(tool_calls: list[dict]) -> str:
             f"Failed to parse arguments as JSON. Arguments: {tool_call['function']['arguments']}"
         ) from e
     for param_name, param_value in args.items():
-        is_multiline = '\n' in param_value
+        is_multiline = isinstance(param_value, str) and '\n' in param_value
         ret += f'<parameter={param_name}>'
         if is_multiline:
             ret += '\n'
@@ -90,7 +83,7 @@ def convert_tool_calls_to_string(tool_calls: list[dict]) -> str:
     return ret
 
 
-def convert_tools_to_description(tools: list[ChatCompletionToolParam]) -> str:
+def convert_tools_to_description(tools: list[dict]) -> str:
     ret = ''
     for i, tool in enumerate(tools):
         assert tool['type'] == 'function'
@@ -122,6 +115,9 @@ def convert_fncall_messages_to_non_fncall_messages(
     converted_messages = []
     for message in messages:
         role, content = message['role'], message['content']
+        if content is None:
+            content = ''
+
         # 1. SYSTEM MESSAGES
         # append system prompt suffix to content
         if role == 'system':
@@ -145,20 +141,26 @@ def convert_fncall_messages_to_non_fncall_messages(
         # - 3.1 no change if no function call
         # - 3.2 change if function call
         elif role == 'assistant':
-            if 'tool_calls' in message:
-                # change content to function call
-                tool_content = convert_tool_calls_to_string(message['tool_calls'])
-                if isinstance(content, str):
-                    content += '\n\n' + tool_content
-                elif isinstance(content, list):
-                    if content and content[-1]['type'] == 'text':
-                        content[-1]['text'] += '\n\n' + tool_content
+            if 'tool_calls' in message and message['tool_calls'] is not None:
+                # handle multiple tool calls by breaking them into multiple messages
+                for tool_call in message['tool_calls']:
+                    try:
+                        tool_content = convert_tool_call_to_string(tool_call)
+                    except FunctionCallConversionError as e:
+                        raise FunctionCallConversionError(
+                            f'Failed to convert tool call to string. Raw messages: {json.dumps(messages, indent=2)}'
+                        ) from e
+                    if isinstance(content, str):
+                        content += '\n\n' + tool_content
+                    elif isinstance(content, list):
+                        if content and content[-1]['type'] == 'text':
+                            content[-1]['text'] += '\n\n' + tool_content
+                        else:
+                            content.append({'type': 'text', 'text': tool_content})
                     else:
-                        content.append({'type': 'text', 'text': tool_content})
-                else:
-                    raise FunctionCallConversionError(
-                        f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
-                    )
+                        raise FunctionCallConversionError(
+                            f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
+                        )
             converted_messages.append({'role': 'assistant', 'content': content})
         # 4. TOOL MESSAGES (tool outputs)
         elif role == 'tool':
