@@ -242,7 +242,7 @@ If the program uses some packages that are incompatible, please figure out alter
         metadata=metadata,
         history=histories,
         metrics=metrics,
-        error=state.last_error if state and state.last_error else None,
+        error=state.get_last_error() if state and state.get_last_error() else None,
         test_result=test_result,
     )
     return output

@@ -163,7 +163,7 @@ Pour créer un workflow d'évaluation pour votre benchmark, suivez ces étapes :
            metadata=metadata,
            history=state.history.compatibility_for_eval_history_pairs(),
            metrics=state.metrics.get() if state.metrics else None,
-           error=state.last_error if state and state.last_error else None,
+           error=state.get_last_error() if state and state.get_last_error() else None,
        )
    ```
 
@@ -279,4 +279,3 @@ Cette fonction fait ce qui suit :
 3. Si l'agent a fait plusieurs tentatives, il lui donne la possibilité d'abandonner
 
 En utilisant cette fonction, vous pouvez garantir un comportement cohérent sur plusieurs exécutions d'évaluation et empêcher l'agent de rester bloqué en attendant une entrée humaine.
-
