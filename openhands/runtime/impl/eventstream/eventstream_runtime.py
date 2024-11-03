@@ -470,47 +470,46 @@ class EventStreamRuntime(Runtime):
         Parameters:
         - rm_all_containers (bool): Whether to remove all containers with the 'openhands-sandbox-' prefix
         """
-        try:
-            # First stop any ongoing requests
-            if self.session:
-                try:
-                    self.session.close()
-                except Exception as e:
-                    self.log('error', f'Error closing session: {e}')
-                self.session = None
+        # First stop any ongoing requests
+        if self.session:
+            try:
+                self.session.close()
+            except Exception as e:
+                self.log('error', f'Error closing session: {e}')
+            self.session = None
 
-            # Then close log buffer
-            if self.log_buffer:
-                try:
-                    self.log_buffer.close(timeout=2)  # Short timeout for log buffer
-                except Exception as e:
-                    self.log('error', f'Error closing log buffer: {e}')
-                self.log_buffer = None
+        # Then close log buffer
+        if self.log_buffer:
+            try:
+                self.log_buffer.close(timeout=2)  # Short timeout for log buffer
+            except Exception as e:
+                self.log('error', f'Error closing log buffer: {e}')
+            self.log_buffer = None
 
-            # Skip container cleanup if we're attached
-            if self.attach_to_existing:
-                return
+        # Skip container cleanup if we're attached
+        if self.attach_to_existing:
+            return
 
-            # Clean up container
-            if self.container:
+        # Clean up container
+        if self.container:
+            try:
+                # Try to stop container gracefully first
+                self.container.stop(timeout=5)
+            except Exception as e:
+                self.log('error', f'Error stopping container: {e}')
                 try:
-                    # Try to stop container gracefully first
-                    self.container.stop(timeout=5)
-                except Exception as e:
-                    self.log('error', f'Error stopping container: {e}')
-                    try:
-                        # Force kill if graceful stop fails
-                        self.container.kill()
-                    except Exception as e2:
-                        self.log('error', f'Error killing container: {e2}')
-                
-                try:
-                    # Remove the container
-                    self.container.remove(force=True)
-                except Exception as e:
-                    self.log('error', f'Error removing container: {e}')
-                
-                self.container = None
+                    # Force kill if graceful stop fails
+                    self.container.kill()
+                except Exception as e2:
+                    self.log('error', f'Error killing container: {e2}')
+            
+            try:
+                # Remove the container
+                self.container.remove(force=True)
+            except Exception as e:
+                self.log('error', f'Error removing container: {e}')
+            
+            self.container = None
 
         try:
             containers = self.docker_client.containers.list(all=True)
