@@ -333,7 +333,7 @@ async def websocket_endpoint(websocket: WebSocket):
         jwt_token = sign_token({'sid': sid}, config.jwt_secret)
 
     logger.info(f'New session: {sid}')
-    session = session_manager.add_or_restart_session(sid, websocket)
+    session = call_sync_from_async(session_manager.add_or_restart_session, sid, websocket)
     await websocket.send_json({'token': jwt_token, 'status': 'ok'})
 
     latest_event_id = -1
@@ -472,6 +472,7 @@ async def list_files(request: Request, path: str | None = None):
     Raises:
         HTTPException: If there's an error listing the files.
     """
+    print("START LIST FILES", flush=True)
     if not request.state.conversation.runtime:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -487,11 +488,11 @@ async def list_files(request: Request, path: str | None = None):
 
     file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
 
-    def filter_for_gitignore(file_list, base_path):
+    async def filter_for_gitignore(file_list, base_path):
         gitignore_path = os.path.join(base_path, '.gitignore')
         try:
             read_action = FileReadAction(gitignore_path)
-            observation = runtime.run_action(read_action)
+            observation = await call_sync_from_async(runtime.run_action, read_action)
             spec = PathSpec.from_lines(
                 GitWildMatchPattern, observation.content.splitlines()
             )
@@ -501,7 +502,7 @@ async def list_files(request: Request, path: str | None = None):
         file_list = [entry for entry in file_list if not spec.match_file(entry)]
         return file_list
 
-    file_list = filter_for_gitignore(file_list, '')
+    file_list = await filter_for_gitignore(file_list, '')
 
     return file_list
 
