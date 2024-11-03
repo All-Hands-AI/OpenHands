@@ -200,63 +200,62 @@ class Session:
 
     async def dispatch(self, data: dict):
         """Dispatch incoming websocket messages to appropriate handlers"""
-        try:
-            action = data.get('action', '')
-            
-            # Handle initialization separately
-            if action == ActionType.INIT:
-                try:
-                    async with asyncio.timeout(30):  # 30 second timeout for initialization
-                        await self._initialize_agent(data)
-                except asyncio.TimeoutError:
-                    await self.send_error('Agent initialization timed out')
-                except Exception as e:
-                    logger.exception("Error initializing agent: %s", e)
-                    await self.send_error(f'Failed to initialize agent: {str(e)}')
-                return
-
-            # Convert message to event
+        action = data.get('action', '')
+        
+        # Handle initialization separately
+        if action == ActionType.INIT:
             try:
-                event = event_from_dict(data.copy())
+                async with asyncio.timeout(30):  # 30 second timeout for initialization
+                    await self._initialize_agent(data)
+            except asyncio.TimeoutError:
+                await self.send_error('Agent initialization timed out')
             except Exception as e:
-                logger.error("Failed to parse event: %s", e)
-                await self.send_error('Invalid event format')
-                return
+                logger.exception("Error initializing agent: %s", e)
+                await self.send_error(f'Failed to initialize agent: {str(e)}')
+            return
 
-            # Handle image validation
-            if isinstance(event, MessageAction) and event.images_urls:
-                controller = self.agent_session.controller
-                if controller:
-                    if controller.agent.llm.config.disable_vision:
-                        await self.send_error(
-                            'Support for images is disabled for this model, try without an image.'
-                        )
-                        return
-                    if not controller.agent.llm.vision_is_active():
-                        await self.send_error(
-                            'Model does not support image upload, change to a different model or try without an image.'
-                        )
-                        return
+        # Convert message to event
+        try:
+            event = event_from_dict(data.copy())
+        except Exception as e:
+            logger.error("Failed to parse event: %s", e)
+            await self.send_error('Invalid event format')
+            return
 
-            # Add event to agent session
-            if self.agent_session.loop:
-                try:
-                    # Use asyncio.wait_for to prevent blocking indefinitely
-                    future = asyncio.run_coroutine_threadsafe(
-                        self._add_event(event, EventSource.USER), 
-                        self.agent_session.loop
+        # Handle image validation
+        if isinstance(event, MessageAction) and event.images_urls:
+            controller = self.agent_session.controller
+            if controller:
+                if controller.agent.llm.config.disable_vision:
+                    await self.send_error(
+                        'Support for images is disabled for this model, try without an image.'
                     )
-                    # Wait for the event to be processed with timeout
-                    await asyncio.wait_for(
-                        asyncio.wrap_future(future),
-                        timeout=10
+                    return
+                if not controller.agent.llm.vision_is_active():
+                    await self.send_error(
+                        'Model does not support image upload, change to a different model or try without an image.'
                     )
-                except asyncio.TimeoutError:
-                    logger.error("Event processing timed out")
-                    await self.send_error('Event processing timed out')
-                except Exception as e:
-                    logger.exception("Error processing event: %s", e)
-                    await self.send_error(f'Failed to process event: {str(e)}')
+                    return
+
+        # Add event to agent session
+        if self.agent_session.loop:
+            try:
+                # Use asyncio.wait_for to prevent blocking indefinitely
+                future = asyncio.run_coroutine_threadsafe(
+                    self._add_event(event, EventSource.USER), 
+                    self.agent_session.loop
+                )
+                # Wait for the event to be processed with timeout
+                await asyncio.wait_for(
+                    asyncio.wrap_future(future),
+                    timeout=10
+                )
+            except asyncio.TimeoutError:
+                logger.error("Event processing timed out")
+                await self.send_error('Event processing timed out')
+            except Exception as e:
+                logger.exception("Error processing event: %s", e)
+                await self.send_error(f'Failed to process event: {str(e)}')
 
     async def _add_event(self, event, event_source):
         self.agent_session.event_stream.add_event(event, EventSource.USER)
