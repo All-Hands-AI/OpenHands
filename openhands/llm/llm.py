@@ -212,6 +212,9 @@ class LLM(RetryMixin, DebugMixin):
         )
         def wrapper(*args, **kwargs):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
+
+            from openhands.core.utils import json
+
             messages: list[dict[str, Any]] | dict[str, Any] = []
             mock_function_calling = kwargs.pop('mock_function_calling', False)
 
@@ -259,8 +262,12 @@ class LLM(RetryMixin, DebugMixin):
                     }
 
             try:
+                logger.debug(
+                    f'Calling completion: messages={json.dumps(messages, indent=2)}'
+                )
                 # we don't support streaming here, thus we get a ModelResponse
                 resp: ModelResponse = completion_unwrapped(*args, **kwargs)
+                logger.debug(f'Completion response: {json.dumps(resp, indent=2)}')
 
                 non_fncall_response = copy.deepcopy(resp)
                 if mock_function_calling:
@@ -282,7 +289,6 @@ class LLM(RetryMixin, DebugMixin):
                         # use the metric model name (for draft editor)
                         f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
                     )
-                    from openhands.core.utils import json
 
                     _d = {
                         'messages': messages,
@@ -369,7 +375,7 @@ class LLM(RetryMixin, DebugMixin):
             or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
             or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
         )
-        return model_name_supported or (
+        return model_name_supported and (
             self.model_info is not None
             and self.model_info.get('supports_function_calling', False)
         )
