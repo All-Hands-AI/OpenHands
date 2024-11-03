@@ -472,7 +472,6 @@ async def list_files(request: Request, path: str | None = None):
     Raises:
         HTTPException: If there's an error listing the files.
     """
-    print("START LIST FILES", flush=True)
     if not request.state.conversation.runtime:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
