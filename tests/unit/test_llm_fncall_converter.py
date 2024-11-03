@@ -7,7 +7,9 @@ import pytest
 from litellm import ChatCompletionToolParam
 
 from openhands.llm.fn_call_converter import (
+    FunctionCallConversionError,
     convert_fncall_messages_to_non_fncall_messages,
+    convert_from_multiple_tool_calls_to_single_tool_call_messages,
     convert_non_fncall_messages_to_fncall_messages,
     convert_tool_call_to_string,
     convert_tools_to_description,
@@ -515,3 +517,213 @@ def test_infer_fncall_on_noncall_model():
     )
     assert converted_fncall_messages == FNCALL_MESSAGES + [FNCALL_RESPONSE_MESSAGE]
     assert converted_fncall_messages[-1] == FNCALL_RESPONSE_MESSAGE
+
+
+def test_convert_from_multiple_tool_calls_to_single_tool_call_messages():
+    # Test case with multiple tool calls in one message
+    input_messages = [
+        {
+            'role': 'assistant',
+            'content': 'Let me help you with that.',
+            'tool_calls': [
+                {
+                    'id': 'call1',
+                    'type': 'function',
+                    'function': {'name': 'func1', 'arguments': '{}'},
+                },
+                {
+                    'id': 'call2',
+                    'type': 'function',
+                    'function': {'name': 'func2', 'arguments': '{}'},
+                },
+            ],
+        },
+        {
+            'role': 'tool',
+            'tool_call_id': 'call1',
+            'content': 'Result 1',
+            'name': 'func1',
+        },
+        {
+            'role': 'tool',
+            'tool_call_id': 'call2',
+            'content': 'Result 2',
+            'name': 'func2',
+        },
+        {
+            'role': 'assistant',
+            'content': 'Test again',
+            'tool_calls': [
+                {
+                    'id': 'call3',
+                    'type': 'function',
+                    'function': {'name': 'func3', 'arguments': '{}'},
+                },
+                {
+                    'id': 'call4',
+                    'type': 'function',
+                    'function': {'name': 'func4', 'arguments': '{}'},
+                },
+            ],
+        },
+        {
+            'role': 'tool',
+            'tool_call_id': 'call3',
+            'content': 'Result 3',
+            'name': 'func3',
+        },
+        {
+            'role': 'tool',
+            'tool_call_id': 'call4',
+            'content': 'Result 4',
+            'name': 'func4',
+        },
+    ]
+
+    expected_output = [
+        {
+            'role': 'assistant',
+            'content': 'Let me help you with that.',
+            'tool_calls': [
+                {
+                    'id': 'call1',
+                    'type': 'function',
+                    'function': {'name': 'func1', 'arguments': '{}'},
+                }
+            ],
+        },
+        {
+            'role': 'tool',
+            'tool_call_id': 'call1',
+            'content': 'Result 1',
+            'name': 'func1',
+        },
+        {
+            'role': 'assistant',
+            'content': '',
+            'tool_calls': [
+                {
+                    'id': 'call2',
+                    'type': 'function',
+                    'function': {'name': 'func2', 'arguments': '{}'},
+                }
+            ],
+        },
+        {
+            'role': 'tool',
+            'tool_call_id': 'call2',
+            'content': 'Result 2',
+            'name': 'func2',
+        },
+        {
+            'role': 'assistant',
+            'content': 'Test again',
+            'tool_calls': [
+                {
+                    'id': 'call3',
+                    'type': 'function',
+                    'function': {'name': 'func3', 'arguments': '{}'},
+                }
+            ],
+        },
+        {
+            'role': 'tool',
+            'tool_call_id': 'call3',
+            'content': 'Result 3',
+            'name': 'func3',
+        },
+        {
+            'role': 'assistant',
+            'content': '',
+            'tool_calls': [
+                {
+                    'id': 'call4',
+                    'type': 'function',
+                    'function': {'name': 'func4', 'arguments': '{}'},
+                }
+            ],
+        },
+        {
+            'role': 'tool',
+            'tool_call_id': 'call4',
+            'content': 'Result 4',
+            'name': 'func4',
+        },
+    ]
+
+    result = convert_from_multiple_tool_calls_to_single_tool_call_messages(
+        input_messages
+    )
+    assert result == expected_output
+
+
+def test_convert_from_multiple_tool_calls_to_single_tool_call_messages_incomplete():
+    # Test case with multiple tool calls in one message
+    input_messages = [
+        {
+            'role': 'assistant',
+            'content': 'Let me help you with that.',
+            'tool_calls': [
+                {
+                    'id': 'call1',
+                    'type': 'function',
+                    'function': {'name': 'func1', 'arguments': '{}'},
+                },
+                {
+                    'id': 'call2',
+                    'type': 'function',
+                    'function': {'name': 'func2', 'arguments': '{}'},
+                },
+            ],
+        },
+        {
+            'role': 'tool',
+            'tool_call_id': 'call1',
+            'content': 'Result 1',
+            'name': 'func1',
+        },
+    ]
+
+    with pytest.raises(FunctionCallConversionError):
+        convert_from_multiple_tool_calls_to_single_tool_call_messages(input_messages)
+
+
+def test_convert_from_multiple_tool_calls_no_changes_needed():
+    # Test case where no conversion is needed (single tool call)
+    input_messages = [
+        {
+            'role': 'assistant',
+            'content': 'Let me help you with that.',
+            'tool_calls': [
+                {
+                    'id': 'call1',
+                    'type': 'function',
+                    'function': {'name': 'func1', 'arguments': '{}'},
+                }
+            ],
+        },
+        {
+            'role': 'tool',
+            'tool_call_id': 'call1',
+            'content': 'Result 1',
+            'name': 'func1',
+        },
+    ]
+
+    result = convert_from_multiple_tool_calls_to_single_tool_call_messages(
+        input_messages
+    )
+    assert result == input_messages
+
+
+def test_convert_from_multiple_tool_calls_no_tool_calls():
+    # Test case with no tool calls
+    input_messages = [
+        {'role': 'user', 'content': 'Hello'},
+        {'role': 'assistant', 'content': 'Hi there!'},
+    ]
+
+    result = convert_from_multiple_tool_calls_to_single_tool_call_messages(
+        input_messages
+    )
+    assert result == input_messages
