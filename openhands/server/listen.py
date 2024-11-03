@@ -479,19 +479,17 @@ async def list_files(request: Request, path: str | None = None):
         )
 
     runtime: Runtime = request.state.conversation.runtime
-    file_list = await asyncio.create_task(
-        call_sync_from_async(runtime.list_files, path)
-    )
+    file_list = await call_sync_from_async(runtime.list_files, path)
     if path:
         file_list = [os.path.join(path, f) for f in file_list]
 
     file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
 
-    def filter_for_gitignore(file_list, base_path):
+    async def filter_for_gitignore(file_list, base_path):
         gitignore_path = os.path.join(base_path, '.gitignore')
         try:
             read_action = FileReadAction(gitignore_path)
-            observation = runtime.run_action(read_action)
+            observation = await call_sync_from_async(runtime.run_action, read_action)
             spec = PathSpec.from_lines(
                 GitWildMatchPattern, observation.content.splitlines()
             )
@@ -501,7 +499,7 @@ async def list_files(request: Request, path: str | None = None):
         file_list = [entry for entry in file_list if not spec.match_file(entry)]
         return file_list
 
-    file_list = filter_for_gitignore(file_list, '')
+    file_list = await filter_for_gitignore(file_list, '')
 
     return file_list
 
