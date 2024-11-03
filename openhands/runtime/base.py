@@ -95,7 +95,7 @@ class Runtime(FileEditRuntimeMixin):
 
     def log(self, level: str, message: str) -> None:
         message = f'[runtime {self.sid}] {message}'
-        getattr(logger, level)(message)
+        getattr(logger, level)(message, stacklevel=2)
 
     # ====================================================================
 
