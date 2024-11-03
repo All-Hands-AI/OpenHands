@@ -55,22 +55,39 @@ class AgentSession:
         agent_configs: dict[str, AgentConfig] | None = None,
         status_message_callback: Optional[Callable] = None,
     ):
-        """Starts the Agent session
+        """Starts the Agent session with proper error handling and timeouts
         Parameters:
         - runtime_name: The name of the runtime associated with the session
-        - config:
-        - agent:
-        - max_iterations:
-        - max_budget_per_task:
-        - agent_to_llm_config:
-        - agent_configs:
+        - config: Application configuration
+        - agent: Agent instance to use
+        - max_iterations: Maximum number of iterations
+        - max_budget_per_task: Maximum budget per task
+        - agent_to_llm_config: LLM configurations for different agents
+        - agent_configs: Agent configurations
+        - status_message_callback: Callback for status updates
         """
         if self.controller or self.runtime:
             raise RuntimeError(
                 'Session already started. You need to close this session and start a new one.'
             )
 
-        asyncio.get_event_loop().run_in_executor(
+        # Create a future to track the start operation
+        start_future = asyncio.Future()
+        
+        def start_callback(future):
+            try:
+                exc = future.exception()
+                if exc:
+                    start_future.set_exception(exc)
+                else:
+                    start_future.set_result(None)
+            except asyncio.CancelledError:
+                start_future.cancel()
+            except Exception as e:
+                start_future.set_exception(e)
+
+        # Start the agent in a thread pool with proper error propagation
+        task = asyncio.get_event_loop().run_in_executor(
             None,
             self._start_thread,
             runtime_name,
@@ -82,13 +99,49 @@ class AgentSession:
             agent_configs,
             status_message_callback,
         )
+        task.add_done_callback(start_callback)
+
+        try:
+            # Wait for start with timeout
+            await asyncio.wait_for(start_future, timeout=30)
+        except asyncio.TimeoutError:
+            logger.error("Agent session start timed out")
+            # Cleanup if start times out
+            await self.close()
+            raise RuntimeError("Agent session start timed out")
+        except Exception as e:
+            logger.exception("Error starting agent session")
+            await self.close()
+            raise
 
     def _start_thread(self, *args):
+        """Start the agent in a separate thread with proper error handling"""
         try:
-            asyncio.run(self._start(*args), debug=True)
-        except RuntimeError:
-            logger.error(f'Error starting session: {RuntimeError}', exc_info=True)
-            logger.debug('Session Finished')
+            # Create new event loop for this thread
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
+            try:
+                # Run with timeout
+                loop.run_until_complete(
+                    asyncio.wait_for(self._start(*args), timeout=25)
+                )
+            except asyncio.TimeoutError:
+                logger.error("Timeout in agent start")
+                raise RuntimeError("Timeout in agent start")
+            except Exception as e:
+                logger.exception("Error in agent start")
+                raise
+            finally:
+                try:
+                    # Clean up the loop
+                    loop.run_until_complete(loop.shutdown_asyncgens())
+                    loop.close()
+                except Exception as e:
+                    logger.error(f"Error cleaning up thread loop: {e}")
+        except Exception as e:
+            logger.error(f"Fatal error in start thread: {e}")
+            raise
 
     async def _start(
         self,
@@ -125,29 +178,110 @@ class AgentSession:
             await self.controller.agent_task  # type: ignore
 
     async def close(self):
-        """Closes the Agent session"""
-
+        """Closes the Agent session with proper cleanup and timeouts"""
         if self._closed:
             return
-        if self.controller is not None:
-            end_state = self.controller.get_state()
-            end_state.save_to_session(self.sid, self.file_store)
-            await self.controller.close()
-        if self.runtime is not None:
-            self.runtime.close()
-        if self.security_analyzer is not None:
-            await self.security_analyzer.close()
 
-        if self.loop:
-            if self.loop.is_closed():
-                logger.debug(
-                    'Trying to close already closed loop. (It probably never started correctly)'
-                )
-            else:
-                self.loop.stop()
-            self.loop = None
+        try:
+            # Set closed flag early to prevent multiple close attempts
+            self._closed = True
 
-        self._closed = True
+            # First cancel any running agent task
+            if self.controller and hasattr(self.controller, 'agent_task'):
+                agent_task = getattr(self.controller, 'agent_task', None)
+                if agent_task and not agent_task.done():
+                    agent_task.cancel()
+                    try:
+                        await asyncio.wait_for(agent_task, timeout=5)
+                    except (asyncio.TimeoutError, asyncio.CancelledError):
+                        logger.warning("Agent task cancellation timed out or was cancelled")
+                    except Exception as e:
+                        logger.error(f"Error cancelling agent task: {e}")
+
+            # Save state with timeout
+            if self.controller is not None:
+                try:
+                    async with asyncio.timeout(5):
+                        end_state = self.controller.get_state()
+                        end_state.save_to_session(self.sid, self.file_store)
+                except asyncio.TimeoutError:
+                    logger.error("Timeout saving agent state")
+                except Exception as e:
+                    logger.error(f"Error saving agent state: {e}")
+
+            # Close controller with timeout
+            if self.controller is not None:
+                try:
+                    async with asyncio.timeout(5):
+                        await self.controller.close()
+                except asyncio.TimeoutError:
+                    logger.error("Timeout closing controller")
+                except Exception as e:
+                    logger.error(f"Error closing controller: {e}")
+                self.controller = None
+
+            # Close runtime (this is synchronous but should be quick)
+            if self.runtime is not None:
+                try:
+                    self.runtime.close()
+                except Exception as e:
+                    logger.error(f"Error closing runtime: {e}")
+                self.runtime = None
+
+            # Close security analyzer with timeout
+            if self.security_analyzer is not None:
+                try:
+                    async with asyncio.timeout(5):
+                        await self.security_analyzer.close()
+                except asyncio.TimeoutError:
+                    logger.error("Timeout closing security analyzer")
+                except Exception as e:
+                    logger.error(f"Error closing security analyzer: {e}")
+                self.security_analyzer = None
+
+            # Handle event loop cleanup
+            if self.loop and not self.loop.is_closed():
+                try:
+                    # Get all running tasks except current one
+                    current_task = asyncio.current_task(self.loop)
+                    pending = [task for task in asyncio.all_tasks(self.loop) 
+                             if task is not current_task]
+                    
+                    if pending:
+                        # Cancel all pending tasks
+                        for task in pending:
+                            task.cancel()
+                        
+                        # Wait for tasks to finish with timeout
+                        try:
+                            await asyncio.wait_for(
+                                asyncio.gather(*pending, return_exceptions=True),
+                                timeout=5
+                            )
+                        except asyncio.TimeoutError:
+                            logger.error("Timeout waiting for tasks to cancel")
+                        except Exception as e:
+                            logger.error(f"Error cancelling tasks: {e}")
+
+                    # Stop the loop gracefully
+                    try:
+                        async with asyncio.timeout(5):
+                            self.loop.stop()
+                    except asyncio.TimeoutError:
+                        logger.error("Timeout stopping event loop")
+                    except Exception as e:
+                        logger.error(f"Error stopping event loop: {e}")
+                
+                except Exception as e:
+                    logger.error(f"Error during loop cleanup: {e}")
+                finally:
+                    self.loop = None
+
+        except Exception as e:
+            logger.exception(f"Unexpected error during session cleanup: {e}")
+        finally:
+            # Ensure closed flag is set even if cleanup fails
+            self._closed = True
 
     def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
