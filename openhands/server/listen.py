@@ -333,7 +333,7 @@ async def websocket_endpoint(websocket: WebSocket):
         jwt_token = sign_token({'sid': sid}, config.jwt_secret)
 
     logger.info(f'New session: {sid}')
-    session = call_sync_from_async(session_manager.add_or_restart_session, sid, websocket)
+    session = await call_sync_from_async(session_manager.add_or_restart_session, sid, websocket)
     await websocket.send_json({'token': jwt_token, 'status': 'ok'})
 
     latest_event_id = -1
@@ -480,9 +480,7 @@ async def list_files(request: Request, path: str | None = None):
         )
 
     runtime: Runtime = request.state.conversation.runtime
-    file_list = await asyncio.create_task(
-        call_sync_from_async(runtime.list_files, path)
-    )
+    file_list = await call_sync_from_async(runtime.list_files, path)
     if path:
         file_list = [os.path.join(path, f) for f in file_list]
 
