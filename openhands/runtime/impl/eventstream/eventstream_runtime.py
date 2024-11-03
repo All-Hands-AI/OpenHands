@@ -442,7 +442,6 @@ class EventStreamRuntime(Runtime):
                 f'{self.api_url}/alive',
                 retry_exceptions=[ConnectionRefusedError],
                 timeout=10,  # Shorter timeout per request
-                max_retries=3  # Limit retries
             )
             
             if response.status_code == 200:
