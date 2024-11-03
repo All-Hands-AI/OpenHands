@@ -63,11 +63,11 @@ class Session:
                     continue
                 await self.dispatch(data)
         except WebSocketDisconnect:
+            logger.info('WebSocket disconnected, sid: %s', self.sid)
             await self.close()
-            logger.debug('WebSocket disconnected, sid: %s', self.sid)
         except RuntimeError as e:
-            await self.close()
             logger.exception('Error in loop_recv: %s', e)
+            await self.close()
 
     async def _initialize_agent(self, data: dict):
         self.agent_session.event_stream.add_event(
@@ -171,10 +171,12 @@ class Session:
                         'Model does not support image upload, change to a different model or try without an image.'
                     )
                     return
-        if self.agent_session.loop:
+        if self.loop:
             asyncio.run_coroutine_threadsafe(
-                self._add_event(event, EventSource.USER), self.agent_session.loop
+                self._add_event(event, EventSource.USER), self.loop
             )  # type: ignore
+        else:
+            raise RuntimeError('No event loop found')
 
     async def _add_event(self, event, event_source):
         self.agent_session.event_stream.add_event(event, EventSource.USER)

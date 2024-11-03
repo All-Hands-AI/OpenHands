@@ -101,7 +101,6 @@ class AgentSession:
         agent_configs: dict[str, AgentConfig] | None = None,
         status_message_callback: Optional[Callable] = None,
     ):
-        self.loop = asyncio.get_running_loop()
         self._create_security_analyzer(config.security.security_analyzer)
         await self._create_runtime(
             runtime_name=runtime_name,
@@ -137,15 +136,6 @@ class AgentSession:
             self.runtime.close()
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
-
-        if self.loop:
-            if self.loop.is_closed():
-                logger.debug(
-                    'Trying to close already closed loop. (It probably never started correctly)'
-                )
-            else:
-                self.loop.stop()
-            self.loop = None
 
         self._closed = True
 
