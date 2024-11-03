@@ -43,6 +43,7 @@ import openhands.agenthub  # noqa F401 (we import this to get the agents registe
 from openhands.controller.agent import Agent
 from openhands.core.config import LLMConfig, load_app_config
 from openhands.core.logger import openhands_logger as logger
+from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.events.action import (
     ChangeAgentStateAction,
     FileReadAction,
@@ -339,9 +340,10 @@ async def websocket_endpoint(websocket: WebSocket):
     latest_event_id = -1
     if websocket.query_params.get('latest_event_id'):
         latest_event_id = int(websocket.query_params.get('latest_event_id'))
-    for event in session.agent_session.event_stream.get_events(
-        start_id=latest_event_id + 1
-    ):
+
+    async_stream = AsyncEventStreamWrapper(session.agent_session.event_stream, latest_event_id + 1)
+
+    async for event in async_stream:
         if isinstance(
             event,
             (

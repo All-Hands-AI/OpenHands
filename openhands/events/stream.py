@@ -30,6 +30,22 @@ def session_exists(sid: str, file_store: FileStore) -> bool:
         return False
 
 
+class AsyncEventStreamWrapper:
+    def __init__(self, event_stream, *args, **kwargs):
+        self.event_stream = event_stream
+        self.args = args
+        self.kwargs = kwargs
+
+
+    async def __aiter__(self):
+        loop = asyncio.get_running_loop()
+
+        # Create an async generator that yields events
+        for event in self.event_stream.get_events(*self.args, **self.kwargs):
+            # Run the blocking get_events() in a thread pool
+            yield await loop.run_in_executor(None, lambda e=event: e)
+
+
 @dataclass
 class EventStream:
     sid: str
