@@ -42,7 +42,7 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
 class LogBuffer:
-    """Synchronous buffer for Docker container logs.
+    """Synchronous buffer for Docker container logs with proper shutdown handling.
 
     This class provides a thread-safe way to collect, store, and retrieve logs
     from a Docker container. It uses a list to store log lines and provides methods
@@ -51,53 +51,100 @@ class LogBuffer:
 
     def __init__(self, container: docker.models.containers.Container, logFn: Callable):
         self.init_msg = 'Runtime client initialized.'
-
+        self.container = container
         self.buffer: list[str] = []
         self.lock = threading.Lock()
         self._stop_event = threading.Event()
-        self.log_generator = container.logs(stream=True, follow=True)
+        self._closed = False
+        
+        # Create log generator with timeout
+        try:
+            self.log_generator = container.logs(stream=True, follow=True, tail=100)
+        except Exception as e:
+            logFn('error', f'Failed to create log generator: {e}')
+            self.log_generator = None
+            return
+
+        self.log = logFn
         self.log_stream_thread = threading.Thread(target=self.stream_logs)
         self.log_stream_thread.daemon = True
         self.log_stream_thread.start()
-        self.log = logFn
 
     def append(self, log_line: str):
+        """Thread-safe append to log buffer"""
+        if self._closed:
+            return
         with self.lock:
             self.buffer.append(log_line)
 
     def get_and_clear(self) -> list[str]:
+        """Thread-safe get and clear of log buffer"""
         with self.lock:
             logs = list(self.buffer)
             self.buffer.clear()
             return logs
 
     def stream_logs(self):
-        """Stream logs from the Docker container in a separate thread.
+        """Stream logs from the Docker container in a separate thread with error handling.
 
         This method runs in its own thread to handle the blocking
         operation of reading log lines from the Docker SDK's synchronous generator.
         """
+        if not self.log_generator:
+            return
+
         try:
-            for log_line in self.log_generator:
-                if self._stop_event.is_set():
+            while not self._stop_event.is_set():
+                try:
+                    # Use a timeout when reading from generator
+                    log_line = next(self.log_generator, None)
+                    if log_line is None:
+                        break
+                    if log_line:
+                        decoded_line = log_line.decode('utf-8').rstrip()
+                        self.append(decoded_line)
+                except StopIteration:
                     break
-                if log_line:
-                    decoded_line = log_line.decode('utf-8').rstrip()
-                    self.append(decoded_line)
+                except Exception as e:
+                    if not self._stop_event.is_set():
+                        self.log('error', f'Error reading docker logs: {e}')
+                    break
         except Exception as e:
-            self.log('error', f'Error streaming docker logs: {e}')
+            if not self._stop_event.is_set():
+                self.log('error', f'Error in log stream thread: {e}')
+        finally:
+            self._closed = True
 
     def __del__(self):
-        if self.log_stream_thread.is_alive():
+        """Ensure proper cleanup on deletion"""
+        if not self._closed and hasattr(self, 'log_stream_thread') and self.log_stream_thread.is_alive():
             self.log(
                 'warn',
                 "LogBuffer was not properly closed. Use 'log_buffer.close()' for clean shutdown.",
             )
-            self.close(timeout=5)
+            self.close(timeout=2)
 
     def close(self, timeout: float = 5.0):
+        """Close the log buffer with proper cleanup
+
+        Args:
+            timeout (float): Maximum time to wait for thread shutdown
+        """
+        if self._closed:
+            return
+
         self._stop_event.set()
-        self.log_stream_thread.join(timeout)
+        self._closed = True
+
+        if hasattr(self, 'log_stream_thread') and self.log_stream_thread.is_alive():
+            try:
+                self.log_stream_thread.join(timeout)
+            except Exception as e:
+                self.log('error', f'Error joining log thread: {e}')
+            
+            # Force kill thread if it's still alive
+            if self.log_stream_thread.is_alive():
+                self.log('warn', 'Log thread did not shut down cleanly')
 
 
 class EventStreamRuntime(Runtime):
@@ -383,44 +430,87 @@ class EventStreamRuntime(Runtime):
             )
 
     @tenacity.retry(
-        stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
-        wait=tenacity.wait_exponential(multiplier=2, min=1, max=20),
+        stop=tenacity.stop_after_delay(30) | stop_if_should_exit(),  # Reduced timeout
+        wait=tenacity.wait_exponential(multiplier=1, min=1, max=5),  # Faster retries
         reraise=(ConnectionRefusedError,),
     )
     def _wait_until_alive(self):
-        self._refresh_logs()
-        if not self.log_buffer:
-            raise RuntimeError('Runtime client is not ready.')
+        """Wait for runtime to be ready with proper error handling and timeouts"""
+        try:
+            self._refresh_logs()
+            if not self.log_buffer:
+                raise RuntimeError('Runtime client is not ready.')
 
-        response = send_request_with_retry(
-            self.session,
-            'GET',
-            f'{self.api_url}/alive',
-            retry_exceptions=[ConnectionRefusedError],
-            timeout=300,  # 5 minutes gives the container time to be alive 🧟‍♂️
-        )
-        if response.status_code == 200:
-            return
-        else:
-            msg = f'Action execution API is not alive. Response: {response}'
-            self.log('error', msg)
-            raise RuntimeError(msg)
+            # Use a shorter timeout for individual requests
+            response = send_request_with_retry(
+                self.session,
+                'GET',
+                f'{self.api_url}/alive',
+                retry_exceptions=[ConnectionRefusedError],
+                timeout=10,  # Shorter timeout per request
+                max_retries=3  # Limit retries
+            )
+            
+            if response.status_code == 200:
+                return
+            else:
+                msg = f'Action execution API is not alive. Response: {response}'
+                self.log('error', msg)
+                raise RuntimeError(msg)
+                
+        except Exception as e:
+            self.log('error', f'Error waiting for runtime: {str(e)}')
+            # Clean up on failure
+            self.close()
+            raise
 
     def close(self, rm_all_containers: bool = True):
-        """Closes the EventStreamRuntime and associated objects
+        """Closes the EventStreamRuntime and associated objects with proper cleanup
 
         Parameters:
         - rm_all_containers (bool): Whether to remove all containers with the 'openhands-sandbox-' prefix
         """
+        try:
+            # First stop any ongoing requests
+            if self.session:
+                try:
+                    self.session.close()
+                except Exception as e:
+                    self.log('error', f'Error closing session: {e}')
+                self.session = None
 
-        if self.log_buffer:
-            self.log_buffer.close()
+            # Then close log buffer
+            if self.log_buffer:
+                try:
+                    self.log_buffer.close(timeout=2)  # Short timeout for log buffer
+                except Exception as e:
+                    self.log('error', f'Error closing log buffer: {e}')
+                self.log_buffer = None
 
-        if self.session:
-            self.session.close()
+            # Skip container cleanup if we're attached
+            if self.attach_to_existing:
+                return
 
-        if self.attach_to_existing:
-            return
+            # Clean up container
+            if self.container:
+                try:
+                    # Try to stop container gracefully first
+                    self.container.stop(timeout=5)
+                except Exception as e:
+                    self.log('error', f'Error stopping container: {e}')
+                    try:
+                        # Force kill if graceful stop fails
+                        self.container.kill()
+                    except Exception as e2:
+                        self.log('error', f'Error killing container: {e2}')
+                
+                try:
+                    # Remove the container
+                    self.container.remove(force=True)
+                except Exception as e:
+                    self.log('error', f'Error removing container: {e}')
+                
+                self.container = None
 
         try:
             containers = self.docker_client.containers.list(all=True)
