@@ -11,7 +11,7 @@ from openhands.events.event import Event, EventSource
 from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.runtime.utils.shutdown_listener import should_continue
 from openhands.storage import FileStore
-
+from openhands.utils.async_utils import call_sync_from_async
 
 class EventStreamSubscriber(str, Enum):
     AGENT_CONTROLLER = 'agent_controller'
@@ -22,9 +22,11 @@ class EventStreamSubscriber(str, Enum):
     TEST = 'test'
 
 
-def session_exists(sid: str, file_store: FileStore) -> bool:
+async def session_exists(sid: str, file_store: FileStore) -> bool:
     try:
-        file_store.list(f'sessions/{sid}')
+        print("Checking if session exists")
+        call_sync_from_async(file_store.list, 10, f'sessions/{sid}')
+        print("Session exists")
         return True
     except FileNotFoundError:
         return False
