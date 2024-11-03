@@ -35,9 +35,10 @@ export function ChatInput({
   className,
 }: ChatInputProps) {
   const handleSubmitMessage = () => {
-    if (value.trim()) {
-      onSubmit(value);
-      // Let parent component handle clearing through onChange
+    const trimmedValue = value.trim();
+    if (trimmedValue) {
+      onSubmit(trimmedValue);
+      // Only clear after submitting
       onChange?.("");
     }
   };
