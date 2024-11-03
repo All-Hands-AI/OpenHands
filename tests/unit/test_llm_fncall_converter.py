@@ -9,7 +9,7 @@ from litellm import ChatCompletionToolParam
 from openhands.llm.fn_call_converter import (
     convert_fncall_messages_to_non_fncall_messages,
     convert_non_fncall_messages_to_fncall_messages,
-    convert_tool_calls_to_string,
+    convert_tool_call_to_string,
     convert_tools_to_description,
 )
 
@@ -437,8 +437,9 @@ NON_FNCALL_RESPONSE_MESSAGE = {
         ),
     ],
 )
-def test_convert_tool_calls_to_string(tool_calls, expected):
-    converted = convert_tool_calls_to_string(tool_calls)
+def test_convert_tool_call_to_string(tool_calls, expected):
+    assert len(tool_calls) == 1
+    converted = convert_tool_call_to_string(tool_calls[0])
     print(converted)
     assert converted == expected
 
