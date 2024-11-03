@@ -480,17 +480,14 @@ class EventStreamRuntime(Runtime):
                     'POST',
                     f'{self.api_url}/execute_action',
                     json={'action': event_to_dict(action)},
-                    timeout=action.timeout,
+                    # wait a few more seconds to get the timeout error from client side
+                    timeout=action.timeout + 5,
                 )
                 output = response.json()
                 obs = observation_from_dict(output)
                 obs._cause = action.id  # type: ignore[attr-defined]
             except requests.Timeout:
-                self.log('error', 'No response received within the timeout period.')
-                obs = ErrorObservation(
-                    f'Action execution timed out after {action.timeout} seconds.',
-                    error_id='AGENT_ERROR$ACTION_TIMEOUT',
-                )
+                raise RuntimeError(f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s')
             self._refresh_logs()
             return obs
 

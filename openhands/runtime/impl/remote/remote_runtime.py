@@ -344,17 +344,14 @@ class RemoteRuntime(Runtime):
                     'POST',
                     f'{self.runtime_url}/execute_action',
                     json=request_body,
-                    timeout=action.timeout,
+                    # wait a few more seconds to get the timeout error from client side
+                    timeout=action.timeout + 5
                 )
                 output = response.json()
                 obs = observation_from_dict(output)
                 obs._cause = action.id  # type: ignore[attr-defined]
             except requests.Timeout:
-                obs = ErrorObservation(
-                    f'[Runtime (ID={self.runtime_id})] Action execution timed out',
-                    error_id='AGENT_ERROR$ACTION_TIMEOUT',
-                )
-                return obs
+                raise RuntimeError(f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s')
             return obs
 
     def _send_request(self, method, url, **kwargs):

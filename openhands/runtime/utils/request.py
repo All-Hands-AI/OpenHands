@@ -57,8 +57,6 @@ def send_request(
     timeout: int = 10,
     **kwargs: Any,
 ) -> requests.Response:
-    # wait a few more seconds to get the timeout error from client side
-    kwargs['timeout'] = timeout + 5
     response = session.request(method, url, **kwargs)
     response.raise_for_status()
     return response
