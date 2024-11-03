@@ -36,6 +36,8 @@ from openhands.storage import get_file_store
 
 
 def display_message(message: str):
+    if not message:
+        return
     print(colored('🤖 ' + message + '\n', 'yellow'))
 
 
