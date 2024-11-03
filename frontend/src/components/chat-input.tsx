@@ -35,11 +35,14 @@ export function ChatInput({
   className,
 }: ChatInputProps) {
   const handleSubmitMessage = () => {
-    if (value.trim()) {
-      // Pass the original value to onSubmit, not the trimmed version
-      onSubmit(value);
-      onChange?.("");
+    // Only check if the value is empty after trimming
+    if (!value || !value.trim()) {
+      return;
     }
+    // Call onSubmit with the exact value from props
+    onSubmit(value);
+    // Clear after submitting
+    onChange?.("");
   };
 
   const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
