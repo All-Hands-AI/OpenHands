@@ -333,7 +333,7 @@ async def websocket_endpoint(websocket: WebSocket):
         jwt_token = sign_token({'sid': sid}, config.jwt_secret)
 
     logger.info(f'New session: {sid}')
-    session = await call_sync_from_async(session_manager.add_or_restart_session, sid, websocket)
+    session = session_manager.add_or_restart_session(sid, websocket)
     await websocket.send_json({'token': jwt_token, 'status': 'ok'})
 
     latest_event_id = -1
