@@ -18,9 +18,8 @@ import toast from "#/utils/toast";
 import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
 import OpenHands from "#/api/open-hands";
-import { useFiles } from "#/context/files";
 import { isOpenHandsErrorResponse } from "#/api/open-hands.utils";
-import { debounce } from "lodash";
+import { useFiles } from "#/context/files";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
@@ -97,8 +96,7 @@ interface FileExplorerProps {
 
 function FileExplorer({ error }: FileExplorerProps) {
   const { revalidate } = useRevalidator();
-
-  const { paths, setPaths, setSelectedPath } = useFiles();
+  const { paths, setPaths } = useFiles();
   const [isHidden, setIsHidden] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
 
@@ -106,11 +104,8 @@ function FileExplorer({ error }: FileExplorerProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const dispatch = useDispatch();
   const { t } = useTranslation();
-  const selectFileInput = () => {
-    fileInputRef.current?.click(); // Trigger the file browser
-  };
 
-  const refreshWorkspace = () => {
+  const refreshWorkspace = React.useCallback(() => {
     if (
       curAgentState === AgentState.LOADING ||
       curAgentState === AgentState.STOPPED
@@ -122,9 +117,9 @@ function FileExplorer({ error }: FileExplorerProps) {
     const token = localStorage.getItem("token");
     if (token) OpenHands.getFiles(token).then(setPaths);
     revalidate();
-  };
+  }, [curAgentState, dispatch, revalidate, setPaths]);
 
-  const uploadFileData = async (files: FileList) => {
+  const uploadFileData = React.useCallback(async (files: FileList) => {
     try {
       const token = localStorage.getItem("token");
       if (token) {
@@ -171,41 +166,45 @@ function FileExplorer({ error }: FileExplorerProps) {
         t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE),
       );
     }
-  };
+  }, [refreshWorkspace, t]);
+
+  const selectFileInput = React.useCallback(() => {
+    fileInputRef.current?.click(); // Trigger the file browser
+  }, []);
 
   React.useEffect(() => {
     refreshWorkspace();
-  }, [curAgentState]);
-
-  const debouncedSetSelectedPath = React.useMemo(
-    () => debounce(setSelectedPath, 300),
-    [setSelectedPath]
-  );
+  }, [curAgentState, refreshWorkspace]);
 
   return (
     <div
       data-testid="file-explorer"
       className="relative h-full"
-      onDragEnter={() => {
+      onDragEnter={(e: React.DragEvent) => {
+        e.preventDefault();
         setIsDragging(true);
       }}
-      onDragEnd={() => {
+      onDragEnd={(e: React.DragEvent) => {
+        e.preventDefault();
         setIsDragging(false);
       }}
     >
       {isDragging && (
         <div
           data-testid="dropzone"
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={(event) => {
-            event.preventDefault();
-            const { files: droppedFiles } = event.dataTransfer;
+          onDragLeave={(e: React.DragEvent) => {
+            e.preventDefault();
+            setIsDragging(false);
+          }}
+          onDrop={(e: React.DragEvent) => {
+            e.preventDefault();
+            const { files: droppedFiles } = e.dataTransfer;
             if (droppedFiles.length > 0) {
               uploadFileData(droppedFiles);
             }
             setIsDragging(false);
           }}
-          onDragOver={(event) => event.preventDefault()}
+          onDragOver={(e: React.DragEvent) => e.preventDefault()}
           className="z-10 absolute flex flex-col justify-center items-center bg-black top-0 bottom-0 left-0 right-0 opacity-65"
         >
           <IoFileTray size={32} />
@@ -235,7 +234,7 @@ function FileExplorer({ error }: FileExplorerProps) {
               )}
               <ExplorerActions
                 isHidden={isHidden}
-                toggleHidden={() => setIsHidden((prev) => !prev)}
+                toggleHidden={() => setIsHidden((prevState: boolean) => !prevState)}
                 onRefresh={refreshWorkspace}
                 onUpload={selectFileInput}
               />
@@ -260,12 +259,13 @@ function FileExplorer({ error }: FileExplorerProps) {
           multiple
           ref={fileInputRef}
           style={{ display: "none" }}
-          onChange={(event) => {
-            const { files: selectedFiles } = event.target;
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            const { files: selectedFiles } = e.target;
             if (selectedFiles && selectedFiles.length > 0) {
               uploadFileData(selectedFiles);
             }
           }}
+          aria-label={t(I18nKey.EXPLORER$LABEL_FILE_INPUT)}
         />
       </div>
     </div>
