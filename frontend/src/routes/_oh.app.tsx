@@ -97,8 +97,9 @@ export const clientLoader = async () => {
   if (ghToken && repo) {
     const data = await retrieveLatestGitHubCommit(ghToken, repo);
     if (isGitHubErrorReponse(data)) {
-      // TODO: Handle error
-      console.error("Failed to retrieve latest commit", data);
+      // Handle GitHub commit retrieval error silently since this is not critical
+      // for application functionality
+      lastCommit = null;
     } else {
       [lastCommit] = data;
     }
