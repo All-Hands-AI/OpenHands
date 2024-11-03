@@ -154,7 +154,6 @@ class AgentSession:
         agent_configs: dict[str, AgentConfig] | None = None,
         status_message_callback: Optional[Callable] = None,
     ):
-        self.loop = asyncio.get_running_loop()
         self._create_security_analyzer(config.security.security_analyzer)
         await self._create_runtime(
             runtime_name=runtime_name,
@@ -185,18 +184,6 @@ class AgentSession:
         try:
             # Set closed flag early to prevent multiple close attempts
             self._closed = True
-
-            # First cancel any running agent task
-            if self.controller and hasattr(self.controller, 'agent_task'):
-                agent_task = getattr(self.controller, 'agent_task', None)
-                if agent_task and not agent_task.done():
-                    agent_task.cancel()
-                    try:
-                        await asyncio.wait_for(agent_task, timeout=5)
-                    except (asyncio.TimeoutError, asyncio.CancelledError):
-                        logger.warning("Agent task cancellation timed out or was cancelled")
-                    except Exception as e:
-                        logger.error(f"Error cancelling agent task: {e}")
 
             # Save state with timeout
             if self.controller is not None:
@@ -238,44 +225,6 @@ class AgentSession:
                 except Exception as e:
                     logger.error(f"Error closing security analyzer: {e}")
                 self.security_analyzer = None
-
-            # Handle event loop cleanup
-            if self.loop and not self.loop.is_closed():
-                try:
-                    # Get all running tasks except current one
-                    current_task = asyncio.current_task(self.loop)
-                    pending = [task for task in asyncio.all_tasks(self.loop) 
-                             if task is not current_task]
-                    
-                    if pending:
-                        # Cancel all pending tasks
-                        for task in pending:
-                            task.cancel()
-                        
-                        # Wait for tasks to finish with timeout
-                        try:
-                            await asyncio.wait_for(
-                                asyncio.gather(*pending, return_exceptions=True),
-                                timeout=5
-                            )
-                        except asyncio.TimeoutError:
-                            logger.error("Timeout waiting for tasks to cancel")
-                        except Exception as e:
-                            logger.error(f"Error cancelling tasks: {e}")
-
-                    # Stop the loop gracefully
-                    try:
-                        async with asyncio.timeout(5):
-                            self.loop.stop()
-                    except asyncio.TimeoutError:
-                        logger.error("Timeout stopping event loop")
-                    except Exception as e:
-                        logger.error(f"Error stopping event loop: {e}")
-                
-                except Exception as e:
-                    logger.error(f"Error during loop cleanup: {e}")
-                finally:
-                    self.loop = None
 
         except Exception as e:
             logger.exception(f"Unexpected error during session cleanup: {e}")

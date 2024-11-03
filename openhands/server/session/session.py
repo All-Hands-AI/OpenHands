@@ -237,25 +237,24 @@ class Session:
                     )
                     return
 
-        # Add event to agent session
-        if self.agent_session.loop:
-            try:
-                # Use asyncio.wait_for to prevent blocking indefinitely
-                future = asyncio.run_coroutine_threadsafe(
-                    self._add_event(event, EventSource.USER), 
-                    self.agent_session.loop
-                )
-                # Wait for the event to be processed with timeout
-                await asyncio.wait_for(
-                    asyncio.wrap_future(future),
-                    timeout=10
-                )
-            except asyncio.TimeoutError:
-                logger.error("Event processing timed out")
-                await self.send_error('Event processing timed out')
-            except Exception as e:
-                logger.exception("Error processing event: %s", e)
-                await self.send_error(f'Failed to process event: {str(e)}')
+
+        try:
+            # Use asyncio.wait_for to prevent blocking indefinitely
+            future = asyncio.run_coroutine_threadsafe(
+                self._add_event(event, EventSource.USER), 
+                asyncio.get_running_loop()
+            )
+            # Wait for the event to be processed with timeout
+            await asyncio.wait_for(
+                asyncio.wrap_future(future),
+                timeout=10
+            )
+        except asyncio.TimeoutError:
+            logger.error("Event processing timed out")
+            await self.send_error('Event processing timed out')
+        except Exception as e:
+            logger.exception("Error processing event: %s", e)
+            await self.send_error(f'Failed to process event: {str(e)}')
 
     async def _add_event(self, event, event_source):
         self.agent_session.event_stream.add_event(event, EventSource.USER)

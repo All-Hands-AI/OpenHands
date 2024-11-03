@@ -424,38 +424,32 @@ class EventStreamRuntime(Runtime):
             )
 
     @tenacity.retry(
-        stop=tenacity.stop_after_delay(30) | stop_if_should_exit(),  # Reduced timeout
+        stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),  # Reduced timeout
         wait=tenacity.wait_exponential(multiplier=1, min=1, max=5),  # Faster retries
         reraise=(ConnectionRefusedError,),
     )
     def _wait_until_alive(self):
         """Wait for runtime to be ready with proper error handling and timeouts"""
-        try:
-            self._refresh_logs()
-            if not self.log_buffer:
-                raise RuntimeError('Runtime client is not ready.')
+        self._refresh_logs()
+        if not self.log_buffer:
+            raise RuntimeError('Runtime client is not ready.')
 
-            # Use a shorter timeout for individual requests
-            response = send_request_with_retry(
-                self.session,
-                'GET',
-                f'{self.api_url}/alive',
-                retry_exceptions=[ConnectionRefusedError],
-                timeout=10,  # Shorter timeout per request
-            )
-            
-            if response.status_code == 200:
-                return
-            else:
-                msg = f'Action execution API is not alive. Response: {response}'
-                self.log('error', msg)
-                raise RuntimeError(msg)
-                
-        except Exception as e:
-            self.log('error', f'Error waiting for runtime: {str(e)}')
-            # Clean up on failure
-            self.close()
-            raise
+        # Use a shorter timeout for individual requests
+        response = send_request_with_retry(
+            self.session,
+            'GET',
+            f'{self.api_url}/alive',
+            retry_exceptions=[ConnectionRefusedError],
+            timeout=10,  # Shorter timeout per request
+        )
+
+        if response.status_code == 200:
+            return
+        else:
+            msg = f'Action execution API is not alive. Response: {response}'
+            self.log('error', msg)
+            raise RuntimeError(msg)
+
 
     def close(self, rm_all_containers: bool = True):
         """Closes the EventStreamRuntime and associated objects with proper cleanup
