@@ -146,7 +146,6 @@ class AgentController:
         self,
         e: Exception,
     ):
-        self.state.last_error = str(e)
         await self.set_agent_state_to(AgentState.ERROR)
         if self.status_callback is not None:
             err_id = ''
