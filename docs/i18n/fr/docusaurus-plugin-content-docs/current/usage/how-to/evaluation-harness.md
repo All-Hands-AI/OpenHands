@@ -279,4 +279,3 @@ Cette fonction fait ce qui suit :
 3. Si l'agent a fait plusieurs tentatives, il lui donne la possibilité d'abandonner
 
 En utilisant cette fonction, vous pouvez garantir un comportement cohérent sur plusieurs exécutions d'évaluation et empêcher l'agent de rester bloqué en attendant une entrée humaine.
-

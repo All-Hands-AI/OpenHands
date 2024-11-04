@@ -304,7 +304,7 @@ class EventStreamRuntime(Runtime):
                 volumes = None
             self.log(
                 'debug',
-                f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}'
+                f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
             )
 
             if self.config.sandbox.browsergym_eval_env is not None:
