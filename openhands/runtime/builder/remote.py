@@ -45,17 +45,21 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
             files.append(('tags', (None, tag)))
 
         # Send the POST request to /build (Begins the build process)
-        response = send_request(
-            self.session,
-            'POST',
-            f'{self.api_url}/build',
-            files=files,
-            timeout=30,
-        )
-
-        if response.status_code != 202:
-            logger.error(f'Build initiation failed: {response.text}')
-            raise RuntimeError(f'Build initiation failed: {response.text}')
+        try:
+            response = send_request(
+                self.session,
+                'POST',
+                f'{self.api_url}/build',
+                files=files,
+                timeout=30,
+            )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 429:
+                logger.warning('Build was rate limited. Retrying in 30 seconds.')
+                time.sleep(30)
+                return self.build(path, tags, platform)
+            else:
+                raise e
 
         build_data = response.json()
         build_id = build_data['build_id']
