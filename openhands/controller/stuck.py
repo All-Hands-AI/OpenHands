@@ -41,8 +41,6 @@ class StuckDetector:
         if len(filtered_history) < 3:
             return False
 
-        return True
-
         # the first few scenarios detect 3 or 4 repeated steps
         # prepare the last 4 actions and observations, to check them out
         last_actions: list[Event] = []
