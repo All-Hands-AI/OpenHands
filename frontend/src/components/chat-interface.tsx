@@ -18,6 +18,8 @@ import ConfirmationButtons from "./chat/ConfirmationButtons";
 import { ErrorMessage } from "./error-message";
 import { ContinueButton } from "./continue-button";
 import { ScrollToBottomButton } from "./scroll-to-bottom-button";
+import { Suggestions } from "./suggestions";
+import { SUGGESTIONS } from "#/utils/suggestions";
 
 const isErrorMessage = (
   message: Message | ErrorMessage,
@@ -64,6 +66,23 @@ export function ChatInterface() {
 
   return (
     <div className="h-full flex flex-col justify-between">
+      {messages.length === 0 && (
+        <Suggestions
+          suggestions={Object.entries(SUGGESTIONS["non-repo"]).map(
+            ([label, value]) => ({ label, value }),
+          )}
+          onSuggestionClick={(value) => {
+            dispatch(
+              addUserMessage({
+                content: value,
+                imageUrls: [],
+                timestamp: new Date().toISOString(),
+              }),
+            );
+          }}
+        />
+      )}
+
       <div
         ref={scrollRef}
         onScroll={(e) => onChatBodyScroll(e.currentTarget)}

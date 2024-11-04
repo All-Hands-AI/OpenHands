@@ -1,19 +1,99 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { act, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { renderWithProviders } from "test-utils";
 import { ChatInterface } from "#/components/chat-interface";
-import { SocketProvider } from "#/context/socket";
+import { addUserMessage } from "#/state/chatSlice";
+import { SUGGESTIONS } from "#/utils/suggestions";
+import * as ChatSlice from "#/state/chatSlice";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const renderChatInterface = (messages: (Message | ErrorMessage)[]) =>
-  render(<ChatInterface />, { wrapper: SocketProvider });
+  renderWithProviders(<ChatInterface />);
 
-describe.skip("ChatInterface", () => {
+describe("ChatInterface", () => {
+  beforeAll(() => {
+    // mock useScrollToBottom hook
+    vi.mock("#/hooks/useScrollToBottom", () => ({
+      useScrollToBottom: vi.fn(() => ({
+        scrollDomToBottom: vi.fn(),
+        onChatBodyScroll: vi.fn(),
+        hitBottom: vi.fn(),
+      })),
+    }));
+  });
+
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  it.todo("should render suggestions if empty");
+  describe.only("Empty state", () => {
+    it("should render suggestions if empty", () => {
+      const { store } = renderWithProviders(<ChatInterface />, {
+        preloadedState: {
+          chat: { messages: [] },
+        },
+      });
+
+      expect(screen.getByTestId("suggestions")).toBeInTheDocument();
+
+      act(() => {
+        store.dispatch(
+          addUserMessage({
+            content: "Hello",
+            imageUrls: [],
+            timestamp: new Date().toISOString(),
+          }),
+        );
+      });
+
+      expect(screen.queryByTestId("suggestions")).not.toBeInTheDocument();
+    });
+
+    it("should render the default suggestions", () => {
+      renderWithProviders(<ChatInterface />, {
+        preloadedState: {
+          chat: { messages: [] },
+        },
+      });
+
+      const suggestions = screen.getByTestId("suggestions");
+      const defaultSuggestions = Object.keys(SUGGESTIONS["non-repo"]);
+
+      // check that there are at most 4 suggestions displayed
+      const displayedSuggestions = within(suggestions).getAllByRole("button");
+      expect(displayedSuggestions.length).toBeLessThanOrEqual(4);
+
+      // Check that each displayed suggestion is one of the default suggestions
+      displayedSuggestions.forEach((suggestion) => {
+        expect(defaultSuggestions).toContain(suggestion.textContent);
+      });
+    });
+
+    it.todo(
+      "should render the other suggestions if the user selected to cloned a repo",
+    );
+
+    it("should dispatch a user message when selecting a message", async () => {
+      const addUserMessageSpy = vi.spyOn(ChatSlice, "addUserMessage");
+      const user = userEvent.setup();
+      const { store } = renderWithProviders(<ChatInterface />, {
+        preloadedState: {
+          chat: { messages: [] },
+        },
+      });
+
+      const suggestions = screen.getByTestId("suggestions");
+      const displayedSuggestions = within(suggestions).getAllByRole("button");
+
+      await user.click(displayedSuggestions[0]);
+
+      // user message has been dispatched
+      expect(addUserMessageSpy).toHaveBeenCalled();
+      expect(screen.queryByTestId("suggestions")).not.toBeInTheDocument();
+      expect(store.getState().chat.messages).toHaveLength(1);
+    });
+  });
 
   it("should render messages", () => {
     const messages: Message[] = [

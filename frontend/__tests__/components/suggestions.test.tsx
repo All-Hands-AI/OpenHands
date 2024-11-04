@@ -28,6 +28,7 @@ describe("Suggestions", () => {
       />,
     );
 
+    expect(screen.getByTestId("suggestions")).toBeInTheDocument();
     const suggestionElements = screen.getAllByTestId("suggestion");
 
     expect(suggestionElements).toHaveLength(2);

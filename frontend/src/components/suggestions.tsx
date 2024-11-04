@@ -10,7 +10,7 @@ export function Suggestions({
   onSuggestionClick,
 }: SuggestionsProps) {
   return (
-    <ul>
+    <ul data-testid="suggestions">
       {suggestions.map((suggestion, index) => (
         <SuggestionItem
           key={index}
