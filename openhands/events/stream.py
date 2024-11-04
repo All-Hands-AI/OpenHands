@@ -43,7 +43,7 @@ class AsyncEventStreamWrapper:
         # Create an async generator that yields events
         for event in self.event_stream.get_events(*self.args, **self.kwargs):
             # Run the blocking get_events() in a thread pool
-            yield await loop.run_in_executor(None, lambda e=event: e) # type: ignore
+            yield await loop.run_in_executor(None, lambda e=event: e)  # type: ignore
 
 
 @dataclass
