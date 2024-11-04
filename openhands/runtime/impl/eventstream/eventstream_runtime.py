@@ -252,18 +252,14 @@ class EventStreamRuntime(Runtime):
         self._container_port = (
             self._host_port
         )  # in future this might differ from host port
-        self.api_url = (
-            f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
-        )
+        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         use_host_network = self.config.sandbox.use_host_network
         network_mode: str | None = 'host' if use_host_network else None
         port_mapping: dict[str, list[dict[str, str]]] | None = (
             None
             if use_host_network
-            else {
-                f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}]
-            }
+            else {f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}]}
         )
 
         if use_host_network:
@@ -504,7 +500,9 @@ class EventStreamRuntime(Runtime):
                 obs = observation_from_dict(output)
                 obs._cause = action.id  # type: ignore[attr-defined]
             except requests.Timeout:
-                raise RuntimeError(f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s')
+                raise RuntimeError(
+                    f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
+                )
             self._refresh_logs()
             return obs
 
