@@ -1,5 +1,7 @@
 import os
 import re
+from functools import wraps
+from typing import Any, Callable, TypeVar, Tuple
 
 import bashlex
 import pexpect
@@ -12,23 +14,41 @@ from openhands.events.observation import (
     FatalErrorObservation,
 )
 
-SOFT_TIMEOUT_SECONDS = 5
+T = TypeVar('T')
+
+def bash_operation(operation_name: str) -> Callable[[Callable[..., T]], Callable[..., T]]:
+    """Decorator for bash operations that handles common error patterns"""
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> T:
+            try:
+                return func(*args, **kwargs)
+            except bashlex.errors.ParsingError as e:
+                logger.debug(
+                    f'Failed to parse bash commands during {operation_name}\n'
+                    f'[warning]: {e}\n'
+                    f'The original command will be returned as is.'
+                )
+                if operation_name == "split_commands":
+                    return [args[0]]  # Return original command
+            except pexpect.TIMEOUT as e:
+                logger.warning(f'Bash pexpect.TIMEOUT during {operation_name}: {e}')
+                if operation_name == "execute":
+                    return args[0].shell.before or '', -1
+            except Exception as e:
+                logger.error(f'Error during {operation_name}: {e}')
+                if operation_name == "parse_exit_code":
+                    return 2
+            return None
+        return wrapper
+    return decorator
 
 
-def split_bash_commands(commands):
+@bash_operation("split_commands")
+def split_bash_commands(commands: str) -> list[str]:
     if not commands.strip():
         return ['']
-    try:
-        parsed = bashlex.parse(commands)
-    except bashlex.errors.ParsingError as e:
-        logger.debug(
-            f'Failed to parse bash commands\n'
-            f'[input]: {commands}\n'
-            f'[warning]: {e}\n'
-            f'The original command will be returned as is.'
-        )
-        # If parsing fails, return the original commands
-        return [commands]
+    parsed = bashlex.parse(commands)
 
     result: list[str] = []
     last_end = 0
@@ -36,42 +56,36 @@ def split_bash_commands(commands):
     for node in parsed:
         start, end = node.pos
 
-        # Include any text between the last command and this one
         if start > last_end:
             between = commands[last_end:start]
             logger.debug(f'BASH PARSING between: {between}')
             if result:
                 result[-1] += between.rstrip()
             elif between.strip():
-                # THIS SHOULD NOT HAPPEN
                 result.append(between.rstrip())
 
-        # Extract the command, preserving original formatting
         command = commands[start:end].rstrip()
         logger.debug(f'BASH PARSING command: {command}')
         result.append(command)
 
         last_end = end
 
-    # Add any remaining text after the last command to the last command
     remaining = commands[last_end:].rstrip()
     logger.debug(f'BASH PARSING remaining: {remaining}')
     if last_end < len(commands) and result:
         result[-1] += remaining
         logger.debug(f'BASH PARSING result[-1] += remaining: {result[-1]}')
-    elif last_end < len(commands):
-        if remaining:
-            result.append(remaining)
-            logger.debug(f'BASH PARSING result.append(remaining): {result[-1]}')
+    elif last_end < len(commands) and remaining:
+        result.append(remaining)
+        logger.debug(f'BASH PARSING result.append(remaining): {result[-1]}')
     return result
 
 
 class BashSession:
-    """A class that maintains a pexpect process and provides a simple interface for running commands and interacting with the shell."""
+    """A class that maintains a pexpect process and provides a simple interface for running commands."""
 
     def __init__(self, work_dir: str, username: str):
         self._pwd = work_dir
-
         self.shell = pexpect.spawn(
             f'su {username}',
             encoding='utf-8',
@@ -91,8 +105,8 @@ class BashSession:
     def workdir(self):
         return self._get_working_directory()
 
-    def _get_working_directory(self):
-        # NOTE: this is part of initialization, so we hard code the timeout
+    @bash_operation("get_working_directory")
+    def _get_working_directory(self) -> str:
         result, exit_code = self._execute_bash('pwd', timeout=60, keep_prompt=False)
         if exit_code != 0:
             raise RuntimeError(
@@ -108,9 +122,7 @@ class BashSession:
             r'[PEXPECT_END]'
         )
 
-        # This should NOT match "PS1=\u@\h:\w [PEXPECT]$" when `env` is executed
         self.__bash_expect_regex = r'\[PEXPECT_BEGIN\]\s*(.*?)\s*([a-z0-9_-]*)@([a-zA-Z0-9.-]*):(.+)\s*\[PEXPECT_END\]'
-        # Set umask to allow group write permissions
         self.shell.sendline(f'umask 002; export PS1="{self.__bash_PS1}"; export PS2=""')
         self.shell.expect(self.__bash_expect_regex)
 
@@ -121,11 +133,11 @@ class BashSession:
         logger.debug(
             f'Bash initialized. Working directory: {work_dir}. Output: [{self.shell.before}]'
         )
-        # Ensure the group has write permissions on the working directory
         self.shell.sendline(f'chmod g+rw "{work_dir}"')
         self.shell.expect(self.__bash_expect_regex)
 
-    def _get_bash_prompt_and_update_pwd(self):
+    @bash_operation("get_prompt")
+    def _get_bash_prompt_and_update_pwd(self) -> str:
         ps1 = self.shell.after
         if ps1 == pexpect.EOF:
             logger.error(f'Bash shell EOF! {self.shell.after=}, {self.shell.before=}')
@@ -134,15 +146,10 @@ class BashSession:
             logger.warning('Bash shell timeout')
             return ''
 
-        # begin at the last occurrence of '[PEXPECT_BEGIN]'.
-        # In multi-line bash commands, the prompt will be repeated
-        # and the matched regex captures all of them
-        # - we only want the last one (newest prompt)
         _begin_pos = ps1.rfind('[PEXPECT_BEGIN]')
         if _begin_pos != -1:
             ps1 = ps1[_begin_pos:]
 
-        # parse the ps1 to get username, hostname, and working directory
         matched = re.match(self.__bash_expect_regex, ps1)
         assert (
             matched is not None
@@ -151,8 +158,6 @@ class BashSession:
         working_dir = working_dir.rstrip()
         self._pwd = os.path.expanduser(working_dir)
 
-        # re-assemble the prompt
-        # ignore the hostname AND use 'openhands-workspace'
         prompt = f'{other_info.strip()}\n{username}@openhands-workspace:{working_dir} '
         if username == 'root':
             prompt += '#'
@@ -160,6 +165,7 @@ class BashSession:
             prompt += '$'
         return prompt + ' '
 
+    @bash_operation("execute")
     def _execute_bash(
         self,
         command: str,
@@ -173,28 +179,26 @@ class BashSession:
             timeout=timeout, keep_prompt=keep_prompt, kill_on_timeout=kill_on_timeout
         )
 
+    @bash_operation("interrupt")
     def _interrupt_bash(
         self,
         action_timeout: int | None,
         interrupt_timeout: int | None = None,
         max_retries: int = 2,
     ) -> tuple[str, int]:
-        interrupt_timeout = interrupt_timeout or 1  # default timeout for SIGINT
-        # try to interrupt the bash shell use SIGINT
+        interrupt_timeout = interrupt_timeout or 1
         while max_retries > 0:
-            self.shell.sendintr()  # send SIGINT to the shell
+            self.shell.sendintr()
             logger.debug('Sent SIGINT to bash. Waiting for output...')
             try:
                 self.shell.expect(self.__bash_expect_regex, timeout=interrupt_timeout)
                 output = self.shell.before
                 logger.debug(f'Received output after SIGINT: {output}')
-                exit_code = 130  # SIGINT
+                exit_code = 130
 
                 _additional_msg = ''
                 if action_timeout is not None:
-                    _additional_msg = (
-                        f'Command timed out after {action_timeout} seconds. '
-                    )
+                    _additional_msg = f'Command timed out after {action_timeout} seconds. '
                 output += (
                     '\r\n\r\n'
                     + f'[{_additional_msg}SIGINT was sent to interrupt the command.]'
@@ -204,7 +208,6 @@ class BashSession:
                 logger.warning(f'Bash pexpect.TIMEOUT while waiting for SIGINT: {e}')
                 max_retries -= 1
 
-        # fall back to send control-z
         logger.error(
             'Failed to get output after SIGINT. Max retries reached. Sending control-z...'
         )
@@ -212,7 +215,6 @@ class BashSession:
         self.shell.expect(self.__bash_expect_regex)
         output = self.shell.before
         logger.debug(f'Received output after control-z: {output}')
-        # Try to kill the job
         self.shell.sendline('kill -9 %1')
         self.shell.expect(self.__bash_expect_regex)
         logger.debug(f'Received output after killing job %1: {self.shell.before}')
@@ -226,7 +228,6 @@ class BashSession:
             + f'[{_additional_msg}SIGINT was sent to interrupt the command, but failed. The command was killed.]'
         )
 
-        # Try to get the exit code again
         self.shell.sendline('echo $?')
         self.shell.expect(self.__bash_expect_regex)
         _exit_code_output = self.shell.before
@@ -234,16 +235,12 @@ class BashSession:
 
         return output, exit_code
 
+    @bash_operation("parse_exit_code")
     def _parse_exit_code(self, output: str) -> int:
-        try:
-            exit_code = int(output.strip().split()[0])
-        except Exception:
-            logger.error('Error getting exit code from bash script')
-            # If we try to run an invalid shell script the output sometimes includes error text
-            # rather than the error code - we assume this is an error
-            exit_code = 2
+        exit_code = int(output.strip().split()[0])
         return exit_code
 
+    @bash_operation("continue")
     def _continue_bash(
         self,
         timeout: int,
@@ -253,10 +250,8 @@ class BashSession:
         logger.debug(f'Continuing bash with timeout={timeout}')
         try:
             self.shell.expect(self.__bash_expect_regex, timeout=timeout)
-
             output = self.shell.before
 
-            # Get exit code
             self.shell.sendline('echo $?')
             logger.debug('Requesting exit code...')
             self.shell.expect(self.__bash_expect_regex, timeout=timeout)
@@ -275,60 +270,50 @@ class BashSession:
                 output += '\r\n' + bash_prompt
         return output, exit_code
 
+    @bash_operation("run")
     def run(self, action: CmdRunAction) -> CmdOutputObservation | FatalErrorObservation:
-        try:
-            assert (
-                action.timeout is not None
-            ), f'Timeout argument is required for CmdRunAction: {action}'
-            commands = split_bash_commands(action.command)
-            all_output = ''
-            python_interpreter = ''
-            for command in commands:
-                if command == '':
-                    output, exit_code = self._continue_bash(
-                        timeout=SOFT_TIMEOUT_SECONDS,
-                        keep_prompt=action.keep_prompt,
-                        kill_on_timeout=False,
-                    )
-                elif command.lower() == 'ctrl+c':
-                    output, exit_code = self._interrupt_bash(
-                        action_timeout=None,  # intentionally None
-                    )
-                else:
-                    output, exit_code = self._execute_bash(
-                        command,
-                        timeout=SOFT_TIMEOUT_SECONDS
-                        if not action.blocking
-                        else action.timeout,
-                        keep_prompt=action.keep_prompt,
-                        kill_on_timeout=False if not action.blocking else True,
-                    )
-                    # Get rid of the python interpreter string from each line of the output.
-                    # We need it only once at the end.
-                    parts = output.rsplit('[Python Interpreter: ', 1)
-                    output = parts[0]
-                    if len(parts) == 2:
-                        python_interpreter = '[Python Interpreter: ' + parts[1]
-                if all_output:
-                    # previous output already exists so we add a newline
-                    all_output += '\r\n'
+        assert (
+            action.timeout is not None
+        ), f'Timeout argument is required for CmdRunAction: {action}'
+        commands = split_bash_commands(action.command)
+        all_output = ''
+        python_interpreter = ''
+        for command in commands:
+            if command == '':
+                output, exit_code = self._continue_bash(
+                    timeout=SOFT_TIMEOUT_SECONDS,
+                    keep_prompt=action.keep_prompt,
+                    kill_on_timeout=False,
+                )
+            elif command.lower() == 'ctrl+c':
+                output, exit_code = self._interrupt_bash(
+                    action_timeout=None,
+                )
+            else:
+                output, exit_code = self._execute_bash(
+                    command,
+                    timeout=SOFT_TIMEOUT_SECONDS if not action.blocking else action.timeout,
+                    keep_prompt=action.keep_prompt,
+                )
 
-                # If the command originated with the agent, append the command that was run...
-                if action.source == EventSource.AGENT:
-                    all_output += command + '\r\n'
+            if output:
+                # Extract Python interpreter path if present
+                if '[Python Interpreter:' in output:
+                    python_interpreter = re.search(
+                        r'\[Python Interpreter: (.*?)\]', output
+                    ).group(1)
 
-                all_output += str(output)
-                if exit_code != 0:
-                    break
-            return CmdOutputObservation(
-                command_id=-1,
-                content=all_output.rstrip('\r\n'),
-                command=action.command,
-                hidden=action.hidden,
-                exit_code=exit_code,
-                interpreter_details=python_interpreter,
-            )
-        except UnicodeDecodeError as e:
-            return FatalErrorObservation(
-                f'Runtime bash execution failed: Command output could not be decoded as utf-8. {str(e)}'
-            )
+                all_output += output
+
+            if exit_code != 0 and not action.ignore_errors:
+                return FatalErrorObservation(
+                    content=f'Command failed with exit code {exit_code}:\n{all_output}',
+                    source=EventSource.AGENT,
+                )
+
+        return CmdOutputObservation(
+            content=all_output,
+            source=EventSource.AGENT,
+            python_interpreter=python_interpreter,
+        )
+

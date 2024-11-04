@@ -4,7 +4,8 @@ import json
 import os
 import sys
 import uuid
-from typing import Callable, Protocol, Type
+from functools import wraps
+from typing import Callable, Protocol, Type, TypeVar, Any
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller import AgentController
@@ -28,6 +29,23 @@ from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.storage import get_file_store
+
+
+T = TypeVar('T')
+
+
+def state_operation(operation_name: str) -> Callable[[Callable[..., T]], Callable[..., T]]:
+    """Decorator for state operations that handles common error patterns"""
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> T | None:
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                logger.debug(f'Error during {operation_name}: {e}')
+            return None
+        return wrapper
+    return decorator
 
 
 class FakeUserResponseFunc(Protocol):
@@ -54,24 +72,11 @@ def create_runtime(
     config: AppConfig,
     sid: str | None = None,
 ) -> Runtime:
-    """Create a runtime for the agent to run on.
-
-    config: The app config.
-    sid: The session id.
-    """
-    # if sid is provided on the command line, use it as the name of the event stream
-    # otherwise generate it on the basis of the configured jwt_secret
-    # we can do this better, this is just so that the sid is retrieved when we want to restore the session
+    """Create a runtime for the agent to run on."""
     session_id = sid or generate_sid(config)
-
-    # set up the event stream
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(session_id, file_store)
-
-    # agent class
     agent_cls = openhands.agenthub.Agent.get_cls(config.default_agent)
-
-    # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)
     logger.debug(f'Initializing runtime: {runtime_cls.__name__}')
     runtime: Runtime = runtime_cls(
@@ -80,8 +85,14 @@ def create_runtime(
         sid=session_id,
         plugins=agent_cls.sandbox_plugins,
     )
-
     return runtime
+
+
+@state_operation("state_restore")
+def restore_initial_state(event_stream: EventStream) -> State | None:
+    """Restore state from session"""
+    logger.debug(f'Restoring agent state from cli session {event_stream.sid}')
+    return State.restore_from_session(event_stream.sid, event_stream.file_store)
 
 
 async def run_controller(
@@ -94,20 +105,7 @@ async def run_controller(
     fake_user_response_fn: FakeUserResponseFunc | None = None,
     headless_mode: bool = True,
 ) -> State | None:
-    """Main coroutine to run the agent controller with task input flexibility.
-    It's only used when you launch openhands backend directly via cmdline.
-
-    Args:
-        config: The app config.
-        initial_user_action: An Action object containing initial user input
-        runtime: (optional) A runtime for the agent to run on.
-        agent: (optional) A agent to run.
-        exit_on_message: quit if agent asks for a message from user (optional)
-        fake_user_response_fn: An optional function that receives the current state
-            (could be None) and returns a fake user response.
-        headless_mode: Whether the agent is run in headless mode.
-    """
-    # Create the agent
+    """Main coroutine to run the agent controller with task input flexibility."""
     if agent is None:
         agent_cls: Type[Agent] = Agent.get_cls(config.default_agent)
         agent_config = config.get_agent_config(config.default_agent)
@@ -117,7 +115,6 @@ async def run_controller(
             config=agent_config,
         )
 
-    # make sure the session id is set
     sid = sid or generate_sid(config)
 
     if runtime is None:
@@ -125,18 +122,10 @@ async def run_controller(
         await runtime.connect()
 
     event_stream = runtime.event_stream
-    # restore cli session if enabled
     initial_state = None
     if config.enable_cli_session:
-        try:
-            logger.debug(f'Restoring agent state from cli session {event_stream.sid}')
-            initial_state = State.restore_from_session(
-                event_stream.sid, event_stream.file_store
-            )
-        except Exception as e:
-            logger.debug(f'Error restoring state: {e}')
+        initial_state = restore_initial_state(event_stream)
 
-    # init controller with this initial state
     controller = AgentController(
         agent=agent,
         max_iterations=config.max_iterations,
@@ -153,15 +142,13 @@ async def run_controller(
     assert isinstance(
         initial_user_action, Action
     ), f'initial user actions must be an Action, got {type(initial_user_action)}'
-    # Logging
+
     logger.debug(
         f'Agent Controller Initialized: Running agent {agent.name}, model '
         f'{agent.llm.config.model}, with actions: {initial_user_action}'
     )
 
-    # start event is a MessageAction with the task, either resumed or new
     if config.enable_cli_session and initial_state is not None:
-        # we're resuming the previous session
         event_stream.add_event(
             MessageAction(
                 content=(
@@ -172,7 +159,6 @@ async def run_controller(
             EventSource.USER,
         )
     elif initial_state is None:
-        # init with the provided actions
         event_stream.add_event(initial_user_action, EventSource.USER)
 
     async def on_event(event: Event):
@@ -195,36 +181,38 @@ async def run_controller(
         AgentState.PAUSED,
         AgentState.STOPPED,
     ]:
-        await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
+        await asyncio.sleep(1)
 
-    # save session when we're about to close
     if config.enable_cli_session:
         end_state = controller.get_state()
         end_state.save_to_session(event_stream.sid, event_stream.file_store)
 
-    # close when done
     await controller.close()
     state = controller.get_state()
 
-    # save trajectories if applicable
     if config.trajectories_path is not None:
-        file_path = os.path.join(config.trajectories_path, sid + '.json')
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        histories = [
-            event_to_trajectory(event)
-            for event in state.history.get_events(include_delegates=True)
-        ]
-        with open(file_path, 'w') as f:
-            json.dump(histories, f)
+        save_trajectory(config.trajectories_path, sid, state)
 
     return state
+
+
+@state_operation("save_trajectory")
+def save_trajectory(trajectories_path: str, sid: str, state: State) -> None:
+    """Save trajectory to file"""
+    file_path = os.path.join(trajectories_path, sid + '.json')
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    histories = [
+        event_to_trajectory(event)
+        for event in state.history.get_events(include_delegates=True)
+    ]
+    with open(file_path, 'w') as f:
+        json.dump(histories, f)
 
 
 def generate_sid(config: AppConfig, session_name: str | None = None) -> str:
     """Generate a session id based on the session name and the jwt secret."""
     session_name = session_name or str(uuid.uuid4())
     jwt_secret = config.jwt_secret
-
     hash_str = hashlib.sha256(f'{session_name}{jwt_secret}'.encode('utf-8')).hexdigest()
     return f'{session_name}-{hash_str[:16]}'
 
@@ -232,7 +220,6 @@ def generate_sid(config: AppConfig, session_name: str | None = None) -> str:
 if __name__ == '__main__':
     args = parse_arguments()
 
-    # Determine the task
     if args.file:
         task_str = read_task_from_file(args.file)
     elif args.task:
@@ -241,27 +228,20 @@ if __name__ == '__main__':
         task_str = read_task_from_stdin()
     else:
         raise ValueError('No task provided. Please specify a task through -t, -f.')
+
     initial_user_action: MessageAction = MessageAction(content=task_str)
-    # Load the app config
-    # this will load config from config.toml in the current directory
-    # as well as from the environment variables
     config = load_app_config(config_file=args.config_file)
 
-    # Override default LLM configs ([llm] section in config.toml)
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
         if llm_config is None:
             raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
         config.set_llm_config(llm_config)
 
-    # Set default agent
     config.default_agent = args.agent_cls
-
-    # Set session name
     session_name = args.name
     sid = generate_sid(config, session_name)
 
-    # if max budget per task is not sent on the command line, use the config value
     if args.max_budget_per_task is not None:
         config.max_budget_per_task = args.max_budget_per_task
     if args.max_iterations is not None:
@@ -274,3 +254,4 @@ if __name__ == '__main__':
             sid=sid,
         )
     )
+

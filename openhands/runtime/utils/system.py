@@ -1,19 +1,33 @@
 import random
 import socket
 import time
+from functools import wraps
+from typing import Any, Callable, TypeVar
+
+T = TypeVar('T')
+
+def system_operation(operation_name: str) -> Callable[[Callable[..., T]], Callable[..., T]]:
+    """Decorator for system operations that handles common error patterns"""
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> T:
+            try:
+                return func(*args, **kwargs)
+            except OSError:
+                if operation_name == "find_port":
+                    time.sleep(0.1)  # Short delay to reduce chance of collisions
+                    return -1
+            except Exception as e:
+                print(f'Error during {operation_name}: {str(e)}')
+                return -1 if operation_name == "find_port" else None
+            return None
+        return wrapper
+    return decorator
 
 
-def find_available_tcp_port(min_port=30000, max_port=39999, max_attempts=10) -> int:
-    """Find an available TCP port in a specified range.
-
-    Args:
-        min_port (int): The lower bound of the port range (default: 30000)
-        max_port (int): The upper bound of the port range (default: 39999)
-        max_attempts (int): Maximum number of attempts to find an available port (default: 10)
-
-    Returns:
-        int: An available port number, or -1 if none found after max_attempts
-    """
+@system_operation("find_port")
+def find_available_tcp_port(min_port: int = 30000, max_port: int = 39999, max_attempts: int = 10) -> int:
+    """Find an available TCP port in a specified range."""
     rng = random.SystemRandom()
     ports = list(range(min_port, max_port + 1))
     rng.shuffle(ports)
@@ -23,19 +37,17 @@ def find_available_tcp_port(min_port=30000, max_port=39999, max_attempts=10) -> 
         try:
             sock.bind(('localhost', port))
             return port
-        except OSError:
-            time.sleep(0.1)  # Short delay to further reduce chance of collisions
-            continue
         finally:
             sock.close()
     return -1
 
 
+@system_operation("display_matrix")
 def display_number_matrix(number: int) -> str | None:
+    """Display a number as an ASCII art matrix."""
     if not 0 <= number <= 999:
         return None
 
-    # Define the matrix representation for each digit
     digits = {
         '0': ['###', '# #', '# #', '# #', '###'],
         '1': ['  #', '  #', '  #', '  #', '  #'],
@@ -49,9 +61,7 @@ def display_number_matrix(number: int) -> str | None:
         '9': ['###', '# #', '###', '  #', '###'],
     }
 
-    # alternatively, with leading zeros: num_str = f"{number:03d}"
-    num_str = str(number)  # Convert to string without padding
-
+    num_str = str(number)
     result = []
     for row in range(5):
         line = ' '.join(digits[digit][row] for digit in num_str)
@@ -59,3 +69,4 @@ def display_number_matrix(number: int) -> str | None:
 
     matrix_display = '\n'.join(result)
     return f'\n{matrix_display}\n'
+

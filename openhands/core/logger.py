@@ -4,9 +4,27 @@ import re
 import sys
 import traceback
 from datetime import datetime
-from typing import Literal, Mapping
+from functools import wraps
+from typing import Callable, Literal, Mapping, TypeVar
 
 from termcolor import colored
+
+T = TypeVar('T')
+
+def file_operation(operation_name: str) -> Callable[[Callable[..., T]], Callable[..., T]]:
+    """Decorator for file operations that handles common error patterns"""
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> T:
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                openhands_logger.error(
+                    f'Failed to {operation_name} file. Reason: {str(e)}'
+                )
+            return None
+        return wrapper
+    return decorator
 
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
 DEBUG = os.getenv('DEBUG', 'False').lower() in ['true', '1', 'yes']
@@ -142,7 +160,6 @@ class RollingLogger:
 
 class SensitiveDataFilter(logging.Filter):
     def filter(self, record):
-        # start with attributes
         sensitive_patterns = [
             'api_key',
             'aws_access_key_id',
@@ -154,17 +171,14 @@ class SensitiveDataFilter(logging.Filter):
             'modal_api_token_secret',
         ]
 
-        # add env var names
         env_vars = [attr.upper() for attr in sensitive_patterns]
         sensitive_patterns.extend(env_vars)
 
-        # and some special cases
         sensitive_patterns.append('JWT_SECRET')
         sensitive_patterns.append('LLM_API_KEY')
         sensitive_patterns.append('GITHUB_TOKEN')
         sensitive_patterns.append('SANDBOX_ENV_GITHUB_TOKEN')
 
-        # this also formats the message with % args
         msg = record.getMessage()
         record.args = ()
 
@@ -172,7 +186,6 @@ class SensitiveDataFilter(logging.Filter):
             pattern = rf"{attr}='?([\w-]+)'?"
             msg = re.sub(pattern, f"{attr}='******'", msg)
 
-        # passed with msg
         record.msg = msg
         return True
 
@@ -204,16 +217,7 @@ logging.basicConfig(level=logging.ERROR)
 
 
 def log_uncaught_exceptions(ex_cls, ex, tb):
-    """Logs uncaught exceptions along with the traceback.
-
-    Args:
-        ex_cls (type): The type of the exception.
-        ex (Exception): The exception instance.
-        tb (traceback): The traceback object.
-
-    Returns:
-        None
-    """
+    """Logs uncaught exceptions along with the traceback."""
     logging.error(''.join(traceback.format_tb(tb)))
     logging.error('{0}: {1}'.format(ex_cls, ex))
 
@@ -236,7 +240,6 @@ openhands_logger.propagate = False
 openhands_logger.debug('Logging initialized')
 
 LOG_DIR = os.path.join(
-    # parent dir of openhands/core (i.e., root of the repo)
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     'logs',
 )
@@ -244,7 +247,7 @@ LOG_DIR = os.path.join(
 if LOG_TO_FILE:
     openhands_logger.addHandler(
         get_file_handler(LOG_DIR, current_log_level)
-    )  # default log to project root
+    )
     openhands_logger.debug(f'Logging to file in: {LOG_DIR}')
 
 # Exclude LiteLLM from logging output
@@ -254,17 +257,9 @@ logging.getLogger('LiteLLM Proxy').disabled = True
 
 
 class LlmFileHandler(logging.FileHandler):
-    """# LLM prompt and response logging"""
+    """LLM prompt and response logging"""
 
     def __init__(self, filename, mode='a', encoding='utf-8', delay=False):
-        """Initializes an instance of LlmFileHandler.
-
-        Args:
-            filename (str): The name of the log file.
-            mode (str, optional): The file mode. Defaults to 'a'.
-            encoding (str, optional): The file encoding. Defaults to None.
-            delay (bool, optional): Whether to delay file opening. Defaults to False.
-        """
         self.filename = filename
         self.message_counter = 1
         if DEBUG:
@@ -273,26 +268,22 @@ class LlmFileHandler(logging.FileHandler):
             self.session = 'default'
         self.log_directory = os.path.join(LOG_DIR, 'llm', self.session)
         os.makedirs(self.log_directory, exist_ok=True)
+        
         if not DEBUG:
-            # Clear the log directory if not in debug mode
-            for file in os.listdir(self.log_directory):
-                file_path = os.path.join(self.log_directory, file)
-                try:
-                    os.unlink(file_path)
-                except Exception as e:
-                    openhands_logger.error(
-                        'Failed to delete %s. Reason: %s', file_path, e
-                    )
+            self._clear_log_directory()
+            
         filename = f'{self.filename}_{self.message_counter:03}.log'
         self.baseFilename = os.path.join(self.log_directory, filename)
         super().__init__(self.baseFilename, mode, encoding, delay)
 
-    def emit(self, record):
-        """Emits a log record.
+    @file_operation("delete log")
+    def _clear_log_directory(self):
+        """Clear the log directory if not in debug mode"""
+        for file in os.listdir(self.log_directory):
+            file_path = os.path.join(self.log_directory, file)
+            os.unlink(file_path)
 
-        Args:
-            record (logging.LogRecord): The log record to emit.
-        """
+    def emit(self, record):
         filename = f'{self.filename}_{self.message_counter:03}.log'
         self.baseFilename = os.path.join(self.log_directory, filename)
         self.stream = self._open()
@@ -303,8 +294,6 @@ class LlmFileHandler(logging.FileHandler):
 
 
 def _get_llm_file_handler(name: str, log_level: int):
-    # The 'delay' parameter, when set to True, postpones the opening of the log file
-    # until the first log message is emitted.
     llm_file_handler = LlmFileHandler(name, delay=True)
     llm_file_handler.setFormatter(llm_formatter)
     llm_file_handler.setLevel(log_level)
@@ -322,3 +311,4 @@ def _setup_llm_logger(name: str, log_level: int):
 
 llm_prompt_logger = _setup_llm_logger('prompt', current_log_level)
 llm_response_logger = _setup_llm_logger('response', current_log_level)
+

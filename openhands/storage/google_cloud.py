@@ -1,10 +1,22 @@
 import os
 from typing import List, Optional
-
+from functools import wraps
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
 
 from openhands.storage.files import FileStore
+
+
+def gcs_operation(func):
+    @wraps(func)
+    def wrapper(self, path: str, *args, **kwargs):
+        try:
+            return func(self, path, *args, **kwargs)
+        except NotFound as err:
+            raise FileNotFoundError(f'Failed to {func.__name__} GCS file at path {path}: {err}')
+        except Exception as e:
+            raise FileNotFoundError(f'Error during GCS {func.__name__}: {str(e)}')
+    return wrapper
 
 
 class GoogleCloudFileStore(FileStore):
@@ -19,19 +31,19 @@ class GoogleCloudFileStore(FileStore):
         self.storage_client = storage.Client()
         self.bucket = self.storage_client.bucket(bucket_name)
 
+    @gcs_operation
     def write(self, path: str, contents: str | bytes) -> None:
         blob = self.bucket.blob(path)
         with blob.open('w') as f:
             f.write(contents)
 
+    @gcs_operation
     def read(self, path: str) -> str:
         blob = self.bucket.blob(path)
-        try:
-            with blob.open('r') as f:
-                return f.read()
-        except NotFound as err:
-            raise FileNotFoundError(err)
+        with blob.open('r') as f:
+            return f.read()
 
+    @gcs_operation
     def list(self, path: str) -> List[str]:
         if not path or path == '/':
             path = ''
@@ -58,6 +70,8 @@ class GoogleCloudFileStore(FileStore):
                 blobs.add(name)
         return list(blobs)
 
+    @gcs_operation
     def delete(self, path: str) -> None:
         blob = self.bucket.blob(path)
         blob.delete()
+

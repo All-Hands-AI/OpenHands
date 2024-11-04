@@ -1,8 +1,38 @@
 import subprocess
+from functools import wraps
+from typing import Any, Callable, TypeVar
 
 from openhands.core.logger import openhands_logger as logger
 
+T = TypeVar('T')
 
+def runtime_operation(operation_name: str) -> Callable[[Callable[..., T]], Callable[..., T]]:
+    """Decorator for runtime operations that handles common error patterns"""
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> T | None:
+            try:
+                return func(*args, **kwargs)
+            except subprocess.CalledProcessError as e:
+                if operation_name == "init_user" and e.returncode == 1:
+                    logger.debug(f'User does not exist. Proceeding with user creation.')
+                    return None
+                logger.error(f'Error during {operation_name}: {e}')
+                raise
+            except Exception as e:
+                logger.error(f'Error during {operation_name}: {e}')
+                raise RuntimeError(f'Failed during {operation_name}: {str(e)}')
+        return wrapper
+    return decorator
+
+
+def run_command(command: str, check: bool = True) -> tuple[str, int]:
+    """Run a shell command and return its output and return code."""
+    output = subprocess.run(command, shell=True, capture_output=True)
+    return output.stdout.decode(), output.returncode
+
+
+@runtime_operation("init_user")
 def init_user_and_working_directory(
     username: str, user_id: int, initial_pwd: str
 ) -> int | None:
@@ -31,73 +61,55 @@ def init_user_and_working_directory(
     Returns:
         int | None: The user ID if it was updated, None otherwise.
     """
-
-    # First create the working directory, independent of the user
     logger.debug(f'Client working directory: {initial_pwd}')
-    command = f'umask 002; mkdir -p {initial_pwd}'
-    output = subprocess.run(command, shell=True, capture_output=True)
-    out_str = output.stdout.decode()
-
-    command = f'chown -R {username}:root {initial_pwd}'
-    output = subprocess.run(command, shell=True, capture_output=True)
-    out_str += output.stdout.decode()
-
-    command = f'chmod g+rw {initial_pwd}'
-    output = subprocess.run(command, shell=True, capture_output=True)
-    out_str += output.stdout.decode()
-    logger.debug(f'Created working directory. Output: [{out_str}]')
+    
+    # Create and configure working directory
+    commands = [
+        f'umask 002; mkdir -p {initial_pwd}',
+        f'chown -R {username}:root {initial_pwd}',
+        f'chmod g+rw {initial_pwd}'
+    ]
+    
+    for cmd in commands:
+        out, code = run_command(cmd)
+        if code != 0:
+            raise RuntimeError(f'Failed to configure working directory: {out}')
+        logger.debug(f'Directory command output: [{out}]')
 
     # Skip root since it is already created
     if username == 'root':
         return None
 
     # Check if the username already exists
-    existing_user_id = -1
-    try:
-        result = subprocess.run(
-            f'id -u {username}', shell=True, check=True, capture_output=True
-        )
-        existing_user_id = int(result.stdout.decode().strip())
-
-        # The user ID already exists, skip setup
+    result, code = run_command(f'id -u {username}', check=False)
+    if code == 0:
+        existing_user_id = int(result.strip())
         if existing_user_id == user_id:
             logger.debug(
                 f'User `{username}` already has the provided UID {user_id}. Skipping user setup.'
             )
-        else:
-            logger.warning(
-                f'User `{username}` already exists with UID {existing_user_id}. Skipping user setup.'
-            )
-            return existing_user_id
-        return None
-    except subprocess.CalledProcessError as e:
-        # Returncode 1 indicates, that the user does not exist yet
-        if e.returncode == 1:
-            logger.debug(
-                f'User `{username}` does not exist. Proceeding with user creation.'
-            )
-        else:
-            logger.error(f'Error checking user `{username}`, skipping setup:\n{e}\n')
-            raise
+            return None
+        logger.warning(
+            f'User `{username}` already exists with UID {existing_user_id}. Skipping user setup.'
+        )
+        return existing_user_id
 
-    # Add sudoer
+    # Add sudoer configuration
     sudoer_line = r"echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
-    output = subprocess.run(sudoer_line, shell=True, capture_output=True)
-    if output.returncode != 0:
-        raise RuntimeError(f'Failed to add sudoer: {output.stderr.decode()}')
-    logger.debug(f'Added sudoer successfully. Output: [{output.stdout.decode()}]')
+    out, code = run_command(sudoer_line)
+    if code != 0:
+        raise RuntimeError(f'Failed to add sudoer: {out}')
+    logger.debug(f'Added sudoer successfully. Output: [{out}]')
 
+    # Create user
     command = (
         f'useradd -rm -d /home/{username} -s /bin/bash '
         f'-g root -G sudo -u {user_id} {username}'
     )
-    output = subprocess.run(command, shell=True, capture_output=True)
-    if output.returncode == 0:
-        logger.debug(
-            f'Added user `{username}` successfully with UID {user_id}. Output: [{output.stdout.decode()}]'
-        )
-    else:
-        raise RuntimeError(
-            f'Failed to create user `{username}` with UID {user_id}. Output: [{output.stderr.decode()}]'
-        )
+    out, code = run_command(command)
+    if code != 0:
+        raise RuntimeError(f'Failed to create user: {out}')
+    logger.debug(f'Added user `{username}` successfully with UID {user_id}. Output: [{out}]')
+    
     return None
+

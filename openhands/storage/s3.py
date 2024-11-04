@@ -1,10 +1,18 @@
 import io
 import os
-
+from functools import wraps
 from minio import Minio
-
 from openhands.storage.files import FileStore
 
+def s3_operation(func):
+    @wraps(func)
+    def wrapper(self, path: str, *args, **kwargs):
+        try:
+            return func(self, path, *args, **kwargs)
+        except Exception as e:
+            operation = func.__name__
+            raise FileNotFoundError(f'Failed to {operation} S3 {"object" if operation != "list" else "objects"} at path {path}: {e}')
+    return wrapper
 
 class S3FileStore(FileStore):
     def __init__(self) -> None:
@@ -15,30 +23,21 @@ class S3FileStore(FileStore):
         self.bucket = os.getenv('AWS_S3_BUCKET')
         self.client = Minio(endpoint, access_key, secret_key, secure=secure)
 
+    @s3_operation
     def write(self, path: str, contents: str) -> None:
         as_bytes = contents.encode('utf-8')
         stream = io.BytesIO(as_bytes)
-        try:
-            self.client.put_object(self.bucket, path, stream, len(as_bytes))
-        except Exception as e:
-            raise FileNotFoundError(f'Failed to write to S3 at path {path}: {e}')
+        self.client.put_object(self.bucket, path, stream, len(as_bytes))
 
+    @s3_operation
     def read(self, path: str) -> str:
-        try:
-            return self.client.get_object(self.bucket, path).data.decode('utf-8')
-        except Exception as e:
-            raise FileNotFoundError(f'Failed to read from S3 at path {path}: {e}')
+        return self.client.get_object(self.bucket, path).data.decode('utf-8')
 
+    @s3_operation
     def list(self, path: str) -> list[str]:
-        try:
-            return [
-                obj.object_name for obj in self.client.list_objects(self.bucket, path)
-            ]
-        except Exception as e:
-            raise FileNotFoundError(f'Failed to list S3 objects at path {path}: {e}')
+        return [obj.object_name for obj in self.client.list_objects(self.bucket, path)]
 
+    @s3_operation
     def delete(self, path: str) -> None:
-        try:
-            self.client.remove_object(self.bucket, path)
-        except Exception as e:
-            raise FileNotFoundError(f'Failed to delete S3 object at path {path}: {e}')
+        self.client.remove_object(self.bucket, path)
+

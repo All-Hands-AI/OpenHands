@@ -1,6 +1,7 @@
 import asyncio
 import logging
-from typing import Type
+from functools import wraps
+from typing import Any, Callable, Type, TypeVar
 
 from termcolor import colored
 
@@ -34,28 +35,50 @@ from openhands.runtime.base import Runtime
 from openhands.storage import get_file_store
 
 
+T = TypeVar('T')
+
+
+def cli_operation(operation_name: str) -> Callable[[Callable[..., T]], Callable[..., T]]:
+    """Decorator for CLI operations that handles common error patterns"""
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> T | None:
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                logger.error(f'Error during {operation_name}: {e}')
+                print(f'An error occurred during {operation_name}. Please try again.')
+            return None
+        return wrapper
+    return decorator
+
+
+@cli_operation("display")
 def display_message(message: str):
     print(colored('🤖 ' + message + '\n', 'yellow'))
 
 
+@cli_operation("display")
 def display_command(command: str):
     print('❯ ' + colored(command + '\n', 'green'))
 
 
+@cli_operation("display")
 def display_command_output(output: str):
     lines = output.split('\n')
     for line in lines:
         if line.startswith('[Python Interpreter') or line.startswith('openhands@'):
-            # TODO: clean this up once we clean up terminal output
             continue
         print(colored(line, 'blue'))
     print('\n')
 
 
+@cli_operation("display")
 def display_file_edit(event: FileEditAction | FileEditObservation):
     print(colored(str(event), 'green'))
 
 
+@cli_operation("display")
 def display_event(event: Event):
     if isinstance(event, Action):
         if hasattr(event, 'thought'):
@@ -75,9 +98,7 @@ def display_event(event: Event):
 
 async def main():
     """Runs the agent in CLI mode"""
-
     parser = get_parser()
-    # Add the version argument
     parser.add_argument(
         '-v',
         '--version',
@@ -108,7 +129,7 @@ async def main():
     event_stream = EventStream(sid, file_store)
 
     runtime_cls = get_runtime_cls(config.runtime)
-    runtime: Runtime = runtime_cls(  # noqa: F841
+    runtime: Runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
         sid=sid,
@@ -127,6 +148,7 @@ async def main():
     if controller is not None:
         controller.agent_task = asyncio.create_task(controller.start_step_loop())
 
+    @cli_operation("prompt")
     async def prompt_for_next_task():
         next_message = input('How can I help? >> ')
         if next_message == 'exit':
@@ -150,13 +172,10 @@ async def main():
                 await prompt_for_next_task()
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
-
     await prompt_for_next_task()
 
-    while controller.state.agent_state not in [
-        AgentState.STOPPED,
-    ]:
-        await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
+    while controller.state.agent_state not in [AgentState.STOPPED]:
+        await asyncio.sleep(1)
 
     print('Exiting...')
     await controller.close()
@@ -168,3 +187,4 @@ if __name__ == '__main__':
         loop.run_until_complete(main())
     finally:
         pass
+

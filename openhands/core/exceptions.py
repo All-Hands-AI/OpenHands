@@ -1,96 +1,73 @@
-class AgentNoInstructionError(Exception):
-    def __init__(self, message='Instruction must be provided'):
-        super().__init__(message)
+class OpenHandsError(Exception):
+    """Base class for OpenHands exceptions."""
+    def __init__(self, message: str | None = None):
+        super().__init__(message or self.default_message)
+
+    @property
+    def default_message(self) -> str:
+        return 'An error occurred in OpenHands'
 
 
-class AgentEventTypeError(Exception):
-    def __init__(self, message='Event must be a dictionary'):
-        super().__init__(message)
+class AgentNoInstructionError(OpenHandsError):
+    default_message = 'Instruction must be provided'
 
 
-class AgentAlreadyRegisteredError(Exception):
-    def __init__(self, name=None):
-        if name is not None:
-            message = f"Agent class already registered under '{name}'"
-        else:
-            message = 'Agent class already registered'
-        super().__init__(message)
+class AgentEventTypeError(OpenHandsError):
+    default_message = 'Event must be a dictionary'
 
 
-class AgentNotRegisteredError(Exception):
-    def __init__(self, name=None):
-        if name is not None:
-            message = f"No agent class registered under '{name}'"
-        else:
-            message = 'No agent class registered'
-        super().__init__(message)
+class AgentAlreadyRegisteredError(OpenHandsError):
+    def __init__(self, name: str | None = None):
+        super().__init__(f"Agent class already registered under '{name}'" if name else 'Agent class already registered')
 
 
-class TaskInvalidStateError(Exception):
-    def __init__(self, state=None):
-        if state is not None:
-            message = f'Invalid state {state}'
-        else:
-            message = 'Invalid state'
-        super().__init__(message)
+class AgentNotRegisteredError(OpenHandsError):
+    def __init__(self, name: str | None = None):
+        super().__init__(f"No agent class registered under '{name}'" if name else 'No agent class registered')
 
 
-class BrowserInitException(Exception):
-    def __init__(self, message='Failed to initialize browser environment'):
-        super().__init__(message)
+class TaskInvalidStateError(OpenHandsError):
+    def __init__(self, state: str | None = None):
+        super().__init__(f'Invalid state {state}' if state else 'Invalid state')
 
 
-class BrowserUnavailableException(Exception):
-    def __init__(
-        self,
-        message='Browser environment is not available, please check if has been initialized',
-    ):
-        super().__init__(message)
+class BrowserInitException(OpenHandsError):
+    default_message = 'Failed to initialize browser environment'
 
 
-# This exception gets sent back to the LLM
-# It might be malformed JSON
-class LLMMalformedActionError(Exception):
-    def __init__(self, message='Malformed response'):
-        self.message = message
-        super().__init__(message)
+class BrowserUnavailableException(OpenHandsError):
+    default_message = 'Browser environment is not available, please check if has been initialized'
+
+
+class LLMMalformedActionError(OpenHandsError):
+    default_message = 'Malformed response'
 
     def __str__(self):
-        return self.message
+        return str(self.args[0]) if self.args else self.default_message
 
 
-# This exception gets sent back to the LLM
-# For some reason, the agent did not return an action
-class LLMNoActionError(Exception):
-    def __init__(self, message='Agent must return an action'):
-        super().__init__(message)
+class LLMNoActionError(OpenHandsError):
+    default_message = 'Agent must return an action'
 
 
-# This exception gets sent back to the LLM
-# The LLM output did not include an action, or the action was not the expected type
-class LLMResponseError(Exception):
-    def __init__(self, message='Failed to retrieve action from LLM response'):
-        super().__init__(message)
+class LLMResponseError(OpenHandsError):
+    default_message = 'Failed to retrieve action from LLM response'
 
 
-class UserCancelledError(Exception):
-    def __init__(self, message='User cancelled the request'):
-        super().__init__(message)
+class UserCancelledError(OpenHandsError):
+    default_message = 'User cancelled the request'
 
 
-class MicroAgentValidationError(Exception):
-    def __init__(self, message='Micro agent validation failed'):
-        super().__init__(message)
+class MicroAgentValidationError(OpenHandsError):
+    default_message = 'Micro agent validation failed'
 
 
-class OperationCancelled(Exception):
+class OperationCancelled(OpenHandsError):
     """Exception raised when an operation is cancelled (e.g. by a keyboard interrupt)."""
-
-    def __init__(self, message='Operation was cancelled'):
-        super().__init__(message)
+    default_message = 'Operation was cancelled'
 
 
-class CloudFlareBlockageError(Exception):
+class CloudFlareBlockageError(OpenHandsError):
     """Exception raised when a request is blocked by CloudFlare."""
+    default_message = 'Request blocked by CloudFlare'
 
-    pass

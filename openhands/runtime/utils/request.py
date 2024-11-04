@@ -1,4 +1,5 @@
-from typing import Any, Callable, Type
+from typing import Any, Callable, Type, TypeVar
+from functools import wraps
 
 import requests
 from requests.exceptions import (
@@ -18,35 +19,59 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
-def is_server_error(exception):
+T = TypeVar('T')
+
+def request_operation(operation_name: str) -> Callable[[Callable[..., T]], Callable[..., T]]:
+    """Decorator for request operations that handles common error patterns"""
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        @wraps(func)
+        def wrapper(*args, **kwargs) -> T:
+            try:
+                return func(*args, **kwargs)
+            except requests.HTTPError as e:
+                logger.error(f'HTTP error during {operation_name}: {e}')
+                raise
+            except Exception as e:
+                logger.error(f'Error during {operation_name}: {e}')
+                raise
+        return wrapper
+    return decorator
+
+
+@request_operation("check_server_error")
+def is_server_error(exception: Exception) -> bool:
     return (
         isinstance(exception, requests.HTTPError)
         and exception.response.status_code >= 500
     )
 
 
-def is_404_error(exception):
+@request_operation("check_404")
+def is_404_error(exception: Exception) -> bool:
     return (
         isinstance(exception, requests.HTTPError)
         and exception.response.status_code == 404
     )
 
 
-def is_429_error(exception):
+@request_operation("check_429")
+def is_429_error(exception: Exception) -> bool:
     return (
         isinstance(exception, requests.HTTPError)
         and exception.response.status_code == 429
     )
 
 
-def is_503_error(exception):
+@request_operation("check_503")
+def is_503_error(exception: Exception) -> bool:
     return (
         isinstance(exception, requests.HTTPError)
         and exception.response.status_code == 503
     )
 
 
-def is_502_error(exception):
+@request_operation("check_502")
+def is_502_error(exception: Exception) -> bool:
     return (
         isinstance(exception, requests.HTTPError)
         and exception.response.status_code == 502
@@ -60,6 +85,7 @@ DEFAULT_RETRY_EXCEPTIONS = [
 ]
 
 
+@request_operation("send_request")
 def send_request_with_retry(
     session: requests.Session,
     method: str,
@@ -73,10 +99,11 @@ def send_request_with_retry(
     retry_condition = retry_if_exception_type(
         tuple(exceptions_to_catch)
     ) | retry_if_exception(is_502_error)
+    
     if retry_fns is not None:
         for fn in retry_fns:
             retry_condition |= retry_if_exception(fn)
-    # wait a few more seconds to get the timeout error from client side
+    
     kwargs['timeout'] = timeout + 10
 
     @retry(
@@ -94,3 +121,4 @@ def send_request_with_retry(
         return response
 
     return _send_request_with_retry()
+
