@@ -55,7 +55,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
     posthog.opt_in_capturing();
   }
 
-  let isAuthed: boolean = false;
+  let isAuthed = false;
   let githubAuthUrl: string | null = null;
 
   try {
