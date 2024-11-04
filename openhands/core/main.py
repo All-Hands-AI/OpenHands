@@ -10,7 +10,6 @@ import openhands.agenthub  # noqa F401 (we import this to get the agents registe
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
-from openhands.core.loop import run_agent_until_done
 from openhands.core.config import (
     AppConfig,
     get_llm_config_arg,
@@ -18,6 +17,7 @@ from openhands.core.config import (
     parse_arguments,
 )
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import MessageAction
@@ -199,7 +199,7 @@ async def run_controller(
     try:
         await run_agent_until_done(controller, runtime, end_states)
     except Exception as e:
-        logger.error("Exception in main loop", e)
+        logger.error('Exception in main loop', e)
 
     # save session when we're about to close
     if config.enable_cli_session:

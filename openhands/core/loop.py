@@ -1,9 +1,10 @@
 import asyncio
 
 from openhands.controller import AgentController
-from openhands.runtime.base import Runtime
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
+from openhands.runtime.base import Runtime
+
 
 async def run_agent_until_done(
     controller: AgentController,
@@ -27,9 +28,13 @@ async def run_agent_until_done(
             logger.info(msg)
 
     if runtime.status_callback:
-        raise ValueError("Runtime status_callback was set, but run_agent_until_done will override it")
+        raise ValueError(
+            'Runtime status_callback was set, but run_agent_until_done will override it'
+        )
     if controller.status_callback:
-        raise ValueError("Controller status_callback was set, but run_agent_until_done will override it")
+        raise ValueError(
+            'Controller status_callback was set, but run_agent_until_done will override it'
+        )
 
     runtime.status_callback = status_callback
     controller.status_callback = status_callback
@@ -43,5 +48,3 @@ async def run_agent_until_done(
             await controller.agent_task
         except asyncio.CancelledError:
             pass
-
-

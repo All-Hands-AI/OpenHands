@@ -9,12 +9,12 @@ import openhands.agenthub  # noqa F401 (we import this to get the agents registe
 from openhands import __version__
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
-from openhands.core.loop import run_agent_until_done
 from openhands.core.config import (
     get_parser,
     load_app_config,
 )
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
@@ -156,7 +156,9 @@ async def main():
 
     asyncio.create_task(prompt_for_next_task())
 
-    await run_agent_until_done(controller, runtime, [AgentState.STOPPED, AgentState.ERROR])
+    await run_agent_until_done(
+        controller, runtime, [AgentState.STOPPED, AgentState.ERROR]
+    )
 
 
 if __name__ == '__main__':
