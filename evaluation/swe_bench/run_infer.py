@@ -20,6 +20,7 @@ from evaluation.utils.shared import (
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
+    update_llm_config_for_completions_logging,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -150,15 +151,11 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
-    if metadata.llm_config.log_completions:
-        metadata.llm_config.log_completions_folder = os.path.join(
-            metadata.eval_output_dir, 'llm_completions', instance['instance_id']
+    config.set_llm_config(
+        update_llm_config_for_completions_logging(
+            metadata.llm_config, metadata.eval_output_dir, instance['instance_id']
         )
-        logger.info(
-            f'Logging LLM completions for instance {instance["instance_id"]} to '
-            f'{metadata.llm_config.log_completions_folder}'
-        )
-    config.set_llm_config(metadata.llm_config)
+    )
     agent_config = AgentConfig(
         codeact_enable_jupyter=False,
         codeact_enable_browsing=RUN_WITH_BROWSING,
