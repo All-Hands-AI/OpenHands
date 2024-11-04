@@ -49,6 +49,7 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
 CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-3-5-sonnet-20241022',
     'claude-3-5-sonnet-20240620',
+    'claude-3-5-haiku-20241022',
     'claude-3-haiku-20240307',
     'claude-3-opus-20240229',
 ]
@@ -57,6 +58,7 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
 FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3-5-sonnet-20240620',
     'claude-3-5-sonnet-20241022',
+    'claude-3-5-haiku-20241022',
     'gpt-4o',
     'gpt-4o-mini',
 ]
@@ -369,7 +371,7 @@ class LLM(RetryMixin, DebugMixin):
             or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
             or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
         )
-        return model_name_supported and (
+        return model_name_supported or (
             self.model_info is not None
             and self.model_info.get('supports_function_calling', False)
         )
