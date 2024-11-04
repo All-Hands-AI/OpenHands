@@ -149,7 +149,10 @@ def process_instance(
             config=config.get_agent_config(metadata.agent_class),
         )
 
-        agent.step = MagicMock(return_value=CmdRunAction('ls -alh'))
+        def next_command(*args, **kwargs):
+            return CmdRunAction(command='ls -lah')
+
+        agent.step = MagicMock(side_effect=next_command)
 
         # Here's how you can run the agent (similar to the `main` function) and get the final task state
         state: State | None = asyncio.run(

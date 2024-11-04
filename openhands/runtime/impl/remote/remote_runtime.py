@@ -260,6 +260,7 @@ class RemoteRuntime(Runtime):
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
         reraise=True,
         retry=tenacity.retry_if_exception_type(RuntimeNotReadyError),
+        wait=tenacity.wait_fixed(2),
     )
     def _wait_until_alive(self):
         self.log('debug', f'Waiting for runtime to be alive at url: {self.runtime_url}')
@@ -276,7 +277,7 @@ class RemoteRuntime(Runtime):
             self._send_request(
                 'GET',
                 f'{self.runtime_url}/alive',
-            )  # will raise exception if we don't get 200 back
+            )  # will raise exception if we don't get 200 back. Since pod is "Ready", this should be fine.
             return
         if pod_status in ('Failed', 'Unknown', 'Not Found'):
             # clean up the runtime
@@ -342,13 +343,15 @@ class RemoteRuntime(Runtime):
                     f'{self.runtime_url}/execute_action',
                     json=request_body,
                     # wait a few more seconds to get the timeout error from client side
-                    timeout=action.timeout + 5
+                    timeout=action.timeout + 5,
                 )
                 output = response.json()
                 obs = observation_from_dict(output)
                 obs._cause = action.id  # type: ignore[attr-defined]
             except requests.Timeout:
-                raise RuntimeError(f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s')
+                raise RuntimeError(
+                    f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
+                )
             return obs
 
     def _send_request(self, method, url, **kwargs):
