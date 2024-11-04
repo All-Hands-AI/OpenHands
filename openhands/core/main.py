@@ -10,6 +10,7 @@ import openhands.agenthub  # noqa F401 (we import this to get the agents registe
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
+from openhands.core.loop import run_agent_until_done
 from openhands.core.config import (
     AppConfig,
     get_llm_config_arg,
@@ -122,7 +123,6 @@ async def run_controller(
 
     if runtime is None:
         runtime = create_runtime(config, sid=sid)
-        await runtime.connect()
 
     event_stream = runtime.event_stream
     # restore cli session if enabled
@@ -136,19 +136,6 @@ async def run_controller(
         except Exception as e:
             logger.debug(f'Error restoring state: {e}')
 
-    controller: AgentController | None = None
-
-    def status_callback(msg_type, msg_id, msg):
-        if msg_type == 'error':
-            print(f'Error: {msg}', 'red')
-            if controller:
-                controller.state.last_error = msg
-                asyncio.create_task(controller.set_agent_state_to(AgentState.ERROR))
-        else:
-            print(f'{msg}', 'green')
-
-    runtime.status_callback = status_callback  # FIXME: don't monkey patch this in
-
     # init controller with this initial state
     controller = AgentController(
         agent=agent,
@@ -158,11 +145,7 @@ async def run_controller(
         event_stream=event_stream,
         initial_state=initial_state,
         headless_mode=headless_mode,
-        status_callback=status_callback,
     )
-
-    if controller is not None:
-        controller.agent_task = asyncio.create_task(controller.start_step_loop())
 
     assert isinstance(
         initial_user_action, Action
@@ -190,7 +173,6 @@ async def run_controller(
         event_stream.add_event(initial_user_action, EventSource.USER)
 
     async def on_event(event: Event):
-        print(event)
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
                 if exit_on_message:
@@ -203,22 +185,27 @@ async def run_controller(
                 event_stream.add_event(action, EventSource.USER)
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
-    while controller.state.agent_state not in [
+
+    await runtime.connect()
+
+    end_states = [
         AgentState.FINISHED,
         AgentState.REJECTED,
         AgentState.ERROR,
         AgentState.PAUSED,
         AgentState.STOPPED,
-    ]:
-        await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
+    ]
+
+    try:
+        await run_agent_until_done(controller, runtime, end_states)
+    except Exception as e:
+        logger.error("Exception in main loop", e)
 
     # save session when we're about to close
     if config.enable_cli_session:
         end_state = controller.get_state()
         end_state.save_to_session(event_stream.sid, event_stream.file_store)
 
-    # close when done
-    await controller.close()
     state = controller.get_state()
 
     # save trajectories if applicable

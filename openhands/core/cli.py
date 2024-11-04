@@ -9,6 +9,7 @@ import openhands.agenthub  # noqa F401 (we import this to get the agents registe
 from openhands import __version__
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
+from openhands.core.loop import run_agent_until_done
 from openhands.core.config import (
     get_parser,
     load_app_config,
@@ -108,25 +109,13 @@ async def main():
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(sid, file_store)
 
-    controller: AgentController | None = None
-
-    def status_callback(msg_type, msg_id, msg):
-        if msg_type == 'error':
-            print(colored(f'Error: {msg}', 'red'))
-            if controller:
-                asyncio.create_task(controller.set_agent_state_to(AgentState.ERROR))
-        else:
-            print(colored(f'{msg}', 'green'))
-
     runtime_cls = get_runtime_cls(config.runtime)
     runtime: Runtime = runtime_cls(  # noqa: F841
         config=config,
         event_stream=event_stream,
         sid=sid,
         plugins=agent_cls.sandbox_plugins,
-        status_callback=status_callback,
     )
-    await runtime.connect()
 
     controller = AgentController(
         agent=agent,
@@ -134,7 +123,6 @@ async def main():
         max_budget_per_task=config.max_budget_per_task,
         agent_to_llm_config=config.get_agent_to_llm_config_map(),
         event_stream=event_stream,
-        status_callback=status_callback,
     )
 
     async def prompt_for_next_task():
@@ -164,24 +152,11 @@ async def main():
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
 
-    await prompt_for_next_task()
+    await runtime.connect()
 
-    controller.agent_task = asyncio.create_task(controller.start_step_loop())
-    while controller.state.agent_state not in [
-        AgentState.STOPPED,
-        AgentState.ERROR,
-    ]:
-        await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
+    asyncio.create_task(prompt_for_next_task())
 
-    if not controller.agent_task.done():
-        controller.agent_task.cancel()
-        try:
-            await controller.agent_task
-        except asyncio.CancelledError:
-            pass
-
-    print('Exiting...')
-    await controller.close()
+    await run_agent_until_done(controller, runtime, [AgentState.STOPPED, AgentState.ERROR])
 
 
 if __name__ == '__main__':

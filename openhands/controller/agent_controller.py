@@ -118,7 +118,7 @@ class AgentController:
 
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
-        self._status_callback = status_callback
+        self.status_callback = status_callback
 
     async def close(self):
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream."""
@@ -147,11 +147,11 @@ class AgentController:
         e: Exception,
     ):
         await self.set_agent_state_to(AgentState.ERROR)
-        if self._status_callback is not None:
+        if self.status_callback is not None:
             err_id = ''
             if isinstance(e, litellm.AuthenticationError):
                 err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
-            self._status_callback('error', err_id, str(e))
+            self.status_callback('error', err_id, str(e))
 
     async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
