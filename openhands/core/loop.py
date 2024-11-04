@@ -9,7 +9,7 @@ from openhands.runtime.base import Runtime
 async def run_agent_until_done(
     controller: AgentController,
     runtime: Runtime,
-    end_states: list[AgentState] = [AgentState.FINISHED, AgentState.ERROR],
+    end_states: list[AgentState],
 ):
     """
     run_agent_until_done takes a controller and a runtime, and will run
