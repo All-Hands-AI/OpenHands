@@ -411,3 +411,20 @@ def reset_logger_for_multiprocessing(
     )
     file_handler.setLevel(logging.INFO)
     logger.addHandler(file_handler)
+
+
+def update_llm_config_for_completions_logging(
+    llm_config: LLMConfig,
+    eval_output_dir: str,
+    instance_id: str,
+) -> LLMConfig:
+    """Update the LLM config for logging completions."""
+    if llm_config.log_completions:
+        llm_config.log_completions_folder = os.path.join(
+            eval_output_dir, 'llm_completions', instance_id
+        )
+        logger.info(
+            f'Logging LLM completions for instance {instance_id} to '
+            f'{llm_config.log_completions_folder}'
+        )
+    return llm_config
