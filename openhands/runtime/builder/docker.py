@@ -17,7 +17,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         version_info = self.docker_client.version()
         server_version = version_info.get('Version', '').replace('-', '.')
-        if tuple(map(int, server_version.split('.'))) < (18, 9):
+        if tuple(map(int, server_version.split('.')[:2])) < (18, 9):
             raise RuntimeError('Docker server version must be >= 18.09 to use BuildKit')
 
         self.rolling_logger = RollingLogger(max_lines=10)
