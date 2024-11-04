@@ -9,7 +9,6 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.utils import json
 from openhands.events.event import Event, EventSource
 from openhands.events.serialization.event import event_from_dict, event_to_dict
-from openhands.runtime.utils.shutdown_listener import should_continue
 from openhands.storage import FileStore
 from openhands.utils.async_utils import call_sync_from_async
 
