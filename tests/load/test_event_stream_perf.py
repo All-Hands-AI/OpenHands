@@ -106,3 +106,4 @@ class TestEventStreamPerformance:
         print(f"\nStorage metrics:")
         print(f"- Events file size: {file_size/1024:.2f} KB")
         print(f"- Average bytes per event: {file_size/NUM_EVENTS:.1f} bytes")
+
