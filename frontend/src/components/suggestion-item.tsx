@@ -7,11 +7,12 @@ interface SuggestionItemProps {
 
 export function SuggestionItem({ suggestion, onClick }: SuggestionItemProps) {
   return (
-    <li>
+    <li className="border border-neutral-600 rounded-xl hover:bg-neutral-700">
       <button
         type="button"
         data-testid="suggestion"
         onClick={() => onClick(suggestion.value)}
+        className="text-[16px] leading-6 -tracking-[0.01em] text-center w-full p-4 font-semibold"
       >
         {suggestion.label}
       </button>

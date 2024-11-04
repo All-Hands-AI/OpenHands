@@ -10,7 +10,7 @@ export function Suggestions({
   onSuggestionClick,
 }: SuggestionsProps) {
   return (
-    <ul data-testid="suggestions">
+    <ul data-testid="suggestions" className="flex flex-col gap-4">
       {suggestions.map((suggestion, index) => (
         <SuggestionItem
           key={index}
