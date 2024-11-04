@@ -71,6 +71,7 @@ class BrowserOutputObservation(Observation):
             self.axtree_object,
             extra_properties=self.extra_element_properties,
             with_clickable=True,
+            skip_generic=True,
             filter_visible_only=filter_visible_only,
         )
         self._axtree_str = cur_axtree_txt
