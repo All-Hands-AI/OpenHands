@@ -29,9 +29,10 @@ body:
       label: OpenHands Installation
       description: How are you running OpenHands?
       options:
-        - app.all-hands.dev
         - Docker command in README
         - Development workflow
+        - app.all-hands.dev
+        - Other
       default: 0
 
   - type: input
