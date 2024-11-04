@@ -1,6 +1,6 @@
-import sys
 import asyncio
 import logging
+import sys
 from typing import Type
 
 from termcolor import colored
@@ -73,6 +73,7 @@ def display_event(event: Event):
     if isinstance(event, FileEditObservation):
         display_file_edit(event)
 
+
 async def main():
     """Runs the agent in CLI mode"""
 
@@ -108,6 +109,7 @@ async def main():
     event_stream = EventStream(sid, file_store)
 
     controller: AgentController | None = None
+
     def status_callback(msg_type, msg_id, msg):
         if msg_type == 'error':
             print(colored(f'Error: {msg}', 'red'))
@@ -115,7 +117,6 @@ async def main():
                 asyncio.create_task(controller.set_agent_state_to(AgentState.ERROR))
         else:
             print(colored(f'{msg}', 'green'))
-
 
     runtime_cls = get_runtime_cls(config.runtime)
     runtime: Runtime = runtime_cls(  # noqa: F841
@@ -127,7 +128,6 @@ async def main():
     )
     await runtime.connect()
 
-
     controller = AgentController(
         agent=agent,
         max_iterations=config.max_iterations,
@@ -136,7 +136,6 @@ async def main():
         event_stream=event_stream,
         status_callback=status_callback,
     )
-
 
     async def prompt_for_next_task():
         # Run input() in a thread pool to avoid blocking the event loop
@@ -191,12 +190,12 @@ if __name__ == '__main__':
     try:
         loop.run_until_complete(main())
     except KeyboardInterrupt:
-        print("Received keyboard interrupt, shutting down...")
+        print('Received keyboard interrupt, shutting down...')
     except ConnectionRefusedError as e:
-        print(f"Connection refused: {e}")
+        print(f'Connection refused: {e}')
         sys.exit(1)
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f'An error occurred: {e}')
         sys.exit(1)
     finally:
         try:
@@ -208,5 +207,5 @@ if __name__ == '__main__':
             loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
             loop.close()
         except Exception as e:
-            print(f"Error during cleanup: {e}")
+            print(f'Error during cleanup: {e}')
             sys.exit(1)

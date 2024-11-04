@@ -137,6 +137,7 @@ async def run_controller(
             logger.debug(f'Error restoring state: {e}')
 
     controller: AgentController | None = None
+
     def status_callback(msg_type, msg_id, msg):
         if msg_type == 'error':
             print(f'Error: {msg}', 'red')
@@ -146,7 +147,7 @@ async def run_controller(
         else:
             print(f'{msg}', 'green')
 
-    runtime.status_callback = status_callback # FIXME: don't monkey patch this in
+    runtime.status_callback = status_callback  # FIXME: don't monkey patch this in
 
     # init controller with this initial state
     controller = AgentController(
