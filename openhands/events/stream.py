@@ -160,9 +160,7 @@ class EventStream:
         tasks = []
         for key in sorted(self._subscribers.keys()):
             callbacks = self._subscribers[key]
-            # callback = stack[-1]
             for callback_id in callbacks:
-                logger.debug(f'emitting on {key} {callback_id}')
                 callback = callbacks[callback_id]
                 tasks.append(asyncio.create_task(callback(event)))
         if tasks:
