@@ -348,6 +348,7 @@ class CodeActAgent(Agent):
         }
         if self.function_calling_active:
             params['tools'] = self.tools
+            params['parallel_tool_calls'] = False
         else:
             params['stop'] = [
                 '</execute_ipython>',
