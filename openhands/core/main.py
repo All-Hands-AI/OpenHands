@@ -136,6 +136,18 @@ async def run_controller(
         except Exception as e:
             logger.debug(f'Error restoring state: {e}')
 
+    controller: AgentController | None = None
+    def status_callback(msg_type, msg_id, msg):
+        if msg_type == 'error':
+            print(f'Error: {msg}', 'red')
+            if controller:
+                controller.state.last_error = msg
+                asyncio.create_task(controller.set_agent_state_to(AgentState.ERROR))
+        else:
+            print(f'{msg}', 'green')
+
+    runtime.status_callback = status_callback # FIXME: don't monkey patch this in
+
     # init controller with this initial state
     controller = AgentController(
         agent=agent,
@@ -145,6 +157,7 @@ async def run_controller(
         event_stream=event_stream,
         initial_state=initial_state,
         headless_mode=headless_mode,
+        status_callback=status_callback,
     )
 
     if controller is not None:
@@ -176,6 +189,7 @@ async def run_controller(
         event_stream.add_event(initial_user_action, EventSource.USER)
 
     async def on_event(event: Event):
+        print(event)
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
                 if exit_on_message:

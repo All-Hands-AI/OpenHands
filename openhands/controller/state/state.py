@@ -97,6 +97,7 @@ class State:
     # NOTE: This will never be used by the controller, but it can be used by different
     # evaluation tasks to store extra data needed to track the progress/state of the task.
     extra_data: dict[str, Any] = field(default_factory=dict)
+    last_error: str = ''
 
     def save_to_session(self, sid: str, file_store: FileStore):
         pickled = pickle.dumps(self)
@@ -148,17 +149,9 @@ class State:
         if not hasattr(self, 'history'):
             self.history = ShortTermHistory()
 
-        # restore the relevant data in history from the state
         self.history.start_id = self.start_id
         self.history.end_id = self.end_id
 
-        # remove the restored data from the state if any
-
-    def get_last_error(self) -> str:
-        for event in self.history.get_events(reverse=True):
-            if isinstance(event, ErrorObservation):
-                return event.content
-        return ''
 
     def get_current_user_intent(self):
         """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""

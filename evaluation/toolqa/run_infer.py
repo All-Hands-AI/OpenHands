@@ -149,7 +149,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
         metadata=metadata,
         history=histories,
         metrics=metrics,
-        error=state.get_last_error() if state and state.get_last_error() else None,
+        error=state.last_error if state and state.last_error else None,
     )
     return output
 

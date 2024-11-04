@@ -302,7 +302,7 @@ Ok now its time to start solving the question. Good luck!
         metadata=metadata,
         history=state.history.compatibility_for_eval_history_pairs(),
         metrics=metrics,
-        error=state.get_last_error() if state and state.get_last_error() else None,
+        error=state.last_error if state and state.last_error else None,
         test_result={
             'result': test_result,
             'found_answers': found_answers,

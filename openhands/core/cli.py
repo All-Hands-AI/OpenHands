@@ -111,7 +111,8 @@ async def main():
     def status_callback(msg_type, msg_id, msg):
         if msg_type == 'error':
             print(colored(f'Error: {msg}', 'red'))
-            asyncio.create_task(controller.set_agent_state_to(AgentState.ERROR))
+            if controller:
+                asyncio.create_task(controller.set_agent_state_to(AgentState.ERROR))
         else:
             print(colored(f'{msg}', 'green'))
 
