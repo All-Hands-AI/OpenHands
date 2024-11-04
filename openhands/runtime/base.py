@@ -136,6 +136,8 @@ class Runtime(FileEditRuntimeMixin):
             )
             observation._cause = event.id  # type: ignore[attr-defined]
             observation.tool_call_metadata = event.tool_call_metadata
+
+            # this might be unnecessary, since source should be set by the event stream when we're here
             source = event.source if event.source else EventSource.AGENT
             await self.event_stream.async_add_event(observation, source)  # type: ignore[arg-type]
 

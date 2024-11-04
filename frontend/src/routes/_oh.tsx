@@ -11,6 +11,7 @@ import {
   ClientLoaderFunctionArgs,
 } from "@remix-run/react";
 import posthog from "posthog-js";
+import { useDispatch } from "react-redux";
 import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
 import CogTooth from "#/assets/cog-tooth";
@@ -30,6 +31,8 @@ import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { WaitlistModal } from "#/components/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/analytics-consent-form-modal";
+import { setCurrentAgentState } from "#/state/agentSlice";
+import AgentState from "#/types/AgentState";
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   try {
@@ -56,7 +59,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   let githubAuthUrl: string | null = null;
 
   try {
-    isAuthed = await userIsAuthenticated(ghToken);
+    isAuthed = await userIsAuthenticated();
     if (!isAuthed && window.__GITHUB_CLIENT_ID__) {
       const requestUrl = new URL(request.url);
       githubAuthUrl = generateGitHubAuthUrl(
@@ -147,6 +150,7 @@ export default function MainApp() {
   } = useLoaderData<typeof clientLoader>();
   const logoutFetcher = useFetcher({ key: "logout" });
   const endSessionFetcher = useFetcher({ key: "end-session" });
+  const dispatch = useDispatch();
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
@@ -216,6 +220,7 @@ export default function MainApp() {
 
   const handleEndSession = () => {
     setStartNewProjectModalIsOpen(false);
+    dispatch(setCurrentAgentState(AgentState.LOADING));
     // call new session action and redirect to '/'
     endSessionFetcher.submit(new FormData(), {
       method: "POST",

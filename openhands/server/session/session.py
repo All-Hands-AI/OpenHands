@@ -25,8 +25,6 @@ from openhands.runtime.utils.shutdown_listener import should_continue
 from openhands.server.session.agent_session import AgentSession
 from openhands.storage.files import FileStore
 
-DEL_DELT_SEC = 60 * 60 * 5
-
 
 class Session:
     sid: str
@@ -73,10 +71,11 @@ class Session:
 
     async def _initialize_agent(self, data: dict):
         self.agent_session.event_stream.add_event(
-            ChangeAgentStateAction(AgentState.LOADING), EventSource.USER
+            ChangeAgentStateAction(AgentState.LOADING), EventSource.ENVIRONMENT
         )
         self.agent_session.event_stream.add_event(
-            AgentStateChangedObservation('', AgentState.LOADING), EventSource.AGENT
+            AgentStateChangedObservation('', AgentState.LOADING),
+            EventSource.ENVIRONMENT,
         )
         # Extract the agent-relevant arguments from the request
         args = {key: value for key, value in data.get('args', {}).items()}
@@ -138,12 +137,19 @@ class Session:
             return
         if event.source == EventSource.AGENT:
             await self.send(event_to_dict(event))
-        elif event.source == EventSource.USER and isinstance(
-            event, CmdOutputObservation
+        # NOTE: ipython observations are not sent here currently
+        elif event.source == EventSource.ENVIRONMENT and isinstance(
+            event, (CmdOutputObservation, AgentStateChangedObservation)
         ):
-            await self.send(event_to_dict(event))
+            # feedback from the environment to agent actions is understood as agent events by the UI
+            event_dict = event_to_dict(event)
+            event_dict['source'] = EventSource.AGENT
+            await self.send(event_dict)
         elif isinstance(event, ErrorObservation):
-            await self.send(event_to_dict(event))
+            # send error events as agent events to the UI
+            event_dict = event_to_dict(event)
+            event_dict['source'] = EventSource.AGENT
+            await self.send(event_dict)
 
     async def dispatch(self, data: dict):
         action = data.get('action', '')
@@ -192,25 +198,9 @@ class Session:
         """Sends an error message to the client."""
         return await self.send({'error': True, 'message': message})
 
-    async def send_message(self, message: str) -> bool:
-        """Sends a message to the client."""
-        return await self.send({'message': message})
-
     async def send_status_message(self, message: str) -> bool:
         """Sends a status message to the client."""
         return await self.send({'status': message})
-
-    def update_connection(self, ws: WebSocket):
-        self.websocket = ws
-        self.is_alive = True
-        self.last_active_ts = int(time.time())
-
-    def load_from_data(self, data: dict) -> bool:
-        self.last_active_ts = data.get('last_active_ts', 0)
-        if self.last_active_ts < int(time.time()) - DEL_DELT_SEC:
-            return False
-        self.is_alive = data.get('is_alive', False)
-        return True
 
     def queue_status_message(self, message: str):
         """Queues a status message to be sent asynchronously."""
