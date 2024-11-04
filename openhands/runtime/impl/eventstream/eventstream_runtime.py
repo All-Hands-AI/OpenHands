@@ -240,7 +240,7 @@ class EventStreamRuntime(Runtime):
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(5) | stop_if_should_exit(),
-        wait=tenacity.wait_exponential(multiplier=1, min=4, max=60),
+        wait=tenacity.wait_fixed(5),
     )
     def _init_container(self):
         try:

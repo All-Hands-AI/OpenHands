@@ -35,7 +35,7 @@ class SessionManager:
 
     def add_or_restart_session(self, sid: str, ws_conn: WebSocket) -> Session:
         if sid in self._sessions:
-            asyncio.create_task(self._sessions[sid].close())
+            self._sessions[sid].close()
         self._sessions[sid] = Session(
             sid=sid, file_store=self.file_store, ws=ws_conn, config=self.config
         )
@@ -47,7 +47,7 @@ class SessionManager:
         return self._sessions.get(sid)
 
     async def attach_to_conversation(self, sid: str) -> Conversation | None:
-        if not session_exists(sid, self.file_store):
+        if not await session_exists(sid, self.file_store):
             return None
         c = Conversation(sid, file_store=self.file_store, config=self.config)
         await c.connect()
@@ -87,7 +87,7 @@ class SessionManager:
             for sid in session_ids_to_remove:
                 to_del_session: Session | None = self._sessions.pop(sid, None)
                 if to_del_session is not None:
-                    await to_del_session.close()
+                    to_del_session.close()
                     logger.debug(
                         f'Session {sid} and related resource have been removed due to inactivity.'
                     )

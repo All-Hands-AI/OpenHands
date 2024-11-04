@@ -509,6 +509,16 @@ class AgentController:
             # update iteration that shall be shared across agents
             self.state.iteration = self.delegate.state.iteration
 
+            # emit AgentDelegateObservation when the delegate terminates due to error
+            delegate_outputs = (
+                self.delegate.state.outputs if self.delegate.state else {}
+            )
+            content = (
+                f'{self.delegate.agent.name} encountered an error during execution.'
+            )
+            obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
+            self.event_stream.add_event(obs, EventSource.AGENT)
+
             # close the delegate upon error
             await self.delegate.close()
             self.delegate = None
@@ -534,9 +544,7 @@ class AgentController:
             content = (
                 f'{self.delegate.agent.name} finishes task with {formatted_output}'
             )
-            obs: Observation = AgentDelegateObservation(
-                outputs=outputs, content=content
-            )
+            obs = AgentDelegateObservation(outputs=outputs, content=content)
 
             # clean up delegate status
             self.delegate = None

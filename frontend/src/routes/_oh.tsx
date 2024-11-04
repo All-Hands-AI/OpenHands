@@ -10,6 +10,7 @@ import {
   Outlet,
   ClientLoaderFunctionArgs,
 } from "@remix-run/react";
+import posthog from "posthog-js";
 import { useDispatch } from "react-redux";
 import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
@@ -29,6 +30,7 @@ import DocsIcon from "#/assets/docs.svg?react";
 import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { WaitlistModal } from "#/components/waitlist-modal";
+import { AnalyticsConsentFormModal } from "#/components/analytics-consent-form-modal";
 import { setCurrentAgentState } from "#/state/agentSlice";
 import AgentState from "#/types/AgentState";
 
@@ -44,8 +46,16 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
 
   let token = localStorage.getItem("token");
   const ghToken = localStorage.getItem("ghToken");
+  const analyticsConsent = localStorage.getItem("analytics-consent");
+  const userConsents = analyticsConsent === "true";
 
-  let isAuthed: boolean = false;
+  if (!userConsents) {
+    posthog.opt_out_capturing();
+  } else {
+    posthog.opt_in_capturing();
+  }
+
+  let isAuthed = false;
   let githubAuthUrl: string | null = null;
 
   try {
@@ -82,6 +92,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
     user,
     settingsIsUpdated,
     settings,
+    analyticsConsent,
   });
 };
 
@@ -135,6 +146,7 @@ export default function MainApp() {
     githubAuthUrl,
     settingsIsUpdated,
     settings,
+    analyticsConsent,
   } = useLoaderData<typeof clientLoader>();
   const logoutFetcher = useFetcher({ key: "logout" });
   const endSessionFetcher = useFetcher({ key: "end-session" });
@@ -309,6 +321,7 @@ export default function MainApp() {
             onClose={handleAccountSettingsModalClose}
             selectedLanguage={settings.LANGUAGE}
             gitHubError={isGitHubErrorReponse(user)}
+            analyticsConsent={analyticsConsent}
           />
         </ModalBackdrop>
       )}
@@ -333,6 +346,7 @@ export default function MainApp() {
       {!isAuthed && (
         <WaitlistModal ghToken={ghToken} githubAuthUrl={githubAuthUrl} />
       )}
+      {!analyticsConsent && <AnalyticsConsentFormModal />}
     </div>
   );
 }
