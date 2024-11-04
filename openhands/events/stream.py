@@ -152,12 +152,16 @@ class EventStream:
 
     def add_event(self, event: Event, source: EventSource):
         try:
-            asyncio.get_running_loop().create_task(self.async_add_event(event, source))
+            asyncio.get_running_loop().create_task(self._async_add_event(event, source))
         except RuntimeError:
             # No event loop running...
-            asyncio.run(self.async_add_event(event, source))
+            asyncio.run(self._async_add_event(event, source))
 
-    async def async_add_event(self, event: Event, source: EventSource):
+    async def _async_add_event(self, event: Event, source: EventSource):
+        if hasattr(event, '_id') and event.id is not None:
+            raise ValueError(
+                'Event already has an ID. It was probably added back to the EventStream from inside a handler, trigging a loop.'
+            )
         with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1

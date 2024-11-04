@@ -1,7 +1,7 @@
 import asyncio
 import copy
 import traceback
-from typing import Type
+from typing import Callable, Type
 
 import litellm
 
@@ -35,9 +35,7 @@ from openhands.events.event import Event
 from openhands.events.observation import (
     AgentDelegateObservation,
     AgentStateChangedObservation,
-    CmdOutputObservation,
     ErrorObservation,
-    FatalErrorObservation,
     Observation,
 )
 from openhands.events.serialization.event import truncate_content
@@ -77,6 +75,7 @@ class AgentController:
         initial_state: State | None = None,
         is_delegate: bool = False,
         headless_mode: bool = True,
+        status_callback: Callable | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -119,6 +118,7 @@ class AgentController:
 
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
+        self.status_callback = status_callback
 
     async def close(self):
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream."""
@@ -132,7 +132,7 @@ class AgentController:
             message (str): The message to log.
         """
         message = f'[Agent Controller {self.id}] {message}'
-        getattr(logger, level)(message, extra=extra)
+        getattr(logger, level)(message, extra=extra, stacklevel=2)
 
     def update_state_before_step(self):
         self.state.iteration += 1
@@ -142,22 +142,16 @@ class AgentController:
         # update metrics especially for cost. Use deepcopy to avoid it being modified by agent.reset()
         self.state.local_metrics = copy.deepcopy(self.agent.llm.metrics)
 
-    async def report_error(self, message: str, exception: Exception | None = None):
-        """Reports an error to the user and sends the exception to the LLM next step, in the hope it can self-correct.
-
-        This method should be called for a particular type of errors, which have:
-        - a user-friendly message, which will be shown in the chat box. This should not be a raw exception message.
-        - an ErrorObservation that can be sent to the LLM by the user role, with the exception message, so it can self-correct next time.
-        """
-        self.state.last_error = message
-        if exception:
-            self.state.last_error += f': {exception}'
-        detail = str(exception) if exception is not None else ''
-        if exception is not None and isinstance(exception, litellm.AuthenticationError):
-            detail = 'Please check your credentials. Is your API key correct?'
-        self.event_stream.add_event(
-            ErrorObservation(f'{message}:{detail}'), EventSource.ENVIRONMENT
-        )
+    async def _react_to_exception(
+        self,
+        e: Exception,
+    ):
+        await self.set_agent_state_to(AgentState.ERROR)
+        if self.status_callback is not None:
+            err_id = ''
+            if isinstance(e, litellm.AuthenticationError):
+                err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
+            self.status_callback('error', err_id, str(e))
 
     async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
@@ -172,12 +166,7 @@ class AgentController:
             except Exception as e:
                 traceback.print_exc()
                 self.log('error', f'Error while running the agent: {e}')
-                self.log('error', traceback.format_exc())
-                await self.report_error(
-                    'There was an unexpected error while running the agent', exception=e
-                )
-                await self.set_agent_state_to(AgentState.ERROR)
-                break
+                await self._react_to_exception(e)
 
             await asyncio.sleep(0.1)
 
@@ -227,15 +216,6 @@ class AgentController:
         Args:
             observation (observation): The observation to handle.
         """
-        if (
-            self._pending_action
-            and hasattr(self._pending_action, 'confirmation_state')
-            and self._pending_action.confirmation_state
-            == ActionConfirmationStatus.AWAITING_CONFIRMATION
-        ):
-            return
-
-        # Make sure we print the observation in the same way as the LLM sees it
         observation_to_print = copy.deepcopy(observation)
         if len(observation_to_print.content) > self.agent.llm.config.max_message_chars:
             observation_to_print.content = truncate_content(
@@ -243,7 +223,6 @@ class AgentController:
             )
         self.log('debug', str(observation_to_print), extra={'msg_type': 'OBSERVATION'})
 
-        # Merge with the metrics from the LLM - it will to synced to the controller's local metrics in update_state_after_step()
         if observation.llm_metrics is not None:
             self.agent.llm.metrics.merge(observation.llm_metrics)
 
@@ -255,19 +234,11 @@ class AgentController:
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
             return
 
-        if isinstance(observation, CmdOutputObservation):
-            return
-        elif isinstance(observation, AgentDelegateObservation):
+        if isinstance(observation, AgentDelegateObservation):
             self.state.history.on_event(observation)
         elif isinstance(observation, ErrorObservation):
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
-        elif isinstance(observation, FatalErrorObservation):
-            self.state.last_error = (
-                f'There was a fatal error during agent execution: {str(observation)}'
-            )
-            self.state.metrics.merge(self.state.local_metrics)
-            await self.set_agent_state_to(AgentState.ERROR)
 
     async def _handle_message_action(self, action: MessageAction):
         """Handles message actions from the event stream.
@@ -420,13 +391,8 @@ class AgentController:
             await asyncio.sleep(1)
             return
 
-        # check if agent got stuck before taking any action
         if self._is_stuck():
-            # This need to go BEFORE report_error to sync metrics
-            self.event_stream.add_event(
-                FatalErrorObservation('Agent got stuck in a loop'),
-                EventSource.ENVIRONMENT,
-            )
+            await self._react_to_exception(RuntimeError('Agent got stuck in a loop'))
             return
 
         if self.delegate is not None:
@@ -465,15 +431,12 @@ class AgentController:
             if action is None:
                 raise LLMNoActionError('No action was returned')
         except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
-            # report to the user
-            # and send the underlying exception to the LLM for self-correction
-            await self.report_error(str(e))
-            return
-        # FIXME: more graceful handling of litellm.exceptions.ContextWindowExceededError
-        # e.g. try to condense the memory and try again
-        except litellm.exceptions.ContextWindowExceededError as e:
-            self.state.last_error = str(e)
-            await self.set_agent_state_to(AgentState.ERROR)
+            self.event_stream.add_event(
+                ErrorObservation(
+                    content=str(e),
+                ),
+                EventSource.AGENT,
+            )
             return
 
         if action.runnable:
@@ -495,6 +458,7 @@ class AgentController:
             self.event_stream.add_event(action, EventSource.AGENT)
 
         await self.update_state_after_step()
+
         self.log('debug', str(action), extra={'msg_type': 'ACTION'})
 
     async def _delegate_step(self):
@@ -524,7 +488,10 @@ class AgentController:
             self.delegate = None
             self.delegateAction = None
 
-            await self.report_error('Delegator agent encountered an error')
+            self.event_stream.add_event(
+                ErrorObservation('Delegate agent encountered an error'),
+                EventSource.AGENT,
+            )
         elif delegate_state in (AgentState.FINISHED, AgentState.REJECTED):
             self.log('debug', 'Delegate agent has finished execution')
             # retrieve delegate result
@@ -571,21 +538,18 @@ class AgentController:
         else:
             self.state.traffic_control_state = TrafficControlState.THROTTLING
             if self.headless_mode:
-                # This need to go BEFORE report_error to sync metrics
-                await self.set_agent_state_to(AgentState.ERROR)
-                # set to ERROR state if running in headless mode
-                # since user cannot resume on the web interface
-                await self.report_error(
-                    f'Agent reached maximum {limit_type} in headless mode, task stopped. '
+                e = RuntimeError(
+                    f'Agent reached maximum {limit_type} in headless mode. '
                     f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}'
                 )
+                await self._react_to_exception(e)
             else:
-                await self.set_agent_state_to(AgentState.PAUSED)
-                await self.report_error(
-                    f'Agent reached maximum {limit_type}, task paused. '
+                e = RuntimeError(
+                    f'Agent reached maximum {limit_type}. '
                     f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}. '
-                    f'{TRAFFIC_CONTROL_REMINDER}'
                 )
+                # FIXME: this isn't really an exception--we should have a different path
+                await self._react_to_exception(e)
             stop_step = True
         return stop_step
 

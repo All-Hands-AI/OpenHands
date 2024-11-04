@@ -11,6 +11,7 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.action.agent import AgentFinishAction
+from openhands.events.observation import ErrorObservation
 from openhands.llm.metrics import Metrics
 from openhands.memory.history import ShortTermHistory
 from openhands.storage.files import FileStore
@@ -80,7 +81,6 @@ class State:
     history: ShortTermHistory = field(default_factory=ShortTermHistory)
     inputs: dict = field(default_factory=dict)
     outputs: dict = field(default_factory=dict)
-    last_error: str | None = None
     agent_state: AgentState = AgentState.LOADING
     resume_state: AgentState | None = None
     traffic_control_state: TrafficControlState = TrafficControlState.NORMAL
@@ -97,6 +97,7 @@ class State:
     # NOTE: This will never be used by the controller, but it can be used by different
     # evaluation tasks to store extra data needed to track the progress/state of the task.
     extra_data: dict[str, Any] = field(default_factory=dict)
+    last_error: str = ''
 
     def save_to_session(self, sid: str, file_store: FileStore):
         pickled = pickle.dumps(self)
@@ -124,9 +125,6 @@ class State:
         else:
             state.resume_state = None
 
-        # don't carry last_error anymore after restore
-        state.last_error = None
-
         # first state after restore
         state.agent_state = AgentState.LOADING
         return state
@@ -151,11 +149,9 @@ class State:
         if not hasattr(self, 'history'):
             self.history = ShortTermHistory()
 
-        # restore the relevant data in history from the state
         self.history.start_id = self.start_id
         self.history.end_id = self.end_id
 
-        # remove the restored data from the state if any
 
     def get_current_user_intent(self):
         """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""

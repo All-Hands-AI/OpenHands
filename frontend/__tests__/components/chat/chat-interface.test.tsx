@@ -128,14 +128,14 @@ describe.skip("ChatInterface", () => {
         timestamp: new Date().toISOString(),
       },
       {
-        error: "Woops!",
+        error: true,
+        id: "",
         message: "Something went wrong",
       },
     ];
     renderChatInterface(messages);
 
     const error = screen.getByTestId("error-message");
-    expect(within(error).getByText("Woops!")).toBeInTheDocument();
     expect(within(error).getByText("Something went wrong")).toBeInTheDocument();
   });
 
