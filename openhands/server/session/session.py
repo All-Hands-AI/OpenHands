@@ -42,7 +42,7 @@ class Session:
         self.last_active_ts = int(time.time())
         self.agent_session = AgentSession(sid, file_store)
         self.agent_session.event_stream.subscribe(
-            EventStreamSubscriber.SERVER, self.on_event
+            EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
         self.config = config
         self.loop = asyncio.get_event_loop()

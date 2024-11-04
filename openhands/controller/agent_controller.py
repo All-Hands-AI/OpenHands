@@ -102,7 +102,7 @@ class AgentController:
         # subscribe to the event stream
         self.event_stream = event_stream
         self.event_stream.subscribe(
-            EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, append=is_delegate
+            EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, self.id
         )
 
         # state from the previous session, state from a parent agent, or a fresh state
@@ -123,7 +123,7 @@ class AgentController:
     async def close(self):
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream."""
         await self.set_agent_state_to(AgentState.STOPPED)
-        self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER)
+        self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER, self.id)
 
     def log(self, level: str, message: str, extra: dict | None = None):
         """Logs a message to the agent controller's logger.
@@ -396,6 +396,8 @@ class AgentController:
             'debug',
             f'start delegate, creating agent {delegate_agent.name} using LLM {llm}',
         )
+
+        self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER, self.id)
         self.delegate = AgentController(
             sid=self.id + '-delegate',
             agent=delegate_agent,
@@ -511,6 +513,11 @@ class AgentController:
 
             # close the delegate upon error
             await self.delegate.close()
+
+            # resubscribe parent when delegate is finished
+            self.event_stream.subscribe(
+                EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, self.id
+            )
             self.delegate = None
             self.delegateAction = None
 
@@ -525,6 +532,11 @@ class AgentController:
 
             # close delegate controller: we must close the delegate controller before adding new events
             await self.delegate.close()
+
+            # resubscribe parent when delegate is finished
+            self.event_stream.subscribe(
+                EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, self.id
+            )
 
             # update delegate result observation
             # TODO: replace this with AI-generated summary (#2395)

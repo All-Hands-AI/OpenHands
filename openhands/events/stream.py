@@ -37,7 +37,7 @@ class EventStream:
     file_store: FileStore
     # For each subscriber ID, there is a stack of callback functions - useful
     # when there are agent delegates
-    _subscribers: dict[str, list[Callable]] = field(default_factory=dict)
+    _subscribers: dict[str, dict[str, Callable]] = field(default_factory=dict)
     _cur_id: int = 0
     _lock: threading.Lock = field(default_factory=threading.Lock)
 
@@ -118,22 +118,27 @@ class EventStream:
     def get_latest_event_id(self) -> int:
         return self._cur_id - 1
 
-    def subscribe(self, id: EventStreamSubscriber, callback: Callable, append=False):
-        if id in self._subscribers:
-            if append:
-                self._subscribers[id].append(callback)
-            else:
-                raise ValueError('Subscriber already exists: ' + id)
-        else:
-            self._subscribers[id] = [callback]
+    def subscribe(
+        self, event_id: EventStreamSubscriber, callback: Callable, callback_id: str
+    ):
+        if event_id not in self._subscribers:
+            self._subscribers[event_id] = {}
 
-    def unsubscribe(self, id: EventStreamSubscriber):
-        if id not in self._subscribers:
-            logger.warning('Subscriber not found during unsubscribe: ' + id)
-        else:
-            self._subscribers[id].pop()
-            if len(self._subscribers[id]) == 0:
-                del self._subscribers[id]
+        if callback_id in self._subscribers[event_id]:
+            logger.warning(f'Subscribed ID already exists: {callback_id}')
+
+        self._subscribers[event_id][callback_id] = callback
+
+    def unsubscribe(self, event_id: EventStreamSubscriber, callback_id):
+        if event_id not in self._subscribers:
+            logger.warning(f'Subscriber not found during unsubscribe: {id}')
+            return
+
+        if callback_id not in self._subscribers[event_id]:
+            logger.warning(f'Listener not found during unsubscribe: {callback_id}')
+            return
+
+        del self._subscribers[event_id][callback_id]
 
     def add_event(self, event: Event, source: EventSource):
         try:
@@ -154,9 +159,12 @@ class EventStream:
             self.file_store.write(self._get_filename_for_id(event.id), json.dumps(data))
         tasks = []
         for key in sorted(self._subscribers.keys()):
-            stack = self._subscribers[key]
-            callback = stack[-1]
-            tasks.append(asyncio.create_task(callback(event)))
+            callbacks = self._subscribers[key]
+            # callback = stack[-1]
+            for callback_id in callbacks:
+                logger.debug(f'emitting on {key} {callback_id}')
+                callback = callbacks[callback_id]
+                tasks.append(asyncio.create_task(callback(event)))
         if tasks:
             await asyncio.wait(tasks)
 
