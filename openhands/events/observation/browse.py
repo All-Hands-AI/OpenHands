@@ -51,7 +51,15 @@ class BrowserOutputObservation(Observation):
         text = f'[Current URL: {self.url}]\n'
         text += f'[Focused element bid: {self.focused_element_bid}]\n\n'
         if self.error:
-            text += f'[Error: {self.error}. {self.last_browser_action_error}]\n'
+            text += (
+                '================ BEGIN error message ===============\n'
+                'The following error occurred when executing the last action:\n'
+                f'{self.last_browser_action_error}\n'
+                '================ END error message ===============\n'
+            )
+        else:
+            text += '[Action executed successfully.]\n'
+
         try:
             # We do not filter visible only here because we want to show the full content
             # of the web page to the agent for simplicity.
