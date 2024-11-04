@@ -12,7 +12,6 @@ from openhands.events.event import Event, EventSource
 from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.observation.delegate import AgentDelegateObservation
 from openhands.events.observation.empty import NullObservation
-from openhands.events.observation.error import FatalErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import event_to_dict
 from openhands.events.stream import EventStream
@@ -34,7 +33,6 @@ class ShortTermHistory(list[Event]):
         NullObservation,
         ChangeAgentStateAction,
         AgentStateChangedObservation,
-        FatalErrorObservation,
     )
 
     def __init__(self):
