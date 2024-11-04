@@ -104,6 +104,7 @@ def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     goal = obs.content
 
+    # Run noop to get the initial browser observation (e.g., the page URL & content)
     action = BrowseInteractiveAction(browser_actions='noop(1000)')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
