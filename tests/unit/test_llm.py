@@ -50,6 +50,7 @@ def test_llm_init_with_model_info(mock_get_model_info, default_config):
         'max_output_tokens': 2000,
     }
     llm = LLM(default_config)
+    llm.init_model_info()
     assert llm.config.max_input_tokens == 8000
     assert llm.config.max_output_tokens == 2000
 
@@ -58,6 +59,7 @@ def test_llm_init_with_model_info(mock_get_model_info, default_config):
 def test_llm_init_without_model_info(mock_get_model_info, default_config):
     mock_get_model_info.side_effect = Exception('Model info not available')
     llm = LLM(default_config)
+    llm.init_model_info()
     assert llm.config.max_input_tokens == 4096
     assert llm.config.max_output_tokens == 4096
 
@@ -108,6 +110,7 @@ def test_llm_init_with_openrouter_model(mock_get_model_info, default_config):
         'max_output_tokens': 1500,
     }
     llm = LLM(default_config)
+    llm.init_model_info()
     assert llm.config.max_input_tokens == 7000
     assert llm.config.max_output_tokens == 1500
     mock_get_model_info.assert_called_once_with('openrouter:gpt-4o-mini')

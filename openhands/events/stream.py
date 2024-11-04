@@ -11,6 +11,7 @@ from openhands.events.event import Event, EventSource
 from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.runtime.utils.shutdown_listener import should_continue
 from openhands.storage import FileStore
+from openhands.utils.async_utils import call_sync_from_async
 
 
 class EventStreamSubscriber(str, Enum):
@@ -22,12 +23,27 @@ class EventStreamSubscriber(str, Enum):
     TEST = 'test'
 
 
-def session_exists(sid: str, file_store: FileStore) -> bool:
+async def session_exists(sid: str, file_store: FileStore) -> bool:
     try:
-        file_store.list(f'sessions/{sid}')
+        await call_sync_from_async(file_store.list, f'sessions/{sid}')
         return True
     except FileNotFoundError:
         return False
+
+
+class AsyncEventStreamWrapper:
+    def __init__(self, event_stream, *args, **kwargs):
+        self.event_stream = event_stream
+        self.args = args
+        self.kwargs = kwargs
+
+    async def __aiter__(self):
+        loop = asyncio.get_running_loop()
+
+        # Create an async generator that yields events
+        for event in self.event_stream.get_events(*self.args, **self.kwargs):
+            # Run the blocking get_events() in a thread pool
+            yield await loop.run_in_executor(None, lambda e=event: e)  # type: ignore
 
 
 @dataclass
