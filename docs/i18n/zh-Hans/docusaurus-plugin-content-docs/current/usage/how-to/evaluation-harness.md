@@ -160,7 +160,7 @@ OpenHands 的主要入口点在 `openhands/core/main.py` 中。以下是它工�
            metadata=metadata,
            history=state.history.compatibility_for_eval_history_pairs(),
            metrics=state.metrics.get() if state.metrics else None,
-           error=state.get_last_error() if state and state.get_last_error() else None,
+           error=state.last_error if state and state.last_error else None,
        )
    ```
 
