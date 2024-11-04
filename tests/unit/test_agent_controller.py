@@ -160,7 +160,7 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
     # it will first become AgentState.ERROR, then become AgentState.STOPPED
     # in side run_controller (since the while loop + sleep no longer loop)
     assert state.agent_state == AgentState.STOPPED
-    assert state.last_error == 'You messed around with Jim'
+    assert state.last_error == 'Agent got stuck in a loop'
     assert len(list(event_stream.get_events())) == 11
 
 
@@ -226,7 +226,7 @@ async def test_run_controller_stop_with_stuck():
     assert last_event['observation'] == 'agent_state_changed'
 
     assert state.agent_state == AgentState.STOPPED
-    assert state.last_error == 'Non fatal error here to trigger loop'
+    assert state.last_error == 'Agent got stuck in a loop'
 
 
 @pytest.mark.asyncio
