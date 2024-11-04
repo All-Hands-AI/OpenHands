@@ -241,7 +241,7 @@ class AgentController:
             observation_to_print.content = truncate_content(
                 observation_to_print.content, self.agent.llm.config.max_message_chars
             )
-        self.log('debug', str(observation_to_print), extra={'msg_type': 'OBSERVATION'})
+        self.log('info', str(observation_to_print), extra={'msg_type': 'OBSERVATION'})
 
         # Merge with the metrics from the LLM - it will to synced to the controller's local metrics in update_state_after_step()
         if observation.llm_metrics is not None:
@@ -495,7 +495,7 @@ class AgentController:
             self.event_stream.add_event(action, EventSource.AGENT)
 
         await self.update_state_after_step()
-        self.log('debug', str(action), extra={'msg_type': 'ACTION'})
+        self.log('info', str(action), extra={'msg_type': 'ACTION'})
 
     async def _delegate_step(self):
         """Executes a single step of the delegate agent."""
