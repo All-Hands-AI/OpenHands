@@ -56,7 +56,7 @@ class TestEventStreamPerformance:
         for event in events:
             event_stream.add_event(event, source)
         write_time = time.time() - write_start
-        print(f'\nWrite performance:')
+        print('\nWrite performance:')
         print(f'- Added {NUM_EVENTS} events in {write_time:.3f} seconds')
         print(f'- Average time per write: {write_time/NUM_EVENTS*1000:.2f} ms')
 
@@ -69,7 +69,7 @@ class TestEventStreamPerformance:
             assert isinstance(event, Event)
             assert event.content == f'Test content {event_id}'
         read_time = time.time() - read_start
-        print(f'\nRead by ID performance:')
+        print('\nRead by ID performance:')
         print(f'- Read {read_count} events by ID in {read_time:.3f} seconds')
         print(f'- Average time per read: {read_time/read_count*1000:.2f} ms')
 
@@ -78,7 +78,7 @@ class TestEventStreamPerformance:
         events_list = list(event_stream.get_events())
         scan_time = time.time() - scan_start
         assert len(events_list) == NUM_EVENTS
-        print(f'\nFull scan performance:')
+        print('\nFull scan performance:')
         print(f'- Retrieved all {NUM_EVENTS} events in {scan_time:.3f} seconds')
 
         # Test filtered scan performance
@@ -86,7 +86,7 @@ class TestEventStreamPerformance:
         filtered_events = list(event_stream.get_events(start_id=50, end_id=100))
         filter_time = time.time() - filter_start
         assert len(filtered_events) == 51  # 50 to 100 inclusive
-        print(f'\nFiltered scan performance:')
+        print('\nFiltered scan performance:')
         print(f'- Retrieved filtered events in {filter_time:.3f} seconds')
         print(f'- Number of events in range: {len(filtered_events)}')
 
@@ -95,7 +95,7 @@ class TestEventStreamPerformance:
         reverse_events = list(event_stream.get_events(reverse=True))
         reverse_time = time.time() - reverse_start
         assert len(reverse_events) == NUM_EVENTS
-        print(f'\nReverse scan performance:')
+        print('\nReverse scan performance:')
         print(f'- Retrieved all events in reverse in {reverse_time:.3f} seconds')
 
         # Verify file size
@@ -103,6 +103,6 @@ class TestEventStreamPerformance:
             event_stream.file_store.root, f'sessions/{event_stream.sid}/events.json'
         )
         file_size = os.path.getsize(events_file)
-        print(f'\nStorage metrics:')
+        print('\nStorage metrics:')
         print(f'- Events file size: {file_size/1024:.2f} KB')
         print(f'- Average bytes per event: {file_size/NUM_EVENTS:.1f} bytes')
