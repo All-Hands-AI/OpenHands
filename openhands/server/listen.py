@@ -57,6 +57,7 @@ from openhands.events.observation import (
     NullObservation,
 )
 from openhands.events.serialization import event_to_dict
+from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.llm import bedrock
 from openhands.runtime.base import Runtime
 from openhands.server.auth import get_sid_from_token, sign_token
@@ -339,9 +340,12 @@ async def websocket_endpoint(websocket: WebSocket):
     latest_event_id = -1
     if websocket.query_params.get('latest_event_id'):
         latest_event_id = int(websocket.query_params.get('latest_event_id'))
-    for event in session.agent_session.event_stream.get_events(
-        start_id=latest_event_id + 1
-    ):
+
+    async_stream = AsyncEventStreamWrapper(
+        session.agent_session.event_stream, latest_event_id + 1
+    )
+
+    async for event in async_stream:
         if isinstance(
             event,
             (
@@ -665,9 +669,11 @@ async def submit_feedback(request: Request):
     # Assuming the storage service is already configured in the backend
     # and there is a function to handle the storage.
     body = await request.json()
-    events = request.state.conversation.event_stream.get_events(filter_hidden=True)
+    async_stream = AsyncEventStreamWrapper(
+        request.state.conversation.event_stream, filter_hidden=True
+    )
     trajectory = []
-    for event in events:
+    async for event in async_stream:
         trajectory.append(event_to_dict(event))
     feedback = FeedbackDataModel(
         email=body.get('email', ''),
@@ -678,7 +684,7 @@ async def submit_feedback(request: Request):
         trajectory=trajectory,
     )
     try:
-        feedback_data = store_feedback(feedback)
+        feedback_data = await call_sync_from_async(store_feedback, feedback)
         return JSONResponse(status_code=200, content=feedback_data)
     except Exception as e:
         logger.error(f'Error submitting feedback: {e}')
