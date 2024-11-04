@@ -30,7 +30,10 @@ from openhands.events.action import (
     CmdRunAction,
     MessageAction,
 )
-from openhands.events.observation import CmdOutputObservation
+from openhands.events.observation import (
+    BrowserOutputObservation,
+    CmdOutputObservation,
+)
 from openhands.runtime.base import Runtime
 from openhands.runtime.browser.browser_env import (
     BROWSER_EVAL_GET_GOAL_ACTION,
@@ -81,7 +84,7 @@ def get_config(
 
 def initialize_runtime(
     runtime: Runtime,
-) -> str:
+) -> tuple[str, BrowserOutputObservation]:
     """Initialize the runtime for the agent.
 
     This function is called before the runtime is used to run the agent.
@@ -101,8 +104,13 @@ def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     goal = obs.content
 
+    action = BrowseInteractiveAction(browser_actions='noop(1000)')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
-    return goal
+    return goal, obs
 
 
 def complete_runtime(
@@ -145,7 +153,12 @@ def process_instance(
 
     runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
-    task_str = initialize_runtime(runtime)
+    task_str, obs = initialize_runtime(runtime)
+
+    task_str += (
+        f'\nInitial browser state (output of `noop(1000)`):\n{obs.get_agent_obs_text()}'
+    )
+
     state: State | None = asyncio.run(
         run_controller(
             config=config,
