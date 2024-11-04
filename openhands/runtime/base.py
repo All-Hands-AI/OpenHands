@@ -72,6 +72,7 @@ class Runtime(FileEditRuntimeMixin):
     config: AppConfig
     initial_env_vars: dict[str, str]
     attach_to_existing: bool
+    status_callback: Callable | None
 
     def __init__(
         self,
