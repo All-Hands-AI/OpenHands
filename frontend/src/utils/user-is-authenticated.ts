@@ -1,9 +1,12 @@
 import OpenHands from "#/api/open-hands";
 
-export const userIsAuthenticated = async (ghToken: string | null) => {
-  if (window.__APP_MODE__ !== "saas") return true;
-  if (!ghToken) return false;
+export const userIsAuthenticated = async () => {
+  if (window.__APP_MODE__ === "oss") return true;
 
-  const authResponse = await OpenHands.authenticate(ghToken);
-  return authResponse.ok;
+  try {
+    await OpenHands.authenticate();
+    return true;
+  } catch (error) {
+    return false;
+  }
 };

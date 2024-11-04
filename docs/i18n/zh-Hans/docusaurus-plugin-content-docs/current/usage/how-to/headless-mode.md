@@ -58,4 +58,3 @@ docker run -it \
     ghcr.io/all-hands-ai/openhands:0.11 \
     python -m openhands.core.main -t "write a bash script that prints hi"
 ```
-

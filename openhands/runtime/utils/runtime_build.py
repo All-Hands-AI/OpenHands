@@ -175,7 +175,9 @@ def build_runtime_image_in_folder(
 
     logger.info(f'Building image: {hash_image_name}')
     if force_rebuild:
-        logger.debug(f'Force rebuild: [{runtime_image_repo}:{source_tag}] from scratch.')
+        logger.debug(
+            f'Force rebuild: [{runtime_image_repo}:{source_tag}] from scratch.'
+        )
         prep_build_folder(
             build_folder,
             base_image,
