@@ -70,9 +70,26 @@ describe("ChatInterface", () => {
       });
     });
 
-    it.todo(
-      "should render the other suggestions if the user selected to cloned a repo",
-    );
+    it("should render the other suggestions if the user selected to cloned a repo", () => {
+      localStorage.setItem("repo", "some/repo");
+      renderWithProviders(<ChatInterface />, {
+        preloadedState: {
+          chat: { messages: [] },
+        },
+      });
+
+      const suggestions = screen.getByTestId("suggestions");
+      const repoSuggestions = Object.keys(SUGGESTIONS.repo);
+
+      // check that there are at most 4 suggestions displayed
+      const displayedSuggestions = within(suggestions).getAllByRole("button");
+      expect(displayedSuggestions.length).toBeLessThanOrEqual(4);
+
+      // Check that each displayed suggestion is one of the repo suggestions
+      displayedSuggestions.forEach((suggestion) => {
+        expect(repoSuggestions).toContain(suggestion.textContent);
+      });
+    });
 
     it("should dispatch a user message when selecting a message", async () => {
       const addUserMessageSpy = vi.spyOn(ChatSlice, "addUserMessage");
