@@ -240,77 +240,77 @@ class EventStreamRuntime(Runtime):
             raise ex
 
     def _init_container(self):
-        try:
-            self.log('debug', 'Preparing to start container...')
-            self.send_status_message('STATUS$PREPARING_CONTAINER')
-            plugin_arg = ''
-            if self.plugins is not None and len(self.plugins) > 0:
-                plugin_arg = (
-                    f'--plugins {" ".join([plugin.name for plugin in self.plugins])} '
-                )
-
-            self._host_port = self._find_available_port()
-            self._container_port = (
-                self._host_port
-            )  # in future this might differ from host port
-            self.api_url = (
-                f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
+        self.log('debug', 'Preparing to start container...')
+        self.send_status_message('STATUS$PREPARING_CONTAINER')
+        plugin_arg = ''
+        if self.plugins is not None and len(self.plugins) > 0:
+            plugin_arg = (
+                f'--plugins {" ".join([plugin.name for plugin in self.plugins])} '
             )
 
-            use_host_network = self.config.sandbox.use_host_network
-            network_mode: str | None = 'host' if use_host_network else None
-            port_mapping: dict[str, list[dict[str, str]]] | None = (
-                None
-                if use_host_network
-                else {
-                    f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}]
-                }
-            )
+        self._host_port = self._find_available_port()
+        self._container_port = (
+            self._host_port
+        )  # in future this might differ from host port
+        self.api_url = (
+            f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
+        )
 
-            if use_host_network:
-                self.log(
-                    'warn',
-                    'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
-                )
-
-            # Combine environment variables
-            environment = {
-                'port': str(self._container_port),
-                'PYTHONUNBUFFERED': 1,
+        use_host_network = self.config.sandbox.use_host_network
+        network_mode: str | None = 'host' if use_host_network else None
+        port_mapping: dict[str, list[dict[str, str]]] | None = (
+            None
+            if use_host_network
+            else {
+                f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}]
             }
-            if self.config.debug or DEBUG:
-                environment['DEBUG'] = 'true'
+        )
 
-            self.log('debug', f'Workspace Base: {self.config.workspace_base}')
-            if (
-                self.config.workspace_mount_path is not None
-                and self.config.workspace_mount_path_in_sandbox is not None
-            ):
-                # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
-                volumes = {
-                    self.config.workspace_mount_path: {
-                        'bind': self.config.workspace_mount_path_in_sandbox,
-                        'mode': 'rw',
-                    }
-                }
-                logger.debug(f'Mount dir: {self.config.workspace_mount_path}')
-            else:
-                logger.debug(
-                    'Mount dir is not set, will not mount the workspace directory to the container'
-                )
-                volumes = None
+        if use_host_network:
             self.log(
-                'debug',
-                f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
+                'warn',
+                'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
             )
 
-            if self.config.sandbox.browsergym_eval_env is not None:
-                browsergym_arg = (
-                    f'--browsergym-eval-env {self.config.sandbox.browsergym_eval_env}'
-                )
-            else:
-                browsergym_arg = ''
+        # Combine environment variables
+        environment = {
+            'port': str(self._container_port),
+            'PYTHONUNBUFFERED': 1,
+        }
+        if self.config.debug or DEBUG:
+            environment['DEBUG'] = 'true'
 
+        self.log('debug', f'Workspace Base: {self.config.workspace_base}')
+        if (
+            self.config.workspace_mount_path is not None
+            and self.config.workspace_mount_path_in_sandbox is not None
+        ):
+            # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
+            volumes = {
+                self.config.workspace_mount_path: {
+                    'bind': self.config.workspace_mount_path_in_sandbox,
+                    'mode': 'rw',
+                }
+            }
+            logger.debug(f'Mount dir: {self.config.workspace_mount_path}')
+        else:
+            logger.debug(
+                'Mount dir is not set, will not mount the workspace directory to the container'
+            )
+            volumes = None
+        self.log(
+            'debug',
+            f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
+        )
+
+        if self.config.sandbox.browsergym_eval_env is not None:
+            browsergym_arg = (
+                f'--browsergym-eval-env {self.config.sandbox.browsergym_eval_env}'
+            )
+        else:
+            browsergym_arg = ''
+
+        try:
             self.container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=(
@@ -334,6 +334,21 @@ class EventStreamRuntime(Runtime):
             self.log_buffer = LogBuffer(self.container, self.log)
             self.log('debug', f'Container started. Server url: {self.api_url}')
             self.send_status_message('STATUS$CONTAINER_STARTED')
+        except docker.errors.APIError as e:
+            # check 409 error
+            if '409' in str(e):
+                self.log(
+                    'warning',
+                    f'Container {self.container_name} already exists. Removing...',
+                )
+                self._close_containers(rm_all_containers=True)
+                return self._init_container()
+
+            else:
+                self.log(
+                    'error',
+                    f'Error: Instance {self.container_name} FAILED to start container!\n',
+                )
         except Exception as e:
             self.log(
                 'error',
@@ -411,7 +426,9 @@ class EventStreamRuntime(Runtime):
 
         if self.attach_to_existing:
             return
+        self._close_containers(rm_all_containers)
 
+    def _close_containers(self, rm_all_containers: bool = True):
         try:
             containers = self.docker_client.containers.list(all=True)
             for container in containers:

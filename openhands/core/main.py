@@ -199,7 +199,7 @@ async def run_controller(
     try:
         await run_agent_until_done(controller, runtime, end_states)
     except Exception as e:
-         logger.error(f'Exception in main loop: {e}')
+        logger.error(f'Exception in main loop: {e}')
 
     # save session when we're about to close
     if config.enable_cli_session:
