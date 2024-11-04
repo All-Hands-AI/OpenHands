@@ -91,7 +91,11 @@ class RemoteRuntime(Runtime):
 
     async def connect(self):
         await call_sync_from_async(self._start_or_attach_to_runtime)
-        await call_sync_from_async(self._wait_until_alive)
+        try:
+            await call_sync_from_async(self._wait_until_alive)
+        except RuntimeNotReadyError:
+            self.log('error', 'Runtime failed to start, timed out before ready')
+            raise
         await call_sync_from_async(self.setup_initial_env)
 
     def _start_or_attach_to_runtime(self):
@@ -257,7 +261,7 @@ class RemoteRuntime(Runtime):
             )
 
     @tenacity.retry(
-        stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
+        stop=tenacity.stop_after_delay(180) | stop_if_should_exit(),
         reraise=True,
         retry=tenacity.retry_if_exception_type(RuntimeNotReadyError),
         wait=tenacity.wait_fixed(2),
