@@ -101,7 +101,6 @@ class AgentSession:
         agent_configs: dict[str, AgentConfig] | None = None,
         status_message_callback: Optional[Callable] = None,
     ):
-        self.loop = asyncio.get_running_loop()
         self._create_security_analyzer(config.security.security_analyzer)
         await self._create_runtime(
             runtime_name=runtime_name,
@@ -124,9 +123,14 @@ class AgentSession:
             self.controller.agent_task = self.controller.start_step_loop()
             await self.controller.agent_task  # type: ignore
 
-    async def close(self):
+    def close(self):
         """Closes the Agent session"""
+        self._closed = True
+        def inner_close():
+            asyncio.run(self._close())
+        asyncio.get_event_loop().run_in_executor(None, inner_close)
 
+    async def _close(self):
         if self._closed:
             return
         if self.controller is not None:
@@ -138,16 +142,6 @@ class AgentSession:
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
 
-        if self.loop:
-            if self.loop.is_closed():
-                logger.debug(
-                    'Trying to close already closed loop. (It probably never started correctly)'
-                )
-            else:
-                self.loop.stop()
-            self.loop = None
-
-        self._closed = True
 
     def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions

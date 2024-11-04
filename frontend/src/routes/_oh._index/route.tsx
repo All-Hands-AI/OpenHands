@@ -1,54 +1,23 @@
 import {
+  Await,
   ClientActionFunctionArgs,
   ClientLoaderFunctionArgs,
-  json,
+  defer,
   redirect,
   useLoaderData,
   useRouteLoaderData,
 } from "@remix-run/react";
-import React from "react";
+import React, { Suspense } from "react";
 import { SuggestionBox } from "./suggestion-box";
 import { TaskForm } from "./task-form";
 import { HeroHeading } from "./hero-heading";
-import { GitHubRepositorySelector } from "./github-repo-selector";
-import {
-  isGitHubErrorReponse,
-  retrieveAllGitHubUserRepositories,
-} from "#/api/github";
-import ModalButton from "#/components/buttons/ModalButton";
-import GitHubLogo from "#/assets/branding/github-logo.svg?react";
-import { ConnectToGitHubModal } from "#/components/modals/connect-to-github-modal";
-import { ModalBackdrop } from "#/components/modals/modal-backdrop";
+import { retrieveAllGitHubUserRepositories } from "#/api/github";
 import store from "#/store";
 import { setInitialQuery } from "#/state/initial-query-slice";
 import { clientLoader as rootClientLoader } from "#/routes/_oh";
 import OpenHands from "#/api/open-hands";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
-
-interface GitHubAuthProps {
-  onConnectToGitHub: () => void;
-  repositories: GitHubRepository[];
-  isLoggedIn: boolean;
-}
-
-function GitHubAuth({
-  onConnectToGitHub,
-  repositories,
-  isLoggedIn,
-}: GitHubAuthProps) {
-  if (isLoggedIn) {
-    return <GitHubRepositorySelector repositories={repositories} />;
-  }
-
-  return (
-    <ModalButton
-      text="Connect to GitHub"
-      icon={<GitHubLogo width={20} height={20} />}
-      className="bg-[#791B80] w-full"
-      onClick={onConnectToGitHub}
-    />
-  );
-}
+import { GitHubRepositoriesSuggestionBox } from "#/components/github-repositories-suggestion-box";
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   let isSaas = false;
@@ -67,12 +36,12 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   const token = localStorage.getItem("token");
   if (token) return redirect("/app");
 
-  let repositories: GitHubRepository[] = [];
+  let repositories: ReturnType<
+    typeof retrieveAllGitHubUserRepositories
+  > | null = null;
   if (ghToken) {
-    const data = await retrieveAllGitHubUserRepositories(ghToken);
-    if (!isGitHubErrorReponse(data)) {
-      repositories = data;
-    }
+    const data = retrieveAllGitHubUserRepositories(ghToken);
+    repositories = data;
   }
 
   let githubAuthUrl: string | null = null;
@@ -81,7 +50,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
     githubAuthUrl = generateGitHubAuthUrl(githubClientId, requestUrl);
   }
 
-  return json({ repositories, githubAuthUrl });
+  return defer({ repositories, githubAuthUrl });
 };
 
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
@@ -95,17 +64,7 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 function Home() {
   const rootData = useRouteLoaderData<typeof rootClientLoader>("routes/_oh");
   const { repositories, githubAuthUrl } = useLoaderData<typeof clientLoader>();
-  const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
-    React.useState(false);
   const [importedFile, setImportedFile] = React.useState<File | null>(null);
-
-  const handleConnectToGitHub = () => {
-    if (githubAuthUrl) {
-      window.location.href = githubAuthUrl;
-    } else {
-      setConnectToGitHubModalOpen(true);
-    }
-  };
 
   return (
     <div className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto">
@@ -115,18 +74,24 @@ function Home() {
           <TaskForm importedProjectZip={importedFile} />
         </div>
         <div className="flex gap-4 w-full">
-          <SuggestionBox
-            title="Open a Repo"
-            content={
-              <GitHubAuth
-                isLoggedIn={
-                  !!rootData?.user && !isGitHubErrorReponse(rootData.user)
-                }
-                repositories={repositories}
-                onConnectToGitHub={handleConnectToGitHub}
+          <Suspense
+            fallback={
+              <SuggestionBox
+                title="Open a Repo"
+                content="Loading repositories..."
               />
             }
-          />
+          >
+            <Await resolve={repositories}>
+              {(resolvedRepositories) => (
+                <GitHubRepositoriesSuggestionBox
+                  repositories={resolvedRepositories}
+                  gitHubAuthUrl={githubAuthUrl}
+                  user={rootData?.user || null}
+                />
+              )}
+            </Await>
+          </Suspense>
           <SuggestionBox
             title={importedFile ? "Project Loaded" : "+ Import Project"}
             content={
@@ -159,13 +124,6 @@ function Home() {
           />
         </div>
       </div>
-      {connectToGitHubModalOpen && (
-        <ModalBackdrop onClose={() => setConnectToGitHubModalOpen(false)}>
-          <ConnectToGitHubModal
-            onClose={() => setConnectToGitHubModalOpen(false)}
-          />
-        </ModalBackdrop>
-      )}
     </div>
   );
 }
