@@ -113,7 +113,7 @@ class EventStream:
             filtered_events = [e for e in event_objects if start_id <= e.id <= end_id]
             # Apply additional filters
             filtered_events = [e for e in filtered_events if not should_filter(e)]
-            
+
             if reverse:
                 filtered_events.reverse()
 
@@ -161,11 +161,13 @@ class EventStream:
         with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1
-            logger.debug(f'Adding {type(event).__name__} id={event.id} from {source.name}')
+            logger.debug(
+                f'Adding {type(event).__name__} id={event.id} from {source.name}'
+            )
             event._timestamp = datetime.now().isoformat()
             event._source = source  # type: ignore [attr-defined]
             data = event_to_dict(event)
-            
+
             # Read current events, append new one, and write back
             events = self._read_events()
             events.append(data)

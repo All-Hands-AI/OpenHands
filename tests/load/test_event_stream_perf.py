@@ -15,18 +15,17 @@ from openhands.storage.local import LocalFileStore
 @dataclass
 class TestEvent(Event):
     """Simple event class for testing."""
-    action: str = "message"  # Makes it an action event
-    message: str = ""
-    content: str = ""  # Required for message actions
+
+    action: str = 'message'  # Makes it an action event
+    message: str = ''
+    content: str = ''  # Required for message actions
 
 
 def create_test_events(count: int) -> List[TestEvent]:
     """Create a list of test events."""
     return [
         TestEvent(
-            action="message",
-            message=f"Test message {i}",
-            content=f"Test content {i}"
+            action='message', message=f'Test message {i}', content=f'Test content {i}'
         )
         for i in range(count)
     ]
@@ -57,9 +56,9 @@ class TestEventStreamPerformance:
         for event in events:
             event_stream.add_event(event, source)
         write_time = time.time() - write_start
-        print(f"\nWrite performance:")
-        print(f"- Added {NUM_EVENTS} events in {write_time:.3f} seconds")
-        print(f"- Average time per write: {write_time/NUM_EVENTS*1000:.2f} ms")
+        print(f'\nWrite performance:')
+        print(f'- Added {NUM_EVENTS} events in {write_time:.3f} seconds')
+        print(f'- Average time per write: {write_time/NUM_EVENTS*1000:.2f} ms')
 
         # Test read by ID performance
         read_start = time.time()
@@ -68,41 +67,42 @@ class TestEventStreamPerformance:
             event_id = i % NUM_EVENTS  # Cycle through events
             event = event_stream.get_event(event_id)
             assert isinstance(event, Event)
-            assert event.content == f"Test content {event_id}"
+            assert event.content == f'Test content {event_id}'
         read_time = time.time() - read_start
-        print(f"\nRead by ID performance:")
-        print(f"- Read {read_count} events by ID in {read_time:.3f} seconds")
-        print(f"- Average time per read: {read_time/read_count*1000:.2f} ms")
+        print(f'\nRead by ID performance:')
+        print(f'- Read {read_count} events by ID in {read_time:.3f} seconds')
+        print(f'- Average time per read: {read_time/read_count*1000:.2f} ms')
 
         # Test get_events() performance (full scan)
         scan_start = time.time()
         events_list = list(event_stream.get_events())
         scan_time = time.time() - scan_start
         assert len(events_list) == NUM_EVENTS
-        print(f"\nFull scan performance:")
-        print(f"- Retrieved all {NUM_EVENTS} events in {scan_time:.3f} seconds")
+        print(f'\nFull scan performance:')
+        print(f'- Retrieved all {NUM_EVENTS} events in {scan_time:.3f} seconds')
 
         # Test filtered scan performance
         filter_start = time.time()
         filtered_events = list(event_stream.get_events(start_id=50, end_id=100))
         filter_time = time.time() - filter_start
         assert len(filtered_events) == 51  # 50 to 100 inclusive
-        print(f"\nFiltered scan performance:")
-        print(f"- Retrieved filtered events in {filter_time:.3f} seconds")
-        print(f"- Number of events in range: {len(filtered_events)}")
+        print(f'\nFiltered scan performance:')
+        print(f'- Retrieved filtered events in {filter_time:.3f} seconds')
+        print(f'- Number of events in range: {len(filtered_events)}')
 
         # Test reverse scan performance
         reverse_start = time.time()
         reverse_events = list(event_stream.get_events(reverse=True))
         reverse_time = time.time() - reverse_start
         assert len(reverse_events) == NUM_EVENTS
-        print(f"\nReverse scan performance:")
-        print(f"- Retrieved all events in reverse in {reverse_time:.3f} seconds")
+        print(f'\nReverse scan performance:')
+        print(f'- Retrieved all events in reverse in {reverse_time:.3f} seconds')
 
         # Verify file size
-        events_file = os.path.join(event_stream.file_store.root, 
-                                 f"sessions/{event_stream.sid}/events.json")
+        events_file = os.path.join(
+            event_stream.file_store.root, f'sessions/{event_stream.sid}/events.json'
+        )
         file_size = os.path.getsize(events_file)
-        print(f"\nStorage metrics:")
-        print(f"- Events file size: {file_size/1024:.2f} KB")
-        print(f"- Average bytes per event: {file_size/NUM_EVENTS:.1f} bytes")
+        print(f'\nStorage metrics:')
+        print(f'- Events file size: {file_size/1024:.2f} KB')
+        print(f'- Average bytes per event: {file_size/NUM_EVENTS:.1f} bytes')
