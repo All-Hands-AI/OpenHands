@@ -278,10 +278,18 @@ class RemoteRuntime(Runtime):
         assert 'pod_status' in runtime_data
         pod_status = runtime_data['pod_status']
         if pod_status == 'Ready':
-            self._send_request(
-                'GET',
-                f'{self.runtime_url}/alive',
-            )  # will raise exception if we don't get 200 back. Since pod is "Ready", this should be fine.
+            try:
+                self._send_request(
+                    'GET',
+                    f'{self.runtime_url}/alive',
+                )  # will raise exception if we don't get 200 back.
+            except requests.HTTPError as e:
+                self.log(
+                    'warning', f"Runtime /alive failed, but pod says it's ready: {e}"
+                )
+                raise RuntimeNotReadyError(
+                    f'Runtime /alive failed to respond with 200: {e}'
+                )
             return
         if pod_status in ('Failed', 'Unknown', 'Not Found'):
             # clean up the runtime
