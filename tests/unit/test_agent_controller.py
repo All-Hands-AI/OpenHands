@@ -113,7 +113,7 @@ async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_cal
     )
     error_message = 'Test error'
     await controller._react_to_exception(RuntimeError(error_message))
-    controller._status_callback.assert_called_once()
+    controller.status_callback.assert_called_once()
     await controller.close()
 
 
@@ -157,9 +157,7 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
     print(f'state: {state}')
     print(f'event_stream: {list(event_stream.get_events())}')
     assert state.iteration == 4
-    # it will first become AgentState.ERROR, then become AgentState.STOPPED
-    # in side run_controller (since the while loop + sleep no longer loop)
-    assert state.agent_state == AgentState.STOPPED
+    assert state.agent_state == AgentState.ERROR
     assert state.last_error == 'Agent got stuck in a loop'
     assert len(list(event_stream.get_events())) == 11
 
@@ -225,7 +223,7 @@ async def test_run_controller_stop_with_stuck():
     assert last_event['extras']['agent_state'] == 'error'
     assert last_event['observation'] == 'agent_state_changed'
 
-    assert state.agent_state == AgentState.STOPPED
+    assert state.agent_state == AgentState.ERROR
     assert state.last_error == 'Agent got stuck in a loop'
 
 
