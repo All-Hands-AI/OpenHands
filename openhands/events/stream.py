@@ -35,8 +35,8 @@ def session_exists(sid: str, file_store: FileStore) -> bool:
 class EventStream:
     sid: str
     file_store: FileStore
-    # For each subscriber ID, there is a stack of callback functions - useful
-    # when there are agent delegates
+    # For each subscriber ID, there is a map of callback functions - useful
+    # when there are multiple listeners
     _subscribers: dict[str, dict[str, Callable]] = field(default_factory=dict)
     _cur_id: int = 0
     _lock: threading.Lock = field(default_factory=threading.Lock)
@@ -119,26 +119,28 @@ class EventStream:
         return self._cur_id - 1
 
     def subscribe(
-        self, event_id: EventStreamSubscriber, callback: Callable, callback_id: str
+        self, subscriber_id: EventStreamSubscriber, callback: Callable, callback_id: str
     ):
-        if event_id not in self._subscribers:
-            self._subscribers[event_id] = {}
+        if subscriber_id not in self._subscribers:
+            self._subscribers[subscriber_id] = {}
 
-        if callback_id in self._subscribers[event_id]:
-            logger.warning(f'Subscribed ID already exists: {callback_id}')
+        if callback_id in self._subscribers[subscriber_id]:
+            raise ValueError(
+                f'Callback ID on subscriber {subscriber_id} already exists: {callback_id}'
+            )
 
-        self._subscribers[event_id][callback_id] = callback
+        self._subscribers[subscriber_id][callback_id] = callback
 
-    def unsubscribe(self, event_id: EventStreamSubscriber, callback_id):
-        if event_id not in self._subscribers:
-            logger.warning(f'Subscriber not found during unsubscribe: {id}')
+    def unsubscribe(self, subscriber_id: EventStreamSubscriber, callback_id: str):
+        if subscriber_id not in self._subscribers:
+            logger.warning(f'Subscriber not found during unsubscribe: {subscriber_id}')
             return
 
-        if callback_id not in self._subscribers[event_id]:
-            logger.warning(f'Listener not found during unsubscribe: {callback_id}')
+        if callback_id not in self._subscribers[subscriber_id]:
+            logger.warning(f'Callback not found during unsubscribe: {callback_id}')
             return
 
-        del self._subscribers[event_id][callback_id]
+        del self._subscribers[subscriber_id][callback_id]
 
     def add_event(self, event: Event, source: EventSource):
         try:
