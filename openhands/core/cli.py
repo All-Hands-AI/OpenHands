@@ -1,3 +1,4 @@
+import sys
 import asyncio
 import logging
 from typing import Type
@@ -72,7 +73,6 @@ def display_event(event: Event):
     if isinstance(event, FileEditObservation):
         display_file_edit(event)
 
-
 async def main():
     """Runs the agent in CLI mode"""
 
@@ -107,14 +107,25 @@ async def main():
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(sid, file_store)
 
+    controller: AgentController | None = None
+    def status_callback(msg_type, msg_id, msg):
+        if msg_type == 'error':
+            print(colored(f'Error: {msg}', 'red'))
+            asyncio.create_task(controller.set_agent_state_to(AgentState.ERROR))
+        else:
+            print(colored(f'{msg}', 'green'))
+
+
     runtime_cls = get_runtime_cls(config.runtime)
     runtime: Runtime = runtime_cls(  # noqa: F841
         config=config,
         event_stream=event_stream,
         sid=sid,
         plugins=agent_cls.sandbox_plugins,
+        status_callback=status_callback,
     )
     await runtime.connect()
+
 
     controller = AgentController(
         agent=agent,
@@ -122,13 +133,18 @@ async def main():
         max_budget_per_task=config.max_budget_per_task,
         agent_to_llm_config=config.get_agent_to_llm_config_map(),
         event_stream=event_stream,
+        status_callback=status_callback,
     )
 
-    if controller is not None:
-        controller.agent_task = asyncio.create_task(controller.start_step_loop())
 
     async def prompt_for_next_task():
-        next_message = input('How can I help? >> ')
+        # Run input() in a thread pool to avoid blocking the event loop
+        loop = asyncio.get_event_loop()
+        next_message = await loop.run_in_executor(
+            None, lambda: input('How can I help? >> ')
+        )
+        if not next_message.strip():
+            await prompt_for_next_task()
         if next_message == 'exit':
             event_stream.add_event(
                 ChangeAgentStateAction(AgentState.STOPPED), EventSource.ENVIRONMENT
@@ -140,12 +156,9 @@ async def main():
     async def on_event(event: Event):
         display_event(event)
         if isinstance(event, AgentStateChangedObservation):
-            if event.agent_state == AgentState.ERROR:
-                print('An error occurred. Please try again.')
             if event.agent_state in [
                 AgentState.AWAITING_USER_INPUT,
                 AgentState.FINISHED,
-                AgentState.ERROR,
             ]:
                 await prompt_for_next_task()
 
@@ -153,18 +166,46 @@ async def main():
 
     await prompt_for_next_task()
 
+    controller.agent_task = asyncio.create_task(controller.start_step_loop())
     while controller.state.agent_state not in [
         AgentState.STOPPED,
+        AgentState.ERROR,
     ]:
         await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
+
+    if not controller.agent_task.done():
+        controller.agent_task.cancel()
+        try:
+            await controller.agent_task
+        except asyncio.CancelledError:
+            pass
 
     print('Exiting...')
     await controller.close()
 
 
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     try:
         loop.run_until_complete(main())
+    except KeyboardInterrupt:
+        print("Received keyboard interrupt, shutting down...")
+    except ConnectionRefusedError as e:
+        print(f"Connection refused: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        sys.exit(1)
     finally:
-        pass
+        try:
+            # Cancel all running tasks
+            pending = asyncio.all_tasks(loop)
+            for task in pending:
+                task.cancel()
+            # Wait for all tasks to complete with a timeout
+            loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+            loop.close()
+        except Exception as e:
+            print(f"Error during cleanup: {e}")
+            sys.exit(1)
