@@ -38,10 +38,6 @@ import AgentState from "#/types/AgentState";
 let clientLoaderCache: any = null; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
-  // Return cached results if they exist
-  if (clientLoaderCache) {
-    return clientLoaderCache;
-  }
 
   try {
     const config = await OpenHands.getConfig();
@@ -65,23 +61,28 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
 
   let isAuthed = false;
   let githubAuthUrl: string | null = null;
-
-  try {
-    isAuthed = await userIsAuthenticated();
-    if (!isAuthed && window.__GITHUB_CLIENT_ID__) {
-      const requestUrl = new URL(request.url);
-      githubAuthUrl = generateGitHubAuthUrl(
-        window.__GITHUB_CLIENT_ID__,
-        requestUrl,
-      );
-    }
-  } catch (error) {
-    isAuthed = false;
-    githubAuthUrl = null;
-  }
-
   let user: GitHubUser | GitHubErrorReponse | null = null;
-  if (ghToken) user = await retrieveGitHubUser(ghToken);
+  if (!clientLoaderCache || clientLoaderCache.ghToken !== ghToken) {
+    try {
+      isAuthed = await userIsAuthenticated();
+      if (!isAuthed && window.__GITHUB_CLIENT_ID__) {
+        const requestUrl = new URL(request.url);
+        githubAuthUrl = generateGitHubAuthUrl(
+          window.__GITHUB_CLIENT_ID__,
+          requestUrl,
+        );
+      }
+    } catch (error) {
+      isAuthed = false;
+      githubAuthUrl = null;
+    }
+
+    if (ghToken) user = await retrieveGitHubUser(ghToken);
+  } else {
+    isAuthed = clientLoaderCache.isAuthed;
+    githubAuthUrl = clientLoaderCache.githubAuthUrl;
+    user = clientLoaderCache.user;
+  }
 
   const settings = getSettings();
   await i18n.changeLanguage(settings.LANGUAGE);
