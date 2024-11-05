@@ -16,6 +16,7 @@ interface ChatInputProps {
   onChange?: (message: string) => void;
   onFocus?: () => void;
   onBlur?: () => void;
+  onImagePaste?: (files: File[]) => void;
   className?: React.HTMLAttributes<HTMLDivElement>["className"];
 }
 
@@ -32,9 +33,34 @@ export function ChatInput({
   onChange,
   onFocus,
   onBlur,
+  onImagePaste,
   className,
 }: ChatInputProps) {
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    if (onImagePaste && event.clipboardData.files.length > 0) {
+      const files = Array.from(event.clipboardData.files).filter(file => 
+        file.type.startsWith('image/')
+      );
+      if (files.length > 0) {
+        event.preventDefault();
+        onImagePaste(files);
+      }
+    }
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLTextAreaElement>) => {
+    if (onImagePaste && event.dataTransfer.files.length > 0) {
+      const files = Array.from(event.dataTransfer.files).filter(file => 
+        file.type.startsWith('image/')
+      );
+      if (files.length > 0) {
+        event.preventDefault();
+        onImagePaste(files);
+      }
+    }
+  };
 
   const handleSubmitMessage = () => {
     if (textareaRef.current?.value) {
@@ -67,6 +93,9 @@ export function ChatInput({
         onChange={handleChange}
         onFocus={onFocus}
         onBlur={onBlur}
+        onPaste={handlePaste}
+        onDrop={handleDrop}
+        onDragOver={(e) => e.preventDefault()}
         value={value}
         minRows={1}
         maxRows={maxRows}
