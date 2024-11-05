@@ -312,7 +312,7 @@ class AgentController:
         if new_state == self.state.agent_state:
             return
 
-        if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
+        if new_state in (AgentState.STOPPED, AgentState.ERROR):
             self.reset_task()
         elif (
             new_state == AgentState.RUNNING
