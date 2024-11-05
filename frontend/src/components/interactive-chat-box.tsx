@@ -62,6 +62,7 @@ export function InteractiveChatBox({
           placeholder="What do you want to build?"
           onSubmit={handleSubmit}
           onStop={onStop}
+          onImagePaste={handleUpload}
         />
       </div>
     </div>
