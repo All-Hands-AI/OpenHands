@@ -877,6 +877,18 @@
     "en": "Export Trace",
     "es": "Exportar traza"
   },
+  "INVARIANT$TRACE_EXPORTED_MESSAGE": {
+    "en": "Trace exported",
+    "es": "Traza exportada"
+  },
+  "INVARIANT$POLICY_UPDATED_MESSAGE": {
+    "en": "Policy updated",
+    "es": "Política actualizada"
+  },
+  "INVARIANT$SETTINGS_UPDATED_MESSAGE": {
+    "en": "Settings updated",
+    "es": "Configuración actualizada"
+  },
   "CHAT_INTERFACE$INITIALIZING_AGENT_LOADING_MESSAGE": {
     "en": "Starting up!",
     "de": "Wird gestartet!",

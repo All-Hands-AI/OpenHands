@@ -123,7 +123,7 @@ function SecurityInvariant(): JSX.Element {
 
   async function exportTraces(): Promise<void> {
     const data = await request(`/api/security/export-trace`);
-    toast.info("Trace exported");
+    toast.info(t(I18nKey.INVARIANT$TRACE_EXPORTED_MESSAGE));
 
     const filename = `openhands-trace-${getFormattedDateTime()}.json`;
     downloadJSON(data, filename);
@@ -134,7 +134,7 @@ function SecurityInvariant(): JSX.Element {
       method: "POST",
       body: JSON.stringify({ policy }),
     });
-    toast.info("Policy updated");
+    toast.info(t(I18nKey.INVARIANT$POLICY_UPDATED_MESSAGE));
   }
 
   async function updateSettings(): Promise<void> {
@@ -143,7 +143,7 @@ function SecurityInvariant(): JSX.Element {
       method: "POST",
       body: JSON.stringify(payload),
     });
-    toast.info("Settings updated");
+    toast.info(t(I18nKey.INVARIANT$SETTINGS_UPDATED_MESSAGE));
   }
 
   const handleExportTraces = useCallback(() => {
