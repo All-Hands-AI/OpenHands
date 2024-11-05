@@ -44,6 +44,8 @@ Reminder:
 - If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls
 """
 
+STOP_WORDS = ['</function']
+
 # NOTE: we need to make sure this example is always in-sync with the tool interface designed in openhands/agenthub/codeact_agent/function_calling.py
 IN_CONTEXT_LEARNING_EXAMPLE = """
 Here's a running example of how to perform a task with the provided tools.

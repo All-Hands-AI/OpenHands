@@ -30,6 +30,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.llm.debug_mixin import DebugMixin
 from openhands.llm.fn_call_converter import (
+    STOP_WORDS,
     convert_fncall_messages_to_non_fncall_messages,
     convert_non_fncall_messages_to_fncall_messages,
 )
@@ -190,6 +191,7 @@ class LLM(RetryMixin, DebugMixin):
                 messages = convert_fncall_messages_to_non_fncall_messages(
                     messages, kwargs['tools']
                 )
+                kwargs['stop'] = STOP_WORDS
 
             # if we have no messages, something went very wrong
             if not messages:
