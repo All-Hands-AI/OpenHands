@@ -81,6 +81,8 @@ RUN \
     apt-get update && \
     /openhands/micromamba/bin/micromamba run -n openhands poetry run pip install playwright && \
     /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry run git -C /openhands clone https://github.com/replayio-public/replayapi.git && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry run /openhands/replayapi/scripts/install-deps.sh && \
     # Set environment variables
     echo "OH_INTERPRETER_PATH=$(/openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print(sys.executable)")" >> /etc/environment && \
     # Clear caches
