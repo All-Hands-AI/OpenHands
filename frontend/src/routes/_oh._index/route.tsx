@@ -21,17 +21,9 @@ import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { GitHubRepositoriesSuggestionBox } from "#/components/github-repositories-suggestion-box";
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
-  let isSaas = false;
-  let githubClientId: string | null = null;
-
-  try {
-    const config = await OpenHands.getConfig();
-    isSaas = config.APP_MODE === "saas";
-    githubClientId = config.GITHUB_CLIENT_ID;
-  } catch (error) {
-    isSaas = false;
-    githubClientId = null;
-  }
+  // Get config values from parent route
+  const isSaas = window.__APP_MODE__ === "saas";
+  const githubClientId = window.__GITHUB_CLIENT_ID__;
 
   const ghToken = localStorage.getItem("ghToken");
   const token = localStorage.getItem("token");
