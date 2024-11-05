@@ -95,7 +95,8 @@ class Runtime(FileEditRuntimeMixin):
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
         self.plugins = plugins if plugins is not None and len(plugins) > 0 else []
-        self.plugins.append(VSCodeRequirement())
+        for plugin in self.DEFAULT_PLUGINS:
+            self.plugins.append(plugin)
         self.status_callback = status_callback
         self.attach_to_existing = attach_to_existing
 
