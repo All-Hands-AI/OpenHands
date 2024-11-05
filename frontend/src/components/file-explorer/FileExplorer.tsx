@@ -118,52 +118,47 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
       return;
     }
     dispatch(setRefreshID(Math.random()));
-    // TODO: Get token from data loader
-    const token = localStorage.getItem("token");
-    if (token) OpenHands.getFiles(token).then(setPaths);
+    OpenHands.getFiles().then(setPaths);
     revalidate();
   };
 
   const uploadFileData = async (files: FileList) => {
     try {
-      const token = localStorage.getItem("token");
-      if (token) {
-        const result = await OpenHands.uploadFiles(token, Array.from(files));
+      const result = await OpenHands.uploadFiles(Array.from(files));
 
-        if (isOpenHandsErrorResponse(result)) {
-          // Handle error response
-          toast.error(
-            `upload-error-${new Date().getTime()}`,
-            result.error || t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE),
-          );
-          return;
-        }
-
-        const uploadedCount = result.uploaded_files.length;
-        const skippedCount = result.skipped_files.length;
-
-        if (uploadedCount > 0) {
-          toast.success(
-            `upload-success-${new Date().getTime()}`,
-            t(I18nKey.EXPLORER$UPLOAD_SUCCESS_MESSAGE, {
-              count: uploadedCount,
-            }),
-          );
-        }
-
-        if (skippedCount > 0) {
-          const message = t(I18nKey.EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE, {
-            count: skippedCount,
-          });
-          toast.info(message);
-        }
-
-        if (uploadedCount === 0 && skippedCount === 0) {
-          toast.info(t(I18nKey.EXPLORER$NO_FILES_UPLOADED_MESSAGE));
-        }
-
-        refreshWorkspace();
+      if (isOpenHandsErrorResponse(result)) {
+        // Handle error response
+        toast.error(
+          `upload-error-${new Date().getTime()}`,
+          result.error || t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE),
+        );
+        return;
       }
+
+      const uploadedCount = result.uploaded_files.length;
+      const skippedCount = result.skipped_files.length;
+
+      if (uploadedCount > 0) {
+        toast.success(
+          `upload-success-${new Date().getTime()}`,
+          t(I18nKey.EXPLORER$UPLOAD_SUCCESS_MESSAGE, {
+            count: uploadedCount,
+          }),
+        );
+      }
+
+      if (skippedCount > 0) {
+        const message = t(I18nKey.EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE, {
+          count: skippedCount,
+        });
+        toast.info(message);
+      }
+
+      if (uploadedCount === 0 && skippedCount === 0) {
+        toast.info(t(I18nKey.EXPLORER$NO_FILES_UPLOADED_MESSAGE));
+      }
+
+      refreshWorkspace();
     } catch (e) {
       // Handle unexpected errors (network issues, etc.)
       toast.error(

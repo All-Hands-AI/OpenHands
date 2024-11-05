@@ -1,7 +1,6 @@
 import React from "react";
 import { Data } from "ws";
 import EventLogger from "#/utils/event-logger";
-import { getValidFallbackHost } from "#/utils/get-valid-fallback-host";
 
 interface WebSocketClientOptions {
   token: string | null;
@@ -46,8 +45,8 @@ function SocketProvider({ children }: SocketProviderProps) {
       );
     }
 
-    const fallback = getValidFallbackHost();
-    const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || fallback;
+    const baseUrl =
+      import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const sessionToken = options?.token || "NO_JWT"; // not allowed to be empty or duplicated
     const ghToken = localStorage.getItem("ghToken") || "NO_GITHUB";

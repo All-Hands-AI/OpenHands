@@ -17,6 +17,7 @@ from openhands.core.config import (
     parse_arguments,
 )
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import MessageAction
@@ -122,7 +123,6 @@ async def run_controller(
 
     if runtime is None:
         runtime = create_runtime(config, sid=sid)
-        await runtime.connect()
 
     event_stream = runtime.event_stream
 
@@ -148,9 +148,6 @@ async def run_controller(
         initial_state=initial_state,
         headless_mode=headless_mode,
     )
-
-    if controller is not None:
-        controller.agent_task = asyncio.create_task(controller.start_step_loop())
 
     assert isinstance(
         initial_user_action, Action
@@ -190,14 +187,21 @@ async def run_controller(
                 event_stream.add_event(action, EventSource.USER)
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
-    while controller.state.agent_state not in [
+
+    await runtime.connect()
+
+    end_states = [
         AgentState.FINISHED,
         AgentState.REJECTED,
         AgentState.ERROR,
         AgentState.PAUSED,
         AgentState.STOPPED,
-    ]:
-        await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
+    ]
+
+    try:
+        await run_agent_until_done(controller, runtime, end_states)
+    except Exception as e:
+        logger.error(f'Exception in main loop: {e}')
 
     # save session when we're about to close
     if config.file_store is not None and config.file_store != 'memory':
@@ -205,8 +209,6 @@ async def run_controller(
         # NOTE: the saved state does not include delegates events
         end_state.save_to_session(event_stream.sid, event_stream.file_store)
 
-    # close when done
-    await controller.close()
     state = controller.get_state()
 
     # save trajectories if applicable

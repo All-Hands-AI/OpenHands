@@ -16,6 +16,7 @@ from openhands.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
+    BrowseInteractiveAction,
     CmdRunAction,
     FileEditAction,
     IPythonRunCellAction,
@@ -23,6 +24,7 @@ from openhands.events.action import (
 )
 from openhands.events.observation import (
     AgentDelegateObservation,
+    BrowserOutputObservation,
     CmdOutputObservation,
     FileEditObservation,
     IPythonRunCellObservation,
@@ -42,7 +44,7 @@ from openhands.utils.prompt import PromptManager
 
 
 class CodeActAgent(Agent):
-    VERSION = '2.1'
+    VERSION = '2.2'
     """
     The Code Act Agent is a minimalist agent.
     The agent works by passing the model a list of action-observation pairs and prompting the model to take the next step.
@@ -105,7 +107,7 @@ class CodeActAgent(Agent):
         if self.function_calling_active:
             # Function calling mode
             self.tools = codeact_function_calling.get_tools(
-                codeact_enable_browsing_delegate=self.config.codeact_enable_browsing_delegate,
+                codeact_enable_browsing=self.config.codeact_enable_browsing,
                 codeact_enable_jupyter=self.config.codeact_enable_jupyter,
                 codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
             )
@@ -142,10 +144,10 @@ class CodeActAgent(Agent):
 
         Args:
             action (Action): The action to convert. Can be one of:
-                - AgentDelegateAction: For delegating tasks to other agents
                 - CmdRunAction: For executing bash commands
                 - IPythonRunCellAction: For running IPython code
                 - FileEditAction: For editing files
+                - BrowseInteractiveAction: For browsing the web
                 - AgentFinishAction: For ending the interaction
                 - MessageAction: For sending messages
             pending_tool_call_action_messages (dict[str, Message]): Dictionary mapping response IDs
@@ -169,6 +171,7 @@ class CodeActAgent(Agent):
                 CmdRunAction,
                 IPythonRunCellAction,
                 FileEditAction,
+                BrowseInteractiveAction,
             ),
         ) or (isinstance(action, AgentFinishAction) and action.source == 'agent'):
             if self.function_calling_active:
@@ -185,13 +188,17 @@ class CodeActAgent(Agent):
                 pending_tool_call_action_messages[llm_response.id] = Message(
                     role=assistant_msg.role,
                     # tool call content SHOULD BE a string
-                    content=[TextContent(text=assistant_msg.content)]
+                    content=[TextContent(text=assistant_msg.content or '')]
                     if assistant_msg.content is not None
                     else [],
                     tool_calls=assistant_msg.tool_calls,
                 )
                 return []
             else:
+                assert not isinstance(action, BrowseInteractiveAction), (
+                    'BrowseInteractiveAction is not supported in non-function calling mode. Action: '
+                    + str(action)
+                )
                 content = [TextContent(text=self.action_parser.action_to_str(action))]
                 return [
                     Message(
@@ -201,7 +208,7 @@ class CodeActAgent(Agent):
                 ]
         elif isinstance(action, MessageAction):
             role = 'user' if action.source == 'user' else 'assistant'
-            content = [TextContent(text=action.content)]
+            content = [TextContent(text=action.content or '')]
             if self.llm.vision_is_active() and action.images_urls:
                 content.append(ImageContent(image_urls=action.images_urls))
             return [
@@ -266,6 +273,12 @@ class CodeActAgent(Agent):
         elif isinstance(obs, FileEditObservation):
             text = obs_prefix + truncate_content(str(obs), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, BrowserOutputObservation):
+            text = obs.get_agent_obs_text()
+            message = Message(
+                role='user',
+                content=[TextContent(text=obs_prefix + text)],
+            )
         elif isinstance(obs, AgentDelegateObservation):
             text = obs_prefix + truncate_content(
                 obs.outputs['content'] if 'content' in obs.outputs else '',
@@ -335,6 +348,7 @@ class CodeActAgent(Agent):
         }
         if self.function_calling_active:
             params['tools'] = self.tools
+            params['parallel_tool_calls'] = False
         else:
             params['stop'] = [
                 '</execute_ipython>',

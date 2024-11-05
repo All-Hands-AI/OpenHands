@@ -11,6 +11,7 @@ from openhands.events.event import Event, EventSource
 from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.runtime.utils.shutdown_listener import should_continue
 from openhands.storage import FileStore
+from openhands.utils.async_utils import call_sync_from_async
 
 
 class EventStreamSubscriber(str, Enum):
@@ -22,12 +23,27 @@ class EventStreamSubscriber(str, Enum):
     TEST = 'test'
 
 
-def session_exists(sid: str, file_store: FileStore) -> bool:
+async def session_exists(sid: str, file_store: FileStore) -> bool:
     try:
-        file_store.list(f'sessions/{sid}')
+        await call_sync_from_async(file_store.list, f'sessions/{sid}')
         return True
     except FileNotFoundError:
         return False
+
+
+class AsyncEventStreamWrapper:
+    def __init__(self, event_stream, *args, **kwargs):
+        self.event_stream = event_stream
+        self.args = args
+        self.kwargs = kwargs
+
+    async def __aiter__(self):
+        loop = asyncio.get_running_loop()
+
+        # Create an async generator that yields events
+        for event in self.event_stream.get_events(*self.args, **self.kwargs):
+            # Run the blocking get_events() in a thread pool
+            yield await loop.run_in_executor(None, lambda e=event: e)  # type: ignore
 
 
 @dataclass
@@ -151,12 +167,16 @@ class EventStream:
 
     def add_event(self, event: Event, source: EventSource):
         try:
-            asyncio.get_running_loop().create_task(self.async_add_event(event, source))
+            asyncio.get_running_loop().create_task(self._async_add_event(event, source))
         except RuntimeError:
             # No event loop running...
-            asyncio.run(self.async_add_event(event, source))
+            asyncio.run(self._async_add_event(event, source))
 
-    async def async_add_event(self, event: Event, source: EventSource):
+    async def _async_add_event(self, event: Event, source: EventSource):
+        if hasattr(event, '_id') and event.id is not None:
+            raise ValueError(
+                'Event already has an ID. It was probably added back to the EventStream from inside a handler, trigging a loop.'
+            )
         with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1

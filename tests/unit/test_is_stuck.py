@@ -427,9 +427,10 @@ class TestStuckDetector:
         # read_observation_2._cause = read_action_2._id
         state.history.append(read_observation_2)
 
-        # one more message to break the pattern
-        message_null_observation = NullObservation(content='')
+        message_action = MessageAction(content='Come on', wait_for_response=False)
         state.history.append(message_action)
+
+        message_null_observation = NullObservation(content='')
         state.history.append(message_null_observation)
 
         cmd_action_3 = CmdRunAction(command='ls')

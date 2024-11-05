@@ -81,7 +81,6 @@ class State:
     history: list[Event] = field(default_factory=list)
     inputs: dict = field(default_factory=dict)
     outputs: dict = field(default_factory=dict)
-    last_error: str | None = None
     agent_state: AgentState = AgentState.LOADING
     resume_state: AgentState | None = None
     traffic_control_state: TrafficControlState = TrafficControlState.NORMAL
@@ -99,6 +98,7 @@ class State:
     # NOTE: This will never be used by the controller, but it can be used by different
     # evaluation tasks to store extra data needed to track the progress/state of the task.
     extra_data: dict[str, Any] = field(default_factory=dict)
+    last_error: str = ''
 
     def save_to_session(self, sid: str, file_store: FileStore):
         pickled = pickle.dumps(self)
@@ -125,9 +125,6 @@ class State:
             state.resume_state = state.agent_state
         else:
             state.resume_state = None
-
-        # don't carry last_error anymore after restore
-        state.last_error = None
 
         # first state after restore
         state.agent_state = AgentState.LOADING
