@@ -1,5 +1,6 @@
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, Mock
+from uuid import uuid4
 
 import pytest
 
@@ -143,7 +144,7 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
             error_obs._cause = event.id
             event_stream.add_event(error_obs, EventSource.USER)
 
-    event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event)
+    event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
     runtime.event_stream = event_stream
 
     state = await run_controller(
@@ -188,7 +189,7 @@ async def test_run_controller_stop_with_stuck():
             non_fatal_error_obs._cause = event.id
             event_stream.add_event(non_fatal_error_obs, EventSource.ENVIRONMENT)
 
-    event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event)
+    event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
     runtime.event_stream = event_stream
 
     state = await run_controller(
