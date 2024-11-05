@@ -127,6 +127,8 @@ class RunloopRuntime(EventStreamRuntime):
             status_message_callback,
             attach_to_existing,
         )
+        # Buffer for container logs
+        self.log_buffer: LogBuffer | None = None
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(90),
@@ -188,7 +190,6 @@ class RunloopRuntime(EventStreamRuntime):
             environment_variables={'DEBUG': 'true'} if self.config.debug else {},
             prebuilt='openhands',
             launch_parameters=LaunchParameters(
-                keep_alive_time_seconds=self.config.sandbox.timeout,
                 available_ports=[self._sandbox_port],
             ),
             metadata={'container-name': self.container_name},
