@@ -131,7 +131,8 @@ function App() {
   const { files, importedProjectZip } = useSelector(
     (state: RootState) => state.initalQuery,
   );
-  const { start, send, setRuntimeIsInitialized, runtimeActive } = useSocket();
+  const { start, send, setRuntimeIsInitialized, runtimeIsInitialized } =
+    useSocket();
   const { settings, token, ghToken, repo, q, lastCommit } =
     useLoaderData<typeof clientLoader>();
   const fetcher = useFetcher();
@@ -225,7 +226,7 @@ function App() {
         isAgentStateChange(parsed) &&
         parsed.extras.agent_state === AgentState.INIT
       ) {
-        setRuntimeIsInitialized();
+        setRuntimeIsInitialized(true);
 
         // handle new session
         if (!token) {
@@ -271,15 +272,15 @@ function App() {
   });
 
   React.useEffect(() => {
-    if (runtimeActive && userId && ghToken) {
+    if (runtimeIsInitialized && userId && ghToken) {
       // Export if the user valid, this could happen mid-session so it is handled here
       send(getGitHubTokenCommand(ghToken));
     }
-  }, [userId, ghToken, runtimeActive]);
+  }, [userId, ghToken, runtimeIsInitialized]);
 
   React.useEffect(() => {
     (async () => {
-      if (runtimeActive && importedProjectZip) {
+      if (runtimeIsInitialized && importedProjectZip) {
         // upload files action
         try {
           const blob = base64ToBlob(importedProjectZip);
@@ -293,7 +294,7 @@ function App() {
         }
       }
     })();
-  }, [runtimeActive, importedProjectZip]);
+  }, [runtimeIsInitialized, importedProjectZip]);
 
   const {
     isOpen: securityModalIsOpen,

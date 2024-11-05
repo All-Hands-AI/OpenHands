@@ -2,6 +2,8 @@ import React from "react";
 import { Data } from "ws";
 import EventLogger from "#/utils/event-logger";
 
+const RECONNECT_RETRIES = 5;
+
 interface WebSocketClientOptions {
   token: string | null;
   onOpen?: (event: Event) => void;
@@ -14,8 +16,8 @@ interface WebSocketContextType {
   send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => void;
   start: (options?: WebSocketClientOptions) => void;
   stop: () => void;
-  setRuntimeIsInitialized: () => void;
-  runtimeActive: boolean;
+  setRuntimeIsInitialized: (runtimeIsInitialized: boolean) => void;
+  runtimeIsInitialized: boolean;
   isConnected: boolean;
   events: Record<string, unknown>[];
 }
@@ -30,13 +32,11 @@ interface SocketProviderProps {
 
 function SocketProvider({ children }: SocketProviderProps) {
   const wsRef = React.useRef<WebSocket | null>(null);
+  const wsReconnectRetries = React.useRef<number | null>();
+  const [shouldRun, setShouldRun] = React.useState(true);
   const [isConnected, setIsConnected] = React.useState(false);
-  const [runtimeActive, setRuntimeActive] = React.useState(false);
+  const [runtimeIsInitialized, setRuntimeIsInitialized] = React.useState(false);
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
-
-  const setRuntimeIsInitialized = () => {
-    setRuntimeActive(true);
-  };
 
   const start = React.useCallback((options?: WebSocketClientOptions): void => {
     if (wsRef.current) {
@@ -45,20 +45,24 @@ function SocketProvider({ children }: SocketProviderProps) {
       );
     }
 
+    setShouldRun(true);
     const baseUrl =
       import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const sessionToken = options?.token || "NO_JWT"; // not allowed to be empty or duplicated
     const ghToken = localStorage.getItem("ghToken") || "NO_GITHUB";
 
+    console.log(`Connecting with sessionToken: ${sessionToken}`);
     const ws = new WebSocket(`${protocol}//${baseUrl}/ws`, [
       "openhands",
       sessionToken,
       ghToken,
     ]);
+    // (window as any).myCurrentWs = ws; // TODO: DELETE ME! (Global Variable allows me to close from console!)
 
     ws.addEventListener("open", (event) => {
       setIsConnected(true);
+      wsReconnectRetries.current = RECONNECT_RETRIES;
       options?.onOpen?.(event);
     });
 
@@ -76,17 +80,29 @@ function SocketProvider({ children }: SocketProviderProps) {
 
     ws.addEventListener("close", (event) => {
       EventLogger.event(event, "SOCKET CLOSE");
-
       setIsConnected(false);
-      setRuntimeActive(false);
+      setRuntimeIsInitialized(false);
       wsRef.current = null;
       options?.onClose?.(event);
+      if (shouldRun) {
+        if (wsReconnectRetries.current) {
+          wsReconnectRetries.current -= 1;
+          const token = localStorage.getItem("token");
+          setTimeout(() => {
+            console.log("RECONNECTING...");
+            start({ ...(options || {}), token });
+          }, 1);
+        } else {
+          setShouldRun(false);
+        }
+      }
     });
 
     wsRef.current = ws;
   }, []);
 
   const stop = React.useCallback((): void => {
+    setShouldRun(false);
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
@@ -111,7 +127,7 @@ function SocketProvider({ children }: SocketProviderProps) {
       start,
       stop,
       setRuntimeIsInitialized,
-      runtimeActive,
+      runtimeIsInitialized,
       isConnected,
       events,
     }),
@@ -120,7 +136,7 @@ function SocketProvider({ children }: SocketProviderProps) {
       start,
       stop,
       setRuntimeIsInitialized,
-      runtimeActive,
+      runtimeIsInitialized,
       isConnected,
       events,
     ],
