@@ -298,7 +298,7 @@ class CodeActAgent(Agent):
             # when the LLM tries to return the next message
             raise ValueError(f'Unknown observation type: {type(obs)}')
 
-        if message and self.function_calling_active:
+        if self.function_calling_active:
             # Update the message as tool response properly
             if (tool_call_metadata := obs.tool_call_metadata) is not None:
                 tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(

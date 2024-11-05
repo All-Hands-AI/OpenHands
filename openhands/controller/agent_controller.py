@@ -621,8 +621,9 @@ class AgentController:
             if self.state.start_id <= -1:
                 self.state.start_id = 0
 
-            logger.debug(
-                f'AgentController {self.id} initializing history from event {self.state.start_id}'
+            self.log(
+                'debug',
+                f'AgentController {self.id} initializing history from event {self.state.start_id}',
             )
 
             self._init_history()
@@ -650,8 +651,9 @@ class AgentController:
 
         # sanity check
         if start_id > end_id + 1:
-            logger.debug(
-                f'start_id {start_id} is greater than end_id + 1 ({end_id + 1}). History will be empty.'
+            self.log(
+                'debug',
+                f'start_id {start_id} is greater than end_id + 1 ({end_id + 1}). History will be empty.',
             )
             self.state.history = []
             return
@@ -680,8 +682,9 @@ class AgentController:
             elif isinstance(event, AgentDelegateObservation):
                 # Match with most recent unmatched delegate action
                 if not delegate_action_ids:
-                    logger.error(
-                        f'Found AgentDelegateObservation without matching action at id={event.id}'
+                    self.log(
+                        'error',
+                        f'Found AgentDelegateObservation without matching action at id={event.id}',
                     )
                     continue
 

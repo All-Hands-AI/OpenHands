@@ -428,6 +428,7 @@ class TestStuckDetector:
         state.history.append(read_observation_2)
 
         message_action = MessageAction(content='Come on', wait_for_response=False)
+        message_action._source = EventSource.USER
         state.history.append(message_action)
 
         message_null_observation = NullObservation(content='')
