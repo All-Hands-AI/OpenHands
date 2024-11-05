@@ -21,12 +21,12 @@ OpenHands provides a user-friendly Graphical User Interface (GUI) mode for inter
 
 ### GitHub Token Setup
 
-You can provide a `GITHUB_TOKEN` is provided to OpenHands through two methods:
+OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if it is available. This can happen in two ways:
 
-1. When running locally: You can manually input your GitHub token
-2. When using online: The token is obtained through GitHub OAuth authentication
+1. Locally (OSS): The user directly inputs their GitHub token.
+2. Online (SaaS): The token is obtained through GitHub OAuth authentication.
 
-If this token exists, it is automatically exported to the shell environment for the agent to use.
+When you reach the `/app` route, the app checks if a token is present. If it finds one, it sets it in the environment for the agent to use.
 
 ### Advanced Settings
 
