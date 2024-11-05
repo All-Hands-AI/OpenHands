@@ -44,6 +44,179 @@ Reminder:
 - If there is no function call available, answer the question like normal with your current knowledge and do not tell the user about function calls
 """
 
+# NOTE: we need to make sure this example is always in-sync with the tool interface designed in openhands/agenthub/codeact_agent/function_calling.py
+IN_CONTEXT_LEARNING_EXAMPLE = """
+Here's a running example of how to perform a task with the provided tools.
+
+--------------------- START OF EXAMPLE ---------------------
+
+USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.
+
+ASSISTANT: Sure! Let me first check the current directory:
+<function=execute_bash>
+<parameter=command>
+pwd && ls
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+/workspace
+openhands@runtime:~/workspace$
+
+ASSISTANT: There is no `app.py` file in the current directory. Let me create a Python file `app.py`:
+<function=str_replace_editor>
+<parameter=command>create</parameter>
+<parameter=path>/workspace/app.py</parameter>
+<parameter=file_text>
+from flask import Flask
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    numbers = list(range(1, 11))
+    return str(numbers)
+
+if __name__ == '__main__':
+    app.run(port=5000)
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [str_replace_editor]:
+File created successfully at: /workspace/app.py
+
+ASSISTANT: I have created a Python file `app.py` that will display a list of numbers from 1 to 10 when you run it. Let me run the Python file for you:
+<function=execute_bash>
+<parameter=command>
+python3 app.py > server.log 2>&1 &
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+[1] 121
+[1]+  Exit 1                  python3 app.py > server.log 2>&1
+
+ASSISTANT: Looks like the server is running with PID 121 then crashed. Let me check the server log:
+<function=execute_bash>
+<parameter=command>
+cat server.log
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+Traceback (most recent call last):
+  File "/workspace/app.py", line 2, in <module>
+    from flask import Flask
+ModuleNotFoundError: No module named 'flask'
+
+ASSISTANT: Looks like the server crashed because the `flask` module is not installed. Let me install the `flask` module for you:
+<function=execute_bash>
+<parameter=command>
+pip3 install flask
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+Defaulting to user installation because normal site-packages is not writeable
+Collecting flask
+  Using cached flask-3.0.3-py3-none-any.whl (101 kB)
+Collecting blinker>=1.6.2
+  Using cached blinker-1.7.0-py3-none-any.whl (13 kB)
+Collecting Werkzeug>=3.0.0
+  Using cached werkzeug-3.0.2-py3-none-any.whl (226 kB)
+Collecting click>=8.1.3
+  Using cached click-8.1.7-py3-none-any.whl (97 kB)
+Collecting itsdangerous>=2.1.2
+  Using cached itsdangerous-2.2.0-py3-none-any.whl (16 kB)
+Requirement already satisfied: Jinja2>=3.1.2 in /home/openhands/.local/lib/python3.10/site-packages (from flask) (3.1.3)
+Requirement already satisfied: MarkupSafe>=2.0 in /home/openhands/.local/lib/python3.10/site-packages (from Jinja2>=3.1.2->flask) (2.1.5)
+Installing collected packages: Werkzeug, itsdangerous, click, blinker, flask
+Successfully installed Werkzeug-3.0.2 blinker-1.7.0 click-8.1.7 flask-3.0.3 itsdangerous-2.2.0
+
+ASSISTANT: The `flask` module is installed successfully. Let me run the Python file again:
+<function=execute_bash>
+<parameter=command>
+python3 app.py > server.log 2>&1 &
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+[1] 124
+
+ASSISTANT:
+Let me check the server log again:
+<function=execute_bash>
+<parameter=command>
+cat server.log
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+* Serving Flask app 'app'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+
+ASSISTANT:
+The server is running on port 5000 with PID 124. You can access the list of numbers by visiting http://127.0.0.1:5000. If you have any further questions, feel free to ask!
+
+USER: Now kill the server, make it display the numbers in a table format.
+
+ASSISTANT:
+Sure! Let me stop the server first:
+<function=execute_bash>
+<parameter=command>
+kill 124
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+[1]+  Terminated              python3 app.py > server.log 2>&1
+
+ASSISTANT:
+Now let me display the numbers in a table format:
+<function=str_replace_editor>
+<parameter=command>str_replace</parameter>
+<parameter=path>/workspace/app.py</parameter>
+<parameter=old_str>return str(numbers)</parameter>
+<parameter=new_str>return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'</parameter>
+</function>
+
+USER: EXECUTION RESULT of [str_replace_editor]:
+The file /workspace/app.py has been edited. Here's the result of running `cat -n` on a snippet of /workspace/app.py:
+     3
+     4  @app.route('/')
+     5  def index():
+     6      numbers = list(range(1, 11))
+     7      return '<table>' + ''.join([f'<tr><td>{i}</td></tr>' for i in numbers]) + '</table>'
+     8
+     9  if __name__ == '__main__':
+    10      app.run(port=5000)
+Review the changes and make sure they are as expected. Edit the file again if necessary.
+
+ASSISTANT:
+Running the updated file:
+<function=execute_bash>
+<parameter=command>
+<parameter=command>
+python3 app.py > server.log 2>&1 &
+</parameter>
+</function>
+
+USER: EXECUTION RESULT of [execute_bash]:
+[1] 126
+
+ASSISTANT:
+The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Let me know if you have any further requests!
+<function=finish>
+</function>
+
+--------------------- END OF EXAMPLE ---------------------
+
+Do NOT assume the environment is the same as in the example above. Now, let's start on a new task:
+
+""".lstrip()
+
 # Regex patterns for function call parsing
 FN_REGEX_PATTERN = r'<function=([^>]+)>\n(.*?)</function>'
 FN_PARAM_REGEX_PATTERN = r'<parameter=([^>]+)>(.*?)</parameter>'
@@ -113,6 +286,7 @@ def convert_fncall_messages_to_non_fncall_messages(
     )
 
     converted_messages = []
+    first_user_message_encountered = False
     for message in messages:
         role, content = message['role'], message['content']
         if content is None:
@@ -135,7 +309,64 @@ def convert_fncall_messages_to_non_fncall_messages(
             converted_messages.append({'role': 'system', 'content': content})
         # 2. USER MESSAGES (no change)
         elif role == 'user':
-            converted_messages.append(message)
+            # Add in-context learning example for the first user message
+            if not first_user_message_encountered:
+                first_user_message_encountered = True
+                # Check tools
+                if not (
+                    tools
+                    and len(tools) > 0
+                    and any(
+                        (
+                            tool['type'] == 'function'
+                            and tool['function']['name'] == 'execute_bash'
+                            and 'command'
+                            in tool['function']['parameters']['properties']
+                        )
+                        for tool in tools
+                    )
+                    and any(
+                        (
+                            tool['type'] == 'function'
+                            and tool['function']['name'] == 'str_replace_editor'
+                            and 'path' in tool['function']['parameters']['properties']
+                            and 'file_text'
+                            in tool['function']['parameters']['properties']
+                            and 'old_str'
+                            in tool['function']['parameters']['properties']
+                            and 'new_str'
+                            in tool['function']['parameters']['properties']
+                        )
+                        for tool in tools
+                    )
+                ):
+                    raise FunctionCallConversionError(
+                        'The currently provided tool set are NOT compatible with the in-context learning example for FnCall to Non-FnCall conversion. '
+                        'Please update your tool set OR the in-context learning example in openhands/llm/fn_call_converter.py'
+                    )
+
+                # add in-context learning example
+                if isinstance(content, str):
+                    content = IN_CONTEXT_LEARNING_EXAMPLE + content
+                elif isinstance(content, list):
+                    if content and content[0]['type'] == 'text':
+                        content[0]['text'] = (
+                            IN_CONTEXT_LEARNING_EXAMPLE + content[0]['text']
+                        )
+                    else:
+                        content = [
+                            {'type': 'text', 'text': IN_CONTEXT_LEARNING_EXAMPLE}
+                        ] + content
+                else:
+                    raise FunctionCallConversionError(
+                        f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
+                    )
+            converted_messages.append(
+                {
+                    'role': 'user',
+                    'content': content,
+                }
+            )
 
         # 3. ASSISTANT MESSAGES
         # - 3.1 no change if no function call
@@ -280,6 +511,7 @@ def convert_non_fncall_messages_to_fncall_messages(
     converted_messages = []
     tool_call_counter = 1  # Counter for tool calls
 
+    first_user_message_encountered = False
     for message in messages:
         role, content = message['role'], message['content']
 
@@ -297,6 +529,22 @@ def convert_non_fncall_messages_to_fncall_messages(
             converted_messages.append({'role': 'system', 'content': content})
         # Skip user messages (no conversion needed)
         elif role == 'user':
+            # Check & replace in-context learning example
+            if not first_user_message_encountered:
+                first_user_message_encountered = True
+                if isinstance(content, str):
+                    content = content.replace(IN_CONTEXT_LEARNING_EXAMPLE, '')
+                elif isinstance(content, list):
+                    for item in content:
+                        if item['type'] == 'text':
+                            item['text'] = item['text'].replace(
+                                IN_CONTEXT_LEARNING_EXAMPLE, ''
+                            )
+                else:
+                    raise FunctionCallConversionError(
+                        f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
+                    )
+
             # Check for tool execution result pattern
             if isinstance(content, str):
                 tool_result_match = re.search(
@@ -348,7 +596,7 @@ def convert_non_fncall_messages_to_fncall_messages(
                     }
                 )
             else:
-                converted_messages.append(message)
+                converted_messages.append({'role': 'user', 'content': content})
 
         # Handle assistant messages
         elif role == 'assistant':
