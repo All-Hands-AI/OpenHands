@@ -12,7 +12,6 @@ from openhands.events.action import (
 )
 from openhands.events.action.agent import AgentFinishAction
 from openhands.events.event import Event, EventSource
-from openhands.events.observation import AgentDelegateObservation
 from openhands.llm.metrics import Metrics
 from openhands.storage.files import FileStore
 
@@ -156,12 +155,6 @@ class State:
                     return last_user_message, None
 
         return last_user_message, last_user_message_image_urls
-
-    def has_delegation(self) -> bool:
-        for event in self.history:
-            if isinstance(event, AgentDelegateObservation):
-                return True
-        return False
 
     def get_last_agent_message(self) -> str | None:
         for event in reversed(self.history):

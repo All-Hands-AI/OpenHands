@@ -115,7 +115,14 @@ def codeact_user_response(
     if state.history:
         # check if the last action has an answer, if so, early exit
         if try_parse is not None:
-            last_action = state.history.get_last_action()
+            last_action = next(
+                (
+                    event
+                    for event in reversed(state.history)
+                    if isinstance(event, Action)
+                ),
+                None,
+            )
             ans = try_parse(last_action)
             if ans is not None:
                 return '/exit'
