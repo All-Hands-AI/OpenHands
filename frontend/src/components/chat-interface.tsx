@@ -41,7 +41,7 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [suggestions, setSuggestions] = React.useState<Record<string, string>>(
-    SUGGESTIONS["non-repo"],
+    SUGGESTIONS.repo,
   );
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
 
@@ -71,7 +71,7 @@ export function ChatInterface() {
 
   React.useEffect(() => {
     if (messageToSend && runtimeActive) {
-      handleSendMessage(messageToSend, []);
+      send(createChatMessage(messageToSend, [], new Date().toISOString()));
       setMessageToSend(null);
     }
   }, [messageToSend, runtimeActive]);
