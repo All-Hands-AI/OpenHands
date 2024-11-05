@@ -32,8 +32,7 @@ interface SocketProviderProps {
 
 function SocketProvider({ children }: SocketProviderProps) {
   const wsRef = React.useRef<WebSocket | null>(null);
-  const wsReconnectRetries = React.useRef<number | null>();
-  const [shouldRun, setShouldRun] = React.useState(true);
+  const wsReconnectRetries = React.useRef<number>(RECONNECT_RETRIES);
   const [isConnected, setIsConnected] = React.useState(false);
   const [runtimeIsInitialized, setRuntimeIsInitialized] = React.useState(false);
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
@@ -45,25 +44,25 @@ function SocketProvider({ children }: SocketProviderProps) {
       );
     }
 
-    setShouldRun(true);
     const baseUrl =
       import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const sessionToken = options?.token || "NO_JWT"; // not allowed to be empty or duplicated
     const ghToken = localStorage.getItem("ghToken") || "NO_GITHUB";
 
-    console.log(`Connecting with sessionToken: ${sessionToken}`);
     const ws = new WebSocket(`${protocol}//${baseUrl}/ws`, [
       "openhands",
       sessionToken,
       ghToken,
     ]);
-    // (window as any).myCurrentWs = ws; // TODO: DELETE ME! (Global Variable allows me to close from console!)
 
     ws.addEventListener("open", (event) => {
       setIsConnected(true);
+      // const reconnecting = wsReconnectRetries.current !== RECONNECT_RETRIES;
       wsReconnectRetries.current = RECONNECT_RETRIES;
+      // if (!reconnecting) {
       options?.onOpen?.(event);
+      // }
     });
 
     ws.addEventListener("message", (event) => {
@@ -84,17 +83,10 @@ function SocketProvider({ children }: SocketProviderProps) {
       setRuntimeIsInitialized(false);
       wsRef.current = null;
       options?.onClose?.(event);
-      if (shouldRun) {
-        if (wsReconnectRetries.current) {
-          wsReconnectRetries.current -= 1;
-          const token = localStorage.getItem("token");
-          setTimeout(() => {
-            console.log("RECONNECTING...");
-            start({ ...(options || {}), token });
-          }, 1);
-        } else {
-          setShouldRun(false);
-        }
+      if (wsReconnectRetries.current) {
+        wsReconnectRetries.current -= 1;
+        const token = localStorage.getItem("token");
+        setTimeout(() => start({ ...(options || {}), token }), 1);
       }
     });
 
@@ -102,7 +94,7 @@ function SocketProvider({ children }: SocketProviderProps) {
   }, []);
 
   const stop = React.useCallback((): void => {
-    setShouldRun(false);
+    wsReconnectRetries.current = 0;
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
