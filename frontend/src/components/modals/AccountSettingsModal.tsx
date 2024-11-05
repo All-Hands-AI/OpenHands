@@ -1,11 +1,10 @@
-import { useFetcher, useRouteLoaderData } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import React from "react";
 import { BaseModalTitle } from "./confirmation-modals/BaseModal";
 import ModalBody from "./ModalBody";
 import ModalButton from "../buttons/ModalButton";
 import FormFieldset from "../form/FormFieldset";
 import { CustomInput } from "../form/custom-input";
-import { clientLoader } from "#/routes/_oh";
 import { clientAction as settingsClientAction } from "#/routes/settings";
 import { clientAction as loginClientAction } from "#/routes/login";
 import { AvailableLanguages } from "#/i18n";
@@ -23,7 +22,7 @@ function AccountSettingsModal({
   gitHubError,
   analyticsConsent,
 }: AccountSettingsModalProps) {
-  const data = useRouteLoaderData<typeof clientLoader>("routes/_oh");
+  const ghToken = localStorage.getItem("ghToken");
   const settingsFetcher = useFetcher<typeof settingsClientAction>({
     key: "settings",
   });
@@ -33,7 +32,7 @@ function AccountSettingsModal({
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const language = formData.get("language")?.toString();
-    const ghToken = formData.get("ghToken")?.toString();
+    const newGHToken = formData.get("ghToken")?.toString();
     const analytics = formData.get("analytics")?.toString() === "on";
 
     const accountForm = new FormData();
@@ -46,7 +45,7 @@ function AccountSettingsModal({
       )?.value;
       accountForm.append("language", languageKey ?? "en");
     }
-    if (ghToken) loginForm.append("ghToken", ghToken);
+    if (newGHToken) loginForm.append("ghToken", newGHToken);
     accountForm.append("analytics", analytics.toString());
 
     settingsFetcher.submit(accountForm, {
@@ -82,14 +81,14 @@ function AccountSettingsModal({
             name="ghToken"
             label="GitHub Token"
             type="password"
-            defaultValue={data?.ghToken ?? ""}
+            defaultValue={ghToken ?? ""}
           />
           {gitHubError && (
             <p className="text-danger text-xs">
               GitHub token is invalid. Please try again.
             </p>
           )}
-          {data?.ghToken && !gitHubError && (
+          {ghToken && !gitHubError && (
             <ModalButton
               variant="text-like"
               text="Disconnect"
