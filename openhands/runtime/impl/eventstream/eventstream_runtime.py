@@ -34,7 +34,7 @@ from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.base import Runtime
 from openhands.runtime.builder import DockerRuntimeBuilder
-from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.plugins import PluginRequirement, VSCodeRequirement
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
@@ -207,7 +207,10 @@ class EventStreamRuntime(Runtime):
                 'info', f'Starting runtime with image: {self.runtime_container_image}'
             )
             await call_sync_from_async(self._init_container)
-            self.log('info', f'Container started: {self.container_name}')
+            self.log(
+                'info',
+                f'Container started: {self.container_name}. VSCode URL: {self.vscode_url}',
+            )
 
         else:
             await call_sync_from_async(self._attach_to_container)
@@ -239,6 +242,11 @@ class EventStreamRuntime(Runtime):
             )
             raise ex
 
+    @property
+    def vscode_url(self) -> str:
+        assert self._vscode_url is not None
+        return self._vscode_url
+
     def _init_container(self):
         self.log('debug', 'Preparing to start container...')
         self.send_status_message('STATUS$PREPARING_CONTAINER')
@@ -247,7 +255,6 @@ class EventStreamRuntime(Runtime):
             plugin_arg = (
                 f'--plugins {" ".join([plugin.name for plugin in self.plugins])} '
             )
-
         self._host_port = self._find_available_port()
         self._container_port = (
             self._host_port
@@ -256,6 +263,7 @@ class EventStreamRuntime(Runtime):
 
         use_host_network = self.config.sandbox.use_host_network
         network_mode: str | None = 'host' if use_host_network else None
+
         port_mapping: dict[str, list[dict[str, str]]] | None = (
             None
             if use_host_network
@@ -267,6 +275,19 @@ class EventStreamRuntime(Runtime):
                 'warn',
                 'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
             )
+
+        # Check if vscode is enabled
+        vscode_enabled = any(
+            isinstance(plugin, VSCodeRequirement) for plugin in self.plugins
+        )
+        self._vscode_url: str | None = None
+        if vscode_enabled:
+            # vscode is on port +1 from container port
+            if isinstance(port_mapping, dict):
+                port_mapping[f'{self._container_port + 1}/tcp'] = [
+                    {'HostPort': str(self._host_port + 1)}
+                ]
+            self._vscode_url = f'http://localhost:{self._host_port + 1}'
 
         # Combine environment variables
         environment = {

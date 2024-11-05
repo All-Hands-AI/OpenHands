@@ -283,3 +283,11 @@ class Runtime(FileEditRuntimeMixin):
     def copy_from(self, path: str) -> bytes:
         """Zip all files in the sandbox and return as a stream of bytes."""
         raise NotImplementedError('This method is not implemented in the base class.')
+
+    # ====================================================================
+    # VSCode URL
+    # ====================================================================
+
+    @property
+    def vscode_url(self) -> str:
+        raise NotImplementedError('This method is not implemented in the base class.')

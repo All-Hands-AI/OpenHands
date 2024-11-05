@@ -18,7 +18,6 @@ from zipfile import ZipFile
 
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.middleware.wsgi import WSGIMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
@@ -50,11 +49,11 @@ from openhands.runtime.plugins import (
     ALL_PLUGINS,
     JupyterPlugin,
     Plugin,
-    VSCodePlugin,
 )
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
+from openhands.runtime.utils.system import check_port_available
 from openhands.utils.async_utils import wait_all
 
 
@@ -321,6 +320,8 @@ if __name__ == '__main__':
     )
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
+    os.environ['VSCODE_PORT'] = str(int(args.port) + 1)
+    assert check_port_available(int(os.environ['VSCODE_PORT']))
 
     plugins_to_load: list[Plugin] = []
     if args.plugins:
@@ -342,14 +343,6 @@ if __name__ == '__main__':
             browsergym_eval_env=args.browsergym_eval_env,
         )
         await client.ainit()
-
-        # Add route /vscode/* to proxy VSCode requests to the VSCode server
-        if 'vscode' in client.plugins:
-            assert isinstance(client.plugins['vscode'], VSCodePlugin)
-            app.mount(
-                '/vscode', WSGIMiddleware(app=client.plugins['vscode'].vscode_proxy)
-            )
-
         yield
         # Clean up & release the resources
         client.close()
