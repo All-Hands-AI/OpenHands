@@ -44,7 +44,7 @@ class Session:
             sid, file_store, status_callback=self.queue_status_message
         )
         self.agent_session.event_stream.subscribe(
-            EventStreamSubscriber.SERVER, self.on_event
+            EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
         self.config = config
         self.loop = asyncio.get_event_loop()
@@ -182,10 +182,7 @@ class Session:
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True
-        except RuntimeError:
-            self.is_alive = False
-            return False
-        except WebSocketDisconnect:
+        except (RuntimeError, WebSocketDisconnect):
             self.is_alive = False
             return False
 
