@@ -45,3 +45,8 @@ export interface GetConfigResponse {
   APP_MODE: "saas" | "oss";
   GITHUB_CLIENT_ID: string | null;
 }
+
+export interface GetVSCodeUrlResponse {
+  vscode_url: string | null;
+  error?: string;
+}

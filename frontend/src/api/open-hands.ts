@@ -7,6 +7,7 @@ import {
   GitHubAccessTokenResponse,
   ErrorResponse,
   GetConfigResponse,
+  GetVSCodeUrlResponse,
 } from "./open-hands.types";
 
 class OpenHands {
@@ -149,6 +150,15 @@ class OpenHands {
       true,
     );
   }
+
+  /**
+   * Get the VSCode URL
+   * @returns VSCode URL
+   */
+  static async getVSCodeUrl(): Promise<GetVSCodeUrlResponse> {
+    return request(`/api/vscode-url`);
+  }
 }
+
 
 export default OpenHands;

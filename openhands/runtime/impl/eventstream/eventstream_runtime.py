@@ -150,6 +150,7 @@ class EventStreamRuntime(Runtime):
         self.config = config
         self._host_port = 30000  # initial dummy value
         self._container_port = 30001  # initial dummy value
+        self._vscode_url: str | None = None  # initial dummy value
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.session = requests.Session()
         self.status_callback = status_callback
@@ -184,6 +185,9 @@ class EventStreamRuntime(Runtime):
             env_vars,
             status_callback,
             attach_to_existing,
+        )
+        self._vscode_enabled = any(
+            isinstance(plugin, VSCodeRequirement) for plugin in self.plugins
         )
 
     async def connect(self):
@@ -227,7 +231,7 @@ class EventStreamRuntime(Runtime):
 
         self.log(
             'debug',
-            f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}',
+            f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}. VSCode URL: {self.vscode_url}',
         )
         self.send_status_message(' ')
 
@@ -243,8 +247,7 @@ class EventStreamRuntime(Runtime):
             raise ex
 
     @property
-    def vscode_url(self) -> str:
-        assert self._vscode_url is not None
+    def vscode_url(self) -> str | None:
         return self._vscode_url
 
     def _init_container(self):
@@ -276,12 +279,7 @@ class EventStreamRuntime(Runtime):
                 'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
             )
 
-        # Check if vscode is enabled
-        vscode_enabled = any(
-            isinstance(plugin, VSCodeRequirement) for plugin in self.plugins
-        )
-        self._vscode_url: str | None = None
-        if vscode_enabled:
+        if self._vscode_enabled:
             # vscode is on port +1 from container port
             if isinstance(port_mapping, dict):
                 port_mapping[f'{self._container_port + 1}/tcp'] = [
@@ -385,6 +383,9 @@ class EventStreamRuntime(Runtime):
             break
         self._host_port = self._container_port
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
+        self._vscode_url = (
+            f'http://localhost:{self._host_port + 1}' if self._vscode_enabled else None
+        )
         self.log(
             'debug',
             f'attached to container: {self.container_name} {self._container_port} {self.api_url}',

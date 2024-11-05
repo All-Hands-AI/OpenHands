@@ -27,6 +27,7 @@ import { getSettings, settingsAreUpToDate } from "#/services/settings";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import NewProjectIcon from "#/assets/new-project.svg?react";
 import DocsIcon from "#/assets/docs.svg?react";
+import VSCodeIcon from "#/assets/vscode-alt.svg?react";
 import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { WaitlistModal } from "#/components/waitlist-modal";
@@ -228,6 +229,21 @@ export default function MainApp() {
     });
   };
 
+  const handleVSCodeClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      const response = await OpenHands.getVSCodeUrl();
+      console.log(response);
+      if (response.vscode_url) {
+        window.open(response.vscode_url, "_blank");
+      } else {
+        console.error("Failed to fetch VSCode URL:", response.error);
+      }
+    } catch (error) {
+      console.error("Failed to fetch VSCode URL:", error);
+    }
+  };
+
   return (
     <div className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3">
       <aside className="px-1 flex flex-col gap-1">
@@ -272,6 +288,14 @@ export default function MainApp() {
             aria-label="Documentation"
           >
             <DocsIcon width={28} height={28} />
+          </a>
+          <a
+            href="#"
+            onClick={handleVSCodeClick}
+            className="w-8 h-8 rounded-full hover:opacity-80 flex items-center justify-center"
+            aria-label="VSCode"
+          >
+            <VSCodeIcon width={26} height={26} />
           </a>
           {!!token && (
             <button
