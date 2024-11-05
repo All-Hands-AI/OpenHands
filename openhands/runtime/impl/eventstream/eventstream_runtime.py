@@ -285,7 +285,7 @@ class EventStreamRuntime(Runtime):
                 port_mapping[f'{self._container_port + 1}/tcp'] = [
                     {'HostPort': str(self._host_port + 1)}
                 ]
-            self._vscode_url = f'http://localhost:{self._host_port + 1}'
+            self._vscode_url = f'http://localhost:{self._host_port + 1}/?folder={self.config.workspace_mount_path_in_sandbox}'
 
         # Combine environment variables
         environment = {
@@ -384,7 +384,9 @@ class EventStreamRuntime(Runtime):
         self._host_port = self._container_port
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self._vscode_url = (
-            f'http://localhost:{self._host_port + 1}' if self._vscode_enabled else None
+            f'http://localhost:{self._host_port + 1}/?folder={self.config.workspace_mount_path_in_sandbox}'
+            if self._vscode_enabled
+            else None
         )
         self.log(
             'debug',
