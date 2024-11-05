@@ -16,6 +16,7 @@ from tqdm import tqdm
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    compatibility_for_eval_history_pairs,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -46,7 +47,7 @@ def codeact_user_response(state: State) -> str:
         # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
         user_msgs = [
             event
-            for event in state.history.get_events()
+            for event in state.history
             if isinstance(event, MessageAction) and event.source == 'user'
         ]
         if len(user_msgs) > 2:
@@ -431,7 +432,7 @@ def process_instance(
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
-    histories = state.history.compatibility_for_eval_history_pairs()
+    histories = compatibility_for_eval_history_pairs(state.history)
 
     # Save the output
     output = EvalOutput(

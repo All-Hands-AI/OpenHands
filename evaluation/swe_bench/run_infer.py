@@ -443,7 +443,8 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    histories = [event_to_dict(event) for event in state.history.get_events()]
+    # NOTE: this is NO LONGER the event stream, but an agent history that includes delegate agent's events
+    histories = [event_to_dict(event) for event in state.history]
     metrics = state.metrics.get() if state.metrics else None
 
     # Save the output

@@ -181,7 +181,7 @@ def process_instance(
     test_result = {}
     if state is None:
         raise ValueError('State should not be None.')
-    histories = [event_to_dict(event) for event in state.history.get_events()]
+    histories = [event_to_dict(event) for event in state.history]
     metrics = state.metrics.get() if state.metrics else None
 
     # Save the output
