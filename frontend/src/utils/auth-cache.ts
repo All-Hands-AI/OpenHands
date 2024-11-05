@@ -1,14 +1,18 @@
+import type { GitHubUser, GitHubErrorReponse } from "#/types/github";
+
 interface CacheEntry<T> {
   value: T;
   timestamp: number;
   token: string;
 }
 
+type GitHubUserResponse = GitHubUser | GitHubErrorReponse;
+
 class AuthCache {
   private static instance: AuthCache;
   private cache: {
     isAuthed?: CacheEntry<boolean>;
-    githubUser?: CacheEntry<any>;
+    githubUser?: CacheEntry<GitHubUserResponse>;
   } = {};
 
   private constructor() {}
@@ -20,11 +24,11 @@ class AuthCache {
     return AuthCache.instance;
   }
 
-  private isExpired(entry: CacheEntry<any>, maxAge: number): boolean {
+  private isExpired<T>(entry: CacheEntry<T>, maxAge: number): boolean {
     return Date.now() - entry.timestamp > maxAge;
   }
 
-  private tokenChanged(entry: CacheEntry<any>, currentToken: string): boolean {
+  private tokenChanged<T>(entry: CacheEntry<T>, currentToken: string): boolean {
     return entry.token !== currentToken;
   }
 
@@ -44,7 +48,7 @@ class AuthCache {
     };
   }
 
-  getGithubUser(token: string): any | undefined {
+  getGithubUser(token: string): GitHubUserResponse | undefined {
     const entry = this.cache.githubUser;
     if (!entry || this.isExpired(entry, 300000) || this.tokenChanged(entry, token)) {
       return undefined;
@@ -52,7 +56,7 @@ class AuthCache {
     return entry.value;
   }
 
-  setGithubUser(token: string, value: any): void {
+  setGithubUser(token: string, value: GitHubUserResponse): void {
     this.cache.githubUser = {
       value,
       timestamp: Date.now(),
