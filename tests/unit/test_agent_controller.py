@@ -1,5 +1,6 @@
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, Mock
+from uuid import uuid4
 
 import pytest
 
@@ -7,14 +8,12 @@ from openhands.controller.agent import Agent
 from openhands.controller.agent_controller import AgentController
 from openhands.controller.state.state import TrafficControlState
 from openhands.core.config import AppConfig
-from openhands.core.exceptions import LLMMalformedActionError
 from openhands.core.main import run_controller
 from openhands.core.schema import AgentState
 from openhands.events import Event, EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import ChangeAgentStateAction, CmdRunAction, MessageAction
 from openhands.events.observation import (
     ErrorObservation,
-    FatalErrorObservation,
 )
 from openhands.events.serialization import event_to_dict
 from openhands.llm import LLM
@@ -43,6 +42,11 @@ def mock_agent():
 @pytest.fixture
 def mock_event_stream():
     return MagicMock(spec=EventStream)
+
+
+@pytest.fixture
+def mock_status_callback():
+    return AsyncMock()
 
 
 @pytest.mark.asyncio
@@ -98,39 +102,19 @@ async def test_on_event_change_agent_state_action(mock_agent, mock_event_stream)
 
 
 @pytest.mark.asyncio
-async def test_report_error(mock_agent, mock_event_stream):
+async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_callback):
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
+        status_callback=mock_status_callback,
         max_iterations=10,
         sid='test',
         confirmation_mode=False,
         headless_mode=True,
     )
     error_message = 'Test error'
-    await controller.report_error(error_message)
-    assert controller.state.last_error == error_message
-    controller.event_stream.add_event.assert_called_once()
-    await controller.close()
-
-
-@pytest.mark.asyncio
-async def test_step_with_exception(mock_agent, mock_event_stream):
-    controller = AgentController(
-        agent=mock_agent,
-        event_stream=mock_event_stream,
-        max_iterations=10,
-        sid='test',
-        confirmation_mode=False,
-        headless_mode=True,
-    )
-    controller.state.agent_state = AgentState.RUNNING
-    controller.report_error = AsyncMock()
-    controller.agent.step.side_effect = LLMMalformedActionError('Malformed action')
-    await controller._step()
-
-    # Verify that report_error was called with the correct error message
-    controller.report_error.assert_called_once_with('Malformed action')
+    await controller._react_to_exception(RuntimeError(error_message))
+    controller.status_callback.assert_called_once()
     await controller.close()
 
 
@@ -141,23 +125,26 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
     event_stream = EventStream(sid='test', file_store=file_store)
 
     agent = MagicMock(spec=Agent)
-    # a random message to send to the runtime
-    event = CmdRunAction(command='ls')
-    agent.step.return_value = event
+    agent = MagicMock(spec=Agent)
+
+    def agent_step_fn(state):
+        print(f'agent_step_fn received state: {state}')
+        return CmdRunAction(command='ls')
+
+    agent.step = agent_step_fn
     agent.llm = MagicMock(spec=LLM)
     agent.llm.metrics = Metrics()
     agent.llm.config = config.get_llm_config()
-
-    fatal_error_obs = FatalErrorObservation('Fatal error detected')
-    fatal_error_obs._cause = event.id
 
     runtime = MagicMock(spec=Runtime)
 
     async def on_event(event: Event):
         if isinstance(event, CmdRunAction):
-            await event_stream.async_add_event(fatal_error_obs, EventSource.USER)
+            error_obs = ErrorObservation('You messed around with Jim')
+            error_obs._cause = event.id
+            event_stream.add_event(error_obs, EventSource.USER)
 
-    event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event)
+    event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
     runtime.event_stream = event_stream
 
     state = await run_controller(
@@ -170,30 +157,23 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
     )
     print(f'state: {state}')
     print(f'event_stream: {list(event_stream.get_events())}')
-    assert state.iteration == 1
-    # it will first become AgentState.ERROR, then become AgentState.STOPPED
-    # in side run_controller (since the while loop + sleep no longer loop)
-    assert state.agent_state == AgentState.STOPPED
-    assert (
-        state.last_error
-        == 'There was a fatal error during agent execution: **FatalErrorObservation**\nFatal error detected'
-    )
-    assert len(list(event_stream.get_events())) == 5
+    assert state.iteration == 4
+    assert state.agent_state == AgentState.ERROR
+    assert state.last_error == 'Agent got stuck in a loop'
+    assert len(list(event_stream.get_events())) == 11
 
 
 @pytest.mark.asyncio
-async def test_run_controller_stop_with_stuck(mock_agent, mock_event_stream):
+async def test_run_controller_stop_with_stuck():
     config = AppConfig()
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(sid='test', file_store=file_store)
 
     agent = MagicMock(spec=Agent)
-    # a random message to send to the runtime
-    event = CmdRunAction(command='ls')
 
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
-        return event
+        return CmdRunAction(command='ls')
 
     agent.step = agent_step_fn
     agent.llm = MagicMock(spec=LLM)
@@ -207,9 +187,9 @@ async def test_run_controller_stop_with_stuck(mock_agent, mock_event_stream):
                 'Non fatal error here to trigger loop'
             )
             non_fatal_error_obs._cause = event.id
-            await event_stream.async_add_event(non_fatal_error_obs, EventSource.USER)
+            event_stream.add_event(non_fatal_error_obs, EventSource.ENVIRONMENT)
 
-    event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event)
+    event_stream.subscribe(EventStreamSubscriber.RUNTIME, on_event, str(uuid4()))
     runtime.event_stream = event_stream
 
     state = await run_controller(
@@ -226,7 +206,7 @@ async def test_run_controller_stop_with_stuck(mock_agent, mock_event_stream):
         print(f'event {i}: {event_to_dict(event)}')
 
     assert state.iteration == 4
-    assert len(events) == 12
+    assert len(events) == 11
     # check the eventstream have 4 pairs of repeated actions and observations
     repeating_actions_and_observations = events[2:10]
     for action, observation in zip(
@@ -244,13 +224,8 @@ async def test_run_controller_stop_with_stuck(mock_agent, mock_event_stream):
     assert last_event['extras']['agent_state'] == 'error'
     assert last_event['observation'] == 'agent_state_changed'
 
-    # it will first become AgentState.ERROR, then become AgentState.STOPPED
-    # in side run_controller (since the while loop + sleep no longer loop)
-    assert state.agent_state == AgentState.STOPPED
-    assert (
-        state.last_error
-        == 'There was a fatal error during agent execution: **FatalErrorObservation**\nAgent got stuck in a loop'
-    )
+    assert state.agent_state == AgentState.ERROR
+    assert state.last_error == 'Agent got stuck in a loop'
 
 
 @pytest.mark.asyncio
@@ -317,7 +292,7 @@ async def test_step_max_iterations(mock_agent, mock_event_stream):
     assert controller.state.traffic_control_state == TrafficControlState.NORMAL
     await controller._step()
     assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
-    assert controller.state.agent_state == AgentState.PAUSED
+    assert controller.state.agent_state == AgentState.ERROR
     await controller.close()
 
 
@@ -357,7 +332,7 @@ async def test_step_max_budget(mock_agent, mock_event_stream):
     assert controller.state.traffic_control_state == TrafficControlState.NORMAL
     await controller._step()
     assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
-    assert controller.state.agent_state == AgentState.PAUSED
+    assert controller.state.agent_state == AgentState.ERROR
     await controller.close()
 
 

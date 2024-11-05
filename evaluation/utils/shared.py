@@ -18,6 +18,9 @@ from openhands.core.logger import get_console_handler
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import Action
 from openhands.events.action.message import MessageAction
+from openhands.events.event import Event
+from openhands.events.serialization.event import event_to_dict
+from openhands.events.utils import get_pairs_from_events
 
 
 class EvalMetadata(BaseModel):
@@ -112,7 +115,14 @@ def codeact_user_response(
     if state.history:
         # check if the last action has an answer, if so, early exit
         if try_parse is not None:
-            last_action = state.history.get_last_action()
+            last_action = next(
+                (
+                    event
+                    for event in reversed(state.history)
+                    if isinstance(event, Action)
+                ),
+                None,
+            )
             ans = try_parse(last_action)
             if ans is not None:
                 return '/exit'
@@ -120,7 +130,7 @@ def codeact_user_response(
         # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
         user_msgs = [
             event
-            for event in state.history.get_events()
+            for event in state.history
             if isinstance(event, MessageAction) and event.source == 'user'
         ]
         if len(user_msgs) >= 2:
@@ -411,3 +421,35 @@ def reset_logger_for_multiprocessing(
     )
     file_handler.setLevel(logging.INFO)
     logger.addHandler(file_handler)
+
+
+def update_llm_config_for_completions_logging(
+    llm_config: LLMConfig,
+    eval_output_dir: str,
+    instance_id: str,
+) -> LLMConfig:
+    """Update the LLM config for logging completions."""
+    if llm_config.log_completions:
+        llm_config.log_completions_folder = os.path.join(
+            eval_output_dir, 'llm_completions', instance_id
+        )
+        logger.info(
+            f'Logging LLM completions for instance {instance_id} to '
+            f'{llm_config.log_completions_folder}'
+        )
+    return llm_config
+
+
+# history is now available as a filtered stream of events, rather than list of pairs of (Action, Observation)
+# we rebuild the pairs here
+# for compatibility with the existing output format in evaluations
+# remove this when it's no longer necessary
+def compatibility_for_eval_history_pairs(
+    history: list[Event],
+) -> list[tuple[dict, dict]]:
+    history_pairs = []
+
+    for action, observation in get_pairs_from_events(history):
+        history_pairs.append((event_to_dict(action), event_to_dict(observation)))
+
+    return history_pairs

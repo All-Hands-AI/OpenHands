@@ -4,12 +4,7 @@ import OpenHands from "#/api/open-hands";
  * Downloads the current workspace as a .zip file.
  */
 export const downloadWorkspace = async () => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    throw new Error("No token found");
-  }
-
-  const blob = await OpenHands.getWorkspaceZip(token);
+  const blob = await OpenHands.getWorkspaceZip();
 
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");

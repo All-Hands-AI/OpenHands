@@ -72,9 +72,8 @@ const isAgentStateChange = (
 
 export const clientLoader = async () => {
   const ghToken = localStorage.getItem("ghToken");
-
   try {
-    const isAuthed = await userIsAuthenticated(ghToken);
+    const isAuthed = await userIsAuthenticated();
     if (!isAuthed) {
       clearSession();
       return redirect("/");
@@ -185,21 +184,6 @@ function App() {
     if (q) addIntialQueryToChat(q, files);
   }, [settings]);
 
-  const handleError = (message: string) => {
-    const [error, ...rest] = message.split(":");
-    const details = rest.join(":");
-    if (!details) {
-      dispatch(
-        addErrorMessage({
-          error: "An error has occured",
-          message: error,
-        }),
-      );
-    } else {
-      dispatch(addErrorMessage({ error, message: details }));
-    }
-  };
-
   const handleMessage = React.useCallback(
     (message: MessageEvent<WebSocket.Data>) => {
       // set token received from the server
@@ -225,7 +209,12 @@ function App() {
         return;
       }
       if (isErrorObservation(parsed)) {
-        handleError(parsed.message);
+        dispatch(
+          addErrorMessage({
+            id: parsed.extras?.error_id,
+            message: parsed.message,
+          }),
+        );
         return;
       }
 
@@ -290,21 +279,21 @@ function App() {
 
   React.useEffect(() => {
     (async () => {
-      if (runtimeActive && token && importedProjectZip) {
+      if (runtimeActive && importedProjectZip) {
         // upload files action
         try {
           const blob = base64ToBlob(importedProjectZip);
           const file = new File([blob], "imported-project.zip", {
             type: blob.type,
           });
-          await OpenHands.uploadFiles(token, [file]);
+          await OpenHands.uploadFiles([file]);
           dispatch(setImportedProjectZip(null));
         } catch (error) {
           toast.error("Failed to upload project files.");
         }
       }
     })();
-  }, [runtimeActive, token, importedProjectZip]);
+  }, [runtimeActive, importedProjectZip]);
 
   const {
     isOpen: securityModalIsOpen,
@@ -315,7 +304,7 @@ function App() {
   return (
     <div className="flex flex-col h-full gap-3">
       <div className="flex h-full overflow-auto gap-3">
-        <Container className="w-[375px] max-h-full">
+        <Container className="w-[390px] max-h-full">
           <ChatInterface />
         </Container>
 
