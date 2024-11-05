@@ -1,11 +1,10 @@
 import os
 
 import httpx
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.sheets_client import GoogleSheetsClient
-from tenacity import retry, stop_after_attempt, wait_exponential
-
 
 GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', '').strip()
 GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '').strip()
