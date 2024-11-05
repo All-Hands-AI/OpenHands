@@ -116,7 +116,10 @@ class ActionExecutor:
         return self._initial_pwd
 
     async def ainit(self):
-        await wait_all(self._init_plugin(plugin) for plugin in self.plugins_to_load)
+        await wait_all(
+            (self._init_plugin(plugin) for plugin in self.plugins_to_load),
+            timeout=30,
+        )
 
         # This is a temporary workaround
         # TODO: refactor AgentSkills to be part of JupyterPlugin
