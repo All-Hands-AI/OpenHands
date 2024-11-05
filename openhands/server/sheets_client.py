@@ -20,8 +20,13 @@ class GoogleSheetsClient:
             logger.info(f'Successfully obtained credentials for project: {project}')
             self.service = build('sheets', 'v4', credentials=credentials)
             logger.info('Successfully initialized Google Sheets API service')
-        except Exception as e:
-            logger.error(f'Failed to initialize Google Sheets client: {str(e)}')
+        except (OSError, ValueError) as e:
+            # OSError for file/env issues, ValueError for invalid credentials
+            logger.error(f'Failed to initialize Google Sheets client due to credentials error: {str(e)}')
+            self.service = None
+        except HttpError as e:
+            # Handle API-specific errors
+            logger.error(f'Failed to initialize Google Sheets client due to API error: {str(e)}')
             self.service = None
 
     def get_usernames(self, spreadsheet_id: str, range_name: str = 'A:A') -> List[str]:
@@ -61,8 +66,10 @@ class GoogleSheetsClient:
         except HttpError as err:
             logger.error(f'Error accessing Google Sheet {spreadsheet_id}: {err}')
             return []
-        except Exception as e:
+        except (KeyError, IndexError) as e:
+            # KeyError if 'values' missing from response
+            # IndexError if cell[0] access fails
             logger.error(
-                f'Unexpected error accessing Google Sheet {spreadsheet_id}: {str(e)}'
+                f'Error parsing data from Google Sheet {spreadsheet_id}: {str(e)}'
             )
             return []

@@ -262,6 +262,8 @@ class AgentSession:
                 agent_state, max_iterations, confirmation_mode
             )
             logger.debug(f'Restored agent state from session, sid: {self.sid}')
-        except Exception as e:
+        except (FileNotFoundError, ValueError, KeyError) as e:
+            # Common exceptions: FileNotFoundError if state file doesn't exist,
+            # ValueError if state data is invalid, KeyError if required fields missing
             logger.debug(f'State could not be restored: {e}')
         logger.debug('Agent controller initialized.')

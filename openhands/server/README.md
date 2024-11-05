@@ -180,3 +180,132 @@ The `listen.py` file is the main server file that sets up the FastAPI applicatio
    - Various API endpoints are provided for agent interactions, file operations, and retrieving configuration defaults.
 
 This server architecture allows for managing multiple client sessions, each with its own agent instance, runtime environment, and security analyzer. The event-driven design facilitates real-time communication between clients and agents, while the modular structure allows for easy extension and maintenance of different components.
+
+## Error Handling Guidelines
+
+The OpenHands server implements comprehensive error handling to ensure reliability and maintainability:
+
+### 1. Input Validation
+
+All inputs should be validated at multiple levels:
+- Request parameters and payloads
+- WebSocket message formats
+- File uploads and content
+- Configuration values
+- Environment variables
+
+### 2. Error Categories
+
+Errors are categorized into different types:
+1. **Client Errors** (4xx):
+   - 400 Bad Request: Invalid input format
+   - 401 Unauthorized: Missing/invalid authentication
+   - 403 Forbidden: Permission denied
+   - 404 Not Found: Resource doesn't exist
+   - 413 Payload Too Large: Request exceeds size limits
+   - 422 Unprocessable Entity: Valid format but invalid content
+
+2. **Server Errors** (5xx):
+   - 500 Internal Server Error: Unexpected errors
+   - 503 Service Unavailable: Service dependencies down
+   - 504 Gateway Timeout: Operation timed out
+
+3. **WebSocket Errors**:
+   - Connection errors
+   - Protocol violations
+   - Message format errors
+   - State errors
+
+4. **Runtime Errors**:
+   - File system errors
+   - Network errors
+   - Resource limits
+   - Timeouts
+
+### 3. Error Response Format
+
+All error responses should follow a consistent format:
+```json
+{
+    "error": true,
+    "message": "Human-readable error message",
+    "code": "ERROR_CODE",
+    "details": {
+        "field": "specific_field",
+        "reason": "specific reason",
+        "suggestion": "how to fix"
+    }
+}
+```
+
+### 4. Logging Guidelines
+
+Error logging follows these principles:
+1. Use appropriate log levels:
+   - ERROR: Application errors requiring attention
+   - WARNING: Unusual but handled conditions
+   - INFO: Normal operation events
+   - DEBUG: Detailed debugging information
+
+2. Include context:
+   - Session ID
+   - Request ID
+   - Timestamp
+   - Stack trace (when appropriate)
+   - Relevant data (sanitized)
+
+3. Sensitive data handling:
+   - Never log credentials
+   - Mask sensitive values
+   - Follow data privacy requirements
+
+### 5. Error Recovery
+
+The server implements several recovery mechanisms:
+1. **Session Recovery**:
+   - Automatic cleanup of dead sessions
+   - State restoration when possible
+   - Resource cleanup on errors
+
+2. **Connection Recovery**:
+   - WebSocket reconnection handling
+   - State synchronization
+   - Event replay when needed
+
+3. **Resource Management**:
+   - Memory limits enforcement
+   - File handle cleanup
+   - Temporary file cleanup
+   - Process termination
+
+### 6. Development Guidelines
+
+When implementing error handling:
+1. Use specific exception types
+2. Validate inputs early
+3. Provide meaningful error messages
+4. Use appropriate HTTP status codes
+5. Clean up resources in finally blocks
+6. Add proper logging
+7. Document error conditions
+8. Test error cases
+
+### 7. Testing Error Handling
+
+Test error conditions using:
+1. Unit tests for validation
+2. Integration tests for system errors
+3. Load tests for resource limits
+4. Chaos testing for resilience
+5. Security tests for vulnerabilities
+
+### 8. Monitoring and Alerts
+
+Monitor error conditions:
+1. Error rate tracking
+2. Response time monitoring
+3. Resource usage alerts
+4. Security incident detection
+5. System health checks
+
+This comprehensive error handling ensures the server remains stable and maintainable while providing good debugging capabilities and user feedback.

@@ -403,14 +403,34 @@ async def get_litellm_models() -> list[str]:
         if ollama_base_url:
             ollama_url = ollama_base_url.strip('/') + '/api/tags'
             try:
-                ollama_models_list = requests.get(ollama_url, timeout=3).json()[
-                    'models'
-                ]
+                response = requests.get(ollama_url, timeout=3)
+                response.raise_for_status()  # Raise for bad status codes
+                
+                data = response.json()
+                if not isinstance(data, dict) or 'models' not in data:
+                    logger.error('Invalid response format from OLLAMA API')
+                    continue
+                    
+                ollama_models_list = data['models']
+                if not isinstance(ollama_models_list, list):
+                    logger.error('OLLAMA models is not a list')
+                    continue
+                    
                 for model in ollama_models_list:
-                    model_list.append('ollama/' + model['name'])
+                    if isinstance(model, dict) and 'name' in model:
+                        model_list.append('ollama/' + model['name'])
+                    else:
+                        logger.warning(f'Invalid model format in OLLAMA response: {model}')
                 break
-            except requests.exceptions.RequestException as e:
-                logger.error(f'Error getting OLLAMA models: {e}', exc_info=True)
+                
+            except requests.exceptions.Timeout:
+                logger.warning(f'Timeout connecting to OLLAMA at {ollama_url}')
+            except requests.exceptions.ConnectionError:
+                logger.warning(f'Failed to connect to OLLAMA at {ollama_url}')
+            except requests.exceptions.HTTPError as e:
+                logger.error(f'HTTP error from OLLAMA API: {str(e)}')
+            except (ValueError, KeyError) as e:
+                logger.error(f'Invalid JSON response from OLLAMA API: {str(e)}')
 
     return list(sorted(set(model_list)))
 
@@ -494,11 +514,23 @@ async def list_files(request: Request, path: str | None = None):
         try:
             read_action = FileReadAction(gitignore_path)
             observation = await call_sync_from_async(runtime.run_action, read_action)
+            if not isinstance(observation, FileReadObservation):
+                logger.warning(f'Unexpected observation type: {type(observation)}')
+                return file_list
+                
             spec = PathSpec.from_lines(
                 GitWildMatchPattern, observation.content.splitlines()
             )
-        except Exception as e:
-            logger.warning(e)
+        except FileNotFoundError:
+            # Not having a .gitignore is normal, just return the original list
+            return file_list
+        except (IOError, OSError) as e:
+            # Handle file system related errors
+            logger.warning(f'Error reading .gitignore: {str(e)}')
+            return file_list
+        except ValueError as e:
+            # Handle invalid .gitignore format
+            logger.warning(f'Invalid .gitignore format: {str(e)}')
             return file_list
         file_list = [entry for entry in file_list if not spec.match_file(entry)]
         return file_list
@@ -686,10 +718,33 @@ async def submit_feedback(request: Request):
     try:
         feedback_data = await call_sync_from_async(store_feedback, feedback)
         return JSONResponse(status_code=200, content=feedback_data)
-    except Exception as e:
-        logger.error(f'Error submitting feedback: {e}')
+    except ValueError as e:
+        # Handle validation errors from store_feedback
+        logger.warning(f'Invalid feedback data: {str(e)}')
         return JSONResponse(
-            status_code=500, content={'error': 'Failed to submit feedback'}
+            status_code=400,
+            content={'error': 'Invalid feedback data', 'details': str(e)}
+        )
+    except requests.exceptions.Timeout:
+        # Handle timeout errors
+        logger.error('Feedback submission timed out')
+        return JSONResponse(
+            status_code=504,
+            content={'error': 'Feedback submission timed out'}
+        )
+    except requests.exceptions.ConnectionError:
+        # Handle connection errors
+        logger.error('Could not connect to feedback server')
+        return JSONResponse(
+            status_code=503,
+            content={'error': 'Feedback service unavailable'}
+        )
+    except Exception as e:
+        # Handle unexpected errors
+        logger.error(f'Unexpected error submitting feedback: {str(e)}', exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={'error': 'Internal server error while submitting feedback'}
         )
 
 
@@ -730,25 +785,74 @@ async def save_file(request: Request):
     """
     try:
         # Extract file path and content from the request
-        data = await request.json()
+        try:
+            data = await request.json()
+        except ValueError as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f'Invalid JSON in request: {str(e)}'
+            )
+
         file_path = data.get('filePath')
         content = data.get('content')
 
-        # Validate the presence of required data
-        if not file_path or content is None:
-            raise HTTPException(status_code=400, detail='Missing filePath or content')
+        # Validate the presence and format of required data
+        if not file_path:
+            raise HTTPException(
+                status_code=400,
+                detail='Missing required field: filePath'
+            )
+        if not isinstance(file_path, str):
+            raise HTTPException(
+                status_code=400,
+                detail='filePath must be a string'
+            )
+        if content is None:
+            raise HTTPException(
+                status_code=400,
+                detail='Missing required field: content'
+            )
+
+        # Validate file path format and security
+        if '..' in file_path or file_path.startswith('/'):
+            raise HTTPException(
+                status_code=400,
+                detail='Invalid file path: must be relative path without parent directory references'
+            )
 
         # Save the file to the agent's runtime file store
         runtime: Runtime = request.state.conversation.runtime
-        file_path = os.path.join(
+        if not runtime:
+            raise HTTPException(
+                status_code=503,
+                detail='Runtime not available'
+            )
+
+        full_path = os.path.join(
             runtime.config.workspace_mount_path_in_sandbox, file_path
         )
-        write_action = FileWriteAction(file_path, content)
-        observation = await call_sync_from_async(runtime.run_action, write_action)
+        write_action = FileWriteAction(full_path, content)
+        
+        try:
+            observation = await call_sync_from_async(runtime.run_action, write_action)
+        except (IOError, OSError) as e:
+            # Handle file system errors
+            raise HTTPException(
+                status_code=500,
+                detail=f'File system error: {str(e)}'
+            )
+        except Exception as e:
+            # Handle unexpected runtime errors
+            logger.error(f'Unexpected error during file write: {str(e)}', exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail='Internal error while writing file'
+            )
 
         if isinstance(observation, FileWriteObservation):
             return JSONResponse(
-                status_code=200, content={'message': 'File saved successfully'}
+                status_code=200,
+                content={'message': 'File saved successfully'}
             )
         elif isinstance(observation, ErrorObservation):
             return JSONResponse(
@@ -791,12 +895,49 @@ async def security_api(request: Request):
 
 @app.get('/api/zip-directory')
 async def zip_current_workspace(request: Request):
+    """Create a zip archive of the current workspace.
+    
+    Args:
+        request: The FastAPI request object
+        
+    Returns:
+        StreamingResponse: A streaming response containing the zip file
+        
+    Raises:
+        HTTPException:
+            - 503 if runtime is not available
+            - 500 if there's an error creating the zip file
+    """
     try:
         logger.debug('Zipping workspace')
         runtime: Runtime = request.state.conversation.runtime
+        
+        if not runtime:
+            raise HTTPException(
+                status_code=503,
+                detail='Runtime not available'
+            )
 
         path = runtime.config.workspace_mount_path_in_sandbox
-        zip_file_bytes = await call_sync_from_async(runtime.copy_from, path)
+        if not path:
+            raise HTTPException(
+                status_code=500,
+                detail='Workspace path not configured'
+            )
+            
+        try:
+            zip_file_bytes = await call_sync_from_async(runtime.copy_from, path)
+        except (IOError, OSError) as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f'Error accessing workspace files: {str(e)}'
+            )
+        except Exception as e:
+            logger.error(f'Unexpected error creating zip: {str(e)}', exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail='Internal error creating zip file'
+            )
         zip_stream = io.BytesIO(zip_file_bytes)  # Wrap to behave like a file stream
         response = StreamingResponse(
             zip_stream,
@@ -871,12 +1012,48 @@ async def authenticate(request: Request):
 
 
 class SPAStaticFiles(StaticFiles):
+    """Custom static files handler that serves index.html for SPA routes.
+    
+    This class extends StaticFiles to handle Single Page Application (SPA) routing
+    by serving index.html when a requested path is not found. This enables client-side
+    routing to work properly.
+    """
     async def get_response(self, path: str, scope):
+        """Get response for the requested path.
+        
+        Args:
+            path: The requested file path
+            scope: The ASGI scope
+            
+        Returns:
+            Response: The file response or index.html for SPA routes
+            
+        Notes:
+            If the requested path is not found, it falls back to serving index.html
+            instead of returning a 404 error. This is required for SPA client-side
+            routing to work.
+        """
         try:
+            # First try to serve the actual file
             return await super().get_response(path, scope)
-        except Exception:
-            # FIXME: just making this HTTPException doesn't work for some reason
+        except FileNotFoundError:
+            # If file not found, serve index.html for SPA routing
+            logger.debug(f'File not found: {path}, serving index.html instead')
             return await super().get_response('index.html', scope)
+        except (IOError, OSError) as e:
+            # Handle file system errors
+            logger.error(f'Error accessing static file {path}: {str(e)}')
+            raise HTTPException(
+                status_code=500,
+                detail='Error accessing static files'
+            )
+        except Exception as e:
+            # Handle unexpected errors
+            logger.error(f'Unexpected error serving static file {path}: {str(e)}', exc_info=True)
+            raise HTTPException(
+                status_code=500,
+                detail='Internal server error'
+            )
 
 
 app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist')
