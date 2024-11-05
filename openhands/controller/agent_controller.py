@@ -133,7 +133,6 @@ class AgentController:
         Note that it's fairly important that this closes properly, otherwise the state is incomplete."""
         await self.set_agent_state_to(AgentState.STOPPED)
 
-
         # we made history, now is the time to rewrite it!
         # the final state.history will be used by external scripts like evals, tests, etc.
         # history will need to be complete WITH delegates events
@@ -158,7 +157,6 @@ class AgentController:
 
         # unsubscribe from the event stream
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER, self.id)
-
 
     def log(self, level: str, message: str, extra: dict | None = None):
         """Logs a message to the agent controller's logger.

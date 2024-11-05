@@ -187,7 +187,7 @@ async def run_controller(
                 event_stream.add_event(action, EventSource.USER)
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, sid)
-    
+
     await runtime.connect()
 
     end_states = [
