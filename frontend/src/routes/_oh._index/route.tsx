@@ -16,7 +16,6 @@ import { retrieveAllGitHubUserRepositories } from "#/api/github";
 import store from "#/store";
 import { setInitialQuery } from "#/state/initial-query-slice";
 import { clientLoader as rootClientLoader } from "#/routes/_oh";
-import OpenHands from "#/api/open-hands";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { GitHubRepositoriesSuggestionBox } from "#/components/github-repositories-suggestion-box";
 
