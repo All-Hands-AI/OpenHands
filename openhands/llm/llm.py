@@ -49,6 +49,7 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
 CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-3-5-sonnet-20241022',
     'claude-3-5-sonnet-20240620',
+    'claude-3-5-haiku-20241022',
     'claude-3-haiku-20240307',
     'claude-3-opus-20240229',
 ]
@@ -57,6 +58,7 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
 FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3-5-sonnet-20240620',
     'claude-3-5-sonnet-20241022',
+    'claude-3-5-haiku-20241022',
     'gpt-4o',
     'gpt-4o-mini',
 ]
@@ -82,6 +84,7 @@ class LLM(RetryMixin, DebugMixin):
             config: The LLM configuration.
             metrics: The metrics to use.
         """
+        self._tried_model_info = False
         self.metrics: Metrics = (
             metrics if metrics is not None else Metrics(model_name=config.model)
         )
@@ -91,56 +94,6 @@ class LLM(RetryMixin, DebugMixin):
         # litellm actually uses base Exception here for unknown model
         self.model_info: ModelInfo | None = None
 
-        try:
-            if self.config.model.startswith('openrouter'):
-                self.model_info = litellm.get_model_info(self.config.model)
-        except Exception as e:
-            logger.debug(f'Error getting model info: {e}')
-
-        if self.config.model.startswith('litellm_proxy/'):
-            # IF we are using LiteLLM proxy, get model info from LiteLLM proxy
-            # GET {base_url}/v1/model/info with litellm_model_id as path param
-            response = requests.get(
-                f'{self.config.base_url}/v1/model/info',
-                headers={'Authorization': f'Bearer {self.config.api_key}'},
-            )
-            resp_json = response.json()
-            if 'data' not in resp_json:
-                logger.error(
-                    f'Error getting model info from LiteLLM proxy: {resp_json}'
-                )
-            all_model_info = resp_json.get('data', [])
-            current_model_info = next(
-                (
-                    info
-                    for info in all_model_info
-                    if info['model_name']
-                    == self.config.model.removeprefix('litellm_proxy/')
-                ),
-                None,
-            )
-            if current_model_info:
-                self.model_info = current_model_info['model_info']
-
-        # Last two attempts to get model info from NAME
-        if not self.model_info:
-            try:
-                self.model_info = litellm.get_model_info(
-                    self.config.model.split(':')[0]
-                )
-            # noinspection PyBroadException
-            except Exception:
-                pass
-        if not self.model_info:
-            try:
-                self.model_info = litellm.get_model_info(
-                    self.config.model.split('/')[-1]
-                )
-            # noinspection PyBroadException
-            except Exception:
-                pass
-        logger.debug(f'Model info: {self.model_info}')
-
         if self.config.log_completions:
             if self.config.log_completions_folder is None:
                 raise RuntimeError(
@@ -148,32 +101,26 @@ class LLM(RetryMixin, DebugMixin):
                 )
             os.makedirs(self.config.log_completions_folder, exist_ok=True)
 
-        # Set the max tokens in an LM-specific way if not set
-        if self.config.max_input_tokens is None:
-            if (
-                self.model_info is not None
-                and 'max_input_tokens' in self.model_info
-                and isinstance(self.model_info['max_input_tokens'], int)
-            ):
-                self.config.max_input_tokens = self.model_info['max_input_tokens']
-            else:
-                # Safe fallback for any potentially viable model
-                self.config.max_input_tokens = 4096
+        self._completion = partial(
+            litellm_completion,
+            model=self.config.model,
+            api_key=self.config.api_key,
+            base_url=self.config.base_url,
+            api_version=self.config.api_version,
+            custom_llm_provider=self.config.custom_llm_provider,
+            max_tokens=self.config.max_output_tokens,
+            timeout=self.config.timeout,
+            temperature=self.config.temperature,
+            top_p=self.config.top_p,
+            drop_params=self.config.drop_params,
+        )
 
-        if self.config.max_output_tokens is None:
-            # Safe default for any potentially viable model
-            self.config.max_output_tokens = 4096
-            if self.model_info is not None:
-                # max_output_tokens has precedence over max_tokens, if either exists.
-                # litellm has models with both, one or none of these 2 parameters!
-                if 'max_output_tokens' in self.model_info and isinstance(
-                    self.model_info['max_output_tokens'], int
-                ):
-                    self.config.max_output_tokens = self.model_info['max_output_tokens']
-                elif 'max_tokens' in self.model_info and isinstance(
-                    self.model_info['max_tokens'], int
-                ):
-                    self.config.max_output_tokens = self.model_info['max_tokens']
+        if self.vision_is_active():
+            logger.debug('LLM: model has vision enabled')
+        if self.is_caching_prompt_active():
+            logger.debug('LLM: caching prompt enabled')
+        if self.is_function_calling_active():
+            logger.debug('LLM: model supports function calling')
 
         self._completion = partial(
             litellm_completion,
@@ -207,6 +154,7 @@ class LLM(RetryMixin, DebugMixin):
         )
         def wrapper(*args, **kwargs):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
+            self.init_model_info()
             messages: list[dict[str, Any]] | dict[str, Any] = []
 
             # some callers might send the model and messages directly
@@ -300,6 +248,87 @@ class LLM(RetryMixin, DebugMixin):
         """
         return self._completion
 
+    def init_model_info(self):
+        if self._tried_model_info:
+            return
+        self._tried_model_info = True
+        try:
+            if self.config.model.startswith('openrouter'):
+                self.model_info = litellm.get_model_info(self.config.model)
+        except Exception as e:
+            logger.debug(f'Error getting model info: {e}')
+
+        if self.config.model.startswith('litellm_proxy/'):
+            # IF we are using LiteLLM proxy, get model info from LiteLLM proxy
+            # GET {base_url}/v1/model/info with litellm_model_id as path param
+            response = requests.get(
+                f'{self.config.base_url}/v1/model/info',
+                headers={'Authorization': f'Bearer {self.config.api_key}'},
+            )
+            resp_json = response.json()
+            if 'data' not in resp_json:
+                logger.error(
+                    f'Error getting model info from LiteLLM proxy: {resp_json}'
+                )
+            all_model_info = resp_json.get('data', [])
+            current_model_info = next(
+                (
+                    info
+                    for info in all_model_info
+                    if info['model_name']
+                    == self.config.model.removeprefix('litellm_proxy/')
+                ),
+                None,
+            )
+            if current_model_info:
+                self.model_info = current_model_info['model_info']
+
+        # Last two attempts to get model info from NAME
+        if not self.model_info:
+            try:
+                self.model_info = litellm.get_model_info(
+                    self.config.model.split(':')[0]
+                )
+            # noinspection PyBroadException
+            except Exception:
+                pass
+        if not self.model_info:
+            try:
+                self.model_info = litellm.get_model_info(
+                    self.config.model.split('/')[-1]
+                )
+            # noinspection PyBroadException
+            except Exception:
+                pass
+        logger.debug(f'Model info: {self.model_info}')
+
+        # Set the max tokens in an LM-specific way if not set
+        if self.config.max_input_tokens is None:
+            if (
+                self.model_info is not None
+                and 'max_input_tokens' in self.model_info
+                and isinstance(self.model_info['max_input_tokens'], int)
+            ):
+                self.config.max_input_tokens = self.model_info['max_input_tokens']
+            else:
+                # Safe fallback for any potentially viable model
+                self.config.max_input_tokens = 4096
+
+        if self.config.max_output_tokens is None:
+            # Safe default for any potentially viable model
+            self.config.max_output_tokens = 4096
+            if self.model_info is not None:
+                # max_output_tokens has precedence over max_tokens, if either exists.
+                # litellm has models with both, one or none of these 2 parameters!
+                if 'max_output_tokens' in self.model_info and isinstance(
+                    self.model_info['max_output_tokens'], int
+                ):
+                    self.config.max_output_tokens = self.model_info['max_output_tokens']
+                elif 'max_tokens' in self.model_info and isinstance(
+                    self.model_info['max_tokens'], int
+                ):
+                    self.config.max_output_tokens = self.model_info['max_tokens']
+
     def vision_is_active(self):
         return not self.config.disable_vision and self._supports_vision()
 
@@ -342,7 +371,7 @@ class LLM(RetryMixin, DebugMixin):
             or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
             or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
         )
-        return model_name_supported and (
+        return model_name_supported or (
             self.model_info is not None
             and self.model_info.get('supports_function_calling', False)
         )

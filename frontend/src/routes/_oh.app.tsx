@@ -184,21 +184,6 @@ function App() {
     if (q) addIntialQueryToChat(q, files);
   }, [settings]);
 
-  const handleError = (message: string) => {
-    const [error, ...rest] = message.split(":");
-    const details = rest.join(":");
-    if (!details) {
-      dispatch(
-        addErrorMessage({
-          error: "An error has occured",
-          message: error,
-        }),
-      );
-    } else {
-      dispatch(addErrorMessage({ error, message: details }));
-    }
-  };
-
   const handleMessage = React.useCallback(
     (message: MessageEvent<WebSocket.Data>) => {
       // set token received from the server
@@ -224,7 +209,12 @@ function App() {
         return;
       }
       if (isErrorObservation(parsed)) {
-        handleError(parsed.message);
+        dispatch(
+          addErrorMessage({
+            id: parsed.extras?.error_id,
+            message: parsed.message,
+          }),
+        );
         return;
       }
 

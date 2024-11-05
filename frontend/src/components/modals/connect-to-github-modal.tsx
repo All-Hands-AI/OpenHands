@@ -53,6 +53,7 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
 
         <div className="flex flex-col gap-2 w-full">
           <ModalButton
+            testId="connect-to-github"
             type="submit"
             text="Connect"
             disabled={fetcher.state === "submitting"}

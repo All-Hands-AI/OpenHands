@@ -11,6 +11,7 @@ from openhands.events.event import Event, EventSource
 from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.runtime.utils.shutdown_listener import should_continue
 from openhands.storage import FileStore
+from openhands.utils.async_utils import call_sync_from_async
 
 
 class EventStreamSubscriber(str, Enum):
@@ -23,12 +24,27 @@ class EventStreamSubscriber(str, Enum):
     TEST = 'test'
 
 
-def session_exists(sid: str, file_store: FileStore) -> bool:
+async def session_exists(sid: str, file_store: FileStore) -> bool:
     try:
-        file_store.list(f'sessions/{sid}')
+        await call_sync_from_async(file_store.list, f'sessions/{sid}')
         return True
     except FileNotFoundError:
         return False
+
+
+class AsyncEventStreamWrapper:
+    def __init__(self, event_stream, *args, **kwargs):
+        self.event_stream = event_stream
+        self.args = args
+        self.kwargs = kwargs
+
+    async def __aiter__(self):
+        loop = asyncio.get_running_loop()
+
+        # Create an async generator that yields events
+        for event in self.event_stream.get_events(*self.args, **self.kwargs):
+            # Run the blocking get_events() in a thread pool
+            yield await loop.run_in_executor(None, lambda e=event: e)  # type: ignore
 
 
 @dataclass
@@ -68,12 +84,27 @@ class EventStream:
 
     def get_events(
         self,
-        start_id=0,
-        end_id=None,
-        reverse=False,
+        start_id: int = 0,
+        end_id: int | None = None,
+        reverse: bool = False,
         filter_out_type: tuple[type[Event], ...] | None = None,
         filter_hidden=False,
     ) -> Iterable[Event]:
+        """
+        Retrieve events from the event stream, optionally filtering out events of a given type
+        and events marked as hidden.
+
+        Args:
+            start_id: The ID of the first event to retrieve. Defaults to 0.
+            end_id: The ID of the last event to retrieve. Defaults to the last event in the stream.
+            reverse: Whether to retrieve events in reverse order. Defaults to False.
+            filter_out_type: A tuple of event types to filter out. Typically used to filter out backend events from the agent.
+            filter_hidden: If True, filters out events with the 'hidden' attribute set to True.
+
+        Yields:
+            Events from the stream that match the criteria.
+        """
+
         def should_filter(event: Event):
             if filter_hidden and hasattr(event, 'hidden') and event.hidden:
                 return True
@@ -144,12 +175,16 @@ class EventStream:
 
     def add_event(self, event: Event, source: EventSource):
         try:
-            asyncio.get_running_loop().create_task(self.async_add_event(event, source))
+            asyncio.get_running_loop().create_task(self._async_add_event(event, source))
         except RuntimeError:
             # No event loop running...
-            asyncio.run(self.async_add_event(event, source))
+            asyncio.run(self._async_add_event(event, source))
 
-    async def async_add_event(self, event: Event, source: EventSource):
+    async def _async_add_event(self, event: Event, source: EventSource):
+        if hasattr(event, '_id') and event.id is not None:
+            raise ValueError(
+                'Event already has an ID. It was probably added back to the EventStream from inside a handler, trigging a loop.'
+            )
         with self._lock:
             event._id = self._cur_id  # type: ignore [attr-defined]
             self._cur_id += 1

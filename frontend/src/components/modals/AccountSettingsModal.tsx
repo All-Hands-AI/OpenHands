@@ -14,12 +14,14 @@ interface AccountSettingsModalProps {
   onClose: () => void;
   selectedLanguage: string;
   gitHubError: boolean;
+  analyticsConsent: string | null;
 }
 
 function AccountSettingsModal({
   onClose,
   selectedLanguage,
   gitHubError,
+  analyticsConsent,
 }: AccountSettingsModalProps) {
   const data = useRouteLoaderData<typeof clientLoader>("routes/_oh");
   const settingsFetcher = useFetcher<typeof settingsClientAction>({
@@ -32,6 +34,7 @@ function AccountSettingsModal({
     const formData = new FormData(event.currentTarget);
     const language = formData.get("language")?.toString();
     const ghToken = formData.get("ghToken")?.toString();
+    const analytics = formData.get("analytics")?.toString() === "on";
 
     const accountForm = new FormData();
     const loginForm = new FormData();
@@ -44,6 +47,7 @@ function AccountSettingsModal({
       accountForm.append("language", languageKey ?? "en");
     }
     if (ghToken) loginForm.append("ghToken", ghToken);
+    accountForm.append("analytics", analytics.toString());
 
     settingsFetcher.submit(accountForm, {
       method: "POST",
@@ -100,6 +104,15 @@ function AccountSettingsModal({
             />
           )}
         </div>
+
+        <label className="flex gap-2 items-center self-start">
+          <input
+            name="analytics"
+            type="checkbox"
+            defaultChecked={analyticsConsent === "true"}
+          />
+          Enable analytics
+        </label>
 
         <div className="flex flex-col gap-2 w-full">
           <ModalButton
