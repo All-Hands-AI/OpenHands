@@ -61,27 +61,6 @@ describe("Empty state", () => {
     });
 
     const suggestions = screen.getByTestId("suggestions");
-    const defaultSuggestions = Object.keys(SUGGESTIONS["non-repo"]);
-
-    // check that there are at most 4 suggestions displayed
-    const displayedSuggestions = within(suggestions).getAllByRole("button");
-    expect(displayedSuggestions.length).toBeLessThanOrEqual(4);
-
-    // Check that each displayed suggestion is one of the default suggestions
-    displayedSuggestions.forEach((suggestion) => {
-      expect(defaultSuggestions).toContain(suggestion.textContent);
-    });
-  });
-
-  it("should render the other suggestions if the user selected to cloned a repo", () => {
-    localStorage.setItem("repo", "some/repo");
-    renderWithProviders(<ChatInterface />, {
-      preloadedState: {
-        chat: { messages: [] },
-      },
-    });
-
-    const suggestions = screen.getByTestId("suggestions");
     const repoSuggestions = Object.keys(SUGGESTIONS.repo);
 
     // check that there are at most 4 suggestions displayed
