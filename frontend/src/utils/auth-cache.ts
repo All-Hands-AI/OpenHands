@@ -6,6 +6,7 @@ interface CacheEntry<T> {
 
 class AuthCache {
   private static instance: AuthCache;
+
   private cache: {
     isAuthed?: CacheEntry<boolean>;
     githubUser?: CacheEntry<any>;
@@ -30,7 +31,11 @@ class AuthCache {
 
   getAuthStatus(token: string): boolean | undefined {
     const entry = this.cache.isAuthed;
-    if (!entry || this.isExpired(entry, 60000) || this.tokenChanged(entry, token)) {
+    if (
+      !entry ||
+      this.isExpired(entry, 60000) ||
+      this.tokenChanged(entry, token)
+    ) {
       return undefined;
     }
     return entry.value;
@@ -46,7 +51,11 @@ class AuthCache {
 
   getGithubUser(token: string): any | undefined {
     const entry = this.cache.githubUser;
-    if (!entry || this.isExpired(entry, 300000) || this.tokenChanged(entry, token)) {
+    if (
+      !entry ||
+      this.isExpired(entry, 300000) ||
+      this.tokenChanged(entry, token)
+    ) {
       return undefined;
     }
     return entry.value;

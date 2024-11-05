@@ -36,6 +36,7 @@ import { setCurrentAgentState } from "#/state/agentSlice";
 import AgentState from "#/types/AgentState";
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
+  console.log('client loader');
   try {
     const config = await OpenHands.getConfig();
     window.__APP_MODE__ = config.APP_MODE;

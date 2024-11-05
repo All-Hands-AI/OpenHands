@@ -3,6 +3,13 @@
  * @param token The GitHub token
  * @returns The headers for the GitHub API
  */
+/**
+ * Given a GitHub token, retrieves the authenticated user
+ * @param token The GitHub token
+ * @returns The authenticated user or an error response
+ */
+import { authCache } from "#/utils/auth-cache";
+
 const generateGitHubAPIHeaders = (token: string) =>
   ({
     Accept: "application/vnd.github+json",
@@ -102,13 +109,6 @@ export const retrieveAllGitHubUserRepositories = async (
 
   return repositories;
 };
-
-/**
- * Given a GitHub token, retrieves the authenticated user
- * @param token The GitHub token
- * @returns The authenticated user or an error response
- */
-import { authCache } from "#/utils/auth-cache";
 
 export const retrieveGitHubUser = async (
   token: string,
