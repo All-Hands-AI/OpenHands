@@ -119,7 +119,7 @@ async def get_github_user(token: str) -> str:
         'Authorization': f'Bearer {token}',
     }
     async with httpx.AsyncClient(
-        timeout=httpx.Timeout(connect=5.0, read=5.0, write=5.0)
+        timeout=httpx.Timeout(connect=5.0, read=5.0, write=5.0, pool=5.0)
     ) as client:
         try:
             response = await client.get('https://api.github.com/user', headers=headers)
