@@ -35,7 +35,7 @@ function LoadingProjectModal({ message }: LoadingProjectModalProps) {
   return (
     <ModalBody>
       <span className="text-xl leading-6 -tracking-[0.01em] font-semibold">
-        {message || "Loading..." || t(I18nKey.LOADING_PROJECT$LOADING)}
+        {message || t(I18nKey.LOADING_PROJECT$LOADING)}
       </span>
       <LoadingSpinner size="large" />
     </ModalBody>

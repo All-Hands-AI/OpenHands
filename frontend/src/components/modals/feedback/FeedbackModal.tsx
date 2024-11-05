@@ -52,7 +52,7 @@ function FeedbackModal({
   };
 
   const copiedToClipboardToast = () => {
-    hotToast("Password copied to clipboard", {
+    hotToast(t(I18nKey.FEEDBACK$PASSWORD_COPIED_MESSAGE), {
       icon: "📋",
       position: "bottom-right",
     });
@@ -79,10 +79,13 @@ function FeedbackModal({
           target="_blank"
           rel="noreferrer"
         >
-          Go to shared feedback
+          {t(I18nKey.FEEDBACK$GO_TO_FEEDBACK)}
         </a>
         <span onClick={() => onPressToast(password)} className="cursor-pointer">
-          Password: {password} <span className="text-gray-500">(copy)</span>
+          {t(I18nKey.FEEDBACK$PASSWORD)} {password}
+          <span className="text-gray-500">
+            ({t(I18nKey.FEEDBACK$COPY_LABEL)})
+          </span>
         </span>
       </div>,
       { duration: 5000 },
@@ -113,14 +116,14 @@ function FeedbackModal({
         } else {
           toast.error(
             "share-error",
-            `Failed to share, please contact the developers: ${response.body.message}`,
+            `${t(I18nKey.FEEDBACK$FAILED_TO_SHARE)} ${response.body.message}`,
           );
         }
       }
     } catch (error) {
       toast.error(
         "share-error",
-        `Failed to share, please contact the developers: ${error}`,
+        `${t(I18nKey.FEEDBACK$FAILED_TO_SHARE)} ${error}`,
       );
     }
   };
@@ -151,7 +154,7 @@ function FeedbackModal({
       <p>{t(I18nKey.FEEDBACK$MODAL_CONTENT)}</p>
 
       <Input
-        label="Email"
+        label={t(I18nKey.FEEDBACK$EMAIL_LABEL)}
         aria-label="email"
         data-testid="email-input"
         placeholder={t(I18nKey.FEEDBACK$EMAIL_PLACEHOLDER)}
@@ -163,12 +166,12 @@ function FeedbackModal({
       />
       {!isEmailValid(email) && (
         <p data-testid="invalid-email-message" className="text-red-500">
-          Invalid email format
+          {t(I18nKey.FEEDBACK$INVALID_EMAIL_FORMAT)}
         </p>
       )}
       <RadioGroup
         data-testid="permissions-group"
-        label="Sharing settings"
+        label={t(I18nKey.FEEDBACK$SHARING_SETTINGS_LABEL)}
         orientation="horizontal"
         value={permissions}
         onValueChange={(value) => setPermissions(value as "public" | "private")}
