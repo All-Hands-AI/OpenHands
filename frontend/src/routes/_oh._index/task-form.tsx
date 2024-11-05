@@ -107,7 +107,7 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
             "before:pointer-events-none before:absolute before:inset-0 before:rounded-lg before:transition-colors",
             "before:border-2 before:border-dashed before:border-transparent",
             "[&:has(*:focus-within)]:before:border-neutral-500/50",
-            "[&:has(*[data-dragging-over='true'])]:before:border-neutral-500/50"
+            "[&:has(*[data-dragging-over='true'])]:before:border-neutral-500/50",
           )}
         >
           <ChatInput

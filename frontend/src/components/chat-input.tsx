@@ -53,7 +53,7 @@ export function ChatInput({
 
   const handleDragOver = (event: React.DragEvent<HTMLTextAreaElement>) => {
     event.preventDefault();
-    if (event.dataTransfer.types.includes('Files')) {
+    if (event.dataTransfer.types.includes("Files")) {
       setIsDraggingOver(true);
     }
   };
@@ -118,7 +118,9 @@ export function ChatInput({
         className={cn(
           "grow text-sm self-center placeholder:text-neutral-400 text-white resize-none outline-none ring-0",
           "transition-all duration-200 ease-in-out",
-          isDraggingOver ? "bg-neutral-600/50 rounded-lg px-2" : "bg-transparent",
+          isDraggingOver
+            ? "bg-neutral-600/50 rounded-lg px-2"
+            : "bg-transparent",
           className,
         )}
       />
