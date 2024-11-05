@@ -182,10 +182,7 @@ class Session:
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True
-        except RuntimeError:
-            self.is_alive = False
-            return False
-        except WebSocketDisconnect:
+        except (RuntimeError, WebSocketDisconnect):
             self.is_alive = False
             return False
 
