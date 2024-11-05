@@ -18,6 +18,7 @@ from zipfile import ZipFile
 
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.wsgi import WSGIMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
@@ -49,6 +50,7 @@ from openhands.runtime.plugins import (
     ALL_PLUGINS,
     JupyterPlugin,
     Plugin,
+    VSCodePlugin,
 )
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
@@ -337,6 +339,14 @@ if __name__ == '__main__':
             browsergym_eval_env=args.browsergym_eval_env,
         )
         await client.ainit()
+
+        # Add route /vscode/* to proxy VSCode requests to the VSCode server
+        if 'vscode' in client.plugins:
+            assert isinstance(client.plugins['vscode'], VSCodePlugin)
+            app.mount(
+                '/vscode', WSGIMiddleware(app=client.plugins['vscode'].vscode_proxy)
+            )
+
         yield
         # Clean up & release the resources
         client.close()

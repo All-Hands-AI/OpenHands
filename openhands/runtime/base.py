@@ -29,7 +29,11 @@ from openhands.events.observation import (
     UserRejectObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.runtime.plugins import JupyterRequirement, PluginRequirement
+from openhands.runtime.plugins import (
+    JupyterRequirement,
+    PluginRequirement,
+    VSCodeRequirement,
+)
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
 from openhands.utils.async_utils import call_sync_from_async
 
@@ -73,6 +77,9 @@ class Runtime(FileEditRuntimeMixin):
     initial_env_vars: dict[str, str]
     attach_to_existing: bool
     status_callback: Callable | None
+    DEFAULT_PLUGINS: list[PluginRequirement] = [
+        VSCodeRequirement(),
+    ]
 
     def __init__(
         self,
@@ -88,6 +95,7 @@ class Runtime(FileEditRuntimeMixin):
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
         self.plugins = plugins if plugins is not None and len(plugins) > 0 else []
+        self.plugins.append(VSCodeRequirement())
         self.status_callback = status_callback
         self.attach_to_existing = attach_to_existing
 
