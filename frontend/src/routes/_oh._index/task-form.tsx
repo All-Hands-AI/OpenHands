@@ -112,8 +112,8 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
             onChange={(message) => setText(message)}
             onFocus={() => setInputIsFocused(true)}
             onBlur={() => setInputIsFocused(false)}
-            onImagePaste={async (files) => {
-              const promises = files.map(convertImageToBase64);
+            onImagePaste={async (imageFiles) => {
+              const promises = imageFiles.map(convertImageToBase64);
               const base64Images = await Promise.all(promises);
               base64Images.forEach((base64) => {
                 dispatch(addFile(base64));

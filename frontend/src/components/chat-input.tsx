@@ -40,8 +40,8 @@ export function ChatInput({
 
   const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
     if (onImagePaste && event.clipboardData.files.length > 0) {
-      const files = Array.from(event.clipboardData.files).filter(file => 
-        file.type.startsWith('image/')
+      const files = Array.from(event.clipboardData.files).filter((file) =>
+        file.type.startsWith("image/"),
       );
       if (files.length > 0) {
         event.preventDefault();
@@ -52,8 +52,8 @@ export function ChatInput({
 
   const handleDrop = (event: React.DragEvent<HTMLTextAreaElement>) => {
     if (onImagePaste && event.dataTransfer.files.length > 0) {
-      const files = Array.from(event.dataTransfer.files).filter(file => 
-        file.type.startsWith('image/')
+      const files = Array.from(event.dataTransfer.files).filter((file) =>
+        file.type.startsWith("image/"),
       );
       if (files.length > 0) {
         event.preventDefault();
