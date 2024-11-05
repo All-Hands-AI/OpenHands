@@ -1441,6 +1441,12 @@
     "fr": "Privé",
     "tr": "Özel"
   },
+  "ERROR_MESSAGE$SHOW_DETAILS": {
+    "en": "Show details"
+  },
+  "ERROR_MESSAGE$HIDE_DETAILS": {
+    "en": "Hide details"
+  },
   "STATUS$STARTING_RUNTIME": {
     "en": "Starting Runtime...",
     "zh-CN": "启动运行时...",
@@ -1510,5 +1516,17 @@
     "ar": "في انتظار جاهزية العميل...",
     "fr": "En attente que le client soit prêt...",
     "tr": "İstemcinin hazır olması bekleniyor..."
+  },
+  "STATUS$ERROR_LLM_AUTHENTICATION": {
+    "en": "Error authenticating with the LLM provider. Please check your API key"
+  },
+  "STATUS$ERROR_RUNTIME_DISCONNECTED": {
+    "en": "There was an error while connecting to the runtime. Please refresh the page."
+  },
+  "AGENT_ERROR$BAD_ACTION": {
+    "en": "Agent tried to execute a malformed action."
+  },
+  "AGENT_ERROR$ACTION_TIMEOUT": {
+    "en": "Action timed out."
   }
 }

@@ -122,7 +122,7 @@ export function ChatInterface() {
           isErrorMessage(message) ? (
             <ErrorMessage
               key={index}
-              error={message.error}
+              id={message.id}
               message={message.message}
             />
           ) : (

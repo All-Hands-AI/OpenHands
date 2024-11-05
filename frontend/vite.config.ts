@@ -5,6 +5,7 @@ import { defineConfig, loadEnv } from "vite";
 import viteTsconfigPaths from "vite-tsconfig-paths";
 import svgr from "vite-plugin-svgr";
 import { vitePlugin as remix } from "@remix-run/dev";
+import { configDefaults } from "vitest/config";
 
 export default defineConfig(({ mode }) => {
   const {
@@ -90,6 +91,7 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: "jsdom",
       setupFiles: ["vitest.setup.ts"],
+      exclude: [...configDefaults.exclude, "tests"],
       coverage: {
         reporter: ["text", "json", "html", "lcov", "text-summary"],
         reportsDirectory: "coverage",

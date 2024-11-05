@@ -6,6 +6,7 @@ type Message = {
 };
 
 type ErrorMessage = {
-  error: string;
+  error: boolean;
+  id?: string;
   message: string;
 };

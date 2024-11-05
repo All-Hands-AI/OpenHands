@@ -40,7 +40,7 @@ system requirements and more information.
 ```bash
 docker pull docker.all-hands.dev/all-hands-ai/runtime:0.12-nikolaik
 
-docker run -it --rm --pull=always \
+docker run -it --pull=always \
     -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.12-nikolaik \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \

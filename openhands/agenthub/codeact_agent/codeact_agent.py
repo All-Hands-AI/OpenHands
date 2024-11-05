@@ -337,8 +337,8 @@ class CodeActAgent(Agent):
             return self.pending_actions.popleft()
 
         # if we're done, go back
-        latest_user_message = state.history.get_last_user_message()
-        if latest_user_message and latest_user_message.strip() == '/exit':
+        last_user_message = state.get_last_user_message()
+        if last_user_message and last_user_message.strip() == '/exit':
             return AgentFinishAction()
 
         # prepare what we want to send to the LLM
@@ -419,7 +419,7 @@ class CodeActAgent(Agent):
 
         pending_tool_call_action_messages: dict[str, Message] = {}
         tool_call_id_to_message: dict[str, Message] = {}
-        events = list(state.history.get_events())
+        events = list(state.history)
         for event in events:
             # create a regular message from an event
             if isinstance(event, Action):
