@@ -2,11 +2,7 @@ import React from "react";
 import { Form, useNavigation } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "#/store";
-import {
-  addFile,
-  removeFile,
-  setImportedProjectZip,
-} from "#/state/initial-query-slice";
+import { addFile, removeFile } from "#/state/initial-query-slice";
 import { SuggestionBubble } from "#/components/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
@@ -14,7 +10,6 @@ import { ChatInput } from "#/components/chat-input";
 import { UploadImageInput } from "#/components/upload-image-input";
 import { ImageCarousel } from "#/components/image-carousel";
 import { getRandomKey } from "#/utils/get-random-key";
-import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { AttachImageLabel } from "#/components/attach-image-label";
 import { cn } from "#/utils/utils";
 
@@ -38,18 +33,9 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
   const formRef = React.useRef<HTMLFormElement>(null);
   const [text, setText] = React.useState("");
   const [suggestion, setSuggestion] = React.useState(
-    getRandomKey(hasLoadedProject ? SUGGESTIONS.repo : SUGGESTIONS["non-repo"]),
+    getRandomKey(SUGGESTIONS["non-repo"]),
   );
   const [inputIsFocused, setInputIsFocused] = React.useState(false);
-
-  React.useEffect(() => {
-    // Display a suggestion based on whether a repository is selected
-    if (hasLoadedProject) {
-      setSuggestion(getRandomKey(SUGGESTIONS.repo));
-    } else {
-      setSuggestion(getRandomKey(SUGGESTIONS["non-repo"]));
-    }
-  }, [selectedRepository, importedProjectZip]);
 
   const onRefreshSuggestion = () => {
     const suggestions = SUGGESTIONS[hasLoadedProject ? "repo" : "non-repo"];
@@ -67,15 +53,6 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
     setText(value);
   };
 
-  const handleSubmitForm = async () => {
-    // This is handled on top of the form submission
-    if (importedProjectZip) {
-      dispatch(
-        setImportedProjectZip(await convertZipToBase64(importedProjectZip)),
-      );
-    }
-  };
-
   const placeholder = React.useMemo(() => {
     if (selectedRepository) {
       return `What would you like to change in ${selectedRepository}?`;
@@ -90,7 +67,6 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
         ref={formRef}
         method="post"
         className="flex flex-col items-center gap-2"
-        onSubmit={handleSubmitForm}
         replace
       >
         <SuggestionBubble

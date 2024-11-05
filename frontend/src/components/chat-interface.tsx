@@ -27,7 +27,7 @@ const isErrorMessage = (
 ): message is ErrorMessage => "error" in message;
 
 export function ChatInterface() {
-  const { send, runtimeActive } = useSocket();
+  const { send } = useSocket();
   const dispatch = useDispatch();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
@@ -49,14 +49,8 @@ export function ChatInterface() {
     const timestamp = new Date().toISOString();
     dispatch(addUserMessage({ content, imageUrls, timestamp }));
     send(createChatMessage(content, imageUrls, timestamp));
+    setMessageToSend(null);
   };
-
-  React.useEffect(() => {
-    if (messageToSend && runtimeActive) {
-      send(createChatMessage(messageToSend, [], new Date().toISOString()));
-      setMessageToSend(null);
-    }
-  }, [messageToSend, runtimeActive]);
 
   const handleStop = () => {
     send(generateAgentStateChangeEvent(AgentState.STOPPED));
@@ -91,13 +85,6 @@ export function ChatInterface() {
                 value,
               }))}
             onSuggestionClick={(value) => {
-              dispatch(
-                addUserMessage({
-                  content: value,
-                  imageUrls: [],
-                  timestamp: new Date().toISOString(),
-                }),
-              );
               setMessageToSend(value);
             }}
           />
@@ -163,6 +150,8 @@ export function ChatInterface() {
             curAgentState === AgentState.AWAITING_USER_CONFIRMATION
           }
           mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
+          value={messageToSend ?? undefined}
+          onChange={setMessageToSend}
         />
       </div>
 
