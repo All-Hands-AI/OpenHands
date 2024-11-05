@@ -93,7 +93,9 @@ class Runtime(FileEditRuntimeMixin):
     ):
         self.sid = sid
         self.event_stream = event_stream
-        self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
+        self.event_stream.subscribe(
+            EventStreamSubscriber.RUNTIME, self.on_event, self.sid
+        )
         self.plugins = plugins if plugins is not None and len(plugins) > 0 else []
         for plugin in self.DEFAULT_PLUGINS:
             self.plugins.append(plugin)

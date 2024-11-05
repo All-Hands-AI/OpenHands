@@ -186,7 +186,7 @@ async def run_controller(
                 action = MessageAction(content=message)
                 event_stream.add_event(action, EventSource.USER)
 
-    event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
+    event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, sid)
 
     await runtime.connect()
 

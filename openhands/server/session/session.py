@@ -44,7 +44,7 @@ class Session:
             sid, file_store, status_callback=self.queue_status_message
         )
         self.agent_session.event_stream.subscribe(
-            EventStreamSubscriber.SERVER, self.on_event
+            EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
         self.config = config
         self.loop = asyncio.get_event_loop()
