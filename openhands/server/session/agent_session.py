@@ -32,7 +32,12 @@ class AgentSession:
     _closed: bool = False
     loop: asyncio.AbstractEventLoop | None = None
 
-    def __init__(self, sid: str, file_store: FileStore):
+    def __init__(
+        self,
+        sid: str,
+        file_store: FileStore,
+        status_callback: Optional[Callable] = None,
+    ):
         """Initializes a new instance of the Session class
 
         Parameters:
@@ -43,6 +48,7 @@ class AgentSession:
         self.sid = sid
         self.event_stream = EventStream(sid, file_store)
         self.file_store = file_store
+        self._status_callback = status_callback
 
     async def start(
         self,
@@ -53,7 +59,6 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-        status_message_callback: Optional[Callable] = None,
     ):
         """Starts the Agent session
         Parameters:
@@ -80,7 +85,6 @@ class AgentSession:
             max_budget_per_task,
             agent_to_llm_config,
             agent_configs,
-            status_message_callback,
         )
 
     def _start_thread(self, *args):
@@ -99,14 +103,12 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-        status_message_callback: Optional[Callable] = None,
     ):
         self._create_security_analyzer(config.security.security_analyzer)
         await self._create_runtime(
             runtime_name=runtime_name,
             config=config,
             agent=agent,
-            status_message_callback=status_message_callback,
         )
         self._create_controller(
             agent,
@@ -126,9 +128,15 @@ class AgentSession:
     def close(self):
         """Closes the Agent session"""
         self._closed = True
+
         def inner_close():
             asyncio.run(self._close())
+
         asyncio.get_event_loop().run_in_executor(None, inner_close)
+
+    async def stop_agent_loop_for_error(self):
+        if self.controller is not None:
+            await self.controller.set_agent_state_to(AgentState.ERROR)
 
     async def _close(self):
         if self._closed:
@@ -141,7 +149,6 @@ class AgentSession:
             self.runtime.close()
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
-
 
     def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
@@ -161,7 +168,6 @@ class AgentSession:
         runtime_name: str,
         config: AppConfig,
         agent: Agent,
-        status_message_callback: Optional[Callable] = None,
     ):
         """Creates a runtime instance
 
@@ -181,13 +187,17 @@ class AgentSession:
             event_stream=self.event_stream,
             sid=self.sid,
             plugins=agent.sandbox_plugins,
-            status_message_callback=status_message_callback,
+            status_callback=self._status_callback,
         )
 
         try:
             await self.runtime.connect()
         except Exception as e:
             logger.error(f'Runtime initialization failed: {e}', exc_info=True)
+            if self._status_callback:
+                self._status_callback(
+                    'error', 'STATUS$ERROR_RUNTIME_DISCONNECTED', str(e)
+                )
             raise
 
         if self.runtime is not None:
@@ -251,9 +261,8 @@ class AgentSession:
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
             confirmation_mode=confirmation_mode,
-            # AgentSession is designed to communicate with the frontend, so we don't want to
-            # run the agent in headless mode.
             headless_mode=False,
+            status_callback=self._status_callback,
         )
         try:
             agent_state = State.restore_from_session(self.sid, self.file_store)

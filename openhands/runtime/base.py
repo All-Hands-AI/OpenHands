@@ -5,6 +5,8 @@ import os
 from abc import abstractmethod
 from typing import Callable
 
+from requests.exceptions import ConnectionError
+
 from openhands.core.config import AppConfig, SandboxConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
@@ -31,6 +33,22 @@ from openhands.runtime.plugins import JupyterRequirement, PluginRequirement
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
 from openhands.utils.async_utils import call_sync_from_async
 
+STATUS_MESSAGES = {
+    'STATUS$STARTING_RUNTIME': 'Starting runtime...',
+    'STATUS$STARTING_CONTAINER': 'Starting container...',
+    'STATUS$PREPARING_CONTAINER': 'Preparing container...',
+    'STATUS$CONTAINER_STARTED': 'Container started.',
+    'STATUS$WAITING_FOR_CLIENT': 'Waiting for client...',
+}
+
+
+class RuntimeNotReadyError(Exception):
+    pass
+
+
+class RuntimeDisconnectedError(Exception):
+    pass
+
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
     ret = {}
@@ -54,6 +72,7 @@ class Runtime(FileEditRuntimeMixin):
     config: AppConfig
     initial_env_vars: dict[str, str]
     attach_to_existing: bool
+    status_callback: Callable | None
 
     def __init__(
         self,
@@ -62,14 +81,14 @@ class Runtime(FileEditRuntimeMixin):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_message_callback: Callable | None = None,
+        status_callback: Callable | None = None,
         attach_to_existing: bool = False,
     ):
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
         self.plugins = plugins if plugins is not None and len(plugins) > 0 else []
-        self.status_message_callback = status_message_callback
+        self.status_callback = status_callback
         self.attach_to_existing = attach_to_existing
 
         self.config = copy.deepcopy(config)
@@ -95,7 +114,17 @@ class Runtime(FileEditRuntimeMixin):
 
     def log(self, level: str, message: str) -> None:
         message = f'[runtime {self.sid}] {message}'
-        getattr(logger, level)(message)
+        getattr(logger, level)(message, stacklevel=2)
+
+    def send_status_message(self, message_id: str):
+        """Sends a status message if the callback function was provided."""
+        if self.status_callback:
+            msg = STATUS_MESSAGES.get(message_id, '')
+            self.status_callback('info', message_id, msg)
+
+    def send_error_message(self, message_id: str, message: str):
+        if self.status_callback:
+            self.status_callback('error', message_id, message)
 
     # ====================================================================
 
@@ -131,15 +160,28 @@ class Runtime(FileEditRuntimeMixin):
             if event.timeout is None:
                 event.timeout = self.config.sandbox.timeout
             assert event.timeout is not None
-            observation: Observation = await call_sync_from_async(
-                self.run_action, event
-            )
+            try:
+                observation: Observation = await call_sync_from_async(
+                    self.run_action, event
+                )
+            except Exception as e:
+                err_id = ''
+                if isinstance(e, ConnectionError) or isinstance(
+                    e, RuntimeDisconnectedError
+                ):
+                    err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
+                self.log('error', f'Unexpected error while running action {e}')
+                self.log('error', f'Problematic action: {str(event)}')
+                self.send_error_message(err_id, str(e))
+                self.close()
+                return
+
             observation._cause = event.id  # type: ignore[attr-defined]
             observation.tool_call_metadata = event.tool_call_metadata
 
             # this might be unnecessary, since source should be set by the event stream when we're here
             source = event.source if event.source else EventSource.AGENT
-            await self.event_stream.async_add_event(observation, source)  # type: ignore[arg-type]
+            self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
     def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.
