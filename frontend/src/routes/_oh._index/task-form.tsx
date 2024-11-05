@@ -13,21 +13,12 @@ import { getRandomKey } from "#/utils/get-random-key";
 import { AttachImageLabel } from "#/components/attach-image-label";
 import { cn } from "#/utils/utils";
 
-interface TaskFormProps {
-  importedProjectZip: File | null;
-}
-
-export function TaskForm({ importedProjectZip }: TaskFormProps) {
+export function TaskForm() {
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
   const { selectedRepository, files } = useSelector(
     (state: RootState) => state.initalQuery,
-  );
-
-  const hasLoadedProject = React.useMemo(
-    () => importedProjectZip || selectedRepository,
-    [importedProjectZip, selectedRepository],
   );
 
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -38,7 +29,7 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
   const [inputIsFocused, setInputIsFocused] = React.useState(false);
 
   const onRefreshSuggestion = () => {
-    const suggestions = SUGGESTIONS[hasLoadedProject ? "repo" : "non-repo"];
+    const suggestions = SUGGESTIONS["non-repo"];
     // remove current suggestion to avoid refreshing to the same suggestion
     const suggestionCopy = { ...suggestions };
     delete suggestionCopy[suggestion];
@@ -48,7 +39,7 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
   };
 
   const onClickSuggestion = () => {
-    const suggestions = SUGGESTIONS[hasLoadedProject ? "repo" : "non-repo"];
+    const suggestions = SUGGESTIONS["non-repo"];
     const value = suggestions[suggestion];
     setText(value);
   };
