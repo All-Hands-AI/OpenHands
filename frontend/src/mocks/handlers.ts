@@ -1,7 +1,7 @@
 import { delay, http, HttpResponse } from "msw";
 
 const openHandsHandlers = [
-  http.get("http://localhost:3001/api/options/models", async () => {
+  http.get("/api/options/models", async () => {
     await delay();
     return HttpResponse.json([
       "gpt-3.5-turbo",
@@ -10,12 +10,12 @@ const openHandsHandlers = [
     ]);
   }),
 
-  http.get("http://localhost:3001/api/options/agents", async () => {
+  http.get("/api/options/agents", async () => {
     await delay();
     return HttpResponse.json(["CodeActAgent", "CoActAgent"]);
   }),
 
-  http.get("http://localhost:3001/api/options/security-analyzers", async () => {
+  http.get("/api/options/security-analyzers", async () => {
     await delay();
     return HttpResponse.json(["mock-invariant"]);
   }),
@@ -71,7 +71,7 @@ const openHandsHandlers = [
 export const handlers = [
   ...openHandsHandlers,
   http.get("https://api.github.com/user/repos", async ({ request }) => {
-    await delay(3500);
+    if (import.meta.env.MODE !== "test") await delay(3500);
 
     const token = request.headers
       .get("Authorization")
@@ -87,10 +87,20 @@ export const handlers = [
       { id: 2, full_name: "octocat/earth" },
     ]);
   }),
+  http.get("https://api.github.com/user", () => {
+    const user: GitHubUser = {
+      id: 1,
+      login: "octocat",
+      avatar_url: "https://avatars.githubusercontent.com/u/583231?v=4",
+    };
+
+    return HttpResponse.json(user);
+  }),
   http.post("http://localhost:3001/api/submit-feedback", async () =>
     HttpResponse.json({ statusCode: 200 }, { status: 200 }),
   ),
   http.post("https://us.i.posthog.com/e", async () =>
     HttpResponse.json(null, { status: 200 }),
   ),
+  http.get("/config.json", () => HttpResponse.json({ APP_MODE: "oss" })),
 ];

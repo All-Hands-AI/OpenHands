@@ -5,6 +5,7 @@ import {
   defer,
   redirect,
   useLoaderData,
+  useNavigate,
   useRouteLoaderData,
 } from "@remix-run/react";
 import React, { Suspense } from "react";
@@ -62,12 +63,16 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 };
 
 function Home() {
+  const navigate = useNavigate();
   const rootData = useRouteLoaderData<typeof rootClientLoader>("routes/_oh");
   const { repositories, githubAuthUrl } = useLoaderData<typeof clientLoader>();
   const [importedFile, setImportedFile] = React.useState<File | null>(null);
 
   return (
-    <div className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto">
+    <div
+      data-testid="root-index"
+      className="bg-root-secondary h-full rounded-xl flex flex-col items-center justify-center relative overflow-y-auto"
+    >
       <HeroHeading />
       <div className="flex flex-col gap-16 w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
@@ -113,6 +118,7 @@ function Home() {
                       if (event.target.files) {
                         const zip = event.target.files[0];
                         setImportedFile(zip);
+                        navigate("/app");
                       } else {
                         // TODO: handle error
                       }

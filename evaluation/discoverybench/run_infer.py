@@ -15,6 +15,7 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     codeact_user_response,
+    compatibility_for_eval_history_pairs,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -173,14 +174,14 @@ def initialize_runtime(runtime: Runtime, data_files: list[str]):
 
 
 def get_last_agent_finish_action(state: State) -> AgentFinishAction:
-    for event in state.history.get_events(reverse=True):
+    for event in reversed(state.history):
         if isinstance(event, AgentFinishAction):
             return event
     return None
 
 
 def get_last_message_action(state: State) -> MessageAction:
-    for event in state.history.get_events(reverse=True):
+    for event in reversed(state.history):
         if isinstance(event, MessageAction):
             return event
     return None
@@ -307,7 +308,7 @@ def process_instance(
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
-    histories = state.history.compatibility_for_eval_history_pairs()
+    histories = compatibility_for_eval_history_pairs(state.history)
 
     # DiscoveryBench Evaluation
     eval_rec = run_eval_gold_vs_gen_NL_hypo_workflow(

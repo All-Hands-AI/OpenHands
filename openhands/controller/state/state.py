@@ -11,9 +11,8 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.action.agent import AgentFinishAction
-from openhands.events.observation import ErrorObservation
+from openhands.events.event import Event, EventSource
 from openhands.llm.metrics import Metrics
-from openhands.memory.history import ShortTermHistory
 from openhands.storage.files import FileStore
 
 
@@ -78,7 +77,7 @@ class State:
     # max number of iterations for the current task
     max_iterations: int = 100
     confirmation_mode: bool = False
-    history: ShortTermHistory = field(default_factory=ShortTermHistory)
+    history: list[Event] = field(default_factory=list)
     inputs: dict = field(default_factory=dict)
     outputs: dict = field(default_factory=dict)
     agent_state: AgentState = AgentState.LOADING
@@ -94,6 +93,7 @@ class State:
     start_id: int = -1
     end_id: int = -1
     almost_stuck: int = 0
+    delegates: dict[tuple[int, int], tuple[str, str]] = field(default_factory=dict)
     # NOTE: This will never be used by the controller, but it can be used by different
     # evaluation tasks to store extra data needed to track the progress/state of the task.
     extra_data: dict[str, Any] = field(default_factory=dict)
@@ -116,7 +116,7 @@ class State:
             pickled = base64.b64decode(encoded)
             state = pickle.loads(pickled)
         except Exception as e:
-            logger.warning(f'Failed to restore state from session: {e}')
+            logger.warning(f'Could not restore state from session: {e}')
             raise e
 
         # update state
@@ -130,39 +130,40 @@ class State:
         return state
 
     def __getstate__(self):
+        # don't pickle history, it will be restored from the event stream
         state = self.__dict__.copy()
-
-        # save the relevant data from recent history
-        # so that we can restore it when the state is restored
-        if 'history' in state:
-            state['start_id'] = state['history'].start_id
-            state['end_id'] = state['history'].end_id
-
-        # don't save history object itself
-        state.pop('history', None)
+        state['history'] = []
         return state
 
     def __setstate__(self, state):
         self.__dict__.update(state)
 
-        # recreate the history object
+        # make sure we always have the attribute history
         if not hasattr(self, 'history'):
-            self.history = ShortTermHistory()
+            self.history = []
 
-        self.history.start_id = self.start_id
-        self.history.end_id = self.end_id
-
-
-    def get_current_user_intent(self):
+    def get_current_user_intent(self) -> tuple[str | None, list[str] | None]:
         """Returns the latest user message and image(if provided) that appears after a FinishAction, or the first (the task) if nothing was finished yet."""
         last_user_message = None
         last_user_message_image_urls: list[str] | None = []
-        for event in self.history.get_events(reverse=True):
+        for event in reversed(self.history):
             if isinstance(event, MessageAction) and event.source == 'user':
                 last_user_message = event.content
                 last_user_message_image_urls = event.images_urls
             elif isinstance(event, AgentFinishAction):
                 if last_user_message is not None:
-                    return last_user_message
+                    return last_user_message, None
 
         return last_user_message, last_user_message_image_urls
+
+    def get_last_agent_message(self) -> str | None:
+        for event in reversed(self.history):
+            if isinstance(event, MessageAction) and event.source == EventSource.AGENT:
+                return event.content
+        return None
+
+    def get_last_user_message(self) -> str | None:
+        for event in reversed(self.history):
+            if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                return event.content
+        return None
