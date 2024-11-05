@@ -63,17 +63,8 @@ RUN if [ -z "${RELEASE_TAG}" ]; then \
     tar -xzf ${RELEASE_TAG}-linux-${arch}.tar.gz && \
     mv -f ${RELEASE_TAG}-linux-${arch} ${OPENVSCODE_SERVER_ROOT} && \
     cp ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/openvscode-server ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/code && \
-    rm -f ${RELEASE_TAG}-linux-${arch}.tar.gz && \
-    # # Setup user
-    # groupadd --gid $USER_GID $USERNAME && \
-    # useradd --uid $USER_UID --gid $USERNAME -m -s /bin/bash $USERNAME && \
-    # echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME && \
-    # chmod 0440 /etc/sudoers.d/$USERNAME && \
-    # # Setup directories
-    # chmod g+rw /home && \
-    # mkdir -p /home/workspace && \
-    # chown -R $USERNAME:$USERNAME /home/workspace && \
-    # chown -R $USERNAME:$USERNAME ${OPENVSCODE_SERVER_ROOT}
+    rm -f ${RELEASE_TAG}-linux-${arch}.tar.gz
+
 {% endmacro %}
 
 {% macro install_dependencies() %}
@@ -100,19 +91,9 @@ RUN \
     # Clean up
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     /openhands/micromamba/bin/micromamba clean --all
+
 {% endmacro %}
 
-# ... rest of your existing file structure with build_from_scratch, etc ...
-
-
-# # Switch to VSCode server user
-# USER ${USERNAME}
-# WORKDIR /home/workspace/
-
-# # Expose VSCode server port
-# EXPOSE 3000
-
-# ENTRYPOINT [ "/bin/sh", "-c", "exec ${OPENVSCODE_SERVER_ROOT}/bin/openvscode-server --host 0.0.0.0 --without-connection-token \"${@}\"", "--" ]
 {% if build_from_scratch %}
 # ================================================================
 # START: Build Runtime Image from Scratch
@@ -138,6 +119,7 @@ RUN \
     if [ -d /openhands/code ]; then rm -rf /openhands/code; fi && \
     mkdir -p /openhands/code/openhands && \
     touch /openhands/code/openhands/__init__.py
+
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 
 {{ install_dependencies() }}

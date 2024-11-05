@@ -92,15 +92,12 @@ class VSCodePlugin(Plugin):
                     headers=dict(response.headers),
                 )
 
-                return proxy_response.get_wsgi_response(environ)(
-                    environ, start_response
-                )
+                # Get the status and headers from the response
+                return proxy_response(environ, start_response)
 
             except requests.RequestException as e:
                 # Handle connection errors
                 proxy_response = Response(f'VSCode server error: {str(e)}', status=502)
-                return proxy_response.get_wsgi_response(environ)(
-                    environ, start_response
-                )
+                return proxy_response(environ, start_response)
 
         return application
