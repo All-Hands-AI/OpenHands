@@ -88,7 +88,7 @@ class LLM(RetryMixin, DebugMixin):
                 self.model_info = litellm.get_model_info(self.config.model)
             else:
                 self.model_info = litellm.get_model_info(
-                    self.config.model.split(':')[0]
+                    self.config.model.split('/')[-1]
                 )
         # noinspection PyBroadException
         except Exception as e:
@@ -249,7 +249,7 @@ class LLM(RetryMixin, DebugMixin):
             self.config.caching_prompt is True
             and self.model_info is not None
             and self.model_info.get('supports_prompt_caching', False)
-            and self.config.model in CACHE_PROMPT_SUPPORTED_MODELS
+            # and self.config.model in CACHE_PROMPT_SUPPORTED_MODELS
         )
 
     def _post_completion(self, response: ModelResponse) -> None:

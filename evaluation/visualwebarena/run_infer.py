@@ -64,7 +64,7 @@ def get_config(
                 'OPENAI_API_KEY': openai_api_key,
                 'VWA_CLASSIFIEDS': f'{base_url}:9980',
                 'VWA_CLASSIFIEDS_RESET_TOKEN': '4b61655535e7ed388f0d40a93600254c',
-                'VWA_SHOPPING': f'{base_url}:7770',
+                'VWA_SHOPPING': f'{base_url}:7770/',
                 'VWA_SHOPPING_ADMIN': f'{base_url}:7780/admin',
                 'VWA_REDDIT': f'{base_url}:9999',
                 'VWA_GITLAB': f'{base_url}:8023',

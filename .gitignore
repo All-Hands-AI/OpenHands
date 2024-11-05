@@ -233,3 +233,8 @@ evaluation/gaia/temp2.txt
 evaluation/gaia/temp.png
 evaluation/gaia/b64_pil_image.py
 .gitignore
+evaluation/visualwebarena/scripts/run_evaluation.sh
+openhands/agenthub/browsing_agent/browsing_agent2.py
+openhands/agenthub/browsing_agent/som_example1_vwa.png
+openhands/agenthub/browsing_agent/som_example2_vwa.png
+openhands/agenthub/browsing_agent/som_example3_vwa.png

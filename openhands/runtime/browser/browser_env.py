@@ -65,7 +65,7 @@ class BrowserEnv:
             logger.error(f'Failed to start browser process: {e}')
             raise
 
-        if not self.check_alive():
+        if not self.check_alive(timeout=200):
             self.close()
             raise BrowserInitException('Failed to start browser environment.')
 
@@ -88,7 +88,7 @@ class BrowserEnv:
                 raise ValueError(
                     f'Unsupported browsergym eval env: {self.browsergym_eval_env}'
                 )
-            env = gym.make(self.browsergym_eval_env)
+            env = gym.make(self.browsergym_eval_env, timeout=100000)
             logger.info('Successfully created browsergym environment for evaluation')
         else:
             env = gym.make(
