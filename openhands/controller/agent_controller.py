@@ -312,7 +312,7 @@ class AgentController:
         if new_state == self.state.agent_state:
             return
 
-        if new_state == AgentState.STOPPED or new_state == AgentState.ERROR:
+        if new_state in (AgentState.STOPPED, AgentState.ERROR):
             self.reset_task()
         elif (
             new_state == AgentState.RUNNING
@@ -338,8 +338,7 @@ class AgentController:
                 if self.state.metrics.accumulated_cost >= self.max_budget_per_task:
                     self.max_budget_per_task += self._initial_max_budget_per_task
         elif self._pending_action is not None and (
-            new_state == AgentState.USER_CONFIRMED
-            or new_state == AgentState.USER_REJECTED
+            new_state in (AgentState.USER_CONFIRMED, AgentState.USER_REJECTED)
         ):
             if hasattr(self._pending_action, 'thought'):
                 self._pending_action.thought = ''  # type: ignore[union-attr]
