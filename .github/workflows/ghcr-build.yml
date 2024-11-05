@@ -424,9 +424,9 @@ jobs:
             -p 3000:3000 \
             -v /var/run/docker.sock:/var/run/docker.sock \
             --add-host host.docker.internal:host-gateway \
-            -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:$SHORT_SHA-nikolaik \
+            -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:$SHORT_SHA-nikolaik \
             --name openhands-app-$SHORT_SHA \
-            ghcr.io/all-hands-ai/runtime:$SHORT_SHA"
+            docker.all-hands.dev/all-hands-ai/openhands:$SHORT_SHA"
 
           PR_BODY=$(gh pr view $PR_NUMBER --json body --jq .body)
 
