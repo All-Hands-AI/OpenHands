@@ -13,10 +13,28 @@ export function ul({
 // Custom component to render <ol> in markdown
 export function ol({
   children,
+  ordered,
+  start,
 }: React.ClassAttributes<HTMLElement> &
   React.HTMLAttributes<HTMLElement> &
-  ExtraProps) {
+  ExtraProps & {
+    ordered?: boolean;
+    start?: number;
+  }) {
   return (
-    <ol className="list-decimal ml-5 pl-2 whitespace-normal">{children}</ol>
+    <ol className="ml-5 pl-2 whitespace-normal" style={{ listStyle: 'none' }}>
+      {React.Children.map(children, (child, index) => {
+        if (React.isValidElement(child)) {
+          const originalNumber = child.props?.value || (start || 1) + index;
+          return React.cloneElement(child, {
+            ...child.props,
+            style: { counterReset: `list-item ${originalNumber}` },
+            className: 'custom-list-item',
+            'data-number': originalNumber,
+          });
+        }
+        return child;
+      })}
+    </ol>
   );
 }

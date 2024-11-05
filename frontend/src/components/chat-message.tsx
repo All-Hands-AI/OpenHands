@@ -75,7 +75,7 @@ export function ChatMessage({
           ul,
           ol,
         }}
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={[[remarkGfm, { listNumbering: true }]]}
       >
         {message}
       </Markdown>

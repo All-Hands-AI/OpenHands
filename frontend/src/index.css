@@ -52,3 +52,16 @@ code {
 .markdown-body th, .markdown-body td {
   padding: 0.1rem 1rem;
 }
+
+.custom-list-item {
+  position: relative;
+  padding-left: 1rem;
+}
+
+.custom-list-item::before {
+  content: attr(data-number) ".";
+  position: absolute;
+  left: -1.5rem;
+  width: 1.5rem;
+  text-align: right;
+}
