@@ -80,10 +80,10 @@ class UserVerifier:
 
 async def authenticate_github_user(auth_token) -> tuple[bool, str | None]:
     """Authenticate a GitHub user.
-    
+
     Args:
         auth_token: GitHub access token
-        
+
     Returns:
         Tuple of (is_authenticated, error_message)
         If successful, is_authenticated is True and error_message is None
@@ -102,10 +102,15 @@ async def authenticate_github_user(auth_token) -> tuple[bool, str | None]:
         return False, 'No GitHub token provided'
 
     login, error = await get_github_user(auth_token)
-    
+
     if error:
         return False, error
-        
+
+    if not login:
+        error_msg = 'Invalid GitHub user data received'
+        logger.warning(error_msg)
+        return False, error_msg
+
     if not user_verifier.is_user_allowed(login):
         error_msg = f'GitHub user {login} not in allow list'
         logger.warning(error_msg)
@@ -136,27 +141,31 @@ async def get_github_user(token: str) -> tuple[str | None, str | None]:
         try:
             logger.debug('Making request to GitHub API')
             response = await client.get('https://api.github.com/user', headers=headers)
-            
+
             # Check rate limit headers
             rate_limit = response.headers.get('X-RateLimit-Remaining', '0')
             rate_limit_reset = response.headers.get('X-RateLimit-Reset', '0')
-            
+
             if response.status_code == 403 and rate_limit == '0':
-                logger.warning(f'GitHub API rate limit exceeded. Reset at timestamp: {rate_limit_reset}')
+                logger.warning(
+                    f'GitHub API rate limit exceeded. Reset at timestamp: {rate_limit_reset}'
+                )
                 return None, 'GitHub API rate limit exceeded. Please try again later.'
-            
+
             response.raise_for_status()
             user_data = response.json()
             login = user_data.get('login')
-            
+
             if not login:
                 return None, 'Invalid GitHub user data received'
-            
+
             logger.info(f'Successfully retrieved GitHub user: {login}')
             return login, None
-            
+
         except httpx.HTTPStatusError as e:
-            error_msg = f'GitHub API error: {e.response.status_code} - {e.response.text}'
+            error_msg = (
+                f'GitHub API error: {e.response.status_code} - {e.response.text}'
+            )
             logger.error(error_msg)
             return None, error_msg
         except httpx.RequestError as e:

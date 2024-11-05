@@ -319,7 +319,9 @@ async def websocket_endpoint(websocket: WebSocket):
 
     is_authenticated, error = await authenticate_github_user(github_token)
     if not is_authenticated:
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason=error or 'Not authenticated')
+        await websocket.close(
+            code=status.WS_1008_POLICY_VIOLATION, reason=error or 'Not authenticated'
+        )
         return
 
     await asyncio.wait_for(websocket.accept(subprotocol=real_protocol), 10)
