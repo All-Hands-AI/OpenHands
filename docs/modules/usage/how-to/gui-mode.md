@@ -19,6 +19,14 @@ OpenHands provides a user-friendly Graphical User Interface (GUI) mode for inter
 3. Enter the corresponding `API Key` for your chosen provider.
 4. Click "Save" to apply the settings.
 
+### GitHub Token Setup
+
+The `GITHUB_TOKEN` is provided to OpenHands in GUI mode through two methods:
+1. Direct input: Users can manually input their GitHub token (in OSS mode)
+2. GitHub OAuth: Token is obtained through GitHub OAuth authentication (in SaaS mode)
+
+Once a user arrives at the `/app` route with a valid GitHub token, it is automatically exported to the shell environment for the agent to use.
+
 ### Advanced Settings
 
 1. Toggle `Advanced Options` to access additional settings.
@@ -49,3 +57,4 @@ The main interface consists of several key components:
 3. Use one of the recommended models, as described in the [LLMs section](usage/llms/llms.md).
 
 Remember, the GUI mode of OpenHands is designed to make your interaction with the AI assistant as smooth and intuitive as possible. Don't hesitate to explore its features to maximize your productivity.
+
