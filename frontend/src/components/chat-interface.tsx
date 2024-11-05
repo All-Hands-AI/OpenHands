@@ -40,25 +40,7 @@ export function ChatInterface() {
     "positive" | "negative"
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
-  const [suggestions, setSuggestions] = React.useState<Record<string, string>>(
-    SUGGESTIONS.repo,
-  );
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    // Function to update suggestions based on the current value in localStorage
-    const updateSuggestions = () => {
-      const repo = localStorage.getItem("repo");
-      if (repo) setSuggestions(SUGGESTIONS.repo);
-      else setSuggestions(SUGGESTIONS["non-repo"]);
-    };
-
-    // Initial fetch when component mounts
-    updateSuggestions();
-
-    window.addEventListener("storage", updateSuggestions);
-    return () => window.removeEventListener("storage", updateSuggestions);
-  }, []);
 
   const handleSendMessage = async (content: string, files: File[]) => {
     const promises = files.map((file) => convertImageToBase64(file));
@@ -102,7 +84,7 @@ export function ChatInterface() {
             </span>
           </div>
           <Suggestions
-            suggestions={Object.entries(suggestions)
+            suggestions={Object.entries(SUGGESTIONS.repo)
               .slice(0, 4)
               .map(([label, value]) => ({
                 label,
