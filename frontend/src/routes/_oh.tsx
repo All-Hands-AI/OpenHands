@@ -35,7 +35,7 @@ import { setCurrentAgentState } from "#/state/agentSlice";
 import AgentState from "#/types/AgentState";
 
 // Cache for clientLoader results
-let clientLoaderCache: any = null;
+let clientLoaderCache: any = null; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   // Return cached results if they exist
