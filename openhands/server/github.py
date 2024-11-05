@@ -101,26 +101,34 @@ async def authenticate_github_user(auth_token) -> bool:
     return True
 
 
-async def get_github_user(token: str) -> str:
+async def get_github_user(token: str, retry: bool = True) -> str:
     """Get GitHub user info from token.
 
     Args:
         token: GitHub access token
 
     Returns:
-        Tuple of (login, error_message)
-        If successful, error_message is None
-        If failed, login is None and error_message contains the error
+        github handle of the user
     """
     logger.info('Fetching GitHub user info from token')
     headers = {
         'Accept': 'application/vnd.github+json',
         'Authorization': f'Bearer {token}',
-        'X-GitHub-Api-Version': '2022-11-28',
     }
     async with httpx.AsyncClient() as client:
-        logger.debug('Making request to GitHub API')
-        response = await client.get('https://api.github.com/user', headers=headers)
+        try:
+            response = await client.get('https://api.github.com/user', headers=headers)
+        except httpx.RequestError as e:
+            logger.error(f'Error making request to GitHub API: {str(e)}')
+            logger.error(e)
+            if retry:
+                sleep(1)
+                return await get_github_user(token, retry=False)
+            else:
+                raise
+
+        logger.info('Received response from GitHub API')
+        logger.debug(f'Response status code: {response.status_code}')
         response.raise_for_status()
         user_data = response.json()
         login = user_data.get('login')
