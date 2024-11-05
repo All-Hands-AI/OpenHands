@@ -34,7 +34,15 @@ import { AnalyticsConsentFormModal } from "#/components/analytics-consent-form-m
 import { setCurrentAgentState } from "#/state/agentSlice";
 import AgentState from "#/types/AgentState";
 
+// Cache for clientLoader results
+let clientLoaderCache: any = null;
+
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
+  // Return cached results if they exist
+  if (clientLoaderCache) {
+    return clientLoaderCache;
+  }
+
   try {
     const config = await OpenHands.getConfig();
     window.__APP_MODE__ = config.APP_MODE;
@@ -84,7 +92,8 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
     token = null;
   }
 
-  return defer({
+  // Store the results in cache
+  clientLoaderCache = defer({
     token,
     ghToken,
     isAuthed,
@@ -94,6 +103,8 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
     settings,
     analyticsConsent,
   });
+
+  return clientLoaderCache;
 };
 
 export function ErrorBoundary() {
