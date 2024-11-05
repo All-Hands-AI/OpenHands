@@ -28,6 +28,7 @@ import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import NewProjectIcon from "#/assets/new-project.svg?react";
 import DocsIcon from "#/assets/docs.svg?react";
 import { userIsAuthenticated } from "#/utils/user-is-authenticated";
+import { authCache } from "#/utils/auth-cache";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { WaitlistModal } from "#/components/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/analytics-consent-form-modal";
@@ -48,6 +49,17 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   const ghToken = localStorage.getItem("ghToken");
   const analyticsConsent = localStorage.getItem("analytics-consent");
   const userConsents = analyticsConsent === "true";
+
+  // Store current tokens to detect changes
+  const prevToken = (window as any).__PREV_TOKEN__;
+  const prevGhToken = (window as any).__PREV_GH_TOKEN__;
+
+  // Clear cache if tokens changed
+  if (token !== prevToken || ghToken !== prevGhToken) {
+    (window as any).__PREV_TOKEN__ = token;
+    (window as any).__PREV_GH_TOKEN__ = ghToken;
+    authCache.clear();
+  }
 
   if (!userConsents) {
     posthog.opt_out_capturing();

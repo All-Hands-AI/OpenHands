@@ -108,9 +108,17 @@ export const retrieveAllGitHubUserRepositories = async (
  * @param token The GitHub token
  * @returns The authenticated user or an error response
  */
+import { authCache } from "#/utils/auth-cache";
+
 export const retrieveGitHubUser = async (
   token: string,
 ): Promise<GitHubUser | GitHubErrorReponse> => {
+  // Check cache first
+  const cachedUser = authCache.getGithubUser(token);
+  if (cachedUser !== undefined) {
+    return cachedUser;
+  }
+
   const response = await fetch("https://api.github.com/user", {
     headers: generateGitHubAPIHeaders(token),
   });
@@ -124,6 +132,8 @@ export const retrieveGitHubUser = async (
       avatar_url: data.avatar_url,
     };
 
+    // Cache the successful response
+    authCache.setGithubUser(token, user);
     return user;
   }
 
@@ -133,6 +143,8 @@ export const retrieveGitHubUser = async (
     status: response.status,
   };
 
+  // Cache the error response too
+  authCache.setGithubUser(token, error);
   return error;
 };
 
