@@ -205,10 +205,11 @@ async def attach_session(request: Request, call_next):
         return response
 
     github_token = request.headers.get('X-GitHub-Token')
-    if not await authenticate_github_user(github_token):
+    is_authenticated, error = await authenticate_github_user(github_token)
+    if not is_authenticated:
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': 'Not authenticated'},
+            content={'error': error or 'Not authenticated'},
         )
 
     if not request.headers.get('Authorization'):
@@ -316,8 +317,9 @@ async def websocket_endpoint(websocket: WebSocket):
     jwt_token = protocols[1] if protocols[1] != 'NO_JWT' else ''
     github_token = protocols[2] if protocols[2] != 'NO_GITHUB' else ''
 
-    if not await authenticate_github_user(github_token):
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+    is_authenticated, error = await authenticate_github_user(github_token)
+    if not is_authenticated:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason=error or 'Not authenticated')
         return
 
     await asyncio.wait_for(websocket.accept(subprotocol=real_protocol), 10)
@@ -857,10 +859,11 @@ def github_callback(auth_code: AuthCode):
 @app.post('/api/authenticate')
 async def authenticate(request: Request):
     token = request.headers.get('X-GitHub-Token')
-    if not await authenticate_github_user(token):
+    is_authenticated, error = await authenticate_github_user(token)
+    if not is_authenticated:
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': 'Not authorized via GitHub waitlist'},
+            content={'error': error or 'Not authorized via GitHub waitlist'},
         )
 
     response = JSONResponse(

@@ -78,30 +78,44 @@ class UserVerifier:
         return False
 
 
-async def authenticate_github_user(auth_token) -> bool:
+async def authenticate_github_user(auth_token) -> tuple[bool, str | None]:
+    """Authenticate a GitHub user.
+    
+    Args:
+        auth_token: GitHub access token
+        
+    Returns:
+        Tuple of (is_authenticated, error_message)
+        If successful, is_authenticated is True and error_message is None
+        If failed, is_authenticated is False and error_message contains the error
+    """
     user_verifier = UserVerifier()
 
     if not user_verifier.is_active():
         logger.info('No user verification sources configured - allowing all users')
-        return True
+        return True, None
 
     logger.info('Checking GitHub token')
 
     if not auth_token:
         logger.warning('No GitHub token provided')
-        return False
+        return False, 'No GitHub token provided'
 
-    login = await get_github_user(auth_token)
-
+    login, error = await get_github_user(auth_token)
+    
+    if error:
+        return False, error
+        
     if not user_verifier.is_user_allowed(login):
-        logger.warning(f'GitHub user {login} not in allow list')
-        return False
+        error_msg = f'GitHub user {login} not in allow list'
+        logger.warning(error_msg)
+        return False, error_msg
 
     logger.info(f'GitHub user {login} authenticated')
-    return True
+    return True, None
 
 
-async def get_github_user(token: str) -> str:
+async def get_github_user(token: str) -> tuple[str | None, str | None]:
     """Get GitHub user info from token.
 
     Args:
@@ -109,7 +123,7 @@ async def get_github_user(token: str) -> str:
 
     Returns:
         Tuple of (login, error_message)
-        If successful, error_message is None
+        If successful, login is set and error_message is None
         If failed, login is None and error_message contains the error
     """
     logger.info('Fetching GitHub user info from token')
@@ -119,10 +133,33 @@ async def get_github_user(token: str) -> str:
         'X-GitHub-Api-Version': '2022-11-28',
     }
     async with httpx.AsyncClient() as client:
-        logger.debug('Making request to GitHub API')
-        response = await client.get('https://api.github.com/user', headers=headers)
-        response.raise_for_status()
-        user_data = response.json()
-        login = user_data.get('login')
-        logger.info(f'Successfully retrieved GitHub user: {login}')
-        return login
+        try:
+            logger.debug('Making request to GitHub API')
+            response = await client.get('https://api.github.com/user', headers=headers)
+            
+            # Check rate limit headers
+            rate_limit = response.headers.get('X-RateLimit-Remaining', '0')
+            rate_limit_reset = response.headers.get('X-RateLimit-Reset', '0')
+            
+            if response.status_code == 403 and rate_limit == '0':
+                logger.warning(f'GitHub API rate limit exceeded. Reset at timestamp: {rate_limit_reset}')
+                return None, 'GitHub API rate limit exceeded. Please try again later.'
+            
+            response.raise_for_status()
+            user_data = response.json()
+            login = user_data.get('login')
+            
+            if not login:
+                return None, 'Invalid GitHub user data received'
+            
+            logger.info(f'Successfully retrieved GitHub user: {login}')
+            return login, None
+            
+        except httpx.HTTPStatusError as e:
+            error_msg = f'GitHub API error: {e.response.status_code} - {e.response.text}'
+            logger.error(error_msg)
+            return None, error_msg
+        except httpx.RequestError as e:
+            error_msg = f'Error making request to GitHub API: {str(e)}'
+            logger.error(error_msg)
+            return None, error_msg
