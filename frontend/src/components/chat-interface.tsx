@@ -27,7 +27,7 @@ const isErrorMessage = (
 ): message is ErrorMessage => "error" in message;
 
 export function ChatInterface() {
-  const { send } = useSocket();
+  const { send, runtimeActive } = useSocket();
   const dispatch = useDispatch();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
@@ -43,6 +43,7 @@ export function ChatInterface() {
   const [suggestions, setSuggestions] = React.useState<Record<string, string>>(
     SUGGESTIONS["non-repo"],
   );
+  const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     // Function to update suggestions based on the current value in localStorage
@@ -67,6 +68,13 @@ export function ChatInterface() {
     dispatch(addUserMessage({ content, imageUrls, timestamp }));
     send(createChatMessage(content, imageUrls, timestamp));
   };
+
+  React.useEffect(() => {
+    if (messageToSend && runtimeActive) {
+      handleSendMessage(messageToSend, []);
+      setMessageToSend(null);
+    }
+  }, [messageToSend, runtimeActive]);
 
   const handleStop = () => {
     send(generateAgentStateChangeEvent(AgentState.STOPPED));
@@ -108,6 +116,7 @@ export function ChatInterface() {
                   timestamp: new Date().toISOString(),
                 }),
               );
+              setMessageToSend(value);
             }}
           />
         </div>

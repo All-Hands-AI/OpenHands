@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { act, screen, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import { ChatInterface } from "#/components/chat-interface";
@@ -12,6 +12,25 @@ const renderChatInterface = (messages: (Message | ErrorMessage)[]) =>
   renderWithProviders(<ChatInterface />);
 
 describe("Empty state", () => {
+  const { send: sendMock } = vi.hoisted(() => ({
+    send: vi.fn(),
+  }));
+
+  const { useSocket: useSocketMock } = vi.hoisted(() => ({
+    useSocket: vi.fn(() => ({ send: sendMock, runtimeActive: true })),
+  }));
+
+  beforeAll(() => {
+    vi.mock("#/context/socket", async (importActual) => ({
+      ...(await importActual<typeof import("#/context/socket")>()),
+      useSocket: useSocketMock,
+    }));
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("should render suggestions if empty", () => {
     const { store } = renderWithProviders(<ChatInterface />, {
       preloadedState: {
@@ -76,6 +95,11 @@ describe("Empty state", () => {
   });
 
   it("should dispatch a user message when selecting a message", async () => {
+    // this is to test that the message is in the UI before the socket is called
+    useSocketMock.mockImplementation(() => ({
+      send: sendMock,
+      runtimeActive: false, // mock an inactive runtime setup
+    }));
     const addUserMessageSpy = vi.spyOn(ChatSlice, "addUserMessage");
     const user = userEvent.setup();
     const { store } = renderWithProviders(<ChatInterface />, {
@@ -93,6 +117,35 @@ describe("Empty state", () => {
     expect(addUserMessageSpy).toHaveBeenCalled();
     expect(screen.queryByTestId("suggestions")).not.toBeInTheDocument();
     expect(store.getState().chat.messages).toHaveLength(1);
+  });
+
+  it("should send the message to the socket only if the runtime is active", async () => {
+    useSocketMock.mockImplementation(() => ({
+      send: sendMock,
+      runtimeActive: false, // mock an inactive runtime setup
+    }));
+    const user = userEvent.setup();
+    const { rerender } = renderWithProviders(<ChatInterface />, {
+      preloadedState: {
+        chat: { messages: [] },
+      },
+    });
+
+    const suggestions = screen.getByTestId("suggestions");
+    const displayedSuggestions = within(suggestions).getAllByRole("button");
+
+    await user.click(displayedSuggestions[0]);
+    expect(sendMock).not.toHaveBeenCalled();
+
+    useSocketMock.mockImplementation(() => ({
+      send: sendMock,
+      runtimeActive: true, // mock an active runtime setup
+    }));
+    rerender(<ChatInterface />);
+
+    await waitFor(() =>
+      expect(sendMock).toHaveBeenCalledWith(expect.any(String)),
+    );
   });
 });
 
