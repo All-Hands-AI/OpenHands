@@ -1,4 +1,5 @@
 import { ClientActionFunctionArgs, json } from "@remix-run/react";
+import posthog from "posthog-js";
 import {
   getDefaultSettings,
   LATEST_SETTINGS_VERSION,
@@ -38,6 +39,7 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
     saveSettings(getDefaultSettings());
     if (requestedToEndSession(formData)) removeSessionTokenAndSelectedRepo();
 
+    posthog.capture("settings_reset");
     return json({ success: true });
   }
 
@@ -97,5 +99,11 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   }
 
   if (requestedToEndSession(formData)) removeSessionTokenAndSelectedRepo();
+
+  const settingsWithoutApiKey = {
+    ...settings,
+    LLM_API_KEY: LLM_API_KEY ? "SET" : "UNSET",
+  };
+  posthog.capture("settings_saved", settingsWithoutApiKey);
   return json({ success: true });
 };

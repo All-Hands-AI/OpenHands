@@ -1,5 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import React from "react";
+import posthog from "posthog-js";
 import { useSocket } from "#/context/socket";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { ChatMessage } from "./chat-message";
@@ -43,6 +44,9 @@ export function ChatInterface() {
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
 
   const handleSendMessage = async (content: string, files: File[]) => {
+    posthog.capture("user_message_sent", {
+      current_message_count: messages.length,
+    });
     const promises = files.map((file) => convertImageToBase64(file));
     const imageUrls = await Promise.all(promises);
 
@@ -53,6 +57,7 @@ export function ChatInterface() {
   };
 
   const handleStop = () => {
+    posthog.capture("stop_button_clicked");
     send(generateAgentStateChangeEvent(AgentState.STOPPED));
   };
 
