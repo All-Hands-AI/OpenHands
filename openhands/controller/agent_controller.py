@@ -255,7 +255,6 @@ class AgentController:
             observation (observation): The observation to handle.
         """
         observation_to_print = copy.deepcopy(observation)
-        # Content truncation is now handled at the runtime level in action_execution_server.py
         self.log('debug', str(observation_to_print), extra={'msg_type': 'OBSERVATION'})
 
         if observation.llm_metrics is not None:
