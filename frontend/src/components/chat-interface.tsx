@@ -18,6 +18,9 @@ import ConfirmationButtons from "./chat/ConfirmationButtons";
 import { ErrorMessage } from "./error-message";
 import { ContinueButton } from "./continue-button";
 import { ScrollToBottomButton } from "./scroll-to-bottom-button";
+import { Suggestions } from "./suggestions";
+import { SUGGESTIONS } from "#/utils/suggestions";
+import BuildIt from "#/assets/build-it.svg?react";
 
 const isErrorMessage = (
   message: Message | ErrorMessage,
@@ -37,6 +40,7 @@ export function ChatInterface() {
     "positive" | "negative"
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
+  const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
 
   const handleSendMessage = async (content: string, files: File[]) => {
     const promises = files.map((file) => convertImageToBase64(file));
@@ -45,6 +49,7 @@ export function ChatInterface() {
     const timestamp = new Date().toISOString();
     dispatch(addUserMessage({ content, imageUrls, timestamp }));
     send(createChatMessage(content, imageUrls, timestamp));
+    setMessageToSend(null);
   };
 
   const handleStop = () => {
@@ -64,6 +69,28 @@ export function ChatInterface() {
 
   return (
     <div className="h-full flex flex-col justify-between">
+      {messages.length === 0 && (
+        <div className="flex flex-col gap-6 h-full px-4 items-center justify-center">
+          <div className="flex flex-col items-center p-4 bg-neutral-700 rounded-xl w-full">
+            <BuildIt width={45} height={54} />
+            <span className="font-semibold text-[20px] leading-6 -tracking-[0.01em] gap-1">
+              Let&apos;s start building!
+            </span>
+          </div>
+          <Suggestions
+            suggestions={Object.entries(SUGGESTIONS.repo)
+              .slice(0, 4)
+              .map(([label, value]) => ({
+                label,
+                value,
+              }))}
+            onSuggestionClick={(value) => {
+              setMessageToSend(value);
+            }}
+          />
+        </div>
+      )}
+
       <div
         ref={scrollRef}
         onScroll={(e) => onChatBodyScroll(e.currentTarget)}
@@ -123,6 +150,8 @@ export function ChatInterface() {
             curAgentState === AgentState.AWAITING_USER_CONFIRMATION
           }
           mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
+          value={messageToSend ?? undefined}
+          onChange={setMessageToSend}
         />
       </div>
 
