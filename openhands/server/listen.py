@@ -334,7 +334,7 @@ async def websocket_endpoint(websocket: WebSocket):
         sid = str(uuid.uuid4())
         jwt_token = sign_token({'sid': sid}, config.jwt_secret)
         logger.info(f'New session: {sid}')
-    
+
     session = session_manager.add_or_restart_session(sid, websocket)
     await websocket.send_json({'token': jwt_token, 'status': 'ok'})
 
