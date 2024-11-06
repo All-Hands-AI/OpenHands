@@ -495,7 +495,16 @@ class CodeActAgent(Agent):
             )
             # do not add this for function calling
             if latest_user_message:
-                reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
+                reminder_text = (
+                    '\n\nENVIRONMENT REMINDER:\n'
+                    f'- You have {state.max_iterations - state.iteration} turns left to complete the task\n'
+                    '- When finished reply with <finish></finish>\n'
+                    '\n<IMPORTANT>\n'
+                    '- You MUST generate only one action per turn!\n'
+                    '- A patch is a set of changes to the source code of the codebase that you are given\n'
+                    '- You MUST generate a patch that attempts to fix the issue described in the <pr_description>\n'
+                    '</IMPORTANT>\n'
+                )
                 latest_user_message.content.append(TextContent(text=reminder_text))
 
         return messages
