@@ -75,19 +75,13 @@ def truncate_content(content: str, max_chars: int) -> str:
     import os
     import datetime
     
-    # Create outputs directory if it doesn't exist
-    outputs_dir = '/openhands/outputs'
-    if not os.path.exists(outputs_dir):
-        os.makedirs(outputs_dir, mode=0o777, exist_ok=True)
-    
     # Generate filename with timestamp
     timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    output_file = os.path.join(outputs_dir, f'truncated_output_{timestamp}.txt')
+    output_file = os.path.join('/openhands/outputs', f'truncated_output_{timestamp}.txt')
     
     try:
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(content)
-        os.chmod(output_file, 0o666)  # Make file readable/writable by all
     except Exception as e:
         logger.error(f'Failed to save full content to file: {e}')
 
