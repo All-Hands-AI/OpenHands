@@ -10,6 +10,8 @@ import {
   Outlet,
   ClientLoaderFunctionArgs,
 } from "@remix-run/react";
+import posthog from "posthog-js";
+import { useDispatch } from "react-redux";
 import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
 import CogTooth from "#/assets/cog-tooth";
@@ -28,6 +30,12 @@ import DocsIcon from "#/assets/docs.svg?react";
 import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { WaitlistModal } from "#/components/waitlist-modal";
+import { AnalyticsConsentFormModal } from "#/components/analytics-consent-form-modal";
+import { setCurrentAgentState } from "#/state/agentSlice";
+import AgentState from "#/types/AgentState";
+
+// Cache for clientLoader results
+let clientLoaderCache: any = null; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   try {
@@ -41,26 +49,39 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
 
   let token = localStorage.getItem("token");
   const ghToken = localStorage.getItem("ghToken");
+  const analyticsConsent = localStorage.getItem("analytics-consent");
+  const userConsents = analyticsConsent === "true";
 
-  let isAuthed: boolean = false;
-  let githubAuthUrl: string | null = null;
-
-  try {
-    isAuthed = await userIsAuthenticated(ghToken);
-    if (!isAuthed && window.__GITHUB_CLIENT_ID__) {
-      const requestUrl = new URL(request.url);
-      githubAuthUrl = generateGitHubAuthUrl(
-        window.__GITHUB_CLIENT_ID__,
-        requestUrl,
-      );
-    }
-  } catch (error) {
-    isAuthed = false;
-    githubAuthUrl = null;
+  if (!userConsents) {
+    posthog.opt_out_capturing();
+  } else {
+    posthog.opt_in_capturing();
   }
 
+  let isAuthed = false;
+  let githubAuthUrl: string | null = null;
   let user: GitHubUser | GitHubErrorReponse | null = null;
-  if (ghToken) user = await retrieveGitHubUser(ghToken);
+  if (!clientLoaderCache || clientLoaderCache.ghToken !== ghToken) {
+    try {
+      isAuthed = await userIsAuthenticated();
+      if (!isAuthed && window.__GITHUB_CLIENT_ID__) {
+        const requestUrl = new URL(request.url);
+        githubAuthUrl = generateGitHubAuthUrl(
+          window.__GITHUB_CLIENT_ID__,
+          requestUrl,
+        );
+      }
+    } catch (error) {
+      isAuthed = false;
+      githubAuthUrl = null;
+    }
+
+    if (ghToken) user = await retrieveGitHubUser(ghToken);
+  } else {
+    isAuthed = clientLoaderCache.isAuthed;
+    githubAuthUrl = clientLoaderCache.githubAuthUrl;
+    user = clientLoaderCache.user;
+  }
 
   const settings = getSettings();
   await i18n.changeLanguage(settings.LANGUAGE);
@@ -71,7 +92,8 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
     token = null;
   }
 
-  return defer({
+  // Store the results in cache
+  clientLoaderCache = {
     token,
     ghToken,
     isAuthed,
@@ -79,7 +101,10 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
     user,
     settingsIsUpdated,
     settings,
-  });
+    analyticsConsent,
+  };
+
+  return defer(clientLoaderCache);
 };
 
 export function ErrorBoundary() {
@@ -132,9 +157,11 @@ export default function MainApp() {
     githubAuthUrl,
     settingsIsUpdated,
     settings,
+    analyticsConsent,
   } = useLoaderData<typeof clientLoader>();
   const logoutFetcher = useFetcher({ key: "logout" });
   const endSessionFetcher = useFetcher({ key: "end-session" });
+  const dispatch = useDispatch();
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
@@ -204,6 +231,7 @@ export default function MainApp() {
 
   const handleEndSession = () => {
     setStartNewProjectModalIsOpen(false);
+    dispatch(setCurrentAgentState(AgentState.LOADING));
     // call new session action and redirect to '/'
     endSessionFetcher.submit(new FormData(), {
       method: "POST",
@@ -212,7 +240,10 @@ export default function MainApp() {
   };
 
   return (
-    <div className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3">
+    <div
+      data-testid="root-layout"
+      className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3"
+    >
       <aside className="px-1 flex flex-col gap-1">
         <div className="w-[34px] h-[34px] flex items-center justify-center">
           {navigation.state === "loading" && <LoadingSpinner size="small" />}
@@ -304,6 +335,7 @@ export default function MainApp() {
             onClose={handleAccountSettingsModalClose}
             selectedLanguage={settings.LANGUAGE}
             gitHubError={isGitHubErrorReponse(user)}
+            analyticsConsent={analyticsConsent}
           />
         </ModalBackdrop>
       )}
@@ -328,6 +360,7 @@ export default function MainApp() {
       {!isAuthed && (
         <WaitlistModal ghToken={ghToken} githubAuthUrl={githubAuthUrl} />
       )}
+      {!analyticsConsent && <AnalyticsConsentFormModal />}
     </div>
   );
 }

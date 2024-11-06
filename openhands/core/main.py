@@ -17,6 +17,7 @@ from openhands.core.config import (
     parse_arguments,
 )
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import MessageAction
@@ -122,19 +123,20 @@ async def run_controller(
 
     if runtime is None:
         runtime = create_runtime(config, sid=sid)
-        await runtime.connect()
 
     event_stream = runtime.event_stream
-    # restore cli session if enabled
+
+    # restore cli session if available
     initial_state = None
-    if config.enable_cli_session:
-        try:
-            logger.debug(f'Restoring agent state from cli session {event_stream.sid}')
-            initial_state = State.restore_from_session(
-                event_stream.sid, event_stream.file_store
-            )
-        except Exception as e:
-            logger.debug(f'Error restoring state: {e}')
+    try:
+        logger.debug(
+            f'Trying to restore agent state from cli session {event_stream.sid} if available'
+        )
+        initial_state = State.restore_from_session(
+            event_stream.sid, event_stream.file_store
+        )
+    except Exception as e:
+        logger.debug(f'Cannot restore agent state: {e}')
 
     # init controller with this initial state
     controller = AgentController(
@@ -147,9 +149,6 @@ async def run_controller(
         headless_mode=headless_mode,
     )
 
-    if controller is not None:
-        controller.agent_task = asyncio.create_task(controller.start_step_loop())
-
     assert isinstance(
         initial_user_action, Action
     ), f'initial user actions must be an Action, got {type(initial_user_action)}'
@@ -160,7 +159,7 @@ async def run_controller(
     )
 
     # start event is a MessageAction with the task, either resumed or new
-    if config.enable_cli_session and initial_state is not None:
+    if initial_state is not None:
         # we're resuming the previous session
         event_stream.add_event(
             MessageAction(
@@ -171,7 +170,7 @@ async def run_controller(
             ),
             EventSource.USER,
         )
-    elif initial_state is None:
+    else:
         # init with the provided actions
         event_stream.add_event(initial_user_action, EventSource.USER)
 
@@ -187,33 +186,36 @@ async def run_controller(
                 action = MessageAction(content=message)
                 event_stream.add_event(action, EventSource.USER)
 
-    event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
-    while controller.state.agent_state not in [
+    event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, sid)
+
+    await runtime.connect()
+
+    end_states = [
         AgentState.FINISHED,
         AgentState.REJECTED,
         AgentState.ERROR,
         AgentState.PAUSED,
         AgentState.STOPPED,
-    ]:
-        await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
+    ]
+
+    try:
+        await run_agent_until_done(controller, runtime, end_states)
+    except Exception as e:
+        logger.error(f'Exception in main loop: {e}')
 
     # save session when we're about to close
-    if config.enable_cli_session:
+    if config.file_store is not None and config.file_store != 'memory':
         end_state = controller.get_state()
+        # NOTE: the saved state does not include delegates events
         end_state.save_to_session(event_stream.sid, event_stream.file_store)
 
-    # close when done
-    await controller.close()
     state = controller.get_state()
 
     # save trajectories if applicable
     if config.trajectories_path is not None:
         file_path = os.path.join(config.trajectories_path, sid + '.json')
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        histories = [
-            event_to_trajectory(event)
-            for event in state.history.get_events(include_delegates=True)
-        ]
+        histories = [event_to_trajectory(event) for event in state.history]
         with open(file_path, 'w') as f:
             json.dump(histories, f)
 
