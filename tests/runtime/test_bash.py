@@ -589,7 +589,7 @@ def test_copy_from_directory(temp_dir, runtime_cls):
 
         # Result is returned as a path
         assert isinstance(result, Path)
-        
+
         result.unlink()
     finally:
         _close_test_runtime(runtime)
