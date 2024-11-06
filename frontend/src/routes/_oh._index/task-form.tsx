@@ -100,8 +100,14 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
         />
         <div
           className={cn(
-            "border border-neutral-600 px-4 py-[17px] rounded-lg text-[17px] leading-5 w-full",
+            "border border-neutral-600 px-4 py-[17px] rounded-lg text-[17px] leading-5 w-full transition-colors duration-200",
             inputIsFocused ? "bg-neutral-600" : "bg-neutral-700",
+            "hover:border-neutral-500 focus-within:border-neutral-500",
+            "group relative",
+            "before:pointer-events-none before:absolute before:inset-0 before:rounded-lg before:transition-colors",
+            "before:border-2 before:border-dashed before:border-transparent",
+            "[&:has(*:focus-within)]:before:border-neutral-500/50",
+            "[&:has(*[data-dragging-over='true'])]:before:border-neutral-500/50",
           )}
         >
           <ChatInput
@@ -112,6 +118,13 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
             onChange={(message) => setText(message)}
             onFocus={() => setInputIsFocused(true)}
             onBlur={() => setInputIsFocused(false)}
+            onImagePaste={async (imageFiles) => {
+              const promises = imageFiles.map(convertImageToBase64);
+              const base64Images = await Promise.all(promises);
+              base64Images.forEach((base64) => {
+                dispatch(addFile(base64));
+              });
+            }}
             placeholder={placeholder}
             value={text}
             maxRows={15}

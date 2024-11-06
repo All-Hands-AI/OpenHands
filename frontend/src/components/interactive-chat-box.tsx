@@ -53,6 +53,13 @@ export function InteractiveChatBox({
         className={cn(
           "flex items-end gap-1",
           "bg-neutral-700 border border-neutral-600 rounded-lg px-2 py-[10px]",
+          "transition-colors duration-200",
+          "hover:border-neutral-500 focus-within:border-neutral-500",
+          "group relative",
+          "before:pointer-events-none before:absolute before:inset-0 before:rounded-lg before:transition-colors",
+          "before:border-2 before:border-dashed before:border-transparent",
+          "[&:has(*:focus-within)]:before:border-neutral-500/50",
+          "[&:has(*[data-dragging-over='true'])]:before:border-neutral-500/50",
         )}
       >
         <UploadImageInput onUpload={handleUpload} />
@@ -62,6 +69,7 @@ export function InteractiveChatBox({
           placeholder="What do you want to build?"
           onSubmit={handleSubmit}
           onStop={onStop}
+          onImagePaste={handleUpload}
         />
       </div>
     </div>
