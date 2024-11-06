@@ -48,6 +48,7 @@ import { clearJupyter } from "#/state/jupyterSlice";
 import { FilesProvider } from "#/context/files";
 import { ErrorObservation } from "#/types/core/observations";
 import { ChatInterface } from "#/components/chat-interface";
+import { cn } from "#/utils/utils";
 
 interface ServerError {
   error: boolean | string;
@@ -292,7 +293,16 @@ function App() {
   return (
     <div className="flex flex-col h-full gap-3">
       <div className="flex h-full overflow-auto gap-3">
-        <Container className="w-[390px] max-h-full">
+        <Container className="w-[390px] max-h-full relative">
+          <div
+            className={cn(
+              "w-2 h-2 rounded-full border",
+              "absolute left-3 top-3",
+              runtimeActive
+                ? "bg-green-800 border-green-500"
+                : "bg-red-800 border-red-500",
+            )}
+          />
           <ChatInterface />
         </Container>
 
