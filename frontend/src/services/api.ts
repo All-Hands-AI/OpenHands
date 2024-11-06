@@ -1,14 +1,26 @@
-import { getToken } from "./auth";
+import { getToken, getGitHubToken } from "./auth";
 import toast from "#/utils/toast";
 
 const WAIT_FOR_AUTH_DELAY_MS = 500;
+
+const UNAUTHED_ROUTE_PREFIXES = [
+  "/api/authenticate",
+  "/api/options/",
+  "/config.json",
+  "/api/github/callback",
+];
 
 export async function request(
   url: string,
   options: RequestInit = {},
   disableToast: boolean = false,
+  returnResponse: boolean = false,
+  maxRetries: number = 3,
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 ): Promise<any> {
+  if (maxRetries < 0) {
+    throw new Error("Max retries exceeded");
+  }
   const onFail = (msg: string) => {
     if (!disableToast) {
       toast.error("api", msg);
@@ -16,12 +28,17 @@ export async function request(
     throw new Error(msg);
   };
 
-  const needsAuth = !url.startsWith("/api/options/");
+  const needsAuth = !UNAUTHED_ROUTE_PREFIXES.some((prefix) =>
+    url.startsWith(prefix),
+  );
   const token = getToken();
+  const githubToken = getGitHubToken();
   if (!token && needsAuth) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve(request(url, options, disableToast));
+        resolve(
+          request(url, options, disableToast, returnResponse, maxRetries - 1),
+        );
       }, WAIT_FOR_AUTH_DELAY_MS);
     });
   }
@@ -30,6 +47,13 @@ export async function request(
     options.headers = {
       ...(options.headers || {}),
       Authorization: `Bearer ${token}`,
+    };
+  }
+  if (githubToken) {
+    // eslint-disable-next-line no-param-reassign
+    options.headers = {
+      ...(options.headers || {}),
+      "X-GitHub-Token": githubToken,
     };
   }
 
@@ -46,6 +70,10 @@ export async function request(
   }
   if (!response?.ok) {
     onFail(`Error fetching ${url}: ${response?.statusText}`);
+  }
+
+  if (returnResponse) {
+    return response;
   }
 
   try {

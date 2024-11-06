@@ -1,6 +1,9 @@
-import { addAssistantMessage, addUserMessage } from "#/state/chatSlice";
+import {
+  addAssistantMessage,
+  addUserMessage,
+  addErrorMessage,
+} from "#/state/chatSlice";
 import { setCode, setActiveFilepath } from "#/state/codeSlice";
-import { appendInput } from "#/state/commandSlice";
 import { appendJupyterInput } from "#/state/jupyterSlice";
 import {
   ActionSecurityRisk,
@@ -56,21 +59,12 @@ const messageActions = {
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
-    if (
-      !message.args.is_confirmed ||
-      message.args.is_confirmed !== "rejected"
-    ) {
-      store.dispatch(appendInput(message.args.command));
-    }
   },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
-    if (
-      !message.args.is_confirmed ||
-      message.args.is_confirmed !== "rejected"
-    ) {
+    if (message.args.confirmation_state !== "rejected") {
       store.dispatch(appendJupyterInput(message.args.code));
     }
   },
@@ -98,7 +92,7 @@ export function handleActionMessage(message: ActionMessage) {
   if (
     (message.action === ActionType.RUN ||
       message.action === ActionType.RUN_IPYTHON) &&
-    message.args.is_confirmed === "awaiting_confirmation"
+    message.args.confirmation_state === "awaiting_confirmation"
   ) {
     if (message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
@@ -129,13 +123,19 @@ export function handleActionMessage(message: ActionMessage) {
 }
 
 export function handleStatusMessage(message: StatusMessage) {
-  const msg = message.status == null ? "" : message.status.trim();
-  store.dispatch(
-    setCurStatusMessage({
-      ...message,
-      status: msg,
-    }),
-  );
+  if (message.type === "info") {
+    store.dispatch(
+      setCurStatusMessage({
+        ...message,
+      }),
+    );
+  } else if (message.type === "error") {
+    store.dispatch(
+      addErrorMessage({
+        ...message,
+      }),
+    );
+  }
 }
 
 export function handleAssistantMessage(data: string | SocketMessage) {
@@ -149,9 +149,11 @@ export function handleAssistantMessage(data: string | SocketMessage) {
 
   if ("action" in socketMessage) {
     handleActionMessage(socketMessage);
-  } else if ("status" in socketMessage) {
+  } else if ("observation" in socketMessage) {
+    handleObservationMessage(socketMessage);
+  } else if ("status_update" in socketMessage) {
     handleStatusMessage(socketMessage);
   } else {
-    handleObservationMessage(socketMessage);
+    console.error("Unknown message type", socketMessage);
   }
 }

@@ -10,10 +10,13 @@ import pandas as pd
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    codeact_user_response,
+    compatibility_for_eval_history_pairs,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
+    update_llm_config_for_completions_logging,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -29,14 +32,22 @@ from openhands.events.action import (
     CmdRunAction,
     MessageAction,
 )
-from openhands.events.observation import CmdOutputObservation
+from openhands.events.observation import (
+    BrowserOutputObservation,
+    CmdOutputObservation,
+)
+from openhands.runtime.base import Runtime
 from openhands.runtime.browser.browser_env import (
     BROWSER_EVAL_GET_GOAL_ACTION,
     BROWSER_EVAL_GET_REWARDS_ACTION,
 )
-from openhands.runtime.runtime import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
-SUPPORTED_AGENT_CLS = {'BrowsingAgent'}
+SUPPORTED_AGENT_CLS = {'BrowsingAgent', 'CodeActAgent'}
+
+AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
+    'CodeActAgent': codeact_user_response,
+}
 
 
 def get_config(
@@ -46,25 +57,32 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='eventstream',
+        runtime=os.environ.get('RUNTIME', 'eventstream'),
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             base_container_image='xingyaoww/od-eval-miniwob:v1.0',
             enable_auto_lint=True,
             use_host_network=False,
             browsergym_eval_env=env_id,
+            api_key=os.environ.get('ALLHANDS_API_KEY', None),
+            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
+            keep_remote_runtime_alive=False,
         ),
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
     )
-    config.set_llm_config(metadata.llm_config)
+    config.set_llm_config(
+        update_llm_config_for_completions_logging(
+            metadata.llm_config, metadata.eval_output_dir, env_id
+        )
+    )
     return config
 
 
 def initialize_runtime(
     runtime: Runtime,
-) -> str:
+) -> tuple[str, BrowserOutputObservation]:
     """Initialize the runtime for the agent.
 
     This function is called before the runtime is used to run the agent.
@@ -84,8 +102,14 @@ def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     goal = obs.content
 
+    # Run noop to get the initial browser observation (e.g., the page URL & content)
+    action = BrowseInteractiveAction(browser_actions='noop(1000)')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
     logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
-    return goal
+    return goal, obs
 
 
 def complete_runtime(
@@ -116,7 +140,7 @@ def process_instance(
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ) -> EvalOutput:
-    env_id = instance.id
+    env_id = instance.instance_id
     config = get_config(metadata, env_id)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
@@ -127,7 +151,13 @@ def process_instance(
         logger.info(f'Starting evaluation for instance {env_id}.')
 
     runtime = create_runtime(config)
-    task_str = initialize_runtime(runtime)
+    call_async_from_sync(runtime.connect)
+    task_str, obs = initialize_runtime(runtime)
+
+    task_str += (
+        f'\nInitial browser state (output of `noop(1000)`):\n{obs.get_agent_obs_text()}'
+    )
+
     state: State | None = asyncio.run(
         run_controller(
             config=config,
@@ -135,6 +165,9 @@ def process_instance(
                 content=task_str
             ),  # take output from initialize_runtime
             runtime=runtime,
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
+                metadata.agent_class
+            ],
         )
     )
 
@@ -150,19 +183,19 @@ def process_instance(
 
     # Instruction is the first message from the USER
     instruction = ''
-    for event in state.history.get_events():
+    for event in state.history:
         if isinstance(event, MessageAction):
             instruction = event.content
             break
 
     return_val = complete_runtime(runtime)
     logger.info(f'Return value from complete_runtime: {return_val}')
-    reward = max(return_val['rewards'])
+    reward = max(return_val['rewards'], default=0)
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
-    histories = state.history.compatibility_for_eval_history_pairs()
+    histories = compatibility_for_eval_history_pairs(state.history)
 
     # Save the output
     output = EvalOutput(

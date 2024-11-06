@@ -1,4 +1,4 @@
-"""Env vars related tests for the EventStreamRuntime, which connects to the RuntimeClient running in the sandbox."""
+"""Env vars related tests for the EventStreamRuntime, which connects to the ActionExecutor running in the sandbox."""
 
 import os
 from unittest.mock import patch
@@ -13,9 +13,9 @@ from openhands.events.observation import CmdOutputObservation
 # ============================================================================================================================
 
 
-def test_env_vars_os_environ(temp_dir, box_class, run_as_openhands):
+def test_env_vars_os_environ(temp_dir, runtime_cls, run_as_openhands):
     with patch.dict(os.environ, {'SANDBOX_ENV_FOOBAR': 'BAZ'}):
-        runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
+        runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
         obs: CmdOutputObservation = runtime.run_action(CmdRunAction(command='env'))
         print(obs)
@@ -27,13 +27,13 @@ def test_env_vars_os_environ(temp_dir, box_class, run_as_openhands):
         assert obs.exit_code == 0, 'The exit code should be 0.'
         assert (
             obs.content.strip().split('\n\r')[0].strip() == 'BAZ'
-        ), f'Output: [{obs.content}] for {box_class}'
+        ), f'Output: [{obs.content}] for {runtime_cls}'
 
         _close_test_runtime(runtime)
 
 
-def test_env_vars_runtime_operations(temp_dir, box_class):
-    runtime = _load_runtime(temp_dir, box_class)
+def test_env_vars_runtime_operations(temp_dir, runtime_cls):
+    runtime = _load_runtime(temp_dir, runtime_cls)
 
     # Test adding single env var
     runtime.add_env_vars({'QUUX': 'abc"def'})
@@ -67,10 +67,10 @@ def test_env_vars_runtime_operations(temp_dir, box_class):
     _close_test_runtime(runtime)
 
 
-def test_env_vars_added_by_config(temp_dir, box_class):
+def test_env_vars_added_by_config(temp_dir, runtime_cls):
     runtime = _load_runtime(
         temp_dir,
-        box_class,
+        runtime_cls,
         runtime_startup_env_vars={'ADDED_ENV_VAR': 'added_value'},
     )
 

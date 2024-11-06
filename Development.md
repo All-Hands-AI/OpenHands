@@ -5,12 +5,14 @@ Otherwise, you can clone the OpenHands project directly.
 
 ## Start the server for development
 ### 1. Requirements
-* Linux, Mac OS, or [WSL on Windows](https://learn.microsoft.com/en-us/windows/wsl/install)  [ Ubuntu <= 22.04]
+* Linux, Mac OS, or [WSL on Windows](https://learn.microsoft.com/en-us/windows/wsl/install)  [Ubuntu <= 22.04]
 * [Docker](https://docs.docker.com/engine/install/) (For those on MacOS, make sure to allow the default Docker socket to be used from advanced settings!)
 * [Python](https://www.python.org/downloads/) = 3.12
 * [NodeJS](https://nodejs.org/en/download/package-manager) >= 18.17.1
 * [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) >= 1.8
-* netcat => sudo apt-get install netcat
+* OS-specific dependencies:
+  - Ubuntu: build-essential => `sudo apt-get install build-essential`
+  - WSL: netcat => `sudo apt-get install netcat`
 
 Make sure you have all these dependencies installed before moving on to `make build`.
 
@@ -98,7 +100,7 @@ poetry run pytest ./tests/unit/test_*.py
 ### 9. Use existing Docker image
 To reduce build time (e.g., if no changes were made to the client-runtime component), you can use an existing Docker container image. Follow these steps:
 1. Set the SANDBOX_RUNTIME_CONTAINER_IMAGE environment variable to the desired Docker image.
-2. Example: export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.9-nikolaik
+2. Example: export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.12-nikolaik
 
 ## Develop inside Docker container
 

@@ -27,11 +27,21 @@ export interface GitHubAccessTokenResponse {
   access_token: string;
 }
 
+export interface AuthenticationResponse {
+  message: string;
+  login?: string; // Only present when allow list is enabled
+}
+
 export interface Feedback {
   version: string;
   email: string;
   token: string;
-  feedback: "positive" | "negative";
+  polarity: "positive" | "negative";
   permissions: "public" | "private";
   trajectory: unknown[];
+}
+
+export interface GetConfigResponse {
+  APP_MODE: "saas" | "oss";
+  GITHUB_CLIENT_ID: string | null;
 }

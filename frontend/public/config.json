@@ -1,3 +1,4 @@
 {
-  "APP_MODE": "oss"
+  "APP_MODE": "oss",
+  "GITHUB_CLIENT_ID": ""
 }

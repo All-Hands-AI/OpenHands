@@ -29,7 +29,7 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
             <span>
               {t(I18nKey.CONNECT_TO_GITHUB_MODAL$GET_YOUR_TOKEN)}{" "}
               <a
-                href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user"
+                href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
                 target="_blank"
                 rel="noreferrer noopener"
                 className="text-[#791B80] underline"
@@ -56,6 +56,7 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
 
         <div className="flex flex-col gap-2 w-full">
           <ModalButton
+            testId="connect-to-github"
             type="submit"
             text={t(I18nKey.CONNECT_TO_GITHUB_MODAL$CONNECT)}
             disabled={fetcher.state === "submitting"}

@@ -8,36 +8,80 @@ import {
   useLoaderData,
   useFetcher,
   Outlet,
+  ClientLoaderFunctionArgs,
 } from "@remix-run/react";
+import posthog from "posthog-js";
+import { useDispatch } from "react-redux";
 import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
 import CogTooth from "#/assets/cog-tooth";
 import { SettingsForm } from "#/components/form/settings-form";
 import AccountSettingsModal from "#/components/modals/AccountSettingsModal";
 import { DangerModal } from "#/components/modals/confirmation-modals/danger-modal";
-import LoadingProjectModal from "#/components/modals/LoadingProject";
+import { LoadingSpinner } from "#/components/modals/LoadingProject";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
-import { UserAvatar } from "#/components/user-avatar";
+import { UserActions } from "#/components/user-actions";
 import { useSocket } from "#/context/socket";
 import i18n from "#/i18n";
 import { getSettings, settingsAreUpToDate } from "#/services/settings";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import NewProjectIcon from "#/assets/new-project.svg?react";
 import DocsIcon from "#/assets/docs.svg?react";
+import { userIsAuthenticated } from "#/utils/user-is-authenticated";
+import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
+import { WaitlistModal } from "#/components/waitlist-modal";
+import { AnalyticsConsentFormModal } from "#/components/analytics-consent-form-modal";
+import { setCurrentAgentState } from "#/state/agentSlice";
+import AgentState from "#/types/AgentState";
 
-export const clientLoader = async () => {
+// Cache for clientLoader results
+let clientLoaderCache: any = null; // eslint-disable-line @typescript-eslint/no-explicit-any
+
+export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   try {
     const config = await OpenHands.getConfig();
     window.__APP_MODE__ = config.APP_MODE;
+    window.__GITHUB_CLIENT_ID__ = config.GITHUB_CLIENT_ID;
   } catch (error) {
     window.__APP_MODE__ = "oss";
+    window.__GITHUB_CLIENT_ID__ = null;
   }
 
   let token = localStorage.getItem("token");
   const ghToken = localStorage.getItem("ghToken");
+  const analyticsConsent = localStorage.getItem("analytics-consent");
+  const userConsents = analyticsConsent === "true";
 
+  if (!userConsents) {
+    posthog.opt_out_capturing();
+  } else {
+    posthog.opt_in_capturing();
+  }
+
+  let isAuthed = false;
+  let githubAuthUrl: string | null = null;
   let user: GitHubUser | GitHubErrorReponse | null = null;
-  if (ghToken) user = await retrieveGitHubUser(ghToken);
+  if (!clientLoaderCache || clientLoaderCache.ghToken !== ghToken) {
+    try {
+      isAuthed = await userIsAuthenticated();
+      if (!isAuthed && window.__GITHUB_CLIENT_ID__) {
+        const requestUrl = new URL(request.url);
+        githubAuthUrl = generateGitHubAuthUrl(
+          window.__GITHUB_CLIENT_ID__,
+          requestUrl,
+        );
+      }
+    } catch (error) {
+      isAuthed = false;
+      githubAuthUrl = null;
+    }
+
+    if (ghToken) user = await retrieveGitHubUser(ghToken);
+  } else {
+    isAuthed = clientLoaderCache.isAuthed;
+    githubAuthUrl = clientLoaderCache.githubAuthUrl;
+    user = clientLoaderCache.user;
+  }
 
   const settings = getSettings();
   await i18n.changeLanguage(settings.LANGUAGE);
@@ -48,13 +92,19 @@ export const clientLoader = async () => {
     token = null;
   }
 
-  return defer({
+  // Store the results in cache
+  clientLoaderCache = {
     token,
     ghToken,
+    isAuthed,
+    githubAuthUrl,
     user,
     settingsIsUpdated,
     settings,
-  });
+    analyticsConsent,
+  };
+
+  return defer(clientLoaderCache);
 };
 
 export function ErrorBoundary() {
@@ -89,43 +139,60 @@ export function ErrorBoundary() {
   );
 }
 
+type SettingsFormData = {
+  models: string[];
+  agents: string[];
+  securityAnalyzers: string[];
+};
+
 export default function MainApp() {
   const { stop, isConnected } = useSocket();
   const navigation = useNavigation();
   const location = useLocation();
-  const { token, user, settingsIsUpdated, settings } =
-    useLoaderData<typeof clientLoader>();
-  const loginFetcher = useFetcher({ key: "login" });
+  const {
+    token,
+    ghToken,
+    user,
+    isAuthed,
+    githubAuthUrl,
+    settingsIsUpdated,
+    settings,
+    analyticsConsent,
+  } = useLoaderData<typeof clientLoader>();
   const logoutFetcher = useFetcher({ key: "logout" });
   const endSessionFetcher = useFetcher({ key: "end-session" });
+  const dispatch = useDispatch();
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
   const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
     React.useState(false);
-  const [data, setData] = React.useState<{
-    models: string[];
-    agents: string[];
-    securityAnalyzers: string[];
-  }>({
-    models: [],
-    agents: [],
-    securityAnalyzers: [],
-  });
+  const [settingsFormData, setSettingsFormData] =
+    React.useState<SettingsFormData>({
+      models: [],
+      agents: [],
+      securityAnalyzers: [],
+    });
+  const [settingsFormError, setSettingsFormError] = React.useState<
+    string | null
+  >(null);
 
   React.useEffect(() => {
     // We fetch this here instead of the data loader because the server seems to block
     // the retrieval when the session is closing -- preventing the screen from rendering until
     // the fetch is complete
     (async () => {
-      const [models, agents, securityAnalyzers] = await Promise.all([
-        OpenHands.getModels(),
-        OpenHands.getAgents(),
-        OpenHands.getSecurityAnalyzers(),
-      ]);
-
-      setData({ models, agents, securityAnalyzers });
+      try {
+        const [models, agents, securityAnalyzers] = await Promise.all([
+          OpenHands.getModels(),
+          OpenHands.getAgents(),
+          OpenHands.getSecurityAnalyzers(),
+        ]);
+        setSettingsFormData({ models, agents, securityAnalyzers });
+      } catch (error) {
+        setSettingsFormError("Failed to load settings, please reload the page");
+      }
     })();
   }, []);
 
@@ -164,6 +231,7 @@ export default function MainApp() {
 
   const handleEndSession = () => {
     setStartNewProjectModalIsOpen(false);
+    dispatch(setCurrentAgentState(AgentState.LOADING));
     // call new session action and redirect to '/'
     endSessionFetcher.submit(new FormData(), {
       method: "POST",
@@ -172,25 +240,35 @@ export default function MainApp() {
   };
 
   return (
-    <div className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3">
-      <aside className="px-1 flex flex-col gap-[15px]">
-        <button
-          type="button"
-          aria-label="All Hands Logo"
-          onClick={() => {
-            if (location.pathname !== "/") setStartNewProjectModalIsOpen(true);
-          }}
-        >
-          <AllHandsLogo width={34} height={23} />
-        </button>
+    <div
+      data-testid="root-layout"
+      className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3"
+    >
+      <aside className="px-1 flex flex-col gap-1">
+        <div className="w-[34px] h-[34px] flex items-center justify-center">
+          {navigation.state === "loading" && <LoadingSpinner size="small" />}
+          {navigation.state !== "loading" && (
+            <button
+              type="button"
+              aria-label="All Hands Logo"
+              onClick={() => {
+                if (location.pathname === "/app")
+                  setStartNewProjectModalIsOpen(true);
+              }}
+            >
+              <AllHandsLogo width={34} height={23} />
+            </button>
+          )}
+        </div>
         <nav className="py-[18px] flex flex-col items-center gap-[18px]">
-          <UserAvatar
-            user={user}
-            isLoading={loginFetcher.state !== "idle"}
-            onLogout={handleUserLogout}
-            handleOpenAccountSettingsModal={() =>
-              setAccountSettingsModalOpen(true)
+          <UserActions
+            user={
+              user && !isGitHubErrorReponse(user)
+                ? { avatar_url: user.avatar_url }
+                : undefined
             }
+            onLogout={handleUserLogout}
+            onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
           />
           <button
             type="button"
@@ -222,70 +300,67 @@ export default function MainApp() {
       </aside>
       <div className="h-full w-full relative">
         <Outlet />
-        {navigation.state === "loading" && location.pathname !== "/" && (
-          <ModalBackdrop>
-            <LoadingProjectModal
-              message={
-                endSessionFetcher.state === "loading"
-                  ? "Ending session, please wait..."
-                  : undefined
-              }
-            />
-          </ModalBackdrop>
-        )}
-        {(!settingsIsUpdated || settingsModalIsOpen) && (
-          <ModalBackdrop onClose={() => setSettingsModalIsOpen(false)}>
-            <div className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2">
-              <span className="text-xl leading-6 font-semibold -tracking-[0.01em">
-                AI Provider Configuration
-              </span>
-              <p className="text-xs text-[#A3A3A3]">
-                To continue, connect an OpenAI, Anthropic, or other LLM account
-              </p>
-              {isConnected && (
-                <p className="text-xs text-danger">
-                  Changing settings during an active session will end the
-                  session
-                </p>
-              )}
-              <SettingsForm
-                settings={settings}
-                models={data.models}
-                agents={data.agents}
-                securityAnalyzers={data.securityAnalyzers}
-                onClose={() => setSettingsModalIsOpen(false)}
-              />
-            </div>
-          </ModalBackdrop>
-        )}
-        {accountSettingsModalOpen && (
-          <ModalBackdrop onClose={handleAccountSettingsModalClose}>
-            <AccountSettingsModal
-              onClose={handleAccountSettingsModalClose}
-              selectedLanguage={settings.LANGUAGE}
-              gitHubError={isGitHubErrorReponse(user)}
-            />
-          </ModalBackdrop>
-        )}
-        {startNewProjectModalIsOpen && (
-          <ModalBackdrop onClose={() => setStartNewProjectModalIsOpen(false)}>
-            <DangerModal
-              title="Are you sure you want to exit?"
-              description="You will lose any unsaved information."
-              buttons={{
-                danger: {
-                  text: "Exit Project",
-                  onClick: handleEndSession,
-                },
-                cancel: {
-                  text: "Cancel",
-                  onClick: () => setStartNewProjectModalIsOpen(false),
-                },
-              }}
-            />
-          </ModalBackdrop>
-        )}
       </div>
+
+      {isAuthed && (!settingsIsUpdated || settingsModalIsOpen) && (
+        <ModalBackdrop onClose={() => setSettingsModalIsOpen(false)}>
+          <div className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2">
+            {settingsFormError && (
+              <p className="text-danger text-xs">{settingsFormError}</p>
+            )}
+            <span className="text-xl leading-6 font-semibold -tracking-[0.01em">
+              AI Provider Configuration
+            </span>
+            <p className="text-xs text-[#A3A3A3]">
+              To continue, connect an OpenAI, Anthropic, or other LLM account
+            </p>
+            {isConnected && (
+              <p className="text-xs text-danger">
+                Changing settings during an active session will end the session
+              </p>
+            )}
+            <SettingsForm
+              settings={settings}
+              models={settingsFormData.models}
+              agents={settingsFormData.agents}
+              securityAnalyzers={settingsFormData.securityAnalyzers}
+              onClose={() => setSettingsModalIsOpen(false)}
+            />
+          </div>
+        </ModalBackdrop>
+      )}
+      {accountSettingsModalOpen && (
+        <ModalBackdrop onClose={handleAccountSettingsModalClose}>
+          <AccountSettingsModal
+            onClose={handleAccountSettingsModalClose}
+            selectedLanguage={settings.LANGUAGE}
+            gitHubError={isGitHubErrorReponse(user)}
+            analyticsConsent={analyticsConsent}
+          />
+        </ModalBackdrop>
+      )}
+      {startNewProjectModalIsOpen && (
+        <ModalBackdrop onClose={() => setStartNewProjectModalIsOpen(false)}>
+          <DangerModal
+            title="Are you sure you want to exit?"
+            description="You will lose any unsaved information."
+            buttons={{
+              danger: {
+                text: "Exit Project",
+                onClick: handleEndSession,
+              },
+              cancel: {
+                text: "Cancel",
+                onClick: () => setStartNewProjectModalIsOpen(false),
+              },
+            }}
+          />
+        </ModalBackdrop>
+      )}
+      {!isAuthed && (
+        <WaitlistModal ghToken={ghToken} githubAuthUrl={githubAuthUrl} />
+      )}
+      {!analyticsConsent && <AnalyticsConsentFormModal />}
     </div>
   );
 }

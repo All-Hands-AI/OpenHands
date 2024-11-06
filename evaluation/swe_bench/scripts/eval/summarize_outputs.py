@@ -3,6 +3,9 @@ import argparse
 import json
 from collections import Counter
 
+from openhands.events.serialization import event_from_dict
+from openhands.events.utils import get_pairs_from_events
+
 ERROR_KEYWORDS = [
     'Agent encountered an error while processing the last action',
     'APIError',
@@ -26,8 +29,37 @@ if __name__ == '__main__':
 
     error_counter = Counter()
 
+    main_agent_cost = []
+    editor_cost = []
+    num_turns = []
+
     for line in lines:
         _d = json.loads(line)
+
+        # Cost
+        costs = _d['metrics'].get('costs', [])
+        _cur_main_agent_cost = 0
+        _cur_editor_cost = 0
+        for cost in costs:
+            if isinstance(cost, float):
+                # backward compatible
+                _cur_main_agent_cost += cost
+            else:
+                if 'draft_editor' in cost['model']:
+                    _cur_editor_cost += cost['cost']
+                else:
+                    _cur_main_agent_cost += cost['cost']
+
+        main_agent_cost.append(_cur_main_agent_cost)
+        editor_cost.append(_cur_editor_cost)
+
+        # Turn status
+        history = _d.get('history', [])
+        events = [event_from_dict(event) for event in history]
+        pairs = get_pairs_from_events(events)
+        num_turns.append(len(pairs))
+
+        # Patch & resolve status
         patch = _d.get('test_result', {}).get('git_patch', '')
         if patch == '':
             num_empty_patch += 1
@@ -38,6 +70,7 @@ if __name__ == '__main__':
         if resolved:
             num_resolved += 1
 
+        # Error
         error = _d.get('error', None)
 
         if error is not None and isinstance(error, str):
@@ -57,20 +90,29 @@ if __name__ == '__main__':
                 break
 
     # print the error counter (with percentage)
-    print('-' * 100)
     print(
-        f'# of resolved: {num_resolved} / {num_lines} ({num_resolved / num_lines * 100:.2f}%)'
+        f'Number of resolved: {num_resolved} / {num_lines} ({num_resolved / num_lines * 100:.2f}%)'
     )
     print(
-        f'# of empty patch: {num_empty_patch} / {num_lines} ({num_empty_patch / num_lines * 100:.2f}%)'
+        f'Number of empty patch: {num_empty_patch} / {num_lines} ({num_empty_patch / num_lines * 100:.2f}%)'
     )
     print(
-        f'# of error lines: {num_error_lines} / {num_lines} ({num_error_lines / num_lines * 100:.2f}%)'
+        f'Number of error lines: {num_error_lines} / {num_lines} ({num_error_lines / num_lines * 100:.2f}%)'
     )
     print(
-        f'# of loop: {num_agent_stuck_in_loop} / {num_lines} ({num_agent_stuck_in_loop / num_lines * 100:.2f}%)'
+        f'Number of agent stuck in loop: {num_agent_stuck_in_loop} / {num_lines} ({num_agent_stuck_in_loop / num_lines * 100:.2f}%)'
     )
-    print('-' * 100)
-    print('Detailed error breakdown:')
+    assert len(num_turns) == num_lines
+    assert len(main_agent_cost) == num_lines
+    assert len(editor_cost) == num_lines
+    print('## Statistics')
+    print(f'Avg. num of turns per instance: {sum(num_turns) / num_lines:.2f}')
+    print(f'Avg. agent cost per instance: {sum(main_agent_cost) / num_lines:.2f} USD')
+    print(f'Avg. editor cost per instance: {sum(editor_cost) / num_lines:.2f} USD')
+    print(
+        f'Avg. total cost per instance: {(sum(main_agent_cost) + sum(editor_cost)) / num_lines:.2f} USD'
+    )
+
+    print('## Detailed error breakdown:')
     for error, count in error_counter.items():
         print(f'{error}: {count} ({count / num_lines * 100:.2f}%)')

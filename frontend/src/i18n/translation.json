@@ -1530,6 +1530,12 @@
     "fr": "Privé",
     "tr": "Özel"
   },
+  "ERROR_MESSAGE$SHOW_DETAILS": {
+    "en": "Show details"
+  },
+  "ERROR_MESSAGE$HIDE_DETAILS": {
+    "en": "Hide details"
+  },
   "STATUS$STARTING_RUNTIME": {
     "en": "Starting Runtime...",
     "zh-CN": "启动运行时...",
@@ -1727,5 +1733,17 @@
   "PROJECT_MENU_DETAILS$AGO_LABEL": {
     "en":"ago",
     "es":"atrás"
+  },
+  "STATUS$ERROR_LLM_AUTHENTICATION": {
+    "en": "Error authenticating with the LLM provider. Please check your API key"
+  },
+  "STATUS$ERROR_RUNTIME_DISCONNECTED": {
+    "en": "There was an error while connecting to the runtime. Please refresh the page."
+  },
+  "AGENT_ERROR$BAD_ACTION": {
+    "en": "Agent tried to execute a malformed action."
+  },
+  "AGENT_ERROR$ACTION_TIMEOUT": {
+    "en": "Action timed out."
   }
 }

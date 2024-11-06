@@ -28,6 +28,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation
+from openhands.utils.async_utils import call_async_from_sync
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
 DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/xingyaoww/')
@@ -128,7 +129,7 @@ def process_instance(
         )
 
     runtime = create_runtime(config)
-
+    call_async_from_sync(runtime.connect)
     # Get patch and save it to /tmp/patch.diff
     with tempfile.TemporaryDirectory() as temp_dir:
         # Patch file
@@ -238,7 +239,7 @@ def process_instance(
                         # Create a directory structure that matches the expected format
                         # NOTE: this is a hack to make the eval report format consistent
                         # with the original SWE-Bench eval script
-                        log_dir = os.path.join(temp_dir, 'logs', instance_id)
+                        log_dir = os.path.join(temp_dir, 'logs', instance_id.lower())
                         os.makedirs(log_dir, exist_ok=True)
                         test_output_path = os.path.join(log_dir, 'test_output.txt')
                         with open(test_output_path, 'w') as f:
@@ -368,10 +369,12 @@ if __name__ == '__main__':
     def count_report_field(row, field):
         return row['test_result']['report'][field]
 
+    report = {}
     for field in fields:
         count = evaluated_predictions.apply(
             count_report_field, args=(field,), axis=1
         ).sum()
+        report[field] = count
         logger.info(
             f'# {field}: {count} / {len(evaluated_predictions)}. ({count / len(evaluated_predictions):.2%})'
         )

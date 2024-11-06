@@ -15,7 +15,6 @@ from openhands.core.config.app_config import AppConfig
 from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
-    UndefinedString,
 )
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.sandbox_config import SandboxConfig
@@ -136,17 +135,14 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     logger.openhands_logger.debug(
                         'Attempt to load default LLM config from config toml'
                     )
-                    non_dict_fields = {
-                        k: v for k, v in value.items() if not isinstance(v, dict)
-                    }
-                    llm_config = LLMConfig(**non_dict_fields)
+                    llm_config = LLMConfig.from_dict(value)
                     cfg.set_llm_config(llm_config, 'llm')
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
                             logger.openhands_logger.debug(
                                 f'Attempt to load group {nested_key} from config toml as llm config'
                             )
-                            llm_config = LLMConfig(**nested_value)
+                            llm_config = LLMConfig.from_dict(nested_value)
                             cfg.set_llm_config(llm_config, nested_key)
                 elif not key.startswith('sandbox') and key.lower() != 'core':
                     logger.openhands_logger.warning(
@@ -194,18 +190,19 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
 
 def finalize_config(cfg: AppConfig):
     """More tweaks to the config after it's been loaded."""
-    cfg.workspace_base = os.path.abspath(cfg.workspace_base)
-    # Set workspace_mount_path if not set by the user
-    if cfg.workspace_mount_path is UndefinedString.UNDEFINED:
-        cfg.workspace_mount_path = cfg.workspace_base
+    if cfg.workspace_base is not None:
+        cfg.workspace_base = os.path.abspath(cfg.workspace_base)
+        if cfg.workspace_mount_path is None:
+            cfg.workspace_mount_path = cfg.workspace_base
 
-    if cfg.workspace_mount_rewrite:  # and not config.workspace_mount_path:
-        # TODO why do we need to check if workspace_mount_path is None?
-        base = cfg.workspace_base or os.getcwd()
-        parts = cfg.workspace_mount_rewrite.split(':')
-        cfg.workspace_mount_path = base.replace(parts[0], parts[1])
+        if cfg.workspace_mount_rewrite:
+            base = cfg.workspace_base or os.getcwd()
+            parts = cfg.workspace_mount_rewrite.split(':')
+            cfg.workspace_mount_path = base.replace(parts[0], parts[1])
 
+    # make sure log_completions_folder is an absolute path
     for llm in cfg.llms.values():
+        llm.log_completions_folder = os.path.abspath(llm.log_completions_folder)
         if llm.embedding_base_url is None:
             llm.embedding_base_url = llm.base_url
 
@@ -255,7 +252,7 @@ def get_llm_config_arg(
     if llm_config_arg.startswith('llm.'):
         llm_config_arg = llm_config_arg[4:]
 
-    logger.openhands_logger.info(f'Loading llm config from {llm_config_arg}')
+    logger.openhands_logger.debug(f'Loading llm config from {llm_config_arg}')
 
     # load the toml file
     try:
@@ -272,7 +269,7 @@ def get_llm_config_arg(
 
     # update the llm config with the specified section
     if 'llm' in toml_config and llm_config_arg in toml_config['llm']:
-        return LLMConfig(**toml_config['llm'][llm_config_arg])
+        return LLMConfig.from_dict(toml_config['llm'][llm_config_arg])
     logger.openhands_logger.debug(f'Loading from toml failed for {llm_config_arg}')
     return None
 
