@@ -461,7 +461,7 @@ class RemoteRuntime(Runtime):
         assert isinstance(response_json, list)
         return response_json
 
-    def copy_from(self, path: str) -> Path | os.PathLike[str]:
+    def copy_from(self, path: str) -> Path:
         """Zip all files in the sandbox and return as a stream of bytes."""
         params = {'path': path}
         response = self._send_request(
@@ -471,8 +471,8 @@ class RemoteRuntime(Runtime):
             stream=True,
             timeout=30,
         )
-        temp_file = tempfile.NamedTemporaryFile()
+        temp_file = tempfile.NamedTemporaryFile(delete=False)
         for chunk in response.iter_content(chunk_size=8192):
             if chunk:  # filter out keep-alive new chunks
                 temp_file.write(chunk)
-        return temp_file
+        return Path(temp_file.name)

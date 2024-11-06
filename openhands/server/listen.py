@@ -27,6 +27,7 @@ with warnings.catch_warnings():
 
 from dotenv import load_dotenv
 from fastapi import (
+    BackgroundTasks,
     FastAPI,
     HTTPException,
     Request,
@@ -790,16 +791,18 @@ async def security_api(request: Request):
 
 
 @app.get('/api/zip-directory')
-async def zip_current_workspace(request: Request):
+async def zip_current_workspace(request: Request, background_tasks: BackgroundTasks):
     try:
         logger.debug('Zipping workspace')
         runtime: Runtime = request.state.conversation.runtime
-        path = await call_sync_from_async(runtime.copy_from, path)
+        path = runtime.config.workspace_mount_path_in_sandbox
+        zip_file = await call_sync_from_async(runtime.copy_from, path)
         response = FileResponse(
-            path=path,
+            path=zip_file,
             filename="workspace.zip",
             media_type='application/x-zip-compressed'
         )
+        background_tasks.add_task(zip_file.unlink)
         return response
     except Exception as e:
         logger.error(f'Error zipping workspace: {e}', exc_info=True)
