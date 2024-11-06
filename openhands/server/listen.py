@@ -812,7 +812,7 @@ async def zip_current_workspace(request: Request):
 
         # Generate a summary
         if session_actions:
-            # Get relevant data from config
+            # Get relevant LLM data from config
             llm_config = config.llms['llm']
             api_key = llm_config.api_key
             model = llm_config.model
