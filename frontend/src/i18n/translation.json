@@ -1647,9 +1647,85 @@
   "LOADING_PROJECT$LOADING": {
     "en": "Loading...",
     "es": "Cargando..."
+  },
+  "CUSTOM_INPUT$OPTIONAL_LABEL": {
+    "en": "(Optional)",
+    "es": "(Opcional)"
+  },
+  "SETTINGS_FORM$ADVANCED_OPTIONS_LABEL": {
+    "en": "Advanced Options",
+    "es": "Opciones avanzadas"
+  },
+  "SETTINGS_FORM$CUSTOM_MODEL_LABEL": {
+    "en": "Custom Model",
+    "es": "Modelo personalizado"
+  },
+  "SETTINGS_FORM$BASE_URL_LABEL": {
+    "en": "Base URL",
+    "es": "URL base"
+  },
+  "SETTINGS_FORM$API_KEY_LABEL": {
+    "en": "API Key",
+    "es": "API Key"
+  },
+  "SETTINGS_FORM$DONT_KNOW_API_KEY_LABEL": {
+    "en": "Don't know your API key?",
+    "es": "¿No sabes tu API key?"
+  },
+  "SETTINGS_FORM$CLICK_HERE_FOR_INSTRUCTIONS_LABEL": {
+    "en": "Click here for instructions",
+    "es": "Clic aquí para instrucciones"
+  },
+  "SETTINGS_FORM$AGENT_LABEL": {
+    "en": "Agent",
+    "es": "Agente"
+  },
+  "SETTINGS_FORM$SECURITY_ANALYZER_LABEL": {
+    "en": "Security Analyzer (Optional)",
+    "es": "Analizador de seguridad (opcional)"
+  },
+  "SETTINGS_FORM$ENABLE_CONFIRMATION_MODE_LABEL": {
+    "en": "Enable Confirmation Mode",
+    "es": "Habilitar modo de confirmación"
+  },
+  "SETTINGS_FORM$SAVE_LABEL": {
+    "en": "Save",
+    "es": "Guardar"
+  },
+  "SETTINGS_FORM$CLOSE_LABEL": {
+    "en": "Close",
+    "es": "Cerrar"
+  },
+  "SETTINGS_FORM$RESET_TO_DEFAULTS_LABEL": {
+    "en": "Reset to defaults",
+    "es": "Reiniciar valores por defect"
+  },
+  "SETTINGS_FORM$CANCEL_LABEL": {
+    "en": "Cancel",
+    "es": "Cancelar"
+  },
+  "SETTINGS_FORM$END_SESSION_LABEL": {
+    "en": "End Session",
+    "es": "Terminar sesión"
+  },
+  "SETTINGS_FORM$CHANGING_WORKSPACE_WARNING_MESSAGE": {
+    "en": "Changing your settings will clear your workspace and start a new session. Are you sure you want to continue?",
+    "es": "Cambiar tu configuración limpiará tu espacio de trabajo e iniciará una nueva sesión. ¿Estás seguro de continuar?"
+  },
+  "SETTINGS_FORM$ARE_YOU_SURE_LABEL": {
+    "en": "Are you sure?",
+    "es": "¿Estás seguro?"
+  },
+  "SETTINGS_FORM$ALL_INFORMATION_WILL_BE_DELETED_MESSAGE": {
+    "en": "All saved information in your AI settings will be deleted, including any API keys.",
+    "es": "Toda la información guardada en tu configuración de IA será eliminada, incluyendo tus API Keys"
+  },
+  "PROJECT_MENU_DETAILS_PLACEHOLDER$NEW_PROJECT_LABEL": {
+    "en":"New Project",
+    "es":"Nuevo proyecto"
+  },
+  "PROJECT_MENU_DETAILS$AGO_LABEL": {
+    "en":"ago",
+    "es":"atrás"
   }
-
-  
-
-
 }
