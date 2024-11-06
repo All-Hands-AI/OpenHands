@@ -26,6 +26,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.events.serialization.event import truncate_content
 from openhands.runtime.base import (
     Runtime,
     RuntimeDisconnectedError,
@@ -359,6 +360,8 @@ class RemoteRuntime(Runtime):
                 )
                 output = response.json()
                 obs = observation_from_dict(output)
+                if hasattr(obs, 'content'):
+                    obs.content = truncate_content(obs.content, self.MAX_CHARS_MESSAGES)
                 obs._cause = action.id  # type: ignore[attr-defined]
             except requests.Timeout:
                 raise RuntimeError(

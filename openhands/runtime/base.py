@@ -29,6 +29,7 @@ from openhands.events.observation import (
     UserRejectObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.events.serialization.event import truncate_content
 from openhands.runtime.plugins import JupyterRequirement, PluginRequirement
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
 from openhands.utils.async_utils import call_sync_from_async
@@ -67,6 +68,9 @@ class Runtime(FileEditRuntimeMixin):
 
     sid is the session id, which is used to identify the current user session.
     """
+
+    # Maximum number of characters for truncating runtime messages
+    MAX_CHARS_MESSAGES = 10000
 
     sid: str
     config: AppConfig
