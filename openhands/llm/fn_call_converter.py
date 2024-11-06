@@ -224,6 +224,7 @@ IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX = """
 --------------------- END OF NEW TASK DESCRIPTION ---------------------
 
 Do NOT assume the environment is the same as in the example above. PLEASE follow the format strictly!
+PLEASE EMIT ONE AND ONLY ONE FUNCTION CALL PER MESSAGE.
 """.lstrip()
 
 # Regex patterns for function call parsing
@@ -541,7 +542,7 @@ def convert_non_fncall_messages_to_fncall_messages(
     first_user_message_encountered = False
     for message in messages:
         role, content = message['role'], message['content']
-
+        content = content or ''  # handle cases where content is None
         # For system messages, remove the added suffix
         if role == 'system':
             if isinstance(content, str):
