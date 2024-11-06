@@ -49,9 +49,6 @@ class Session:
         self.config = config
         self.loop = asyncio.get_event_loop()
 
-    async def start(self):
-        self._initialize_agent({"data": ActionType.INIT})
-
     def close(self):
         self.is_alive = False
         self.agent_session.close()

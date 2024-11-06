@@ -58,11 +58,8 @@ function SocketProvider({ children }: SocketProviderProps) {
 
     ws.addEventListener("open", (event) => {
       setIsConnected(true);
-      // const reconnecting = wsReconnectRetries.current !== RECONNECT_RETRIES;
       wsReconnectRetries.current = RECONNECT_RETRIES;
-      // if (!reconnecting) {
       options?.onOpen?.(event);
-      // }
     });
 
     ws.addEventListener("message", (event) => {
