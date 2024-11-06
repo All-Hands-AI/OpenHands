@@ -169,12 +169,6 @@ export default function MainApp() {
 
   React.useEffect(() => {
     if (user && !isGitHubErrorReponse(user)) {
-      console.warn("Identifying user", {
-        login: user.login,
-        email: user.email,
-        name: user.name,
-        company: user.company,
-      });
       posthog.identify(user.login, {
         company: user.company,
         name: user.name,
