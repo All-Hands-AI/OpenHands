@@ -111,8 +111,7 @@ def event_to_memory(event: 'Event', max_message_chars: int) -> dict:
 
     if 'extras' in d:
         remove_fields(d['extras'], DELETE_FROM_MEMORY_EXTRAS)
-    if isinstance(event, Observation) and 'content' in d:
-        d['content'] = truncate_content(d['content'], max_message_chars)
+    # Content truncation is now handled at the runtime level
     return d
 
 

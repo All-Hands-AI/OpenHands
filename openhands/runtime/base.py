@@ -70,7 +70,7 @@ class Runtime(FileEditRuntimeMixin):
     """
 
     # Maximum number of characters for truncating runtime messages
-    MAX_CHARS_MESSAGES = 10000
+    MAX_CHARS_MESSAGES = 30_000
 
     sid: str
     config: AppConfig
