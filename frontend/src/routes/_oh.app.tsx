@@ -7,7 +7,6 @@ import {
   json,
   ClientActionFunctionArgs,
   useRouteLoaderData,
-  redirect,
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import WebSocket from "ws";
@@ -47,8 +46,6 @@ import { base64ToBlob } from "#/utils/base64-to-blob";
 import { clientLoader as rootClientLoader } from "#/routes/_oh";
 import { clearJupyter } from "#/state/jupyterSlice";
 import { FilesProvider } from "#/context/files";
-import { clearSession } from "#/utils/clear-session";
-import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 import { ErrorObservation } from "#/types/core/observations";
 import { ChatInterface } from "#/components/chat-interface";
 
@@ -72,16 +69,6 @@ const isAgentStateChange = (
 
 export const clientLoader = async () => {
   const ghToken = localStorage.getItem("ghToken");
-  try {
-    const isAuthed = await userIsAuthenticated();
-    if (!isAuthed) {
-      clearSession();
-      return redirect("/");
-    }
-  } catch (error) {
-    clearSession();
-    return redirect("/");
-  }
 
   const q = store.getState().initalQuery.initialQuery;
   const repo =
@@ -127,6 +114,7 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 };
 
 function App() {
+  console.log("render app");
   const dispatch = useDispatch();
   const { files, importedProjectZip } = useSelector(
     (state: RootState) => state.initalQuery,
