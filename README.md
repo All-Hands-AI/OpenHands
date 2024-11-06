@@ -42,11 +42,18 @@ docker pull docker.all-hands.dev/all-hands-ai/runtime:0.12-nikolaik
 
 docker run -it --pull=always \
     -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.12-nikolaik \
+    -e SANDBOX_USER_ID=${SANDBOX_USER_ID:-1234} \
+    -e WORKSPACE_MOUNT_PATH=${WORKSPACE_BASE:-$PWD/workspace} \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
     docker.all-hands.dev/all-hands-ai/openhands:0.12
+```
+
+if you run from a local machine, you can use the following command:
+```
+docker compose up
 ```
 
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
