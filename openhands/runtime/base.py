@@ -4,8 +4,6 @@ import json
 import os
 from abc import abstractmethod
 from pathlib import Path
-from tempfile import TemporaryFile
-import tempfile
 from typing import Callable
 
 from requests.exceptions import ConnectionError

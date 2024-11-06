@@ -4,7 +4,6 @@ import tempfile
 import threading
 from functools import lru_cache
 from typing import Callable
-import urllib.request
 from zipfile import ZipFile
 
 import docker
