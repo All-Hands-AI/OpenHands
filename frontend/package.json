@@ -1,6 +1,6 @@
 {
   "name": "openhands-frontend",
-  "version": "0.12.2",
+  "version": "0.12.3",
   "private": true,
   "type": "module",
   "engines": {
@@ -50,6 +50,7 @@
     "build": "npm run make-i18n && tsc && remix vite:build",
     "start": "npx sirv-cli build/ --single",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "test:coverage": "npm run make-i18n && vitest run --coverage",
     "dev_wsl": "VITE_WATCH_USE_POLLING=true vite",
     "preview": "vite preview",
@@ -71,6 +72,7 @@
     ]
   },
   "devDependencies": {
+    "@playwright/test": "^1.48.2",
     "@remix-run/dev": "^2.11.2",
     "@remix-run/testing": "^2.11.2",
     "@tailwindcss/typography": "^0.5.15",

@@ -229,7 +229,10 @@ export default function MainApp() {
   };
 
   return (
-    <div className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3">
+    <div
+      data-testid="root-layout"
+      className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3"
+    >
       <aside className="px-1 flex flex-col gap-1">
         <div className="w-[34px] h-[34px] flex items-center justify-center">
           {navigation.state === "loading" && <LoadingSpinner size="small" />}

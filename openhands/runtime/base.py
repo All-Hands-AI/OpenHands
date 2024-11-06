@@ -86,7 +86,9 @@ class Runtime(FileEditRuntimeMixin):
     ):
         self.sid = sid
         self.event_stream = event_stream
-        self.event_stream.subscribe(EventStreamSubscriber.RUNTIME, self.on_event)
+        self.event_stream.subscribe(
+            EventStreamSubscriber.RUNTIME, self.on_event, self.sid
+        )
         self.plugins = plugins if plugins is not None and len(plugins) > 0 else []
         self.status_callback = status_callback
         self.attach_to_existing = attach_to_existing

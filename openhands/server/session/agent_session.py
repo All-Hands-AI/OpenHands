@@ -127,6 +127,9 @@ class AgentSession:
 
     def close(self):
         """Closes the Agent session"""
+        if self._closed:
+            return
+
         self._closed = True
 
         def inner_close():
@@ -134,13 +137,7 @@ class AgentSession:
 
         asyncio.get_event_loop().run_in_executor(None, inner_close)
 
-    async def stop_agent_loop_for_error(self):
-        if self.controller is not None:
-            await self.controller.set_agent_state_to(AgentState.ERROR)
-
     async def _close(self):
-        if self._closed:
-            return
         if self.controller is not None:
             end_state = self.controller.get_state()
             end_state.save_to_session(self.sid, self.file_store)
@@ -149,6 +146,10 @@ class AgentSession:
             self.runtime.close()
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
+
+    async def stop_agent_loop_for_error(self):
+        if self.controller is not None:
+            await self.controller.set_agent_state_to(AgentState.ERROR)
 
     def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions

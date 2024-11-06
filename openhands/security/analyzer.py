@@ -1,4 +1,5 @@
 from typing import Any
+from uuid import uuid4
 
 from fastapi import Request
 
@@ -19,7 +20,7 @@ class SecurityAnalyzer:
         """
         self.event_stream = event_stream
         self.event_stream.subscribe(
-            EventStreamSubscriber.SECURITY_ANALYZER, self.on_event
+            EventStreamSubscriber.SECURITY_ANALYZER, self.on_event, str(uuid4())
         )
 
     async def on_event(self, event: Event) -> None:
