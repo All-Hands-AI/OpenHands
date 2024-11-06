@@ -795,13 +795,66 @@ async def zip_current_workspace(request: Request):
         logger.debug('Zipping workspace')
         runtime: Runtime = request.state.conversation.runtime
 
+        # Collect relevant session actions
+        async_stream = AsyncEventStreamWrapper(
+            request.state.conversation.event_stream, filter_hidden=True
+        )
+        session_actions = []
+        async for event in async_stream:
+            if (
+                hasattr(event, 'message')
+                and hasattr(event, 'source')
+                and event.message
+                and event.source
+            ):
+                if event.message != 'No observation':
+                    session_actions.append(f'{str(event.source)}: {event.message}')
+
+        # Generate a summary
+        if session_actions:
+            # Get relevant data from config
+            llm_config = config.llms['llm']
+            api_key = llm_config.api_key
+            model = llm_config.model
+
+            # Format context string to be passed to LLM
+            session_actions_text = '\n'.join(session_actions)
+
+            # Prepare the prompt for the LLM
+            new_prompt = f"""The following context is a list of actions that represent the interaction between a user and an LLM Agent.
+            Please summarize the interaction into a concise phrase of 50 characters or less to be used as a filename.
+            When summarizing, focus on the overall purpose of the interaction as well as key features.
+
+            Context: {session_actions_text}"""
+
+            # Generate the summary using litellm
+            summary_response = litellm.completion(
+                messages=[{'role': 'user', 'content': new_prompt}],
+                model=model,
+                api_key=api_key,
+            )
+            # Extract the generated summary text
+            summary = summary_response['choices'][0]['message']['content'].strip()
+        else:
+            # Default summary if no actions are found
+            summary = 'workspace'
+
+        # Function to format the summary as a filename
+        def sanitize(summary):
+            sanitized = re.sub(r'[^\w\s-]', '', summary)
+            sanitized = sanitized.strip().lower().replace(' ', '-').replace('\n', '-')
+            sanitized = sanitized[:50]
+            return sanitized or 'workspace'
+
+        # Get zip file as file stream and add filename to response
+        filename = sanitize(summary) + '.zip'
         path = runtime.config.workspace_mount_path_in_sandbox
         zip_file_bytes = await call_sync_from_async(runtime.copy_from, path)
         zip_stream = io.BytesIO(zip_file_bytes)  # Wrap to behave like a file stream
         response = StreamingResponse(
             zip_stream,
             media_type='application/x-zip-compressed',
-            headers={'Content-Disposition': 'attachment; filename=workspace.zip'},
+            headers={'Content-Disposition': f'attachment; filename={filename}'},
         )
 
         return response

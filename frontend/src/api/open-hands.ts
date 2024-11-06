@@ -97,12 +97,11 @@ class OpenHands {
   }
 
   /**
-   * Get the blob of the workspace zip
-   * @returns Blob of the workspace zip
+   * Get the workspace zip from the server
+   * @returns Workspace zip as server response
    */
-  static async getWorkspaceZip(): Promise<Blob> {
-    const response = await request(`/api/zip-directory`, {}, false, true);
-    return response.blob();
+  static async getWorkspaceZip(): Promise<Response> {
+    return request(`/api/zip-directory`, {}, false, true);
   }
 
   /**
