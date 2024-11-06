@@ -169,21 +169,32 @@ function App() {
     );
   };
 
+  const doSendInitialQuery = React.useRef<boolean>(true);
+
   const sendInitialQuery = (query: string, base64Files: string[]) => {
     const timestamp = new Date().toISOString();
     send(createChatMessage(query, base64Files, timestamp));
   };
 
-  const handleOpen = React.useCallback(() => {
-    const initEvent = {
-      action: ActionType.INIT,
-      args: settings,
-    };
-    send(JSON.stringify(initEvent));
+  const handleOpen = React.useCallback(
+    (event: Event, isNewSession: boolean) => {
+      if (!isNewSession) {
+        dispatch(clearMessages());
+        dispatch(clearTerminal());
+        dispatch(clearJupyter());
+      }
+      doSendInitialQuery.current = isNewSession;
+      const initEvent = {
+        action: ActionType.INIT,
+        args: settings,
+      };
+      send(JSON.stringify(initEvent));
 
-    // display query in UI, but don't send it to the server
-    if (q) addIntialQueryToChat(q, files);
-  }, [settings]);
+      // display query in UI, but don't send it to the server
+      if (q && isNewSession) addIntialQueryToChat(q, files);
+    },
+    [settings],
+  );
 
   const handleMessage = React.useCallback(
     (message: MessageEvent<WebSocket.Data>) => {
@@ -241,7 +252,7 @@ function App() {
             additionalInfo = `Files have been uploaded. Please check the /workspace for files.`;
           }
 
-          if (q) {
+          if (q && doSendInitialQuery.current) {
             if (additionalInfo) {
               sendInitialQuery(`${q}\n\n[${additionalInfo}]`, files);
             } else {

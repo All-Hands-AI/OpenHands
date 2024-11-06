@@ -6,7 +6,7 @@ const RECONNECT_RETRIES = 5;
 
 interface WebSocketClientOptions {
   token: string | null;
-  onOpen?: (event: Event) => void;
+  onOpen?: (event: Event, isNewSession: boolean) => void;
   onMessage?: (event: MessageEvent<Data>) => void;
   onError?: (event: Event) => void;
   onClose?: (event: Event) => void;
@@ -58,8 +58,9 @@ function SocketProvider({ children }: SocketProviderProps) {
 
     ws.addEventListener("open", (event) => {
       setIsConnected(true);
+      const isNewSession = sessionToken === "NO_JWT";
       wsReconnectRetries.current = RECONNECT_RETRIES;
-      options?.onOpen?.(event);
+      options?.onOpen?.(event, isNewSession);
     });
 
     ws.addEventListener("message", (event) => {
