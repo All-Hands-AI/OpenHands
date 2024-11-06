@@ -51,7 +51,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
 
   if (!userConsents) {
     posthog.opt_out_capturing();
-  } else {
+  } else if (userConsents && !posthog.has_opted_in_capturing()) {
     posthog.opt_in_capturing();
   }
 
@@ -166,6 +166,22 @@ export default function MainApp() {
   const [settingsFormError, setSettingsFormError] = React.useState<
     string | null
   >(null);
+
+  React.useEffect(() => {
+    if (user && !isGitHubErrorReponse(user)) {
+      console.warn("Identifying user", {
+        login: user.login,
+        email: user.email,
+        name: user.name,
+        company: user.company,
+      });
+      posthog.identify(user.login, {
+        company: user.company,
+        name: user.name,
+        email: user.email,
+      });
+    }
+  }, [user]);
 
   React.useEffect(() => {
     // We fetch this here instead of the data loader because the server seems to block
