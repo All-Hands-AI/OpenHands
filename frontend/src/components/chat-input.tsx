@@ -16,6 +16,7 @@ interface ChatInputProps {
   onChange?: (message: string) => void;
   onFocus?: () => void;
   onBlur?: () => void;
+  onImagePaste?: (files: File[]) => void;
   className?: React.HTMLAttributes<HTMLDivElement>["className"];
 }
 
@@ -32,9 +33,46 @@ export function ChatInput({
   onChange,
   onFocus,
   onBlur,
+  onImagePaste,
   className,
 }: ChatInputProps) {
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const [isDraggingOver, setIsDraggingOver] = React.useState(false);
+
+  const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    event.preventDefault();
+    if (onImagePaste && event.clipboardData.files.length > 0) {
+      const files = Array.from(event.clipboardData.files).filter((file) =>
+        file.type.startsWith("image/"),
+      );
+      if (files.length > 0) onImagePaste(files);
+    }
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLTextAreaElement>) => {
+    event.preventDefault();
+    if (event.dataTransfer.types.includes("Files")) {
+      setIsDraggingOver(true);
+    }
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLTextAreaElement>) => {
+    event.preventDefault();
+    setIsDraggingOver(false);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLTextAreaElement>) => {
+    event.preventDefault();
+    setIsDraggingOver(false);
+    if (onImagePaste && event.dataTransfer.files.length > 0) {
+      const files = Array.from(event.dataTransfer.files).filter((file) =>
+        file.type.startsWith("image/"),
+      );
+      if (files.length > 0) {
+        onImagePaste(files);
+      }
+    }
+  };
 
   const handleSubmitMessage = () => {
     if (textareaRef.current?.value) {
@@ -67,12 +105,20 @@ export function ChatInput({
         onChange={handleChange}
         onFocus={onFocus}
         onBlur={onBlur}
+        onPaste={handlePaste}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
         value={value}
         minRows={1}
         maxRows={maxRows}
+        data-dragging-over={isDraggingOver}
         className={cn(
-          "grow text-sm self-center placeholder:text-neutral-400 text-white resize-none bg-transparent outline-none ring-0",
-          "transition-[height] duration-200 ease-in-out",
+          "grow text-sm self-center placeholder:text-neutral-400 text-white resize-none outline-none ring-0",
+          "transition-all duration-200 ease-in-out",
+          isDraggingOver
+            ? "bg-neutral-600/50 rounded-lg px-2"
+            : "bg-transparent",
           className,
         )}
       />
