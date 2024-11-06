@@ -800,8 +800,8 @@ async def zip_current_workspace(request: Request, background_tasks: BackgroundTa
         zip_file = await call_sync_from_async(runtime.copy_from, path)
         response = FileResponse(
             path=zip_file,
-            filename="workspace.zip",
-            media_type='application/x-zip-compressed'
+            filename='workspace.zip',
+            media_type='application/x-zip-compressed',
         )
         background_tasks.add_task(zip_file.unlink)
         return response
