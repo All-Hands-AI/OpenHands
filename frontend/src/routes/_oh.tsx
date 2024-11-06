@@ -38,7 +38,6 @@ import AgentState from "#/types/AgentState";
 let clientLoaderCache: any = null; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
-
   try {
     const config = await OpenHands.getConfig();
     window.__APP_MODE__ = config.APP_MODE;
@@ -63,7 +62,6 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   let githubAuthUrl: string | null = null;
   let user: GitHubUser | GitHubErrorReponse | null = null;
   if (!clientLoaderCache || clientLoaderCache.ghToken !== ghToken) {
-    console.log('gh token changed', clientLoaderCache, ghToken);
     try {
       isAuthed = await userIsAuthenticated();
       if (!isAuthed && window.__GITHUB_CLIENT_ID__) {
