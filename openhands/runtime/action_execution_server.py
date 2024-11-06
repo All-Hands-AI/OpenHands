@@ -43,7 +43,6 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization import event_from_dict, event_to_dict
-from openhands.events.serialization.event import truncate_content
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import (
@@ -63,6 +62,21 @@ class ActionRequest(BaseModel):
 
 # Maximum number of characters for truncating runtime messages
 MAX_CHARS_MESSAGES = 30_000
+
+
+def truncate_content(content: str, max_chars: int) -> str:
+    """Truncate the middle of the observation content if it is too long."""
+    if len(content) <= max_chars or max_chars == -1:
+        return content
+
+    # truncate the middle and include a message to the LLM about it
+    half = max_chars // 2
+    return (
+        content[:half]
+        + '\n[... Observation truncated due to length ...]\n'
+        + content[-half:]
+    )
+
 
 ROOT_GID = 0
 INIT_COMMANDS = [

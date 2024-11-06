@@ -39,7 +39,7 @@ from openhands.events.observation import (
     NullObservation,
     Observation,
 )
-from openhands.events.serialization.event import truncate_content
+
 from openhands.llm.llm import LLM
 from openhands.runtime.utils.shutdown_listener import should_continue
 
@@ -255,10 +255,7 @@ class AgentController:
             observation (observation): The observation to handle.
         """
         observation_to_print = copy.deepcopy(observation)
-        if len(observation_to_print.content) > self.agent.llm.config.max_message_chars:
-            observation_to_print.content = truncate_content(
-                observation_to_print.content, self.agent.llm.config.max_message_chars
-            )
+        # Content truncation is now handled at the runtime level in action_execution_server.py
         self.log('debug', str(observation_to_print), extra={'msg_type': 'OBSERVATION'})
 
         if observation.llm_metrics is not None:

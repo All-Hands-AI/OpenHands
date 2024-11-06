@@ -111,20 +111,8 @@ def event_to_memory(event: 'Event', max_message_chars: int) -> dict:
 
     if 'extras' in d:
         remove_fields(d['extras'], DELETE_FROM_MEMORY_EXTRAS)
-    if isinstance(event, Observation) and 'content' in d:
-        d['content'] = truncate_content(d['content'], max_message_chars)
+    # Content truncation is now handled at the runtime level in action_execution_server.py
     return d
 
 
-def truncate_content(content: str, max_chars: int) -> str:
-    """Truncate the middle of the observation content if it is too long."""
-    if len(content) <= max_chars or max_chars == -1:
-        return content
 
-    # truncate the middle and include a message to the LLM about it
-    half = max_chars // 2
-    return (
-        content[:half]
-        + '\n[... Observation truncated due to length ...]\n'
-        + content[-half:]
-    )
