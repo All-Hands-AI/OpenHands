@@ -498,8 +498,6 @@ class EventStreamRuntime(Runtime):
                 )
                 output = response.json()
                 obs = observation_from_dict(output)
-                if hasattr(obs, 'content'):
-                    obs.content = truncate_content(obs.content, self.MAX_CHARS_MESSAGES)
                 obs._cause = action.id  # type: ignore[attr-defined]
             except requests.Timeout:
                 raise RuntimeError(

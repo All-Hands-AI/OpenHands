@@ -43,6 +43,7 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization import event_from_dict, event_to_dict
+from openhands.events.serialization.event import truncate_content
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import (
@@ -59,6 +60,9 @@ from openhands.utils.async_utils import wait_all
 class ActionRequest(BaseModel):
     action: dict
 
+
+# Maximum number of characters for truncating runtime messages
+MAX_CHARS_MESSAGES = 30_000
 
 ROOT_GID = 0
 INIT_COMMANDS = [
@@ -399,6 +403,9 @@ if __name__ == '__main__':
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
             observation = await client.run_action(action)
+            # Truncate observation content if it exists
+            if hasattr(observation, 'content'):
+                observation.content = truncate_content(observation.content, MAX_CHARS_MESSAGES)
             return event_to_dict(observation)
         except Exception as e:
             logger.error(
