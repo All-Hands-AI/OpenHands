@@ -1,8 +1,10 @@
 import os
+from pathlib import Path
 import tempfile
 import threading
 from functools import lru_cache
 from typing import Callable
+import urllib.request
 from zipfile import ZipFile
 
 import docker
@@ -604,7 +606,7 @@ class EventStreamRuntime(Runtime):
         except requests.Timeout:
             raise TimeoutError('List files operation timed out')
 
-    def copy_from(self, path: str) -> bytes:
+    def copy_from(self, path: str) -> Path | os.PathLike[str]:
         """Zip all files in the sandbox and return as a stream of bytes."""
         self._refresh_logs()
         try:
@@ -617,8 +619,11 @@ class EventStreamRuntime(Runtime):
                 stream=True,
                 timeout=30,
             )
-            data = response.content
-            return data
+            temp_file = tempfile.NamedTemporaryFile()
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:  # filter out keep-alive new chunks
+                    temp_file.write(chunk)
+            return temp_file
         except requests.Timeout:
             raise TimeoutError('Copy operation timed out')
 

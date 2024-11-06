@@ -34,7 +34,7 @@ from fastapi import (
     WebSocket,
     status,
 )
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -794,16 +794,12 @@ async def zip_current_workspace(request: Request):
     try:
         logger.debug('Zipping workspace')
         runtime: Runtime = request.state.conversation.runtime
-
-        path = runtime.config.workspace_mount_path_in_sandbox
-        zip_file_bytes = await call_sync_from_async(runtime.copy_from, path)
-        zip_stream = io.BytesIO(zip_file_bytes)  # Wrap to behave like a file stream
-        response = StreamingResponse(
-            zip_stream,
-            media_type='application/x-zip-compressed',
-            headers={'Content-Disposition': 'attachment; filename=workspace.zip'},
+        path = await call_sync_from_async(runtime.copy_from, path)
+        response = FileResponse(
+            path=path,
+            filename="workspace.zip",
+            media_type='application/x-zip-compressed'
         )
-
         return response
     except Exception as e:
         logger.error(f'Error zipping workspace: {e}', exc_info=True)
