@@ -47,7 +47,7 @@ Reminder:
 STOP_WORDS = ['</function']
 
 # NOTE: we need to make sure this example is always in-sync with the tool interface designed in openhands/agenthub/codeact_agent/function_calling.py
-IN_CONTEXT_LEARNING_EXAMPLE = """
+IN_CONTEXT_LEARNING_EXAMPLE_PREFIX = """
 Here's a running example of how to perform a task with the provided tools.
 
 --------------------- START OF EXAMPLE ---------------------
@@ -215,8 +215,15 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 
 --------------------- END OF EXAMPLE ---------------------
 
-Do NOT assume the environment is the same as in the example above. Now, let's start on a new task:
+Do NOT assume the environment is the same as in the example above.
 
+--------------------- NEW TASK DESCRIPTION ---------------------
+""".lstrip()
+
+IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX = """
+--------------------- END OF NEW TASK DESCRIPTION ---------------------
+
+Do NOT assume the environment is the same as in the example above. PLEASE follow the format strictly!
 """.lstrip()
 
 # Regex patterns for function call parsing
@@ -349,16 +356,34 @@ def convert_fncall_messages_to_non_fncall_messages(
 
                 # add in-context learning example
                 if isinstance(content, str):
-                    content = IN_CONTEXT_LEARNING_EXAMPLE + content
+                    content = (
+                        IN_CONTEXT_LEARNING_EXAMPLE_PREFIX
+                        + content
+                        + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
+                    )
                 elif isinstance(content, list):
                     if content and content[0]['type'] == 'text':
                         content[0]['text'] = (
-                            IN_CONTEXT_LEARNING_EXAMPLE + content[0]['text']
+                            IN_CONTEXT_LEARNING_EXAMPLE_PREFIX
+                            + content[0]['text']
+                            + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
                         )
                     else:
-                        content = [
-                            {'type': 'text', 'text': IN_CONTEXT_LEARNING_EXAMPLE}
-                        ] + content
+                        content = (
+                            [
+                                {
+                                    'type': 'text',
+                                    'text': IN_CONTEXT_LEARNING_EXAMPLE_PREFIX,
+                                }
+                            ]
+                            + content
+                            + [
+                                {
+                                    'type': 'text',
+                                    'text': IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX,
+                                }
+                            ]
+                        )
                 else:
                     raise FunctionCallConversionError(
                         f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
@@ -535,12 +560,16 @@ def convert_non_fncall_messages_to_fncall_messages(
             if not first_user_message_encountered:
                 first_user_message_encountered = True
                 if isinstance(content, str):
-                    content = content.replace(IN_CONTEXT_LEARNING_EXAMPLE, '')
+                    content = content.replace(IN_CONTEXT_LEARNING_EXAMPLE_PREFIX, '')
+                    content = content.replace(IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX, '')
                 elif isinstance(content, list):
                     for item in content:
                         if item['type'] == 'text':
                             item['text'] = item['text'].replace(
-                                IN_CONTEXT_LEARNING_EXAMPLE, ''
+                                IN_CONTEXT_LEARNING_EXAMPLE_PREFIX, ''
+                            )
+                            item['text'] = item['text'].replace(
+                                IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX, ''
                             )
                 else:
                     raise FunctionCallConversionError(
