@@ -28,6 +28,9 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
     const LANGUAGE = formData.get("language")?.toString();
     if (LANGUAGE) saveSettings({ LANGUAGE });
 
+    const ANALYTICS = formData.get("analytics")?.toString() ?? "false";
+    localStorage.setItem("analytics-consent", ANALYTICS);
+
     return json({ success: true });
   }
 

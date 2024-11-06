@@ -829,7 +829,7 @@
     "en": "Sharing settings",
     "es": "Configuración de compartir"
   },
-  "SECURITY$UNKNOWN_ANALYZER_LABEL":{
+  "SECURITY$UNKNOWN_ANALYZER_LABEL": {
     "en": "Unknown security analyzer chosen",
     "es": "Analizador de seguridad desconocido"
   },
@@ -1530,6 +1530,12 @@
     "fr": "Privé",
     "tr": "Özel"
   },
+  "ERROR_MESSAGE$SHOW_DETAILS": {
+    "en": "Show details"
+  },
+  "ERROR_MESSAGE$HIDE_DETAILS": {
+    "en": "Hide details"
+  },
   "STATUS$STARTING_RUNTIME": {
     "en": "Starting Runtime...",
     "zh-CN": "启动运行时...",
@@ -1600,19 +1606,19 @@
     "fr": "En attente que le client soit prêt...",
     "tr": "İstemcinin hazır olması bekleniyor..."
   },
-  "ACCOUNT_SETTINGS_MODAL$DISCONNECT":{
+  "ACCOUNT_SETTINGS_MODAL$DISCONNECT": {
     "en": "Disconnect",
     "es": "Desconectar"
   },
-  "ACCOUNT_SETTINGS_MODAL$SAVE":{
+  "ACCOUNT_SETTINGS_MODAL$SAVE": {
     "en": "Save",
     "es": "Guardar"
   },
-  "ACCOUNT_SETTINGS_MODAL$CLOSE":{
+  "ACCOUNT_SETTINGS_MODAL$CLOSE": {
     "en": "Close",
     "es": ""
   },
-  "ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID":{
+  "ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID": {
     "en": "GitHub token is invalid. Please try again.",
     "es": ""
   },
@@ -1721,11 +1727,23 @@
     "es": "Toda la información guardada en tu configuración de IA será eliminada, incluyendo tus API Keys"
   },
   "PROJECT_MENU_DETAILS_PLACEHOLDER$NEW_PROJECT_LABEL": {
-    "en":"New Project",
-    "es":"Nuevo proyecto"
+    "en": "New Project",
+    "es": "Nuevo proyecto"
   },
   "PROJECT_MENU_DETAILS$AGO_LABEL": {
-    "en":"ago",
-    "es":"atrás"
+    "en": "ago",
+    "es": "atrás"
+  },
+  "STATUS$ERROR_LLM_AUTHENTICATION": {
+    "en": "Error authenticating with the LLM provider. Please check your API key"
+  },
+  "STATUS$ERROR_RUNTIME_DISCONNECTED": {
+    "en": "There was an error while connecting to the runtime. Please refresh the page."
+  },
+  "AGENT_ERROR$BAD_ACTION": {
+    "en": "Agent tried to execute a malformed action."
+  },
+  "AGENT_ERROR$ACTION_TIMEOUT": {
+    "en": "Action timed out."
   }
 }

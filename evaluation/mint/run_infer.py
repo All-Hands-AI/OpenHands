@@ -13,6 +13,7 @@ from evaluation.mint.tasks import Task
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    compatibility_for_eval_history_pairs,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -28,11 +29,13 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import (
+    Action,
     CmdRunAction,
     MessageAction,
 )
 from openhands.events.observation import CmdOutputObservation
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
 
 def codeact_user_response_mint(state: State, task: Task, task_config: dict[str, int]):
@@ -44,7 +47,10 @@ def codeact_user_response_mint(state: State, task: Task, task_config: dict[str, 
         task=task,
         task_config=task_config,
     )
-    last_action = state.history.get_last_action()
+    last_action = next(
+        (event for event in reversed(state.history) if isinstance(event, Action)),
+        None,
+    )
     result_state: TaskState = env.step(last_action.message or '')
 
     state.extra_data['task_state'] = result_state
@@ -176,6 +182,7 @@ def process_instance(
     )
 
     runtime = create_runtime(config)
+    call_async_from_sync(runtime.connect)
     initialize_runtime(runtime)
 
     state: State | None = asyncio.run(
@@ -200,7 +207,7 @@ def process_instance(
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
-    histories = state.history.compatibility_for_eval_history_pairs()
+    histories = compatibility_for_eval_history_pairs(state.history)
 
     # Save the output
     output = EvalOutput(

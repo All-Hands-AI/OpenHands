@@ -2,10 +2,12 @@ import json
 from datetime import datetime
 
 from json_repair import repair_json
+from litellm.types.utils import ModelResponse
 
 from openhands.core.exceptions import LLMResponseError
 from openhands.events.event import Event
 from openhands.events.serialization import event_to_dict
+from openhands.llm.metrics import Metrics
 
 
 def my_default_encoder(obj):
@@ -14,6 +16,10 @@ def my_default_encoder(obj):
         return obj.isoformat()
     if isinstance(obj, Event):
         return event_to_dict(obj)
+    if isinstance(obj, Metrics):
+        return obj.get()
+    if isinstance(obj, ModelResponse):
+        return obj.model_dump()
     return json.JSONEncoder().default(obj)
 
 

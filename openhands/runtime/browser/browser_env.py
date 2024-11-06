@@ -57,7 +57,7 @@ class BrowserEnv:
         retry=tenacity.retry_if_exception_type(BrowserInitException),
     )
     def init_browser(self):
-        logger.info('Starting browser env...')
+        logger.debug('Starting browser env...')
         try:
             self.process = multiprocessing.Process(target=self.browser_process)
             self.process.start()
@@ -72,7 +72,7 @@ class BrowserEnv:
     def browser_process(self):
         if self.eval_mode:
             assert self.browsergym_eval_env is not None
-            logger.info('Initializing browser env for web browsing evaluation.')
+            logger.debug('Initializing browser env for web browsing evaluation.')
             if 'webarena' in self.browsergym_eval_env:
                 import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
             elif 'miniwob' in self.browsergym_eval_env:
@@ -81,7 +81,10 @@ class BrowserEnv:
                 raise ValueError(
                     f'Unsupported browsergym eval env: {self.browsergym_eval_env}'
                 )
-            env = gym.make(self.browsergym_eval_env)
+            env = gym.make(
+                self.browsergym_eval_env,
+                tags_to_mark='all',
+            )
         else:
             env = gym.make(
                 'browsergym/openended',
@@ -89,6 +92,7 @@ class BrowserEnv:
                 wait_for_user_message=False,
                 headless=True,
                 disable_env_checker=True,
+                tags_to_mark='all',
             )
 
         obs, info = env.reset()
@@ -97,10 +101,10 @@ class BrowserEnv:
         self.eval_goal = None
         self.eval_rewards: list[float] = []
         if self.eval_mode:
-            logger.info(f"Browsing goal: {obs['goal']}")
+            logger.debug(f"Browsing goal: {obs['goal']}")
             self.eval_goal = obs['goal']
 
-        logger.info('Browser env started.')
+        logger.debug('Browser env started.')
         while should_continue():
             try:
                 if self.browser_side.poll(timeout=0.01):
@@ -108,7 +112,7 @@ class BrowserEnv:
 
                     # shutdown the browser environment
                     if unique_request_id == 'SHUTDOWN':
-                        logger.info('SHUTDOWN recv, shutting down browser env...')
+                        logger.debug('SHUTDOWN recv, shutting down browser env...')
                         env.close()
                         return
                     elif unique_request_id == 'IS_ALIVE':
@@ -146,7 +150,7 @@ class BrowserEnv:
                     obs['elapsed_time'] = obs['elapsed_time'].item()
                     self.browser_side.send((unique_request_id, obs))
             except KeyboardInterrupt:
-                logger.info('Browser env process interrupted by user.')
+                logger.debug('Browser env process interrupted by user.')
                 try:
                     env.close()
                 except Exception:
@@ -172,7 +176,7 @@ class BrowserEnv:
             response_id, _ = self.agent_side.recv()
             if response_id == 'ALIVE':
                 return True
-            logger.info(f'Browser env is not alive. Response ID: {response_id}')
+            logger.debug(f'Browser env is not alive. Response ID: {response_id}')
 
     def close(self):
         if not self.process.is_alive():

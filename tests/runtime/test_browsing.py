@@ -1,4 +1,4 @@
-"""Browsing-related tests for the EventStreamRuntime, which connects to the RuntimeClient running in the sandbox."""
+"""Browsing-related tests for the EventStreamRuntime, which connects to the ActionExecutor running in the sandbox."""
 
 import json
 
@@ -22,8 +22,8 @@ from openhands.events.observation import (
 PY3_FOR_TESTING = '/openhands/micromamba/bin/micromamba run -n openhands python3'
 
 
-def test_simple_browse(temp_dir, box_class, run_as_openhands):
-    runtime = _load_runtime(temp_dir, box_class, run_as_openhands)
+def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
     # Test browse
     action_cmd = CmdRunAction(
@@ -68,10 +68,10 @@ def test_simple_browse(temp_dir, box_class, run_as_openhands):
     _close_test_runtime(runtime)
 
 
-def test_browsergym_eval_env(box_class, temp_dir):
+def test_browsergym_eval_env(runtime_cls, temp_dir):
     runtime = _load_runtime(
         temp_dir,
-        box_class=box_class,
+        runtime_cls=runtime_cls,
         run_as_openhands=False,  # need root permission to access file
         base_container_image='xingyaoww/od-eval-miniwob:v1.0',
         browsergym_eval_env='browsergym/miniwob.choose-list',

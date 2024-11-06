@@ -13,9 +13,11 @@ from evaluation.utils.shared import (
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
+    update_llm_config_for_completions_logging,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
+    AgentConfig,
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
@@ -24,7 +26,9 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import MessageAction
-from openhands.runtime.runtime import Runtime
+from openhands.events.serialization.event import event_to_dict
+from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
 FAKE_RESPONSES = {
     'CodeActAgent': codeact_user_response,
@@ -33,23 +37,36 @@ FAKE_RESPONSES = {
 
 def get_config(
     metadata: EvalMetadata,
+    instance_id: str,
 ) -> AppConfig:
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='eventstream',
+        runtime=os.environ.get('RUNTIME', 'eventstream'),
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             # use default base_container_image
             enable_auto_lint=True,
             use_host_network=False,
             timeout=100,
+            api_key=os.environ.get('ALLHANDS_API_KEY', None),
+            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
         ),
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
     )
-    config.set_llm_config(metadata.llm_config)
+    config.set_llm_config(
+        update_llm_config_for_completions_logging(
+            metadata.llm_config, metadata.eval_output_dir, instance_id
+        )
+    )
+    agent_config = AgentConfig(
+        codeact_enable_jupyter=True,
+        codeact_enable_browsing=True,
+        codeact_enable_llm_editor=False,
+    )
+    config.set_agent_config(agent_config)
     return config
 
 
@@ -58,7 +75,7 @@ def process_instance(
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ) -> EvalOutput:
-    config = get_config(metadata)
+    config = get_config(metadata, instance.instance_id)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
@@ -92,6 +109,7 @@ def process_instance(
     # =============================================
 
     runtime: Runtime = create_runtime(config)
+    call_async_from_sync(runtime.connect)
 
     test_class.initialize_runtime(runtime)
 
@@ -111,7 +129,7 @@ def process_instance(
     # # result evaluation
     # # =============================================
 
-    histories = state.history.get_events()
+    histories = [event_to_dict(event) for event in state.history]
     test_result: TestResult = test_class.verify_result(runtime, histories)
     metrics = state.metrics.get() if state.metrics else None
 
@@ -200,3 +218,10 @@ if __name__ == '__main__':
         + df[['instance_id', 'success', 'reason']].to_string(index=False)
     )
     logger.info('-' * 100)
+
+    report_file = os.path.join(metadata.eval_output_dir, 'report.md')
+    with open(report_file, 'w') as f:
+        f.write(
+            f'Success rate: {df["success"].mean():.2%} ({df["success"].sum()}/{len(df)})\n'
+        )
+        f.write(df[['instance_id', 'success', 'reason']].to_markdown(index=False))

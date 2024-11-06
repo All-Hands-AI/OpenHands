@@ -171,7 +171,7 @@ function SecurityInvariant(): JSX.Element {
           {logs.map((log: SecurityAnalyzerLog, index: number) => (
             <div
               key={index}
-              className={`mb-2 p-2 rounded-lg ${log.confirmed_changed && log.is_confirmed === "confirmed" ? "border-green-800" : "border-red-800"}`}
+              className={`mb-2 p-2 rounded-lg ${log.confirmed_changed && log.confirmation_state === "confirmed" ? "border-green-800" : "border-red-800"}`}
               style={{
                 backgroundColor: "rgba(128, 128, 128, 0.2)",
                 borderWidth: log.confirmed_changed ? "2px" : "0",
@@ -179,7 +179,7 @@ function SecurityInvariant(): JSX.Element {
             >
               <p className="text-sm relative break-words">
                 {log.content}
-                {(log.is_confirmed === "awaiting_confirmation" ||
+                {(log.confirmation_state === "awaiting_confirmation" ||
                   log.confirmed_changed) && (
                   <IoAlertCircle className="absolute top-0 right-0" />
                 )}

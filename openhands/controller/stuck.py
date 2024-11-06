@@ -28,13 +28,12 @@ class StuckDetector:
         # filter out MessageAction with source='user' from history
         filtered_history = [
             event
-            for event in self.state.history.get_events()
+            for event in self.state.history
             if not (
                 (isinstance(event, MessageAction) and event.source == EventSource.USER)
                 or
                 # there might be some NullAction or NullObservation in the history at least for now
-                isinstance(event, NullAction)
-                or isinstance(event, NullObservation)
+                isinstance(event, (NullAction, NullObservation))
             )
         ]
 

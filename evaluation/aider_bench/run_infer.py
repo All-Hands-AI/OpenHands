@@ -15,6 +15,7 @@ from evaluation.aider_bench.helper import (
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    compatibility_for_eval_history_pairs,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -32,7 +33,8 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
 # Configure visibility of unit tests to the Agent.
 USE_UNIT_TESTS = os.environ.get('USE_UNIT_TESTS', 'false').lower() == 'true'
@@ -48,13 +50,14 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='eventstream',
+        runtime=os.environ.get('RUNTIME', 'eventstream'),
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             base_container_image='python:3.11-bookworm',
             enable_auto_lint=True,
             use_host_network=False,
             timeout=100,
+            api_key=os.environ.get('ALLHANDS_API_KEY', None),
         ),
         # do not mount workspace
         workspace_base=None,
@@ -186,7 +189,9 @@ def process_instance(
         signature_file=f'{instance.instance_name}.py',
     )
     if USE_UNIT_TESTS:
-        print(f'\nInstruction to run test_file: {instance.instance_name}_test.py\n')
+        logger.info(
+            f'\nInstruction to run test_file: {instance.instance_name}_test.py\n'
+        )
         instruction += (
             f'Use `python -m unittest {instance.instance_name}_test.py` to run the test_file '
             'and verify the correctness of your solution. DO NOT EDIT the test file.\n\n'
@@ -204,6 +209,7 @@ def process_instance(
     # =============================================
 
     runtime: Runtime = create_runtime(config)
+    call_async_from_sync(runtime.connect)
 
     initialize_runtime(runtime, instance=instance)
 
@@ -245,7 +251,7 @@ def process_instance(
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
-    histories = state.history.compatibility_for_eval_history_pairs()
+    histories = compatibility_for_eval_history_pairs(state.history)
     metrics = state.metrics.get() if state.metrics else None
 
     # Save the output

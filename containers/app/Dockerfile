@@ -41,18 +41,11 @@ ENV SANDBOX_LOCAL_RUNTIME_URL=http://host.docker.internal
 ENV USE_HOST_NETWORK=false
 ENV WORKSPACE_BASE=/opt/workspace_base
 ENV OPENHANDS_BUILD_VERSION=$OPENHANDS_BUILD_VERSION
+ENV SANDBOX_USER_ID=0
 RUN mkdir -p $WORKSPACE_BASE
 
 RUN apt-get update -y \
     && apt-get install -y curl ssh sudo
-
-# Install Docker - https://docs.docker.com/engine/install/debian/
-RUN apt-get install ca-certificates curl \
-    && curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc \
-    && chmod a+r /etc/apt/keyrings/docker.asc \
-    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null \
-    && apt-get update \
-    && apt install -y docker-ce
 
 # Default is 1000, but OSX is often 501
 RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs

@@ -8,12 +8,20 @@ class AgentConfig:
     """Configuration for the agent.
 
     Attributes:
+        function_calling: Whether function calling is enabled. Default is True.
+        codeact_enable_browsing: Whether browsing delegate is enabled in the action space. Default is False. Only works with function calling.
+        codeact_enable_llm_editor: Whether LLM editor is enabled in the action space. Default is False. Only works with function calling.
+        codeact_enable_jupyter: Whether Jupyter is enabled in the action space. Default is False.
         micro_agent_name: The name of the micro agent to use for this agent.
         memory_enabled: Whether long-term memory (embeddings) is enabled.
         memory_max_threads: The maximum number of threads indexing at the same time for embeddings.
         llm_config: The name of the llm config to use. If specified, this will override global llm config.
     """
 
+    function_calling: bool = True
+    codeact_enable_browsing: bool = True
+    codeact_enable_llm_editor: bool = False
+    codeact_enable_jupyter: bool = True
     micro_agent_name: str | None = None
     memory_enabled: bool = False
     memory_max_threads: int = 3

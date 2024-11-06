@@ -21,13 +21,17 @@ export function BaseModalTitle({ title }: BaseModalTitleProps) {
 }
 
 interface BaseModalDescriptionProps {
-  description: React.ReactNode;
+  description?: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export function BaseModalDescription({
   description,
+  children,
 }: BaseModalDescriptionProps) {
-  return <span className="text-xs text-[#A3A3A3]">{description}</span>;
+  return (
+    <span className="text-xs text-[#A3A3A3]">{children || description}</span>
+  );
 }
 
 interface BaseModalProps {

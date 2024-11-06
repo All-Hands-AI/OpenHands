@@ -13,6 +13,11 @@ from pathspec.patterns import GitWildMatchPattern
 
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
+from openhands.server.github import (
+    GITHUB_CLIENT_ID,
+    GITHUB_CLIENT_SECRET,
+    authenticate_github_user,
+)
 from openhands.storage import get_file_store
 from openhands.utils.async_utils import call_sync_from_async
 
@@ -29,7 +34,6 @@ from fastapi import (
     WebSocket,
     status,
 )
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
@@ -53,9 +57,11 @@ from openhands.events.observation import (
     NullObservation,
 )
 from openhands.events.serialization import event_to_dict
+from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.llm import bedrock
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
 from openhands.server.auth import get_sid_from_token, sign_token
+from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware
 from openhands.server.session import SessionManager
 
 load_dotenv()
@@ -74,12 +80,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(
-    CORSMiddleware,
-    allow_origins=['http://localhost:3001', 'http://127.0.0.1:3001'],
+    LocalhostCORSMiddleware,
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
 )
+
+
+app.add_middleware(NoCacheMiddleware)
 
 security_scheme = HTTPBearer()
 
@@ -180,9 +188,14 @@ async def attach_session(request: Request, call_next):
     Returns:
         Response: The response from the next middleware or route handler.
     """
-    if request.url.path.startswith('/api/options/') or not request.url.path.startswith(
-        '/api/'
-    ):
+    non_authed_paths = [
+        '/api/options/',
+        '/api/github/callback',
+        '/api/authenticate',
+    ]
+    if any(
+        request.url.path.startswith(path) for path in non_authed_paths
+    ) or not request.url.path.startswith('/api/'):
         response = await call_next(request)
         return response
 
@@ -191,7 +204,13 @@ async def attach_session(request: Request, call_next):
         response = await call_next(request)
         return response
 
-    # For all other methods, validate the Authorization header
+    github_token = request.headers.get('X-GitHub-Token')
+    if not await authenticate_github_user(github_token):
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={'error': 'Not authenticated'},
+        )
+
     if not request.headers.get('Authorization'):
         logger.warning('Missing Authorization header')
         return JSONResponse(
@@ -211,16 +230,18 @@ async def attach_session(request: Request, call_next):
             content={'error': 'Invalid token'},
         )
 
-    request.state.conversation = await call_sync_from_async(
-        session_manager.attach_to_conversation, request.state.sid
+    request.state.conversation = await session_manager.attach_to_conversation(
+        request.state.sid
     )
     if request.state.conversation is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Session not found'},
         )
-
-    response = await call_next(request)
+    try:
+        response = await call_next(request)
+    finally:
+        await session_manager.detach_from_conversation(request.state.conversation)
     return response
 
 
@@ -254,7 +275,7 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Run a command:
         ```json
-        {"action": "run", "args": {"command": "ls -l", "thought": "", "is_confirmed": "confirmed"}}
+        {"action": "run", "args": {"command": "ls -l", "thought": "", "confirmation_state": "confirmed"}}
         ```
     - Run an IPython command:
         ```json
@@ -281,11 +302,28 @@ async def websocket_endpoint(websocket: WebSocket):
         {"action": "finish", "args": {}}
         ```
     """
-    await asyncio.wait_for(websocket.accept(), 10)
+    # Get protocols from Sec-WebSocket-Protocol header
+    protocols = websocket.headers.get('sec-websocket-protocol', '').split(', ')
 
-    if websocket.query_params.get('token'):
-        token = websocket.query_params.get('token')
-        sid = get_sid_from_token(token, config.jwt_secret)
+    # The first protocol should be our real protocol (e.g. 'openhands')
+    # The second protocol should contain our auth token
+    if len(protocols) < 3:
+        logger.error('Expected 3 websocket protocols, got %d', len(protocols))
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
+    real_protocol = protocols[0]
+    jwt_token = protocols[1] if protocols[1] != 'NO_JWT' else ''
+    github_token = protocols[2] if protocols[2] != 'NO_GITHUB' else ''
+
+    if not await authenticate_github_user(github_token):
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
+
+    await asyncio.wait_for(websocket.accept(subprotocol=real_protocol), 10)
+
+    if jwt_token:
+        sid = get_sid_from_token(jwt_token, config.jwt_secret)
 
         if sid == '':
             await websocket.send_json({'error': 'Invalid token', 'error_code': 401})
@@ -293,17 +331,21 @@ async def websocket_endpoint(websocket: WebSocket):
             return
     else:
         sid = str(uuid.uuid4())
-        token = sign_token({'sid': sid}, config.jwt_secret)
+        jwt_token = sign_token({'sid': sid}, config.jwt_secret)
 
+    logger.info(f'New session: {sid}')
     session = session_manager.add_or_restart_session(sid, websocket)
-    await websocket.send_json({'token': token, 'status': 'ok'})
+    await websocket.send_json({'token': jwt_token, 'status': 'ok'})
 
     latest_event_id = -1
     if websocket.query_params.get('latest_event_id'):
         latest_event_id = int(websocket.query_params.get('latest_event_id'))
-    for event in session.agent_session.event_stream.get_events(
-        start_id=latest_event_id + 1
-    ):
+
+    async_stream = AsyncEventStreamWrapper(
+        session.agent_session.event_stream, latest_event_id + 1
+    )
+
+    async for event in async_stream:
         if isinstance(
             event,
             (
@@ -441,29 +483,27 @@ async def list_files(request: Request, path: str | None = None):
         )
 
     runtime: Runtime = request.state.conversation.runtime
-    file_list = await asyncio.create_task(
-        call_sync_from_async(runtime.list_files, path)
-    )
+    file_list = await call_sync_from_async(runtime.list_files, path)
     if path:
         file_list = [os.path.join(path, f) for f in file_list]
 
     file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
 
-    def filter_for_gitignore(file_list, base_path):
+    async def filter_for_gitignore(file_list, base_path):
         gitignore_path = os.path.join(base_path, '.gitignore')
         try:
             read_action = FileReadAction(gitignore_path)
-            observation = runtime.run_action(read_action)
+            observation = await call_sync_from_async(runtime.run_action, read_action)
             spec = PathSpec.from_lines(
                 GitWildMatchPattern, observation.content.splitlines()
             )
         except Exception as e:
-            print(e)
+            logger.warning(e)
             return file_list
         file_list = [entry for entry in file_list if not spec.match_file(entry)]
         return file_list
 
-    file_list = filter_for_gitignore(file_list, '')
+    file_list = await filter_for_gitignore(file_list, '')
 
     return file_list
 
@@ -606,14 +646,14 @@ async def upload_file(request: Request, files: list[UploadFile]):
 
 
 @app.post('/api/submit-feedback')
-async def submit_feedback(request: Request, feedback: FeedbackDataModel):
+async def submit_feedback(request: Request):
     """Submit user feedback.
 
     This function stores the provided feedback data.
 
     To submit feedback:
     ```sh
-    curl -X POST -F "email=test@example.com" -F "token=abc" -F "feedback=positive" -F "permissions=private" -F "trajectory={}" http://localhost:3000/api/submit-feedback
+    curl -X POST -d '{"email": "test@example.com"}' -H "Authorization:"
     ```
 
     Args:
@@ -628,8 +668,23 @@ async def submit_feedback(request: Request, feedback: FeedbackDataModel):
     """
     # Assuming the storage service is already configured in the backend
     # and there is a function to handle the storage.
+    body = await request.json()
+    async_stream = AsyncEventStreamWrapper(
+        request.state.conversation.event_stream, filter_hidden=True
+    )
+    trajectory = []
+    async for event in async_stream:
+        trajectory.append(event_to_dict(event))
+    feedback = FeedbackDataModel(
+        email=body.get('email', ''),
+        version=body.get('version', ''),
+        permissions=body.get('permissions', 'private'),
+        polarity=body.get('polarity', ''),
+        feedback=body.get('polarity', ''),
+        trajectory=trajectory,
+    )
     try:
-        feedback_data = store_feedback(feedback)
+        feedback_data = await call_sync_from_async(store_feedback, feedback)
         return JSONResponse(status_code=200, content=feedback_data)
     except Exception as e:
         logger.error(f'Error submitting feedback: {e}')
@@ -737,11 +792,11 @@ async def security_api(request: Request):
 @app.get('/api/zip-directory')
 async def zip_current_workspace(request: Request):
     try:
-        logger.info('Zipping workspace')
+        logger.debug('Zipping workspace')
         runtime: Runtime = request.state.conversation.runtime
 
         path = runtime.config.workspace_mount_path_in_sandbox
-        zip_file_bytes = runtime.copy_from(path)
+        zip_file_bytes = await call_sync_from_async(runtime.copy_from, path)
         zip_stream = io.BytesIO(zip_file_bytes)  # Wrap to behave like a file stream
         response = StreamingResponse(
             zip_stream,
@@ -762,16 +817,16 @@ class AuthCode(BaseModel):
     code: str
 
 
-@app.post('/github/callback')
+@app.post('/api/github/callback')
 def github_callback(auth_code: AuthCode):
     # Prepare data for the token exchange request
     data = {
-        'client_id': os.getenv('GITHUB_CLIENT_ID'),
-        'client_secret': os.getenv('GITHUB_CLIENT_SECRET'),
+        'client_id': GITHUB_CLIENT_ID,
+        'client_secret': GITHUB_CLIENT_SECRET,
         'code': auth_code.code,
     }
 
-    logger.info(f'Exchanging code for token: {data}')
+    logger.debug('Exchanging code for GitHub token')
 
     headers = {'Accept': 'application/json'}
     response = requests.post(
@@ -779,6 +834,7 @@ def github_callback(auth_code: AuthCode):
     )
 
     if response.status_code != 200:
+        logger.error(f'Failed to exchange code for token: {response.text}')
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={'error': 'Failed to exchange code for token'},
@@ -798,4 +854,29 @@ def github_callback(auth_code: AuthCode):
     )
 
 
-app.mount('/', StaticFiles(directory='./frontend/build', html=True), name='dist')
+@app.post('/api/authenticate')
+async def authenticate(request: Request):
+    token = request.headers.get('X-GitHub-Token')
+    if not await authenticate_github_user(token):
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={'error': 'Not authorized via GitHub waitlist'},
+        )
+
+    response = JSONResponse(
+        status_code=status.HTTP_200_OK, content={'message': 'User authenticated'}
+    )
+
+    return response
+
+
+class SPAStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        try:
+            return await super().get_response(path, scope)
+        except Exception:
+            # FIXME: just making this HTTPException doesn't work for some reason
+            return await super().get_response('index.html', scope)
+
+
+app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist')

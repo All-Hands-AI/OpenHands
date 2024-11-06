@@ -2,8 +2,10 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { StatusMessage } from "#/types/Message";
 
 const initialStatusMessage: StatusMessage = {
-  status: "",
-  is_error: false,
+  status_update: true,
+  type: "info",
+  id: "",
+  message: "",
 };
 
 export const statusSlice = createSlice({

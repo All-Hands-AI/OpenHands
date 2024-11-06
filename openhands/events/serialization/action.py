@@ -12,7 +12,11 @@ from openhands.events.action.commands import (
     IPythonRunCellAction,
 )
 from openhands.events.action.empty import NullAction
-from openhands.events.action.files import FileReadAction, FileWriteAction
+from openhands.events.action.files import (
+    FileEditAction,
+    FileReadAction,
+    FileWriteAction,
+)
 from openhands.events.action.message import MessageAction
 from openhands.events.action.tasks import AddTaskAction, ModifyTaskAction
 
@@ -24,6 +28,7 @@ actions = (
     BrowseInteractiveAction,
     FileReadAction,
     FileWriteAction,
+    FileEditAction,
     AgentFinishAction,
     AgentRejectAction,
     AgentDelegateAction,
@@ -54,6 +59,12 @@ def action_from_dict(action: dict) -> Action:
     args = action.get('args', {})
     # Remove timestamp from args if present
     timestamp = args.pop('timestamp', None)
+
+    # compatibility for older event streams
+    # is_confirmed has been renamed to confirmation_state
+    is_confirmed = args.pop('is_confirmed', None)
+    if is_confirmed is not None:
+        args['confirmation_state'] = is_confirmed
 
     try:
         decoded_action = action_class(**args)
