@@ -13,7 +13,8 @@
  * console.log(parsed.symbol); // openhands@659478cb008c:/workspace $
  */
 export const parseTerminalOutput = (raw: string) => {
-  const envRegex = /(.*)\[Python Interpreter: (.*)\]/s;
+  // Extract the actual command output before the Python interpreter info
+  const envRegex = /(.*?)\r?\n*\
   const match = raw.match(envRegex);
 
   if (!match) return raw;
