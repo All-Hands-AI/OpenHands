@@ -312,7 +312,7 @@ function App() {
             className={cn(
               "w-2 h-2 rounded-full border",
               "absolute left-3 top-3",
-              runtimeActive
+              runtimeIsInitialized
                 ? "bg-green-800 border-green-500"
                 : "bg-red-800 border-red-500",
             )}
