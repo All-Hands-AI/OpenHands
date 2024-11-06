@@ -40,14 +40,12 @@ export function ChatInput({
   const [isDraggingOver, setIsDraggingOver] = React.useState(false);
 
   const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    event.preventDefault();
     if (onImagePaste && event.clipboardData.files.length > 0) {
       const files = Array.from(event.clipboardData.files).filter((file) =>
         file.type.startsWith("image/"),
       );
-      if (files.length > 0) {
-        event.preventDefault();
-        onImagePaste(files);
-      }
+      if (files.length > 0) onImagePaste(files);
     }
   };
 
