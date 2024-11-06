@@ -63,6 +63,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   let githubAuthUrl: string | null = null;
   let user: GitHubUser | GitHubErrorReponse | null = null;
   if (!clientLoaderCache || clientLoaderCache.ghToken !== ghToken) {
+    console.log('gh token changed', clientLoaderCache, ghToken);
     try {
       isAuthed = await userIsAuthenticated();
       if (!isAuthed && window.__GITHUB_CLIENT_ID__) {
@@ -94,7 +95,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   }
 
   // Store the results in cache
-  clientLoaderCache = defer({
+  clientLoaderCache = {
     token,
     ghToken,
     isAuthed,
@@ -103,9 +104,9 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
     settingsIsUpdated,
     settings,
     analyticsConsent,
-  });
+  };
 
-  return clientLoaderCache;
+  return defer(clientLoaderCache);
 };
 
 export function ErrorBoundary() {
