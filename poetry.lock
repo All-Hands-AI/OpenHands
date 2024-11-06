@@ -1565,6 +1565,17 @@ files = [
 ]
 
 [[package]]
+name = "diskcache"
+version = "5.6.3"
+description = "Disk Cache -- Disk and file backed persistent cache."
+optional = false
+python-versions = ">=3"
+files = [
+    {file = "diskcache-5.6.3-py3-none-any.whl", hash = "sha256:5e31b2d5fbad117cc363ebaf6b689474db18a1f6438bc82358b024abd4c2ca19"},
+    {file = "diskcache-5.6.3.tar.gz", hash = "sha256:2c3a3fa2743d8535d832ec61c2054a1641f41775aa7c556758a109941e33e4fc"},
+]
+
+[[package]]
 name = "distlib"
 version = "0.3.9"
 description = "Distribution utilities"
@@ -5637,6 +5648,32 @@ files = [
 
 [package.dependencies]
 numpy = {version = ">=1.26.0", markers = "python_version >= \"3.12\""}
+
+[[package]]
+name = "openhands-aci"
+version = "0.0.1"
+description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
+optional = false
+python-versions = "^3.12"
+files = []
+develop = false
+
+[package.dependencies]
+diskcache = "^5.6.3"
+gitpython = "*"
+grep-ast = "0.3.3"
+litellm = "*"
+networkx = "*"
+numpy = "*"
+pandas = "*"
+scipy = "*"
+tree-sitter = "0.21.3"
+
+[package.source]
+type = "git"
+url = "https://github.com/All-Hands-AI/openhands-aci/"
+reference = "HEAD"
+resolved_reference = "0699ef087e1d3afec9c481ea1eb950262e32364e"
 
 [[package]]
 name = "opentelemetry-api"
@@ -10127,4 +10164,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "2a4f90bb5c7f7d82160f57d71af7e81c7acef69426d0e1e46e1da09972a6215f"
+content-hash = "bac65624f749c5f8ec2527b5b4ecf20388cc8f9475421634ce7f7b80c5761616"
