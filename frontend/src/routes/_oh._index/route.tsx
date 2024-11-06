@@ -20,7 +20,9 @@ import OpenHands from "#/api/open-hands";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { GitHubRepositoriesSuggestionBox } from "#/components/github-repositories-suggestion-box";
 
-let cachedRepositories: ReturnType<typeof retrieveAllGitHubUserRepositories> | null = null;
+let cachedRepositories: ReturnType<
+  typeof retrieveAllGitHubUserRepositories
+> | null = null;
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   let isSaas = false;
   let githubClientId: string | null = null;
