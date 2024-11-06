@@ -40,8 +40,8 @@ websocat ws://127.0.0.1:3000/ws
 ## Supported Environment Variables
 
 ```sh
-LLM_API_KEY=sk-... # Your OpenAI API Key
-LLM_MODEL=gpt-4o   # Default model for the agent to use
+LLM_API_KEY=sk-... # Your Anthropic API Key
+LLM_MODEL=claude-3-5-sonnet-20241022 # Default model for the agent to use
 WORKSPACE_BASE=/path/to/your/workspace # Default absolute path to workspace
 ```
 

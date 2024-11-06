@@ -6,22 +6,33 @@ from openhands.events.observation.observation import Observation
 from openhands.events.serialization.action import action_from_dict
 from openhands.events.serialization.observation import observation_from_dict
 from openhands.events.serialization.utils import remove_fields
+from openhands.events.tool import ToolCallMetadata
 
 # TODO: move `content` into `extras`
-TOP_KEYS = ['id', 'timestamp', 'source', 'message', 'cause', 'action', 'observation']
-UNDERSCORE_KEYS = ['id', 'timestamp', 'source', 'cause']
+TOP_KEYS = [
+    'id',
+    'timestamp',
+    'source',
+    'message',
+    'cause',
+    'action',
+    'observation',
+    'tool_call_metadata',
+]
+UNDERSCORE_KEYS = ['id', 'timestamp', 'source', 'cause', 'tool_call_metadata']
 
-DELETE_FROM_MEMORY_EXTRAS = {
+DELETE_FROM_TRAJECTORY_EXTRAS = {
     'screenshot',
     'dom_object',
     'axtree_object',
-    'open_pages_urls',
     'active_page_index',
     'last_browser_action',
     'last_browser_action_error',
     'focused_element_bid',
     'extra_element_properties',
 }
+
+DELETE_FROM_MEMORY_EXTRAS = DELETE_FROM_TRAJECTORY_EXTRAS | {'open_pages_urls'}
 
 
 def event_from_dict(data) -> 'Event':
@@ -39,6 +50,8 @@ def event_from_dict(data) -> 'Event':
                 value = value.isoformat()
             if key == 'source':
                 value = EventSource(value)
+            if key == 'tool_call_metadata':
+                value = ToolCallMetadata(**value)
             setattr(evt, '_' + key, value)
     return evt
 
@@ -58,6 +71,8 @@ def event_to_dict(event: 'Event') -> dict:
                 d['timestamp'] = d['timestamp'].isoformat()
         if key == 'source' and 'source' in d:
             d['source'] = d['source'].value
+        if key == 'tool_call_metadata' and 'tool_call_metadata' in d:
+            d['tool_call_metadata'] = d['tool_call_metadata'].model_dump()
         props.pop(key, None)
     if 'security_risk' in props and props['security_risk'] is None:
         props.pop('security_risk')
@@ -73,6 +88,13 @@ def event_to_dict(event: 'Event') -> dict:
     return d
 
 
+def event_to_trajectory(event: 'Event') -> dict:
+    d = event_to_dict(event)
+    if 'extras' in d:
+        remove_fields(d['extras'], DELETE_FROM_TRAJECTORY_EXTRAS)
+    return d
+
+
 def event_to_memory(event: 'Event', max_message_chars: int) -> dict:
     d = event_to_dict(event)
     d.pop('id', None)
@@ -85,7 +107,7 @@ def event_to_memory(event: 'Event', max_message_chars: int) -> dict:
     if 'args' in d:
         d['args'].pop('blocking', None)
         d['args'].pop('keep_prompt', None)
-        d['args'].pop('is_confirmed', None)
+        d['args'].pop('confirmation_state', None)
 
     if 'extras' in d:
         remove_fields(d['extras'], DELETE_FROM_MEMORY_EXTRAS)

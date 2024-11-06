@@ -70,16 +70,74 @@ class ColoredFormatter(logging.Formatter):
         return super().format(record)
 
 
-console_formatter = ColoredFormatter(
-    '\033[92m%(asctime)s - %(name)s:%(levelname)s\033[0m: %(filename)s:%(lineno)s - %(message)s',
-    datefmt='%H:%M:%S',
-)
-
 file_formatter = logging.Formatter(
     '%(asctime)s - %(name)s:%(levelname)s: %(filename)s:%(lineno)s - %(message)s',
     datefmt='%H:%M:%S',
 )
 llm_formatter = logging.Formatter('%(message)s')
+
+
+class RollingLogger:
+    max_lines: int
+    char_limit: int
+    log_lines: list[str]
+
+    def __init__(self, max_lines=10, char_limit=80):
+        self.max_lines = max_lines
+        self.char_limit = char_limit
+        self.log_lines = [''] * self.max_lines
+
+    def is_enabled(self):
+        return DEBUG and sys.stdout.isatty()
+
+    def start(self, message=''):
+        if message:
+            print(message)
+        self._write('\n' * self.max_lines)
+        self._flush()
+
+    def add_line(self, line):
+        self.log_lines.pop(0)
+        self.log_lines.append(line[: self.char_limit])
+        self.print_lines()
+
+    def write_immediately(self, line):
+        self._write(line)
+        self._flush()
+
+    def print_lines(self):
+        """Display the last n log_lines in the console (not for file logging).
+        This will create the effect of a rolling display in the console.
+        """
+        self.move_back()
+        for line in self.log_lines:
+            self.replace_current_line(line)
+
+    def move_back(self, amount=-1):
+        """
+        '\033[F'    moves the cursor up one line.
+        """
+        if amount == -1:
+            amount = self.max_lines
+        self._write('\033[F' * (self.max_lines))
+        self._flush()
+
+    def replace_current_line(self, line=''):
+        """
+        '\033[2K\r' clears the line and moves the cursor to the beginning of the line.
+        """
+        self._write('\033[2K' + line + '\n')
+        self._flush()
+
+    def _write(self, line):
+        if not self.is_enabled():
+            return
+        sys.stdout.write(line)
+
+    def _flush(self):
+        if not self.is_enabled():
+            return
+        sys.stdout.flush()
 
 
 class SensitiveDataFilter(logging.Filter):
@@ -92,6 +150,8 @@ class SensitiveDataFilter(logging.Filter):
             'e2b_api_key',
             'github_token',
             'jwt_secret',
+            'modal_api_token_id',
+            'modal_api_token_secret',
         ]
 
         # add env var names
@@ -117,11 +177,14 @@ class SensitiveDataFilter(logging.Filter):
         return True
 
 
-def get_console_handler(log_level=logging.INFO):
+def get_console_handler(log_level=logging.INFO, extra_info: str | None = None):
     """Returns a console handler for logging."""
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level)
-    console_handler.setFormatter(console_formatter)
+    formatter_str = '\033[92m%(asctime)s - %(name)s:%(levelname)s\033[0m: %(filename)s:%(lineno)s - %(message)s'
+    if extra_info:
+        formatter_str = f'{extra_info} - ' + formatter_str
+    console_handler.setFormatter(ColoredFormatter(formatter_str, datefmt='%H:%M:%S'))
     return console_handler
 
 
@@ -165,7 +228,7 @@ openhands_logger.setLevel(current_log_level)
 
 if current_log_level == logging.DEBUG:
     LOG_TO_FILE = True
-    openhands_logger.info('DEBUG mode enabled.')
+    openhands_logger.debug('DEBUG mode enabled.')
 
 openhands_logger.addHandler(get_console_handler(current_log_level))
 openhands_logger.addFilter(SensitiveDataFilter(openhands_logger.name))
@@ -182,7 +245,7 @@ if LOG_TO_FILE:
     openhands_logger.addHandler(
         get_file_handler(LOG_DIR, current_log_level)
     )  # default log to project root
-    openhands_logger.info(f'Logging to file in: {LOG_DIR}')
+    openhands_logger.debug(f'Logging to file in: {LOG_DIR}')
 
 # Exclude LiteLLM from logging output
 logging.getLogger('LiteLLM').disabled = True

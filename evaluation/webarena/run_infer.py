@@ -10,6 +10,7 @@ import pandas as pd
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    compatibility_for_eval_history_pairs,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -30,11 +31,12 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.observation import CmdOutputObservation
+from openhands.runtime.base import Runtime
 from openhands.runtime.browser.browser_env import (
     BROWSER_EVAL_GET_GOAL_ACTION,
     BROWSER_EVAL_GET_REWARDS_ACTION,
 )
-from openhands.runtime.runtime import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
 SUPPORTED_AGENT_CLS = {'BrowsingAgent'}
 
@@ -143,6 +145,7 @@ def process_instance(
         logger.info(f'Starting evaluation for instance {env_id}.')
 
     runtime = create_runtime(config)
+    call_async_from_sync(runtime.connect)
     task_str = initialize_runtime(runtime)
 
     state: State | None = asyncio.run(
@@ -164,7 +167,7 @@ def process_instance(
 
     # Instruction is the first message from the USER
     instruction = ''
-    for event in state.history.get_events():
+    for event in state.history:
         if isinstance(event, MessageAction):
             instruction = event.content
             break
@@ -176,7 +179,7 @@ def process_instance(
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
-    histories = state.history.compatibility_for_eval_history_pairs()
+    histories = compatibility_for_eval_history_pairs(state.history)
 
     # Save the output
     output = EvalOutput(

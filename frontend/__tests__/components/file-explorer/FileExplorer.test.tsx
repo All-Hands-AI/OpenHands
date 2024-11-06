@@ -16,13 +16,16 @@ vi.mock("../../services/fileService", async () => ({
 }));
 
 const renderFileExplorerWithRunningAgentState = () =>
-  renderWithProviders(<FileExplorer />, {
-    preloadedState: {
-      agent: {
-        curAgentState: AgentState.RUNNING,
+  renderWithProviders(
+    <FileExplorer error={null} isOpen onToggle={() => {}} />,
+    {
+      preloadedState: {
+        agent: {
+          curAgentState: AgentState.RUNNING,
+        },
       },
     },
-  });
+  );
 
 describe.skip("FileExplorer", () => {
   afterEach(() => {

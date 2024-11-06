@@ -15,6 +15,7 @@ export interface CommandObservation extends OpenHandsObservationEvent<"run"> {
     command: string;
     command_id: number;
     exit_code: number;
+    hidden?: boolean;
   };
 }
 
@@ -52,7 +53,10 @@ export interface BrowseObservation extends OpenHandsObservationEvent<"browse"> {
 }
 
 export interface ErrorObservation extends OpenHandsObservationEvent<"error"> {
-  source: "agent";
+  source: "user";
+  extras: {
+    error_id?: string;
+  };
 }
 
 export type OpenHandsObservation =

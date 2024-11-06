@@ -16,6 +16,7 @@ from evaluation.agent_bench.helper import (
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    compatibility_for_eval_history_pairs,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -32,7 +33,8 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import AgentFinishAction, CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
 
 def get_config(
@@ -210,6 +212,7 @@ def process_instance(
     # =============================================
 
     runtime: Runtime = create_runtime(config)
+    call_async_from_sync(runtime.connect)
 
     initialize_runtime(runtime, instance=instance)
 
@@ -240,7 +243,7 @@ def process_instance(
         raw_ans = ''
 
         # retrieve the last agent message or thought
-        for event in state.history.get_events(reverse=True):
+        for event in reversed(state.history):
             if event.source == 'agent':
                 if isinstance(event, AgentFinishAction):
                     raw_ans = event.thought
@@ -269,7 +272,7 @@ def process_instance(
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
-    histories = state.history.compatibility_for_eval_history_pairs()
+    histories = compatibility_for_eval_history_pairs(state.history)
 
     metrics = state.metrics.get() if state.metrics else None
 

@@ -1,22 +1,16 @@
 import contextlib
 import io
-import os
 import sys
-from unittest.mock import patch
 
 import docx
 import pytest
 
+from openhands.runtime.plugins.agent_skills.agentskills import file_editor
 from openhands.runtime.plugins.agent_skills.file_ops.file_ops import (
-    MSG_FILE_UPDATED,
     WINDOW,
     _print_window,
-    append_file,
-    create_file,
-    edit_file_by_replace,
     find_file,
     goto_line,
-    insert_content_at_line,
     open_file,
     scroll_down,
     scroll_up,
@@ -65,12 +59,6 @@ def _calculate_window_bounds(current_line, total_lines, window_size):
         start = current_line - half_window
         end = current_line + half_window
     return start, end
-
-
-def _generate_ruby_test_file_with_lines(temp_path, num_lines) -> str:
-    file_path = temp_path / 'test_file.rb'
-    file_path.write_text('\n' * num_lines)
-    return file_path
 
 
 def _capture_file_operation_error(operation, expected_error_msg):
@@ -185,28 +173,6 @@ def test_open_file_long_with_lineno(tmp_path):
     else:
         expected += f'({1000 - end} more lines below)\n'
         expected += '[Use `scroll_down` to view the next 100 lines of the file!]\n'
-    assert result.split('\n') == expected.split('\n')
-
-
-def test_create_file_unexist_path():
-    with pytest.raises(FileNotFoundError):
-        create_file('/unexist/path/a.txt')
-
-
-def test_create_file(tmp_path):
-    temp_file_path = tmp_path / 'a.txt'
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            create_file(str(temp_file_path))
-        result = buf.getvalue()
-
-    expected = (
-        f'[File: {temp_file_path} (1 lines total)]\n'
-        '(this is the beginning of the file)\n'
-        '1|\n'
-        '(this is the end of the file)\n'
-        f'[File {temp_file_path} created.]\n'
-    )
     assert result.split('\n') == expected.split('\n')
 
 
@@ -411,7 +377,7 @@ def test_scroll_down_edge(tmp_path):
 
 def test_print_window_internal(tmp_path):
     test_file_path = tmp_path / 'a.txt'
-    create_file(str(test_file_path))
+    test_file_path.write_text('')
     open_file(str(test_file_path))
     with open(test_file_path, 'w') as file:
         for i in range(1, 101):
@@ -438,7 +404,7 @@ def test_print_window_internal(tmp_path):
 
 def test_open_file_large_line_number(tmp_path):
     test_file_path = tmp_path / 'a.txt'
-    create_file(str(test_file_path))
+    test_file_path.write_text('')
     open_file(str(test_file_path))
     with open(test_file_path, 'w') as file:
         for i in range(1, 1000):
@@ -461,648 +427,6 @@ def test_open_file_large_line_number(tmp_path):
         expected += '(149 more lines below)\n'
         expected += '[Use `scroll_down` to view the next 100 lines of the file!]\n'
         assert result == expected
-
-
-def test_edit_file_by_replace_window(tmp_path):
-    with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
-        content = """def any_int(a, b, c):
-    return isinstance(a, int) and isinstance(b, int) and isinstance(c, int)
-
-def test_any_int():
-    assert any_int(1, 2, 3) == True
-    assert any_int(1.5, 2, 3) == False
-    assert any_int(1, 2.5, 3) == False
-    assert any_int(1, 2, 3.5) == False
-    assert any_int(1.0, 2, 3) == False
-    assert any_int(1, 2.0, 3) == False
-    assert any_int(1, 2, 3.0) == False
-    assert any_int(0, 0, 0) == True
-    assert any_int(-1, -2, -3) == True
-    assert any_int(1, -2, 3) == True
-    assert any_int(1.5, -2, 3) == False
-    assert any_int(1, -2.5, 3) == False
-
-def check(any_int):
-    # Check some simple cases
-    assert any_int(2, 3, 1)==True, "This prints if this assert fails 1 (good for debugging!)"
-    assert any_int(2.5, 2, 3)==False, "This prints if this assert fails 2 (good for debugging!)"
-    assert any_int(1.5, 5, 3.5)==False, "This prints if this assert fails 3 (good for debugging!)"
-    assert any_int(2, 6, 2)==False, "This prints if this assert fails 4 (good for debugging!)"
-    assert any_int(4, 2, 2)==True, "This prints if this assert fails 5 (good for debugging!)"
-    assert any_int(2.2, 2.2, 2.2)==False, "This prints if this assert fails 6 (good for debugging!)"
-    assert any_int(-4, 6, 2)==True, "This prints if this assert fails 7 (good for debugging!)"
-
-    # Check some edge cases that are easy to work out by hand.
-    assert any_int(2,1,1)==True, "This prints if this assert fails 8 (also good for debugging!)"
-    assert any_int(3,4,7)==True, "This prints if this assert fails 9 (also good for debugging!)"
-    assert any_int(3.0,4,7)==False, "This prints if this assert fails 10 (also good for debugging!)"
-
-check(any_int)"""
-
-        temp_file_path = tmp_path / 'error-test.py'
-        temp_file_path.write_text(content)
-
-        open_file(str(temp_file_path))
-
-        with io.StringIO() as buf:
-            with contextlib.redirect_stdout(buf):
-                edit_file_by_replace(
-                    str(temp_file_path),
-                    to_replace='    assert any_int(1.0, 2, 3) == False',
-                    new_content='        assert any_int(1.0, 2, 3) == False',
-                )
-            result = buf.getvalue()
-            expected = (
-                '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
-                'ERRORS:\n'
-                + str(temp_file_path)
-                + ':9:9: '
-                + 'E999 IndentationError: unexpected indent\n'
-                '[This is how your edit would have looked if applied]\n'
-                + SEP
-                + '(this is the beginning of the file)\n'
-                '1|def any_int(a, b, c):\n'
-                '2|    return isinstance(a, int) and isinstance(b, int) and isinstance(c, int)\n'
-                '3|\n'
-                '4|def test_any_int():\n'
-                '5|    assert any_int(1, 2, 3) == True\n'
-                '6|    assert any_int(1.5, 2, 3) == False\n'
-                '7|    assert any_int(1, 2.5, 3) == False\n'
-                '8|    assert any_int(1, 2, 3.5) == False\n'
-                '9|        assert any_int(1.0, 2, 3) == False\n'
-                '10|    assert any_int(1, 2.0, 3) == False\n'
-                '11|    assert any_int(1, 2, 3.0) == False\n'
-                '12|    assert any_int(0, 0, 0) == True\n'
-                '13|    assert any_int(-1, -2, -3) == True\n'
-                '14|    assert any_int(1, -2, 3) == True\n'
-                '15|    assert any_int(1.5, -2, 3) == False\n'
-                '16|    assert any_int(1, -2.5, 3) == False\n'
-                '17|\n'
-                '18|def check(any_int):\n'
-                '19|    # Check some simple cases\n'
-                '20|    assert any_int(2, 3, 1)==True, "This prints if this assert fails 1 (good for debugging!)"\n'
-                '21|    assert any_int(2.5, 2, 3)==False, "This prints if this assert fails 2 (good for debugging!)"\n'
-                '(12 more lines below)\n' + SEP + '\n'
-                '[This is the original code before your edit]\n'
-                + SEP
-                + '(this is the beginning of the file)\n'
-                '1|def any_int(a, b, c):\n'
-                '2|    return isinstance(a, int) and isinstance(b, int) and isinstance(c, int)\n'
-                '3|\n'
-                '4|def test_any_int():\n'
-                '5|    assert any_int(1, 2, 3) == True\n'
-                '6|    assert any_int(1.5, 2, 3) == False\n'
-                '7|    assert any_int(1, 2.5, 3) == False\n'
-                '8|    assert any_int(1, 2, 3.5) == False\n'
-                '9|    assert any_int(1.0, 2, 3) == False\n'
-                '10|    assert any_int(1, 2.0, 3) == False\n'
-                '11|    assert any_int(1, 2, 3.0) == False\n'
-                '12|    assert any_int(0, 0, 0) == True\n'
-                '13|    assert any_int(-1, -2, -3) == True\n'
-                '14|    assert any_int(1, -2, 3) == True\n'
-                '15|    assert any_int(1.5, -2, 3) == False\n'
-                '16|    assert any_int(1, -2.5, 3) == False\n'
-                '17|\n'
-                '18|def check(any_int):\n'
-                '19|    # Check some simple cases\n'
-                '20|    assert any_int(2, 3, 1)==True, "This prints if this assert fails 1 (good for debugging!)"\n'
-                '21|    assert any_int(2.5, 2, 3)==False, "This prints if this assert fails 2 (good for debugging!)"\n'
-                '(12 more lines below)\n'
-                + SEP
-                + 'Your changes have NOT been applied. Please fix your edit command and try again.\n'
-                'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
-                'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
-            )
-            assert result == expected
-
-
-def test_edit_file_by_replace_with_multiple_errors(tmp_path):
-    # If the file has multiple errors, but the suggested modification can only fix one error, make sure it is applied.
-    with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
-        content = """def Sum(a,b):
-    try:
-        answer = a + b
-        return answer
-    except Exception:
-        answer = ANOTHER_CONSTANT
-        return answer
-Sum(1,1)
-"""
-
-        temp_file_path = tmp_path / 'problematic-file-test.py'
-        temp_file_path.write_text(content)
-
-        open_file(str(temp_file_path))
-
-        with io.StringIO() as buf:
-            with contextlib.redirect_stdout(buf):
-                edit_file_by_replace(
-                    str(temp_file_path),
-                    to_replace='        answer = a + b',
-                    new_content='        answer = a+b',
-                )
-            result = buf.getvalue()
-            expected = (
-                f'[File: {temp_file_path} (8 lines total after edit)]\n'
-                '(this is the beginning of the file)\n'
-                '1|def Sum(a,b):\n'
-                '2|    try:\n'
-                '3|        answer = a+b\n'
-                '4|        return answer\n'
-                '5|    except Exception:\n'
-                '6|        answer = ANOTHER_CONSTANT\n'
-                '7|        return answer\n'
-                '8|Sum(1,1)\n'
-                '(this is the end of the file)\n'
-                + MSG_FILE_UPDATED.format(line_number=3)
-                + '\n'
-            )
-            assert result.split('\n') == expected.split('\n')
-
-
-# ================================
-
-
-def test_edit_file_by_replace(tmp_path):
-    temp_file_path = tmp_path / 'a.txt'
-    content = 'Line 1\nLine 2\nLine 3\nLine 4\nLine 5'
-    temp_file_path.write_text(content)
-
-    open_file(str(temp_file_path))
-
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            edit_file_by_replace(
-                file_name=str(temp_file_path),
-                to_replace='Line 1\nLine 2\nLine 3',
-                new_content='REPLACE TEXT',
-            )
-        result = buf.getvalue()
-        expected = (
-            f'[File: {temp_file_path} (3 lines total after edit)]\n'
-            '(this is the beginning of the file)\n'
-            '1|REPLACE TEXT\n'
-            '2|Line 4\n'
-            '3|Line 5\n'
-            '(this is the end of the file)\n'
-            + MSG_FILE_UPDATED.format(line_number=1)
-            + '\n'
-        )
-        assert result.split('\n') == expected.split('\n')
-
-    with open(temp_file_path, 'r') as file:
-        lines = file.readlines()
-    assert len(lines) == 3
-    assert lines[0].rstrip() == 'REPLACE TEXT'
-    assert lines[1].rstrip() == 'Line 4'
-    assert lines[2].rstrip() == 'Line 5'
-
-
-def test_edit_file_by_replace_sameline(tmp_path):
-    temp_file_path = tmp_path / 'a.txt'
-    content = 'Line 1\nLine 2\nLine 2\nLine 4\nLine 5'
-    temp_file_path.write_text(content)
-
-    open_file(str(temp_file_path))
-
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            edit_file_by_replace(
-                file_name=str(temp_file_path),
-                to_replace='Line 2\nLine 2',
-                new_content='Line 2\nREPLACE TEXT',
-            )
-        result = buf.getvalue()
-        expected = (
-            f'[File: {temp_file_path} (5 lines total after edit)]\n'
-            '(this is the beginning of the file)\n'
-            '1|Line 1\n'
-            '2|Line 2\n'
-            '3|REPLACE TEXT\n'
-            '4|Line 4\n'
-            '5|Line 5\n'
-            '(this is the end of the file)\n'
-            + MSG_FILE_UPDATED.format(line_number=2)
-            + '\n'
-        )
-        assert result.split('\n') == expected.split('\n')
-
-    with open(temp_file_path, 'r') as file:
-        lines = file.readlines()
-    assert len(lines) == 5
-    assert lines[0].rstrip() == 'Line 1'
-    assert lines[1].rstrip() == 'Line 2'
-    assert lines[2].rstrip() == 'REPLACE TEXT'
-    assert lines[3].rstrip() == 'Line 4'
-    assert lines[4].rstrip() == 'Line 5'
-
-
-def test_edit_file_by_replace_multiline(tmp_path):
-    temp_file_path = tmp_path / 'a.txt'
-    content = 'Line 1\nLine 2\nLine 2\nLine 4\nLine 5'
-    temp_file_path.write_text(content)
-
-    open_file(str(temp_file_path))
-
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            edit_file_by_replace(
-                file_name=str(temp_file_path),
-                to_replace='Line 2',
-                new_content='REPLACE TEXT',
-            )
-            result = buf.getvalue()
-            assert result.strip().startswith(
-                'ERROR: `to_replace` appears more than once, please include enough lines to make code in `to_replace` unique'
-            )
-
-
-def test_edit_file_by_replace_no_diff(tmp_path):
-    temp_file_path = tmp_path / 'a.txt'
-    content = 'Line 1\nLine 2\nLine 2\nLine 4\nLine 5'
-    temp_file_path.write_text(content)
-
-    open_file(str(temp_file_path))
-
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            edit_file_by_replace(
-                file_name=str(temp_file_path),
-                to_replace='Line 1',
-                new_content='Line 1',
-            )
-            result = buf.getvalue()
-            assert result.strip().startswith(
-                'ERROR: `to_replace` and `new_content` must be different'
-            )
-
-
-def test_edit_file_by_replace_toreplace_empty(tmp_path):
-    temp_file_path = tmp_path / 'a.txt'
-    content = 'Line 1\nLine 2\nLine 2\nLine 4\nLine 5'
-    temp_file_path.write_text(content)
-
-    open_file(str(temp_file_path))
-
-    _capture_file_operation_error(
-        lambda: edit_file_by_replace(
-            file_name=str(temp_file_path),
-            to_replace='',
-            new_content='Line 1',
-        ),
-        'ERROR: `to_replace` must not be empty.',
-    )
-
-
-def test_edit_file_by_replace_unknown_file():
-    _capture_file_operation_error(
-        lambda: edit_file_by_replace(
-            str('unknown file'),
-            'ORIGINAL TEXT',
-            'REPLACE TEXT',
-        ),
-        'ERROR: File unknown file not found.',
-    )
-
-
-def test_insert_content_at_line(tmp_path):
-    temp_file_path = tmp_path / 'b.txt'
-    content = 'Line 1\nLine 2\nLine 3'
-    temp_file_path.write_text(content)
-    open_file(str(temp_file_path))
-
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            insert_content_at_line(
-                file_name=str(temp_file_path),
-                line_number=2,
-                content='Inserted Line',
-            )
-        result = buf.getvalue()
-        expected = (
-            f'[File: {temp_file_path} (4 lines total after edit)]\n'
-            '(this is the beginning of the file)\n'
-            '1|Line 1\n'
-            '2|Inserted Line\n'
-            '3|Line 2\n'
-            '4|Line 3\n'
-            '(this is the end of the file)\n'
-            + MSG_FILE_UPDATED.format(line_number=2)
-            + '\n'
-        )
-        assert result.split('\n') == expected.split('\n')
-
-    with open(temp_file_path, 'r') as file:
-        lines = file.readlines()
-    assert len(lines) == 4
-    assert lines[0].rstrip() == 'Line 1'
-    assert lines[1].rstrip() == 'Inserted Line'
-    assert lines[2].rstrip() == 'Line 2'
-    assert lines[3].rstrip() == 'Line 3'
-
-
-def test_insert_content_at_line_from_scratch(tmp_path):
-    temp_file_path = tmp_path / 'a.txt'
-    create_file(str(temp_file_path))
-    open_file(str(temp_file_path))
-
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            insert_content_at_line(
-                file_name=str(temp_file_path),
-                line_number=1,
-                content='REPLACE TEXT',
-            )
-        result = buf.getvalue()
-        expected = (
-            f'[File: {temp_file_path} (1 lines total after edit)]\n'
-            '(this is the beginning of the file)\n'
-            '1|REPLACE TEXT\n'
-            '(this is the end of the file)\n'
-            + MSG_FILE_UPDATED.format(line_number=1)
-            + '\n'
-        )
-        assert result.split('\n') == expected.split('\n')
-
-    with open(temp_file_path, 'r') as file:
-        lines = file.readlines()
-    assert len(lines) == 1
-    assert lines[0].rstrip() == 'REPLACE TEXT'
-
-
-def test_insert_content_at_line_from_scratch_emptyfile(tmp_path):
-    temp_file_path = tmp_path / 'a.txt'
-    with open(temp_file_path, 'w') as file:
-        file.write('')
-    open_file(str(temp_file_path))
-
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            insert_content_at_line(
-                file_name=str(temp_file_path),
-                line_number=1,
-                content='REPLACE TEXT',
-            )
-        result = buf.getvalue()
-        expected = (
-            f'[File: {temp_file_path} (1 lines total after edit)]\n'
-            '(this is the beginning of the file)\n'
-            '1|REPLACE TEXT\n'
-            '(this is the end of the file)\n'
-            + MSG_FILE_UPDATED.format(line_number=1)
-            + '\n'
-        )
-        assert result.split('\n') == expected.split('\n')
-
-    with open(temp_file_path, 'r') as file:
-        lines = file.readlines()
-    assert len(lines) == 1
-    assert lines[0].rstrip() == 'REPLACE TEXT'
-
-
-def test_insert_content_at_line_emptyline(tmp_path):
-    temp_file_path = tmp_path / 'b.txt'
-    content = 'Line 1\n\n'
-    temp_file_path.write_text(content)
-    open_file(str(temp_file_path))
-
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            insert_content_at_line(
-                file_name=str(temp_file_path),
-                line_number=2,
-                content='Inserted Line',
-            )
-        result = buf.getvalue()
-        expected = (
-            f'[File: {temp_file_path} (3 lines total after edit)]\n'
-            '(this is the beginning of the file)\n'
-            '1|Line 1\n'
-            '2|Inserted Line\n'
-            '3|\n'
-            '(this is the end of the file)\n'
-            + MSG_FILE_UPDATED.format(line_number=2)
-            + '\n'
-        )
-        assert result.split('\n') == expected.split('\n')
-
-    with open(temp_file_path, 'r') as file:
-        lines = file.readlines()
-    assert len(lines) == 3
-    assert lines[0].rstrip() == 'Line 1'
-    assert lines[1].rstrip() == 'Inserted Line'
-
-
-def test_insert_content_at_line_from_scratch_multiline_with_backticks_and_second_edit(
-    tmp_path,
-):
-    temp_file_path = tmp_path / 'a.txt'
-    create_file(str(temp_file_path))
-    open_file(str(temp_file_path))
-
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            insert_content_at_line(
-                str(temp_file_path),
-                1,
-                '`REPLACE TEXT1`\n`REPLACE TEXT2`\n`REPLACE TEXT3`',
-            )
-        result = buf.getvalue()
-        expected = (
-            f'[File: {temp_file_path} (3 lines total after edit)]\n'
-            '(this is the beginning of the file)\n'
-            '1|`REPLACE TEXT1`\n'
-            '2|`REPLACE TEXT2`\n'
-            '3|`REPLACE TEXT3`\n'
-            '(this is the end of the file)\n'
-            + MSG_FILE_UPDATED.format(line_number=1)
-            + '\n'
-        )
-        assert result.split('\n') == expected.split('\n')
-
-    with open(temp_file_path, 'r') as file:
-        lines = file.readlines()
-    assert len(lines) == 3
-    assert lines[0].rstrip() == '`REPLACE TEXT1`'
-    assert lines[1].rstrip() == '`REPLACE TEXT2`'
-    assert lines[2].rstrip() == '`REPLACE TEXT3`'
-
-    # Check that no backticks are escaped in the edit_file_by_replace call
-    assert '\\`' not in result
-
-    # Perform a second edit
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            edit_file_by_replace(
-                str(temp_file_path),
-                '`REPLACE TEXT1`\n`REPLACE TEXT2`\n`REPLACE TEXT3`',
-                '`REPLACED TEXT1`\n`REPLACED TEXT2`\n`REPLACED TEXT3`',
-            )
-        second_result = buf.getvalue()
-        second_expected = (
-            f'[File: {temp_file_path} (3 lines total after edit)]\n'
-            '(this is the beginning of the file)\n'
-            '1|`REPLACED TEXT1`\n'
-            '2|`REPLACED TEXT2`\n'
-            '3|`REPLACED TEXT3`\n'
-            '(this is the end of the file)\n'
-            + MSG_FILE_UPDATED.format(line_number=1)
-            + '\n'
-        )
-        assert second_result.split('\n') == second_expected.split('\n')
-
-    with open(temp_file_path, 'r') as file:
-        lines = file.readlines()
-    assert len(lines) == 3
-    assert lines[0].rstrip() == '`REPLACED TEXT1`'
-    assert lines[1].rstrip() == '`REPLACED TEXT2`'
-    assert lines[2].rstrip() == '`REPLACED TEXT3`'
-
-    # Check that no backticks are escaped in the second edit_file_by_replace call
-    assert '\\`' not in second_result
-
-
-def test_insert_content_at_line_from_scratch_multiline(tmp_path):
-    temp_file_path = tmp_path / 'a.txt'
-    create_file(str(temp_file_path))
-    open_file(temp_file_path)
-
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            insert_content_at_line(
-                str(temp_file_path),
-                1,
-                content='REPLACE TEXT1\nREPLACE TEXT2\nREPLACE TEXT3',
-            )
-        result = buf.getvalue()
-        expected = (
-            f'[File: {temp_file_path} (3 lines total after edit)]\n'
-            '(this is the beginning of the file)\n'
-            '1|REPLACE TEXT1\n'
-            '2|REPLACE TEXT2\n'
-            '3|REPLACE TEXT3\n'
-            '(this is the end of the file)\n'
-            + MSG_FILE_UPDATED.format(line_number=1)
-            + '\n'
-        )
-        assert result.split('\n') == expected.split('\n')
-
-    with open(temp_file_path, 'r') as file:
-        lines = file.readlines()
-    assert len(lines) == 3
-    assert lines[0].rstrip() == 'REPLACE TEXT1'
-    assert lines[1].rstrip() == 'REPLACE TEXT2'
-    assert lines[2].rstrip() == 'REPLACE TEXT3'
-
-
-def test_insert_content_at_line_not_opened():
-    _capture_file_operation_error(
-        lambda: insert_content_at_line(
-            str('unknown file'),
-            1,
-            'REPLACE TEXT',
-        ),
-        'ERROR: Invalid path or file name.',
-    )
-
-
-def test_append_file(tmp_path):
-    temp_file_path = tmp_path / 'a.txt'
-    content = 'Line 1\nLine 2'
-    temp_file_path.write_text(content)
-
-    open_file(str(temp_file_path))
-
-    with io.StringIO() as buf:
-        with contextlib.redirect_stdout(buf):
-            append_file(str(temp_file_path), content='APPENDED TEXT')
-        result = buf.getvalue()
-        expected = (
-            f'[File: {temp_file_path} (3 lines total after edit)]\n'
-            '(this is the beginning of the file)\n'
-            '1|Line 1\n'
-            '2|Line 2\n'
-            '3|APPENDED TEXT\n'
-            '(this is the end of the file)\n'
-            + MSG_FILE_UPDATED.format(line_number=2)
-            + '\n'
-        )
-        assert result.split('\n') == expected.split('\n')
-
-    with open(temp_file_path, 'r') as file:
-        lines = file.readlines()
-    assert len(lines) == 3
-    assert lines[0].rstrip() == 'Line 1'
-    assert lines[1].rstrip() == 'Line 2'
-    assert lines[2].rstrip() == 'APPENDED TEXT'
-
-
-def test_append_file_from_scratch(tmp_path):
-    temp_file_path = tmp_path / 'a.txt'
-    create_file(str(temp_file_path))
-    try:
-        open_file(str(temp_file_path))
-        with io.StringIO() as buf:
-            with contextlib.redirect_stdout(buf):
-                append_file(str(temp_file_path), content='APPENDED TEXT')
-            result = buf.getvalue()
-            expected = (
-                f'[File: {temp_file_path} (1 lines total after edit)]\n'
-                '(this is the beginning of the file)\n'
-                '1|APPENDED TEXT\n'
-                '(this is the end of the file)\n'
-                + MSG_FILE_UPDATED.format(line_number=1)
-                + '\n'
-            )
-            assert result.split('\n') == expected.split('\n')
-
-        with open(temp_file_path, 'r') as file:
-            lines = file.readlines()
-        assert len(lines) == 1
-        assert lines[0].rstrip() == 'APPENDED TEXT'
-    finally:
-        os.remove(temp_file_path)
-
-
-def test_append_file_from_scratch_multiline(tmp_path):
-    temp_file_path = tmp_path / 'a3.txt'
-    create_file(str(temp_file_path))
-    try:
-        open_file(temp_file_path)
-        with io.StringIO() as buf:
-            with contextlib.redirect_stdout(buf):
-                append_file(
-                    str(temp_file_path),
-                    content='APPENDED TEXT1\nAPPENDED TEXT2\nAPPENDED TEXT3',
-                )
-            result = buf.getvalue()
-            expected = (
-                f'[File: {temp_file_path} (3 lines total after edit)]\n'
-                '(this is the beginning of the file)\n'
-                '1|APPENDED TEXT1\n'
-                '2|APPENDED TEXT2\n'
-                '3|APPENDED TEXT3\n'
-                '(this is the end of the file)\n'
-                + MSG_FILE_UPDATED.format(line_number=1)
-                + '\n'
-            )
-            assert result.split('\n') == expected.split('\n')
-
-        with open(temp_file_path, 'r') as file:
-            lines = file.readlines()
-        assert len(lines) == 3
-        assert lines[0].rstrip() == 'APPENDED TEXT1'
-        assert lines[1].rstrip() == 'APPENDED TEXT2'
-        assert lines[2].rstrip() == 'APPENDED TEXT3'
-    finally:
-        os.remove(temp_file_path)
-
-
-def test_append_file_not_opened():
-    _capture_file_operation_error(
-        lambda: append_file('unknown file', content='APPENDED TEXT'),
-        'ERROR: Invalid path or file name.',
-    )
 
 
 def test_search_dir(tmp_path):
@@ -1275,143 +599,6 @@ def test_find_file_not_exist_file_specific_path(tmp_path):
     assert result.split('\n') == expected.split('\n')
 
 
-def test_edit_lint_file_pass(tmp_path):
-    # Enable linting
-    with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
-        file_path = _generate_test_file_with_lines(tmp_path, 1)
-
-        # Test linting functionality
-        with io.StringIO() as buf:
-            with contextlib.redirect_stdout(buf):
-                open_file(str(file_path))
-                insert_content_at_line(str(file_path), 1, "print('hello')\n")
-            result = buf.getvalue()
-        assert result is not None
-        expected = (
-            f'[File: {file_path} (1 lines total)]\n'
-            '(this is the beginning of the file)\n'
-            '1|\n'
-            '(this is the end of the file)\n'
-            f'[File: {file_path} (1 lines total after edit)]\n'
-            '(this is the beginning of the file)\n'
-            "1|print('hello')\n"
-            '(this is the end of the file)\n'
-            + MSG_FILE_UPDATED.format(line_number=1)
-            + '\n'
-        )
-        assert result.split('\n') == expected.split('\n')
-
-
-def test_lint_file_fail_undefined_name(tmp_path, capsys):
-    with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
-        current_line = 1
-
-        file_path = _generate_test_file_with_lines(tmp_path, 1)
-
-        open_file(str(file_path), current_line)
-        insert_content_at_line(str(file_path), 1, 'undefined_name()\n')
-
-        result = capsys.readouterr().out
-        assert result is not None
-
-        expected = (
-            f'[File: {file_path} (1 lines total)]\n'
-            '(this is the beginning of the file)\n'
-            '1|\n'
-            '(this is the end of the file)\n'
-            '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
-            'ERRORS:\n'
-            f"{file_path}:1:1: F821 undefined name 'undefined_name'\n"
-            '[This is how your edit would have looked if applied]\n'
-            + SEP
-            + '(this is the beginning of the file)\n'
-            '1|undefined_name()\n'
-            '(this is the end of the file)\n'
-            + SEP
-            + '\n[This is the original code before your edit]\n'
-            + SEP
-            + '(this is the beginning of the file)\n'
-            '1|\n'
-            '(this is the end of the file)\n'
-            + SEP
-            + 'Your changes have NOT been applied. Please fix your edit command and try again.\n'
-            'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
-            'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
-        )
-        assert result.split('\n') == expected.split('\n')
-
-
-def test_lint_file_fail_undefined_name_long(tmp_path, capsys):
-    with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
-        num_lines = 1000
-        error_line = 500
-
-        file_path = _generate_test_file_with_lines(tmp_path, num_lines)
-
-        error_message = (
-            f"{file_path}:{error_line}:1: F821 undefined name 'undefined_name'"
-        )
-
-        open_file(str(file_path))
-        insert_content_at_line(str(file_path), error_line, 'undefined_name()\n')
-
-        result = capsys.readouterr().out
-        assert result is not None
-
-        open_lines = '\n'.join([f'{i}|' for i in range(1, WINDOW + 1)])
-        expected = (
-            f'[File: {file_path} ({num_lines} lines total)]\n'
-            '(this is the beginning of the file)\n'
-            f'{open_lines}\n'
-            f'({num_lines - WINDOW} more lines below)\n'
-            f'[Use `scroll_down` to view the next 100 lines of the file!]\n'
-            '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
-            f'ERRORS:\n{error_message}\n'
-            '[This is how your edit would have looked if applied]\n'
-            + SEP
-            + '(489 more lines above)\n'
-            + _numbered_test_lines(error_line - 10, error_line - 1)
-            + '500|undefined_name()\n'
-            + _numbered_test_lines(error_line + 1, error_line + 10)
-            + '(491 more lines below)\n'
-            + SEP
-            + '\n[This is the original code before your edit]\n'
-            + SEP
-            + '(489 more lines above)\n'
-            + _numbered_test_lines(error_line - 10, error_line + 10)
-            + '(490 more lines below)\n'
-            + SEP
-            + 'Your changes have NOT been applied. Please fix your edit command and try again.\n'
-            'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
-            'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
-        )
-        assert result.split('\n') == expected.split('\n')
-
-
-def test_lint_file_disabled_undefined_name(tmp_path, capsys):
-    with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'False'}):
-        file_path = _generate_test_file_with_lines(tmp_path, 1)
-
-        open_file(str(file_path))
-        insert_content_at_line(str(file_path), 1, 'undefined_name()\n')
-
-        result = capsys.readouterr().out
-        assert result is not None
-        expected = (
-            f'[File: {file_path} (1 lines total)]\n'
-            '(this is the beginning of the file)\n'
-            '1|\n'
-            '(this is the end of the file)\n'
-            f'[File: {file_path} (1 lines total after edit)]\n'
-            '(this is the beginning of the file)\n'
-            '1|undefined_name()\n'
-            '(this is the end of the file)\n'
-            + MSG_FILE_UPDATED.format(line_number=1)
-            + '\n'
-        )
-        assert result.split('\n') == expected.split('\n')
-
-
 def test_parse_docx(tmp_path):
     # Create a DOCX file with some content
     test_docx_path = tmp_path / 'test.docx'
@@ -1531,40 +718,300 @@ def test_parse_pptx(tmp_path):
     assert output == expected_output, f'Expected output does not match. Got: {output}'
 
 
-def test_lint_file_fail_non_python(tmp_path, capsys):
-    with patch.dict(os.environ, {'ENABLE_AUTO_LINT': 'True'}):
-        current_line = 1
-        file_path = _generate_ruby_test_file_with_lines(tmp_path, 1)
+# =============================================================================
 
-        open_file(str(file_path), current_line)
-        insert_content_at_line(
-            str(file_path), 1, "def print_hello_world()\n    puts 'Hello World'"
-        )
-        result = capsys.readouterr().out
-        assert result is not None
-        expected = (
-            f'[File: {file_path} (1 lines total)]\n'
-            '(this is the beginning of the file)\n'
-            '1|\n'
-            '(this is the end of the file)\n'
-            '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
-            'ERRORS:\n'
-            f'{file_path}:1:1: Syntax error\n'
-            '[This is how your edit would have looked if applied]\n'
-            + SEP
-            + '(this is the beginning of the file)\n'
-            '1|def print_hello_world()\n'
-            "2|    puts 'Hello World'\n"
-            '(this is the end of the file)\n'
-            '-------------------------------------------------\n\n'
-            '[This is the original code before your edit]\n'
-            + SEP
-            + '(this is the beginning of the file)\n'
-            '1|\n'
-            '(this is the end of the file)\n'
-            + SEP
-            + 'Your changes have NOT been applied. Please fix your edit command and try again.\n'
-            'You either need to 1) Specify the correct start/end line arguments or 2) Correct your edit code.\n'
-            'DO NOT re-run the same failed edit command. Running it again will lead to the same error.\n'
-        )
-        assert result.split('\n') == expected.split('\n')
+
+def test_file_editor_view(tmp_path):
+    # generate a random directory
+    random_dir = tmp_path / 'dir_1'
+    random_dir.mkdir()
+    # create a file in the directory
+    random_file = random_dir / 'a.txt'
+    random_file.write_text('Line 1\nLine 2\nLine 3\nLine 4\nLine 5')
+    random_dir_2 = tmp_path / 'dir_2'
+    random_dir_2.mkdir()
+    random_file_2 = random_dir_2 / 'b.txt'
+    random_file_2.write_text('Line 1\nLine 2\nLine 3\nLine 4\nLine 5')
+
+    from openhands.runtime.plugins.agent_skills.agentskills import file_editor
+
+    # view the file
+    result = file_editor(command='view', path=str(random_file))
+    print('\n', result)
+    assert result is not None
+    assert (
+        result.split('\n')
+        == f"""Here's the result of running `cat -n` on {random_file}:
+     1\tLine 1
+     2\tLine 2
+     3\tLine 3
+     4\tLine 4
+     5\tLine 5
+""".split('\n')
+    )
+
+    # view the directory
+    result = file_editor(command='view', path=str(tmp_path))
+    print('\n', result)
+    assert result is not None
+    assert (
+        result.strip().split('\n')
+        == f"""Here's the files and directories up to 2 levels deep in {tmp_path}, excluding hidden items:
+{tmp_path}
+{tmp_path}/dir_2
+{tmp_path}/dir_2/b.txt
+{tmp_path}/dir_1
+{tmp_path}/dir_1/a.txt
+""".strip().split('\n')
+    )
+
+
+def test_file_editor_create(tmp_path):
+    # generate a random directory
+    random_dir = tmp_path / 'dir_1'
+    random_dir.mkdir()
+    # create a file in the directory
+    random_file = random_dir / 'a.txt'
+
+    from openhands.runtime.plugins.agent_skills.agentskills import file_editor
+
+    # view an unexist file
+    result = file_editor(command='view', path=str(random_file))
+    print(result)
+    assert result is not None
+    assert (
+        result
+        == f'ERROR:\nThe path {random_file} does not exist. Please provide a valid path.'
+    )
+
+    # create a file
+    result = file_editor(command='create', path=str(random_file), file_text='Line 6')
+    print(result)
+    assert result is not None
+    assert result == f'File created successfully at: {random_file}'
+
+    # view again
+    result = file_editor(command='view', path=str(random_file))
+    print(result)
+    assert result is not None
+    assert (
+        result.strip().split('\n')
+        == f"""Here's the result of running `cat -n` on {random_file}:
+     1\tLine 6
+""".strip().split('\n')
+    )
+
+
+@pytest.fixture
+def setup_file(tmp_path):
+    random_dir = tmp_path / 'dir_1'
+    random_dir.mkdir()
+    random_file = random_dir / 'a.txt'
+    return random_file
+
+
+def test_file_editor_create_and_view(setup_file):
+    random_file = setup_file
+
+    # Test create command
+    result = file_editor(
+        command='create', path=str(random_file), file_text='Line 1\nLine 2\nLine 3'
+    )
+    print(result)
+    assert result == f'File created successfully at: {random_file}'
+
+    # Test view command for file
+    result = file_editor(command='view', path=str(random_file))
+    print(result)
+    assert (
+        result.strip().split('\n')
+        == f"""Here's the result of running `cat -n` on {random_file}:
+     1\tLine 1
+     2\tLine 2
+     3\tLine 3
+""".strip().split('\n')
+    )
+
+    # Test view command for directory
+    result = file_editor(command='view', path=str(random_file.parent))
+    assert f'{random_file.parent}' in result
+    assert f'{random_file.name}' in result
+
+
+def test_file_editor_view_nonexistent(setup_file):
+    random_file = setup_file
+
+    # Test view command for non-existent file
+    result = file_editor(command='view', path=str(random_file))
+    assert (
+        result
+        == f'ERROR:\nThe path {random_file} does not exist. Please provide a valid path.'
+    )
+
+
+def test_file_editor_str_replace(setup_file):
+    random_file = setup_file
+    file_editor(
+        command='create', path=str(random_file), file_text='Line 1\nLine 2\nLine 3'
+    )
+
+    # Test str_replace command
+    result = file_editor(
+        command='str_replace',
+        path=str(random_file),
+        old_str='Line 2',
+        new_str='New Line 2',
+    )
+    print(result)
+    assert (
+        result
+        == f"""The file {random_file} has been edited. Here's the result of running `cat -n` on a snippet of {random_file}:
+     1\tLine 1
+     2\tNew Line 2
+     3\tLine 3
+Review the changes and make sure they are as expected. Edit the file again if necessary."""
+    )
+
+    # View the file after str_replace
+    result = file_editor(command='view', path=str(random_file))
+    print(result)
+    assert (
+        result.strip().split('\n')
+        == f"""Here's the result of running `cat -n` on {random_file}:
+     1\tLine 1
+     2\tNew Line 2
+     3\tLine 3
+""".strip().split('\n')
+    )
+
+
+def test_file_editor_str_replace_non_existent(setup_file):
+    random_file = setup_file
+    file_editor(
+        command='create', path=str(random_file), file_text='Line 1\nLine 2\nLine 3'
+    )
+
+    # Test str_replace with non-existent string
+    result = file_editor(
+        command='str_replace',
+        path=str(random_file),
+        old_str='Non-existent Line',
+        new_str='New Line',
+    )
+    print(result)
+    assert (
+        result
+        == f'ERROR:\nNo replacement was performed, old_str `Non-existent Line` did not appear verbatim in {random_file}.'
+    )
+
+
+def test_file_editor_insert(setup_file):
+    random_file = setup_file
+    file_editor(
+        command='create', path=str(random_file), file_text='Line 1\nLine 2\nLine 3'
+    )
+
+    # Test insert command
+    result = file_editor(
+        command='insert', path=str(random_file), insert_line=2, new_str='Inserted Line'
+    )
+    print(result)
+    assert (
+        result
+        == f"""The file {random_file} has been edited. Here's the result of running `cat -n` on a snippet of the edited file:
+     1\tLine 1
+     2\tLine 2
+     3\tInserted Line
+     4\tLine 3
+Review the changes and make sure they are as expected (correct indentation, no duplicate lines, etc). Edit the file again if necessary."""
+    )
+
+    # View the file after insert
+    result = file_editor(command='view', path=str(random_file))
+    assert (
+        result.strip().split('\n')
+        == f"""Here's the result of running `cat -n` on {random_file}:
+     1\tLine 1
+     2\tLine 2
+     3\tInserted Line
+     4\tLine 3
+""".strip().split('\n')
+    )
+
+
+def test_file_editor_insert_invalid_line(setup_file):
+    random_file = setup_file
+    file_editor(
+        command='create', path=str(random_file), file_text='Line 1\nLine 2\nLine 3'
+    )
+
+    # Test insert with invalid line number
+    result = file_editor(
+        command='insert',
+        path=str(random_file),
+        insert_line=10,
+        new_str='Invalid Insert',
+    )
+    assert (
+        result
+        == 'ERROR:\nInvalid `insert_line` parameter: 10. It should be within the range of lines of the file: [0, 3]'
+    )
+
+
+def test_file_editor_undo_edit(setup_file):
+    random_file = setup_file
+    result = file_editor(
+        command='create', path=str(random_file), file_text='Line 1\nLine 2\nLine 3'
+    )
+    print(result)
+    assert result == f"""File created successfully at: {random_file}"""
+
+    # Make an edit
+    result = file_editor(
+        command='str_replace',
+        path=str(random_file),
+        old_str='Line 2',
+        new_str='New Line 2',
+    )
+    print(result)
+    assert (
+        result
+        == f"""The file {random_file} has been edited. Here's the result of running `cat -n` on a snippet of {random_file}:
+     1\tLine 1
+     2\tNew Line 2
+     3\tLine 3
+Review the changes and make sure they are as expected. Edit the file again if necessary."""
+    )
+
+    # Test undo_edit command
+    result = file_editor(command='undo_edit', path=str(random_file))
+    print(result)
+    assert (
+        result
+        == f"""Last edit to {random_file} undone successfully. Here's the result of running `cat -n` on {random_file}:
+     1\tLine 1
+     2\tLine 2
+     3\tLine 3
+"""
+    )
+
+    # View the file after undo_edit
+    result = file_editor(command='view', path=str(random_file))
+    assert (
+        result.strip().split('\n')
+        == f"""Here's the result of running `cat -n` on {random_file}:
+     1\tLine 1
+     2\tLine 2
+     3\tLine 3
+""".strip().split('\n')
+    )
+
+
+def test_file_editor_undo_edit_no_edits(tmp_path):
+    random_file = tmp_path / 'a.txt'
+    random_file.touch()
+
+    # Test undo_edit when no edits have been made
+    result = file_editor(command='undo_edit', path=str(random_file))
+    print(result)
+    assert result == f'ERROR:\nNo edit history found for {random_file}.'

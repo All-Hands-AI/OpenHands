@@ -11,6 +11,7 @@ from datasets import load_dataset
 import openhands.agenthub
 from evaluation.swe_bench.prompt import CODEACT_SWE_PROMPT
 from evaluation.utils.shared import (
+    EvalException,
     EvalMetadata,
     EvalOutput,
     assert_and_raise,
@@ -19,9 +20,11 @@ from evaluation.utils.shared import (
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
+    update_llm_config_for_completions_logging,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
+    AgentConfig,
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
@@ -32,20 +35,17 @@ from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
 from openhands.events.serialization.event import event_to_dict
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
 from openhands.runtime.utils.shutdown_listener import sleep_if_should_continue
+from openhands.utils.async_utils import call_async_from_sync
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false').lower() == 'true'
+RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
     'CodeActSWEAgent': codeact_user_response,
-}
-
-AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': 'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n',
-    'CodeActSWEAgent': 'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n',
 }
 
 
@@ -69,23 +69,34 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
             )
         instruction += CODEACT_SWE_PROMPT.format(workspace_dir_name=workspace_dir_name)
     else:
-        # Testing general agents
+        # Instruction based on Anthropic's official trajectory
+        # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
         instruction = (
-            f'Please fix the following issue for the repository in /workspace/{workspace_dir_name}.\n'
-            'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
-            '# Problem Statement\n'
-            f'{instance.problem_statement}\n\n'
-        )
-        if USE_HINT_TEXT and instance.hints_text:
-            instruction += f'# Hints\n{instance.hints_text}\n\n'
-        instruction += (
-            'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-            'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
-            'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
+            '<uploaded_files>\n'
+            f'/workspace/{workspace_dir_name}\n'
+            '</uploaded_files>\n'
+            f"I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following PR description:\n\n"
+            f'<pr_description>\n'
+            f'{instance.problem_statement}\n'
+            '</pr_description>\n\n'
+            'Can you help me implement the necessary changes to the repository so that the requirements specified in the <pr_description> are met?\n'
+            "I've already taken care of all changes to any of the test files described in the <pr_description>. This means you DON'T have to modify the testing logic or any of the tests in any way!\n"
+            'Your task is to make the minimal changes to non-tests files in the /repo directory to ensure the <pr_description> is satisfied.\n'
+            'Follow these steps to resolve the issue:\n'
+            '1. As a first step, it might be a good idea to explore the repo to familiarize yourself with its structure.\n'
+            '2. Create a script to reproduce the error and execute it with `python <filename.py>` using the BashTool, to confirm the error\n'
+            '3. Edit the sourcecode of the repo to resolve the issue\n'
+            '4. Rerun your reproduce script and confirm that the error is fixed!\n'
+            '5. Think about edgecases and make sure your fix handles them as well\n'
+            "Your thinking should be thorough and so it's fine if it's very long.\n"
         )
 
-    # NOTE: You can actually set slightly different instruction for different agents
-    instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
+    if RUN_WITH_BROWSING:
+        instruction += (
+            '<IMPORTANT!>\n'
+            'You SHOULD NEVER attempt to browse the web. '
+            '</IMPORTANT!>\n'
+        )
     return instruction
 
 
@@ -99,7 +110,7 @@ def get_instance_docker_image(instance_id: str) -> str:
     image_name = image_name.replace(
         '__', '_s_'
     )  # to comply with docker image naming convention
-    return DOCKER_IMAGE_PREFIX.rstrip('/') + '/' + image_name
+    return (DOCKER_IMAGE_PREFIX.rstrip('/') + '/' + image_name).lower()
 
 
 def get_config(
@@ -122,7 +133,6 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        max_budget_per_task=4,
         max_iterations=metadata.max_iterations,
         runtime=os.environ.get('RUNTIME', 'eventstream'),
         sandbox=SandboxConfig(
@@ -131,6 +141,8 @@ def get_config(
             use_host_network=False,
             # large enough timeout, since some testcases take very long to run
             timeout=300,
+            # Add platform to the sandbox config to solve issue 4401
+            platform='linux/amd64',
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
             keep_remote_runtime_alive=False,
@@ -139,7 +151,17 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
-    config.set_llm_config(metadata.llm_config)
+    config.set_llm_config(
+        update_llm_config_for_completions_logging(
+            metadata.llm_config, metadata.eval_output_dir, instance['instance_id']
+        )
+    )
+    agent_config = AgentConfig(
+        codeact_enable_jupyter=False,
+        codeact_enable_browsing=RUN_WITH_BROWSING,
+        codeact_enable_llm_editor=False,
+    )
+    config.set_agent_config(agent_config)
     return config
 
 
@@ -166,7 +188,7 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(
-        obs.exit_code == 0, f'Failed to export SWE_INSTANCE_ID: {obs.content}'
+        obs.exit_code == 0, f'Failed to export SWE_INSTANCE_ID: {str(obs)}'
     )
 
     action = CmdRunAction(command="""export USER=$(whoami); echo USER=${USER} """)
@@ -174,7 +196,7 @@ def initialize_runtime(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(obs.exit_code == 0, f'Failed to export USER: {obs.content}')
+    assert_and_raise(obs.exit_code == 0, f'Failed to export USER: {str(obs)}')
 
     if USE_INSTANCE_IMAGE:
         # inject the init script
@@ -188,7 +210,7 @@ def initialize_runtime(
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert_and_raise(
             obs.exit_code == 0,
-            f'Failed to create /swe_util/eval_data/instances: {obs.content}',
+            f'Failed to create /swe_util/eval_data/instances: {str(obs)}',
         )
 
         swe_instance_json_name = 'swe-bench-instance.json'
@@ -215,16 +237,16 @@ def initialize_runtime(
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert_and_raise(obs.exit_code == 0, f'Failed to cat ~/.bashrc: {obs.content}')
+        assert_and_raise(obs.exit_code == 0, f'Failed to cat ~/.bashrc: {str(obs)}')
 
         action = CmdRunAction(command='source ~/.bashrc')
         action.timeout = 600
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert_and_raise(
-            obs.exit_code == 0, f'Failed to source ~/.bashrc: {obs.content}'
-        )
+        if isinstance(obs, ErrorObservation):
+            logger.error(f'Failed to source ~/.bashrc: {str(obs)}')
+        assert_and_raise(obs.exit_code == 0, f'Failed to source ~/.bashrc: {str(obs)}')
 
         action = CmdRunAction(command='source /swe_util/instance_swe_entry.sh')
         action.timeout = 3600
@@ -233,7 +255,7 @@ def initialize_runtime(
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert_and_raise(
             obs.exit_code == 0,
-            f'Failed to source /swe_util/instance_swe_entry.sh: {obs.content}',
+            f'Failed to source /swe_util/instance_swe_entry.sh: {str(obs)}',
         )
     else:
         action = CmdRunAction(command='source /swe_util/swe_entry.sh')
@@ -243,7 +265,7 @@ def initialize_runtime(
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert_and_raise(
             obs.exit_code == 0,
-            f'Failed to source /swe_util/swe_entry.sh: {obs.content}',
+            f'Failed to source /swe_util/swe_entry.sh: {str(obs)}',
         )
 
     action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
@@ -253,7 +275,7 @@ def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(
         obs.exit_code == 0,
-        f'Failed to cd to /workspace/{workspace_dir_name}: {obs.content}',
+        f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
     )
 
     action = CmdRunAction(command='git reset --hard')
@@ -261,7 +283,7 @@ def initialize_runtime(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(obs.exit_code == 0, f'Failed to git reset --hard: {obs.content}')
+    assert_and_raise(obs.exit_code == 0, f'Failed to git reset --hard: {str(obs)}')
 
     action = CmdRunAction(
         command='for remote_name in $(git remote); do git remote remove "${remote_name}"; done'
@@ -270,7 +292,7 @@ def initialize_runtime(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(obs.exit_code == 0, f'Failed to remove git remotes: {obs.content}')
+    assert_and_raise(obs.exit_code == 0, f'Failed to remove git remotes: {str(obs)}')
 
     logger.info('-' * 30)
     logger.info('END Runtime Initialization Fn')
@@ -299,8 +321,8 @@ def complete_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(
-        obs.exit_code == 0,
-        f'Failed to cd to /workspace/{workspace_dir_name}: {obs.content}',
+        isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
+        f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
     )
 
     action = CmdRunAction(command='git config --global core.pager ""')
@@ -309,8 +331,8 @@ def complete_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(
-        obs.exit_code == 0,
-        f'Failed to git config --global core.pager "": {obs.content}',
+        isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
+        f'Failed to git config --global core.pager "": {str(obs)}',
     )
 
     action = CmdRunAction(command='git add -A')
@@ -318,7 +340,10 @@ def complete_runtime(
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(obs.exit_code == 0, f'Failed to git add -A: {obs.content}')
+    assert_and_raise(
+        isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
+        f'Failed to git add -A: {str(obs)}',
+    )
 
     n_retries = 0
     git_patch = None
@@ -343,7 +368,9 @@ def complete_runtime(
             logger.error(f'Error occurred: {obs.content}. Retrying...')
             sleep_if_should_continue(10)
         else:
-            assert_and_raise(False, f'Unexpected observation type: {type(obs)}')
+            assert_and_raise(False, f'Unexpected observation type: {str(obs)}')
+
+    assert_and_raise(git_patch is not None, 'Failed to get git diff (None)')
 
     logger.info('-' * 30)
     logger.info('END Runtime Completion Fn')
@@ -366,6 +393,7 @@ def process_instance(
         logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
     runtime = create_runtime(config)
+    call_async_from_sync(runtime.connect)
 
     try:
         initialize_runtime(runtime, instance)
@@ -383,6 +411,14 @@ def process_instance(
                 ],
             )
         )
+
+        # if fatal error, throw EvalError to trigger re-run
+        if (
+            state.last_error
+            and 'fatal error during agent execution' in state.last_error
+            and 'stuck in a loop' not in state.last_error
+        ):
+            raise EvalException('Fatal error detected: ' + state.last_error)
 
         # ======= THIS IS SWE-Bench specific =======
         # Get git patch
@@ -407,7 +443,8 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    histories = [event_to_dict(event) for event in state.history.get_events()]
+    # NOTE: this is NO LONGER the event stream, but an agent history that includes delegate agent's events
+    histories = [event_to_dict(event) for event in state.history]
     metrics = state.metrics.get() if state.metrics else None
 
     # Save the output
@@ -419,7 +456,6 @@ def process_instance(
         metadata=metadata,
         history=histories,
         metrics=metrics,
-        llm_completions=state.extra_data.get('llm_completions', []),
         error=state.last_error if state and state.last_error else None,
     )
     return output
@@ -466,20 +502,20 @@ if __name__ == '__main__':
     llm_config = None
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
+        llm_config.log_completions = True
 
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     details = {}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
-    if hasattr(_agent_cls, 'system_message'):
-        details['system_message'] = _agent_cls.system_message
-    if hasattr(_agent_cls, 'in_context_example'):
-        details['in_context_example'] = _agent_cls.in_context_example
 
+    dataset_descrption = (
+        args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
+    )
     metadata = make_metadata(
         llm_config,
-        'swe-bench-lite',
+        dataset_descrption,
         args.agent_cls,
         args.max_iterations,
         args.eval_note,

@@ -2,7 +2,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import React from "react";
 import { Command } from "#/state/commandSlice";
-import { sendTerminalCommand } from "#/services/terminalService";
+import { getTerminalCommand } from "#/services/terminalService";
 import { parseTerminalOutput } from "#/utils/parseTerminalOutput";
 import { useSocket } from "#/context/socket";
 
@@ -11,7 +11,10 @@ import { useSocket } from "#/context/socket";
   The reason for this is that the hook exposes a ref that requires a DOM element to be rendered.
 */
 
-export const useTerminal = (commands: Command[] = []) => {
+export const useTerminal = (
+  commands: Command[] = [],
+  secrets: string[] = [],
+) => {
   const { send } = useSocket();
   const terminal = React.useRef<Terminal | null>(null);
   const fitAddon = React.useRef<FitAddon | null>(null);
@@ -69,7 +72,7 @@ export const useTerminal = (commands: Command[] = []) => {
 
   const handleEnter = (command: string) => {
     terminal.current?.write("\r\n");
-    send(sendTerminalCommand(command));
+    send(getTerminalCommand(command));
   };
 
   const handleBackspace = (command: string) => {
@@ -131,10 +134,16 @@ export const useTerminal = (commands: Command[] = []) => {
     if (terminal.current && commands.length > 0) {
       // Start writing commands from the last command index
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
-        const command = commands[i];
-        terminal.current?.writeln(parseTerminalOutput(command.content));
+        // eslint-disable-next-line prefer-const
+        let { content, type } = commands[i];
 
-        if (command.type === "output") {
+        secrets.forEach((secret) => {
+          content = content.replaceAll(secret, "*".repeat(10));
+        });
+
+        terminal.current?.writeln(parseTerminalOutput(content));
+
+        if (type === "output") {
           terminal.current.write(`\n$ `);
         }
       }

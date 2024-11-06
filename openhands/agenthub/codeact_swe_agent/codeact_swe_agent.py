@@ -89,11 +89,7 @@ class CodeActSWEAgent(Agent):
         return ''
 
     def get_action_message(self, action: Action) -> Message | None:
-        if (
-            isinstance(action, CmdRunAction)
-            or isinstance(action, IPythonRunCellAction)
-            or isinstance(action, MessageAction)
-        ):
+        if isinstance(action, (CmdRunAction, IPythonRunCellAction, MessageAction)):
             content = [TextContent(text=self.action_to_str(action))]
 
             if (
@@ -112,7 +108,9 @@ class CodeActSWEAgent(Agent):
     def get_observation_message(self, obs: Observation) -> Message | None:
         max_message_chars = self.llm.config.max_message_chars
         if isinstance(obs, CmdOutputObservation):
-            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text = 'OBSERVATION:\n' + truncate_content(
+                obs.content + obs.interpreter_details, max_message_chars
+            )
             text += (
                 f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
             )
@@ -156,8 +154,8 @@ class CodeActSWEAgent(Agent):
         - AgentFinishAction() - end the interaction
         """
         # if we're done, go back
-        latest_user_message = state.history.get_last_user_message()
-        if latest_user_message and latest_user_message.strip() == '/exit':
+        last_user_message = state.get_last_user_message()
+        if last_user_message and last_user_message.strip() == '/exit':
             return AgentFinishAction()
 
         # prepare what we want to send to the LLM
@@ -178,7 +176,7 @@ class CodeActSWEAgent(Agent):
             Message(role='user', content=[TextContent(text=self.in_context_example)]),
         ]
 
-        for event in state.history.get_events():
+        for event in state.history:
             # create a regular message from an event
             if isinstance(event, Action):
                 message = self.get_action_message(event)

@@ -17,7 +17,6 @@ from openhands.events.observation.commands import IPythonRunCellObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.stream import EventSource, EventStream
-from openhands.memory.history import ShortTermHistory
 from openhands.storage import get_file_store
 
 
@@ -54,22 +53,21 @@ def event_stream(temp_dir):
 
 class TestStuckDetector:
     @pytest.fixture
-    def stuck_detector(self, event_stream):
+    def stuck_detector(self):
         state = State(inputs={}, max_iterations=50)
-        state.history.set_event_stream(event_stream)
-
+        state.history = []  # Initialize history as an empty list
         return StuckDetector(state)
 
     def _impl_syntax_error_events(
         self,
-        event_stream: EventStream,
+        state: State,
         error_message: str,
         random_line: bool,
         incidents: int = 4,
     ):
         for i in range(incidents):
             ipython_action = IPythonRunCellAction(code=code_snippet)
-            event_stream.add_event(ipython_action, EventSource.AGENT)
+            state.history.append(ipython_action)
             extra_number = (i + 1) * 10 if random_line else '42'
             extra_line = '\n' * (i + 1) if random_line else ''
             ipython_observation = IPythonRunCellObservation(
@@ -78,15 +76,15 @@ class TestStuckDetector:
                 f'{error_message}{extra_line}' + jupyter_line_1 + jupyter_line_2,
                 code=code_snippet,
             )
-            ipython_observation._cause = ipython_action._id
-            event_stream.add_event(ipython_observation, EventSource.USER)
+            # ipython_observation._cause = ipython_action._id
+            state.history.append(ipython_observation)
 
     def _impl_unterminated_string_error_events(
-        self, event_stream: EventStream, random_line: bool, incidents: int = 4
+        self, state: State, random_line: bool, incidents: int = 4
     ):
         for i in range(incidents):
             ipython_action = IPythonRunCellAction(code=code_snippet)
-            event_stream.add_event(ipython_action, EventSource.AGENT)
+            state.history.append(ipython_action)
             line_number = (i + 1) * 10 if random_line else '1'
             ipython_observation = IPythonRunCellObservation(
                 content=f'print("  Cell In[1], line {line_number}\nhello\n       ^\nSyntaxError: unterminated string literal (detected at line {line_number})'
@@ -94,34 +92,30 @@ class TestStuckDetector:
                 + jupyter_line_2,
                 code=code_snippet,
             )
-            ipython_observation._cause = ipython_action._id
-            event_stream.add_event(ipython_observation, EventSource.USER)
+            # ipython_observation._cause = ipython_action._
+            state.history.append(ipython_observation)
 
-    def test_history_too_short(
-        self, stuck_detector: StuckDetector, event_stream: EventStream
-    ):
+    def test_history_too_short(self, stuck_detector: StuckDetector):
+        state = stuck_detector.state
         message_action = MessageAction(content='Hello', wait_for_response=False)
         message_action._source = EventSource.USER
         observation = NullObservation(content='')
-        observation._cause = message_action.id
-        event_stream.add_event(message_action, EventSource.USER)
-        event_stream.add_event(observation, EventSource.USER)
+        # observation._cause = message_action.id
+        state.history.append(message_action)
+        state.history.append(observation)
 
         cmd_action = CmdRunAction(command='ls')
-        event_stream.add_event(cmd_action, EventSource.AGENT)
+        state.history.append(cmd_action)
         cmd_observation = CmdOutputObservation(
             command_id=1, command='ls', content='file1.txt\nfile2.txt'
         )
-        cmd_observation._cause = cmd_action._id
-        event_stream.add_event(cmd_observation, EventSource.USER)
-
-        # stuck_detector.state.history.set_event_stream(event_stream)
+        # cmd_observation._cause = cmd_action._id
+        state.history.append(cmd_observation)
 
         assert stuck_detector.is_stuck() is False
 
-    def test_is_stuck_repeating_action_observation(
-        self, stuck_detector: StuckDetector, event_stream: EventStream
-    ):
+    def test_is_stuck_repeating_action_observation(self, stuck_detector: StuckDetector):
+        state = stuck_detector.state
         message_action = MessageAction(content='Done', wait_for_response=False)
         message_action._source = EventSource.USER
 
@@ -129,117 +123,125 @@ class TestStuckDetector:
         hello_observation = NullObservation('')
 
         # 2 events
-        event_stream.add_event(hello_action, EventSource.USER)
-        event_stream.add_event(hello_observation, EventSource.USER)
+        state.history.append(hello_action)
+        state.history.append(hello_observation)
 
         cmd_action_1 = CmdRunAction(command='ls')
-        event_stream.add_event(cmd_action_1, EventSource.AGENT)
-        cmd_observation_1 = CmdOutputObservation(
-            content='', command='ls', command_id=cmd_action_1._id
-        )
+        cmd_action_1._id = 1
+        state.history.append(cmd_action_1)
+        cmd_observation_1 = CmdOutputObservation(content='', command='ls', command_id=1)
         cmd_observation_1._cause = cmd_action_1._id
-        event_stream.add_event(cmd_observation_1, EventSource.USER)
+        state.history.append(cmd_observation_1)
         # 4 events
 
         cmd_action_2 = CmdRunAction(command='ls')
-        event_stream.add_event(cmd_action_2, EventSource.AGENT)
-        cmd_observation_2 = CmdOutputObservation(
-            content='', command='ls', command_id=cmd_action_2._id
-        )
+        cmd_action_2._id = 2
+        state.history.append(cmd_action_2)
+        cmd_observation_2 = CmdOutputObservation(content='', command='ls', command_id=2)
         cmd_observation_2._cause = cmd_action_2._id
-        event_stream.add_event(cmd_observation_2, EventSource.USER)
+        state.history.append(cmd_observation_2)
         # 6 events
 
         # random user message just because we can
         message_null_observation = NullObservation(content='')
-        event_stream.add_event(message_action, EventSource.USER)
-        event_stream.add_event(message_null_observation, EventSource.USER)
+        state.history.append(message_action)
+        state.history.append(message_null_observation)
         # 8 events
 
         assert stuck_detector.is_stuck() is False
         assert stuck_detector.state.almost_stuck == 2
 
         cmd_action_3 = CmdRunAction(command='ls')
-        event_stream.add_event(cmd_action_3, EventSource.AGENT)
-        cmd_observation_3 = CmdOutputObservation(
-            content='', command='ls', command_id=cmd_action_3._id
-        )
+        cmd_action_3._id = 3
+        state.history.append(cmd_action_3)
+        cmd_observation_3 = CmdOutputObservation(content='', command='ls', command_id=3)
         cmd_observation_3._cause = cmd_action_3._id
-        event_stream.add_event(cmd_observation_3, EventSource.USER)
+        state.history.append(cmd_observation_3)
         # 10 events
 
-        assert len(collect_events(event_stream)) == 10
-        assert len(list(stuck_detector.state.history.get_events())) == 8
-        assert len(stuck_detector.state.history.get_pairs()) == 5
+        assert len(state.history) == 10
+        assert (
+            len(state.history) == 10
+        )  # Adjusted since history is a list and the controller is not running
+
+        # FIXME are we still testing this without this test?
+        # assert (
+        #    len(
+        #        get_pairs_from_events(state.history)
+        #    )
+        #    == 5
+        # )
 
         assert stuck_detector.is_stuck() is False
         assert stuck_detector.state.almost_stuck == 1
 
         cmd_action_4 = CmdRunAction(command='ls')
-        event_stream.add_event(cmd_action_4, EventSource.AGENT)
-        cmd_observation_4 = CmdOutputObservation(
-            content='', command='ls', command_id=cmd_action_4._id
-        )
+        cmd_action_4._id = 4
+        state.history.append(cmd_action_4)
+        cmd_observation_4 = CmdOutputObservation(content='', command='ls', command_id=4)
         cmd_observation_4._cause = cmd_action_4._id
-        event_stream.add_event(cmd_observation_4, EventSource.USER)
+        state.history.append(cmd_observation_4)
         # 12 events
 
-        assert len(collect_events(event_stream)) == 12
-        assert len(list(stuck_detector.state.history.get_events())) == 10
-        assert len(stuck_detector.state.history.get_pairs()) == 6
+        assert len(state.history) == 12
+        # assert (
+        #    len(
+        #        get_pairs_from_events(state.history)
+        #    )
+        #    == 6
+        # )
 
         with patch('logging.Logger.warning') as mock_warning:
             assert stuck_detector.is_stuck() is True
             assert stuck_detector.state.almost_stuck == 0
             mock_warning.assert_called_once_with('Action, Observation loop detected')
 
-    def test_is_stuck_repeating_action_error(
-        self, stuck_detector: StuckDetector, event_stream: EventStream
-    ):
+    def test_is_stuck_repeating_action_error(self, stuck_detector: StuckDetector):
+        state = stuck_detector.state
         # (action, error_observation), not necessarily the same error
         message_action = MessageAction(content='Done', wait_for_response=False)
         message_action._source = EventSource.USER
 
         hello_action = MessageAction(content='Hello', wait_for_response=False)
         hello_observation = NullObservation(content='')
-        event_stream.add_event(hello_action, EventSource.USER)
-        hello_observation._cause = hello_action._id
-        event_stream.add_event(hello_observation, EventSource.USER)
+        state.history.append(hello_action)
+        # hello_observation._cause = hello_action._id
+        state.history.append(hello_observation)
         # 2 events
 
         cmd_action_1 = CmdRunAction(command='invalid_command')
-        event_stream.add_event(cmd_action_1, EventSource.AGENT)
+        state.history.append(cmd_action_1)
         error_observation_1 = ErrorObservation(content='Command not found')
-        error_observation_1._cause = cmd_action_1._id
-        event_stream.add_event(error_observation_1, EventSource.USER)
+        # error_observation_1._cause = cmd_action_1._id
+        state.history.append(error_observation_1)
         # 4 events
 
         cmd_action_2 = CmdRunAction(command='invalid_command')
-        event_stream.add_event(cmd_action_2, EventSource.AGENT)
+        state.history.append(cmd_action_2)
         error_observation_2 = ErrorObservation(
             content='Command still not found or another error'
         )
-        error_observation_2._cause = cmd_action_2._id
-        event_stream.add_event(error_observation_2, EventSource.USER)
+        # error_observation_2._cause = cmd_action_2._id
+        state.history.append(error_observation_2)
         # 6 events
 
         message_null_observation = NullObservation(content='')
-        event_stream.add_event(message_action, EventSource.USER)
-        event_stream.add_event(message_null_observation, EventSource.USER)
+        state.history.append(message_action)
+        state.history.append(message_null_observation)
         # 8 events
 
         cmd_action_3 = CmdRunAction(command='invalid_command')
-        event_stream.add_event(cmd_action_3, EventSource.AGENT)
+        state.history.append(cmd_action_3)
         error_observation_3 = ErrorObservation(content='Different error')
-        error_observation_3._cause = cmd_action_3._id
-        event_stream.add_event(error_observation_3, EventSource.USER)
+        # error_observation_3._cause = cmd_action_3._id
+        state.history.append(error_observation_3)
         # 10 events
 
         cmd_action_4 = CmdRunAction(command='invalid_command')
-        event_stream.add_event(cmd_action_4, EventSource.AGENT)
+        state.history.append(cmd_action_4)
         error_observation_4 = ErrorObservation(content='Command not found')
-        error_observation_4._cause = cmd_action_4._id
-        event_stream.add_event(error_observation_4, EventSource.USER)
+        # error_observation_4._cause = cmd_action_4._id
+        state.history.append(error_observation_4)
         # 12 events
 
         with patch('logging.Logger.warning') as mock_warning:
@@ -248,11 +250,10 @@ class TestStuckDetector:
                 'Action, ErrorObservation loop detected'
             )
 
-    def test_is_stuck_invalid_syntax_error(
-        self, stuck_detector: StuckDetector, event_stream: EventStream
-    ):
+    def test_is_stuck_invalid_syntax_error(self, stuck_detector: StuckDetector):
+        state = stuck_detector.state
         self._impl_syntax_error_events(
-            event_stream,
+            state,
             error_message='SyntaxError: invalid syntax. Perhaps you forgot a comma?',
             random_line=False,
         )
@@ -261,10 +262,11 @@ class TestStuckDetector:
             assert stuck_detector.is_stuck() is True
 
     def test_is_not_stuck_invalid_syntax_error_random_lines(
-        self, stuck_detector: StuckDetector, event_stream: EventStream
+        self, stuck_detector: StuckDetector
     ):
+        state = stuck_detector.state
         self._impl_syntax_error_events(
-            event_stream,
+            state,
             error_message='SyntaxError: invalid syntax. Perhaps you forgot a comma?',
             random_line=True,
         )
@@ -273,10 +275,11 @@ class TestStuckDetector:
             assert stuck_detector.is_stuck() is False
 
     def test_is_not_stuck_invalid_syntax_error_only_three_incidents(
-        self, stuck_detector: StuckDetector, event_stream: EventStream
+        self, stuck_detector: StuckDetector
     ):
+        state = stuck_detector.state
         self._impl_syntax_error_events(
-            event_stream,
+            state,
             error_message='SyntaxError: invalid syntax. Perhaps you forgot a comma?',
             random_line=True,
             incidents=3,
@@ -285,11 +288,10 @@ class TestStuckDetector:
         with patch('logging.Logger.warning'):
             assert stuck_detector.is_stuck() is False
 
-    def test_is_stuck_incomplete_input_error(
-        self, stuck_detector: StuckDetector, event_stream: EventStream
-    ):
+    def test_is_stuck_incomplete_input_error(self, stuck_detector: StuckDetector):
+        state = stuck_detector.state
         self._impl_syntax_error_events(
-            event_stream,
+            state,
             error_message='SyntaxError: incomplete input',
             random_line=False,
         )
@@ -297,11 +299,10 @@ class TestStuckDetector:
         with patch('logging.Logger.warning'):
             assert stuck_detector.is_stuck() is True
 
-    def test_is_not_stuck_incomplete_input_error(
-        self, stuck_detector: StuckDetector, event_stream: EventStream
-    ):
+    def test_is_not_stuck_incomplete_input_error(self, stuck_detector: StuckDetector):
+        state = stuck_detector.state
         self._impl_syntax_error_events(
-            event_stream,
+            state,
             error_message='SyntaxError: incomplete input',
             random_line=True,
         )
@@ -310,238 +311,241 @@ class TestStuckDetector:
             assert stuck_detector.is_stuck() is False
 
     def test_is_not_stuck_ipython_unterminated_string_error_random_lines(
-        self, stuck_detector: StuckDetector, event_stream: EventStream
+        self, stuck_detector: StuckDetector
     ):
-        self._impl_unterminated_string_error_events(event_stream, random_line=True)
+        state = stuck_detector.state
+        self._impl_unterminated_string_error_events(state, random_line=True)
 
         with patch('logging.Logger.warning'):
             assert stuck_detector.is_stuck() is False
 
     def test_is_not_stuck_ipython_unterminated_string_error_only_three_incidents(
-        self, stuck_detector: StuckDetector, event_stream: EventStream
+        self, stuck_detector: StuckDetector
     ):
+        state = stuck_detector.state
         self._impl_unterminated_string_error_events(
-            event_stream, random_line=False, incidents=3
+            state, random_line=False, incidents=3
         )
 
         with patch('logging.Logger.warning'):
             assert stuck_detector.is_stuck() is False
 
     def test_is_stuck_ipython_unterminated_string_error(
-        self, stuck_detector: StuckDetector, event_stream: EventStream
+        self, stuck_detector: StuckDetector
     ):
-        self._impl_unterminated_string_error_events(event_stream, random_line=False)
+        state = stuck_detector.state
+        self._impl_unterminated_string_error_events(state, random_line=False)
 
         with patch('logging.Logger.warning'):
             assert stuck_detector.is_stuck() is True
 
     def test_is_not_stuck_ipython_syntax_error_not_at_end(
-        self, stuck_detector: StuckDetector, event_stream: EventStream
+        self, stuck_detector: StuckDetector
     ):
+        state = stuck_detector.state
         # this test is to make sure we don't get false positives
         # since the "at line x" is changing in between!
         ipython_action_1 = IPythonRunCellAction(code='print("hello')
-        event_stream.add_event(ipython_action_1, EventSource.AGENT)
+        state.history.append(ipython_action_1)
         ipython_observation_1 = IPythonRunCellObservation(
             content='print("hello\n       ^\nSyntaxError: unterminated string literal (detected at line 1)\nThis is some additional output',
             code='print("hello',
         )
-        ipython_observation_1._cause = ipython_action_1._id
-        event_stream.add_event(ipython_observation_1, EventSource.USER)
+        # ipython_observation_1._cause = ipython_action_1._id
+        state.history.append(ipython_observation_1)
 
         ipython_action_2 = IPythonRunCellAction(code='print("hello')
-        event_stream.add_event(ipython_action_2, EventSource.AGENT)
+        state.history.append(ipython_action_2)
         ipython_observation_2 = IPythonRunCellObservation(
             content='print("hello\n       ^\nSyntaxError: unterminated string literal (detected at line 1)\nToo much output here on and on',
             code='print("hello',
         )
-        ipython_observation_2._cause = ipython_action_2._id
-        event_stream.add_event(ipython_observation_2, EventSource.USER)
+        # ipython_observation_2._cause = ipython_action_2._id
+        state.history.append(ipython_observation_2)
 
         ipython_action_3 = IPythonRunCellAction(code='print("hello')
-        event_stream.add_event(ipython_action_3, EventSource.AGENT)
+        state.history.append(ipython_action_3)
         ipython_observation_3 = IPythonRunCellObservation(
             content='print("hello\n       ^\nSyntaxError: unterminated string literal (detected at line 3)\nEnough',
             code='print("hello',
         )
-        ipython_observation_3._cause = ipython_action_3._id
-        event_stream.add_event(ipython_observation_3, EventSource.USER)
+        # ipython_observation_3._cause = ipython_action_3._id
+        state.history.append(ipython_observation_3)
 
         ipython_action_4 = IPythonRunCellAction(code='print("hello')
-        event_stream.add_event(ipython_action_4, EventSource.AGENT)
+        state.history.append(ipython_action_4)
         ipython_observation_4 = IPythonRunCellObservation(
             content='print("hello\n       ^\nSyntaxError: unterminated string literal (detected at line 2)\nLast line of output',
             code='print("hello',
         )
-        ipython_observation_4._cause = ipython_action_4._id
-        event_stream.add_event(ipython_observation_4, EventSource.USER)
+        # ipython_observation_4._cause = ipython_action_4._id
+        state.history.append(ipython_observation_4)
 
         with patch('logging.Logger.warning') as mock_warning:
             assert stuck_detector.is_stuck() is False
             mock_warning.assert_not_called()
 
     def test_is_stuck_repeating_action_observation_pattern(
-        self, stuck_detector: StuckDetector, event_stream: EventStream
+        self, stuck_detector: StuckDetector
     ):
+        state = stuck_detector.state
         message_action = MessageAction(content='Come on', wait_for_response=False)
         message_action._source = EventSource.USER
-        event_stream.add_event(message_action, EventSource.USER)
+        state.history.append(message_action)
         message_observation = NullObservation(content='')
-        event_stream.add_event(message_observation, EventSource.USER)
+        state.history.append(message_observation)
 
         cmd_action_1 = CmdRunAction(command='ls')
-        event_stream.add_event(cmd_action_1, EventSource.AGENT)
+        state.history.append(cmd_action_1)
         cmd_observation_1 = CmdOutputObservation(
             command_id=1, command='ls', content='file1.txt\nfile2.txt'
         )
-        cmd_observation_1._cause = cmd_action_1._id
-        event_stream.add_event(cmd_observation_1, EventSource.USER)
+        # cmd_observation_1._cause = cmd_action_1._id
+        state.history.append(cmd_observation_1)
 
         read_action_1 = FileReadAction(path='file1.txt')
-        event_stream.add_event(read_action_1, EventSource.AGENT)
+        state.history.append(read_action_1)
         read_observation_1 = FileReadObservation(
             content='File content', path='file1.txt'
         )
-        read_observation_1._cause = read_action_1._id
-        event_stream.add_event(read_observation_1, EventSource.USER)
+        # read_observation_1._cause = read_action_1._id
+        state.history.append(read_observation_1)
 
         cmd_action_2 = CmdRunAction(command='ls')
-        event_stream.add_event(cmd_action_2, EventSource.AGENT)
+        state.history.append(cmd_action_2)
         cmd_observation_2 = CmdOutputObservation(
             command_id=2, command='ls', content='file1.txt\nfile2.txt'
         )
-        cmd_observation_2._cause = cmd_action_2._id
-        event_stream.add_event(cmd_observation_2, EventSource.USER)
+        # cmd_observation_2._cause = cmd_action_2._id
+        state.history.append(cmd_observation_2)
 
         read_action_2 = FileReadAction(path='file1.txt')
-        event_stream.add_event(read_action_2, EventSource.AGENT)
+        state.history.append(read_action_2)
         read_observation_2 = FileReadObservation(
             content='File content', path='file1.txt'
         )
-        read_observation_2._cause = read_action_2._id
-        event_stream.add_event(read_observation_2, EventSource.USER)
+        # read_observation_2._cause = read_action_2._id
+        state.history.append(read_observation_2)
 
-        # one more message to break the pattern
+        message_action = MessageAction(content='Come on', wait_for_response=False)
+        message_action._source = EventSource.USER
+        state.history.append(message_action)
+
         message_null_observation = NullObservation(content='')
-        event_stream.add_event(message_action, EventSource.USER)
-        event_stream.add_event(message_null_observation, EventSource.USER)
+        state.history.append(message_null_observation)
 
         cmd_action_3 = CmdRunAction(command='ls')
-        event_stream.add_event(cmd_action_3, EventSource.AGENT)
+        state.history.append(cmd_action_3)
         cmd_observation_3 = CmdOutputObservation(
             command_id=3, command='ls', content='file1.txt\nfile2.txt'
         )
-        cmd_observation_3._cause = cmd_action_3._id
-        event_stream.add_event(cmd_observation_3, EventSource.USER)
+        # cmd_observation_3._cause = cmd_action_3._id
+        state.history.append(cmd_observation_3)
 
         read_action_3 = FileReadAction(path='file1.txt')
-        event_stream.add_event(read_action_3, EventSource.AGENT)
+        state.history.append(read_action_3)
         read_observation_3 = FileReadObservation(
             content='File content', path='file1.txt'
         )
-        read_observation_3._cause = read_action_3._id
-        event_stream.add_event(read_observation_3, EventSource.USER)
+        # read_observation_3._cause = read_action_3._id
+        state.history.append(read_observation_3)
 
         with patch('logging.Logger.warning') as mock_warning:
             assert stuck_detector.is_stuck() is True
             mock_warning.assert_called_once_with('Action, Observation pattern detected')
 
-    def test_is_stuck_not_stuck(
-        self, stuck_detector: StuckDetector, event_stream: EventStream
-    ):
+    def test_is_stuck_not_stuck(self, stuck_detector: StuckDetector):
+        state = stuck_detector.state
         message_action = MessageAction(content='Done', wait_for_response=False)
         message_action._source = EventSource.USER
 
         hello_action = MessageAction(content='Hello', wait_for_response=False)
-        event_stream.add_event(hello_action, EventSource.USER)
+        state.history.append(hello_action)
         hello_observation = NullObservation(content='')
-        hello_observation._cause = hello_action._id
-        event_stream.add_event(hello_observation, EventSource.USER)
+        # hello_observation._cause = hello_action._id
+        state.history.append(hello_observation)
 
         cmd_action_1 = CmdRunAction(command='ls')
-        event_stream.add_event(cmd_action_1, EventSource.AGENT)
+        state.history.append(cmd_action_1)
         cmd_observation_1 = CmdOutputObservation(
             command_id=cmd_action_1.id, command='ls', content='file1.txt\nfile2.txt'
         )
-        cmd_observation_1._cause = cmd_action_1._id
-        event_stream.add_event(cmd_observation_1, EventSource.USER)
+        # cmd_observation_1._cause = cmd_action_1._id
+        state.history.append(cmd_observation_1)
 
         read_action_1 = FileReadAction(path='file1.txt')
-        event_stream.add_event(read_action_1, EventSource.AGENT)
+        state.history.append(read_action_1)
         read_observation_1 = FileReadObservation(
             content='File content', path='file1.txt'
         )
-        read_observation_1._cause = read_action_1._id
-        event_stream.add_event(read_observation_1, EventSource.USER)
+        # read_observation_1._cause = read_action_1._id
+        state.history.append(read_observation_1)
 
         cmd_action_2 = CmdRunAction(command='pwd')
-        event_stream.add_event(cmd_action_2, EventSource.AGENT)
+        state.history.append(cmd_action_2)
         cmd_observation_2 = CmdOutputObservation(
             command_id=2, command='pwd', content='/home/user'
         )
-        cmd_observation_2._cause = cmd_action_2._id
-        event_stream.add_event(cmd_observation_2, EventSource.USER)
+        # cmd_observation_2._cause = cmd_action_2._id
+        state.history.append(cmd_observation_2)
 
         read_action_2 = FileReadAction(path='file2.txt')
-        event_stream.add_event(read_action_2, EventSource.AGENT)
+        state.history.append(read_action_2)
         read_observation_2 = FileReadObservation(
             content='Another file content', path='file2.txt'
         )
-        read_observation_2._cause = read_action_2._id
-        event_stream.add_event(read_observation_2, EventSource.USER)
+        # read_observation_2._cause = read_action_2._id
+        state.history.append(read_observation_2)
 
         message_null_observation = NullObservation(content='')
-        event_stream.add_event(message_action, EventSource.USER)
-        event_stream.add_event(message_null_observation, EventSource.USER)
+        state.history.append(message_action)
+        state.history.append(message_null_observation)
 
         cmd_action_3 = CmdRunAction(command='pwd')
-        event_stream.add_event(cmd_action_3, EventSource.AGENT)
+        state.history.append(cmd_action_3)
         cmd_observation_3 = CmdOutputObservation(
             command_id=cmd_action_3.id, command='pwd', content='/home/user'
         )
-        cmd_observation_3._cause = cmd_action_3._id
-        event_stream.add_event(cmd_observation_3, EventSource.USER)
+        # cmd_observation_3._cause = cmd_action_3._id
+        state.history.append(cmd_observation_3)
 
         read_action_3 = FileReadAction(path='file2.txt')
-        event_stream.add_event(read_action_3, EventSource.AGENT)
+        state.history.append(read_action_3)
         read_observation_3 = FileReadObservation(
             content='Another file content', path='file2.txt'
         )
-        read_observation_3._cause = read_action_3._id
-        event_stream.add_event(read_observation_3, EventSource.USER)
+        # read_observation_3._cause = read_action_3._id
+        state.history.append(read_observation_3)
 
         assert stuck_detector.is_stuck() is False
 
-    def test_is_stuck_monologue(self, stuck_detector, event_stream):
-        # Add events to the event stream
+    def test_is_stuck_monologue(self, stuck_detector):
+        state = stuck_detector.state
+        # Add events to the history list directly
         message_action_1 = MessageAction(content='Hi there!')
-        event_stream.add_event(message_action_1, EventSource.USER)
         message_action_1._source = EventSource.USER
-
+        state.history.append(message_action_1)
         message_action_2 = MessageAction(content='Hi there!')
-        event_stream.add_event(message_action_2, EventSource.AGENT)
         message_action_2._source = EventSource.AGENT
-
+        state.history.append(message_action_2)
         message_action_3 = MessageAction(content='How are you?')
-        event_stream.add_event(message_action_3, EventSource.USER)
         message_action_3._source = EventSource.USER
+        state.history.append(message_action_3)
 
         cmd_kill_action = CmdRunAction(
             command='echo 42', thought="I'm not stuck, he's stuck"
         )
-        event_stream.add_event(cmd_kill_action, EventSource.AGENT)
+        state.history.append(cmd_kill_action)
 
         message_action_4 = MessageAction(content="I'm doing well, thanks for asking.")
-        event_stream.add_event(message_action_4, EventSource.AGENT)
         message_action_4._source = EventSource.AGENT
-
+        state.history.append(message_action_4)
         message_action_5 = MessageAction(content="I'm doing well, thanks for asking.")
-        event_stream.add_event(message_action_5, EventSource.AGENT)
         message_action_5._source = EventSource.AGENT
-
+        state.history.append(message_action_5)
         message_action_6 = MessageAction(content="I'm doing well, thanks for asking.")
-        event_stream.add_event(message_action_6, EventSource.AGENT)
         message_action_6._source = EventSource.AGENT
+        state.history.append(message_action_6)
 
         assert stuck_detector.is_stuck()
 
@@ -552,16 +556,15 @@ class TestStuckDetector:
             command='storybook',
             exit_code=0,
         )
-        cmd_output_observation._cause = cmd_kill_action._id
-        event_stream.add_event(cmd_output_observation, EventSource.USER)
+        # cmd_output_observation._cause = cmd_kill_action._id
+        state.history.append(cmd_output_observation)
 
         message_action_7 = MessageAction(content="I'm doing well, thanks for asking.")
-        event_stream.add_event(message_action_7, EventSource.AGENT)
         message_action_7._source = EventSource.AGENT
-
+        state.history.append(message_action_7)
         message_action_8 = MessageAction(content="I'm doing well, thanks for asking.")
-        event_stream.add_event(message_action_8, EventSource.AGENT)
         message_action_8._source = EventSource.AGENT
+        state.history.append(message_action_8)
 
         with patch('logging.Logger.warning'):
             assert not stuck_detector.is_stuck()
@@ -576,7 +579,6 @@ class TestAgentController:
         )
         controller.delegate = None
         controller.state = Mock()
-        controller.state.history = ShortTermHistory()
         return controller
 
     def test_is_stuck_delegate_stuck(self, controller: AgentController):

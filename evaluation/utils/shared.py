@@ -18,6 +18,9 @@ from openhands.core.logger import get_console_handler
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import Action
 from openhands.events.action.message import MessageAction
+from openhands.events.event import Event
+from openhands.events.serialization.event import event_to_dict
+from openhands.events.utils import get_pairs_from_events
 
 
 class EvalMetadata(BaseModel):
@@ -61,7 +64,6 @@ class EvalOutput(BaseModel):
     history: (
         list[dict[str, Any]] | list[tuple[dict[str, Any], dict[str, Any]]] | None
     ) = None
-    llm_completions: list[dict[str, Any]] | None = None
     metrics: dict[str, Any] | None = None
     error: str | None = None
 
@@ -105,7 +107,7 @@ def codeact_user_response(
     )
     msg = (
         'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have solved the task, please first send your answer to user through message and then <execute_bash> exit </execute_bash>.\n'
+        'If you think you have solved the task, please first send your answer to user through message and then finish the interaction.\n'
         f'{encaps_str}'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
     )
@@ -113,7 +115,14 @@ def codeact_user_response(
     if state.history:
         # check if the last action has an answer, if so, early exit
         if try_parse is not None:
-            last_action = state.history.get_last_action()
+            last_action = next(
+                (
+                    event
+                    for event in reversed(state.history)
+                    if isinstance(event, Action)
+                ),
+                None,
+            )
             ans = try_parse(last_action)
             if ans is not None:
                 return '/exit'
@@ -121,7 +130,7 @@ def codeact_user_response(
         # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
         user_msgs = [
             event
-            for event in state.history.get_events()
+            for event in state.history
             if isinstance(event, MessageAction) and event.source == 'user'
         ]
         if len(user_msgs) >= 2:
@@ -152,7 +161,7 @@ def make_metadata(
     details: dict[str, Any] | None = None,
 ) -> EvalMetadata:
     model_name = llm_config.model.split('/')[-1]
-    model_path = model_name.replace(':', '_')
+    model_path = model_name.replace(':', '_').replace('@', '-')
     eval_note = f'_N_{eval_note}' if eval_note else ''
 
     eval_output_path = os.path.join(
@@ -248,7 +257,7 @@ def update_progress(
     """Update the progress bar and write the result to the output file."""
     pbar.update(1)
     pbar.set_description(f'Instance {result.instance_id}')
-    pbar.set_postfix_str(f'Test Result: {result.test_result}')
+    pbar.set_postfix_str(f'Test Result: {str(result.test_result)[:300]}...')
     logger.info(
         f'Finished evaluation for instance {result.instance_id}: {str(result.test_result)[:300]}...\n'
     )
@@ -412,3 +421,35 @@ def reset_logger_for_multiprocessing(
     )
     file_handler.setLevel(logging.INFO)
     logger.addHandler(file_handler)
+
+
+def update_llm_config_for_completions_logging(
+    llm_config: LLMConfig,
+    eval_output_dir: str,
+    instance_id: str,
+) -> LLMConfig:
+    """Update the LLM config for logging completions."""
+    if llm_config.log_completions:
+        llm_config.log_completions_folder = os.path.join(
+            eval_output_dir, 'llm_completions', instance_id
+        )
+        logger.info(
+            f'Logging LLM completions for instance {instance_id} to '
+            f'{llm_config.log_completions_folder}'
+        )
+    return llm_config
+
+
+# history is now available as a filtered stream of events, rather than list of pairs of (Action, Observation)
+# we rebuild the pairs here
+# for compatibility with the existing output format in evaluations
+# remove this when it's no longer necessary
+def compatibility_for_eval_history_pairs(
+    history: list[Event],
+) -> list[tuple[dict, dict]]:
+    history_pairs = []
+
+    for action, observation in get_pairs_from_events(history):
+        history_pairs.append((event_to_dict(action), event_to_dict(observation)))
+
+    return history_pairs

@@ -11,7 +11,7 @@ from openhands.events.action.agent import ChangeAgentStateAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 
@@ -32,7 +32,12 @@ class AgentSession:
     _closed: bool = False
     loop: asyncio.AbstractEventLoop | None = None
 
-    def __init__(self, sid: str, file_store: FileStore):
+    def __init__(
+        self,
+        sid: str,
+        file_store: FileStore,
+        status_callback: Optional[Callable] = None,
+    ):
         """Initializes a new instance of the Session class
 
         Parameters:
@@ -43,6 +48,7 @@ class AgentSession:
         self.sid = sid
         self.event_stream = EventStream(sid, file_store)
         self.file_store = file_store
+        self._status_callback = status_callback
 
     async def start(
         self,
@@ -53,7 +59,6 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-        status_message_callback: Optional[Callable] = None,
     ):
         """Starts the Agent session
         Parameters:
@@ -80,14 +85,14 @@ class AgentSession:
             max_budget_per_task,
             agent_to_llm_config,
             agent_configs,
-            status_message_callback,
         )
 
     def _start_thread(self, *args):
         try:
             asyncio.run(self._start(*args), debug=True)
         except RuntimeError:
-            logger.info('Session Finished')
+            logger.error(f'Error starting session: {RuntimeError}', exc_info=True)
+            logger.debug('Session Finished')
 
     async def _start(
         self,
@@ -98,11 +103,13 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-        status_message_callback: Optional[Callable] = None,
     ):
-        self.loop = asyncio.get_running_loop()
         self._create_security_analyzer(config.security.security_analyzer)
-        self._create_runtime(runtime_name, config, agent, status_message_callback)
+        await self._create_runtime(
+            runtime_name=runtime_name,
+            config=config,
+            agent=agent,
+        )
         self._create_controller(
             agent,
             config.security.confirmation_mode,
@@ -112,17 +119,25 @@ class AgentSession:
             agent_configs=agent_configs,
         )
         self.event_stream.add_event(
-            ChangeAgentStateAction(AgentState.INIT), EventSource.USER
+            ChangeAgentStateAction(AgentState.INIT), EventSource.ENVIRONMENT
         )
         if self.controller:
             self.controller.agent_task = self.controller.start_step_loop()
             await self.controller.agent_task  # type: ignore
 
-    async def close(self):
+    def close(self):
         """Closes the Agent session"""
-
         if self._closed:
             return
+
+        self._closed = True
+
+        def inner_close():
+            asyncio.run(self._close())
+
+        asyncio.get_event_loop().run_in_executor(None, inner_close)
+
+    async def _close(self):
         if self.controller is not None:
             end_state = self.controller.get_state()
             end_state.save_to_session(self.sid, self.file_store)
@@ -132,10 +147,9 @@ class AgentSession:
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
 
-        if self.loop:
-            self.loop.call_soon_threadsafe(self.loop.stop)
-
-        self._closed = True
+    async def stop_agent_loop_for_error(self):
+        if self.controller is not None:
+            await self.controller.set_agent_state_to(AgentState.ERROR)
 
     def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
@@ -150,12 +164,11 @@ class AgentSession:
                 security_analyzer, SecurityAnalyzer
             )(self.event_stream)
 
-    def _create_runtime(
+    async def _create_runtime(
         self,
         runtime_name: str,
         config: AppConfig,
         agent: Agent,
-        status_message_callback: Optional[Callable] = None,
     ):
         """Creates a runtime instance
 
@@ -168,19 +181,24 @@ class AgentSession:
         if self.runtime is not None:
             raise RuntimeError('Runtime already created')
 
-        logger.info(f'Initializing runtime `{runtime_name}` now...')
+        logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
+        self.runtime = runtime_cls(
+            config=config,
+            event_stream=self.event_stream,
+            sid=self.sid,
+            plugins=agent.sandbox_plugins,
+            status_callback=self._status_callback,
+        )
 
         try:
-            self.runtime = runtime_cls(
-                config=config,
-                event_stream=self.event_stream,
-                sid=self.sid,
-                plugins=agent.sandbox_plugins,
-                status_message_callback=status_message_callback,
-            )
+            await self.runtime.connect()
         except Exception as e:
             logger.error(f'Runtime initialization failed: {e}', exc_info=True)
+            if self._status_callback:
+                self._status_callback(
+                    'error', 'STATUS$ERROR_RUNTIME_DISCONNECTED', str(e)
+                )
             raise
 
         if self.runtime is not None:
@@ -217,13 +235,23 @@ class AgentSession:
                 'Runtime must be initialized before the agent controller'
             )
 
-        logger.info(
+        msg = (
             '\n--------------------------------- OpenHands Configuration ---------------------------------\n'
             f'LLM: {agent.llm.config.model}\n'
             f'Base URL: {agent.llm.config.base_url}\n'
+        )
+        if agent.llm.config.draft_editor:
+            msg += (
+                f'Draft editor LLM (for file editing): {agent.llm.config.draft_editor.model}\n'
+                f'Draft editor LLM (for file editing) Base URL: {agent.llm.config.draft_editor.base_url}\n'
+            )
+        msg += (
             f'Agent: {agent.name}\n'
+            f'Runtime: {self.runtime.__class__.__name__}\n'
+            f'Plugins: {agent.sandbox_plugins}\n'
             '-------------------------------------------------------------------------------------------'
         )
+        logger.debug(msg)
 
         self.controller = AgentController(
             sid=self.sid,
@@ -234,16 +262,15 @@ class AgentSession:
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
             confirmation_mode=confirmation_mode,
-            # AgentSession is designed to communicate with the frontend, so we don't want to
-            # run the agent in headless mode.
             headless_mode=False,
+            status_callback=self._status_callback,
         )
         try:
             agent_state = State.restore_from_session(self.sid, self.file_store)
             self.controller.set_initial_state(
                 agent_state, max_iterations, confirmation_mode
             )
-            logger.info(f'Restored agent state from session, sid: {self.sid}')
+            logger.debug(f'Restored agent state from session, sid: {self.sid}')
         except Exception as e:
-            logger.info(f'State could not be restored: {e}')
-        logger.info('Agent controller initialized.')
+            logger.debug(f'State could not be restored: {e}')
+        logger.debug('Agent controller initialized.')

@@ -21,7 +21,7 @@ The OpenHands Runtime system uses a client-server architecture implemented with 
 graph TD
     A[User-provided Custom Docker Image] --> B[OpenHands Backend]
     B -->|Builds| C[OH Runtime Image]
-    C -->|Launches| D[Runtime Client]
+    C -->|Launches| D[Action Executor]
     D -->|Initializes| E[Browser]
     D -->|Initializes| F[Bash Shell]
     D -->|Initializes| G[Plugins]
@@ -49,10 +49,10 @@ graph TD
 1. User Input: The user provides a custom base Docker image
 2. Image Building: OpenHands builds a new Docker image (the "OH runtime image") based on the user-provided image. This new image includes OpenHands-specific code, primarily the "runtime client"
 3. Container Launch: When OpenHands starts, it launches a Docker container using the OH runtime image
-4. Client Initialization: The runtime client initializes inside the container, setting up necessary components like a bash shell and loading any specified plugins
-5. Communication: The OpenHands backend (`runtime.py`) communicates with the runtime client over RESTful API, sending actions and receiving observations
+4. Action Execution Server Initialization: The action execution server initializes an `ActionExecutor` inside the container, setting up necessary components like a bash shell and loading any specified plugins
+5. Communication: The OpenHands backend (`openhands/runtime/impl/eventstream/eventstream_runtime.py`) communicates with the action execution server over RESTful API, sending actions and receiving observations
 6. Action Execution: The runtime client receives actions from the backend, executes them in the sandboxed environment, and sends back observations
-7. Observation Return: The client sends execution results back to the OpenHands backend as observations
+7. Observation Return: The action execution server sends execution results back to the OpenHands backend as observations
 
 
 The role of the client:
@@ -70,74 +70,54 @@ Check out the [relevant code](https://github.com/All-Hands-AI/OpenHands/blob/mai
 
 ### Image Tagging System
 
-OpenHands uses a dual-tagging system for its runtime images to balance reproducibility with flexibility:
+OpenHands uses a three-tag system for its runtime images to balance reproducibility with flexibility.
+Tags may be in one of 2 formats:
 
-1. Hash-based tag: `{target_image_repo}:{target_image_hash_tag}`.
-   Example: `runtime:abc123def456`
+- **Versioned Tag**: `oh_v{openhands_version}_{base_image}` (e.g.: `oh_v0.9.9_nikolaik_s_python-nodejs_t_python3.12-nodejs22`)
+- **Lock Tag**: `oh_v{openhands_version}_{16_digit_lock_hash}` (e.g.: `oh_v0.9.9_1234567890abcdef`)
+- **Source Tag**: `oh_v{openhands_version}_{16_digit_lock_hash}_{16_digit_source_hash}`
+  (e.g.: `oh_v0.9.9_1234567890abcdef_1234567890abcdef`)
 
-   - This tag is based on the MD5 hash of the Docker build folder, which includes the source code (of runtime client and related dependencies) and Dockerfile
-   - Identical hash tags guarantee that the images were built with exactly the same source code and Dockerfile
-   - This ensures reproducibility; the same hash always means the same image contents
 
-2. Generic tag: `{target_image_repo}:{target_image_tag}`.
-   Example: `runtime:oh_v0.9.3_ubuntu_tag_22.04`
+#### Source Tag - Most Specific
 
-   - This tag follows the format: `runtime:oh_v{OH_VERSION}_{BASE_IMAGE_NAME}_tag_{BASE_IMAGE_TAG}`
-   - It represents the latest build for a particular base image and OpenHands version combination
-   - This tag is updated whenever a new image is built from the same base image, even if the source code changes
+This is the first 16 digits of the MD5 of the directory hash for the source directory. This gives a hash
+for only the openhands source
 
-The hash-based tag ensures reproducibility, while the generic tag provides a stable reference to the latest version of a particular configuration. This dual-tagging approach allows OpenHands to efficiently manage both development and production environments.
 
-### Build Process
+#### Lock Tag
 
-1. Image Naming Convention:
-   - Hash-based tag: `{target_image_repo}:{target_image_hash_tag}`.
-     Example: `runtime:abc123def456`
-   - Generic tag: `{target_image_repo}:{target_image_tag}`.
-     Example: `runtime:oh_v0.9.3_ubuntu_tag_22.04`
+This hash is built from the first 16 digits of the MD5 of:
+- The name of the base image upon which the image was built (e.g.: `nikolaik/python-nodejs:python3.12-nodejs22`)
+- The content of the `pyproject.toml` included in the image.
+- The content of the `poetry.lock` included in the image.
 
-2. Build Process:
-   - a. Convert the base image name to an OH runtime image name
-      Example: `ubuntu:22.04` -> `runtime:oh_v0.9.3_ubuntu_tag_22.04`
-   - b. Generate a build context (Dockerfile and OpenHands source code) and calculate its hash
-   - c. Check for an existing image with the calculated hash
-   - d. If not found, check for a recent compatible image to use as a base
-   - e. If no compatible image exists, build from scratch using the original base image
-   - f. Tag the new image with both hash-based and generic tags
+This effectively gives a hash for the dependencies of Openhands independent of the source code.
 
-3. Image Reuse and Rebuilding Logic:
-   The system follows these steps to determine whether to build a new image or use an existing one from a user-provided (base) image (e.g., `ubuntu:22.04`):
-   - a. If an image exists with the same hash (e.g., `runtime:abc123def456`), it will be reused as is
-   - b. If the exact hash is not found, the system will try to rebuild using the latest generic image (e.g., `runtime:oh_v0.9.3_ubuntu_tag_22.04`) as a base. This saves time by leveraging existing dependencies
-   - c. If neither the hash-tagged nor the generic-tagged image is found, the system will build the image completely from scratch
+#### Versioned Tag - Most Generic
 
-4. Caching and Efficiency:
-   - The system attempts to reuse existing images when possible to save build time
-   - If an exact match (by hash) is found, it's used without rebuilding
-   - If a compatible image is found, it's used as a base for rebuilding, saving time on dependency installation
+This tag is a concatenation of openhands version and the base image name (transformed to fit in tag standard).
 
-Here's a flowchart illustrating the build process:
+#### Build Process
 
-```mermaid
-flowchart TD
-    A[Start] --> B{Convert base image name}
-    B --> |ubuntu:22.04 -> runtime:oh_v0.9.3_ubuntu_tag_22.04| C[Generate build context and hash]
-    C --> D{Check for existing image with hash}
-    D -->|Found runtime:abc123def456| E[Use existing image]
-    D -->|Not found| F{Check for runtime:oh_v0.9.3_ubuntu_tag_22.04}
-    F -->|Found| G[Rebuild based on recent image]
-    F -->|Not found| H[Build from scratch]
-    G --> I[Tag with hash and generic tags]
-    H --> I
-    E --> J[End]
-    I --> J
-```
+When generating an image...
 
-This approach ensures that:
+- **No re-build**: OpenHands first checks whether an image with the same **most specific source tag** exists. If there is such an image,
+  no build is performed - the existing image is used.
+- **Fastest re-build**: OpenHands next checks whether an image with the **generic lock tag** exists. If there is such an image,
+  OpenHands builds a new image based upon it, bypassing all installation steps (like `poetry install` and
+  `apt-get`) except a final operation to copy the current source code. The new image is tagged with a
+  **source** tag only.
+- **Ok-ish re-build**: If neither a **source** nor **lock** tag exists, an image will be built based upon the **versioned** tag image.
+  In versioned tag image, most dependencies should already been installed hence saving time.
+- **Slowest re-build**: If all of the three tags don't exists, a brand new image is built based upon the base
+  image (Which is a slower operation). This new image is tagged with all the **source**, **lock**, and **versioned** tags.
+
+This tagging approach allows OpenHands to efficiently manage both development and production environments.
 
 1. Identical source code and Dockerfile always produce the same image (via hash-based tags)
 2. The system can quickly rebuild images when minor changes occur (by leveraging recent compatible images)
-3. The generic tag (e.g., `runtime:oh_v0.9.3_ubuntu_tag_22.04`) always points to the latest build for a particular base image and OpenHands version combination
+3. The **lock** tag (e.g., `runtime:oh_v0.9.3_1234567890abcdef`) always points to the latest build for a particular base image, dependency, and OpenHands version combination
 
 ## Runtime Plugin System
 

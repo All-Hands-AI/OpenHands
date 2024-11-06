@@ -6,7 +6,6 @@ from openhands.core.config import (
     AgentConfig,
     AppConfig,
     LLMConfig,
-    UndefinedString,
     finalize_config,
     get_llm_config_arg,
     load_from_env,
@@ -82,12 +81,8 @@ def test_load_from_old_style_env(monkeypatch, default_config):
     assert default_config.get_agent_config().memory_enabled is True
     assert default_config.default_agent == 'PlannerAgent'
     assert default_config.workspace_base == '/opt/files/workspace'
-    assert (
-        default_config.workspace_mount_path is UndefinedString.UNDEFINED
-    )  # before finalize_config
-    assert (
-        default_config.workspace_mount_path_in_sandbox is not UndefinedString.UNDEFINED
-    )
+    assert default_config.workspace_mount_path is None  # before finalize_config
+    assert default_config.workspace_mount_path_in_sandbox is not None
     assert default_config.sandbox.base_container_image == 'custom_image'
 
 
@@ -148,11 +143,8 @@ default_agent = "TestAgent"
     assert default_config.workspace_base == '/opt/files2/workspace'
     assert default_config.sandbox.timeout == 1
 
-    # before finalize_config, workspace_mount_path is UndefinedString.UNDEFINED if it was not set
-    assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
-    assert (
-        default_config.workspace_mount_path_in_sandbox is not UndefinedString.UNDEFINED
-    )
+    assert default_config.workspace_mount_path is None
+    assert default_config.workspace_mount_path_in_sandbox is not None
     assert default_config.workspace_mount_path_in_sandbox == '/workspace'
 
     finalize_config(default_config)
@@ -231,8 +223,7 @@ sandbox_user_id = 1001
 
     load_from_toml(default_config, temp_toml_file)
 
-    # before finalize_config, workspace_mount_path is UndefinedString.UNDEFINED if it was not set
-    assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
+    assert default_config.workspace_mount_path is None
 
     load_from_env(default_config, os.environ)
 
@@ -244,11 +235,9 @@ sandbox_user_id = 1001
 
     # after we set workspace_base to 'UNDEFINED' in the environment,
     # workspace_base should be set to that
-    # workspace_mount path is still UndefinedString.UNDEFINED
-    assert default_config.workspace_base is not UndefinedString.UNDEFINED
+    assert default_config.workspace_base is not None
     assert default_config.workspace_base == 'UNDEFINED'
-    assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
-    assert default_config.workspace_mount_path == 'UNDEFINED'
+    assert default_config.workspace_mount_path is None
 
     assert default_config.disable_color is True
     assert default_config.sandbox.timeout == 1000
@@ -284,8 +273,7 @@ user_id = 1001
 
     load_from_toml(default_config, temp_toml_file)
 
-    # before finalize_config, workspace_mount_path is UndefinedString.UNDEFINED if it was not set
-    assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
+    assert default_config.workspace_mount_path is None
 
     # before load_from_env, values are set to the values from the toml file
     assert default_config.get_llm_config().api_key == 'toml-api-key'
@@ -338,9 +326,7 @@ user_id = 1001
 def test_defaults_dict_after_updates(default_config):
     # Test that `defaults_dict` retains initial values after updates.
     initial_defaults = default_config.defaults_dict
-    assert (
-        initial_defaults['workspace_mount_path']['default'] is UndefinedString.UNDEFINED
-    )
+    assert initial_defaults['workspace_mount_path']['default'] is None
     assert initial_defaults['default_agent']['default'] == 'CodeActAgent'
 
     updated_config = AppConfig()
@@ -352,10 +338,7 @@ def test_defaults_dict_after_updates(default_config):
 
     defaults_after_updates = updated_config.defaults_dict
     assert defaults_after_updates['default_agent']['default'] == 'CodeActAgent'
-    assert (
-        defaults_after_updates['workspace_mount_path']['default']
-        is UndefinedString.UNDEFINED
-    )
+    assert defaults_after_updates['workspace_mount_path']['default'] is None
     assert defaults_after_updates['sandbox']['timeout']['default'] == 120
     assert (
         defaults_after_updates['sandbox']['base_container_image']['default']
@@ -384,17 +367,16 @@ def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
 
 def test_finalize_config(default_config):
     # Test finalize config
-    assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
+    assert default_config.workspace_mount_path is None
+    default_config.workspace_base = None
     finalize_config(default_config)
 
-    assert default_config.workspace_mount_path == os.path.abspath(
-        default_config.workspace_base
-    )
+    assert default_config.workspace_mount_path is None
 
 
-# tests for workspace, mount path, path in sandbox, cache dir
 def test_workspace_mount_path_default(default_config):
-    assert default_config.workspace_mount_path is UndefinedString.UNDEFINED
+    assert default_config.workspace_mount_path is None
+    default_config.workspace_base = '/home/user/project'
     finalize_config(default_config)
     assert default_config.workspace_mount_path == os.path.abspath(
         default_config.workspace_base
@@ -477,15 +459,25 @@ def test_api_keys_repr_str():
         agents={'agent': agent_config},
         e2b_api_key='my_e2b_api_key',
         jwt_secret='my_jwt_secret',
+        modal_api_token_id='my_modal_api_token_id',
+        modal_api_token_secret='my_modal_api_token_secret',
     )
     assert "e2b_api_key='******'" in repr(app_config)
     assert "e2b_api_key='******'" in str(app_config)
     assert "jwt_secret='******'" in repr(app_config)
     assert "jwt_secret='******'" in str(app_config)
+    assert "modal_api_token_id='******'" in repr(app_config)
+    assert "modal_api_token_id='******'" in str(app_config)
+    assert "modal_api_token_secret='******'" in repr(app_config)
+    assert "modal_api_token_secret='******'" in str(app_config)
 
     # Check that no other attrs in AppConfig have 'key' or 'token' in their name
     # This will fail when new attrs are added, and attract attention
-    known_key_token_attrs_app = ['e2b_api_key']
+    known_key_token_attrs_app = [
+        'e2b_api_key',
+        'modal_api_token_id',
+        'modal_api_token_secret',
+    ]
     for attr_name in dir(AppConfig):
         if (
             not attr_name.startswith('__')

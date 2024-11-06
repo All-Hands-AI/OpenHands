@@ -21,6 +21,7 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     codeact_user_response,
+    compatibility_for_eval_history_pairs,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -37,7 +38,8 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
-from openhands.runtime.runtime import Runtime
+from openhands.runtime.base import Runtime
+from openhands.utils.async_utils import call_async_from_sync
 
 IMPORT_HELPER = {
     'python': [
@@ -99,7 +101,7 @@ def get_config(
 
 
 def _get_instance_id(instance: pd.Series) -> str:
-    return instance.task_id.replace('/', '__')
+    return instance.instance_id.replace('/', '__')
 
 
 def initialize_runtime(
@@ -206,9 +208,9 @@ def process_instance(
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
         log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
-        reset_logger_for_multiprocessing(logger, instance.task_id, log_dir)
+        reset_logger_for_multiprocessing(logger, instance.instance_id, log_dir)
     else:
-        logger.info(f'Starting evaluation for instance {instance.task_id}.')
+        logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
     # Create file with HumanEvalFix problem
     # Prompt reference: https://github.com/bigcode-project/bigcode-evaluation-harness/blob/84b96da31b7f840b55c5733325346176140cdb6b/bigcode_eval/tasks/humanevalpack.py#L509
@@ -233,6 +235,7 @@ def process_instance(
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
     runtime = create_runtime(config)
+    call_async_from_sync(runtime.connect)
     initialize_runtime(runtime, instance)
     state: State | None = asyncio.run(
         run_controller(
@@ -253,11 +256,11 @@ def process_instance(
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
-    histories = state.history.compatibility_for_eval_history_pairs()
+    histories = compatibility_for_eval_history_pairs(state.history)
 
     # Save the output
     output = EvalOutput(
-        instance_id=instance.task_id,
+        instance_id=instance.instance_id,
         instruction=instruction,
         metadata=metadata,
         history=histories,

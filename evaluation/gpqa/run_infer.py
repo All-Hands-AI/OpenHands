@@ -28,6 +28,7 @@ from datasets import load_dataset
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    compatibility_for_eval_history_pairs,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -48,6 +49,7 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.observation import Observation
+from openhands.utils.async_utils import call_async_from_sync
 
 ACTION_FORMAT = """
 <<FINAL_ANSWER||
@@ -215,7 +217,7 @@ Ok now its time to start solving the question. Good luck!
 """
 
     runtime = create_runtime(config)
-
+    call_async_from_sync(runtime.connect)
     state: State | None = asyncio.run(
         run_controller(
             config=config,
@@ -243,7 +245,7 @@ Ok now its time to start solving the question. Good luck!
         'C': False,
         'D': False,
     }
-    for event in state.history.get_events(reverse=True):
+    for event in reversed(state.history):
         if (
             isinstance(event, AgentFinishAction)
             and event.source != 'user'
@@ -299,7 +301,7 @@ Ok now its time to start solving the question. Good luck!
         instance_id=str(instance.instance_id),
         instruction=instruction,
         metadata=metadata,
-        history=state.history.compatibility_for_eval_history_pairs(),
+        history=compatibility_for_eval_history_pairs(state.history),
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
         test_result={
