@@ -20,6 +20,7 @@ import OpenHands from "#/api/open-hands";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { GitHubRepositoriesSuggestionBox } from "#/components/github-repositories-suggestion-box";
 
+let cachedRepositories: ReturnType<typeof retrieveAllGitHubUserRepositories> | null = null;
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   let isSaas = false;
   let githubClientId: string | null = null;
@@ -40,9 +41,12 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   let repositories: ReturnType<
     typeof retrieveAllGitHubUserRepositories
   > | null = null;
-  if (ghToken) {
+  if (cachedRepositories) {
+    repositories = cachedRepositories;
+  } else if (ghToken) {
     const data = retrieveAllGitHubUserRepositories(ghToken);
     repositories = data;
+    cachedRepositories = data;
   }
 
   let githubAuthUrl: string | null = null;
