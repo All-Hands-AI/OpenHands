@@ -665,15 +665,13 @@ def convert_non_fncall_messages_to_fncall_messages(
         # Handle assistant messages
         elif role == 'assistant':
             if isinstance(content, str):
-                fn_match = re.search(
-                    FN_REGEX_PATTERN, _fix_deepseek_stopword(content), re.DOTALL
-                )
+                content = _fix_deepseek_stopword(content)
+                fn_match = re.search(FN_REGEX_PATTERN, content, re.DOTALL)
             elif isinstance(content, list):
                 if content and content[-1]['type'] == 'text':
+                    content[-1]['text'] = _fix_deepseek_stopword(content[-1]['text'])
                     fn_match = re.search(
-                        FN_REGEX_PATTERN,
-                        _fix_deepseek_stopword(content[-1]['text']),
-                        re.DOTALL,
+                        FN_REGEX_PATTERN, content[-1]['text'], re.DOTALL
                     )
                 else:
                     fn_match = None
