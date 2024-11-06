@@ -100,9 +100,9 @@ class AgentSession:
         config: AppConfig,
         agent: Agent,
         max_iterations: int,
-        max_budget_per_task: float | None = None,
-        agent_to_llm_config: dict[str, LLMConfig] | None = None,
-        agent_configs: dict[str, AgentConfig] | None = None,
+        max_budget_per_task: float | None,
+        agent_to_llm_config: dict[str, LLMConfig] | None,
+        agent_configs: dict[str, AgentConfig] | None,
     ):
         self._create_security_analyzer(config.security.security_analyzer)
         await self._create_runtime(

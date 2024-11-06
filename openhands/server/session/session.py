@@ -30,7 +30,7 @@ class Session:
     sid: str
     websocket: WebSocket | None
     last_active_ts: int = 0
-    is_alive: bool = True
+    is_alive: bool = False
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
 
@@ -109,6 +109,7 @@ class Session:
 
         # Create the agent session
         try:
+            self.is_alive = True
             await self.agent_session.start(
                 runtime_name=self.config.runtime,
                 config=self.config,
@@ -155,7 +156,8 @@ class Session:
     async def dispatch(self, data: dict):
         action = data.get('action', '')
         if action == ActionType.INIT:
-            await self._initialize_agent(data)
+            if not self.is_alive:
+                await self._initialize_agent(data)
             return
         event = event_from_dict(data.copy())
         # This checks if the model supports images

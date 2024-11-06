@@ -105,18 +105,19 @@ class AgentController:
         self.agent = agent
         self.headless_mode = headless_mode
 
-        # subscribe to the event stream
-        self.event_stream = event_stream
-        self.event_stream.subscribe(
-            EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, self.id
-        )
-
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
             state=initial_state,
             max_iterations=max_iterations,
             confirmation_mode=confirmation_mode,
         )
+
+        # subscribe to the event stream
+        self.event_stream = event_stream
+        self.event_stream.subscribe(
+            EventStreamSubscriber.AGENT_CONTROLLER, self.on_event, self.id
+        )
+
         self.max_budget_per_task = max_budget_per_task
         self.agent_to_llm_config = agent_to_llm_config if agent_to_llm_config else {}
         self.agent_configs = agent_configs if agent_configs else {}
