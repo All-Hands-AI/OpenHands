@@ -118,7 +118,6 @@ function Home() {
                       if (event.target.files) {
                         const zip = event.target.files[0];
                         setImportedFile(zip);
-                        navigate("/app");
                       } else {
                         // TODO: handle error
                       }
