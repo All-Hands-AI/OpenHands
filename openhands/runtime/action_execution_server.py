@@ -65,17 +65,40 @@ MAX_CHARS_MESSAGES = 30_000
 
 
 def truncate_content(content: str, max_chars: int) -> str:
-    """Truncate the middle of the observation content if it is too long."""
+    """Truncate the middle of the observation content if it is too long.
+    If truncation occurs, the full content will be saved to a file in /openhands/outputs/
+    """
     if len(content) <= max_chars or max_chars == -1:
         return content
 
+    # Save the full content to a file
+    import os
+    import datetime
+    
+    # Create outputs directory if it doesn't exist
+    outputs_dir = '/openhands/outputs'
+    if not os.path.exists(outputs_dir):
+        os.makedirs(outputs_dir, mode=0o777, exist_ok=True)
+    
+    # Generate filename with timestamp
+    timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    output_file = os.path.join(outputs_dir, f'truncated_output_{timestamp}.txt')
+    
+    try:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(content)
+        os.chmod(output_file, 0o666)  # Make file readable/writable by all
+    except Exception as e:
+        logger.error(f'Failed to save full content to file: {e}')
+
     # truncate the middle and include a message to the LLM about it
     half = max_chars // 2
-    return (
+    truncated = (
         content[:half]
-        + '\n[... Observation truncated due to length ...]\n'
+        + f'\n[... Observation truncated due to length. Full content saved to {output_file} ...]\n'
         + content[-half:]
     )
+    return truncated
 
 
 ROOT_GID = 0
