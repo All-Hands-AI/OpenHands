@@ -223,8 +223,7 @@ Do NOT assume the environment is the same as in the example above.
 IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX = """
 --------------------- END OF NEW TASK DESCRIPTION ---------------------
 
-Do NOT assume the environment is the same as in the example above. PLEASE follow the format strictly!
-PLEASE EMIT ONE AND ONLY ONE FUNCTION CALL PER MESSAGE.
+PLEASE follow the format strictly! PLEASE EMIT ONE AND ONLY ONE FUNCTION CALL PER MESSAGE.
 """.lstrip()
 
 # Regex patterns for function call parsing
@@ -547,6 +546,17 @@ def _extract_and_validate_params(
     return params
 
 
+def _fix_deepseek_stopword(content: str) -> str:
+    """Fix the issue when Deepseek would not keep the full stopwords."""
+    if (
+        '<function=' in content
+        and content.count('<function=') == 1
+        and content.endswith('</')
+    ):
+        content = content.rstrip() + 'function>'
+    return content
+
+
 def convert_non_fncall_messages_to_fncall_messages(
     messages: list[dict],
     tools: list[ChatCompletionToolParam],
@@ -655,11 +665,15 @@ def convert_non_fncall_messages_to_fncall_messages(
         # Handle assistant messages
         elif role == 'assistant':
             if isinstance(content, str):
-                fn_match = re.search(FN_REGEX_PATTERN, content, re.DOTALL)
+                fn_match = re.search(
+                    FN_REGEX_PATTERN, _fix_deepseek_stopword(content), re.DOTALL
+                )
             elif isinstance(content, list):
                 if content and content[-1]['type'] == 'text':
                     fn_match = re.search(
-                        FN_REGEX_PATTERN, content[-1]['text'], re.DOTALL
+                        FN_REGEX_PATTERN,
+                        _fix_deepseek_stopword(content[-1]['text']),
+                        re.DOTALL,
                     )
                 else:
                     fn_match = None

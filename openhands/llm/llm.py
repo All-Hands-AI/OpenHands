@@ -12,7 +12,6 @@ from openhands.core.config import LLMConfig
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
-from litellm import Message as LitellmMessage
 from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
@@ -186,6 +185,7 @@ class LLM(RetryMixin, DebugMixin):
             messages = messages if isinstance(messages, list) else [messages]
 
             original_fncall_messages = copy.deepcopy(messages)
+            mock_fncall_tools = None
             if mock_function_calling:
                 assert (
                     'tools' in kwargs
@@ -193,7 +193,9 @@ class LLM(RetryMixin, DebugMixin):
                 messages = convert_fncall_messages_to_non_fncall_messages(
                     messages, kwargs['tools']
                 )
+                kwargs['messages'] = messages
                 kwargs['stop'] = STOP_WORDS
+                mock_fncall_tools = kwargs.pop('tools')
 
             # if we have no messages, something went very wrong
             if not messages:
@@ -222,14 +224,15 @@ class LLM(RetryMixin, DebugMixin):
                 non_fncall_response = copy.deepcopy(resp)
                 if mock_function_calling:
                     assert len(resp.choices) == 1
+                    assert mock_fncall_tools is not None
                     non_fncall_response_message = resp.choices[0].message
                     fn_call_messages_with_response = (
                         convert_non_fncall_messages_to_fncall_messages(
-                            messages + [non_fncall_response_message], kwargs['tools']
+                            messages + [non_fncall_response_message], mock_fncall_tools
                         )
                     )
                     fn_call_response_message = fn_call_messages_with_response[-1]
-                    resp.choices[0].message = LitellmMessage(**fn_call_response_message)
+                    resp.choices[0].message = fn_call_response_message
 
                 # log for evals or other scripts that need the raw completion
                 if self.config.log_completions:
