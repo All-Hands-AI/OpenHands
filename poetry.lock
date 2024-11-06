@@ -5671,9 +5671,9 @@ tree-sitter = "0.21.3"
 
 [package.source]
 type = "git"
-url = "https://github.com/All-Hands-AI/openhands-aci/"
-reference = "HEAD"
-resolved_reference = "0699ef087e1d3afec9c481ea1eb950262e32364e"
+url = "https://github.com/All-Hands-AI/openhands-aci.git"
+reference = "ht/simplify-undo-edit"
+resolved_reference = "3324ec545aa9884d24eb1f03b306d1a3e34b5a47"
 
 [[package]]
 name = "opentelemetry-api"
@@ -10164,4 +10164,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "bac65624f749c5f8ec2527b5b4ecf20388cc8f9475421634ce7f7b80c5761616"
+content-hash = "21ff4e5ea0252ee787c19983ef0eb56a9eec643436a7ea739f0c2f3a662afe3a"

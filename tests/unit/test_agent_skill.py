@@ -781,7 +781,7 @@ def test_file_editor_create(tmp_path):
     assert result is not None
     assert (
         result
-        == f'ERROR:\nThe path {random_file} does not exist. Please provide a valid path.'
+        == f'ERROR:\nInvalid `path` parameter: {random_file}. The path {random_file} does not exist. Please provide a valid path.'
     )
 
     # create a file
@@ -845,7 +845,7 @@ def test_file_editor_view_nonexistent(setup_file):
     result = file_editor(command='view', path=str(random_file))
     assert (
         result
-        == f'ERROR:\nThe path {random_file} does not exist. Please provide a valid path.'
+        == f'ERROR:\nInvalid `path` parameter: {random_file}. The path {random_file} does not exist. Please provide a valid path.'
     )
 
 
