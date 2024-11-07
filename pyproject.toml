@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openhands-ai"
-version = "0.12.0"
+version = "0.12.3"
 description = "OpenHands: Code Less, Make More"
 authors = ["OpenHands"]
 license = "MIT"
@@ -16,6 +16,9 @@ datasets = "*"
 pandas = "*"
 litellm = "^1.51.1"
 google-generativeai = "*" # To use litellm with Gemini Pro API
+google-api-python-client = "*" # For Google Sheets API
+google-auth-httplib2 = "*" # For Google Sheets authentication
+google-auth-oauthlib = "*" # For Google Sheets OAuth
 termcolor = "*"
 seaborn = "*"
 docker = "*"
@@ -89,6 +92,7 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -118,6 +122,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"

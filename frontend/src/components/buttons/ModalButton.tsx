@@ -2,6 +2,7 @@ import clsx from "clsx";
 import React from "react";
 
 interface ModalButtonProps {
+  testId?: string;
   variant?: "default" | "text-like";
   onClick?: () => void;
   text: string;
@@ -13,6 +14,7 @@ interface ModalButtonProps {
 }
 
 function ModalButton({
+  testId,
   variant = "default",
   onClick,
   text,
@@ -24,6 +26,7 @@ function ModalButton({
 }: ModalButtonProps) {
   return (
     <button
+      data-testid={testId}
       type={type === "submit" ? "submit" : "button"}
       disabled={disabled}
       onClick={onClick}

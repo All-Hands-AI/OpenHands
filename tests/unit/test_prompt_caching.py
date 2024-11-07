@@ -1,14 +1,12 @@
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.core.config import AgentConfig, LLMConfig
-from openhands.events import EventSource, EventStream
 from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
 from openhands.llm.llm import LLM
-from openhands.storage import get_file_store
 
 
 @pytest.fixture
@@ -17,12 +15,6 @@ def mock_llm():
     llm.config = LLMConfig(model='claude-3-5-sonnet-20241022', caching_prompt=True)
     llm.is_caching_prompt_active.return_value = True
     return llm
-
-
-@pytest.fixture
-def mock_event_stream(tmp_path):
-    file_store = get_file_store('local', str(tmp_path))
-    return EventStream('test_session', file_store)
 
 
 @pytest.fixture(params=[False, True])
@@ -57,17 +49,28 @@ def response_mock(content: str):
     return MockModelResponse(content)
 
 
-def test_get_messages_with_reminder(codeact_agent, mock_event_stream):
-    # Add some events to the stream
-    mock_event_stream.add_event(MessageAction('Initial user message'), EventSource.USER)
-    mock_event_stream.add_event(MessageAction('Sure!'), EventSource.AGENT)
-    mock_event_stream.add_event(MessageAction('Hello, agent!'), EventSource.USER)
-    mock_event_stream.add_event(MessageAction('Hello, user!'), EventSource.AGENT)
-    mock_event_stream.add_event(MessageAction('Laaaaaaaast!'), EventSource.USER)
+def test_get_messages_with_reminder(codeact_agent: CodeActAgent):
+    # Add some events to history
+    history = list()
+    message_action_1 = MessageAction('Initial user message')
+    message_action_1._source = 'user'
+    history.append(message_action_1)
+    message_action_2 = MessageAction('Sure!')
+    message_action_2._source = 'assistant'
+    history.append(message_action_2)
+    message_action_3 = MessageAction('Hello, agent!')
+    message_action_3._source = 'user'
+    history.append(message_action_3)
+    message_action_4 = MessageAction('Hello, user!')
+    message_action_4._source = 'assistant'
+    history.append(message_action_4)
+    message_action_5 = MessageAction('Laaaaaaaast!')
+    message_action_5._source = 'user'
+    history.append(message_action_5)
 
     codeact_agent.reset()
     messages = codeact_agent._get_messages(
-        Mock(history=mock_event_stream, max_iterations=5, iteration=0)
+        Mock(history=history, max_iterations=5, iteration=0)
     )
 
     assert (
@@ -102,19 +105,20 @@ def test_get_messages_with_reminder(codeact_agent, mock_event_stream):
         )
 
 
-def test_get_messages_prompt_caching(codeact_agent, mock_event_stream):
+def test_get_messages_prompt_caching(codeact_agent: CodeActAgent):
+    history = list()
     # Add multiple user and agent messages
     for i in range(15):
-        mock_event_stream.add_event(
-            MessageAction(f'User message {i}'), EventSource.USER
-        )
-        mock_event_stream.add_event(
-            MessageAction(f'Agent message {i}'), EventSource.AGENT
-        )
+        message_action_user = MessageAction(f'User message {i}')
+        message_action_user._source = 'user'
+        history.append(message_action_user)
+        message_action_agent = MessageAction(f'Agent message {i}')
+        message_action_agent._source = 'assistant'
+        history.append(message_action_agent)
 
     codeact_agent.reset()
     messages = codeact_agent._get_messages(
-        Mock(history=mock_event_stream, max_iterations=10, iteration=5)
+        Mock(history=history, max_iterations=10, iteration=5)
     )
 
     # Check that only the last two user messages have cache_prompt=True
@@ -136,18 +140,23 @@ def test_get_messages_prompt_caching(codeact_agent, mock_event_stream):
     assert cached_user_messages[3].content[0].text.startswith('User message 1')
 
 
-def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
+def test_get_messages_with_cmd_action(codeact_agent: CodeActAgent):
     if codeact_agent.config.function_calling:
         pytest.skip('Skipping this test for function calling')
+
+    history = list()
 
     # Add a mix of actions and observations
     message_action_1 = MessageAction(
         "Let's list the contents of the current directory."
     )
-    mock_event_stream.add_event(message_action_1, EventSource.USER)
+    message_action_1._source = 'user'
+    history.append(message_action_1)
 
     cmd_action_1 = CmdRunAction('ls -l', thought='List files in current directory')
-    mock_event_stream.add_event(cmd_action_1, EventSource.AGENT)
+    cmd_action_1._source = 'agent'
+    cmd_action_1._id = 'cmd_1'
+    history.append(cmd_action_1)
 
     cmd_observation_1 = CmdOutputObservation(
         content='total 0\n-rw-r--r-- 1 user group 0 Jan 1 00:00 file1.txt\n-rw-r--r-- 1 user group 0 Jan 1 00:00 file2.txt',
@@ -155,13 +164,17 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
         command='ls -l',
         exit_code=0,
     )
-    mock_event_stream.add_event(cmd_observation_1, EventSource.ENVIRONMENT)
+    cmd_observation_1._source = 'user'
+    history.append(cmd_observation_1)
 
     message_action_2 = MessageAction("Now, let's create a new directory.")
-    mock_event_stream.add_event(message_action_2, EventSource.AGENT)
+    message_action_2._source = 'agent'
+    history.append(message_action_2)
 
     cmd_action_2 = CmdRunAction('mkdir new_directory', thought='Create a new directory')
-    mock_event_stream.add_event(cmd_action_2, EventSource.AGENT)
+    cmd_action_2._source = 'agent'
+    cmd_action_2._id = 'cmd_2'
+    history.append(cmd_action_2)
 
     cmd_observation_2 = CmdOutputObservation(
         content='',
@@ -169,11 +182,12 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
         command='mkdir new_directory',
         exit_code=0,
     )
-    mock_event_stream.add_event(cmd_observation_2, EventSource.ENVIRONMENT)
+    cmd_observation_2._source = 'user'
+    history.append(cmd_observation_2)
 
     codeact_agent.reset()
     messages = codeact_agent._get_messages(
-        Mock(history=mock_event_stream, max_iterations=5, iteration=0)
+        Mock(history=history, max_iterations=5, iteration=0)
     )
 
     # Assert the presence of key elements in the messages
@@ -218,19 +232,17 @@ def test_get_messages_with_cmd_action(codeact_agent, mock_event_stream):
         assert 'ENVIRONMENT REMINDER: You have 5 turns' in messages[5].content[1].text
 
 
-def test_prompt_caching_headers(codeact_agent, mock_event_stream):
+def test_prompt_caching_headers(codeact_agent: CodeActAgent):
+    history = list()
     if codeact_agent.config.function_calling:
         pytest.skip('Skipping this test for function calling')
 
     # Setup
-    mock_event_stream.add_event(MessageAction('Hello, agent!'), EventSource.USER)
-    mock_event_stream.add_event(MessageAction('Hello, user!'), EventSource.AGENT)
-
-    mock_short_term_history = MagicMock()
-    mock_short_term_history.get_last_user_message.return_value = 'Hello, agent!'
+    history.append(MessageAction('Hello, agent!'))
+    history.append(MessageAction('Hello, user!'))
 
     mock_state = Mock()
-    mock_state.history = mock_short_term_history
+    mock_state.history = history
     mock_state.max_iterations = 5
     mock_state.iteration = 0
 

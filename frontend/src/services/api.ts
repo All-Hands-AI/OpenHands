@@ -7,6 +7,7 @@ const UNAUTHED_ROUTE_PREFIXES = [
   "/api/authenticate",
   "/api/options/",
   "/config.json",
+  "/api/github/callback",
 ];
 
 export async function request(

@@ -7,21 +7,15 @@ def get_version():
     try:
         from importlib.metadata import PackageNotFoundError, version
 
-        try:
-            return version(__package_name__)
-        except PackageNotFoundError:
-            pass
-    except ImportError:
+        return version(__package_name__)
+    except (ImportError, PackageNotFoundError):
         pass
 
     try:
         from pkg_resources import DistributionNotFound, get_distribution
 
-        try:
-            return get_distribution(__package_name__).version
-        except DistributionNotFound:
-            pass
-    except ImportError:
+        return get_distribution(__package_name__).version
+    except (ImportError, DistributionNotFound):
         pass
 
     # Try getting the version from pyproject.toml

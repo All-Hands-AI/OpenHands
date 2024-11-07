@@ -7,7 +7,6 @@ import {
   json,
   ClientActionFunctionArgs,
   useRouteLoaderData,
-  redirect,
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import WebSocket from "ws";
@@ -37,6 +36,7 @@ import ListIcon from "#/assets/list-type-number.svg?react";
 import { createChatMessage } from "#/services/chatService";
 import {
   clearFiles,
+  clearInitialQuery,
   clearSelectedRepository,
   setImportedProjectZip,
 } from "#/state/initial-query-slice";
@@ -47,10 +47,9 @@ import { base64ToBlob } from "#/utils/base64-to-blob";
 import { clientLoader as rootClientLoader } from "#/routes/_oh";
 import { clearJupyter } from "#/state/jupyterSlice";
 import { FilesProvider } from "#/context/files";
-import { clearSession } from "#/utils/clear-session";
-import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 import { ErrorObservation } from "#/types/core/observations";
 import { ChatInterface } from "#/components/chat-interface";
+import { cn } from "#/utils/utils";
 
 interface ServerError {
   error: boolean | string;
@@ -72,16 +71,6 @@ const isAgentStateChange = (
 
 export const clientLoader = async () => {
   const ghToken = localStorage.getItem("ghToken");
-  try {
-    const isAuthed = await userIsAuthenticated();
-    if (!isAuthed) {
-      clearSession();
-      return redirect("/");
-    }
-  } catch (error) {
-    clearSession();
-    return redirect("/");
-  }
 
   const q = store.getState().initalQuery.initialQuery;
   const repo =
@@ -184,21 +173,6 @@ function App() {
     if (q) addIntialQueryToChat(q, files);
   }, [settings]);
 
-  const handleError = (message: string) => {
-    const [error, ...rest] = message.split(":");
-    const details = rest.join(":");
-    if (!details) {
-      dispatch(
-        addErrorMessage({
-          error: "An error has occured",
-          message: error,
-        }),
-      );
-    } else {
-      dispatch(addErrorMessage({ error, message: details }));
-    }
-  };
-
   const handleMessage = React.useCallback(
     (message: MessageEvent<WebSocket.Data>) => {
       // set token received from the server
@@ -224,7 +198,12 @@ function App() {
         return;
       }
       if (isErrorObservation(parsed)) {
-        handleError(parsed.message);
+        dispatch(
+          addErrorMessage({
+            id: parsed.extras?.error_id,
+            message: parsed.message,
+          }),
+        );
         return;
       }
 
@@ -277,6 +256,7 @@ function App() {
     dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
+    dispatch(clearInitialQuery()); // Clear initial query when navigating to /app
     startSocketConnection();
   });
 
@@ -314,7 +294,16 @@ function App() {
   return (
     <div className="flex flex-col h-full gap-3">
       <div className="flex h-full overflow-auto gap-3">
-        <Container className="w-[390px] max-h-full">
+        <Container className="w-[390px] max-h-full relative">
+          <div
+            className={cn(
+              "w-2 h-2 rounded-full border",
+              "absolute left-3 top-3",
+              runtimeActive
+                ? "bg-green-800 border-green-500"
+                : "bg-red-800 border-red-500",
+            )}
+          />
           <ChatInterface />
         </Container>
 

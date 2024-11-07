@@ -15,14 +15,6 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
       await OpenHands.getGitHubAccessToken(code);
 
     localStorage.setItem("ghToken", accessToken);
-    const authResponse = await OpenHands.authenticate();
-    if (!authResponse.ok) {
-      localStorage.removeItem("ghToken");
-      return json(
-        { error: "Failed to authenticate with GitHub" },
-        { status: authResponse.status },
-      );
-    }
 
     return redirect("/");
   }
