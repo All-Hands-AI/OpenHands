@@ -6,12 +6,14 @@ __package_name__ = 'openhands_ai'
 def get_version():
     try:
         from importlib.metadata import PackageNotFoundError, version
+
         return version(__package_name__)
     except (ImportError, PackageNotFoundError):
         pass
 
     try:
         from pkg_resources import DistributionNotFound, get_distribution
+
         return get_distribution(__package_name__).version
     except (ImportError, DistributionNotFound):
         pass
