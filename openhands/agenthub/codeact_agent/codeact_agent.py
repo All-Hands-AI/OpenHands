@@ -103,12 +103,14 @@ class CodeActAgent(Agent):
                 f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
             )
             self.prompt_manager = PromptManager(
-                prompt_dir=os.path.join(os.path.dirname(__file__), 'tools'),
+                microagent_dir=os.path.join(os.path.dirname(__file__), 'micro'),
+                prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts', 'tools'),
             )
         else:
             self.action_parser = CodeActResponseParser()
             self.prompt_manager = PromptManager(
-                prompt_dir=os.path.join(os.path.dirname(__file__), 'default'),
+                microagent_dir=os.path.join(os.path.dirname(__file__), 'micro'),
+                prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts', 'default'),
                 agent_skills_docs=AgentSkillsRequirement.documentation,
             )
 

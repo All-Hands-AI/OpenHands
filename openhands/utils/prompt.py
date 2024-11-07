@@ -24,6 +24,7 @@ class PromptManager:
     def __init__(
         self,
         prompt_dir: str,
+        microagent_dir: str = '',
         agent_skills_docs: str = '',
     ):
         self.prompt_dir: str = prompt_dir
@@ -33,15 +34,16 @@ class PromptManager:
         self.user_template: Template = self._load_template('user_prompt')
         self.microagents: dict = {}
 
-        micro_agent_dir = os.path.join(prompt_dir, 'micro')
-        micro_agent_files = [
-            os.path.join(micro_agent_dir, f)
-            for f in os.listdir(micro_agent_dir)
-            if f.endswith('.md')
-        ]
-        for micro_agent_file in micro_agent_files:
-            micro_agent = MicroAgent(micro_agent_file)
-            self.microagents[micro_agent.name] = micro_agent
+        microagent_files = []
+        if microagent_dir:
+            microagent_files = [
+                os.path.join(microagent_dir, f)
+                for f in os.listdir(microagent_dir)
+                if f.endswith('.md')
+            ]
+        for microagent_file in microagent_files:
+            microagent = MicroAgent(microagent_file)
+            self.microagents[microagent.name] = microagent
 
     def _load_template(self, template_name: str) -> Template:
         template_path = os.path.join(self.prompt_dir, f'{template_name}.j2')
@@ -78,11 +80,11 @@ class PromptManager:
         if not message.content:
             return
         message_content = message.content[0].text
-        for micro_agent in self.microagents.values():
-            trigger = micro_agent.get_trigger(message_content)
+        for microagent in self.microagents.values():
+            trigger = microagent.get_trigger(message_content)
             if trigger:
                 micro_text = f'### EXTRA INFO:\n> The following information has been included based on a keyword match for "{trigger}". It may or may not be relevant to the user\'s request.'
-                micro_text += '\n\n' + micro_agent.content
+                micro_text += '\n\n' + microagent.content
                 message.content.append(TextContent(text=micro_text))
 
     def add_turns_left_reminder(self, messages: list[Message], state: State) -> None:
