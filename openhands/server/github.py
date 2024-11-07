@@ -1,6 +1,7 @@
 import os
 
 import httpx
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.sheets_client import GoogleSheetsClient
@@ -101,6 +102,7 @@ async def authenticate_github_user(auth_token) -> bool:
     return True
 
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
 async def get_github_user(token: str) -> str:
     """Get GitHub user info from token.
 
@@ -108,19 +110,25 @@ async def get_github_user(token: str) -> str:
         token: GitHub access token
 
     Returns:
-        Tuple of (login, error_message)
-        If successful, error_message is None
-        If failed, login is None and error_message contains the error
+        github handle of the user
     """
     logger.info('Fetching GitHub user info from token')
     headers = {
         'Accept': 'application/vnd.github+json',
         'Authorization': f'Bearer {token}',
-        'X-GitHub-Api-Version': '2022-11-28',
     }
-    async with httpx.AsyncClient() as client:
-        logger.debug('Making request to GitHub API')
-        response = await client.get('https://api.github.com/user', headers=headers)
+    async with httpx.AsyncClient(
+        timeout=httpx.Timeout(connect=5.0, read=5.0, write=5.0, pool=5.0)
+    ) as client:
+        try:
+            response = await client.get('https://api.github.com/user', headers=headers)
+        except httpx.RequestError as e:
+            logger.error(f'Error making request to GitHub API: {str(e)}')
+            logger.error(e)
+            raise
+
+        logger.info('Received response from GitHub API')
+        logger.debug(f'Response status code: {response.status_code}')
         response.raise_for_status()
         user_data = response.json()
         login = user_data.get('login')
