@@ -117,9 +117,6 @@ class Runtime(FileEditRuntimeMixin):
         self._vscode_connection_token: str | None = None
         if self._vscode_enabled:
             self._vscode_connection_token = str(uuid.uuid4())
-            self.initial_env_vars['VSCODE_CONNECTION_TOKEN'] = (
-                self._vscode_connection_token
-            )
 
         # Load mixins
         FileEditRuntimeMixin.__init__(self)

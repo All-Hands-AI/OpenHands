@@ -293,6 +293,9 @@ class EventStreamRuntime(Runtime):
         if self.config.debug or DEBUG:
             environment['DEBUG'] = 'true'
 
+        if self.vscode_connection_token:
+            environment['VSCODE_CONNECTION_TOKEN'] = self.vscode_connection_token
+
         self.log('debug', f'Workspace Base: {self.config.workspace_base}')
         if (
             self.config.workspace_mount_path is not None
