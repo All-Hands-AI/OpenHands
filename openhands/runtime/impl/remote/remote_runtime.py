@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import tempfile
 import threading
 from typing import Callable, Optional
@@ -467,13 +468,18 @@ class RemoteRuntime(Runtime):
         assert isinstance(response_json, list)
         return response_json
 
-    def copy_from(self, path: str) -> bytes:
+    def copy_from(self, path: str) -> Path:
         """Zip all files in the sandbox and return as a stream of bytes."""
         params = {'path': path}
         response = self._send_request(
             'GET',
             f'{self.runtime_url}/download_files',
             params=params,
+            stream=True,
             timeout=30,
         )
-        return response.content
+        temp_file = tempfile.NamedTemporaryFile(delete=False)
+        for chunk in response.iter_content(chunk_size=8192):
+            if chunk:  # filter out keep-alive new chunks
+                temp_file.write(chunk)
+        return Path(temp_file.name)
