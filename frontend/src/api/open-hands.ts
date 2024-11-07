@@ -1,4 +1,5 @@
 import { request } from "#/services/api";
+import { cache } from "#/utils/cache";
 import {
   SaveFileSuccessResponse,
   FileUploadSuccessResponse,
@@ -15,7 +16,13 @@ class OpenHands {
    * @returns List of models available
    */
   static async getModels(): Promise<string[]> {
-    return request("/api/options/models");
+    const cachedData = cache.get<string[]>("models");
+    if (cachedData) return cachedData;
+
+    const data = await request("/api/options/models");
+    cache.set("models", data);
+
+    return data;
   }
 
   /**
@@ -23,7 +30,13 @@ class OpenHands {
    * @returns List of agents available
    */
   static async getAgents(): Promise<string[]> {
-    return request(`/api/options/agents`);
+    const cachedData = cache.get<string[]>("agents");
+    if (cachedData) return cachedData;
+
+    const data = await request(`/api/options/agents`);
+    cache.set("agents", data);
+
+    return data;
   }
 
   /**
@@ -31,11 +44,23 @@ class OpenHands {
    * @returns List of security analyzers available
    */
   static async getSecurityAnalyzers(): Promise<string[]> {
-    return request(`/api/options/security-analyzers`);
+    const cachedData = cache.get<string[]>("agents");
+    if (cachedData) return cachedData;
+
+    const data = await request(`/api/options/security-analyzers`);
+    cache.set("security-analyzers", data);
+
+    return data;
   }
 
   static async getConfig(): Promise<GetConfigResponse> {
-    return request("/config.json");
+    const cachedData = cache.get<GetConfigResponse>("config");
+    if (cachedData) return cachedData;
+
+    const data = await request("/config.json");
+    cache.set("config", data);
+
+    return data;
   }
 
   /**
