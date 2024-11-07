@@ -45,8 +45,8 @@
     "ws": "^8.18.0"
   },
   "scripts": {
-    "dev": "npm run make-i18n && VITE_MOCK_API=false remix vite:dev",
-    "dev:mock": "npm run make-i18n && VITE_MOCK_API=true remix vite:dev",
+    "dev": "npm run make-i18n && cross-env VITE_MOCK_API=false remix vite:dev",
+    "dev:mock": "npm run make-i18n && cross-env VITE_MOCK_API=true remix vite:dev",
     "build": "npm run make-i18n && tsc && remix vite:build",
     "start": "npx sirv-cli build/ --single",
     "test": "vitest run",
@@ -89,6 +89,7 @@
     "@typescript-eslint/parser": "^7.18.0",
     "@vitest/coverage-v8": "^1.6.0",
     "autoprefixer": "^10.4.20",
+    "cross-env": "^7.0.3",
     "eslint": "^8.57.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-airbnb-typescript": "^18.0.0",
