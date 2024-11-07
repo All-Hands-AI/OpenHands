@@ -35,7 +35,7 @@ export function ProjectMenuDetails({
       >
         <span>{lastCommit.sha.slice(-7)}</span> <span>&middot;</span>{" "}
         <span>
-          {formatTimeDelta(new Date(lastCommit.commit.author.date))}
+          {formatTimeDelta(new Date(lastCommit.commit.author.date))}{" "}
           {t(I18nKey.PROJECT_MENU_DETAILS$AGO_LABEL)}
         </span>
       </a>
