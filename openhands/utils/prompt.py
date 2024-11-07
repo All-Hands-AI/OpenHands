@@ -83,8 +83,9 @@ class PromptManager:
         for microagent in self.microagents.values():
             trigger = microagent.get_trigger(message_content)
             if trigger:
-                micro_text = f'### EXTRA INFO:\n> The following information has been included based on a keyword match for "{trigger}". It may or may not be relevant to the user\'s request.'
+                micro_text = f'<extra_info>\nThe following information has been included based on a keyword match for "{trigger}". It may or may not be relevant to the user\'s request.'
                 micro_text += '\n\n' + microagent.content
+                micro_text += '\n</extra_info>'
                 message.content.append(TextContent(text=micro_text))
 
     def add_turns_left_reminder(self, messages: list[Message], state: State) -> None:
