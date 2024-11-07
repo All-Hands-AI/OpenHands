@@ -249,7 +249,11 @@ export default function MainApp() {
           "Jumping to VSCode... NOTE: The agent currently is unaware of changes you've made in VSCode. Please let the agent know the changes you've made. Please try not to work at the same time as the agent.",
           { duration: 5000 },
         );
-        window.open(response.vscode_url, "_blank");
+        // Add 3 second delay before opening VSCode
+        setTimeout(
+          () => window.open(response.vscode_url ?? "", "_blank"),
+          3000,
+        );
       } else {
         toast.error(
           `${response.error}\nPlease make sure the agent is already connected to Runtime.`,
