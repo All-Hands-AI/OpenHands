@@ -1,13 +1,8 @@
 import os
 
-import pytest
 from pytest import MonkeyPatch
 
 import openhands.agenthub  # noqa: F401
-from openhands.core.exceptions import (
-    AgentNotRegisteredError,
-    MicroAgentValidationError,
-)
 from openhands.utils.microagent import MicroAgent
 
 CONTENT = (
