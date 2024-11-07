@@ -59,14 +59,11 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
       return;
     }
 
-    const token = localStorage.getItem("token");
-    if (token) {
-      try {
-        const newChildren = await OpenHands.getFiles(token, path);
-        setChildren(newChildren);
-      } catch (error) {
-        toast.error("Failed to fetch files");
-      }
+    try {
+      const newChildren = await OpenHands.getFiles(path);
+      setChildren(newChildren);
+    } catch (error) {
+      toast.error("Failed to fetch files");
     }
   };
 
@@ -77,15 +74,13 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
   }, [refreshID, isOpen]);
 
   const handleClick = async () => {
-    const token = localStorage.getItem("token");
-
     if (isDirectory) {
       setIsOpen((prev) => !prev);
-    } else if (token) {
+    } else {
       const code = modifiedFiles[path] || files[path];
 
       try {
-        const fetchedCode = await OpenHands.getFile(token, path);
+        const fetchedCode = await OpenHands.getFile(path);
         setSelectedPath(path);
         if (!code || fetchedCode !== files[path]) {
           setFileContent(path, fetchedCode);

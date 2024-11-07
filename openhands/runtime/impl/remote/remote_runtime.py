@@ -1,15 +1,14 @@
 import os
+from pathlib import Path
 import tempfile
 import threading
-import time
 from typing import Callable, Optional
 from zipfile import ZipFile
 
 import requests
-from requests.exceptions import Timeout
+import tenacity
 
 from openhands.core.config import AppConfig
-from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
     BrowseInteractiveAction,
@@ -22,22 +21,26 @@ from openhands.events.action import (
 )
 from openhands.events.action.action import Action
 from openhands.events.observation import (
-    FatalErrorObservation,
+    ErrorObservation,
     NullObservation,
     Observation,
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.runtime.base import Runtime
+from openhands.runtime.base import (
+    Runtime,
+    RuntimeDisconnectedError,
+    RuntimeNotReadyError,
+)
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
 from openhands.runtime.utils.request import (
-    is_404_error,
-    is_503_error,
-    send_request_with_retry,
+    send_request,
 )
 from openhands.runtime.utils.runtime_build import build_runtime_image
+from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
 class RemoteRuntime(Runtime):
@@ -52,24 +55,33 @@ class RemoteRuntime(Runtime):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_message_callback: Optional[Callable] = None,
+        status_callback: Optional[Callable] = None,
         attach_to_existing: bool = False,
     ):
-        self.config = config
-        self.status_message_callback = status_message_callback
+        # We need to set session and action_semaphore before the __init__ below, or we get odd errors
+        self.session = requests.Session()
+        self.action_semaphore = threading.Semaphore(1)
 
+        super().__init__(
+            config,
+            event_stream,
+            sid,
+            plugins,
+            env_vars,
+            status_callback,
+            attach_to_existing,
+        )
         if self.config.sandbox.api_key is None:
             raise ValueError(
                 'API key is required to use the remote runtime. '
                 'Please set the API key in the config (config.toml) or as an environment variable (SANDBOX_API_KEY).'
             )
-        self.session = requests.Session()
         self.session.headers.update({'X-API-Key': self.config.sandbox.api_key})
-        self.action_semaphore = threading.Semaphore(1)
 
         if self.config.workspace_base is not None:
-            logger.warning(
-                'Setting workspace_base is not supported in the remote runtime.'
+            self.log(
+                'debug',
+                'Setting workspace_base is not supported in the remote runtime.',
             )
 
         self.runtime_builder = RemoteRuntimeBuilder(
@@ -78,37 +90,32 @@ class RemoteRuntime(Runtime):
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
 
-        super().__init__(
-            config,
-            event_stream,
-            sid,
-            plugins,
-            env_vars,
-            status_message_callback,
-            attach_to_existing,
-        )
-
     async def connect(self):
-        self._start_or_attach_to_runtime()
-        self._wait_until_alive()
-        self.setup_initial_env()
+        try:
+            await call_sync_from_async(self._start_or_attach_to_runtime)
+        except RuntimeNotReadyError:
+            self.log('error', 'Runtime failed to start, timed out before ready')
+            raise
+        await call_sync_from_async(self.setup_initial_env)
 
     def _start_or_attach_to_runtime(self):
         existing_runtime = self._check_existing_runtime()
         if existing_runtime:
-            logger.info(f'Using existing runtime with ID: {self.runtime_id}')
+            self.log('debug', f'Using existing runtime with ID: {self.runtime_id}')
         elif self.attach_to_existing:
             raise RuntimeError('Could not find existing runtime to attach to.')
         else:
             self.send_status_message('STATUS$STARTING_CONTAINER')
             if self.config.sandbox.runtime_container_image is None:
-                logger.info(
-                    f'Building remote runtime with base image: {self.config.sandbox.base_container_image}'
+                self.log(
+                    'info',
+                    f'Building remote runtime with base image: {self.config.sandbox.base_container_image}',
                 )
                 self._build_runtime()
             else:
-                logger.info(
-                    f'Running remote runtime with image: {self.config.sandbox.runtime_container_image}'
+                self.log(
+                    'info',
+                    f'Starting remote runtime with image: {self.config.sandbox.runtime_container_image}',
                 )
                 self.container_image = self.config.sandbox.runtime_container_image
             self._start_runtime()
@@ -119,61 +126,64 @@ class RemoteRuntime(Runtime):
             self.runtime_url is not None
         ), 'Runtime URL is not set. This should never happen.'
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+        if not self.attach_to_existing:
+            self.log('info', 'Waiting for runtime to be alive...')
         self._wait_until_alive()
+        if not self.attach_to_existing:
+            self.log('info', 'Runtime is ready.')
+        self.send_status_message(' ')
 
     def _check_existing_runtime(self) -> bool:
         try:
-            response = send_request_with_retry(
-                self.session,
+            response = self._send_request(
                 'GET',
                 f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.sid}',
                 timeout=5,
             )
-        except Exception as e:
-            logger.debug(f'Error while looking for remote runtime: {e}')
-            return False
+        except requests.HTTPError as e:
+            if e.response.status_code == 404:
+                return False
+            self.log('debug', f'Error while looking for remote runtime: {e}')
+            raise
 
-        if response.status_code == 200:
-            data = response.json()
-            status = data.get('status')
-            if status == 'running':
-                self._parse_runtime_response(response)
-                return True
-            elif status == 'stopped':
-                logger.info('Found existing remote runtime, but it is stopped')
-                return False
-            elif status == 'paused':
-                logger.info('Found existing remote runtime, but it is paused')
-                self._parse_runtime_response(response)
-                self._resume_runtime()
-                return True
-            else:
-                logger.error(f'Invalid response from runtime API: {data}')
-                return False
+        data = response.json()
+        status = data.get('status')
+        if status == 'running':
+            self._parse_runtime_response(response)
+            return True
+        elif status == 'stopped':
+            self.log('debug', 'Found existing remote runtime, but it is stopped')
+            return False
+        elif status == 'paused':
+            self.log('debug', 'Found existing remote runtime, but it is paused')
+            self._parse_runtime_response(response)
+            self._resume_runtime()
+            return True
         else:
-            logger.info('Could not find existing remote runtime')
+            self.log('error', f'Invalid response from runtime API: {data}')
             return False
 
     def _build_runtime(self):
-        logger.debug(f'RemoteRuntime `{self.sid}` config:\n{self.config}')
-        response = send_request_with_retry(
-            self.session,
+        self.log('debug', f'Building RemoteRuntime config:\n{self.config}')
+        response = self._send_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
-            timeout=30,
+            timeout=10,
         )
         response_json = response.json()
         registry_prefix = response_json['registry_prefix']
         os.environ['OH_RUNTIME_RUNTIME_IMAGE_REPO'] = (
             registry_prefix.rstrip('/') + '/runtime'
         )
-        logger.info(
-            f'Runtime image repo: {os.environ["OH_RUNTIME_RUNTIME_IMAGE_REPO"]}'
+        self.log(
+            'debug',
+            f'Runtime image repo: {os.environ["OH_RUNTIME_RUNTIME_IMAGE_REPO"]}',
         )
 
         if self.config.sandbox.runtime_extra_deps:
-            logger.info(
-                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}'
+            self.log(
+                'debug',
+                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
             )
 
         # Build the container image
@@ -185,14 +195,13 @@ class RemoteRuntime(Runtime):
             force_rebuild=self.config.sandbox.force_rebuild_runtime,
         )
 
-        response = send_request_with_retry(
-            self.session,
+        response = self._send_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
             params={'image': self.container_image},
-            timeout=30,
+            timeout=10,
         )
-        if response.status_code != 200 or not response.json()['exists']:
+        if not response.json()['exists']:
             raise RuntimeError(f'Container image {self.container_image} does not exist')
 
     def _start_runtime(self):
@@ -222,35 +231,25 @@ class RemoteRuntime(Runtime):
         }
 
         # Start the sandbox using the /start endpoint
-        response = send_request_with_retry(
-            self.session,
+        response = self._send_request(
             'POST',
             f'{self.config.sandbox.remote_runtime_api_url}/start',
             json=start_request,
-            timeout=300,
         )
-        if response.status_code != 201:
-            raise RuntimeError(
-                f'[Runtime (ID={self.runtime_id})] Failed to start runtime: {response.text}'
-            )
         self._parse_runtime_response(response)
-        logger.info(
-            f'[Runtime (ID={self.runtime_id})] Runtime started. URL: {self.runtime_url}'
+        self.log(
+            'debug',
+            f'Runtime started. URL: {self.runtime_url}',
         )
 
     def _resume_runtime(self):
-        response = send_request_with_retry(
-            self.session,
+        self._send_request(
             'POST',
             f'{self.config.sandbox.remote_runtime_api_url}/resume',
             json={'runtime_id': self.runtime_id},
             timeout=30,
         )
-        if response.status_code != 200:
-            raise RuntimeError(
-                f'[Runtime (ID={self.runtime_id})] Failed to resume runtime: {response.text}'
-            )
-        logger.info(f'[Runtime (ID={self.runtime_id})] Runtime resumed.')
+        self.log('debug', 'Runtime resumed.')
 
     def _parse_runtime_response(self, response: requests.Response):
         start_response = response.json()
@@ -261,81 +260,77 @@ class RemoteRuntime(Runtime):
                 {'X-Session-API-Key': start_response['session_api_key']}
             )
 
+    @tenacity.retry(
+        stop=tenacity.stop_after_delay(180) | stop_if_should_exit(),
+        reraise=True,
+        retry=tenacity.retry_if_exception_type(RuntimeNotReadyError),
+        wait=tenacity.wait_fixed(2),
+    )
     def _wait_until_alive(self):
-        logger.info(f'Waiting for runtime to be alive at url: {self.runtime_url}')
-        # send GET request to /runtime/<id>
-        pod_running = False
-        max_not_found_count = 12  # 2 minutes
-        not_found_count = 0
-        while not pod_running:
-            runtime_info_response = send_request_with_retry(
-                self.session,
-                'GET',
-                f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.runtime_id}',
-                timeout=5,
-            )
-            if runtime_info_response.status_code != 200:
-                raise RuntimeError(
-                    f'Failed to get runtime status: {runtime_info_response.status_code}. Response: {runtime_info_response.text}'
-                )
-            runtime_data = runtime_info_response.json()
-            assert runtime_data['runtime_id'] == self.runtime_id
-            pod_status = runtime_data['pod_status']
-            logger.info(
-                f'Waiting for runtime pod to be active. Current status: {pod_status}'
-            )
-            if pod_status == 'Ready':
-                pod_running = True
-                break
-            elif pod_status == 'Not Found' and not_found_count < max_not_found_count:
-                not_found_count += 1
-                logger.info(
-                    f'Runtime pod not found. Count: {not_found_count} / {max_not_found_count}'
-                )
-            elif pod_status in ('Failed', 'Unknown', 'Not Found'):
-                # clean up the runtime
-                self.close()
-                raise RuntimeError(
-                    f'Runtime (ID={self.runtime_id}) failed to start. Current status: {pod_status}'
-                )
-            # Pending otherwise - add proper sleep
-            time.sleep(10)
-
-        response = send_request_with_retry(
-            self.session,
+        self.log('debug', f'Waiting for runtime to be alive at url: {self.runtime_url}')
+        runtime_info_response = self._send_request(
             'GET',
-            f'{self.runtime_url}/alive',
-            # Retry 404 & 503 errors for the /alive endpoint
-            # because the runtime might just be starting up
-            # and have not registered the endpoint yet
-            retry_fns=[is_404_error, is_503_error],
-            # leave enough time for the runtime to start up
-            timeout=600,
+            f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.runtime_id}',
         )
-        if response.status_code != 200:
-            msg = f'Runtime (ID={self.runtime_id}) is not alive yet. Status: {response.status_code}.'
-            logger.warning(msg)
-            raise RuntimeError(msg)
+        runtime_data = runtime_info_response.json()
+        assert 'runtime_id' in runtime_data
+        assert runtime_data['runtime_id'] == self.runtime_id
+        assert 'pod_status' in runtime_data
+        pod_status = runtime_data['pod_status']
+
+        # FIXME: We should fix it at the backend of /start endpoint, make sure
+        # the pod is created before returning the response.
+        # Retry a period of time to give the cluster time to start the pod
+        if pod_status == 'Not Found':
+            raise RuntimeNotReadyError(
+                f'Runtime (ID={self.runtime_id}) is not yet ready. Status: {pod_status}'
+            )
+        if pod_status == 'Ready':
+            try:
+                self._send_request(
+                    'GET',
+                    f'{self.runtime_url}/alive',
+                )  # will raise exception if we don't get 200 back.
+            except requests.HTTPError as e:
+                self.log(
+                    'warning', f"Runtime /alive failed, but pod says it's ready: {e}"
+                )
+                raise RuntimeNotReadyError(
+                    f'Runtime /alive failed to respond with 200: {e}'
+                )
+            return
+        if pod_status in ('Failed', 'Unknown'):
+            # clean up the runtime
+            self.close()
+            raise RuntimeError(
+                f'Runtime (ID={self.runtime_id}) failed to start. Current status: {pod_status}'
+            )
+
+        self.log(
+            'debug',
+            f'Waiting for runtime pod to be active. Current status: {pod_status}',
+        )
+        raise RuntimeNotReadyError()
 
     def close(self, timeout: int = 10):
         if self.config.sandbox.keep_remote_runtime_alive or self.attach_to_existing:
             self.session.close()
             return
-        if self.runtime_id:
+        if self.runtime_id and self.session:
             try:
-                response = send_request_with_retry(
-                    self.session,
+                response = self._send_request(
                     'POST',
                     f'{self.config.sandbox.remote_runtime_api_url}/stop',
                     json={'runtime_id': self.runtime_id},
                     timeout=timeout,
                 )
                 if response.status_code != 200:
-                    logger.error(
-                        f'[Runtime (ID={self.runtime_id})] Failed to stop runtime: {response.text}'
+                    self.log(
+                        'error',
+                        f'Failed to stop runtime: {response.text}',
                     )
                 else:
-                    logger.info(f'[Runtime (ID={self.runtime_id})] Runtime stopped.')
+                    self.log('debug', 'Runtime stopped.')
             except Exception as e:
                 raise e
             finally:
@@ -351,48 +346,48 @@ class RemoteRuntime(Runtime):
                 return NullObservation('')
             action_type = action.action  # type: ignore[attr-defined]
             if action_type not in ACTION_TYPE_TO_CLASS:
-                return FatalErrorObservation(
-                    f'[Runtime (ID={self.runtime_id})] Action {action_type} does not exist.'
-                )
+                raise ValueError(f'Action {action_type} does not exist.')
             if not hasattr(self, action_type):
-                return FatalErrorObservation(
-                    f'[Runtime (ID={self.runtime_id})] Action {action_type} is not supported in the current runtime.'
+                return ErrorObservation(
+                    f'[Runtime (ID={self.runtime_id})] Action {action_type} is not supported in the current runtime.',
+                    error_id='AGENT_ERROR$BAD_ACTION',
                 )
 
             assert action.timeout is not None
 
             try:
                 request_body = {'action': event_to_dict(action)}
-                logger.debug(f'Request body: {request_body}')
-                response = send_request_with_retry(
-                    self.session,
+                self.log('debug', f'Request body: {request_body}')
+                response = self._send_request(
                     'POST',
                     f'{self.runtime_url}/execute_action',
                     json=request_body,
-                    timeout=action.timeout,
+                    # wait a few more seconds to get the timeout error from client side
+                    timeout=action.timeout + 5,
                 )
-                if response.status_code == 200:
-                    output = response.json()
-                    obs = observation_from_dict(output)
-                    obs._cause = action.id  # type: ignore[attr-defined]
-                    return obs
-                else:
-                    error_message = response.text
-                    logger.error(f'Error from server: {error_message}')
-                    obs = FatalErrorObservation(
-                        f'Action execution failed: {error_message}'
-                    )
-            except Timeout:
-                logger.error('No response received within the timeout period.')
-                obs = FatalErrorObservation(
-                    f'[Runtime (ID={self.runtime_id})] Action execution timed out'
-                )
-            except Exception as e:
-                logger.error(f'Error during action execution: {e}')
-                obs = FatalErrorObservation(
-                    f'[Runtime (ID={self.runtime_id})] Action execution failed: {str(e)}'
+                output = response.json()
+                obs = observation_from_dict(output)
+                obs._cause = action.id  # type: ignore[attr-defined]
+            except requests.Timeout:
+                raise RuntimeError(
+                    f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
                 )
             return obs
+
+    def _send_request(self, method, url, **kwargs):
+        is_runtime_request = self.runtime_url and self.runtime_url in url
+        try:
+            return send_request(self.session, method, url, **kwargs)
+        except requests.Timeout:
+            self.log('error', 'No response received within the timeout period.')
+            raise
+        except requests.HTTPError as e:
+            if is_runtime_request and e.response.status_code == 404:
+                raise RuntimeDisconnectedError(
+                    f'404 error while connecting to {self.runtime_url}'
+                )
+            else:
+                raise e
 
     def run(self, action: CmdRunAction) -> Observation:
         return self.run_action(action)
@@ -440,96 +435,51 @@ class RemoteRuntime(Runtime):
 
             params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
 
-            response = send_request_with_retry(
-                self.session,
+            response = self._send_request(
                 'POST',
                 f'{self.runtime_url}/upload_file',
                 files=upload_data,
                 params=params,
                 timeout=300,
             )
-            if response.status_code == 200:
-                logger.info(
-                    f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}'
-                )
-                return
-            else:
-                error_message = response.text
-                raise Exception(
-                    f'[Runtime (ID={self.runtime_id})] Copy operation failed: {error_message}'
-                )
-        except TimeoutError:
-            raise TimeoutError(
-                f'[Runtime (ID={self.runtime_id})] Copy operation timed out'
-            )
-        except Exception as e:
-            raise RuntimeError(
-                f'[Runtime (ID={self.runtime_id})] Copy operation failed: {str(e)}'
+            self.log(
+                'debug',
+                f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}',
             )
         finally:
             if recursive:
                 os.unlink(temp_zip_path)
-            logger.info(f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}')
+            self.log(
+                'debug', f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}'
+            )
 
     def list_files(self, path: str | None = None) -> list[str]:
-        try:
-            data = {}
-            if path is not None:
-                data['path'] = path
+        data = {}
+        if path is not None:
+            data['path'] = path
 
-            response = send_request_with_retry(
-                self.session,
-                'POST',
-                f'{self.runtime_url}/list_files',
-                json=data,
-                timeout=30,
-            )
-            if response.status_code == 200:
-                response_json = response.json()
-                assert isinstance(response_json, list)
-                return response_json
-            else:
-                error_message = response.text
-                raise Exception(
-                    f'[Runtime (ID={self.runtime_id})] List files operation failed: {error_message}'
-                )
-        except TimeoutError:
-            raise TimeoutError(
-                f'[Runtime (ID={self.runtime_id})] List files operation timed out'
-            )
-        except Exception as e:
-            raise RuntimeError(
-                f'[Runtime (ID={self.runtime_id})] List files operation failed: {str(e)}'
-            )
+        response = self._send_request(
+            'POST',
+            f'{self.runtime_url}/list_files',
+            json=data,
+            timeout=30,
+        )
+        response_json = response.json()
+        assert isinstance(response_json, list)
+        return response_json
 
-    def copy_from(self, path: str) -> bytes:
+    def copy_from(self, path: str) -> Path:
         """Zip all files in the sandbox and return as a stream of bytes."""
-        try:
-            params = {'path': path}
-            response = send_request_with_retry(
-                self.session,
-                'GET',
-                f'{self.runtime_url}/download_files',
-                params=params,
-                timeout=30,
-            )
-            if response.status_code == 200:
-                return response.content
-            else:
-                error_message = response.text
-                raise Exception(
-                    f'[Runtime (ID={self.runtime_id})] Copy operation failed: {error_message}'
-                )
-        except requests.Timeout:
-            raise TimeoutError(
-                f'[Runtime (ID={self.runtime_id})] Copy operation timed out'
-            )
-        except Exception as e:
-            raise RuntimeError(
-                f'[Runtime (ID={self.runtime_id})] Copy operation failed: {str(e)}'
-            )
-
-    def send_status_message(self, message: str):
-        """Sends a status message if the callback function was provided."""
-        if self.status_message_callback:
-            self.status_message_callback(message)
+        params = {'path': path}
+        response = self._send_request(
+            'GET',
+            f'{self.runtime_url}/download_files',
+            params=params,
+            stream=True,
+            timeout=30,
+        )
+        temp_file = tempfile.NamedTemporaryFile(delete=False)
+        for chunk in response.iter_content(chunk_size=8192):
+            if chunk:  # filter out keep-alive new chunks
+                temp_file.write(chunk)
+        return Path(temp_file.name)

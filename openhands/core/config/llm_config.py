@@ -3,6 +3,7 @@ from dataclasses import dataclass, fields
 from typing import Optional
 
 from openhands.core.config.config_utils import get_field_info
+from openhands.core.logger import LOG_DIR
 
 LLM_SENSITIVE_FIELDS = ['api_key', 'aws_access_key_id', 'aws_secret_access_key']
 
@@ -44,7 +45,7 @@ class LLMConfig:
         draft_editor: A more efficient LLM to use for file editing. Introduced in [PR 3985](https://github.com/All-Hands-AI/OpenHands/pull/3985).
     """
 
-    model: str = 'gpt-4o'
+    model: str = 'claude-3-5-sonnet-20241022'
     api_key: str | None = None
     base_url: str | None = None
     api_version: str | None = None
@@ -61,7 +62,7 @@ class LLMConfig:
     retry_min_wait: int = 15
     retry_max_wait: int = 120
     timeout: int | None = None
-    max_message_chars: int = 10_000  # maximum number of characters in an observation's content when sent to the llm
+    max_message_chars: int = 30_000  # maximum number of characters in an observation's content when sent to the llm
     temperature: float = 0.0
     top_p: float = 1.0
     custom_llm_provider: str | None = None
@@ -74,7 +75,7 @@ class LLMConfig:
     disable_vision: bool | None = None
     caching_prompt: bool = True
     log_completions: bool = False
-    log_completions_folder: str | None = None
+    log_completions_folder: str = os.path.join(LOG_DIR, 'completions')
     draft_editor: Optional['LLMConfig'] = None
 
     def defaults_to_dict(self) -> dict:

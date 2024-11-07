@@ -7,12 +7,10 @@ import {
   json,
   ClientActionFunctionArgs,
   useRouteLoaderData,
-  redirect,
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import WebSocket from "ws";
 import toast from "react-hot-toast";
-import ChatInterface from "#/components/chat/ChatInterface";
 import { getSettings } from "#/services/settings";
 import Security from "../components/modals/security/Security";
 import { Controls } from "#/components/controls";
@@ -38,6 +36,7 @@ import ListIcon from "#/assets/list-type-number.svg?react";
 import { createChatMessage } from "#/services/chatService";
 import {
   clearFiles,
+  clearInitialQuery,
   clearSelectedRepository,
   setImportedProjectZip,
 } from "#/state/initial-query-slice";
@@ -48,9 +47,8 @@ import { base64ToBlob } from "#/utils/base64-to-blob";
 import { clientLoader as rootClientLoader } from "#/routes/_oh";
 import { clearJupyter } from "#/state/jupyterSlice";
 import { FilesProvider } from "#/context/files";
-import { clearSession } from "#/utils/clear-session";
-import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 import { ErrorObservation } from "#/types/core/observations";
+import { ChatInterface } from "#/components/chat-interface";
 
 interface ServerError {
   error: boolean | string;
@@ -72,12 +70,6 @@ const isAgentStateChange = (
 
 export const clientLoader = async () => {
   const ghToken = localStorage.getItem("ghToken");
-
-  const isAuthed = await userIsAuthenticated(ghToken);
-  if (!isAuthed) {
-    clearSession();
-    return redirect("/waitlist");
-  }
 
   const q = store.getState().initalQuery.initialQuery;
   const repo =
@@ -133,6 +125,11 @@ function App() {
   const fetcher = useFetcher();
   const data = useRouteLoaderData<typeof rootClientLoader>("routes/_oh");
 
+  const secrets = React.useMemo(
+    () => [ghToken, token].filter((secret) => secret !== null),
+    [ghToken, token],
+  );
+
   // To avoid re-rendering the component when the user object changes, we memoize the user ID.
   // We use this to ensure the github token is valid before exporting it to the terminal.
   const userId = React.useMemo(() => {
@@ -175,21 +172,6 @@ function App() {
     if (q) addIntialQueryToChat(q, files);
   }, [settings]);
 
-  const handleError = (message: string) => {
-    const [error, ...rest] = message.split(":");
-    const details = rest.join(":");
-    if (!details) {
-      dispatch(
-        addErrorMessage({
-          error: "An error has occured",
-          message: error,
-        }),
-      );
-    } else {
-      dispatch(addErrorMessage({ error, message: details }));
-    }
-  };
-
   const handleMessage = React.useCallback(
     (message: MessageEvent<WebSocket.Data>) => {
       // set token received from the server
@@ -215,7 +197,12 @@ function App() {
         return;
       }
       if (isErrorObservation(parsed)) {
-        handleError(parsed.message);
+        dispatch(
+          addErrorMessage({
+            id: parsed.extras?.error_id,
+            message: parsed.message,
+          }),
+        );
         return;
       }
 
@@ -230,13 +217,23 @@ function App() {
 
         // handle new session
         if (!token) {
+          let additionalInfo = "";
           if (ghToken && repo) {
             send(getCloneRepoCommand(ghToken, repo));
+            additionalInfo = `Repository ${repo} has been cloned to /workspace. Please check the /workspace for files.`;
             dispatch(clearSelectedRepository()); // reset selected repository; maybe better to move this to '/'?
+          }
+          // if there's an uploaded project zip, add it to the chat
+          else if (importedProjectZip) {
+            additionalInfo = `Files have been uploaded. Please check the /workspace for files.`;
           }
 
           if (q) {
-            sendInitialQuery(q, files);
+            if (additionalInfo) {
+              sendInitialQuery(`${q}\n\n[${additionalInfo}]`, files);
+            } else {
+              sendInitialQuery(q, files);
+            }
             dispatch(clearFiles()); // reset selected files
           }
         }
@@ -258,6 +255,7 @@ function App() {
     dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
+    dispatch(clearInitialQuery()); // Clear initial query when navigating to /app
     startSocketConnection();
   });
 
@@ -270,21 +268,21 @@ function App() {
 
   React.useEffect(() => {
     (async () => {
-      if (runtimeActive && token && importedProjectZip) {
+      if (runtimeActive && importedProjectZip) {
         // upload files action
         try {
           const blob = base64ToBlob(importedProjectZip);
           const file = new File([blob], "imported-project.zip", {
             type: blob.type,
           });
-          await OpenHands.uploadFiles(token, [file]);
+          await OpenHands.uploadFiles([file]);
           dispatch(setImportedProjectZip(null));
         } catch (error) {
           toast.error("Failed to upload project files.");
         }
       }
     })();
-  }, [runtimeActive, token, importedProjectZip]);
+  }, [runtimeActive, importedProjectZip]);
 
   const {
     isOpen: securityModalIsOpen,
@@ -295,11 +293,11 @@ function App() {
   return (
     <div className="flex flex-col h-full gap-3">
       <div className="flex h-full overflow-auto gap-3">
-        <Container className="w-1/4 max-h-full">
+        <Container className="w-[390px] max-h-full relative">
           <ChatInterface />
         </Container>
 
-        <div className="flex flex-col w-3/4 gap-3">
+        <div className="flex flex-col grow gap-3">
           <Container
             className="h-2/3"
             labels={[
@@ -321,7 +319,7 @@ function App() {
            * that it loads only in the client-side. */}
           <Container className="h-1/3 overflow-scroll" label="Terminal">
             <React.Suspense fallback={<div className="h-full" />}>
-              <Terminal />
+              <Terminal secrets={secrets} />
             </React.Suspense>
           </Container>
         </div>

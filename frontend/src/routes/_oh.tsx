@@ -8,7 +8,10 @@ import {
   useLoaderData,
   useFetcher,
   Outlet,
+  ClientLoaderFunctionArgs,
 } from "@remix-run/react";
+import posthog from "posthog-js";
+import { useDispatch } from "react-redux";
 import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
 import CogTooth from "#/assets/cog-tooth";
@@ -24,8 +27,14 @@ import { getSettings, settingsAreUpToDate } from "#/services/settings";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import NewProjectIcon from "#/assets/new-project.svg?react";
 import DocsIcon from "#/assets/docs.svg?react";
+import { userIsAuthenticated } from "#/utils/user-is-authenticated";
+import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
+import { WaitlistModal } from "#/components/waitlist-modal";
+import { AnalyticsConsentFormModal } from "#/components/analytics-consent-form-modal";
+import { setCurrentAgentState } from "#/state/agentSlice";
+import AgentState from "#/types/AgentState";
 
-export const clientLoader = async () => {
+export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   try {
     const config = await OpenHands.getConfig();
     window.__APP_MODE__ = config.APP_MODE;
@@ -37,8 +46,32 @@ export const clientLoader = async () => {
 
   let token = localStorage.getItem("token");
   const ghToken = localStorage.getItem("ghToken");
+  const analyticsConsent = localStorage.getItem("analytics-consent");
+  const userConsents = analyticsConsent === "true";
 
+  if (!userConsents) {
+    posthog.opt_out_capturing();
+  } else if (userConsents && !posthog.has_opted_in_capturing()) {
+    posthog.opt_in_capturing();
+  }
+
+  let isAuthed = false;
+  let githubAuthUrl: string | null = null;
   let user: GitHubUser | GitHubErrorReponse | null = null;
+  try {
+    isAuthed = await userIsAuthenticated();
+    if (!isAuthed && window.__GITHUB_CLIENT_ID__) {
+      const requestUrl = new URL(request.url);
+      githubAuthUrl = generateGitHubAuthUrl(
+        window.__GITHUB_CLIENT_ID__,
+        requestUrl,
+      );
+    }
+  } catch (error) {
+    isAuthed = false;
+    githubAuthUrl = null;
+  }
+
   if (ghToken) user = await retrieveGitHubUser(ghToken);
 
   const settings = getSettings();
@@ -50,12 +83,16 @@ export const clientLoader = async () => {
     token = null;
   }
 
+  // Store the results in cache
   return defer({
     token,
     ghToken,
+    isAuthed,
+    githubAuthUrl,
     user,
     settingsIsUpdated,
     settings,
+    analyticsConsent,
   });
 };
 
@@ -101,10 +138,19 @@ export default function MainApp() {
   const { stop, isConnected } = useSocket();
   const navigation = useNavigation();
   const location = useLocation();
-  const { token, user, settingsIsUpdated, settings } =
-    useLoaderData<typeof clientLoader>();
+  const {
+    token,
+    ghToken,
+    user,
+    isAuthed,
+    githubAuthUrl,
+    settingsIsUpdated,
+    settings,
+    analyticsConsent,
+  } = useLoaderData<typeof clientLoader>();
   const logoutFetcher = useFetcher({ key: "logout" });
   const endSessionFetcher = useFetcher({ key: "end-session" });
+  const dispatch = useDispatch();
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
@@ -120,6 +166,16 @@ export default function MainApp() {
   const [settingsFormError, setSettingsFormError] = React.useState<
     string | null
   >(null);
+
+  React.useEffect(() => {
+    if (user && !isGitHubErrorReponse(user)) {
+      posthog.identify(user.login, {
+        company: user.company,
+        name: user.name,
+        email: user.email,
+      });
+    }
+  }, [user]);
 
   React.useEffect(() => {
     // We fetch this here instead of the data loader because the server seems to block
@@ -174,6 +230,7 @@ export default function MainApp() {
 
   const handleEndSession = () => {
     setStartNewProjectModalIsOpen(false);
+    dispatch(setCurrentAgentState(AgentState.LOADING));
     // call new session action and redirect to '/'
     endSessionFetcher.submit(new FormData(), {
       method: "POST",
@@ -182,7 +239,10 @@ export default function MainApp() {
   };
 
   return (
-    <div className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3">
+    <div
+      data-testid="root-layout"
+      className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3"
+    >
       <aside className="px-1 flex flex-col gap-1">
         <div className="w-[34px] h-[34px] flex items-center justify-center">
           {navigation.state === "loading" && <LoadingSpinner size="small" />}
@@ -191,7 +251,7 @@ export default function MainApp() {
               type="button"
               aria-label="All Hands Logo"
               onClick={() => {
-                if (location.pathname !== "/")
+                if (location.pathname === "/app")
                   setStartNewProjectModalIsOpen(true);
               }}
             >
@@ -239,62 +299,67 @@ export default function MainApp() {
       </aside>
       <div className="h-full w-full relative">
         <Outlet />
-        {(!settingsIsUpdated || settingsModalIsOpen) && (
-          <ModalBackdrop onClose={() => setSettingsModalIsOpen(false)}>
-            <div className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2">
-              {settingsFormError && (
-                <p className="text-danger text-xs">{settingsFormError}</p>
-              )}
-              <span className="text-xl leading-6 font-semibold -tracking-[0.01em">
-                AI Provider Configuration
-              </span>
-              <p className="text-xs text-[#A3A3A3]">
-                To continue, connect an OpenAI, Anthropic, or other LLM account
-              </p>
-              {isConnected && (
-                <p className="text-xs text-danger">
-                  Changing settings during an active session will end the
-                  session
-                </p>
-              )}
-              <SettingsForm
-                settings={settings}
-                models={settingsFormData.models}
-                agents={settingsFormData.agents}
-                securityAnalyzers={settingsFormData.securityAnalyzers}
-                onClose={() => setSettingsModalIsOpen(false)}
-              />
-            </div>
-          </ModalBackdrop>
-        )}
-        {accountSettingsModalOpen && (
-          <ModalBackdrop onClose={handleAccountSettingsModalClose}>
-            <AccountSettingsModal
-              onClose={handleAccountSettingsModalClose}
-              selectedLanguage={settings.LANGUAGE}
-              gitHubError={isGitHubErrorReponse(user)}
-            />
-          </ModalBackdrop>
-        )}
-        {startNewProjectModalIsOpen && (
-          <ModalBackdrop onClose={() => setStartNewProjectModalIsOpen(false)}>
-            <DangerModal
-              title="Are you sure you want to exit?"
-              description="You will lose any unsaved information."
-              buttons={{
-                danger: {
-                  text: "Exit Project",
-                  onClick: handleEndSession,
-                },
-                cancel: {
-                  text: "Cancel",
-                  onClick: () => setStartNewProjectModalIsOpen(false),
-                },
-              }}
-            />
-          </ModalBackdrop>
-        )}
       </div>
+
+      {isAuthed && (!settingsIsUpdated || settingsModalIsOpen) && (
+        <ModalBackdrop onClose={() => setSettingsModalIsOpen(false)}>
+          <div className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2">
+            {settingsFormError && (
+              <p className="text-danger text-xs">{settingsFormError}</p>
+            )}
+            <span className="text-xl leading-6 font-semibold -tracking-[0.01em">
+              AI Provider Configuration
+            </span>
+            <p className="text-xs text-[#A3A3A3]">
+              To continue, connect an OpenAI, Anthropic, or other LLM account
+            </p>
+            {isConnected && (
+              <p className="text-xs text-danger">
+                Changing settings during an active session will end the session
+              </p>
+            )}
+            <SettingsForm
+              settings={settings}
+              models={settingsFormData.models}
+              agents={settingsFormData.agents}
+              securityAnalyzers={settingsFormData.securityAnalyzers}
+              onClose={() => setSettingsModalIsOpen(false)}
+            />
+          </div>
+        </ModalBackdrop>
+      )}
+      {accountSettingsModalOpen && (
+        <ModalBackdrop onClose={handleAccountSettingsModalClose}>
+          <AccountSettingsModal
+            onClose={handleAccountSettingsModalClose}
+            selectedLanguage={settings.LANGUAGE}
+            gitHubError={isGitHubErrorReponse(user)}
+            analyticsConsent={analyticsConsent}
+          />
+        </ModalBackdrop>
+      )}
+      {startNewProjectModalIsOpen && (
+        <ModalBackdrop onClose={() => setStartNewProjectModalIsOpen(false)}>
+          <DangerModal
+            title="Are you sure you want to exit?"
+            description="You will lose any unsaved information."
+            buttons={{
+              danger: {
+                text: "Exit Project",
+                onClick: handleEndSession,
+              },
+              cancel: {
+                text: "Cancel",
+                onClick: () => setStartNewProjectModalIsOpen(false),
+              },
+            }}
+          />
+        </ModalBackdrop>
+      )}
+      {!isAuthed && (
+        <WaitlistModal ghToken={ghToken} githubAuthUrl={githubAuthUrl} />
+      )}
+      {!analyticsConsent && <AnalyticsConsentFormModal />}
     </div>
   );
 }

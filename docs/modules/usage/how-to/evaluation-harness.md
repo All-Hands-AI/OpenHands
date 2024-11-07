@@ -12,7 +12,7 @@ Here's an example configuration file you can use to define and use multiple LLMs
 ```toml
 [llm]
 # IMPORTANT: add your API key here, and set the model to the one you want to evaluate
-model = "claude-3-5-sonnet-20240620"
+model = "claude-3-5-sonnet-20241022"
 api_key = "sk-XXX"
 
 [llm.eval_gpt4_1106_preview_llm]
@@ -158,7 +158,7 @@ To create an evaluation workflow for your benchmark, follow these steps:
            instruction=instruction,
            test_result=evaluation_result,
            metadata=metadata,
-           history=state.history.compatibility_for_eval_history_pairs(),
+           history=compatibility_for_eval_history_pairs(state.history),
            metrics=state.metrics.get() if state.metrics else None,
            error=state.last_error if state and state.last_error else None,
        )
@@ -257,7 +257,7 @@ def codeact_user_response(state: State | None) -> str:
         # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
         user_msgs = [
             event
-            for event in state.history.get_events()
+            for event in state.history
             if isinstance(event, MessageAction) and event.source == 'user'
         ]
         if len(user_msgs) >= 2:

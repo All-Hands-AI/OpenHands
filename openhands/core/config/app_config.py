@@ -1,4 +1,3 @@
-import os
 import uuid
 from dataclasses import dataclass, field, fields, is_dataclass
 from typing import ClassVar
@@ -8,7 +7,6 @@ from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
-    UndefinedString,
     get_field_info,
 )
 from openhands.core.config.llm_config import LLMConfig
@@ -40,7 +38,6 @@ class AppConfig:
         e2b_api_key: The E2B API key.
         disable_color: Whether to disable color. For terminals that don't support color.
         debug: Whether to enable debugging.
-        enable_cli_session: Whether to enable saving and restoring the session when run from CLI.
         file_uploads_max_file_size_mb: Maximum file size for uploads in megabytes. 0 means no limit.
         file_uploads_restrict_file_types: Whether to restrict file types for file uploads. Defaults to False.
         file_uploads_allowed_extensions: List of allowed file extensions for uploads. ['.*'] means all extensions are allowed.
@@ -55,11 +52,8 @@ class AppConfig:
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
     trajectories_path: str | None = None
-    # TODO: clean up workspace path after the removal of ServerRuntime
-    workspace_base: str = os.path.join(os.getcwd(), 'workspace')
-    workspace_mount_path: str | None = (
-        UndefinedString.UNDEFINED  # this path should always be set when config is fully loaded
-    )  # when set to None, do not mount the workspace
+    workspace_base: str | None = None
+    workspace_mount_path: str | None = None
     workspace_mount_path_in_sandbox: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
@@ -72,7 +66,6 @@ class AppConfig:
     disable_color: bool = False
     jwt_secret: str = uuid.uuid4().hex
     debug: bool = False
-    enable_cli_session: bool = False
     file_uploads_max_file_size_mb: int = 0
     file_uploads_restrict_file_types: bool = False
     file_uploads_allowed_extensions: list[str] = field(default_factory=lambda: ['.*'])

@@ -13,7 +13,6 @@ from openhands.events.action import (
 )
 from openhands.events.observation import (
     ErrorObservation,
-    FatalErrorObservation,
     FileEditObservation,
     FileReadObservation,
     FileWriteObservation,
@@ -111,14 +110,14 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             model_name='draft_editor:' + llm_config.draft_editor.model
         )
         if llm_config.draft_editor.caching_prompt:
-            logger.info(
+            logger.debug(
                 'It is not recommended to cache draft editor LLM prompts as it may incur high costs for the same prompt. '
                 'Automatically setting caching_prompt=false.'
             )
             llm_config.draft_editor.caching_prompt = False
 
         self.draft_editor_llm = LLM(llm_config.draft_editor, metrics=llm_metrics)
-        logger.info(
+        logger.debug(
             f'[Draft edit functionality] enabled with LLM: {self.draft_editor_llm}'
         )
 
@@ -214,8 +213,8 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             if isinstance(obs, ErrorObservation):
                 return obs
             if not isinstance(obs, FileWriteObservation):
-                return FatalErrorObservation(
-                    f'Fatal Runtime in editing: Expected FileWriteObservation, got {type(obs)}: {str(obs)}'
+                raise ValueError(
+                    f'Expected FileWriteObservation, got {type(obs)}: {str(obs)}'
                 )
             return FileEditObservation(
                 content=get_diff('', action.content, action.path),
@@ -225,8 +224,8 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
                 new_content=action.content,
             )
         if not isinstance(obs, FileReadObservation):
-            return FatalErrorObservation(
-                f'Fatal Runtime in editing: Expected FileReadObservation, got {type(obs)}: {str(obs)}'
+            raise ValueError(
+                f'Expected FileReadObservation, got {type(obs)}: {str(obs)}'
             )
 
         original_file_content = obs.content

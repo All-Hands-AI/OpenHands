@@ -31,6 +31,8 @@ body:
       options:
         - Docker command in README
         - Development workflow
+        - app.all-hands.dev
+        - Other
       default: 0
 
   - type: input

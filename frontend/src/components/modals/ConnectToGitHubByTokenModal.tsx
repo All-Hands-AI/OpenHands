@@ -1,4 +1,5 @@
 import { Form, useNavigation } from "@remix-run/react";
+import { useTranslation } from "react-i18next";
 import {
   BaseModalDescription,
   BaseModalTitle,
@@ -7,10 +8,11 @@ import ModalButton from "../buttons/ModalButton";
 import AllHandsLogo from "#/assets/branding/all-hands-logo-spark.svg?react";
 import ModalBody from "./ModalBody";
 import { CustomInput } from "../form/custom-input";
+import { I18nKey } from "#/i18n/declaration";
 
 function ConnectToGitHubByTokenModal() {
   const navigation = useNavigation();
-
+  const { t } = useTranslation();
   return (
     <ModalBody testID="auth-modal">
       <div className="flex flex-col gap-2">
@@ -29,13 +31,18 @@ function ConnectToGitHubByTokenModal() {
             required
           />
           <p className="text-xs text-[#A3A3A3]">
-            By connecting you agree to our{" "}
-            <span className="text-hyperlink">terms of service</span>.
+            {t(
+              I18nKey.CONNECT_TO_GITHUB_BY_TOKEN_MODAL$BY_CONNECTING_YOU_AGREE,
+            )}{" "}
+            <span className="text-hyperlink">
+              {t(I18nKey.CONNECT_TO_GITHUB_BY_TOKEN_MODAL$TERMS_OF_SERVICE)}
+            </span>
+            .
           </p>
         </label>
         <ModalButton
           type="submit"
-          text="Continue"
+          text={t(I18nKey.CONNECT_TO_GITHUB_BY_TOKEN_MODAL$CONTINUE)}
           className="bg-[#791B80] w-full"
           disabled={navigation.state === "loading"}
         />

@@ -239,7 +239,7 @@ def process_instance(
                         # Create a directory structure that matches the expected format
                         # NOTE: this is a hack to make the eval report format consistent
                         # with the original SWE-Bench eval script
-                        log_dir = os.path.join(temp_dir, 'logs', instance_id)
+                        log_dir = os.path.join(temp_dir, 'logs', instance_id.lower())
                         os.makedirs(log_dir, exist_ok=True)
                         test_output_path = os.path.join(log_dir, 'test_output.txt')
                         with open(test_output_path, 'w') as f:
@@ -369,10 +369,12 @@ if __name__ == '__main__':
     def count_report_field(row, field):
         return row['test_result']['report'][field]
 
+    report = {}
     for field in fields:
         count = evaluated_predictions.apply(
             count_report_field, args=(field,), axis=1
         ).sum()
+        report[field] = count
         logger.info(
             f'# {field}: {count} / {len(evaluated_predictions)}. ({count / len(evaluated_predictions):.2%})'
         )

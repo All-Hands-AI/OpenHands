@@ -25,6 +25,21 @@ describe("InteractiveChatBox", () => {
     within(chatBox).getByTestId("upload-image-input");
   });
 
+  it.fails("should set custom values", () => {
+    render(
+      <InteractiveChatBox
+        onSubmit={onSubmitMock}
+        onStop={onStopMock}
+        value="Hello, world!"
+      />,
+    );
+
+    const chatBox = screen.getByTestId("interactive-chat-box");
+    const chatInput = within(chatBox).getByTestId("chat-input");
+
+    expect(chatInput).toHaveValue("Hello, world!");
+  });
+
   it("should display the image previews when images are uploaded", async () => {
     const user = userEvent.setup();
     render(<InteractiveChatBox onSubmit={onSubmitMock} onStop={onStopMock} />);

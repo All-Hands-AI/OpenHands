@@ -1,7 +1,7 @@
 import React from "react";
 import { Data } from "ws";
+import posthog from "posthog-js";
 import EventLogger from "#/utils/event-logger";
-import { getValidFallbackHost } from "#/utils/get-valid-fallback-host";
 
 interface WebSocketClientOptions {
   token: string | null;
@@ -46,14 +46,20 @@ function SocketProvider({ children }: SocketProviderProps) {
       );
     }
 
-    const fallback = getValidFallbackHost();
-    const baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || fallback;
+    const baseUrl =
+      import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const ws = new WebSocket(
-      `${protocol}//${baseUrl}/ws${options?.token ? `?token=${options.token}` : ""}`,
-    );
+    const sessionToken = options?.token || "NO_JWT"; // not allowed to be empty or duplicated
+    const ghToken = localStorage.getItem("ghToken") || "NO_GITHUB";
+
+    const ws = new WebSocket(`${protocol}//${baseUrl}/ws`, [
+      "openhands",
+      sessionToken,
+      ghToken,
+    ]);
 
     ws.addEventListener("open", (event) => {
+      posthog.capture("socket_opened");
       setIsConnected(true);
       options?.onOpen?.(event);
     });
@@ -66,11 +72,13 @@ function SocketProvider({ children }: SocketProviderProps) {
     });
 
     ws.addEventListener("error", (event) => {
+      posthog.capture("socket_error");
       EventLogger.event(event, "SOCKET ERROR");
       options?.onError?.(event);
     });
 
     ws.addEventListener("close", (event) => {
+      posthog.capture("socket_closed");
       EventLogger.event(event, "SOCKET CLOSE");
 
       setIsConnected(false);
@@ -95,6 +103,7 @@ function SocketProvider({ children }: SocketProviderProps) {
         EventLogger.error("WebSocket is not connected.");
         return;
       }
+      setEvents((prevEvents) => [...prevEvents, JSON.parse(data.toString())]);
       wsRef.current.send(data);
     },
     [],

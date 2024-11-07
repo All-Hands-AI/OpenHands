@@ -47,6 +47,9 @@ class CmdRunAction(Action):
 class IPythonRunCellAction(Action):
     code: str
     thought: str = ''
+    include_extra: bool = (
+        True  # whether to include CWD & Python interpreter in the output
+    )
     action: str = ActionType.RUN_IPYTHON
     runnable: ClassVar[bool] = True
     confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED

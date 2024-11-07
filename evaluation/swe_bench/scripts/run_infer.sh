@@ -34,6 +34,11 @@ if [ -z "$USE_INSTANCE_IMAGE" ]; then
   USE_INSTANCE_IMAGE=true
 fi
 
+if [ -z "$RUN_WITH_BROWSING" ]; then
+  echo "RUN_WITH_BROWSING not specified, use default false"
+  RUN_WITH_BROWSING=false
+fi
+
 
 if [ -z "$DATASET" ]; then
   echo "DATASET not specified, use default princeton-nlp/SWE-bench_Lite"
@@ -47,6 +52,8 @@ fi
 
 export USE_INSTANCE_IMAGE=$USE_INSTANCE_IMAGE
 echo "USE_INSTANCE_IMAGE: $USE_INSTANCE_IMAGE"
+export RUN_WITH_BROWSING=$RUN_WITH_BROWSING
+echo "RUN_WITH_BROWSING: $RUN_WITH_BROWSING"
 
 get_agent_version
 
@@ -65,6 +72,10 @@ EVAL_NOTE="$AGENT_VERSION"
 # if not using Hint, add -no-hint to the eval note
 if [ "$USE_HINT_TEXT" = false ]; then
   EVAL_NOTE="$EVAL_NOTE-no-hint"
+fi
+
+if [ "$RUN_WITH_BROWSING" = true ]; then
+  EVAL_NOTE="$EVAL_NOTE-with-browsing"
 fi
 
 if [ -n "$EXP_NAME" ]; then

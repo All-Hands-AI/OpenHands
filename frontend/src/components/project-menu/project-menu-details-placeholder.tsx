@@ -1,5 +1,7 @@
+import { useTranslation } from "react-i18next";
 import { cn } from "#/utils/utils";
 import CloudConnection from "#/assets/cloud-connection.svg?react";
+import { I18nKey } from "#/i18n/declaration";
 
 interface ProjectMenuDetailsPlaceholderProps {
   isConnectedToGitHub: boolean;
@@ -10,9 +12,13 @@ export function ProjectMenuDetailsPlaceholder({
   isConnectedToGitHub,
   onConnectToGitHub,
 }: ProjectMenuDetailsPlaceholderProps) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex flex-col">
-      <span className="text-sm leading-6 font-semibold">New Project</span>
+      <span className="text-sm leading-6 font-semibold">
+        {t(I18nKey.PROJECT_MENU_DETAILS_PLACEHOLDER$NEW_PROJECT_LABEL)}
+      </span>
       <button
         type="button"
         onClick={onConnectToGitHub}
