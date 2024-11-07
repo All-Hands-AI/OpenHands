@@ -10,6 +10,7 @@ import {
 } from "@remix-run/react";
 import React from "react";
 import { useDispatch } from "react-redux";
+import posthog from "posthog-js";
 import { SuggestionBox } from "./suggestion-box";
 import { TaskForm } from "./task-form";
 import { HeroHeading } from "./hero-heading";
@@ -63,6 +64,10 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const formData = await request.formData();
   const q = formData.get("q")?.toString();
   if (q) store.dispatch(setInitialQuery(q));
+
+  posthog.capture("initial_query_submitted", {
+    query_character_length: q?.length,
+  });
 
   return redirect("/app");
 };
