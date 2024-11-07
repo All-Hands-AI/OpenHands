@@ -269,7 +269,7 @@ class RemoteRuntime(Runtime):
         self.log('debug', f'Waiting for runtime to be alive at url: {self.runtime_url}')
         runtime_info_response = self._send_request(
             'GET',
-            f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.runtime_id}',
+            f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
         )
         runtime_data = runtime_info_response.json()
         assert 'runtime_id' in runtime_data
