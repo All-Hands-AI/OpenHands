@@ -512,12 +512,7 @@ class CodeActAgent(Agent):
                 return messages
 
             # Build environment reminder text
-            reminder_parts = [
-                '\n\nENVIRONMENT REMINDER:',
-                f'- You have {state.max_iterations - state.iteration} turns left to complete the task',
-                '- When finished reply with <finish></finish>\n',
-            ]
-            reminder_text = '\n'.join(reminder_parts)
+            reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
 
             # Add SWE Bench specific instructions if needed
             if os.environ.get('SWE_BENCH_RUN', 'false').lower() == 'true':
