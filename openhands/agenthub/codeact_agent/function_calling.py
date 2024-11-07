@@ -245,7 +245,7 @@ StrReplaceEditorTool = ChatCompletionToolParam(
                     'type': 'string',
                 },
                 'path': {
-                    'description': 'Absolute path to file or directory, e.g. `/repo/file.py` or `/repo`.',
+                    'description': 'Absolute path to file or directory, e.g. `/workspace/file.py` or `/workspace`.',
                     'type': 'string',
                 },
                 'file_text': {
