@@ -121,9 +121,9 @@ function AgentStatusBar() {
     <div className="flex flex-col items-center">
       <div className="flex items-center bg-neutral-800 px-2 py-1 text-gray-400 rounded-[100px] text-sm gap-[6px]">
         <div
-          className={`w-2 h-2 rounded-full animate-pulse ${AgentStatusMap[curAgentState].indicator}`}
+          className={`w-2 h-2 rounded-full animate-pulse inline-flex self-center ${AgentStatusMap[curAgentState].indicator}`}
         />
-        <span className="text-sm text-stone-400">{statusMessage}</span>
+        <span className="text-sm text-stone-400 inline-flex self-center">{statusMessage}</span>
       </div>
     </div>
   );
