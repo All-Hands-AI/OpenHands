@@ -123,7 +123,7 @@ function SecurityInvariant(): JSX.Element {
 
   async function exportTraces(): Promise<void> {
     const data = await request(`/api/security/export-trace`);
-    toast.info("Trace exported");
+    toast.info(t(I18nKey.INVARIANT$TRACE_EXPORTED_MESSAGE));
 
     const filename = `openhands-trace-${getFormattedDateTime()}.json`;
     downloadJSON(data, filename);
@@ -134,7 +134,7 @@ function SecurityInvariant(): JSX.Element {
       method: "POST",
       body: JSON.stringify({ policy }),
     });
-    toast.info("Policy updated");
+    toast.info(t(I18nKey.INVARIANT$POLICY_UPDATED_MESSAGE));
   }
 
   async function updateSettings(): Promise<void> {
@@ -143,7 +143,7 @@ function SecurityInvariant(): JSX.Element {
       method: "POST",
       body: JSON.stringify(payload),
     });
-    toast.info("Settings updated");
+    toast.info(t(I18nKey.INVARIANT$SETTINGS_UPDATED_MESSAGE));
   }
 
   const handleExportTraces = useCallback(() => {
@@ -162,9 +162,9 @@ function SecurityInvariant(): JSX.Element {
     logs: (
       <>
         <div className="flex justify-between items-center border-b border-neutral-600 mb-4 p-4">
-          <h2 className="text-2xl">Logs</h2>
+          <h2 className="text-2xl">{t(I18nKey.INVARIANT$LOG_LABEL)}</h2>
           <Button onClick={handleExportTraces} className="bg-neutral-700">
-            Export Trace
+            {t(I18nKey.INVARIANT$EXPORT_TRACE_LABEL)}
           </Button>
         </div>
         <div className="flex-1 p-4 max-h-screen overflow-y-auto" ref={logsRef}>
@@ -195,9 +195,9 @@ function SecurityInvariant(): JSX.Element {
     policy: (
       <>
         <div className="flex justify-between items-center border-b border-neutral-600 mb-4 p-4">
-          <h2 className="text-2xl">Policy</h2>
+          <h2 className="text-2xl">{t(I18nKey.INVARIANT$POLICY_LABEL)}</h2>
           <Button className="bg-neutral-700" onClick={handleUpdatePolicy}>
-            Update Policy
+            {t(I18nKey.INVARIANT$UPDATE_POLICY_LABEL)}
           </Button>
         </div>
         <div className="flex grow items-center justify-center">
@@ -214,14 +214,16 @@ function SecurityInvariant(): JSX.Element {
     settings: (
       <>
         <div className="flex justify-between items-center border-b border-neutral-600 mb-4 p-4">
-          <h2 className="text-2xl">Settings</h2>
+          <h2 className="text-2xl">{t(I18nKey.INVARIANT$SETTINGS_LABEL)}</h2>
           <Button className="bg-neutral-700" onClick={handleUpdateSettings}>
-            Update Settings
+            {t(I18nKey.INVARIANT$UPDATE_SETTINGS_LABEL)}
           </Button>
         </div>
         <div className="flex grow p-4">
           <div className="flex flex-col w-full">
-            <p className="mb-2">Ask for user confirmation on risk severity:</p>
+            <p className="mb-2">
+              {t(I18nKey.INVARIANT$ASK_CONFIRMATION_RISK_SEVERITY_LABEL)}
+            </p>
             <Select
               placeholder="Select risk severity"
               value={selectedRisk}
@@ -264,7 +266,7 @@ function SecurityInvariant(): JSX.Element {
                 key={ActionSecurityRisk.HIGH + 1}
                 aria-label="Don't ask for confirmation"
               >
-                Don&apos;t ask for confirmation
+                {t(I18nKey.INVARIANT$DONT_ASK_FOR_CONFIRMATION_LABEL)}
               </SelectItem>
             </Select>
           </div>
@@ -278,18 +280,17 @@ function SecurityInvariant(): JSX.Element {
       <div className="w-60 bg-neutral-800 border-r border-r-neutral-600 p-4 flex-shrink-0">
         <div className="text-center mb-2">
           <InvariantLogoIcon className="mx-auto mb-1" />
-          <b>Invariant Analyzer</b>
+          <b>{t(I18nKey.INVARIANT$INVARIANT_ANALYZER_LABEL)}</b>
         </div>
         <p className="text-[0.6rem]">
-          Invariant Analyzer continuously monitors your OpenHands agent for
-          security issues.{" "}
+          {t(I18nKey.INVARIANT$INVARIANT_ANALYZER_MESSAGE)}{" "}
           <a
             className="underline"
             href="https://github.com/invariantlabs-ai/invariant"
             target="_blank"
             rel="noreferrer"
           >
-            Click to learn more
+            {t(I18nKey.INVARIANT$CLICK_TO_LEARN_MORE_LABEL)}
           </a>
         </p>
         <hr className="border-t border-neutral-600 my-2" />
@@ -298,19 +299,19 @@ function SecurityInvariant(): JSX.Element {
             className={`cursor-pointer p-2 rounded ${activeSection === "logs" && "bg-neutral-600"}`}
             onClick={() => setActiveSection("logs")}
           >
-            Logs
+            {t(I18nKey.INVARIANT$LOG_LABEL)}
           </div>
           <div
             className={`cursor-pointer p-2 rounded ${activeSection === "policy" && "bg-neutral-600"}`}
             onClick={() => setActiveSection("policy")}
           >
-            Policy
+            {t(I18nKey.INVARIANT$POLICY_LABEL)}
           </div>
           <div
             className={`cursor-pointer p-2 rounded ${activeSection === "settings" && "bg-neutral-600"}`}
             onClick={() => setActiveSection("settings")}
           >
-            Settings
+            {t(I18nKey.INVARIANT$SETTINGS_LABEL)}
           </div>
         </ul>
       </div>

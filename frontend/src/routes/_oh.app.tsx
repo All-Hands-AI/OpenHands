@@ -36,6 +36,7 @@ import ListIcon from "#/assets/list-type-number.svg?react";
 import { createChatMessage } from "#/services/chatService";
 import {
   clearFiles,
+  clearInitialQuery,
   clearSelectedRepository,
   setImportedProjectZip,
 } from "#/state/initial-query-slice";
@@ -48,6 +49,7 @@ import { clearJupyter } from "#/state/jupyterSlice";
 import { FilesProvider } from "#/context/files";
 import { ErrorObservation } from "#/types/core/observations";
 import { ChatInterface } from "#/components/chat-interface";
+import { cn } from "#/utils/utils";
 
 interface ServerError {
   error: boolean | string;
@@ -114,7 +116,6 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 };
 
 function App() {
-  console.log("render app");
   const dispatch = useDispatch();
   const { files, importedProjectZip } = useSelector(
     (state: RootState) => state.initalQuery,
@@ -255,6 +256,7 @@ function App() {
     dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
+    dispatch(clearInitialQuery()); // Clear initial query when navigating to /app
     startSocketConnection();
   });
 
@@ -292,7 +294,16 @@ function App() {
   return (
     <div className="flex flex-col h-full gap-3">
       <div className="flex h-full overflow-auto gap-3">
-        <Container className="w-[390px] max-h-full">
+        <Container className="w-[390px] max-h-full relative">
+          <div
+            className={cn(
+              "w-2 h-2 rounded-full border",
+              "absolute left-3 top-3",
+              runtimeActive
+                ? "bg-green-800 border-green-500"
+                : "bg-red-800 border-red-500",
+            )}
+          />
           <ChatInterface />
         </Container>
 
