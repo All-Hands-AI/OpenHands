@@ -123,6 +123,7 @@ async def run_controller(
 
     if runtime is None:
         runtime = create_runtime(config, sid=sid)
+        await runtime.connect()
 
     event_stream = runtime.event_stream
 
@@ -187,8 +188,6 @@ async def run_controller(
                 event_stream.add_event(action, EventSource.USER)
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, sid)
-
-    await runtime.connect()
 
     end_states = [
         AgentState.FINISHED,
