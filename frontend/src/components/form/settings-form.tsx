@@ -5,16 +5,18 @@ import {
   Switch,
 } from "@nextui-org/react";
 import { useFetcher, useLocation, useNavigate } from "@remix-run/react";
+import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import React from "react";
-import { ModalBackdrop } from "#/components/modals/modal-backdrop";
-import { ModelSelector } from "#/components/modals/settings/ModelSelector";
-import { clientAction } from "#/routes/settings";
-import { Settings } from "#/services/settings";
-import { extractModelAndProvider } from "#/utils/extractModelAndProvider";
 import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
+import { ModelSelector } from "#/components/modals/settings/ModelSelector";
+import { Settings } from "#/services/settings";
+import { ModalBackdrop } from "#/components/modals/modal-backdrop";
+import { clientAction } from "#/routes/settings";
+import { extractModelAndProvider } from "#/utils/extractModelAndProvider";
 import ModalButton from "../buttons/ModalButton";
 import { DangerModal } from "../modals/confirmation-modals/danger-modal";
+import { I18nKey } from "#/i18n/declaration";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -35,6 +37,7 @@ export function SettingsForm({
 }: SettingsFormProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const fetcher = useFetcher<typeof clientAction>();
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -161,7 +164,7 @@ export function SettingsForm({
               label: "text-[#A3A3A3] text-xs",
             }}
           >
-            Advanced Options
+            {t(I18nKey.SETTINGS_FORM$ADVANCED_OPTIONS_LABEL)}
           </Switch>
 
           {showAdvancedOptions && (
@@ -171,7 +174,7 @@ export function SettingsForm({
                   htmlFor="custom-model"
                   className="font-[500] text-[#A3A3A3] text-xs"
                 >
-                  Custom Model
+                  {t(I18nKey.SETTINGS_FORM$CUSTOM_MODEL_LABEL)}
                 </label>
                 <Input
                   isDisabled={disabled}
@@ -190,7 +193,7 @@ export function SettingsForm({
                   htmlFor="base-url"
                   className="font-[500] text-[#A3A3A3] text-xs"
                 >
-                  Base URL
+                  {t(I18nKey.SETTINGS_FORM$BASE_URL_LABEL)}
                 </label>
                 <Input
                   isDisabled={disabled}
@@ -220,7 +223,7 @@ export function SettingsForm({
               htmlFor="api-key"
               className="font-[500] text-[#A3A3A3] text-xs"
             >
-              API Key
+              {t(I18nKey.SETTINGS_FORM$API_KEY_LABEL)}
             </label>
             <Input
               isDisabled={disabled}
@@ -234,14 +237,14 @@ export function SettingsForm({
               }}
             />
             <p className="text-sm text-[#A3A3A3]">
-              Don&apos;t know your API key?{" "}
+              {t(I18nKey.SETTINGS_FORM$DONT_KNOW_API_KEY_LABEL)}{" "}
               <a
                 href="https://docs.all-hands.dev/modules/usage/llms"
                 rel="noreferrer noopener"
                 target="_blank"
                 className="underline underline-offset-2"
               >
-                Click here for instructions
+                {t(I18nKey.SETTINGS_FORM$CLICK_HERE_FOR_INSTRUCTIONS_LABEL)}
               </a>
             </p>
           </fieldset>
@@ -255,7 +258,7 @@ export function SettingsForm({
                 htmlFor="agent"
                 className="font-[500] text-[#A3A3A3] text-xs"
               >
-                Agent
+                {t(I18nKey.SETTINGS_FORM$AGENT_LABEL)}
               </label>
               <Autocomplete
                 isDisabled={disabled}
@@ -291,7 +294,7 @@ export function SettingsForm({
                   htmlFor="security-analyzer"
                   className="font-[500] text-[#A3A3A3] text-xs"
                 >
-                  Security Analyzer (Optional)
+                  {t(I18nKey.SETTINGS_FORM$SECURITY_ANALYZER_LABEL)}
                 </label>
                 <Autocomplete
                   isDisabled={disabled}
@@ -334,7 +337,7 @@ export function SettingsForm({
                   label: "text-[#A3A3A3] text-xs",
                 }}
               >
-                Enable Confirmation Mode
+                {t(I18nKey.SETTINGS_FORM$ENABLE_CONFIRMATION_MODE_LABEL)}
               </Switch>
             </>
           )}
@@ -345,18 +348,18 @@ export function SettingsForm({
             <ModalButton
               disabled={disabled || fetcher.state === "submitting"}
               type="submit"
-              text="Save"
+              text={t(I18nKey.SETTINGS_FORM$SAVE_LABEL)}
               className="bg-[#4465DB] w-full"
             />
             <ModalButton
-              text="Close"
+              text={t(I18nKey.SETTINGS_FORM$CLOSE_LABEL)}
               className="bg-[#737373] w-full"
               onClick={handleCloseClick}
             />
           </div>
           <ModalButton
             disabled={disabled}
-            text="Reset to defaults"
+            text={t(I18nKey.SETTINGS_FORM$RESET_TO_DEFAULTS_LABEL)}
             variant="text-like"
             className="text-danger self-start"
             onClick={() => {
@@ -369,15 +372,17 @@ export function SettingsForm({
       {confirmResetDefaultsModalOpen && (
         <ModalBackdrop>
           <DangerModal
-            title="Are you sure?"
-            description="All saved information in your AI settings will be deleted including any API keys."
+            title={t(I18nKey.SETTINGS_FORM$ARE_YOU_SURE_LABEL)}
+            description={t(
+              I18nKey.SETTINGS_FORM$ALL_INFORMATION_WILL_BE_DELETED_MESSAGE,
+            )}
             buttons={{
               danger: {
-                text: "Reset Defaults",
+                text: t(I18nKey.SETTINGS_FORM$RESET_TO_DEFAULTS_LABEL),
                 onClick: handleConfirmResetSettings,
               },
               cancel: {
-                text: "Cancel",
+                text: t(I18nKey.SETTINGS_FORM$CANCEL_LABEL),
                 onClick: () => setConfirmResetDefaultsModalOpen(false),
               },
             }}
@@ -387,12 +392,17 @@ export function SettingsForm({
       {confirmEndSessionModalOpen && (
         <ModalBackdrop>
           <DangerModal
-            title="End Session"
-            description="Changing your settings will clear your workspace and start a new session. Are you sure you want to continue?"
+            title={t(I18nKey.SETTINGS_FORM$END_SESSION_LABEL)}
+            description={t(
+              I18nKey.SETTINGS_FORM$CHANGING_WORKSPACE_WARNING_MESSAGE,
+            )}
             buttons={{
-              danger: { text: "End Session", onClick: handleConfirmEndSession },
+              danger: {
+                text: t(I18nKey.SETTINGS_FORM$END_SESSION_LABEL),
+                onClick: handleConfirmEndSession,
+              },
               cancel: {
-                text: "Cancel",
+                text: t(I18nKey.SETTINGS_FORM$CANCEL_LABEL),
                 onClick: () => setConfirmEndSessionModalOpen(false),
               },
             }}
