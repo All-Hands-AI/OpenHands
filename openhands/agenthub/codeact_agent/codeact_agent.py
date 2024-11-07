@@ -99,7 +99,6 @@ class CodeActAgent(Agent):
             self.function_calling_active = False
 
         if self.function_calling_active:
-            # Function calling mode
             self.tools = codeact_function_calling.get_tools(
                 codeact_enable_browsing=self.config.codeact_enable_browsing,
                 codeact_enable_jupyter=self.config.codeact_enable_jupyter,
@@ -108,15 +107,14 @@ class CodeActAgent(Agent):
             logger.debug(
                 f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
             )
-            self.system_prompt = codeact_function_calling.SYSTEM_PROMPT
-            self.initial_user_message = None
+            self.prompt_manager = PromptManager(
+                prompt_dir=os.path.join(os.path.dirname(__file__), 'tools'),
+            )
         else:
-            # Non-function-calling mode
             self.action_parser = CodeActResponseParser()
             self.prompt_manager = PromptManager(
-                prompt_dir=os.path.join(os.path.dirname(__file__)),
+                prompt_dir=os.path.join(os.path.dirname(__file__), 'default'),
                 agent_skills_docs=AgentSkillsRequirement.documentation,
-                micro_agent=self.micro_agent,
             )
             self.system_prompt = self.prompt_manager.system_message
             self.initial_user_message = self.prompt_manager.initial_user_message
