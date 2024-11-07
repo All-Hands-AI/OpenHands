@@ -112,6 +112,10 @@ class Runtime(FileEditRuntimeMixin):
         # Load mixins
         FileEditRuntimeMixin.__init__(self)
 
+        self._vscode_enabled = any(
+            isinstance(plugin, VSCodeRequirement) for plugin in self.plugins
+        )
+
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
             return
@@ -288,8 +292,12 @@ class Runtime(FileEditRuntimeMixin):
         raise NotImplementedError('This method is not implemented in the base class.')
 
     # ====================================================================
-    # VSCode URL
+    # VSCode
     # ====================================================================
+
+    @property
+    def vscode_enabled(self) -> bool:
+        return self._vscode_enabled
 
     @property
     def vscode_url(self) -> str | None:

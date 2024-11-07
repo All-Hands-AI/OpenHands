@@ -34,7 +34,7 @@ from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.base import Runtime
 from openhands.runtime.builder import DockerRuntimeBuilder
-from openhands.runtime.plugins import PluginRequirement, VSCodeRequirement
+from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
@@ -186,9 +186,6 @@ class EventStreamRuntime(Runtime):
             status_callback,
             attach_to_existing,
         )
-        self._vscode_enabled = any(
-            isinstance(plugin, VSCodeRequirement) for plugin in self.plugins
-        )
 
     async def connect(self):
         self.send_status_message('STATUS$STARTING_RUNTIME')
@@ -279,7 +276,7 @@ class EventStreamRuntime(Runtime):
                 'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
             )
 
-        if self._vscode_enabled:
+        if self.vscode_enabled:
             # vscode is on port +1 from container port
             if isinstance(port_mapping, dict):
                 port_mapping[f'{self._container_port + 1}/tcp'] = [
@@ -385,7 +382,7 @@ class EventStreamRuntime(Runtime):
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self._vscode_url = (
             f'http://localhost:{self._host_port + 1}/?folder={self.config.workspace_mount_path_in_sandbox}'
-            if self._vscode_enabled
+            if self.vscode_enabled
             else None
         )
         self.log(
