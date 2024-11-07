@@ -1,6 +1,7 @@
 import os
 import tempfile
 import threading
+import time
 from typing import Callable, Optional
 from zipfile import ZipFile
 
@@ -277,6 +278,22 @@ class RemoteRuntime(Runtime):
         assert runtime_data['runtime_id'] == self.runtime_id
         assert 'pod_status' in runtime_data
         pod_status = runtime_data['pod_status']
+
+        # Retry a period of time to give the cluster time to start the pod
+        n_attempts = 0
+        while pod_status == 'Not Found' and n_attempts < 10:
+            time.sleep(5)
+            runtime_info_response = self._send_request(
+                'GET',
+                f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.runtime_id}',
+            )
+            runtime_data = runtime_info_response.json()
+            assert 'runtime_id' in runtime_data
+            assert runtime_data['runtime_id'] == self.runtime_id
+            assert 'pod_status' in runtime_data
+            pod_status = runtime_data['pod_status']
+            n_attempts += 1
+
         if pod_status == 'Ready':
             try:
                 self._send_request(
