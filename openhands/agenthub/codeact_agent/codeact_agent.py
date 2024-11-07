@@ -116,8 +116,6 @@ class CodeActAgent(Agent):
                 prompt_dir=os.path.join(os.path.dirname(__file__), 'default'),
                 agent_skills_docs=AgentSkillsRequirement.documentation,
             )
-            self.system_prompt = self.prompt_manager.system_message
-            self.initial_user_message = self.prompt_manager.initial_user_message
 
         self.pending_actions: deque[Action] = deque()
 

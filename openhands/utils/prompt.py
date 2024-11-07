@@ -24,7 +24,7 @@ class PromptManager:
     def __init__(
         self,
         prompt_dir: str,
-        agent_skills_docs: str,
+        agent_skills_docs: str = '',
     ):
         self.prompt_dir: str = prompt_dir
         self.agent_skills_docs: str = agent_skills_docs
