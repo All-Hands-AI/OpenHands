@@ -45,11 +45,7 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
-from openhands.runtime.plugins import (
-    ALL_PLUGINS,
-    JupyterPlugin,
-    Plugin,
-)
+from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
@@ -503,6 +499,19 @@ if __name__ == '__main__':
     @app.get('/alive')
     async def alive():
         return {'status': 'ok'}
+
+    # ================================
+    # VSCode-specific operations
+    # ================================
+
+    @app.get('/vscode/connection_token')
+    async def get_vscode_connection_token():
+        assert client is not None
+        if 'vscode' in client.plugins:
+            plugin: VSCodePlugin = client.plugins['vscode']  # type: ignore
+            return {'token': plugin.vscode_connection_token}
+        else:
+            return {'token': None}
 
     # ================================
     # File-specific operations for UI

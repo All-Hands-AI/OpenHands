@@ -1,6 +1,7 @@
 import os
 import subprocess
 import time
+import uuid
 from dataclasses import dataclass
 
 from openhands.core.logger import openhands_logger as logger
@@ -19,9 +20,7 @@ class VSCodePlugin(Plugin):
 
     async def initialize(self, username: str):
         self.vscode_port = int(os.environ['VSCODE_PORT'])
-        self.vscode_connection_token = os.environ.get('VSCODE_CONNECTION_TOKEN')
-        if self.vscode_connection_token is None:
-            raise ValueError('VSCODE_CONNECTION_TOKEN is not set')
+        self.vscode_connection_token = str(uuid.uuid4())
         assert check_port_available(self.vscode_port)
         self._vscode_url = f'http://localhost:{self.vscode_port}'
         cmd = (
