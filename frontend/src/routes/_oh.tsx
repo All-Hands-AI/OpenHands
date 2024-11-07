@@ -12,6 +12,7 @@ import {
 } from "@remix-run/react";
 import posthog from "posthog-js";
 import { useDispatch } from "react-redux";
+import { toast } from "react-hot-toast";
 import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
 import CogTooth from "#/assets/cog-tooth";
@@ -243,14 +244,23 @@ export default function MainApp() {
     e.preventDefault();
     try {
       const response = await OpenHands.getVSCodeUrl();
-      console.log(response);
       if (response.vscode_url) {
+        toast.success(
+          "Jumping to VSCode... NOTE: The agent currently is unaware of changes you've made in VSCode. Please let the agent know the changes you've made. Please try not to work at the same time as the agent.",
+          { duration: 5000 },
+        );
         window.open(response.vscode_url, "_blank");
       } else {
-        console.error("Failed to fetch VSCode URL:", response.error);
+        toast.error(
+          `${response.error}\nPlease make sure the agent is already connected to Runtime.`,
+          { duration: 5000 },
+        );
       }
     } catch (error) {
-      console.error("Failed to fetch VSCode URL:", error);
+      toast.error(
+        `Unexpected error: ${String(error)}\nPlease make sure the backend is running.`,
+        { duration: 5000 },
+      );
     }
   };
 

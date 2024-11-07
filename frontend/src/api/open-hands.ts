@@ -181,7 +181,7 @@ class OpenHands {
    * @returns VSCode URL
    */
   static async getVSCodeUrl(): Promise<GetVSCodeUrlResponse> {
-    return request(`/api/vscode-url`);
+    return request(`/api/vscode-url`, {}, false, false, 1);
   }
 }
 
