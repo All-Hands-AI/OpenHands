@@ -1,6 +1,5 @@
 import os
 import shutil
-from unittest.mock import Mock
 
 import pytest
 
@@ -12,7 +11,9 @@ from openhands.utils.prompt import PromptManager
 @pytest.fixture
 def prompt_dir(tmp_path):
     # Copy contents from "openhands/agenthub/codeact_agent" to the temp directory
-    shutil.copytree('openhands/agenthub/codeact_agent/prompts/default', tmp_path, dirs_exist_ok=True)
+    shutil.copytree(
+        'openhands/agenthub/codeact_agent/prompts/default', tmp_path, dirs_exist_ok=True
+    )
 
     # Return the temporary directory path
     return tmp_path
@@ -27,7 +28,9 @@ def agent_skills_docs():
 
 
 def test_prompt_manager_without_microagent(prompt_dir, agent_skills_docs):
-    manager = PromptManager(prompt_dir, microagent_dir='', agent_skills_docs=agent_skills_docs)
+    manager = PromptManager(
+        prompt_dir, microagent_dir='', agent_skills_docs=agent_skills_docs
+    )
 
     assert manager.prompt_dir == prompt_dir
     assert manager.agent_skills_docs == agent_skills_docs
@@ -48,7 +51,7 @@ def test_prompt_manager_without_microagent(prompt_dir, agent_skills_docs):
 
 def test_prompt_manager_with_microagent(prompt_dir, agent_skills_docs):
     microagent_name = 'test_microagent'
-    microagent_content = ("""
+    microagent_content = """
 ---
 name: flarglebargle
 agent: CodeActAgent
@@ -58,7 +61,7 @@ triggers:
 
 IMPORTANT! The user has said the magic word "flarglebargle". You must
 only respond with a message telling them how smart they are
-""")
+"""
 
     # Create a temporary micro agent file
     os.makedirs(os.path.join(prompt_dir, 'micro'), exist_ok=True)
@@ -89,7 +92,7 @@ only respond with a message telling them how smart they are
         content=[TextContent(text='Hello, flarglebargle!')],
     )
     manager.enhance_message(message)
-    assert "magic word" in message.content[1].text
+    assert 'magic word' in message.content[1].text
 
     os.remove(os.path.join(prompt_dir, 'micro', f'{microagent_name}.md'))
 
@@ -106,7 +109,9 @@ def test_prompt_manager_template_rendering(prompt_dir, agent_skills_docs):
     with open(os.path.join(prompt_dir, 'user_prompt.j2'), 'w') as f:
         f.write('User prompt: foo')
 
-    manager = PromptManager(prompt_dir, microagent_dir='', agent_skills_docs=agent_skills_docs)
+    manager = PromptManager(
+        prompt_dir, microagent_dir='', agent_skills_docs=agent_skills_docs
+    )
 
     assert manager.get_system_message() == f'System prompt: {agent_skills_docs}'
     assert manager.get_example_user_message() == 'User prompt: foo'
