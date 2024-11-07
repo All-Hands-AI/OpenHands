@@ -508,23 +508,28 @@ class CodeActAgent(Agent):
                 None,
             )
             # do not add this for function calling
-            if latest_user_message:
-                reminder_text = (
-                    '\n\nENVIRONMENT REMINDER:\n'
-                    f'- You have {state.max_iterations - state.iteration} turns left to complete the task\n'
-                    '- When finished reply with <finish></finish>\n'
-                )
-                
-                # Add SWE Bench specific instructions only when running in that context
-                if os.environ.get('SWE_BENCH_RUN', 'false').lower() == 'true':
-                    reminder_text += (
-                        '\n<IMPORTANT>\n'
-                        '- You MUST generate only one action per turn!\n'
-                        '- A patch is a set of changes to the source code of the codebase that you are given\n'
-                        '- You MUST generate a patch that attempts to fix the issue described in the <pr_description>\n'
-                        '</IMPORTANT>\n'
-                    )
-                
-                latest_user_message.content.append(TextContent(text=reminder_text))
+            if not latest_user_message:
+                return messages
+
+            # Build environment reminder text
+            reminder_parts = [
+                '\n\nENVIRONMENT REMINDER:',
+                f'- You have {state.max_iterations - state.iteration} turns left to complete the task',
+                '- When finished reply with <finish></finish>\n',
+            ]
+            reminder_text = '\n'.join(reminder_parts)
+
+            # Add SWE Bench specific instructions if needed
+            if os.environ.get('SWE_BENCH_RUN', 'false').lower() == 'true':
+                swe_bench_parts = [
+                    '\n<IMPORTANT>',
+                    '- You MUST generate only one action per turn!',
+                    '- A patch is a set of changes to the source code of the codebase that you are given',
+                    '- You MUST generate a patch that attempts to fix the issue described in the <pr_description>',
+                    '</IMPORTANT>\n',
+                ]
+                reminder_text += '\n'.join(swe_bench_parts)
+
+            latest_user_message.content.append(TextContent(text=reminder_text))
 
         return messages
