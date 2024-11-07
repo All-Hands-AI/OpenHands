@@ -1,8 +1,8 @@
 import os
-from pathlib import Path
 import tempfile
 import threading
 from functools import lru_cache
+from pathlib import Path
 from typing import Callable
 from zipfile import ZipFile
 
@@ -283,7 +283,7 @@ class EventStreamRuntime(Runtime):
                 port_mapping[f'{self._container_port + 1}/tcp'] = [
                     {'HostPort': str(self._host_port + 1)}
                 ]
-            self._vscode_url = f'http://localhost:{self._host_port + 1}/?folder={self.config.workspace_mount_path_in_sandbox}'
+            self._vscode_url = f'http://localhost:{self._host_port + 1}/?tkn={self.vscode_connection_token}&folder={self.config.workspace_mount_path_in_sandbox}'
 
         # Combine environment variables
         environment = {
@@ -382,7 +382,7 @@ class EventStreamRuntime(Runtime):
         self._host_port = self._container_port
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self._vscode_url = (
-            f'http://localhost:{self._host_port + 1}/?folder={self.config.workspace_mount_path_in_sandbox}'
+            f'http://localhost:{self._host_port + 1}/?tkn={self.vscode_connection_token}&folder={self.config.workspace_mount_path_in_sandbox}'
             if self.vscode_enabled
             else None
         )

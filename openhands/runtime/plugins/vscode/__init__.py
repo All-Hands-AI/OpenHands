@@ -19,6 +19,9 @@ class VSCodePlugin(Plugin):
 
     async def initialize(self, username: str):
         self.vscode_port = int(os.environ['VSCODE_PORT'])
+        self.vscode_connection_token = os.environ.get('VSCODE_CONNECTION_TOKEN')
+        if self.vscode_connection_token is None:
+            raise ValueError('VSCODE_CONNECTION_TOKEN is not set')
         assert check_port_available(self.vscode_port)
         self._vscode_url = f'http://localhost:{self.vscode_port}'
         self.gateway_process = subprocess.Popen(
@@ -26,7 +29,7 @@ class VSCodePlugin(Plugin):
                 f"su - {username} -s /bin/bash << 'EOF'\n"
                 f'sudo chown -R {username}:{username} /openhands/.openvscode-server\n'
                 'cd /workspace\n'
-                f'exec /openhands/.openvscode-server/bin/openvscode-server --host 0.0.0.0 --without-connection-token --port {self.vscode_port}\n'
+                f'exec /openhands/.openvscode-server/bin/openvscode-server --host 0.0.0.0 --connection-token {self.vscode_connection_token} --port {self.vscode_port}\n'
                 'EOF'
             ),
             stderr=subprocess.STDOUT,
