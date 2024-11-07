@@ -406,7 +406,6 @@ class CodeActAgent(Agent):
                 )
             )
 
-        latest_user_message = state.get_last_user_message()
         pending_tool_call_action_messages: dict[str, Message] = {}
         tool_call_id_to_message: dict[str, Message] = {}
         events = list(state.history)
@@ -453,7 +452,7 @@ class CodeActAgent(Agent):
 
             for message in messages_to_add:
                 if message:
-                    if latest_user_message and event.id == latest_user_message.id:
+                    if message.role == 'user':
                         self.prompt_manager.enhance_message(message)
                     # handle error if the message is the SAME role as the previous message
                     # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
