@@ -2,7 +2,6 @@ import atexit
 import copy
 import json
 import os
-import uuid
 from abc import abstractmethod
 from pathlib import Path
 from typing import Callable
@@ -114,9 +113,6 @@ class Runtime(FileEditRuntimeMixin):
         self._vscode_enabled = any(
             isinstance(plugin, VSCodeRequirement) for plugin in self.plugins
         )
-        self._vscode_connection_token: str | None = None
-        if self._vscode_enabled:
-            self._vscode_connection_token = str(uuid.uuid4())
 
         # Load mixins
         FileEditRuntimeMixin.__init__(self)
@@ -303,10 +299,6 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def vscode_enabled(self) -> bool:
         return self._vscode_enabled
-
-    @property
-    def vscode_connection_token(self) -> str | None:
-        return self._vscode_connection_token
 
     @property
     def vscode_url(self) -> str | None:

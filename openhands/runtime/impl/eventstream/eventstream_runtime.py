@@ -1,6 +1,7 @@
 import os
 import tempfile
 import threading
+import uuid
 from functools import lru_cache
 from pathlib import Path
 from typing import Callable
@@ -152,6 +153,7 @@ class EventStreamRuntime(Runtime):
         self._host_port = 30000  # initial dummy value
         self._container_port = 30001  # initial dummy value
         self._vscode_url: str | None = None  # initial dummy value
+        self._vscode_connection_token: str | None = None
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.session = requests.Session()
         self.status_callback = status_callback
@@ -277,14 +279,6 @@ class EventStreamRuntime(Runtime):
                 'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
             )
 
-        if self.vscode_enabled:
-            # vscode is on port +1 from container port
-            if isinstance(port_mapping, dict):
-                port_mapping[f'{self._container_port + 1}/tcp'] = [
-                    {'HostPort': str(self._host_port + 1)}
-                ]
-            self._vscode_url = f'http://localhost:{self._host_port + 1}/?tkn={self.vscode_connection_token}&folder={self.config.workspace_mount_path_in_sandbox}'
-
         # Combine environment variables
         environment = {
             'port': str(self._container_port),
@@ -293,8 +287,15 @@ class EventStreamRuntime(Runtime):
         if self.config.debug or DEBUG:
             environment['DEBUG'] = 'true'
 
-        if self.vscode_connection_token:
-            environment['VSCODE_CONNECTION_TOKEN'] = self.vscode_connection_token
+        if self.vscode_enabled:
+            self._vscode_connection_token = str(uuid.uuid4())
+            # vscode is on port +1 from container port
+            if isinstance(port_mapping, dict):
+                port_mapping[f'{self._container_port + 1}/tcp'] = [
+                    {'HostPort': str(self._host_port + 1)}
+                ]
+            self._vscode_url = f'http://localhost:{self._host_port + 1}/?tkn={self._vscode_connection_token}&folder={self.config.workspace_mount_path_in_sandbox}'
+            environment['VSCODE_CONNECTION_TOKEN'] = self._vscode_connection_token
 
         self.log('debug', f'Workspace Base: {self.config.workspace_base}')
         if (
@@ -385,7 +386,7 @@ class EventStreamRuntime(Runtime):
         self._host_port = self._container_port
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self._vscode_url = (
-            f'http://localhost:{self._host_port + 1}/?tkn={self.vscode_connection_token}&folder={self.config.workspace_mount_path_in_sandbox}'
+            f'http://localhost:{self._host_port + 1}/?tkn={self._vscode_connection_token}&folder={self.config.workspace_mount_path_in_sandbox}'
             if self.vscode_enabled
             else None
         )

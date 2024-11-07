@@ -24,14 +24,16 @@ class VSCodePlugin(Plugin):
             raise ValueError('VSCODE_CONNECTION_TOKEN is not set')
         assert check_port_available(self.vscode_port)
         self._vscode_url = f'http://localhost:{self.vscode_port}'
+        cmd = (
+            f"su - {username} -s /bin/bash << 'EOF'\n"
+            f'sudo chown -R {username}:{username} /openhands/.openvscode-server\n'
+            'cd /workspace\n'
+            f'exec /openhands/.openvscode-server/bin/openvscode-server --host 0.0.0.0 --connection-token {self.vscode_connection_token} --port {self.vscode_port}\n'
+            'EOF'
+        )
+        print(cmd)
         self.gateway_process = subprocess.Popen(
-            (
-                f"su - {username} -s /bin/bash << 'EOF'\n"
-                f'sudo chown -R {username}:{username} /openhands/.openvscode-server\n'
-                'cd /workspace\n'
-                f'exec /openhands/.openvscode-server/bin/openvscode-server --host 0.0.0.0 --connection-token {self.vscode_connection_token} --port {self.vscode_port}\n'
-                'EOF'
-            ),
+            cmd,
             stderr=subprocess.STDOUT,
             shell=True,
         )
