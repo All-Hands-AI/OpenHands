@@ -85,11 +85,6 @@ class CodeActAgent(Agent):
         super().__init__(llm, config)
         self.reset()
 
-        self.prompt_manager = PromptManager(
-            prompt_dir=os.path.join(os.path.dirname(__file__)),
-            agent_skills_docs=AgentSkillsRequirement.documentation,
-        )
-
         self.function_calling_active = self.config.function_calling
         if self.function_calling_active and not self.llm.is_function_calling_active():
             logger.warning(
