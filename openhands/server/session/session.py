@@ -30,7 +30,7 @@ class Session:
     sid: str
     websocket: WebSocket | None
     last_active_ts: int = 0
-    is_alive: bool = False
+    is_alive: bool = True
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
 
@@ -109,7 +109,6 @@ class Session:
 
         # Create the agent session
         try:
-            self.is_alive = True
             await self.agent_session.start(
                 runtime_name=self.config.runtime,
                 config=self.config,
@@ -139,7 +138,9 @@ class Session:
             return
         if event.source == EventSource.AGENT:
             await self.send(event_to_dict(event))
-        elif event.source == EventSource.USER and isinstance(event, CmdOutputObservation):
+        elif event.source == EventSource.USER and isinstance(
+            event, CmdOutputObservation
+        ):
             await self.send(event_to_dict(event))
         # NOTE: ipython observations are not sent here currently
         elif event.source == EventSource.ENVIRONMENT and isinstance(
@@ -158,8 +159,7 @@ class Session:
     async def dispatch(self, data: dict):
         action = data.get('action', '')
         if action == ActionType.INIT:
-            if not self.is_alive:
-                await self._initialize_agent(data)
+            await self._initialize_agent(data)
             return
         event = event_from_dict(data.copy())
         # This checks if the model supports images
