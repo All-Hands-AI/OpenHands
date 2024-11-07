@@ -279,8 +279,6 @@ class RemoteRuntime(Runtime):
         assert 'pod_status' in runtime_data
         pod_status = runtime_data['pod_status']
 
-        # FIXME: We should fix it at the backend of /start endpoint, make sure
-        # the pod is created before returning the response.
         # Retry a period of time to give the cluster time to start the pod
         n_attempts = 0
         while pod_status == 'Not Found' and n_attempts < 10:
