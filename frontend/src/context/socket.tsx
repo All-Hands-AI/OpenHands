@@ -3,11 +3,9 @@ import { Data } from "ws";
 import posthog from "posthog-js";
 import EventLogger from "#/utils/event-logger";
 
-const RECONNECT_RETRIES = 5;
-
 interface WebSocketClientOptions {
   token: string | null;
-  onOpen?: (event: Event, isNewSession: boolean) => void;
+  onOpen?: (event: Event) => void;
   onMessage?: (event: MessageEvent<Data>) => void;
   onError?: (event: Event) => void;
   onClose?: (event: Event) => void;
@@ -17,8 +15,8 @@ interface WebSocketContextType {
   send: (data: string | ArrayBufferLike | Blob | ArrayBufferView) => void;
   start: (options?: WebSocketClientOptions) => void;
   stop: () => void;
-  setRuntimeIsInitialized: (runtimeIsInitialized: boolean) => void;
-  runtimeIsInitialized: boolean;
+  setRuntimeIsInitialized: () => void;
+  runtimeActive: boolean;
   isConnected: boolean;
   events: Record<string, unknown>[];
 }
@@ -33,10 +31,13 @@ interface SocketProviderProps {
 
 function SocketProvider({ children }: SocketProviderProps) {
   const wsRef = React.useRef<WebSocket | null>(null);
-  const wsReconnectRetries = React.useRef<number>(RECONNECT_RETRIES);
   const [isConnected, setIsConnected] = React.useState(false);
-  const [runtimeIsInitialized, setRuntimeIsInitialized] = React.useState(false);
+  const [runtimeActive, setRuntimeActive] = React.useState(false);
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
+
+  const setRuntimeIsInitialized = () => {
+    setRuntimeActive(true);
+  };
 
   const start = React.useCallback((options?: WebSocketClientOptions): void => {
     if (wsRef.current) {
@@ -60,9 +61,7 @@ function SocketProvider({ children }: SocketProviderProps) {
     ws.addEventListener("open", (event) => {
       posthog.capture("socket_opened");
       setIsConnected(true);
-      const isNewSession = sessionToken === "NO_JWT";
-      wsReconnectRetries.current = RECONNECT_RETRIES;
-      options?.onOpen?.(event, isNewSession);
+      options?.onOpen?.(event);
     });
 
     ws.addEventListener("message", (event) => {
@@ -81,22 +80,17 @@ function SocketProvider({ children }: SocketProviderProps) {
     ws.addEventListener("close", (event) => {
       posthog.capture("socket_closed");
       EventLogger.event(event, "SOCKET CLOSE");
+
       setIsConnected(false);
-      setRuntimeIsInitialized(false);
+      setRuntimeActive(false);
       wsRef.current = null;
       options?.onClose?.(event);
-      if (wsReconnectRetries.current) {
-        wsReconnectRetries.current -= 1;
-        const token = localStorage.getItem("token");
-        setTimeout(() => start({ ...(options || {}), token }), 1);
-      }
     });
 
     wsRef.current = ws;
   }, []);
 
   const stop = React.useCallback((): void => {
-    wsReconnectRetries.current = 0;
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
@@ -121,7 +115,7 @@ function SocketProvider({ children }: SocketProviderProps) {
       start,
       stop,
       setRuntimeIsInitialized,
-      runtimeIsInitialized,
+      runtimeActive,
       isConnected,
       events,
     }),
@@ -130,7 +124,7 @@ function SocketProvider({ children }: SocketProviderProps) {
       start,
       stop,
       setRuntimeIsInitialized,
-      runtimeIsInitialized,
+      runtimeActive,
       isConnected,
       events,
     ],
