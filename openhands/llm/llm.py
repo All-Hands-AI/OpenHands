@@ -12,6 +12,7 @@ from openhands.core.config import LLMConfig
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
+from litellm import Message as LiteLLMMessage
 from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
@@ -232,7 +233,7 @@ class LLM(RetryMixin, DebugMixin):
                         )
                     )
                     fn_call_response_message = fn_call_messages_with_response[-1]
-                    resp.choices[0].message = fn_call_response_message
+                    resp.choices[0].message = LiteLLMMessage(**fn_call_response_message)
 
                 # log for evals or other scripts that need the raw completion
                 if self.config.log_completions:
