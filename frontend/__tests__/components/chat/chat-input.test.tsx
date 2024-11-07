@@ -1,5 +1,5 @@
 import userEvent from "@testing-library/user-event";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, afterEach, vi, it, expect } from "vitest";
 import { ChatInput } from "#/components/chat-input";
 
@@ -159,7 +159,8 @@ describe("ChatInput", () => {
     expect(onBlurMock).toHaveBeenCalledOnce();
   });
 
-  it("should handle text paste correctly", () => {
+  it("should handle text paste correctly", async () => {
+    const user = userEvent.setup();
     const onSubmit = vi.fn();
     const onChange = vi.fn();
     
@@ -168,16 +169,12 @@ describe("ChatInput", () => {
     const input = screen.getByTestId("chat-input").querySelector("textarea");
     expect(input).toBeTruthy();
     
-    // Fire paste event with text data
-    fireEvent.paste(input!, {
-      clipboardData: {
-        getData: (type: string) => type === 'text/plain' ? 'test paste' : '',
-        files: []
-      }
-    });
+    // Paste text data
+    await user.paste(input!, "test paste");
   });
 
-  it("should handle image paste correctly", () => {
+  it("should handle image paste correctly", async () => {
+    const user = userEvent.setup();
     const onSubmit = vi.fn();
     const onImagePaste = vi.fn();
     
@@ -189,12 +186,9 @@ describe("ChatInput", () => {
     // Create a paste event with an image file
     const file = new File(["dummy content"], "image.png", { type: "image/png" });
     
-    // Fire paste event with image data
-    fireEvent.paste(input!, {
-      clipboardData: {
-        getData: () => '',
-        files: [file]
-      }
+    // Paste image data
+    await user.paste(input!, {
+      files: [file]
     });
     
     // Verify image paste was handled
