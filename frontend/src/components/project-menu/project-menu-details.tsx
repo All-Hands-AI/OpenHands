@@ -1,5 +1,7 @@
+import { useTranslation } from "react-i18next";
 import ExternalLinkIcon from "#/assets/external-link.svg?react";
 import { formatTimeDelta } from "#/utils/format-time-delta";
+import { I18nKey } from "#/i18n/declaration";
 
 interface ProjectMenuDetailsProps {
   repoName: string;
@@ -12,6 +14,7 @@ export function ProjectMenuDetails({
   avatar,
   lastCommit,
 }: ProjectMenuDetailsProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col">
       <a
@@ -32,7 +35,8 @@ export function ProjectMenuDetails({
       >
         <span>{lastCommit.sha.slice(-7)}</span> <span>&middot;</span>{" "}
         <span>
-          {formatTimeDelta(new Date(lastCommit.commit.author.date))} ago
+          {formatTimeDelta(new Date(lastCommit.commit.author.date))}{" "}
+          {t(I18nKey.PROJECT_MENU_DETAILS$AGO_LABEL)}
         </span>
       </a>
     </div>
