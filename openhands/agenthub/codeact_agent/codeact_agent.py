@@ -399,11 +399,12 @@ class CodeActAgent(Agent):
                 ],
             )
         ]
-        if self.initial_user_message:
+        example_message = self.prompt_manager.get_example_user_message()
+        if example_message:
             messages.append(
                 Message(
                     role='user',
-                    content=[TextContent(text=self.prompt_manager.get_example_user_message())],
+                    content=[TextContent(text=example_message)],
                     cache_prompt=self.llm.is_caching_prompt_active(),
                 )
             )
