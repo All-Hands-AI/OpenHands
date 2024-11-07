@@ -111,16 +111,18 @@ class Runtime(FileEditRuntimeMixin):
         if env_vars is not None:
             self.initial_env_vars.update(env_vars)
 
-        # Load mixins
-        FileEditRuntimeMixin.__init__(self)
-
         self._vscode_enabled = any(
             isinstance(plugin, VSCodeRequirement) for plugin in self.plugins
         )
         self._vscode_connection_token: str | None = None
         if self._vscode_enabled:
             self._vscode_connection_token = str(uuid.uuid4())
-            os.environ['VSCODE_CONNECTION_TOKEN'] = self._vscode_connection_token
+            self.add_env_vars(
+                {'VSCODE_CONNECTION_TOKEN': self._vscode_connection_token}
+            )
+
+        # Load mixins
+        FileEditRuntimeMixin.__init__(self)
 
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
