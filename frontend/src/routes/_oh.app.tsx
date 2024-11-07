@@ -69,8 +69,6 @@ const isAgentStateChange = (
   data.extras instanceof Object &&
   "agent_state" in data.extras;
 
-let lastCommitCached: GitHubCommit | null = null;
-let repoForLastCommit: string | null = null;
 export const clientLoader = async () => {
   const ghToken = localStorage.getItem("ghToken");
 
@@ -84,16 +82,14 @@ export const clientLoader = async () => {
 
   if (repo) localStorage.setItem("repo", repo);
 
-  if (!lastCommitCached || repoForLastCommit !== repo) {
-    if (ghToken && repo) {
-      const data = await retrieveLatestGitHubCommit(ghToken, repo);
-      if (isGitHubErrorReponse(data)) {
-        // TODO: Handle error
-        console.error("Failed to retrieve latest commit", data);
-      } else {
-        [lastCommitCached] = data;
-        repoForLastCommit = repo;
-      }
+  let lastCommit: GitHubCommit | null = null;
+  if (ghToken && repo) {
+    const data = await retrieveLatestGitHubCommit(ghToken, repo);
+    if (isGitHubErrorReponse(data)) {
+      // TODO: Handle error
+      console.error("Failed to retrieve latest commit", data);
+    } else {
+      [lastCommit] = data;
     }
   }
 
@@ -103,7 +99,7 @@ export const clientLoader = async () => {
     ghToken,
     repo,
     q,
-    lastCommit: lastCommitCached,
+    lastCommit,
   });
 };
 
