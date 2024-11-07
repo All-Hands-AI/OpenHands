@@ -28,7 +28,7 @@ const isErrorMessage = (
 ): message is ErrorMessage => "error" in message;
 
 export function ChatInterface() {
-  const { send } = useSocket();
+  const { send, isConnected } = useSocket();
   const dispatch = useDispatch();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
@@ -74,7 +74,7 @@ export function ChatInterface() {
 
   return (
     <div className="h-full flex flex-col justify-between">
-      {messages.length === 0 && (
+      {messages.length === 0 && isConnected && (
         <div className="flex flex-col gap-6 h-full px-4 items-center justify-center">
           <div className="flex flex-col items-center p-4 bg-neutral-700 rounded-xl w-full">
             <BuildIt width={45} height={54} />
