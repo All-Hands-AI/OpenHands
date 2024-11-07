@@ -233,7 +233,11 @@ class LLM(RetryMixin, DebugMixin):
                         )
                     )
                     fn_call_response_message = fn_call_messages_with_response[-1]
-                    resp.choices[0].message = LiteLLMMessage(**fn_call_response_message)
+                    if not isinstance(fn_call_response_message, LiteLLMMessage):
+                        fn_call_response_message = LiteLLMMessage(
+                            **fn_call_response_message
+                        )
+                    resp.choices[0].message = fn_call_response_message
 
                 # log for evals or other scripts that need the raw completion
                 if self.config.log_completions:
