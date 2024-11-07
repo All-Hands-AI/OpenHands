@@ -122,6 +122,9 @@ export const retrieveGitHubUser = async (
       id: data.id,
       login: data.login,
       avatar_url: data.avatar_url,
+      company: data.company,
+      name: data.name,
+      email: data.email,
     };
 
     return user;
