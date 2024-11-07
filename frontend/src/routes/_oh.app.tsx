@@ -203,11 +203,6 @@ function App() {
         return;
       }
       if (isErrorObservation(parsed)) {
-        posthog.capture("error_observation", {
-          timestamp: parsed.timestamp,
-          observation: parsed.observation,
-          message: parsed.message,
-        });
         dispatch(
           addErrorMessage({
             id: parsed.extras?.error_id,
