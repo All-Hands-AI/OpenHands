@@ -100,10 +100,9 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 
   if (requestedToEndSession(formData)) removeSessionTokenAndSelectedRepo();
 
-  const settingsWithoutApiKey = {
-    ...settings,
+  posthog.capture("settings_saved", {
+    LLM_MODEL,
     LLM_API_KEY: LLM_API_KEY ? "SET" : "UNSET",
-  };
-  posthog.capture("settings_saved", settingsWithoutApiKey);
+  });
   return json({ success: true });
 };
