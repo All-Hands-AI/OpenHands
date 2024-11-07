@@ -96,7 +96,7 @@ function JupyterEditor({ maxWidth }: JupyterEditorProps) {
     useScrollToBottom(jupyterRef);
 
   return (
-    <div className="flex-1 h-full w-full" style={{ maxWidth }}>
+    <div className="flex-1" style={{ maxWidth }}>
       <div
         className="overflow-y-auto h-full"
         ref={jupyterRef}
