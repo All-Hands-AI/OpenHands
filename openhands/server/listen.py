@@ -801,7 +801,10 @@ async def zip_current_workspace(request: Request, background_tasks: BackgroundTa
             filename='workspace.zip',
             media_type='application/x-zip-compressed',
         )
+
+        # This will execute after the response is sent (So the file is not deleted before being sent)
         background_tasks.add_task(zip_file.unlink)
+
         return response
     except Exception as e:
         logger.error(f'Error zipping workspace: {e}', exc_info=True)
