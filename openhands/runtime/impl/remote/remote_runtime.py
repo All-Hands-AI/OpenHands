@@ -2,6 +2,7 @@ import os
 import tempfile
 import threading
 from typing import Callable, Optional
+from urllib.parse import urlparse
 from zipfile import ZipFile
 
 import requests
@@ -88,6 +89,7 @@ class RemoteRuntime(Runtime):
         )
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
+        self._vscode_url: str | None = None
 
     async def connect(self):
         await call_sync_from_async(self._start_or_attach_to_runtime)
@@ -255,10 +257,20 @@ class RemoteRuntime(Runtime):
         start_response = response.json()
         self.runtime_id = start_response['runtime_id']
         self.runtime_url = start_response['url']
+        # parse runtime_url to get vscode_url
+        _parsed_url = urlparse(self.runtime_url)
+        assert isinstance(_parsed_url.scheme, str) and isinstance(
+            _parsed_url.netloc, str
+        )
+        self._vscode_url = f'{_parsed_url.scheme}://vscode-{_parsed_url.netloc}'
         if 'session_api_key' in start_response:
             self.session.headers.update(
                 {'X-Session-API-Key': start_response['session_api_key']}
             )
+
+    @property
+    def vscode_url(self) -> str | None:
+        return self._vscode_url
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(180) | stop_if_should_exit(),
