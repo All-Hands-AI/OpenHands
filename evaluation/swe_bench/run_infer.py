@@ -4,6 +4,9 @@ import os
 import tempfile
 from typing import Any
 
+# Set environment variable to indicate SWE Bench context
+os.environ['SWE_BENCH_RUN'] = 'true'
+
 import pandas as pd
 import toml
 from datasets import load_dataset

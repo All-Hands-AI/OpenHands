@@ -513,12 +513,18 @@ class CodeActAgent(Agent):
                     '\n\nENVIRONMENT REMINDER:\n'
                     f'- You have {state.max_iterations - state.iteration} turns left to complete the task\n'
                     '- When finished reply with <finish></finish>\n'
-                    '\n<IMPORTANT>\n'
-                    '- You MUST generate only one action per turn!\n'
-                    '- A patch is a set of changes to the source code of the codebase that you are given\n'
-                    '- You MUST generate a patch that attempts to fix the issue described in the <pr_description>\n'
-                    '</IMPORTANT>\n'
                 )
+                
+                # Add SWE Bench specific instructions only when running in that context
+                if os.environ.get('SWE_BENCH_RUN', 'false').lower() == 'true':
+                    reminder_text += (
+                        '\n<IMPORTANT>\n'
+                        '- You MUST generate only one action per turn!\n'
+                        '- A patch is a set of changes to the source code of the codebase that you are given\n'
+                        '- You MUST generate a patch that attempts to fix the issue described in the <pr_description>\n'
+                        '</IMPORTANT>\n'
+                    )
+                
                 latest_user_message.content.append(TextContent(text=reminder_text))
 
         return messages
