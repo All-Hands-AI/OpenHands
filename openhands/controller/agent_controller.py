@@ -117,7 +117,6 @@ class AgentController:
             max_iterations=max_iterations,
             confirmation_mode=confirmation_mode,
         )
-
         self.max_budget_per_task = max_budget_per_task
         self.agent_to_llm_config = agent_to_llm_config if agent_to_llm_config else {}
         self.agent_configs = agent_configs if agent_configs else {}
