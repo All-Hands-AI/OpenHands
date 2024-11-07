@@ -1,7 +1,6 @@
 import os
 import tempfile
 import threading
-import time
 from typing import Callable, Optional
 from zipfile import ZipFile
 
@@ -91,9 +90,8 @@ class RemoteRuntime(Runtime):
         self.runtime_url: str | None = None
 
     async def connect(self):
-        await call_sync_from_async(self._start_or_attach_to_runtime)
         try:
-            await call_sync_from_async(self._wait_until_alive)
+            await call_sync_from_async(self._start_or_attach_to_runtime)
         except RuntimeNotReadyError:
             self.log('error', 'Runtime failed to start, timed out before ready')
             raise
@@ -282,20 +280,10 @@ class RemoteRuntime(Runtime):
         # FIXME: We should fix it at the backend of /start endpoint, make sure
         # the pod is created before returning the response.
         # Retry a period of time to give the cluster time to start the pod
-        n_attempts = 0
-        while pod_status == 'Not Found' and n_attempts < 10:
-            time.sleep(5)
-            runtime_info_response = self._send_request(
-                'GET',
-                f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.runtime_id}',
+        if pod_status == 'Not Found':
+            raise RuntimeNotReadyError(
+                f'Runtime (ID={self.runtime_id}) is not yet ready. Status: {pod_status}'
             )
-            runtime_data = runtime_info_response.json()
-            assert 'runtime_id' in runtime_data
-            assert runtime_data['runtime_id'] == self.runtime_id
-            assert 'pod_status' in runtime_data
-            pod_status = runtime_data['pod_status']
-            n_attempts += 1
-
         if pod_status == 'Ready':
             try:
                 self._send_request(
@@ -310,7 +298,7 @@ class RemoteRuntime(Runtime):
                     f'Runtime /alive failed to respond with 200: {e}'
                 )
             return
-        if pod_status in ('Failed', 'Unknown', 'Not Found'):
+        if pod_status in ('Failed', 'Unknown'):
             # clean up the runtime
             self.close()
             raise RuntimeError(
