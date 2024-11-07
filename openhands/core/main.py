@@ -185,6 +185,9 @@ async def run_controller(
                     message = fake_user_response_fn(controller.get_state())
                 action = MessageAction(content=message)
                 event_stream.add_event(action, EventSource.USER)
+        elif headless_mode:
+            # Log all events in headless mode
+            logger.info(event)
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, sid)
 
