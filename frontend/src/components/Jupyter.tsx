@@ -98,7 +98,7 @@ function JupyterEditor({ maxWidth }: JupyterEditorProps) {
   return (
     <div className="flex-1 h-full w-full" style={{ maxWidth }}>
       <div
-        className="overflow-auto h-full"
+        className="overflow-y-auto h-full"
         ref={jupyterRef}
         onScroll={(e) => onChatBodyScroll(e.currentTarget)}
       >
