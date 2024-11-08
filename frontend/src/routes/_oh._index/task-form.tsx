@@ -2,11 +2,7 @@ import React from "react";
 import { Form, useNavigation } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "#/store";
-import {
-  addFile,
-  removeFile,
-  setImportedProjectZip,
-} from "#/state/initial-query-slice";
+import { addFile, removeFile } from "#/state/initial-query-slice";
 import { SuggestionBubble } from "#/components/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
@@ -14,15 +10,10 @@ import { ChatInput } from "#/components/chat-input";
 import { UploadImageInput } from "#/components/upload-image-input";
 import { ImageCarousel } from "#/components/image-carousel";
 import { getRandomKey } from "#/utils/get-random-key";
-import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { AttachImageLabel } from "#/components/attach-image-label";
 import { cn } from "#/utils/utils";
 
-interface TaskFormProps {
-  importedProjectZip: File | null;
-}
-
-export function TaskForm({ importedProjectZip }: TaskFormProps) {
+export function TaskForm() {
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
@@ -30,29 +21,15 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
     (state: RootState) => state.initalQuery,
   );
 
-  const hasLoadedProject = React.useMemo(
-    () => importedProjectZip || selectedRepository,
-    [importedProjectZip, selectedRepository],
-  );
-
   const formRef = React.useRef<HTMLFormElement>(null);
   const [text, setText] = React.useState("");
   const [suggestion, setSuggestion] = React.useState(
-    getRandomKey(hasLoadedProject ? SUGGESTIONS.repo : SUGGESTIONS["non-repo"]),
+    getRandomKey(SUGGESTIONS["non-repo"]),
   );
   const [inputIsFocused, setInputIsFocused] = React.useState(false);
 
-  React.useEffect(() => {
-    // Display a suggestion based on whether a repository is selected
-    if (hasLoadedProject) {
-      setSuggestion(getRandomKey(SUGGESTIONS.repo));
-    } else {
-      setSuggestion(getRandomKey(SUGGESTIONS["non-repo"]));
-    }
-  }, [selectedRepository, importedProjectZip]);
-
   const onRefreshSuggestion = () => {
-    const suggestions = SUGGESTIONS[hasLoadedProject ? "repo" : "non-repo"];
+    const suggestions = SUGGESTIONS["non-repo"];
     // remove current suggestion to avoid refreshing to the same suggestion
     const suggestionCopy = { ...suggestions };
     delete suggestionCopy[suggestion];
@@ -62,18 +39,9 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
   };
 
   const onClickSuggestion = () => {
-    const suggestions = SUGGESTIONS[hasLoadedProject ? "repo" : "non-repo"];
+    const suggestions = SUGGESTIONS["non-repo"];
     const value = suggestions[suggestion];
     setText(value);
-  };
-
-  const handleSubmitForm = async () => {
-    // This is handled on top of the form submission
-    if (importedProjectZip) {
-      dispatch(
-        setImportedProjectZip(await convertZipToBase64(importedProjectZip)),
-      );
-    }
   };
 
   const placeholder = React.useMemo(() => {
@@ -90,7 +58,6 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
         ref={formRef}
         method="post"
         className="flex flex-col items-center gap-2"
-        onSubmit={handleSubmitForm}
         replace
       >
         <SuggestionBubble
@@ -100,8 +67,14 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
         />
         <div
           className={cn(
-            "border border-neutral-600 px-4 py-[17px] rounded-lg text-[17px] leading-5 w-full",
+            "border border-neutral-600 px-4 py-[17px] rounded-lg text-[17px] leading-5 w-full transition-colors duration-200",
             inputIsFocused ? "bg-neutral-600" : "bg-neutral-700",
+            "hover:border-neutral-500 focus-within:border-neutral-500",
+            "group relative",
+            "before:pointer-events-none before:absolute before:inset-0 before:rounded-lg before:transition-colors",
+            "before:border-2 before:border-dashed before:border-transparent",
+            "[&:has(*:focus-within)]:before:border-neutral-500/50",
+            "[&:has(*[data-dragging-over='true'])]:before:border-neutral-500/50",
           )}
         >
           <ChatInput
@@ -112,6 +85,13 @@ export function TaskForm({ importedProjectZip }: TaskFormProps) {
             onChange={(message) => setText(message)}
             onFocus={() => setInputIsFocused(true)}
             onBlur={() => setInputIsFocused(false)}
+            onImagePaste={async (imageFiles) => {
+              const promises = imageFiles.map(convertImageToBase64);
+              const base64Images = await Promise.all(promises);
+              base64Images.forEach((base64) => {
+                dispatch(addFile(base64));
+              });
+            }}
             placeholder={placeholder}
             value={text}
             maxRows={15}

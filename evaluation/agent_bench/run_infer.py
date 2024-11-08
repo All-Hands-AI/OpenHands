@@ -16,6 +16,7 @@ from evaluation.agent_bench.helper import (
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    compatibility_for_eval_history_pairs,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -242,7 +243,7 @@ def process_instance(
         raw_ans = ''
 
         # retrieve the last agent message or thought
-        for event in state.history.get_events(reverse=True):
+        for event in reversed(state.history):
             if event.source == 'agent':
                 if isinstance(event, AgentFinishAction):
                     raw_ans = event.thought
@@ -271,7 +272,7 @@ def process_instance(
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
-    histories = state.history.compatibility_for_eval_history_pairs()
+    histories = compatibility_for_eval_history_pairs(state.history)
 
     metrics = state.metrics.get() if state.metrics else None
 

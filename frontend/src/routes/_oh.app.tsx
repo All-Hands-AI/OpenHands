@@ -7,7 +7,6 @@ import {
   json,
   ClientActionFunctionArgs,
   useRouteLoaderData,
-  redirect,
 } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import WebSocket from "ws";
@@ -37,6 +36,7 @@ import ListIcon from "#/assets/list-type-number.svg?react";
 import { createChatMessage } from "#/services/chatService";
 import {
   clearFiles,
+  clearInitialQuery,
   clearSelectedRepository,
   setImportedProjectZip,
 } from "#/state/initial-query-slice";
@@ -47,8 +47,6 @@ import { base64ToBlob } from "#/utils/base64-to-blob";
 import { clientLoader as rootClientLoader } from "#/routes/_oh";
 import { clearJupyter } from "#/state/jupyterSlice";
 import { FilesProvider } from "#/context/files";
-import { clearSession } from "#/utils/clear-session";
-import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 import { ErrorObservation } from "#/types/core/observations";
 import { ChatInterface } from "#/components/chat-interface";
 
@@ -72,17 +70,6 @@ const isAgentStateChange = (
 
 export const clientLoader = async () => {
   const ghToken = localStorage.getItem("ghToken");
-
-  try {
-    const isAuthed = await userIsAuthenticated(ghToken);
-    if (!isAuthed) {
-      clearSession();
-      return redirect("/");
-    }
-  } catch (error) {
-    clearSession();
-    return redirect("/");
-  }
 
   const q = store.getState().initalQuery.initialQuery;
   const repo =
@@ -185,21 +172,6 @@ function App() {
     if (q) addIntialQueryToChat(q, files);
   }, [settings]);
 
-  const handleError = (message: string) => {
-    const [error, ...rest] = message.split(":");
-    const details = rest.join(":");
-    if (!details) {
-      dispatch(
-        addErrorMessage({
-          error: "An error has occured",
-          message: error,
-        }),
-      );
-    } else {
-      dispatch(addErrorMessage({ error, message: details }));
-    }
-  };
-
   const handleMessage = React.useCallback(
     (message: MessageEvent<WebSocket.Data>) => {
       // set token received from the server
@@ -225,7 +197,12 @@ function App() {
         return;
       }
       if (isErrorObservation(parsed)) {
-        handleError(parsed.message);
+        dispatch(
+          addErrorMessage({
+            id: parsed.extras?.error_id,
+            message: parsed.message,
+          }),
+        );
         return;
       }
 
@@ -278,6 +255,7 @@ function App() {
     dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
+    dispatch(clearInitialQuery()); // Clear initial query when navigating to /app
     startSocketConnection();
   });
 
@@ -290,21 +268,21 @@ function App() {
 
   React.useEffect(() => {
     (async () => {
-      if (runtimeActive && token && importedProjectZip) {
+      if (runtimeActive && importedProjectZip) {
         // upload files action
         try {
           const blob = base64ToBlob(importedProjectZip);
           const file = new File([blob], "imported-project.zip", {
             type: blob.type,
           });
-          await OpenHands.uploadFiles(token, [file]);
+          await OpenHands.uploadFiles([file]);
           dispatch(setImportedProjectZip(null));
         } catch (error) {
           toast.error("Failed to upload project files.");
         }
       }
     })();
-  }, [runtimeActive, token, importedProjectZip]);
+  }, [runtimeActive, importedProjectZip]);
 
   const {
     isOpen: securityModalIsOpen,
@@ -315,7 +293,7 @@ function App() {
   return (
     <div className="flex flex-col h-full gap-3">
       <div className="flex h-full overflow-auto gap-3">
-        <Container className="w-[375px] max-h-full">
+        <Container className="w-[390px] max-h-full relative">
           <ChatInterface />
         </Container>
 

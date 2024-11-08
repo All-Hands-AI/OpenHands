@@ -32,7 +32,8 @@ workspace_base = "./workspace"
 # Enable saving and restoring the session when run from CLI
 #enable_cli_session = false
 
-# Path to store trajectories
+# Path to store trajectories, can be a folder or a file
+# If it's a folder, the session id will be used as the file name
 #trajectories_path="./trajectories"
 
 # File store path

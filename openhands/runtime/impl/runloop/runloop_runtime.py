@@ -18,7 +18,7 @@ from openhands.runtime.impl.eventstream.eventstream_runtime import (
 )
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
-from openhands.runtime.utils.request import send_request_with_retry
+from openhands.runtime.utils.request import send_request
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
@@ -245,12 +245,11 @@ class RunloopRuntime(EventStreamRuntime):
         self._refresh_logs()
         if not self.log_buffer:
             raise RuntimeError('Runtime client is not ready.')
-        response = send_request_with_retry(
+        response = send_request(
             self.session,
             'GET',
             f'{self.api_url}/alive',
-            retry_exceptions=[ConnectionRefusedError],
-            timeout=300,  # 5 minutes gives the container time to be alive 🧟‍♂️
+            timeout=5,
         )
         if response.status_code == 200:
             return

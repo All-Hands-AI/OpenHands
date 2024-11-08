@@ -1,4 +1,8 @@
-import { addAssistantMessage, addUserMessage } from "#/state/chatSlice";
+import {
+  addAssistantMessage,
+  addUserMessage,
+  addErrorMessage,
+} from "#/state/chatSlice";
 import { setCode, setActiveFilepath } from "#/state/codeSlice";
 import { appendJupyterInput } from "#/state/jupyterSlice";
 import {
@@ -119,13 +123,19 @@ export function handleActionMessage(message: ActionMessage) {
 }
 
 export function handleStatusMessage(message: StatusMessage) {
-  const msg = message.status == null ? "" : message.status.trim();
-  store.dispatch(
-    setCurStatusMessage({
-      ...message,
-      status: msg,
-    }),
-  );
+  if (message.type === "info") {
+    store.dispatch(
+      setCurStatusMessage({
+        ...message,
+      }),
+    );
+  } else if (message.type === "error") {
+    store.dispatch(
+      addErrorMessage({
+        ...message,
+      }),
+    );
+  }
 }
 
 export function handleAssistantMessage(data: string | SocketMessage) {
@@ -139,9 +149,11 @@ export function handleAssistantMessage(data: string | SocketMessage) {
 
   if ("action" in socketMessage) {
     handleActionMessage(socketMessage);
-  } else if ("status" in socketMessage) {
+  } else if ("observation" in socketMessage) {
+    handleObservationMessage(socketMessage);
+  } else if ("status_update" in socketMessage) {
     handleStatusMessage(socketMessage);
   } else {
-    handleObservationMessage(socketMessage);
+    console.error("Unknown message type", socketMessage);
   }
 }

@@ -1,16 +1,20 @@
-import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
+import { cache } from "./cache";
 
-export const userIsAuthenticated = async (ghToken: string | null) => {
-  if (window.__APP_MODE__ !== "saas") return true;
+export const userIsAuthenticated = async () => {
+  if (window.__APP_MODE__ === "oss") return true;
 
-  let user: GitHubUser | GitHubErrorReponse | null = null;
-  if (ghToken) user = await retrieveGitHubUser(ghToken);
+  const cachedData = cache.get<boolean>("user_is_authenticated");
+  if (cachedData) return cachedData;
 
-  if (user && !isGitHubErrorReponse(user)) {
-    const isAuthed = await OpenHands.isAuthenticated(user.login);
-    return isAuthed;
+  let authenticated = false;
+  try {
+    await OpenHands.authenticate();
+    authenticated = true;
+  } catch (error) {
+    authenticated = false;
   }
 
-  return false;
+  cache.set("user_is_authenticated", authenticated, 3 * 60 * 1000); // cache for 3 minutes
+  return authenticated;
 };
