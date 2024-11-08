@@ -18,7 +18,7 @@ describe("Cache", () => {
   it("sets data in memory with expiration", () => {
     cache.set(testKey, testData, testTTL);
     const cachedEntry = JSON.parse(
-      cached.cacheMemory[`app_cache_${testKey}`] || "",
+      cache.cacheMemory[testKey] || "",
     );
 
     expect(cachedEntry.data).toEqual(testData);
@@ -38,7 +38,7 @@ describe("Cache", () => {
     vi.advanceTimersByTime(5 * 60 * 1000 + 1);
 
     expect(cache.get(testKey)).toBeNull();
-    expect(cache.cacheMemory[`app_cache_${testKey}`]).toBeNull();
+    expect(cache.cacheMemory[`app_cache_${testKey}`]).toBeUndefined();
   });
 
   it("returns null if cached data is expired", () => {
@@ -46,14 +46,14 @@ describe("Cache", () => {
 
     vi.advanceTimersByTime(testTTL + 1);
     expect(cache.get(testKey)).toBeNull();
-    expect(cache.cacheMemory[`app_cache_${testKey}`]).toBeNull();
+    expect(cache.cacheMemory[`app_cache_${testKey}`]).toBeUndefined();
   });
 
   it("deletes data from memory", () => {
     cache.set(testKey, testData, testTTL);
     cache.delete(testKey);
 
-    expect(cache.cacheMemory[`app_cache_${testKey}`]).toBeNull();
+    expect(cache.cacheMemory[`app_cache_${testKey}`]).toBeUndefined();
   });
 
   it("clears all data with the app prefix from memory", () => {
@@ -61,6 +61,6 @@ describe("Cache", () => {
     cache.set("anotherKey", { data: "More data" }, testTTL);
     cache.clearAll();
 
-    expect(Object.keys(cache.cacheMemory)).toBe(0);
+    expect(Object.keys(cache.cacheMemory).length).toBe(0);
   });
 });
