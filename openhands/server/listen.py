@@ -2,6 +2,7 @@ import asyncio
 import os
 import re
 import tempfile
+import time
 import uuid
 import warnings
 from contextlib import asynccontextmanager
@@ -60,7 +61,7 @@ from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.llm import bedrock
 from openhands.runtime.base import Runtime
-from openhands.server.auth import get_sid_from_token, sign_token
+from openhands.server.auth import get_sid_from_token, sign_token, jwt_encode, jwt_decode
 from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware
 from openhands.server.session import SessionManager
 
@@ -205,9 +206,19 @@ async def attach_session(request: Request, call_next):
         return response
 
     # First check for auth cookie
-    github_token = request.cookies.get('github_auth')
+    signed_token = request.cookies.get('github_auth')
+    github_token = None
     
-    # If no cookie, fall back to header
+    if signed_token:
+        try:
+            # Verify and decode the JWT token
+            cookie_data = jwt_decode(signed_token, config.jwt_secret)
+            github_token = cookie_data.get('github_token')
+        except Exception:
+            # If token is invalid or expired, ignore it
+            github_token = None
+    
+    # If no valid cookie, fall back to header
     if not github_token:
         github_token = request.headers.get('X-GitHub-Token')
         # If no header token either, return error
@@ -330,15 +341,23 @@ async def websocket_endpoint(websocket: WebSocket):
 
     # First check for auth cookie
     cookie_header = websocket.headers.get('cookie', '')
-    github_auth_cookie = None
+    github_token = None
+    
+    # Parse cookies and look for github_auth
     for cookie in cookie_header.split(';'):
         name, _, value = cookie.strip().partition('=')
         if name == 'github_auth':
-            github_auth_cookie = value
-            break
+            try:
+                # Verify and decode the JWT token
+                cookie_data = jwt_decode(value, config.jwt_secret)
+                github_token = cookie_data.get('github_token')
+                break
+            except Exception:
+                # If token is invalid or expired, ignore it
+                pass
     
-    # If cookie exists, use it, otherwise verify with GitHub
-    if not github_auth_cookie and not await authenticate_github_user(github_token):
+    # If no valid cookie or GitHub verification fails
+    if not github_token and not await authenticate_github_user(github_token):
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
@@ -886,13 +905,20 @@ async def authenticate(request: Request):
             content={'error': 'Not authorized via GitHub waitlist'},
         )
 
+    # Create a signed JWT token with 1-hour expiration
+    cookie_data = {
+        'github_token': token,
+        'exp': int(time.time()) + 3600  # 1 hour expiration
+    }
+    signed_token = jwt_encode(cookie_data, config.jwt_secret)
+
     response = JSONResponse(
         status_code=status.HTTP_200_OK, content={'message': 'User authenticated'})
     
-    # Set secure cookie that expires in 1 hour
+    # Set secure cookie with signed token
     response.set_cookie(
         key="github_auth",
-        value=token,
+        value=signed_token,
         max_age=3600,  # 1 hour in seconds
         httponly=True,
         secure=True,
