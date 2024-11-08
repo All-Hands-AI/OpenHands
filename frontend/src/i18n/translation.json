@@ -1745,5 +1745,17 @@
   },
   "AGENT_ERROR$ACTION_TIMEOUT": {
     "en": "Action timed out."
+  },
+  "PROJECT_MENU_CARD_CONTEXT_MENU$CONNECT_TO_GITHUB_LABEL": {
+    "en": "Connect to GitHub",
+    "es": "Conectar a GitHub"
+  },
+  "PROJECT_MENU_CARD_CONTEXT_MENU$PUSH_TO_GITHUB_LABEL": {
+    "en": "Push to GitHub",
+    "es": "Subir a GitHub"
+  },
+  "PROJECT_MENU_CARD_CONTEXT_MENU$DOWNLOAD_AS_ZIP_LABEL": {
+    "en": "Download as .zip",
+    "es": "Descargar como .zip"
   }
 }
