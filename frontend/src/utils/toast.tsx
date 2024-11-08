@@ -19,25 +19,21 @@ export default {
     });
     idMap.set(id, toastId);
   },
-  success: (id: string, msg: string) => {
-    const toastId = idMap.get(id);
-    if (toastId === undefined) return;
-    if (toastId) {
-      toast.success(msg, {
-        id: toastId,
-        duration: 4000,
-        style: {
-          background: "#333",
-          color: "#fff",
-          lineBreak: "anywhere",
-        },
-        iconTheme: {
-          primary: "#333",
-          secondary: "#fff",
-        },
-      });
-    }
-    idMap.delete(id);
+  success: (id: string, msg: string, duration: number = 4000) => {
+    if (idMap.has(id)) return; // prevent duplicate toast
+    const toastId = toast.success(msg, {
+      duration: duration,
+      style: {
+        background: "#333",
+        color: "#fff",
+        lineBreak: "anywhere",
+      },
+      iconTheme: {
+        primary: "#333",
+        secondary: "#fff",
+      },
+    });
+    idMap.set(id, toastId);
   },
   settingsChanged: (msg: string) => {
     toast(msg, {
