@@ -35,7 +35,7 @@ describe("Empty state", () => {
     vi.clearAllMocks();
   });
 
-  it.only("should not render suggestions if socket is not yet connected", () => {
+  it("should not render suggestions if socket is not yet connected", () => {
     useSocketMock.mockImplementation(() => ({
       send: sendMock,
       runtimeActive: false,
