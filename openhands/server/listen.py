@@ -17,6 +17,7 @@ from openhands.server.data_models.feedback import FeedbackDataModel, store_feedb
 from openhands.server.github import (
     GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET,
+    UserVerifier,
     authenticate_github_user,
 )
 from openhands.storage import get_file_store
@@ -206,35 +207,21 @@ async def attach_session(request: Request, call_next):
         response = await call_next(request)
         return response
 
-    # First check for auth cookie
-    signed_token = request.cookies.get('github_auth')
-    github_token = None
-
-    if signed_token:
+    user_verifier = UserVerifier()
+    if user_verifier.is_active():
+        signed_token = request.cookies.get('github_auth')
+        if not signed_token:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={'error': 'Not authenticated'},
+            )
         try:
-            # Verify and decode the JWT token
-            cookie_data = jwt.decode(
-                signed_token, config.jwt_secret, algorithms=['HS256']
-            )
-            github_token = cookie_data.get('github_token')
-        except Exception:
-            # If token is invalid or expired, ignore it
-            github_token = None
-
-    # If no valid cookie, fall back to header
-    if not github_token:
-        github_token = request.headers.get('X-GitHub-Token')
-        # If no header token either, return error
-        if not github_token:
+            jwt.decode(signed_token, config.jwt_secret, algorithms=['HS256'])
+        except Exception as e:
+            logger.warning(f'Invalid token: {e}')
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'error': 'Not authenticated'},
-            )
-        # If using header token, verify with GitHub
-        if not await authenticate_github_user(github_token):
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'error': 'Not authenticated'},
+                content={'error': 'Invalid token'},
             )
 
     if not request.headers.get('Authorization'):
