@@ -175,8 +175,8 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
       const response = await OpenHands.getVSCodeUrl();
       if (response.vscode_url) {
         toast.success(
-          "Switching to VS Code in 3 seconds...\nImportant: Please inform the agent of any changes you make in VS Code. To avoid conflicts, wait for the assistant to complete its work before making your own changes.",
-          { duration: 5000 },
+          `open-vscode-${new Date().getTime()}`,
+          t(I18nKey.EXPLORER$VSCODE_SWITCHING_MESSAGE),
         );
         setTimeout(
           () => window.open(response.vscode_url ?? "", "_blank"),
@@ -184,14 +184,18 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
         );
       } else {
         toast.error(
-          `${response.error}\nPlease make sure the agent is already connected to Runtime.`,
-          { duration: 5000 },
+          `open-vscode-error-${new Date().getTime()}`,
+          t(I18nKey.EXPLORER$VSCODE_SWITCHING_ERROR_MESSAGE, {
+            error: response.error,
+          }),
         );
       }
     } catch (error) {
       toast.error(
-        `Unexpected error: ${String(error)}\nPlease make sure the backend is running.`,
-        { duration: 5000 },
+        `open-vscode-error-${new Date().getTime()}`,
+        t(I18nKey.EXPLORER$VSCODE_SWITCHING_ERROR_MESSAGE, {
+          error: String(error),
+        }),
       );
     }
   };
