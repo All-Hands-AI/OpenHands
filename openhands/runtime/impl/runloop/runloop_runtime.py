@@ -105,7 +105,7 @@ class RunloopRuntime(EventStreamRuntime):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_message_callback: Callable | None = None,
+        status_callback: Callable | None = None,
         attach_to_existing: bool = False,
     ):
         assert config.runloop_api_key is not None, 'Runloop API key is required'
@@ -115,7 +115,6 @@ class RunloopRuntime(EventStreamRuntime):
             bearer_token=config.runloop_api_key,
         )
         self.session = requests.Session()
-        self.status_message_callback = status_message_callback
         self.container_name = self.container_name_prefix + sid
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
         self.init_base_runtime(
@@ -124,7 +123,7 @@ class RunloopRuntime(EventStreamRuntime):
             sid,
             plugins,
             env_vars,
-            status_message_callback,
+            status_callback,
             attach_to_existing,
         )
         # Buffer for container logs
