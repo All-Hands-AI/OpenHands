@@ -143,4 +143,4 @@ function useSocket() {
   return context;
 }
 
-export { SocketContext, SocketProvider, useSocket };
+export { SocketProvider, useSocket };
