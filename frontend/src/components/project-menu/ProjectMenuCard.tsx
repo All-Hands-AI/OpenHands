@@ -12,6 +12,7 @@ import { ProjectMenuCardContextMenu } from "./project.menu-card-context-menu";
 import { ProjectMenuDetailsPlaceholder } from "./project-menu-details-placeholder";
 import { ProjectMenuDetails } from "./project-menu-details";
 import { downloadWorkspace } from "#/utils/download-workspace";
+import { LoadingSpinner } from "../modals/LoadingProject";
 
 interface ProjectMenuCardProps {
   isConnectedToGitHub: boolean;
@@ -32,6 +33,7 @@ export function ProjectMenuCard({
   const [contextMenuIsOpen, setContextMenuIsOpen] = React.useState(false);
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
     React.useState(false);
+  const [working, setWorking] = React.useState(false);
 
   const toggleMenuVisibility = () => {
     setContextMenuIsOpen((prev) => !prev);
@@ -60,7 +62,11 @@ Please push the changes to GitHub and open a pull request.
   const handleDownloadWorkspace = () => {
     posthog.capture("download_workspace_button_clicked");
     try {
-      downloadWorkspace();
+      setWorking(true);
+      downloadWorkspace().then(
+        () => setWorking(false),
+        () => setWorking(false),
+      );
     } catch (error) {
       toast.error("Failed to download workspace");
     }
@@ -68,7 +74,7 @@ Please push the changes to GitHub and open a pull request.
 
   return (
     <div className="px-4 py-[10px] w-[337px] rounded-xl border border-[#525252] flex justify-between items-center relative">
-      {contextMenuIsOpen && (
+      {!working && contextMenuIsOpen && (
         <ProjectMenuCardContextMenu
           isConnectedToGitHub={isConnectedToGitHub}
           onConnectToGitHub={() => setConnectToGitHubModalOpen(true)}
@@ -95,7 +101,11 @@ Please push the changes to GitHub and open a pull request.
         onClick={toggleMenuVisibility}
         aria-label="Open project menu"
       >
-        <EllipsisH width={36} height={36} />
+        {working ? (
+          <LoadingSpinner size="small" />
+        ) : (
+          <EllipsisH width={36} height={36} />
+        )}
       </button>
       {connectToGitHubModalOpen && (
         <ModalBackdrop onClose={() => setConnectToGitHubModalOpen(false)}>
