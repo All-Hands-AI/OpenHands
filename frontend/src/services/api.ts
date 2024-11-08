@@ -64,13 +64,14 @@ export async function request(
     onFail(`Error fetching ${url}`);
   }
   if (response?.status === 401) {
-    await request("/api/authenticate",
+    await request(
+      "/api/authenticate",
       {
         method: "POST",
       },
       true,
     );
-    return await request(url, options, disableToast, returnResponse, maxRetries - 1);
+    return request(url, options, disableToast, returnResponse, maxRetries - 1);
   }
   if (response?.status && response?.status >= 400) {
     onFail(
