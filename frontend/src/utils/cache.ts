@@ -4,10 +4,12 @@ type CacheEntry<T> = {
   expiration: number;
 };
 
+
 class Cache {
   private prefix = "app_cache_";
 
   private defaultTTL = 5 * 60 * 1000; // 5 minutes
+  private this.cacheMemory = {};
 
   /**
    * Generate a unique key with prefix for local storage
@@ -24,7 +26,7 @@ class Cache {
    * @returns The data stored in local storage
    */
   public get<T>(key: CacheKey): T | null {
-    const cachedEntry = localStorage.getItem(this.getKey(key));
+    const cachedEntry = this.cacheMemory[this.getKey(key)];
     if (cachedEntry) {
       const { data, expiration } = JSON.parse(cachedEntry) as CacheEntry<T>;
       if (Date.now() < expiration) return data;
@@ -44,7 +46,7 @@ class Cache {
   public set<T>(key: CacheKey, data: T, ttl = this.defaultTTL): void {
     const expiration = Date.now() + ttl;
     const entry: CacheEntry<T> = { data, expiration };
-    localStorage.setItem(this.getKey(key), JSON.stringify(entry));
+    this.cacheMemory[this.getKey(key)] = JSON.stringify(entry);
   }
 
   /**
@@ -53,7 +55,7 @@ class Cache {
    * @returns void
    */
   public delete(key: CacheKey): void {
-    localStorage.removeItem(this.getKey(key));
+    delete this.cacheMemory[this.getKey(key)];
   }
 
   /**
@@ -61,8 +63,8 @@ class Cache {
    * @returns void
    */
   public clearAll(): void {
-    Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith(this.prefix)) localStorage.removeItem(key);
+    Object.keys(this.cacheMemory).forEach((key) => {
+      if (key.startsWith(this.prefix)) delete this.cacheMemory[key];
     });
   }
 }
