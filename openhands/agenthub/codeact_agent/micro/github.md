@@ -19,7 +19,7 @@ Here are some instructions for pushing, but ONLY do this if the user asks you to
 * Use the GitHub API to create a pull request, if you haven't already
 * Use the main branch as the base branch, unless the user requests otherwise
 * After opening or updating a pull request, send the user a short message with a link to the pull request.
-* Do all of the above in as few steps as possible. E.g. you could open a PR with one step by doing:
+* Do all of the above in as few steps as possible. E.g. you could open a PR with one step by running the following bash commands:
 ```bash
 git checkout -b create-widget
 git add .
