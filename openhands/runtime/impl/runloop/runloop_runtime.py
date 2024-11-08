@@ -130,8 +130,8 @@ class RunloopRuntime(EventStreamRuntime):
         self.log_buffer: LogBuffer | None = None
 
     @tenacity.retry(
-        stop=tenacity.stop_after_attempt(90),
-        wait=tenacity.wait_fixed(0.75),
+        stop=tenacity.stop_after_attempt(120),
+        wait=tenacity.wait_fixed(1),
     )
     def _wait_for_devbox(self, devbox: DevboxView) -> DevboxView:
         """Pull devbox status until it is running"""
@@ -236,7 +236,7 @@ class RunloopRuntime(EventStreamRuntime):
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
-        wait=tenacity.wait_exponential(multiplier=2, min=1, max=20),
+        wait=tenacity.wait_fixed(1),
         reraise=(ConnectionRefusedError,),
     )
     def _wait_until_alive(self):
