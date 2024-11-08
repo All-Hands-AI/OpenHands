@@ -4,12 +4,12 @@ type CacheEntry<T> = {
   expiration: number;
 };
 
-
 class Cache {
   private prefix = "app_cache_";
 
   private defaultTTL = 5 * 60 * 1000; // 5 minutes
-  private cacheMemory = {};
+
+  private cacheMemory: Record<string, string> = {};
 
   /**
    * Generate a unique key with prefix
