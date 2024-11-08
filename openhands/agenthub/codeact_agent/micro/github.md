@@ -21,7 +21,6 @@ Here are some instructions for pushing, but ONLY do this if the user asks you to
 * After opening or updating a pull request, send the user a short message with a link to the pull request.
 * Do all of the above in as few steps as possible. E.g. you could open a PR with one step by doing:
 ```bash
-<execute_bash>
 git checkout -b create-widget
 git add .
 git commit -m "Create widget"
