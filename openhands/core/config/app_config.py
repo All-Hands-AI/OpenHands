@@ -140,6 +140,7 @@ class AppConfig:
                 'jwt_secret',
                 'modal_api_token_id',
                 'modal_api_token_secret',
+                'runloop_api_key',
             ]:
                 attr_value = '******' if attr_value else None
 
