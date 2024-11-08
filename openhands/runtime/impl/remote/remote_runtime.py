@@ -287,8 +287,8 @@ class RemoteRuntime(Runtime):
                 f'Runtime (ID={self.runtime_id}) is not yet ready. Status: {pod_status}'
             )
 
-        # Wait for pending status (until it changes)
-        while pod_status == 'Pending':
+        # Wait for pending status
+        while pod_status in ('Pending', 'Running'):
             time.sleep(2)
             runtime_info_response = self._send_request(
                 'GET',
@@ -314,7 +314,7 @@ class RemoteRuntime(Runtime):
                     f'Runtime /alive failed to respond with 200: {e}'
                 )
             return
-        if pod_status in ('Failed', 'Unknown'):
+        elif pod_status in ('Failed', 'Unknown'):
             # clean up the runtime
             self.close()
             raise RuntimeError(
@@ -323,9 +323,9 @@ class RemoteRuntime(Runtime):
 
         self.log(
             'debug',
-            f'Waiting for runtime pod to be active. Current status: {pod_status}',
+            f'Unexpected runtime pod status: {pod_status}',
         )
-        raise RuntimeNotReadyError()
+        raise RuntimeError(f'Unexpected runtime pod status: {pod_status}')
 
     def close(self, timeout: int = 10):
         if self.config.sandbox.keep_remote_runtime_alive or self.attach_to_existing:
