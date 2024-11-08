@@ -1,5 +1,5 @@
 import userEvent from "@testing-library/user-event";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, afterEach, vi, it, expect } from "vitest";
 import { ChatInput } from "#/components/chat-input";
 
@@ -173,25 +173,29 @@ describe("ChatInput", () => {
     await user.paste(input!, "test paste");
   });
 
-  it("should handle image paste correctly", async () => {
-    const user = userEvent.setup();
-    const onSubmit = vi.fn();
+  it('should handle image paste correctly', () => {
     const onImagePaste = vi.fn();
+    const file = new File([''], 'test.png', { type: 'image/png' });
     
-    render(<ChatInput onSubmit={onSubmit} onImagePaste={onImagePaste} />);
+    render(<ChatInput onSubmit={onSubmitMock} onImagePaste={onImagePaste} />);
     
-    const input = screen.getByTestId("chat-input").querySelector("textarea");
-    expect(input).toBeTruthy();
-    
-    // Create a paste event with an image file
-    const file = new File(["dummy content"], "image.png", { type: "image/png" });
-    
-    // Paste image data
-    await user.paste(input!, {
-      files: [file]
+    // Create a mock clipboard event with image data
+    const clipboardData = {
+      files: [file],
+      items: [
+        {
+          kind: 'file',
+          type: 'image/png',
+          getAsFile: () => file
+        }
+      ]
+    };
+  
+    // Fire paste event with mock clipboard data
+    fireEvent.paste(screen.getByRole('textbox'), {
+      clipboardData
     });
     
-    // Verify image paste was handled
     expect(onImagePaste).toHaveBeenCalledWith([file]);
   });
 });
