@@ -21,7 +21,7 @@ export default {
   success: (id: string, msg: string, duration: number = 4000) => {
     if (idMap.has(id)) return; // prevent duplicate toast
     const toastId = toast.success(msg, {
-      duration: duration,
+      duration,
       style: {
         background: "#333",
         color: "#fff",

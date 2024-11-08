@@ -190,11 +190,11 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
           }),
         );
       }
-    } catch (error) {
+    } catch (exp_error) {
       toast.error(
         `open-vscode-error-${new Date().getTime()}`,
         t(I18nKey.EXPLORER$VSCODE_SWITCHING_ERROR_MESSAGE, {
-          error: String(error),
+          error: String(exp_error),
         }),
       );
     }

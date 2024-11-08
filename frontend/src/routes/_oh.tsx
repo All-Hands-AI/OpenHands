@@ -238,7 +238,6 @@ export default function MainApp() {
     });
   };
 
-
   return (
     <div
       data-testid="root-layout"
