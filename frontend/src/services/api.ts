@@ -70,7 +70,7 @@ export async function request(
       },
       true,
     );
-    await request(url, options, disableToast, returnResponse, maxRetries - 1);
+    return await request(url, options, disableToast, returnResponse, maxRetries - 1);
   }
   if (response?.status && response?.status >= 400) {
     onFail(
