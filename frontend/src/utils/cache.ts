@@ -9,7 +9,7 @@ class Cache {
   private prefix = "app_cache_";
 
   private defaultTTL = 5 * 60 * 1000; // 5 minutes
-  private this.cacheMemory = {};
+  private cacheMemory = {};
 
   /**
    * Generate a unique key with prefix for local storage
