@@ -1,5 +1,6 @@
 import { useFetcher, useRouteLoaderData } from "@remix-run/react";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { BaseModalTitle } from "./confirmation-modals/BaseModal";
 import ModalBody from "./ModalBody";
 import ModalButton from "../buttons/ModalButton";
@@ -9,6 +10,7 @@ import { clientLoader } from "#/routes/_oh";
 import { clientAction as settingsClientAction } from "#/routes/settings";
 import { clientAction as loginClientAction } from "#/routes/login";
 import { AvailableLanguages } from "#/i18n";
+import { I18nKey } from "#/i18n/declaration";
 
 interface AccountSettingsModalProps {
   onClose: () => void;
@@ -23,6 +25,7 @@ function AccountSettingsModal({
   gitHubError,
   analyticsConsent,
 }: AccountSettingsModalProps) {
+  const { t } = useTranslation();
   const data = useRouteLoaderData<typeof clientLoader>("routes/_oh");
   const settingsFetcher = useFetcher<typeof settingsClientAction>({
     key: "settings",
@@ -86,13 +89,13 @@ function AccountSettingsModal({
           />
           {gitHubError && (
             <p className="text-danger text-xs">
-              GitHub token is invalid. Please try again.
+              {t(I18nKey.ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID)}
             </p>
           )}
           {data?.ghToken && !gitHubError && (
             <ModalButton
               variant="text-like"
-              text="Disconnect"
+              text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$DISCONNECT)}
               onClick={() => {
                 settingsFetcher.submit(
                   {},
@@ -122,11 +125,11 @@ function AccountSettingsModal({
             }
             type="submit"
             intent="account"
-            text="Save"
+            text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$SAVE)}
             className="bg-[#4465DB]"
           />
           <ModalButton
-            text="Close"
+            text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$CLOSE)}
             onClick={onClose}
             className="bg-[#737373]"
           />

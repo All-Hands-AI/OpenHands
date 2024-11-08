@@ -1,6 +1,7 @@
 import React from "react";
 import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
+import posthog from "posthog-js";
 import EllipsisH from "#/assets/ellipsis-h.svg?react";
 import { ModalBackdrop } from "../modals/modal-backdrop";
 import { ConnectToGitHubModal } from "../modals/connect-to-github-modal";
@@ -37,6 +38,7 @@ export function ProjectMenuCard({
   };
 
   const handlePushToGitHub = () => {
+    posthog.capture("push_to_github_button_clicked");
     const rawEvent = {
       content: `
 Let's push the code to GitHub.
@@ -58,6 +60,15 @@ Finally, open up a pull request using the GitHub API and the token in the GITHUB
     setContextMenuIsOpen(false);
   };
 
+  const handleDownloadWorkspace = () => {
+    posthog.capture("download_workspace_button_clicked");
+    try {
+      downloadWorkspace();
+    } catch (error) {
+      toast.error("Failed to download workspace");
+    }
+  };
+
   return (
     <div className="px-4 py-[10px] w-[337px] rounded-xl border border-[#525252] flex justify-between items-center relative">
       {contextMenuIsOpen && (
@@ -65,13 +76,7 @@ Finally, open up a pull request using the GitHub API and the token in the GITHUB
           isConnectedToGitHub={isConnectedToGitHub}
           onConnectToGitHub={() => setConnectToGitHubModalOpen(true)}
           onPushToGitHub={handlePushToGitHub}
-          onDownloadWorkspace={() => {
-            try {
-              downloadWorkspace();
-            } catch (error) {
-              toast.error("Failed to download workspace");
-            }
-          }}
+          onDownloadWorkspace={handleDownloadWorkspace}
           onClose={() => setContextMenuIsOpen(false)}
         />
       )}

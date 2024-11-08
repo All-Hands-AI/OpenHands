@@ -44,7 +44,7 @@ class Session:
             sid, file_store, status_callback=self.queue_status_message
         )
         self.agent_session.event_stream.subscribe(
-            EventStreamSubscriber.SERVER, self.on_event
+            EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
         self.config = config
         self.loop = asyncio.get_event_loop()
@@ -138,6 +138,10 @@ class Session:
             return
         if event.source == EventSource.AGENT:
             await self.send(event_to_dict(event))
+        elif event.source == EventSource.USER and isinstance(
+            event, CmdOutputObservation
+        ):
+            await self.send(event_to_dict(event))
         # NOTE: ipython observations are not sent here currently
         elif event.source == EventSource.ENVIRONMENT and isinstance(
             event, (CmdOutputObservation, AgentStateChangedObservation)
@@ -182,10 +186,7 @@ class Session:
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True
-        except RuntimeError:
-            self.is_alive = False
-            return False
-        except WebSocketDisconnect:
+        except (RuntimeError, WebSocketDisconnect):
             self.is_alive = False
             return False
 

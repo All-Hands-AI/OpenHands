@@ -2,6 +2,7 @@ import asyncio
 import logging
 import sys
 from typing import Type
+from uuid import uuid4
 
 from termcolor import colored
 
@@ -150,7 +151,7 @@ async def main():
             ]:
                 await prompt_for_next_task()
 
-    event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
+    event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
 
     await runtime.connect()
 
