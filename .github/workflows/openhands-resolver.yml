@@ -11,5 +11,5 @@ jobs:
     uses: All-Hands-AI/openhands-resolver/.github/workflows/openhands-resolver.yml@main
     if: github.event.label.name == 'fix-me'
     with:
-      issue_number: ${{ github.event.issue.number || github.event.pull_request.number }}
+      max_iterations: 50
     secrets: inherit
