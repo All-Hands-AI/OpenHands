@@ -9,11 +9,9 @@ class Cache {
 
   private defaultTTL = 5 * 60 * 1000; // 5 minutes
 
-  private cacheMemory: Record<string, string> = {};
-
   /**
-   * Generate a unique key with prefix
-   * @param key The key to be stored in memory
+   * Generate a unique key with prefix for local storage
+   * @param key The key to be stored in local storage
    * @returns The unique key with prefix
    */
   private getKey(key: CacheKey): string {
@@ -21,12 +19,12 @@ class Cache {
   }
 
   /**
-   * Retrieve the cached data from memory
-   * @param key The key to be retrieved from memory
-   * @returns The data stored in memory
+   * Retrieve the cached data from local storage
+   * @param key The key to be retrieved from local storage
+   * @returns The data stored in local storage
    */
   public get<T>(key: CacheKey): T | null {
-    const cachedEntry = this.cacheMemory[this.getKey(key)];
+    const cachedEntry = localStorage.getItem(this.getKey(key));
     if (cachedEntry) {
       const { data, expiration } = JSON.parse(cachedEntry) as CacheEntry<T>;
       if (Date.now() < expiration) return data;
@@ -37,34 +35,34 @@ class Cache {
   }
 
   /**
-   * Store the data in memory with expiration
-   * @param key The key to be stored in memory
-   * @param data The data to be stored in memory
+   * Store the data in local storage with expiration
+   * @param key The key to be stored in local storage
+   * @param data The data to be stored in local storage
    * @param ttl The time to live for the data in milliseconds
    * @returns void
    */
   public set<T>(key: CacheKey, data: T, ttl = this.defaultTTL): void {
     const expiration = Date.now() + ttl;
     const entry: CacheEntry<T> = { data, expiration };
-    this.cacheMemory[this.getKey(key)] = JSON.stringify(entry);
+    localStorage.setItem(this.getKey(key), JSON.stringify(entry));
   }
 
   /**
-   * Remove the data from memory
-   * @param key The key to be removed from memory
+   * Remove the data from local storage
+   * @param key The key to be removed from local storage
    * @returns void
    */
   public delete(key: CacheKey): void {
-    delete this.cacheMemory[this.getKey(key)];
+    localStorage.removeItem(this.getKey(key));
   }
 
   /**
-   * Clear all data with the app prefix from memory
+   * Clear all data with the app prefix from local storage
    * @returns void
    */
   public clearAll(): void {
-    Object.keys(this.cacheMemory).forEach((key) => {
-      if (key.startsWith(this.prefix)) delete this.cacheMemory[key];
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith(this.prefix)) localStorage.removeItem(key);
     });
   }
 }
