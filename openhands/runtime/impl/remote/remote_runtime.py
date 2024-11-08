@@ -1,7 +1,7 @@
 import os
-from pathlib import Path
 import tempfile
 import threading
+from pathlib import Path
 from typing import Callable, Optional
 from zipfile import ZipFile
 
@@ -310,7 +310,9 @@ class RemoteRuntime(Runtime):
             'debug',
             f'Waiting for runtime pod to be active. Current status: {pod_status}',
         )
-        raise RuntimeNotReadyError()
+        raise RuntimeNotReadyError(
+            f'Waiting for runtime pod to be active. Current status: {pod_status}'
+        )
 
     def close(self, timeout: int = 10):
         if self.config.sandbox.keep_remote_runtime_alive or self.attach_to_existing:
