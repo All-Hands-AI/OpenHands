@@ -1,4 +1,4 @@
-import CloseIcon from "#/assets/close.svg?react";
+import CloseIcon from "#/icons/close.svg?react";
 import { cn } from "#/utils/utils";
 
 interface ImagePreviewProps {

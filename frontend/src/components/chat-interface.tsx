@@ -21,7 +21,7 @@ import { ContinueButton } from "./continue-button";
 import { ScrollToBottomButton } from "./scroll-to-bottom-button";
 import { Suggestions } from "./suggestions";
 import { SUGGESTIONS } from "#/utils/suggestions";
-import BuildIt from "#/assets/build-it.svg?react";
+import BuildIt from "#/icons/build-it.svg?react";
 
 const isErrorMessage = (
   message: Message | ErrorMessage,
