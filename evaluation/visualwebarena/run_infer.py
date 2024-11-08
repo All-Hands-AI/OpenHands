@@ -58,7 +58,6 @@ def get_config(
             enable_auto_lint=True,
             use_host_network=False,
             browsergym_eval_env=env_id,
-            # TODO: how to initialize these urls?
             runtime_startup_env_vars={
                 'BASE_URL': base_url,
                 'OPENAI_API_KEY': openai_api_key,
@@ -176,9 +175,12 @@ def process_instance(
             # image_urls = event.images_urls
             break
 
-    return_val = complete_runtime(runtime)
-    logger.info(f'Return value from complete_runtime: {return_val}')
-    reward = max(return_val['rewards'])
+    try:
+        return_val = complete_runtime(runtime)
+        logger.info(f'Return value from complete_runtime: {return_val}')
+        reward = max(return_val['rewards'])
+    except Exception:
+        reward = -1.0  # kept -1 to identify instances that failed.
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
@@ -197,6 +199,7 @@ def process_instance(
             'reward': reward,
         },
     )
+    runtime.close()
     return output
 
 

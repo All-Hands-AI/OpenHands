@@ -370,7 +370,9 @@ class BrowsingAgent(Agent):
             # screenshot + som: will be a non-empty string if present in observation
             if (last_obs.set_of_marks is not None) and (len(last_obs.set_of_marks) > 0):
                 user_content.append(
-                    TextContent(text='IMAGES: (1) current page screenshot')
+                    TextContent(
+                        text='IMAGES FOR USER QUERY: (1) current page screenshot'
+                    )
                 )
                 user_content.append(ImageContent(image_urls=[last_obs.set_of_marks]))
             try:
@@ -389,9 +391,7 @@ class BrowsingAgent(Agent):
         goal, image_urls = state.get_current_user_intent()
         if image_urls is not None:
             for idx, url in enumerate(image_urls):
-                user_content.append(
-                    TextContent(text=f'({idx+2}) input image {idx+1}))')
-                )
+                user_content.append(TextContent(text=f'({idx+2}) input image {idx+1}'))
                 user_content.append(ImageContent(image_urls=[url]))
         if goal is None:
             goal = state.inputs['task']
@@ -410,7 +410,7 @@ The previous action: This is the action you just performed. It may be helpful to
 You will be given 3 example inputs and their corresponding example outputs and then finally you will get the user query.
 The actions you can perform are described below:
 
-{self.action_space.describe(with_long_description=True, with_examples=True)}
+{self.action_space.describe(with_long_description=True, with_examples=False)}
 
 To be successful, it is very important to follow the following rules:
 1. You should only issue an action that is valid given the current observation
@@ -424,29 +424,22 @@ To be successful, it is very important to follow the following rules:
 "
 """.strip()
         # TODO: caching of prompt is not working right now
-        messages.append(
-            Message(
-                role='system', content=[TextContent(text=system_msg, cache_prompt=True)]
-            )
-        )
+        messages.append(Message(role='system', content=[TextContent(text=system_msg)]))
         with open('openhands/agenthub/browsing_agent/few_shot_prompts.json', 'r') as f:
             few_shot_data = json.load(f)
         for i, example in enumerate(few_shot_data['examples']):
             example_img = Image.open(example[2])
             example_content = [
+                TextContent(text=f'EXAMPLE INPUT {i+1}\n\n' + example[0]),
                 TextContent(
-                    text=f'EXAMPLE INPUT {i+1}\n\n' + example[0], cache_prompt=True
-                ),
-                TextContent(
-                    text='IMAGES: (1) current page screenshot', cache_prompt=True
+                    text=f'IMAGES FOR EXAMPLE INPUT {i+1}: (1) current page screenshot'
                 ),
                 ImageContent(
                     image_urls=[
                         BrowserEnv.image_to_png_base64_url(
                             image=example_img, add_data_prefix=True
                         )
-                    ],
-                    cache_prompt=True,
+                    ]
                 ),
             ]
             messages.append(Message(role='user', content=example_content))
@@ -454,10 +447,7 @@ To be successful, it is very important to follow the following rules:
                 Message(
                     role='assistant',
                     content=[
-                        TextContent(
-                            text=f'EXAMPLE OUTPUT {i+1}\n\n' + example[1],
-                            cache_prompt=True,
-                        )
+                        TextContent(text=f'EXAMPLE OUTPUT {i+1}\n\n' + example[1])
                     ],
                 )
             )
