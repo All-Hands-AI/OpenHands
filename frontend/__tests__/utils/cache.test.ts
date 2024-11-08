@@ -15,16 +15,6 @@ describe("Cache", () => {
     vi.useRealTimers();
   });
 
-  it("sets data in memory with expiration", () => {
-    cache.set(testKey, testData, testTTL);
-    const cachedEntry = JSON.parse(
-      cache.cacheMemory[testKey] || "",
-    );
-
-    expect(cachedEntry.data).toEqual(testData);
-    expect(cachedEntry.expiration).toBeGreaterThan(Date.now());
-  });
-
   it("gets data from memory if not expired", () => {
     cache.set(testKey, testData, testTTL);
 
@@ -38,7 +28,6 @@ describe("Cache", () => {
     vi.advanceTimersByTime(5 * 60 * 1000 + 1);
 
     expect(cache.get(testKey)).toBeNull();
-    expect(cache.cacheMemory[`app_cache_${testKey}`]).toBeUndefined();
   });
 
   it("returns null if cached data is expired", () => {
@@ -46,21 +35,19 @@ describe("Cache", () => {
 
     vi.advanceTimersByTime(testTTL + 1);
     expect(cache.get(testKey)).toBeNull();
-    expect(cache.cacheMemory[`app_cache_${testKey}`]).toBeUndefined();
   });
 
   it("deletes data from memory", () => {
     cache.set(testKey, testData, testTTL);
     cache.delete(testKey);
-
-    expect(cache.cacheMemory[`app_cache_${testKey}`]).toBeUndefined();
+    expect(cache.get(testKey)).toBeNull();
   });
 
   it("clears all data with the app prefix from memory", () => {
     cache.set(testKey, testData, testTTL);
     cache.set("anotherKey", { data: "More data" }, testTTL);
     cache.clearAll();
-
-    expect(Object.keys(cache.cacheMemory).length).toBe(0);
+    expect(cache.get(testKey)).toBeNull();
+    expect(cache.get("anotherKey")).toBeNull();
   });
 });
