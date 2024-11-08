@@ -20,6 +20,7 @@ import { I18nKey } from "#/i18n/declaration";
 import OpenHands from "#/api/open-hands";
 import { useFiles } from "#/context/files";
 import { isOpenHandsErrorResponse } from "#/api/open-hands.utils";
+import VSCodeIcon from "#/assets/vscode-alt.svg?react";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
@@ -168,6 +169,33 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
     }
   };
 
+  const handleVSCodeClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      const response = await OpenHands.getVSCodeUrl();
+      if (response.vscode_url) {
+        toast.success(
+          "Switching to VS Code in 3 seconds...\nImportant: Please inform the agent of any changes you make in VS Code. To avoid conflicts, wait for the assistant to complete its work before making your own changes.",
+          { duration: 5000 },
+        );
+        setTimeout(
+          () => window.open(response.vscode_url ?? "", "_blank"),
+          3000,
+        );
+      } else {
+        toast.error(
+          `${response.error}\nPlease make sure the agent is already connected to Runtime.`,
+          { duration: 5000 },
+        );
+      }
+    } catch (error) {
+      toast.error(
+        `Unexpected error: ${String(error)}\nPlease make sure the backend is running.`,
+        { duration: 5000 },
+      );
+    }
+  };
+
   React.useEffect(() => {
     refreshWorkspace();
   }, [curAgentState]);
@@ -210,7 +238,7 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
           !isOpen ? "w-12" : "w-60",
         )}
       >
-        <div className="flex flex-col relative h-full px-3 py-2">
+        <div className="flex flex-col relative h-full px-3 py-2 overflow-hidden">
           <div className="sticky top-0 bg-neutral-800">
             <div
               className={twMerge(
@@ -232,7 +260,7 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
             </div>
           </div>
           {!error && (
-            <div className="overflow-auto flex-grow">
+            <div className="overflow-auto flex-grow min-h-0">
               <div style={{ display: !isOpen ? "none" : "block" }}>
                 <ExplorerTree files={paths} />
               </div>
@@ -242,6 +270,17 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
             <div className="flex flex-col items-center justify-center h-full">
               <p className="text-neutral-300 text-sm">{error}</p>
             </div>
+          )}
+          {isOpen && (
+            <button
+              type="button"
+              onClick={handleVSCodeClick}
+              className="mt-auto mb-2 w-full h-10 bg-[#0066B8] hover:bg-[#005BA4] text-white rounded flex items-center justify-center gap-2 transition-colors"
+              aria-label="Open in VS Code"
+            >
+              <VSCodeIcon width={20} height={20} />
+              Open in VS Code
+            </button>
           )}
         </div>
         <input

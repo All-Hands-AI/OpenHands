@@ -316,14 +316,6 @@ export default function MainApp() {
           >
             <DocsIcon width={28} height={28} />
           </a>
-          <button
-            type="button"
-            onClick={handleVSCodeClick}
-            className="w-8 h-8 rounded-full hover:opacity-80 flex items-center justify-center"
-            aria-label="VSCode"
-          >
-            <VSCodeIcon width={25} height={25} />
-          </button>
           {!!token && (
             <button
               type="button"
