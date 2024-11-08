@@ -91,6 +91,14 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
             "Your thinking should be thorough and so it's fine if it's very long.\n"
         )
 
+    instruction += (
+        '<IMPORTANT>\n'
+        '- You MUST generate only one action per turn!\n'
+        '- A patch is a set of changes to the source code of the codebase that you are given\n'
+        '- You MUST generate a patch that attempts to fix the issue described in the <pr_description>\n'
+        '</IMPORTANT>\n'
+    )
+
     if RUN_WITH_BROWSING:
         instruction += (
             '<IMPORTANT!>\n'
