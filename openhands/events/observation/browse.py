@@ -64,7 +64,7 @@ class BrowserOutputObservation(Observation):
             # We do not filter visible only here because we want to show the full content
             # of the web page to the agent for simplicity.
             # FIXME: handle the case when the web page is too large
-            cur_axtree_txt = self.get_axtree_str(filter_visible_only=False)
+            cur_axtree_txt = self.get_axtree_str(filter_visible_only=True)
             text += (
                 f'============== BEGIN accessibility tree ==============\n'
                 f'{cur_axtree_txt}\n'
@@ -74,12 +74,12 @@ class BrowserOutputObservation(Observation):
             text += f'\n[Error encountered when processing the accessibility tree: {e}]'
         return text
 
-    def get_axtree_str(self, filter_visible_only: bool = False) -> str:
+    def get_axtree_str(self, filter_visible_only: bool = True) -> str:
         cur_axtree_txt = flatten_axtree_to_str(
             self.axtree_object,
             extra_properties=self.extra_element_properties,
             with_clickable=True,
-            skip_generic=False,
+            skip_generic=True,
             filter_visible_only=filter_visible_only,
         )
         self._axtree_str = cur_axtree_txt
