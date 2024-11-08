@@ -73,7 +73,6 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         instruction += CODEACT_SWE_PROMPT.format(workspace_dir_name=workspace_dir_name)
     else:
         # Instruction based on Anthropic's official trajectory
-        # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
         instruction = (
             '<uploaded_files>\n'
             f'/workspace/{workspace_dir_name}\n'
@@ -93,6 +92,14 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
             '5. Think about edgecases and make sure your fix handles them as well\n'
             "Your thinking should be thorough and so it's fine if it's very long.\n"
         )
+
+    instruction += """
+        <IMPORTANT>
+        - You MUST generate only one action per turn!
+        - A patch is a set of changes to the source code of the codebase that you are given
+        - You MUST generate a patch that attempts to fix the issue described in the <pr_description>
+        </IMPORTANT>
+        """
 
     if RUN_WITH_BROWSING:
         instruction += (
