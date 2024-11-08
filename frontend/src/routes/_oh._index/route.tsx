@@ -10,6 +10,7 @@ import {
 } from "@remix-run/react";
 import React from "react";
 import { useDispatch } from "react-redux";
+import posthog from "posthog-js";
 import { SuggestionBox } from "./suggestion-box";
 import { TaskForm } from "./task-form";
 import { HeroHeading } from "./hero-heading";
@@ -25,9 +26,6 @@ import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { GitHubRepositoriesSuggestionBox } from "#/components/github-repositories-suggestion-box";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 
-let cachedRepositories: ReturnType<
-  typeof retrieveAllGitHubUserRepositories
-> | null = null;
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   let isSaas = false;
   let githubClientId: string | null = null;
@@ -48,12 +46,9 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   let repositories: ReturnType<
     typeof retrieveAllGitHubUserRepositories
   > | null = null;
-  if (cachedRepositories) {
-    repositories = cachedRepositories;
-  } else if (ghToken) {
+  if (ghToken) {
     const data = retrieveAllGitHubUserRepositories(ghToken);
     repositories = data;
-    cachedRepositories = data;
   }
 
   let githubAuthUrl: string | null = null;
@@ -69,6 +64,10 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   const formData = await request.formData();
   const q = formData.get("q")?.toString();
   if (q) store.dispatch(setInitialQuery(q));
+
+  posthog.capture("initial_query_submitted", {
+    query_character_length: q?.length,
+  });
 
   return redirect("/app");
 };

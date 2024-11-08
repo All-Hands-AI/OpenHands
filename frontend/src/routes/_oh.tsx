@@ -34,9 +34,6 @@ import { AnalyticsConsentFormModal } from "#/components/analytics-consent-form-m
 import { setCurrentAgentState } from "#/state/agentSlice";
 import AgentState from "#/types/AgentState";
 
-// Cache for clientLoader results
-let clientLoaderCache: any = null; // eslint-disable-line @typescript-eslint/no-explicit-any
-
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   try {
     const config = await OpenHands.getConfig();
@@ -54,34 +51,28 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
 
   if (!userConsents) {
     posthog.opt_out_capturing();
-  } else {
+  } else if (userConsents && !posthog.has_opted_in_capturing()) {
     posthog.opt_in_capturing();
   }
 
   let isAuthed = false;
   let githubAuthUrl: string | null = null;
   let user: GitHubUser | GitHubErrorReponse | null = null;
-  if (!clientLoaderCache || clientLoaderCache.ghToken !== ghToken) {
-    try {
-      isAuthed = await userIsAuthenticated();
-      if (!isAuthed && window.__GITHUB_CLIENT_ID__) {
-        const requestUrl = new URL(request.url);
-        githubAuthUrl = generateGitHubAuthUrl(
-          window.__GITHUB_CLIENT_ID__,
-          requestUrl,
-        );
-      }
-    } catch (error) {
-      isAuthed = false;
-      githubAuthUrl = null;
+  try {
+    isAuthed = await userIsAuthenticated();
+    if (!isAuthed && window.__GITHUB_CLIENT_ID__) {
+      const requestUrl = new URL(request.url);
+      githubAuthUrl = generateGitHubAuthUrl(
+        window.__GITHUB_CLIENT_ID__,
+        requestUrl,
+      );
     }
-
-    if (ghToken) user = await retrieveGitHubUser(ghToken);
-  } else {
-    isAuthed = clientLoaderCache.isAuthed;
-    githubAuthUrl = clientLoaderCache.githubAuthUrl;
-    user = clientLoaderCache.user;
+  } catch (error) {
+    isAuthed = false;
+    githubAuthUrl = null;
   }
+
+  if (ghToken) user = await retrieveGitHubUser(ghToken);
 
   const settings = getSettings();
   await i18n.changeLanguage(settings.LANGUAGE);
@@ -93,7 +84,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   }
 
   // Store the results in cache
-  clientLoaderCache = {
+  return defer({
     token,
     ghToken,
     isAuthed,
@@ -102,9 +93,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
     settingsIsUpdated,
     settings,
     analyticsConsent,
-  };
-
-  return defer(clientLoaderCache);
+  });
 };
 
 export function ErrorBoundary() {
@@ -177,6 +166,16 @@ export default function MainApp() {
   const [settingsFormError, setSettingsFormError] = React.useState<
     string | null
   >(null);
+
+  React.useEffect(() => {
+    if (user && !isGitHubErrorReponse(user)) {
+      posthog.identify(user.login, {
+        company: user.company,
+        name: user.name,
+        email: user.email,
+      });
+    }
+  }, [user]);
 
   React.useEffect(() => {
     // We fetch this here instead of the data loader because the server seems to block

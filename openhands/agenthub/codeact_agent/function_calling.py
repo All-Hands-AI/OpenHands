@@ -29,6 +29,7 @@ SYSTEM_PROMPT = """You are OpenHands agent, a helpful AI assistant that can inte
 <IMPORTANT>
 * If user provides a path, you should NOT assume it's relative to the current working directory. Instead, you should explore the file system to find the file before working on it.
 * When configuring git credentials, use "openhands" as the user.name and "openhands@all-hands.dev" as the user.email by default, unless explicitly instructed otherwise.
+* The assistant MUST NOT include comments in the code unless they are necessary to describe non-obvious behavior.
 </IMPORTANT>
 """
 
@@ -284,6 +285,17 @@ _browser_action_space = HighLevelActionSet(
 
 
 _BROWSER_DESCRIPTION = """Interact with the browser using Python code.
+
+See the description of "code" parameter for more details.
+
+Multiple actions can be provided at once, but will be executed sequentially without any feedback from the page.
+More than 2-3 actions usually leads to failure or unexpected behavior. Example:
+fill('a12', 'example with "quotes"')
+click('a51')
+click('48', button='middle', modifiers=['Shift'])
+"""
+
+_BROWSER_TOOL_DESCRIPTION = """
 The following 15 functions are available. Nothing else is supported.
 
 goto(url: str)
@@ -385,20 +397,15 @@ upload_file(bid: str, file: str | list[str])
         upload_file('572', '/home/user/my_receipt.pdf')
 
         upload_file('63', ['/home/bob/Documents/image.jpg', '/home/bob/Documents/file.zip'])
-
-Multiple actions can be provided at once, but will be executed sequentially without any feedback from the page.
-More than 2-3 actions usually leads to failure or unexpected behavior. Example:
-fill('a12', 'example with "quotes"')
-click('a51')
-click('48', button='middle', modifiers=['Shift'])
 """
+
 
 for _, action in _browser_action_space.action_set.items():
     assert (
-        action.signature in _BROWSER_DESCRIPTION
+        action.signature in _BROWSER_TOOL_DESCRIPTION
     ), f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.signature}'
     assert (
-        action.description in _BROWSER_DESCRIPTION
+        action.description in _BROWSER_TOOL_DESCRIPTION
     ), f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.description}'
 
 BrowserTool = ChatCompletionToolParam(
@@ -411,7 +418,10 @@ BrowserTool = ChatCompletionToolParam(
             'properties': {
                 'code': {
                     'type': 'string',
-                    'description': 'The Python code that interacts with the browser.',
+                    'description': (
+                        'The Python code that interacts with the browser.\n'
+                        + _BROWSER_TOOL_DESCRIPTION
+                    ),
                 }
             },
             'required': ['code'],
