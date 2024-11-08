@@ -63,11 +63,4 @@ describe("Cache", () => {
 
     expect(Object.keys(cache.cacheMemory)).toBe(0);
   });
-
-  it("does not retrieve non-prefixed data from memory when clearing", () => {
-    cache.cacheMemory["nonPrefixedKey"] = "should remain";
-    cache.set(testKey, testData, testTTL);
-    cache.clearAll();
-    expect(cache.cacheMemory["nonPrefixedKey"]).toBe("should remain");
-  });
 });

@@ -5,20 +5,9 @@ type CacheEntry<T> = {
 };
 
 class Cache {
-  private prefix = "app_cache_";
-
   private defaultTTL = 5 * 60 * 1000; // 5 minutes
 
   private cacheMemory: Record<string, string> = {};
-
-  /**
-   * Generate a unique key with prefix
-   * @param key The key to be stored in memory
-   * @returns The unique key with prefix
-   */
-  private getKey(key: CacheKey): string {
-    return `${this.prefix}${key}`;
-  }
 
   /**
    * Retrieve the cached data from memory
@@ -26,7 +15,7 @@ class Cache {
    * @returns The data stored in memory
    */
   public get<T>(key: CacheKey): T | null {
-    const cachedEntry = this.cacheMemory[this.getKey(key)];
+    const cachedEntry = this.cacheMemory[key];
     if (cachedEntry) {
       const { data, expiration } = JSON.parse(cachedEntry) as CacheEntry<T>;
       if (Date.now() < expiration) return data;
@@ -46,7 +35,7 @@ class Cache {
   public set<T>(key: CacheKey, data: T, ttl = this.defaultTTL): void {
     const expiration = Date.now() + ttl;
     const entry: CacheEntry<T> = { data, expiration };
-    this.cacheMemory[this.getKey(key)] = JSON.stringify(entry);
+    this.cacheMemory[key] = JSON.stringify(entry);
   }
 
   /**
@@ -55,16 +44,16 @@ class Cache {
    * @returns void
    */
   public delete(key: CacheKey): void {
-    delete this.cacheMemory[this.getKey(key)];
+    delete this.cacheMemory[key];
   }
 
   /**
-   * Clear all data with the app prefix from memory
+   * Clear all data
    * @returns void
    */
   public clearAll(): void {
     Object.keys(this.cacheMemory).forEach((key) => {
-      if (key.startsWith(this.prefix)) delete this.cacheMemory[key];
+      delete this.cacheMemory[key];
     });
   }
 }
