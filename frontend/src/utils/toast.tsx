@@ -10,7 +10,6 @@ export default {
       style: {
         background: "#ef4444",
         color: "#fff",
-        lineBreak: "anywhere",
       },
       iconTheme: {
         primary: "#ef4444",
@@ -26,7 +25,6 @@ export default {
       style: {
         background: "#333",
         color: "#fff",
-        lineBreak: "anywhere",
       },
       iconTheme: {
         primary: "#333",
@@ -44,7 +42,6 @@ export default {
       style: {
         background: "#333",
         color: "#fff",
-        lineBreak: "anywhere",
       },
     });
   },
