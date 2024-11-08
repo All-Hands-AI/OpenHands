@@ -204,12 +204,24 @@ async def attach_session(request: Request, call_next):
         response = await call_next(request)
         return response
 
-    github_token = request.headers.get('X-GitHub-Token')
-    if not await authenticate_github_user(github_token):
-        return JSONResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': 'Not authenticated'},
-        )
+    # First check for auth cookie
+    github_token = request.cookies.get('github_auth')
+    
+    # If no cookie, fall back to header
+    if not github_token:
+        github_token = request.headers.get('X-GitHub-Token')
+        # If no header token either, return error
+        if not github_token:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={'error': 'Not authenticated'},
+            )
+        # If using header token, verify with GitHub
+        if not await authenticate_github_user(github_token):
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={'error': 'Not authenticated'},
+            )
 
     if not request.headers.get('Authorization'):
         logger.warning('Missing Authorization header')
@@ -316,7 +328,17 @@ async def websocket_endpoint(websocket: WebSocket):
     jwt_token = protocols[1] if protocols[1] != 'NO_JWT' else ''
     github_token = protocols[2] if protocols[2] != 'NO_GITHUB' else ''
 
-    if not await authenticate_github_user(github_token):
+    # First check for auth cookie
+    cookie_header = websocket.headers.get('cookie', '')
+    github_auth_cookie = None
+    for cookie in cookie_header.split(';'):
+        name, _, value = cookie.strip().partition('=')
+        if name == 'github_auth':
+            github_auth_cookie = value
+            break
+    
+    # If cookie exists, use it, otherwise verify with GitHub
+    if not github_auth_cookie and not await authenticate_github_user(github_token):
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
@@ -865,9 +887,17 @@ async def authenticate(request: Request):
         )
 
     response = JSONResponse(
-        status_code=status.HTTP_200_OK, content={'message': 'User authenticated'}
+        status_code=status.HTTP_200_OK, content={'message': 'User authenticated'})
+    
+    # Set secure cookie that expires in 1 hour
+    response.set_cookie(
+        key="github_auth",
+        value=token,
+        max_age=3600,  # 1 hour in seconds
+        httponly=True,
+        secure=True,
+        samesite="strict"
     )
-
     return response
 
 
