@@ -78,9 +78,6 @@ class Runtime(FileEditRuntimeMixin):
     initial_env_vars: dict[str, str]
     attach_to_existing: bool
     status_callback: Callable | None
-    DEFAULT_PLUGINS: list[PluginRequirement] = [
-        VSCodeRequirement(),
-    ]
 
     def __init__(
         self,
@@ -91,6 +88,7 @@ class Runtime(FileEditRuntimeMixin):
         env_vars: dict[str, str] | None = None,
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
+        headless_mode: bool = False,
     ):
         self.sid = sid
         self.event_stream = event_stream
@@ -98,8 +96,10 @@ class Runtime(FileEditRuntimeMixin):
             EventStreamSubscriber.RUNTIME, self.on_event, self.sid
         )
         self.plugins = plugins if plugins is not None and len(plugins) > 0 else []
-        for plugin in self.DEFAULT_PLUGINS:
-            self.plugins.append(plugin)
+        # add VSCode plugin if not in headless mode
+        if not headless_mode:
+            self.plugins.append(VSCodeRequirement())
+
         self.status_callback = status_callback
         self.attach_to_existing = attach_to_existing
 
