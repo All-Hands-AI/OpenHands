@@ -246,7 +246,7 @@ export default function MainApp() {
       const response = await OpenHands.getVSCodeUrl();
       if (response.vscode_url) {
         toast.success(
-          "Jumping to VSCode in 3 seconds...\nNOTE: The agent currently is unaware of changes you've made in VSCode. Please let the agent know the changes you've made. Please try not to work at the same time as the agent.",
+          "Switching to VS Code in 3 seconds...\nImportant: Please inform the agent of any changes you make in VS Code. To avoid conflicts, wait for the assistant to complete its work before making your own changes.",
           { duration: 5000 },
         );
         // Add 3 second delay before opening VSCode
