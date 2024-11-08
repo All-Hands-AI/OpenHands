@@ -28,5 +28,4 @@ git push origin create-widget
 curl -X POST "https://api.github.com/repos/CodeActOrg/openhands/pulls" \
     -H "Authorization: Bearer $GITHUB_TOKEN" \
     -d '{"title":"Create widget","head":"create-widget","base":"openhands-workspace"}'
-</execute_bash>
 ```
