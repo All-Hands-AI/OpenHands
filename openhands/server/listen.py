@@ -339,25 +339,7 @@ async def websocket_endpoint(websocket: WebSocket):
     jwt_token = protocols[1] if protocols[1] != 'NO_JWT' else ''
     github_token = protocols[2] if protocols[2] != 'NO_GITHUB' else ''
 
-    # First check for auth cookie
-    cookie_header = websocket.headers.get('cookie', '')
-    github_token = None
-    
-    # Parse cookies and look for github_auth
-    for cookie in cookie_header.split(';'):
-        name, _, value = cookie.strip().partition('=')
-        if name == 'github_auth':
-            try:
-                # Verify and decode the JWT token
-                cookie_data = jwt_decode(value, config.jwt_secret)
-                github_token = cookie_data.get('github_token')
-                break
-            except Exception:
-                # If token is invalid or expired, ignore it
-                pass
-    
-    # If no valid cookie or GitHub verification fails
-    if not github_token and not await authenticate_github_user(github_token):
+    if not await authenticate_github_user(github_token):
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
