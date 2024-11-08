@@ -17,7 +17,11 @@ describe("Empty state", () => {
   }));
 
   const { useSocket: useSocketMock } = vi.hoisted(() => ({
-    useSocket: vi.fn(() => ({ send: sendMock, runtimeActive: true })),
+    useSocket: vi.fn(() => ({
+      send: sendMock,
+      runtimeActive: true,
+      isConnected: true,
+    })),
   }));
 
   beforeAll(() => {
@@ -29,6 +33,31 @@ describe("Empty state", () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  it.only("should not render suggestions if socket is not yet connected", () => {
+    useSocketMock.mockImplementation(() => ({
+      send: sendMock,
+      runtimeActive: false,
+      isConnected: false,
+    }));
+
+    const { rerender } = renderWithProviders(<ChatInterface />, {
+      preloadedState: {
+        chat: { messages: [] },
+      },
+    });
+
+    expect(screen.queryByTestId("suggestions")).not.toBeInTheDocument();
+
+    useSocketMock.mockImplementation(() => ({
+      send: sendMock,
+      runtimeActive: true,
+      isConnected: true,
+    }));
+    rerender(<ChatInterface />);
+
+    expect(screen.getByTestId("suggestions")).toBeInTheDocument();
   });
 
   it("should render suggestions if empty", () => {
@@ -80,6 +109,7 @@ describe("Empty state", () => {
       useSocketMock.mockImplementation(() => ({
         send: sendMock,
         runtimeActive: false, // mock an inactive runtime setup
+        isConnected: false,
       }));
       const addUserMessageSpy = vi.spyOn(ChatSlice, "addUserMessage");
       const user = userEvent.setup();
@@ -109,6 +139,7 @@ describe("Empty state", () => {
       useSocketMock.mockImplementation(() => ({
         send: sendMock,
         runtimeActive: false, // mock an inactive runtime setup
+        isConnected: false,
       }));
       const user = userEvent.setup();
       const { rerender } = renderWithProviders(<ChatInterface />, {
@@ -126,6 +157,7 @@ describe("Empty state", () => {
       useSocketMock.mockImplementation(() => ({
         send: sendMock,
         runtimeActive: true, // mock an active runtime setup
+        isConnected: true,
       }));
       rerender(<ChatInterface />);
 
