@@ -22,7 +22,6 @@ class VSCodePlugin(Plugin):
         self.vscode_port = int(os.environ['VSCODE_PORT'])
         self.vscode_connection_token = str(uuid.uuid4())
         assert check_port_available(self.vscode_port)
-        self._vscode_url = f'http://localhost:{self.vscode_port}'
         cmd = (
             f"su - {username} -s /bin/bash << 'EOF'\n"
             f'sudo chown -R {username}:{username} /openhands/.openvscode-server\n'

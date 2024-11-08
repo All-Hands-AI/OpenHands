@@ -155,6 +155,7 @@ class EventStreamRuntime(Runtime):
         self._host_port = 30000  # initial dummy value
         self._container_port = 30001  # initial dummy value
         self._vscode_url: str | None = None  # initial dummy value
+        self._runtime_initialized: bool = False
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.session = requests.Session()
         self.status_callback = status_callback
@@ -236,6 +237,7 @@ class EventStreamRuntime(Runtime):
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}. VSCode URL: {self.vscode_url}',
         )
         self.send_status_message(' ')
+        self._runtime_initialized = True
 
     @staticmethod
     @lru_cache(maxsize=1)
@@ -660,8 +662,10 @@ class EventStreamRuntime(Runtime):
 
     @property
     def vscode_url(self) -> str | None:
-        if self.vscode_enabled:
-            if hasattr(self, '_vscode_url'):  # cached value
+        if self.vscode_enabled and self._runtime_initialized:
+            if (
+                hasattr(self, '_vscode_url') and self._vscode_url is not None
+            ):  # cached value
                 return self._vscode_url
 
             response = send_request(
@@ -675,6 +679,10 @@ class EventStreamRuntime(Runtime):
             if response_json['token'] is None:
                 return None
             self._vscode_url = f'http://localhost:{self._host_port + 1}/?tkn={response_json["token"]}&folder={self.config.workspace_mount_path_in_sandbox}'
+            self.log(
+                'debug',
+                f'VSCode URL: {self._vscode_url}',
+            )
             return self._vscode_url
         else:
             return None

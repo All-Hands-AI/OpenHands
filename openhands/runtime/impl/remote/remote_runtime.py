@@ -92,7 +92,8 @@ class RemoteRuntime(Runtime):
         )
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
-        self._vscode_url: str | None = None
+        self._runtime_initialized: bool = False
+        self._vscode_url: str | None = None  # initial dummy value
 
     async def connect(self):
         try:
@@ -101,6 +102,7 @@ class RemoteRuntime(Runtime):
             self.log('error', 'Runtime failed to start, timed out before ready')
             raise
         await call_sync_from_async(self.setup_initial_env)
+        self._runtime_initialized = True
 
     def _start_or_attach_to_runtime(self):
         existing_runtime = self._check_existing_runtime()
@@ -259,12 +261,6 @@ class RemoteRuntime(Runtime):
         start_response = response.json()
         self.runtime_id = start_response['runtime_id']
         self.runtime_url = start_response['url']
-        # parse runtime_url to get vscode_url
-        _parsed_url = urlparse(self.runtime_url)
-        assert isinstance(_parsed_url.scheme, str) and isinstance(
-            _parsed_url.netloc, str
-        )
-        self._vscode_url = f'{_parsed_url.scheme}://vscode-{_parsed_url.netloc}'
         if 'session_api_key' in start_response:
             self.session.headers.update(
                 {'X-Session-API-Key': start_response['session_api_key']}
@@ -272,7 +268,34 @@ class RemoteRuntime(Runtime):
 
     @property
     def vscode_url(self) -> str | None:
-        return self._vscode_url
+        if self.vscode_enabled and self._runtime_initialized:
+            if (
+                hasattr(self, '_vscode_url') and self._vscode_url is not None
+            ):  # cached value
+                return self._vscode_url
+
+            response = self._send_request(
+                'GET',
+                f'{self.runtime_url}/vscode/connection_token',
+                timeout=10,
+            )
+            response_json = response.json()
+            assert isinstance(response_json, dict)
+            if response_json['token'] is None:
+                return None
+            # parse runtime_url to get vscode_url
+            _parsed_url = urlparse(self.runtime_url)
+            assert isinstance(_parsed_url.scheme, str) and isinstance(
+                _parsed_url.netloc, str
+            )
+            self._vscode_url = f'{_parsed_url.scheme}://vscode-{_parsed_url.netloc}/?tkn={response_json["token"]}&folder={self.config.workspace_mount_path_in_sandbox}'
+            self.log(
+                'debug',
+                f'VSCode URL: {self._vscode_url}',
+            )
+            return self._vscode_url
+        else:
+            return None
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(180) | stop_if_should_exit(),
