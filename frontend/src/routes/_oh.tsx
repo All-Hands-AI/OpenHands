@@ -12,7 +12,6 @@ import {
 } from "@remix-run/react";
 import posthog from "posthog-js";
 import { useDispatch } from "react-redux";
-import { toast } from "react-hot-toast";
 import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
 import CogTooth from "#/assets/cog-tooth";
@@ -28,7 +27,6 @@ import { getSettings, settingsAreUpToDate } from "#/services/settings";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import NewProjectIcon from "#/assets/new-project.svg?react";
 import DocsIcon from "#/assets/docs.svg?react";
-import VSCodeIcon from "#/assets/vscode-alt.svg?react";
 import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { WaitlistModal } from "#/components/waitlist-modal";
@@ -240,33 +238,6 @@ export default function MainApp() {
     });
   };
 
-  const handleVSCodeClick = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    try {
-      const response = await OpenHands.getVSCodeUrl();
-      if (response.vscode_url) {
-        toast.success(
-          "Switching to VS Code in 3 seconds...\nImportant: Please inform the agent of any changes you make in VS Code. To avoid conflicts, wait for the assistant to complete its work before making your own changes.",
-          { duration: 5000 },
-        );
-        // Add 3 second delay before opening VSCode
-        setTimeout(
-          () => window.open(response.vscode_url ?? "", "_blank"),
-          3000,
-        );
-      } else {
-        toast.error(
-          `${response.error}\nPlease make sure the agent is already connected to Runtime.`,
-          { duration: 5000 },
-        );
-      }
-    } catch (error) {
-      toast.error(
-        `Unexpected error: ${String(error)}\nPlease make sure the backend is running.`,
-        { duration: 5000 },
-      );
-    }
-  };
 
   return (
     <div
