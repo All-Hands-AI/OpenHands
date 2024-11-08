@@ -72,7 +72,12 @@ class Message(BaseModel):
         # - into a single string: for providers that don't support list of content items (e.g. no vision, no tool calls)
         # - into a list of content items: the new APIs of providers with vision/prompt caching/tool calls
         # NOTE: remove this when litellm or providers support the new API
-        if self.cache_enabled or self.vision_enabled or self.tool_call_id is not None:
+        if (
+            self.cache_enabled
+            or self.vision_enabled
+            or self.tool_call_id is not None
+            or self.tool_calls is not None
+        ):
             return self._list_serializer()
         return self._string_serializer()
 
