@@ -70,6 +70,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         instruction += CODEACT_SWE_PROMPT.format(workspace_dir_name=workspace_dir_name)
     else:
         # Instruction based on Anthropic's official trajectory
+        # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
         instruction = (
             '<uploaded_files>\n'
             f'/workspace/{workspace_dir_name}\n'
