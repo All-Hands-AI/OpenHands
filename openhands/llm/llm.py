@@ -215,12 +215,8 @@ class LLM(RetryMixin, DebugMixin):
                     }
 
             try:
-                logger.debug(
-                    f'Calling completion: messages={json.dumps(messages, indent=2)}'
-                )
                 # we don't support streaming here, thus we get a ModelResponse
                 resp: ModelResponse = completion_unwrapped(*args, **kwargs)
-                logger.debug(f'Completion response: {json.dumps(resp, indent=2)}')
 
                 non_fncall_response = copy.deepcopy(resp)
                 if mock_function_calling:
