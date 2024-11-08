@@ -12,8 +12,8 @@ class Cache {
   private cacheMemory = {};
 
   /**
-   * Generate a unique key with prefix for local storage
-   * @param key The key to be stored in local storage
+   * Generate a unique key with prefix
+   * @param key The key to be stored in memory
    * @returns The unique key with prefix
    */
   private getKey(key: CacheKey): string {
@@ -21,9 +21,9 @@ class Cache {
   }
 
   /**
-   * Retrieve the cached data from local storage
-   * @param key The key to be retrieved from local storage
-   * @returns The data stored in local storage
+   * Retrieve the cached data from memory
+   * @param key The key to be retrieved from memory
+   * @returns The data stored in memory
    */
   public get<T>(key: CacheKey): T | null {
     const cachedEntry = this.cacheMemory[this.getKey(key)];
@@ -37,9 +37,9 @@ class Cache {
   }
 
   /**
-   * Store the data in local storage with expiration
-   * @param key The key to be stored in local storage
-   * @param data The data to be stored in local storage
+   * Store the data in memory with expiration
+   * @param key The key to be stored in memory
+   * @param data The data to be stored in memory
    * @param ttl The time to live for the data in milliseconds
    * @returns void
    */
@@ -50,8 +50,8 @@ class Cache {
   }
 
   /**
-   * Remove the data from local storage
-   * @param key The key to be removed from local storage
+   * Remove the data from memory
+   * @param key The key to be removed from memory
    * @returns void
    */
   public delete(key: CacheKey): void {
@@ -59,7 +59,7 @@ class Cache {
   }
 
   /**
-   * Clear all data with the app prefix from local storage
+   * Clear all data with the app prefix from memory
    * @returns void
    */
   public clearAll(): void {
