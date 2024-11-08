@@ -127,6 +127,7 @@ class EventStreamRuntime(Runtime):
         env_vars: dict[str, str] | None = None,
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
+        headless_mode: bool = True,
     ):
         super().__init__(
             config,
@@ -136,6 +137,7 @@ class EventStreamRuntime(Runtime):
             env_vars,
             status_callback,
             attach_to_existing,
+            headless_mode,
         )
 
     def __init__(
@@ -147,6 +149,7 @@ class EventStreamRuntime(Runtime):
         env_vars: dict[str, str] | None = None,
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
+        headless_mode: bool = True,
     ):
         self.config = config
         self._host_port = 30000  # initial dummy value
@@ -186,6 +189,7 @@ class EventStreamRuntime(Runtime):
             env_vars,
             status_callback,
             attach_to_existing,
+            headless_mode,
         )
 
     async def connect(self):

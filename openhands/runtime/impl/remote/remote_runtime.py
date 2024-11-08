@@ -1,7 +1,7 @@
 import os
-from pathlib import Path
 import tempfile
 import threading
+from pathlib import Path
 from typing import Callable, Optional
 from urllib.parse import urlparse
 from zipfile import ZipFile
@@ -58,6 +58,7 @@ class RemoteRuntime(Runtime):
         env_vars: dict[str, str] | None = None,
         status_callback: Optional[Callable] = None,
         attach_to_existing: bool = False,
+        headless_mode: bool = True,
     ):
         # We need to set session and action_semaphore before the __init__ below, or we get odd errors
         self.session = requests.Session()
@@ -71,6 +72,7 @@ class RemoteRuntime(Runtime):
             env_vars,
             status_callback,
             attach_to_existing,
+            headless_mode,
         )
         if self.config.sandbox.api_key is None:
             raise ValueError(
