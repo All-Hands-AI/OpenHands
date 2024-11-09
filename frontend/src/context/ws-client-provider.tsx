@@ -50,7 +50,7 @@ export function WsClientProvider({
       EventLogger.error("WebSocket is not connected.");
       return;
     }
-    setEvents((prevEvents) => [...prevEvents, event]);
+    // setEvents((prevEvents) => [...prevEvents, event]);
     wsRef.current.send(JSON.stringify(event));
   }
 

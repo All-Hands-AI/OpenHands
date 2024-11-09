@@ -14,7 +14,6 @@ import {
 import { ErrorObservation } from "#/types/core/observations";
 import { addErrorMessage, addUserMessage } from "#/state/chatSlice";
 import { handleAssistantMessage } from "#/services/actions";
-import AgentState from "#/types/AgentState";
 import {
   getCloneRepoCommand,
   getGitHubTokenCommand,
@@ -42,13 +41,6 @@ const isServerError = (data: object): data is ServerError => "error" in data;
 
 const isErrorObservation = (data: object): data is ErrorObservation =>
   "observation" in data && data.observation === "error";
-
-const isAgentStateChange = (
-  data: object,
-): data is { extras: { agent_state: AgentState } } =>
-  "extras" in data &&
-  data.extras instanceof Object &&
-  "agent_state" in data.extras;
 
 interface EventHandlerProps {
   children?: React.ReactNode | undefined;
@@ -118,14 +110,12 @@ export function EventHandler({ children }: EventHandlerProps) {
       );
       return;
     }
-
     handleAssistantMessage(event);
+  }, [events.length]);
 
+  React.useEffect(() => {
     // handle first time connection
-    if (
-      isAgentStateChange(event) &&
-      event.extras.agent_state === AgentState.INIT
-    ) {
+    if (status === WsClientProviderStatus.ACTIVE) {
       // handle new session
       if (!token) {
         let additionalInfo = "";
@@ -148,8 +138,18 @@ export function EventHandler({ children }: EventHandlerProps) {
           dispatch(clearFiles()); // reset selected files
         }
       }
+
+      if (initialQuery) {
+        dispatch(
+          addUserMessage({
+            content: initialQuery,
+            imageUrls: files,
+            timestamp: new Date().toISOString(),
+          }),
+        );
+      }
     }
-  }, [events.length, status]);
+  }, [status]);
 
   React.useEffect(() => {
     if (runtimeActive && userId && ghToken) {
@@ -175,20 +175,6 @@ export function EventHandler({ children }: EventHandlerProps) {
       }
     })();
   }, [runtimeActive, importedProjectZip]);
-
-  React.useEffect(() => {
-    if (status === WsClientProviderStatus.ACTIVE) {
-      if (initialQuery) {
-        dispatch(
-          addUserMessage({
-            content: initialQuery,
-            imageUrls: files,
-            timestamp: new Date().toISOString(),
-          }),
-        );
-      }
-    }
-  }, [status]);
 
   return children;
 }
