@@ -148,7 +148,6 @@ export default function MainApp() {
     settings,
     analyticsConsent,
   } = useLoaderData<typeof clientLoader>();
-  const logoutFetcher = useFetcher({ key: "logout" });
   const endSessionFetcher = useFetcher({ key: "end-session" });
   const dispatch = useDispatch();
 
@@ -211,13 +210,7 @@ export default function MainApp() {
   }, [location.pathname]);
 
   const handleUserLogout = () => {
-    logoutFetcher.submit(
-      {},
-      {
-        method: "POST",
-        action: "/logout",
-      },
-    );
+    OpenHands.logout();
   };
 
   const handleAccountSettingsModalClose = () => {

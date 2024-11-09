@@ -900,6 +900,16 @@ async def authenticate(request: Request):
     return response
 
 
+@app.post('/api/logout')
+async def logout(request: Request):
+    response = JSONResponse(
+        status_code=status.HTTP_200_OK, content={'message': 'User logged out'}
+    )
+
+    response.delete_cookie(key='github_auth')
+    return response
+
+
 class SPAStaticFiles(StaticFiles):
     async def get_response(self, path: str, scope):
         try:

@@ -11,6 +11,9 @@ import { clientAction as settingsClientAction } from "#/routes/settings";
 import { clientAction as loginClientAction } from "#/routes/login";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
+import OpenHands from "#/api/open-hands";
+import posthog from "posthog-js";
+import { cache } from "#/utils/cache";
 
 interface AccountSettingsModalProps {
   onClose: () => void;
@@ -97,11 +100,12 @@ function AccountSettingsModal({
               variant="text-like"
               text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$DISCONNECT)}
               onClick={() => {
-                settingsFetcher.submit(
-                  {},
-                  { method: "POST", action: "/logout" },
-                );
-                onClose();
+                OpenHands.logout().then(() => {
+                  localStorage.removeItem("ghToken");
+                  cache.clearAll();
+                  posthog.reset();
+                  onClose();
+                });
               }}
               className="text-danger self-start"
             />

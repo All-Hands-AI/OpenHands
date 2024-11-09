@@ -174,6 +174,12 @@ class OpenHands {
       true,
     );
   }
+
+  static async logout(): Promise<Response> {
+    return request(`/api/logout`, {
+      method: "POST",
+    });
+  }
 }
 
 export default OpenHands;
