@@ -94,8 +94,8 @@ class CodeActAgent(Agent):
 
         self.mock_function_calling = False
         if not self.llm.is_function_calling_active():
-            logger.warning(
-                f'Function calling not supported for model {self.llm.config.model}. '
+            logger.info(
+                f'Function calling not enabled for model {self.llm.config.model}. '
                 'Mocking function calling via prompting.'
             )
             self.mock_function_calling = True
