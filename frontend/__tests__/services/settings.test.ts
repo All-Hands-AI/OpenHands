@@ -22,7 +22,8 @@ describe("getSettings", () => {
       .mockReturnValueOnce("language_value")
       .mockReturnValueOnce("api_key")
       .mockReturnValueOnce("true")
-      .mockReturnValueOnce("invariant");
+      .mockReturnValueOnce("invariant")
+      .mockReturnValueOnce("true");
 
     const settings = getSettings();
 
@@ -34,6 +35,7 @@ describe("getSettings", () => {
       LLM_API_KEY: "api_key",
       CONFIRMATION_MODE: true,
       SECURITY_ANALYZER: "invariant",
+      ENABLE_BROWSING: true,
     });
   });
 
@@ -58,6 +60,7 @@ describe("getSettings", () => {
       LLM_BASE_URL: DEFAULT_SETTINGS.LLM_BASE_URL,
       CONFIRMATION_MODE: DEFAULT_SETTINGS.CONFIRMATION_MODE,
       SECURITY_ANALYZER: DEFAULT_SETTINGS.SECURITY_ANALYZER,
+      ENABLE_BROWSING: DEFAULT_SETTINGS.ENABLE_BROWSING,
     });
   });
 });
@@ -72,6 +75,7 @@ describe("saveSettings", () => {
       LLM_API_KEY: "some_key",
       CONFIRMATION_MODE: true,
       SECURITY_ANALYZER: "invariant",
+      ENABLE_BROWSING: true,
     };
 
     saveSettings(settings);
