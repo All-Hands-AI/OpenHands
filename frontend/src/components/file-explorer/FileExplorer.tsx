@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { twMerge } from "tailwind-merge";
 import AgentState from "#/types/AgentState";
 import { setRefreshID } from "#/state/codeSlice";
+import { addAssistantMessage } from "#/state/chatSlice";
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
 import toast from "#/utils/toast";
@@ -174,14 +175,8 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
     try {
       const response = await OpenHands.getVSCodeUrl();
       if (response.vscode_url) {
-        toast.success(
-          `open-vscode-${new Date().getTime()}`,
-          t(I18nKey.EXPLORER$VSCODE_SWITCHING_MESSAGE),
-        );
-        setTimeout(
-          () => window.open(response.vscode_url ?? "", "_blank"),
-          3000,
-        );
+        dispatch(addAssistantMessage("You opened VS Code. Please inform the agent of any changes you made to the workspace or environment. To avoid conflicts, it's best to pause the agent before making any changes."));
+        window.open(response.vscode_url, "_blank");
       } else {
         toast.error(
           `open-vscode-error-${new Date().getTime()}`,
