@@ -278,7 +278,7 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
             <button
               type="button"
               onClick={handleVSCodeClick}
-              className="mt-auto mb-2 w-full h-10 bg-[#0066B8] hover:bg-[#005BA4] text-white rounded flex items-center justify-center gap-2 transition-colors"
+              className="mt-auto mb-2 w-full h-10 bg-[#4465DB] hover:bg-[#3451C7] text-white rounded flex items-center justify-center gap-2 transition-colors"
               aria-label="Open in VS Code"
             >
               <VSCodeIcon width={20} height={20} />
