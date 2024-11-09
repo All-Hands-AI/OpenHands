@@ -339,8 +339,6 @@ export function SettingsForm({
               >
                 {t(I18nKey.SETTINGS_FORM$ENABLE_CONFIRMATION_MODE_LABEL)}
               </Switch>
-
-
             </>
           )}
         </div>
