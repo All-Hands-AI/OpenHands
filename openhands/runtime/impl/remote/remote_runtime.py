@@ -1,7 +1,6 @@
 import os
 import tempfile
 import threading
-import time
 from pathlib import Path
 from typing import Callable, Optional
 from zipfile import ZipFile
@@ -262,7 +261,7 @@ class RemoteRuntime(Runtime):
             )
 
     @tenacity.retry(
-        stop=tenacity.stop_after_delay(360) | stop_if_should_exit(),
+        stop=tenacity.stop_after_delay(180) | stop_if_should_exit(),
         reraise=True,
         retry=tenacity.retry_if_exception_type(RuntimeNotReadyError),
         wait=tenacity.wait_fixed(2),
@@ -286,20 +285,6 @@ class RemoteRuntime(Runtime):
             raise RuntimeNotReadyError(
                 f'Runtime (ID={self.runtime_id}) is not yet ready. Status: {pod_status}'
             )
-
-        # Wait for pending status
-        while pod_status in ('Pending', 'Running'):
-            time.sleep(2)
-            runtime_info_response = self._send_request(
-                'GET',
-                f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.runtime_id}',
-            )
-            runtime_data = runtime_info_response.json()
-            assert 'runtime_id' in runtime_data
-            assert runtime_data['runtime_id'] == self.runtime_id
-            assert 'pod_status' in runtime_data
-            pod_status = runtime_data['pod_status']
-
         if pod_status == 'Ready':
             try:
                 self._send_request(
@@ -314,7 +299,7 @@ class RemoteRuntime(Runtime):
                     f'Runtime /alive failed to respond with 200: {e}'
                 )
             return
-        elif pod_status in ('Failed', 'Unknown'):
+        if pod_status in ('Failed', 'Unknown'):
             # clean up the runtime
             self.close()
             raise RuntimeError(
@@ -323,9 +308,9 @@ class RemoteRuntime(Runtime):
 
         self.log(
             'debug',
-            f'Unexpected runtime pod status: {pod_status}',
+            f'Waiting for runtime pod to be active. Current status: {pod_status}',
         )
-        raise RuntimeError(f'Unexpected runtime pod status: {pod_status}')
+        raise RuntimeNotReadyError()
 
     def close(self, timeout: int = 10):
         if self.config.sandbox.keep_remote_runtime_alive or self.attach_to_existing:
