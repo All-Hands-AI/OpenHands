@@ -2,14 +2,15 @@ import asyncio
 import os
 import re
 import tempfile
-import time
 import uuid
 import warnings
-from collections import defaultdict
 from contextlib import asynccontextmanager
 
 import jwt
 import requests
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
@@ -95,63 +96,32 @@ app.add_middleware(NoCacheMiddleware)
 
 security_scheme = HTTPBearer()
 
+# Initialize rate limiter
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=['5 per second'],
+    strategy='moving-window',  # Use a sliding window for more accurate rate limiting
+)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-class RateLimiter:
-    def __init__(self):
-        self.requests = defaultdict(list)
-        self.limits = {
-            'default': {'qps': 5, 'block_at': 10},
-            'ws': {'qps': 1, 'block_at': 2},
-            'auth': {'qps': 1, 'block_at': 2},
-        }
-
-    def _clean_old_requests(self, key: str, now: float):
-        window = now - 1.0  # 1 second window
-        while self.requests[key] and self.requests[key][0] < window:
-            self.requests[key].pop(0)
-
-    def is_rate_limited(self, key: str, path: str) -> tuple[bool, float]:
-        now = time.time()
-        self._clean_old_requests(key, now)
-
-        # Determine which limit to apply
-        limit_key = 'default'
-        if path == '/ws':
-            limit_key = 'ws'
-        elif path in ['/api/github/callback', '/api/authenticate']:
-            limit_key = 'auth'
-
-        limit = self.limits[limit_key]
-        current_qps = len(self.requests[key])
-
-        # Block if rate is too high
-        if current_qps >= limit['block_at']:
-            return True, 1.0
-
-        # Add request and slow down if approaching limit
-        self.requests[key].append(now)
-        if current_qps >= limit['qps']:
-            return True, 0.1
-
-        return False, 0
-
-
-rate_limiter = RateLimiter()
-
+# Apply stricter limits to auth endpoints
+def get_path_limits(request: Request):
+    path = request.url.path
+    if path == '/ws' or path in ['/api/github/callback', '/api/authenticate']:
+        return ['1 per second']
+    return ['5 per second']
 
 @app.middleware('http')
 async def rate_limit_middleware(request: Request, call_next):
-    client_ip = request.client.host
-    is_limited, delay = rate_limiter.is_rate_limited(client_ip, request.url.path)
-
-    if is_limited:
-        if delay >= 1.0:
-            return JSONResponse(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                content={'error': 'Too many requests'},
-            )
-        await asyncio.sleep(delay)
-
+    limits = get_path_limits(request)
+    try:
+        await limiter.check_request_limit(request, limits=limits)
+    except RateLimitExceeded:
+        return JSONResponse(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            content={'error': 'Too many requests'},
+        )
     return await call_next(request)
 
 
@@ -320,13 +290,13 @@ async def attach_session(request: Request, call_next):
 
 @app.websocket('/ws')
 async def websocket_endpoint(websocket: WebSocket):
-    client_ip = websocket.client.host
-    is_limited, delay = rate_limiter.is_rate_limited(client_ip, '/ws')
-    if is_limited:
-        if delay >= 1.0:
-            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-            return
-        await asyncio.sleep(delay)
+    try:
+        # Create a mock request object for rate limiting
+        mock_request = Request(scope={'type': 'http', 'client': websocket.client})
+        await limiter.check_request_limit(mock_request, limits=['1 per second'])
+    except RateLimitExceeded:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
     """WebSocket endpoint for receiving events from the client (i.e., the browser).
     Once connected, the client can send various actions:
     - Initialize the agent:
