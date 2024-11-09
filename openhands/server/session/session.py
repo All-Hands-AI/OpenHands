@@ -89,6 +89,10 @@ class Session:
             ConfigType.SECURITY_ANALYZER, self.config.security.security_analyzer
         )
         max_iterations = args.get(ConfigType.MAX_ITERATIONS, self.config.max_iterations)
+        
+        # Get agent config and update browsing setting
+        agent_config = self.config.get_agent_config(agent_cls)
+        agent_config.codeact_enable_browsing = args.get('ENABLE_BROWSING', True)
         # override default LLM config
         default_llm_config = self.config.get_llm_config()
         default_llm_config.model = args.get(
@@ -104,7 +108,6 @@ class Session:
         # TODO: override other LLM config & agent config groups (#2075)
 
         llm = LLM(config=self.config.get_llm_config_from_agent(agent_cls))
-        agent_config = self.config.get_agent_config(agent_cls)
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
         # Create the agent session
