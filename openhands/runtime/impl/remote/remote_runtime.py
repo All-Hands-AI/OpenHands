@@ -1,7 +1,7 @@
 import os
-from pathlib import Path
 import tempfile
 import threading
+from pathlib import Path
 from typing import Callable, Optional
 from zipfile import ZipFile
 

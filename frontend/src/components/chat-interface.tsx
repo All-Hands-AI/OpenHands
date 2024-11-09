@@ -155,7 +155,7 @@ export function ChatInterface() {
             curAgentState === AgentState.AWAITING_USER_CONFIRMATION
           }
           mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
-          value={messageToSend ?? undefined}
+          value={messageToSend ?? ""}
           onChange={setMessageToSend}
         />
       </div>
