@@ -14,7 +14,8 @@ class SandboxConfig:
         base_container_image: The base container image from which to build the runtime image.
         runtime_container_image: The runtime container image to use.
         user_id: The user ID for the sandbox.
-        timeout: The timeout for the sandbox.
+        timeout: The timeout for the default sandbox action execution.
+        remote_runtime_init_timeout: The timeout for the remote runtime to start.
         enable_auto_lint: Whether to enable auto-lint.
         use_host_network: Whether to use the host network.
         initialize_plugins: Whether to initialize plugins.
@@ -41,6 +42,7 @@ class SandboxConfig:
     runtime_container_image: str | None = None
     user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
     timeout: int = 120
+    remote_runtime_init_timeout: int = 180
     enable_auto_lint: bool = (
         False  # once enabled, OpenHands would lint files after editing
     )
