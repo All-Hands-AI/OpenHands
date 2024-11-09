@@ -12,6 +12,7 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     codeact_user_response,
+    compatibility_for_eval_history_pairs,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -166,7 +167,7 @@ def process_instance(
 
     model_answer_raw = ''
     # get the last message or thought from the agent
-    for event in state.history.get_events(reverse=True):
+    for event in reversed(state.history):
         if event.source == 'agent':
             if isinstance(event, AgentFinishAction):
                 model_answer_raw = event.thought
@@ -203,7 +204,7 @@ def process_instance(
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
-    histories = state.history.compatibility_for_eval_history_pairs()
+    histories = compatibility_for_eval_history_pairs(state.history)
 
     # Save the output
     output = EvalOutput(

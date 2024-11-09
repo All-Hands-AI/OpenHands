@@ -8,6 +8,9 @@ interface GitHubUser {
   id: number;
   login: string;
   avatar_url: string;
+  company: string | null;
+  name: string | null;
+  email: string | null;
 }
 
 interface GitHubRepository {

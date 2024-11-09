@@ -36,7 +36,9 @@ class BrowseInteractiveAction(Action):
 
     @property
     def message(self) -> str:
-        return f'Executing browser actions: {self.browser_actions}'
+        return (
+            f'I am interacting with the browser:\n' f'```\n{self.browser_actions}\n```'
+        )
 
     def __str__(self) -> str:
         ret = '**BrowseInteractiveAction**\n'

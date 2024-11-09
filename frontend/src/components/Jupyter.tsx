@@ -25,7 +25,11 @@ function JupyterCell({ cell }: IJupyterCell): JSX.Element {
           className="scrollbar-custom scrollbar-thumb-gray-500 hover:scrollbar-thumb-gray-400 dark:scrollbar-thumb-white/10 dark:hover:scrollbar-thumb-white/20 overflow-auto px-5"
           style={{ padding: 0, marginBottom: 0, fontSize: "0.75rem" }}
         >
-          <SyntaxHighlighter language="python" style={atomOneDark}>
+          <SyntaxHighlighter
+            language="python"
+            style={atomOneDark}
+            wrapLongLines
+          >
             {code}
           </SyntaxHighlighter>
         </pre>
@@ -78,7 +82,11 @@ function JupyterCell({ cell }: IJupyterCell): JSX.Element {
   );
 }
 
-function JupyterEditor(): JSX.Element {
+interface JupyterEditorProps {
+  maxWidth: number;
+}
+
+function JupyterEditor({ maxWidth }: JupyterEditorProps) {
   const { t } = useTranslation();
 
   const { cells } = useSelector((state: RootState) => state.jupyter);
@@ -88,7 +96,7 @@ function JupyterEditor(): JSX.Element {
     useScrollToBottom(jupyterRef);
 
   return (
-    <div className="flex-1">
+    <div className="flex-1" style={{ maxWidth }}>
       <div
         className="overflow-y-auto h-full"
         ref={jupyterRef}

@@ -14,7 +14,7 @@ class LocalhostCORSMiddleware(CORSMiddleware):
     def __init__(self, app: ASGIApp, **kwargs) -> None:
         super().__init__(app, **kwargs)
 
-    async def is_allowed_origin(self, origin: str) -> bool:
+    def is_allowed_origin(self, origin: str) -> bool:
         if origin:
             parsed = urlparse(origin)
             hostname = parsed.hostname or ''
@@ -24,7 +24,7 @@ class LocalhostCORSMiddleware(CORSMiddleware):
                 return True
 
         # For missing origin or other origins, use the parent class's logic
-        return await super().is_allowed_origin(origin)
+        return super().is_allowed_origin(origin)
 
 
 class NoCacheMiddleware(BaseHTTPMiddleware):
