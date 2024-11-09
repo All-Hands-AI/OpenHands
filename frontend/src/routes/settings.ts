@@ -50,11 +50,13 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   let baseUrl: string | undefined;
   let confirmationMode = false;
   let securityAnalyzer: string | undefined;
+  let enableBrowsing = true;
 
   if (isUsingAdvancedOptions) {
     customModel = formData.get("custom-model")?.toString();
     baseUrl = formData.get("base-url")?.toString();
     confirmationMode = keys.includes("confirmation-mode");
+    enableBrowsing = keys.includes("enable-browsing");
     if (confirmationMode) {
       // only set securityAnalyzer if confirmationMode is enabled
       securityAnalyzer = formData.get("security-analyzer")?.toString();
@@ -80,6 +82,7 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
     LLM_BASE_URL,
     CONFIRMATION_MODE,
     SECURITY_ANALYZER,
+    ENABLE_BROWSING: enableBrowsing,
   };
 
   saveSettings(settings);
