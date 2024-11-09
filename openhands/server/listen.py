@@ -4,6 +4,7 @@ from openhands.server.config import config, session_manager
 from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware, attach_session
 from openhands.server.websocket import websocket_endpoint
 from openhands.server.api_options import router as api_options_router
+from openhands.server.api_files import router as api_files_router
 
 app = FastAPI()
 app.add_middleware(
@@ -16,18 +17,10 @@ app.add_middleware(NoCacheMiddleware)
 app.middleware('http')(attach_session)
 app.websocket('/ws')(websocket_endpoint)
 app.include_router(api_options_router, prefix='/api/options')
+app.include_router(api_files_router, prefix='/api')
 
 security_scheme = HTTPBearer()
 
-FILES_TO_IGNORE = [
-    '.git/',
-    '.DS_Store',
-    'node_modules/',
-    '__pycache__/',
-]
-
-
-@app.get('/api/list-files')
 async def list_files(request: Request, path: str | None = None):
     """List files in the specified path.
 
