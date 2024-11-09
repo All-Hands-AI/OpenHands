@@ -1,10 +1,7 @@
 import { useFetcher, useRouteLoaderData } from "@remix-run/react";
-import { cache } from "#/utils/cache";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {
-  BaseModalTitle,
-} from "./confirmation-modals/BaseModal";
+import { BaseModalTitle } from "./confirmation-modals/BaseModal";
 import ModalBody from "./ModalBody";
 import ModalButton from "../buttons/ModalButton";
 import FormFieldset from "../form/FormFieldset";

@@ -5,7 +5,7 @@ import OpenHands from "#/api/open-hands";
 
 const TOKEN_KEY = "token";
 const GITHUB_TOKEN_KEY = "ghToken";
-const REPO_KEY = "repo"
+const REPO_KEY = "repo";
 
 const getToken = (): string => localStorage.getItem(TOKEN_KEY) ?? "";
 
@@ -35,7 +35,7 @@ const logout = (): void => {
   cache.clearAll();
   posthog.reset();
   OpenHands.logout();
-}
+};
 
 export {
   getToken,
