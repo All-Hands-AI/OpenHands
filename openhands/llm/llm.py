@@ -141,6 +141,9 @@ class LLM(RetryMixin, DebugMixin):
             drop_params=self.config.drop_params,
         )
 
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            self.init_model_info()
         if self.vision_is_active():
             logger.debug('LLM: model has vision enabled')
         if self.is_caching_prompt_active():
@@ -162,7 +165,6 @@ class LLM(RetryMixin, DebugMixin):
 
             from openhands.core.utils import json
 
-            self.init_model_info()
             messages: list[dict[str, Any]] | dict[str, Any] = []
             mock_function_calling = kwargs.pop('mock_function_calling', False)
 
@@ -183,7 +185,6 @@ class LLM(RetryMixin, DebugMixin):
 
             # ensure we work with a list of messages
             messages = messages if isinstance(messages, list) else [messages]
-
             original_fncall_messages = copy.deepcopy(messages)
             mock_fncall_tools = None
             if mock_function_calling:
@@ -368,7 +369,9 @@ class LLM(RetryMixin, DebugMixin):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
     def vision_is_active(self):
-        return not self.config.disable_vision and self._supports_vision()
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            return not self.config.disable_vision and self._supports_vision()
 
     def _supports_vision(self):
         """Acquire from litellm if model is vision capable.
