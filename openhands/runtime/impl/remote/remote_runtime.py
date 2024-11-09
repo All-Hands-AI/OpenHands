@@ -89,7 +89,6 @@ class RemoteRuntime(Runtime):
         )
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
-        self.runtime_init_timeout = self.config.sandbox.remote_runtime_init_timeout
 
     async def connect(self):
         try:
@@ -263,7 +262,9 @@ class RemoteRuntime(Runtime):
 
     def _wait_until_alive(self):
         retry_decorator = tenacity.retry(
-            stop=tenacity.stop_after_delay(self.runtime_init_timeout)
+            stop=tenacity.stop_after_delay(
+                self.config.sandbox.remote_runtime_init_timeout
+            )
             | stop_if_should_exit(),
             reraise=True,
             retry=tenacity.retry_if_exception_type(RuntimeNotReadyError),
