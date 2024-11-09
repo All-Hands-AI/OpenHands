@@ -6,7 +6,7 @@ import PlayIcon from "#/assets/play";
 import { generateAgentStateChangeEvent } from "#/services/agentStateService";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
-import { useSocket } from "#/context/socket";
+import { useWsClient } from "#/context/ws-client-provider";
 
 const IgnoreTaskStateMap: Record<string, AgentState[]> = {
   [AgentState.PAUSED]: [
@@ -72,7 +72,7 @@ function ActionButton({
 }
 
 function AgentControlBar() {
-  const { send } = useSocket();
+  const { send } = useWsClient();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const handleAction = (action: AgentState) => {

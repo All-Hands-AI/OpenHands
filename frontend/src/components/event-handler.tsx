@@ -65,7 +65,7 @@ interface LoaderData {
 
 export function EventHandler({ children }: EventHandlerProps) {
   const { events, status, send } = useWsClient();
-  const runtimeActive = status === WsClientProviderStatus.READY;
+  const runtimeActive = status === WsClientProviderStatus.ACTIVE;
   const fetcher = useFetcher();
   const dispatch = useDispatch();
   const { files, importedProjectZip } = useSelector(
@@ -85,6 +85,9 @@ export function EventHandler({ children }: EventHandlerProps) {
   }, [data?.user]);
 
   React.useEffect(() => {
+    if (!events.length) {
+      return;
+    }
     const event = events[events.length - 1];
     if (event.token) {
       fetcher.submit({ token: event.token as string }, { method: "post" });
@@ -174,7 +177,7 @@ export function EventHandler({ children }: EventHandlerProps) {
   }, [runtimeActive, importedProjectZip]);
 
   React.useEffect(() => {
-    if (status === WsClientProviderStatus.READY) {
+    if (status === WsClientProviderStatus.ACTIVE) {
       if (initialQuery) {
         dispatch(
           addUserMessage({

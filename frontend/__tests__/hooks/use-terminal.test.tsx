@@ -2,8 +2,8 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
 import { afterEach } from "node:test";
 import { useTerminal } from "#/hooks/useTerminal";
-import { SocketProvider } from "#/context/socket";
 import { Command } from "#/state/commandSlice";
+import { WsClientProvider } from "#/context/ws-client-provider";
 
 interface TestTerminalComponentProps {
   commands: Command[];
@@ -50,7 +50,7 @@ describe("useTerminal", () => {
 
   it("should render", () => {
     render(<TestTerminalComponent commands={[]} secrets={[]} />, {
-      wrapper: SocketProvider,
+      wrapper: WsClientProvider,
     });
   });
 
@@ -61,7 +61,7 @@ describe("useTerminal", () => {
     ];
 
     render(<TestTerminalComponent commands={commands} secrets={[]} />, {
-      wrapper: SocketProvider,
+      wrapper: WsClientProvider,
     });
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(1, "echo hello");
@@ -85,7 +85,7 @@ describe("useTerminal", () => {
         secrets={[secret, anotherSecret]}
       />,
       {
-        wrapper: SocketProvider,
+        wrapper: WsClientProvider,
       },
     );
 

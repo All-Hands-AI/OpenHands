@@ -3,12 +3,14 @@ import React from "react";
 import { Settings } from "#/services/settings";
 import ActionType from "#/types/ActionType";
 import EventLogger from "#/utils/event-logger";
+import AgentState from "#/types/AgentState";
 
 export enum WsClientProviderStatus {
   STOPPED,
   OPENING,
   INITIALIZING,
-  READY,
+  ACTIVE,
+  ERROR,
 }
 
 interface UseWsClient {
@@ -29,7 +31,7 @@ interface WsClientProviderProps {
   enabled: boolean;
   token: string | null;
   ghToken: string | null;
-  settings: Settings;
+  settings: Settings | null;
 }
 
 export function WsClientProvider({
@@ -53,6 +55,7 @@ export function WsClientProvider({
   }
 
   function handleOpen() {
+    setStatus(WsClientProviderStatus.OPENING);
     const initEvent = {
       action: ActionType.INIT,
       args: settings,
@@ -60,8 +63,18 @@ export function WsClientProvider({
     send(initEvent);
   }
 
-  function handleMessage(event: MessageEvent) {
-    setEvents([...events, JSON.parse(event.data)]);
+  function handleMessage(messageEvent: MessageEvent) {
+    const event = JSON.parse(messageEvent.data);
+    setEvents((prevEvents) => [...prevEvents, event]);
+    if (event.extras?.agent_state === AgentState.INIT) {
+      setStatus(WsClientProviderStatus.ACTIVE);
+    }
+    if (
+      status !== WsClientProviderStatus.ACTIVE &&
+      event?.observation === "error"
+    ) {
+      setStatus(WsClientProviderStatus.ERROR);
+    }
   }
 
   function handleClose() {
@@ -86,8 +99,13 @@ export function WsClientProvider({
       return;
     }
     let ws = wsRef.current;
-    if (ws) {
-      ws.close();
+    if (
+      ws &&
+      ws.readyState !== WebSocket.CLOSING &&
+      ws.readyState !== WebSocket.CLOSED
+    ) {
+      // This is really annoying. StrictMode means this hook is called twice with no change.
+      return;
     }
     const baseUrl =
       import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
@@ -102,7 +120,7 @@ export function WsClientProvider({
     ws.addEventListener("error", handleError);
     ws.addEventListener("close", handleClose);
     wsRef.current = ws;
-  }, [enabled, token, ghToken, settings]);
+  }, [enabled, token, ghToken]);
 
   const value = React.useMemo<UseWsClient>(
     () => ({
