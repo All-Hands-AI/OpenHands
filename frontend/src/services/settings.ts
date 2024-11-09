@@ -19,7 +19,7 @@ export const DEFAULT_SETTINGS: Settings = {
   LLM_API_KEY: "",
   CONFIRMATION_MODE: false,
   SECURITY_ANALYZER: "",
-  ENABLE_BROWSING: true,
+  ENABLE_BROWSING: false,
 };
 
 const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[];
@@ -73,7 +73,7 @@ export const getSettings = (): Settings => {
   const apiKey = localStorage.getItem("LLM_API_KEY");
   const confirmationMode = localStorage.getItem("CONFIRMATION_MODE") === "true";
   const securityAnalyzer = localStorage.getItem("SECURITY_ANALYZER");
-  const enableBrowsing = localStorage.getItem("ENABLE_BROWSING") !== "false"; // Default to true if not set
+  const enableBrowsing = localStorage.getItem("ENABLE_BROWSING") === "true"; // Default to false if not set
 
   return {
     LLM_MODEL: model || DEFAULT_SETTINGS.LLM_MODEL,

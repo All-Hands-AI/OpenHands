@@ -19,7 +19,7 @@ class AgentConfig:
     """
 
     function_calling: bool = True
-    codeact_enable_browsing: bool = True
+    codeact_enable_browsing: bool = False
     codeact_enable_llm_editor: bool = False
     codeact_enable_jupyter: bool = True
     micro_agent_name: str | None = None

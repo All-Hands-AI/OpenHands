@@ -92,7 +92,7 @@ class Session:
         
         # Get agent config and update browsing setting
         agent_config = self.config.get_agent_config(agent_cls)
-        agent_config.codeact_enable_browsing = args.get('ENABLE_BROWSING', True)
+        agent_config.codeact_enable_browsing = args.get('ENABLE_BROWSING', False)
         # override default LLM config
         default_llm_config = self.config.get_llm_config()
         default_llm_config.model = args.get(
