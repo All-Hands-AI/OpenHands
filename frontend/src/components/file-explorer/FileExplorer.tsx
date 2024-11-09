@@ -278,7 +278,17 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
             <button
               type="button"
               onClick={handleVSCodeClick}
-              className="mt-auto mb-2 w-full h-10 bg-[#4465DB] hover:bg-[#3451C7] text-white rounded flex items-center justify-center gap-2 transition-colors"
+              disabled={
+                curAgentState === AgentState.INIT ||
+                curAgentState === AgentState.LOADING
+              }
+              className={twMerge(
+                "mt-auto mb-2 w-full h-10 text-white rounded flex items-center justify-center gap-2 transition-colors",
+                curAgentState === AgentState.INIT ||
+                  curAgentState === AgentState.LOADING
+                  ? "bg-neutral-600 cursor-not-allowed"
+                  : "bg-[#4465DB] hover:bg-[#3451C7]",
+              )}
               aria-label="Open in VS Code"
             >
               <VSCodeIcon width={20} height={20} />
