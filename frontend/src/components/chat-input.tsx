@@ -41,17 +41,19 @@ export function ChatInput({
 
   const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
     // Only handle paste if we have an image paste handler and there are files
-    if (onImagePaste && event.clipboardData.files.length > 0) {
-      const files = Array.from(event.clipboardData.files).filter((file) =>
-        file.type.startsWith("image/"),
-      );
-      // Only prevent default if we found image files to handle
-      if (files.length > 0) {
-        event.preventDefault();
-        onImagePaste(files);
-      }
+    if (!onImagePaste || event.clipboardData.files.length === 0) {
+      // For text paste, let the default behavior handle it
+      return;
     }
-    // For text paste, let the default behavior handle it
+
+    const files = Array.from(event.clipboardData.files).filter((file) =>
+      file.type.startsWith("image/"),
+    );
+    // Only prevent default if we found image files to handle
+    if (files.length > 0) {
+      event.preventDefault();
+      onImagePaste(files);
+    }
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLTextAreaElement>) => {
