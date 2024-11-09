@@ -5,6 +5,7 @@ import tempfile
 import time
 import uuid
 import warnings
+from collections import defaultdict
 from contextlib import asynccontextmanager
 
 import jwt
@@ -93,6 +94,63 @@ app.add_middleware(
 app.add_middleware(NoCacheMiddleware)
 
 security_scheme = HTTPBearer()
+
+
+class RateLimiter:
+    def __init__(self):
+        self.requests = defaultdict(list)
+        self.limits = {
+            'default': {'qps': 5, 'block_at': 10},
+            'ws': {'qps': 1, 'block_at': 2},
+            'auth': {'qps': 1, 'block_at': 2},
+        }
+
+    def _clean_old_requests(self, key: str, now: float):
+        window = now - 1.0  # 1 second window
+        while self.requests[key] and self.requests[key][0] < window:
+            self.requests[key].pop(0)
+
+    def is_rate_limited(self, key: str, path: str) -> tuple[bool, float]:
+        now = time.time()
+        self._clean_old_requests(key, now)
+
+        # Determine which limit to apply
+        limit_key = 'default'
+        if path == '/ws':
+            limit_key = 'ws'
+        elif path in ['/api/github/callback', '/api/authenticate']:
+            limit_key = 'auth'
+
+        limit = self.limits[limit_key]
+        current_qps = len(self.requests[key])
+
+        # Block if rate is too high
+        if current_qps >= limit['block_at']:
+            return True, 1.0
+
+        # Add request and slow down if approaching limit
+        self.requests[key].append(now)
+        if current_qps >= limit['qps']:
+            return True, 0.1
+
+        return False, 0
+
+rate_limiter = RateLimiter()
+
+@app.middleware('http')
+async def rate_limit_middleware(request: Request, call_next):
+    client_ip = request.client.host
+    is_limited, delay = rate_limiter.is_rate_limited(client_ip, request.url.path)
+
+    if is_limited:
+        if delay >= 1.0:
+            return JSONResponse(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                content={'error': 'Too many requests'},
+            )
+        await asyncio.sleep(delay)
+
+    return await call_next(request)
 
 
 def load_file_upload_config() -> tuple[int, bool, list[str]]:
@@ -260,6 +318,13 @@ async def attach_session(request: Request, call_next):
 
 @app.websocket('/ws')
 async def websocket_endpoint(websocket: WebSocket):
+    client_ip = websocket.client.host
+    is_limited, delay = rate_limiter.is_rate_limited(client_ip, '/ws')
+    if is_limited:
+        if delay >= 1.0:
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+            return
+        await asyncio.sleep(delay)
     """WebSocket endpoint for receiving events from the client (i.e., the browser).
     Once connected, the client can send various actions:
     - Initialize the agent:
