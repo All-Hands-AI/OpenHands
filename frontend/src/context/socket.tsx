@@ -1,5 +1,6 @@
 import React from "react";
 import { Data } from "ws";
+import posthog from "posthog-js";
 import EventLogger from "#/utils/event-logger";
 
 interface WebSocketClientOptions {
@@ -58,6 +59,7 @@ function SocketProvider({ children }: SocketProviderProps) {
     ]);
 
     ws.addEventListener("open", (event) => {
+      posthog.capture("socket_opened");
       setIsConnected(true);
       options?.onOpen?.(event);
     });
@@ -70,11 +72,13 @@ function SocketProvider({ children }: SocketProviderProps) {
     });
 
     ws.addEventListener("error", (event) => {
+      posthog.capture("socket_error");
       EventLogger.event(event, "SOCKET ERROR");
       options?.onError?.(event);
     });
 
     ws.addEventListener("close", (event) => {
+      posthog.capture("socket_closed");
       EventLogger.event(event, "SOCKET CLOSE");
 
       setIsConnected(false);

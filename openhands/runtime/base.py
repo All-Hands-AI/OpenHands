@@ -3,6 +3,7 @@ import copy
 import json
 import os
 from abc import abstractmethod
+from pathlib import Path
 from typing import Callable
 
 from requests.exceptions import ConnectionError
@@ -274,6 +275,6 @@ class Runtime(FileEditRuntimeMixin):
         raise NotImplementedError('This method is not implemented in the base class.')
 
     @abstractmethod
-    def copy_from(self, path: str) -> bytes:
-        """Zip all files in the sandbox and return as a stream of bytes."""
+    def copy_from(self, path: str) -> Path:
+        """Zip all files in the sandbox and return a path in the local filesystem."""
         raise NotImplementedError('This method is not implemented in the base class.')
