@@ -39,7 +39,6 @@ from openhands.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
 )
-from openhands.utils.microagent import MicroAgent
 from openhands.utils.prompt import PromptManager
 
 
@@ -86,16 +85,6 @@ class CodeActAgent(Agent):
         super().__init__(llm, config)
         self.reset()
 
-        self.micro_agent = (
-            MicroAgent(
-                os.path.join(
-                    os.path.dirname(__file__), 'micro', f'{config.micro_agent_name}.md'
-                )
-            )
-            if config.micro_agent_name
-            else None
-        )
-
         self.function_calling_active = self.config.function_calling
         if self.function_calling_active and not self.llm.is_function_calling_active():
             logger.warning(
@@ -105,7 +94,6 @@ class CodeActAgent(Agent):
             self.function_calling_active = False
 
         if self.function_calling_active:
-            # Function calling mode
             self.tools = codeact_function_calling.get_tools(
                 codeact_enable_browsing=self.config.codeact_enable_browsing,
                 codeact_enable_jupyter=self.config.codeact_enable_jupyter,
@@ -114,18 +102,17 @@ class CodeActAgent(Agent):
             logger.debug(
                 f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
             )
-            self.system_prompt = codeact_function_calling.SYSTEM_PROMPT
-            self.initial_user_message = None
+            self.prompt_manager = PromptManager(
+                microagent_dir=os.path.join(os.path.dirname(__file__), 'micro'),
+                prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts', 'tools'),
+            )
         else:
-            # Non-function-calling mode
             self.action_parser = CodeActResponseParser()
             self.prompt_manager = PromptManager(
-                prompt_dir=os.path.join(os.path.dirname(__file__)),
+                microagent_dir=os.path.join(os.path.dirname(__file__), 'micro'),
+                prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts', 'default'),
                 agent_skills_docs=AgentSkillsRequirement.documentation,
-                micro_agent=self.micro_agent,
             )
-            self.system_prompt = self.prompt_manager.system_message
-            self.initial_user_message = self.prompt_manager.initial_user_message
 
         self.pending_actions: deque[Action] = deque()
 
@@ -337,8 +324,8 @@ class CodeActAgent(Agent):
             return self.pending_actions.popleft()
 
         # if we're done, go back
-        last_user_message = state.get_last_user_message()
-        if last_user_message and last_user_message.strip() == '/exit':
+        latest_user_message = state.get_last_user_message()
+        if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
         # prepare what we want to send to the LLM
@@ -403,17 +390,19 @@ class CodeActAgent(Agent):
                 role='system',
                 content=[
                     TextContent(
-                        text=self.system_prompt,
-                        cache_prompt=self.llm.is_caching_prompt_active(),  # Cache system prompt
+                        text=self.prompt_manager.get_system_message(),
+                        cache_prompt=self.llm.is_caching_prompt_active(),
                     )
                 ],
             )
         ]
-        if self.initial_user_message:
+        example_message = self.prompt_manager.get_example_user_message()
+        if example_message:
             messages.append(
                 Message(
                     role='user',
-                    content=[TextContent(text=self.initial_user_message)],
+                    content=[TextContent(text=example_message)],
+                    cache_prompt=self.llm.is_caching_prompt_active(),
                 )
             )
 
@@ -462,8 +451,9 @@ class CodeActAgent(Agent):
                 pending_tool_call_action_messages.pop(response_id)
 
             for message in messages_to_add:
-                # add regular message
                 if message:
+                    if message.role == 'user':
+                        self.prompt_manager.enhance_message(message)
                     # handle error if the message is the SAME role as the previous message
                     # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
                     # there shouldn't be two consecutive messages from the same role
@@ -493,23 +483,6 @@ class CodeActAgent(Agent):
                         break
 
         if not self.function_calling_active:
-            # The latest user message is important:
-            # we want to remind the agent of the environment constraints
-            latest_user_message = next(
-                islice(
-                    (
-                        m
-                        for m in reversed(messages)
-                        if m.role == 'user'
-                        and any(isinstance(c, TextContent) for c in m.content)
-                    ),
-                    1,
-                ),
-                None,
-            )
-            # do not add this for function calling
-            if latest_user_message:
-                reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
-                latest_user_message.content.append(TextContent(text=reminder_text))
+            self.prompt_manager.add_turns_left_reminder(messages, state)
 
         return messages
