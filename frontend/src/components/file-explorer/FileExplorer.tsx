@@ -175,7 +175,11 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
     try {
       const response = await OpenHands.getVSCodeUrl();
       if (response.vscode_url) {
-        dispatch(addAssistantMessage("You opened VS Code. Please inform the agent of any changes you made to the workspace or environment. To avoid conflicts, it's best to pause the agent before making any changes."));
+        dispatch(
+          addAssistantMessage(
+            "You opened VS Code. Please inform the agent of any changes you made to the workspace or environment. To avoid conflicts, it's best to pause the agent before making any changes.",
+          ),
+        );
         window.open(response.vscode_url, "_blank");
       } else {
         toast.error(
