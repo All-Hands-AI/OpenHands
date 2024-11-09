@@ -249,6 +249,25 @@ export function SettingsForm({
             </p>
           </fieldset>
 
+          <Switch
+            isDisabled={disabled}
+            name="enable-browsing"
+            defaultSelected={settings.ENABLE_BROWSING}
+            classNames={{
+              thumb: clsx(
+                "bg-[#5D5D5D] w-3 h-3",
+                "group-data-[selected=true]:bg-white",
+              ),
+              wrapper: clsx(
+                "border border-[#D4D4D4] bg-white px-[6px] w-12 h-6",
+                "group-data-[selected=true]:border-transparent group-data-[selected=true]:bg-[#4465DB]",
+              ),
+              label: "text-[#A3A3A3] text-xs",
+            }}
+          >
+            Browser Control (Experimental)
+          </Switch>
+
           {showAdvancedOptions && (
             <fieldset
               data-testid="agent-selector"

@@ -26,29 +26,22 @@ function BrowserPanel() {
 
   return (
     <div className="h-full w-full flex flex-col text-neutral-400">
-      <div className="w-full p-2 flex items-center justify-between border-b border-neutral-600">
-        <div className="truncate">{url}</div>
-        <Switch
-          name="enable-browsing"
-          defaultSelected={settings.ENABLE_BROWSING}
-          onValueChange={handleBrowserToggle}
-          classNames={{
-            thumb: clsx(
-              "bg-[#5D5D5D] w-3 h-3",
-              "group-data-[selected=true]:bg-white",
-            ),
-            wrapper: clsx(
-              "border border-[#D4D4D4] bg-white px-[6px] w-12 h-6",
-              "group-data-[selected=true]:border-transparent group-data-[selected=true]:bg-[#4465DB]",
-            ),
-            label: "text-[#A3A3A3] text-xs",
-          }}
-        >
-          Browser Control
-        </Switch>
+      <div className="w-full p-2 truncate border-b border-neutral-600">
+        {url}
       </div>
       <div className="overflow-y-auto grow scrollbar-hide rounded-xl">
-        {screenshotSrc ? (
+        {!settings.ENABLE_BROWSING ? (
+          <div className="flex flex-col items-center h-full justify-center gap-4 text-center px-4">
+            <IoIosGlobe size={100} />
+            <div>
+              <p className="text-lg mb-2">Browser Control is Disabled</p>
+              <p className="text-sm text-neutral-500">
+                Browser control is an experimental feature that allows the AI assistant to interact with web browsers.
+                To enable it, go to Settings and enable Browser Control.
+              </p>
+            </div>
+          </div>
+        ) : screenshotSrc ? (
           <img
             src={imgSrc}
             style={{ objectFit: "contain", width: "100%", height: "auto" }}
