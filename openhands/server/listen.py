@@ -135,7 +135,9 @@ class RateLimiter:
 
         return False, 0
 
+
 rate_limiter = RateLimiter()
+
 
 @app.middleware('http')
 async def rate_limit_middleware(request: Request, call_next):
