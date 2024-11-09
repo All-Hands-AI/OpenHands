@@ -62,6 +62,7 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
 
 # function calling supporting models
 FUNCTION_CALLING_SUPPORTED_MODELS = [
+    'claude-3-5-sonnet',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-sonnet-20241022',
     'claude-3-5-haiku-20241022',
@@ -413,10 +414,7 @@ class LLM(RetryMixin, DebugMixin):
             or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
             or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
         )
-        return model_name_supported or (
-            self.model_info is not None
-            and self.model_info.get('supports_function_calling', False)
-        )
+        return model_name_supported
 
     def _post_completion(self, response: ModelResponse) -> None:
         """Post-process the completion response.
