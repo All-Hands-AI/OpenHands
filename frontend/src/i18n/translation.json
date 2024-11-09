@@ -1531,10 +1531,12 @@
     "tr": "Özel"
   },
   "ERROR_MESSAGE$SHOW_DETAILS": {
-    "en": "Show details"
+    "en": "Show details",
+    "es": "Mostrar detalles"
   },
   "ERROR_MESSAGE$HIDE_DETAILS": {
-    "en": "Hide details"
+    "en": "Hide details",
+    "es": "Ocultar detalles"
   },
   "STATUS$STARTING_RUNTIME": {
     "en": "Starting Runtime...",
@@ -1616,7 +1618,7 @@
   },
   "ACCOUNT_SETTINGS_MODAL$CLOSE":{
     "en": "Close",
-    "es": ""
+    "es": "Cerrar"
   },
   "ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID":{
     "en": "GitHub token is invalid. Please try again.",
@@ -1735,7 +1737,8 @@
     "es":"atrás"
   },
   "STATUS$ERROR_LLM_AUTHENTICATION": {
-    "en": "Error authenticating with the LLM provider. Please check your API key"
+    "en": "Error authenticating with the LLM provider. Please check your API key",
+    "es": "Error autenticando con el proveedor de LLM. Por favor revisa tu API key"
   },
   "STATUS$ERROR_RUNTIME_DISCONNECTED": {
     "en": "There was an error while connecting to the runtime. Please refresh the page."
