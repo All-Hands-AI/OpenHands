@@ -8,7 +8,6 @@ describe("Cache", () => {
   const testTTL = 1000; // 1 second
 
   beforeEach(() => {
-    localStorage.clear();
     vi.useFakeTimers();
   });
 
@@ -16,17 +15,7 @@ describe("Cache", () => {
     vi.useRealTimers();
   });
 
-  it("sets data in localStorage with expiration", () => {
-    cache.set(testKey, testData, testTTL);
-    const cachedEntry = JSON.parse(
-      localStorage.getItem(`app_cache_${testKey}`) || "",
-    );
-
-    expect(cachedEntry.data).toEqual(testData);
-    expect(cachedEntry.expiration).toBeGreaterThan(Date.now());
-  });
-
-  it("gets data from localStorage if not expired", () => {
+  it("gets data from memory if not expired", () => {
     cache.set(testKey, testData, testTTL);
 
     expect(cache.get(testKey)).toEqual(testData);
@@ -39,7 +28,6 @@ describe("Cache", () => {
     vi.advanceTimersByTime(5 * 60 * 1000 + 1);
 
     expect(cache.get(testKey)).toBeNull();
-    expect(localStorage.getItem(`app_cache_${testKey}`)).toBeNull();
   });
 
   it("returns null if cached data is expired", () => {
@@ -47,28 +35,19 @@ describe("Cache", () => {
 
     vi.advanceTimersByTime(testTTL + 1);
     expect(cache.get(testKey)).toBeNull();
-    expect(localStorage.getItem(`app_cache_${testKey}`)).toBeNull();
   });
 
-  it("deletes data from localStorage", () => {
+  it("deletes data from memory", () => {
     cache.set(testKey, testData, testTTL);
     cache.delete(testKey);
-
-    expect(localStorage.getItem(`app_cache_${testKey}`)).toBeNull();
+    expect(cache.get(testKey)).toBeNull();
   });
 
-  it("clears all data with the app prefix from localStorage", () => {
+  it("clears all data with the app prefix from memory", () => {
     cache.set(testKey, testData, testTTL);
     cache.set("anotherKey", { data: "More data" }, testTTL);
     cache.clearAll();
-
-    expect(localStorage.length).toBe(0);
-  });
-
-  it("does not retrieve non-prefixed data from localStorage when clearing", () => {
-    localStorage.setItem("nonPrefixedKey", "should remain");
-    cache.set(testKey, testData, testTTL);
-    cache.clearAll();
-    expect(localStorage.getItem("nonPrefixedKey")).toBe("should remain");
+    expect(cache.get(testKey)).toBeNull();
+    expect(cache.get("anotherKey")).toBeNull();
   });
 });
