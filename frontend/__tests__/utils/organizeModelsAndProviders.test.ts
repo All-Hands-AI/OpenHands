@@ -15,7 +15,6 @@ test("organizeModelsAndProviders", () => {
     "gpt-4o",
     "together-ai-21.1b-41b",
     "gpt-4o-mini",
-    "claude-3-5-sonnet-20241022",
     "claude-3-haiku-20240307",
     "claude-2",
     "claude-2.1",
@@ -51,7 +50,6 @@ test("organizeModelsAndProviders", () => {
     anthropic: {
       separator: "/",
       models: [
-        "claude-3-5-sonnet-20241022",
         "claude-3-haiku-20240307",
         "claude-2",
         "claude-2.1",
