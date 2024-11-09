@@ -156,14 +156,14 @@ class State:
 
         return last_user_message, last_user_message_image_urls
 
-    def get_last_agent_message(self) -> str | None:
+    def get_last_agent_message(self) -> MessageAction | None:
         for event in reversed(self.history):
             if isinstance(event, MessageAction) and event.source == EventSource.AGENT:
-                return event.content
+                return event
         return None
 
-    def get_last_user_message(self) -> str | None:
+    def get_last_user_message(self) -> MessageAction | None:
         for event in reversed(self.history):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
-                return event.content
+                return event
         return None
