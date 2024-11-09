@@ -1,7 +1,10 @@
 import { useFetcher, useRouteLoaderData } from "@remix-run/react";
+import { cache } from "#/utils/cache";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { BaseModalTitle } from "./confirmation-modals/BaseModal";
+import {
+  BaseModalTitle,
+} from "./confirmation-modals/BaseModal";
 import ModalBody from "./ModalBody";
 import ModalButton from "../buttons/ModalButton";
 import FormFieldset from "../form/FormFieldset";
@@ -12,8 +15,6 @@ import { clientAction as loginClientAction } from "#/routes/login";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import OpenHands from "#/api/open-hands";
-import posthog from "posthog-js";
-import { cache } from "#/utils/cache";
 
 interface AccountSettingsModalProps {
   onClose: () => void;
@@ -90,6 +91,17 @@ function AccountSettingsModal({
             type="password"
             defaultValue={data?.ghToken ?? ""}
           />
+          <span className="text-sm">
+            {t(I18nKey.CONNECT_TO_GITHUB_MODAL$GET_YOUR_TOKEN)}{" "}
+            <a
+              href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="text-[#791B80] underline"
+            >
+              {t(I18nKey.CONNECT_TO_GITHUB_MODAL$HERE)}
+            </a>
+          </span>
           {gitHubError && (
             <p className="text-danger text-xs">
               {t(I18nKey.ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID)}
@@ -101,9 +113,6 @@ function AccountSettingsModal({
               text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$DISCONNECT)}
               onClick={() => {
                 OpenHands.logout().then(() => {
-                  localStorage.removeItem("ghToken");
-                  cache.clearAll();
-                  posthog.reset();
                   onClose();
                 });
               }}
