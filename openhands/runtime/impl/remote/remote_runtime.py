@@ -262,7 +262,7 @@ class RemoteRuntime(Runtime):
             )
 
     @tenacity.retry(
-        stop=tenacity.stop_after_delay(360) | stop_if_should_exit(),
+        stop=tenacity.stop_after_delay(180) | stop_if_should_exit(),
         reraise=True,
         retry=tenacity.retry_if_exception_type(RuntimeNotReadyError),
         wait=tenacity.wait_fixed(2),
