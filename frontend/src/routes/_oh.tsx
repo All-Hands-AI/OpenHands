@@ -27,6 +27,7 @@ import { getSettings, settingsAreUpToDate } from "#/services/settings";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import NewProjectIcon from "#/assets/new-project.svg?react";
 import DocsIcon from "#/assets/docs.svg?react";
+import { logout } from "#/services/auth";
 import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { WaitlistModal } from "#/components/waitlist-modal";
@@ -209,15 +210,11 @@ export default function MainApp() {
     }
   }, [location.pathname]);
 
-  const handleUserLogout = () => {
-    OpenHands.logout();
-  };
-
   const handleAccountSettingsModalClose = () => {
     // If the user closes the modal without connecting to GitHub,
     // we need to log them out to clear the invalid token from the
     // local storage
-    if (isGitHubErrorReponse(user)) handleUserLogout();
+    if (isGitHubErrorReponse(user)) logout();
     setAccountSettingsModalOpen(false);
   };
 
@@ -259,7 +256,7 @@ export default function MainApp() {
                 ? { avatar_url: user.avatar_url }
                 : undefined
             }
-            onLogout={handleUserLogout}
+            onLogout={logout}
             onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
           />
           <button

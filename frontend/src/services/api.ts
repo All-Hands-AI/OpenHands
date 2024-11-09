@@ -4,6 +4,7 @@ import toast from "#/utils/toast";
 const WAIT_FOR_AUTH_DELAY_MS = 500;
 
 const UNAUTHED_ROUTE_PREFIXES = [
+  "/api/logout",
   "/api/authenticate",
   "/api/options/",
   "/config.json",

@@ -195,6 +195,7 @@ async def attach_session(request: Request, call_next):
         '/api/options/',
         '/api/github/callback',
         '/api/authenticate',
+        '/api/logout',
     ]
     if any(
         request.url.path.startswith(path) for path in non_authed_paths

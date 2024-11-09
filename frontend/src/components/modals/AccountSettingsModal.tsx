@@ -14,7 +14,7 @@ import { clientAction as settingsClientAction } from "#/routes/settings";
 import { clientAction as loginClientAction } from "#/routes/login";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
-import OpenHands from "#/api/open-hands";
+import { logout } from "#/services/auth";
 
 interface AccountSettingsModalProps {
   onClose: () => void;
@@ -112,9 +112,8 @@ function AccountSettingsModal({
               variant="text-like"
               text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$DISCONNECT)}
               onClick={() => {
-                OpenHands.logout().then(() => {
-                  onClose();
-                });
+                logout();
+                onClose();
               }}
               className="text-danger self-start"
             />
