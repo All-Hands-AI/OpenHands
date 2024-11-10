@@ -8,6 +8,7 @@ from evaluation.EDA.game import Q20Game, Q20GameCelebrity
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    compatibility_for_eval_history_pairs,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -34,7 +35,8 @@ def codeact_user_response_eda(state: State) -> str:
 
     # retrieve the latest model message from history
     if state.history:
-        model_guess = state.history.get_last_agent_message()
+        last_agent_message = state.get_last_agent_message()
+        model_guess = last_agent_message.content if last_agent_message else ''
 
     assert game is not None, 'Game is not initialized.'
     msg = game.generate_user_response(model_guess)
@@ -139,7 +141,8 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    final_message = state.history.get_last_agent_message()
+    last_agent_message = state.get_last_agent_message()
+    final_message = last_agent_message.content if last_agent_message else ''
 
     logger.info(f'Final message: {final_message} | Ground truth: {instance["text"]}')
     test_result = game.reward()
@@ -148,7 +151,7 @@ def process_instance(
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
-    histories = state.history.compatibility_for_eval_history_pairs()
+    histories = compatibility_for_eval_history_pairs(state.history)
 
     # Save the output
     output = EvalOutput(

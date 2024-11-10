@@ -38,7 +38,6 @@ class AppConfig:
         e2b_api_key: The E2B API key.
         disable_color: Whether to disable color. For terminals that don't support color.
         debug: Whether to enable debugging.
-        enable_cli_session: Whether to enable saving and restoring the session when run from CLI.
         file_uploads_max_file_size_mb: Maximum file size for uploads in megabytes. 0 means no limit.
         file_uploads_restrict_file_types: Whether to restrict file types for file uploads. Defaults to False.
         file_uploads_allowed_extensions: List of allowed file extensions for uploads. ['.*'] means all extensions are allowed.
@@ -67,10 +66,10 @@ class AppConfig:
     disable_color: bool = False
     jwt_secret: str = uuid.uuid4().hex
     debug: bool = False
-    enable_cli_session: bool = False
     file_uploads_max_file_size_mb: int = 0
     file_uploads_restrict_file_types: bool = False
     file_uploads_allowed_extensions: list[str] = field(default_factory=lambda: ['.*'])
+    runloop_api_key: str | None = None
 
     defaults_dict: ClassVar[dict] = {}
 
@@ -141,6 +140,7 @@ class AppConfig:
                 'jwt_secret',
                 'modal_api_token_id',
                 'modal_api_token_secret',
+                'runloop_api_key',
             ]:
                 attr_value = '******' if attr_value else None
 

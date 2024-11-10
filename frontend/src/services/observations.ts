@@ -9,10 +9,18 @@ import { addAssistantMessage } from "#/state/chatSlice";
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {
-    case ObservationType.RUN:
+    case ObservationType.RUN: {
       if (message.extras.hidden) break;
-      store.dispatch(appendOutput(message.content));
+      let { content } = message;
+
+      if (content.length > 5000) {
+        const head = content.slice(0, 5000);
+        content = `${head}\r\n\n... (truncated ${message.content.length - 5000} characters) ...`;
+      }
+
+      store.dispatch(appendOutput(content));
       break;
+    }
     case ObservationType.RUN_IPYTHON:
       // FIXME: render this as markdown
       store.dispatch(appendJupyterOutput(message.content));
