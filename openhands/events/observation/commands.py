@@ -42,7 +42,7 @@ class CmdOutputMetadata(BaseModel):
         )
         # Make sure we escape double quotes in the JSON string
         # So that PS1 will keep them as part of the output
-        prompt += json_str.replace('"', '\\"')
+        prompt += json_str.replace('"', r'\"')
         prompt += CMD_OUTPUT_PS1_END
         return prompt
 
@@ -53,14 +53,44 @@ class CmdOutputMetadata(BaseModel):
     @classmethod
     def from_ps1_match(cls, match: re.Match[str]) -> Self:
         """Extract the required metadata from a PS1 prompt."""
-        metadata = json.loads(match.group(1))
         try:
-            metadata['pid'] = int(metadata['pid'])
-            metadata['exit_code'] = int(metadata['exit_code'])
-            return cls(**metadata)
+            metadata = json.loads(match.group(1))
+            # Create a copy of metadata to avoid modifying the original
+            processed = metadata.copy()
+            try:
+                if 'pid' in metadata:
+                    try:
+                        if isinstance(metadata['pid'], bool):
+                            processed['pid'] = 1 if metadata['pid'] else 0
+                        else:
+                            processed['pid'] = int(str(metadata['pid']))
+                    except (ValueError, TypeError):
+                        processed['pid'] = -1
+                if 'exit_code' in metadata:
+                    try:
+                        if isinstance(metadata['exit_code'], bool):
+                            processed['exit_code'] = 1 if metadata['exit_code'] else 0
+                        else:
+                            processed['exit_code'] = int(str(metadata['exit_code']))
+                    except (ValueError, TypeError):
+                        processed['exit_code'] = -1
+                return cls(**processed)
+            except (ValueError, TypeError):
+                logger.warning(f'Failed to convert numeric fields in PS1 metadata: {match.group(1)}')
+                return cls()
         except json.JSONDecodeError:
             logger.warning(f'Failed to parse PS1 metadata: {match.group(1)}')
             return cls()
+
+    @classmethod
+    def from_ps1(cls, ps1_str: str) -> Self:
+        """Parse PS1 output and extract metadata."""
+        matches = cls.matches_ps1_metadata(ps1_str)
+        if not matches:
+            return cls()
+        if len(matches) > 1:
+            raise ValueError("Multiple PS1 metadata blocks detected")
+        return cls.from_ps1_match(matches[0])
 
 
 @dataclass

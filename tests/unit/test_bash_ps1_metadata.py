@@ -17,10 +17,15 @@ def test_ps1_metadata_json_structure():
     prompt = CmdOutputMetadata.to_ps1_prompt()
     # Extract JSON content between markers
     json_str = prompt.replace('###PS1JSON###\n', '').replace('\n###PS1END###\n', '')
+    # Remove escaping before parsing
+    json_str = json_str.replace(r'\"', '"')
+    # Remove any trailing content after the JSON
+    json_str = json_str.split('###PS1END###')[0].strip()
     data = json.loads(json_str)
 
     # Check required fields
     expected_fields = {
+        'pid',
         'exit_code',
         'username',
         'hostname',
@@ -96,6 +101,99 @@ def test_ps1_metadata_parsing_invalid():
     metadata = CmdOutputMetadata.from_ps1(invalid_format)
     assert isinstance(metadata, CmdOutputMetadata)
     assert metadata.exit_code == -1  # default value
+
+    # Test with empty PS1 metadata
+    empty_metadata = """###PS1JSON###
+
+###PS1END###
+"""
+    metadata = CmdOutputMetadata.from_ps1(empty_metadata)
+    assert isinstance(metadata, CmdOutputMetadata)
+    assert metadata.exit_code == -1  # default value
+
+    # Test with whitespace in PS1 metadata
+    whitespace_metadata = """###PS1JSON###
+    
+    {
+        "exit_code": "0",
+        "pid": "123",
+        "username": "test",
+        "hostname": "localhost",
+        "working_dir": "/home/test",
+        "py_interpreter_path": "/usr/bin/python"
+    }
+    
+###PS1END###
+"""
+    metadata = CmdOutputMetadata.from_ps1(whitespace_metadata)
+    assert isinstance(metadata, CmdOutputMetadata)
+    assert metadata.exit_code == 0
+    assert metadata.pid == 123
+
+
+def test_ps1_metadata_missing_fields():
+    """Test handling of missing fields in PS1 metadata"""
+    # Test with only required fields
+    minimal_data = {
+        'exit_code': 0,
+        'pid': 123
+    }
+    ps1_str = f"""###PS1JSON###
+{json.dumps(minimal_data)}
+###PS1END###
+"""
+    metadata = CmdOutputMetadata.from_ps1(ps1_str)
+    assert metadata.exit_code == 0
+    assert metadata.pid == 123
+    assert metadata.username is None
+    assert metadata.hostname is None
+    assert metadata.working_dir is None
+    assert metadata.py_interpreter_path is None
+
+    # Test with missing exit_code but valid pid
+    no_exit_code = {
+        'pid': 123,
+        'username': 'test'
+    }
+    ps1_str = f"""###PS1JSON###
+{json.dumps(no_exit_code)}
+###PS1END###
+"""
+    metadata = CmdOutputMetadata.from_ps1(ps1_str)
+    assert metadata.exit_code == -1  # default value
+    assert metadata.pid == 123
+    assert metadata.username == 'test'
+
+
+def test_ps1_metadata_malformed_values():
+    """Test handling of malformed values in PS1 metadata"""
+    # Test with non-integer exit_code and pid
+    malformed_data = {
+        'exit_code': 'not_an_int',
+        'pid': 'abc',
+        'username': 'test'
+    }
+    ps1_str = f"""###PS1JSON###
+{json.dumps(malformed_data)}
+###PS1END###
+"""
+    metadata = CmdOutputMetadata.from_ps1(ps1_str)
+    assert metadata.exit_code == -1  # default value
+    assert metadata.pid == -1  # default value
+    assert metadata.username == 'test'
+
+    # Test with boolean values for numeric fields
+    boolean_data = {
+        'exit_code': True,
+        'pid': False
+    }
+    ps1_str = f"""###PS1JSON###
+{json.dumps(boolean_data)}
+###PS1END###
+"""
+    metadata = CmdOutputMetadata.from_ps1(ps1_str)
+    assert metadata.exit_code == 1  # True converts to 1
+    assert metadata.pid == 0  # False converts to 0
 
 
 def test_ps1_metadata_multiple_blocks():
