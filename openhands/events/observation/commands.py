@@ -9,6 +9,10 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import ObservationType
 from openhands.events.observation.observation import Observation
 
+CMD_OUTPUT_METADATA_PS1_REGEX = re.compile(
+    r'###PS1JSON###\n(.*?)###PS1END###\n', re.DOTALL
+)
+
 
 class CmdOutputMetadata(BaseModel):
     """Additional metadata captured from PS1"""
@@ -37,17 +41,22 @@ class CmdOutputMetadata(BaseModel):
         return prompt
 
     @classmethod
+    def contains_ps1_metadata(cls, actual_ps1: str) -> bool:
+        return CMD_OUTPUT_METADATA_PS1_REGEX.search(actual_ps1) is not None
+
+    @classmethod
     def from_ps1(cls, actual_ps1: str) -> Self:
         """Extract the required metadata from a PS1 prompt."""
-        regex = re.compile(r'###PS1JSON###\n(.*?)###PS1END###\n', re.DOTALL)
-        match = regex.search(actual_ps1)
-        if not match:
+        matches = list(CMD_OUTPUT_METADATA_PS1_REGEX.finditer(actual_ps1))
+        if len(matches) > 1:
+            raise ValueError("Multiple PS1 metadata blocks detected. Expected only one.")
+        if not matches:
             return cls()
         try:
-            metadata = json.loads(match.group(1))
+            metadata = json.loads(matches[0].group(1))
             return cls(**metadata)
         except json.JSONDecodeError:
-            logger.warning(f'Failed to parse PS1 metadata: {match.group(1)}')
+            logger.warning(f'Failed to parse PS1 metadata: {matches[0].group(1)}')
             return cls()
 
 
@@ -76,7 +85,7 @@ class CmdOutputObservation(Observation):
         return f'Command `{self.command}` executed with exit code {self.exit_code}.'
 
     def __str__(self) -> str:
-        return f'**CmdOutputObservation (source={self.source}, exit code={self.exit_code}, metadata={json.dumps(self.metadata, indent=2)})**\n{self.content}'
+        return f'**CmdOutputObservation (source={self.source}, exit code={self.exit_code}, metadata={json.dumps(self.metadata.model_dump(), indent=2)})**\n{self.content}'
 
 
 @dataclass
