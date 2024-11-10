@@ -4,6 +4,7 @@ import { afterEach } from "node:test";
 import { useTerminal } from "#/hooks/useTerminal";
 import { Command } from "#/state/commandSlice";
 import { WsClientProvider } from "#/context/ws-client-provider";
+import { ReactNode } from "react";
 
 interface TestTerminalComponentProps {
   commands: Command[];
@@ -16,6 +17,17 @@ function TestTerminalComponent({
 }: TestTerminalComponentProps) {
   const ref = useTerminal(commands, secrets);
   return <div ref={ref} />;
+}
+
+interface WrapperProps {
+  children: ReactNode;
+}
+
+
+function Wrapper({children}: WrapperProps) {
+  return (
+    <WsClientProvider enabled={true} token="NO_JWT" ghToken="NO_GITHUB" settings={null}>{children}</WsClientProvider>
+  )
 }
 
 describe("useTerminal", () => {
@@ -50,7 +62,7 @@ describe("useTerminal", () => {
 
   it("should render", () => {
     render(<TestTerminalComponent commands={[]} secrets={[]} />, {
-      wrapper: WsClientProvider,
+      wrapper: Wrapper,
     });
   });
 
@@ -61,7 +73,7 @@ describe("useTerminal", () => {
     ];
 
     render(<TestTerminalComponent commands={commands} secrets={[]} />, {
-      wrapper: WsClientProvider,
+      wrapper: Wrapper,
     });
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(1, "echo hello");
@@ -85,7 +97,7 @@ describe("useTerminal", () => {
         secrets={[secret, anotherSecret]}
       />,
       {
-        wrapper: WsClientProvider,
+        wrapper: Wrapper,
       },
     );
 
