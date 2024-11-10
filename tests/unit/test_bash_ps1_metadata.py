@@ -177,15 +177,17 @@ def test_ps1_metadata_malformed_values():
 {json.dumps(malformed_data)}
 ###PS1END###
 """
+    # Should return default metadata when parsing fails
     metadata = CmdOutputMetadata.from_ps1(ps1_str)
-    assert metadata.exit_code == -1  # default value
-    assert metadata.pid == -1  # default value
-    assert metadata.username == 'test'
+    assert metadata.exit_code == -1
+    assert metadata.pid == -1
+    assert metadata.username is None
 
     # Test with boolean values for numeric fields
     boolean_data = {
         'exit_code': True,
-        'pid': False
+        'pid': False,
+        'username': 'test'
     }
     ps1_str = f"""###PS1JSON###
 {json.dumps(boolean_data)}
@@ -194,6 +196,7 @@ def test_ps1_metadata_malformed_values():
     metadata = CmdOutputMetadata.from_ps1(ps1_str)
     assert metadata.exit_code == 1  # True converts to 1
     assert metadata.pid == 0  # False converts to 0
+    assert metadata.username == 'test'
 
 
 def test_ps1_metadata_multiple_blocks():

@@ -53,34 +53,21 @@ class CmdOutputMetadata(BaseModel):
     @classmethod
     def from_ps1_match(cls, match: re.Match[str]) -> Self:
         """Extract the required metadata from a PS1 prompt."""
-        try:
-            metadata = json.loads(match.group(1))
-            # Create a copy of metadata to avoid modifying the original
-            processed = metadata.copy()
-            try:
-                if 'pid' in metadata:
-                    try:
-                        if isinstance(metadata['pid'], bool):
-                            processed['pid'] = 1 if metadata['pid'] else 0
-                        else:
-                            processed['pid'] = int(str(metadata['pid']))
-                    except (ValueError, TypeError):
-                        processed['pid'] = -1
-                if 'exit_code' in metadata:
-                    try:
-                        if isinstance(metadata['exit_code'], bool):
-                            processed['exit_code'] = 1 if metadata['exit_code'] else 0
-                        else:
-                            processed['exit_code'] = int(str(metadata['exit_code']))
-                    except (ValueError, TypeError):
-                        processed['exit_code'] = -1
-                return cls(**processed)
-            except (ValueError, TypeError):
-                logger.warning(f'Failed to convert numeric fields in PS1 metadata: {match.group(1)}')
-                return cls()
-        except json.JSONDecodeError:
-            logger.warning(f'Failed to parse PS1 metadata: {match.group(1)}')
-            return cls()
+        metadata = json.loads(match.group(1))
+        # Create a copy of metadata to avoid modifying the original
+        processed = metadata.copy()
+        # Convert numeric fields
+        if 'pid' in metadata:
+            if isinstance(metadata['pid'], bool):
+                processed['pid'] = 1 if metadata['pid'] else 0
+            else:
+                processed['pid'] = int(str(metadata['pid']))
+        if 'exit_code' in metadata:
+            if isinstance(metadata['exit_code'], bool):
+                processed['exit_code'] = 1 if metadata['exit_code'] else 0
+            else:
+                processed['exit_code'] = int(str(metadata['exit_code']))
+        return cls(**processed)
 
     @classmethod
     def from_ps1(cls, ps1_str: str) -> Self:
@@ -90,7 +77,11 @@ class CmdOutputMetadata(BaseModel):
             return cls()
         if len(matches) > 1:
             raise ValueError("Multiple PS1 metadata blocks detected")
-        return cls.from_ps1_match(matches[0])
+        try:
+            return cls.from_ps1_match(matches[0])
+        except (json.JSONDecodeError, ValueError, TypeError) as e:
+            logger.warning(f'Failed to parse PS1 metadata: {matches[0].group(1)}. Error: {str(e)}')
+            return cls()
 
 
 @dataclass
