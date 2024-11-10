@@ -13,11 +13,11 @@ CMD_OUTPUT_METADATA_PS1_REGEX = re.compile(
     r'###PS1JSON###\n(.*?)###PS1END###\n', re.DOTALL
 )
 
-
 class CmdOutputMetadata(BaseModel):
     """Additional metadata captured from PS1"""
 
     exit_code: int = -1
+    pid: int = -1
     username: str | None = None
     hostname: str | None = None
     working_dir: str | None = None
@@ -29,6 +29,7 @@ class CmdOutputMetadata(BaseModel):
         prompt = '###PS1JSON###\n'
         json_str = json.dumps(
             {
+                'pid': '$!',
                 'exit_code': '$?',
                 'username': r'\u',
                 'hostname': r'\h',
@@ -44,13 +45,13 @@ class CmdOutputMetadata(BaseModel):
         return prompt
 
     @classmethod
-    def contains_ps1_metadata(cls, actual_ps1: str) -> bool:
-        return CMD_OUTPUT_METADATA_PS1_REGEX.search(actual_ps1) is not None
+    def matches_ps1_metadata(cls, string: str) -> list[re.Match[str]]:
+        return list(CMD_OUTPUT_METADATA_PS1_REGEX.finditer(string))
 
     @classmethod
-    def from_ps1(cls, actual_ps1: str) -> Self:
+    def from_ps1(cls, string: str) -> Self:
         """Extract the required metadata from a PS1 prompt."""
-        matches = list(CMD_OUTPUT_METADATA_PS1_REGEX.finditer(actual_ps1))
+        matches = cls.matches_ps1_metadata(string)
         if len(matches) > 1:
             raise ValueError("Multiple PS1 metadata blocks detected. Expected only one.")
         if not matches:
@@ -67,13 +68,16 @@ class CmdOutputMetadata(BaseModel):
 class CmdOutputObservation(Observation):
     """This data class represents the output of a command."""
 
-    command_id: int
     command: str
     observation: str = ObservationType.RUN
     # Additional metadata captured from PS1
     metadata: CmdOutputMetadata = field(default_factory=CmdOutputMetadata)
     # Whether the command output should be hidden from the user
     hidden: bool = False
+
+    @property
+    def command_id(self) -> int:
+        return self.metadata.pid
 
     @property
     def exit_code(self) -> int:
