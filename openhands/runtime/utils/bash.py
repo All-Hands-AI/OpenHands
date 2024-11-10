@@ -212,8 +212,9 @@ class BashSession:
 
             # 2) Execution timed out since there's no change in output
             # for a while (self.NO_CHANGE_TIMEOUT_SECONDS)
+            # We ignore this if the command is blocking
             time_since_last_change = time.time() - last_change_time
-            if time_since_last_change >= self.NO_CHANGE_TIMEOUT_SECONDS:
+            if not action.blocking and time_since_last_change >= self.NO_CHANGE_TIMEOUT_SECONDS:
                 return self._handle_nochange_timeout_command(action.command)
 
             # 3) Execution timed out due to hard timeout
