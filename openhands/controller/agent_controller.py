@@ -259,7 +259,7 @@ class AgentController:
             observation_to_print.content = truncate_content(
                 observation_to_print.content, self.agent.llm.config.max_message_chars
             )
-        self.log('info', str(observation_to_print), extra={'msg_type': 'OBSERVATION'})
+        self.log('debug', str(observation_to_print), extra={'msg_type': 'OBSERVATION'})
 
         if observation.llm_metrics is not None:
             self.agent.llm.metrics.merge(observation.llm_metrics)
