@@ -8,6 +8,7 @@ def test_ps1_metadata_format():
     prompt = CmdOutputMetadata.to_ps1_prompt()
     assert prompt.startswith('###PS1JSON###\n')
     assert prompt.endswith('###PS1END###\n')
+    assert r'\"exit_code\"' in prompt, "PS1 prompt should contain escaped double quotes"
     print(prompt)
 
 

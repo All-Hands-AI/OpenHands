@@ -27,16 +27,19 @@ class CmdOutputMetadata(BaseModel):
     def to_ps1_prompt(cls) -> str:
         """Convert the required metadata into a PS1 prompt."""
         prompt = '###PS1JSON###\n'
-        prompt += json.dumps(
+        json_str = json.dumps(
             {
                 'exit_code': '$?',
                 'username': r'\u',
                 'hostname': r'\h',
                 'working_dir': r'\w',
-                'py_interpreter_path': '$(which python 2>/dev/null || echo "")',
+                'py_interpreter_path': r'$(which python 2>/dev/null || echo "")',
             },
             indent=2,
         )
+        # Make sure we escape double quotes in the JSON string
+        # So that PS1 will keep them as part of the output
+        prompt += json_str.replace('"', '\\"')
         prompt += '\n###PS1END###\n'
         return prompt
 
