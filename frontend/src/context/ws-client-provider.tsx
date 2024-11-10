@@ -8,7 +8,6 @@ import AgentState from "#/types/AgentState";
 export enum WsClientProviderStatus {
   STOPPED,
   OPENING,
-  INITIALIZING,
   ACTIVE,
   ERROR,
 }
@@ -42,6 +41,9 @@ export function WsClientProvider({
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
   const wsRef = React.useRef<WebSocket | null>(null);
+  const tokenRef = React.useRef<string | null>(token);
+  const ghTokenRef = React.useRef<string | null>(ghToken);
+  const closeRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [status, setStatus] = React.useState(WsClientProviderStatus.STOPPED);
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
 
@@ -86,41 +88,71 @@ export function WsClientProvider({
   function handleError(event: Event) {
     posthog.capture("socket_error");
     EventLogger.event(event, "SOCKET ERROR");
+    setStatus(WsClientProviderStatus.ERROR);
   }
 
-  // Connect / disconnect websocket
+  // Connect websocket
   React.useEffect(() => {
+    let ws = wsRef.current;
+
+    // If disabled close any existing websockets...
     if (!enabled) {
-      const ws = wsRef.current;
       if (ws) {
         ws.close();
       }
       wsRef.current = null;
-      return;
+      return () => {};
     }
-    let ws = wsRef.current;
+
+    // If there is no websocket or the tokens have changed or the current websocket os closed,
+    // create a new one
     if (
-      ws &&
-      ws.readyState !== WebSocket.CLOSING &&
-      ws.readyState !== WebSocket.CLOSED
+      !ws ||
+      (tokenRef.current && token !== tokenRef.current) ||
+      ghToken !== ghTokenRef.current ||
+      ws.readyState === WebSocket.CLOSED ||
+      ws.readyState === WebSocket.CLOSING
     ) {
-      // This is really annoying. StrictMode means this hook is called twice with no change.
-      return;
+      ws?.close();
+      const baseUrl =
+        import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      ws = new WebSocket(`${protocol}//${baseUrl}/ws`, [
+        "openhands",
+        token || "NO_JWT",
+        ghToken || "NO_GITHUB",
+      ]);
     }
-    const baseUrl =
-      import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    ws = new WebSocket(`${protocol}//${baseUrl}/ws`, [
-      "openhands",
-      token || "NO_JWT",
-      ghToken || "NO_GITHUB",
-    ]);
     ws.addEventListener("open", handleOpen);
     ws.addEventListener("message", handleMessage);
     ws.addEventListener("error", handleError);
     ws.addEventListener("close", handleClose);
     wsRef.current = ws;
+    tokenRef.current = token;
+    ghTokenRef.current = ghToken;
+
+    return () => {
+      ws.removeEventListener("open", handleOpen);
+      ws.removeEventListener("message", handleMessage);
+      ws.removeEventListener("error", handleError);
+      ws.removeEventListener("close", handleClose);
+    };
   }, [enabled, token, ghToken]);
+
+  // Strict mode mounts and unmounts each component twice, so we have to wait in the destructor
+  // before actually closing the socket and cancel the operation if the component gets remounted.
+  React.useEffect(() => {
+    const timeout = closeRef.current;
+    if (timeout != null) {
+      clearTimeout(timeout);
+    }
+
+    return () => {
+      closeRef.current = setTimeout(() => {
+        wsRef.current?.close();
+      }, 100);
+    };
+  }, []);
 
   const value = React.useMemo<UseWsClient>(
     () => ({

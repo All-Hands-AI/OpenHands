@@ -57,14 +57,19 @@ interface LoaderData {
 
 export function EventHandler({ children }: EventHandlerProps) {
   const { events, status, send } = useWsClient();
+  const statusRef = React.useRef<WsClientProviderStatus>(
+    WsClientProviderStatus.STOPPED,
+  );
   const runtimeActive = status === WsClientProviderStatus.ACTIVE;
   const fetcher = useFetcher();
   const dispatch = useDispatch();
   const { files, importedProjectZip } = useSelector(
     (state: RootState) => state.initalQuery,
   );
-  const { token, ghToken, repo }: LoaderData = useLoaderData();
-  const { initialQuery } = store.getState().initalQuery;
+  const { ghToken, repo }: LoaderData = useLoaderData();
+  const initialQueryRef = React.useRef<string | null>(
+    store.getState().initalQuery.initialQuery,
+  );
 
   const sendInitialQuery = (query: string, base64Files: string[]) => {
     const timestamp = new Date().toISOString();
@@ -114,40 +119,43 @@ export function EventHandler({ children }: EventHandlerProps) {
   }, [events.length]);
 
   React.useEffect(() => {
-    // handle first time connection
-    if (status === WsClientProviderStatus.ACTIVE) {
-      // handle new session
-      if (!token) {
-        let additionalInfo = "";
-        if (ghToken && repo) {
-          send(getCloneRepoCommand(ghToken, repo));
-          additionalInfo = `Repository ${repo} has been cloned to /workspace. Please check the /workspace for files.`;
-          dispatch(clearSelectedRepository()); // reset selected repository; maybe better to move this to '/'?
-        }
-        // if there's an uploaded project zip, add it to the chat
-        else if (importedProjectZip) {
-          additionalInfo = `Files have been uploaded. Please check the /workspace for files.`;
-        }
+    if (statusRef.current === status) {
+      return; // This is a check because of strict mode - if the status did not change, don't do anything
+    }
+    statusRef.current = status;
+    const initialQuery = initialQueryRef.current;
 
-        if (initialQuery) {
-          if (additionalInfo) {
-            sendInitialQuery(`${initialQuery}\n\n[${additionalInfo}]`, files);
-          } else {
-            sendInitialQuery(initialQuery, files);
-          }
-          dispatch(clearFiles()); // reset selected files
-        }
+    if (status === WsClientProviderStatus.ACTIVE) {
+      let additionalInfo = "";
+      if (ghToken && repo) {
+        send(getCloneRepoCommand(ghToken, repo));
+        additionalInfo = `Repository ${repo} has been cloned to /workspace. Please check the /workspace for files.`;
+        dispatch(clearSelectedRepository()); // reset selected repository; maybe better to move this to '/'?
+      }
+      // if there's an uploaded project zip, add it to the chat
+      else if (importedProjectZip) {
+        additionalInfo = `Files have been uploaded. Please check the /workspace for files.`;
       }
 
       if (initialQuery) {
-        dispatch(
-          addUserMessage({
-            content: initialQuery,
-            imageUrls: files,
-            timestamp: new Date().toISOString(),
-          }),
-        );
+        if (additionalInfo) {
+          sendInitialQuery(`${initialQuery}\n\n[${additionalInfo}]`, files);
+        } else {
+          sendInitialQuery(initialQuery, files);
+        }
+        dispatch(clearFiles()); // reset selected files
+        initialQueryRef.current = null;
       }
+    }
+
+    if (status === WsClientProviderStatus.OPENING && initialQuery) {
+      dispatch(
+        addUserMessage({
+          content: initialQuery,
+          imageUrls: files,
+          timestamp: new Date().toISOString(),
+        }),
+      );
     }
   }, [status]);
 
