@@ -161,7 +161,7 @@ Pour créer un workflow d'évaluation pour votre benchmark, suivez ces étapes :
            instruction=instruction,
            test_result=evaluation_result,
            metadata=metadata,
-           history=state.history.compatibility_for_eval_history_pairs(),
+           history=compatibility_for_eval_history_pairs(state.history),
            metrics=state.metrics.get() if state.metrics else None,
            error=state.last_error if state and state.last_error else None,
        )
@@ -260,7 +260,7 @@ def codeact_user_response(state: State | None) -> str:
         # vérifier si l'agent a essayé de parler à l'utilisateur 3 fois, si oui, faire savoir à l'agent qu'il peut abandonner
         user_msgs = [
             event
-            for event in state.history.get_events()
+            for event in state.history
             if isinstance(event, MessageAction) and event.source == 'user'
         ]
         if len(user_msgs) >= 2:
@@ -279,4 +279,3 @@ Cette fonction fait ce qui suit :
 3. Si l'agent a fait plusieurs tentatives, il lui donne la possibilité d'abandonner
 
 En utilisant cette fonction, vous pouvez garantir un comportement cohérent sur plusieurs exécutions d'évaluation et empêcher l'agent de rester bloqué en attendant une entrée humaine.
-

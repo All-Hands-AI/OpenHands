@@ -40,16 +40,18 @@ class Session:
         self.sid = sid
         self.websocket = ws
         self.last_active_ts = int(time.time())
-        self.agent_session = AgentSession(sid, file_store)
+        self.agent_session = AgentSession(
+            sid, file_store, status_callback=self.queue_status_message
+        )
         self.agent_session.event_stream.subscribe(
-            EventStreamSubscriber.SERVER, self.on_event
+            EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
         self.config = config
         self.loop = asyncio.get_event_loop()
 
-    async def close(self):
+    def close(self):
         self.is_alive = False
-        await self.agent_session.close()
+        self.agent_session.close()
 
     async def loop_recv(self):
         try:
@@ -63,11 +65,11 @@ class Session:
                     continue
                 await self.dispatch(data)
         except WebSocketDisconnect:
-            await self.close()
-            logger.debug('WebSocket disconnected, sid: %s', self.sid)
+            logger.info('WebSocket disconnected, sid: %s', self.sid)
+            self.close()
         except RuntimeError as e:
-            await self.close()
             logger.exception('Error in loop_recv: %s', e)
+            self.close()
 
     async def _initialize_agent(self, data: dict):
         self.agent_session.event_stream.add_event(
@@ -115,7 +117,6 @@ class Session:
                 max_budget_per_task=self.config.max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
-                status_message_callback=self.queue_status_message,
             )
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
@@ -136,6 +137,10 @@ class Session:
         if isinstance(event, NullObservation):
             return
         if event.source == EventSource.AGENT:
+            await self.send(event_to_dict(event))
+        elif event.source == EventSource.USER and isinstance(
+            event, CmdOutputObservation
+        ):
             await self.send(event_to_dict(event))
         # NOTE: ipython observations are not sent here currently
         elif event.source == EventSource.ENVIRONMENT and isinstance(
@@ -171,12 +176,6 @@ class Session:
                         'Model does not support image upload, change to a different model or try without an image.'
                     )
                     return
-        if self.agent_session.loop:
-            asyncio.run_coroutine_threadsafe(
-                self._add_event(event, EventSource.USER), self.agent_session.loop
-            )  # type: ignore
-
-    async def _add_event(self, event, event_source):
         self.agent_session.event_stream.add_event(event, EventSource.USER)
 
     async def send(self, data: dict[str, object]) -> bool:
@@ -187,10 +186,7 @@ class Session:
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True
-        except RuntimeError:
-            self.is_alive = False
-            return False
-        except WebSocketDisconnect:
+        except (RuntimeError, WebSocketDisconnect):
             self.is_alive = False
             return False
 
@@ -198,11 +194,17 @@ class Session:
         """Sends an error message to the client."""
         return await self.send({'error': True, 'message': message})
 
-    async def send_status_message(self, message: str) -> bool:
+    async def _send_status_message(self, msg_type: str, id: str, message: str) -> bool:
         """Sends a status message to the client."""
-        return await self.send({'status': message})
+        if msg_type == 'error':
+            await self.agent_session.stop_agent_loop_for_error()
 
-    def queue_status_message(self, message: str):
+        return await self.send(
+            {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
+        )
+
+    def queue_status_message(self, msg_type: str, id: str, message: str):
         """Queues a status message to be sent asynchronously."""
-        # Ensure the coroutine runs in the main event loop
-        asyncio.run_coroutine_threadsafe(self.send_status_message(message), self.loop)
+        asyncio.run_coroutine_threadsafe(
+            self._send_status_message(msg_type, id, message), self.loop
+        )

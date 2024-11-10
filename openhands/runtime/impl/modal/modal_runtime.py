@@ -75,7 +75,7 @@ class ModalRuntime(EventStreamRuntime):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_message_callback: Callable | None = None,
+        status_callback: Callable | None = None,
         attach_to_existing: bool = False,
     ):
         assert config.modal_api_token_id, 'Modal API token id is required'
@@ -102,7 +102,7 @@ class ModalRuntime(EventStreamRuntime):
         self.container_port = 3000
 
         self.session = requests.Session()
-        self.status_message_callback = status_message_callback
+        self.status_callback = status_callback
         self.base_container_image_id = self.config.sandbox.base_container_image
         self.runtime_container_image_id = self.config.sandbox.runtime_container_image
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
@@ -122,7 +122,7 @@ class ModalRuntime(EventStreamRuntime):
             sid,
             plugins,
             env_vars,
-            status_message_callback,
+            status_callback,
             attach_to_existing,
         )
 

@@ -27,14 +27,14 @@ class E2BRuntime(Runtime):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         sandbox: E2BSandbox | None = None,
-        status_message_callback: Optional[Callable] = None,
+        status_callback: Optional[Callable] = None,
     ):
         super().__init__(
             config,
             event_stream,
             sid,
             plugins,
-            status_message_callback=status_message_callback,
+            status_callback=status_callback,
         )
         if sandbox is None:
             self.sandbox = E2BSandbox()
