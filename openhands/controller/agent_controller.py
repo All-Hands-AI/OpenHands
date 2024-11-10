@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import os
 import traceback
 from typing import Callable, ClassVar, Type
 
@@ -164,6 +165,10 @@ class AgentController:
         Args:
             message (str): The message to log.
         """
+        # override log level to 'info' if LOG_ALL_EVENTS is set and level is 'debug'
+        if os.getenv('LOG_ALL_EVENTS') in ('true', '1') and level.lower() == 'debug':
+            level = 'info'
+
         message = f'[Agent Controller {self.id}] {message}'
         getattr(logger, level)(message, extra=extra, stacklevel=2)
 
@@ -663,7 +668,7 @@ class AgentController:
         # sanity check
         if start_id > end_id + 1:
             self.log(
-                'debug',
+                'warning',
                 f'start_id {start_id} is greater than end_id + 1 ({end_id + 1}). History will be empty.',
             )
             self.state.history = []
@@ -694,7 +699,7 @@ class AgentController:
                 # Match with most recent unmatched delegate action
                 if not delegate_action_ids:
                     self.log(
-                        'error',
+                        'warning',
                         f'Found AgentDelegateObservation without matching action at id={event.id}',
                     )
                     continue
