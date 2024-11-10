@@ -9,8 +9,10 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import ObservationType
 from openhands.events.observation.observation import Observation
 
+CMD_OUTPUT_PS1_BEGIN = '###PS1JSON###\n'
+CMD_OUTPUT_PS1_END = '###PS1END###\n'
 CMD_OUTPUT_METADATA_PS1_REGEX = re.compile(
-    r'###PS1JSON###\n(.*?)###PS1END###\n', re.DOTALL
+    f'{CMD_OUTPUT_PS1_BEGIN}(.*?){CMD_OUTPUT_PS1_END}', re.DOTALL
 )
 
 class CmdOutputMetadata(BaseModel):
@@ -26,7 +28,7 @@ class CmdOutputMetadata(BaseModel):
     @classmethod
     def to_ps1_prompt(cls) -> str:
         """Convert the required metadata into a PS1 prompt."""
-        prompt = '###PS1JSON###\n'
+        prompt = CMD_OUTPUT_PS1_BEGIN
         json_str = json.dumps(
             {
                 'pid': '$!',
@@ -41,7 +43,7 @@ class CmdOutputMetadata(BaseModel):
         # Make sure we escape double quotes in the JSON string
         # So that PS1 will keep them as part of the output
         prompt += json_str.replace('"', '\\"')
-        prompt += '\n###PS1END###\n'
+        prompt += CMD_OUTPUT_PS1_END
         return prompt
 
     @classmethod
@@ -49,18 +51,15 @@ class CmdOutputMetadata(BaseModel):
         return list(CMD_OUTPUT_METADATA_PS1_REGEX.finditer(string))
 
     @classmethod
-    def from_ps1(cls, string: str) -> Self:
+    def from_ps1_match(cls, match: re.Match[str]) -> Self:
         """Extract the required metadata from a PS1 prompt."""
-        matches = cls.matches_ps1_metadata(string)
-        if len(matches) > 1:
-            raise ValueError("Multiple PS1 metadata blocks detected. Expected only one.")
-        if not matches:
-            return cls()
+        metadata = json.loads(match.group(1))
         try:
-            metadata = json.loads(matches[0].group(1))
+            metadata['pid'] = int(metadata['pid'])
+            metadata['exit_code'] = int(metadata['exit_code'])
             return cls(**metadata)
         except json.JSONDecodeError:
-            logger.warning(f'Failed to parse PS1 metadata: {matches[0].group(1)}')
+            logger.warning(f'Failed to parse PS1 metadata: {match.group(1)}')
             return cls()
 
 
