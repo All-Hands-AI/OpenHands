@@ -101,6 +101,10 @@ export const useTerminal = (
           if (commandBuffer.length > 0) {
             commandBuffer = handleBackspace(commandBuffer);
           }
+        } else if (domEvent.key === "Tab") {
+          // Swallow tab key and convert to space
+          commandBuffer += " ";
+          terminal.current?.write(" ");
         } else {
           // Ignore paste event
           if (key.charCodeAt(0) === 22) {

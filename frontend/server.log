@@ -1,0 +1,11 @@
+
+> openhands-frontend@0.13.0 dev
+> npm run make-i18n && cross-env VITE_MOCK_API=false remix vite:dev
+
+
+> openhands-frontend@0.13.0 make-i18n
+> node scripts/make-i18n-translations.cjs
+
+  ➜  Local:   http://localhost:3001/
+  ➜  Network: use --host to expose
+  ➜  press h + enter to show help
