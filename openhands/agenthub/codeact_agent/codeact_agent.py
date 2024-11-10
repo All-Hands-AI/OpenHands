@@ -196,8 +196,8 @@ class CodeActAgent(Agent):
         elif isinstance(action, MessageAction):
             role = 'user' if action.source == 'user' else 'assistant'
             content = [TextContent(text=action.content or '')]
-            if self.llm.vision_is_active() and action.images_urls:
-                content.append(ImageContent(image_urls=action.images_urls))
+            if self.llm.vision_is_active() and action.image_urls:
+                content.append(ImageContent(image_urls=action.image_urls))
             return [
                 Message(
                     role=role,
