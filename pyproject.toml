@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openhands-ai"
-version = "0.12.3"
+version = "0.13.0"
 description = "OpenHands: Code Less, Make More"
 authors = ["OpenHands"]
 license = "MIT"
@@ -61,6 +61,7 @@ protobuf = "^4.21.6,<5.0.0" # chromadb currently fails on 5.0+
 opentelemetry-api = "1.25.0"
 opentelemetry-exporter-otlp-proto-grpc = "1.25.0"
 modal = "^0.64.145"
+runloop-api-client = "0.7.0"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
@@ -92,7 +93,6 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
-
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -122,7 +122,6 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
-
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"

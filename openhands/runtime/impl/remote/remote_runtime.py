@@ -1,7 +1,7 @@
 import os
-from pathlib import Path
 import tempfile
 import threading
+from pathlib import Path
 from typing import Callable, Optional
 from zipfile import ZipFile
 
@@ -260,13 +260,19 @@ class RemoteRuntime(Runtime):
                 {'X-Session-API-Key': start_response['session_api_key']}
             )
 
-    @tenacity.retry(
-        stop=tenacity.stop_after_delay(180) | stop_if_should_exit(),
-        reraise=True,
-        retry=tenacity.retry_if_exception_type(RuntimeNotReadyError),
-        wait=tenacity.wait_fixed(2),
-    )
     def _wait_until_alive(self):
+        retry_decorator = tenacity.retry(
+            stop=tenacity.stop_after_delay(
+                self.config.sandbox.remote_runtime_init_timeout
+            )
+            | stop_if_should_exit(),
+            reraise=True,
+            retry=tenacity.retry_if_exception_type(RuntimeNotReadyError),
+            wait=tenacity.wait_fixed(2),
+        )
+        return retry_decorator(self._wait_until_alive_impl)()
+
+    def _wait_until_alive_impl(self):
         self.log('debug', f'Waiting for runtime to be alive at url: {self.runtime_url}')
         runtime_info_response = self._send_request(
             'GET',
