@@ -13,6 +13,9 @@ from openhands.events.action.action import (
 class CmdRunAction(Action):
     command: str
     # When `command` is empty, it will be used to print the current tmux window
+    blocking: bool = False
+    # If blocking is True, the command will be run in a blocking manner.
+    # e.g., it will NOT return early due to soft timeout.
     thought: str = ''
     hidden: bool = False
     action: str = ActionType.RUN
