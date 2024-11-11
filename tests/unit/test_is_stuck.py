@@ -107,7 +107,7 @@ class TestStuckDetector:
         cmd_action = CmdRunAction(command='ls')
         state.history.append(cmd_action)
         cmd_observation = CmdOutputObservation(
-            command_id=1, command='ls', content='file1.txt\nfile2.txt'
+            command='ls', content='file1.txt\nfile2.txt'
         )
         # cmd_observation._cause = cmd_action._id
         state.history.append(cmd_observation)
@@ -129,7 +129,7 @@ class TestStuckDetector:
         cmd_action_1 = CmdRunAction(command='ls')
         cmd_action_1._id = 1
         state.history.append(cmd_action_1)
-        cmd_observation_1 = CmdOutputObservation(content='', command='ls', command_id=1)
+        cmd_observation_1 = CmdOutputObservation(content='', command='ls')
         cmd_observation_1._cause = cmd_action_1._id
         state.history.append(cmd_observation_1)
         # 4 events
@@ -137,7 +137,7 @@ class TestStuckDetector:
         cmd_action_2 = CmdRunAction(command='ls')
         cmd_action_2._id = 2
         state.history.append(cmd_action_2)
-        cmd_observation_2 = CmdOutputObservation(content='', command='ls', command_id=2)
+        cmd_observation_2 = CmdOutputObservation(content='', command='ls')
         cmd_observation_2._cause = cmd_action_2._id
         state.history.append(cmd_observation_2)
         # 6 events
@@ -154,7 +154,7 @@ class TestStuckDetector:
         cmd_action_3 = CmdRunAction(command='ls')
         cmd_action_3._id = 3
         state.history.append(cmd_action_3)
-        cmd_observation_3 = CmdOutputObservation(content='', command='ls', command_id=3)
+        cmd_observation_3 = CmdOutputObservation(content='', command='ls')
         cmd_observation_3._cause = cmd_action_3._id
         state.history.append(cmd_observation_3)
         # 10 events
@@ -178,7 +178,7 @@ class TestStuckDetector:
         cmd_action_4 = CmdRunAction(command='ls')
         cmd_action_4._id = 4
         state.history.append(cmd_action_4)
-        cmd_observation_4 = CmdOutputObservation(content='', command='ls', command_id=4)
+        cmd_observation_4 = CmdOutputObservation(content='', command='ls')
         cmd_observation_4._cause = cmd_action_4._id
         state.history.append(cmd_observation_4)
         # 12 events
@@ -398,7 +398,7 @@ class TestStuckDetector:
         cmd_action_1 = CmdRunAction(command='ls')
         state.history.append(cmd_action_1)
         cmd_observation_1 = CmdOutputObservation(
-            command_id=1, command='ls', content='file1.txt\nfile2.txt'
+            command='ls', content='file1.txt\nfile2.txt'
         )
         # cmd_observation_1._cause = cmd_action_1._id
         state.history.append(cmd_observation_1)
@@ -414,7 +414,7 @@ class TestStuckDetector:
         cmd_action_2 = CmdRunAction(command='ls')
         state.history.append(cmd_action_2)
         cmd_observation_2 = CmdOutputObservation(
-            command_id=2, command='ls', content='file1.txt\nfile2.txt'
+            command='ls', content='file1.txt\nfile2.txt'
         )
         # cmd_observation_2._cause = cmd_action_2._id
         state.history.append(cmd_observation_2)
@@ -437,7 +437,7 @@ class TestStuckDetector:
         cmd_action_3 = CmdRunAction(command='ls')
         state.history.append(cmd_action_3)
         cmd_observation_3 = CmdOutputObservation(
-            command_id=3, command='ls', content='file1.txt\nfile2.txt'
+            command='ls', content='file1.txt\nfile2.txt'
         )
         # cmd_observation_3._cause = cmd_action_3._id
         state.history.append(cmd_observation_3)
@@ -468,7 +468,7 @@ class TestStuckDetector:
         cmd_action_1 = CmdRunAction(command='ls')
         state.history.append(cmd_action_1)
         cmd_observation_1 = CmdOutputObservation(
-            command_id=cmd_action_1.id, command='ls', content='file1.txt\nfile2.txt'
+            command='ls', content='file1.txt\nfile2.txt'
         )
         # cmd_observation_1._cause = cmd_action_1._id
         state.history.append(cmd_observation_1)
@@ -483,9 +483,7 @@ class TestStuckDetector:
 
         cmd_action_2 = CmdRunAction(command='pwd')
         state.history.append(cmd_action_2)
-        cmd_observation_2 = CmdOutputObservation(
-            command_id=2, command='pwd', content='/home/user'
-        )
+        cmd_observation_2 = CmdOutputObservation(command='pwd', content='/home/user')
         # cmd_observation_2._cause = cmd_action_2._id
         state.history.append(cmd_observation_2)
 
@@ -503,9 +501,7 @@ class TestStuckDetector:
 
         cmd_action_3 = CmdRunAction(command='pwd')
         state.history.append(cmd_action_3)
-        cmd_observation_3 = CmdOutputObservation(
-            command_id=cmd_action_3.id, command='pwd', content='/home/user'
-        )
+        cmd_observation_3 = CmdOutputObservation(command='pwd', content='/home/user')
         # cmd_observation_3._cause = cmd_action_3._id
         state.history.append(cmd_observation_3)
 
@@ -552,7 +548,6 @@ class TestStuckDetector:
         # Add an observation event between the repeated message actions
         cmd_output_observation = CmdOutputObservation(
             content='OK, I was stuck, but no more.',
-            command_id=42,
             command='storybook',
             exit_code=0,
         )

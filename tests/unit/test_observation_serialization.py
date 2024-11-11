@@ -50,7 +50,6 @@ def test_observation_event_props_serialization_deserialization():
         'extras': {
             'exit_code': 0,
             'command': 'ls -l',
-            'command_id': 3,
             'hidden': False,
             'interpreter_details': '',
         },
@@ -65,7 +64,6 @@ def test_command_output_observation_serialization_deserialization():
         'extras': {
             'exit_code': 0,
             'command': 'ls -l',
-            'command_id': 3,
             'hidden': False,
             'interpreter_details': '',
         },

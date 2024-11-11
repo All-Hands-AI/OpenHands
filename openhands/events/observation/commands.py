@@ -12,8 +12,7 @@ from openhands.events.observation.observation import Observation
 CMD_OUTPUT_PS1_BEGIN = '###PS1JSON###\n'
 CMD_OUTPUT_PS1_END = '\n###PS1END###'
 CMD_OUTPUT_METADATA_PS1_REGEX = re.compile(
-    f'{CMD_OUTPUT_PS1_BEGIN}(.*?){CMD_OUTPUT_PS1_END}',
-    re.DOTALL
+    f'{CMD_OUTPUT_PS1_BEGIN}(.*?){CMD_OUTPUT_PS1_END}', re.DOTALL
 )
 
 
@@ -45,7 +44,7 @@ class CmdOutputMetadata(BaseModel):
         # Make sure we escape double quotes in the JSON string
         # So that PS1 will keep them as part of the output
         prompt += json_str.replace('"', r'\"')
-        prompt += CMD_OUTPUT_PS1_END + '\n' # Ensure there's a newline at the end
+        prompt += CMD_OUTPUT_PS1_END + '\n'  # Ensure there's a newline at the end
         return prompt
 
     @classmethod
@@ -107,6 +106,12 @@ class CmdOutputObservation(Observation):
 
     def __str__(self) -> str:
         return f'**CmdOutputObservation (source={self.source}, exit code={self.exit_code}, metadata={json.dumps(self.metadata.model_dump(), indent=2)})**\n{self.content}'
+
+    def to_agent_observation(self) -> str:
+        ret = self.content
+        if self.metadata.py_interpreter_path:
+            ret += f'\n[Python interpreter: {self.metadata.py_interpreter_path}]'
+        return ret
 
 
 @dataclass

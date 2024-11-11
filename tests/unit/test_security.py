@@ -393,9 +393,7 @@ def test_parse_action(action, expected_trace):
             ],
         ),
         (
-            CmdOutputObservation(
-                content='cmd output content', command_id=1, command='ls'
-            ),
+            CmdOutputObservation(content='cmd output content', command='ls'),
             [
                 ToolOutput(
                     metadata={},

@@ -1,7 +1,6 @@
 import json
 import os
 from collections import deque
-from itertools import islice
 
 from litellm import ModelResponse
 
@@ -110,7 +109,9 @@ class CodeActAgent(Agent):
             self.action_parser = CodeActResponseParser()
             self.prompt_manager = PromptManager(
                 microagent_dir=os.path.join(os.path.dirname(__file__), 'micro'),
-                prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts', 'default'),
+                prompt_dir=os.path.join(
+                    os.path.dirname(__file__), 'prompts', 'default'
+                ),
                 agent_skills_docs=AgentSkillsRequirement.documentation,
             )
 
@@ -241,7 +242,8 @@ class CodeActAgent(Agent):
         obs_prefix = 'OBSERVATION:\n'
         if isinstance(obs, CmdOutputObservation):
             text = obs_prefix + truncate_content(
-                obs.content + obs.interpreter_details, max_message_chars
+                obs.to_agent_observation(),
+                max_message_chars,
             )
             text += f'\n[Command finished with exit code {obs.exit_code}]'
             message = Message(role='user', content=[TextContent(text=text)])

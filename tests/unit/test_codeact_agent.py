@@ -26,7 +26,7 @@ def agent() -> CodeActAgent:
 def test_cmd_output_observation_message(agent: CodeActAgent):
     agent.config.function_calling = False
     obs = CmdOutputObservation(
-        command='echo hello', content='Command output', command_id=1, exit_code=0
+        command='echo hello', content='Command output', exit_code=0
     )
 
     results = agent.get_observation_message(obs, tool_call_id_to_message={})

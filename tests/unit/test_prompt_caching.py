@@ -160,7 +160,6 @@ def test_get_messages_with_cmd_action(codeact_agent: CodeActAgent):
 
     cmd_observation_1 = CmdOutputObservation(
         content='total 0\n-rw-r--r-- 1 user group 0 Jan 1 00:00 file1.txt\n-rw-r--r-- 1 user group 0 Jan 1 00:00 file2.txt',
-        command_id=cmd_action_1._id,
         command='ls -l',
         exit_code=0,
     )
@@ -178,7 +177,6 @@ def test_get_messages_with_cmd_action(codeact_agent: CodeActAgent):
 
     cmd_observation_2 = CmdOutputObservation(
         content='',
-        command_id=cmd_action_2._id,
         command='mkdir new_directory',
         exit_code=0,
     )

@@ -109,11 +109,10 @@ class CodeActSWEAgent(Agent):
         max_message_chars = self.llm.config.max_message_chars
         if isinstance(obs, CmdOutputObservation):
             text = 'OBSERVATION:\n' + truncate_content(
-                obs.content + obs.interpreter_details, max_message_chars
+                obs.to_agent_observation(),
+                max_message_chars,
             )
-            text += (
-                f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
-            )
+            text += f'\n[Command finished with exit code {obs.exit_code}]'
             return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
             text = 'OBSERVATION:\n' + obs.content
