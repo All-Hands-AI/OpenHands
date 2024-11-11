@@ -12,7 +12,7 @@ from openhands.events.observation.observation import Observation
 CMD_OUTPUT_PS1_BEGIN = '###PS1JSON###\n'
 CMD_OUTPUT_PS1_END = '\n###PS1END###\n'
 CMD_OUTPUT_METADATA_PS1_REGEX = re.compile(
-    f'{re.escape(CMD_OUTPUT_PS1_BEGIN)}(.*?){re.escape(CMD_OUTPUT_PS1_END)}', re.DOTALL
+    f'{CMD_OUTPUT_PS1_BEGIN}(.*?){CMD_OUTPUT_PS1_END}', re.DOTALL
 )
 
 
