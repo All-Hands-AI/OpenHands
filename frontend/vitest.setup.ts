@@ -13,7 +13,7 @@ vi.mock("react-i18next", async (importOriginal) => ({
 }));
 
 // Mock requests during tests
-beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));
+beforeAll(() => server.listen());
 afterEach(() => {
   server.resetHandlers();
   // Cleanup the document body after each test
