@@ -227,6 +227,7 @@ class RemoteRuntime(Runtime):
             'command': command,
             'working_dir': '/openhands/code/',
             'environment': {'DEBUG': 'true'} if self.config.debug else {},
+            'session_id': self.sid,
         }
 
         # Start the sandbox using the /start endpoint
