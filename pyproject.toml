@@ -13,6 +13,7 @@ packages = [
 [tool.poetry.dependencies]
 python = "^3.12"
 datasets = "*"
+PyGithub = "*"
 pandas = "*"
 litellm = "^1.51.1"
 google-generativeai = "*" # To use litellm with Gemini Pro API
@@ -93,6 +94,7 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -122,6 +124,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
