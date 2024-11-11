@@ -229,6 +229,12 @@ class ActionExecutor:
                     encoded_image = f'data:{mime_type};base64,{encoded_image}'
 
                 return FileReadObservation(path=filepath, content=encoded_image)
+            elif filepath.lower().endswith('.pdf'):
+                with open(filepath, 'rb') as file:
+                    pdf_data = file.read()
+                    encoded_pdf = base64.b64encode(pdf_data).decode('utf-8')
+                    encoded_pdf = f'data:application/pdf;base64,{encoded_pdf}'
+                return FileReadObservation(path=filepath, content=encoded_pdf)
 
             with open(filepath, 'r', encoding='utf-8') as file:
                 lines = read_lines(file.readlines(), action.start, action.end)

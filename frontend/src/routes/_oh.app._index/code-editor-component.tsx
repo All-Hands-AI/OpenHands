@@ -30,6 +30,7 @@ function CodeEditorCompoonent({
   };
 
   const isBase64Image = (content: string) => content.startsWith("data:image/");
+  const isPDF = (content: string) => content.startsWith("data:application/pdf");
 
   React.useEffect(() => {
     const handleSave = async (event: KeyboardEvent) => {
@@ -66,11 +67,25 @@ function CodeEditorCompoonent({
 
   const fileContent = modifiedFiles[selectedPath] || files[selectedPath];
 
-  return isBase64Image(fileContent) ? (
-    <section className="flex flex-col relative items-center overflow-auto h-[90%]">
-      <img src={fileContent} alt={selectedPath} className="object-contain" />
-    </section>
-  ) : (
+  if (isBase64Image(fileContent)) {
+    return (
+      <section className="flex flex-col relative items-center overflow-auto h-[90%]">
+        <img src={fileContent} alt={selectedPath} className="object-contain" />
+      </section>
+    );
+  }
+
+  if (isPDF(fileContent)) {
+    return (
+      <iframe
+        src={fileContent}
+        title={selectedPath}
+        width="100%"
+        height="100%"
+      />
+    );
+  }
+  return (
     <Editor
       data-testid="code-editor"
       path={selectedPath ?? undefined}
