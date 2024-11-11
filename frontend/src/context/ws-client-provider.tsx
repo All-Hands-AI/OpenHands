@@ -103,7 +103,7 @@ export function WsClientProvider({
       return () => {};
     }
 
-    // If there is no websocket or the tokens have changed or the current websocket os closed,
+    // If there is no websocket or the tokens have changed or the current websocket is closed,
     // create a new one
     if (
       !ws ||
