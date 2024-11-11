@@ -1,4 +1,3 @@
-import base64
 import os
 from pathlib import Path
 
@@ -82,15 +81,8 @@ async def read_file(
         )
 
     try:
-        if whole_path.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
-            with open(whole_path, 'rb') as file:
-                image_data = file.read()
-                encoded_image = base64.b64encode(image_data).decode('utf-8')
-                print(encoded_image)
-            return FileReadObservation(path=path, content=encoded_image)
-        else:
-            with open(whole_path, 'r', encoding='utf-8') as file:
-                lines = read_lines(file.readlines(), start, end)
+        with open(whole_path, 'r', encoding='utf-8') as file:
+            lines = read_lines(file.readlines(), start, end)
     except FileNotFoundError:
         return ErrorObservation(f'File not found: {path}')
     except UnicodeDecodeError:
