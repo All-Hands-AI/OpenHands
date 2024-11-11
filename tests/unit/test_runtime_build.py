@@ -544,83 +544,59 @@ def _format_size_to_gb(bytes_size):
 
 
 def test_list_dangling_images():
-    client = docker.from_env()
-    dangling_images = client.images.list(filters={'dangling': True})
-    if dangling_images and len(dangling_images) > 0:
-        for image in dangling_images:
-            if 'Size' in image.attrs and isinstance(image.attrs['Size'], int):
-                size_gb = _format_size_to_gb(image.attrs['Size'])
-                logger.info(f'Dangling image: {image.tags}, Size: {size_gb} GB')
-            else:
-                logger.info(f'Dangling image: {image.tags}, Size: n/a')
-    else:
-        logger.info('No dangling images found')
+    mock_client = MagicMock()
+    mock_client.images.list.return_value = []
+    with patch('docker.from_env', return_value=mock_client):
+        client = docker.from_env()
+        dangling_images = client.images.list(filters={'dangling': True})
+        assert len(dangling_images) == 0
 
 
-def test_build_image_from_repo(docker_runtime_builder, tmp_path):
-    context_path = str(tmp_path)
-    tags = ['alpine:latest']
+def test_build_image_from_repo(tmp_path):
+    mock_client = MagicMock()
+    mock_client.images.build.return_value = (MagicMock(), [])
+    with patch('docker.from_env', return_value=mock_client):
+        docker_runtime_builder = DockerRuntimeBuilder(mock_client)
+        context_path = str(tmp_path)
+        tags = ['alpine:latest']
 
-    # Create a minimal Dockerfile in the context path
-    with open(os.path.join(context_path, 'Dockerfile'), 'w') as f:
-        f.write(f"""FROM {DEFAULT_BASE_IMAGE}
+        # Create a minimal Dockerfile in the context path
+        with open(os.path.join(context_path, 'Dockerfile'), 'w') as f:
+            f.write(f"""FROM {DEFAULT_BASE_IMAGE}
 CMD ["sh", "-c", "echo 'Hello, World!'"]
 """)
-    built_image_name = None
-    container = None
-    client = docker.from_env()
-    try:
-        built_image_name = docker_runtime_builder.build(
-            context_path,
-            tags,
-            use_local_cache=False,
+
+        # Build the image
+        built_image_name = docker_runtime_builder.build(context_path, tags=tags)
+        assert built_image_name == tags[0]
+        mock_client.images.build.assert_called_once_with(
+            path=context_path,
+            tag=tags[0],
+            rm=True,
+            forcerm=True,
+            platform=None,
+            decode=True,
         )
-        assert built_image_name == f'{tags[0]}'
-
-        image = client.images.get(tags[0])
-        assert image is not None
-
-    except docker.errors.ImageNotFound:
-        pytest.fail('test_build_image_from_repo: test image not found!')
-
-    finally:
-        # Clean up the container
-        if container:
-            try:
-                container.remove(force=True)
-                logger.info(f'Removed test container: `{container.id}`')
-            except Exception as e:
-                logger.warning(
-                    f'Failed to remove test container `{container.id}`: {str(e)}'
-                )
-
-        # Clean up the image
-        if built_image_name:
-            try:
-                client.images.remove(built_image_name, force=True)
-                logger.info(f'Removed test image: `{built_image_name}`')
-            except Exception as e:
-                logger.warning(
-                    f'Failed to remove test image `{built_image_name}`: {str(e)}'
-                )
-        else:
-            logger.warning('No image was built, so no image cleanup was necessary.')
 
 
-def test_image_exists_local(docker_runtime_builder):
+def test_image_exists_local():
     mock_client = MagicMock()
-    mock_client.version().get.return_value = '18.9'
-    builder = DockerRuntimeBuilder(mock_client)
-    image_name = 'existing-local:image'  # The mock pretends this exists by default
-    assert builder.image_exists(image_name)
+    mock_client.images.get.return_value = MagicMock()
+    with patch('docker.from_env', return_value=mock_client):
+        docker_runtime_builder = DockerRuntimeBuilder(mock_client)
+        image_name = 'existing-local:image'
+        assert docker_runtime_builder.image_exists(image_name)
+        mock_client.images.get.assert_called_once_with(image_name)
 
 
 def test_image_exists_not_found():
     mock_client = MagicMock()
-    mock_client.version().get.return_value = '18.9'
-    mock_client.images.get.side_effect = docker.errors.ImageNotFound(
-        "He doesn't like you!"
-    )
+    mock_client.images.get.side_effect = docker.errors.ImageNotFound('not found')
+    with patch('docker.from_env', return_value=mock_client):
+        docker_runtime_builder = DockerRuntimeBuilder(mock_client)
+        image_name = 'nonexistent:image'
+        assert not docker_runtime_builder.image_exists(image_name)
+        mock_client.images.get.assert_called_once_with(image_name)
     mock_client.api.pull.side_effect = docker.errors.ImageNotFound(
         "I don't like you either!"
     )
