@@ -29,6 +29,8 @@ function CodeEditorCompoonent({
     if (selectedPath && value) modifyFileContent(selectedPath, value);
   };
 
+  const isBase64Image = (content: string) => content.startsWith("data:image/");
+
   React.useEffect(() => {
     const handleSave = async (event: KeyboardEvent) => {
       if (selectedPath && event.metaKey && event.key === "s") {
@@ -62,16 +64,18 @@ function CodeEditorCompoonent({
     );
   }
 
-  return (
+  const fileContent = modifiedFiles[selectedPath] || files[selectedPath];
+
+  return isBase64Image(fileContent) ? (
+    <section className="flex flex-col relative items-center overflow-auto h-[90%]">
+      <img src={fileContent} alt={selectedPath} className="object-contain" />
+    </section>
+  ) : (
     <Editor
       data-testid="code-editor"
       path={selectedPath ?? undefined}
       defaultValue=""
-      value={
-        selectedPath
-          ? modifiedFiles[selectedPath] || files[selectedPath]
-          : undefined
-      }
+      value={selectedPath ? fileContent : undefined}
       onMount={onMount}
       onChange={handleEditorChange}
       options={{ readOnly: isReadOnly }}

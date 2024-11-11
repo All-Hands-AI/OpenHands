@@ -7,7 +7,9 @@ NOTE: this will be executed inside the docker sandbox.
 
 import argparse
 import asyncio
+import base64
 import io
+import mimetypes
 import os
 import shutil
 import tempfile
@@ -217,6 +219,17 @@ class ActionExecutor:
         working_dir = self.bash_session.workdir
         filepath = self._resolve_path(action.path, working_dir)
         try:
+            if filepath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+                with open(filepath, 'rb') as file:
+                    image_data = file.read()
+                    encoded_image = base64.b64encode(image_data).decode('utf-8')
+                    mime_type, _ = mimetypes.guess_type(filepath)
+                    if mime_type is None:
+                        mime_type = 'image/png'  # default to PNG if mime type cannot be determined
+                    encoded_image = f'data:{mime_type};base64,{encoded_image}'
+
+                return FileReadObservation(path=filepath, content=encoded_image)
+
             with open(filepath, 'r', encoding='utf-8') as file:
                 lines = read_lines(file.readlines(), action.start, action.end)
         except FileNotFoundError:
