@@ -90,7 +90,7 @@ class BashSession:
         metadata = CmdOutputMetadata.from_ps1_match(ps1_matches[1])
 
         # Extract the command output between the two PS1 prompts
-        command_output = full_output[ps1_matches[0].end() : ps1_matches[1].start()]
+        command_output = full_output[ps1_matches[0].end() + 1 : ps1_matches[1].start()]
         command_output = command_output.lstrip().removeprefix(command.lstrip())
 
         self._clear_screen()
@@ -107,7 +107,7 @@ class BashSession:
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
         assert len(ps1_matches) == 1, 'Expected exactly one PS1 metadata block'
 
-        command_output = full_output[ps1_matches[0].end() :]
+        command_output = full_output[ps1_matches[0].end() + 1 :]
         # remove the previous command output from the new output if any
         if self.prev_output:
             _clean_command_output = command_output.removeprefix(self.prev_output)
@@ -137,7 +137,7 @@ class BashSession:
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
         assert len(ps1_matches) == 1, 'Expected exactly one PS1 metadata block'
 
-        command_output = full_output[ps1_matches[0].end() :]
+        command_output = full_output[ps1_matches[0].end() + 1 :]
         if self.prev_output:
             _clean_command_output = command_output.removeprefix(self.prev_output)
             command_output = (
@@ -179,7 +179,7 @@ class BashSession:
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
         assert len(ps1_matches) == 1, 'Expected exactly one PS1 metadata block'
 
-        command_output = full_output[ps1_matches[0].end() :]
+        command_output = full_output[ps1_matches[0].end() + 1 :]
         # remove the previous command output from the new output if any
         if self.prev_output:
             _clean_command_output = command_output.removeprefix(self.prev_output)
