@@ -11,6 +11,9 @@ import jwt
 import requests
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
@@ -93,6 +96,36 @@ app.add_middleware(
 app.add_middleware(NoCacheMiddleware)
 
 security_scheme = HTTPBearer()
+
+# Initialize rate limiter
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=['5 per second'],
+    strategy='moving-window',  # Use a sliding window for more accurate rate limiting
+)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+# Apply stricter limits to auth endpoints
+def get_path_limits(request: Request):
+    path = request.url.path
+    if path == '/ws' or path in ['/api/github/callback', '/api/authenticate']:
+        return ['1 per second']
+    return ['5 per second']
+
+
+@app.middleware('http')
+async def rate_limit_middleware(request: Request, call_next):
+    limits = get_path_limits(request)
+    try:
+        await limiter.check_request_limit(request, limits=limits)
+    except RateLimitExceeded:
+        return JSONResponse(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            content={'error': 'Too many requests'},
+        )
+    return await call_next(request)
 
 
 def load_file_upload_config() -> tuple[int, bool, list[str]]:
@@ -260,6 +293,13 @@ async def attach_session(request: Request, call_next):
 
 @app.websocket('/ws')
 async def websocket_endpoint(websocket: WebSocket):
+    try:
+        # Create a mock request object for rate limiting
+        mock_request = Request(scope={'type': 'http', 'client': websocket.client})
+        await limiter.check_request_limit(mock_request, limits=['1 per second'])
+    except RateLimitExceeded:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
     """WebSocket endpoint for receiving events from the client (i.e., the browser).
     Once connected, the client can send various actions:
     - Initialize the agent:
