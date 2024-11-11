@@ -11,6 +11,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import WebSocket from "ws";
 import toast from "react-hot-toast";
+import posthog from "posthog-js";
 import { getSettings } from "#/services/settings";
 import Security from "../components/modals/security/Security";
 import { Controls } from "#/components/controls";
@@ -30,9 +31,9 @@ import {
 } from "#/services/terminalService";
 import { clearTerminal } from "#/state/commandSlice";
 import { useEffectOnce } from "#/utils/use-effect-once";
-import CodeIcon from "#/assets/code.svg?react";
-import GlobeIcon from "#/assets/globe.svg?react";
-import ListIcon from "#/assets/list-type-number.svg?react";
+import CodeIcon from "#/icons/code.svg?react";
+import GlobeIcon from "#/icons/globe.svg?react";
+import ListIcon from "#/icons/list-type-number.svg?react";
 import { createChatMessage } from "#/services/chatService";
 import {
   clearFiles,
@@ -159,6 +160,11 @@ function App() {
   const sendInitialQuery = (query: string, base64Files: string[]) => {
     const timestamp = new Date().toISOString();
     send(createChatMessage(query, base64Files, timestamp));
+
+    const userSettings = getSettings();
+    if (userSettings.LLM_API_KEY) {
+      posthog.capture("user_activated");
+    }
   };
 
   const handleOpen = React.useCallback(() => {
