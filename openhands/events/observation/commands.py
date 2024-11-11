@@ -36,7 +36,7 @@ class CmdOutputMetadata(BaseModel):
                 'exit_code': '$?',
                 'username': r'\u',
                 'hostname': r'\h',
-                'working_dir': r'\w',
+                'working_dir': r'$(pwd)',
                 'py_interpreter_path': r'$(which python 2>/dev/null || echo "")',
             },
             indent=2,
