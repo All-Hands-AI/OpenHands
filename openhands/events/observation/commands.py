@@ -10,9 +10,10 @@ from openhands.core.schema import ObservationType
 from openhands.events.observation.observation import Observation
 
 CMD_OUTPUT_PS1_BEGIN = '###PS1JSON###\n'
-CMD_OUTPUT_PS1_END = '\n###PS1END###\n'
+CMD_OUTPUT_PS1_END = '\n###PS1END###'
 CMD_OUTPUT_METADATA_PS1_REGEX = re.compile(
-    f'{CMD_OUTPUT_PS1_BEGIN}(.*?){CMD_OUTPUT_PS1_END}', re.DOTALL
+    f'{CMD_OUTPUT_PS1_BEGIN}(.*?){CMD_OUTPUT_PS1_END}',
+    re.DOTALL
 )
 
 
@@ -44,7 +45,7 @@ class CmdOutputMetadata(BaseModel):
         # Make sure we escape double quotes in the JSON string
         # So that PS1 will keep them as part of the output
         prompt += json_str.replace('"', r'\"')
-        prompt += CMD_OUTPUT_PS1_END
+        prompt += CMD_OUTPUT_PS1_END + '\n' # Ensure there's a newline at the end
         return prompt
 
     @classmethod
