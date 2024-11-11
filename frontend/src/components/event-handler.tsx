@@ -23,9 +23,9 @@ import {
   clearSelectedRepository,
   setImportedProjectZip,
 } from "#/state/initial-query-slice";
+import { clientLoader as appClientLoader } from "#/routes/_oh.app";
 import store, { RootState } from "#/store";
 import { createChatMessage } from "#/services/chatService";
-import { Settings } from "#/services/settings";
 import { clientLoader as rootClientLoader } from "#/routes/_oh";
 import { isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
@@ -44,15 +44,6 @@ const isServerError = (data: object): data is ServerError => "error" in data;
 const isErrorObservation = (data: object): data is ErrorObservation =>
   "observation" in data && data.observation === "error";
 
-interface LoaderData {
-  settings: Settings;
-  token: string;
-  ghToken: string;
-  repo: string;
-  q: string;
-  lastCommit: string;
-}
-
 export function EventHandler({ children }: React.PropsWithChildren) {
   const { events, status, send } = useWsClient();
   const statusRef = React.useRef<WsClientProviderStatus | null>(null);
@@ -62,7 +53,7 @@ export function EventHandler({ children }: React.PropsWithChildren) {
   const { files, importedProjectZip } = useSelector(
     (state: RootState) => state.initalQuery,
   );
-  const { ghToken, repo }: LoaderData = useLoaderData();
+  const { ghToken, repo } = useLoaderData<typeof appClientLoader>();
   const initialQueryRef = React.useRef<string | null>(
     store.getState().initalQuery.initialQuery,
   );
