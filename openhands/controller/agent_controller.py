@@ -287,8 +287,12 @@ class AgentController:
             action (MessageAction): The message action to handle.
         """
         if action.source == EventSource.USER:
+            # Use info level if LOG_ALL_EVENTS is set
+            log_level = (
+                'info' if os.getenv('LOG_ALL_EVENTS') in ('true', '1') else 'debug'
+            )
             self.log(
-                'debug',
+                log_level,
                 str(action),
                 extra={'msg_type': 'ACTION', 'event_source': EventSource.USER},
             )
