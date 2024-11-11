@@ -24,7 +24,7 @@ export function ProjectMenuDetails({
         className="flex items-center gap-2"
       >
         <img src={avatar} alt="" className="w-4 h-4 rounded-full" />
-        <span className="text-sm leading-6 font-semibold">{repoName}</span>
+        <span className="text-sm leading-6 font-semibold truncate max-w-[200px]">{repoName}</span>
         <ExternalLinkIcon width={16} height={16} />
       </a>
       <a

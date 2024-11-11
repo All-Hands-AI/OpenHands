@@ -73,7 +73,7 @@ Please push the changes to GitHub and open a pull request.
   };
 
   return (
-    <div className="px-4 py-[10px] w-[337px] rounded-xl border border-[#525252] flex justify-between items-center relative">
+    <div className="px-4 py-[10px] min-w-[337px] max-w-[400px] rounded-xl border border-[#525252] flex justify-between items-center relative">
       {!working && contextMenuIsOpen && (
         <ProjectMenuCardContextMenu
           isConnectedToGitHub={isConnectedToGitHub}
