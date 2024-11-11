@@ -12,6 +12,7 @@ import {
 } from "@remix-run/react";
 import posthog from "posthog-js";
 import { useDispatch } from "react-redux";
+import { FaCommentDots } from "react-icons/fa";
 import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
 import CogTooth from "#/assets/cog-tooth";
@@ -285,6 +286,15 @@ export default function MainApp() {
             aria-label="Documentation"
           >
             <DocsIcon width={28} height={28} />
+          </a>
+          <a
+            href="https://airtable.com/app1eEYA5bqQmGTNk/pagiMCeTlddJGbUkV/form"
+            target="_blank"
+            rel="noreferrer noopener"
+            className="w-8 h-8 rounded-full hover:opacity-80 flex items-center justify-center"
+            aria-label="Feedback"
+          >
+            <FaCommentDots fill="#A3A3A3" size={24} />
           </a>
           {!!token && (
             <button
