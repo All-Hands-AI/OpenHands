@@ -59,38 +59,22 @@ class CmdOutputMetadata(BaseModel):
         processed = metadata.copy()
         # Convert numeric fields
         if 'pid' in metadata:
-            if isinstance(metadata['pid'], bool):
-                processed['pid'] = 1 if metadata['pid'] else 0
-            else:
-                try:
-                    processed['pid'] = int(float(str(metadata['pid'])))
-                except (ValueError, TypeError):
-                    processed['pid'] = -1
+            try:
+                processed['pid'] = int(float(str(metadata['pid'])))
+            except (ValueError, TypeError):
+                logger.warning(
+                    f'Failed to parse pid: {metadata["pid"]}. Setting to -1.'
+                )
+                processed['pid'] = -1
         if 'exit_code' in metadata:
-            if isinstance(metadata['exit_code'], bool):
-                processed['exit_code'] = 1 if metadata['exit_code'] else 0
-            else:
-                try:
-                    processed['exit_code'] = int(float(str(metadata['exit_code'])))
-                except (ValueError, TypeError):
-                    processed['exit_code'] = -1
+            try:
+                processed['exit_code'] = int(float(str(metadata['exit_code'])))
+            except (ValueError, TypeError):
+                logger.warning(
+                    f'Failed to parse exit code: {metadata["exit_code"]}. Setting to -1.'
+                )
+                processed['exit_code'] = -1
         return cls(**processed)
-
-    @classmethod
-    def from_ps1(cls, ps1_str: str) -> Self:
-        """Parse PS1 output and extract metadata."""
-        matches = cls.matches_ps1_metadata(ps1_str)
-        if not matches:
-            return cls()
-        if len(matches) > 1:
-            raise ValueError('Multiple PS1 metadata blocks detected')
-        try:
-            return cls.from_ps1_match(matches[0])
-        except (json.JSONDecodeError, ValueError, TypeError) as e:
-            logger.warning(
-                f'Failed to parse PS1 metadata: {matches[0].group(1)}. Error: {str(e)}'
-            )
-            return cls()
 
 
 @dataclass

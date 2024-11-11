@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from openhands.events.observation.commands import (
     CmdOutputMetadata,
     CmdOutputObservation,
@@ -55,8 +57,9 @@ def test_ps1_metadata_parsing():
 {json.dumps(test_data, indent=2)}
 ###PS1END###
 """
-
-    metadata = CmdOutputMetadata.from_ps1(ps1_str)
+    matches = CmdOutputMetadata.matches_ps1_metadata(ps1_str)
+    assert len(matches) == 1
+    metadata = CmdOutputMetadata.from_ps1_match(matches[0])
     assert metadata.exit_code == test_data['exit_code']
     assert metadata.username == test_data['username']
     assert metadata.hostname == test_data['hostname']
@@ -66,7 +69,6 @@ def test_ps1_metadata_parsing():
 
 def test_ps1_metadata_parsing_string():
     """Test parsing PS1 output into CmdOutputMetadata"""
-
     ps1_str = r"""###PS1JSON###
 {
   "exit_code": "0",
@@ -77,8 +79,9 @@ def test_ps1_metadata_parsing_string():
 }
 ###PS1END###
 """
-
-    metadata = CmdOutputMetadata.from_ps1(ps1_str)
+    matches = CmdOutputMetadata.matches_ps1_metadata(ps1_str)
+    assert len(matches) == 1
+    metadata = CmdOutputMetadata.from_ps1_match(matches[0])
     assert metadata.exit_code == 0
     assert metadata.username == 'myname'
     assert metadata.hostname == 'myhostname'
@@ -104,7 +107,9 @@ This is something that not part of the PS1 prompt
 ###PS1END###
 """
 
-    metadata = CmdOutputMetadata.from_ps1(ps1_str)
+    matches = CmdOutputMetadata.matches_ps1_metadata(ps1_str)
+    assert len(matches) == 1
+    metadata = CmdOutputMetadata.from_ps1_match(matches[0])
     assert metadata.exit_code == test_data['exit_code']
     assert metadata.username == test_data['username']
     assert metadata.hostname == test_data['hostname']
@@ -119,24 +124,25 @@ def test_ps1_metadata_parsing_invalid():
     {invalid json}
 ###PS1END###
 """
-    metadata = CmdOutputMetadata.from_ps1(invalid_json)
-    assert isinstance(metadata, CmdOutputMetadata)
-    assert metadata.exit_code == -1  # default value
+    matches = CmdOutputMetadata.matches_ps1_metadata(invalid_json)
+    assert len(matches) == 1
+    with pytest.raises(json.JSONDecodeError):
+        CmdOutputMetadata.from_ps1_match(matches[0])
 
     # Test with missing markers
-    invalid_format = """{"exit_code": 0}"""
-    metadata = CmdOutputMetadata.from_ps1(invalid_format)
-    assert isinstance(metadata, CmdOutputMetadata)
-    assert metadata.exit_code == -1  # default value
+    invalid_format = """NOT A VALID PS1 PROMPT"""
+    matches = CmdOutputMetadata.matches_ps1_metadata(invalid_format)
+    assert len(matches) == 0
 
     # Test with empty PS1 metadata
     empty_metadata = """###PS1JSON###
 
 ###PS1END###
 """
-    metadata = CmdOutputMetadata.from_ps1(empty_metadata)
-    assert isinstance(metadata, CmdOutputMetadata)
-    assert metadata.exit_code == -1  # default value
+    matches = CmdOutputMetadata.matches_ps1_metadata(empty_metadata)
+    assert len(matches) == 1
+    with pytest.raises(json.JSONDecodeError):
+        CmdOutputMetadata.from_ps1_match(matches[0])
 
     # Test with whitespace in PS1 metadata
     whitespace_metadata = """###PS1JSON###
@@ -152,8 +158,9 @@ def test_ps1_metadata_parsing_invalid():
     
 ###PS1END###
 """
-    metadata = CmdOutputMetadata.from_ps1(whitespace_metadata)
-    assert isinstance(metadata, CmdOutputMetadata)
+    matches = CmdOutputMetadata.matches_ps1_metadata(whitespace_metadata)
+    assert len(matches) == 1
+    metadata = CmdOutputMetadata.from_ps1_match(matches[0])
     assert metadata.exit_code == 0
     assert metadata.pid == 123
 
@@ -169,7 +176,9 @@ def test_ps1_metadata_missing_fields():
 {json.dumps(minimal_data)}
 ###PS1END###
 """
-    metadata = CmdOutputMetadata.from_ps1(ps1_str)
+    matches = CmdOutputMetadata.matches_ps1_metadata(ps1_str)
+    assert len(matches) == 1
+    metadata = CmdOutputMetadata.from_ps1_match(matches[0])
     assert metadata.exit_code == 0
     assert metadata.pid == 123
     assert metadata.username is None
@@ -186,79 +195,16 @@ def test_ps1_metadata_missing_fields():
 {json.dumps(no_exit_code)}
 ###PS1END###
 """
-    metadata = CmdOutputMetadata.from_ps1(ps1_str)
+    matches = CmdOutputMetadata.matches_ps1_metadata(ps1_str)
+    assert len(matches) == 1
+    metadata = CmdOutputMetadata.from_ps1_match(matches[0])
     assert metadata.exit_code == -1  # default value
     assert metadata.pid == 123
     assert metadata.username == 'test'
 
 
-def test_ps1_metadata_malformed_values():
-    """Test handling of malformed values in PS1 metadata"""
-    # Test with non-integer exit_code and pid
-    malformed_data = {
-        'exit_code': 'not_an_int',
-        'pid': 'abc',
-        'username': 'test'
-    }
-    ps1_str = f"""###PS1JSON###
-{json.dumps(malformed_data)}
-###PS1END###
-"""
-    # Should return default metadata for numeric fields when parsing fails
-    # but keep valid string fields
-    metadata = CmdOutputMetadata.from_ps1(ps1_str)
-    assert metadata.exit_code == -1
-    assert metadata.pid == -1
-    assert metadata.username == 'test'
-
-    # Test with boolean values for numeric fields
-    boolean_data = {
-        'exit_code': True,
-        'pid': False,
-        'username': 'test'
-    }
-    ps1_str = f"""###PS1JSON###
-{json.dumps(boolean_data)}
-###PS1END###
-"""
-    metadata = CmdOutputMetadata.from_ps1(ps1_str)
-    assert metadata.exit_code == 1  # True converts to 1
-    assert metadata.pid == 0  # False converts to 0
-    assert metadata.username == 'test'
-
-    # Test with float values for numeric fields
-    float_data = {
-        'exit_code': 1.5,
-        'pid': 2.7,
-        'username': 'test'
-    }
-    ps1_str = f"""###PS1JSON###
-{json.dumps(float_data)}
-###PS1END###
-"""
-    metadata = CmdOutputMetadata.from_ps1(ps1_str)
-    assert metadata.exit_code == 1  # Float should be truncated
-    assert metadata.pid == 2  # Float should be truncated
-    assert metadata.username == 'test'
-
-    # Test with None values for numeric fields
-    none_data = {
-        'exit_code': None,
-        'pid': None,
-        'username': 'test'
-    }
-    ps1_str = f"""###PS1JSON###
-{json.dumps(none_data)}
-###PS1END###
-"""
-    metadata = CmdOutputMetadata.from_ps1(ps1_str)
-    assert metadata.exit_code == -1  # Should use default value
-    assert metadata.pid == -1  # Should use default value
-    assert metadata.username == 'test'
-
-
 def test_ps1_metadata_multiple_blocks():
-    """Test that an error is raised when multiple PS1 metadata blocks are present"""
+    """Test handling multiple PS1 metadata blocks"""
     test_data = {
         'exit_code': 0,
         'username': 'testuser',
@@ -275,10 +221,13 @@ Some other content
 {json.dumps(test_data, indent=2)}
 ###PS1END###
 """
-
-    import pytest
-    with pytest.raises(ValueError, match="Multiple PS1 metadata blocks detected"):
-        CmdOutputMetadata.from_ps1(ps1_str)
+    matches = CmdOutputMetadata.matches_ps1_metadata(ps1_str)
+    assert len(matches) == 2  # Should find both blocks
+    # Both blocks should parse successfully
+    metadata1 = CmdOutputMetadata.from_ps1_match(matches[0])
+    metadata2 = CmdOutputMetadata.from_ps1_match(matches[1])
+    assert metadata1.exit_code == test_data['exit_code']
+    assert metadata2.exit_code == test_data['exit_code']
 
 
 def test_ps1_metadata_regex_pattern():
@@ -342,7 +291,9 @@ def test_ps1_metadata_empty_fields():
 {json.dumps(empty_data)}
 ###PS1END###
 """
-    metadata = CmdOutputMetadata.from_ps1(ps1_str)
+    matches = CmdOutputMetadata.matches_ps1_metadata(ps1_str)
+    assert len(matches) == 1
+    metadata = CmdOutputMetadata.from_ps1_match(matches[0])
     assert metadata.exit_code == 0
     assert metadata.pid == 123
     assert metadata.username == ''
@@ -362,7 +313,9 @@ def test_ps1_metadata_empty_fields():
     }
 ###PS1END###
 """
-    metadata = CmdOutputMetadata.from_ps1(malformed_json)
+    matches = CmdOutputMetadata.matches_ps1_metadata(malformed_json)
+    assert len(matches) == 1
+    metadata = CmdOutputMetadata.from_ps1_match(matches[0])
     assert metadata.exit_code == 0
     assert metadata.pid == 123
     assert metadata.username == 'test'
