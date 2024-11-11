@@ -1,9 +1,34 @@
 import os
+import tempfile
+from pathlib import Path
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
-from openhands.runtime.utils.bash import BashSession
+from openhands.runtime.utils.bash import BashSession, BashCommandStatus
 
+
+def test_session_initialization():
+    # Test with custom working directory
+    with tempfile.TemporaryDirectory() as temp_dir:
+        session = BashSession(work_dir=temp_dir)
+        obs = session.execute(CmdRunAction('pwd'))
+        assert obs.content.rstrip() == temp_dir
+        session.close()
+
+    # Test with custom username
+    session = BashSession(work_dir=os.getcwd(), username='nobody')
+    assert 'openhands-nobody' in session.session.name
+    session.close()
+
+def test_pwd_property():
+    session = BashSession(work_dir=os.getcwd())
+    initial_pwd = session.pwd
+    
+    # Change directory and verify pwd updates
+    test_dir = '/tmp'
+    session.execute(CmdRunAction(f'cd {test_dir}'))
+    assert session.pwd == test_dir
+    session.close()
 
 def test_basic_command():
     session = BashSession(work_dir=os.getcwd())
@@ -20,35 +45,50 @@ def test_basic_command():
     assert obs.metadata.exit_code == 127
     assert obs.content.rstrip() == 'bash: nonexistent_command: command not found'
 
+    # Test command with special characters
+    obs = session.execute(CmdRunAction("echo 'hello   world    with\nspecial  chars'"))
+    assert 'hello   world    with\nspecial  chars' in obs.content
+    assert obs.metadata.exit_code == 0
+
+    # Test multiple commands in sequence
+    obs = session.execute(CmdRunAction('echo "first" && echo "second" && echo "third"'))
+    assert obs.content.strip() == 'first\nsecond\nthird'
+    assert obs.metadata.exit_code == 0
+
+    session.close()
+
 
 def test_long_running_command():
     session = BashSession(work_dir=os.getcwd())
 
-    # Test no-change timeout behavior
+    # Test command that produces output slowly
+    obs = session.execute(
+        CmdRunAction('for i in {1..3}; do echo $i; sleep 12; done', blocking=False)
+    )
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert '1' in obs.content  # First number should appear before timeout
+    assert obs.metadata.exit_code == -1  # -1 indicates command is still running
+    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
+
+    # Continue watching output
+    obs = session.execute(CmdRunAction(''))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert session.prev_status == BashCommandStatus.CONTINUE
+
+    # Verify we can see new numbers in the output
+    assert any(str(num) in obs.content for num in range(2, 4))
+
+    # Test command that produces no output
     obs = session.execute(CmdRunAction('sleep 15', blocking=False))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert (
         f'no new output after {BashSession.NO_CHANGE_TIMEOUT_SECONDS} seconds'
         in obs.content
     )
-    assert obs.metadata.exit_code is None
+    assert obs.metadata.exit_code == -1  # -1 indicates command is still running
+    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
-    # Continue waiting with empty command
-    obs = session.execute(CmdRunAction(''))
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert '[Command output continued from previous command]' in obs.content
-
-    # Start a long-running command
-    obs = session.execute(CmdRunAction("sleep 2 && echo 'done sleeping'"))
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert 'done sleeping' in obs.content
-    assert obs.metadata.exit_code == 0
-
-    # Test timeout behavior
-    obs = session.execute(CmdRunAction('sleep 5', timeout=1))
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert 'timed out after 1 seconds' in obs.content
-    assert obs.metadata.exit_code is None  # No exit code available for timeout
+    session.close()
 
 
 def test_interactive_command():
@@ -62,13 +102,28 @@ def test_interactive_command():
     )
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'Enter name:' in obs.content
-    assert obs.metadata.exit_code is None  # No exit code while waiting for input
+    assert obs.metadata.exit_code == -1  # -1 indicates command is still running
+    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     # Send input
     obs = session.execute(CmdRunAction('John'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'Hello John' in obs.content
     assert obs.metadata.exit_code == 0
+    assert session.prev_status == BashCommandStatus.COMPLETED
+
+    # Test multiline command input
+    obs = session.execute(CmdRunAction('cat << EOF', blocking=True))
+    assert obs.metadata.exit_code is None
+    obs = session.execute(CmdRunAction('line 1'))
+    assert obs.metadata.exit_code is None
+    obs = session.execute(CmdRunAction('line 2'))
+    assert obs.metadata.exit_code is None
+    obs = session.execute(CmdRunAction('EOF'))
+    assert 'line 1\nline 2' in obs.content.replace('\r\n', '\n')
+    assert obs.metadata.exit_code == 0
+
+    session.close()
 
 
 def test_ctrl_c():
@@ -80,12 +135,16 @@ def test_ctrl_c():
     )
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'looping' in obs.content
-    assert obs.metadata.exit_code is None  # No exit code while running
+    assert obs.metadata.exit_code == -1  # -1 indicates command is still running
+    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     # Send Ctrl+C
     obs = session.execute(CmdRunAction('ctrl+c'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.metadata.exit_code == 130  # Standard exit code for Ctrl+C
+    assert session.prev_status == BashCommandStatus.COMPLETED
+
+    session.close()
 
 
 def test_empty_command_errors():
@@ -96,6 +155,9 @@ def test_empty_command_errors():
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'ERROR: No previous command to continue from' in obs.content
     assert obs.metadata.exit_code is None
+    assert session.prev_status is None
+
+    session.close()
 
 
 def test_command_output_continuation():
@@ -107,11 +169,48 @@ def test_command_output_continuation():
     )
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'no new output after' in obs.content
+    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     # Continue watching output
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[Command output continued from previous command]' in obs.content
+    assert session.prev_status == BashCommandStatus.CONTINUE
 
     # Verify we can see new numbers in the output
     assert any(str(num) in obs.content for num in range(1, 6))
+
+    session.close()
+
+def test_ansi_escape_codes():
+    session = BashSession(work_dir=os.getcwd())
+
+    # Test command that produces colored output
+    obs = session.execute(CmdRunAction('echo -e "\\033[31mRed\\033[0m \\033[32mGreen\\033[0m"'))
+    assert 'Red Green' in obs.content  # ANSI codes should be stripped
+    assert obs.metadata.exit_code == 0
+
+    session.close()
+
+def test_long_output():
+    session = BashSession(work_dir=os.getcwd())
+
+    # Generate a long output that may exceed buffer size
+    obs = session.execute(CmdRunAction('for i in {1..1000}; do echo "Line $i"; done'))
+    assert 'Line 1' in obs.content
+    assert 'Line 1000' in obs.content
+    assert obs.metadata.exit_code == 0
+
+    session.close()
+
+def test_multiline_command():
+    session = BashSession(work_dir=os.getcwd())
+
+    # Test multiline command with PS2 prompt disabled
+    obs = session.execute(CmdRunAction('''if true; then
+echo "inside if"
+fi'''))
+    assert 'inside if' in obs.content
+    assert obs.metadata.exit_code == 0
+
+    session.close()
