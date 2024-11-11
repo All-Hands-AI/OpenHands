@@ -251,6 +251,9 @@ class EventStreamRuntime(Runtime):
     def _init_container(self):
         self.log('debug', 'Preparing to start container...')
         self.send_status_message('STATUS$PREPARING_CONTAINER')
+        self._close_containers(
+            rm_all_containers=True
+        )  # TODO: in multi-Conversation, this will have to go away
         plugin_arg = ''
         if self.plugins is not None and len(self.plugins) > 0:
             plugin_arg = (
