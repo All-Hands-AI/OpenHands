@@ -62,9 +62,6 @@ class CmdOutputMetadata(BaseModel):
             try:
                 processed['pid'] = int(float(str(metadata['pid'])))
             except (ValueError, TypeError):
-                logger.warning(
-                    f'Failed to parse pid: {metadata["pid"]}. Setting to -1.'
-                )
                 processed['pid'] = -1
         if 'exit_code' in metadata:
             try:
