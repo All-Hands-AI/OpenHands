@@ -62,7 +62,6 @@ opentelemetry-api = "1.25.0"
 opentelemetry-exporter-otlp-proto-grpc = "1.25.0"
 modal = "^0.64.145"
 runloop-api-client = "0.7.0"
-slowapi = "^0.1.9"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
@@ -94,7 +93,6 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
-
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -124,7 +122,6 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
-
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
