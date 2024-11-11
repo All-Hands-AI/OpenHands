@@ -2,7 +2,7 @@ import React from "react";
 import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import posthog from "posthog-js";
-import EllipsisH from "#/assets/ellipsis-h.svg?react";
+import EllipsisH from "#/icons/ellipsis-h.svg?react";
 import { ModalBackdrop } from "../modals/modal-backdrop";
 import { ConnectToGitHubModal } from "../modals/connect-to-github-modal";
 import { addUserMessage } from "#/state/chatSlice";

@@ -1,6 +1,6 @@
 import React from "react";
 import TextareaAutosize from "react-textarea-autosize";
-import ArrowSendIcon from "#/assets/arrow-send.svg?react";
+import ArrowSendIcon from "#/icons/arrow-send.svg?react";
 import { cn } from "#/utils/utils";
 
 interface ChatInputProps {
