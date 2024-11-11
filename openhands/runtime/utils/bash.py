@@ -91,7 +91,7 @@ class BashSession:
 
         # Extract the command output between the two PS1 prompts
         command_output = full_output[ps1_matches[0].end() + 1 : ps1_matches[1].start()]
-        command_output = command_output.lstrip().removeprefix(command.lstrip())
+        command_output = command_output.lstrip().removeprefix(command.lstrip()).lstrip()
 
         self._clear_screen()
         return CmdOutputObservation(
@@ -146,7 +146,7 @@ class BashSession:
             )
             self.prev_output = _clean_command_output
 
-        command_output = command_output.lstrip().removeprefix(command.lstrip())
+        command_output = command_output.lstrip().removeprefix(command.lstrip()).lstrip()
         command_output += (
             f'\n[The command timed out after {timeout} seconds. '
             "You may wait longer to see additional output by sending empty command '', "
