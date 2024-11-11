@@ -17,8 +17,8 @@ Frontend:
 - Prerequisites: A recent version of NodeJS / NPM
 - Setup: Run `npm install` in the frontend directory
 - Testing:
-  - Run tests: `npm run test`
-  - To run specific tests: `npm run test -- -t "TestName"`
+  - Run tests: `npm run test -- --silent`
+  - To run specific tests: `npm run test -- -t "TestName" --silent`
 - Building:
   - Build for production: `npm run build`
 - Environment Variables:
