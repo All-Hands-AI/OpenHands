@@ -34,20 +34,16 @@ jobs:
         uses: Vampire/setup-wsl@v2
         with:
           distribution: Ubuntu-22.04
-          
+          additional-packages: python3-pip python3-venv
 
-      - name: Install poetry via pipx
+      - name: Set up Python and Poetry in WSL
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-pip
-          python3 -m pip install pipx
+          sudo apt-get install -y python${{ matrix.python-version }} python${{ matrix.python-version }}-venv
+          python3 -m pip install --user pipx
+          python3 -m pipx ensurepath
+          source ~/.bashrc
           pipx install poetry
-          
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'poetry'
           
       - name: Install Python dependencies using Poetry
         run: poetry install --without evaluation,llama-index
