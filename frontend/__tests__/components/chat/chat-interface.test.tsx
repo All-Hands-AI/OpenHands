@@ -16,14 +16,14 @@ describe("Empty state", () => {
     send: vi.fn(),
   }));
 
-  const { useSocket: useSocketMock } = vi.hoisted(() => ({
-    useSocket: vi.fn(() => ({ send: sendMock, runtimeActive: true })),
+  const { useWsClient: useWsClientMock } = vi.hoisted(() => ({
+    useWsClient: vi.fn(() => ({ send: sendMock, runtimeActive: true })),
   }));
 
   beforeAll(() => {
     vi.mock("#/context/socket", async (importActual) => ({
-      ...(await importActual<typeof import("#/context/socket")>()),
-      useSocket: useSocketMock,
+      ...(await importActual<typeof import("#/context/ws-client-provider")>()),
+      useWsClient: useWsClientMock,
     }));
   });
 
@@ -77,7 +77,7 @@ describe("Empty state", () => {
     "should load the a user message to the input when selecting",
     async () => {
       // this is to test that the message is in the UI before the socket is called
-      useSocketMock.mockImplementation(() => ({
+      useWsClientMock.mockImplementation(() => ({
         send: sendMock,
         runtimeActive: false, // mock an inactive runtime setup
       }));
@@ -106,7 +106,7 @@ describe("Empty state", () => {
   it.fails(
     "should send the message to the socket only if the runtime is active",
     async () => {
-      useSocketMock.mockImplementation(() => ({
+      useWsClientMock.mockImplementation(() => ({
         send: sendMock,
         runtimeActive: false, // mock an inactive runtime setup
       }));
@@ -123,7 +123,7 @@ describe("Empty state", () => {
       await user.click(displayedSuggestions[0]);
       expect(sendMock).not.toHaveBeenCalled();
 
-      useSocketMock.mockImplementation(() => ({
+      useWsClientMock.mockImplementation(() => ({
         send: sendMock,
         runtimeActive: true, // mock an active runtime setup
       }));
