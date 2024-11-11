@@ -26,6 +26,7 @@ import { extractModelAndProvider } from "./extractModelAndProvider";
  */
 export const organizeModelsAndProviders = (models: string[]) => {
   const object: Record<string, { separator: string; models: string[] }> = {};
+
   models.forEach((model) => {
     const {
       separator,
@@ -45,5 +46,6 @@ export const organizeModelsAndProviders = (models: string[]) => {
     }
     object[key].models.push(modelId);
   });
+
   return object;
 };
