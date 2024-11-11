@@ -57,7 +57,7 @@ interface LoaderData {
   lastCommit: string;
 }
 
-export function EventHandler({ children }: EventHandlerProps) {
+export function EventHandler({ children }: React.PropsWithChildren) {
   const { events, status, send } = useWsClient();
   const statusRef = React.useRef<WsClientProviderStatus | null>(null);
   const runtimeActive = status === WsClientProviderStatus.ACTIVE;
