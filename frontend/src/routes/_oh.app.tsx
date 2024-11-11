@@ -30,9 +30,9 @@ import {
 } from "#/services/terminalService";
 import { clearTerminal } from "#/state/commandSlice";
 import { useEffectOnce } from "#/utils/use-effect-once";
-import CodeIcon from "#/assets/code.svg?react";
-import GlobeIcon from "#/assets/globe.svg?react";
-import ListIcon from "#/assets/list-type-number.svg?react";
+import CodeIcon from "#/icons/code.svg?react";
+import GlobeIcon from "#/icons/globe.svg?react";
+import ListIcon from "#/icons/list-type-number.svg?react";
 import { createChatMessage } from "#/services/chatService";
 import {
   clearFiles,
