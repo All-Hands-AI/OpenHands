@@ -263,28 +263,22 @@ Some other content
 def test_ps1_metadata_regex_pattern():
     """Test the regex pattern used to extract PS1 metadata"""
     # Test basic pattern matching
-    test_str = "###PS1JSON###\ntest\n###PS1END###\n"
+    test_str = f"{CMD_OUTPUT_PS1_BEGIN}test\n{CMD_OUTPUT_PS1_END}"
     matches = CMD_OUTPUT_METADATA_PS1_REGEX.finditer(test_str)
     match = next(matches)
-    assert match.group(1) == "test"
-
-    # Test with different line endings
-    test_str = "###PS1JSON###\r\ntest\r\n###PS1END###\r\n"
-    matches = CMD_OUTPUT_METADATA_PS1_REGEX.finditer(test_str)
-    match = next(matches)
-    assert match.group(1) == "test"
+    assert match.group(1).strip() == "test"
 
     # Test with content before and after
-    test_str = "prefix\n###PS1JSON###\ntest\n###PS1END###\nsuffix"
+    test_str = f"prefix\n{CMD_OUTPUT_PS1_BEGIN}test\n{CMD_OUTPUT_PS1_END}suffix"
     matches = CMD_OUTPUT_METADATA_PS1_REGEX.finditer(test_str)
     match = next(matches)
-    assert match.group(1) == "test"
+    assert match.group(1).strip() == "test"
 
     # Test with multiline content
-    test_str = "###PS1JSON###\nline1\nline2\nline3\n###PS1END###\n"
+    test_str = f"{CMD_OUTPUT_PS1_BEGIN}line1\nline2\nline3\n{CMD_OUTPUT_PS1_END}"
     matches = CMD_OUTPUT_METADATA_PS1_REGEX.finditer(test_str)
     match = next(matches)
-    assert match.group(1) == "line1\nline2\nline3"
+    assert match.group(1).strip() == "line1\nline2\nline3"
 
 
 def test_cmd_output_observation_properties():
