@@ -69,10 +69,14 @@ class BashSession:
         Args:
             full: If True, capture the entire history of the pane.
         """
+        # https://man7.org/linux/man-pages/man1/tmux.1.html
+        # -J preserves trailing spaces and joins any wrapped lines;
+        # -p direct output to stdout
+        # -S -: start from the start of history
         if full:
             # Capture the entire history of the pane
-            return '\n'.join(self.pane.cmd('capture-pane', '-pS', '-').stdout)
-        return '\n'.join(self.pane.cmd('capture-pane', '-p').stdout)
+            return '\n'.join(self.pane.cmd('capture-pane', '-J', '-pS', '-').stdout)
+        return '\n'.join(self.pane.cmd('capture-pane', '-J', '-p').stdout)
 
     def _handle_completed_command(self, command: str) -> CmdOutputObservation:
         self.prev_status = BashCommandStatus.COMPLETED
