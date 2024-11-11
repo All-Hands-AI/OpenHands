@@ -91,7 +91,6 @@ class RemoteRuntime(Runtime):
         self.runtime_url: str | None = None
 
     async def connect(self):
-        print('CONNECT')
         try:
             await call_sync_from_async(self._start_or_attach_to_runtime)
         except RuntimeNotReadyError:
@@ -100,7 +99,6 @@ class RemoteRuntime(Runtime):
         await call_sync_from_async(self.setup_initial_env)
 
     def _start_or_attach_to_runtime(self):
-        print('START OR ATTACH')
         existing_runtime = self._check_existing_runtime()
         if existing_runtime:
             self.log('debug', f'Using existing runtime with ID: {self.runtime_id}')
@@ -249,7 +247,6 @@ class RemoteRuntime(Runtime):
         )
 
     def _resume_runtime(self):
-        print('RESUME RUNTIME')
         self._send_request(
             'POST',
             f'{self.config.sandbox.remote_runtime_api_url}/resume',
@@ -311,8 +308,6 @@ class RemoteRuntime(Runtime):
                     f'Runtime /alive failed to respond with 200: {e}'
                 )
             return
-        elif pod_status == 'Paused':
-            print('paused')
         elif (
             pod_status == 'Not Found'
             or pod_status == 'Pending'
@@ -417,6 +412,7 @@ class RemoteRuntime(Runtime):
                 if not is_retry:
                     self.log('warning', 'Runtime appears to be paused. Resuming...')
                     self._resume_runtime()
+                    self._wait_until_alive()
                     return self._send_request(method, url, True, **kwargs)
                 else:
                     raise e
