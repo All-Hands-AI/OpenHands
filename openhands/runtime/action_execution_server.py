@@ -168,7 +168,7 @@ class ActionExecutor:
     async def run(
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
-        return self.bash_session.run(action)
+        return self.bash_session.execute(action)
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         if 'jupyter' in self.plugins:
@@ -214,7 +214,7 @@ class ActionExecutor:
     async def read(self, action: FileReadAction) -> Observation:
         # NOTE: the client code is running inside the sandbox,
         # so there's no need to check permission
-        working_dir = self.bash_session.workdir
+        working_dir = self.bash_session.pwd
         filepath = self._resolve_path(action.path, working_dir)
         try:
             with open(filepath, 'r', encoding='utf-8') as file:
@@ -234,7 +234,7 @@ class ActionExecutor:
         return FileReadObservation(path=filepath, content=code_view)
 
     async def write(self, action: FileWriteAction) -> Observation:
-        working_dir = self.bash_session.workdir
+        working_dir = self.bash_session.pwd
         filepath = self._resolve_path(action.path, working_dir)
 
         insert = action.content.split('\n')

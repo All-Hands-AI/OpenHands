@@ -23,7 +23,7 @@ class BashSession:
     POLL_INTERVAL = 0.5
     PS1 = CmdOutputMetadata.to_ps1_prompt()
 
-    def __init__(self, working_dir: str, username: str | None = None):
+    def __init__(self, work_dir: str, username: str | None = None):
         self.server = libtmux.Server()
         window_command = '/bin/bash'
         if username:
@@ -33,7 +33,7 @@ class BashSession:
             session_name=f'openhands-{username}',
             window_name='bash',
             window_command=window_command,
-            start_directory=working_dir,
+            start_directory=work_dir,
             kill_session=True,
         )
         self.pane = self.session.attached_window.attached_pane
