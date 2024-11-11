@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   test-on-wsl:
-    name: Python Unit Tests on WSL
+    name: Python Unit Tests on WSL (${{ matrix.python-version }})
     runs-on: windows-latest
     env:
       INSTALL_DOCKER: '0'
@@ -35,10 +35,7 @@ jobs:
         with:
           distribution: Ubuntu-22.04
           
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-        
+
       - name: Install poetry via pipx
         run: |
           sudo apt-get update
