@@ -1,12 +1,14 @@
 import time
-import re
-from enum import Enum, auto
-from typing import Optional
+from enum import Enum
 
 import libtmux
 
 from openhands.events.action import CmdRunAction
-from openhands.events.observation.commands import CmdOutputObservation, CmdOutputMetadata, CMD_OUTPUT_PS1_BEGIN, CMD_OUTPUT_PS1_END
+from openhands.events.observation.commands import (
+    CMD_OUTPUT_PS1_END,
+    CmdOutputMetadata,
+    CmdOutputObservation,
+)
 
 
 class BashCommandStatus(Enum):
@@ -76,19 +78,19 @@ class BashSession:
         self.prev_status = BashCommandStatus.COMPLETED
         self.prev_output = ''  # Reset previous command output
         full_output = self._get_pane_content(full=True)
-        
+
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
-        assert len(ps1_matches) == 2, "Expected exactly two PS1 metadata blocks"
+        assert len(ps1_matches) == 2, 'Expected exactly two PS1 metadata blocks'
         metadata = CmdOutputMetadata.from_ps1_match(ps1_matches[1])
-        
+
         # Extract the command output between the two PS1 prompts
-        command_output = full_output[ps1_matches[0].end():ps1_matches[1].start()]
+        command_output = full_output[ps1_matches[0].end() : ps1_matches[1].start()]
         command_output = command_output.lstrip().removeprefix(command.lstrip())
 
         self._clear_screen()
         return CmdOutputObservation(
+            content=command_output,
             command=command,
-            output=command_output,
             metadata=metadata,
         )
 
@@ -97,56 +99,58 @@ class BashSession:
         full_output = self._get_pane_content(full=True)
 
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
-        assert len(ps1_matches) == 1, "Expected exactly one PS1 metadata block"
+        assert len(ps1_matches) == 1, 'Expected exactly one PS1 metadata block'
 
-        command_output = full_output[ps1_matches[0].end():]
+        command_output = full_output[ps1_matches[0].end() :]
         # remove the previous command output from the new output if any
         if self.prev_output:
             _clean_command_output = command_output.removeprefix(self.prev_output)
             command_output = (
-                "[Command output continued from previous command]\n"
+                '[Command output continued from previous command]\n'
                 + _clean_command_output
             )
             self.prev_output = _clean_command_output
 
         command_output += (
-            f"\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. "
+            f'\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
             "You may wait longer to see additional output by sending empty command '', "
-            "send other commands to interact with the current process, "
-            "or send keys to interrupt/kill the command.]"
+            'send other commands to interact with the current process, '
+            'or send keys to interrupt/kill the command.]'
         )
         return CmdOutputObservation(
+            content=command_output,
             command=command,
-            output=command_output,
             metadata=CmdOutputMetadata(),  # No metadata available
         )
 
-    def _handle_hard_timeout_command(self, command: str, timeout: float) -> CmdOutputObservation:
+    def _handle_hard_timeout_command(
+        self, command: str, timeout: float
+    ) -> CmdOutputObservation:
         self.prev_status = BashCommandStatus.HARD_TIMEOUT
         full_output = self._get_pane_content(full=True)
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
-        assert len(ps1_matches) == 1, "Expected exactly one PS1 metadata block"
+        assert len(ps1_matches) == 1, 'Expected exactly one PS1 metadata block'
 
-        command_output = full_output[ps1_matches[0].end():]
+        command_output = full_output[ps1_matches[0].end() :]
         if self.prev_output:
             _clean_command_output = command_output.removeprefix(self.prev_output)
             command_output = (
-                "[Command output continued from previous command]\n"
+                '[Command output continued from previous command]\n'
                 + _clean_command_output
             )
             self.prev_output = _clean_command_output
 
         command_output = command_output.lstrip().removeprefix(command.lstrip())
         command_output += (
-            f"\n[The command timed out after {timeout} seconds. "
+            f'\n[The command timed out after {timeout} seconds. '
             "You may wait longer to see additional output by sending empty command '', "
-            "send other commands to interact with the current process, "
-            "or send keys to interrupt/kill the command.]"
+            'send other commands to interact with the current process, '
+            'or send keys to interrupt/kill the command.]'
         )
 
         return CmdOutputObservation(
             command=command,
-            output=command_output,
+            content=command_output,
             metadata=CmdOutputMetadata(),  # No metadata available
         )
 
@@ -157,9 +161,9 @@ class BashSession:
             BashCommandStatus.HARD_TIMEOUT,
         }:
             return CmdOutputObservation(
+                content='ERROR: No previous command to continue from. '
+                + 'Previous command has to be timeout to be continued.',
                 command='',
-                output='ERROR: No previous command to continue from. '
-                + 'Previous command has to be timeouted to be completed.',
                 metadata=CmdOutputMetadata(),
             )
 
@@ -167,25 +171,26 @@ class BashSession:
         full_output = self._get_pane_content(full=True)
 
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
-        assert len(ps1_matches) == 1, "Expected exactly one PS1 metadata block"
+        assert len(ps1_matches) == 1, 'Expected exactly one PS1 metadata block'
 
-        command_output = full_output[ps1_matches[0].end():]
+        command_output = full_output[ps1_matches[0].end() :]
         # remove the previous command output from the new output if any
         if self.prev_output:
             _clean_command_output = command_output.removeprefix(self.prev_output)
             command_output = (
-                "[Command output continued from previous command]\n"
+                '[Command output continued from previous command]\n'
                 + _clean_command_output
             )
             self.prev_output = _clean_command_output
 
         return CmdOutputObservation(
+            content=command_output,
             command='',
-            output=command_output,
             metadata=CmdOutputMetadata(),
         )
 
     def execute(self, action: CmdRunAction) -> CmdOutputObservation:
+        """Execute a command in the bash session."""
         if action.command.strip() == '':
             return self._handle_empty_command()
 
@@ -195,8 +200,10 @@ class BashSession:
         start_time = time.time()
         last_change_time = start_time
         last_pane_output = self._get_pane_content()
-        
-        assert len(CmdOutputMetadata.matches_ps1_metadata(last_pane_output)) == 1, "Expected exactly one PS1 metadata block BEFORE the execution of a command"
+
+        assert (
+            len(CmdOutputMetadata.matches_ps1_metadata(last_pane_output)) == 1
+        ), 'Expected exactly one PS1 metadata block BEFORE the execution of a command'
         self.pane.send_keys(action.command)
 
         while True:
@@ -204,7 +211,7 @@ class BashSession:
             if cur_pane_output != last_pane_output:
                 last_pane_output = cur_pane_output
                 last_change_time = time.time()
-            
+
             # 1) Execution completed
             # if the last command output contains the end marker
             if cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip()):
@@ -212,13 +219,16 @@ class BashSession:
 
             # 2) Execution timed out since there's no change in output
             # for a while (self.NO_CHANGE_TIMEOUT_SECONDS)
-            # We ignore this if the command is blocking
+            # We ignore this if the command is *blocking
             time_since_last_change = time.time() - last_change_time
-            if not action.blocking and time_since_last_change >= self.NO_CHANGE_TIMEOUT_SECONDS:
+            if (
+                not action.blocking
+                and time_since_last_change >= self.NO_CHANGE_TIMEOUT_SECONDS
+            ):
                 return self._handle_nochange_timeout_command(action.command)
 
             # 3) Execution timed out due to hard timeout
-            if time.time() - start_time >= action.timeout:
+            if action.timeout and time.time() - start_time >= action.timeout:
                 return self._handle_hard_timeout_command(action.command, action.timeout)
 
             time.sleep(self.POLL_INTERVAL)
