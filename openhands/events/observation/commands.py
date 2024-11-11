@@ -12,7 +12,7 @@ from openhands.events.observation.observation import Observation
 CMD_OUTPUT_PS1_BEGIN = '###PS1JSON###\n'
 CMD_OUTPUT_PS1_END = '###PS1END###\n'
 CMD_OUTPUT_METADATA_PS1_REGEX = re.compile(
-    f'{CMD_OUTPUT_PS1_BEGIN}(.*?){CMD_OUTPUT_PS1_END}', re.DOTALL
+    r'###PS1JSON###\r?\n(.*?)\r?\n###PS1END###\r?\n', re.DOTALL
 )
 
 class CmdOutputMetadata(BaseModel):
@@ -61,12 +61,18 @@ class CmdOutputMetadata(BaseModel):
             if isinstance(metadata['pid'], bool):
                 processed['pid'] = 1 if metadata['pid'] else 0
             else:
-                processed['pid'] = int(str(metadata['pid']))
+                try:
+                    processed['pid'] = int(float(str(metadata['pid'])))
+                except (ValueError, TypeError):
+                    processed['pid'] = -1
         if 'exit_code' in metadata:
             if isinstance(metadata['exit_code'], bool):
                 processed['exit_code'] = 1 if metadata['exit_code'] else 0
             else:
-                processed['exit_code'] = int(str(metadata['exit_code']))
+                try:
+                    processed['exit_code'] = int(float(str(metadata['exit_code'])))
+                except (ValueError, TypeError):
+                    processed['exit_code'] = -1
         return cls(**processed)
 
     @classmethod
