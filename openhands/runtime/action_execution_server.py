@@ -235,6 +235,16 @@ class ActionExecutor:
                     encoded_pdf = base64.b64encode(pdf_data).decode('utf-8')
                     encoded_pdf = f'data:application/pdf;base64,{encoded_pdf}'
                 return FileReadObservation(path=filepath, content=encoded_pdf)
+            elif filepath.lower().endswith(('.mp4', '.webm', '.ogg')):
+                with open(filepath, 'rb') as file:
+                    video_data = file.read()
+                    encoded_video = base64.b64encode(video_data).decode('utf-8')
+                    mime_type, _ = mimetypes.guess_type(filepath)
+                    if mime_type is None:
+                        mime_type = 'video/mp4'  # default to MP4 if MIME type cannot be determined
+                    encoded_video = f'data:{mime_type};base64,{encoded_video}'
+
+                return FileReadObservation(path=filepath, content=encoded_video)
 
             with open(filepath, 'r', encoding='utf-8') as file:
                 lines = read_lines(file.readlines(), action.start, action.end)

@@ -31,6 +31,7 @@ function CodeEditorCompoonent({
 
   const isBase64Image = (content: string) => content.startsWith("data:image/");
   const isPDF = (content: string) => content.startsWith("data:application/pdf");
+  const isVideo = (content: string) => content.startsWith("data:video/");
 
   React.useEffect(() => {
     const handleSave = async (event: KeyboardEvent) => {
@@ -83,6 +84,14 @@ function CodeEditorCompoonent({
         width="100%"
         height="100%"
       />
+    );
+  }
+
+  if (isVideo(fileContent)) {
+    return (
+      <video controls src={fileContent} width="100%" height="100%">
+        <track kind="captions" label="English captions" />
+      </video>
     );
   }
   return (
