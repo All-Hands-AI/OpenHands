@@ -191,7 +191,8 @@
     "fr": "Planificateur",
     "it": "Pianificatore",
     "pt": "Planejador",
-    "es": "Planificador"
+    "es": "Planificador",
+    "tr": "Planlayıcı"
   },
   "WORKSPACE$JUPYTER_TAB_LABEL": {
     "en": "Jupyter IPython",
@@ -204,7 +205,8 @@
     "fr": "Jupyter IPython",
     "it": "Jupyter IPython",
     "pt": "Jupyter IPython",
-    "es": "Jupyter IPython"
+    "es": "Jupyter IPython",
+    "tr": "Jupyter IPython"
   },
   "WORKSPACE$CODE_EDITOR_TAB_LABEL": {
     "en": "Code Editor",
@@ -258,7 +260,8 @@
     "fr": "Par défaut: ./workspace",
     "it": "Predefinito: ./workspace",
     "pt": "Padrão: ./workspace",
-    "es": "Predeterminado: ./workspace"
+    "es": "Predeterminado: ./workspace",
+    "tr": "Varsayılan: ./workspace"
   },
   "CONFIGURATION$MODAL_TITLE": {
     "en": "Configuration",
@@ -341,7 +344,8 @@
     "fr": "Langue",
     "it": "Lingua",
     "pt": "Idioma",
-    "es": "Idioma"
+    "es": "Idioma",
+    "tr": "Dil"
   },
   "CONFIGURATION$LANGUAGE_SELECT_PLACEHOLDER": {
     "en": "Select a language",
@@ -410,7 +414,8 @@
     "fr": "Enregistrer",
     "it": "Salva",
     "pt": "Salvar",
-    "es": "Guardar"
+    "es": "Guardar",
+    "tr": "Kaydet"
   },
   "CONFIGURATION$MODAL_RESET_BUTTON_LABEL": {
     "en": "Reset to defaults",
