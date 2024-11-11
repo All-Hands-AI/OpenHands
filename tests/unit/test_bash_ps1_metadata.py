@@ -64,6 +64,27 @@ def test_ps1_metadata_parsing():
     assert metadata.py_interpreter_path == test_data['py_interpreter_path']
 
 
+def test_ps1_metadata_parsing_string():
+    """Test parsing PS1 output into CmdOutputMetadata"""
+
+    ps1_str = r"""###PS1JSON###
+{
+  "exit_code": "0",
+  "username": "myname",
+  "hostname": "myhostname",
+  "working_dir": "~/mydir",
+  "py_interpreter_path": "/my/python/path"
+}
+###PS1END###
+"""
+
+    metadata = CmdOutputMetadata.from_ps1(ps1_str)
+    assert metadata.exit_code == 0
+    assert metadata.username == 'myname'
+    assert metadata.hostname == 'myhostname'
+    assert metadata.working_dir == '~/mydir'
+    assert metadata.py_interpreter_path == '/my/python/path'
+
 
 def test_ps1_metadata_parsing_additional_prefix():
     """Test parsing PS1 output into CmdOutputMetadata"""
