@@ -43,10 +43,7 @@ export function ProjectMenuCard({
     posthog.capture("push_to_github_button_clicked");
     const rawEvent = {
       content: `
-Let's push the code to GitHub.
-If we're currently on the openhands-workspace branch, please create a new branch with a descriptive name.
-Commit any changes and push them to the remote repository.
-Finally, open up a pull request using the GitHub API and the token in the GITHUB_TOKEN environment variable, then show me the URL of the pull request.
+Please push the changes to GitHub and open a pull request.
 `,
       imageUrls: [],
       timestamp: new Date().toISOString(),
