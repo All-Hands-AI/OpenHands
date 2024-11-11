@@ -319,7 +319,7 @@ class RemoteRuntime(Runtime):
         raise RuntimeNotReadyError()
 
     def close(self, timeout: int = 10):
-        if self.config.sandbox.keep_remote_runtime_alive or self.attach_to_existing:
+        if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
             self.session.close()
             return
         if self.runtime_id and self.session:

@@ -1,8 +1,8 @@
 import os
-from pathlib import Path
 import tempfile
 import threading
 from functools import lru_cache
+from pathlib import Path
 from typing import Callable
 from zipfile import ZipFile
 
@@ -189,7 +189,15 @@ class EventStreamRuntime(Runtime):
 
     async def connect(self):
         self.send_status_message('STATUS$STARTING_RUNTIME')
-        if not self.attach_to_existing:
+        try:
+            await call_sync_from_async(self._attach_to_container)
+        except docker.errors.NotFound as e:
+            if self.attach_to_existing:
+                self.log(
+                    'error',
+                    f'Container {self.container_name} not found.',
+                )
+                raise e
             if self.runtime_container_image is None:
                 if self.base_container_image is None:
                     raise ValueError(
@@ -210,13 +218,12 @@ class EventStreamRuntime(Runtime):
             await call_sync_from_async(self._init_container)
             self.log('info', f'Container started: {self.container_name}')
 
-        else:
-            await call_sync_from_async(self._attach_to_container)
-
         if not self.attach_to_existing:
             self.log('info', f'Waiting for client to become ready at {self.api_url}...')
-        self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+            self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+
         await call_sync_from_async(self._wait_until_alive)
+
         if not self.attach_to_existing:
             self.log('info', 'Runtime is ready.')
 
@@ -227,7 +234,8 @@ class EventStreamRuntime(Runtime):
             'debug',
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}',
         )
-        self.send_status_message(' ')
+        if not self.attach_to_existing:
+            self.send_status_message(' ')
 
     @staticmethod
     @lru_cache(maxsize=1)
@@ -414,14 +422,13 @@ class EventStreamRuntime(Runtime):
         Parameters:
         - rm_all_containers (bool): Whether to remove all containers with the 'openhands-sandbox-' prefix
         """
-
         if self.log_buffer:
             self.log_buffer.close()
 
         if self.session:
             self.session.close()
 
-        if self.attach_to_existing:
+        if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
             return
         self._close_containers(rm_all_containers)
 
