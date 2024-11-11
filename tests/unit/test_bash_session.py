@@ -1,5 +1,6 @@
 import os
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.runtime.utils.bash import BashSession
 
@@ -9,13 +10,15 @@ def test_basic_command():
 
     # Test simple command
     obs = session.execute(CmdRunAction("echo 'hello world'"))
-    assert 'hello world' in obs.content
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.content.rstrip() == 'hello world'
     assert obs.metadata.exit_code == 0
 
     # Test command with error
     obs = session.execute(CmdRunAction('nonexistent_command'))
-    assert obs.metadata.exit_code != 0
-    assert 'command not found' in obs.content.lower()
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert obs.metadata.exit_code == 127
+    assert obs.content.rstrip() == 'bash: nonexistent_command: command not found'
 
 
 def test_long_running_command():
