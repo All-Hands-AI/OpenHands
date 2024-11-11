@@ -10,10 +10,11 @@ from openhands.core.schema import ObservationType
 from openhands.events.observation.observation import Observation
 
 CMD_OUTPUT_PS1_BEGIN = '###PS1JSON###\n'
-CMD_OUTPUT_PS1_END = '###PS1END###\n'
+CMD_OUTPUT_PS1_END = '\n###PS1END###\n'
 CMD_OUTPUT_METADATA_PS1_REGEX = re.compile(
     f'{re.escape(CMD_OUTPUT_PS1_BEGIN)}(.*?){re.escape(CMD_OUTPUT_PS1_END)}', re.DOTALL
 )
+
 
 class CmdOutputMetadata(BaseModel):
     """Additional metadata captured from PS1"""
@@ -43,7 +44,7 @@ class CmdOutputMetadata(BaseModel):
         # Make sure we escape double quotes in the JSON string
         # So that PS1 will keep them as part of the output
         prompt += json_str.replace('"', r'\"')
-        prompt += '\n' + CMD_OUTPUT_PS1_END
+        prompt += CMD_OUTPUT_PS1_END
         return prompt
 
     @classmethod
@@ -82,11 +83,13 @@ class CmdOutputMetadata(BaseModel):
         if not matches:
             return cls()
         if len(matches) > 1:
-            raise ValueError("Multiple PS1 metadata blocks detected")
+            raise ValueError('Multiple PS1 metadata blocks detected')
         try:
             return cls.from_ps1_match(matches[0])
         except (json.JSONDecodeError, ValueError, TypeError) as e:
-            logger.warning(f'Failed to parse PS1 metadata: {matches[0].group(1)}. Error: {str(e)}')
+            logger.warning(
+                f'Failed to parse PS1 metadata: {matches[0].group(1)}. Error: {str(e)}'
+            )
             return cls()
 
 
