@@ -30,6 +30,8 @@ import { clientLoader as rootClientLoader } from "#/routes/_oh";
 import { isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
 import { base64ToBlob } from "#/utils/base64-to-blob";
+import { setCurrentAgentState } from "#/state/agentSlice";
+import AgentState from "#/types/AgentState";
 
 interface ServerError {
   error: boolean | string;
@@ -57,9 +59,7 @@ interface LoaderData {
 
 export function EventHandler({ children }: EventHandlerProps) {
   const { events, status, send } = useWsClient();
-  const statusRef = React.useRef<WsClientProviderStatus>(
-    WsClientProviderStatus.STOPPED,
-  );
+  const statusRef = React.useRef<WsClientProviderStatus | null>(null);
   const runtimeActive = status === WsClientProviderStatus.ACTIVE;
   const fetcher = useFetcher();
   const dispatch = useDispatch();
@@ -156,6 +156,10 @@ export function EventHandler({ children }: EventHandlerProps) {
           timestamp: new Date().toISOString(),
         }),
       );
+    }
+
+    if (status === WsClientProviderStatus.STOPPED) {
+      store.dispatch(setCurrentAgentState(AgentState.STOPPED));
     }
   }, [status]);
 
