@@ -39,7 +39,9 @@ class BashSession:
         self.pane = self.session.attached_window.attached_pane
 
         # Configure bash to use simple PS1 and disable PS2
-        self.pane.send_keys(f'export PS1="{self.PS1}"; export PS2=""')
+        self.pane.send_keys(
+            f'export PROMPT_COMMAND=\'export PS1="{self.PS1}"\'; export PS2=""'
+        )
         time.sleep(0.2)  # Wait for command to take effect
         self._clear_screen()
 
