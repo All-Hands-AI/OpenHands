@@ -4,7 +4,7 @@ import React from "react";
 import { Command } from "#/state/commandSlice";
 import { getTerminalCommand } from "#/services/terminalService";
 import { parseTerminalOutput } from "#/utils/parseTerminalOutput";
-import { useSocket } from "#/context/socket";
+import { useWsClient } from "#/context/ws-client-provider";
 
 /*
   NOTE: Tests for this hook are indirectly covered by the tests for the XTermTerminal component.
@@ -15,7 +15,7 @@ export const useTerminal = (
   commands: Command[] = [],
   secrets: string[] = [],
 ) => {
-  const { send } = useSocket();
+  const { send } = useWsClient();
   const terminal = React.useRef<Terminal | null>(null);
   const fitAddon = React.useRef<FitAddon | null>(null);
   const ref = React.useRef<HTMLDivElement>(null);
