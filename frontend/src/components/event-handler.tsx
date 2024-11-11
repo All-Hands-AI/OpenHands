@@ -7,6 +7,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 
+import posthog from "posthog-js";
 import {
   useWsClient,
   WsClientProviderStatus,
@@ -32,6 +33,7 @@ import OpenHands from "#/api/open-hands";
 import { base64ToBlob } from "#/utils/base64-to-blob";
 import { setCurrentAgentState } from "#/state/agentSlice";
 import AgentState from "#/types/AgentState";
+import { getSettings } from "#/services/settings";
 
 interface ServerError {
   error: boolean | string;
@@ -67,6 +69,7 @@ export function EventHandler({ children }: React.PropsWithChildren) {
     if (data?.user && !isGitHubErrorReponse(data.user)) return data.user.id;
     return null;
   }, [data?.user]);
+  const userSettings = getSettings();
 
   React.useEffect(() => {
     if (!events.length) {
@@ -174,6 +177,12 @@ export function EventHandler({ children }: React.PropsWithChildren) {
       }
     })();
   }, [runtimeActive, importedProjectZip]);
+
+  React.useEffect(() => {
+    if (userSettings.LLM_API_KEY) {
+      posthog.capture("user_activated");
+    }
+  }, [userSettings.LLM_API_KEY]);
 
   return children;
 }
