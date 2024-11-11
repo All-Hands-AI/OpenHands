@@ -44,10 +44,6 @@ const isServerError = (data: object): data is ServerError => "error" in data;
 const isErrorObservation = (data: object): data is ErrorObservation =>
   "observation" in data && data.observation === "error";
 
-interface EventHandlerProps {
-  children?: React.ReactNode | undefined;
-}
-
 interface LoaderData {
   settings: Settings;
   token: string;
