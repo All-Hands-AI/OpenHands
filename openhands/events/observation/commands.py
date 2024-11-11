@@ -43,7 +43,7 @@ class CmdOutputMetadata(BaseModel):
         # Make sure we escape double quotes in the JSON string
         # So that PS1 will keep them as part of the output
         prompt += json_str.replace('"', r'\"')
-        prompt += CMD_OUTPUT_PS1_END
+        prompt += '\n' + CMD_OUTPUT_PS1_END
         return prompt
 
     @classmethod
