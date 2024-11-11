@@ -2,17 +2,18 @@ import asyncio
 import os
 import re
 import tempfile
+import time
 import uuid
 import warnings
 from contextlib import asynccontextmanager
 
 import jwt
 import requests
+from pathspec import PathSpec
+from pathspec.patterns import GitWildMatchPattern
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
-from pathspec import PathSpec
-from pathspec.patterns import GitWildMatchPattern
 
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
@@ -105,12 +106,14 @@ limiter = Limiter(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+
 # Apply stricter limits to auth endpoints
 def get_path_limits(request: Request):
     path = request.url.path
     if path == '/ws' or path in ['/api/github/callback', '/api/authenticate']:
         return ['1 per second']
     return ['5 per second']
+
 
 @app.middleware('http')
 async def rate_limit_middleware(request: Request, call_next):
