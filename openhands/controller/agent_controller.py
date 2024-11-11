@@ -165,10 +165,6 @@ class AgentController:
         Args:
             message (str): The message to log.
         """
-        # override log level to 'info' if LOG_ALL_EVENTS is set and level is 'debug'
-        if os.getenv('LOG_ALL_EVENTS') in ('true', '1') and level.lower() == 'debug':
-            level = 'info'
-
         message = f'[Agent Controller {self.id}] {message}'
         getattr(logger, level)(message, extra=extra, stacklevel=2)
 
@@ -264,7 +260,11 @@ class AgentController:
             observation_to_print.content = truncate_content(
                 observation_to_print.content, self.agent.llm.config.max_message_chars
             )
-        self.log('debug', str(observation_to_print), extra={'msg_type': 'OBSERVATION'})
+        # Use info level if LOG_ALL_EVENTS is set
+        log_level = 'info' if os.getenv('LOG_ALL_EVENTS') in ('true', '1') else 'debug'
+        self.log(
+            log_level, str(observation_to_print), extra={'msg_type': 'OBSERVATION'}
+        )
 
         if observation.llm_metrics is not None:
             self.agent.llm.metrics.merge(observation.llm_metrics)
@@ -502,7 +502,9 @@ class AgentController:
 
         await self.update_state_after_step()
 
-        self.log('debug', str(action), extra={'msg_type': 'ACTION'})
+        # Use info level if LOG_ALL_EVENTS is set
+        log_level = 'info' if os.getenv('LOG_ALL_EVENTS') in ('true', '1') else 'debug'
+        self.log(log_level, str(action), extra={'msg_type': 'ACTION'})
 
     async def _delegate_step(self):
         """Executes a single step of the delegate agent."""
