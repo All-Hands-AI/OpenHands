@@ -282,14 +282,12 @@ class RemoteRuntime(Runtime):
         assert runtime_data['runtime_id'] == self.runtime_id
         assert 'pod_status' in runtime_data
         pod_status = runtime_data['pod_status']
+        self.log('debug', runtime_data)
+        self.log('debug', f'Pod status: {pod_status}')
 
         # FIXME: We should fix it at the backend of /start endpoint, make sure
         # the pod is created before returning the response.
         # Retry a period of time to give the cluster time to start the pod
-        if pod_status == 'Not Found':
-            raise RuntimeNotReadyError(
-                f'Runtime (ID={self.runtime_id}) is not yet ready. Status: {pod_status}'
-            )
         if pod_status == 'Ready':
             try:
                 self._send_request(
@@ -304,12 +302,25 @@ class RemoteRuntime(Runtime):
                     f'Runtime /alive failed to respond with 200: {e}'
                 )
             return
-        if pod_status in ('Failed', 'Unknown'):
+        elif pod_status == 'Paused':
+            print('paused')
+        elif (
+            pod_status == 'Not Found'
+            or pod_status == 'Pending'
+            or pod_status == 'Running'
+        ):  # nb: Running is not yet Ready
+            raise RuntimeNotReadyError(
+                f'Runtime (ID={self.runtime_id}) is not yet ready. Status: {pod_status}'
+            )
+        elif pod_status in ('Failed', 'Unknown'):
             # clean up the runtime
             self.close()
             raise RuntimeError(
                 f'Runtime (ID={self.runtime_id}) failed to start. Current status: {pod_status}'
             )
+        else:
+            # Maybe this should be a hard failure, but passing through in case the API changes
+            self.log('warning', f'Unknown pod status: {pod_status}')
 
         self.log(
             'debug',
