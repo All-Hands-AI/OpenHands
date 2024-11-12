@@ -1,6 +1,8 @@
-import LoadingSpinnerOuter from "#/assets/loading-outer.svg?react";
+import { useTranslation } from "react-i18next";
+import LoadingSpinnerOuter from "#/icons/loading-outer.svg?react";
 import { cn } from "#/utils/utils";
 import ModalBody from "./ModalBody";
+import { I18nKey } from "#/i18n/declaration";
 
 interface LoadingSpinnerProps {
   size: "small" | "large";
@@ -28,10 +30,12 @@ interface LoadingProjectModalProps {
 }
 
 function LoadingProjectModal({ message }: LoadingProjectModalProps) {
+  const { t } = useTranslation();
+
   return (
     <ModalBody>
       <span className="text-xl leading-6 -tracking-[0.01em] font-semibold">
-        {message || "Loading..."}
+        {message || t(I18nKey.LOADING_PROJECT$LOADING)}
       </span>
       <LoadingSpinner size="large" />
     </ModalBody>

@@ -1,5 +1,6 @@
 import { useFetcher, useRouteLoaderData } from "@remix-run/react";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { BaseModalTitle } from "./confirmation-modals/BaseModal";
 import ModalBody from "./ModalBody";
 import ModalButton from "../buttons/ModalButton";
@@ -9,18 +10,22 @@ import { clientLoader } from "#/routes/_oh";
 import { clientAction as settingsClientAction } from "#/routes/settings";
 import { clientAction as loginClientAction } from "#/routes/login";
 import { AvailableLanguages } from "#/i18n";
+import { I18nKey } from "#/i18n/declaration";
 
 interface AccountSettingsModalProps {
   onClose: () => void;
   selectedLanguage: string;
   gitHubError: boolean;
+  analyticsConsent: string | null;
 }
 
 function AccountSettingsModal({
   onClose,
   selectedLanguage,
   gitHubError,
+  analyticsConsent,
 }: AccountSettingsModalProps) {
+  const { t } = useTranslation();
   const data = useRouteLoaderData<typeof clientLoader>("routes/_oh");
   const settingsFetcher = useFetcher<typeof settingsClientAction>({
     key: "settings",
@@ -32,6 +37,7 @@ function AccountSettingsModal({
     const formData = new FormData(event.currentTarget);
     const language = formData.get("language")?.toString();
     const ghToken = formData.get("ghToken")?.toString();
+    const analytics = formData.get("analytics")?.toString() === "on";
 
     const accountForm = new FormData();
     const loginForm = new FormData();
@@ -44,6 +50,7 @@ function AccountSettingsModal({
       accountForm.append("language", languageKey ?? "en");
     }
     if (ghToken) loginForm.append("ghToken", ghToken);
+    accountForm.append("analytics", analytics.toString());
 
     settingsFetcher.submit(accountForm, {
       method: "POST",
@@ -82,13 +89,13 @@ function AccountSettingsModal({
           />
           {gitHubError && (
             <p className="text-danger text-xs">
-              GitHub token is invalid. Please try again.
+              {t(I18nKey.ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID)}
             </p>
           )}
           {data?.ghToken && !gitHubError && (
             <ModalButton
               variant="text-like"
-              text="Disconnect"
+              text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$DISCONNECT)}
               onClick={() => {
                 settingsFetcher.submit(
                   {},
@@ -101,6 +108,15 @@ function AccountSettingsModal({
           )}
         </div>
 
+        <label className="flex gap-2 items-center self-start">
+          <input
+            name="analytics"
+            type="checkbox"
+            defaultChecked={analyticsConsent === "true"}
+          />
+          Enable analytics
+        </label>
+
         <div className="flex flex-col gap-2 w-full">
           <ModalButton
             disabled={
@@ -109,11 +125,11 @@ function AccountSettingsModal({
             }
             type="submit"
             intent="account"
-            text="Save"
+            text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$SAVE)}
             className="bg-[#4465DB]"
           />
           <ModalButton
-            text="Close"
+            text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$CLOSE)}
             onClick={onClose}
             className="bg-[#737373]"
           />

@@ -158,7 +158,7 @@ OpenHands 的主要入口点在 `openhands/core/main.py` 中。以下是它工�
            instruction=instruction,
            test_result=evaluation_result,
            metadata=metadata,
-           history=state.history.compatibility_for_eval_history_pairs(),
+           history=compatibility_for_eval_history_pairs(state.history),
            metrics=state.metrics.get() if state.metrics else None,
            error=state.last_error if state and state.last_error else None,
        )
@@ -257,7 +257,7 @@ def codeact_user_response(state: State | None) -> str:
         # 检查代理是否已尝试与用户对话 3 次，如果是，让代理知道它可以放弃
         user_msgs = [
             event
-            for event in state.history.get_events()
+            for event in state.history
             if isinstance(event, MessageAction) and event.source == 'user'
         ]
         if len(user_msgs) >= 2:

@@ -122,6 +122,9 @@ export const retrieveGitHubUser = async (
       id: data.id,
       login: data.login,
       avatar_url: data.avatar_url,
+      company: data.company,
+      name: data.name,
+      email: data.email,
     };
 
     return user;
@@ -134,33 +137,6 @@ export const retrieveGitHubUser = async (
   };
 
   return error;
-};
-
-/**
- * Given a GitHub token and a repository name, creates a repository for the authenticated user
- * @param token The GitHub token
- * @param repositoryName Name of the repository to create
- * @param description Description of the repository
- * @param isPrivate Boolean indicating if the repository should be private
- * @returns The created repository or an error response
- */
-export const createGitHubRepository = async (
-  token: string,
-  repositoryName: string,
-  description?: string,
-  isPrivate = true,
-): Promise<GitHubRepository | GitHubErrorReponse> => {
-  const response = await fetch("https://api.github.com/user/repos", {
-    method: "POST",
-    headers: generateGitHubAPIHeaders(token),
-    body: JSON.stringify({
-      name: repositoryName,
-      description,
-      private: isPrivate,
-    }),
-  });
-
-  return response.json();
 };
 
 export const retrieveLatestGitHubCommit = async (

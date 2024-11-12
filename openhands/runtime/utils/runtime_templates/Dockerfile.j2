@@ -87,6 +87,7 @@ COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 RUN if [ -d /openhands/code/openhands ]; then rm -rf /openhands/code/openhands; fi
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 COPY ./code/openhands /openhands/code/openhands
+RUN chmod a+rwx /openhands/code/openhands/__init__.py
 
 # ================================================================
 # END: Build from versioned image

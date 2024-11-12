@@ -7,6 +7,7 @@ const UNAUTHED_ROUTE_PREFIXES = [
   "/api/authenticate",
   "/api/options/",
   "/config.json",
+  "/api/github/callback",
 ];
 
 export async function request(
@@ -61,6 +62,16 @@ export async function request(
     response = await fetch(url, options);
   } catch (e) {
     onFail(`Error fetching ${url}`);
+  }
+  if (response?.status === 401 && !url.startsWith("/api/authenticate")) {
+    await request(
+      "/api/authenticate",
+      {
+        method: "POST",
+      },
+      true,
+    );
+    return request(url, options, disableToast, returnResponse, maxRetries - 1);
   }
   if (response?.status && response?.status >= 400) {
     onFail(

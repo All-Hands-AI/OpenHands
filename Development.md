@@ -100,7 +100,7 @@ poetry run pytest ./tests/unit/test_*.py
 ### 9. Use existing Docker image
 To reduce build time (e.g., if no changes were made to the client-runtime component), you can use an existing Docker container image. Follow these steps:
 1. Set the SANDBOX_RUNTIME_CONTAINER_IMAGE environment variable to the desired Docker image.
-2. Example: export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.9-nikolaik
+2. Example: export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.13-nikolaik
 
 ## Develop inside Docker container
 

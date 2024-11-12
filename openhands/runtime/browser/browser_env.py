@@ -81,7 +81,10 @@ class BrowserEnv:
                 raise ValueError(
                     f'Unsupported browsergym eval env: {self.browsergym_eval_env}'
                 )
-            env = gym.make(self.browsergym_eval_env)
+            env = gym.make(
+                self.browsergym_eval_env,
+                tags_to_mark='all',
+            )
         else:
             env = gym.make(
                 'browsergym/openended',
@@ -89,6 +92,7 @@ class BrowserEnv:
                 wait_for_user_message=False,
                 headless=True,
                 disable_env_checker=True,
+                tags_to_mark='all',
             )
 
         obs, info = env.reset()
