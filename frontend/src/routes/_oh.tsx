@@ -171,6 +171,7 @@ export default function MainApp() {
         company: user.company,
         name: user.name,
         email: user.email,
+        user: user.login,
       });
 
       if (window.__APP_MODE__ === "saas") {
