@@ -19,6 +19,8 @@ class PromptManager:
     Attributes:
         prompt_dir (str): Directory containing prompt templates.
         agent_skills_docs (str): Documentation of agent skills.
+        microagent_dir (str): Directory containing microagent specifications.
+        disabled_microagents (list[str] | None): List of microagents to disable. If None, all microagents are enabled.
     """
 
     def __init__(
@@ -26,6 +28,7 @@ class PromptManager:
         prompt_dir: str,
         microagent_dir: str = '',
         agent_skills_docs: str = '',
+        disabled_microagents: list[str] | None = None,
     ):
         self.prompt_dir: str = prompt_dir
         self.agent_skills_docs: str = agent_skills_docs
@@ -43,7 +46,8 @@ class PromptManager:
             ]
         for microagent_file in microagent_files:
             microagent = MicroAgent(microagent_file)
-            self.microagents[microagent.name] = microagent
+            if disabled_microagents is None or microagent.name not in disabled_microagents:
+                self.microagents[microagent.name] = microagent
 
     def _load_template(self, template_name: str) -> Template:
         template_path = os.path.join(self.prompt_dir, f'{template_name}.j2')
