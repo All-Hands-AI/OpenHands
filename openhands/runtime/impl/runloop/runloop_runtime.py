@@ -190,7 +190,7 @@ class RunloopRuntime(EventStreamRuntime):
             prebuilt='openhands',
             launch_parameters=LaunchParameters(
                 available_ports=[self._sandbox_port],
-                resource_size_request="LARGE",
+                resource_size_request='LARGE',
             ),
             metadata={'container-name': self.container_name},
         )

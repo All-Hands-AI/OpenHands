@@ -1,7 +1,6 @@
 import json
 import os
 from collections import deque
-from itertools import islice
 
 from litellm import ModelResponse
 
@@ -110,7 +109,9 @@ class CodeActAgent(Agent):
             self.action_parser = CodeActResponseParser()
             self.prompt_manager = PromptManager(
                 microagent_dir=os.path.join(os.path.dirname(__file__), 'micro'),
-                prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts', 'default'),
+                prompt_dir=os.path.join(
+                    os.path.dirname(__file__), 'prompts', 'default'
+                ),
                 agent_skills_docs=AgentSkillsRequirement.documentation,
             )
 
