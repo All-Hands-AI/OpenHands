@@ -15,10 +15,14 @@ import store from "./store";
 
 function PosthogInit() {
   React.useEffect(() => {
-    posthog.init("phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA", {
-      api_host: "https://us.i.posthog.com",
-      person_profiles: "identified_only",
-    });
+    fetch("/config.json")
+      .then((response) => response.json())
+      .then((config) => {
+        posthog.init(config.POSTHOG_CLIENT_KEY, {
+          api_host: "https://us.i.posthog.com",
+          person_profiles: "identified_only",
+        });
+      });
   }, []);
 
   return null;
