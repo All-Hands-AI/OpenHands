@@ -7,7 +7,10 @@ import uuid
 import warnings
 
 import jwt
+import redis.asyncio as redis
 import requests
+from fastapi_limiter import FastAPILimiter
+from fastapi_limiter.depends import RateLimiter
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
@@ -29,6 +32,7 @@ with warnings.catch_warnings():
 from dotenv import load_dotenv
 from fastapi import (
     BackgroundTasks,
+    Depends,
     FastAPI,
     HTTPException,
     Request,
@@ -73,13 +77,18 @@ file_store = get_file_store(config.file_store, config.file_store_path)
 session_manager = SessionManager(config, file_store)
 
 
-app = FastAPI()
+app = FastAPI(dependencies=[Depends(RateLimiter(times=2, seconds=1))])  # Default 2 req/sec
 app.add_middleware(
     LocalhostCORSMiddleware,
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
 )
+
+@app.on_event("startup")
+async def startup():
+    redis_instance = redis.from_url("redis://localhost", encoding="utf-8", decode_responses=True)
+    await FastAPILimiter.init(redis_instance)
 
 
 app.add_middleware(NoCacheMiddleware)
@@ -251,6 +260,7 @@ async def attach_session(request: Request, call_next):
 
 
 @app.websocket('/ws')
+@RateLimiter(times=1, seconds=5)  # 1 request per 5 seconds
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for receiving events from the client (i.e., the browser).
     Once connected, the client can send various actions:
@@ -861,6 +871,7 @@ def github_callback(auth_code: AuthCode):
 
 
 @app.post('/api/authenticate')
+@RateLimiter(times=1, seconds=5)  # 1 request per 5 seconds
 async def authenticate(request: Request):
     token = request.headers.get('X-GitHub-Token')
     if not await authenticate_github_user(token):
@@ -899,6 +910,13 @@ class SPAStaticFiles(StaticFiles):
         except Exception:
             # FIXME: just making this HTTPException doesn't work for some reason
             return await super().get_response('index.html', scope)
+
+    async def __call__(self, scope, receive, send) -> None:
+        if scope["type"] == "http":
+            # Apply rate limiting
+            limiter = RateLimiter(times=10, seconds=1)  # 10 requests per second
+            await limiter(scope, receive, send)
+        return await super().__call__(scope, receive, send)
 
 
 app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist')
