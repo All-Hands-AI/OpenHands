@@ -1563,6 +1563,17 @@ files = [
 ]
 
 [[package]]
+name = "diskcache"
+version = "5.6.3"
+description = "Disk Cache -- Disk and file backed persistent cache."
+optional = false
+python-versions = ">=3"
+files = [
+    {file = "diskcache-5.6.3-py3-none-any.whl", hash = "sha256:5e31b2d5fbad117cc363ebaf6b689474db18a1f6438bc82358b024abd4c2ca19"},
+    {file = "diskcache-5.6.3.tar.gz", hash = "sha256:2c3a3fa2743d8535d832ec61c2054a1641f41775aa7c556758a109941e33e4fc"},
+]
+
+[[package]]
 name = "distlib"
 version = "0.3.9"
 description = "Distribution utilities"
@@ -5628,6 +5639,28 @@ files = [
 
 [package.dependencies]
 numpy = {version = ">=1.26.0", markers = "python_version >= \"3.12\""}
+
+[[package]]
+name = "openhands-aci"
+version = "0.1.0"
+description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
+optional = false
+python-versions = "<4.0,>=3.12"
+files = [
+    {file = "openhands_aci-0.1.0-py3-none-any.whl", hash = "sha256:f28e5a32e394d1e643f79bf8af27fe44d039cb71729d590f9f3ee0c23c075f00"},
+    {file = "openhands_aci-0.1.0.tar.gz", hash = "sha256:babc55f516efbb27eb7e528662e14b75c902965c48a110408fda824b83ea4461"},
+]
+
+[package.dependencies]
+diskcache = ">=5.6.3,<6.0.0"
+gitpython = "*"
+grep-ast = "0.3.3"
+litellm = "*"
+networkx = "*"
+numpy = "*"
+pandas = "*"
+scipy = "*"
+tree-sitter = "0.21.3"
 
 [[package]]
 name = "opentelemetry-api"
@@ -10178,4 +10211,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "245fd4cd56a3c95b2dd4f3a06251f7de82ad0300de7349f0710aac1f92a151b7"
+content-hash = "a552f630dfdb9221eda6932e71e67a935c52ebfe4388ec9ef4b3245e7df2f82b"
