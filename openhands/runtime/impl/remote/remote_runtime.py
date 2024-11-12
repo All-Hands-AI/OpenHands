@@ -288,7 +288,6 @@ class RemoteRuntime(Runtime):
         assert runtime_data['runtime_id'] == self.runtime_id
         assert 'pod_status' in runtime_data
         pod_status = runtime_data['pod_status']
-        self.log('debug', runtime_data)
         self.log('debug', f'Pod status: {pod_status}')
 
         # FIXME: We should fix it at the backend of /start endpoint, make sure
