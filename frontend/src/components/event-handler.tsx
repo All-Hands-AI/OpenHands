@@ -88,6 +88,7 @@ export function EventHandler({ children }: React.PropsWithChildren) {
         fetcher.submit({}, { method: "POST", action: "/end-session" });
         return;
       }
+
       if (typeof event.error === "string") {
         toast.error(event.error);
       } else {
