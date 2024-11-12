@@ -376,7 +376,8 @@ if __name__ == '__main__':
     metadata_filepath = os.path.join(os.path.dirname(args.input_file), 'metadata.json')
     if os.path.exists(metadata_filepath):
         with open(metadata_filepath, 'r') as metadata_file:
-            metadata = EvalMetadata.model_validate_json(metadata_filepath)
+            data = metadata_file.read()
+            metadata = EvalMetadata.model_validate_json(data)
 
     # The evaluation harness constrains the signature of `process_instance_func` but we need to
     # pass extra information. Build a new function object to avoid issues with multiprocessing.
