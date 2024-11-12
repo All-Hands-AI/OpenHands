@@ -41,12 +41,13 @@ jobs:
           # Add deadsnakes PPA for Python 3.12
           sudo add-apt-repository ppa:deadsnakes/ppa -y
           sudo apt-get update
-          sudo apt-get install -y python3.12 python3.12-venv python3.12-dev
+          sudo apt-get install -y python3.12 python3.12-venv python3.12-dev python3.12-distutils
           
           # Install pip for Python 3.12
           curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
           
           # Install poetry using pip
+          python3.12 -m pip install --upgrade pip setuptools wheel
           python3.12 -m pip install poetry
           
       - name: Install Python dependencies using Poetry
@@ -55,7 +56,8 @@ jobs:
           poetry env use python3.12
           poetry config virtualenvs.create true
           poetry config virtualenvs.in-project true
-          poetry install -vv --without evaluation,llama-index
+          poetry config installer.max-workers 10
+          poetry install --no-interaction --without evaluation,llama-index
         
       - name: Build Environment
         run: make build
