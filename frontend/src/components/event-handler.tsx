@@ -21,6 +21,7 @@ import {
 } from "#/services/terminalService";
 import {
   clearFiles,
+  clearInitialQuery,
   clearSelectedRepository,
   setImportedProjectZip,
 } from "#/state/initial-query-slice";
@@ -52,13 +53,10 @@ export function EventHandler({ children }: React.PropsWithChildren) {
   const runtimeActive = status === WsClientProviderStatus.ACTIVE;
   const fetcher = useFetcher();
   const dispatch = useDispatch();
-  const { files, importedProjectZip } = useSelector(
+  const { files, importedProjectZip, initialQuery } = useSelector(
     (state: RootState) => state.initalQuery,
   );
   const { ghToken, repo } = useLoaderData<typeof appClientLoader>();
-  const initialQueryRef = React.useRef<string | null>(
-    store.getState().initalQuery.initialQuery,
-  );
 
   const sendInitialQuery = (query: string, base64Files: string[]) => {
     const timestamp = new Date().toISOString();
@@ -109,11 +107,11 @@ export function EventHandler({ children }: React.PropsWithChildren) {
   }, [events.length]);
 
   React.useEffect(() => {
+    console.warn("STATUS", status);
     if (statusRef.current === status) {
       return; // This is a check because of strict mode - if the status did not change, don't do anything
     }
     statusRef.current = status;
-    const initialQuery = initialQueryRef.current;
 
     if (status === WsClientProviderStatus.ACTIVE) {
       let additionalInfo = "";
@@ -134,7 +132,7 @@ export function EventHandler({ children }: React.PropsWithChildren) {
           sendInitialQuery(initialQuery, files);
         }
         dispatch(clearFiles()); // reset selected files
-        initialQueryRef.current = null;
+        dispatch(clearInitialQuery()); // reset initial query
       }
     }
 
