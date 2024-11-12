@@ -1,3 +1,4 @@
+import atexit
 import os
 import tempfile
 import threading
@@ -35,12 +36,22 @@ from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.base import Runtime
 from openhands.runtime.builder import DockerRuntimeBuilder
+from openhands.runtime.impl.event_stream.containers import remove_all_containers
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
+
+CONTAINER_NAME_PREFIX = 'openhands-runtime-'
+
+
+def remove_all_runtime_containers():
+    remove_all_containers(CONTAINER_NAME_PREFIX)
+
+
+atexit.register(remove_all_runtime_containers)
 
 
 class LogBuffer:
@@ -114,8 +125,6 @@ class EventStreamRuntime(Runtime):
         env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
     """
 
-    container_name_prefix = 'openhands-runtime-'
-
     # Need to provide this method to allow inheritors to init the Runtime
     # without initting the EventStreamRuntime.
     def init_base_runtime(
@@ -158,7 +167,7 @@ class EventStreamRuntime(Runtime):
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
-        self.container_name = self.container_name_prefix + sid
+        self.container_name = CONTAINER_NAME_PREFIX + sid
         self.container = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
@@ -172,10 +181,6 @@ class EventStreamRuntime(Runtime):
                 'debug',
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
             )
-
-        self.skip_container_logs = (
-            os.environ.get('SKIP_CONTAINER_LOGS', 'false').lower() == 'true'
-        )
 
         self.init_base_runtime(
             config,
@@ -251,9 +256,6 @@ class EventStreamRuntime(Runtime):
     def _init_container(self):
         self.log('debug', 'Preparing to start container...')
         self.send_status_message('STATUS$PREPARING_CONTAINER')
-        self._close_containers(
-            rm_all_containers=True
-        )  # TODO: in multi-Conversation, this will have to go away
         plugin_arg = ''
         if self.plugins is not None and len(self.plugins) > 0:
             plugin_arg = (
@@ -349,7 +351,7 @@ class EventStreamRuntime(Runtime):
                     'warning',
                     f'Container {self.container_name} already exists. Removing...',
                 )
-                self._close_containers(rm_all_containers=True)
+                remove_all_containers(self.container_name)
                 return self._init_container()
 
             else:
@@ -433,33 +435,10 @@ class EventStreamRuntime(Runtime):
 
         if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
             return
-        self._close_containers(rm_all_containers)
-
-    def _close_containers(self, rm_all_containers: bool = True):
-        try:
-            containers = self.docker_client.containers.list(all=True)
-            for container in containers:
-                try:
-                    # If the app doesn't shut down properly, it can leave runtime containers on the system. This ensures
-                    # that all 'openhands-sandbox-' containers are removed as well.
-                    if rm_all_containers and container.name.startswith(
-                        self.container_name_prefix
-                    ):
-                        container.remove(force=True)
-                    elif container.name == self.container_name:
-                        if not self.skip_container_logs:
-                            logs = container.logs(tail=1000).decode('utf-8')
-                            self.log(
-                                'debug',
-                                f'==== Container logs on close ====\n{logs}\n==== End of container logs ====',
-                            )
-                        container.remove(force=True)
-                except docker.errors.APIError:
-                    pass
-                except docker.errors.NotFound:
-                    pass
-        except docker.errors.NotFound:  # yes, this can happen!
-            pass
+        close_prefix = (
+            CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
+        )
+        remove_all_containers(close_prefix)
 
     def run_action(self, action: Action) -> Observation:
         if isinstance(action, FileEditAction):
