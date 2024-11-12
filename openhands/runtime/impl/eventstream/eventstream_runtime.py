@@ -345,7 +345,6 @@ class EventStreamRuntime(Runtime):
             self.log('debug', f'Container started. Server url: {self.api_url}')
             self.send_status_message('STATUS$CONTAINER_STARTED')
         except docker.errors.APIError as e:
-            # check 409 error
             if '409' in str(e):
                 self.log(
                     'warning',
