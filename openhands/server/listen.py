@@ -93,6 +93,13 @@ app = FastAPI(lifespan=lifespan)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# Set default rate limit for all routes
+@app.middleware("http")
+@limiter.limit("2/second")
+async def default_rate_limit(request: Request, call_next):
+    response = await call_next(request)
+    return response
+
 app.add_middleware(
     LocalhostCORSMiddleware,
     allow_credentials=True,
