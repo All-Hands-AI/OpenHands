@@ -39,24 +39,21 @@ jobs:
           # Install Python 3.12 from deadsnakes PPA
           sudo add-apt-repository ppa:deadsnakes/ppa -y
           sudo apt-get update
-          sudo apt-get install -y python3.12 python3.12-venv python3.12-dev python3.12-distutils
+          sudo apt-get install -y python3.12 python3.12-venv python3.12-dev python3.12-distutils python3.12-pip
           
           # Create symlinks for python3.12
           sudo ln -sf /usr/bin/python3.12 /usr/local/bin/python3
           sudo ln -sf /usr/bin/python3.12 /usr/local/bin/python
+          sudo ln -sf /usr/bin/pip3.12 /usr/local/bin/pip3
+          sudo ln -sf /usr/bin/pip3.12 /usr/local/bin/pip
           
-          # Install pip for Python 3.12
-          curl -sS https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-          sudo python3.12 get-pip.py
-          sudo ln -sf /usr/local/bin/pip3.12 /usr/local/bin/pip3
-          sudo ln -sf /usr/local/bin/pip3.12 /usr/local/bin/pip
+          # Install pipx and poetry
+          python3 -m pip install --user pipx
+          python3 -m pipx ensurepath
+          python3 -m pipx install poetry
           
-          # Install pipx
-          sudo pip3 install pipx
-          pipx ensurepath
-          
-          # Install poetry via pipx
-          pipx install poetry
+          # Add local bin to PATH
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
       
       - name: Install Python dependencies using Poetry
         shell: wsl-bash {0}
