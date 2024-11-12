@@ -1,0 +1,40 @@
+name: Python Unit Tests on WSL
+
+on:
+  push:
+    branches: [ "main", "openhands-workspace" ]
+  pull_request:
+    branches: [ "main", "openhands-workspace" ]
+
+jobs:
+  test:
+    runs-on: windows-2019
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up WSL
+      uses: Vampire/setup-wsl@v3
+      with:
+        distribution: Ubuntu-22.04
+        update: true
+        additional-packages: python3-pip python3-venv
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      shell: wsl-bash {0}
+      run: |
+        python3 -m venv venv
+        . venv/bin/activate
+        python -m pip install --upgrade pip
+        pip install poetry
+        poetry install
+    
+    - name: Run Tests
+      shell: wsl-bash {0}
+      run: |
+        . venv/bin/activate
+        poetry run pytest tests/
