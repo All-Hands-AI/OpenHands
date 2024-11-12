@@ -7,7 +7,7 @@ import uuid
 import warnings
 
 import jwt
-import redis.asyncio as redis
+import redis.asyncio as redis  # type: ignore
 import requests
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
