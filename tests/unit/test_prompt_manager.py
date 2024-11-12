@@ -119,3 +119,63 @@ def test_prompt_manager_template_rendering(prompt_dir, agent_skills_docs):
     # Clean up temporary files
     os.remove(os.path.join(prompt_dir, 'system_prompt.j2'))
     os.remove(os.path.join(prompt_dir, 'user_prompt.j2'))
+
+
+def test_prompt_manager_disabled_microagents(prompt_dir, agent_skills_docs):
+    # Create test microagent files
+    microagent1_name = 'test_microagent1'
+    microagent2_name = 'test_microagent2'
+    microagent1_content = """
+---
+name: Test Microagent 1
+agent: CodeActAgent
+triggers:
+- test1
+---
+
+Test microagent 1 content
+"""
+    microagent2_content = """
+---
+name: Test Microagent 2
+agent: CodeActAgent
+triggers:
+- test2
+---
+
+Test microagent 2 content
+"""
+
+    # Create temporary micro agent files
+    os.makedirs(os.path.join(prompt_dir, 'micro'), exist_ok=True)
+    with open(os.path.join(prompt_dir, 'micro', f'{microagent1_name}.md'), 'w') as f:
+        f.write(microagent1_content)
+    with open(os.path.join(prompt_dir, 'micro', f'{microagent2_name}.md'), 'w') as f:
+        f.write(microagent2_content)
+
+    # Test that specific microagents can be disabled
+    manager = PromptManager(
+        prompt_dir=prompt_dir,
+        microagent_dir=os.path.join(prompt_dir, 'micro'),
+        agent_skills_docs=agent_skills_docs,
+        disabled_microagents=['Test Microagent 1'],
+    )
+
+    assert len(manager.microagents) == 1
+    assert 'Test Microagent 2' in manager.microagents
+    assert 'Test Microagent 1' not in manager.microagents
+
+    # Test that all microagents are enabled by default
+    manager = PromptManager(
+        prompt_dir=prompt_dir,
+        microagent_dir=os.path.join(prompt_dir, 'micro'),
+        agent_skills_docs=agent_skills_docs,
+    )
+
+    assert len(manager.microagents) == 2
+    assert 'Test Microagent 1' in manager.microagents
+    assert 'Test Microagent 2' in manager.microagents
+
+    # Clean up temporary files
+    os.remove(os.path.join(prompt_dir, 'micro', f'{microagent1_name}.md'))
+    os.remove(os.path.join(prompt_dir, 'micro', f'{microagent2_name}.md'))

@@ -1,5 +1,5 @@
 import { LoadingSpinner } from "./modals/LoadingProject";
-import DefaultUserAvatar from "#/assets/default-user.svg?react";
+import DefaultUserAvatar from "#/icons/default-user.svg?react";
 import { cn } from "#/utils/utils";
 
 interface UserAvatarProps {

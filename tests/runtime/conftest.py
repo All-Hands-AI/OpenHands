@@ -224,6 +224,7 @@ def _load_runtime(
     config = load_app_config()
     config.run_as_openhands = run_as_openhands
     config.sandbox.force_rebuild_runtime = force_rebuild_runtime
+    config.sandbox.keep_runtime_alive = False
     # Folder where all tests create their own folder
     global test_mount_path
     if use_workspace:
