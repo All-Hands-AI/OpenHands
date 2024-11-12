@@ -283,7 +283,7 @@ class EventStream:
         """
         if limit < 1 or limit > 100:
             raise ValueError("Limit must be between 1 and 100")
-            
+
         matching_events: list = []
 
         for event in self.get_events(start_id=start_id):
