@@ -204,6 +204,7 @@ class BashSession:
         if self.prev_status not in {
             BashCommandStatus.NO_CHANGE_TIMEOUT,
             BashCommandStatus.HARD_TIMEOUT,
+            BashCommandStatus.CONTINUE,
         }:
             self._clear_screen()
 
