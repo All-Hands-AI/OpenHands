@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import LoadingSpinnerOuter from "#/assets/loading-outer.svg?react";
+import LoadingSpinnerOuter from "#/icons/loading-outer.svg?react";
 import { cn } from "#/utils/utils";
 import ModalBody from "./ModalBody";
 import { I18nKey } from "#/i18n/declaration";

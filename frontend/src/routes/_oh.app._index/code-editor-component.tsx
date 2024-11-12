@@ -29,6 +29,10 @@ function CodeEditorCompoonent({
     if (selectedPath && value) modifyFileContent(selectedPath, value);
   };
 
+  const isBase64Image = (content: string) => content.startsWith("data:image/");
+  const isPDF = (content: string) => content.startsWith("data:application/pdf");
+  const isVideo = (content: string) => content.startsWith("data:video/");
+
   React.useEffect(() => {
     const handleSave = async (event: KeyboardEvent) => {
       if (selectedPath && event.metaKey && event.key === "s") {
@@ -62,16 +66,40 @@ function CodeEditorCompoonent({
     );
   }
 
+  const fileContent = modifiedFiles[selectedPath] || files[selectedPath];
+
+  if (isBase64Image(fileContent)) {
+    return (
+      <section className="flex flex-col relative items-center overflow-auto h-[90%]">
+        <img src={fileContent} alt={selectedPath} className="object-contain" />
+      </section>
+    );
+  }
+
+  if (isPDF(fileContent)) {
+    return (
+      <iframe
+        src={fileContent}
+        title={selectedPath}
+        width="100%"
+        height="100%"
+      />
+    );
+  }
+
+  if (isVideo(fileContent)) {
+    return (
+      <video controls src={fileContent} width="100%" height="100%">
+        <track kind="captions" label="English captions" />
+      </video>
+    );
+  }
   return (
     <Editor
       data-testid="code-editor"
       path={selectedPath ?? undefined}
       defaultValue=""
-      value={
-        selectedPath
-          ? modifiedFiles[selectedPath] || files[selectedPath]
-          : undefined
-      }
+      value={selectedPath ? fileContent : undefined}
       onMount={onMount}
       onChange={handleEditorChange}
       options={{ readOnly: isReadOnly }}

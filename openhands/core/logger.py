@@ -177,7 +177,7 @@ class SensitiveDataFilter(logging.Filter):
         return True
 
 
-def get_console_handler(log_level=logging.INFO, extra_info: str | None = None):
+def get_console_handler(log_level: int = logging.INFO, extra_info: str | None = None):
     """Returns a console handler for logging."""
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level)
@@ -188,7 +188,7 @@ def get_console_handler(log_level=logging.INFO, extra_info: str | None = None):
     return console_handler
 
 
-def get_file_handler(log_dir, log_level=logging.INFO):
+def get_file_handler(log_dir: str, log_level: int = logging.INFO):
     """Returns a file handler for logging."""
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime('%Y-%m-%d')

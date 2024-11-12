@@ -137,7 +137,7 @@ class RemoteRuntime(Runtime):
         try:
             response = self._send_request(
                 'GET',
-                f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.sid}',
+                f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
                 timeout=5,
             )
         except requests.HTTPError as e:
@@ -227,7 +227,7 @@ class RemoteRuntime(Runtime):
             'command': command,
             'working_dir': '/openhands/code/',
             'environment': {'DEBUG': 'true'} if self.config.debug else {},
-            'runtime_id': self.sid,
+            'session_id': self.sid,
         }
 
         # Start the sandbox using the /start endpoint
@@ -276,7 +276,7 @@ class RemoteRuntime(Runtime):
         self.log('debug', f'Waiting for runtime to be alive at url: {self.runtime_url}')
         runtime_info_response = self._send_request(
             'GET',
-            f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.runtime_id}',
+            f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
         )
         runtime_data = runtime_info_response.json()
         assert 'runtime_id' in runtime_data
