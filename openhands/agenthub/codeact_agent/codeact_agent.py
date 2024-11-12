@@ -259,7 +259,7 @@ class CodeActAgent(Agent):
         obs_prefix = 'OBSERVATION:\n'
         if isinstance(obs, CmdOutputObservation):
             text = obs_prefix + truncate_content(
-                obs.content + obs.interpreter_details, max_message_chars
+                obs.content + '\n' + obs.interpreter_details, max_message_chars
             )
             text += f'\n[Command finished with exit code {obs.exit_code}]'
             message = Message(role='user', content=[TextContent(text=text)])
