@@ -53,7 +53,8 @@ jobs:
           python3 -m pipx install poetry
           
           # Add local bin to PATH
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
+          echo "PATH=$PATH" >> $GITHUB_ENV
       
       - name: Install Python dependencies using Poetry
         shell: wsl-bash {0}
