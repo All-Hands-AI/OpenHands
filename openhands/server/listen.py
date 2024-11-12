@@ -11,9 +11,6 @@ import jwt
 import requests
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
@@ -96,36 +93,6 @@ app.add_middleware(
 app.add_middleware(NoCacheMiddleware)
 
 security_scheme = HTTPBearer()
-
-# Initialize rate limiter
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=['5 per second'],
-    strategy='moving-window',  # Use a sliding window for more accurate rate limiting
-)
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-
-# Apply stricter limits to auth endpoints
-def get_path_limits(request: Request):
-    path = request.url.path
-    if path == '/ws' or path in ['/api/github/callback', '/api/authenticate']:
-        return ['1 per second']
-    return ['5 per second']
-
-
-@app.middleware('http')
-async def rate_limit_middleware(request: Request, call_next):
-    limits = get_path_limits(request)
-    try:
-        await limiter.check_request_limit(request, limits=limits)
-    except RateLimitExceeded:
-        return JSONResponse(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            content={'error': 'Too many requests'},
-        )
-    return await call_next(request)
 
 
 def load_file_upload_config() -> tuple[int, bool, list[str]]:
@@ -293,13 +260,6 @@ async def attach_session(request: Request, call_next):
 
 @app.websocket('/ws')
 async def websocket_endpoint(websocket: WebSocket):
-    try:
-        # Create a mock request object for rate limiting
-        mock_request = Request(scope={'type': 'http', 'client': websocket.client})
-        await limiter.check_request_limit(mock_request, limits=['1 per second'])
-    except RateLimitExceeded:
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        return
     """WebSocket endpoint for receiving events from the client (i.e., the browser).
     Once connected, the client can send various actions:
     - Initialize the agent:
@@ -316,7 +276,7 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Send a message:
         ```json
-        {"action": "message", "args": {"content": "Hello, how are you?", "images_urls": ["base64_url1", "base64_url2"]}}
+        {"action": "message", "args": {"content": "Hello, how are you?", "image_urls": ["base64_url1", "base64_url2"]}}
         ```
     - Write contents to a file:
         ```json
@@ -418,20 +378,20 @@ async def websocket_endpoint(websocket: WebSocket):
 async def search_events(
     request: Request,
     query: str | None = None,
-    page: int = 1,
-    page_size: int = 20,
+    start_id: int = 0,
+    limit: int = 20,
     event_type: str | None = None,
     source: str | None = None,
     start_date: str | None = None,
     end_date: str | None = None,
 ):
-    """Search through the event stream with pagination and filtering.
+    """Search through the event stream with filtering and pagination.
 
     Args:
         request (Request): The incoming request object
         query (str, optional): Text to search for in event content
-        page (int): Page number (1-based). Defaults to 1
-        page_size (int): Number of events per page. Defaults to 20, max 100
+        start_id (int): Starting ID in the event stream. Defaults to 0
+        limit (int): Maximum number of events to return. Must be between 1 and 100. Defaults to 20
         event_type (str, optional): Filter by event type (e.g., "FileReadAction")
         source (str, optional): Filter by event source
         start_date (str, optional): Filter events after this date (ISO format)
@@ -439,70 +399,38 @@ async def search_events(
 
     Returns:
         dict: Dictionary containing:
-            - events: List of events for the current page
-            - total: Total number of matching events
-            - page: Current page number
-            - total_pages: Total number of pages
-            - has_next: Whether there are more pages
-            - has_prev: Whether there are previous pages
+            - events: List of matching events
+            - has_more: Whether there are more matching events after this batch
+
+    Raises:
+        HTTPException: If conversation is not found
+        ValueError: If limit is less than 1 or greater than 100
     """
     if not request.state.conversation:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='Conversation not found'
         )
 
-    # Validate and adjust pagination parameters
-    if page < 1:
-        page = 1
-    if page_size < 1:
-        page_size = 20
-    if page_size > 100:
-        page_size = 100
-
-    # Calculate start and end IDs for pagination
-    start_id = (page - 1) * page_size
-
-    # Get events from the stream
+    # Get matching events from the stream
     event_stream = request.state.conversation.event_stream
-    matching_events: list = []
-    total_events = 0
+    matching_events = event_stream.get_matching_events(
+        query=query,
+        event_type=event_type,
+        source=source,
+        start_date=start_date,
+        end_date=end_date,
+        start_id=start_id,
+        limit=limit + 1,  # Get one extra to check if there are more
+    )
 
-    for event in event_stream.get_events(start_id=0):  # Get all events to filter
-        # Apply filters
-        if event_type and not event.__class__.__name__ == event_type:
-            continue
-
-        if source and not event.source.name == source:
-            continue
-
-        if start_date and event.timestamp < start_date:
-            continue
-
-        if end_date and event.timestamp > end_date:
-            continue
-
-        # Text search in event content if query provided
-        if query:
-            event_dict = event_to_dict(event)
-            event_str = str(event_dict).lower()
-            if query.lower() not in event_str:
-                continue
-
-        total_events += 1
-
-        # Only keep events for current page
-        if total_events > start_id and (len(matching_events) < page_size):
-            matching_events.append(event_to_dict(event))
-
-    total_pages = (total_events + page_size - 1) // page_size
+    # Check if there are more events
+    has_more = len(matching_events) > limit
+    if has_more:
+        matching_events = matching_events[:limit]  # Remove the extra event
 
     return {
         'events': matching_events,
-        'total': total_events,
-        'page': page,
-        'total_pages': total_pages,
-        'has_next': page < total_pages,
-        'has_prev': page > 1,
+        'has_more': has_more,
     }
 
 
