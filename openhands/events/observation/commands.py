@@ -104,7 +104,10 @@ class CmdOutputObservation(Observation):
     def __str__(self) -> str:
         return (
             f'**CmdOutputObservation (source={self.source}, exit code={self.exit_code}, '
-            f'metadata={json.dumps(self.metadata.model_dump(), indent=2)})**\n--BEGIN AGENT OBSERVATION--\n{self.to_agent_observation()}\n--END AGENT OBSERVATION--'
+            f'metadata={json.dumps(self.metadata.model_dump(), indent=2)})**\n'
+            '--BEGIN AGENT OBSERVATION--\n'
+            f'{self.to_agent_observation()}\n'
+            '--END AGENT OBSERVATION--'
         )
 
     def to_agent_observation(self) -> str:
