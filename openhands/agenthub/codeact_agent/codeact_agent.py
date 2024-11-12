@@ -1,12 +1,12 @@
 import json
 import os
 from collections import deque
-from itertools import islice
 
 from litellm import ModelResponse
 
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.agenthub.codeact_agent.action_parser import CodeActResponseParser
+from openhands.agenthub.codeact_agent.function_calling import action_to_str
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -103,15 +103,21 @@ class CodeActAgent(Agent):
                 f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
             )
             self.prompt_manager = PromptManager(
-                microagent_dir=os.path.join(os.path.dirname(__file__), 'micro') if self.config.use_microagents else None,
+                microagent_dir=os.path.join(os.path.dirname(__file__), 'micro')
+                if self.config.use_microagents
+                else None,
                 prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts', 'tools'),
                 disabled_microagents=self.config.disabled_microagents,
             )
         else:
             self.action_parser = CodeActResponseParser()
             self.prompt_manager = PromptManager(
-                microagent_dir=os.path.join(os.path.dirname(__file__), 'micro') if self.config.use_microagents else None,
-                prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts', 'default'),
+                microagent_dir=os.path.join(os.path.dirname(__file__), 'micro')
+                if self.config.use_microagents
+                else None,
+                prompt_dir=os.path.join(
+                    os.path.dirname(__file__), 'prompts', 'default'
+                ),
                 agent_skills_docs=AgentSkillsRequirement.documentation,
                 disabled_microagents=self.config.disabled_microagents,
             )
@@ -157,12 +163,14 @@ class CodeActAgent(Agent):
             action,
             (
                 AgentDelegateAction,
-                CmdRunAction,
                 IPythonRunCellAction,
                 FileEditAction,
                 BrowseInteractiveAction,
             ),
-        ) or (isinstance(action, AgentFinishAction) and action.source == 'agent'):
+        ) or (
+            isinstance(action, (AgentFinishAction, CmdRunAction))
+            and action.source == 'agent'
+        ):
             if self.function_calling_active:
                 tool_metadata = action.tool_call_metadata
                 assert tool_metadata is not None, (
@@ -203,6 +211,14 @@ class CodeActAgent(Agent):
             return [
                 Message(
                     role=role,
+                    content=content,
+                )
+            ]
+        elif isinstance(action, CmdRunAction) and action.source == 'user':
+            content = [TextContent(text=action_to_str(action))]
+            return [
+                Message(
+                    role='user',
                     content=content,
                 )
             ]
