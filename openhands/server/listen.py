@@ -35,11 +35,13 @@ from fastapi import (
     FastAPI,
     HTTPException,
     Request,
+    Response,
     UploadFile,
     WebSocket,
     status,
 )
 from fastapi.responses import FileResponse, JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -93,17 +95,28 @@ async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) 
             "detail": f"Too many requests. Please wait {exc.retry_after} seconds before trying again.",
             "retry_after": exc.retry_after
         },
+        headers={
+            "Retry-After": str(exc.retry_after)
+        }
     )
 
-app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+# Rate limiting middleware
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app: FastAPI):
+        super().__init__(app)
+        self.limiter = app.state.limiter
 
+    async def dispatch(self, request: Request, call_next) -> Response:
+        try:
+            # Apply default rate limit of 2/second
+            self.limiter._check_request_limit(request, None, False, "2/second")
+            response = await call_next(request)
+            return response
+        except RateLimitExceeded as exc:
+            return await rate_limit_exceeded_handler(request, exc)
 
-# Set default rate limit for all routes
-@app.middleware('http')
-@limiter.limit('2/second')
-async def default_rate_limit(request: Request, call_next):
-    response = await call_next(request)
-    return response
+# Add rate limit middleware first
+app.add_middleware(RateLimitMiddleware)
 
 
 app.add_middleware(
