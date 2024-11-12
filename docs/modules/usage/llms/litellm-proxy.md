@@ -1,6 +1,3 @@
----
-sidebar_position: 8
----
 
 # LiteLLM Proxy
 
