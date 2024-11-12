@@ -63,7 +63,7 @@ export async function request(
   } catch (e) {
     onFail(`Error fetching ${url}`);
   }
-  if (response?.status === 401) {
+  if (response?.status === 401 && !url.startsWith("/api/authenticate")) {
     await request(
       "/api/authenticate",
       {

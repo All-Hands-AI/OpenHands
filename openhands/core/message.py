@@ -98,6 +98,13 @@ class Message(BaseModel):
                 content.extend(d)
 
         ret: dict = {'content': content, 'role': self.role}
+        # pop content if it's empty
+        if not content or (
+            len(content) == 1
+            and content[0]['type'] == 'text'
+            and content[0]['text'] == ''
+        ):
+            ret.pop('content')
 
         if role_tool_with_prompt_caching:
             ret['cache_control'] = {'type': 'ephemeral'}
