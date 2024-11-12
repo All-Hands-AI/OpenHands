@@ -37,32 +37,34 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y python3.12 python3.12-venv python3.12-dev
           
-          # Create and activate virtual environment
+          # Create virtual environment
           python3.12 -m venv ~/.venv
-          source ~/.venv/bin/activate
           
           # Install poetry
+          source ~/.venv/bin/activate
           curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "export PATH=$HOME/.local/bin:$PATH" >> ~/.bashrc
       
       - name: Install Python dependencies using Poetry
         shell: wsl-bash {0}
         run: |
           source ~/.venv/bin/activate
-          export PATH="$HOME/.local/bin:$PATH"
-          poetry install --without evaluation,llama-index
+          source ~/.bashrc
+          $HOME/.local/bin/poetry install --without evaluation,llama-index
       
       - name: Build Environment
         shell: wsl-bash {0}
         run: |
           source ~/.venv/bin/activate
+          source ~/.bashrc
           make build
       
       - name: Run Tests
         shell: wsl-bash {0}
         run: |
           source ~/.venv/bin/activate
-          poetry run pytest --forked --cov=openhands --cov-report=xml -svv ./tests/unit --ignore=tests/unit/test_memory.py
+          source ~/.bashrc
+          $HOME/.local/bin/poetry run pytest --forked --cov=openhands --cov-report=xml -svv ./tests/unit --ignore=tests/unit/test_memory.py
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
