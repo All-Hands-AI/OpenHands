@@ -25,13 +25,6 @@ from openhands.events.action import (
 )
 from openhands.events.tool import ToolCallMetadata
 
-SYSTEM_PROMPT = """You are OpenHands agent, a helpful AI assistant that can interact with a computer to solve tasks.
-<IMPORTANT>
-* If user provides a path, you should NOT assume it's relative to the current working directory. Instead, you should explore the file system to find the file before working on it.
-* When configuring git credentials, use "openhands" as the user.name and "openhands@all-hands.dev" as the user.email by default, unless explicitly instructed otherwise.
-</IMPORTANT>
-"""
-
 _BASH_DESCRIPTION = """Execute a bash command in the terminal.
 * Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`.
 * Interactive: If a bash command returns exit code `-1`, this means the process is not yet finished. The assistant must then send a second call to terminal with an empty `command` (which will retrieve any additional logs), or it can send additional text (set `command` to the text) to STDIN of the running process, or it can send command=`ctrl+c` to interrupt the process.
@@ -284,6 +277,17 @@ _browser_action_space = HighLevelActionSet(
 
 
 _BROWSER_DESCRIPTION = """Interact with the browser using Python code.
+
+See the description of "code" parameter for more details.
+
+Multiple actions can be provided at once, but will be executed sequentially without any feedback from the page.
+More than 2-3 actions usually leads to failure or unexpected behavior. Example:
+fill('a12', 'example with "quotes"')
+click('a51')
+click('48', button='middle', modifiers=['Shift'])
+"""
+
+_BROWSER_TOOL_DESCRIPTION = """
 The following 15 functions are available. Nothing else is supported.
 
 goto(url: str)
@@ -385,20 +389,15 @@ upload_file(bid: str, file: str | list[str])
         upload_file('572', '/home/user/my_receipt.pdf')
 
         upload_file('63', ['/home/bob/Documents/image.jpg', '/home/bob/Documents/file.zip'])
-
-Multiple actions can be provided at once, but will be executed sequentially without any feedback from the page.
-More than 2-3 actions usually leads to failure or unexpected behavior. Example:
-fill('a12', 'example with "quotes"')
-click('a51')
-click('48', button='middle', modifiers=['Shift'])
 """
+
 
 for _, action in _browser_action_space.action_set.items():
     assert (
-        action.signature in _BROWSER_DESCRIPTION
+        action.signature in _BROWSER_TOOL_DESCRIPTION
     ), f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.signature}'
     assert (
-        action.description in _BROWSER_DESCRIPTION
+        action.description in _BROWSER_TOOL_DESCRIPTION
     ), f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.description}'
 
 BrowserTool = ChatCompletionToolParam(
@@ -411,7 +410,10 @@ BrowserTool = ChatCompletionToolParam(
             'properties': {
                 'code': {
                     'type': 'string',
-                    'description': 'The Python code that interacts with the browser.',
+                    'description': (
+                        'The Python code that interacts with the browser.\n'
+                        + _BROWSER_TOOL_DESCRIPTION
+                    ),
                 }
             },
             'required': ['code'],

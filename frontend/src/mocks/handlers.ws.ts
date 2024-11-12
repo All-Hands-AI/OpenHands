@@ -29,7 +29,7 @@ const generateAgentResponse = (message: string): AssistantMessageAction => ({
   action: "message",
   args: {
     content: message,
-    images_urls: [],
+    image_urls: [],
     wait_for_response: false,
   },
 });
