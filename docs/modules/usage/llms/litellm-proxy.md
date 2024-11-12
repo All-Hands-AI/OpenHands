@@ -43,9 +43,6 @@ api_key = "your-api-key"
 temperature = 0.0
 top_p = 1.0
 
-# Optional: Additional parameters specific to your LiteLLM proxy setup
-[llm.extra_body]
-custom_param = "value"
 ```
 
 ## Supported Models
