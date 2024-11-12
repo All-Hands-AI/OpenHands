@@ -37,7 +37,6 @@ Here's how to use LiteLLM proxy in your OpenHands configuration:
 
 ```toml
 [llm]
-provider = "litellm_proxy"
 model = "claude-3-5-sonnet-20241022-v2:0"
 base_url = "https://proxy.example.com"
 api_key = "your-api-key"
