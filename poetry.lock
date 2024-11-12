@@ -3933,35 +3933,6 @@ transformers = "*"
 types-tqdm = "*"
 
 [[package]]
-name = "limits"
-version = "3.13.0"
-description = "Rate limiting utilities"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "limits-3.13.0-py3-none-any.whl", hash = "sha256:9767f7233da4255e9904b79908a728e8ec0984c0b086058b4cbbd309aea553f6"},
-    {file = "limits-3.13.0.tar.gz", hash = "sha256:6571b0c567bfa175a35fed9f8a954c0c92f1c3200804282f1b8f1de4ad98a953"},
-]
-
-[package.dependencies]
-deprecated = ">=1.2"
-importlib-resources = ">=1.3"
-packaging = ">=21,<25"
-typing-extensions = "*"
-
-[package.extras]
-all = ["aetcd", "coredis (>=3.4.0,<5)", "emcache (>=0.6.1)", "emcache (>=1)", "etcd3", "motor (>=3,<4)", "pymemcache (>3,<5.0.0)", "pymongo (>4.1,<5)", "redis (>3,!=4.5.2,!=4.5.3,<6.0.0)", "redis (>=4.2.0,!=4.5.2,!=4.5.3)"]
-async-etcd = ["aetcd"]
-async-memcached = ["emcache (>=0.6.1)", "emcache (>=1)"]
-async-mongodb = ["motor (>=3,<4)"]
-async-redis = ["coredis (>=3.4.0,<5)"]
-etcd = ["etcd3"]
-memcached = ["pymemcache (>3,<5.0.0)"]
-mongodb = ["pymongo (>4.1,<5)"]
-redis = ["redis (>3,!=4.5.2,!=4.5.3,<6.0.0)"]
-rediscluster = ["redis (>=4.2.0,!=4.5.2,!=4.5.3)"]
-
-[[package]]
 name = "litellm"
 version = "1.52.3"
 description = "Library to easily interface with LLM API providers"
@@ -8330,23 +8301,6 @@ files = [
 ]
 
 [[package]]
-name = "slowapi"
-version = "0.1.9"
-description = "A rate limiting extension for Starlette and Fastapi"
-optional = false
-python-versions = ">=3.7,<4.0"
-files = [
-    {file = "slowapi-0.1.9-py3-none-any.whl", hash = "sha256:cfad116cfb84ad9d763ee155c1e5c5cbf00b0d47399a769b227865f5df576e36"},
-    {file = "slowapi-0.1.9.tar.gz", hash = "sha256:639192d0f1ca01b1c6d95bf6c71d794c3a9ee189855337b4821f7f457dddad77"},
-]
-
-[package.dependencies]
-limits = ">=2.3"
-
-[package.extras]
-redis = ["redis (>=3.4.1,<4.0.0)"]
-
-[[package]]
 name = "smmap"
 version = "5.0.1"
 description = "A pure Python implementation of a sliding window memory map manager"
@@ -10224,4 +10178,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "2c52184376e4637e8033f27d6c8be006deb7b041f3aacf921a2205e00ec9464a"
+content-hash = "245fd4cd56a3c95b2dd4f3a06251f7de82ad0300de7349f0710aac1f92a151b7"
