@@ -11,6 +11,10 @@ import jwt
 import requests
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from starlette.requests import Request
 
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
@@ -73,6 +77,9 @@ config = load_app_config()
 file_store = get_file_store(config.file_store, config.file_store_path)
 session_manager = SessionManager(config, file_store)
 
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -82,6 +89,11 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+# Add rate limiter to the app
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 app.add_middleware(
     LocalhostCORSMiddleware,
     allow_credentials=True,
@@ -259,6 +271,7 @@ async def attach_session(request: Request, call_next):
 
 
 @app.websocket('/ws')
+@limiter.limit("1/5seconds")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for receiving events from the client (i.e., the browser).
     Once connected, the client can send various actions:
@@ -375,7 +388,8 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 @app.get('/api/options/models')
-async def get_litellm_models() -> list[str]:
+@limiter.limit("10/second")
+async def get_litellm_models(request: Request) -> list[str]:
     """
     Get all models supported by LiteLLM.
 
@@ -429,7 +443,8 @@ async def get_litellm_models() -> list[str]:
 
 
 @app.get('/api/options/agents')
-async def get_agents():
+@limiter.limit("10/second")
+async def get_agents(request: Request):
     """Get all agents supported by LiteLLM.
 
     To get the agents:
@@ -445,7 +460,8 @@ async def get_agents():
 
 
 @app.get('/api/options/security-analyzers')
-async def get_security_analyzers():
+@limiter.limit("10/second")
+async def get_security_analyzers(request: Request):
     """Get all supported security analyzers.
 
     To get the security analyzers:
@@ -468,6 +484,7 @@ FILES_TO_IGNORE = [
 
 
 @app.get('/api/list-files')
+@limiter.limit("10/second")
 async def list_files(request: Request, path: str | None = None):
     """List files in the specified path.
 
@@ -522,6 +539,7 @@ async def list_files(request: Request, path: str | None = None):
 
 
 @app.get('/api/select-file')
+@limiter.limit("10/second")
 async def select_file(file: str, request: Request):
     """Retrieve the content of a specified file.
 
@@ -573,6 +591,7 @@ def sanitize_filename(filename):
 
 
 @app.post('/api/upload-files')
+@limiter.limit("1/second")
 async def upload_file(request: Request, files: list[UploadFile]):
     """Upload a list of files to the workspace.
 
@@ -659,6 +678,7 @@ async def upload_file(request: Request, files: list[UploadFile]):
 
 
 @app.post('/api/submit-feedback')
+@limiter.limit("1/second")
 async def submit_feedback(request: Request):
     """Submit user feedback.
 
@@ -707,7 +727,8 @@ async def submit_feedback(request: Request):
 
 
 @app.get('/api/defaults')
-async def appconfig_defaults():
+@limiter.limit("10/second")
+async def appconfig_defaults(request: Request):
     """Retrieve the default configuration settings.
 
     To get the default configurations:
@@ -722,6 +743,7 @@ async def appconfig_defaults():
 
 
 @app.post('/api/save-file')
+@limiter.limit("1/second")
 async def save_file(request: Request):
     """Save a file to the agent's runtime file store.
 
@@ -780,6 +802,7 @@ async def save_file(request: Request):
 
 
 @app.route('/api/security/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@limiter.limit("10/second")
 async def security_api(request: Request):
     """Catch-all route for security analyzer API requests.
 
@@ -803,6 +826,7 @@ async def security_api(request: Request):
 
 
 @app.get('/api/zip-directory')
+@limiter.limit("1/second")
 async def zip_current_workspace(request: Request, background_tasks: BackgroundTasks):
     try:
         logger.debug('Zipping workspace')
@@ -832,6 +856,7 @@ class AuthCode(BaseModel):
 
 
 @app.post('/api/github/callback')
+@limiter.limit("1/5seconds")
 def github_callback(auth_code: AuthCode):
     # Prepare data for the token exchange request
     data = {
@@ -869,6 +894,7 @@ def github_callback(auth_code: AuthCode):
 
 
 @app.post('/api/authenticate')
+@limiter.limit("1/5seconds")
 async def authenticate(request: Request):
     token = request.headers.get('X-GitHub-Token')
     if not await authenticate_github_user(token):
