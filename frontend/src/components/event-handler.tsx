@@ -34,14 +34,7 @@ import { base64ToBlob } from "#/utils/base64-to-blob";
 import { setCurrentAgentState } from "#/state/agentSlice";
 import AgentState from "#/types/AgentState";
 import { getSettings } from "#/services/settings";
-
-interface ServerError {
-  error: boolean | string;
-  message: string;
-  [key: string]: unknown;
-}
-
-const isServerError = (data: object): data is ServerError => "error" in data;
+import { generateAgentStateChangeEvent } from "#/services/agentStateService";
 
 const isErrorObservation = (data: object): data is ErrorObservation =>
   "observation" in data && data.observation === "error";
@@ -81,19 +74,12 @@ export function EventHandler({ children }: React.PropsWithChildren) {
       return;
     }
 
-    if (isServerError(event)) {
-      if (event.error_code === 401) {
-        toast.error("Session expired.");
-        fetcher.submit({}, { method: "POST", action: "/end-session" });
-        return;
+    if (event.type === "error") {
+      const message: string = `${event.message}`;
+      if (message.startsWith("Agent reached maximum")) {
+        // We set the agent state to paused here - if the user clicks resume, it auto updates the max iterations
+        send(generateAgentStateChangeEvent(AgentState.PAUSED));
       }
-
-      if (typeof event.error === "string") {
-        toast.error(event.error);
-      } else {
-        toast.error(event.message);
-      }
-      return;
     }
 
     if (isErrorObservation(event)) {
