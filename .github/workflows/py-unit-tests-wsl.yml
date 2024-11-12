@@ -25,34 +25,38 @@ jobs:
         uses: Vampire/setup-wsl@v3
         with:
           distribution: Ubuntu-22.04
-          update: true
+          wsl-shell-user: root
+          additional-packages:
+            software-properties-common
+            python3-pip
+            python3-venv
+            make
+            curl
       - name: Set up Python and Poetry in WSL
         shell: wsl-bash {0}
         run: |
-          sudo apt-get update
-          sudo apt-get install -y software-properties-common
-          sudo add-apt-repository -y ppa:deadsnakes/ppa
-          sudo apt-get update
-          sudo apt-get install -y python${{ matrix.python-version }} python${{ matrix.python-version }}-venv python3-pip
-          python${{ matrix.python-version }} -m pip install --user pipx
+          add-apt-repository -y ppa:deadsnakes/ppa
+          apt-get update
+          apt-get install -y python${{ matrix.python-version }} python${{ matrix.python-version }}-venv
+          python${{ matrix.python-version }} -m pip install pipx
           python${{ matrix.python-version }} -m pipx ensurepath
-          export PATH="$HOME/.local/bin:$PATH"
+          export PATH="/root/.local/bin:$PATH"
           pipx install poetry
       - name: Install Python dependencies using Poetry
         shell: wsl-bash {0}
         run: |
-          export PATH="$HOME/.local/bin:$PATH"
+          export PATH="/root/.local/bin:$PATH"
           poetry env use python${{ matrix.python-version }}
           poetry install --without evaluation,llama-index
       - name: Build Environment
         shell: wsl-bash {0}
         run: |
-          export PATH="$HOME/.local/bin:$PATH"
+          export PATH="/root/.local/bin:$PATH"
           make build
       - name: Run Tests
         shell: wsl-bash {0}
         run: |
-          export PATH="$HOME/.local/bin:$PATH"
+          export PATH="/root/.local/bin:$PATH"
           poetry run pytest --forked --cov=openhands --cov-report=xml -svv ./tests/unit --ignore=tests/unit/test_memory.py
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
