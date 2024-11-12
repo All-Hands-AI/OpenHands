@@ -1,41 +1,30 @@
 import asyncio
 import os
-import re
-import tempfile
-import time
 import uuid
 import warnings
-from typing import Callable
 
 import jwt
 import requests
 from dotenv import load_dotenv
 from fastapi import (
-    BackgroundTasks,
     Depends,
     FastAPI,
-    HTTPException,
     Request,
-    UploadFile,
     WebSocket,
     status,
 )
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
-from pydantic import BaseModel
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
 
 from openhands.security.options import SecurityAnalyzers
-from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
 from openhands.server.github import (
-    GITHUB_CLIENT_ID,
-    GITHUB_CLIENT_SECRET,
     UserVerifier,
     authenticate_github_user,
 )
@@ -50,7 +39,9 @@ file_store = get_file_store(config.file_store, config.file_store_path)
 session_manager = SessionManager(config, file_store)
 
 
-app = FastAPI(dependencies=[Depends(lambda: RateLimiter(times=2, seconds=1))])  # Default 2 req/sec
+app = FastAPI(
+    dependencies=[Depends(lambda: RateLimiter(times=2, seconds=1))]
+)  # Default 2 req/sec
 app.add_middleware(
     LocalhostCORSMiddleware,
     allow_credentials=True,
