@@ -287,7 +287,9 @@ class EventStream:
         matching_events: list = []
 
         for event in self.get_events(start_id=start_id):
-            if self._should_filter_event(event, query, event_type, source, start_date, end_date):
+            if self._should_filter_event(
+                event, query, event_type, source, start_date, end_date
+            ):
                 continue
 
             matching_events.append(event_to_dict(event))
