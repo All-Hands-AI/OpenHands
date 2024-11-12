@@ -172,13 +172,8 @@ export default function MainApp() {
         name: user.name,
         email: user.email,
         user: user.login,
+        mode: window.__APP_MODE__ || "oss",
       });
-
-      if (window.__APP_MODE__ === "saas") {
-        posthog.capture("saas_login", {
-          user: user.login,
-        });
-      }
     }
   }, [user]);
 
