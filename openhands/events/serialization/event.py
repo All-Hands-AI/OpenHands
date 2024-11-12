@@ -36,9 +36,6 @@ DELETE_FROM_MEMORY_EXTRAS = DELETE_FROM_TRAJECTORY_EXTRAS | {'open_pages_urls'}
 
 
 def event_from_dict(data) -> 'Event':
-    if 'images_urls' in data:
-        data['image_urls'] = data.pop('images_urls')
-
     evt: Event
     if 'action' in data:
         evt = action_from_dict(data)
