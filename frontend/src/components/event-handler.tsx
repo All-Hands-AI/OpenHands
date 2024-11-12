@@ -36,6 +36,14 @@ import AgentState from "#/types/AgentState";
 import { getSettings } from "#/services/settings";
 import { generateAgentStateChangeEvent } from "#/services/agentStateService";
 
+interface ServerError {
+  error: boolean | string;
+  message: string;
+  [key: string]: unknown;
+}
+
+const isServerError = (data: object): data is ServerError => "error" in data;
+
 const isErrorObservation = (data: object): data is ErrorObservation =>
   "observation" in data && data.observation === "error";
 
@@ -71,6 +79,20 @@ export function EventHandler({ children }: React.PropsWithChildren) {
     const event = events[events.length - 1];
     if (event.token) {
       fetcher.submit({ token: event.token as string }, { method: "post" });
+      return;
+    }
+
+    if (isServerError(event)) {
+      if (event.error_code === 401) {
+        toast.error("Session expired.");
+        fetcher.submit({}, { method: "POST", action: "/end-session" });
+        return;
+      }
+      if (typeof event.error === "string") {
+        toast.error(event.error);
+      } else {
+        toast.error(event.message);
+      }
       return;
     }
 
