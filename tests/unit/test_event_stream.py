@@ -153,11 +153,11 @@ def test_get_matching_events_limit_validation(temp_dir: str):
     event_stream = EventStream('abc', file_store)
 
     # Test limit less than 1
-    with pytest.raises(ValueError, match="Limit must be between 1 and 100"):
+    with pytest.raises(ValueError, match='Limit must be between 1 and 100'):
         event_stream.get_matching_events(limit=0)
 
     # Test limit greater than 100
-    with pytest.raises(ValueError, match="Limit must be between 1 and 100"):
+    with pytest.raises(ValueError, match='Limit must be between 1 and 100'):
         event_stream.get_matching_events(limit=101)
 
     # Test valid limits work
