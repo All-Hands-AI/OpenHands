@@ -530,5 +530,5 @@ def action_to_str(action: Action) -> str:
     # for example, when the user runs a command from the terminal
     # we want to show the command in the chat history
     if isinstance(action, CmdRunAction) and action.source == 'user':
-        return action.command
+        return f'COMMAND:\n{action.command}'
     return ''
