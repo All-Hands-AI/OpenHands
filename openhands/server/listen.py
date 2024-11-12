@@ -82,7 +82,20 @@ app = FastAPI()
 
 # Add rate limiter to the app
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# Custom rate limit exceeded handler
+async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+    """Handle rate limit exceeded errors with a user-friendly message."""
+    return JSONResponse(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        content={
+            "error": "Rate limit exceeded",
+            "detail": f"Too many requests. Please wait {exc.retry_after} seconds before trying again.",
+            "retry_after": exc.retry_after
+        },
+    )
+
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
 
 
 # Set default rate limit for all routes
