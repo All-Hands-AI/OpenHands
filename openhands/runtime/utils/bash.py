@@ -201,7 +201,11 @@ class BashSession:
             return self._handle_empty_command()
 
         # Clear screen before executing new command
-        self._clear_screen()
+        if self.prev_status not in {
+            BashCommandStatus.NO_CHANGE_TIMEOUT,
+            BashCommandStatus.HARD_TIMEOUT,
+        }:
+            self._clear_screen()
 
         start_time = time.time()
         last_change_time = start_time
