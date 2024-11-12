@@ -34,19 +34,26 @@ jobs:
         uses: Vampire/setup-wsl@v2
         with:
           distribution: Ubuntu-22.04
-          additional-packages: python3-pip python3-venv
+          additional-packages: python3-pip python3-venv curl software-properties-common
 
       - name: Set up Python and Poetry in WSL
         run: |
+          # Add deadsnakes PPA for Python 3.12
+          sudo add-apt-repository ppa:deadsnakes/ppa -y
           sudo apt-get update
-          sudo apt-get install -y python${{ matrix.python-version }} python${{ matrix.python-version }}-venv
-          python3 -m pip install --user pipx
-          python3 -m pipx ensurepath
-          source ~/.bashrc
-          pipx install poetry
+          sudo apt-get install -y python3.12 python3.12-venv python3.12-dev
+          
+          # Install pip for Python 3.12
+          curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
+          
+          # Install poetry using pip
+          python3.12 -m pip install poetry
           
       - name: Install Python dependencies using Poetry
-        run: poetry install --without evaluation,llama-index
+        run: |
+          # Ensure we're using Python 3.12
+          poetry env use python3.12
+          poetry install --without evaluation,llama-index
         
       - name: Build Environment
         run: make build
