@@ -66,7 +66,7 @@ def get_config(
             browsergym_eval_env=env_id,
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
-            keep_remote_runtime_alive=False,
+            keep_runtime_alive=False,
         ),
         # do not mount workspace
         workspace_base=None,

@@ -286,7 +286,6 @@ jobs:
           image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
-          SKIP_CONTAINER_LOGS=true \
           TEST_RUNTIME=eventstream \
           SANDBOX_USER_ID=$(id -u) \
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
@@ -364,7 +363,6 @@ jobs:
           image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
-          SKIP_CONTAINER_LOGS=true \
           TEST_RUNTIME=eventstream \
           SANDBOX_USER_ID=$(id -u) \
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
