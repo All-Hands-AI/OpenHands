@@ -71,7 +71,6 @@ const openHandsHandlers = [
 export const handlers = [
   ...openHandsHandlers,
   http.get("https://api.github.com/user/repos", async ({ request }) => {
-
     const token = request.headers
       .get("Authorization")
       ?.replace("Bearer", "")
