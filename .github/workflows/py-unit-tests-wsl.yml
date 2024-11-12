@@ -27,17 +27,19 @@ jobs:
         with:
           distribution: Ubuntu-22.04
           
-      - name: Install poetry via pipx in WSL
-        shell: wsl-bash {0}
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-          
       - name: Set up Python in WSL
         shell: wsl-bash {0}
         run: |
           sudo apt-get update
-          sudo apt-get install -y python${{ matrix.python-version }}
+          sudo apt-get install -y python3-pip python${{ matrix.python-version }}
+          
+      - name: Install poetry via pipx in WSL
+        shell: wsl-bash {0}
+        run: |
+          python3 -m pip install --user pipx
+          python3 -m pipx ensurepath
+          pipx install poetry
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
           
       - name: Install Python dependencies using Poetry
         shell: wsl-bash {0}
