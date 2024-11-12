@@ -107,7 +107,6 @@ export function EventHandler({ children }: React.PropsWithChildren) {
   }, [events.length]);
 
   React.useEffect(() => {
-    console.warn("STATUS", status);
     if (statusRef.current === status) {
       return; // This is a check because of strict mode - if the status did not change, don't do anything
     }
