@@ -53,7 +53,9 @@ jobs:
         run: |
           # Ensure we're using Python 3.12
           poetry env use python3.12
-          poetry install --without evaluation,llama-index
+          poetry config virtualenvs.create true
+          poetry config virtualenvs.in-project true
+          poetry install -vv --without evaluation,llama-index
         
       - name: Build Environment
         run: make build
