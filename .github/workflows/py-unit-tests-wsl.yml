@@ -1,0 +1,58 @@
+name: Run Python Unit Tests on WSL
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ (github.head_ref && github.ref) || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  test-on-wsl:
+    name: Python Unit Tests on WSL
+    runs-on: windows-latest
+    env:
+      INSTALL_DOCKER: '0'
+    strategy:
+      matrix:
+        python-version: ['3.12']
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup WSL
+        uses: Vampire/setup-wsl@v3
+        with:
+          distribution: Ubuntu-22.04
+          
+      - name: Install poetry via pipx in WSL
+        shell: wsl-bash {0}
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          
+      - name: Set up Python in WSL
+        shell: wsl-bash {0}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python${{ matrix.python-version }}
+          
+      - name: Install Python dependencies using Poetry
+        shell: wsl-bash {0}
+        run: |
+          poetry install --without evaluation,llama-index
+          
+      - name: Build Environment
+        shell: wsl-bash {0}
+        run: make build
+        
+      - name: Run Tests
+        shell: wsl-bash {0}
+        run: poetry run pytest --forked --cov=openhands --cov-report=xml -svv ./tests/unit --ignore=tests/unit/test_memory.py
+        
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
