@@ -21,7 +21,7 @@ Here's an example configuration:
 
 ```toml
 [llm]
-provider = "litellm_proxy"  # Important: Use litellm_proxy instead of openai
+# Important: Use `litellm_proxy/` instead of `openai/`
 model = "claude-3-5-sonnet-20241022-v2:0"  # The model name as configured in your LiteLLM proxy
 base_url = "https://your-litellm-proxy.com"  # Your LiteLLM proxy URL
 api_key = "your-api-key"  # API key for authentication with the proxy
