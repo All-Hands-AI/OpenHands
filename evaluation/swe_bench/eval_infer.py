@@ -95,7 +95,7 @@ def get_config(instance: pd.Series) -> AppConfig:
 
 def process_instance(
     instance: pd.Series,
-    _metadata: EvalMetadata,
+    metadata: EvalMetadata,
     reset_logger: bool = True,
     log_dir: str | None = None,
 ) -> EvalOutput:
@@ -143,6 +143,7 @@ def process_instance(
         return EvalOutput(
             instance_id=instance_id,
             test_result=instance['test_result'],
+            metadata=metadata,
         )
 
     runtime = create_runtime(config)
@@ -192,6 +193,7 @@ def process_instance(
             return EvalOutput(
                 instance_id=instance_id,
                 test_result=instance['test_result'],
+                metadata=metadata,
             )
         elif 'APPLY_PATCH_PASS' in apply_patch_output:
             logger.info(f'[{instance_id}] {APPLY_PATCH_PASS}:\n{apply_patch_output}')
@@ -285,6 +287,7 @@ def process_instance(
             return EvalOutput(
                 instance_id=instance_id,
                 test_result=instance['test_result'],
+                metadata=metadata,
             )
         else:
             logger.info(
