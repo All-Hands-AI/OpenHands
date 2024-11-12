@@ -102,7 +102,10 @@ class CmdOutputObservation(Observation):
         return f'Command `{self.command}` executed with exit code {self.exit_code}.'
 
     def __str__(self) -> str:
-        return f'**CmdOutputObservation (source={self.source}, exit code={self.exit_code}, metadata={json.dumps(self.metadata.model_dump(), indent=2)})**\n{self.content}'
+        return (
+            f'**CmdOutputObservation (source={self.source}, exit code={self.exit_code}, '
+            f'metadata={json.dumps(self.metadata.model_dump(), indent=2)})**\n--CONTENT--\n{self.content}\n--END CONTENT--'
+        )
 
     def to_agent_observation(self) -> str:
         ret = self.content
