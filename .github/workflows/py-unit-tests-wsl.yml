@@ -32,39 +32,41 @@ jobs:
       - name: Set up Python in WSL
         shell: wsl-bash {0}
         run: |
-          # Install Python 3.12
+          # Install Python 3.12 from deadsnakes PPA
           sudo add-apt-repository ppa:deadsnakes/ppa -y
           sudo apt-get update
-          sudo apt-get install -y python3.12 python3.12-venv python3.12-dev
+          sudo apt-get install -y python3.12 python3.12-venv python3.12-dev python3.12-distutils
           
-          # Create virtual environment
-          python3.12 -m venv ~/.venv
+          # Install pip for Python 3.12
+          curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
           
-          # Install poetry
-          source ~/.venv/bin/activate
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "export PATH=$HOME/.local/bin:$PATH" >> ~/.bashrc
+          # Install pipx
+          python3.12 -m pip install --user pipx
+          python3.12 -m pipx ensurepath
+          
+          # Add local bin to PATH
+          export PATH="/root/.local/bin:$PATH"
+          
+          # Install poetry via pipx
+          pipx install poetry
       
       - name: Install Python dependencies using Poetry
         shell: wsl-bash {0}
         run: |
-          source ~/.venv/bin/activate
-          source ~/.bashrc
-          $HOME/.local/bin/poetry install --without evaluation,llama-index
+          export PATH="/root/.local/bin:$PATH"
+          poetry install --without evaluation,llama-index
       
       - name: Build Environment
         shell: wsl-bash {0}
         run: |
-          source ~/.venv/bin/activate
-          source ~/.bashrc
+          export PATH="/root/.local/bin:$PATH"
           make build
       
       - name: Run Tests
         shell: wsl-bash {0}
         run: |
-          source ~/.venv/bin/activate
-          source ~/.bashrc
-          $HOME/.local/bin/poetry run pytest --forked --cov=openhands --cov-report=xml -svv ./tests/unit --ignore=tests/unit/test_memory.py
+          export PATH="/root/.local/bin:$PATH"
+          poetry run pytest --forked --cov=openhands --cov-report=xml -svv ./tests/unit --ignore=tests/unit/test_memory.py
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
