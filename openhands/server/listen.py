@@ -12,9 +12,8 @@ import requests
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from starlette.requests import Request
+from slowapi.util import get_remote_address
 
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
@@ -271,7 +270,7 @@ async def attach_session(request: Request, call_next):
 
 
 @app.websocket('/ws')
-@limiter.limit("1/5seconds")
+@limiter.limit('1/5seconds')
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for receiving events from the client (i.e., the browser).
     Once connected, the client can send various actions:
@@ -388,7 +387,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 @app.get('/api/options/models')
-@limiter.limit("10/second")
+@limiter.limit('10/second')
 async def get_litellm_models(request: Request) -> list[str]:
     """
     Get all models supported by LiteLLM.
@@ -443,7 +442,7 @@ async def get_litellm_models(request: Request) -> list[str]:
 
 
 @app.get('/api/options/agents')
-@limiter.limit("10/second")
+@limiter.limit('10/second')
 async def get_agents(request: Request):
     """Get all agents supported by LiteLLM.
 
@@ -460,7 +459,7 @@ async def get_agents(request: Request):
 
 
 @app.get('/api/options/security-analyzers')
-@limiter.limit("10/second")
+@limiter.limit('10/second')
 async def get_security_analyzers(request: Request):
     """Get all supported security analyzers.
 
@@ -484,7 +483,7 @@ FILES_TO_IGNORE = [
 
 
 @app.get('/api/list-files')
-@limiter.limit("10/second")
+@limiter.limit('10/second')
 async def list_files(request: Request, path: str | None = None):
     """List files in the specified path.
 
@@ -539,7 +538,7 @@ async def list_files(request: Request, path: str | None = None):
 
 
 @app.get('/api/select-file')
-@limiter.limit("10/second")
+@limiter.limit('10/second')
 async def select_file(file: str, request: Request):
     """Retrieve the content of a specified file.
 
@@ -591,7 +590,7 @@ def sanitize_filename(filename):
 
 
 @app.post('/api/upload-files')
-@limiter.limit("1/second")
+@limiter.limit('1/second')
 async def upload_file(request: Request, files: list[UploadFile]):
     """Upload a list of files to the workspace.
 
@@ -678,7 +677,7 @@ async def upload_file(request: Request, files: list[UploadFile]):
 
 
 @app.post('/api/submit-feedback')
-@limiter.limit("1/second")
+@limiter.limit('1/second')
 async def submit_feedback(request: Request):
     """Submit user feedback.
 
@@ -727,7 +726,7 @@ async def submit_feedback(request: Request):
 
 
 @app.get('/api/defaults')
-@limiter.limit("10/second")
+@limiter.limit('10/second')
 async def appconfig_defaults(request: Request):
     """Retrieve the default configuration settings.
 
@@ -743,7 +742,7 @@ async def appconfig_defaults(request: Request):
 
 
 @app.post('/api/save-file')
-@limiter.limit("1/second")
+@limiter.limit('1/second')
 async def save_file(request: Request):
     """Save a file to the agent's runtime file store.
 
@@ -802,7 +801,7 @@ async def save_file(request: Request):
 
 
 @app.route('/api/security/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])
-@limiter.limit("10/second")
+@limiter.limit('10/second')
 async def security_api(request: Request):
     """Catch-all route for security analyzer API requests.
 
@@ -826,7 +825,7 @@ async def security_api(request: Request):
 
 
 @app.get('/api/zip-directory')
-@limiter.limit("1/second")
+@limiter.limit('1/second')
 async def zip_current_workspace(request: Request, background_tasks: BackgroundTasks):
     try:
         logger.debug('Zipping workspace')
@@ -856,8 +855,8 @@ class AuthCode(BaseModel):
 
 
 @app.post('/api/github/callback')
-@limiter.limit("1/5seconds")
-def github_callback(auth_code: AuthCode):
+@limiter.limit('1/5seconds')
+def github_callback(auth_code: AuthCode, request: Request):
     # Prepare data for the token exchange request
     data = {
         'client_id': GITHUB_CLIENT_ID,
@@ -894,7 +893,7 @@ def github_callback(auth_code: AuthCode):
 
 
 @app.post('/api/authenticate')
-@limiter.limit("1/5seconds")
+@limiter.limit('1/5seconds')
 async def authenticate(request: Request):
     token = request.headers.get('X-GitHub-Token')
     if not await authenticate_github_user(token):
