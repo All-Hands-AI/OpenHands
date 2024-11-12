@@ -5,7 +5,6 @@ import tempfile
 import time
 import uuid
 import warnings
-from contextlib import asynccontextmanager
 
 import jwt
 import requests
@@ -74,14 +73,7 @@ file_store = get_file_store(config.file_store, config.file_store_path)
 session_manager = SessionManager(config, file_store)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global session_manager
-    async with session_manager:
-        yield
-
-
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 app.add_middleware(
     LocalhostCORSMiddleware,
     allow_credentials=True,
