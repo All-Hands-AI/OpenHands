@@ -7,7 +7,9 @@ NOTE: this will be executed inside the docker sandbox.
 
 import argparse
 import asyncio
+import base64
 import io
+import mimetypes
 import os
 import shutil
 import tempfile
@@ -217,6 +219,33 @@ class ActionExecutor:
         working_dir = self.bash_session.workdir
         filepath = self._resolve_path(action.path, working_dir)
         try:
+            if filepath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+                with open(filepath, 'rb') as file:
+                    image_data = file.read()
+                    encoded_image = base64.b64encode(image_data).decode('utf-8')
+                    mime_type, _ = mimetypes.guess_type(filepath)
+                    if mime_type is None:
+                        mime_type = 'image/png'  # default to PNG if mime type cannot be determined
+                    encoded_image = f'data:{mime_type};base64,{encoded_image}'
+
+                return FileReadObservation(path=filepath, content=encoded_image)
+            elif filepath.lower().endswith('.pdf'):
+                with open(filepath, 'rb') as file:
+                    pdf_data = file.read()
+                    encoded_pdf = base64.b64encode(pdf_data).decode('utf-8')
+                    encoded_pdf = f'data:application/pdf;base64,{encoded_pdf}'
+                return FileReadObservation(path=filepath, content=encoded_pdf)
+            elif filepath.lower().endswith(('.mp4', '.webm', '.ogg')):
+                with open(filepath, 'rb') as file:
+                    video_data = file.read()
+                    encoded_video = base64.b64encode(video_data).decode('utf-8')
+                    mime_type, _ = mimetypes.guess_type(filepath)
+                    if mime_type is None:
+                        mime_type = 'video/mp4'  # default to MP4 if MIME type cannot be determined
+                    encoded_video = f'data:{mime_type};base64,{encoded_video}'
+
+                return FileReadObservation(path=filepath, content=encoded_video)
+
             with open(filepath, 'r', encoding='utf-8') as file:
                 lines = read_lines(file.readlines(), action.start, action.end)
         except FileNotFoundError:

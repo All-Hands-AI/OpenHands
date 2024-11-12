@@ -5,7 +5,7 @@ import RejectIcon from "#/assets/reject";
 import { I18nKey } from "#/i18n/declaration";
 import AgentState from "#/types/AgentState";
 import { generateAgentStateChangeEvent } from "#/services/agentStateService";
-import { useSocket } from "#/context/socket";
+import { useWsClient } from "#/context/ws-client-provider";
 
 interface ActionTooltipProps {
   type: "confirm" | "reject";
@@ -37,7 +37,7 @@ function ActionTooltip({ type, onClick }: ActionTooltipProps) {
 
 function ConfirmationButtons() {
   const { t } = useTranslation();
-  const { send } = useSocket();
+  const { send } = useWsClient();
 
   const handleStateChange = (state: AgentState) => {
     const event = generateAgentStateChangeEvent(state);

@@ -143,7 +143,8 @@ class RemoteRuntime(Runtime):
         try:
             response = self._send_request(
                 'GET',
-                f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.sid}',
+                f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
+                is_retry=False,
                 timeout=5,
             )
         except requests.HTTPError as e:
@@ -174,6 +175,7 @@ class RemoteRuntime(Runtime):
         response = self._send_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
+            is_retry=False,
             timeout=10,
         )
         response_json = response.json()
@@ -204,6 +206,7 @@ class RemoteRuntime(Runtime):
         response = self._send_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
+            is_retry=False,
             params={'image': self.container_image},
             timeout=10,
         )
@@ -233,13 +236,14 @@ class RemoteRuntime(Runtime):
             'command': command,
             'working_dir': '/openhands/code/',
             'environment': {'DEBUG': 'true'} if self.config.debug else {},
-            'runtime_id': self.sid,
+            'session_id': self.sid,
         }
 
         # Start the sandbox using the /start endpoint
         response = self._send_request(
             'POST',
             f'{self.config.sandbox.remote_runtime_api_url}/start',
+            is_retry=False,
             json=start_request,
         )
         self._parse_runtime_response(response)
@@ -252,6 +256,7 @@ class RemoteRuntime(Runtime):
         self._send_request(
             'POST',
             f'{self.config.sandbox.remote_runtime_api_url}/resume',
+            is_retry=False,
             json={'runtime_id': self.runtime_id},
             timeout=30,
         )
@@ -304,24 +309,33 @@ class RemoteRuntime(Runtime):
         wait=tenacity.wait_fixed(2),
     )
     def _wait_until_alive(self):
+        retry_decorator = tenacity.retry(
+            stop=tenacity.stop_after_delay(
+                self.config.sandbox.remote_runtime_init_timeout
+            )
+            | stop_if_should_exit(),
+            reraise=True,
+            retry=tenacity.retry_if_exception_type(RuntimeNotReadyError),
+            wait=tenacity.wait_fixed(2),
+        )
+        return retry_decorator(self._wait_until_alive_impl)()
+
+    def _wait_until_alive_impl(self):
         self.log('debug', f'Waiting for runtime to be alive at url: {self.runtime_url}')
         runtime_info_response = self._send_request(
             'GET',
-            f'{self.config.sandbox.remote_runtime_api_url}/runtime/{self.runtime_id}',
+            f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
         )
         runtime_data = runtime_info_response.json()
         assert 'runtime_id' in runtime_data
         assert runtime_data['runtime_id'] == self.runtime_id
         assert 'pod_status' in runtime_data
         pod_status = runtime_data['pod_status']
+        self.log('debug', f'Pod status: {pod_status}')
 
         # FIXME: We should fix it at the backend of /start endpoint, make sure
         # the pod is created before returning the response.
         # Retry a period of time to give the cluster time to start the pod
-        if pod_status == 'Not Found':
-            raise RuntimeNotReadyError(
-                f'Runtime (ID={self.runtime_id}) is not yet ready. Status: {pod_status}'
-            )
         if pod_status == 'Ready':
             try:
                 self._send_request(
@@ -336,12 +350,23 @@ class RemoteRuntime(Runtime):
                     f'Runtime /alive failed to respond with 200: {e}'
                 )
             return
-        if pod_status in ('Failed', 'Unknown'):
+        elif (
+            pod_status == 'Not Found'
+            or pod_status == 'Pending'
+            or pod_status == 'Running'
+        ):  # nb: Running is not yet Ready
+            raise RuntimeNotReadyError(
+                f'Runtime (ID={self.runtime_id}) is not yet ready. Status: {pod_status}'
+            )
+        elif pod_status in ('Failed', 'Unknown'):
             # clean up the runtime
             self.close()
             raise RuntimeError(
                 f'Runtime (ID={self.runtime_id}) failed to start. Current status: {pod_status}'
             )
+        else:
+            # Maybe this should be a hard failure, but passing through in case the API changes
+            self.log('warning', f'Unknown pod status: {pod_status}')
 
         self.log(
             'debug',
@@ -350,7 +375,7 @@ class RemoteRuntime(Runtime):
         raise RuntimeNotReadyError()
 
     def close(self, timeout: int = 10):
-        if self.config.sandbox.keep_remote_runtime_alive or self.attach_to_existing:
+        if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
             self.session.close()
             return
         if self.runtime_id and self.session:
@@ -358,6 +383,7 @@ class RemoteRuntime(Runtime):
                 response = self._send_request(
                     'POST',
                     f'{self.config.sandbox.remote_runtime_api_url}/stop',
+                    is_retry=False,
                     json={'runtime_id': self.runtime_id},
                     timeout=timeout,
                 )
@@ -373,7 +399,7 @@ class RemoteRuntime(Runtime):
             finally:
                 self.session.close()
 
-    def run_action(self, action: Action) -> Observation:
+    def run_action(self, action: Action, is_retry: bool = False) -> Observation:
         if action.timeout is None:
             action.timeout = self.config.sandbox.timeout
         if isinstance(action, FileEditAction):
@@ -398,6 +424,7 @@ class RemoteRuntime(Runtime):
                 response = self._send_request(
                     'POST',
                     f'{self.runtime_url}/execute_action',
+                    is_retry=False,
                     json=request_body,
                     # wait a few more seconds to get the timeout error from client side
                     timeout=action.timeout + 5,
@@ -411,7 +438,7 @@ class RemoteRuntime(Runtime):
                 )
             return obs
 
-    def _send_request(self, method, url, **kwargs):
+    def _send_request(self, method, url, is_retry=False, **kwargs):
         is_runtime_request = self.runtime_url and self.runtime_url in url
         try:
             return send_request(self.session, method, url, **kwargs)
@@ -423,6 +450,15 @@ class RemoteRuntime(Runtime):
                 raise RuntimeDisconnectedError(
                     f'404 error while connecting to {self.runtime_url}'
                 )
+            elif is_runtime_request and e.response.status_code == 503:
+                if not is_retry:
+                    self.log('warning', 'Runtime appears to be paused. Resuming...')
+                    self._resume_runtime()
+                    self._wait_until_alive()
+                    return self._send_request(method, url, True, **kwargs)
+                else:
+                    raise e
+
             else:
                 raise e
 
@@ -475,6 +511,7 @@ class RemoteRuntime(Runtime):
             response = self._send_request(
                 'POST',
                 f'{self.runtime_url}/upload_file',
+                is_retry=False,
                 files=upload_data,
                 params=params,
                 timeout=300,
@@ -498,6 +535,7 @@ class RemoteRuntime(Runtime):
         response = self._send_request(
             'POST',
             f'{self.runtime_url}/list_files',
+            is_retry=False,
             json=data,
             timeout=30,
         )
@@ -511,6 +549,7 @@ class RemoteRuntime(Runtime):
         response = self._send_request(
             'GET',
             f'{self.runtime_url}/download_files',
+            is_retry=False,
             params=params,
             stream=True,
             timeout=30,

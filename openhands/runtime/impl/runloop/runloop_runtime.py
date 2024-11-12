@@ -21,6 +21,8 @@ from openhands.runtime.utils.command import get_remote_startup_command
 from openhands.runtime.utils.request import send_request
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
+CONTAINER_NAME_PREFIX = 'openhands-runtime-'
+
 
 class RunloopLogBuffer(LogBuffer):
     """Synchronous buffer for Runloop devbox logs.
@@ -115,7 +117,7 @@ class RunloopRuntime(EventStreamRuntime):
             bearer_token=config.runloop_api_key,
         )
         self.session = requests.Session()
-        self.container_name = self.container_name_prefix + sid
+        self.container_name = CONTAINER_NAME_PREFIX + sid
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
         self.init_base_runtime(
             config,
@@ -190,7 +192,7 @@ class RunloopRuntime(EventStreamRuntime):
             prebuilt='openhands',
             launch_parameters=LaunchParameters(
                 available_ports=[self._sandbox_port],
-                resource_size_request="LARGE",
+                resource_size_request='LARGE',
             ),
             metadata={'container-name': self.container_name},
         )

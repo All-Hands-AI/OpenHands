@@ -2,17 +2,17 @@ import React from "react";
 import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import posthog from "posthog-js";
-import EllipsisH from "#/assets/ellipsis-h.svg?react";
+import EllipsisH from "#/icons/ellipsis-h.svg?react";
 import { ModalBackdrop } from "../modals/modal-backdrop";
 import { ConnectToGitHubModal } from "../modals/connect-to-github-modal";
 import { addUserMessage } from "#/state/chatSlice";
-import { useSocket } from "#/context/socket";
 import { createChatMessage } from "#/services/chatService";
 import { ProjectMenuCardContextMenu } from "./project.menu-card-context-menu";
 import { ProjectMenuDetailsPlaceholder } from "./project-menu-details-placeholder";
 import { ProjectMenuDetails } from "./project-menu-details";
 import { downloadWorkspace } from "#/utils/download-workspace";
 import { LoadingSpinner } from "../modals/LoadingProject";
+import { useWsClient } from "#/context/ws-client-provider";
 
 interface ProjectMenuCardProps {
   isConnectedToGitHub: boolean;
@@ -27,7 +27,7 @@ export function ProjectMenuCard({
   isConnectedToGitHub,
   githubData,
 }: ProjectMenuCardProps) {
-  const { send } = useSocket();
+  const { send } = useWsClient();
   const dispatch = useDispatch();
 
   const [contextMenuIsOpen, setContextMenuIsOpen] = React.useState(false);
@@ -43,10 +43,7 @@ export function ProjectMenuCard({
     posthog.capture("push_to_github_button_clicked");
     const rawEvent = {
       content: `
-Let's push the code to GitHub.
-If we're currently on the openhands-workspace branch, please create a new branch with a descriptive name.
-Commit any changes and push them to the remote repository.
-Finally, open up a pull request using the GitHub API and the token in the GITHUB_TOKEN environment variable, then show me the URL of the pull request.
+Please push the changes to GitHub and open a pull request.
 `,
       imageUrls: [],
       timestamp: new Date().toISOString(),

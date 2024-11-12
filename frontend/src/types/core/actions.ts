@@ -4,7 +4,7 @@ export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
   source: "user";
   args: {
     content: string;
-    images_urls: string[];
+    image_urls: string[];
   };
 }
 
@@ -23,7 +23,7 @@ export interface AssistantMessageAction
   source: "agent";
   args: {
     content: string;
-    images_urls: string[] | null;
+    image_urls: string[] | null;
     wait_for_response: boolean;
   };
 }

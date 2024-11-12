@@ -163,7 +163,7 @@ class Session:
             return
         event = event_from_dict(data.copy())
         # This checks if the model supports images
-        if isinstance(event, MessageAction) and event.images_urls:
+        if isinstance(event, MessageAction) and event.image_urls:
             controller = self.agent_session.controller
             if controller:
                 if controller.agent.llm.config.disable_vision:
