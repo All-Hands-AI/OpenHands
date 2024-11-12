@@ -42,7 +42,7 @@ jobs:
           python3.12 -m pip install --user pipx
           python3.12 -m pipx ensurepath
           export PATH="$HOME/.local/bin:$PATH"
-          python3.12 -m pipx install poetry
+          python3.12 -m pipx install poetry --python python3.12
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           
       - name: Install Python dependencies using Poetry
