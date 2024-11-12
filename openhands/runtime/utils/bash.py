@@ -18,6 +18,10 @@ class BashCommandStatus(Enum):
     HARD_TIMEOUT = 'hard_timeout'
 
 
+def _remove_command_prefix(command_output: str, command: str) -> str:
+    return command_output.lstrip().removeprefix(command.lstrip()).lstrip()
+
+
 class BashSession:
     NO_CHANGE_TIMEOUT_SECONDS = 10.0
     POLL_INTERVAL = 0.5
@@ -108,6 +112,7 @@ class BashSession:
         assert len(ps1_matches) == 1, 'Expected exactly one PS1 metadata block'
 
         command_output = full_output[ps1_matches[0].end() + 1 :]
+        command_output = _remove_command_prefix(command_output, command)
         # remove the previous command output from the new output if any
         if self.prev_output:
             _clean_command_output = command_output.removeprefix(self.prev_output)
@@ -118,7 +123,7 @@ class BashSession:
             self.prev_output = _clean_command_output
 
         command_output += (
-            f'\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
+            f'\n\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
             "You may wait longer to see additional output by sending empty command '', "
             'send other commands to interact with the current process, '
             'or send keys to interrupt/kill the command.]'
@@ -146,9 +151,9 @@ class BashSession:
             )
             self.prev_output = _clean_command_output
 
-        command_output = command_output.lstrip().removeprefix(command.lstrip()).lstrip()
+        command_output = _remove_command_prefix(command_output, command)
         command_output += (
-            f'\n[The command timed out after {timeout} seconds. '
+            f'\n\n[The command timed out after {timeout} seconds. '
             "You may wait longer to see additional output by sending empty command '', "
             'send other commands to interact with the current process, '
             'or send keys to interrupt/kill the command.]'
@@ -199,14 +204,6 @@ class BashSession:
         """Execute a command in the bash session."""
         if action.command.strip() == '':
             return self._handle_empty_command()
-
-        # Clear screen before executing new command
-        if self.prev_status not in {
-            BashCommandStatus.NO_CHANGE_TIMEOUT,
-            BashCommandStatus.HARD_TIMEOUT,
-            BashCommandStatus.CONTINUE,
-        }:
-            self._clear_screen()
 
         start_time = time.time()
         last_change_time = start_time
