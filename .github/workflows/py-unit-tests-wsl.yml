@@ -34,7 +34,8 @@ jobs:
           sudo apt-get install -y software-properties-common
           sudo add-apt-repository -y ppa:deadsnakes/ppa
           sudo apt-get update
-          sudo apt-get install -y python3-pip python3.12 python3.12-dev python3.12-venv
+          sudo apt-get install -y python3-pip python3.12 python3.12-dev python3.12-venv python3-distutils
+          python3.12 -m pip install --upgrade pip
           
       - name: Install poetry via pipx in WSL
         shell: wsl-bash {0}
