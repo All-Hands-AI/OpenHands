@@ -288,7 +288,6 @@ class RemoteRuntime(Runtime):
         assert runtime_data['runtime_id'] == self.runtime_id
         assert 'pod_status' in runtime_data
         pod_status = runtime_data['pod_status']
-        self.log('debug', runtime_data)
         self.log('debug', f'Pod status: {pod_status}')
 
         # FIXME: We should fix it at the backend of /start endpoint, make sure
@@ -333,7 +332,7 @@ class RemoteRuntime(Runtime):
         raise RuntimeNotReadyError()
 
     def close(self, timeout: int = 10):
-        if self.config.sandbox.keep_remote_runtime_alive or self.attach_to_existing:
+        if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
             self.session.close()
             return
         if self.runtime_id and self.session:
