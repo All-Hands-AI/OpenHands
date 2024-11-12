@@ -5,7 +5,6 @@ import tempfile
 import time
 import uuid
 import warnings
-from contextlib import asynccontextmanager
 
 import jwt
 import requests
@@ -99,7 +98,6 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 async def default_rate_limit(request: Request, call_next):
     response = await call_next(request)
     return response
-
 app.add_middleware(
     LocalhostCORSMiddleware,
     allow_credentials=True,
