@@ -9,5 +9,5 @@ export function createChatMessage(
     action: ActionType.MESSAGE,
     args: { content: message, images_urls, timestamp },
   };
-  return JSON.stringify(event);
+  return event;
 }

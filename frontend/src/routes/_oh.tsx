@@ -21,12 +21,11 @@ import { DangerModal } from "#/components/modals/confirmation-modals/danger-moda
 import { LoadingSpinner } from "#/components/modals/LoadingProject";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { UserActions } from "#/components/user-actions";
-import { useSocket } from "#/context/socket";
 import i18n from "#/i18n";
 import { getSettings, settingsAreUpToDate } from "#/services/settings";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
-import NewProjectIcon from "#/assets/new-project.svg?react";
-import DocsIcon from "#/assets/docs.svg?react";
+import NewProjectIcon from "#/icons/new-project.svg?react";
+import DocsIcon from "#/icons/docs.svg?react";
 import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { WaitlistModal } from "#/components/waitlist-modal";
@@ -135,7 +134,6 @@ type SettingsFormData = {
 };
 
 export default function MainApp() {
-  const { stop, isConnected } = useSocket();
   const navigation = useNavigation();
   const location = useLocation();
   const {
@@ -201,14 +199,6 @@ export default function MainApp() {
       setAccountSettingsModalOpen(true);
     }
   }, [user]);
-
-  React.useEffect(() => {
-    if (location.pathname === "/") {
-      // If the user is on the home page, we should stop the socket connection.
-      // This is relevant when the user redirects here for whatever reason.
-      if (isConnected) stop();
-    }
-  }, [location.pathname]);
 
   const handleUserLogout = () => {
     logoutFetcher.submit(
@@ -313,11 +303,9 @@ export default function MainApp() {
             <p className="text-xs text-[#A3A3A3]">
               To continue, connect an OpenAI, Anthropic, or other LLM account
             </p>
-            {isConnected && (
-              <p className="text-xs text-danger">
-                Changing settings during an active session will end the session
-              </p>
-            )}
+            <p className="text-xs text-danger">
+              Changing settings during an active session will end the session
+            </p>
             <SettingsForm
               settings={settings}
               models={settingsFormData.models}
