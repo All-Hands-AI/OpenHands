@@ -1,7 +1,7 @@
 
 # LiteLLM Proxy
 
-OpenHands supports using LiteLLM proxy to access various LLM providers. This is particularly useful when you want to:
+OpenHands supports using the [LiteLLM proxy](https://docs.litellm.ai/docs/proxy/quick_start) to access various LLM providers. This is particularly useful when you want to:
 
 - Use a single interface to access multiple LLM providers
 - Add authentication, rate limiting, and other features to your LLM API
