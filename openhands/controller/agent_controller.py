@@ -307,6 +307,10 @@ class AgentController:
         self.almost_stuck = 0
         self.agent.reset()
 
+        # Reset browser environment if it exists
+        if hasattr(self.agent, 'browser_env'):
+            self.agent.browser_env.reset()
+
     async def set_agent_state_to(self, new_state: AgentState):
         """Updates the agent's state and handles side effects. Can emit events to the event stream.
 

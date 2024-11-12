@@ -118,6 +118,11 @@ class BrowserEnv:
                     elif unique_request_id == 'IS_ALIVE':
                         self.browser_side.send(('ALIVE', None))
                         continue
+                    elif unique_request_id == 'RESET':
+                        logger.debug('RESET recv, resetting browser env...')
+                        obs, info = env.reset()
+                        self.browser_side.send((unique_request_id, obs))
+                        continue
 
                     # EVAL ONLY: Get evaluation info
                     if action_data['action'] == BROWSER_EVAL_GET_GOAL_ACTION:
@@ -177,6 +182,20 @@ class BrowserEnv:
             if response_id == 'ALIVE':
                 return True
             logger.debug(f'Browser env is not alive. Response ID: {response_id}')
+
+    def reset(self):
+        """Reset the browser environment to its initial state."""
+        if not self.process.is_alive():
+            return
+        try:
+            self.agent_side.send(('RESET', None))
+            if self.agent_side.poll(timeout=5):
+                _, obs = self.agent_side.recv()
+                return obs
+        except Exception:
+            logger.error(
+                'Encountered an error when resetting browser env', exc_info=True
+            )
 
     def close(self):
         if not self.process.is_alive():
