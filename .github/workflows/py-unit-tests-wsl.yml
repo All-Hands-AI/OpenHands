@@ -39,10 +39,10 @@ jobs:
       - name: Install poetry via pipx in WSL
         shell: wsl-bash {0}
         run: |
-          python3 -m pip install --user pipx
-          python3 -m pipx ensurepath
+          python3.12 -m pip install --user pipx
+          python3.12 -m pipx ensurepath
           export PATH="$HOME/.local/bin:$PATH"
-          python3 -m pipx install poetry
+          python3.12 -m pipx install poetry
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           
       - name: Install Python dependencies using Poetry
