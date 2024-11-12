@@ -26,7 +26,7 @@ class PromptManager:
     def __init__(
         self,
         prompt_dir: str,
-        microagent_dir: str = '',
+        microagent_dir: str | None = None,
         agent_skills_docs: str = '',
         disabled_microagents: list[str] | None = None,
     ):
@@ -46,10 +46,15 @@ class PromptManager:
             ]
         for microagent_file in microagent_files:
             microagent = MicroAgent(microagent_file)
-            if disabled_microagents is None or microagent.name not in disabled_microagents:
+            if (
+                disabled_microagents is None
+                or microagent.name not in disabled_microagents
+            ):
                 self.microagents[microagent.name] = microagent
 
     def _load_template(self, template_name: str) -> Template:
+        if self.prompt_dir is None:
+            raise ValueError('Prompt directory is not set')
         template_path = os.path.join(self.prompt_dir, f'{template_name}.j2')
         if not os.path.exists(template_path):
             raise FileNotFoundError(f'Prompt file {template_path} not found')
