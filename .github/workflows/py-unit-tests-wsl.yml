@@ -42,7 +42,7 @@ jobs:
           python3 -m pip install --user pipx
           python3 -m pipx ensurepath
           export PATH="$HOME/.local/bin:$PATH"
-          pipx install poetry
+          python3 -m pipx install poetry
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           
       - name: Install Python dependencies using Poetry
