@@ -151,7 +151,7 @@ def test_get_matching_events_pagination(temp_dir: str):
 def test_get_matching_events_limit_validation(temp_dir: str):
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
-    
+
     # Test limit less than 1
     with pytest.raises(ValueError, match="Limit must be between 1 and 100"):
         event_stream.get_matching_events(limit=0)
