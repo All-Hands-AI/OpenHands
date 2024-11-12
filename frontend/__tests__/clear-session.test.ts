@@ -12,7 +12,7 @@ describe("clearSession", () => {
       removeItem: vi.fn(),
       clear: vi.fn(),
     };
-    global.localStorage = localStorageMock;
+    vi.stubGlobal("localStorage", localStorageMock);
 
     // Set initial browser state to non-default values
     store.dispatch({
