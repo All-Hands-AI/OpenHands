@@ -12,6 +12,7 @@ import openhands.agenthub  # noqa F401 (we import this to get the agents registe
 from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware
 from openhands.server.routes.auth import app as auth_api_router
 from openhands.server.routes.public import app as public_api_router
+from openhands.server.routes.restricted import AttachSessionMiddleware
 from openhands.server.routes.restricted import app as restricted_api_router
 from openhands.server.routes.websocket import app as websocket_router
 
@@ -30,6 +31,10 @@ app.include_router(auth_api_router)
 app.include_router(public_api_router)
 app.include_router(restricted_api_router)
 app.include_router(websocket_router)
+
+app.middleware('http')(
+    AttachSessionMiddleware(app, target_router=restricted_api_router)
+)
 
 
 class SPAStaticFiles(StaticFiles):

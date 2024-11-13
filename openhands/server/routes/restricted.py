@@ -1,11 +1,11 @@
 import os
 import tempfile
+from typing import Callable
 
 import jwt
 from fastapi import (
     APIRouter,
     BackgroundTasks,
-    Depends,
     HTTPException,
     Request,
     UploadFile,
@@ -45,91 +45,86 @@ from openhands.utils.async_utils import call_sync_from_async
 app = APIRouter()
 
 
-async def attach_session(request: Request, call_next):
-    """Middleware to attach session information to the request.
+class AttachSessionMiddleware:
+    def __init__(self, app, target_router: APIRouter):
+        self.app = app
+        self.target_router = target_router
+        self.target_paths = {route.path for route in target_router.routes}
+        self.prefix = target_router.prefix or ''
 
-    This middleware checks for the Authorization header, validates the token,
-    and attaches the corresponding session to the request state.
+    async def __call__(self, request: Request, call_next: Callable):
+        do_attach = False
+        current_path = request.url.path
+        if current_path.startswith(self.prefix):
+            path_without_prefix = current_path[len(self.prefix) :]
+        else:
+            path_without_prefix = current_path
+        if not path_without_prefix.startswith('/'):
+            path_without_prefix = '/' + path_without_prefix
+        if path_without_prefix in self.target_paths:
+            do_attach = True
 
-    Args:
-        request (Request): The incoming request object.
-        call_next (Callable): The next middleware or route handler in the chain.
+        if request.method == 'OPTIONS':
+            do_attach = False
 
-    Returns:
-        Response: The response from the next middleware or route handler.
-    """
-    non_authed_paths = [
-        '/api/options/',
-        '/api/github/callback',
-        '/api/authenticate',
-    ]
-    if any(
-        request.url.path.startswith(path) for path in non_authed_paths
-    ) or not request.url.path.startswith('/api/'):
-        response = await call_next(request)
-        return response
+        if not do_attach:
+            return await call_next(request)
 
-    # Bypass authentication for OPTIONS requests (preflight)
-    if request.method == 'OPTIONS':
-        response = await call_next(request)
-        return response
+        user_verifier = UserVerifier()
+        if user_verifier.is_active():
+            signed_token = request.cookies.get('github_auth')
+            if not signed_token:
+                return JSONResponse(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    content={'error': 'Not authenticated'},
+                )
+            try:
+                jwt.decode(signed_token, config.jwt_secret, algorithms=['HS256'])
+            except Exception as e:
+                logger.warning(f'Invalid token: {e}')
+                return JSONResponse(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    content={'error': 'Invalid token'},
+                )
 
-    user_verifier = UserVerifier()
-    if user_verifier.is_active():
-        signed_token = request.cookies.get('github_auth')
-        if not signed_token:
+        if not request.headers.get('Authorization'):
+            logger.warning('Missing Authorization header')
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'error': 'Not authenticated'},
+                content={'error': 'Missing Authorization header'},
             )
-        try:
-            jwt.decode(signed_token, config.jwt_secret, algorithms=['HS256'])
-        except Exception as e:
-            logger.warning(f'Invalid token: {e}')
+
+        auth_token = request.headers.get('Authorization')
+        if 'Bearer' in auth_token:
+            auth_token = auth_token.split('Bearer')[1].strip()
+
+        request.state.sid = get_sid_from_token(auth_token, config.jwt_secret)
+        if request.state.sid == '':
+            logger.warning('Invalid token')
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 content={'error': 'Invalid token'},
             )
 
-    if not request.headers.get('Authorization'):
-        logger.warning('Missing Authorization header')
-        return JSONResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': 'Missing Authorization header'},
+        request.state.conversation = await session_manager.attach_to_conversation(
+            request.state.sid
         )
-
-    auth_token = request.headers.get('Authorization')
-    if 'Bearer' in auth_token:
-        auth_token = auth_token.split('Bearer')[1].strip()
-
-    request.state.sid = get_sid_from_token(auth_token, config.jwt_secret)
-    if request.state.sid == '':
-        logger.warning('Invalid token')
-        return JSONResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': 'Invalid token'},
-        )
-
-    request.state.conversation = await session_manager.attach_to_conversation(
-        request.state.sid
-    )
-    if request.state.conversation is None:
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND,
-            content={'error': 'Session not found'},
-        )
-    try:
-        response = await call_next(request)
-    finally:
-        await session_manager.detach_from_conversation(request.state.conversation)
-    return response
+        if request.state.conversation is None:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={'error': 'Session not found'},
+            )
+        try:
+            response = await call_next(request)
+        finally:
+            await session_manager.detach_from_conversation(request.state.conversation)
+        return response
 
 
 @app.get('/api/list-files')
 async def list_files(
     request: Request,
     path: str | None = None,
-    middlware_check: bool = Depends(attach_session),
 ):
     """List files in the specified path.
 
@@ -184,9 +179,7 @@ async def list_files(
 
 
 @app.get('/api/select-file')
-async def select_file(
-    file: str, request: Request, middlware_check: bool = Depends(attach_session)
-):
+async def select_file(file: str, request: Request):
     """Retrieve the content of a specified file.
 
     To select a file:
@@ -226,7 +219,6 @@ async def select_file(
 async def upload_file(
     request: Request,
     files: list[UploadFile],
-    middlware_check: bool = Depends(attach_session),
 ):
     """Upload a list of files to the workspace.
 
@@ -313,7 +305,7 @@ async def upload_file(
 
 
 @app.post('/api/save-file')
-async def save_file(request: Request, middlware_check: bool = Depends(attach_session)):
+async def save_file(request: Request):
     """Save a file to the agent's runtime file store.
 
     This endpoint allows saving a file when the agent is in a paused, finished,
@@ -371,9 +363,7 @@ async def save_file(request: Request, middlware_check: bool = Depends(attach_ses
 
 
 @app.post('/api/submit-feedback')
-async def submit_feedback(
-    request: Request, middlware_check: bool = Depends(attach_session)
-):
+async def submit_feedback(request: Request):
     """Submit user feedback.
 
     This function stores the provided feedback data.
@@ -424,7 +414,6 @@ async def submit_feedback(
 async def zip_current_workspace(
     request: Request,
     background_tasks: BackgroundTasks,
-    middlware_check: bool = Depends(attach_session),
 ):
     try:
         logger.debug('Zipping workspace')
@@ -450,9 +439,7 @@ async def zip_current_workspace(
 
 
 @app.route('/api/security/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])
-async def security_api(
-    request: Request, middlware_check: bool = Depends(attach_session)
-):
+async def security_api(request: Request):
     """Catch-all route for security analyzer API requests.
 
     Each request is handled directly to the security analyzer.
@@ -475,9 +462,7 @@ async def security_api(
 
 
 @app.get('/api/vscode-url')
-async def get_vscode_url(
-    request: Request, middlware_check: bool = Depends(attach_session)
-):
+async def get_vscode_url(request: Request):
     """Get the VSCode URL.
 
     This endpoint allows getting the VSCode URL.
