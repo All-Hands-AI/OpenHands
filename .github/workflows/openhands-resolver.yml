@@ -40,6 +40,7 @@ permissions:
   issues: write
 
 jobs:
+
   auto-fix:
     if: |
       github.event_name == 'workflow_call' ||
@@ -47,12 +48,12 @@ jobs:
       github.event.label.name == 'fix-me-experimental' ||
 
       (
-        ((github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') && 
+        ((github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
         startsWith(github.event.comment.body, inputs.macro || '@openhands-agent') &&
         (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'COLLABORATOR' || github.event.comment.author_association == 'MEMBER')
         ) ||
-        
-        (github.event_name == 'pull_request_review' && 
+
+        (github.event_name == 'pull_request_review' &&
         startsWith(github.event.review.body, inputs.macro || '@openhands-agent') &&
         (github.event.review.author_association == 'OWNER' || github.event.review.author_association == 'COLLABORATOR' || github.event.review.author_association == 'MEMBER')
         )
@@ -66,6 +67,22 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Get latest versions and create requirements.txt
+        run: |
+          python -m pip index versions openhands-ai > openhands_versions.txt
+          OPENHANDS_VERSION=$(head -n 1 openhands_versions.txt | awk '{print $2}' | tr -d '()')
+          echo "openhands-resolver==${OPENHANDS_VERSION}" >> requirements.txt
+          cat requirements.txt
+
+      - name: Cache pip dependencies
+        if: github.event.label.name != 'fix-me-experimental'
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.pythonLocation }}/lib/python3.12/site-packages/*
+          key: ${{ runner.os }}-pip-openhands-resolver-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-openhands-resolver-${{ hashFiles('requirements.txt') }}
 
       - name: Check required environment variables
         env:
@@ -123,8 +140,12 @@ jobs:
 
       - name: Install OpenHands
         run: |
-          python -m pip install --upgrade pip
-          pip install -e .
+          if [ "${{ github.event.label.name }}" == "fix-me-experimental" ]; then
+            python -m pip install --upgrade pip
+            pip install git+https://github.com/all-hands-ai/openhands.git
+          else
+            python -m pip install --upgrade -r requirements.txt
+          fi
 
       - name: Attempt to resolve issue
         env:
