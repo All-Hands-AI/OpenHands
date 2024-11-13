@@ -51,7 +51,20 @@ class Session:
 
     def close(self):
         self.is_alive = False
-        self.agent_session.close()
+        try:
+            if self.websocket is not None:
+                # Schedule websocket close in the event loop to avoid RuntimeError
+                asyncio.run_coroutine_threadsafe(
+                    self.websocket.close(), self.loop
+                )
+                self.websocket = None
+        except Exception as e:
+            logger.error(f'Error closing websocket: {e}')
+        finally:
+            try:
+                self.agent_session.close()
+            except Exception as e:
+                logger.error(f'Error closing agent session: {e}')
 
     async def loop_recv(self):
         try:

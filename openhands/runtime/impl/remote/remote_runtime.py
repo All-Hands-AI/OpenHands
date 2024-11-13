@@ -375,29 +375,34 @@ class RemoteRuntime(Runtime):
         raise RuntimeNotReadyError()
 
     def close(self, timeout: int = 10):
-        if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
-            self.session.close()
+        if not hasattr(self, 'session') or self.session is None:
             return
-        if self.runtime_id and self.session:
+            
+        try:
+            if not (self.config.sandbox.keep_runtime_alive or self.attach_to_existing):
+                if self.runtime_id:
+                    try:
+                        response = self._send_request(
+                            'POST',
+                            f'{self.config.sandbox.remote_runtime_api_url}/stop',
+                            is_retry=False,
+                            json={'runtime_id': self.runtime_id},
+                            timeout=timeout,
+                        )
+                        if response.status_code != 200:
+                            self.log(
+                                'error',
+                                f'Failed to stop runtime: {response.text}',
+                            )
+                        else:
+                            self.log('debug', 'Runtime stopped.')
+                    except Exception as e:
+                        self.log('error', f'Error stopping runtime: {e}')
+        finally:
             try:
-                response = self._send_request(
-                    'POST',
-                    f'{self.config.sandbox.remote_runtime_api_url}/stop',
-                    is_retry=False,
-                    json={'runtime_id': self.runtime_id},
-                    timeout=timeout,
-                )
-                if response.status_code != 200:
-                    self.log(
-                        'error',
-                        f'Failed to stop runtime: {response.text}',
-                    )
-                else:
-                    self.log('debug', 'Runtime stopped.')
-            except Exception as e:
-                raise e
-            finally:
                 self.session.close()
+            except Exception as e:
+                self.log('error', f'Error closing session: {e}')
 
     def run_action(self, action: Action, is_retry: bool = False) -> Observation:
         if action.timeout is None:

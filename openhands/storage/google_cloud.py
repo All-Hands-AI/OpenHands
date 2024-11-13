@@ -4,6 +4,7 @@ from typing import List, Optional
 from google.api_core.exceptions import NotFound
 from google.cloud import storage
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.storage.files import FileStore
 
 
@@ -18,6 +19,20 @@ class GoogleCloudFileStore(FileStore):
             bucket_name = os.environ['GOOGLE_CLOUD_BUCKET_NAME']
         self.storage_client = storage.Client()
         self.bucket = self.storage_client.bucket(bucket_name)
+        self._closed = False
+
+    def __del__(self):
+        self.close()
+
+    def close(self):
+        """Close the storage client and cleanup resources."""
+        if not self._closed and hasattr(self, 'storage_client'):
+            try:
+                self.storage_client.close()
+            except Exception as e:
+                logger.error(f'Error closing storage client: {e}')
+            finally:
+                self._closed = True
 
     def write(self, path: str, contents: str | bytes) -> None:
         blob = self.bucket.blob(path)

@@ -138,14 +138,35 @@ class AgentSession:
         asyncio.get_event_loop().run_in_executor(None, inner_close)
 
     async def _close(self):
-        if self.controller is not None:
-            end_state = self.controller.get_state()
-            end_state.save_to_session(self.sid, self.file_store)
-            await self.controller.close()
-        if self.runtime is not None:
-            self.runtime.close()
-        if self.security_analyzer is not None:
-            await self.security_analyzer.close()
+        try:
+            if self.controller is not None:
+                try:
+                    end_state = self.controller.get_state()
+                    end_state.save_to_session(self.sid, self.file_store)
+                    await self.controller.close()
+                except Exception as e:
+                    logger.error(f'Error closing controller: {e}')
+                finally:
+                    self.controller = None
+
+            if self.runtime is not None:
+                try:
+                    self.runtime.close()
+                except Exception as e:
+                    logger.error(f'Error closing runtime: {e}')
+                finally:
+                    self.runtime = None
+
+            if self.security_analyzer is not None:
+                try:
+                    await self.security_analyzer.close()
+                except Exception as e:
+                    logger.error(f'Error closing security analyzer: {e}')
+                finally:
+                    self.security_analyzer = None
+        except Exception as e:
+            logger.error(f'Error in _close: {e}')
+            raise
 
     async def stop_agent_loop_for_error(self):
         if self.controller is not None:
