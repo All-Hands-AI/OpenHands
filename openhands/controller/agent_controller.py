@@ -216,8 +216,6 @@ class AgentController:
         # if the event is not filtered out, add it to the history
         if not any(isinstance(event, filter_type) for filter_type in self.filter_out):
             self.state.history.append(event)
-            # apply conversation window after adding new event
-            self.state.history = self._apply_conversation_window(self.state.history)
 
         if isinstance(event, Action):
             await self._handle_action(event)
@@ -270,6 +268,49 @@ class AgentController:
 
         if observation.llm_metrics is not None:
             self.agent.llm.metrics.merge(observation.llm_metrics)
+
+        # Check if we need to trim history based on conversation window
+        if (
+            observation.cause
+            and self.agent.llm.config.max_conversation_window
+            and len(self.state.history)
+            > self.agent.llm.config.max_conversation_window * 2
+        ):
+            # Find first agent action in history
+            first_agent_action_idx = None
+            for i, event in enumerate(self.state.history):
+                if (
+                    isinstance(event, Action)
+                    and event.source is not None
+                    and event.source == EventSource.AGENT
+                ):
+                    first_agent_action_idx = i
+                    break
+
+            if first_agent_action_idx is not None:
+                # Find its matching observation
+                action_id = self.state.history[first_agent_action_idx].id
+                matching_obs_idx = None
+
+                for i, event in enumerate(
+                    self.state.history[first_agent_action_idx + 1 :],
+                    first_agent_action_idx + 1,
+                ):
+                    if isinstance(event, Observation) and event.cause == action_id:
+                        matching_obs_idx = i
+                        break
+
+                if matching_obs_idx is not None:
+                    # Remove only the action and its matching observation
+                    self.state.history = (
+                        self.state.history[
+                            :first_agent_action_idx
+                        ]  # Events before action
+                        + self.state.history[
+                            first_agent_action_idx + 1 : matching_obs_idx
+                        ]  # Events between action and obs
+                        + self.state.history[matching_obs_idx + 1 :]  # Events after obs
+                    )
 
         if self._pending_action and self._pending_action.id == observation.cause:
             self._pending_action = None
