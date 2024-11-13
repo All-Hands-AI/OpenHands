@@ -31,22 +31,22 @@ class Flags:
     use_action_history: bool = False
     use_memory: bool = False
     use_diff: bool = False
-    html_type: str = 'pruned_html'
+    html_type: str = "pruned_html"
     use_concrete_example: bool = True
     use_abstract_example: bool = False
     multi_actions: bool = False
     action_space: Literal[
-        'python', 'bid', 'coord', 'bid+coord', 'bid+nav', 'coord+nav', 'bid+coord+nav'
-    ] = 'bid'
+        "python", "bid", "coord", "bid+coord", "bid+nav", "coord+nav", "bid+coord+nav"
+    ] = "bid"
     is_strict: bool = False
     # This flag will be automatically disabled `if not chat_model_args.has_vision()`
     use_screenshot: bool = True
     enable_chat: bool = False
     max_prompt_tokens: int = 100_000
     extract_visible_tag: bool = False
-    extract_coords: Literal['False', 'center', 'box'] = 'False'
+    extract_coords: Literal["False", "center", "box"] = "False"
     extract_visible_elements_only: bool = False
-    demo_mode: Literal['off', 'default', 'only_visible_elements'] = 'off'
+    demo_mode: Literal["off", "default", "only_visible_elements"] = "off"
 
     def copy(self):
         return deepcopy(self)
@@ -63,7 +63,7 @@ class Flags:
 
         if not isinstance(flags_dict, dict):
             raise ValueError(
-                f'Unregcognized type for flags_dict of type {type(flags_dict)}.'
+                f"Unregcognized type for flags_dict of type {type(flags_dict)}."
             )
         return Flags(**flags_dict)
 
@@ -77,9 +77,9 @@ class PromptElement:
     attributes or @property decorator.
     """
 
-    _prompt = ''
-    _abstract_ex = ''
-    _concrete_ex = ''
+    _prompt = ""
+    _abstract_ex = ""
+    _concrete_ex = ""
 
     def __init__(self, visible: bool = True) -> None:
         """Prompt element that can be hidden.
@@ -131,7 +131,7 @@ class PromptElement:
         if self.is_visible:
             return value
         else:
-            return ''
+            return ""
 
     def _parse_answer(self, text_answer) -> dict:
         if self.is_visible:
@@ -174,9 +174,9 @@ class Truncater(Shrinkable):
             lines = self._prompt.splitlines()
             new_line_count = int(len(lines) * (1 - self.shrink_speed))
             self.deleted_lines += len(lines) - new_line_count
-            self._prompt = '\n'.join(lines[:new_line_count])
+            self._prompt = "\n".join(lines[:new_line_count])
             self._prompt += (
-                f'\n... Deleted {self.deleted_lines} lines to reduce prompt size.'
+                f"\n... Deleted {self.deleted_lines} lines to reduce prompt size."
             )
 
         self.shrink_calls += 1
@@ -212,9 +212,9 @@ def fit_tokens(
         if isinstance(prompt, str):
             prompt_str = prompt
         elif isinstance(prompt, list):
-            prompt_str = '\n'.join([p['text'] for p in prompt if p['type'] == 'text'])
+            prompt_str = "\n".join([p["text"] for p in prompt if p["type"] == "text"])
         else:
-            raise ValueError(f'Unrecognized type for prompt: {type(prompt)}')
+            raise ValueError(f"Unrecognized type for prompt: {type(prompt)}")
         n_chars = len(prompt_str)
         if n_chars <= max_prompt_chars:
             return prompt
@@ -231,33 +231,33 @@ def fit_tokens(
 
 
 class HTML(Truncater):
-    def __init__(self, html, visible: bool = True, prefix='') -> None:
+    def __init__(self, html, visible: bool = True, prefix="") -> None:
         super().__init__(visible=visible, start_truncate_iteration=5)
-        self._prompt = f'\n{prefix}HTML:\n{html}\n'
+        self._prompt = f"\n{prefix}HTML:\n{html}\n"
 
 
 class AXTree(Truncater):
     def __init__(
-        self, ax_tree, visible: bool = True, coord_type=None, prefix=''
+        self, ax_tree, visible: bool = True, coord_type=None, prefix=""
     ) -> None:
         super().__init__(visible=visible, start_truncate_iteration=10)
-        if coord_type == 'center':
+        if coord_type == "center":
             coord_note = """\
 Note: center coordinates are provided in parenthesis and are
   relative to the top left corner of the page.\n\n"""
-        elif coord_type == 'box':
+        elif coord_type == "box":
             coord_note = """\
 Note: bounding box of each object are provided in parenthesis and are
   relative to the top left corner of the page.\n\n"""
         else:
-            coord_note = ''
-        self._prompt = f'\n{prefix}AXTree:\n{coord_note}{ax_tree}\n'
+            coord_note = ""
+        self._prompt = f"\n{prefix}AXTree:\n{coord_note}{ax_tree}\n"
 
 
 class Error(PromptElement):
-    def __init__(self, error, visible: bool = True, prefix='') -> None:
+    def __init__(self, error, visible: bool = True, prefix="") -> None:
         super().__init__(visible=visible)
-        self._prompt = f'\n{prefix}Error from previous action:\n{error}\n'
+        self._prompt = f"\n{prefix}Error from previous action:\n{error}\n"
 
 
 class Observation(Shrinkable):
@@ -270,17 +270,17 @@ class Observation(Shrinkable):
         super().__init__()
         self.flags = flags
         self.obs = obs
-        self.html = HTML(obs[flags.html_type], visible=flags.use_html, prefix='## ')
+        self.html = HTML(obs[flags.html_type], visible=flags.use_html, prefix="## ")
         self.ax_tree = AXTree(
-            obs['axtree_txt'],
+            obs["axtree_txt"],
             visible=flags.use_ax_tree,
             coord_type=flags.extract_coords,
-            prefix='## ',
+            prefix="## ",
         )
         self.error = Error(
-            obs['last_action_error'],
-            visible=flags.use_error_logs and obs['last_action_error'],
-            prefix='## ',
+            obs["last_action_error"],
+            visible=flags.use_error_logs and obs["last_action_error"],
+            prefix="## ",
         )
 
     def shrink(self):
@@ -289,24 +289,24 @@ class Observation(Shrinkable):
 
     @property
     def _prompt(self) -> str:  # type: ignore
-        return f'\n# Observation of current step:\n{self.html.prompt}{self.ax_tree.prompt}{self.error.prompt}\n\n'
+        return f"\n# Observation of current step:\n{self.html.prompt}{self.ax_tree.prompt}{self.error.prompt}\n\n"
 
     def add_screenshot(self, prompt):
         if self.flags.use_screenshot:
             if isinstance(prompt, str):
-                prompt = [{'type': 'text', 'text': prompt}]
+                prompt = [{"type": "text", "text": prompt}]
             img_url = BrowserEnv.image_to_jpg_base64_url(
-                self.obs['screenshot'], add_data_prefix=True
+                self.obs["screenshot"], add_data_prefix=True
             )
-            prompt.append({'type': 'image_url', 'image_url': img_url})
+            prompt.append({"type": "image_url", "image_url": img_url})
 
         return prompt
 
 
 class MacNote(PromptElement):
     def __init__(self) -> None:
-        super().__init__(visible=platform.system() == 'Darwin')
-        self._prompt = '\nNote: you are on mac so you should use Meta instead of Control for Control+C etc.\n'
+        super().__init__(visible=platform.system() == "Darwin")
+        self._prompt = "\nNote: you are on mac so you should use Meta instead of Control for Control+C etc.\n"
 
 
 class BeCautious(PromptElement):
@@ -351,7 +351,7 @@ and executed by a program, make sure to follow the formatting instructions.
 ## Chat messages:
 
 """
-        self._prompt += '\n'.join(
+        self._prompt += "\n".join(
             [
                 f"""\
  - [{msg['role']}], {msg['message']}"""
@@ -381,20 +381,20 @@ class MainPrompt(Shrinkable):
         self.history = History(obs_history, actions, memories, thoughts, flags)
         if self.flags.enable_chat:
             self.instructions: Union[ChatInstructions, GoalInstructions] = (
-                ChatInstructions(obs_history[-1]['chat_messages'])
+                ChatInstructions(obs_history[-1]["chat_messages"])
             )
         else:
             if (
-                'chat_messages' in obs_history[-1]
+                "chat_messages" in obs_history[-1]
                 and sum(
-                    [msg['role'] == 'user' for msg in obs_history[-1]['chat_messages']]
+                    [msg["role"] == "user" for msg in obs_history[-1]["chat_messages"]]
                 )
                 > 1
             ):
                 logging.warning(
-                    'Agent is in goal mode, but multiple user messages are present in the chat. Consider switching to `enable_chat=True`.'
+                    "Agent is in goal mode, but multiple user messages are present in the chat. Consider switching to `enable_chat=True`."
                 )
-            self.instructions = GoalInstructions(obs_history[-1]['goal'])
+            self.instructions = GoalInstructions(obs_history[-1]["goal"])
 
         self.obs = Observation(obs_history[-1], self.flags)
         self.action_space = ActionSpace(self.flags)
@@ -456,7 +456,7 @@ class ActionSpace(PromptElement):
         self.action_space = _get_action_space(flags)
 
         self._prompt = (
-            f'# Action space:\n{self.action_space.describe()}{MacNote().prompt}\n'
+            f"# Action space:\n{self.action_space.describe()}{MacNote().prompt}\n"
         )
         self._abstract_ex = f"""
 <action>
@@ -471,17 +471,17 @@ class ActionSpace(PromptElement):
 
     def _parse_answer(self, text_answer):
         ans_dict = parse_html_tags_raise(
-            text_answer, keys=['action'], merge_multiple=True
+            text_answer, keys=["action"], merge_multiple=True
         )
 
         try:
             # just check if action can be mapped to python code but keep action as is
             # the environment will be responsible for mapping it to python
-            self.action_space.to_python_code(ans_dict['action'])
+            self.action_space.to_python_code(ans_dict["action"])
         except Exception as e:
             raise ParseError(
-                f'Error while parsing action\n: {e}\n'
-                'Make sure your answer is restricted to the allowed actions.'
+                f"Error while parsing action\n: {e}\n"
+                "Make sure your answer is restricted to the allowed actions."
             )
 
         return ans_dict
@@ -489,34 +489,34 @@ class ActionSpace(PromptElement):
 
 def _get_action_space(flags: Flags) -> AbstractActionSet:
     match flags.action_space:
-        case 'python':
+        case "python":
             action_space = PythonActionSet(strict=flags.is_strict)
             if flags.multi_actions:
                 warn(
-                    f'Flag action_space={repr(flags.action_space)} incompatible with multi_actions={repr(flags.multi_actions)}.',
+                    f"Flag action_space={repr(flags.action_space)} incompatible with multi_actions={repr(flags.multi_actions)}.",
                     stacklevel=2,
                 )
-            if flags.demo_mode != 'off':
+            if flags.demo_mode != "off":
                 warn(
-                    f'Flag action_space={repr(flags.action_space)} incompatible with demo_mode={repr(flags.demo_mode)}.',
+                    f"Flag action_space={repr(flags.action_space)} incompatible with demo_mode={repr(flags.demo_mode)}.",
                     stacklevel=2,
                 )
             return action_space
-        case 'bid':
-            action_subsets = ['chat', 'bid']
-        case 'coord':
-            action_subsets = ['chat', 'coord']
-        case 'bid+coord':
-            action_subsets = ['chat', 'bid', 'coord']
-        case 'bid+nav':
-            action_subsets = ['chat', 'bid', 'nav']
-        case 'coord+nav':
-            action_subsets = ['chat', 'coord', 'nav']
-        case 'bid+coord+nav':
-            action_subsets = ['chat', 'bid', 'coord', 'nav']
+        case "bid":
+            action_subsets = ["chat", "bid"]
+        case "coord":
+            action_subsets = ["chat", "coord"]
+        case "bid+coord":
+            action_subsets = ["chat", "bid", "coord"]
+        case "bid+nav":
+            action_subsets = ["chat", "bid", "nav"]
+        case "coord+nav":
+            action_subsets = ["chat", "coord", "nav"]
+        case "bid+coord+nav":
+            action_subsets = ["chat", "bid", "coord", "nav"]
         case _:
             raise NotImplementedError(
-                f'Unknown action_space {repr(flags.action_space)}'
+                f"Unknown action_space {repr(flags.action_space)}"
             )
 
     action_space = HighLevelActionSet(
@@ -530,7 +530,7 @@ def _get_action_space(flags: Flags) -> AbstractActionSet:
 
 
 class Memory(PromptElement):
-    _prompt = ''  # provided in the abstract and concrete examples
+    _prompt = ""  # provided in the abstract and concrete examples
 
     _abstract_ex = """
 <memory>
@@ -548,12 +548,12 @@ focusable for elements of the form at next step.
 
     def _parse_answer(self, text_answer):
         return parse_html_tags_raise(
-            text_answer, optional_keys=['memory'], merge_multiple=True
+            text_answer, optional_keys=["memory"], merge_multiple=True
         )
 
 
 class Think(PromptElement):
-    _prompt = ''
+    _prompt = ""
 
     _abstract_ex = """
 <think>
@@ -571,7 +571,7 @@ the form is not visible yet or some fields are disabled. I need to replan.
 
     def _parse_answer(self, text_answer):
         return parse_html_tags_raise(
-            text_answer, optional_keys=['think'], merge_multiple=True
+            text_answer, optional_keys=["think"], merge_multiple=True
         )
 
 
@@ -581,10 +581,10 @@ def diff(previous, new):
     If the difference is above diff_threshold, return the diff string.
     """
     if previous == new:
-        return 'Identical', []
+        return "Identical", []
 
     if len(previous) == 0 or previous is None:
-        return 'previous is empty', []
+        return "previous is empty", []
 
     diff_gen = difflib.ndiff(previous.splitlines(), new.splitlines())
 
@@ -592,23 +592,23 @@ def diff(previous, new):
     plus_count = 0
     minus_count = 0
     for line in diff_gen:
-        if line.strip().startswith('+'):
+        if line.strip().startswith("+"):
             diff_lines.append(line)
             plus_count += 1
-        elif line.strip().startswith('-'):
+        elif line.strip().startswith("-"):
             diff_lines.append(line)
             minus_count += 1
         else:
             continue
 
-    header = f'{plus_count} lines added and {minus_count} lines removed:'
+    header = f"{plus_count} lines added and {minus_count} lines removed:"
 
     return header, diff_lines
 
 
 class Diff(Shrinkable):
     def __init__(
-        self, previous, new, prefix='', max_line_diff=20, shrink_speed=2, visible=True
+        self, previous, new, prefix="", max_line_diff=20, shrink_speed=2, visible=True
     ) -> None:
         super().__init__(visible=visible)
         self.max_line_diff = max_line_diff
@@ -622,11 +622,11 @@ class Diff(Shrinkable):
 
     @property
     def _prompt(self) -> str:  # type: ignore
-        diff_str = '\n'.join(self.diff_lines[: self.max_line_diff])
+        diff_str = "\n".join(self.diff_lines[: self.max_line_diff])
         if len(self.diff_lines) > self.max_line_diff:
             original_count = len(self.diff_lines)
-            diff_str = f'{diff_str}\nDiff truncated, {original_count - self.max_line_diff} changes now shown.'
-        return f'{self.prefix}{self.header}\n{diff_str}\n'
+            diff_str = f"{diff_str}\nDiff truncated, {original_count - self.max_line_diff} changes now shown."
+        return f"{self.prefix}{self.header}\n{diff_str}\n"
 
 
 class HistoryStep(Shrinkable):
@@ -637,25 +637,25 @@ class HistoryStep(Shrinkable):
         self.html_diff = Diff(
             previous_obs[flags.html_type],
             current_obs[flags.html_type],
-            prefix='\n### HTML diff:\n',
+            prefix="\n### HTML diff:\n",
             shrink_speed=shrink_speed,
             visible=lambda: flags.use_html and flags.use_diff,
         )
         self.ax_tree_diff = Diff(
-            previous_obs['axtree_txt'],
-            current_obs['axtree_txt'],
-            prefix='\n### Accessibility tree diff:\n',
+            previous_obs["axtree_txt"],
+            current_obs["axtree_txt"],
+            prefix="\n### Accessibility tree diff:\n",
             shrink_speed=shrink_speed,
             visible=lambda: flags.use_ax_tree and flags.use_diff,
         )
         self.error = Error(
-            current_obs['last_action_error'],
+            current_obs["last_action_error"],
             visible=(
                 flags.use_error_logs
-                and current_obs['last_action_error']
+                and current_obs["last_action_error"]
                 and flags.use_past_error_logs
             ),
-            prefix='### ',
+            prefix="### ",
         )
         self.shrink_speed = shrink_speed
         self.action = action
@@ -669,17 +669,17 @@ class HistoryStep(Shrinkable):
 
     @property
     def _prompt(self) -> str:  # type: ignore
-        prompt = ''
+        prompt = ""
 
         if self.flags.use_action_history:
-            prompt += f'\n### Action:\n{self.action}\n'
+            prompt += f"\n### Action:\n{self.action}\n"
 
         prompt += (
-            f'{self.error.prompt}{self.html_diff.prompt}{self.ax_tree_diff.prompt}'
+            f"{self.error.prompt}{self.html_diff.prompt}{self.ax_tree_diff.prompt}"
         )
 
         if self.flags.use_memory and self.memory is not None:
-            prompt += f'\n### Memory:\n{self.memory}\n'
+            prompt += f"\n### Memory:\n{self.memory}\n"
 
         return prompt
 
@@ -715,14 +715,14 @@ class History(Shrinkable):
 
     @property
     def _prompt(self):
-        prompts = ['# History of interaction with the task:\n']
+        prompts = ["# History of interaction with the task:\n"]
         for i, step in enumerate(self.history_steps):
-            prompts.append(f'## step {i}')
+            prompts.append(f"## step {i}")
             prompts.append(step.prompt)
-        return '\n'.join(prompts) + '\n'
+        return "\n".join(prompts) + "\n"
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     html_template = """
     <html>
     <body>
@@ -736,27 +736,27 @@ if __name__ == '__main__':
 
     OBS_HISTORY = [
         {
-            'goal': 'do this and that',
-            'pruned_html': html_template.format(1),
-            'axtree_txt': '[1] Click me',
-            'last_action_error': '',
+            "goal": "do this and that",
+            "pruned_html": html_template.format(1),
+            "axtree_txt": "[1] Click me",
+            "last_action_error": "",
         },
         {
-            'goal': 'do this and that',
-            'pruned_html': html_template.format(2),
-            'axtree_txt': '[1] Click me',
-            'last_action_error': '',
+            "goal": "do this and that",
+            "pruned_html": html_template.format(2),
+            "axtree_txt": "[1] Click me",
+            "last_action_error": "",
         },
         {
-            'goal': 'do this and that',
-            'pruned_html': html_template.format(3),
-            'axtree_txt': '[1] Click me',
-            'last_action_error': 'Hey, there is an error now',
+            "goal": "do this and that",
+            "pruned_html": html_template.format(3),
+            "axtree_txt": "[1] Click me",
+            "last_action_error": "Hey, there is an error now",
         },
     ]
     ACTIONS = ["click('41')", "click('42')"]
-    MEMORIES = ['memory A', 'memory B']
-    THOUGHTS = ['thought A', 'thought B']
+    MEMORIES = ["memory A", "memory B"]
+    THOUGHTS = ["thought A", "thought B"]
 
     flags = Flags(
         use_html=True,
@@ -768,7 +768,7 @@ if __name__ == '__main__':
         use_action_history=True,
         use_memory=True,
         use_diff=True,
-        html_type='pruned_html',
+        html_type="pruned_html",
         use_concrete_example=True,
         use_abstract_example=True,
         use_screenshot=False,

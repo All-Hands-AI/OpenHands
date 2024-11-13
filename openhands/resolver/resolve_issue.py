@@ -2,48 +2,48 @@
 
 import asyncio
 import dataclasses
+import json
 import os
 import pathlib
 import shutil
 import subprocess
-import json
 from typing import Any
 from uuid import uuid4
+
 from termcolor import colored
 
-from openhands.resolver.github_issue import GithubIssue
-from openhands.resolver.issue_definitions import (
-    IssueHandler,
-    IssueHandlerInterface,
-    PRHandler
-)
-from openhands.resolver.resolver_output import ResolverOutput
 import openhands
-from openhands.core.main import create_runtime, run_controller
 from openhands.controller.state.state import State
+from openhands.core.config import (
+    AgentConfig,
+    AppConfig,
+    LLMConfig,
+    SandboxConfig,
+)
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
-from openhands.events.stream import EventStreamSubscriber
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
     Observation,
 )
-from openhands.core.config import (
-    AppConfig,
-    SandboxConfig,
-    AgentConfig,
+from openhands.events.stream import EventStreamSubscriber
+from openhands.resolver.github_issue import GithubIssue
+from openhands.resolver.issue_definitions import (
+    IssueHandler,
+    IssueHandlerInterface,
+    PRHandler,
 )
-from openhands.core.config import LLMConfig
-from openhands.runtime.base import Runtime
+from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import (
     codeact_user_response,
     reset_logger_for_multiprocessing,
 )
-
+from openhands.runtime.base import Runtime
 
 # Don't make this confgurable for now, unless we have other competitive agents
-AGENT_CLASS = "CodeActAgent"
+AGENT_CLASS = 'CodeActAgent'
 
 
 def initialize_runtime(
@@ -64,16 +64,14 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-        raise RuntimeError(
-            f"Failed to change directory to /workspace.\n{obs}"
-        )
+        raise RuntimeError(f'Failed to change directory to /workspace.\n{obs}')
 
     action = CmdRunAction(command='git config --global core.pager ""')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-        raise RuntimeError(f"Failed to set git config.\n{obs}")
+        raise RuntimeError(f'Failed to set git config.\n{obs}')
 
 
 async def complete_runtime(
@@ -97,7 +95,7 @@ async def complete_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(
-            f"Failed to change directory to /workspace. Observation: {obs}"
+            f'Failed to change directory to /workspace. Observation: {obs}'
         )
 
     action = CmdRunAction(command='git config --global core.pager ""')
@@ -105,21 +103,21 @@ async def complete_runtime(
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-        raise RuntimeError(f"Failed to set git config. Observation: {obs}")
+        raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
     action = CmdRunAction(command='git config --global --add safe.directory /workspace')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-        raise RuntimeError(f"Failed to set git config. Observation: {obs}")
+        raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
     action = CmdRunAction(command='git add -A')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-        raise RuntimeError(f"Failed to git add. Observation: {obs}")
+        raise RuntimeError(f'Failed to git add. Observation: {obs}')
 
     n_retries = 0
     git_patch = None
@@ -164,7 +162,6 @@ async def process_issue(
     repo_instruction: str | None = None,
     reset_logger: bool = False,
 ) -> ResolverOutput:
-
     # Setup the logger properly, so you can run multi-processing to parallelize processing
     if reset_logger:
         log_dir = os.path.join(output_dir, 'infer_logs')
@@ -172,17 +169,19 @@ async def process_issue(
     else:
         logger.info(f'Starting fixing issue {issue.number}.')
 
-    workspace_base = os.path.join(output_dir, "workspace", f"{issue_handler.issue_type}_{issue.number}")
+    workspace_base = os.path.join(
+        output_dir, 'workspace', f'{issue_handler.issue_type}_{issue.number}'
+    )
 
     # Get the absolute path of the workspace base
     workspace_base = os.path.abspath(workspace_base)
     # write the repo to the workspace
     if os.path.exists(workspace_base):
         shutil.rmtree(workspace_base)
-    shutil.copytree(os.path.join(output_dir, "repo"), workspace_base)
+    shutil.copytree(os.path.join(output_dir, 'repo'), workspace_base)
 
     config = AppConfig(
-        default_agent="CodeActAgent",
+        default_agent='CodeActAgent',
         runtime='eventstream',
         max_budget_per_task=4,
         max_iterations=max_iterations,
@@ -196,28 +195,25 @@ async def process_issue(
         # do not mount workspace
         workspace_base=workspace_base,
         workspace_mount_path=workspace_base,
-        agents={
-            "CodeActAgent": AgentConfig(
-                disabled_microagents=["github"]
-            )
-        },
+        agents={'CodeActAgent': AgentConfig(disabled_microagents=['github'])},
     )
     config.set_llm_config(llm_config)
 
-    runtime = create_runtime(config, sid=f"{issue.number}")
+    runtime = create_runtime(config, sid=f'{issue.number}')
     await runtime.connect()
+
     async def on_event(evt):
         logger.info(evt)
+
     runtime.event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
 
     initialize_runtime(runtime)
 
-    instruction, images_urls = issue_handler.get_instruction(issue, prompt_template, repo_instruction)
-    # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    action = MessageAction(
-        content=instruction,
-        image_urls=images_urls
+    instruction, images_urls = issue_handler.get_instruction(
+        issue, prompt_template, repo_instruction
     )
+    # Here's how you can run the agent (similar to the `main` function) and get the final task state
+    action = MessageAction(content=instruction, image_urls=images_urls)
     try:
         state: State | None = await run_controller(
             config=config,
@@ -226,9 +222,9 @@ async def process_issue(
             fake_user_response_fn=codeact_user_response,
         )
         if state is None:
-            raise RuntimeError("Failed to run the agent.")
+            raise RuntimeError('Failed to run the agent.')
     except (ValueError, RuntimeError) as e:
-        error_msg = f"Agent failed with error: {str(e)}"
+        error_msg = f'Agent failed with error: {str(e)}'
         logger.error(error_msg)
         state = None
         last_error: str | None = error_msg
@@ -246,26 +242,34 @@ async def process_issue(
         metrics = None
         success = False
         comment_success = None
-        success_explanation = "Agent failed to run"
-        last_error = "Agent failed to run or crashed"
+        success_explanation = 'Agent failed to run'
+        last_error = 'Agent failed to run or crashed'
     else:
         histories = [dataclasses.asdict(event) for event in state.history]
         metrics = state.metrics.get() if state.metrics else None
         # determine success based on the history and the issue description
-        success, comment_success, success_explanation = issue_handler.guess_success(issue, state.history, llm_config)
+        success, comment_success, success_explanation = issue_handler.guess_success(
+            issue, state.history, llm_config
+        )
 
-        if issue_handler.issue_type == "pr" and comment_success:
-            success_log = "I have updated the PR and resolved some of the issues that were cited in the pull request review. Specifically, I identified the following revision requests, and all the ones that I think I successfully resolved are checked off. All the unchecked ones I was not able to resolve, so manual intervention may be required:\n"
+        if issue_handler.issue_type == 'pr' and comment_success:
+            success_log = 'I have updated the PR and resolved some of the issues that were cited in the pull request review. Specifically, I identified the following revision requests, and all the ones that I think I successfully resolved are checked off. All the unchecked ones I was not able to resolve, so manual intervention may be required:\n'
             try:
                 explanations = json.loads(success_explanation)
             except json.JSONDecodeError:
-                logger.error(f"Failed to parse success_explanation as JSON: {success_explanation}")
+                logger.error(
+                    f'Failed to parse success_explanation as JSON: {success_explanation}'
+                )
                 explanations = [str(success_explanation)]  # Use raw string as fallback
-            
+
             for success_indicator, explanation in zip(comment_success, explanations):
-                status = colored("[X]", "red") if success_indicator else colored("[ ]", "red")
-                bullet_point = colored("-", "yellow")
-                success_log += f"\n{bullet_point} {status}: {explanation}"
+                status = (
+                    colored('[X]', 'red')
+                    if success_indicator
+                    else colored('[ ]', 'red')
+                )
+                bullet_point = colored('-', 'yellow')
+                success_log += f'\n{bullet_point} {status}: {explanation}'
             logger.info(success_log)
         last_error = state.last_error if state.last_error else None
 
@@ -286,13 +290,15 @@ async def process_issue(
     return output
 
 
-def issue_handler_factory(issue_type: str, owner: str, repo: str, token: str) -> IssueHandlerInterface:
-    if issue_type == "issue":
+def issue_handler_factory(
+    issue_type: str, owner: str, repo: str, token: str
+) -> IssueHandlerInterface:
+    if issue_type == 'issue':
         return IssueHandler(owner, repo, token)
-    elif issue_type == "pr":
+    elif issue_type == 'pr':
         return PRHandler(owner, repo, token)
     else:
-        raise ValueError(f"Invalid issue type: {issue_type}")
+        raise ValueError(f'Invalid issue type: {issue_type}')
 
 
 async def resolve_issue(
@@ -332,58 +338,61 @@ async def resolve_issue(
     issue_handler = issue_handler_factory(issue_type, owner, repo, token)
 
     # Load dataset
-    issues: list[GithubIssue] = issue_handler.get_converted_issues(comment_id=comment_id)
-    
+    issues: list[GithubIssue] = issue_handler.get_converted_issues(
+        comment_id=comment_id
+    )
+
     # Find the specific issue
     issue = next((i for i in issues if i.number == issue_number), None)
     if not issue:
-        raise ValueError(f"Issue {issue_number} not found")
-    
+        raise ValueError(f'Issue {issue_number} not found')
+
     if comment_id is not None:
-        if (issue_type == 'pr'
+        if (
+            issue_type == 'pr'
             and not issue.review_comments
-            and not issue.review_threads 
-            and not issue.thread_comments):
-            raise ValueError(f"Comment ID {comment_id} did not have a match for issue {issue.number}")
+            and not issue.review_threads
+            and not issue.thread_comments
+        ):
+            raise ValueError(
+                f'Comment ID {comment_id} did not have a match for issue {issue.number}'
+            )
 
-        if (issue_type == 'issue'
-            and not issue.thread_comments):
-            raise ValueError(f"Comment ID {comment_id} did not have a match for issue {issue.number}")
-
-    
+        if issue_type == 'issue' and not issue.thread_comments:
+            raise ValueError(
+                f'Comment ID {comment_id} did not have a match for issue {issue.number}'
+            )
 
     # TEST METADATA
-    model_name = llm_config.model.split("/")[-1]
+    model_name = llm_config.model.split('/')[-1]
 
     pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(os.path.join(output_dir, "infer_logs")).mkdir(
+    pathlib.Path(os.path.join(output_dir, 'infer_logs')).mkdir(
         parents=True, exist_ok=True
     )
-    logger.info(f"Using output directory: {output_dir}")
+    logger.info(f'Using output directory: {output_dir}')
 
     # checkout the repo
-    repo_dir = os.path.join(output_dir, "repo")
+    repo_dir = os.path.join(output_dir, 'repo')
     if not os.path.exists(repo_dir):
         checkout_output = subprocess.check_output(
             [
-            "git",
-            "clone",
-            f"https://{username}:{token}@github.com/{owner}/{repo}",
-            f"{output_dir}/repo",
-        ]
-        ).decode("utf-8")
-        if "fatal" in checkout_output:
-            raise RuntimeError(f"Failed to clone repository: {checkout_output}")
+                'git',
+                'clone',
+                f'https://{username}:{token}@github.com/{owner}/{repo}',
+                f'{output_dir}/repo',
+            ]
+        ).decode('utf-8')
+        if 'fatal' in checkout_output:
+            raise RuntimeError(f'Failed to clone repository: {checkout_output}')
 
     # get the commit id of current repo for reproducibility
     base_commit = (
-        subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=repo_dir
-        )
-        .decode("utf-8")
+        subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
+        .decode('utf-8')
         .strip()
     )
-    logger.info(f"Base commit: {base_commit}")
+    logger.info(f'Base commit: {base_commit}')
 
     if repo_instruction is None:
         # Check for .openhands_instructions file in the workspace directory
@@ -393,39 +402,41 @@ async def resolve_issue(
                 repo_instruction = f.read()
 
     # OUTPUT FILE
-    output_file = os.path.join(output_dir, "output.jsonl")
-    logger.info(f"Writing output to {output_file}")
+    output_file = os.path.join(output_dir, 'output.jsonl')
+    logger.info(f'Writing output to {output_file}')
 
     # Check if this issue was already processed
     if os.path.exists(output_file):
-        with open(output_file, "r") as f:
+        with open(output_file, 'r') as f:
             for line in f:
                 data = ResolverOutput.model_validate_json(line)
                 if data.issue.number == issue_number:
-                    logger.warning(f"Issue {issue_number} was already processed. Skipping.")
+                    logger.warning(
+                        f'Issue {issue_number} was already processed. Skipping.'
+                    )
                     return
 
-    output_fp = open(output_file, "a")
+    output_fp = open(output_file, 'a')
 
     logger.info(
-        f"Resolving issue {issue_number} with Agent {AGENT_CLASS}, model {model_name}, max iterations {max_iterations}."
+        f'Resolving issue {issue_number} with Agent {AGENT_CLASS}, model {model_name}, max iterations {max_iterations}.'
     )
 
     try:
         # checkout to pr branch if needed
-        if issue_type == "pr":
-            logger.info(f"Checking out to PR branch {issue.head_branch} for issue {issue.number}")
-            
+        if issue_type == 'pr':
+            logger.info(
+                f'Checking out to PR branch {issue.head_branch} for issue {issue.number}'
+            )
+
             subprocess.check_output(
-                ["git", "checkout", f"{issue.head_branch}"],
+                ['git', 'checkout', f'{issue.head_branch}'],
                 cwd=repo_dir,
             )
 
             base_commit = (
-                subprocess.check_output(
-                    ["git", "rev-parse", "HEAD"], cwd=repo_dir
-                )
-                .decode("utf-8")
+                subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
+                .decode('utf-8')
                 .strip()
             )
 
@@ -441,12 +452,12 @@ async def resolve_issue(
             repo_instruction,
             reset_logger,
         )
-        output_fp.write(output.model_dump_json() + "\n")
+        output_fp.write(output.model_dump_json() + '\n')
         output_fp.flush()
 
     finally:
         output_fp.close()
-        logger.info("Finished.")
+        logger.info('Finished.')
 
 
 def main():
@@ -458,118 +469,113 @@ def main():
         else:
             return int(value)
 
-
-    parser = argparse.ArgumentParser(description="Resolve a single issue from Github.")
+    parser = argparse.ArgumentParser(description='Resolve a single issue from Github.')
     parser.add_argument(
-        "--repo",
+        '--repo',
         type=str,
         required=True,
-        help="Github repository to resolve issues in form of `owner/repo`.",
+        help='Github repository to resolve issues in form of `owner/repo`.',
     )
     parser.add_argument(
-        "--token",
+        '--token',
         type=str,
         default=None,
-        help="Github token to access the repository.",
+        help='Github token to access the repository.',
     )
     parser.add_argument(
-        "--username",
+        '--username',
         type=str,
         default=None,
-        help="Github username to access the repository.",
+        help='Github username to access the repository.',
     )
     parser.add_argument(
-        "--runtime-container-image",
+        '--runtime-container-image',
         type=str,
         default=None,
-        help="Container image to use.",
+        help='Container image to use.',
     )
     parser.add_argument(
-        "--max-iterations",
+        '--max-iterations',
         type=int,
         default=50,
-        help="Maximum number of iterations to run.",
+        help='Maximum number of iterations to run.',
     )
     parser.add_argument(
-        "--issue-number",
+        '--issue-number',
         type=int,
         required=True,
-        help="Issue number to resolve.",
+        help='Issue number to resolve.',
     )
     parser.add_argument(
-        "--comment-id",
+        '--comment-id',
         type=int_or_none,
         required=False,
         default=None,
-        help="Resolve a specific comment"
+        help='Resolve a specific comment',
     )
     parser.add_argument(
-        "--output-dir",
+        '--output-dir',
         type=str,
-        default="output",
-        help="Output directory to write the results.",
+        default='output',
+        help='Output directory to write the results.',
     )
     parser.add_argument(
-        "--llm-model",
-        type=str,
-        default=None,
-        help="LLM model to use.",
-    )
-    parser.add_argument(
-        "--llm-api-key",
+        '--llm-model',
         type=str,
         default=None,
-        help="LLM API key to use.",
+        help='LLM model to use.',
     )
     parser.add_argument(
-        "--llm-base-url",
+        '--llm-api-key',
         type=str,
         default=None,
-        help="LLM base URL to use.",
+        help='LLM API key to use.',
     )
     parser.add_argument(
-        "--prompt-file",
+        '--llm-base-url',
         type=str,
         default=None,
-        help="Path to the prompt template file in Jinja format.",
+        help='LLM base URL to use.',
     )
     parser.add_argument(
-        "--repo-instruction-file",
+        '--prompt-file',
         type=str,
         default=None,
-        help="Path to the repository instruction file in text format.",
+        help='Path to the prompt template file in Jinja format.',
     )
     parser.add_argument(
-        "--issue-type",
+        '--repo-instruction-file',
         type=str,
-        default="issue",
-        choices=["issue", "pr"],
-        help="Type of issue to resolve, either open issue or pr comments.",
+        default=None,
+        help='Path to the repository instruction file in text format.',
+    )
+    parser.add_argument(
+        '--issue-type',
+        type=str,
+        default='issue',
+        choices=['issue', 'pr'],
+        help='Type of issue to resolve, either open issue or pr comments.',
     )
 
     my_args = parser.parse_args()
 
     runtime_container_image = my_args.runtime_container_image
     if runtime_container_image is None:
-        runtime_container_image = f"ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik"
+        runtime_container_image = (
+            f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
+        )
 
-    owner, repo = my_args.repo.split("/")
-    token = (
-        my_args.token if my_args.token else os.getenv("GITHUB_TOKEN")
-    )
-    username = (
-        my_args.username
-        if my_args.username
-        else os.getenv("GITHUB_USERNAME")
-    ) 
+    owner, repo = my_args.repo.split('/')
+    token = my_args.token if my_args.token else os.getenv('GITHUB_TOKEN')
+    username = my_args.username if my_args.username else os.getenv('GITHUB_USERNAME')
 
     if not token:
-        raise ValueError("Github token is required.")
+        raise ValueError('Github token is required.')
 
     llm_config = LLMConfig(
-        model=my_args.llm_model or os.environ["LLM_MODEL"],
-        api_key=my_args.llm_api_key or os.environ["LLM_API_KEY"],
-        base_url=my_args.llm_base_url or os.environ.get("LLM_BASE_URL", None),
+        model=my_args.llm_model or os.environ['LLM_MODEL'],
+        api_key=my_args.llm_api_key or os.environ['LLM_API_KEY'],
+        base_url=my_args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
     )
 
     repo_instruction = None
@@ -582,10 +588,14 @@ def main():
     # Read the prompt template
     prompt_file = my_args.prompt_file
     if prompt_file is None:
-        if issue_type == "issue":
-            prompt_file = os.path.join(os.path.dirname(__file__), "prompts/resolve/basic-with-tests.jinja")
+        if issue_type == 'issue':
+            prompt_file = os.path.join(
+                os.path.dirname(__file__), 'prompts/resolve/basic-with-tests.jinja'
+            )
         else:
-            prompt_file = os.path.join(os.path.dirname(__file__), "prompts/resolve/basic-followup.jinja") 
+            prompt_file = os.path.join(
+                os.path.dirname(__file__), 'prompts/resolve/basic-followup.jinja'
+            )
     with open(prompt_file, 'r') as f:
         prompt_template = f.read()
 
@@ -608,5 +618,5 @@ def main():
     )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

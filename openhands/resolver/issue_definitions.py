@@ -689,7 +689,7 @@ class PRHandler(IssueHandler):
                         review_thread, issues_context, last_message, llm_config
                     )
                 else:
-                    success, explanation = False, "Missing context or message"
+                    success, explanation = False, 'Missing context or message'
                 success_list.append(success)
                 explanation_list.append(explanation)
         # Handle PRs with only thread comments (no file-specific review comments)
@@ -699,7 +699,10 @@ class PRHandler(IssueHandler):
                     issue.thread_comments, issues_context, last_message, llm_config
                 )
             else:
-                success, explanation = False, "Missing thread comments, context or message"
+                success, explanation = (
+                    False,
+                    'Missing thread comments, context or message',
+                )
             success_list.append(success)
             explanation_list.append(explanation)
         elif issue.review_comments:
@@ -709,7 +712,10 @@ class PRHandler(IssueHandler):
                     issue.review_comments, issues_context, last_message, llm_config
                 )
             else:
-                success, explanation = False, "Missing review comments, context or message"
+                success, explanation = (
+                    False,
+                    'Missing review comments, context or message',
+                )
             success_list.append(success)
             explanation_list.append(explanation)
         else:

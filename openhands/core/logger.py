@@ -114,18 +114,14 @@ class RollingLogger:
             self.replace_current_line(line)
 
     def move_back(self, amount=-1):
-        """
-        '\033[F'    moves the cursor up one line.
-        """
+        """'\033[F'    moves the cursor up one line."""
         if amount == -1:
             amount = self.max_lines
         self._write('\033[F' * (self.max_lines))
         self._flush()
 
     def replace_current_line(self, line=''):
-        """
-        '\033[2K\r' clears the line and moves the cursor to the beginning of the line.
-        """
+        """'\033[2K\r' clears the line and moves the cursor to the beginning of the line."""
         self._write('\033[2K' + line + '\n')
         self._flush()
 

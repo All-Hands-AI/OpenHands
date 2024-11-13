@@ -79,29 +79,29 @@ HTML_FILE = """
 
 
 class Test(BaseIntegrationTest):
-    INSTRUCTION = 'Browse localhost:8000, and tell me the ultimate answer to life.'
+    INSTRUCTION = "Browse localhost:8000, and tell me the ultimate answer to life."
 
     @classmethod
     def initialize_runtime(cls, runtime: Runtime) -> None:
-        action = CmdRunAction(command='mkdir -p /workspace', keep_prompt=False)
+        action = CmdRunAction(command="mkdir -p /workspace", keep_prompt=False)
         obs = runtime.run_action(action)
-        assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
+        assert_and_raise(obs.exit_code == 0, f"Failed to run command: {obs.content}")
 
-        action = CmdRunAction(command='mkdir -p /tmp/server', keep_prompt=False)
+        action = CmdRunAction(command="mkdir -p /tmp/server", keep_prompt=False)
         obs = runtime.run_action(action)
-        assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
+        assert_and_raise(obs.exit_code == 0, f"Failed to run command: {obs.content}")
 
         # create a file with a typo in /workspace/bad.txt
         with tempfile.TemporaryDirectory() as temp_dir:
-            temp_file_path = os.path.join(temp_dir, 'index.html')
-            with open(temp_file_path, 'w') as f:
+            temp_file_path = os.path.join(temp_dir, "index.html")
+            with open(temp_file_path, "w") as f:
                 f.write(HTML_FILE)
             # Copy the file to the desired location
-            runtime.copy_to(temp_file_path, '/tmp/server')
+            runtime.copy_to(temp_file_path, "/tmp/server")
 
         # create README.md
         action = CmdRunAction(
-            command='cd /tmp/server && nohup python3 -m http.server 8000 &',
+            command="cd /tmp/server && nohup python3 -m http.server 8000 &",
             keep_prompt=False,
         )
         obs = runtime.run_action(action)
@@ -120,15 +120,15 @@ class Test(BaseIntegrationTest):
             if isinstance(event, AgentDelegateObservation):
                 content = event.content
             elif isinstance(event, AgentFinishAction):
-                content = event.outputs.get('content', '')
+                content = event.outputs.get("content", "")
             elif isinstance(event, MessageAction):
                 content = event.content
             else:
-                raise ValueError(f'Unknown event type: {type(event)}')
+                raise ValueError(f"Unknown event type: {type(event)}")
 
-            if 'OpenHands is all you need!' in content:
+            if "OpenHands is all you need!" in content:
                 return TestResult(success=True)
         return TestResult(
             success=False,
-            reason=f'The answer is not found in any message. Total messages: {len(message_actions)}. Messages: {message_actions}',
+            reason=f"The answer is not found in any message. Total messages: {len(message_actions)}. Messages: {message_actions}",
         )

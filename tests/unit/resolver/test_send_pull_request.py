@@ -44,9 +44,11 @@ def mock_github_issue():
         body="Test body",
     )
 
+
 @pytest.fixture
 def mock_llm_config():
     return LLMConfig()
+
 
 def test_load_single_resolver_output():
     mock_output_jsonl = "tests/unit/resolver/mock_output/output.jsonl"
@@ -237,6 +239,7 @@ def test_initialize_repo(mock_output_dir):
     with open(os.path.join(patches_dir, "README.md"), "r") as f:
         assert f.read() == "hello world"
 
+
 @patch("openhands.resolver.send_pull_request.reply_to_comment")
 @patch("requests.post")
 @patch("subprocess.run")
@@ -251,7 +254,7 @@ def test_update_existing_pull_request(
         title="Test PR",
         body="This is a test PR",
         thread_ids=["comment1", "comment2"],
-        head_branch="test-branch"
+        head_branch="test-branch",
     )
     github_token = "test-token"
     github_username = "test-user"
@@ -264,11 +267,13 @@ def test_update_existing_pull_request(
     # Mock the requests.post call for adding a PR comment
     mock_requests_post.return_value.status_code = 201
     mock_completion_response = MagicMock()
-    mock_completion_response.choices = [MagicMock(message=MagicMock(content="This is an issue resolution."))]
+    mock_completion_response.choices = [
+        MagicMock(message=MagicMock(content="This is an issue resolution."))
+    ]
     llm_config = LLMConfig()
 
     # Act: Call the function without comment_message to test auto-generation
-    with patch('litellm.completion', MagicMock(return_value=mock_completion_response)):
+    with patch("litellm.completion", MagicMock(return_value=mock_completion_response)):
         result = update_existing_pull_request(
             github_issue,
             github_token,
@@ -285,7 +290,9 @@ def test_update_existing_pull_request(
         f"https://{github_username}:{github_token}@github.com/"
         f"{github_issue.owner}/{github_issue.repo}.git {github_issue.head_branch}"
     )
-    mock_subprocess_run.assert_called_once_with(push_command, shell=True, capture_output=True, text=True)
+    mock_subprocess_run.assert_called_once_with(
+        push_command, shell=True, capture_output=True, text=True
+    )
 
     # Assert: Check if the auto-generated comment was posted to the PR
     comment_url = f"https://api.github.com/repos/{github_issue.owner}/{github_issue.repo}/issues/{github_issue.number}/comments"
@@ -299,16 +306,19 @@ def test_update_existing_pull_request(
         json={"body": expected_comment},
     )
 
-
     # Assert: Check if the reply_to_comment function was called for each thread ID
-    mock_reply_to_comment.assert_has_calls([
-        call(github_token, "comment1", "Fixed bug in function A"),
-        call(github_token, "comment2", "Updated documentation for B"),
-    ])
+    mock_reply_to_comment.assert_has_calls(
+        [
+            call(github_token, "comment1", "Fixed bug in function A"),
+            call(github_token, "comment2", "Updated documentation for B"),
+        ]
+    )
 
     # Assert: Check the returned PR URL
-    assert result == f"https://github.com/{github_issue.owner}/{github_issue.repo}/pull/{github_issue.number}"
-
+    assert (
+        result
+        == f"https://github.com/{github_issue.owner}/{github_issue.repo}/pull/{github_issue.number}"
+    )
 
 
 @pytest.mark.parametrize("pr_type", ["branch", "draft", "ready"])
@@ -316,14 +326,20 @@ def test_update_existing_pull_request(
 @patch("requests.post")
 @patch("requests.get")
 def test_send_pull_request(
-    mock_get, mock_post, mock_run, mock_github_issue, mock_output_dir, mock_llm_config, pr_type
+    mock_get,
+    mock_post,
+    mock_run,
+    mock_github_issue,
+    mock_output_dir,
+    mock_llm_config,
+    pr_type,
 ):
     repo_path = os.path.join(mock_output_dir, "repo")
 
     # Mock API responses
     mock_get.side_effect = [
         MagicMock(status_code=404),  # Branch doesn't exist
-        MagicMock(json=lambda: {"default_branch": "main"})
+        MagicMock(json=lambda: {"default_branch": "main"}),
     ]
     mock_post.return_value.json.return_value = {
         "html_url": "https://github.com/test-owner/test-repo/pull/1"
@@ -353,12 +369,19 @@ def test_send_pull_request(
     checkout_call, push_call = mock_run.call_args_list
 
     assert checkout_call == call(
-        ['git', '-C', repo_path, 'checkout', '-b', 'openhands-fix-issue-42'],
+        ["git", "-C", repo_path, "checkout", "-b", "openhands-fix-issue-42"],
         capture_output=True,
         text=True,
     )
     assert push_call == call(
-        ['git', '-C', repo_path, 'push', 'https://test-user:test-token@github.com/test-owner/test-repo.git', 'openhands-fix-issue-42'],
+        [
+            "git",
+            "-C",
+            repo_path,
+            "push",
+            "https://test-user:test-token@github.com/test-owner/test-repo.git",
+            "openhands-fix-issue-42",
+        ],
         capture_output=True,
         text=True,
     )
@@ -416,11 +439,25 @@ def test_send_pull_request_git_push_failure(
 
     # Check the git checkout -b command
     checkout_call = mock_run.call_args_list[0]
-    assert checkout_call[0][0] == ['git', '-C', repo_path, 'checkout', '-b', 'openhands-fix-issue-42']
+    assert checkout_call[0][0] == [
+        "git",
+        "-C",
+        repo_path,
+        "checkout",
+        "-b",
+        "openhands-fix-issue-42",
+    ]
 
     # Check the git push command
     push_call = mock_run.call_args_list[1]
-    assert push_call[0][0] == ['git', '-C', repo_path, 'push', 'https://test-user:test-token@github.com/test-owner/test-repo.git', 'openhands-fix-issue-42']
+    assert push_call[0][0] == [
+        "git",
+        "-C",
+        repo_path,
+        "push",
+        "https://test-user:test-token@github.com/test-owner/test-repo.git",
+        "openhands-fix-issue-42",
+    ]
 
     # Assert that no pull request was created
     mock_post.assert_not_called()
@@ -461,6 +498,7 @@ def test_send_pull_request_permission_error(
     assert mock_run.call_count == 2
     mock_post.assert_called_once()
 
+
 @patch("requests.post")
 def test_reply_to_comment(mock_post):
     # Arrange: set up the test data
@@ -477,12 +515,12 @@ def test_reply_to_comment(mock_post):
                 "comment": {
                     "id": "test_reply_id",
                     "body": "Openhands fix success summary\n\n\nThis is a test reply.",
-                    "createdAt": "2024-10-01T12:34:56Z"
+                    "createdAt": "2024-10-01T12:34:56Z",
                 }
             }
         }
     }
-    
+
     mock_post.return_value = mock_response
 
     # Act: call the function
@@ -500,10 +538,10 @@ def test_reply_to_comment(mock_post):
                 }
             }
             """
-    
+
     expected_variables = {
         "body": "Openhands fix success summary\n\n\nThis is a test reply.",
-        "pullRequestReviewThreadId": comment_id
+        "pullRequestReviewThreadId": comment_id,
     }
 
     # Check that the correct request was made to the API
@@ -518,8 +556,6 @@ def test_reply_to_comment(mock_post):
 
     # Check that the response status was checked (via response.raise_for_status)
     mock_response.raise_for_status.assert_called_once()
-
-
 
 
 @patch("openhands.resolver.send_pull_request.initialize_repo")
@@ -547,10 +583,11 @@ def test_process_single_pr_update(
             title="Issue 1",
             body="Body 1",
             closing_issues=[],
-            review_threads=[ReviewThread(comment="review comment for feedback", files=[])],
-            thread_ids= ["1"],
-            head_branch="branch 1"
-
+            review_threads=[
+                ReviewThread(comment="review comment for feedback", files=[])
+            ],
+            thread_ids=["1"],
+            head_branch="branch 1",
         ),
         issue_type="pr",
         instruction="Test instruction 1",
@@ -563,16 +600,21 @@ def test_process_single_pr_update(
         success_explanation="[Test success 1]",
         error=None,
     )
-    
+
     mock_update_existing_pull_request.return_value = (
         "https://github.com/test-owner/test-repo/pull/1"
     )
-    mock_initialize_repo.return_value = (
-        f"{mock_output_dir}/patches/pr_1"
-    )
+    mock_initialize_repo.return_value = f"{mock_output_dir}/patches/pr_1"
 
     process_single_issue(
-        mock_output_dir, resolver_output, github_token, github_username, pr_type, mock_llm_config, None, False
+        mock_output_dir,
+        resolver_output,
+        github_token,
+        github_username,
+        pr_type,
+        mock_llm_config,
+        None,
+        False,
     )
 
     mock_initialize_repo.assert_called_once_with(mock_output_dir, 1, "pr", "branch 1")
@@ -590,8 +632,6 @@ def test_process_single_pr_update(
         additional_message="[Test success 1]",
         llm_config=mock_llm_config,
     )
-
-
 
 
 @patch("openhands.resolver.send_pull_request.initialize_repo")
@@ -635,13 +675,18 @@ def test_process_single_issue(
     mock_send_pull_request.return_value = (
         "https://github.com/test-owner/test-repo/pull/1"
     )
-    mock_initialize_repo.return_value = (
-        f"{mock_output_dir}/patches/issue_1"
-    )
+    mock_initialize_repo.return_value = f"{mock_output_dir}/patches/issue_1"
 
     # Call the function
     process_single_issue(
-        mock_output_dir, resolver_output, github_token, github_username, pr_type, mock_llm_config, None, False
+        mock_output_dir,
+        resolver_output,
+        github_token,
+        github_username,
+        pr_type,
+        mock_llm_config,
+        None,
+        False,
     )
 
     # Assert that the mocked functions were called with correct arguments
@@ -703,7 +748,14 @@ def test_process_single_issue_unsuccessful(
 
     # Call the function
     process_single_issue(
-        mock_output_dir, resolver_output, github_token, github_username, pr_type, mock_llm_config, None, False
+        mock_output_dir,
+        resolver_output,
+        github_token,
+        github_username,
+        pr_type,
+        mock_llm_config,
+        None,
+        False,
     )
 
     # Assert that none of the mocked functions were called
@@ -787,12 +839,12 @@ def test_process_all_successful_issues(
 
     # Call the function
     process_all_successful_issues(
-        "output_dir", 
-        "github_token", 
-        "github_username", 
-        "draft", 
-        mock_llm_config, # llm_config
-        None, # fork_owner
+        "output_dir",
+        "github_token",
+        "github_username",
+        "draft",
+        mock_llm_config,  # llm_config
+        None,  # fork_owner
     )
 
     # Assert that process_single_issue was called for successful issues only
@@ -827,9 +879,8 @@ def test_process_all_successful_issues(
     # Add more assertions as needed to verify the behavior of the function
 
 
-
-@patch('requests.get')
-@patch('subprocess.run')
+@patch("requests.get")
+@patch("subprocess.run")
 def test_send_pull_request_branch_naming(
     mock_run, mock_get, mock_github_issue, mock_output_dir, mock_llm_config
 ):
@@ -867,36 +918,53 @@ def test_send_pull_request_branch_naming(
     checkout_call, push_call = mock_run.call_args_list
 
     assert checkout_call == call(
-        ['git', '-C', repo_path, 'checkout', '-b', 'openhands-fix-issue-42-try3'],
+        ["git", "-C", repo_path, "checkout", "-b", "openhands-fix-issue-42-try3"],
         capture_output=True,
         text=True,
     )
     assert push_call == call(
-        ['git', '-C', repo_path, 'push', 'https://test-user:test-token@github.com/test-owner/test-repo.git', 'openhands-fix-issue-42-try3'],
+        [
+            "git",
+            "-C",
+            repo_path,
+            "push",
+            "https://test-user:test-token@github.com/test-owner/test-repo.git",
+            "openhands-fix-issue-42-try3",
+        ],
         capture_output=True,
         text=True,
     )
 
     # Check the result
-    assert result == "https://github.com/test-owner/test-repo/compare/openhands-fix-issue-42-try3?expand=1"
+    assert (
+        result
+        == "https://github.com/test-owner/test-repo/compare/openhands-fix-issue-42-try3?expand=1"
+    )
 
-@patch('openhands.resolver.send_pull_request.argparse.ArgumentParser')
-@patch('openhands.resolver.send_pull_request.process_all_successful_issues')
-@patch('openhands.resolver.send_pull_request.process_single_issue')
-@patch('openhands.resolver.send_pull_request.load_single_resolver_output')
-@patch('os.path.exists')
-@patch('os.getenv')
-def test_main(mock_getenv, mock_path_exists, mock_load_single_resolver_output, 
-              mock_process_single_issue, mock_process_all_successful_issues, mock_parser):
+
+@patch("openhands.resolver.send_pull_request.argparse.ArgumentParser")
+@patch("openhands.resolver.send_pull_request.process_all_successful_issues")
+@patch("openhands.resolver.send_pull_request.process_single_issue")
+@patch("openhands.resolver.send_pull_request.load_single_resolver_output")
+@patch("os.path.exists")
+@patch("os.getenv")
+def test_main(
+    mock_getenv,
+    mock_path_exists,
+    mock_load_single_resolver_output,
+    mock_process_single_issue,
+    mock_process_all_successful_issues,
+    mock_parser,
+):
     from openhands.resolver.send_pull_request import main
-    
+
     # Setup mock parser
     mock_args = MagicMock()
     mock_args.github_token = None
     mock_args.github_username = None
-    mock_args.output_dir = '/mock/output'
-    mock_args.pr_type = 'draft'
-    mock_args.issue_number = '42'
+    mock_args.output_dir = "/mock/output"
+    mock_args.pr_type = "draft"
+    mock_args.issue_number = "42"
     mock_args.fork_owner = None
     mock_args.send_on_failure = False
     mock_args.llm_model = "mock_model"
@@ -905,7 +973,9 @@ def test_main(mock_getenv, mock_path_exists, mock_load_single_resolver_output,
     mock_parser.return_value.parse_args.return_value = mock_args
 
     # Setup environment variables
-    mock_getenv.side_effect = lambda key, default=None: 'mock_token' if key == 'GITHUB_TOKEN' else default
+    mock_getenv.side_effect = (
+        lambda key, default=None: "mock_token" if key == "GITHUB_TOKEN" else default
+    )
 
     # Setup path exists
     mock_path_exists.return_value = True
@@ -916,60 +986,63 @@ def test_main(mock_getenv, mock_path_exists, mock_load_single_resolver_output,
 
     # Run main function
     main()
-    
+
     llm_config = LLMConfig(
         model=mock_args.llm_model,
         base_url=mock_args.llm_base_url,
-        api_key=mock_args.llm_api_key
+        api_key=mock_args.llm_api_key,
     )
 
     # Assert function calls
     mock_parser.assert_called_once()
-    mock_getenv.assert_any_call('GITHUB_TOKEN')
-    mock_path_exists.assert_called_with('/mock/output')
-    mock_load_single_resolver_output.assert_called_with('/mock/output/output.jsonl', 42)
+    mock_getenv.assert_any_call("GITHUB_TOKEN")
+    mock_path_exists.assert_called_with("/mock/output")
+    mock_load_single_resolver_output.assert_called_with("/mock/output/output.jsonl", 42)
     mock_process_single_issue.assert_called_with(
-        '/mock/output', 
-        mock_resolver_output, 
-        'mock_token', 
-        None, 
-        'draft', 
+        "/mock/output",
+        mock_resolver_output,
+        "mock_token",
+        None,
+        "draft",
         llm_config,
-        None, 
-        False, 
+        None,
+        False,
     )
 
     # Test for 'all_successful' issue number
-    mock_args.issue_number = 'all_successful'
+    mock_args.issue_number = "all_successful"
     main()
     mock_process_all_successful_issues.assert_called_with(
-        '/mock/output', 
-        'mock_token', 
-        None, 
-        'draft', 
+        "/mock/output",
+        "mock_token",
+        None,
+        "draft",
         llm_config,
-        None, 
+        None,
     )
 
     # Test for invalid issue number
-    mock_args.issue_number = 'invalid'
+    mock_args.issue_number = "invalid"
     with pytest.raises(ValueError):
         main()
 
-@patch('subprocess.run')
+
+@patch("subprocess.run")
 def test_make_commit_escapes_issue_title(mock_subprocess_run):
     # Setup
-    repo_dir = '/path/to/repo'
+    repo_dir = "/path/to/repo"
     issue = GithubIssue(
-        owner='test-owner',
-        repo='test-repo',
+        owner="test-owner",
+        repo="test-repo",
         number=42,
         title='Issue with "quotes" and $pecial characters',
-        body='Test body'
+        body="Test body",
     )
 
     # Mock subprocess.run to return success for all calls
-    mock_subprocess_run.return_value = MagicMock(returncode=0, stdout='sample output', stderr='')
+    mock_subprocess_run.return_value = MagicMock(
+        returncode=0, stdout="sample output", stderr=""
+    )
 
     # Call the function
     issue_type = "issue"
@@ -981,43 +1054,60 @@ def test_make_commit_escapes_issue_title(mock_subprocess_run):
 
     # Check the git commit call
     git_commit_call = calls[3][0][0]
-    expected_commit_message = "Fix issue #42: Issue with \"quotes\" and $pecial characters"
-    assert ['git', '-C', '/path/to/repo', 'commit', '-m', expected_commit_message] == git_commit_call
+    expected_commit_message = (
+        'Fix issue #42: Issue with "quotes" and $pecial characters'
+    )
+    assert [
+        "git",
+        "-C",
+        "/path/to/repo",
+        "commit",
+        "-m",
+        expected_commit_message,
+    ] == git_commit_call
 
-@patch('subprocess.run')
+
+@patch("subprocess.run")
 def test_make_commit_no_changes(mock_subprocess_run):
     # Setup
-    repo_dir = '/path/to/repo'
+    repo_dir = "/path/to/repo"
     issue = GithubIssue(
-        owner='test-owner',
-        repo='test-repo',
+        owner="test-owner",
+        repo="test-repo",
         number=42,
-        title='Issue with no changes',
-        body='Test body'
+        title="Issue with no changes",
+        body="Test body",
     )
 
     # Mock subprocess.run to simulate no changes in the repo
     mock_subprocess_run.side_effect = [
-        MagicMock(returncode=0), 
         MagicMock(returncode=0),
-        MagicMock(returncode=1, stdout=''), # git status --porcelain (no changes)
+        MagicMock(returncode=0),
+        MagicMock(returncode=1, stdout=""),  # git status --porcelain (no changes)
     ]
 
-    with pytest.raises(RuntimeError, match="ERROR: Openhands failed to make code changes."):
+    with pytest.raises(
+        RuntimeError, match="ERROR: Openhands failed to make code changes."
+    ):
         make_commit(repo_dir, issue, "issue")
 
     # Check that subprocess.run was called for checking git status and add, but not commit
     assert mock_subprocess_run.call_count == 3
     git_status_call = mock_subprocess_run.call_args_list[2][0][0]
-    assert f'git -C {repo_dir} status --porcelain' in git_status_call
+    assert f"git -C {repo_dir} status --porcelain" in git_status_call
+
 
 def test_apply_patch_rename_directory(mock_output_dir):
     # Create a sample directory structure
     old_dir = os.path.join(mock_output_dir, "prompts", "resolve")
     os.makedirs(old_dir)
-    
+
     # Create test files
-    test_files = ["issue-success-check.jinja", "pr-feedback-check.jinja", "pr-thread-check.jinja"]
+    test_files = [
+        "issue-success-check.jinja",
+        "pr-feedback-check.jinja",
+        "pr-thread-check.jinja",
+    ]
     for filename in test_files:
         file_path = os.path.join(old_dir, filename)
         with open(file_path, "w") as f:

@@ -1,5 +1,7 @@
 from typing import Any
+
 from litellm import BaseModel
+
 from openhands.resolver.github_issue import GithubIssue
 
 

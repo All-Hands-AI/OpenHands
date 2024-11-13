@@ -12,4 +12,4 @@ class NullAction(Action):
 
     @property
     def message(self) -> str:
-        return 'No action'
+        return "No action"

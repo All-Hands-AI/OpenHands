@@ -48,16 +48,13 @@ def mock_os():
 def mock_prompt_template():
     return "Issue: {{ body }}\n\nPlease fix this issue."
 
+
 @pytest.fixture
 def mock_followup_prompt_template():
     return "Issue context: {{ issues }}\n\nReview comments: {{ review_comments }}\n\nReview threads: {{ review_threads }}\n\nFiles: {{ files }}\n\nPlease fix this issue."
 
 
-
-
-def create_cmd_output(
-    exit_code: int, content: str, command_id: int, command: str
-):
+def create_cmd_output(exit_code: int, content: str, command_id: int, command: str):
     return CmdOutputObservation(
         exit_code=exit_code, content=content, command_id=command_id, command=command
     )
@@ -89,12 +86,16 @@ def test_initialize_runtime():
 def test_download_issues_from_github():
     handler = IssueHandler("owner", "repo", "token")
 
-
     mock_issues_response = MagicMock()
     mock_issues_response.json.side_effect = [
         [
             {"number": 1, "title": "Issue 1", "body": "This is an issue"},
-            {"number": 2, "title": "PR 1", "body": "This is a pull request", "pull_request": {}},
+            {
+                "number": 2,
+                "title": "PR 1",
+                "body": "This is a pull request",
+                "pull_request": {},
+            },
             {"number": 3, "title": "Issue 2", "body": "This is another issue"},
         ],
         None,
@@ -110,7 +111,7 @@ def test_download_issues_from_github():
             return mock_comments_response
         return mock_issues_response
 
-    with patch('requests.get', side_effect=get_mock_response):
+    with patch("requests.get", side_effect=get_mock_response):
         issues = handler.get_converted_issues()
 
     assert len(issues) == 2
@@ -128,8 +129,18 @@ def test_download_pr_from_github():
     mock_pr_response = MagicMock()
     mock_pr_response.json.side_effect = [
         [
-            {"number": 1, "title": "PR 1", "body": "This is a pull request", "head": {"ref": "b1"}},
-            {"number": 2, "title": "My PR", "body": "This is another pull request", "head": {"ref": "b2"}},
+            {
+                "number": 1,
+                "title": "PR 1",
+                "body": "This is a pull request",
+                "head": {"ref": "b1"},
+            },
+            {
+                "number": 2,
+                "title": "My PR",
+                "body": "This is another pull request",
+                "head": {"ref": "b2"},
+            },
             {"number": 3, "title": "PR 3", "body": "Final PR", "head": {"ref": "b3"}},
         ],
         None,
@@ -150,7 +161,7 @@ def test_download_pr_from_github():
                     "closingIssuesReferences": {
                         "edges": [
                             {"node": {"body": "Issue 1 body", "number": 1}},
-                            {"node": {"body": "Issue 2 body", "number": 2}}
+                            {"node": {"body": "Issue 2 body", "number": 2}},
                         ]
                     },
                     "reviewThreads": {
@@ -161,10 +172,13 @@ def test_download_pr_from_github():
                                     "id": "1",
                                     "comments": {
                                         "nodes": [
-                                            {"body": "Unresolved comment 1", "path": "/frontend/header.tsx"},
-                                            {"body": "Follow up thread"}
+                                            {
+                                                "body": "Unresolved comment 1",
+                                                "path": "/frontend/header.tsx",
+                                            },
+                                            {"body": "Follow up thread"},
                                         ]
-                                    }
+                                    },
                                 }
                             },
                             {
@@ -173,9 +187,12 @@ def test_download_pr_from_github():
                                     "id": "2",
                                     "comments": {
                                         "nodes": [
-                                            {"body": "Resolved comment 1", "path": "/some/file.py"}
+                                            {
+                                                "body": "Resolved comment 1",
+                                                "path": "/some/file.py",
+                                            }
                                         ]
-                                    }
+                                    },
                                 }
                             },
                             {
@@ -184,13 +201,16 @@ def test_download_pr_from_github():
                                     "id": "3",
                                     "comments": {
                                         "nodes": [
-                                            {"body": "Unresolved comment 3", "path": "/another/file.py"}
+                                            {
+                                                "body": "Unresolved comment 3",
+                                                "path": "/another/file.py",
+                                            }
                                         ]
-                                    }
+                                    },
                                 }
-                            }
+                            },
                         ]
-                    }
+                    },
                 }
             }
         }
@@ -203,8 +223,8 @@ def test_download_pr_from_github():
             return mock_comments_response
         return mock_pr_response
 
-    with patch('requests.get', side_effect=get_mock_response):
-        with patch('requests.post', return_value=mock_graphql_response):  
+    with patch("requests.get", side_effect=get_mock_response):
+        with patch("requests.post", return_value=mock_graphql_response):
             issues = handler.get_converted_issues()
 
     assert len(issues) == 3
@@ -213,14 +233,21 @@ def test_download_pr_from_github():
     assert [issue.number for issue in issues] == [1, 2, 3]
     assert [issue.title for issue in issues] == ["PR 1", "My PR", "PR 3"]
     assert [issue.head_branch for issue in issues] == ["b1", "b2", "b3"]
-    
+
     assert len(issues[0].review_threads) == 2  # Only unresolved threads
-    assert issues[0].review_threads[0].comment == "Unresolved comment 1\n---\nlatest feedback:\nFollow up thread\n"
+    assert (
+        issues[0].review_threads[0].comment
+        == "Unresolved comment 1\n---\nlatest feedback:\nFollow up thread\n"
+    )
     assert issues[0].review_threads[0].files == ["/frontend/header.tsx"]
-    assert issues[0].review_threads[1].comment == "latest feedback:\nUnresolved comment 3\n"
+    assert (
+        issues[0].review_threads[1].comment
+        == "latest feedback:\nUnresolved comment 3\n"
+    )
     assert issues[0].review_threads[1].files == ["/another/file.py"]
     assert issues[0].closing_issues == ["Issue 1 body", "Issue 2 body"]
     assert issues[0].thread_ids == ["1", "3"]
+
 
 @pytest.mark.asyncio
 async def test_complete_runtime():
@@ -239,13 +266,13 @@ async def test_complete_runtime():
             exit_code=0,
             content="",
             command_id=3,
-            command='git config --global --add safe.directory /workspace',
+            command="git config --global --add safe.directory /workspace",
         ),
         create_cmd_output(
             exit_code=0,
             content="",
             command_id=4,
-            command='git diff base_commit_hash fix',
+            command="git diff base_commit_hash fix",
         ),
         create_cmd_output(
             exit_code=0, content="git diff content", command_id=5, command="git apply"
@@ -287,13 +314,15 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
             "name": "successful_run",
             "run_controller_return": MagicMock(
                 history=[NullObservation(content="")],
-                metrics=MagicMock(get=MagicMock(return_value={"test_result": "passed"})),
+                metrics=MagicMock(
+                    get=MagicMock(return_value={"test_result": "passed"})
+                ),
                 last_error=None,
             ),
             "run_controller_raises": None,
             "expected_success": True,
             "expected_error": None,
-            "expected_explanation": "Issue resolved successfully"
+            "expected_explanation": "Issue resolved successfully",
         },
         {
             "name": "value_error",
@@ -301,7 +330,7 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
             "run_controller_raises": ValueError("Test value error"),
             "expected_success": False,
             "expected_error": "Agent failed to run or crashed",
-            "expected_explanation": "Agent failed to run"
+            "expected_explanation": "Agent failed to run",
         },
         {
             "name": "runtime_error",
@@ -309,13 +338,15 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
             "run_controller_raises": RuntimeError("Test runtime error"),
             "expected_success": False,
             "expected_error": "Agent failed to run or crashed",
-            "expected_explanation": "Agent failed to run"
+            "expected_explanation": "Agent failed to run",
         },
         {
             "name": "json_decode_error",
             "run_controller_return": MagicMock(
                 history=[NullObservation(content="")],
-                metrics=MagicMock(get=MagicMock(return_value={"test_result": "passed"})),
+                metrics=MagicMock(
+                    get=MagicMock(return_value={"test_result": "passed"})
+                ),
                 last_error=None,
             ),
             "run_controller_raises": None,
@@ -323,8 +354,11 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
             "expected_error": None,
             "expected_explanation": "Non-JSON explanation",
             "is_pr": True,
-            "comment_success": [True, False]  # To trigger the PR success logging code path
-        }
+            "comment_success": [
+                True,
+                False,
+            ],  # To trigger the PR success logging code path
+        },
     ]
 
     for test_case in test_cases:
@@ -342,12 +376,12 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
         else:
             mock_run_controller.return_value = test_case["run_controller_return"]
             mock_run_controller.side_effect = None
-        
+
         mock_complete_runtime.return_value = {"git_patch": "test patch"}
         handler_instance.guess_success.return_value = (
-            test_case["expected_success"], 
-            test_case.get("comment_success", None), 
-            test_case["expected_explanation"]
+            test_case["expected_success"],
+            test_case.get("comment_success", None),
+            test_case["expected_explanation"],
         )
         handler_instance.get_instruction.return_value = ("Test instruction", [])
         handler_instance.issue_type = "pr" if test_case.get("is_pr", False) else "issue"
@@ -355,14 +389,13 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
         with patch(
             "openhands.resolver.resolve_issue.create_runtime", mock_create_runtime
         ), patch(
-            "openhands.resolver.resolve_issue.initialize_runtime", mock_initialize_runtime
+            "openhands.resolver.resolve_issue.initialize_runtime",
+            mock_initialize_runtime,
         ), patch(
             "openhands.resolver.resolve_issue.run_controller", mock_run_controller
         ), patch(
             "openhands.resolver.resolve_issue.complete_runtime", mock_complete_runtime
-        ), patch(
-            "openhands.resolver.resolve_issue.logger"
-        ):
+        ), patch("openhands.resolver.resolve_issue.logger"):
             # Call the function
             result = await process_issue(
                 issue,
@@ -374,7 +407,7 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
                 mock_prompt_template,
                 handler_instance,
                 repo_instruction,
-                reset_logger=False
+                reset_logger=False,
             )
 
             # Assert the result
@@ -401,8 +434,6 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
                 handler_instance.guess_success.assert_not_called()
 
 
-
-
 def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
     issue = GithubIssue(
         owner="test_owner",
@@ -412,9 +443,11 @@ def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
         body="This is a test issue refer to image ![First Image](https://sampleimage.com/image1.png)",
     )
     issue_handler = IssueHandler("owner", "repo", "token")
-    instruction, images_urls = issue_handler.get_instruction(issue, mock_prompt_template, None)
+    instruction, images_urls = issue_handler.get_instruction(
+        issue, mock_prompt_template, None
+    )
     expected_instruction = "Issue: Test Issue\n\nThis is a test issue refer to image ![First Image](https://sampleimage.com/image1.png)\n\nPlease fix this issue."
-    
+
     assert images_urls == ["https://sampleimage.com/image1.png"]
     assert issue_handler.issue_type == "issue"
     assert instruction == expected_instruction
@@ -426,16 +459,23 @@ def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
         title="Test Issue",
         body="This is a test issue",
         closing_issues=["Issue 1 fix the type"],
-        review_threads=[ReviewThread(comment="There is still a typo 'pthon' instead of 'python'", files=[])],
+        review_threads=[
+            ReviewThread(
+                comment="There is still a typo 'pthon' instead of 'python'", files=[]
+            )
+        ],
     )
 
     pr_handler = PRHandler("owner", "repo", "token")
-    instruction, images_urls = pr_handler.get_instruction(issue, mock_followup_prompt_template, None)
-    expected_instruction = 'Issue context: [\n    "Issue 1 fix the type"\n]\n\nReview comments: None\n\nReview threads: [\n    "There is still a typo \'pthon\' instead of \'python\'"\n]\n\nFiles: []\n\nPlease fix this issue.'
+    instruction, images_urls = pr_handler.get_instruction(
+        issue, mock_followup_prompt_template, None
+    )
+    expected_instruction = "Issue context: [\n    \"Issue 1 fix the type\"\n]\n\nReview comments: None\n\nReview threads: [\n    \"There is still a typo 'pthon' instead of 'python'\"\n]\n\nFiles: []\n\nPlease fix this issue."
 
     assert images_urls == []
     assert pr_handler.issue_type == "pr"
     assert instruction == expected_instruction
+
 
 def test_file_instruction():
     issue = GithubIssue(
@@ -480,11 +520,16 @@ def test_file_instruction_with_repo_instruction():
     with open("openhands/resolver/prompts/resolve/basic.jinja", "r") as f:
         prompt = f.read()
     # load repo instruction from openhands/resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt
-    with open("openhands/resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt", "r") as f:
+    with open(
+        "openhands/resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt",
+        "r",
+    ) as f:
         repo_instruction = f.read()
-    
+
     issue_handler = IssueHandler("owner", "repo", "token")
-    instruction, image_urls = issue_handler.get_instruction(issue, prompt, repo_instruction)
+    instruction, image_urls = issue_handler.get_instruction(
+        issue, prompt, repo_instruction
+    )
     expected_instruction = """Please fix the following issue for the repository in /workspace.
 An environment has been set up for you to start working. You may assume all necessary tools are installed.
 
@@ -507,6 +552,7 @@ When you think you have fixed the issue through code changes, please finish the 
     assert issue_handler.issue_type == "issue"
     assert image_urls == []
 
+
 def test_guess_success():
     mock_issue = GithubIssue(
         owner="test_owner",
@@ -517,24 +563,30 @@ def test_guess_success():
     )
     mock_history = [
         create_cmd_output(
-            exit_code=0,
-            content="",
-            command_id=1,
-            command="cd /workspace"
+            exit_code=0, content="", command_id=1, command="cd /workspace"
         )
     ]
     mock_llm_config = LLMConfig(model="test_model", api_key="test_api_key")
 
     mock_completion_response = MagicMock()
-    mock_completion_response.choices = [MagicMock(message=MagicMock(content="--- success\ntrue\n--- explanation\nIssue resolved successfully"))]
+    mock_completion_response.choices = [
+        MagicMock(
+            message=MagicMock(
+                content="--- success\ntrue\n--- explanation\nIssue resolved successfully"
+            )
+        )
+    ]
     issue_handler = IssueHandler("owner", "repo", "token")
 
-    with patch('litellm.completion', MagicMock(return_value=mock_completion_response)):
-        success, comment_success, explanation = issue_handler.guess_success(mock_issue, mock_history, mock_llm_config)
+    with patch("litellm.completion", MagicMock(return_value=mock_completion_response)):
+        success, comment_success, explanation = issue_handler.guess_success(
+            mock_issue, mock_history, mock_llm_config
+        )
         assert issue_handler.issue_type == "issue"
         assert comment_success is None
         assert success
         assert explanation == "Issue resolved successfully"
+
 
 def test_guess_success_with_thread_comments():
     mock_issue = GithubIssue(
@@ -543,19 +595,29 @@ def test_guess_success_with_thread_comments():
         number=1,
         title="Test Issue",
         body="This is a test issue",
-        thread_comments=["First comment", "Second comment", "latest feedback:\nPlease add tests"]
+        thread_comments=[
+            "First comment",
+            "Second comment",
+            "latest feedback:\nPlease add tests",
+        ],
     )
-    mock_history = [
-        MagicMock(message="I have added tests for this case")
-    ]
+    mock_history = [MagicMock(message="I have added tests for this case")]
     mock_llm_config = LLMConfig(model="test_model", api_key="test_api_key")
 
     mock_completion_response = MagicMock()
-    mock_completion_response.choices = [MagicMock(message=MagicMock(content="--- success\ntrue\n--- explanation\nTests have been added to verify thread comments handling"))]
+    mock_completion_response.choices = [
+        MagicMock(
+            message=MagicMock(
+                content="--- success\ntrue\n--- explanation\nTests have been added to verify thread comments handling"
+            )
+        )
+    ]
     issue_handler = IssueHandler("owner", "repo", "token")
 
-    with patch('litellm.completion', MagicMock(return_value=mock_completion_response)):
-        success, comment_success, explanation = issue_handler.guess_success(mock_issue, mock_history, mock_llm_config)
+    with patch("litellm.completion", MagicMock(return_value=mock_completion_response)):
+        success, comment_success, explanation = issue_handler.guess_success(
+            mock_issue, mock_history, mock_llm_config
+        )
         assert issue_handler.issue_type == "issue"
         assert comment_success is None
         assert success
@@ -570,16 +632,20 @@ def test_instruction_with_thread_comments():
         number=123,
         title="Test Issue",
         body="This is a test issue",
-        thread_comments=["First comment", "Second comment", "latest feedback:\nPlease add tests"]
+        thread_comments=[
+            "First comment",
+            "Second comment",
+            "latest feedback:\nPlease add tests",
+        ],
     )
-    
+
     # Load the basic prompt template
     with open("openhands/resolver/prompts/resolve/basic.jinja", "r") as f:
         prompt = f.read()
-    
+
     issue_handler = IssueHandler("owner", "repo", "token")
     instruction, images_urls = issue_handler.get_instruction(issue, prompt, None)
-    
+
     # Verify that thread comments are included in the instruction
     assert "First comment" in instruction
     assert "Second comment" in instruction
@@ -595,19 +661,29 @@ def test_guess_success_failure():
         number=1,
         title="Test Issue",
         body="This is a test issue",
-        thread_comments=["First comment", "Second comment", "latest feedback:\nPlease add tests"]
+        thread_comments=[
+            "First comment",
+            "Second comment",
+            "latest feedback:\nPlease add tests",
+        ],
     )
-    mock_history = [
-        MagicMock(message="I have added tests for this case")
-    ]
+    mock_history = [MagicMock(message="I have added tests for this case")]
     mock_llm_config = LLMConfig(model="test_model", api_key="test_api_key")
 
     mock_completion_response = MagicMock()
-    mock_completion_response.choices = [MagicMock(message=MagicMock(content="--- success\ntrue\n--- explanation\nTests have been added to verify thread comments handling"))]
+    mock_completion_response.choices = [
+        MagicMock(
+            message=MagicMock(
+                content="--- success\ntrue\n--- explanation\nTests have been added to verify thread comments handling"
+            )
+        )
+    ]
     issue_handler = IssueHandler("owner", "repo", "token")
 
-    with patch('litellm.completion', MagicMock(return_value=mock_completion_response)):
-        success, comment_success, explanation = issue_handler.guess_success(mock_issue, mock_history, mock_llm_config)
+    with patch("litellm.completion", MagicMock(return_value=mock_completion_response)):
+        success, comment_success, explanation = issue_handler.guess_success(
+            mock_issue, mock_history, mock_llm_config
+        )
         assert issue_handler.issue_type == "issue"
         assert comment_success is None
         assert success
@@ -624,20 +700,25 @@ def test_guess_success_negative_case():
     )
     mock_history = [
         create_cmd_output(
-            exit_code=0,
-            content="",
-            command_id=1,
-            command="cd /workspace"
+            exit_code=0, content="", command_id=1, command="cd /workspace"
         )
     ]
     mock_llm_config = LLMConfig(model="test_model", api_key="test_api_key")
 
     mock_completion_response = MagicMock()
-    mock_completion_response.choices = [MagicMock(message=MagicMock(content="--- success\nfalse\n--- explanation\nIssue not resolved"))]    
+    mock_completion_response.choices = [
+        MagicMock(
+            message=MagicMock(
+                content="--- success\nfalse\n--- explanation\nIssue not resolved"
+            )
+        )
+    ]
     issue_handler = IssueHandler("owner", "repo", "token")
 
-    with patch('litellm.completion', MagicMock(return_value=mock_completion_response)):
-        success, comment_success, explanation = issue_handler.guess_success(mock_issue, mock_history, mock_llm_config)
+    with patch("litellm.completion", MagicMock(return_value=mock_completion_response)):
+        success, comment_success, explanation = issue_handler.guess_success(
+            mock_issue, mock_history, mock_llm_config
+        )
         assert issue_handler.issue_type == "issue"
         assert comment_success is None
         assert not success
@@ -654,24 +735,28 @@ def test_guess_success_invalid_output():
     )
     mock_history = [
         create_cmd_output(
-            exit_code=0,
-            content="",
-            command_id=1,
-            command="cd /workspace"
+            exit_code=0, content="", command_id=1, command="cd /workspace"
         )
     ]
     mock_llm_config = LLMConfig(model="test_model", api_key="test_api_key")
 
     mock_completion_response = MagicMock()
-    mock_completion_response.choices = [MagicMock(message=MagicMock(content="This is not a valid output"))]
+    mock_completion_response.choices = [
+        MagicMock(message=MagicMock(content="This is not a valid output"))
+    ]
     issue_handler = IssueHandler("owner", "repo", "token")
 
-    with patch('litellm.completion', MagicMock(return_value=mock_completion_response)):
-        success, comment_success, explanation = issue_handler.guess_success(mock_issue, mock_history, mock_llm_config)
+    with patch("litellm.completion", MagicMock(return_value=mock_completion_response)):
+        success, comment_success, explanation = issue_handler.guess_success(
+            mock_issue, mock_history, mock_llm_config
+        )
         assert issue_handler.issue_type == "issue"
         assert comment_success is None
         assert not success
-        assert explanation == "Failed to decode answer from LLM response: This is not a valid output"
+        assert (
+            explanation
+            == "Failed to decode answer from LLM response: This is not a valid output"
+        )
 
 
 def test_download_pr_with_review_comments():
@@ -679,7 +764,12 @@ def test_download_pr_with_review_comments():
     mock_pr_response = MagicMock()
     mock_pr_response.json.side_effect = [
         [
-            {"number": 1, "title": "PR 1", "body": "This is a pull request", "head": {"ref": "b1"}},
+            {
+                "number": 1,
+                "title": "PR 1",
+                "body": "This is a pull request",
+                "head": {"ref": "b1"},
+            },
         ],
         None,
     ]
@@ -696,15 +786,13 @@ def test_download_pr_with_review_comments():
         "data": {
             "repository": {
                 "pullRequest": {
-                    "closingIssuesReferences": {
-                        "edges": []
-                    },
+                    "closingIssuesReferences": {"edges": []},
                     "reviews": {
                         "nodes": [
                             {"body": "Please fix this typo"},
-                            {"body": "Add more tests"}
+                            {"body": "Add more tests"},
                         ]
-                    }
+                    },
                 }
             }
         }
@@ -717,8 +805,8 @@ def test_download_pr_with_review_comments():
             return mock_comments_response
         return mock_pr_response
 
-    with patch('requests.get', side_effect=get_mock_response):
-        with patch('requests.post', return_value=mock_graphql_response):  
+    with patch("requests.get", side_effect=get_mock_response):
+        with patch("requests.post", return_value=mock_graphql_response):
             issues = handler.get_converted_issues()
 
     assert len(issues) == 1
@@ -727,7 +815,7 @@ def test_download_pr_with_review_comments():
     assert issues[0].number == 1
     assert issues[0].title == "PR 1"
     assert issues[0].head_branch == "b1"
-    
+
     # Verify review comments are set but threads are empty
     assert len(issues[0].review_comments) == 2
     assert issues[0].review_comments[0] == "Please fix this typo"
@@ -736,9 +824,10 @@ def test_download_pr_with_review_comments():
     assert not issues[0].closing_issues
     assert not issues[0].thread_ids
 
+
 def test_download_issue_with_specific_comment():
     handler = IssueHandler("owner", "repo", "token")
-    
+
     # Define the specific comment_id to filter
     specific_comment_id = 101
 
@@ -754,20 +843,26 @@ def test_download_issue_with_specific_comment():
 
     mock_comments_response = MagicMock()
     mock_comments_response.json.return_value = [
-        {"id": specific_comment_id, "body": "Specific comment body", "issue_url": "https://api.github.com/repos/owner/repo/issues/1"},
-        {"id": 102, "body": "Another comment body", "issue_url": "https://api.github.com/repos/owner/repo/issues/2"},
+        {
+            "id": specific_comment_id,
+            "body": "Specific comment body",
+            "issue_url": "https://api.github.com/repos/owner/repo/issues/1",
+        },
+        {
+            "id": 102,
+            "body": "Another comment body",
+            "issue_url": "https://api.github.com/repos/owner/repo/issues/2",
+        },
     ]
     mock_comments_response.raise_for_status = MagicMock()
-
 
     def get_mock_response(url, *args, **kwargs):
         if "/comments" in url:
             return mock_comments_response
-        
+
         return mock_issue_response
 
-
-    with patch('requests.get', side_effect=get_mock_response):
+    with patch("requests.get", side_effect=get_mock_response):
         issues = handler.get_converted_issues(comment_id=specific_comment_id)
 
     assert len(issues) == 1
@@ -778,9 +873,3 @@ def test_download_issue_with_specific_comment():
 
 if __name__ == "__main__":
     pytest.main()
-
-
-
-
-
-

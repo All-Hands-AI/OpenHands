@@ -76,7 +76,6 @@ class EmbeddingsLoader:
         Returns:
         - An instance of the selected embedding model or None.
         """
-
         if strategy in SUPPORTED_OLLAMA_EMBED_MODELS:
             from llama_index.embeddings.ollama import OllamaEmbedding
 
@@ -152,7 +151,6 @@ def run_pipeline(
     embed_model: 'BaseEmbedding', documents: list['Document'], num_workers: int
 ) -> list['TextNode']:
     """Run a pipeline embedding documents."""
-
     # set up a pipeline with the transformations to make
     pipeline = IngestionPipeline(
         transformations=[
