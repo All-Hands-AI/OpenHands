@@ -27,6 +27,10 @@ def findall_regex(items, regex):
 def split_by_regex(items, regex):
     splits = list()
     indices = findall_regex(items, regex)
+    if not indices:
+        splits.append(items)
+        return splits
+
     k = None
     for i in indices:
         if k is None:
