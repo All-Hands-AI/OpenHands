@@ -831,53 +831,53 @@ class AgentController:
 
         # Handle first event in truncated history
         if kept_events:
-            first_event = kept_events[0]
-
-            if isinstance(first_event, Observation) and first_event.cause:
-                # Find its action and include it
-                matching_action = next(
-                    (
-                        e
-                        for e in events[:mid_point]
-                        if isinstance(e, Action) and e.id == first_event.cause
-                    ),
-                    None,
-                )
-                if matching_action:
-                    kept_events = [matching_action] + kept_events
-
-            elif isinstance(first_event, MessageAction):
-                # Look for next observation and ensure its action is included
-                next_obs = next(
-                    (
-                        e
-                        for e in kept_events[1:]
-                        if isinstance(e, Observation) and e.cause
-                    ),
-                    None,
-                )
-                if next_obs:
+            i = mid_point
+            while i < len(kept_events):
+                first_event = kept_events[i]
+                if isinstance(first_event, Observation) and first_event.cause:
+                    # Find its action and include it
                     matching_action = next(
                         (
                             e
-                            for e in events[:mid_point]
-                            if isinstance(e, Action) and e.id == next_obs.cause
+                            for e in reversed(events[:mid_point])
+                            if isinstance(e, Action) and e.id == first_event.cause
                         ),
                         None,
                     )
                     if matching_action:
                         kept_events = [matching_action] + kept_events
+                    else:
+                        self.log(
+                            'warning',
+                            f'Found Observation without matching Action at id={first_event.id}',
+                        )
+                        # drop this observation
+                        kept_events = kept_events[1:]
+                    break
+
+                elif isinstance(first_event, MessageAction) or (
+                    isinstance(first_event, Action)
+                    and first_event.source == EventSource.USER
+                ):
+                    # if it's a message action or a user action, keep it and continue to find the next event
+                    i += 1
+                    continue
+
+                else:
+                    # if it's an action with source == EventSource.AGENT, we're good
+                    break
+
+        # Save where to continue from in next reload
+        if kept_events:
+            self.state.truncation_id = kept_events[0].id
 
         # Ensure first user message is included
         if first_user_msg and first_user_msg not in kept_events:
             kept_events = [first_user_msg] + kept_events
 
-        # Save where to continue from in next reload
-        if kept_events:
-            self.state.truncation_id = kept_events[0].id
-            # start_id points to first user message
-            if first_user_msg:
-                self.state.start_id = first_user_msg.id
+        # start_id points to first user message
+        if first_user_msg:
+            self.state.start_id = first_user_msg.id
 
         return kept_events
 
