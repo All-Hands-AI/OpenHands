@@ -345,7 +345,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
     latest_event_id = -1
     if websocket.query_params.get('latest_event_id'):
-        latest_event_id = int(websocket.query_params.get('latest_event_id'))
+        try:
+            latest_event_id = int(websocket.query_params.get('latest_event_id'))
+        except ValueError:
+            logger.warning(
+                f'Invalid latest_event_id: {websocket.query_params.get("latest_event_id")}'
+            )
+            pass
 
     async_stream = AsyncEventStreamWrapper(
         session.agent_session.event_stream, latest_event_id + 1
