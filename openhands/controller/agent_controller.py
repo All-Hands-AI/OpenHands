@@ -276,6 +276,8 @@ class AgentController:
             and len(self.state.history)
             > self.agent.llm.config.max_conversation_window * 2
         ):
+            self._trim_history()
+
             # Find first agent action in history
             first_agent_action_idx = None
             for i, event in enumerate(self.state.history):
@@ -836,6 +838,47 @@ class AgentController:
 
         # restore original order
         return list(reversed(kept_events))
+
+    def _trim_history(self):
+        """Trims the history to the conversation window size."""
+        if self.agent.llm.config.max_conversation_window is None:
+            return
+
+        max_window_size = self.agent.llm.config.max_conversation_window * 2
+
+        # find the first observation in history, which has a cause
+        # and whose cause is an action with source=agent
+        # or agent messages
+        oldest_obs = None
+        for event in self.state.history:
+            # find an old agent action and obs
+            if isinstance(event, Observation) and event.cause is not None:
+                oldest_obs_cause = event.cause
+                if (
+                    isinstance(oldest_obs_cause, Action)
+                    and oldest_obs_cause.source is not None
+                    and oldest_obs_cause.source == EventSource.AGENT
+                ):
+                    oldest_obs = event
+                    # clean up this pair
+                    self.state.history = [
+                        ev
+                        for ev in self.state.history
+                        if ev.id not in (oldest_obs.id, oldest_obs_cause.id)
+                    ]
+
+                    # if conversation window is now satisfied, break
+                    if len(self.state.history) <= max_window_size:
+                        break
+            # or find an old agent message
+            elif isinstance(event, MessageAction) and event.source == EventSource.AGENT:
+                # clean it up
+                self.state.history = [
+                    ev for ev in self.state.history if ev.id != event.id
+                ]
+                # if conversation window is now satisfied, break
+                if len(self.state.history) <= max_window_size:
+                    break
 
     def _is_stuck(self):
         """Checks if the agent or its delegate is stuck in a loop.
