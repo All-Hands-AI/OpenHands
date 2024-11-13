@@ -966,7 +966,7 @@ def parse_git_binary_diff(text):
                 # not supported
                 new_size = 0
                 continue
-        elif new_size > 0:
+        elif new_size > 0 and line is not None:
             if base85string.match(line):
                 assert len(line) >= 6 and ((len(line) - 1) % 5) == 0
                 new_encoded += line[1:]
@@ -993,7 +993,7 @@ def parse_git_binary_diff(text):
                 # not supported
                 old_size = 0
                 continue
-        elif old_size > 0:
+        elif old_size > 0 and line is not None:
             if base85string.match(line):
                 assert len(line) >= 6 and ((len(line) - 1) % 5) == 0
                 old_encoded += line[1:]
