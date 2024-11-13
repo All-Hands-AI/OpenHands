@@ -43,5 +43,6 @@ export interface Feedback {
 
 export interface GetConfigResponse {
   APP_MODE: "saas" | "oss";
-  GITHUB_CLIENT_ID: string | null;
+  GITHUB_CLIENT_ID: string;
+  POSTHOG_CLIENT_KEY: string;
 }
