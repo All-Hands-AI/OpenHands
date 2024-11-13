@@ -153,7 +153,7 @@ class LLM(RetryMixin, DebugMixin):
         if self.is_function_calling_active():
             logger.debug('LLM: model supports function calling')
 
-        completion_unwrapped = self._completion
+        self._completion_unwrapped = self._completion
 
         @self.retry_decorator(
             num_retries=self.config.num_retries,
@@ -218,7 +218,7 @@ class LLM(RetryMixin, DebugMixin):
 
             try:
                 # we don't support streaming here, thus we get a ModelResponse
-                resp: ModelResponse = completion_unwrapped(*args, **kwargs)
+                resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
                 non_fncall_response = copy.deepcopy(resp)
                 if mock_function_calling:

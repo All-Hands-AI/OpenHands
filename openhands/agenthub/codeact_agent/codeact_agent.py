@@ -103,7 +103,7 @@ class CodeActAgent(Agent):
             microagent_dir=os.path.join(os.path.dirname(__file__), 'micro')
             if self.config.use_microagents
             else None,
-            prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts', 'tools'),
+            prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
             disabled_microagents=self.config.disabled_microagents,
         )
 
@@ -315,7 +315,6 @@ class CodeActAgent(Agent):
         if self.mock_function_calling:
             params['mock_function_calling'] = True
         response = self.llm.completion(**params)
-
         actions = codeact_function_calling.response_to_actions(response)
         for action in actions:
             self.pending_actions.append(action)
