@@ -46,3 +46,8 @@ export interface GetConfigResponse {
   GITHUB_CLIENT_ID: string;
   POSTHOG_CLIENT_KEY: string;
 }
+
+export interface GetVSCodeUrlResponse {
+  vscode_url: string | null;
+  error?: string;
+}

@@ -678,6 +678,16 @@
     "tr": "Sunucudan beklenmeyen yanıt yapısı",
     "no": "Uventet responsstruktur fra serveren"
   },
+  "EXPLORER$VSCODE_SWITCHING_MESSAGE": {
+    "en": "Switching to VS Code in 3 seconds...\nImportant: Please inform the agent of any changes you make in VS Code. To avoid conflicts, wait for the assistant to complete its work before making your own changes.",
+    "zh-CN": "3 秒后切换到 VS Code\n重要提示：请告知 OpenHands 您在 VS Code 中进行的任何更改。为了避免冲突，请在 OpenHands 完成工作后再进行自己的更改。",
+    "zh-TW": "3 秒後切換到 VS Code\n重要提示：請告知 OpenHands 您在 VS Code 中進行的任何更改。為避免衝突，請在 OpenHands 完成工作後再進行自己的更改。"
+  },
+  "EXPLORER$VSCODE_SWITCHING_ERROR_MESSAGE": {
+    "en": "Error switching to VS Code: {{error}}",
+    "zh-CN": "切换到 VS Code 时发生错误: {{error}}",
+    "zh-TW": "切換到 VS Code 時發生錯誤: {{error}}"
+  },
   "LOAD_SESSION$MODAL_TITLE": {
     "en": "Return to existing session?",
     "de": "Zurück zu vorhandener Sitzung?",
