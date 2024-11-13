@@ -188,7 +188,7 @@ class Session:
             if self.websocket:
                 await self.websocket.send_json(data)
             if self.sio:
-                await self.sio.emit(data, to=self.sid)
+                await self.sio.emit("oh_event", data, to=self.sid)
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True

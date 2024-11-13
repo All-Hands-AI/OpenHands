@@ -1,5 +1,6 @@
 from ast import parse
 import asyncio
+import json
 import os
 import re
 import tempfile
@@ -940,7 +941,7 @@ app = socketio.ASGIApp(sio, other_asgi_app=app)
 
 @sio.event
 async def connect(session_id: str, environ):
-    logger.info(f"SIO:CONNECT: {session_id}")
+    logger.info(f"sio:connect: {session_id}")
 
     jwt_token = environ.get("HTTP_OH_TOKEN", '')
     if jwt_token:
@@ -958,8 +959,6 @@ async def connect(session_id: str, environ):
     github_token = environ.get('HTTP_GITHUB_TOKEN', '')
     if not await authenticate_github_user(github_token):
         raise RuntimeError(status.WS_1008_POLICY_VIOLATION)
-    
-    # Read fails because not started!
     
     await session.send({'token': jwt_token, 'status': 'ok'})
 
@@ -983,15 +982,17 @@ async def connect(session_id: str, environ):
 
 
 @sio.event
-async def oh_action(session_id, data):
-    logger.info(f"SIO:OH_ACTION:{session_id}")
+async def oh_action(session_id: str, data: str):
+
+    logger.info(f"sio:oh_action:{session_id}")
     session = session_manager.get_existing_session(session_id)
     if session is None:
         raise ValueError(f'no_such_session_id:{session_id}')
-    session.on_event(event_from_dict(data))
+    await session.dispatch(json.loads(data))
+    # session.on_event(event_from_dict(json.loads(data)))
 
 
 @sio.event
 def disconnect(sid):
-    logger.info(f'SIO:DISCONNECT:{sid}')
-    #session_manager.stop_session(sid) # I dunno about this - should we do this later?
+    logger.info(f'sio:disconnect:{sid}')
+    session_manager.stop_session(sid)

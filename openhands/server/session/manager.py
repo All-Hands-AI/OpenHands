@@ -46,7 +46,7 @@ class SessionManager:
             session.close()
         return bool(session)
 
-    def get_existing_session(self, sio: socketio.AsyncServer | None, sid: str = None):
+    def get_existing_session(self, sid: str):
         return self.sessions.get(sid)
     
     def add_new_session(self, sio: socketio.AsyncServer | None, sid: str = None):
