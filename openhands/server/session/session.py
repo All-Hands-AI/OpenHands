@@ -31,19 +31,17 @@ class Session:
     sid: str
     websocket: WebSocket | None
     sio: socketio.AsyncServer | None
-    socket_id: str | None
     last_active_ts: int = 0
     is_alive: bool = True
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
 
     def __init__(
-        self, sid: str, ws: WebSocket | None, config: AppConfig, file_store: FileStore, sio: socketio.AsyncServer | None, socket_id: str | None
+        self, sid: str, ws: WebSocket | None, config: AppConfig, file_store: FileStore, sio: socketio.AsyncServer | None
     ):
         self.sid = sid
         self.websocket = ws
         self.sio = sio
-        self.socket_id = socket_id
         self.last_active_ts = int(time.time())
         self.agent_session = AgentSession(
             sid, file_store, status_callback=self.queue_status_message
@@ -189,8 +187,8 @@ class Session:
                 return False
             if self.websocket:
                 await self.websocket.send_json(data)
-            if self.socket_id:
-                await self.sio.emit(data, to=self.socket_id)
+            if self.sio:
+                await self.sio.emit(data, to=self.sid)
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True

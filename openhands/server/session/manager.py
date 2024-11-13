@@ -18,15 +18,12 @@ class SessionManager:
     file_store: FileStore
     sessions: dict[str, Session] = field(default_factory=dict)
 
-    def add_or_restart_session(self, sid: str, ws_conn: WebSocket, sio: socketio.AsyncServer | None, socket_id: str = None) -> Session:
+    def add_or_restart_session(self, sid: str, ws_conn: WebSocket) -> Session:
         session = Session(
-            sid=sid, file_store=self.file_store, ws=ws_conn, config=self.config, sio=sio, socket_id=socket_id
+            sid=sid, file_store=self.file_store, ws=ws_conn, config=self.config
         )
         self.sessions[sid] = session
         return session
-    
-    def get_existing_session(self, sid: str):
-        return self.sessions.get(sid)
 
     async def attach_to_conversation(self, sid: str) -> Conversation | None:
         start_time = time.time()
@@ -48,3 +45,19 @@ class SessionManager:
         if session:
             session.close()
         return bool(session)
+
+    def get_existing_session(self, sio: socketio.AsyncServer | None, sid: str = None):
+        return self.sessions.get(sid)
+    
+    def add_new_session(self, sio: socketio.AsyncServer | None, sid: str = None):
+        session = Session(
+            sid=sid, file_store=self.file_store, config=self.config, sio=sio
+        )
+        self.sessions[sid] = session
+        return session
+    
+    def alias_existing_session(self, old_sid: str, new_sid: str):
+        session = self.sessions.pop(old_sid)
+        if not session:
+            raise RuntimeError(f'unknown_session:{old_sid}')
+        self.sessions[new_sid] = session

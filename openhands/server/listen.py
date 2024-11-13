@@ -921,9 +921,8 @@ async def connect(session_id: str, environ):
             sio.send({'error': 'Invalid token', 'error_code': 401})
             return
         logger.info(f'Renaming existing session: {old_session_id} to {session_id}')
-        session = session_manager.rename_existing_session(old_session_id, session_id)
+        session = session_manager.alias_existing_session(old_session_id, session_id)
     else:
-        session_id = str(uuid.uuid4())
         jwt_token = sign_token({'sid': session_id}, config.jwt_secret)
         logger.info(f'New session: {session_id}')
         session = session_manager.add_new_session(sio, session_id)
@@ -966,8 +965,4 @@ async def oh_action(session_id, data):
 @sio.event
 def disconnect(sid):
     logger.info(f'SIO:DISCONNECT:{sid}')
-    # I dunno about this - should we create a new one?
-    #session = session_manager.close(session_id)
-    #if session is None:
-    #    raise ValueError(f'no_such_session_id:{session_id}')
-
+    #session_manager.stop_session(sid) # I dunno about this - should we do this later?
