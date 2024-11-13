@@ -25,14 +25,7 @@ import {
   useWsClient,
   WsClientProviderStatus,
 } from "#/context/ws-client-provider";
-import { request } from "#/services/api";
-
-const getRuntimeId = async (): Promise<{ runtime_id: string }> => {
-  const response = await request("/api/config");
-  const data = await response.json();
-
-  return data;
-};
+import OpenHands from "#/api/open-hands";
 
 const isErrorMessage = (
   message: Message | ErrorMessage,
@@ -58,7 +51,7 @@ export function ChatInterface() {
   React.useEffect(() => {
     if (status === WsClientProviderStatus.ACTIVE) {
       try {
-        getRuntimeId().then(({ runtime_id }) => {
+        OpenHands.getRuntimeId().then(({ runtime_id }) => {
           setRuntimeId(runtime_id);
         });
       } catch (e) {

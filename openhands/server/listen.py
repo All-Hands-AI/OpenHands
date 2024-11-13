@@ -567,17 +567,20 @@ def sanitize_filename(filename):
 @app.get('/api/config')
 async def get_remote_runtime_config(request: Request):
     """Retrieve the remote runtime configuration.
-    
+
     Currently, this is the runtime ID.
     """
     try:
         runtime: Runtime = request.state.conversation.runtime
-        runtime_id = runtime.runtime_id
+        runtime_id = runtime.runtime_id  # type: ignore
 
         return JSONResponse(content={runtime_id})
     except Exception as e:
         logger.error(e)
-        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={"error": "Something went wrong"})
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong'},
+        )
 
 
 @app.post('/api/upload-files')
