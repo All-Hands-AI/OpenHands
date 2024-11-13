@@ -16,6 +16,8 @@ if DEBUG:
 LOG_TO_FILE = os.getenv('LOG_TO_FILE', 'False').lower() in ['true', '1', 'yes']
 DISABLE_COLOR_PRINTING = False
 
+LOG_ALL_EVENTS = os.getenv('LOG_ALL_EVENTS', 'False').lower() in ['true', '1', 'yes']
+
 ColorType = Literal[
     'red',
     'green',
@@ -65,7 +67,8 @@ class ColoredFormatter(logging.Formatter):
                 return f'{time_str} - {name_str}:{level_str}: {record.filename}:{record.lineno}\n{msg_type_color}\n{msg}'
             return f'{time_str} - {msg_type_color}\n{msg}'
         elif msg_type == 'STEP':
-            msg = '\n\n==============\n' + record.msg + '\n'
+            if LOG_ALL_EVENTS:
+                msg = '\n\n==============\n' + record.msg + '\n'
             return f'{msg}'
         return super().format(record)
 
