@@ -55,6 +55,10 @@ class RuntimeDisconnectedError(Exception):
     pass
 
 
+class RuntimeNotFoundError(Exception):
+    pass
+
+
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
     ret = {}
     for key in os.environ:

@@ -239,7 +239,8 @@ async def attach_session(request: Request, call_next):
     request.state.conversation = await session_manager.attach_to_conversation(
         request.state.sid
     )
-    if request.state.conversation is None:
+    if not request.state.conversation:
+        logger.error(f'Runtime not found for session: {request.state.sid}')
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Session not found'},
