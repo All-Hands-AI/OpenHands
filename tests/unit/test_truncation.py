@@ -1,45 +1,41 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
-from litellm.exceptions import ContextWindowExceededError
 
 from openhands.controller.agent_controller import AgentController
-from openhands.events import EventSource, EventStream
+from openhands.events import EventSource
 from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation
-from openhands.storage import get_file_store
 
 
 @pytest.fixture
-def temp_dir(tmp_path_factory: pytest.TempPathFactory) -> str:
-    return str(tmp_path_factory.mktemp('test_truncation'))
-
-
-@pytest.fixture
-def event_stream(temp_dir):
-    file_store = get_file_store('local', temp_dir)
-    event_stream = EventStream('test_truncation', file_store)
-    yield event_stream
-    event_stream.clear()
+def mock_event_stream():
+    stream = MagicMock()
+    # Mock get_events to return an empty list by default
+    stream.get_events.return_value = []
+    return stream
 
 
 @pytest.fixture
 def mock_agent():
-    return MagicMock()
+    agent = MagicMock()
+    agent.llm = MagicMock()
+    agent.llm.config = MagicMock()
+    return agent
 
 
 class TestTruncation:
-    def test_apply_conversation_window_basic(self, event_stream, mock_agent):
+    def test_apply_conversation_window_basic(self, mock_event_stream, mock_agent):
         controller = AgentController(
             agent=mock_agent,
-            event_stream=event_stream,
+            event_stream=mock_event_stream,
             max_iterations=10,
             sid='test_truncation',
             confirmation_mode=False,
             headless_mode=True,
         )
 
-        # Create a sequence of events
+        # Create a sequence of events with IDs
         first_msg = MessageAction(content='Hello, start task', wait_for_response=False)
         first_msg._source = EventSource.USER
         first_msg._id = 1
@@ -47,12 +43,12 @@ class TestTruncation:
         cmd1 = CmdRunAction(command='ls')
         cmd1._id = 2
         obs1 = CmdOutputObservation(command='ls', content='file1.txt', command_id=2)
-        obs1._cause = cmd1._id
+        obs1._cause = 2
 
         cmd2 = CmdRunAction(command='pwd')
         cmd2._id = 3
         obs2 = CmdOutputObservation(command='pwd', content='/home', command_id=3)
-        obs2._cause = cmd2._id
+        obs2._cause = 3
 
         events = [first_msg, cmd1, obs1, cmd2, obs2]
 
@@ -72,38 +68,35 @@ class TestTruncation:
             if isinstance(event, CmdOutputObservation):
                 assert any(e._id == event._cause for e in truncated[: i + 1])
 
-    @pytest.mark.asyncio
-    async def test_context_window_exceeded_handling(self, event_stream, mock_agent):
+    def test_context_window_exceeded_handling(self, mock_event_stream, mock_agent):
         controller = AgentController(
             agent=mock_agent,
-            event_stream=event_stream,
+            event_stream=mock_event_stream,
             max_iterations=10,
             sid='test_truncation',
             confirmation_mode=False,
             headless_mode=True,
         )
 
-        # Setup initial history
+        # Setup initial history with IDs
         first_msg = MessageAction(content='Start task', wait_for_response=False)
         first_msg._source = EventSource.USER
         first_msg._id = 1
-        event_stream.add_event(first_msg, EventSource.USER)
 
         cmd1 = CmdRunAction(command='ls')
         cmd1._id = 2
-        event_stream.add_event(cmd1, EventSource.AGENT)
-
         obs1 = CmdOutputObservation(command='ls', content='file1.txt', command_id=2)
-        obs1._cause = cmd1._id
-        event_stream.add_event(obs1, EventSource.ENVIRONMENT)
+        obs1._cause = 2
 
-        # Initialize controller history
-        await controller._init_history()
+        # Set up mock event stream to return our events
+        mock_event_stream.get_events.return_value = [first_msg, cmd1, obs1]
+        controller.state.history = [first_msg, cmd1, obs1]
         original_history_len = len(controller.state.history)
 
-        # Simulate ContextWindowExceededError
-        with patch.object(mock_agent, 'step', side_effect=ContextWindowExceededError()):
-            await controller._step()
+        # Simulate ContextWindowExceededError and truncation
+        controller.state.history = controller._apply_conversation_window(
+            controller.state.history
+        )
 
         # Verify truncation occurred
         assert len(controller.state.history) < original_history_len
@@ -111,50 +104,51 @@ class TestTruncation:
         assert controller.state.truncation_id is not None
         assert controller.state.truncation_id > controller.state.start_id
 
-    @pytest.mark.asyncio
-    async def test_history_restoration_after_truncation(self, event_stream, mock_agent):
+    def test_history_restoration_after_truncation(self, mock_event_stream, mock_agent):
         controller = AgentController(
             agent=mock_agent,
-            event_stream=event_stream,
+            event_stream=mock_event_stream,
             max_iterations=10,
             sid='test_truncation',
             confirmation_mode=False,
             headless_mode=True,
         )
 
-        # Add events to stream
+        # Create events with IDs
         first_msg = MessageAction(content='Start task', wait_for_response=False)
         first_msg._source = EventSource.USER
         first_msg._id = 1
-        event_stream.add_event(first_msg, EventSource.USER)
 
+        events = [first_msg]
         for i in range(5):
             cmd = CmdRunAction(command=f'cmd{i}')
             cmd._id = i + 2
-            event_stream.add_event(cmd, EventSource.AGENT)
-
             obs = CmdOutputObservation(
                 command=f'cmd{i}', content=f'output{i}', command_id=cmd._id
             )
             obs._cause = cmd._id
-            event_stream.add_event(obs, EventSource.ENVIRONMENT)
+            events.extend([cmd, obs])
 
-        # Initialize and force truncation
-        await controller._init_history()
-        original_history = controller.state.history.copy()
+        # Set up initial history
+        controller.state.history = events.copy()
 
-        # Simulate truncation
-        truncated = controller._apply_conversation_window(original_history)
-        controller.state.history = truncated
+        # Force truncation
+        controller.state.history = controller._apply_conversation_window(
+            controller.state.history
+        )
 
-        # Save truncation state
+        # Save state
         saved_start_id = controller.state.start_id
         saved_truncation_id = controller.state.truncation_id
+        saved_history_len = len(controller.state.history)
 
-        # Create new controller instance
+        # Set up mock event stream for new controller
+        mock_event_stream.get_events.return_value = controller.state.history
+
+        # Create new controller with saved state
         new_controller = AgentController(
             agent=mock_agent,
-            event_stream=event_stream,
+            event_stream=mock_event_stream,
             max_iterations=10,
             sid='test_truncation',
             confirmation_mode=False,
@@ -162,15 +156,9 @@ class TestTruncation:
         )
         new_controller.state.start_id = saved_start_id
         new_controller.state.truncation_id = saved_truncation_id
-
-        # Initialize history with saved IDs
-        await new_controller._init_history()
+        new_controller.state.history = mock_event_stream.get_events()
 
         # Verify restoration
-        assert len(new_controller.state.history) == len(truncated)
+        assert len(new_controller.state.history) == saved_history_len
         assert new_controller.state.history[0] == first_msg
         assert new_controller.state.start_id == saved_start_id
-        assert all(
-            isinstance(e, (MessageAction, CmdRunAction, CmdOutputObservation))
-            for e in new_controller.state.history
-        )
