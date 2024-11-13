@@ -2,7 +2,15 @@ import os
 import tempfile
 
 import jwt
-from fastapi import BackgroundTasks, FastAPI, HTTPException, Request, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    Request,
+    UploadFile,
+    status,
+)
 from fastapi.responses import FileResponse, JSONResponse
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
@@ -34,10 +42,9 @@ from openhands.server.github import (
 from openhands.server.shared import config, session_manager
 from openhands.utils.async_utils import call_sync_from_async
 
-app = FastAPI()
+app = APIRouter()
 
 
-@app.middleware('http')
 async def attach_session(request: Request, call_next):
     """Middleware to attach session information to the request.
 
@@ -119,7 +126,11 @@ async def attach_session(request: Request, call_next):
 
 
 @app.get('/api/list-files')
-async def list_files(request: Request, path: str | None = None):
+async def list_files(
+    request: Request,
+    path: str | None = None,
+    middlware_check: bool = Depends(attach_session),
+):
     """List files in the specified path.
 
     This function retrieves a list of files from the agent's runtime file store,
@@ -173,7 +184,9 @@ async def list_files(request: Request, path: str | None = None):
 
 
 @app.get('/api/select-file')
-async def select_file(file: str, request: Request):
+async def select_file(
+    file: str, request: Request, middlware_check: bool = Depends(attach_session)
+):
     """Retrieve the content of a specified file.
 
     To select a file:
@@ -210,7 +223,11 @@ async def select_file(file: str, request: Request):
 
 
 @app.post('/api/upload-files')
-async def upload_file(request: Request, files: list[UploadFile]):
+async def upload_file(
+    request: Request,
+    files: list[UploadFile],
+    middlware_check: bool = Depends(attach_session),
+):
     """Upload a list of files to the workspace.
 
     To upload a files:
@@ -296,7 +313,7 @@ async def upload_file(request: Request, files: list[UploadFile]):
 
 
 @app.post('/api/save-file')
-async def save_file(request: Request):
+async def save_file(request: Request, middlware_check: bool = Depends(attach_session)):
     """Save a file to the agent's runtime file store.
 
     This endpoint allows saving a file when the agent is in a paused, finished,
@@ -304,7 +321,7 @@ async def save_file(request: Request):
     with the file save operation.
 
     Args:
-        request (Request): The incoming FastAPI request object.
+        request (Request): The incoming APIRouter request object.
 
     Returns:
         JSONResponse: A JSON response indicating the success of the operation.
@@ -354,7 +371,9 @@ async def save_file(request: Request):
 
 
 @app.post('/api/submit-feedback')
-async def submit_feedback(request: Request):
+async def submit_feedback(
+    request: Request, middlware_check: bool = Depends(attach_session)
+):
     """Submit user feedback.
 
     This function stores the provided feedback data.
@@ -402,7 +421,11 @@ async def submit_feedback(request: Request):
 
 
 @app.get('/api/zip-directory')
-async def zip_current_workspace(request: Request, background_tasks: BackgroundTasks):
+async def zip_current_workspace(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    middlware_check: bool = Depends(attach_session),
+):
     try:
         logger.debug('Zipping workspace')
         runtime: Runtime = request.state.conversation.runtime
@@ -427,13 +450,15 @@ async def zip_current_workspace(request: Request, background_tasks: BackgroundTa
 
 
 @app.route('/api/security/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])
-async def security_api(request: Request):
+async def security_api(
+    request: Request, middlware_check: bool = Depends(attach_session)
+):
     """Catch-all route for security analyzer API requests.
 
     Each request is handled directly to the security analyzer.
 
     Args:
-        request (Request): The incoming FastAPI request object.
+        request (Request): The incoming APIRouter request object.
 
     Returns:
         Any: The response from the security analyzer.
@@ -450,13 +475,15 @@ async def security_api(request: Request):
 
 
 @app.get('/api/vscode-url')
-async def get_vscode_url(request: Request):
+async def get_vscode_url(
+    request: Request, middlware_check: bool = Depends(attach_session)
+):
     """Get the VSCode URL.
 
     This endpoint allows getting the VSCode URL.
 
     Args:
-        request (Request): The incoming FastAPI request object.
+        request (Request): The incoming APIRouter request object.
 
     Returns:
         JSONResponse: A JSON response indicating the success of the operation.

@@ -1,7 +1,7 @@
 import asyncio
 import uuid
 
-from fastapi import FastAPI, WebSocket, status
+from fastapi import APIRouter, WebSocket, status
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
@@ -20,10 +20,10 @@ from openhands.server.github import (
 )
 from openhands.server.shared import config, session_manager
 
-app = FastAPI()
+app = APIRouter()
 
 
-@app.websocket('/')
+@app.websocket('/ws')
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for receiving events from the client (i.e., the browser).
     Once connected, the client can send various actions:

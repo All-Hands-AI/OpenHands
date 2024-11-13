@@ -9,7 +9,7 @@ with warnings.catch_warnings():
     import litellm
 
 from fastapi import (
-    FastAPI,
+    APIRouter,
 )
 
 from openhands.controller.agent import Agent
@@ -18,7 +18,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.llm import bedrock
 from openhands.server.shared import config
 
-app = FastAPI()
+app = APIRouter(prefix='/api/options')
 
 
 @app.get('/models')

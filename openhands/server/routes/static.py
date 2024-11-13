@@ -1,7 +1,7 @@
-from fastapi import FastAPI
+from fastapi import APIRouter
 from fastapi.staticfiles import StaticFiles
 
-app = FastAPI()
+app = APIRouter()
 
 
 class SPAStaticFiles(StaticFiles):

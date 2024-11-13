@@ -13,7 +13,7 @@ with warnings.catch_warnings():
     warnings.simplefilter('ignore')
 
 from fastapi import (
-    FastAPI,
+    APIRouter,
     Request,
     status,
 )
@@ -24,7 +24,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.server.auth.auth import sign_token
 from openhands.server.shared import config
 
-app = FastAPI()
+app = APIRouter(prefix='/api')
 
 
 class AuthCode(BaseModel):
