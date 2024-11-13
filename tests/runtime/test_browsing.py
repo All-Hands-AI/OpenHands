@@ -162,3 +162,108 @@ def test_multi_session_browse(temp_dir, runtime_cls, run_as_openhands):
 
     _close_test_runtime(runtime1)
     _close_test_runtime(runtime2)
+
+
+def test_browser_session_cleanup(temp_dir, runtime_cls, run_as_openhands):
+    """Test proper cleanup of browser sessions."""
+    from openhands.runtime.browser.browser_env import BrowserEnv
+
+    # Start with a clean state
+    BrowserEnv.close_all()
+    assert len(BrowserEnv._instances) == 0
+
+    # Create multiple sessions
+    runtime1 = _load_runtime(temp_dir, runtime_cls, run_as_openhands, sid="cleanup1")
+    runtime2 = _load_runtime(temp_dir, runtime_cls, run_as_openhands, sid="cleanup2")
+
+    # Verify sessions are created
+    assert len(BrowserEnv._instances) == 2
+    assert "cleanup1" in BrowserEnv._instances
+    assert "cleanup2" in BrowserEnv._instances
+
+    # Close one session
+    _close_test_runtime(runtime1)
+    assert len(BrowserEnv._instances) == 1
+    assert "cleanup1" not in BrowserEnv._instances
+    assert "cleanup2" in BrowserEnv._instances
+
+    # Close all sessions
+    _close_test_runtime(runtime2)
+    assert len(BrowserEnv._instances) == 0
+
+
+def test_browser_session_backward_compatibility(temp_dir, runtime_cls, run_as_openhands):
+    """Test backward compatibility with default session ID."""
+    # Create runtime without explicit session ID
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+
+    # Browse to a test page
+    action = BrowseURLAction(url='about:blank')
+    obs = runtime.run_action(action)
+    assert isinstance(obs, BrowserOutputObservation)
+    assert not obs.error
+    assert obs.open_pages_urls == ['about:blank']
+
+    # Verify session uses default ID
+    from openhands.runtime.browser.browser_env import BrowserEnv
+    assert "default" in BrowserEnv._instances
+
+    _close_test_runtime(runtime)
+
+
+def test_browser_session_error_handling(temp_dir, runtime_cls, run_as_openhands):
+    """Test error handling in browser sessions."""
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands, sid="error_test")
+
+    # Test invalid URL
+    action = BrowseURLAction(url='invalid://url')
+    obs = runtime.run_action(action)
+    assert isinstance(obs, BrowserOutputObservation)
+    assert obs.error
+    assert obs.last_browser_action_error != ''
+
+    # Test invalid browser action
+    action = BrowseInteractiveAction(browser_actions='invalid_action()')
+    obs = runtime.run_action(action)
+    assert isinstance(obs, BrowserOutputObservation)
+    assert obs.error
+    assert obs.last_browser_action_error != ''
+
+    _close_test_runtime(runtime)
+
+
+def test_browser_session_concurrent_actions(temp_dir, runtime_cls, run_as_openhands):
+    """Test concurrent actions in different browser sessions."""
+    runtime1 = _load_runtime(temp_dir, runtime_cls, run_as_openhands, sid="concurrent1")
+    runtime2 = _load_runtime(temp_dir, runtime_cls, run_as_openhands, sid="concurrent2")
+
+    # Start a test server
+    action_cmd = CmdRunAction(
+        command=f'{PY3_FOR_TESTING} -m http.server 8000 > server.log 2>&1 &'
+    )
+    obs = runtime1.run_action(action_cmd)
+    assert obs.exit_code == 0
+
+    # Wait for server
+    action_cmd = CmdRunAction(command='sleep 3')
+    runtime1.run_action(action_cmd)
+
+    # Perform concurrent actions
+    action1 = BrowseInteractiveAction(browser_actions='goto("http://localhost:8000")')
+    action2 = BrowseInteractiveAction(browser_actions='goto("about:blank")')
+
+    obs1 = runtime1.run_action(action1)
+    obs2 = runtime2.run_action(action2)
+
+    # Verify both actions succeeded independently
+    assert not obs1.error
+    assert not obs2.error
+    assert 'http://localhost:8000' in obs1.url
+    assert 'about:blank' in obs2.url
+
+    # Clean up
+    action = CmdRunAction(command='rm -rf server.log')
+    runtime1.run_action(action)
+
+    _close_test_runtime(runtime1)
+    _close_test_runtime(runtime2)
