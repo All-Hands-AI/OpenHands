@@ -4,6 +4,7 @@ import { Settings } from "#/services/settings";
 import ActionType from "#/types/ActionType";
 import EventLogger from "#/utils/event-logger";
 import AgentState from "#/types/AgentState";
+import { handleAssistantMessage } from "#/services/actions";
 
 const RECONNECT_RETRIES = 5;
 
@@ -80,6 +81,8 @@ export function WsClientProvider({
     ) {
       setStatus(WsClientProviderStatus.ERROR);
     }
+
+    handleAssistantMessage(event);
   }
 
   function handleClose() {
