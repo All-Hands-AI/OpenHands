@@ -10,6 +10,7 @@ from openhands.core.config.config_utils import (
     get_field_info,
 )
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.replay_config import ReplayConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 
@@ -21,6 +22,7 @@ class AppConfig:
     Attributes:
         llms: A dictionary of name -> LLM configuration. Default config is under 'llm' key.
         agents: A dictionary of name -> Agent configuration. Default config is under 'agent' key.
+        replay: The replay configuration.
         default_agent: The name of the default agent to use.
         sandbox: The sandbox configuration.
         runtime: The runtime environment.
@@ -46,6 +48,7 @@ class AppConfig:
     llms: dict[str, LLMConfig] = field(default_factory=dict)
     agents: dict = field(default_factory=dict)
     default_agent: str = OH_DEFAULT_AGENT
+    replay: ReplayConfig = field(default_factory=ReplayConfig)
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
     runtime: str = 'eventstream'

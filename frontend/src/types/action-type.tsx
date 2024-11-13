@@ -17,6 +17,9 @@ enum ActionType {
   // Runs a IPython command.
   RUN_IPYTHON = "run_ipython",
 
+  // Runs a Replay command.
+  RUN_REPLAY = "run_replay",
+
   // Opens a web page.
   BROWSE = "browse",
 

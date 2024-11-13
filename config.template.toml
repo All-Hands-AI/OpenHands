@@ -232,6 +232,16 @@ llm_config = 'gpt3'
 # BrowserGym environment to use for evaluation
 #browsergym_eval_env = ""
 
+#################################### Replay ###################################
+# Configuration for replay integration
+##############################################################################
+[replay]
+# a replay api key for either the workspace or user (config item name means our REPLAY_API_KEY env var will work)
+#api_key = ''
+
+# the parent directory of both devtools and replayapi git repos (config item name means our REPLAY_DIR env var will work)
+#dir = ''
+
 #################################### Security ###################################
 # Configuration for security features
 ##############################################################################

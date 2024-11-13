@@ -3,6 +3,7 @@ type OpenHandsEventType =
   | "agent_state_changed"
   | "run"
   | "run_ipython"
+  | "run_replay"
   | "delegate"
   | "browse"
   | "browse_interactive"

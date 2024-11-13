@@ -47,6 +47,7 @@ Key features of the `ActionExecutor` class:
 3. **Action Execution**:
    - Different types of actions are executed:
      - Bash commands using `run` method
+     - Replay commands using `run_replay` method
      - IPython cells using `run_ipython` method
      - File operations (read/write) using `read` and `write` methods
      - Web browsing using `browse` and `browse_interactive` methods

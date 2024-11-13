@@ -11,6 +11,9 @@ enum ObservationType {
   // The output of an IPython command
   RUN_IPYTHON = "run_ipython",
 
+  // The output of a replay command
+  RUN_REPLAY = "run_replay",
+
   // A message from the user
   CHAT = "chat",
 

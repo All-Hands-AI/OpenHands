@@ -20,6 +20,7 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    ReplayCmdRunAction,
     FileEditAction,
     FileReadAction,
     FileWriteAction,
@@ -339,6 +340,18 @@ class EventStreamRuntime(Runtime):
             f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
         )
 
+        if self.config.replay.dir is not None:
+            if volumes is None:
+                volumes = {}
+            volumes[self.config.replay.dir] = {
+                'bind': "/replay",
+                'mode': 'rw',
+            }
+        self.log(
+            'debug',
+            f'Replay volume: {self.config.replay.dir} -> /replay',
+        )
+
         if self.config.sandbox.browsergym_eval_env is not None:
             browsergym_arg = (
                 f'--browsergym-eval-env {self.config.sandbox.browsergym_eval_env}'
@@ -535,6 +548,9 @@ class EventStreamRuntime(Runtime):
             return obs
 
     def run(self, action: CmdRunAction) -> Observation:
+        return self.run_action(action)
+
+    def run_replay(self, action: ReplayCmdRunAction) -> Observation:
         return self.run_action(action)
 
     def run_ipython(self, action: IPythonRunCellAction) -> Observation:

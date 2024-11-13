@@ -17,6 +17,7 @@ from openhands.core.config.config_utils import (
     OH_MAX_ITERATIONS,
 )
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.replay_config import ReplayConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 
 load_dotenv()
@@ -144,6 +145,12 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                             )
                             llm_config = LLMConfig.from_dict(nested_value)
                             cfg.set_llm_config(llm_config, nested_key)
+                elif key is not None and key.lower() == 'replay':
+                    logger.openhands_logger.debug(
+                        'Attempt to load replay config from config toml'
+                    )
+                    replay_config = ReplayConfig(**value)
+                    cfg.replay = replay_config
                 elif not key.startswith('sandbox') and key.lower() != 'core':
                     logger.openhands_logger.warning(
                         f'Unknown key in {toml_file}: "{key}"'

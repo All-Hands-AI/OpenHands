@@ -23,8 +23,41 @@ from openhands.events.action import (
     FileEditAction,
     IPythonRunCellAction,
     MessageAction,
+    ReplayCmdRunAction,
 )
 from openhands.events.tool import ToolCallMetadata
+
+_REPLAY_DESCRIPTION = """
+Runs a command against a recording of execution.  There are several available:
+
+* `session start` - Starts a new session with a given recording.  Requires the recording id.  Outputs the session id.
+* `session stop` - Stops the current session.  Requires the session id.
+* `fetch-comments` - Fetches all comments associated with a recording.
+
+All responses from the replay tool are in JSON format.
+"""
+
+ReplayRunCmdTool = ChatCompletionToolParam(
+    type='function',
+    function=ChatCompletionToolParamFunctionChunk(
+        name='execute_replay',
+        description=_REPLAY_DESCRIPTION,
+        parameters={
+            'type': 'object',
+            'properties': {
+                'command': {
+                    'type': 'string',
+                    'description': 'The command to replay.',
+                },
+                'recording_id': {
+                    'type': 'string',
+                    'description': 'The recording ID to replay against.',
+                }
+            },
+            'required': ['command'],
+        },
+    ),
+)
 
 _BASH_DESCRIPTION = """Execute a bash command in the terminal.
 * Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`.
@@ -463,6 +496,8 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 ) from e
             if tool_call.function.name == 'execute_bash':
                 action = CmdRunAction(**arguments)
+            elif tool_call.function.name == 'execute_replay':
+                action = ReplayCmdRunAction(**arguments)
             elif tool_call.function.name == 'execute_ipython_cell':
                 action = IPythonRunCellAction(**arguments)
             elif tool_call.function.name == 'delegate_to_browsing_agent':
@@ -513,6 +548,7 @@ def get_tools(
     codeact_enable_browsing: bool = False,
     codeact_enable_llm_editor: bool = False,
     codeact_enable_jupyter: bool = False,
+    codeact_enable_replay: bool = False,
 ) -> list[ChatCompletionToolParam]:
     tools = [CmdRunTool, FinishTool]
     if codeact_enable_browsing:
@@ -523,4 +559,6 @@ def get_tools(
         tools.append(LLMBasedFileEditTool)
     else:
         tools.append(StrReplaceEditorTool)
+    if codeact_enable_replay:
+        tools.append(ReplayRunCmdTool)
     return tools

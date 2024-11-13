@@ -24,6 +24,10 @@ class ObservationTypeSchema(BaseModel):
     """Runs a IPython cell.
     """
 
+    RUN_REPLAY: str = Field(default='run_replay')
+    """Runs a Replay command.
+    """
+
     CHAT: str = Field(default='chat')
     """A message from the user
     """

@@ -20,6 +20,7 @@ from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
+    ReplayCmdRunAction,
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
@@ -134,6 +135,13 @@ class Runtime(FileEditRuntimeMixin):
         self.add_env_vars(self.initial_env_vars)
         if self.config.sandbox.runtime_startup_env_vars:
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
+        if self.config.replay.api_key:
+            self.add_env_vars({'REPLAY_API_KEY': self.config.replay.api_key})
+
+        if self.config.replay.api_key:
+            self.add_env_vars({'REPLAY_API_KEY': self.config.replay.api_key})
+        if self.config.replay.dir:
+            self.add_env_vars({'REPLAY_DIR': self.config.replay.dir})
 
     def close(self) -> None:
         pass
@@ -267,6 +275,10 @@ class Runtime(FileEditRuntimeMixin):
 
     @abstractmethod
     def run_ipython(self, action: IPythonRunCellAction) -> Observation:
+        pass
+
+    @abstractmethod
+    def run_replay(self, action: ReplayCmdRunAction) -> Observation:
         pass
 
     @abstractmethod

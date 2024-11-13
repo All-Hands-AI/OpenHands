@@ -27,6 +27,15 @@ export interface IPythonObservation
   };
 }
 
+export interface ReplayObservation
+  extends OpenHandsObservationEvent<"run_replay"> {
+  source: "agent";
+  extras: {
+    command: string;
+    exit_code: number;
+  };
+}
+
 export interface DelegateObservation
   extends OpenHandsObservationEvent<"delegate"> {
   source: "agent";

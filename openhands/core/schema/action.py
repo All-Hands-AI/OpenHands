@@ -36,6 +36,10 @@ class ActionTypeSchema(BaseModel):
     """Runs a IPython cell.
     """
 
+    RUN_REPLAY: str = Field(default='run_replay')
+    """Runs a Replay command.
+    """
+
     BROWSE: str = Field(default='browse')
     """Opens a web page.
     """

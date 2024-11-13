@@ -35,6 +35,7 @@ from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
+    ReplayCmdRunAction,
 )
 from openhands.events.observation import (
     CmdOutputObservation,
@@ -43,6 +44,7 @@ from openhands.events.observation import (
     FileWriteObservation,
     IPythonRunCellObservation,
     Observation,
+    ReplayCmdOutputObservation,
 )
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
@@ -173,6 +175,40 @@ class ActionExecutor:
     ) -> CmdOutputObservation | ErrorObservation:
         obs = await call_sync_from_async(self.bash_session.run, action)
         return obs
+
+    async def run_replay(
+        self, action: ReplayCmdRunAction
+    ) -> ReplayCmdOutputObservation | ErrorObservation:
+        command = f'/replay/replayapi/scripts/run.sh {action.command}'
+        if action.recording_id != '':
+            command = command + f' -r {action.recording_id}'
+        if action.session_id != '':
+            command = command + f' -s {action.session_id}'
+
+        cmd_action = CmdRunAction(
+            command=command,
+            thought=action.thought,
+            blocking=action.blocking,
+            keep_prompt=action.keep_prompt,
+            hidden=action.hidden,
+            confirmation_state=action.confirmation_state,
+            security_risk=action.security_risk,
+        )
+        cmd_action.timeout = 600
+        obs = self.bash_session.run(cmd_action)
+
+        if isinstance(obs, ErrorObservation):
+            return obs
+
+        # we might not actually need a separate observation type for replay...
+        return ReplayCmdOutputObservation(
+            command_id=obs.command_id,
+            command=obs.command,
+            exit_code=obs.exit_code,
+            hidden=obs.hidden,
+            interpreter_details=obs.interpreter_details,
+            content=obs.content,
+        )
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         if 'jupyter' in self.plugins:
