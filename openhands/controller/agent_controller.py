@@ -733,7 +733,7 @@ class AgentController:
             # Normal loading from start_id
             events = list(
                 self.event_stream.get_events(
-                    start_id=self.state.start_id if self.state.start_id >= 0 else 0,
+                    start_id=start_id,
                     end_id=end_id,
                     reverse=False,
                     filter_out_type=self.filter_out,
