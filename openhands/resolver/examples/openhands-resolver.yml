@@ -18,7 +18,7 @@ jobs:
     if: |
       ${{
         github.event.label.name == 'fix-me' ||
-        (github.event_name == 'issue_comment' && 
+        (github.event_name == 'issue_comment' &&
         startsWith(github.event.comment.body, vars.OPENHANDS_MACRO || '@openhands-agent') &&
         (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'COLLABORATOR' || github.event.comment.author_association == 'MEMBER'))
       }}
