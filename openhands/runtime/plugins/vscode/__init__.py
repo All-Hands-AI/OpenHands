@@ -6,8 +6,8 @@ from dataclasses import dataclass
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.plugins.requirement import Plugin, PluginRequirement
-from openhands.runtime.utils.shutdown_listener import should_continue
 from openhands.runtime.utils.system import check_port_available
+from openhands.utils.shutdown_listener import should_continue
 
 
 @dataclass
