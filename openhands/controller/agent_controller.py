@@ -216,6 +216,8 @@ class AgentController:
         # if the event is not filtered out, add it to the history
         if not any(isinstance(event, filter_type) for filter_type in self.filter_out):
             self.state.history.append(event)
+            # apply conversation window after adding new event
+            self.state.history = self._apply_conversation_window(self.state.history)
 
         if isinstance(event, Action):
             await self._handle_action(event)
@@ -743,6 +745,56 @@ class AgentController:
 
         # make sure history is in sync
         self.state.start_id = start_id
+
+        # apply conversation window if configured
+        self.state.history = self._apply_conversation_window(self.state.history)
+
+    def _apply_conversation_window(self, events: list[Event]) -> list[Event]:
+        """Applies conversation window limit to events list if configured.
+
+        Args:
+            events: List of events to filter
+
+        Returns:
+            Filtered list of events respecting max_conversation_window if set
+        """
+        if not self.agent.llm.config.max_conversation_window:
+            return events
+
+        # count action-observation pairs from newest to oldest
+        window_size = self.agent.llm.config.max_conversation_window
+        kept_events = []
+        action_obs_pairs = 0
+
+        # process events in reverse to keep newest pairs
+        for event in reversed(events):
+            # Always keep non-agent events
+            if not hasattr(event, 'source') or event.source != EventSource.AGENT:
+                kept_events.append(event)
+                continue
+
+            # for agent events, track action-observation pairs
+            if isinstance(event, (Action, Observation)):
+                # if we find an observation, look for matching action
+                if isinstance(event, Observation) and event.cause:
+                    matching_action = next(
+                        (
+                            e
+                            for e in events
+                            if isinstance(e, Action) and e.id == event.cause
+                        ),
+                        None,
+                    )
+                    if matching_action:
+                        if action_obs_pairs < window_size:
+                            kept_events.extend([matching_action, event])
+                        action_obs_pairs += 1
+                # keep unpaired events within window
+                elif action_obs_pairs < window_size:
+                    kept_events.append(event)
+
+        # restore original order
+        return list(reversed(kept_events))
 
     def _is_stuck(self):
         """Checks if the agent or its delegate is stuck in a loop.
