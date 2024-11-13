@@ -47,15 +47,19 @@ STATUS_MESSAGES = {
 }
 
 
-class RuntimeNotReadyError(Exception):
+class RuntimeUnavailableError(Exception):
     pass
 
 
-class RuntimeDisconnectedError(Exception):
+class RuntimeNotReadyError(RuntimeUnavailableError):
     pass
 
 
-class RuntimeNotFoundError(Exception):
+class RuntimeDisconnectedError(RuntimeUnavailableError):
+    pass
+
+
+class RuntimeNotFoundError(RuntimeUnavailableError):
     pass
 
 

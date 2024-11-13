@@ -6,7 +6,7 @@ from fastapi import WebSocket
 from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.stream import session_exists
-from openhands.runtime.base import RuntimeNotFoundError
+from openhands.runtime.base import RuntimeUnavailableError
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import Session
 from openhands.storage.files import FileStore
@@ -29,7 +29,7 @@ class SessionManager:
         c = Conversation(sid, file_store=self.file_store, config=self.config)
         try:
             await c.connect()
-        except RuntimeNotFoundError as e:
+        except RuntimeUnavailableError as e:
             logger.error(f'Error connecting to conversation {c.sid}: {e}')
             return None
         end_time = time.time()
