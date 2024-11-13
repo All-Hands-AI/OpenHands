@@ -270,19 +270,6 @@ class AgentController:
         if observation.llm_metrics is not None:
             self.agent.llm.metrics.merge(observation.llm_metrics)
 
-        # Check if we need to trim history based on conversation window
-        if (
-            observation.cause
-            and self.agent.llm.config.max_conversation_window
-            and len(self.state.history)
-            > self.agent.llm.config.max_conversation_window * 2
-        ):
-            self._apply_conversation_window(
-                self.state.history,
-                window_size=len(self.state.history)
-                // 4,  # Half the pairs (each pair is 2 events)
-            )
-
         if self._pending_action and self._pending_action.id == observation.cause:
             self._pending_action = None
             if self.state.agent_state == AgentState.USER_CONFIRMED:
@@ -500,12 +487,12 @@ class AgentController:
             )
             return
         except ContextWindowExceededError:
-            # When context window is exceeded, apply window to keep newest half of agent interactions
-            self.state.history = self._apply_conversation_window(
-                self.state.history,
-                window_size=len(self.state.history)
-                // 4,  # Half the pairs (each pair is 2 events)
-            )
+            # When context window is exceeded, keep roughly half of agent interactions
+            self.state.history = self._apply_conversation_window(self.state.history)
+
+            # Save the ID of the first event in our truncated history for future reloading
+            if self.state.history:
+                self.state.start_id = self.state.history[0].id
             # Don't add error event - let the agent retry with reduced context
             return
 
@@ -767,60 +754,52 @@ class AgentController:
         # make sure history is in sync
         self.state.start_id = start_id
 
-        # apply conversation window if configured
-        self.state.history = self._apply_conversation_window(self.state.history)
-
-    def _apply_conversation_window(
-        self, events: list[Event], window_size: int | None = None
-    ) -> list[Event]:
-        """Applies conversation window limit to events list.
-        Used when loading initial history or when context window is exceeded.
+    def _apply_conversation_window(self, events: list[Event]) -> list[Event]:
+        """Cuts history roughly in half when context window is exceeded, preserving action-observation pairs
+        and non-agent events.
 
         Args:
             events: List of events to filter
-            window_size: Number of action-observation pairs to keep. If None, uses max_conversation_window from config.
 
         Returns:
-            Filtered list of events keeping only the newest pairs within window
+            Filtered list of events keeping only the newest half of pairs
         """
-        if window_size is None:
-            if not self.agent.llm.config.max_conversation_window:
-                return events
-            window_size = self.agent.llm.config.max_conversation_window
+        if not events:
+            return events
 
-        # count action-observation pairs from newest to oldest
+        # First pass: identify all action-observation pairs and their positions
+        pairs = []  # List of (action_idx, obs_idx) tuples
+
+        for i, event in enumerate(events):
+            # Find observation and its matching action
+            if isinstance(event, Observation) and event.cause:
+                action_idx = next(
+                    (
+                        j
+                        for j, e in enumerate(events)
+                        if isinstance(e, Action) and e.id == event.cause
+                    ),
+                    None,
+                )
+                if action_idx is not None:
+                    pairs.append((action_idx, i))
+
+        # Keep newest half of pairs
+        num_pairs_to_keep = len(pairs) // 2
+        kept_pairs = pairs[-num_pairs_to_keep:] if pairs else []
+        indices_to_keep = {idx for pair in kept_pairs for idx in pair}
+
+        # Build final history preserving order
         kept_events = []
-        action_obs_pairs = 0
-
-        # process events in reverse to keep newest pairs
-        for event in reversed(events):
-            # Always keep non-agent events
+        for i, event in enumerate(events):
+            # Keep non-agent events (like user messages)
             if not hasattr(event, 'source') or event.source != EventSource.AGENT:
                 kept_events.append(event)
-                continue
+            # Keep events that are part of kept pairs
+            elif i in indices_to_keep:
+                kept_events.append(event)
 
-            # for agent events, track action-observation pairs
-            if isinstance(event, (Action, Observation)):
-                # if we find an observation, look for matching action
-                if isinstance(event, Observation) and event.cause:
-                    matching_action = next(
-                        (
-                            e
-                            for e in events
-                            if isinstance(e, Action) and e.id == event.cause
-                        ),
-                        None,
-                    )
-                    if matching_action:
-                        if action_obs_pairs < window_size:
-                            kept_events.extend([matching_action, event])
-                        action_obs_pairs += 1
-                # keep unpaired events within window
-                elif action_obs_pairs < window_size:
-                    kept_events.append(event)
-
-        # restore original order
-        return list(reversed(kept_events))
+        return kept_events
 
     def _is_stuck(self):
         """Checks if the agent or its delegate is stuck in a loop.
