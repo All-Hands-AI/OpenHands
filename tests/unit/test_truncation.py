@@ -86,6 +86,7 @@ class TestTruncation:
         cmd1 = CmdRunAction(command='ls')
         cmd1._id = 2
         obs1 = CmdOutputObservation(command='ls', content='file1.txt', command_id=2)
+        obs1._id = 3
         obs1._cause = 2
 
         # Set up mock event stream to return our events

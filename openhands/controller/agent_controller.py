@@ -816,8 +816,8 @@ class AgentController:
             None,
         )
 
-        # Initial cut in half
-        mid_point = len(events) // 2
+        # cut in half
+        mid_point = max(1, len(events) // 2)
         kept_events = events[mid_point:]
 
         # Handle first event in truncated history
