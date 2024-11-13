@@ -62,6 +62,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'gpt-4o',
     'gpt-4o-mini',
     'claude-3.5-sonnet',  # OpenRouter model name
+    'claude-3.5-haiku',  # OpenRouter model name
 ]
 
 
