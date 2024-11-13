@@ -183,6 +183,8 @@ async def attach_session(request: Request, call_next):
     Returns:
         Response: The response from the next middleware or route handler.
     """
+    logger.info(f'Attaching session for {request.url.path}')
+    start_time = time.time()
     non_authed_paths = [
         '/api/options/',
         '/api/github/callback',
@@ -238,6 +240,8 @@ async def attach_session(request: Request, call_next):
     request.state.conversation = await session_manager.attach_to_conversation(
         request.state.sid
     )
+    end_time = time.time()
+    logger.info(f'Attach session time: {end_time - start_time:.2f}s')
     if request.state.conversation is None:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -486,9 +490,12 @@ async def list_files(request: Request, path: str | None = None):
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Runtime not yet initialized'},
         )
+    start_time = time.time()
 
     runtime: Runtime = request.state.conversation.runtime
     file_list = await call_sync_from_async(runtime.list_files, path)
+    end_time = time.time()
+    logger.info(f'List files time: {end_time - start_time:.2f}s')
     if path:
         file_list = [os.path.join(path, f) for f in file_list]
 
@@ -509,6 +516,8 @@ async def list_files(request: Request, path: str | None = None):
         return file_list
 
     file_list = await filter_for_gitignore(file_list, '')
+    end_time = time.time()
+    logger.info(f'Filter files time: {end_time - start_time:.2f}s')
 
     return file_list
 
