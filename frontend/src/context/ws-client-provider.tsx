@@ -1,5 +1,6 @@
 import posthog from "posthog-js";
 import React from "react";
+import { io, Socket } from "socket.io-client";
 import { Settings } from "#/services/settings";
 import ActionType from "#/types/ActionType";
 import EventLogger from "#/utils/event-logger";
@@ -43,23 +44,25 @@ export function WsClientProvider({
   settings,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
-  const wsRef = React.useRef<WebSocket | null>(null);
+  const sioRef = React.useRef<Socket | null>(null);
   const tokenRef = React.useRef<string | null>(token);
   const ghTokenRef = React.useRef<string | null>(ghToken);
-  const closeRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const disconnectRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [status, setStatus] = React.useState(WsClientProviderStatus.STOPPED);
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const [retryCount, setRetryCount] = React.useState(RECONNECT_RETRIES);
 
   function send(event: Record<string, unknown>) {
-    if (!wsRef.current) {
+    if (!sioRef.current) {
       EventLogger.error("WebSocket is not connected.");
       return;
     }
-    wsRef.current.send(JSON.stringify(event));
+    sioRef.current.emit("oh_action", event);
   }
 
-  function handleOpen() {
+  function handleConnect() {
     setRetryCount(RECONNECT_RETRIES);
     setStatus(WsClientProviderStatus.OPENING);
     const initEvent = {
@@ -69,10 +72,10 @@ export function WsClientProvider({
     send(initEvent);
   }
 
-  function handleMessage(messageEvent: MessageEvent) {
-    const event = JSON.parse(messageEvent.data);
+  function handleMessage(event: Record<string, unknown>) {
     setEvents((prevEvents) => [...prevEvents, event]);
-    if (event.extras?.agent_state === AgentState.INIT) {
+    const extras = event.extras as Record<string, unknown>;
+    if (extras?.agent_state === AgentState.INIT) {
       setStatus(WsClientProviderStatus.ACTIVE);
     }
     if (
@@ -85,7 +88,7 @@ export function WsClientProvider({
     handleAssistantMessage(event);
   }
 
-  function handleClose() {
+  function handleDisconnect() {
     if (retryCount) {
       setTimeout(() => {
         setRetryCount(retryCount - 1);
@@ -94,81 +97,88 @@ export function WsClientProvider({
       setStatus(WsClientProviderStatus.STOPPED);
       setEvents([]);
     }
-    wsRef.current = null;
+    sioRef.current = null;
   }
 
-  function handleError(event: Event) {
+  function handleError() {
     posthog.capture("socket_error");
-    EventLogger.event(event, "SOCKET ERROR");
     setStatus(WsClientProviderStatus.ERROR);
   }
 
   // Connect websocket
   React.useEffect(() => {
-    let ws = wsRef.current;
+    let sio = sioRef.current;
 
-    // If disabled close any existing websockets...
+    // If disabled disconnect any existing websockets...
     if (!enabled || !retryCount) {
-      if (ws) {
-        ws.close();
+      if (sio) {
+        sio.disconnect();
       }
-      wsRef.current = null;
+      sioRef.current = null;
       return () => {};
     }
 
-    // If there is no websocket or the tokens have changed or the current websocket is closed,
+    // If there is no websocket or the tokens have changed or the current websocket is disconnected,
     // create a new one
     if (
-      !ws ||
+      !sio ||
       (tokenRef.current && token !== tokenRef.current) ||
       ghToken !== ghTokenRef.current ||
-      ws.readyState === WebSocket.CLOSED ||
-      ws.readyState === WebSocket.CLOSING
+      !sio.connected
     ) {
-      ws?.close();
+      sio?.disconnect();
+
+      const extraHeaders: Record<string, string> = {};
+      if (token) {
+        extraHeaders.TOKEN = token;
+      }
+      if (ghToken) {
+        extraHeaders.GITHUB_TOKEN = ghToken;
+      }
+      if (events.length) {
+        extraHeaders.LATEST_EVENT_ID = `${events[events.length - 1].id}`;
+      }
+
       const baseUrl =
         import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
-      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      let wsUrl = `${protocol}//${baseUrl}/ws`;
-      if (events.length) {
-        wsUrl += `?latest_event_id=${events[events.length - 1].id}`;
-      }
-      ws = new WebSocket(wsUrl, [
-        "openhands",
-        token || "NO_JWT",
-        ghToken || "NO_GITHUB",
-      ]);
+      sio = io(`${window.location.protocol}//${baseUrl}`, {
+        transports: ["websocket"],
+        extraHeaders,
+      });
     }
-    ws.addEventListener("open", handleOpen);
-    ws.addEventListener("message", handleMessage);
-    ws.addEventListener("error", handleError);
-    ws.addEventListener("close", handleClose);
-    wsRef.current = ws;
+    sio.on("connect", handleConnect);
+    sio.on("oh_event", handleMessage);
+    sio.on("connect_error", handleError);
+    sio.on("connect_failed", handleError);
+    sio.on("disconnect", handleDisconnect);
+
+    sioRef.current = sio;
     tokenRef.current = token;
     ghTokenRef.current = ghToken;
 
     return () => {
-      ws.removeEventListener("open", handleOpen);
-      ws.removeEventListener("message", handleMessage);
-      ws.removeEventListener("error", handleError);
-      ws.removeEventListener("close", handleClose);
+      sio.off("connect", handleConnect);
+      sio.off("oh_event", handleMessage);
+      sio.off("connect_error", handleError);
+      sio.off("connect_failed", handleError);
+      sio.off("disconnect", handleDisconnect);
     };
   }, [enabled, token, ghToken, retryCount]);
 
   // Strict mode mounts and unmounts each component twice, so we have to wait in the destructor
-  // before actually closing the socket and cancel the operation if the component gets remounted.
+  // before actually disconnecting the socket and cancel the operation if the component gets remounted.
   React.useEffect(() => {
-    const timeout = closeRef.current;
+    const timeout = disconnectRef.current;
     if (timeout != null) {
       clearTimeout(timeout);
     }
 
     return () => {
-      closeRef.current = setTimeout(() => {
-        const ws = wsRef.current;
-        if (ws) {
-          ws.removeEventListener("close", handleClose);
-          ws.close();
+      disconnectRef.current = setTimeout(() => {
+        const sio = sioRef.current;
+        if (sio) {
+          sio.off("disconnect", handleDisconnect);
+          sio.disconnect();
         }
       }, 100);
     };
