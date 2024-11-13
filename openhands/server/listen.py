@@ -871,12 +871,15 @@ def github_callback(auth_code: AuthCode):
 
 @app.post('/api/authenticate')
 async def authenticate(request: Request):
+    logger.info('Authenticating user via GitHub waitlist')
     token = request.headers.get('X-GitHub-Token')
     if not await authenticate_github_user(token):
+        logger.warning('User not authorized via GitHub waitlist')
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content={'error': 'Not authorized via GitHub waitlist'},
         )
+    logger.info('User authenticated via GitHub waitlist')
 
     # Create a signed JWT token with 1-hour expiration
     cookie_data = {

@@ -1,4 +1,5 @@
 import os
+import time
 
 from github import Github
 from github.GithubException import GithubException
@@ -60,6 +61,7 @@ class UserVerifier:
 
     def is_user_allowed(self, username: str) -> bool:
         """Check if user is allowed based on file and/or sheet configuration"""
+        start_time = time.time()
         if not self.is_active():
             return True
 
@@ -70,12 +72,16 @@ class UserVerifier:
                 return True
             logger.debug(f'User {username} not found in text file allowlist')
 
+        logger.info(f'Took {time.time() - start_time:.2f} seconds to check file users')
+
         if self.sheets_client and self.spreadsheet_id:
             sheet_users = self.sheets_client.get_usernames(self.spreadsheet_id)
             if username in sheet_users:
                 logger.debug(f'User {username} found in Google Sheets allowlist')
                 return True
             logger.debug(f'User {username} not found in Google Sheets allowlist')
+
+        logger.info(f'Took {time.time() - start_time:.2f} seconds to check sheet users')
 
         logger.debug(f'User {username} not found in any allowlist')
         return False
@@ -94,7 +100,9 @@ async def authenticate_github_user(auth_token) -> bool:
         logger.warning('No GitHub token provided')
         return False
 
+    start_time = time.time()
     login = await get_github_user(auth_token)
+    logger.info(f'Took {time.time() - start_time:.2f} seconds to get GitHub user')
 
     if not user_verifier.is_user_allowed(login):
         logger.warning(f'GitHub user {login} not in allow list')
