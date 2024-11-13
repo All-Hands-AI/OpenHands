@@ -36,7 +36,7 @@ def split_by_regex(items, regex):
             splits.append(items[k:i])
             k = i
 
-    if k is not None:
+    if k is not None and k < len(items):
         splits.append(items[k:])
 
     return splits
