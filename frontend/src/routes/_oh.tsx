@@ -171,6 +171,8 @@ export default function MainApp() {
         company: user.company,
         name: user.name,
         email: user.email,
+        user: user.login,
+        mode: window.__APP_MODE__ || "oss",
       });
     }
   }, [user]);
