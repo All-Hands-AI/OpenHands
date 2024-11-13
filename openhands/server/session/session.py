@@ -51,7 +51,12 @@ class Session:
 
     def close(self):
         self.is_alive = False
-        self.agent_session.close()
+        try:
+            if self.websocket is not None:
+                self.websocket.close()
+                self.websocket = None
+        finally:
+            self.agent_session.close()
 
     async def loop_recv(self):
         try:
