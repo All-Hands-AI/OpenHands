@@ -598,6 +598,8 @@ def main():
         raise ValueError(f'Output directory {my_args.output_dir} does not exist.')
 
     if my_args.issue_number == 'all_successful':
+        if not github_username:
+            raise ValueError('Github username is required.')
         process_all_successful_issues(
             my_args.output_dir,
             github_token,
@@ -612,6 +614,8 @@ def main():
         issue_number = int(my_args.issue_number)
         output_path = os.path.join(my_args.output_dir, 'output.jsonl')
         resolver_output = load_single_resolver_output(output_path, issue_number)
+        if not github_username:
+            raise ValueError('Github username is required.')
         process_single_issue(
             my_args.output_dir,
             resolver_output,

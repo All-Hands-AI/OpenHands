@@ -326,6 +326,8 @@ def main():
     owner, repo = my_args.repo.split('/')
     token = my_args.token if my_args.token else os.getenv('GITHUB_TOKEN')
     username = my_args.username if my_args.username else os.getenv('GITHUB_USERNAME')
+    if not username:
+        raise ValueError('Github username is required.')
 
     if not token:
         raise ValueError('Github token is required.')
