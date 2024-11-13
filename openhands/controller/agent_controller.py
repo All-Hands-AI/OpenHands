@@ -700,7 +700,6 @@ class AgentController:
 
         # If we have a truncation point, get first user message and then rest of history
         if hasattr(self.state, 'truncation_id') and self.state.truncation_id:
-            # Get events from start_id until we find first user message
             # Find first user message from stream
             first_user_msg = next(
                 (
