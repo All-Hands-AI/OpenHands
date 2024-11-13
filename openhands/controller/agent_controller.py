@@ -756,48 +756,80 @@ class AgentController:
 
     def _apply_conversation_window(self, events: list[Event]) -> list[Event]:
         """Cuts history roughly in half when context window is exceeded, preserving action-observation pairs
-        and non-agent events.
+        and ensuring the first user message is always included.
+
+        The algorithm:
+        1. Cut history in half
+        2. Check first event in new history:
+           - If Observation: find and include its Action
+           - If MessageAction: ensure its related Action-Observation pair isn't split
+        3. Always include the first user message
 
         Args:
             events: List of events to filter
 
         Returns:
-            Filtered list of events keeping only the newest half of pairs
+            Filtered list of events keeping newest half while preserving pairs
         """
         if not events:
             return events
 
-        # First pass: identify all action-observation pairs and their positions
-        pairs = []  # List of (action_idx, obs_idx) tuples
+        # Find first user message - we'll need to ensure it's included
+        first_user_msg = next(
+            (
+                e
+                for e in events
+                if isinstance(e, MessageAction) and e.source == EventSource.USER
+            ),
+            None,
+        )
 
-        for i, event in enumerate(events):
-            # Find observation and its matching action
-            if isinstance(event, Observation) and event.cause:
-                action_idx = next(
+        # Initial cut in half
+        mid_point = len(events) // 2
+        kept_events = events[mid_point:]
+
+        # Handle first event in truncated history
+        if kept_events:
+            first_event = kept_events[0]
+
+            if isinstance(first_event, Observation) and first_event.cause:
+                # Find its action and include it
+                matching_action = next(
                     (
-                        j
-                        for j, e in enumerate(events)
-                        if isinstance(e, Action) and e.id == event.cause
+                        e
+                        for e in events[:mid_point]
+                        if isinstance(e, Action) and e.id == first_event.cause
                     ),
                     None,
                 )
-                if action_idx is not None:
-                    pairs.append((action_idx, i))
+                if matching_action:
+                    kept_events = [matching_action] + kept_events
 
-        # Keep newest half of pairs
-        num_pairs_to_keep = len(pairs) // 2
-        kept_pairs = pairs[-num_pairs_to_keep:] if pairs else []
-        indices_to_keep = {idx for pair in kept_pairs for idx in pair}
+            elif isinstance(first_event, MessageAction):
+                # Look for next observation and ensure its action is included
+                next_obs = next(
+                    (
+                        e
+                        for e in kept_events[1:]
+                        if isinstance(e, Observation) and e.cause
+                    ),
+                    None,
+                )
+                if next_obs:
+                    matching_action = next(
+                        (
+                            e
+                            for e in events[:mid_point]
+                            if isinstance(e, Action) and e.id == next_obs.cause
+                        ),
+                        None,
+                    )
+                    if matching_action:
+                        kept_events = [matching_action] + kept_events
 
-        # Build final history preserving order
-        kept_events = []
-        for i, event in enumerate(events):
-            # Keep non-agent events (like user messages)
-            if not hasattr(event, 'source') or event.source != EventSource.AGENT:
-                kept_events.append(event)
-            # Keep events that are part of kept pairs
-            elif i in indices_to_keep:
-                kept_events.append(event)
+        # Ensure first user message is included
+        if first_user_msg and first_user_msg not in kept_events:
+            kept_events = [first_user_msg] + kept_events
 
         return kept_events
 
