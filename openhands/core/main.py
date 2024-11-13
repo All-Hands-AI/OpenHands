@@ -35,8 +35,8 @@ class FakeUserResponseFunc(Protocol):
     def __call__(
         self,
         state: State,
-        encapsulate_solution: bool = ...,
-        try_parse: Callable[[Action], str] = ...,
+        encapsulate_solution: bool = False,
+        try_parse: Callable[[Action | None], str] | None = None,
     ) -> str: ...
 
 

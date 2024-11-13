@@ -929,7 +929,7 @@ def parse_git_binary_diff(text):
     except AttributeError:
         lines = text
 
-    changes = list()
+    changes: list[Change] = list()
 
     old_version = None
     new_version = None

@@ -1,56 +1,61 @@
-import re
-import os
-from abc import ABC, abstractmethod
-from typing import ClassVar, Any
-import requests
-import litellm
-import jinja2
 import json
+import os
+import re
+from abc import ABC, abstractmethod
+from typing import Any, ClassVar
 
-from openhands.events.event import Event
-from openhands.resolver.github_issue import GithubIssue, ReviewThread
+import jinja2
+import litellm
+import requests
+
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
-
+from openhands.events.event import Event
+from openhands.resolver.github_issue import GithubIssue, ReviewThread
 
 
 class IssueHandlerInterface(ABC):
     issue_type: ClassVar[str]
-    
+
     @abstractmethod
     def get_converted_issues(self, comment_id: int | None = None) -> list[GithubIssue]:
         """Download issues from GitHub."""
         pass
-    
+
     @abstractmethod
-    def get_instruction(self, issue: GithubIssue, prompt_template: str, repo_instruction: str | None = None) -> tuple[str, list[str]]:
+    def get_instruction(
+        self,
+        issue: GithubIssue,
+        prompt_template: str,
+        repo_instruction: str | None = None,
+    ) -> tuple[str, list[str]]:
         """Generate instruction and image urls for the agent."""
         pass
-    
+
     @abstractmethod
-    def guess_success(self, issue: GithubIssue, history: list[Event], llm_config: LLMConfig) -> tuple[bool, list[bool] | None, str]:
+    def guess_success(
+        self, issue: GithubIssue, history: list[Event], llm_config: LLMConfig
+    ) -> tuple[bool, list[bool] | None, str]:
         """Guess if the issue has been resolved based on the agent's output."""
         pass
 
 
-
-    
 class IssueHandler(IssueHandlerInterface):
-    issue_type: ClassVar[str] = "issue"
+    issue_type: ClassVar[str] = 'issue'
 
     def __init__(self, owner: str, repo: str, token: str):
-        self.download_url = "https://api.github.com/repos/{}/{}/issues"
+        self.download_url = 'https://api.github.com/repos/{}/{}/issues'
         self.owner = owner
         self.repo = repo
         self.token = token
-    
+
     def _download_issues_from_github(self) -> list[Any]:
         url = self.download_url.format(self.owner, self.repo)
         headers = {
-            "Authorization": f"token {self.token}",
-            "Accept": "application/vnd.github.v3+json",
+            'Authorization': f'token {self.token}',
+            'Accept': 'application/vnd.github.v3+json',
         }
-        params: dict[str, int | str] = {"state": "open", "per_page": 100, "page": 1}
+        params: dict[str, int | str] = {'state': 'open', 'per_page': 100, 'page': 1}
         all_issues = []
 
         while True:
@@ -64,31 +69,33 @@ class IssueHandler(IssueHandlerInterface):
             if not isinstance(issues, list) or any(
                 [not isinstance(issue, dict) for issue in issues]
             ):
-                raise ValueError("Expected list of dictionaries from Github API.")
+                raise ValueError('Expected list of dictionaries from Github API.')
 
             all_issues.extend(issues)
-            assert isinstance(params["page"], int)
-            params["page"] += 1
+            assert isinstance(params['page'], int)
+            params['page'] += 1
 
         return all_issues
+
     def _extract_image_urls(self, issue_body: str) -> list[str]:
         # Regular expression to match Markdown image syntax ![alt text](image_url)
         image_pattern = r'!\[.*?\]\((https?://[^\s)]+)\)'
         return re.findall(image_pattern, issue_body)
 
     def _extract_issue_references(self, body: str) -> list[int]:
-        pattern = r"#(\d+)"
+        pattern = r'#(\d+)'
         return [int(match) for match in re.findall(pattern, body)]
 
-
-    def _get_issue_comments(self, issue_number: int, comment_id: int | None = None) -> list[str] | None:
+    def _get_issue_comments(
+        self, issue_number: int, comment_id: int | None = None
+    ) -> list[str] | None:
         """Download comments for a specific issue from Github."""
-        url = f"https://api.github.com/repos/{self.owner}/{self.repo}/issues/{issue_number}/comments"
+        url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{issue_number}/comments'
         headers = {
-            "Authorization": f"token {self.token}",
-            "Accept": "application/vnd.github.v3+json",
+            'Authorization': f'token {self.token}',
+            'Accept': 'application/vnd.github.v3+json',
         }
-        params = {"per_page": 100, "page": 1}
+        params = {'per_page': 100, 'page': 1}
         all_comments = []
 
         while True:
@@ -100,16 +107,23 @@ class IssueHandler(IssueHandlerInterface):
                 break
 
             if comment_id:
-                matching_comment = next((comment["body"] for comment in comments if comment["id"] == comment_id), None)
+                matching_comment = next(
+                    (
+                        comment['body']
+                        for comment in comments
+                        if comment['id'] == comment_id
+                    ),
+                    None,
+                )
                 if matching_comment:
                     return [matching_comment]
             else:
-                all_comments.extend([comment["body"] for comment in comments])
+                all_comments.extend([comment['body'] for comment in comments])
 
-            params["page"] += 1
+            params['page'] += 1
 
         return all_comments if all_comments else None
-    
+
     def get_converted_issues(self, comment_id: int | None = None) -> list[GithubIssue]:
         """Download issues from Github.
 
@@ -119,89 +133,109 @@ class IssueHandler(IssueHandlerInterface):
         all_issues = self._download_issues_from_github()
         converted_issues = []
         for issue in all_issues:
-            if any([issue.get(key) is None for key in ["number", "title", "body"]]):
+            if any([issue.get(key) is None for key in ['number', 'title', 'body']]):
                 logger.warning(
-                    f"Skipping issue {issue} as it is missing number, title, or body."
+                    f'Skipping issue {issue} as it is missing number, title, or body.'
                 )
                 continue
 
-            if "pull_request" in issue:
+            if 'pull_request' in issue:
                 continue
-            
+
             # Get issue thread comments
-            thread_comments = self._get_issue_comments(issue["number"], comment_id=comment_id)
+            thread_comments = self._get_issue_comments(
+                issue['number'], comment_id=comment_id
+            )
             # Convert empty lists to None for optional fields
             issue_details = GithubIssue(
-                                owner=self.owner,
-                                repo=self.repo,
-                                number=issue["number"],
-                                title=issue["title"],
-                                body=issue["body"],
-                                thread_comments=thread_comments,
-                                review_comments=None,  # Initialize review comments as None for regular issues
-                            )
-                
+                owner=self.owner,
+                repo=self.repo,
+                number=issue['number'],
+                title=issue['title'],
+                body=issue['body'],
+                thread_comments=thread_comments,
+                review_comments=None,  # Initialize review comments as None for regular issues
+            )
+
             converted_issues.append(issue_details)
 
         return converted_issues
 
-    def get_instruction(self, issue: GithubIssue, prompt_template: str, repo_instruction: str | None = None) -> tuple[str, list[str]]:
+    def get_instruction(
+        self,
+        issue: GithubIssue,
+        prompt_template: str,
+        repo_instruction: str | None = None,
+    ) -> tuple[str, list[str]]:
         """Generate instruction for the agent."""
         # Format thread comments if they exist
-        thread_context = ""
+        thread_context = ''
         if issue.thread_comments:
-            thread_context = "\n\nIssue Thread Comments:\n" + "\n---\n".join(issue.thread_comments)
-        
+            thread_context = '\n\nIssue Thread Comments:\n' + '\n---\n'.join(
+                issue.thread_comments
+            )
+
         images = []
         images.extend(self._extract_image_urls(issue.body))
         images.extend(self._extract_image_urls(thread_context))
 
         template = jinja2.Template(prompt_template)
-        return template.render(body=issue.title + "\n\n" + issue.body + thread_context, repo_instruction=repo_instruction), images
+        return (
+            template.render(
+                body=issue.title + '\n\n' + issue.body + thread_context,
+                repo_instruction=repo_instruction,
+            ),
+            images,
+        )
 
-
-
-
-    def guess_success(self, issue: GithubIssue, history: list[Event], llm_config: LLMConfig) -> tuple[bool, None | list[bool], str]:
+    def guess_success(
+        self, issue: GithubIssue, history: list[Event], llm_config: LLMConfig
+    ) -> tuple[bool, None | list[bool], str]:
         """Guess if the issue is fixed based on the history and the issue description."""
         last_message = history[-1].message
         # Include thread comments in the prompt if they exist
         issue_context = issue.body
         if issue.thread_comments:
-            issue_context += "\n\nIssue Thread Comments:\n" + "\n---\n".join(issue.thread_comments)
-            
-        with open(os.path.join(os.path.dirname(__file__), "prompts/guess_success/issue-success-check.jinja"), 'r') as f:
+            issue_context += '\n\nIssue Thread Comments:\n' + '\n---\n'.join(
+                issue.thread_comments
+            )
+
+        with open(
+            os.path.join(
+                os.path.dirname(__file__),
+                'prompts/guess_success/issue-success-check.jinja',
+            ),
+            'r',
+        ) as f:
             template = jinja2.Template(f.read())
         prompt = template.render(issue_context=issue_context, last_message=last_message)
 
         response = litellm.completion(
-
             model=llm_config.model,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{'role': 'user', 'content': prompt}],
             api_key=llm_config.api_key,
             base_url=llm_config.base_url,
         )
-        
+
         answer = response.choices[0].message.content.strip()
         pattern = r'--- success\n*(true|false)\n*--- explanation*\n((?:.|\n)*)'
         match = re.search(pattern, answer)
         if match:
             return match.group(1).lower() == 'true', None, match.group(2)
-        
-        return False, None, f"Failed to decode answer from LLM response: {answer}"
 
+        return False, None, f'Failed to decode answer from LLM response: {answer}'
 
 
 class PRHandler(IssueHandler):
-    issue_type: ClassVar[str] = "pr"
+    issue_type: ClassVar[str] = 'pr'
 
     def __init__(self, owner: str, repo: str, token: str):
         super().__init__(owner, repo, token)
-        self.download_url = "https://api.github.com/repos/{}/{}/pulls"
+        self.download_url = 'https://api.github.com/repos/{}/{}/pulls'
 
-
-
-    def __download_pr_metadata(self, pull_number: int, comment_id: int | None = None) -> tuple[list[str], list[int], list[str], list[ReviewThread], list[str]]:
+    def __download_pr_metadata(
+        self, pull_number: int, comment_id: int | None = None
+    ) -> tuple[list[str], list[int], list[str], list[ReviewThread], list[str]]:
         """Run a GraphQL query against the GitHub API for information.
 
         Retrieves information about:
@@ -261,85 +295,102 @@ class PRHandler(IssueHandler):
                 }
             """
 
+        variables = {'owner': self.owner, 'repo': self.repo, 'pr': pull_number}
 
-
-        variables = {
-            "owner": self.owner,
-            "repo": self.repo,
-            "pr": pull_number
-        }
-
-        url = "https://api.github.com/graphql"
+        url = 'https://api.github.com/graphql'
         headers = {
-            "Authorization": f"Bearer {self.token}",
-            "Content-Type": "application/json"
+            'Authorization': f'Bearer {self.token}',
+            'Content-Type': 'application/json',
         }
-        
-        response = requests.post(url, json={"query": query, "variables": variables}, headers=headers)
+
+        response = requests.post(
+            url, json={'query': query, 'variables': variables}, headers=headers
+        )
         response.raise_for_status()
         response_json = response.json()
 
         # Parse the response to get closing issue references and unresolved review comments
-        pr_data = response_json.get("data", {}).get("repository", {}).get("pullRequest", {})
+        pr_data = (
+            response_json.get('data', {}).get('repository', {}).get('pullRequest', {})
+        )
 
         # Get closing issues
-        closing_issues = pr_data.get("closingIssuesReferences", {}).get("edges", [])
-        closing_issues_bodies = [issue["node"]["body"] for issue in closing_issues]
-        closing_issue_numbers = [issue["node"]["number"] for issue in closing_issues]  # Extract issue numbers
+        closing_issues = pr_data.get('closingIssuesReferences', {}).get('edges', [])
+        closing_issues_bodies = [issue['node']['body'] for issue in closing_issues]
+        closing_issue_numbers = [
+            issue['node']['number'] for issue in closing_issues
+        ]  # Extract issue numbers
 
         # Get review comments
-        reviews = pr_data.get("reviews", {}).get("nodes", [])
+        reviews = pr_data.get('reviews', {}).get('nodes', [])
         if comment_id is not None:
-            reviews = [review for review in reviews if int(review["fullDatabaseId"]) == comment_id]
-        review_bodies = [review["body"] for review in reviews]
+            reviews = [
+                review
+                for review in reviews
+                if int(review['fullDatabaseId']) == comment_id
+            ]
+        review_bodies = [review['body'] for review in reviews]
 
         # Get unresolved review threads
         review_threads = []
         thread_ids = []  # Store thread IDs; agent replies to the thread
-        raw_review_threads = pr_data.get("reviewThreads", {}).get("edges", [])
+        raw_review_threads = pr_data.get('reviewThreads', {}).get('edges', [])
         for thread in raw_review_threads:
-            node = thread.get("node", {})
-            if not node.get("isResolved", True):  # Check if the review thread is unresolved
-                id = node.get("id")
+            node = thread.get('node', {})
+            if not node.get(
+                'isResolved', True
+            ):  # Check if the review thread is unresolved
+                id = node.get('id')
                 thread_contains_comment_id = False
-                my_review_threads = node.get("comments", {}).get("nodes", [])
-                message = ""
+                my_review_threads = node.get('comments', {}).get('nodes', [])
+                message = ''
                 files = []
                 for i, review_thread in enumerate(my_review_threads):
-                    if comment_id is not None and int(review_thread["fullDatabaseId"]) == comment_id:
+                    if (
+                        comment_id is not None
+                        and int(review_thread['fullDatabaseId']) == comment_id
+                    ):
                         thread_contains_comment_id = True
 
-                    if i == len(my_review_threads) - 1:  # Check if it's the last thread in the thread
+                    if (
+                        i == len(my_review_threads) - 1
+                    ):  # Check if it's the last thread in the thread
                         if len(my_review_threads) > 1:
-                            message += "---\n"  # Add "---" before the last message if there's more than one thread
-                        message += "latest feedback:\n" + review_thread["body"] + "\n"
+                            message += '---\n'  # Add "---" before the last message if there's more than one thread
+                        message += 'latest feedback:\n' + review_thread['body'] + '\n'
                     else:
-                        message += review_thread["body"] + "\n"  # Add each thread in a new line
-                    
-                    file = review_thread.get("path")
+                        message += (
+                            review_thread['body'] + '\n'
+                        )  # Add each thread in a new line
+
+                    file = review_thread.get('path')
                     if file and file not in files:
                         files.append(file)
 
                 if comment_id is None or thread_contains_comment_id:
-                    unresolved_thread = ReviewThread(
-                        comment=message,
-                        files=files
-                    )
+                    unresolved_thread = ReviewThread(comment=message, files=files)
                     review_threads.append(unresolved_thread)
                     thread_ids.append(id)
 
-        return closing_issues_bodies, closing_issue_numbers, review_bodies, review_threads, thread_ids
-
+        return (
+            closing_issues_bodies,
+            closing_issue_numbers,
+            review_bodies,
+            review_threads,
+            thread_ids,
+        )
 
     # Override processing of downloaded issues
-    def _get_pr_comments(self, pr_number: int, comment_id: int | None = None) -> list[str] | None:
+    def _get_pr_comments(
+        self, pr_number: int, comment_id: int | None = None
+    ) -> list[str] | None:
         """Download comments for a specific pull request from Github."""
-        url = f"https://api.github.com/repos/{self.owner}/{self.repo}/issues/{pr_number}/comments"
+        url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{pr_number}/comments'
         headers = {
-            "Authorization": f"token {self.token}",
-            "Accept": "application/vnd.github.v3+json",
+            'Authorization': f'token {self.token}',
+            'Accept': 'application/vnd.github.v3+json',
         }
-        params = {"per_page": 100, "page": 1}
+        params = {'per_page': 100, 'page': 1}
         all_comments = []
 
         while True:
@@ -349,27 +400,34 @@ class PRHandler(IssueHandler):
 
             if not comments:
                 break
-            
+
             if comment_id is not None:
-                matching_comment = next((comment["body"] for comment in comments if comment["id"] == comment_id), None)
+                matching_comment = next(
+                    (
+                        comment['body']
+                        for comment in comments
+                        if comment['id'] == comment_id
+                    ),
+                    None,
+                )
                 if matching_comment:
                     return [matching_comment]
             else:
-                all_comments.extend([comment["body"] for comment in comments])
+                all_comments.extend([comment['body'] for comment in comments])
 
-            params["page"] += 1
+            params['page'] += 1
 
         return all_comments if all_comments else None
 
     def __get_context_from_external_issues_references(
-            self, 
-            closing_issues: list[str],
-            closing_issue_numbers: list[int],
-            issue_body: str,
-            review_comments: list[str],
-            review_threads: list[ReviewThread],
-            thread_comments: list[str] | None
-        ):
+        self,
+        closing_issues: list[str],
+        closing_issue_numbers: list[int],
+        issue_body: str,
+        review_comments: list[str],
+        review_threads: list[ReviewThread],
+        thread_comments: list[str] | None,
+    ):
         new_issue_references = []
 
         if issue_body:
@@ -378,32 +436,37 @@ class PRHandler(IssueHandler):
         if review_comments:
             for comment in review_comments:
                 new_issue_references.extend(self._extract_issue_references(comment))
-        
+
         if review_threads:
             for review_thread in review_threads:
-                new_issue_references.extend(self._extract_issue_references(review_thread.comment))
+                new_issue_references.extend(
+                    self._extract_issue_references(review_thread.comment)
+                )
 
         if thread_comments:
             for thread_comment in thread_comments:
-                new_issue_references.extend(self._extract_issue_references(thread_comment))
-        
+                new_issue_references.extend(
+                    self._extract_issue_references(thread_comment)
+                )
+
         non_duplicate_references = set(new_issue_references)
-        unique_issue_references = non_duplicate_references.difference(closing_issue_numbers)
+        unique_issue_references = non_duplicate_references.difference(
+            closing_issue_numbers
+        )
 
         for issue_number in unique_issue_references:
-            url = f"https://api.github.com/repos/{self.owner}/{self.repo}/issues/{issue_number}"
+            url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{issue_number}'
             headers = {
-                "Authorization": f"Bearer {self.token}",
-                "Accept": "application/vnd.github.v3+json",
+                'Authorization': f'Bearer {self.token}',
+                'Accept': 'application/vnd.github.v3+json',
             }
             response = requests.get(url, headers=headers)
             response.raise_for_status()
             issue_data = response.json()
-            issue_body = issue_data.get("body", "")
+            issue_body = issue_data.get('body', '')
             if issue_body:
                 closing_issues.append(issue_body)
 
-        
         return closing_issues
 
     def get_converted_issues(self, comment_id: int | None = None) -> list[GithubIssue]:
@@ -411,55 +474,66 @@ class PRHandler(IssueHandler):
         converted_issues = []
         for issue in all_issues:
             # For PRs, body can be None
-            if any([issue.get(key) is None for key in ["number", "title"]]):
-                logger.warning(
-                    f"Skipping #{issue} as it is missing number or title."
-                )
-                continue            
+            if any([issue.get(key) is None for key in ['number', 'title']]):
+                logger.warning(f'Skipping #{issue} as it is missing number or title.')
+                continue
 
             # Handle None body for PRs
-            body = issue.get("body") if issue.get("body") is not None else ""
-            closing_issues, closing_issues_numbers, review_comments, review_threads, thread_ids = self.__download_pr_metadata(issue["number"], comment_id=comment_id)
-            head_branch = issue["head"]["ref"]
+            body = issue.get('body') if issue.get('body') is not None else ''
+            (
+                closing_issues,
+                closing_issues_numbers,
+                review_comments,
+                review_threads,
+                thread_ids,
+            ) = self.__download_pr_metadata(issue['number'], comment_id=comment_id)
+            head_branch = issue['head']['ref']
 
             # Get PR thread comments
-            thread_comments = self._get_pr_comments(issue["number"], comment_id=comment_id)
+            thread_comments = self._get_pr_comments(
+                issue['number'], comment_id=comment_id
+            )
 
+            closing_issues = self.__get_context_from_external_issues_references(
+                closing_issues,
+                closing_issues_numbers,
+                body,
+                review_comments,
+                review_threads,
+                thread_comments,
+            )
 
-            closing_issues = self.__get_context_from_external_issues_references(closing_issues, 
-                                                                                closing_issues_numbers, 
-                                                                                body,
-                                                                                review_comments, 
-                                                                                review_threads,
-                                                                                thread_comments)
-            
             issue_details = GithubIssue(
-                                owner=self.owner,
-                                repo=self.repo,
-                                number=issue["number"],
-                                title=issue["title"],
-                                body=body,
-                                closing_issues=closing_issues,
-                                review_comments=review_comments,
-                                review_threads=review_threads,
-                                thread_ids=thread_ids,
-                                head_branch=head_branch,
-                                thread_comments=thread_comments
-                            )
-            
+                owner=self.owner,
+                repo=self.repo,
+                number=issue['number'],
+                title=issue['title'],
+                body=body,
+                closing_issues=closing_issues,
+                review_comments=review_comments,
+                review_threads=review_threads,
+                thread_ids=thread_ids,
+                head_branch=head_branch,
+                thread_comments=thread_comments,
+            )
+
             converted_issues.append(issue_details)
 
         return converted_issues
 
-
-    def get_instruction(self, issue: GithubIssue, prompt_template: str, repo_instruction: str | None = None) -> tuple[str, list[str]]:
+    def get_instruction(
+        self,
+        issue: GithubIssue,
+        prompt_template: str,
+        repo_instruction: str | None = None,
+    ) -> tuple[str, list[str]]:
         """Generate instruction for the agent."""
         template = jinja2.Template(prompt_template)
         images = []
 
         issues_str = None
         if issue.closing_issues:
-            issues_str = json.dumps(issue.closing_issues, indent=4) 
+            issues_str = json.dumps(issue.closing_issues, indent=4)
             images.extend(self._extract_image_urls(issues_str))
 
         # Handle PRs with review comments
@@ -472,94 +546,135 @@ class PRHandler(IssueHandler):
         review_thread_str = None
         review_thread_file_str = None
         if issue.review_threads:
-            review_threads = [review_thread.comment for review_thread in issue.review_threads]
+            review_threads = [
+                review_thread.comment for review_thread in issue.review_threads
+            ]
             review_thread_files = []
             for review_thread in issue.review_threads:
                 review_thread_files.extend(review_thread.files)
             review_thread_str = json.dumps(review_threads, indent=4)
             review_thread_file_str = json.dumps(review_thread_files, indent=4)
             images.extend(self._extract_image_urls(review_thread_str))
-        
+
         # Format thread comments if they exist
-        thread_context = ""
+        thread_context = ''
         if issue.thread_comments:
-            thread_context = "\n\nPR Thread Comments:\n" + "\n---\n".join(issue.thread_comments)
+            thread_context = '\n\nPR Thread Comments:\n' + '\n---\n'.join(
+                issue.thread_comments
+            )
             images.extend(self._extract_image_urls(thread_context))
 
         instruction = template.render(
-            issues=issues_str, 
-            review_comments=review_comments_str, 
-            review_threads=review_thread_str, 
-            files=review_thread_file_str, 
+            issues=issues_str,
+            review_comments=review_comments_str,
+            review_threads=review_thread_str,
+            files=review_thread_file_str,
             thread_context=thread_context,
-            repo_instruction=repo_instruction
+            repo_instruction=repo_instruction,
         )
         return instruction, images
-    
 
-    def _check_feedback_with_llm(self, prompt: str, llm_config: LLMConfig) -> tuple[bool, str]:
+    def _check_feedback_with_llm(
+        self, prompt: str, llm_config: LLMConfig
+    ) -> tuple[bool, str]:
         """Helper function to check feedback with LLM and parse response."""
         response = litellm.completion(
             model=llm_config.model,
-            messages=[{"role": "user", "content": prompt}],
+            messages=[{'role': 'user', 'content': prompt}],
             api_key=llm_config.api_key,
             base_url=llm_config.base_url,
         )
-        
+
         answer = response.choices[0].message.content.strip()
         pattern = r'--- success\n*(true|false)\n*--- explanation*\n((?:.|\n)*)'
         match = re.search(pattern, answer)
         if match:
             return match.group(1).lower() == 'true', match.group(2).strip()
-        return False, f"Failed to decode answer from LLM response: {answer}"
+        return False, f'Failed to decode answer from LLM response: {answer}'
 
-    def _check_review_thread(self, review_thread: ReviewThread, issues_context: str, last_message: str, llm_config: LLMConfig) -> tuple[bool, str]:
+    def _check_review_thread(
+        self,
+        review_thread: ReviewThread,
+        issues_context: str,
+        last_message: str,
+        llm_config: LLMConfig,
+    ) -> tuple[bool, str]:
         """Check if a review thread's feedback has been addressed."""
         files_context = json.dumps(review_thread.files, indent=4)
-        
-        with open(os.path.join(os.path.dirname(__file__), "prompts/guess_success/pr-feedback-check.jinja"), 'r') as f:
+
+        with open(
+            os.path.join(
+                os.path.dirname(__file__),
+                'prompts/guess_success/pr-feedback-check.jinja',
+            ),
+            'r',
+        ) as f:
             template = jinja2.Template(f.read())
-        
+
         prompt = template.render(
             issue_context=issues_context,
             feedback=review_thread.comment,
             files_context=files_context,
             last_message=last_message,
         )
-        
+
         return self._check_feedback_with_llm(prompt, llm_config)
 
-    def _check_thread_comments(self, thread_comments: list[str], issues_context: str, last_message: str, llm_config: LLMConfig) -> tuple[bool, str]:
+    def _check_thread_comments(
+        self,
+        thread_comments: list[str],
+        issues_context: str,
+        last_message: str,
+        llm_config: LLMConfig,
+    ) -> tuple[bool, str]:
         """Check if thread comments feedback has been addressed."""
-        thread_context = "\n---\n".join(thread_comments)
-        
-        with open(os.path.join(os.path.dirname(__file__), "prompts/guess_success/pr-thread-check.jinja"), 'r') as f:
+        thread_context = '\n---\n'.join(thread_comments)
+
+        with open(
+            os.path.join(
+                os.path.dirname(__file__), 'prompts/guess_success/pr-thread-check.jinja'
+            ),
+            'r',
+        ) as f:
             template = jinja2.Template(f.read())
-        
+
         prompt = template.render(
             issue_context=issues_context,
             thread_context=thread_context,
             last_message=last_message,
         )
-        
+
         return self._check_feedback_with_llm(prompt, llm_config)
 
-    def _check_review_comments(self, review_comments: list[str], issues_context: str, last_message: str, llm_config: LLMConfig) -> tuple[bool, str]:
+    def _check_review_comments(
+        self,
+        review_comments: list[str],
+        issues_context: str,
+        last_message: str,
+        llm_config: LLMConfig,
+    ) -> tuple[bool, str]:
         """Check if review comments feedback has been addressed."""
-        review_context = "\n---\n".join(review_comments)
-        
-        with open(os.path.join(os.path.dirname(__file__), "prompts/guess_success/pr-review-check.jinja"), 'r') as f:
+        review_context = '\n---\n'.join(review_comments)
+
+        with open(
+            os.path.join(
+                os.path.dirname(__file__), 'prompts/guess_success/pr-review-check.jinja'
+            ),
+            'r',
+        ) as f:
             template = jinja2.Template(f.read())
-        
+
         prompt = template.render(
             issue_context=issues_context,
             review_context=review_context,
             last_message=last_message,
         )
-        
+
         return self._check_feedback_with_llm(prompt, llm_config)
 
-    def guess_success(self, issue: GithubIssue, history: list[Event], llm_config: LLMConfig) -> tuple[bool, None | list[bool], str]:
+    def guess_success(
+        self, issue: GithubIssue, history: list[Event], llm_config: LLMConfig
+    ) -> tuple[bool, None | list[bool], str]:
         """Guess if the issue is fixed based on the history and the issue description."""
         last_message = history[-1].message
         issues_context = json.dumps(issue.closing_issues, indent=4)
@@ -569,36 +684,39 @@ class PRHandler(IssueHandler):
         # Handle PRs with file-specific review comments
         if issue.review_threads:
             for review_thread in issue.review_threads:
-                success, explanation = self._check_review_thread(review_thread, issues_context, last_message, llm_config)
+                if issues_context and last_message:
+                    success, explanation = self._check_review_thread(
+                        review_thread, issues_context, last_message, llm_config
+                    )
+                else:
+                    success, explanation = False, "Missing context or message"
                 success_list.append(success)
                 explanation_list.append(explanation)
         # Handle PRs with only thread comments (no file-specific review comments)
         elif issue.thread_comments:
-            success, explanation = self._check_thread_comments(issue.thread_comments, issues_context, last_message, llm_config)
+            if issue.thread_comments and issues_context and last_message:
+                success, explanation = self._check_thread_comments(
+                    issue.thread_comments, issues_context, last_message, llm_config
+                )
+            else:
+                success, explanation = False, "Missing thread comments, context or message"
             success_list.append(success)
             explanation_list.append(explanation)
         elif issue.review_comments:
             # Handle PRs with only review comments (no file-specific review comments or thread comments)
-            success, explanation = self._check_review_comments(issue.review_comments, issues_context, last_message, llm_config)
+            if issue.review_comments and issues_context and last_message:
+                success, explanation = self._check_review_comments(
+                    issue.review_comments, issues_context, last_message, llm_config
+                )
+            else:
+                success, explanation = False, "Missing review comments, context or message"
             success_list.append(success)
             explanation_list.append(explanation)
         else:
             # No review comments, thread comments, or file-level review comments found
-            return False, None, "No feedback was found to process"
-            
+            return False, None, 'No feedback was found to process'
+
         # Return overall success (all must be true) and explanations
         if not success_list:
-            return False, None, "No feedback was processed"
-        return all(success_list), success_list, "\n".join(explanation_list)
-
-
-
-
-
-
-
-
-
-
-
-
+            return False, None, 'No feedback was processed'
+        return all(success_list), success_list, '\n'.join(explanation_list)
