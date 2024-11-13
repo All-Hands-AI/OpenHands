@@ -971,11 +971,12 @@ def parse_git_binary_diff(text):
                 assert len(line) >= 6 and ((len(line) - 1) % 5) == 0
                 new_encoded += line[1:]
             elif 0 == len(line):
-                decoded = base64.b85decode(new_encoded)
-                added_data = zlib.decompress(decoded)
-                assert new_size == len(added_data)
-                change = Change(None, 0, added_data, None)
-                changes.append(change)
+                if new_encoded:
+                    decoded = base64.b85decode(new_encoded)
+                    added_data = zlib.decompress(decoded)
+                    assert new_size == len(added_data)
+                    change = Change(None, 0, added_data, None)
+                    changes.append(change)
                 new_size = 0
                 new_encoded = ""
             else:
@@ -998,11 +999,12 @@ def parse_git_binary_diff(text):
                 assert len(line) >= 6 and ((len(line) - 1) % 5) == 0
                 old_encoded += line[1:]
             elif 0 == len(line):
-                decoded = base64.b85decode(old_encoded)
-                removed_data = zlib.decompress(decoded)
-                assert old_size == len(removed_data)
-                change = Change(0, None, None, removed_data)
-                changes.append(change)
+                if old_encoded:
+                    decoded = base64.b85decode(old_encoded)
+                    removed_data = zlib.decompress(decoded)
+                    assert old_size == len(removed_data)
+                    change = Change(0, None, None, removed_data)
+                    changes.append(change)
                 old_size = 0
                 old_encoded = ""
             else:

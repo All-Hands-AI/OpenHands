@@ -31,17 +31,15 @@ def split_by_regex(items, regex):
         splits.append(items)
         return splits
 
-    k = None
-    for i in indices:
-        if k is None:
-            splits.append(items[0:i])
-            k = i
-        else:
-            splits.append(items[k:i])
-            k = i
+    # Add first chunk before first match
+    splits.append(items[0:indices[0]])
 
-    if k is not None and k < len(items):
-        splits.append(items[k:])
+    # Add chunks between matches
+    for i in range(len(indices) - 1):
+        splits.append(items[indices[i]:indices[i + 1]])
+
+    # Add final chunk after last match
+    splits.append(items[indices[-1]:])
 
     return splits
 
