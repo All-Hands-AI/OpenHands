@@ -5,6 +5,7 @@ import traceback
 from typing import Callable, ClassVar, Type
 
 import litellm
+from litellm.exceptions import ContextWindowExceededError
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State, TrafficControlState
@@ -276,43 +277,11 @@ class AgentController:
             and len(self.state.history)
             > self.agent.llm.config.max_conversation_window * 2
         ):
-            self._trim_history()
-
-            # Find first agent action in history
-            first_agent_action_idx = None
-            for i, event in enumerate(self.state.history):
-                if (
-                    isinstance(event, Action)
-                    and event.source is not None
-                    and event.source == EventSource.AGENT
-                ):
-                    first_agent_action_idx = i
-                    break
-
-            if first_agent_action_idx is not None:
-                # Find its matching observation
-                action_id = self.state.history[first_agent_action_idx].id
-                matching_obs_idx = None
-
-                for i, event in enumerate(
-                    self.state.history[first_agent_action_idx + 1 :],
-                    first_agent_action_idx + 1,
-                ):
-                    if isinstance(event, Observation) and event.cause == action_id:
-                        matching_obs_idx = i
-                        break
-
-                if matching_obs_idx is not None:
-                    # Remove only the action and its matching observation
-                    self.state.history = (
-                        self.state.history[
-                            :first_agent_action_idx
-                        ]  # Events before action
-                        + self.state.history[
-                            first_agent_action_idx + 1 : matching_obs_idx
-                        ]  # Events between action and obs
-                        + self.state.history[matching_obs_idx + 1 :]  # Events after obs
-                    )
+            self._apply_conversation_window(
+                self.state.history,
+                window_size=len(self.state.history)
+                // 4,  # Half the pairs (each pair is 2 events)
+            )
 
         if self._pending_action and self._pending_action.id == observation.cause:
             self._pending_action = None
@@ -529,6 +498,15 @@ class AgentController:
                 ),
                 EventSource.AGENT,
             )
+            return
+        except ContextWindowExceededError:
+            # When context window is exceeded, apply window to keep newest half of agent interactions
+            self.state.history = self._apply_conversation_window(
+                self.state.history,
+                window_size=len(self.state.history)
+                // 4,  # Half the pairs (each pair is 2 events)
+            )
+            # Don't add error event - let the agent retry with reduced context
             return
 
         if action.runnable:
@@ -792,20 +770,25 @@ class AgentController:
         # apply conversation window if configured
         self.state.history = self._apply_conversation_window(self.state.history)
 
-    def _apply_conversation_window(self, events: list[Event]) -> list[Event]:
-        """Applies conversation window limit to events list if configured.
+    def _apply_conversation_window(
+        self, events: list[Event], window_size: int | None = None
+    ) -> list[Event]:
+        """Applies conversation window limit to events list.
+        Used when loading initial history or when context window is exceeded.
 
         Args:
             events: List of events to filter
+            window_size: Number of action-observation pairs to keep. If None, uses max_conversation_window from config.
 
         Returns:
-            Filtered list of events respecting max_conversation_window if set
+            Filtered list of events keeping only the newest pairs within window
         """
-        if not self.agent.llm.config.max_conversation_window:
-            return events
+        if window_size is None:
+            if not self.agent.llm.config.max_conversation_window:
+                return events
+            window_size = self.agent.llm.config.max_conversation_window
 
         # count action-observation pairs from newest to oldest
-        window_size = self.agent.llm.config.max_conversation_window
         kept_events = []
         action_obs_pairs = 0
 
@@ -838,47 +821,6 @@ class AgentController:
 
         # restore original order
         return list(reversed(kept_events))
-
-    def _trim_history(self):
-        """Trims the history to the conversation window size."""
-        if self.agent.llm.config.max_conversation_window is None:
-            return
-
-        max_window_size = self.agent.llm.config.max_conversation_window * 2
-
-        # find the first observation in history, which has a cause
-        # and whose cause is an action with source=agent
-        # or agent messages
-        oldest_obs = None
-        for event in self.state.history:
-            # find an old agent action and obs
-            if isinstance(event, Observation) and event.cause is not None:
-                oldest_obs_cause = event.cause
-                if (
-                    isinstance(oldest_obs_cause, Action)
-                    and oldest_obs_cause.source is not None
-                    and oldest_obs_cause.source == EventSource.AGENT
-                ):
-                    oldest_obs = event
-                    # clean up this pair
-                    self.state.history = [
-                        ev
-                        for ev in self.state.history
-                        if ev.id not in (oldest_obs.id, oldest_obs_cause.id)
-                    ]
-
-                    # if conversation window is now satisfied, break
-                    if len(self.state.history) <= max_window_size:
-                        break
-            # or find an old agent message
-            elif isinstance(event, MessageAction) and event.source == EventSource.AGENT:
-                # clean it up
-                self.state.history = [
-                    ev for ev in self.state.history if ev.id != event.id
-                ]
-                # if conversation window is now satisfied, break
-                if len(self.state.history) <= max_window_size:
-                    break
 
     def _is_stuck(self):
         """Checks if the agent or its delegate is stuck in a loop.
