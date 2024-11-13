@@ -1,3 +1,4 @@
+import asyncio
 from collections import defaultdict
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
@@ -51,8 +52,9 @@ class InMemoryRateLimiter:
     history: dict
     requests: int
     seconds: int
+    sleep_seconds: int
 
-    def __init__(self, requests: int = 2, seconds: int = 1):
+    def __init__(self, requests: int = 2, seconds: int = 1, sleep_seconds: int = 1):
         self.requests = requests
         self.seconds = seconds
         self.history = defaultdict(list)
@@ -63,16 +65,22 @@ class InMemoryRateLimiter:
         self.history[key] = [ts for ts in self.history[key] if ts > cutoff]
 
     async def __call__(self, request: Request) -> bool:
-        print('CALL', request.client.host)
         key = request.client.host
         now = datetime.now()
 
         self._clean_old_requests(key)
 
-        if len(self.history[key]) >= self.requests:
-            return False
-
         self.history[key].append(now)
+
+        if len(self.history[key]) > self.requests * 2:
+            return False
+        elif len(self.history[key]) > self.requests:
+            if self.sleep_seconds > 0:
+                await asyncio.sleep(self.sleep_seconds)
+                return True
+            else:
+                return False
+
         return True
 
 
