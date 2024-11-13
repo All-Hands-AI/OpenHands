@@ -982,13 +982,13 @@ async def connect(session_id: str, environ):
 
 
 @sio.event
-async def oh_action(session_id: str, data: str):
+async def oh_action(session_id: str, data: dict):
 
     logger.info(f"sio:oh_action:{session_id}")
     session = session_manager.get_existing_session(session_id)
     if session is None:
         raise ValueError(f'no_such_session_id:{session_id}')
-    await session.dispatch(json.loads(data))
+    await session.dispatch(data)
     # session.on_event(event_from_dict(json.loads(data)))
 
 
