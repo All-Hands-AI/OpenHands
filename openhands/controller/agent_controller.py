@@ -705,7 +705,7 @@ class AgentController:
                 (
                     e
                     for e in self.event_stream.get_events(
-                        start_id=self.state.start_id if self.state.start_id >= 0 else 0,
+                        start_id=start_id,
                         end_id=end_id,
                         reverse=False,
                         filter_out_type=self.filter_out,
@@ -718,28 +718,20 @@ class AgentController:
             if first_user_msg:
                 events.append(first_user_msg)
 
-            # Get rest of history from truncation point
-            truncated_events = list(
-                self.event_stream.get_events(
-                    start_id=self.state.truncation_id,
-                    end_id=end_id,
-                    reverse=False,
-                    filter_out_type=self.filter_out,
-                    filter_hidden=True,
-                )
+            # the rest of the events are from the truncation point
+            start_id = self.state.truncation_id
+
+        # Get rest of history
+        events_to_add = list(
+            self.event_stream.get_events(
+                start_id=start_id,
+                end_id=end_id,
+                reverse=False,
+                filter_out_type=self.filter_out,
+                filter_hidden=True,
             )
-            events.extend(truncated_events)
-        else:
-            # Normal loading from start_id
-            events = list(
-                self.event_stream.get_events(
-                    start_id=start_id,
-                    end_id=end_id,
-                    reverse=False,
-                    filter_out_type=self.filter_out,
-                    filter_hidden=True,
-                )
-            )
+        )
+        events.extend(events_to_add)
 
         # Find all delegate action/observation pairs
         delegate_ranges: list[tuple[int, int]] = []
