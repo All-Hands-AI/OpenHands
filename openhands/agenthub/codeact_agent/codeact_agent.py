@@ -1,7 +1,6 @@
 import json
 import os
 from collections import deque
-from itertools import islice
 
 from litellm import ModelResponse
 
@@ -103,15 +102,21 @@ class CodeActAgent(Agent):
                 f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
             )
             self.prompt_manager = PromptManager(
-                microagent_dir=os.path.join(os.path.dirname(__file__), 'micro') if self.config.use_microagents else None,
+                microagent_dir=os.path.join(os.path.dirname(__file__), 'micro')
+                if self.config.use_microagents
+                else None,
                 prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts', 'tools'),
                 disabled_microagents=self.config.disabled_microagents,
             )
         else:
             self.action_parser = CodeActResponseParser()
             self.prompt_manager = PromptManager(
-                microagent_dir=os.path.join(os.path.dirname(__file__), 'micro') if self.config.use_microagents else None,
-                prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts', 'default'),
+                microagent_dir=os.path.join(os.path.dirname(__file__), 'micro')
+                if self.config.use_microagents
+                else None,
+                prompt_dir=os.path.join(
+                    os.path.dirname(__file__), 'prompts', 'default'
+                ),
                 agent_skills_docs=AgentSkillsRequirement.documentation,
                 disabled_microagents=self.config.disabled_microagents,
             )

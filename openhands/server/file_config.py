@@ -1,7 +1,15 @@
 import os
+import re
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.shared import config
+
+FILES_TO_IGNORE = [
+    '.git/',
+    '.DS_Store',
+    'node_modules/',
+    '__pycache__/',
+]
 
 
 def load_file_upload_config() -> tuple[int, bool, list[str]]:
@@ -84,3 +92,17 @@ def is_extension_allowed(filename):
         or file_ext in (ext.lower() for ext in ALLOWED_EXTENSIONS)
         or (file_ext == '' and '.' in ALLOWED_EXTENSIONS)
     )
+
+
+def sanitize_filename(filename):
+    """Sanitize the filename to prevent directory traversal"""
+    # Remove any directory components
+    filename = os.path.basename(filename)
+    # Remove any non-alphanumeric characters except for .-_
+    filename = re.sub(r'[^\w\-_\.]', '', filename)
+    # Limit the filename length
+    max_length = 255
+    if len(filename) > max_length:
+        name, ext = os.path.splitext(filename)
+        filename = name[: max_length - len(ext)] + ext
+    return filename

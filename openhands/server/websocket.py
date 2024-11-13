@@ -23,7 +23,7 @@ from openhands.server.shared import config, session_manager
 app = FastAPI()
 
 
-@app.websocket('/ws')
+@app.websocket('/')
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for receiving events from the client (i.e., the browser).
     Once connected, the client can send various actions:
