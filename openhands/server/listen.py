@@ -931,7 +931,8 @@ async def connect(session_id: str, environ):
     if not await authenticate_github_user(github_token):
         raise RuntimeError(status.WS_1008_POLICY_VIOLATION)
     
-    logger.info("TODO: Session work here...")
+    # Read fails because not started!
+    
     await session.send({'token': jwt_token, 'status': 'ok'})
 
     latest_event_id = int(environ.get('HTTP_LATEST_EVENT_ID', -1))

@@ -20,7 +20,7 @@ class SessionManager:
 
     def add_or_restart_session(self, sid: str, ws_conn: WebSocket) -> Session:
         session = Session(
-            sid=sid, file_store=self.file_store, ws=ws_conn, config=self.config
+            sid=sid, file_store=self.file_store, ws=ws_conn, config=self.config, sio=None
         )
         self.sessions[sid] = session
         return session
@@ -51,7 +51,7 @@ class SessionManager:
     
     def add_new_session(self, sio: socketio.AsyncServer | None, sid: str = None):
         session = Session(
-            sid=sid, file_store=self.file_store, config=self.config, sio=sio
+            sid=sid, file_store=self.file_store, config=self.config, sio=sio, ws=None
         )
         self.sessions[sid] = session
         return session
