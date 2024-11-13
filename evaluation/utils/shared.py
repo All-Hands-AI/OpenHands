@@ -137,7 +137,7 @@ def codeact_user_response(
             # let the agent know that it can give up when it has tried 3 times
             return (
                 msg
-                + 'If you want to give up, use the "finish" tool to finish the interactin.\n'
+                + 'If you want to give up, use the "finish" tool to finish the interaction.\n'
             )
     return msg
 
