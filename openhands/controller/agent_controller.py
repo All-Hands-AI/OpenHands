@@ -669,6 +669,12 @@ class AgentController:
         - For delegate events (between AgentDelegateAction and AgentDelegateObservation):
             - Excludes all events between the action and observation
             - Includes the delegate action and observation themselves
+
+        The history is loaded in two parts if truncation_id is set:
+        1. First user message from start_id onwards
+        2. Rest of history from truncation_id to the end
+
+        Otherwise loads normally from start_id.
         """
 
         # define range of events to fetch
@@ -690,16 +696,51 @@ class AgentController:
             self.state.history = []
             return
 
-        # Get all events, filtering out backend events and hidden events
-        events = list(
-            self.event_stream.get_events(
-                start_id=start_id,
-                end_id=end_id,
-                reverse=False,
-                filter_out_type=self.filter_out,
-                filter_hidden=True,
+        events: list[Event] = []
+
+        # If we have a truncation point, get first user message and then rest of history
+        if hasattr(self.state, 'truncation_id') and self.state.truncation_id:
+            # Get events from start_id until we find first user message
+            # Find first user message from stream
+            first_user_msg = next(
+                (
+                    e
+                    for e in self.event_stream.get_events(
+                        start_id=self.state.start_id if self.state.start_id >= 0 else 0,
+                        end_id=end_id,
+                        reverse=False,
+                        filter_out_type=self.filter_out,
+                        filter_hidden=True,
+                    )
+                    if isinstance(e, MessageAction) and e.source == EventSource.USER
+                ),
+                None,
             )
-        )
+            if first_user_msg:
+                events.append(first_user_msg)
+
+            # Get rest of history from truncation point
+            truncated_events = list(
+                self.event_stream.get_events(
+                    start_id=self.state.truncation_id,
+                    end_id=end_id,
+                    reverse=False,
+                    filter_out_type=self.filter_out,
+                    filter_hidden=True,
+                )
+            )
+            events.extend(truncated_events)
+        else:
+            # Normal loading from start_id
+            events = list(
+                self.event_stream.get_events(
+                    start_id=self.state.start_id if self.state.start_id >= 0 else 0,
+                    end_id=end_id,
+                    reverse=False,
+                    filter_out_type=self.filter_out,
+                    filter_hidden=True,
+                )
+            )
 
         # Find all delegate action/observation pairs
         delegate_ranges: list[tuple[int, int]] = []
@@ -830,6 +871,13 @@ class AgentController:
         # Ensure first user message is included
         if first_user_msg and first_user_msg not in kept_events:
             kept_events = [first_user_msg] + kept_events
+
+        # Save where to continue from in next reload
+        if kept_events:
+            self.state.truncation_id = kept_events[0].id
+            # start_id points to first user message
+            if first_user_msg:
+                self.state.start_id = first_user_msg.id
 
         return kept_events
 
