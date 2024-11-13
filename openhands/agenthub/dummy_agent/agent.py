@@ -28,8 +28,7 @@ from openhands.events.observation import (
 from openhands.events.serialization.event import event_to_dict
 from openhands.llm.llm import LLM
 
-"""DummyAgent module for testing purposes.
-
+"""
 FIXME: There are a few problems this surfaced
 * FileWrites seem to add an unintended newline at the end of the file
 * Browser not working
@@ -41,9 +40,11 @@ ActionObs = TypedDict(
 
 
 class DummyAgent(Agent):
-    VERSION = "1.0"
-    """The DummyAgent is used for e2e testing. It just sends the same set of actions deterministically,
-    without making any LLM calls."""
+    VERSION = '1.0'
+    """
+    The DummyAgent is used for e2e testing. It just sends the same set of actions deterministically,
+    without making any LLM calls.
+    """
 
     def __init__(self, llm: LLM, config: AgentConfig):
         super().__init__(llm, config)
