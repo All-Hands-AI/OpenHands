@@ -48,6 +48,10 @@ CONTAINER_NAME_PREFIX = 'openhands-runtime-'
 
 
 def remove_all_runtime_containers():
+    # Clean up browser sessions first
+    from openhands.runtime.browser.browser_env import BrowserEnv
+    BrowserEnv.close_all()
+    # Then remove containers
     remove_all_containers(CONTAINER_NAME_PREFIX)
 
 
@@ -286,6 +290,7 @@ class EventStreamRuntime(Runtime):
         environment = {
             'port': str(self._container_port),
             'PYTHONUNBUFFERED': 1,
+            'OPENHANDS_SESSION_ID': self.sid,  # Add session ID for browser session management
         }
         if self.config.debug or DEBUG:
             environment['DEBUG'] = 'true'

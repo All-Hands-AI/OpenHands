@@ -24,7 +24,22 @@ BROWSER_EVAL_GET_REWARDS_ACTION = 'GET_EVAL_REWARDS'
 
 
 class BrowserEnv:
-    def __init__(self, browsergym_eval_env: str | None = None):
+    _instances = {}
+
+    @classmethod
+    def get_instance(cls, session_id: str = "default", browsergym_eval_env: str | None = None) -> 'BrowserEnv':
+        if session_id not in cls._instances:
+            cls._instances[session_id] = cls(browsergym_eval_env, session_id)
+        return cls._instances[session_id]
+
+    @classmethod
+    def close_all(cls):
+        for instance in cls._instances.values():
+            instance.close()
+        cls._instances.clear()
+
+    def __init__(self, browsergym_eval_env: str | None = None, session_id: str = "default"):
+        self.session_id = session_id
         self.html_text_converter = self.get_html_text_converter()
         self.eval_mode = False
         self.eval_dir = ''
@@ -195,6 +210,8 @@ class BrowserEnv:
                     self.process.join(5)  # Wait for the process to terminate
             self.agent_side.close()
             self.browser_side.close()
+            if self.session_id in self._instances:
+                del self._instances[self.session_id]
         except Exception:
             logger.error('Encountered an error when closing browser env', exc_info=True)
 

@@ -111,3 +111,54 @@ def test_browsergym_eval_env(runtime_cls, temp_dir):
     assert json.loads(obs.content) == [0.0]
 
     _close_test_runtime(runtime)
+
+def test_multi_session_browse(temp_dir, runtime_cls, run_as_openhands):
+    # Start two runtimes with different session IDs
+    runtime1 = _load_runtime(temp_dir, runtime_cls, run_as_openhands, sid="session1")
+    runtime2 = _load_runtime(temp_dir, runtime_cls, run_as_openhands, sid="session2")
+
+    # Start a test server for browsing
+    action_cmd = CmdRunAction(
+        command=f"{PY3_FOR_TESTING} -m http.server 8000 > server.log 2>&1 &"
+    )
+    obs = runtime1.run_action(action_cmd)
+    assert isinstance(obs, CmdOutputObservation)
+    assert obs.exit_code == 0
+
+    # Wait for server to start
+    action_cmd = CmdRunAction(command="sleep 3")
+    runtime1.run_action(action_cmd)
+
+    # Test that each runtime has its own independent browser session
+    # First runtime browses to localhost:8000
+    action1 = BrowseURLAction(url="http://localhost:8000")
+    obs1 = runtime1.run_action(action1)
+    assert isinstance(obs1, BrowserOutputObservation)
+    assert "http://localhost:8000" in obs1.url
+    assert not obs1.error
+    assert obs1.open_pages_urls == ["http://localhost:8000/"]
+    assert "Directory listing for /" in obs1.content
+
+    # Second runtime browses to about:blank
+    action2 = BrowseURLAction(url="about:blank")
+    obs2 = runtime2.run_action(action2)
+    assert isinstance(obs2, BrowserOutputObservation)
+    assert "about:blank" in obs2.url
+    assert not obs2.error
+    assert obs2.open_pages_urls == ["about:blank"]
+
+    # Verify sessions remain independent
+    action1 = BrowseInteractiveAction(browser_actions="noop()")
+    obs1 = runtime1.run_action(action1)
+    assert "http://localhost:8000" in obs1.url  # First session still on localhost
+
+    action2 = BrowseInteractiveAction(browser_actions="noop()")
+    obs2 = runtime2.run_action(action2)
+    assert "about:blank" in obs2.url  # Second session still on about:blank
+
+    # Clean up
+    action = CmdRunAction(command="rm -rf server.log")
+    runtime1.run_action(action)
+
+    _close_test_runtime(runtime1)
+    _close_test_runtime(runtime2)

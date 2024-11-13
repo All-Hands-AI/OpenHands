@@ -107,7 +107,9 @@ class ActionExecutor:
 
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
-        self.browser = BrowserEnv(browsergym_eval_env)
+        # Use environment session ID if available, otherwise use username
+        session_id = os.environ.get('OPENHANDS_SESSION_ID', username)
+        self.browser = BrowserEnv.get_instance(session_id=session_id, browsergym_eval_env=browsergym_eval_env)
         self.start_time = time.time()
         self.last_execution_time = self.start_time
 
@@ -325,7 +327,9 @@ class ActionExecutor:
 
     def close(self):
         self.bash_session.close()
-        self.browser.close()
+        if self.browser:
+            self.browser.close()
+            BrowserEnv.close_all()
 
 
 if __name__ == '__main__':
