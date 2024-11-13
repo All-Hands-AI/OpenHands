@@ -6,9 +6,9 @@ from openhands.runtime.plugins.requirement import Plugin, PluginRequirement
 
 @dataclass
 class AgentSkillsRequirement(PluginRequirement):
-    name: str = 'agent_skills'
+    name: str = "agent_skills"
     documentation: str = agentskills.DOCUMENTATION
 
 
 class AgentSkillsPlugin(Plugin):
-    name: str = 'agent_skills'
+    name: str = "agent_skills"

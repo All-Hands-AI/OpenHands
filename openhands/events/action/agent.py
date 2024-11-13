@@ -10,12 +10,12 @@ class ChangeAgentStateAction(Action):
     """Fake action, just to notify the client that a task state has changed."""
 
     agent_state: str
-    thought: str = ''
+    thought: str = ""
     action: str = ActionType.CHANGE_AGENT_STATE
 
     @property
     def message(self) -> str:
-        return f'Agent state changed to {self.agent_state}'
+        return f"Agent state changed to {self.agent_state}"
 
 
 @dataclass
@@ -28,8 +28,8 @@ class AgentSummarizeAction(Action):
         return self.summary
 
     def __str__(self) -> str:
-        ret = '**AgentSummarizeAction**\n'
-        ret += f'SUMMARY: {self.summary}'
+        ret = "**AgentSummarizeAction**\n"
+        ret += f"SUMMARY: {self.summary}"
         return ret
 
 
@@ -44,12 +44,12 @@ class AgentFinishAction(Action):
     """
 
     outputs: dict[str, Any] = field(default_factory=dict)
-    thought: str = ''
+    thought: str = ""
     action: str = ActionType.FINISH
 
     @property
     def message(self) -> str:
-        if self.thought != '':
+        if self.thought != "":
             return self.thought
         return "All done! What's next on the agenda?"
 
@@ -57,14 +57,14 @@ class AgentFinishAction(Action):
 @dataclass
 class AgentRejectAction(Action):
     outputs: dict = field(default_factory=dict)
-    thought: str = ''
+    thought: str = ""
     action: str = ActionType.REJECT
 
     @property
     def message(self) -> str:
-        msg: str = 'Task is rejected by the agent.'
-        if 'reason' in self.outputs:
-            msg += ' Reason: ' + self.outputs['reason']
+        msg: str = "Task is rejected by the agent."
+        if "reason" in self.outputs:
+            msg += " Reason: " + self.outputs["reason"]
         return msg
 
 
@@ -72,7 +72,7 @@ class AgentRejectAction(Action):
 class AgentDelegateAction(Action):
     agent: str
     inputs: dict
-    thought: str = ''
+    thought: str = ""
     action: str = ActionType.DELEGATE
 
     @property

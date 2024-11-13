@@ -34,13 +34,13 @@ class SandboxConfig:
         platform: The platform on which the image should be built. Default is None.
     """
 
-    remote_runtime_api_url: str = 'http://localhost:8000'
-    local_runtime_url: str = 'http://localhost'
+    remote_runtime_api_url: str = "http://localhost:8000"
+    local_runtime_url: str = "http://localhost"
     keep_runtime_alive: bool = True
     api_key: str | None = None
-    base_container_image: str = 'nikolaik/python-nodejs:python3.12-nodejs22'  # default to nikolaik/python-nodejs:python3.12-nodejs22 for eventstream runtime
+    base_container_image: str = "nikolaik/python-nodejs:python3.12-nodejs22"  # default to nikolaik/python-nodejs:python3.12-nodejs22 for eventstream runtime
     runtime_container_image: str | None = None
-    user_id: int = os.getuid() if hasattr(os, 'getuid') else 1000
+    user_id: int = os.getuid() if hasattr(os, "getuid") else 1000
     timeout: int = 120
     remote_runtime_init_timeout: int = 180
     enable_auto_lint: bool = (
@@ -67,7 +67,7 @@ class SandboxConfig:
             attr_name = f.name
             attr_value = getattr(self, f.name)
 
-            attr_str.append(f'{attr_name}={repr(attr_value)}')
+            attr_str.append(f"{attr_name}={repr(attr_value)}")
 
         return f"SandboxConfig({', '.join(attr_str)})"
 

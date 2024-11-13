@@ -10,7 +10,7 @@ class LLM:
 
 class Event(BaseModel):
     metadata: dict | None = Field(
-        default_factory=dict, description='Metadata associated with the event'
+        default_factory=dict, description="Metadata associated with the event"
     )
 
 
@@ -32,9 +32,9 @@ class Message(Event):
 
     def __rich_repr__(self):
         # Print on separate line
-        yield 'role', self.role
-        yield 'content', self.content
-        yield 'tool_calls', self.tool_calls
+        yield "role", self.role
+        yield "content", self.content
+        yield "tool_calls", self.tool_calls
 
 
 class ToolOutput(Event):

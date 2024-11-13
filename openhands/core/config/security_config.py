@@ -28,7 +28,7 @@ class SecurityConfig:
             attr_name = f.name
             attr_value = getattr(self, f.name)
 
-            attr_str.append(f'{attr_name}={repr(attr_value)}')
+            attr_str.append(f"{attr_name}={repr(attr_value)}")
 
         return f"SecurityConfig({', '.join(attr_str)})"
 

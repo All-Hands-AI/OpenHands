@@ -39,15 +39,15 @@ OBSERVATION_TYPE_TO_CLASS = {
 
 def observation_from_dict(observation: dict) -> Observation:
     observation = observation.copy()
-    if 'observation' not in observation:
+    if "observation" not in observation:
         raise KeyError(f"'observation' key is not found in {observation=}")
-    observation_class = OBSERVATION_TYPE_TO_CLASS.get(observation['observation'])
+    observation_class = OBSERVATION_TYPE_TO_CLASS.get(observation["observation"])
     if observation_class is None:
         raise KeyError(
             f"'{observation['observation']=}' is not defined. Available observations: {OBSERVATION_TYPE_TO_CLASS.keys()}"
         )
-    observation.pop('observation')
-    observation.pop('message', None)
-    content = observation.pop('content', '')
-    extras = observation.pop('extras', {})
+    observation.pop("observation")
+    observation.pop("message", None)
+    content = observation.pop("content", "")
+    extras = observation.pop("extras", {})
     return observation_class(content=content, **extras)
