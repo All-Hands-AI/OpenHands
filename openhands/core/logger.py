@@ -69,7 +69,9 @@ class ColoredFormatter(logging.Formatter):
         elif msg_type == 'STEP':
             if LOG_ALL_EVENTS:
                 msg = '\n\n==============\n' + record.msg + '\n'
-            return f'{msg}'
+                return f'{msg}'
+            else:
+                return record.msg
         return super().format(record)
 
 
