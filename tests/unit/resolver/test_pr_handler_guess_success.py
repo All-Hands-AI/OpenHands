@@ -7,7 +7,7 @@ from openhands.events.action.message import MessageAction
 from openhands.core.config import LLMConfig
 
 def test_guess_success_review_threads_litellm_call():
-    """Test that the litellm.completion() call for review threads contains the expected content"""
+    """Test that the litellm.completion() call for review threads contains the expected content."""
     # Create a PR handler instance
     handler = PRHandler('test-owner', 'test-repo', 'test-token')
     
@@ -83,7 +83,7 @@ The changes successfully address the feedback."""
         assert 'Last message from AI agent:\n' + history[0].content in second_prompt
 
 def test_guess_success_thread_comments_litellm_call():
-    """Test that the litellm.completion() call for thread comments contains the expected content"""
+    """Test that the litellm.completion() call for thread comments contains the expected content."""
     # Create a PR handler instance
     handler = PRHandler('test-owner', 'test-repo', 'test-token')
     
@@ -144,7 +144,7 @@ The changes successfully address the feedback."""
         assert 'Last message from AI agent:\n' + history[0].content in prompt
 
 def test_check_feedback_with_llm():
-    """Test the _check_feedback_with_llm helper function"""
+    """Test the _check_feedback_with_llm helper function."""
     # Create a PR handler instance
     handler = PRHandler('test-owner', 'test-repo', 'test-token')
     
@@ -188,7 +188,7 @@ def test_check_feedback_with_llm():
             assert (success, explanation) == case['expected']
 
 def test_check_review_thread():
-    """Test the _check_review_thread helper function"""
+    """Test the _check_review_thread helper function."""
     # Create a PR handler instance
     handler = PRHandler('test-owner', 'test-repo', 'test-token')
     
@@ -236,7 +236,7 @@ Changes look good"""
         assert explanation == 'Changes look good'
 
 def test_check_thread_comments():
-    """Test the _check_thread_comments helper function"""
+    """Test the _check_thread_comments helper function."""
     # Create a PR handler instance
     handler = PRHandler('test-owner', 'test-repo', 'test-token')
     
@@ -284,7 +284,7 @@ Changes look good"""
         assert explanation == 'Changes look good'
 
 def test_check_review_comments():
-    """Test the _check_review_comments helper function"""
+    """Test the _check_review_comments helper function."""
     # Create a PR handler instance
     handler = PRHandler('test-owner', 'test-repo', 'test-token')
     
@@ -332,7 +332,7 @@ Changes look good"""
         assert explanation == 'Changes look good'
 
 def test_guess_success_review_comments_litellm_call():
-    """Test that the litellm.completion() call for review comments contains the expected content"""
+    """Test that the litellm.completion() call for review comments contains the expected content."""
     # Create a PR handler instance
     handler = PRHandler('test-owner', 'test-repo', 'test-token')
     

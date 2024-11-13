@@ -341,7 +341,6 @@ def update_existing_pull_request(
         comment_message: The main message to post as a comment on the PR.
         additional_message: The additional messages to post as a comment on the PR in json list format.
     """
-
     # Set up headers and base URL for GitHub API
     headers = {
         "Authorization": f"token {github_token}",

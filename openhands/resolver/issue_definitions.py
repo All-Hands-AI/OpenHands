@@ -146,7 +146,7 @@ class IssueHandler(IssueHandlerInterface):
         return converted_issues
 
     def get_instruction(self, issue: GithubIssue, prompt_template: str, repo_instruction: str | None = None) -> tuple[str, list[str]]:
-        """Generate instruction for the agent"""
+        """Generate instruction for the agent."""
         # Format thread comments if they exist
         thread_context = ""
         if issue.thread_comments:
@@ -164,7 +164,6 @@ class IssueHandler(IssueHandlerInterface):
 
     def guess_success(self, issue: GithubIssue, history: list[Event], llm_config: LLMConfig) -> tuple[bool, None | list[bool], str]:
         """Guess if the issue is fixed based on the history and the issue description."""
-       
         last_message = history[-1].message
         # Include thread comments in the prompt if they exist
         issue_context = issue.body
@@ -203,19 +202,21 @@ class PRHandler(IssueHandler):
 
 
     def __download_pr_metadata(self, pull_number: int, comment_id: int | None = None) -> tuple[list[str], list[int], list[str], list[ReviewThread], list[str]]:
-    
-        """
-            Run a GraphQL query against the GitHub API for information on 
-                1. unresolved review comments
-                2. referenced issues the pull request would close
+        """Run a GraphQL query against the GitHub API for information.
 
-            Args:
-                query: The GraphQL query as a string.
-                variables: A dictionary of variables for the query.
-                token: Your GitHub personal access token.
+        Retrieves information about:
+            1. unresolved review comments
+            2. referenced issues the pull request would close
 
-            Returns:
-                The JSON response from the GitHub API.
+        Args:
+            pull_number: The number of the pull request to query.
+            comment_id: Optional ID of a specific comment to focus on.
+            query: The GraphQL query as a string.
+            variables: A dictionary of variables for the query.
+            token: Your GitHub personal access token.
+
+        Returns:
+            The JSON response from the GitHub API.
         """
         # Using graphql as REST API doesn't indicate resolved status for review comments
         # TODO: grabbing the first 10 issues, 100 review threads, and 100 coments; add pagination to retrieve all
@@ -452,7 +453,7 @@ class PRHandler(IssueHandler):
 
 
     def get_instruction(self, issue: GithubIssue, prompt_template: str, repo_instruction: str | None = None) -> tuple[str, list[str]]:
-        """Generate instruction for the agent"""
+        """Generate instruction for the agent."""
         template = jinja2.Template(prompt_template)
         images = []
 
@@ -497,7 +498,7 @@ class PRHandler(IssueHandler):
     
 
     def _check_feedback_with_llm(self, prompt: str, llm_config: LLMConfig) -> tuple[bool, str]:
-        """Helper function to check feedback with LLM and parse response"""
+        """Helper function to check feedback with LLM and parse response."""
         response = litellm.completion(
             model=llm_config.model,
             messages=[{"role": "user", "content": prompt}],
@@ -513,7 +514,7 @@ class PRHandler(IssueHandler):
         return False, f"Failed to decode answer from LLM response: {answer}"
 
     def _check_review_thread(self, review_thread: ReviewThread, issues_context: str, last_message: str, llm_config: LLMConfig) -> tuple[bool, str]:
-        """Check if a review thread's feedback has been addressed"""
+        """Check if a review thread's feedback has been addressed."""
         files_context = json.dumps(review_thread.files, indent=4)
         
         with open(os.path.join(os.path.dirname(__file__), "prompts/guess_success/pr-feedback-check.jinja"), 'r') as f:
@@ -529,7 +530,7 @@ class PRHandler(IssueHandler):
         return self._check_feedback_with_llm(prompt, llm_config)
 
     def _check_thread_comments(self, thread_comments: list[str], issues_context: str, last_message: str, llm_config: LLMConfig) -> tuple[bool, str]:
-        """Check if thread comments feedback has been addressed"""
+        """Check if thread comments feedback has been addressed."""
         thread_context = "\n---\n".join(thread_comments)
         
         with open(os.path.join(os.path.dirname(__file__), "prompts/guess_success/pr-thread-check.jinja"), 'r') as f:
@@ -544,7 +545,7 @@ class PRHandler(IssueHandler):
         return self._check_feedback_with_llm(prompt, llm_config)
 
     def _check_review_comments(self, review_comments: list[str], issues_context: str, last_message: str, llm_config: LLMConfig) -> tuple[bool, str]:
-        """Check if review comments feedback has been addressed"""
+        """Check if review comments feedback has been addressed."""
         review_context = "\n---\n".join(review_comments)
         
         with open(os.path.join(os.path.dirname(__file__), "prompts/guess_success/pr-review-check.jinja"), 'r') as f:
@@ -560,7 +561,6 @@ class PRHandler(IssueHandler):
 
     def guess_success(self, issue: GithubIssue, history: list[Event], llm_config: LLMConfig) -> tuple[bool, None | list[bool], str]:
         """Guess if the issue is fixed based on the history and the issue description."""
-        
         last_message = history[-1].message
         issues_context = json.dumps(issue.closing_issues, indent=4)
         success_list = []

@@ -65,16 +65,17 @@ async def resolve_issues(
         repo: Github repository to resolve issues in form of `owner/repo`.
         token: Github token to access the repository.
         username: Github username to access the repository.
-        max_iterations: Maximum number of iterations to run
+        max_iterations: Maximum number of iterations to run.
         limit_issues: Limit the number of issues to resolve.
         num_workers: Number of workers to use for parallel processing.
         output_dir: Output directory to write the results.
+        llm_config: Configuration for the language model.
         runtime_container_image: Container image to use.
         prompt_template: Prompt template to use.
+        issue_type: Type of issue to resolve (issue or pr).
         repo_instruction: Repository instruction to use.
         issue_numbers: List of issue numbers to resolve.
     """
-
     issue_handler = issue_handler_factory(issue_type, owner, repo, token)
 
     # Load dataset
