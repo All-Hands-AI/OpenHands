@@ -5,12 +5,9 @@ import tempfile
 import time
 import uuid
 import warnings
-from collections import defaultdict
-from datetime import datetime, timedelta
 
 import jwt
 import requests
-from fastapi import HTTPException
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
@@ -32,8 +29,8 @@ with warnings.catch_warnings():
 from dotenv import load_dotenv
 from fastapi import (
     BackgroundTasks,
-    Depends,
     FastAPI,
+    HTTPException,
     Request,
     UploadFile,
     WebSocket,
@@ -66,7 +63,12 @@ from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.llm import bedrock
 from openhands.runtime.base import Runtime
 from openhands.server.auth.auth import get_sid_from_token, sign_token
-from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware
+from openhands.server.middleware import (
+    InMemoryRateLimiter,
+    LocalhostCORSMiddleware,
+    NoCacheMiddleware,
+    RateLimitMiddleware,
+)
 from openhands.server.session import SessionManager
 
 load_dotenv()
@@ -86,40 +88,12 @@ app.add_middleware(
 
 
 app.add_middleware(NoCacheMiddleware)
+app.add_middleware(
+    RateLimitMiddleware, rate_limiter=InMemoryRateLimiter(requests=2, seconds=1)
+)
 
 
 security_scheme = HTTPBearer()
-
-
-class InMemoryRateLimiter:
-    requests: dict
-    times: int
-    seconds: int
-
-    def __init__(self, times: int = 2, seconds: int = 1):
-        self.times = times
-        self.seconds = seconds
-        self.requests = defaultdict(list)
-
-    def _clean_old_requests(self, key: str) -> None:
-        now = datetime.now()
-        cutoff = now - timedelta(seconds=self.seconds)
-        self.requests[key] = [ts for ts in self.requests[key] if ts > cutoff]
-
-    async def __call__(self, request: Request) -> None:
-        key = request.client.host
-        now = datetime.now()
-
-        self._clean_old_requests(key)
-
-        if len(self.requests[key]) >= self.times:
-            raise HTTPException(status_code=429, detail='Too many requests')
-
-        self.requests[key].append(now)
-
-
-def rate_limit_all():
-    return InMemoryRateLimiter(times=2, seconds=1)  # 2 requests per second
 
 
 def load_file_upload_config() -> tuple[int, bool, list[str]]:
@@ -401,7 +375,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await session.loop_recv()
 
 
-@app.get('/api/options/models', dependencies=[Depends(rate_limit_all())])
+@app.get('/api/options/models')
 async def get_litellm_models() -> list[str]:
     """
     Get all models supported by LiteLLM.
@@ -455,7 +429,7 @@ async def get_litellm_models() -> list[str]:
     return list(sorted(set(model_list)))
 
 
-@app.get('/api/options/agents', dependencies=[Depends(rate_limit_all())])
+@app.get('/api/options/agents')
 async def get_agents():
     """Get all agents supported by LiteLLM.
 
@@ -471,7 +445,7 @@ async def get_agents():
     return agents
 
 
-@app.get('/api/options/security-analyzers', dependencies=[Depends(rate_limit_all())])
+@app.get('/api/options/security-analyzers')
 async def get_security_analyzers():
     """Get all supported security analyzers.
 
@@ -494,7 +468,7 @@ FILES_TO_IGNORE = [
 ]
 
 
-@app.get('/api/list-files', dependencies=[Depends(rate_limit_all())])
+@app.get('/api/list-files')
 async def list_files(request: Request, path: str | None = None):
     """List files in the specified path.
 
@@ -548,7 +522,7 @@ async def list_files(request: Request, path: str | None = None):
     return file_list
 
 
-@app.get('/api/select-file', dependencies=[Depends(rate_limit_all())])
+@app.get('/api/select-file')
 async def select_file(file: str, request: Request):
     """Retrieve the content of a specified file.
 
@@ -599,7 +573,7 @@ def sanitize_filename(filename):
     return filename
 
 
-@app.post('/api/upload-files', dependencies=[Depends(rate_limit_all())])
+@app.post('/api/upload-files')
 async def upload_file(request: Request, files: list[UploadFile]):
     """Upload a list of files to the workspace.
 
@@ -685,7 +659,7 @@ async def upload_file(request: Request, files: list[UploadFile]):
         )
 
 
-@app.post('/api/submit-feedback', dependencies=[Depends(rate_limit_all())])
+@app.post('/api/submit-feedback')
 async def submit_feedback(request: Request):
     """Submit user feedback.
 
@@ -733,7 +707,7 @@ async def submit_feedback(request: Request):
         )
 
 
-@app.get('/api/defaults', dependencies=[Depends(rate_limit_all())])
+@app.get('/api/defaults')
 async def appconfig_defaults():
     """Retrieve the default configuration settings.
 
@@ -748,7 +722,7 @@ async def appconfig_defaults():
     return config.defaults_dict
 
 
-@app.post('/api/save-file', dependencies=[Depends(rate_limit_all())])
+@app.post('/api/save-file')
 async def save_file(request: Request):
     """Save a file to the agent's runtime file store.
 
@@ -829,7 +803,7 @@ async def security_api(request: Request):
     )
 
 
-@app.get('/api/zip-directory', dependencies=[Depends(rate_limit_all())])
+@app.get('/api/zip-directory')
 async def zip_current_workspace(request: Request, background_tasks: BackgroundTasks):
     try:
         logger.debug('Zipping workspace')
@@ -927,7 +901,7 @@ async def authenticate(request: Request):
     return response
 
 
-@app.get('/api/vscode-url', dependencies=[Depends(rate_limit_all())])
+@app.get('/api/vscode-url')
 async def get_vscode_url(request: Request):
     """Get the VSCode URL.
 
