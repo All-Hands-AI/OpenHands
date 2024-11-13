@@ -34,6 +34,7 @@ from fastapi import (
     Request,
     UploadFile,
     WebSocket,
+    WebSocketDisconnect,
     status,
 )
 from fastapi.responses import FileResponse, JSONResponse
@@ -361,7 +362,14 @@ async def websocket_endpoint(websocket: WebSocket):
             ),
         ):
             continue
-        await websocket.send_json(event_to_dict(event))
+        try:
+            await websocket.send_json(event_to_dict(event))
+        except WebSocketDisconnect:
+            logger.warning(
+                'Websocket disconnected while sending event history, before loop started'
+            )
+            session.close()
+            return
 
     await session.loop_recv()
 
