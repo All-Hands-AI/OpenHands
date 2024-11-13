@@ -7,15 +7,15 @@ from openhands.linter.base import LintResult
 
 @pytest.fixture
 def mock_file_content():
-    return "\n".join([f"Line {i}" for i in range(1, 21)])
+    return '\n'.join([f'Line {i}' for i in range(1, 21)])
 
 
 def test_visualize_standard_case(mock_file_content):
     lint_result = LintResult(
-        file="test_file.py", line=10, column=5, message="Test error message"
+        file='test_file.py', line=10, column=5, message='Test error message'
     )
 
-    with patch("builtins.open", mock_open(read_data=mock_file_content)):
+    with patch('builtins.open', mock_open(read_data=mock_file_content)):
         result = lint_result.visualize(half_window=3)
 
     expected_output = (
@@ -34,10 +34,10 @@ def test_visualize_standard_case(mock_file_content):
 
 def test_visualize_small_window(mock_file_content):
     lint_result = LintResult(
-        file="test_file.py", line=10, column=5, message="Test error message"
+        file='test_file.py', line=10, column=5, message='Test error message'
     )
 
-    with patch("builtins.open", mock_open(read_data=mock_file_content)):
+    with patch('builtins.open', mock_open(read_data=mock_file_content)):
         result = lint_result.visualize(half_window=1)
 
     expected_output = (
@@ -52,10 +52,10 @@ def test_visualize_small_window(mock_file_content):
 
 def test_visualize_error_at_start(mock_file_content):
     lint_result = LintResult(
-        file="test_file.py", line=1, column=3, message="Start error"
+        file='test_file.py', line=1, column=3, message='Start error'
     )
 
-    with patch("builtins.open", mock_open(read_data=mock_file_content)):
+    with patch('builtins.open', mock_open(read_data=mock_file_content)):
         result = lint_result.visualize(half_window=2)
 
     expected_output = (
@@ -70,10 +70,10 @@ def test_visualize_error_at_start(mock_file_content):
 
 def test_visualize_error_at_end(mock_file_content):
     lint_result = LintResult(
-        file="test_file.py", line=20, column=1, message="End error"
+        file='test_file.py', line=20, column=1, message='End error'
     )
 
-    with patch("builtins.open", mock_open(read_data=mock_file_content)):
+    with patch('builtins.open', mock_open(read_data=mock_file_content)):
         result = lint_result.visualize(half_window=2)
 
     expected_output = (

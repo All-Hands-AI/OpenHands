@@ -46,21 +46,21 @@ class CodeActResponseParser(ResponseParser):
     def parse_response(self, response) -> str:
         action = response.choices[0].message.content
         if action is None:
-            return ""
-        for lang in ["bash", "ipython", "browse"]:
+            return ''
+        for lang in ['bash', 'ipython', 'browse']:
             # special handling for DeepSeek: it has stop-word bug and returns </execute_ipython instead of </execute_ipython>
-            if f"</execute_{lang}" in action and f"</execute_{lang}>" not in action:
-                action = action.replace(f"</execute_{lang}", f"</execute_{lang}>")
+            if f'</execute_{lang}' in action and f'</execute_{lang}>' not in action:
+                action = action.replace(f'</execute_{lang}', f'</execute_{lang}>')
 
-            if f"<execute_{lang}>" in action and f"</execute_{lang}>" not in action:
-                action += f"</execute_{lang}>"
+            if f'<execute_{lang}>' in action and f'</execute_{lang}>' not in action:
+                action += f'</execute_{lang}>'
 
         # special handling for DeepSeek: it has stop-word bug and returns </execute_ipython instead of </execute_ipython>
-        if "</file_edit" in action and "</file_edit>" not in action:
-            action = action.replace("</file_edit", "</file_edit>")
+        if '</file_edit' in action and '</file_edit>' not in action:
+            action = action.replace('</file_edit', '</file_edit>')
 
-        if "<file_edit" in action and "</file_edit>" not in action:
-            action += "</file_edit>"
+        if '<file_edit' in action and '</file_edit>' not in action:
+            action += '</file_edit>'
         return action
 
     def parse_action(self, action_str: str) -> Action:
@@ -72,19 +72,19 @@ class CodeActResponseParser(ResponseParser):
     def action_to_str(self, action: Action) -> str:
         if isinstance(action, CmdRunAction):
             return (
-                f"{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>"
+                f'{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>'
             )
         elif isinstance(action, IPythonRunCellAction):
-            return f"{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>"
+            return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
         elif isinstance(action, AgentDelegateAction):
             return f'{action.thought}\n<execute_browse>\n{action.inputs["task"]}\n</execute_browse>'
         elif isinstance(action, FileEditAction):
-            return f"{action.thought}\n<file_edit path={action.path}>\n{action.content}\n</file_edit>"
+            return f'{action.thought}\n<file_edit path={action.path}>\n{action.content}\n</file_edit>'
         elif isinstance(action, MessageAction):
             return action.content
-        elif isinstance(action, AgentFinishAction) and action.source == "agent":
+        elif isinstance(action, AgentFinishAction) and action.source == 'agent':
             return action.thought
-        return ""
+        return ''
 
 
 class CodeActActionParserFinish(ActionParser):
@@ -98,14 +98,14 @@ class CodeActActionParserFinish(ActionParser):
         self.finish_command = None
 
     def check_condition(self, action_str: str) -> bool:
-        self.finish_command = re.search(r"<finish>.*</finish>", action_str, re.DOTALL)
+        self.finish_command = re.search(r'<finish>.*</finish>', action_str, re.DOTALL)
         return self.finish_command is not None
 
     def parse(self, action_str: str) -> Action:
         assert (
             self.finish_command is not None
-        ), "self.finish_command should not be None when parse is called"
-        thought = action_str.replace(self.finish_command.group(0), "").strip()
+        ), 'self.finish_command should not be None when parse is called'
+        thought = action_str.replace(self.finish_command.group(0), '').strip()
         return AgentFinishAction(thought=thought)
 
 
@@ -122,18 +122,18 @@ class CodeActActionParserCmdRun(ActionParser):
 
     def check_condition(self, action_str: str) -> bool:
         self.bash_command = re.search(
-            r"<execute_bash>(.*?)</execute_bash>", action_str, re.DOTALL
+            r'<execute_bash>(.*?)</execute_bash>', action_str, re.DOTALL
         )
         return self.bash_command is not None
 
     def parse(self, action_str: str) -> Action:
         assert (
             self.bash_command is not None
-        ), "self.bash_command should not be None when parse is called"
-        thought = action_str.replace(self.bash_command.group(0), "").strip()
+        ), 'self.bash_command should not be None when parse is called'
+        thought = action_str.replace(self.bash_command.group(0), '').strip()
         # a command was found
         command_group = self.bash_command.group(1).strip()
-        if command_group.strip() == "exit":
+        if command_group.strip() == 'exit':
             return AgentFinishAction(thought=thought)
         return CmdRunAction(command=command_group, thought=thought)
 
@@ -147,20 +147,20 @@ class CodeActActionParserIPythonRunCell(ActionParser):
         self,
     ):
         self.python_code = None
-        self.jupyter_kernel_init_code: str = "from agentskills import *"
+        self.jupyter_kernel_init_code: str = 'from agentskills import *'
 
     def check_condition(self, action_str: str) -> bool:
         self.python_code = re.search(
-            r"<execute_ipython>(.*?)</execute_ipython>", action_str, re.DOTALL
+            r'<execute_ipython>(.*?)</execute_ipython>', action_str, re.DOTALL
         )
         return self.python_code is not None
 
     def parse(self, action_str: str) -> Action:
         assert (
             self.python_code is not None
-        ), "self.python_code should not be None when parse is called"
+        ), 'self.python_code should not be None when parse is called'
         code_group = self.python_code.group(1).strip()
-        thought = action_str.replace(self.python_code.group(0), "").strip()
+        thought = action_str.replace(self.python_code.group(0), '').strip()
         return IPythonRunCellAction(
             code=code_group,
             thought=thought,
@@ -180,24 +180,24 @@ class CodeActActionParserAgentDelegate(ActionParser):
 
     def check_condition(self, action_str: str) -> bool:
         self.agent_delegate = re.search(
-            r"<execute_browse>(.*)</execute_browse>", action_str, re.DOTALL
+            r'<execute_browse>(.*)</execute_browse>', action_str, re.DOTALL
         )
         return self.agent_delegate is not None
 
     def parse(self, action_str: str) -> Action:
         assert (
             self.agent_delegate is not None
-        ), "self.agent_delegate should not be None when parse is called"
-        thought = action_str.replace(self.agent_delegate.group(0), "").strip()
+        ), 'self.agent_delegate should not be None when parse is called'
+        thought = action_str.replace(self.agent_delegate.group(0), '').strip()
         browse_actions = self.agent_delegate.group(1).strip()
         thought = (
-            f"{thought}\nI should start with: {browse_actions}"
+            f'{thought}\nI should start with: {browse_actions}'
             if thought
-            else f"I should start with: {browse_actions}"
+            else f'I should start with: {browse_actions}'
         )
 
         return AgentDelegateAction(
-            agent="BrowsingAgent", thought=thought, inputs={"task": browse_actions}
+            agent='BrowsingAgent', thought=thought, inputs={'task': browse_actions}
         )
 
 
@@ -229,7 +229,7 @@ class CodeActActionParserFileEdit(ActionParser):
         self.file_edit_match: re.Match | None = None
 
     def check_condition(self, action_str: str) -> bool:
-        if "<file_edit" not in action_str:
+        if '<file_edit' not in action_str:
             return False
 
         # Updated regex to make start and end optional
@@ -244,10 +244,10 @@ class CodeActActionParserFileEdit(ActionParser):
                 f'FileEditAction detected but the format is incorrect. Unable to match for <file_edit> in:\n{"-" * 80}\n{action_str}\n{"-" * 80}'
             )
             raise LLMMalformedActionError(
-                "FileEditAction detected but the format is incorrect. Usage:\n"
+                'FileEditAction detected but the format is incorrect. Usage:\n'
                 '<file_edit path="[path]" start=[start_line] end=[end_line]>\n'
-                "[content_to_edit]\n"
-                "</file_edit>\n"
+                '[content_to_edit]\n'
+                '</file_edit>\n'
             )
 
         path = self.file_edit_match.group(2)
@@ -256,7 +256,7 @@ class CodeActActionParserFileEdit(ActionParser):
 
         if not path:
             raise LLMMalformedActionError(
-                "FileEditAction detected but no `path` specified. You should specify the path of the file to edit."
+                'FileEditAction detected but no `path` specified. You should specify the path of the file to edit.'
             )
 
         if start:
@@ -264,7 +264,7 @@ class CodeActActionParserFileEdit(ActionParser):
                 int(start)
             except ValueError:
                 raise LLMMalformedActionError(
-                    f"FileEditAction detected but `start` is not a valid integer: {start}"
+                    f'FileEditAction detected but `start` is not a valid integer: {start}'
                 )
 
         if end:
@@ -272,7 +272,7 @@ class CodeActActionParserFileEdit(ActionParser):
                 int(end)
             except ValueError:
                 raise LLMMalformedActionError(
-                    f"FileEditAction detected but `end` is not a valid integer: {end}"
+                    f'FileEditAction detected but `end` is not a valid integer: {end}'
                 )
 
         return True
@@ -280,7 +280,7 @@ class CodeActActionParserFileEdit(ActionParser):
     def parse(self, action_str: str) -> Action:
         assert (
             self.file_edit_match is not None
-        ), "self.file_edit_match should not be None when parse is called"
+        ), 'self.file_edit_match should not be None when parse is called'
 
         file_path = self.file_edit_match.group(2).strip()
         start_line = (
@@ -294,7 +294,7 @@ class CodeActActionParserFileEdit(ActionParser):
             else None
         )
         content = self.file_edit_match.group(7)
-        thought = action_str.replace(self.file_edit_match.group(0), "").strip()
+        thought = action_str.replace(self.file_edit_match.group(0), '').strip()
 
         action = FileEditAction(path=file_path, content=content, thought=thought)
         if start_line is not None:

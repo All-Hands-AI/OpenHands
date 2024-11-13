@@ -7,7 +7,7 @@ from tree_sitter_languages import get_parser
 from openhands.linter.base import BaseLinter, LintResult
 
 # tree_sitter is throwing a FutureWarning
-warnings.simplefilter("ignore", category=FutureWarning)
+warnings.simplefilter('ignore', category=FutureWarning)
 
 
 def tree_context(fname, code, line_nums):
@@ -34,10 +34,10 @@ def tree_context(fname, code, line_nums):
 def traverse_tree(node):
     """Traverses the tree to find errors."""
     errors = []
-    if node.type == "ERROR" or node.is_missing:
+    if node.type == 'ERROR' or node.is_missing:
         line_no = node.start_point[0] + 1
         col_no = node.start_point[1] + 1
-        error_type = "Missing node" if node.is_missing else "Syntax error"
+        error_type = 'Missing node' if node.is_missing else 'Syntax error'
         errors.append((line_no, col_no, error_type))
 
     for child in node.children:
@@ -57,9 +57,9 @@ class TreesitterBasicLinter(BaseLinter):
         if not lang:
             return []
         parser = get_parser(lang)
-        with open(file_path, "r") as f:
+        with open(file_path, 'r') as f:
             code = f.read()
-        tree = parser.parse(bytes(code, "utf-8"))
+        tree = parser.parse(bytes(code, 'utf-8'))
         errors = traverse_tree(tree.root_node)
         if not errors:
             return []

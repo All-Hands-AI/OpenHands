@@ -101,18 +101,18 @@ What is your next thought or action? Again, you must reply with JSON, and only w
 def get_hint(latest_action_id: str) -> str:
     """Returns action type hint based on given action_id"""
     hints = {
-        "": "You haven't taken any actions yet. Start by using `ls` to check out what files you're working with.",
-        ActionType.RUN: "You should think about the command you just ran, what output it gave, and how that affects your plan.",
-        ActionType.READ: "You should think about the file you just read, what you learned from it, and how that affects your plan.",
-        ActionType.WRITE: "You just changed a file. You should think about how it affects your plan.",
-        ActionType.BROWSE: "You should think about the page you just visited, and what you learned from it.",
+        '': "You haven't taken any actions yet. Start by using `ls` to check out what files you're working with.",
+        ActionType.RUN: 'You should think about the command you just ran, what output it gave, and how that affects your plan.',
+        ActionType.READ: 'You should think about the file you just read, what you learned from it, and how that affects your plan.',
+        ActionType.WRITE: 'You just changed a file. You should think about how it affects your plan.',
+        ActionType.BROWSE: 'You should think about the page you just visited, and what you learned from it.',
         ActionType.MESSAGE: "Look at your last thought in the history above. What does it suggest? Don't think anymore--take action.",
-        ActionType.ADD_TASK: "You should think about the next action to take.",
-        ActionType.MODIFY_TASK: "You should think about the next action to take.",
-        ActionType.SUMMARIZE: "",
-        ActionType.FINISH: "",
+        ActionType.ADD_TASK: 'You should think about the next action to take.',
+        ActionType.MODIFY_TASK: 'You should think about the next action to take.',
+        ActionType.SUMMARIZE: '',
+        ActionType.FINISH: '',
     }
-    return hints.get(latest_action_id, "")
+    return hints.get(latest_action_id, '')
 
 
 def get_prompt_and_images(
@@ -159,19 +159,19 @@ def get_prompt_and_images(
         plan_status = "You're not currently working on any tasks. Your next action MUST be to mark a task as in_progress."
 
     # the hint, based on the last action
-    hint = get_hint(event_to_memory(latest_action, max_message_chars).get("action", ""))
-    logger.debug("HINT:\n" + hint, extra={"msg_type": "DETAIL"})
+    hint = get_hint(event_to_memory(latest_action, max_message_chars).get('action', ''))
+    logger.debug('HINT:\n' + hint, extra={'msg_type': 'DETAIL'})
 
     # the last relevant user message (the task)
     message, image_urls = state.get_current_user_intent()
 
     # finally, fill in the prompt
     return prompt % {
-        "task": message,
-        "plan": plan_str,
-        "history": history_str,
-        "hint": hint,
-        "plan_status": plan_status,
+        'task': message,
+        'plan': plan_str,
+        'history': history_str,
+        'hint': hint,
+        'plan_status': plan_status,
     }, image_urls
 
 
@@ -184,8 +184,8 @@ def parse_response(response: str) -> Action:
     - Action: A valid next action to perform from model output
     """
     action_dict = json.loads(response)
-    if "contents" in action_dict:
+    if 'contents' in action_dict:
         # The LLM gets confused here. Might as well be robust
-        action_dict["content"] = action_dict.pop("contents")
+        action_dict['content'] = action_dict.pop('contents')
     action = action_from_dict(action_dict)
     return action

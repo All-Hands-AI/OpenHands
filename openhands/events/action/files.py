@@ -15,14 +15,14 @@ class FileReadAction(Action):
     path: str
     start: int = 0
     end: int = -1
-    thought: str = ""
+    thought: str = ''
     action: str = ActionType.READ
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
 
     @property
     def message(self) -> str:
-        return f"Reading file: {self.path}"
+        return f'Reading file: {self.path}'
 
 
 @dataclass
@@ -36,14 +36,14 @@ class FileWriteAction(Action):
     content: str
     start: int = 0
     end: int = -1
-    thought: str = ""
+    thought: str = ''
     action: str = ActionType.WRITE
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
 
     @property
     def message(self) -> str:
-        return f"Writing file: {self.path}"
+        return f'Writing file: {self.path}'
 
 
 @dataclass
@@ -60,15 +60,15 @@ class FileEditAction(Action):
     content: str
     start: int = 1
     end: int = -1
-    thought: str = ""
+    thought: str = ''
     action: str = ActionType.EDIT
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
 
     def __repr__(self) -> str:
-        ret = "**FileEditAction**\n"
-        ret += f"Thought: {self.thought}\n"
-        ret += f"Range: [L{self.start}:L{self.end}]\n"
-        ret += f"Path: [{self.path}]\n"
-        ret += f"Content:\n```\n{self.content}\n```\n"
+        ret = '**FileEditAction**\n'
+        ret += f'Thought: {self.thought}\n'
+        ret += f'Range: [L{self.start}:L{self.end}]\n'
+        ret += f'Path: [{self.path}]\n'
+        ret += f'Content:\n```\n{self.content}\n```\n'
         return ret

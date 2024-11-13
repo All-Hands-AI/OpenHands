@@ -42,7 +42,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
-from openhands.runtime.utils.shutdown_listener import should_continue
+from openhands.utils.shutdown_listener import should_continue
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -131,8 +131,7 @@ class AgentController:
     async def close(self):
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
 
-        Note that it's fairly important that this closes properly, otherwise the state is incomplete.
-        """
+        Note that it's fairly important that this closes properly, otherwise the state is incomplete."""
         await self.set_agent_state_to(AgentState.STOPPED)
 
         # we made history, now is the time to rewrite it!
@@ -190,6 +189,7 @@ class AgentController:
 
     async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
+
         self.log('info', 'Starting step loop...')
         while should_continue():
             try:
@@ -303,6 +303,7 @@ class AgentController:
 
     def reset_task(self):
         """Resets the agent's task."""
+
         self.almost_stuck = 0
         self.agent.reset()
 
@@ -659,6 +660,7 @@ class AgentController:
             - Excludes all events between the action and observation
             - Includes the delegate action and observation themselves
         """
+
         # define range of events to fetch
         # delegates start with a start_id and initially won't find any events
         # otherwise we're restoring a previous session

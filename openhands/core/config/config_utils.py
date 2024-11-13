@@ -1,7 +1,7 @@
 from types import UnionType
 from typing import get_args, get_origin
 
-OH_DEFAULT_AGENT = "CodeActAgent"
+OH_DEFAULT_AGENT = 'CodeActAgent'
 OH_MAX_ITERATIONS = 100
 
 
@@ -29,11 +29,11 @@ def get_field_info(f):
 
     # type name in a pretty format
     type_name = (
-        field_type.__name__ if hasattr(field_type, "__name__") else str(field_type)
+        field_type.__name__ if hasattr(field_type, '__name__') else str(field_type)
     )
 
     # default is always present
     default = f.default
 
     # return a schema with the useful info for frontend
-    return {"type": type_name.lower(), "optional": optional, "default": default}
+    return {'type': type_name.lower(), 'optional': optional, 'default': default}

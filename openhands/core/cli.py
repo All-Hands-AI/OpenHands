@@ -78,6 +78,7 @@ def display_event(event: Event):
 
 async def main():
     """Runs the agent in CLI mode"""
+
     parser = get_parser()
     # Add the version argument
     parser.add_argument(
@@ -115,6 +116,7 @@ async def main():
         event_stream=event_stream,
         sid=sid,
         plugins=agent_cls.sandbox_plugins,
+        headless_mode=True,
     )
 
     controller = AgentController(

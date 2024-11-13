@@ -34,7 +34,7 @@ from openhands.runtime.plugins import (
 
 
 def get_system_message() -> str:
-    return f"{SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}"
+    return f'{SYSTEM_PREFIX}\n\n{COMMAND_DOCS}\n\n{SYSTEM_SUFFIX}'
 
 
 def get_in_context_example() -> str:
@@ -42,7 +42,7 @@ def get_in_context_example() -> str:
 
 
 class CodeActSWEAgent(Agent):
-    VERSION = "1.6"
+    VERSION = '1.6'
     """
     This agent is an adaptation of the original [SWE Agent](https://swe-agent.com/) based on CodeAct 1.5 using the `agentskills` library of OpenHands.
 
@@ -80,13 +80,13 @@ class CodeActSWEAgent(Agent):
     def action_to_str(self, action: Action) -> str:
         if isinstance(action, CmdRunAction):
             return (
-                f"{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>"
+                f'{action.thought}\n<execute_bash>\n{action.command}\n</execute_bash>'
             )
         elif isinstance(action, IPythonRunCellAction):
-            return f"{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>"
+            return f'{action.thought}\n<execute_ipython>\n{action.code}\n</execute_ipython>'
         elif isinstance(action, MessageAction):
             return action.content
-        return ""
+        return ''
 
     def get_action_message(self, action: Action) -> Message | None:
         if isinstance(action, (CmdRunAction, IPythonRunCellAction, MessageAction)):
@@ -100,7 +100,7 @@ class CodeActSWEAgent(Agent):
                 content.append(ImageContent(image_urls=action.image_urls))
 
             return Message(
-                role="user" if action.source == "user" else "assistant", content=content
+                role='user' if action.source == 'user' else 'assistant', content=content
             )
 
         return None
@@ -108,33 +108,33 @@ class CodeActSWEAgent(Agent):
     def get_observation_message(self, obs: Observation) -> Message | None:
         max_message_chars = self.llm.config.max_message_chars
         if isinstance(obs, CmdOutputObservation):
-            text = "OBSERVATION:\n" + truncate_content(
+            text = 'OBSERVATION:\n' + truncate_content(
                 obs.content + obs.interpreter_details, max_message_chars
             )
             text += (
-                f"\n[Command {obs.command_id} finished with exit code {obs.exit_code}]"
+                f'\n[Command {obs.command_id} finished with exit code {obs.exit_code}]'
             )
-            return Message(role="user", content=[TextContent(text=text)])
+            return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
-            text = "OBSERVATION:\n" + obs.content
+            text = 'OBSERVATION:\n' + obs.content
             # replace base64 images with a placeholder
-            splitted = text.split("\n")
+            splitted = text.split('\n')
             for i, line in enumerate(splitted):
-                if "![image](data:image/png;base64," in line:
+                if '![image](data:image/png;base64,' in line:
                     splitted[i] = (
-                        "![image](data:image/png;base64, ...) already displayed to user"
+                        '![image](data:image/png;base64, ...) already displayed to user'
                     )
-            text = "\n".join(splitted)
+            text = '\n'.join(splitted)
             text = truncate_content(text, max_message_chars)
-            return Message(role="user", content=[TextContent(text=text)])
+            return Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, ErrorObservation):
-            text = "OBSERVATION:\n" + truncate_content(obs.content, max_message_chars)
-            text += "\n[Error occurred in processing last action]"
-            return Message(role="user", content=[TextContent(text=text)])
+            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text += '\n[Error occurred in processing last action]'
+            return Message(role='user', content=[TextContent(text=text)])
         else:
             # If an observation message is not returned, it will cause an error
             # when the LLM tries to return the next message
-            raise ValueError(f"Unknown observation type: {type(obs)}")
+            raise ValueError(f'Unknown observation type: {type(obs)}')
 
     def reset(self) -> None:
         """Resets the CodeAct Agent."""
@@ -155,7 +155,7 @@ class CodeActSWEAgent(Agent):
         """
         # if we're done, go back
         last_user_message = state.get_last_user_message()
-        if last_user_message and last_user_message.content.strip() == "/exit":
+        if last_user_message and last_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
         # prepare what we want to send to the LLM
@@ -163,8 +163,8 @@ class CodeActSWEAgent(Agent):
         response = self.llm.completion(
             messages=self.llm.format_messages_for_llm(messages),
             stop=[
-                "</execute_ipython>",
-                "</execute_bash>",
+                '</execute_ipython>',
+                '</execute_bash>',
             ],
         )
 
@@ -172,8 +172,8 @@ class CodeActSWEAgent(Agent):
 
     def _get_messages(self, state: State) -> list[Message]:
         messages: list[Message] = [
-            Message(role="system", content=[TextContent(text=self.system_message)]),
-            Message(role="user", content=[TextContent(text=self.in_context_example)]),
+            Message(role='system', content=[TextContent(text=self.system_message)]),
+            Message(role='user', content=[TextContent(text=self.in_context_example)]),
         ]
 
         for event in state.history:
@@ -183,7 +183,7 @@ class CodeActSWEAgent(Agent):
             elif isinstance(event, Observation):
                 message = self.get_observation_message(event)
             else:
-                raise ValueError(f"Unknown event type: {type(event)}")
+                raise ValueError(f'Unknown event type: {type(event)}')
 
             # add regular message
             if message:
@@ -198,7 +198,7 @@ class CodeActSWEAgent(Agent):
         # the latest user message is important:
         # we want to remind the agent of the environment constraints
         latest_user_message = next(
-            (m for m in reversed(messages) if m.role == "user"), None
+            (m for m in reversed(messages) if m.role == 'user'), None
         )
 
         # Get the last user text inside content
@@ -211,7 +211,7 @@ class CodeActSWEAgent(Agent):
                 )
             )
             # add a reminder to the prompt
-            reminder_text = f"\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>."
+            reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
 
             if latest_user_message_text:
                 latest_user_message_text.text = (

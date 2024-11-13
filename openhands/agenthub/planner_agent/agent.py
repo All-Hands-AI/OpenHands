@@ -9,7 +9,7 @@ from openhands.llm.llm import LLM
 
 
 class PlannerAgent(Agent):
-    VERSION = "1.0"
+    VERSION = '1.0'
     """
     The planner agent utilizes a special prompting strategy to create long term plans for solving problems.
     The agent is given its previous action-observation pairs, current task, and hint based on last action taken at every step.
@@ -36,9 +36,9 @@ class PlannerAgent(Agent):
         - Action: The next action to take based on llm response
         """
         if state.root_task.state in [
-            "completed",
-            "verified",
-            "abandoned",
+            'completed',
+            'verified',
+            'abandoned',
         ]:
             return AgentFinishAction()
 
@@ -48,6 +48,6 @@ class PlannerAgent(Agent):
         content = [TextContent(text=prompt)]
         if self.llm.vision_is_active() and image_urls:
             content.append(ImageContent(image_urls=image_urls))
-        message = Message(role="user", content=content)
+        message = Message(role='user', content=content)
         resp = self.llm.completion(messages=self.llm.format_messages_for_llm(message))
         return self.response_parser.parse(resp)

@@ -54,11 +54,14 @@ def read_task_from_stdin() -> str:
 def create_runtime(
     config: AppConfig,
     sid: str | None = None,
+    headless_mode: bool = True,
 ) -> Runtime:
     """Create a runtime for the agent to run on.
 
     config: The app config.
     sid: The session id.
+    headless_mode: Whether the agent is run in headless mode. `create_runtime` is typically called within evaluation scripts,
+        where we don't want to have the VSCode UI open, so it defaults to True.
     """
     # if sid is provided on the command line, use it as the name of the event stream
     # otherwise generate it on the basis of the configured jwt_secret
@@ -80,6 +83,7 @@ def create_runtime(
         event_stream=event_stream,
         sid=session_id,
         plugins=agent_cls.sandbox_plugins,
+        headless_mode=headless_mode,
     )
 
     return runtime
@@ -122,7 +126,7 @@ async def run_controller(
     sid = sid or generate_sid(config)
 
     if runtime is None:
-        runtime = create_runtime(config, sid=sid)
+        runtime = create_runtime(config, sid=sid, headless_mode=headless_mode)
         await runtime.connect()
 
     event_stream = runtime.event_stream

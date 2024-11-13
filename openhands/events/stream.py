@@ -9,9 +9,9 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.utils import json
 from openhands.events.event import Event, EventSource
 from openhands.events.serialization.event import event_from_dict, event_to_dict
-from openhands.runtime.utils.shutdown_listener import should_continue
 from openhands.storage import FileStore
 from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.shutdown_listener import should_continue
 
 
 class EventStreamSubscriber(str, Enum):
@@ -90,7 +90,8 @@ class EventStream:
         filter_out_type: tuple[type[Event], ...] | None = None,
         filter_hidden=False,
     ) -> Iterable[Event]:
-        """Retrieve events from the event stream, optionally filtering out events of a given type
+        """
+        Retrieve events from the event stream, optionally filtering out events of a given type
         and events marked as hidden.
 
         Args:

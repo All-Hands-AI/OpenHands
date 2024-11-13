@@ -137,7 +137,7 @@ def process_instance(
     else:
         logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
-    runtime = create_runtime(config)
+    runtime = create_runtime(config, headless_mode=False)
     call_async_from_sync(runtime.connect)
 
     try:
@@ -204,6 +204,7 @@ def process_instance(
 )
 def test_stress_remote_runtime(n_eval_workers: int = 64):
     """Mimic evaluation setting to test remote runtime in a multi-processing setting."""
+
     llm_config = LLMConfig()
     metadata = make_metadata(
         llm_config,

@@ -5,7 +5,7 @@ from typing import Optional
 from openhands.core.config.config_utils import get_field_info
 from openhands.core.logger import LOG_DIR
 
-LLM_SENSITIVE_FIELDS = ["api_key", "aws_access_key_id", "aws_secret_access_key"]
+LLM_SENSITIVE_FIELDS = ['api_key', 'aws_access_key_id', 'aws_secret_access_key']
 
 
 @dataclass
@@ -45,18 +45,18 @@ class LLMConfig:
         draft_editor: A more efficient LLM to use for file editing. Introduced in [PR 3985](https://github.com/All-Hands-AI/OpenHands/pull/3985).
     """
 
-    model: str = "claude-3-5-sonnet-20241022"
+    model: str = 'claude-3-5-sonnet-20241022'
     api_key: str | None = None
     base_url: str | None = None
     api_version: str | None = None
-    embedding_model: str = "local"
+    embedding_model: str = 'local'
     embedding_base_url: str | None = None
     embedding_deployment_name: str | None = None
     aws_access_key_id: str | None = None
     aws_secret_access_key: str | None = None
     aws_region_name: str | None = None
-    openrouter_site_url: str = "https://docs.all-hands.dev/"
-    openrouter_app_name: str = "OpenHands"
+    openrouter_site_url: str = 'https://docs.all-hands.dev/'
+    openrouter_app_name: str = 'OpenHands'
     num_retries: int = 8
     retry_multiplier: float = 2
     retry_min_wait: int = 15
@@ -75,8 +75,8 @@ class LLMConfig:
     disable_vision: bool | None = None
     caching_prompt: bool = True
     log_completions: bool = False
-    log_completions_folder: str = os.path.join(LOG_DIR, "completions")
-    draft_editor: Optional["LLMConfig"] = None
+    log_completions_folder: str = os.path.join(LOG_DIR, 'completions')
+    draft_editor: Optional['LLMConfig'] = None
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
@@ -86,14 +86,16 @@ class LLMConfig:
         return result
 
     def __post_init__(self):
-        """Post-initialization hook to assign OpenRouter-related variables to environment variables.
+        """
+        Post-initialization hook to assign OpenRouter-related variables to environment variables.
         This ensures that these values are accessible to litellm at runtime.
         """
+
         # Assign OpenRouter-specific variables to environment variables
         if self.openrouter_site_url:
-            os.environ["OR_SITE_URL"] = self.openrouter_site_url
+            os.environ['OR_SITE_URL'] = self.openrouter_site_url
         if self.openrouter_app_name:
-            os.environ["OR_APP_NAME"] = self.openrouter_app_name
+            os.environ['OR_APP_NAME'] = self.openrouter_app_name
 
     def __str__(self):
         attr_str = []
@@ -102,9 +104,9 @@ class LLMConfig:
             attr_value = getattr(self, f.name)
 
             if attr_name in LLM_SENSITIVE_FIELDS:
-                attr_value = "******" if attr_value else None
+                attr_value = '******' if attr_value else None
 
-            attr_str.append(f"{attr_name}={repr(attr_value)}")
+            attr_str.append(f'{attr_name}={repr(attr_value)}')
 
         return f"LLMConfig({', '.join(attr_str)})"
 
@@ -116,20 +118,20 @@ class LLMConfig:
         ret = self.__dict__.copy()
         for k, v in ret.items():
             if k in LLM_SENSITIVE_FIELDS:
-                ret[k] = "******" if v else None
+                ret[k] = '******' if v else None
             elif isinstance(v, LLMConfig):
                 ret[k] = v.to_safe_dict()
         return ret
 
     @classmethod
-    def from_dict(cls, llm_config_dict: dict) -> "LLMConfig":
+    def from_dict(cls, llm_config_dict: dict) -> 'LLMConfig':
         """Create an LLMConfig object from a dictionary.
 
         This function is used to create an LLMConfig object from a dictionary,
         with the exception of the 'draft_editor' key, which is a nested LLMConfig object.
         """
         args = {k: v for k, v in llm_config_dict.items() if not isinstance(v, dict)}
-        if "draft_editor" in llm_config_dict:
-            draft_editor_config = LLMConfig(**llm_config_dict["draft_editor"])
-            args["draft_editor"] = draft_editor_config
+        if 'draft_editor' in llm_config_dict:
+            draft_editor_config = LLMConfig(**llm_config_dict['draft_editor'])
+            args['draft_editor'] = draft_editor_config
         return cls(**args)

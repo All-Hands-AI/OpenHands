@@ -28,12 +28,14 @@ def to_json(obj, **kwargs):
 
 
 class MicroAgent(Agent):
-    VERSION = "1.0"
-    prompt = ""
+    VERSION = '1.0'
+    prompt = ''
     agent_definition: dict = {}
 
     def history_to_json(self, history: list[Event], max_events: int = 20, **kwargs):
-        """Serialize and simplify history to str format"""
+        """
+        Serialize and simplify history to str format
+        """
         processed_history = []
         event_count = 0
 
@@ -52,11 +54,11 @@ class MicroAgent(Agent):
 
     def __init__(self, llm: LLM, config: AgentConfig):
         super().__init__(llm, config)
-        if "name" not in self.agent_definition:
-            raise ValueError("Agent definition must contain a name")
+        if 'name' not in self.agent_definition:
+            raise ValueError('Agent definition must contain a name')
         self.prompt_template = Environment(loader=BaseLoader).from_string(self.prompt)
         self.delegates = all_microagents.copy()
-        del self.delegates[self.agent_definition["name"]]
+        del self.delegates[self.agent_definition['name']]
 
     def step(self, state: State) -> Action:
         last_user_message, last_image_urls = state.get_current_user_intent()
@@ -71,10 +73,10 @@ class MicroAgent(Agent):
         content = [TextContent(text=prompt)]
         if self.llm.vision_is_active() and last_image_urls:
             content.append(ImageContent(image_urls=last_image_urls))
-        message = Message(role="user", content=content)
+        message = Message(role='user', content=content)
         resp = self.llm.completion(
             messages=self.llm.format_messages_for_llm(message),
         )
-        action_resp = resp["choices"][0]["message"]["content"]
+        action_resp = resp['choices'][0]['message']['content']
         action = parse_response(action_resp)
         return action

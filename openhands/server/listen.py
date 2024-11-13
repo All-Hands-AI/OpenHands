@@ -368,7 +368,8 @@ async def websocket_endpoint(websocket: WebSocket):
 
 @app.get('/api/options/models')
 async def get_litellm_models() -> list[str]:
-    """Get all models supported by LiteLLM.
+    """
+    Get all models supported by LiteLLM.
 
     This function combines models from litellm and Bedrock, removing any
     error-prone Bedrock models.
@@ -889,6 +890,34 @@ async def authenticate(request: Request):
         samesite='strict',
     )
     return response
+
+
+@app.get('/api/vscode-url')
+async def get_vscode_url(request: Request):
+    """Get the VSCode URL.
+
+    This endpoint allows getting the VSCode URL.
+
+    Args:
+        request (Request): The incoming FastAPI request object.
+
+    Returns:
+        JSONResponse: A JSON response indicating the success of the operation.
+    """
+    try:
+        runtime: Runtime = request.state.conversation.runtime
+        logger.debug(f'Runtime type: {type(runtime)}')
+        logger.debug(f'Runtime VSCode URL: {runtime.vscode_url}')
+        return JSONResponse(status_code=200, content={'vscode_url': runtime.vscode_url})
+    except Exception as e:
+        logger.error(f'Error getting VSCode URL: {e}', exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={
+                'vscode_url': None,
+                'error': f'Error getting VSCode URL: {e}',
+            },
+        )
 
 
 class SPAStaticFiles(StaticFiles):
