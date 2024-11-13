@@ -1,3 +1,4 @@
+from ast import parse
 import asyncio
 import os
 import re
@@ -10,7 +11,9 @@ import jwt
 import requests
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
+import socketio
 
+from openhands.events.serialization.event import event_from_dict
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
 from openhands.server.github import (
@@ -902,3 +905,69 @@ class SPAStaticFiles(StaticFiles):
 
 
 app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist')
+
+sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*')
+app = socketio.ASGIApp(sio, other_asgi_app=app)
+
+
+@sio.event
+async def connect(session_id: str, environ):
+    logger.info(f"SIO:CONNECT: {session_id}")
+
+    jwt_token = environ.get("HTTP_OH_TOKEN", '')
+    if jwt_token:
+        old_session_id = get_sid_from_token(jwt_token, config.jwt_secret)
+        if old_session_id == '':
+            sio.send({'error': 'Invalid token', 'error_code': 401})
+            return
+        logger.info(f'Renaming existing session: {old_session_id} to {session_id}')
+        session = session_manager.rename_existing_session(old_session_id, session_id)
+    else:
+        session_id = str(uuid.uuid4())
+        jwt_token = sign_token({'sid': session_id}, config.jwt_secret)
+        logger.info(f'New session: {session_id}')
+        session = session_manager.add_new_session(sio, session_id)
+    
+    github_token = environ.get('HTTP_GITHUB_TOKEN', '')
+    if not await authenticate_github_user(github_token):
+        raise RuntimeError(status.WS_1008_POLICY_VIOLATION)
+    
+    logger.info("TODO: Session work here...")
+    await session.send({'token': jwt_token, 'status': 'ok'})
+
+    latest_event_id = int(environ.get('HTTP_LATEST_EVENT_ID', -1))
+    async_stream = AsyncEventStreamWrapper(
+        session.agent_session.event_stream, latest_event_id + 1
+    )
+
+    async for event in async_stream:
+        if isinstance(
+            event,
+            (
+                NullAction,
+                NullObservation,
+                ChangeAgentStateAction,
+                AgentStateChangedObservation,
+            ),
+        ):
+            continue
+        await session.send(event_to_dict(event))
+
+
+@sio.event
+async def oh_action(session_id, data):
+    logger.info(f"SIO:OH_ACTION:{session_id}")
+    session = session_manager.get_existing_session(session_id)
+    if session is None:
+        raise ValueError(f'no_such_session_id:{session_id}')
+    session.on_event(event_from_dict(data))
+
+
+@sio.event
+def disconnect(sid):
+    logger.info(f'SIO:DISCONNECT:{sid}')
+    # I dunno about this - should we create a new one?
+    #session = session_manager.close(session_id)
+    #if session is None:
+    #    raise ValueError(f'no_such_session_id:{session_id}')
+
