@@ -28,9 +28,9 @@ class InvariantAnalyzer(SecurityAnalyzer):
 
     trace: list[TraceElement]
     input: list[dict]
-    container_name: str = "openhands-invariant-server"
-    image_name: str = "ghcr.io/invariantlabs-ai/server:openhands"
-    api_host: str = "http://localhost"
+    container_name: str = 'openhands-invariant-server'
+    image_name: str = 'ghcr.io/invariantlabs-ai/server:openhands'
+    api_host: str = 'http://localhost'
     timeout: int = 180
     settings: dict = {}
 
@@ -52,16 +52,16 @@ class InvariantAnalyzer(SecurityAnalyzer):
             self.docker_client = docker.from_env()
         except Exception as ex:
             logger.exception(
-                "Error creating Invariant Security Analyzer container. Please check that Docker is running or disable the Security Analyzer in settings.",
+                'Error creating Invariant Security Analyzer container. Please check that Docker is running or disable the Security Analyzer in settings.',
                 exc_info=False,
             )
             raise ex
         running_containers = self.docker_client.containers.list(
-            filters={"name": self.container_name}
+            filters={'name': self.container_name}
         )
         if not running_containers:
             all_containers = self.docker_client.containers.list(
-                all=True, filters={"name": self.container_name}
+                all=True, filters={'name': self.container_name}
             )
             if all_containers:
                 self.container = all_containers[0]
@@ -71,33 +71,33 @@ class InvariantAnalyzer(SecurityAnalyzer):
                 self.container = self.docker_client.containers.run(
                     self.image_name,
                     name=self.container_name,
-                    platform="linux/amd64",
-                    ports={"8000/tcp": self.api_port},
+                    platform='linux/amd64',
+                    ports={'8000/tcp': self.api_port},
                     detach=True,
                 )
         else:
             self.container = running_containers[0]
 
         elapsed = 0
-        while self.container.status != "running":
+        while self.container.status != 'running':
             self.container = self.docker_client.containers.get(self.container_name)
             elapsed += 1
             logger.debug(
-                f"waiting for container to start: {elapsed}, container status: {self.container.status}"
+                f'waiting for container to start: {elapsed}, container status: {self.container.status}'
             )
             if elapsed > self.timeout:
                 break
 
         self.api_port = int(
-            self.container.attrs["NetworkSettings"]["Ports"]["8000/tcp"][0]["HostPort"]
+            self.container.attrs['NetworkSettings']['Ports']['8000/tcp'][0]['HostPort']
         )
 
-        self.api_server = f"{self.api_host}:{self.api_port}"
+        self.api_server = f'{self.api_host}:{self.api_port}'
         self.client = InvariantClient(self.api_server, self.sid)
         if policy is None:
             policy, _ = self.client.Policy.get_template()
             if policy is None:
-                policy = ""
+                policy = ''
         self.monitor = self.client.Monitor.from_string(policy)
 
     async def close(self):
@@ -109,15 +109,15 @@ class InvariantAnalyzer(SecurityAnalyzer):
             self.trace.extend(element)
             self.input.extend([e.model_dump(exclude_none=True) for e in element])  # type: ignore [call-overload]
         else:
-            logger.debug("Invariant skipping element: event")
+            logger.debug('Invariant skipping element: event')
 
     def get_risk(self, results: list[str]) -> ActionSecurityRisk:
         mapping = {
-            "high": ActionSecurityRisk.HIGH,
-            "medium": ActionSecurityRisk.MEDIUM,
-            "low": ActionSecurityRisk.LOW,
+            'high': ActionSecurityRisk.HIGH,
+            'medium': ActionSecurityRisk.MEDIUM,
+            'low': ActionSecurityRisk.LOW,
         }
-        regex = r"(?<=risk=)\w+"
+        regex = r'(?<=risk=)\w+'
         risks = []
         for result in results:
             m = re.search(regex, result)
@@ -137,22 +137,22 @@ class InvariantAnalyzer(SecurityAnalyzer):
         risk = event.security_risk  # type: ignore [attr-defined]
         return (
             risk is not None
-            and risk < self.settings.get("RISK_SEVERITY", ActionSecurityRisk.MEDIUM)
-            and hasattr(event, "confirmation_state")
+            and risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM)
+            and hasattr(event, 'confirmation_state')
             and event.confirmation_state
             == ActionConfirmationStatus.AWAITING_CONFIRMATION
         )
 
     async def confirm(self, event: Event) -> None:
         new_event = action_from_dict(
-            {"action": "change_agent_state", "args": {"agent_state": "user_confirmed"}}
+            {'action': 'change_agent_state', 'args': {'agent_state': 'user_confirmed'}}
         )
         # we should confirm only on agent actions
         event_source = event.source if event.source else EventSource.AGENT
         await call_sync_from_async(self.event_stream.add_event, new_event, event_source)
 
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
-        logger.debug("Calling security_risk on InvariantAnalyzer")
+        logger.debug('Calling security_risk on InvariantAnalyzer')
         new_elements = parse_element(self.trace, event)
         input = [e.model_dump(exclude_none=True) for e in new_elements]  # type: ignore [call-overload]
         self.trace.extend(new_elements)
@@ -160,7 +160,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
         self.input.extend(input)
         risk = ActionSecurityRisk.UNKNOWN
         if err:
-            logger.warning(f"Error checking policy: {err}")
+            logger.warning(f'Error checking policy: {err}')
             return risk
 
         risk = self.get_risk(result)
@@ -169,35 +169,35 @@ class InvariantAnalyzer(SecurityAnalyzer):
 
     ### Handle API requests
     async def handle_api_request(self, request: Request) -> Any:
-        path_parts = request.url.path.strip("/").split("/")
+        path_parts = request.url.path.strip('/').split('/')
         endpoint = path_parts[-1]  # Get the last part of the path
 
-        if request.method == "GET":
-            if endpoint == "export-trace":
+        if request.method == 'GET':
+            if endpoint == 'export-trace':
                 return await self.export_trace(request)
-            elif endpoint == "policy":
+            elif endpoint == 'policy':
                 return await self.get_policy(request)
-            elif endpoint == "settings":
+            elif endpoint == 'settings':
                 return await self.get_settings(request)
-        elif request.method == "POST":
-            if endpoint == "policy":
+        elif request.method == 'POST':
+            if endpoint == 'policy':
                 return await self.update_policy(request)
-            elif endpoint == "settings":
+            elif endpoint == 'settings':
                 return await self.update_settings(request)
-        raise HTTPException(status_code=405, detail="Method Not Allowed")
+        raise HTTPException(status_code=405, detail='Method Not Allowed')
 
     async def export_trace(self, request: Request) -> Any:
         return JSONResponse(content=self.input)
 
     async def get_policy(self, request: Request) -> Any:
-        return JSONResponse(content={"policy": self.monitor.policy})
+        return JSONResponse(content={'policy': self.monitor.policy})
 
     async def update_policy(self, request: Request) -> Any:
         data = await request.json()
-        policy = data.get("policy")
+        policy = data.get('policy')
         new_monitor = self.client.Monitor.from_string(policy)
         self.monitor = new_monitor
-        return JSONResponse(content={"policy": policy})
+        return JSONResponse(content={'policy': policy})
 
     async def get_settings(self, request: Request) -> Any:
         return JSONResponse(content=self.settings)

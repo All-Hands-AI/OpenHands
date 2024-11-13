@@ -13,11 +13,11 @@ class ErrorObservation(Observation):
     """
 
     observation: str = ObservationType.ERROR
-    error_id: str = ""
+    error_id: str = ''
 
     @property
     def message(self) -> str:
         return self.content
 
     def __str__(self) -> str:
-        return f"**ErrorObservation**\n{self.content}"
+        return f'**ErrorObservation**\n{self.content}'

@@ -21,14 +21,14 @@ class CodeActSWEActionParserFinish(ActionParser):
         self.finish_command = None
 
     def check_condition(self, action_str: str) -> bool:
-        self.finish_command = re.search(r"<finish>.*</finish>", action_str, re.DOTALL)
+        self.finish_command = re.search(r'<finish>.*</finish>', action_str, re.DOTALL)
         return self.finish_command is not None
 
     def parse(self, action_str: str) -> Action:
         assert (
             self.finish_command is not None
-        ), "self.finish_command should not be None when parse is called"
-        thought = action_str.replace(self.finish_command.group(0), "").strip()
+        ), 'self.finish_command should not be None when parse is called'
+        thought = action_str.replace(self.finish_command.group(0), '').strip()
         return AgentFinishAction(thought=thought)
 
 
@@ -45,18 +45,18 @@ class CodeActSWEActionParserCmdRun(ActionParser):
 
     def check_condition(self, action_str: str) -> bool:
         self.bash_command = re.search(
-            r"<execute_bash>(.*?)</execute_bash>", action_str, re.DOTALL
+            r'<execute_bash>(.*?)</execute_bash>', action_str, re.DOTALL
         )
         return self.bash_command is not None
 
     def parse(self, action_str: str) -> Action:
         assert (
             self.bash_command is not None
-        ), "self.bash_command should not be None when parse is called"
-        thought = action_str.replace(self.bash_command.group(0), "").strip()
+        ), 'self.bash_command should not be None when parse is called'
+        thought = action_str.replace(self.bash_command.group(0), '').strip()
         # a command was found
         command_group = self.bash_command.group(1).strip()
-        if command_group.strip() == "exit":
+        if command_group.strip() == 'exit':
             return AgentFinishAction()
         return CmdRunAction(command=command_group, thought=thought)
 
@@ -70,20 +70,20 @@ class CodeActSWEActionParserIPythonRunCell(ActionParser):
         self,
     ):
         self.python_code = None
-        self.jupyter_kernel_init_code: str = "from agentskills import *"
+        self.jupyter_kernel_init_code: str = 'from agentskills import *'
 
     def check_condition(self, action_str: str) -> bool:
         self.python_code = re.search(
-            r"<execute_ipython>(.*?)</execute_ipython>", action_str, re.DOTALL
+            r'<execute_ipython>(.*?)</execute_ipython>', action_str, re.DOTALL
         )
         return self.python_code is not None
 
     def parse(self, action_str: str) -> Action:
         assert (
             self.python_code is not None
-        ), "self.python_code should not be None when parse is called"
+        ), 'self.python_code should not be None when parse is called'
         code_group = self.python_code.group(1).strip()
-        thought = action_str.replace(self.python_code.group(0), "").strip()
+        thought = action_str.replace(self.python_code.group(0), '').strip()
         return IPythonRunCellAction(
             code=code_group,
             thought=thought,

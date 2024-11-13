@@ -35,6 +35,7 @@ class LongTermMemory:
         event_stream: EventStream,
     ):
         """Initialize the chromadb and set up ChromaVectorStore for later use."""
+
         check_llama_index()
 
         # initialize the chromadb client

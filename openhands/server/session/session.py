@@ -61,14 +61,14 @@ class Session:
                 try:
                     data = await self.websocket.receive_json()
                 except ValueError:
-                    await self.send_error("Invalid JSON")
+                    await self.send_error('Invalid JSON')
                     continue
                 await self.dispatch(data)
         except WebSocketDisconnect:
-            logger.info("WebSocket disconnected, sid: %s", self.sid)
+            logger.info('WebSocket disconnected, sid: %s', self.sid)
             self.close()
         except RuntimeError as e:
-            logger.exception("Error in loop_recv: %s", e)
+            logger.exception('Error in loop_recv: %s', e)
             self.close()
 
     async def _initialize_agent(self, data: dict):
@@ -76,16 +76,16 @@ class Session:
             ChangeAgentStateAction(AgentState.LOADING), EventSource.ENVIRONMENT
         )
         self.agent_session.event_stream.add_event(
-            AgentStateChangedObservation("", AgentState.LOADING),
+            AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
         )
         # Extract the agent-relevant arguments from the request
-        args = {key: value for key, value in data.get("args", {}).items()}
+        args = {key: value for key, value in data.get('args', {}).items()}
         agent_cls = args.get(ConfigType.AGENT, self.config.default_agent)
         self.config.security.confirmation_mode = args.get(
             ConfigType.CONFIRMATION_MODE, self.config.security.confirmation_mode
         )
-        self.config.security.security_analyzer = data.get("args", {}).get(
+        self.config.security.security_analyzer = data.get('args', {}).get(
             ConfigType.SECURITY_ANALYZER, self.config.security.security_analyzer
         )
         max_iterations = args.get(ConfigType.MAX_ITERATIONS, self.config.max_iterations)
@@ -119,9 +119,9 @@ class Session:
                 agent_configs=self.config.get_agent_configs(),
             )
         except Exception as e:
-            logger.exception(f"Error creating controller: {e}")
+            logger.exception(f'Error creating controller: {e}')
             await self.send_error(
-                f"Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information.."
+                f'Error creating controller. Please check Docker is running and visit `{TROUBLESHOOTING_URL}` for more debugging information..'
             )
             return
 
@@ -148,16 +148,16 @@ class Session:
         ):
             # feedback from the environment to agent actions is understood as agent events by the UI
             event_dict = event_to_dict(event)
-            event_dict["source"] = EventSource.AGENT
+            event_dict['source'] = EventSource.AGENT
             await self.send(event_dict)
         elif isinstance(event, ErrorObservation):
             # send error events as agent events to the UI
             event_dict = event_to_dict(event)
-            event_dict["source"] = EventSource.AGENT
+            event_dict['source'] = EventSource.AGENT
             await self.send(event_dict)
 
     async def dispatch(self, data: dict):
-        action = data.get("action", "")
+        action = data.get('action', '')
         if action == ActionType.INIT:
             await self._initialize_agent(data)
             return
@@ -168,12 +168,12 @@ class Session:
             if controller:
                 if controller.agent.llm.config.disable_vision:
                     await self.send_error(
-                        "Support for images is disabled for this model, try without an image."
+                        'Support for images is disabled for this model, try without an image.'
                     )
                     return
                 if not controller.agent.llm.vision_is_active():
                     await self.send_error(
-                        "Model does not support image upload, change to a different model or try without an image."
+                        'Model does not support image upload, change to a different model or try without an image.'
                     )
                     return
         self.agent_session.event_stream.add_event(event, EventSource.USER)
@@ -192,15 +192,15 @@ class Session:
 
     async def send_error(self, message: str) -> bool:
         """Sends an error message to the client."""
-        return await self.send({"error": True, "message": message})
+        return await self.send({'error': True, 'message': message})
 
     async def _send_status_message(self, msg_type: str, id: str, message: str) -> bool:
         """Sends a status message to the client."""
-        if msg_type == "error":
+        if msg_type == 'error':
             await self.agent_session.stop_agent_loop_for_error()
 
         return await self.send(
-            {"status_update": True, "type": msg_type, "id": id, "message": message}
+            {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
         )
 
     def queue_status_message(self, msg_type: str, id: str, message: str):

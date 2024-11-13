@@ -16,7 +16,7 @@ class PlannerResponseParser(ResponseParser):
 
     def parse_response(self, response) -> str:
         # get the next action from the response
-        return response["choices"][0]["message"]["content"]
+        return response['choices'][0]['message']['content']
 
     def parse_action(self, action_str: str) -> Action:
         """Parses a string to find an action within it
@@ -30,8 +30,8 @@ class PlannerResponseParser(ResponseParser):
         # attempt to load the JSON dict from the response
         action_dict = json.loads(action_str)
 
-        if "content" in action_dict:
+        if 'content' in action_dict:
             # The LLM gets confused here. Might as well be robust
-            action_dict["contents"] = action_dict.pop("content")
+            action_dict['contents'] = action_dict.pop('content')
 
         return action_from_dict(action_dict)

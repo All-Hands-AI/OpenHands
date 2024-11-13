@@ -10,30 +10,30 @@ class Test(BaseIntegrationTest):
 
     @classmethod
     def initialize_runtime(cls, runtime: Runtime) -> None:
-        action = CmdRunAction(command="mkdir -p /workspace", keep_prompt=False)
+        action = CmdRunAction(command='mkdir -p /workspace', keep_prompt=False)
         obs = runtime.run_action(action)
-        assert_and_raise(obs.exit_code == 0, f"Failed to run command: {obs.content}")
+        assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
 
     @classmethod
     def verify_result(cls, runtime: Runtime, histories: list[Event]) -> TestResult:
         # check if the file /workspace/hello.sh exists
-        action = CmdRunAction(command="cat /workspace/hello.sh", keep_prompt=False)
+        action = CmdRunAction(command='cat /workspace/hello.sh', keep_prompt=False)
         obs = runtime.run_action(action)
         if obs.exit_code != 0:
             return TestResult(
                 success=False,
-                reason=f"Failed to cat /workspace/hello.sh: {obs.content}.",
+                reason=f'Failed to cat /workspace/hello.sh: {obs.content}.',
             )
 
         # execute the script
-        action = CmdRunAction(command="bash /workspace/hello.sh", keep_prompt=False)
+        action = CmdRunAction(command='bash /workspace/hello.sh', keep_prompt=False)
         obs = runtime.run_action(action)
         if obs.exit_code != 0:
             return TestResult(
                 success=False,
-                reason=f"Failed to execute /workspace/hello.sh: {obs.content}.",
+                reason=f'Failed to execute /workspace/hello.sh: {obs.content}.',
             )
-        if obs.content.strip() != "hello":
+        if obs.content.strip() != 'hello':
             return TestResult(
                 success=False, reason=f'Script did not print "hello": {obs.content}.'
             )
