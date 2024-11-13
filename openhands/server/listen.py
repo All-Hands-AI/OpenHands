@@ -6,7 +6,6 @@ with warnings.catch_warnings():
 from fastapi import (
     FastAPI,
 )
-from fastapi.staticfiles import StaticFiles
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware
@@ -15,6 +14,7 @@ from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.restricted import AttachSessionMiddleware
 from openhands.server.routes.restricted import app as restricted_api_router
 from openhands.server.routes.websocket import app as websocket_router
+from openhands.server.static import SPAStaticFiles
 
 app = FastAPI()
 app.add_middleware(
@@ -35,15 +35,5 @@ app.include_router(websocket_router)
 app.middleware('http')(
     AttachSessionMiddleware(app, target_router=restricted_api_router)
 )
-
-
-class SPAStaticFiles(StaticFiles):
-    async def get_response(self, path: str, scope):
-        try:
-            return await super().get_response(path, scope)
-        except Exception:
-            # FIXME: just making this HTTPException doesn't work for some reason
-            return await super().get_response('index.html', scope)
-
 
 app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist')
