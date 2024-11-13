@@ -5645,14 +5645,13 @@ name = "openhands-aci"
 version = "0.1.0"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
-python-versions = "<4.0,>=3.12"
-files = [
-    {file = "openhands_aci-0.1.0-py3-none-any.whl", hash = "sha256:f28e5a32e394d1e643f79bf8af27fe44d039cb71729d590f9f3ee0c23c075f00"},
-    {file = "openhands_aci-0.1.0.tar.gz", hash = "sha256:babc55f516efbb27eb7e528662e14b75c902965c48a110408fda824b83ea4461"},
-]
+python-versions = "^3.12"
+files = []
+develop = false
 
 [package.dependencies]
-diskcache = ">=5.6.3,<6.0.0"
+diskcache = "^5.6.3"
+flake8 = "*"
 gitpython = "*"
 grep-ast = "0.3.3"
 litellm = "*"
@@ -5661,6 +5660,13 @@ numpy = "*"
 pandas = "*"
 scipy = "*"
 tree-sitter = "0.21.3"
+whatthepatch = "^1.0.6"
+
+[package.source]
+type = "git"
+url = "https://github.com/All-Hands-AI/openhands-aci.git"
+reference = "ht/add-linter"
+resolved_reference = "cb65f471d8a762fd53494159ef99fc5b05113e2f"
 
 [[package]]
 name = "opentelemetry-api"
@@ -10211,4 +10217,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "a552f630dfdb9221eda6932e71e67a935c52ebfe4388ec9ef4b3245e7df2f82b"
+content-hash = "f2b10eb65d4a6d11f4fff92c1609ca5876ca4521f504893cfd2772e495548096"
