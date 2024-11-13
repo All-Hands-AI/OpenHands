@@ -35,7 +35,8 @@ def codeact_user_response_eda(state: State) -> str:
 
     # retrieve the latest model message from history
     if state.history:
-        model_guess = state.get_last_agent_message()
+        last_agent_message = state.get_last_agent_message()
+        model_guess = last_agent_message.content if last_agent_message else ''
 
     assert game is not None, 'Game is not initialized.'
     msg = game.generate_user_response(model_guess)
@@ -140,7 +141,8 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    final_message = state.get_last_agent_message()
+    last_agent_message = state.get_last_agent_message()
+    final_message = last_agent_message.content if last_agent_message else ''
 
     logger.info(f'Final message: {final_message} | Ground truth: {instance["text"]}')
     test_result = game.reward()

@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import os
 import traceback
 from typing import Callable, ClassVar, Type
 
@@ -42,7 +43,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
-from openhands.runtime.utils.shutdown_listener import should_continue
+from openhands.utils.shutdown_listener import should_continue
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -260,7 +261,11 @@ class AgentController:
             observation_to_print.content = truncate_content(
                 observation_to_print.content, self.agent.llm.config.max_message_chars
             )
-        self.log('debug', str(observation_to_print), extra={'msg_type': 'OBSERVATION'})
+        # Use info level if LOG_ALL_EVENTS is set
+        log_level = 'info' if os.getenv('LOG_ALL_EVENTS') in ('true', '1') else 'debug'
+        self.log(
+            log_level, str(observation_to_print), extra={'msg_type': 'OBSERVATION'}
+        )
 
         if observation.llm_metrics is not None:
             self.agent.llm.metrics.merge(observation.llm_metrics)
@@ -283,8 +288,12 @@ class AgentController:
             action (MessageAction): The message action to handle.
         """
         if action.source == EventSource.USER:
+            # Use info level if LOG_ALL_EVENTS is set
+            log_level = (
+                'info' if os.getenv('LOG_ALL_EVENTS') in ('true', '1') else 'debug'
+            )
             self.log(
-                'debug',
+                log_level,
                 str(action),
                 extra={'msg_type': 'ACTION', 'event_source': EventSource.USER},
             )
@@ -503,7 +512,9 @@ class AgentController:
 
         await self.update_state_after_step()
 
-        self.log('debug', str(action), extra={'msg_type': 'ACTION'})
+        # Use info level if LOG_ALL_EVENTS is set
+        log_level = 'info' if os.getenv('LOG_ALL_EVENTS') in ('true', '1') else 'debug'
+        self.log(log_level, str(action), extra={'msg_type': 'ACTION'})
 
     async def _delegate_step(self):
         """Executes a single step of the delegate agent."""
@@ -669,7 +680,7 @@ class AgentController:
         # sanity check
         if start_id > end_id + 1:
             self.log(
-                'debug',
+                'warning',
                 f'start_id {start_id} is greater than end_id + 1 ({end_id + 1}). History will be empty.',
             )
             self.state.history = []
@@ -700,7 +711,7 @@ class AgentController:
                 # Match with most recent unmatched delegate action
                 if not delegate_action_ids:
                     self.log(
-                        'error',
+                        'warning',
                         f'Found AgentDelegateObservation without matching action at id={event.id}',
                     )
                     continue

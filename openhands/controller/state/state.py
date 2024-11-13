@@ -149,21 +149,21 @@ class State:
         for event in reversed(self.history):
             if isinstance(event, MessageAction) and event.source == 'user':
                 last_user_message = event.content
-                last_user_message_image_urls = event.images_urls
+                last_user_message_image_urls = event.image_urls
             elif isinstance(event, AgentFinishAction):
                 if last_user_message is not None:
                     return last_user_message, None
 
         return last_user_message, last_user_message_image_urls
 
-    def get_last_agent_message(self) -> str | None:
+    def get_last_agent_message(self) -> MessageAction | None:
         for event in reversed(self.history):
             if isinstance(event, MessageAction) and event.source == EventSource.AGENT:
-                return event.content
+                return event
         return None
 
-    def get_last_user_message(self) -> str | None:
+    def get_last_user_message(self) -> MessageAction | None:
         for event in reversed(self.history):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
-                return event.content
+                return event
         return None

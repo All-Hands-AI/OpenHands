@@ -10,17 +10,27 @@ import React, { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import posthog from "posthog-js";
-import { SocketProvider } from "./context/socket";
 import "./i18n";
 import store from "./store";
+import OpenHands from "./api/open-hands";
 
 function PosthogInit() {
+  const [key, setKey] = React.useState<string | null>(null);
+
   React.useEffect(() => {
-    posthog.init("phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA", {
-      api_host: "https://us.i.posthog.com",
-      person_profiles: "identified_only",
+    OpenHands.getConfig().then((config) => {
+      setKey(config.POSTHOG_CLIENT_KEY);
     });
   }, []);
+
+  React.useEffect(() => {
+    if (key) {
+      posthog.init(key, {
+        api_host: "https://us.i.posthog.com",
+        person_profiles: "identified_only",
+      });
+    }
+  }, [key]);
 
   return null;
 }
@@ -43,12 +53,10 @@ prepareApp().then(() =>
     hydrateRoot(
       document,
       <StrictMode>
-        <SocketProvider>
-          <Provider store={store}>
-            <RemixBrowser />
-            <PosthogInit />
-          </Provider>
-        </SocketProvider>
+        <Provider store={store}>
+          <RemixBrowser />
+          <PosthogInit />
+        </Provider>
       </StrictMode>,
     );
   }),

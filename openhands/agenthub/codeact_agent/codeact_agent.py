@@ -37,7 +37,7 @@ from openhands.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
 )
-from openhands.utils.microagent import MicroAgent
+from openhands.utils.prompt import PromptManager
 
 
 class CodeActAgent(Agent):
@@ -82,16 +82,6 @@ class CodeActAgent(Agent):
         super().__init__(llm, config)
         self.reset()
 
-        self.micro_agent = (
-            MicroAgent(
-                os.path.join(
-                    os.path.dirname(__file__), 'micro', f'{config.micro_agent_name}.md'
-                )
-            )
-            if config.micro_agent_name
-            else None
-        )
-
         self.mock_function_calling = False
         if not self.llm.is_function_calling_active():
             logger.info(
@@ -109,7 +99,13 @@ class CodeActAgent(Agent):
         logger.debug(
             f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
         )
-        self.system_prompt = codeact_function_calling.SYSTEM_PROMPT
+        self.prompt_manager = PromptManager(
+            microagent_dir=os.path.join(os.path.dirname(__file__), 'micro')
+            if self.config.use_microagents
+            else None,
+            prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts', 'tools'),
+            disabled_microagents=self.config.disabled_microagents,
+        )
 
         self.pending_actions: deque[Action] = deque()
 
@@ -180,8 +176,8 @@ class CodeActAgent(Agent):
         elif isinstance(action, MessageAction):
             role = 'user' if action.source == 'user' else 'assistant'
             content = [TextContent(text=action.content or '')]
-            if self.llm.vision_is_active() and action.images_urls:
-                content.append(ImageContent(image_urls=action.images_urls))
+            if self.llm.vision_is_active() and action.image_urls:
+                content.append(ImageContent(image_urls=action.image_urls))
             return [
                 Message(
                     role=role,
@@ -306,8 +302,8 @@ class CodeActAgent(Agent):
             return self.pending_actions.popleft()
 
         # if we're done, go back
-        last_user_message = state.get_last_user_message()
-        if last_user_message and last_user_message.strip() == '/exit':
+        latest_user_message = state.get_last_user_message()
+        if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
         # prepare what we want to send to the LLM
@@ -362,12 +358,21 @@ class CodeActAgent(Agent):
                 role='system',
                 content=[
                     TextContent(
-                        text=self.system_prompt,
-                        cache_prompt=self.llm.is_caching_prompt_active(),  # Cache system prompt
+                        text=self.prompt_manager.get_system_message(),
+                        cache_prompt=self.llm.is_caching_prompt_active(),
                     )
                 ],
             )
         ]
+        example_message = self.prompt_manager.get_example_user_message()
+        if example_message:
+            messages.append(
+                Message(
+                    role='user',
+                    content=[TextContent(text=example_message)],
+                    cache_prompt=self.llm.is_caching_prompt_active(),
+                )
+            )
 
         pending_tool_call_action_messages: dict[str, Message] = {}
         tool_call_id_to_message: dict[str, Message] = {}
@@ -414,8 +419,9 @@ class CodeActAgent(Agent):
                 pending_tool_call_action_messages.pop(response_id)
 
             for message in messages_to_add:
-                # add regular message
                 if message:
+                    if message.role == 'user':
+                        self.prompt_manager.enhance_message(message)
                     # handle error if the message is the SAME role as the previous message
                     # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
                     # there shouldn't be two consecutive messages from the same role

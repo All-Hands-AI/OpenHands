@@ -2,10 +2,11 @@ import asyncio
 import os
 import re
 import tempfile
+import time
 import uuid
 import warnings
-from contextlib import asynccontextmanager
 
+import jwt
 import requests
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
@@ -15,6 +16,7 @@ from openhands.server.data_models.feedback import FeedbackDataModel, store_feedb
 from openhands.server.github import (
     GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET,
+    UserVerifier,
     authenticate_github_user,
 )
 from openhands.storage import get_file_store
@@ -60,7 +62,7 @@ from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.llm import bedrock
 from openhands.runtime.base import Runtime
-from openhands.server.auth import get_sid_from_token, sign_token
+from openhands.server.auth.auth import get_sid_from_token, sign_token
 from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware
 from openhands.server.session import SessionManager
 
@@ -71,14 +73,7 @@ file_store = get_file_store(config.file_store, config.file_store_path)
 session_manager = SessionManager(config, file_store)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global session_manager
-    async with session_manager:
-        yield
-
-
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 app.add_middleware(
     LocalhostCORSMiddleware,
     allow_credentials=True,
@@ -204,12 +199,22 @@ async def attach_session(request: Request, call_next):
         response = await call_next(request)
         return response
 
-    github_token = request.headers.get('X-GitHub-Token')
-    if not await authenticate_github_user(github_token):
-        return JSONResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': 'Not authenticated'},
-        )
+    user_verifier = UserVerifier()
+    if user_verifier.is_active():
+        signed_token = request.cookies.get('github_auth')
+        if not signed_token:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={'error': 'Not authenticated'},
+            )
+        try:
+            jwt.decode(signed_token, config.jwt_secret, algorithms=['HS256'])
+        except Exception as e:
+            logger.warning(f'Invalid token: {e}')
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={'error': 'Invalid token'},
+            )
 
     if not request.headers.get('Authorization'):
         logger.warning('Missing Authorization header')
@@ -263,7 +268,7 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Send a message:
         ```json
-        {"action": "message", "args": {"content": "Hello, how are you?", "images_urls": ["base64_url1", "base64_url2"]}}
+        {"action": "message", "args": {"content": "Hello, how are you?", "image_urls": ["base64_url1", "base64_url2"]}}
         ```
     - Write contents to a file:
         ```json
@@ -864,11 +869,55 @@ async def authenticate(request: Request):
             content={'error': 'Not authorized via GitHub waitlist'},
         )
 
+    # Create a signed JWT token with 1-hour expiration
+    cookie_data = {
+        'github_token': token,
+        'exp': int(time.time()) + 3600,  # 1 hour expiration
+    }
+    signed_token = sign_token(cookie_data, config.jwt_secret)
+
     response = JSONResponse(
         status_code=status.HTTP_200_OK, content={'message': 'User authenticated'}
     )
 
+    # Set secure cookie with signed token
+    response.set_cookie(
+        key='github_auth',
+        value=signed_token,
+        max_age=3600,  # 1 hour in seconds
+        httponly=True,
+        secure=True,
+        samesite='strict',
+    )
     return response
+
+
+@app.get('/api/vscode-url')
+async def get_vscode_url(request: Request):
+    """Get the VSCode URL.
+
+    This endpoint allows getting the VSCode URL.
+
+    Args:
+        request (Request): The incoming FastAPI request object.
+
+    Returns:
+        JSONResponse: A JSON response indicating the success of the operation.
+    """
+    try:
+        runtime: Runtime = request.state.conversation.runtime
+        logger.debug(f'Runtime type: {type(runtime)}')
+        logger.debug(f'Runtime VSCode URL: {runtime.vscode_url}')
+        return JSONResponse(status_code=200, content={'vscode_url': runtime.vscode_url})
+    except Exception as e:
+        logger.error(f'Error getting VSCode URL: {e}', exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={
+                'vscode_url': None,
+                'error': f'Error getting VSCode URL: {e}',
+            },
+        )
 
 
 class SPAStaticFiles(StaticFiles):

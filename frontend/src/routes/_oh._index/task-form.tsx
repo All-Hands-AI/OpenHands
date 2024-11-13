@@ -70,11 +70,6 @@ export function TaskForm() {
             "border border-neutral-600 px-4 py-[17px] rounded-lg text-[17px] leading-5 w-full transition-colors duration-200",
             inputIsFocused ? "bg-neutral-600" : "bg-neutral-700",
             "hover:border-neutral-500 focus-within:border-neutral-500",
-            "group relative",
-            "before:pointer-events-none before:absolute before:inset-0 before:rounded-lg before:transition-colors",
-            "before:border-2 before:border-dashed before:border-transparent",
-            "[&:has(*:focus-within)]:before:border-neutral-500/50",
-            "[&:has(*[data-dragging-over='true'])]:before:border-neutral-500/50",
           )}
         >
           <ChatInput

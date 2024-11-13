@@ -116,6 +116,7 @@ async def main():
         event_stream=event_stream,
         sid=sid,
         plugins=agent_cls.sandbox_plugins,
+        headless_mode=True,
     )
 
     controller = AgentController(
