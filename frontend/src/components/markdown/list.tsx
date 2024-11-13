@@ -13,12 +13,12 @@ export function ul({
 // Custom component to render <ol> in markdown
 export function ol({
   children,
-  ...props
+  start,
 }: React.ClassAttributes<HTMLElement> &
   React.HTMLAttributes<HTMLElement> &
   ExtraProps) {
   return (
-    <ol className="list-decimal ml-5 pl-2 whitespace-normal" {...props}>
+    <ol className="list-decimal ml-5 pl-2 whitespace-normal" start={start}>
       {children}
     </ol>
   );
