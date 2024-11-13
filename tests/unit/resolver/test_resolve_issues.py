@@ -353,15 +353,15 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
         handler_instance.issue_type = "pr" if test_case.get("is_pr", False) else "issue"
 
         with patch(
-            "openhands_resolver.resolve_issue.create_runtime", mock_create_runtime
+            "openhands.resolver.resolve_issue.create_runtime", mock_create_runtime
         ), patch(
-            "openhands_resolver.resolve_issue.initialize_runtime", mock_initialize_runtime
+            "openhands.resolver.resolve_issue.initialize_runtime", mock_initialize_runtime
         ), patch(
-            "openhands_resolver.resolve_issue.run_controller", mock_run_controller
+            "openhands.resolver.resolve_issue.run_controller", mock_run_controller
         ), patch(
-            "openhands_resolver.resolve_issue.complete_runtime", mock_complete_runtime
+            "openhands.resolver.resolve_issue.complete_runtime", mock_complete_runtime
         ), patch(
-            "openhands_resolver.resolve_issue.logger"
+            "openhands.resolver.resolve_issue.logger"
         ):
             # Call the function
             result = await process_issue(
@@ -445,8 +445,8 @@ def test_file_instruction():
         title="Test Issue",
         body="This is a test issue ![image](https://sampleimage.com/sample.png)",
     )
-    # load prompt from openhands_resolver/prompts/resolve/basic.jinja
-    with open("openhands_resolver/prompts/resolve/basic.jinja", "r") as f:
+    # load prompt from openhands/resolver/prompts/resolve/basic.jinja
+    with open("openhands/resolver/prompts/resolve/basic.jinja", "r") as f:
         prompt = f.read()
     # Test without thread comments
     issue_handler = IssueHandler("owner", "repo", "token")
@@ -476,11 +476,11 @@ def test_file_instruction_with_repo_instruction():
         title="Test Issue",
         body="This is a test issue",
     )
-    # load prompt from openhands_resolver/prompts/resolve/basic.jinja
-    with open("openhands_resolver/prompts/resolve/basic.jinja", "r") as f:
+    # load prompt from openhands/resolver/prompts/resolve/basic.jinja
+    with open("openhands/resolver/prompts/resolve/basic.jinja", "r") as f:
         prompt = f.read()
-    # load repo instruction from openhands_resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt
-    with open("openhands_resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt", "r") as f:
+    # load repo instruction from openhands/resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt
+    with open("openhands/resolver/prompts/repo_instructions/all-hands-ai___openhands-resolver.txt", "r") as f:
         repo_instruction = f.read()
     
     issue_handler = IssueHandler("owner", "repo", "token")
@@ -574,7 +574,7 @@ def test_instruction_with_thread_comments():
     )
     
     # Load the basic prompt template
-    with open("openhands_resolver/prompts/resolve/basic.jinja", "r") as f:
+    with open("openhands/resolver/prompts/resolve/basic.jinja", "r") as f:
         prompt = f.read()
     
     issue_handler = IssueHandler("owner", "repo", "token")

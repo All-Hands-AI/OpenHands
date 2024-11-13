@@ -1,12 +1,12 @@
 import toml
 import os
-import openhands_resolver
+import openhands.resolver as openhands_resolver
 
 def test_version():
     # Get the directory of the current file
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    # Go up one directory to reach the project root
-    project_root = os.path.dirname(current_dir)
+    # Go up three directories to reach the project root
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
     # Construct the path to pyproject.toml
     pyproject_path = os.path.join(project_root, 'pyproject.toml')
     

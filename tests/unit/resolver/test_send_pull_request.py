@@ -49,7 +49,7 @@ def mock_llm_config():
     return LLMConfig()
 
 def test_load_single_resolver_output():
-    mock_output_jsonl = "tests/mock_output/output.jsonl"
+    mock_output_jsonl = "tests/unit/resolver/mock_output/output.jsonl"
 
     # Test loading an existing issue
     resolver_output = load_single_resolver_output(mock_output_jsonl, 5)
@@ -237,7 +237,7 @@ def test_initialize_repo(mock_output_dir):
     with open(os.path.join(patches_dir, "README.md"), "r") as f:
         assert f.read() == "hello world"
 
-@patch("openhands_resolver.send_pull_request.reply_to_comment")
+@patch("openhands.resolver.send_pull_request.reply_to_comment")
 @patch("requests.post")
 @patch("subprocess.run")
 def test_update_existing_pull_request(
@@ -522,10 +522,10 @@ def test_reply_to_comment(mock_post):
 
 
 
-@patch("openhands_resolver.send_pull_request.initialize_repo")
-@patch("openhands_resolver.send_pull_request.apply_patch")
-@patch("openhands_resolver.send_pull_request.update_existing_pull_request")
-@patch("openhands_resolver.send_pull_request.make_commit")
+@patch("openhands.resolver.send_pull_request.initialize_repo")
+@patch("openhands.resolver.send_pull_request.apply_patch")
+@patch("openhands.resolver.send_pull_request.update_existing_pull_request")
+@patch("openhands.resolver.send_pull_request.make_commit")
 def test_process_single_pr_update(
     mock_make_commit,
     mock_update_existing_pull_request,
@@ -594,10 +594,10 @@ def test_process_single_pr_update(
 
 
 
-@patch("openhands_resolver.send_pull_request.initialize_repo")
-@patch("openhands_resolver.send_pull_request.apply_patch")
-@patch("openhands_resolver.send_pull_request.send_pull_request")
-@patch("openhands_resolver.send_pull_request.make_commit")
+@patch("openhands.resolver.send_pull_request.initialize_repo")
+@patch("openhands.resolver.send_pull_request.apply_patch")
+@patch("openhands.resolver.send_pull_request.send_pull_request")
+@patch("openhands.resolver.send_pull_request.make_commit")
 def test_process_single_issue(
     mock_make_commit,
     mock_send_pull_request,
@@ -664,10 +664,10 @@ def test_process_single_issue(
     )
 
 
-@patch("openhands_resolver.send_pull_request.initialize_repo")
-@patch("openhands_resolver.send_pull_request.apply_patch")
-@patch("openhands_resolver.send_pull_request.send_pull_request")
-@patch("openhands_resolver.send_pull_request.make_commit")
+@patch("openhands.resolver.send_pull_request.initialize_repo")
+@patch("openhands.resolver.send_pull_request.apply_patch")
+@patch("openhands.resolver.send_pull_request.send_pull_request")
+@patch("openhands.resolver.send_pull_request.make_commit")
 def test_process_single_issue_unsuccessful(
     mock_make_commit,
     mock_send_pull_request,
@@ -713,8 +713,8 @@ def test_process_single_issue_unsuccessful(
     mock_send_pull_request.assert_not_called()
 
 
-@patch("openhands_resolver.send_pull_request.load_all_resolver_outputs")
-@patch("openhands_resolver.send_pull_request.process_single_issue")
+@patch("openhands.resolver.send_pull_request.load_all_resolver_outputs")
+@patch("openhands.resolver.send_pull_request.process_single_issue")
 def test_process_all_successful_issues(
     mock_process_single_issue, mock_load_all_resolver_outputs, mock_llm_config
 ):
@@ -880,10 +880,10 @@ def test_send_pull_request_branch_naming(
     # Check the result
     assert result == "https://github.com/test-owner/test-repo/compare/openhands-fix-issue-42-try3?expand=1"
 
-@patch('openhands_resolver.send_pull_request.argparse.ArgumentParser')
-@patch('openhands_resolver.send_pull_request.process_all_successful_issues')
-@patch('openhands_resolver.send_pull_request.process_single_issue')
-@patch('openhands_resolver.send_pull_request.load_single_resolver_output')
+@patch('openhands.resolver.send_pull_request.argparse.ArgumentParser')
+@patch('openhands.resolver.send_pull_request.process_all_successful_issues')
+@patch('openhands.resolver.send_pull_request.process_single_issue')
+@patch('openhands.resolver.send_pull_request.load_single_resolver_output')
 @patch('os.path.exists')
 @patch('os.getenv')
 def test_main(mock_getenv, mock_path_exists, mock_load_single_resolver_output, 

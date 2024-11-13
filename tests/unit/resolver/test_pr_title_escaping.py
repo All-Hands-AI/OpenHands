@@ -83,7 +83,7 @@ def test_pr_title_with_quotes(monkeypatch):
 
     monkeypatch.setattr("requests.post", mock_post)
     monkeypatch.setattr("requests.get", lambda *args, **kwargs: MockGetResponse())
-    monkeypatch.setattr("openhands_resolver.send_pull_request.branch_exists", lambda *args, **kwargs: False)
+    monkeypatch.setattr("openhands.resolver.send_pull_request.branch_exists", lambda *args, **kwargs: False)
     
     # Mock subprocess.run to avoid actual git commands
     original_run = subprocess.run
