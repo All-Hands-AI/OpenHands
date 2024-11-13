@@ -48,62 +48,62 @@ class AppConfig:
     default_agent: str = OH_DEFAULT_AGENT
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
-    runtime: str = 'eventstream'
-    file_store: str = 'memory'
-    file_store_path: str = '/tmp/file_store'
+    runtime: str = "eventstream"
+    file_store: str = "memory"
+    file_store_path: str = "/tmp/file_store"
     trajectories_path: str | None = None
     workspace_base: str | None = None
     workspace_mount_path: str | None = None
-    workspace_mount_path_in_sandbox: str = '/workspace'
+    workspace_mount_path_in_sandbox: str = "/workspace"
     workspace_mount_rewrite: str | None = None
-    cache_dir: str = '/tmp/cache'
+    cache_dir: str = "/tmp/cache"
     run_as_openhands: bool = True
     max_iterations: int = OH_MAX_ITERATIONS
     max_budget_per_task: float | None = None
-    e2b_api_key: str = ''
-    modal_api_token_id: str = ''
-    modal_api_token_secret: str = ''
+    e2b_api_key: str = ""
+    modal_api_token_id: str = ""
+    modal_api_token_secret: str = ""
     disable_color: bool = False
     jwt_secret: str = uuid.uuid4().hex
     debug: bool = False
     file_uploads_max_file_size_mb: int = 0
     file_uploads_restrict_file_types: bool = False
-    file_uploads_allowed_extensions: list[str] = field(default_factory=lambda: ['.*'])
+    file_uploads_allowed_extensions: list[str] = field(default_factory=lambda: [".*"])
     runloop_api_key: str | None = None
 
     defaults_dict: ClassVar[dict] = {}
 
-    def get_llm_config(self, name='llm') -> LLMConfig:
+    def get_llm_config(self, name="llm") -> LLMConfig:
         """Llm is the name for default config (for backward compatibility prior to 0.8)"""
         if name in self.llms:
             return self.llms[name]
-        if name is not None and name != 'llm':
+        if name is not None and name != "llm":
             logger.openhands_logger.warning(
-                f'llm config group {name} not found, using default config'
+                f"llm config group {name} not found, using default config"
             )
-        if 'llm' not in self.llms:
-            self.llms['llm'] = LLMConfig()
-        return self.llms['llm']
+        if "llm" not in self.llms:
+            self.llms["llm"] = LLMConfig()
+        return self.llms["llm"]
 
-    def set_llm_config(self, value: LLMConfig, name='llm'):
+    def set_llm_config(self, value: LLMConfig, name="llm"):
         self.llms[name] = value
 
-    def get_agent_config(self, name='agent') -> AgentConfig:
+    def get_agent_config(self, name="agent") -> AgentConfig:
         """Agent is the name for default config (for backward compability prior to 0.8)"""
         if name in self.agents:
             return self.agents[name]
-        if 'agent' not in self.agents:
-            self.agents['agent'] = AgentConfig()
-        return self.agents['agent']
+        if "agent" not in self.agents:
+            self.agents["agent"] = AgentConfig()
+        return self.agents["agent"]
 
-    def set_agent_config(self, value: AgentConfig, name='agent'):
+    def set_agent_config(self, value: AgentConfig, name="agent"):
         self.agents[name] = value
 
     def get_agent_to_llm_config_map(self) -> dict[str, LLMConfig]:
         """Get a map of agent names to llm configs."""
         return {name: self.get_llm_config_from_agent(name) for name in self.agents}
 
-    def get_llm_config_from_agent(self, name='agent') -> LLMConfig:
+    def get_llm_config_from_agent(self, name="agent") -> LLMConfig:
         agent_config: AgentConfig = self.get_agent_config(name)
         llm_config_name = agent_config.llm_config
         return self.get_llm_config(llm_config_name)
@@ -135,16 +135,16 @@ class AppConfig:
             attr_value = getattr(self, f.name)
 
             if attr_name in [
-                'e2b_api_key',
-                'github_token',
-                'jwt_secret',
-                'modal_api_token_id',
-                'modal_api_token_secret',
-                'runloop_api_key',
+                "e2b_api_key",
+                "github_token",
+                "jwt_secret",
+                "modal_api_token_id",
+                "modal_api_token_secret",
+                "runloop_api_key",
             ]:
-                attr_value = '******' if attr_value else None
+                attr_value = "******" if attr_value else None
 
-            attr_str.append(f'{attr_name}={repr(attr_value)}')
+            attr_str.append(f"{attr_name}={repr(attr_value)}")
 
         return f"AppConfig({', '.join(attr_str)}"
 

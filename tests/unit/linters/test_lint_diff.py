@@ -26,7 +26,7 @@ foo()
 
 
 def test_get_and_parse_diff(tmp_path):
-    diff = get_diff(OLD_CONTENT, NEW_CONTENT_V1, 'test.py')
+    diff = get_diff(OLD_CONTENT, NEW_CONTENT_V1, "test.py")
     print(diff)
     assert (
         diff
@@ -41,8 +41,8 @@ def test_get_and_parse_diff(tmp_path):
     )
 
     print(
-        '\n'.join(
-            [f'{i+1}|{line}' for i, line in enumerate(NEW_CONTENT_V1.splitlines())]
+        "\n".join(
+            [f"{i+1}|{line}" for i, line in enumerate(NEW_CONTENT_V1.splitlines())]
         )
     )
     changes = parse_diff(diff)
@@ -50,26 +50,26 @@ def test_get_and_parse_diff(tmp_path):
     assert (
         changes[0].old is None
         and changes[0].new == 7
-        and changes[0].line == 'def new_function_that_causes_error():'
+        and changes[0].line == "def new_function_that_causes_error():"
     )
     assert (
         changes[1].old is None
         and changes[1].new == 8
-        and changes[1].line == '    y = ANOTHER_UNDEFINED_VARIABLE'
+        and changes[1].line == "    y = ANOTHER_UNDEFINED_VARIABLE"
     )
-    assert changes[2].old is None and changes[2].new == 9 and changes[2].line == ''
+    assert changes[2].old is None and changes[2].new == 9 and changes[2].line == ""
 
 
 def test_lint_with_diff_append(tmp_path):
-    with open(tmp_path / 'old.py', 'w') as f:
+    with open(tmp_path / "old.py", "w") as f:
         f.write(OLD_CONTENT)
-    with open(tmp_path / 'new.py', 'w') as f:
+    with open(tmp_path / "new.py", "w") as f:
         f.write(NEW_CONTENT_V1)
 
     linter = DefaultLinter()
     result: list[LintResult] = linter.lint_file_diff(
-        str(tmp_path / 'old.py'),
-        str(tmp_path / 'new.py'),
+        str(tmp_path / "old.py"),
+        str(tmp_path / "new.py"),
     )
     print(result)
     assert len(result) == 1
@@ -81,15 +81,15 @@ def test_lint_with_diff_append(tmp_path):
 
 
 def test_lint_with_diff_insert(tmp_path):
-    with open(tmp_path / 'old.py', 'w') as f:
+    with open(tmp_path / "old.py", "w") as f:
         f.write(OLD_CONTENT)
-    with open(tmp_path / 'new.py', 'w') as f:
+    with open(tmp_path / "new.py", "w") as f:
         f.write(NEW_CONTENT_V2)
 
     linter = DefaultLinter()
     result: list[LintResult] = linter.lint_file_diff(
-        str(tmp_path / 'old.py'),
-        str(tmp_path / 'new.py'),
+        str(tmp_path / "old.py"),
+        str(tmp_path / "new.py"),
     )
     assert len(result) == 1
     assert (
@@ -119,15 +119,15 @@ def bar():
 foo()
 bar()
 """
-    with open(tmp_path / 'old.py', 'w') as f:
+    with open(tmp_path / "old.py", "w") as f:
         f.write(old_content)
-    with open(tmp_path / 'new.py', 'w') as f:
+    with open(tmp_path / "new.py", "w") as f:
         f.write(new_content)
 
     linter = DefaultLinter()
     result: list[LintResult] = linter.lint_file_diff(
-        str(tmp_path / 'old.py'),
-        str(tmp_path / 'new.py'),
+        str(tmp_path / "old.py"),
+        str(tmp_path / "new.py"),
     )
     assert len(result) == 2
     assert (
@@ -152,15 +152,15 @@ x = 5
 y = ANOTHER_UNDEFINED_VARIABLE
 z = UNDEFINED_VARIABLE
 """
-    with open(tmp_path / 'old.py', 'w') as f:
+    with open(tmp_path / "old.py", "w") as f:
         f.write(old_content)
-    with open(tmp_path / 'new.py', 'w') as f:
+    with open(tmp_path / "new.py", "w") as f:
         f.write(new_content)
 
     linter = DefaultLinter()
     result: list[LintResult] = linter.lint_file_diff(
-        str(tmp_path / 'old.py'),
-        str(tmp_path / 'new.py'),
+        str(tmp_path / "old.py"),
+        str(tmp_path / "new.py"),
     )
     assert len(result) == 2
     assert (
@@ -189,15 +189,15 @@ def complex_function(a, b, c):
             b +
             c)
 """
-    with open(tmp_path / 'old.py', 'w') as f:
+    with open(tmp_path / "old.py", "w") as f:
         f.write(old_content)
-    with open(tmp_path / 'new.py', 'w') as f:
+    with open(tmp_path / "new.py", "w") as f:
         f.write(new_content)
 
     linter = DefaultLinter()
     result: list[LintResult] = linter.lint_file_diff(
-        str(tmp_path / 'old.py'),
-        str(tmp_path / 'new.py'),
+        str(tmp_path / "old.py"),
+        str(tmp_path / "new.py"),
     )
     assert len(result) == 1
     assert (
@@ -216,15 +216,15 @@ def foo():
 def foo():
     print("Hello, World!"
 """
-    with open(tmp_path / 'old.py', 'w') as f:
+    with open(tmp_path / "old.py", "w") as f:
         f.write(old_content)
-    with open(tmp_path / 'new.py', 'w') as f:
+    with open(tmp_path / "new.py", "w") as f:
         f.write(new_content)
 
     linter = DefaultLinter()
     result: list[LintResult] = linter.lint_file_diff(
-        str(tmp_path / 'old.py'),
-        str(tmp_path / 'new.py'),
+        str(tmp_path / "old.py"),
+        str(tmp_path / "new.py"),
     )
     assert len(result) == 1
     assert (
@@ -248,15 +248,15 @@ def foo():
     """
     print("Hello, World!")
 '''
-    with open(tmp_path / 'old.py', 'w') as f:
+    with open(tmp_path / "old.py", "w") as f:
         f.write(old_content)
-    with open(tmp_path / 'new.py', 'w') as f:
+    with open(tmp_path / "new.py", "w") as f:
         f.write(new_content)
 
     linter = DefaultLinter()
     result: list[LintResult] = linter.lint_file_diff(
-        str(tmp_path / 'old.py'),
-        str(tmp_path / 'new.py'),
+        str(tmp_path / "old.py"),
+        str(tmp_path / "new.py"),
     )
     assert len(result) == 0  # Linter should ignore changes in docstrings
 
@@ -274,15 +274,15 @@ def foo():
     x = UNDEFINED_VARIABLE + ANOTHER_UNDEFINED_VARIABLE
 foo()
 """
-    with open(tmp_path / 'old.py', 'w') as f:
+    with open(tmp_path / "old.py", "w") as f:
         f.write(old_content)
-    with open(tmp_path / 'new.py', 'w') as f:
+    with open(tmp_path / "new.py", "w") as f:
         f.write(new_content)
 
     linter = DefaultLinter()
     result: list[LintResult] = linter.lint_file_diff(
-        str(tmp_path / 'old.py'),
-        str(tmp_path / 'new.py'),
+        str(tmp_path / "old.py"),
+        str(tmp_path / "new.py"),
     )
     print(result)
     assert len(result) == 2
@@ -299,14 +299,13 @@ foo()
 
 
 def test_parse_diff_with_empty_patch():
-    diff_patch = ''
+    diff_patch = ""
     changes = parse_diff(diff_patch)
     assert len(changes) == 0
 
 
 def test_lint_file_diff_ignore_existing_errors(tmp_path):
-    """
-    Make sure we allow edits as long as it does not introduce new errors. In other
+    """Make sure we allow edits as long as it does not introduce new errors. In other
     words, we don't care about existing linting errors. Although they might be
     real syntax issues, sometimes they are just false positives, or errors that
     we don't care about.
@@ -323,10 +322,10 @@ def some_wrong_but_unused_function():
 def sum(a, b):
     return a - b
 """
-    new_content = content.replace('    return a - b', '    return a + b')
-    temp_file_old_path = tmp_path / 'problematic-file-test.py'
+    new_content = content.replace("    return a - b", "    return a + b")
+    temp_file_old_path = tmp_path / "problematic-file-test.py"
     temp_file_old_path.write_text(content)
-    temp_file_new_path = tmp_path / 'problematic-file-test-new.py'
+    temp_file_new_path = tmp_path / "problematic-file-test-new.py"
     temp_file_new_path.write_text(new_content)
 
     linter = DefaultLinter()
@@ -338,8 +337,7 @@ def sum(a, b):
 
 
 def test_lint_file_diff_catch_new_errors_in_edits(tmp_path):
-    """
-    Make sure we catch new linting errors in our edit chunk, and at the same
+    """Make sure we catch new linting errors in our edit chunk, and at the same
     time, ignore old linting errors (in this case, the old linting error is
     a false positive)
     """
@@ -352,10 +350,10 @@ def sum(a, b):
     return a - b
 """
 
-    temp_file_old_path = tmp_path / 'problematic-file-test.py'
+    temp_file_old_path = tmp_path / "problematic-file-test.py"
     temp_file_old_path.write_text(content)
-    new_content = content.replace('    return a - b', '    return a + variable')
-    temp_file_new_path = tmp_path / 'problematic-file-test-new.py'
+    new_content = content.replace("    return a - b", "    return a + variable")
+    temp_file_new_path = tmp_path / "problematic-file-test-new.py"
     temp_file_new_path.write_text(new_content)
 
     linter = DefaultLinter()
@@ -373,8 +371,7 @@ def sum(a, b):
 
 
 def test_lint_file_diff_catch_new_errors_outside_edits(tmp_path):
-    """
-    Make sure we catch new linting errors induced by our edits, even
+    """Make sure we catch new linting errors induced by our edits, even
     though the error itself is not in the edit chunk
     """
     content = """def valid_func1():
@@ -390,13 +387,13 @@ def valid_func2():
     # linting would pass, and thus there won't be any comparison
     # between pre-edit and post-edit linting.
     for _ in range(100):
-        content += '\ninvalid_func()'
+        content += "\ninvalid_func()"
 
-    temp_file_old_path = tmp_path / 'problematic-file-test.py'
+    temp_file_old_path = tmp_path / "problematic-file-test.py"
     temp_file_old_path.write_text(content)
 
-    new_content = content.replace('def my_sum(a, b):', 'def my_sum2(a, b):')
-    temp_file_new_path = tmp_path / 'problematic-file-test-new.py'
+    new_content = content.replace("def my_sum(a, b):", "def my_sum2(a, b):")
+    temp_file_new_path = tmp_path / "problematic-file-test-new.py"
     temp_file_new_path.write_text(new_content)
 
     linter = DefaultLinter()

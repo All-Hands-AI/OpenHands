@@ -64,36 +64,34 @@ def codeact_user_response(
 
 
 def cleanup():
-    print("Cleaning up child processes...")
+    print('Cleaning up child processes...')
     for process in mp.active_children():
-        print(f"Terminating child process: {process.name}")
+        print(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
 
 
 def prepare_dataset(dataset: pd.DataFrame, output_file: str, eval_n_limit: int):
-    assert (
-        "instance_id" in dataset.columns
-    ), (
+    assert 'instance_id' in dataset.columns, (
         "Expected 'instance_id' column in the dataset. You should define your own "
         "unique identifier for each instance and use it as the 'instance_id' column."
     )
-    id_column = "instance_id"
-    logger.info(f"Writing evaluation output to {output_file}")
+    id_column = 'instance_id'
+    logger.info(f'Writing evaluation output to {output_file}')
     finished_ids = set()
     if os.path.exists(output_file):
-        with open(output_file, "r") as f:
+        with open(output_file, 'r') as f:
             for line in f:
                 data = json.loads(line)
                 finished_ids.add(data[id_column])
         logger.warning(
-            f"Output file {output_file} already exists. Loaded "
-            f"{len(finished_ids)} finished instances."
+            f'Output file {output_file} already exists. Loaded '
+            f'{len(finished_ids)} finished instances.'
         )
 
     if eval_n_limit:
         dataset = dataset.head(eval_n_limit)
-        logger.info(f"Limiting evaluation to first {eval_n_limit} instances.")
+        logger.info(f'Limiting evaluation to first {eval_n_limit} instances.')
 
     new_dataset = [
         instance
@@ -101,8 +99,8 @@ def prepare_dataset(dataset: pd.DataFrame, output_file: str, eval_n_limit: int):
         if instance[id_column] not in finished_ids
     ]
     logger.info(
-        f"Finished instances: {len(finished_ids)}, "
-        f"Remaining instances: {len(new_dataset)}"
+        f'Finished instances: {len(finished_ids)}, '
+        f'Remaining instances: {len(new_dataset)}'
     )
 
     return pd.DataFrame(new_dataset)
@@ -119,7 +117,7 @@ def reset_logger_for_multiprocessing(
     # Set up logger
     log_file = os.path.join(
         log_dir,
-        f"instance_{instance_id}.log",
+        f'instance_{instance_id}.log',
     )
     # Remove all existing handlers from logger
     for handler in logger.handlers[:]:
@@ -127,7 +125,7 @@ def reset_logger_for_multiprocessing(
     # add back the console handler to print ONE line
     logger.addHandler(get_console_handler())
     logger.info(
-        f"Starting resolver for instance {instance_id}.\n"
+        f'Starting resolver for instance {instance_id}.\n'
         f'Hint: run "tail -f {log_file}" to see live logs in a separate shell'
     )
     # Remove all existing handlers from logger
@@ -136,6 +134,6 @@ def reset_logger_for_multiprocessing(
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
     file_handler = logging.FileHandler(log_file)
     file_handler.setFormatter(
-        logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     )
     logger.addHandler(file_handler)

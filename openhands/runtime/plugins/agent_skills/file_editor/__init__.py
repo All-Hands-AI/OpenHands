@@ -5,4 +5,4 @@ The implementation of the `EditTool` class can be found at: https://github.com/A
 
 from openhands_aci.editor import file_editor
 
-__all__ = ['file_editor']
+__all__ = ["file_editor"]

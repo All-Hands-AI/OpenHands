@@ -9,8 +9,7 @@ from openhands.utils.microagent import MicroAgent
 
 
 class PromptManager:
-    """
-    Manages prompt templates and micro-agents for AI interactions.
+    """Manages prompt templates and micro-agents for AI interactions.
 
     This class handles loading and rendering of system and user prompt templates,
     as well as loading micro-agent specifications. It provides methods to access

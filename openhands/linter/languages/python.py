@@ -7,13 +7,13 @@ from openhands.linter.utils import run_cmd
 
 def python_compile_lint(fname: str) -> list[LintResult]:
     try:
-        with open(fname, 'r') as f:
+        with open(fname, "r") as f:
             code = f.read()
-        compile(code, fname, 'exec')  # USE TRACEBACK BELOW HERE
+        compile(code, fname, "exec")  # USE TRACEBACK BELOW HERE
         return []
     except SyntaxError as err:
-        err_lineno = getattr(err, 'end_lineno', err.lineno)
-        err_offset = getattr(err, 'end_offset', err.offset)
+        err_lineno = getattr(err, "end_lineno", err.lineno)
+        err_offset = getattr(err, "end_offset", err.offset)
         if err_offset and err_offset < 0:
             err_offset = err.offset
         return [
@@ -24,8 +24,8 @@ def python_compile_lint(fname: str) -> list[LintResult]:
 
 
 def flake_lint(filepath: str) -> list[LintResult]:
-    fatal = 'F821,F822,F831,E112,E113,E999,E902'
-    flake8_cmd = f'flake8 --select={fatal} --isolated {filepath}'
+    fatal = "F821,F822,F831,E112,E113,E999,E902"
+    flake8_cmd = f"flake8 --select={fatal} --isolated {filepath}"
 
     try:
         cmd_outputs = run_cmd(flake8_cmd)
@@ -35,17 +35,17 @@ def flake_lint(filepath: str) -> list[LintResult]:
     if not cmd_outputs:
         return results
     for line in cmd_outputs.splitlines():
-        parts = line.split(':')
+        parts = line.split(":")
         if len(parts) >= 4:
             _msg = parts[3].strip()
             if len(parts) > 4:
-                _msg += ': ' + parts[4].strip()
+                _msg += ": " + parts[4].strip()
 
             try:
                 line_num = int(parts[1])
             except ValueError as e:
                 logger.warning(
-                    f'Error parsing flake8 output for line: {e}. Parsed parts: {parts}. Skipping...'
+                    f"Error parsing flake8 output for line: {e}. Parsed parts: {parts}. Skipping..."
                 )
                 continue
 
@@ -54,10 +54,10 @@ def flake_lint(filepath: str) -> list[LintResult]:
             except ValueError as e:
                 column_num = 1
                 _msg = (
-                    parts[2].strip() + ' ' + _msg
+                    parts[2].strip() + " " + _msg
                 )  # add the unparsed message to the original message
                 logger.warning(
-                    f'Error parsing flake8 output for column: {e}. Parsed parts: {parts}. Using default column 1.'
+                    f"Error parsing flake8 output for column: {e}. Parsed parts: {parts}. Using default column 1."
                 )
 
             results.append(
@@ -74,7 +74,7 @@ def flake_lint(filepath: str) -> list[LintResult]:
 class PythonLinter(BaseLinter):
     @property
     def supported_extensions(self) -> List[str]:
-        return ['.py']
+        return [".py"]
 
     def lint(self, file_path: str) -> list[LintResult]:
         error = flake_lint(file_path)
@@ -84,7 +84,7 @@ class PythonLinter(BaseLinter):
 
     def compile_lint(self, file_path: str, code: str) -> List[LintResult]:
         try:
-            compile(code, file_path, 'exec')
+            compile(code, file_path, "exec")
             return []
         except SyntaxError as e:
             return [
@@ -93,6 +93,6 @@ class PythonLinter(BaseLinter):
                     line=e.lineno,
                     column=e.offset,
                     message=str(e),
-                    rule='SyntaxError',
+                    rule="SyntaxError",
                 )
             ]

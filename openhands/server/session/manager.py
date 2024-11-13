@@ -29,7 +29,7 @@ class SessionManager:
         await c.connect()
         end_time = time.time()
         logger.info(
-            f'Conversation {c.sid} connected in {end_time - start_time} seconds'
+            f"Conversation {c.sid} connected in {end_time - start_time} seconds"
         )
         return c
 

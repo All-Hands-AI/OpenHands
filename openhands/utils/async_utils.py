@@ -8,8 +8,7 @@ EXECUTOR = ThreadPoolExecutor()
 
 
 async def call_sync_from_async(fn: Callable, *args, **kwargs):
-    """
-    Shorthand for running a function in the default background thread pool executor
+    """Shorthand for running a function in the default background thread pool executor
     and awaiting the result. The nature of synchronous code is that the future
     returned by this function is not cancellable
     """
@@ -22,11 +21,9 @@ async def call_sync_from_async(fn: Callable, *args, **kwargs):
 def call_async_from_sync(
     corofn: Callable, timeout: float = GENERAL_TIMEOUT, *args, **kwargs
 ):
-    """
-    Shorthand for running a coroutine in the default background thread pool executor
+    """Shorthand for running a coroutine in the default background thread pool executor
     and awaiting the result
     """
-
     if corofn is None:
         raise ValueError('corofn is None')
     if not asyncio.iscoroutinefunction(corofn):
@@ -61,8 +58,7 @@ async def call_coro_in_bg_thread(
 async def wait_all(
     iterable: Iterable[Coroutine], timeout: int = GENERAL_TIMEOUT
 ) -> List:
-    """
-    Shorthand for waiting for all the coroutines in the iterable given in parallel. Creates
+    """Shorthand for waiting for all the coroutines in the iterable given in parallel. Creates
     a task for each coroutine.
     Returns a list of results in the original order. If any single task raised an exception, this is raised.
     If multiple tasks raised exceptions, an AsyncException is raised containing all exceptions.

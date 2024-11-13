@@ -204,7 +204,6 @@ def process_instance(
 )
 def test_stress_remote_runtime(n_eval_workers: int = 64):
     """Mimic evaluation setting to test remote runtime in a multi-processing setting."""
-
     llm_config = LLMConfig()
     metadata = make_metadata(
         llm_config,

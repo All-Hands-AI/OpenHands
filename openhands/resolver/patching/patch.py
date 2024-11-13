@@ -936,8 +936,8 @@ def parse_git_binary_diff(text):
     cmd_old_path = None
     cmd_new_path = None
     # the sizes are used as latch-up
-    old_size = None
-    new_size = None
+    new_size = 0
+    old_size = 0
     old_encoded = ""
     new_encoded = ""
     for line in lines:
@@ -956,7 +956,7 @@ def parse_git_binary_diff(text):
                 continue
 
         # the first is added file
-        if new_size is None:
+        if new_size == 0:
             literal = git_binary_literal_start.match(line)
             if literal:
                 new_size = int(literal.group(1))
@@ -966,7 +966,7 @@ def parse_git_binary_diff(text):
                 # not supported
                 new_size = 0
                 continue
-        elif new_size > 0 and line is not None:
+        elif new_size > 0:
             if base85string.match(line):
                 assert len(line) >= 6 and ((len(line) - 1) % 5) == 0
                 new_encoded += line[1:]
@@ -985,7 +985,7 @@ def parse_git_binary_diff(text):
                 new_encoded = ""
 
         # the second is removed file
-        if old_size is None:
+        if old_size == 0:
             literal = git_binary_literal_start.match(line)
             if literal:
                 old_size = int(literal.group(1))
@@ -994,7 +994,7 @@ def parse_git_binary_diff(text):
                 # not supported
                 old_size = 0
                 continue
-        elif old_size > 0 and line is not None:
+        elif old_size > 0:
             if base85string.match(line):
                 assert len(line) >= 6 and ((len(line) - 1) % 5) == 0
                 old_encoded += line[1:]

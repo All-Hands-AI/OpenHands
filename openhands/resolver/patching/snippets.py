@@ -32,14 +32,14 @@ def split_by_regex(items, regex):
         return splits
 
     # Add first chunk before first match
-    splits.append(items[0:indices[0]])
+    splits.append(items[0 : indices[0]])
 
     # Add chunks between matches
     for i in range(len(indices) - 1):
-        splits.append(items[indices[i]:indices[i + 1]])
+        splits.append(items[indices[i] : indices[i + 1]])
 
     # Add final chunk after last match
-    splits.append(items[indices[-1]:])
+    splits.append(items[indices[-1] :])
 
     return splits
 

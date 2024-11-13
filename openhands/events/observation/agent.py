@@ -13,4 +13,4 @@ class AgentStateChangedObservation(Observation):
 
     @property
     def message(self) -> str:
-        return ''
+        return ""

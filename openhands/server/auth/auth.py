@@ -15,19 +15,19 @@ def get_sid_from_token(token: str, jwt_secret: str) -> str:
     """
     try:
         # Decode the JWT using the specified secret and algorithm
-        payload = jwt.decode(token, jwt_secret, algorithms=['HS256'])
+        payload = jwt.decode(token, jwt_secret, algorithms=["HS256"])
 
         # Ensure the payload contains 'sid'
-        if 'sid' in payload:
-            return payload['sid']
+        if "sid" in payload:
+            return payload["sid"]
         else:
-            logger.error('SID not found in token')
-            return ''
+            logger.error("SID not found in token")
+            return ""
     except InvalidTokenError:
-        logger.error('Invalid token')
+        logger.error("Invalid token")
     except Exception as e:
-        logger.exception('Unexpected error decoding token: %s', e)
-    return ''
+        logger.exception("Unexpected error decoding token: %s", e)
+    return ""
 
 
 def sign_token(payload: dict[str, object], jwt_secret: str) -> str:
@@ -36,4 +36,4 @@ def sign_token(payload: dict[str, object], jwt_secret: str) -> str:
     #     "sid": sid,
     #     # "exp": datetime.now(timezone.utc) + timedelta(minutes=15),
     # }
-    return jwt.encode(payload, jwt_secret, algorithm='HS256')
+    return jwt.encode(payload, jwt_secret, algorithm="HS256")

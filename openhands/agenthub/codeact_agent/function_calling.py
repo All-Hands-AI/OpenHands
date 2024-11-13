@@ -32,19 +32,19 @@ _BASH_DESCRIPTION = """Execute a bash command in the terminal.
 """
 
 CmdRunTool = ChatCompletionToolParam(
-    type='function',
+    type="function",
     function=ChatCompletionToolParamFunctionChunk(
-        name='execute_bash',
+        name="execute_bash",
         description=_BASH_DESCRIPTION,
         parameters={
-            'type': 'object',
-            'properties': {
-                'command': {
-                    'type': 'string',
-                    'description': 'The bash command to execute. Can be empty to view additional logs when previous exit code is `-1`. Can be `ctrl+c` to interrupt the currently running process.',
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "description": "The bash command to execute. Can be empty to view additional logs when previous exit code is `-1`. Can be `ctrl+c` to interrupt the currently running process.",
                 },
             },
-            'required': ['command'],
+            "required": ["command"],
         },
     ),
 )
@@ -58,19 +58,19 @@ _IPYTHON_DESCRIPTION = """Run a cell of Python code in an IPython environment.
 # {AgentSkillsRequirement.documentation}"""
 
 IPythonTool = ChatCompletionToolParam(
-    type='function',
+    type="function",
     function=ChatCompletionToolParamFunctionChunk(
-        name='execute_ipython_cell',
+        name="execute_ipython_cell",
         description=_IPYTHON_DESCRIPTION,
         parameters={
-            'type': 'object',
-            'properties': {
-                'code': {
-                    'type': 'string',
-                    'description': 'The Python code to execute. Supports magic commands like %pip.',
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "description": "The Python code to execute. Supports magic commands like %pip.",
                 },
             },
-            'required': ['code'],
+            "required": ["code"],
         },
     ),
 )
@@ -182,31 +182,31 @@ print(MyClass().y)
 """
 
 LLMBasedFileEditTool = ChatCompletionToolParam(
-    type='function',
+    type="function",
     function=ChatCompletionToolParamFunctionChunk(
-        name='edit_file',
+        name="edit_file",
         description=_FILE_EDIT_DESCRIPTION,
         parameters={
-            'type': 'object',
-            'properties': {
-                'path': {
-                    'type': 'string',
-                    'description': 'The absolute path to the file to be edited.',
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "The absolute path to the file to be edited.",
                 },
-                'new_content_draft': {
-                    'type': 'string',
-                    'description': 'A draft of the new content for the file being edited. Note that the assistant may skip unchanged lines.',
+                "new_content_draft": {
+                    "type": "string",
+                    "description": "A draft of the new content for the file being edited. Note that the assistant may skip unchanged lines.",
                 },
-                'start': {
-                    'type': 'integer',
-                    'description': 'The starting line number for the edit (1-indexed, inclusive). Default is 1.',
+                "start": {
+                    "type": "integer",
+                    "description": "The starting line number for the edit (1-indexed, inclusive). Default is 1.",
                 },
-                'end': {
-                    'type': 'integer',
-                    'description': 'The ending line number for the edit (1-indexed, inclusive). Default is -1 (end of file).',
+                "end": {
+                    "type": "integer",
+                    "description": "The ending line number for the edit (1-indexed, inclusive). Default is -1 (end of file).",
                 },
             },
-            'required': ['path', 'content'],
+            "required": ["path", "content"],
         },
     ),
 )
@@ -225,52 +225,52 @@ Notes for using the `str_replace` command:
 """
 
 StrReplaceEditorTool = ChatCompletionToolParam(
-    type='function',
+    type="function",
     function=ChatCompletionToolParamFunctionChunk(
-        name='str_replace_editor',
+        name="str_replace_editor",
         description=_STR_REPLACE_EDITOR_DESCRIPTION,
         parameters={
-            'type': 'object',
-            'properties': {
-                'command': {
-                    'description': 'The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.',
-                    'enum': ['view', 'create', 'str_replace', 'insert', 'undo_edit'],
-                    'type': 'string',
+            "type": "object",
+            "properties": {
+                "command": {
+                    "description": "The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.",
+                    "enum": ["view", "create", "str_replace", "insert", "undo_edit"],
+                    "type": "string",
                 },
-                'path': {
-                    'description': 'Absolute path to file or directory, e.g. `/workspace/file.py` or `/workspace`.',
-                    'type': 'string',
+                "path": {
+                    "description": "Absolute path to file or directory, e.g. `/workspace/file.py` or `/workspace`.",
+                    "type": "string",
                 },
-                'file_text': {
-                    'description': 'Required parameter of `create` command, with the content of the file to be created.',
-                    'type': 'string',
+                "file_text": {
+                    "description": "Required parameter of `create` command, with the content of the file to be created.",
+                    "type": "string",
                 },
-                'old_str': {
-                    'description': 'Required parameter of `str_replace` command containing the string in `path` to replace.',
-                    'type': 'string',
+                "old_str": {
+                    "description": "Required parameter of `str_replace` command containing the string in `path` to replace.",
+                    "type": "string",
                 },
-                'new_str': {
-                    'description': 'Optional parameter of `str_replace` command containing the new string (if not given, no string will be added). Required parameter of `insert` command containing the string to insert.',
-                    'type': 'string',
+                "new_str": {
+                    "description": "Optional parameter of `str_replace` command containing the new string (if not given, no string will be added). Required parameter of `insert` command containing the string to insert.",
+                    "type": "string",
                 },
-                'insert_line': {
-                    'description': 'Required parameter of `insert` command. The `new_str` will be inserted AFTER the line `insert_line` of `path`.',
-                    'type': 'integer',
+                "insert_line": {
+                    "description": "Required parameter of `insert` command. The `new_str` will be inserted AFTER the line `insert_line` of `path`.",
+                    "type": "integer",
                 },
-                'view_range': {
-                    'description': 'Optional parameter of `view` command when `path` points to a file. If none is given, the full file is shown. If provided, the file will be shown in the indicated line number range, e.g. [11, 12] will show lines 11 and 12. Indexing at 1 to start. Setting `[start_line, -1]` shows all lines from `start_line` to the end of the file.',
-                    'items': {'type': 'integer'},
-                    'type': 'array',
+                "view_range": {
+                    "description": "Optional parameter of `view` command when `path` points to a file. If none is given, the full file is shown. If provided, the file will be shown in the indicated line number range, e.g. [11, 12] will show lines 11 and 12. Indexing at 1 to start. Setting `[start_line, -1]` shows all lines from `start_line` to the end of the file.",
+                    "items": {"type": "integer"},
+                    "type": "array",
                 },
             },
-            'required': ['command', 'path'],
+            "required": ["command", "path"],
         },
     ),
 )
 
 # from browsergym/core/action/highlevel.py
 _browser_action_space = HighLevelActionSet(
-    subsets=['bid', 'nav'],
+    subsets=["bid", "nav"],
     strict=False,  # less strict on the parsing of the actions
     multiaction=True,  # enable to agent to take multiple actions at once
 )
@@ -395,28 +395,28 @@ upload_file(bid: str, file: str | list[str])
 for _, action in _browser_action_space.action_set.items():
     assert (
         action.signature in _BROWSER_TOOL_DESCRIPTION
-    ), f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.signature}'
+    ), f"Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.signature}"
     assert (
         action.description in _BROWSER_TOOL_DESCRIPTION
-    ), f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.description}'
+    ), f"Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.description}"
 
 BrowserTool = ChatCompletionToolParam(
-    type='function',
+    type="function",
     function=ChatCompletionToolParamFunctionChunk(
-        name='browser',
+        name="browser",
         description=_BROWSER_DESCRIPTION,
         parameters={
-            'type': 'object',
-            'properties': {
-                'code': {
-                    'type': 'string',
-                    'description': (
-                        'The Python code that interacts with the browser.\n'
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "description": (
+                        "The Python code that interacts with the browser.\n"
                         + _BROWSER_TOOL_DESCRIPTION
                     ),
                 }
             },
-            'required': ['code'],
+            "required": ["code"],
         },
     ),
 )
@@ -424,16 +424,16 @@ BrowserTool = ChatCompletionToolParam(
 _FINISH_DESCRIPTION = """Finish the interaction when the task is complete OR if the assistant cannot proceed further with the task."""
 
 FinishTool = ChatCompletionToolParam(
-    type='function',
+    type="function",
     function=ChatCompletionToolParamFunctionChunk(
-        name='finish',
+        name="finish",
         description=_FINISH_DESCRIPTION,
     ),
 )
 
 
 def combine_thought(action: Action, thought: str) -> Action:
-    if not hasattr(action, 'thought'):
+    if not hasattr(action, "thought"):
         return action
     if thought:
         action.thought = thought
@@ -442,17 +442,17 @@ def combine_thought(action: Action, thought: str) -> Action:
 
 def response_to_actions(response: ModelResponse) -> list[Action]:
     actions: list[Action] = []
-    assert len(response.choices) == 1, 'Only one choice is supported for now'
+    assert len(response.choices) == 1, "Only one choice is supported for now"
     assistant_msg = response.choices[0].message
     if assistant_msg.tool_calls:
         # Check if there's assistant_msg.content. If so, add it to the thought
-        thought = ''
+        thought = ""
         if isinstance(assistant_msg.content, str):
             thought = assistant_msg.content
         elif isinstance(assistant_msg.content, list):
             for msg in assistant_msg.content:
-                if msg['type'] == 'text':
-                    thought += msg['text']
+                if msg["type"] == "text":
+                    thought += msg["text"]
 
         # Process each tool call to OpenHands action
         for i, tool_call in enumerate(assistant_msg.tool_calls):
@@ -461,33 +461,33 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 arguments = json.loads(tool_call.function.arguments)
             except json.decoder.JSONDecodeError as e:
                 raise RuntimeError(
-                    f'Failed to parse tool call arguments: {tool_call.function.arguments}'
+                    f"Failed to parse tool call arguments: {tool_call.function.arguments}"
                 ) from e
-            if tool_call.function.name == 'execute_bash':
+            if tool_call.function.name == "execute_bash":
                 action = CmdRunAction(**arguments)
-            elif tool_call.function.name == 'execute_ipython_cell':
+            elif tool_call.function.name == "execute_ipython_cell":
                 action = IPythonRunCellAction(**arguments)
-            elif tool_call.function.name == 'delegate_to_browsing_agent':
+            elif tool_call.function.name == "delegate_to_browsing_agent":
                 action = AgentDelegateAction(
-                    agent='BrowsingAgent',
+                    agent="BrowsingAgent",
                     inputs=arguments,
                 )
-            elif tool_call.function.name == 'finish':
+            elif tool_call.function.name == "finish":
                 action = AgentFinishAction()
-            elif tool_call.function.name == 'edit_file':
+            elif tool_call.function.name == "edit_file":
                 action = FileEditAction(**arguments)
-            elif tool_call.function.name == 'str_replace_editor':
+            elif tool_call.function.name == "str_replace_editor":
                 # We implement this in agent_skills, which can be used via Jupyter
                 # convert tool_call.function.arguments to kwargs that can be passed to file_editor
-                code = f'print(file_editor(**{arguments}))'
+                code = f"print(file_editor(**{arguments}))"
                 logger.debug(
-                    f'TOOL CALL: str_replace_editor -> file_editor with code: {code}'
+                    f"TOOL CALL: str_replace_editor -> file_editor with code: {code}"
                 )
                 action = IPythonRunCellAction(code=code, include_extra=False)
-            elif tool_call.function.name == 'browser':
-                action = BrowseInteractiveAction(browser_actions=arguments['code'])
+            elif tool_call.function.name == "browser":
+                action = BrowseInteractiveAction(browser_actions=arguments["code"])
             else:
-                raise RuntimeError(f'Unknown tool call: {tool_call.function.name}')
+                raise RuntimeError(f"Unknown tool call: {tool_call.function.name}")
 
             # We only add thought to the first action
             if i == 0:
