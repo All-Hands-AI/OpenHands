@@ -21,14 +21,25 @@ import { ScrollToBottomButton } from "./scroll-to-bottom-button";
 import { Suggestions } from "./suggestions";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import BuildIt from "#/icons/build-it.svg?react";
-import { useWsClient } from "#/context/ws-client-provider";
+import {
+  useWsClient,
+  WsClientProviderStatus,
+} from "#/context/ws-client-provider";
+import { request } from "#/services/api";
+
+const getRuntimeId = async (): Promise<{ runtime_id: string }> => {
+  const response = await request("/api/config");
+  const data = await response.json();
+
+  return data;
+};
 
 const isErrorMessage = (
   message: Message | ErrorMessage,
 ): message is ErrorMessage => "error" in message;
 
 export function ChatInterface() {
-  const { send } = useWsClient();
+  const { send, status } = useWsClient();
   const dispatch = useDispatch();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
@@ -42,6 +53,19 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
+  const [runtimeId, setRuntimeId] = React.useState<string | null>("ABC123");
+
+  React.useEffect(() => {
+    if (status === WsClientProviderStatus.ACTIVE) {
+      try {
+        getRuntimeId().then(({ runtime_id }) => {
+          setRuntimeId(runtime_id);
+        });
+      } catch (e) {
+        console.warn("Runtime ID not available in this environment");
+      }
+    }
+  }, [status]);
 
   const handleSendMessage = async (content: string, files: File[]) => {
     posthog.capture("user_message_sent", {
@@ -74,6 +98,11 @@ export function ChatInterface() {
 
   return (
     <div className="h-full flex flex-col justify-between">
+      {runtimeId && (
+        <span className="text-xs text-neutral-300 p-2">
+          Runtime ID: <code>{runtimeId}</code>
+        </span>
+      )}
       {messages.length === 0 && (
         <div className="flex flex-col gap-6 h-full px-4 items-center justify-center">
           <div className="flex flex-col items-center p-4 bg-neutral-700 rounded-xl w-full">
