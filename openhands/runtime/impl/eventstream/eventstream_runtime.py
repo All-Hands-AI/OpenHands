@@ -34,7 +34,11 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.runtime.base import Runtime, RuntimeDisconnectedError
+from openhands.runtime.base import (
+    Runtime,
+    RuntimeDisconnectedError,
+    RuntimeNotFoundError,
+)
 from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.impl.eventstream.containers import remove_all_containers
 from openhands.runtime.plugins import PluginRequirement
@@ -434,9 +438,7 @@ class EventStreamRuntime(Runtime):
                     f'Container {self.container_name} has exited.'
                 )
         except docker.errors.NotFound:
-            raise RuntimeDisconnectedError(
-                f'Container {self.container_name} not found.'
-            )
+            raise RuntimeNotFoundError(f'Container {self.container_name} not found.')
 
         self._refresh_logs()
         if not self.log_buffer:
