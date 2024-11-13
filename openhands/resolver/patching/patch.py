@@ -978,7 +978,8 @@ def parse_git_binary_diff(text):
                 changes.append(change)
                 new_size = 0
             else:
-                break
+                # Invalid line format
+                new_size = 0
 
         # the second is removed file
         if old_size is None:
@@ -1002,6 +1003,7 @@ def parse_git_binary_diff(text):
                 changes.append(change)
                 old_size = 0
             else:
-                break
+                # Invalid line format
+                old_size = 0
 
     return changes
