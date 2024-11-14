@@ -1,3 +1,7 @@
+---
+id: configuration-options
+---
+
 # Configuration Options
 
 This guide details all configuration options available for OpenHands, helping you customize its behavior and integrate it with other services. Required options and those with recommended settings are highlighted.
