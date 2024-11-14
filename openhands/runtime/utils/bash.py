@@ -103,6 +103,10 @@ class BashSession:
         command_output = full_output[ps1_matches[0].end() + 1 : ps1_matches[1].start()]
         command_output = command_output.lstrip().removeprefix(command.lstrip()).lstrip()
 
+        command_output += (
+            f'\n\n[The command completed with exit code {metadata.exit_code}.]'
+        )
+
         self._clear_screen()
         return CmdOutputObservation(
             content=command_output,
