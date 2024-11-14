@@ -174,31 +174,53 @@ def test_empty_command_errors():
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'ERROR: No previous command to continue from' in obs.content
-    assert obs.metadata.exit_code is None
+    assert obs.metadata.exit_code == -1
     assert session.prev_status is None
 
     session.close()
 
 
 def test_command_output_continuation():
-    session = BashSession(work_dir=os.getcwd())
+    session = BashSession(work_dir=os.getcwd(), no_change_timeout_seconds=2)
 
     # Start a command that produces output slowly
-    obs = session.execute(
-        CmdRunAction('for i in {1..5}; do echo $i; sleep 2; done', blocking=False)
-    )
+    obs = session.execute(CmdRunAction('for i in {1..5}; do echo $i; sleep 3; done'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'no new output after' in obs.content
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
-    # Continue watching output
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[Command output continued from previous command]' in obs.content
-    assert session.prev_status == BashCommandStatus.CONTINUE
+    assert '2\n' in obs.content
+    assert '[The command has no new output after 2 seconds.' in obs.content
+    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
-    # Verify we can see new numbers in the output
-    assert any(str(num) in obs.content for num in range(1, 6))
+    obs = session.execute(CmdRunAction(''))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert '[Command output continued from previous command]' in obs.content
+    assert '3\n' in obs.content
+    assert '[The command has no new output after 2 seconds.' in obs.content
+    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
+
+    obs = session.execute(CmdRunAction(''))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert '[Command output continued from previous command]' in obs.content
+    assert '4\n' in obs.content
+    assert '[The command has no new output after 2 seconds.' in obs.content
+    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
+
+    obs = session.execute(CmdRunAction(''))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert '[Command output continued from previous command]' in obs.content
+    assert '5\n' in obs.content
+    assert '[The command has no new output after 2 seconds.' in obs.content
+    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
+
+    obs = session.execute(CmdRunAction(''))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert '[The command completed with exit code 0.]' in obs.content
+    assert session.prev_status == BashCommandStatus.COMPLETED
 
     session.close()
 

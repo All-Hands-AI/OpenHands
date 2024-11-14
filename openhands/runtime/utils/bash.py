@@ -236,8 +236,16 @@ class BashSession:
 
     def execute(self, action: CmdRunAction) -> CmdOutputObservation:
         """Execute a command in the bash session."""
-        if action.command.strip() == '':
-            return self._handle_empty_command()
+        if action.command.strip() != '' and self.prev_status in {
+            BashCommandStatus.NO_CHANGE_TIMEOUT,
+            BashCommandStatus.HARD_TIMEOUT,
+        }:
+            return CmdOutputObservation(
+                content='ERROR: Cannot execute new command while the previous command is still running. '
+                + "Please wait for the previous command to complete by sending empty command '' or kill the command with 'C-c' (control-c).",
+                command='',
+                metadata=CmdOutputMetadata(),
+            )
 
         start_time = time.time()
         last_change_time = start_time
@@ -246,12 +254,15 @@ class BashSession:
         assert (
             len(CmdOutputMetadata.matches_ps1_metadata(last_pane_output)) == 1
         ), 'Expected exactly one PS1 metadata block BEFORE the execution of a command'
-        self.pane.send_keys(
-            action.command,
-            # do not send enter for special keys
-            enter=not self._is_special_key(action.command),
-        )
 
+        if action.command.strip() != '':
+            self.pane.send_keys(
+                action.command,
+                # do not send enter for special keys
+                enter=not self._is_special_key(action.command),
+            )
+
+        # Loop until the command completes or times out
         while True:
             cur_pane_output = self._get_pane_content()
             if cur_pane_output != last_pane_output:
