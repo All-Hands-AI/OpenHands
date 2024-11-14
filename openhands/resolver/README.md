@@ -106,7 +106,7 @@ python -m openhands.resolver.resolve_issue --repo [OWNER]/[REPO] --issue-number 
 For instance, if you want to resolve issue #100 in this repo, you would run:
 
 ```bash
-python -m openhands_resolver.resolve_issue --repo all-hands-ai/openhands-resolver --issue-number 100
+python -m openhands.resolver.resolve_issue --repo all-hands-ai/openhands-resolver --issue-number 100
 ```
 
 The output will be written to the `output/` directory.
@@ -114,19 +114,19 @@ The output will be written to the `output/` directory.
 If you've installed the package from source using poetry, you can use:
 
 ```bash
-poetry run python openhands_resolver/resolve_issue.py --repo all-hands-ai/openhands-resolver --issue-number 100
+poetry run python openhands.resolver/resolve_issue.py --repo all-hands-ai/openhands-resolver --issue-number 100
 ```
 
 For resolving multiple issues at once (e.g., in a batch process), you can use the `resolve_all_issues` command:
 
 ```bash
-python -m openhands_resolver.resolve_all_issues --repo [OWNER]/[REPO] --issue-numbers [NUMBERS]
+python -m openhands.resolver.resolve_all_issues --repo [OWNER]/[REPO] --issue-numbers [NUMBERS]
 ```
 
 For example:
 
 ```bash
-python -m openhands_resolver.resolve_all_issues --repo all-hands-ai/openhands-resolver --issue-numbers 100,101,102
+python -m openhands.resolver.resolve_all_issues --repo all-hands-ai/openhands-resolver --issue-numbers 100,101,102
 ```
 
 ## Responding to PR Comments
@@ -134,7 +134,7 @@ python -m openhands_resolver.resolve_all_issues --repo all-hands-ai/openhands-re
 The resolver can also respond to comments on pull requests using:
 
 ```bash
-python -m openhands_resolver.send_pull_request --issue-number PR_NUMBER --issue-type pr
+python -m openhands.resolver.send_pull_request --issue-number PR_NUMBER --issue-type pr
 ```
 
 This functionality is available both through the GitHub Actions workflow and when running the resolver locally.
@@ -150,7 +150,7 @@ grep '"success":true' output/output.jsonl | sed 's/.*\("number":[0-9]*\).*/\1/g'
 Then you can go through and visualize the ones you'd like.
 
 ```bash
-python -m openhands_resolver.visualize_resolver_output --issue-number ISSUE_NUMBER --vis-method json
+python -m openhands.resolver.visualize_resolver_output --issue-number ISSUE_NUMBER --vis-method json
 ```
 
 ## Uploading PRs
@@ -163,13 +163,13 @@ There are three ways you can upload:
 3. `ready` - create a non-draft PR that's ready for review
 
 ```bash
-python -m openhands_resolver.send_pull_request --issue-number ISSUE_NUMBER --github-username YOUR_GITHUB_USERNAME --pr-type draft
+python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --github-username YOUR_GITHUB_USERNAME --pr-type draft
 ```
 
 If you want to upload to a fork, you can do so by specifying the `fork-owner`:
 
 ```bash
-python -m openhands_resolver.send_pull_request --issue-number ISSUE_NUMBER --github-username YOUR_GITHUB_USERNAME --pr-type draft --fork-owner YOUR_GITHUB_USERNAME
+python -m openhands.resolver.send_pull_request --issue-number ISSUE_NUMBER --github-username YOUR_GITHUB_USERNAME --pr-type draft --fork-owner YOUR_GITHUB_USERNAME
 ```
 
 ## Providing Custom Instructions
