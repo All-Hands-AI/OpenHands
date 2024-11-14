@@ -72,7 +72,8 @@ class BashSession:
     def _is_special_key(self, command: str) -> bool:
         """Check if the command is a special key."""
         # Special keys are of the form C-<key>
-        return command.startswith('C-') and len(command) == 3
+        _command = command.strip()
+        return _command.startswith('C-') and len(_command) == 3
 
     def _clear_screen(self):
         """Clear the tmux pane screen and history."""
@@ -201,8 +202,9 @@ class BashSession:
             metadata=CmdOutputMetadata(),  # No metadata available
         )
 
-    def _handle_empty_command(self) -> CmdOutputObservation:
-        if self.prev_status not in {
+    def execute(self, action: CmdRunAction) -> CmdOutputObservation:
+        """Execute a command in the bash session."""
+        if action.command.strip() == '' and self.prev_status not in {
             BashCommandStatus.CONTINUE,
             BashCommandStatus.COMPLETED,
             BashCommandStatus.NO_CHANGE_TIMEOUT,
@@ -211,38 +213,6 @@ class BashSession:
             return CmdOutputObservation(
                 content='ERROR: No previous command to continue from. '
                 + 'Previous command has to be timeout to be continued.',
-                command='',
-                metadata=CmdOutputMetadata(),
-            )
-
-        self.prev_status = BashCommandStatus.CONTINUE
-        full_output = self._get_pane_content(full=True)
-
-        ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
-        assert len(ps1_matches) == 1, 'Expected exactly one PS1 metadata block'
-
-        raw_command_output = full_output[ps1_matches[0].end() + 1 :]
-        command_output = self._get_command_output(
-            '',
-            raw_command_output,
-            continue_prefix='[Command output continued from previous command]\n',
-        )
-
-        return CmdOutputObservation(
-            content=command_output,
-            command='',
-            metadata=CmdOutputMetadata(),
-        )
-
-    def execute(self, action: CmdRunAction) -> CmdOutputObservation:
-        """Execute a command in the bash session."""
-        if action.command.strip() != '' and self.prev_status in {
-            BashCommandStatus.NO_CHANGE_TIMEOUT,
-            BashCommandStatus.HARD_TIMEOUT,
-        }:
-            return CmdOutputObservation(
-                content='ERROR: Cannot execute new command while the previous command is still running. '
-                + "Please wait for the previous command to complete by sending empty command '' or kill the command with 'C-c' (control-c).",
                 command='',
                 metadata=CmdOutputMetadata(),
             )
