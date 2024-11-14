@@ -53,9 +53,6 @@ _IPYTHON_DESCRIPTION = """Run a cell of Python code in an IPython environment.
 * The assistant should define variables and import packages before using them.
 * The variable defined in the IPython environment will not be available outside the IPython environment (e.g., in terminal).
 """
-# We are not using agentskills's file_ops for viewing files now because StrReplaceEditorTool already supports viewing files
-# """* Apart from the standard Python library, the assistant can also use the following functions (already imported):
-# {AgentSkillsRequirement.documentation}"""
 
 IPythonTool = ChatCompletionToolParam(
     type='function',
