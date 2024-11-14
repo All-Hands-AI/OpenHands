@@ -90,9 +90,24 @@ class BashSession:
             return '\n'.join(self.pane.cmd('capture-pane', '-J', '-pS', '-').stdout)
         return '\n'.join(self.pane.cmd('capture-pane', '-J', '-p').stdout)
 
+    def _get_command_output(
+        self,
+        command: str,
+        raw_command_output: str,
+        custom_prefix: str = '',
+        custom_suffix: str = '',
+    ) -> str:
+        # remove the previous command output from the new output if any
+        if self.prev_output:
+            command_output = raw_command_output.removeprefix(self.prev_output)
+        else:
+            command_output = raw_command_output
+        self.prev_output = raw_command_output  # update current command output anyway
+        command_output = _remove_command_prefix(command_output, command)
+        command_output = f'{custom_prefix}{command_output}{custom_suffix}'
+        return command_output
+
     def _handle_completed_command(self, command: str) -> CmdOutputObservation:
-        self.prev_status = BashCommandStatus.COMPLETED
-        self.prev_output = ''  # Reset previous command output
         full_output = self._get_pane_content(full=True)
 
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
@@ -101,12 +116,13 @@ class BashSession:
 
         # Extract the command output between the two PS1 prompts
         command_output = full_output[ps1_matches[0].end() + 1 : ps1_matches[1].start()]
-        command_output = command_output.lstrip().removeprefix(command.lstrip()).lstrip()
-
-        command_output += (
-            f'\n\n[The command completed with exit code {metadata.exit_code}.]'
+        command_output = self._get_command_output(
+            command,
+            command_output,
+            custom_suffix=f'\n\n[The command completed with exit code {metadata.exit_code}.]',
         )
-
+        self.prev_status = BashCommandStatus.COMPLETED
+        self.prev_output = ''  # Reset previous command output
         self._clear_screen()
         return CmdOutputObservation(
             content=command_output,
@@ -121,22 +137,17 @@ class BashSession:
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
         assert len(ps1_matches) == 1, 'Expected exactly one PS1 metadata block'
 
-        command_output = full_output[ps1_matches[0].end() + 1 :]
-        command_output = _remove_command_prefix(command_output, command)
-        # remove the previous command output from the new output if any
-        if self.prev_output:
-            _clean_command_output = command_output.removeprefix(self.prev_output)
-            command_output = (
-                '[Command output continued from previous command]\n'
-                + _clean_command_output
-            )
-            self.prev_output = _clean_command_output
-
-        command_output += (
-            f'\n\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
-            "You may wait longer to see additional output by sending empty command '', "
-            'send other commands to interact with the current process, '
-            'or send keys to interrupt/kill the command.]'
+        raw_command_output = full_output[ps1_matches[0].end() + 1 :]
+        command_output = self._get_command_output(
+            command,
+            raw_command_output,
+            custom_prefix='[Command output continued from previous command]\n',
+            custom_suffix=(
+                f'[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
+                "You may wait longer to see additional output by sending empty command '', "
+                'send other commands to interact with the current process, '
+                'or send keys to interrupt/kill the command.]'
+            ),
         )
         return CmdOutputObservation(
             content=command_output,
@@ -152,21 +163,17 @@ class BashSession:
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
         assert len(ps1_matches) == 1, 'Expected exactly one PS1 metadata block'
 
-        command_output = full_output[ps1_matches[0].end() + 1 :]
-        if self.prev_output:
-            _clean_command_output = command_output.removeprefix(self.prev_output)
-            command_output = (
-                '[Command output continued from previous command]\n'
-                + _clean_command_output
-            )
-            self.prev_output = _clean_command_output
-
-        command_output = _remove_command_prefix(command_output, command)
-        command_output += (
-            f'\n\n[The command timed out after {timeout} seconds. '
-            "You may wait longer to see additional output by sending empty command '', "
-            'send other commands to interact with the current process, '
-            'or send keys to interrupt/kill the command.]'
+        raw_command_output = full_output[ps1_matches[0].end() + 1 :]
+        command_output = self._get_command_output(
+            command,
+            raw_command_output,
+            custom_prefix='[Command output continued from previous command]\n',
+            custom_suffix=(
+                f'\n\n[The command timed out after {timeout} seconds. '
+                "You may wait longer to see additional output by sending empty command '', "
+                'send other commands to interact with the current process, '
+                'or send keys to interrupt/kill the command.]'
+            ),
         )
 
         return CmdOutputObservation(
@@ -194,15 +201,12 @@ class BashSession:
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
         assert len(ps1_matches) == 1, 'Expected exactly one PS1 metadata block'
 
-        command_output = full_output[ps1_matches[0].end() + 1 :]
-        # remove the previous command output from the new output if any
-        if self.prev_output:
-            _clean_command_output = command_output.removeprefix(self.prev_output)
-            command_output = (
-                '[Command output continued from previous command]\n'
-                + _clean_command_output
-            )
-            self.prev_output = _clean_command_output
+        raw_command_output = full_output[ps1_matches[0].end() + 1 :]
+        command_output = self._get_command_output(
+            '',
+            raw_command_output,
+            custom_prefix='[Command output continued from previous command]\n',
+        )
 
         return CmdOutputObservation(
             content=command_output,
