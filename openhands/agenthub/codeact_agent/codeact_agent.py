@@ -148,12 +148,14 @@ class CodeActAgent(Agent):
             action,
             (
                 AgentDelegateAction,
-                CmdRunAction,
                 IPythonRunCellAction,
                 FileEditAction,
                 BrowseInteractiveAction,
             ),
-        ) or (isinstance(action, AgentFinishAction) and action.source == 'agent'):
+        ) or (
+            isinstance(action, (AgentFinishAction, CmdRunAction))
+            and action.source == 'agent'
+        ):
             tool_metadata = action.tool_call_metadata
             assert tool_metadata is not None, (
                 'Tool call metadata should NOT be None when function calling is enabled. Action: '
@@ -181,6 +183,14 @@ class CodeActAgent(Agent):
             return [
                 Message(
                     role=role,
+                    content=content,
+                )
+            ]
+        elif isinstance(action, CmdRunAction) and action.source == 'user':
+            content = [TextContent(text=f'User executed the command:\n{action.command}')]
+            return [
+                Message(
+                    role='user',
                     content=content,
                 )
             ]
@@ -219,9 +229,16 @@ class CodeActAgent(Agent):
         message: Message
         max_message_chars = self.llm.config.max_message_chars
         if isinstance(obs, CmdOutputObservation):
-            text = truncate_content(
-                obs.content + obs.interpreter_details, max_message_chars
-            )
+            # if it doesn't have tool call metadata, it was triggered by a user action
+            if obs.tool_call_metadata is None:
+                text = truncate_content(
+                    f'\nObserved result of command executed by user:\n{obs.content}',
+                    max_message_chars,
+                )
+            else:
+                text = truncate_content(
+                    obs.content + obs.interpreter_details, max_message_chars
+                )
             text += f'\n[Command finished with exit code {obs.exit_code}]'
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
