@@ -22,6 +22,7 @@ import { Suggestions } from "./suggestions";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import BuildIt from "#/icons/build-it.svg?react";
 import { useWsClient } from "#/context/ws-client-provider";
+import { SuggestionItem } from "./suggestion-item";
 
 const isErrorMessage = (
   message: Message | ErrorMessage,
@@ -71,6 +72,8 @@ export function ChatInterface() {
     setFeedbackModalIsOpen(true);
     setFeedbackPolarity(polarity);
   };
+
+  const lastMessage = messages[messages.length - 1];
 
   return (
     <div className="h-full flex flex-col justify-between">
@@ -125,6 +128,23 @@ export function ChatInterface() {
             </ChatMessage>
           ),
         )}
+
+        {messages.length > 2 &&
+          !isErrorMessage(lastMessage) &&
+          lastMessage.sender === "assistant" && (
+            <div className="mb-2">
+              <SuggestionItem
+                suggestion={{
+                  label: "Push to GitHub",
+                  value:
+                    "Please push the changes to GitHub and open a pull request.",
+                }}
+                onClick={(value) => {
+                  handleSendMessage(value, []);
+                }}
+              />
+            </div>
+          )}
       </div>
 
       <div className="flex flex-col gap-[6px] px-4 pb-4">
