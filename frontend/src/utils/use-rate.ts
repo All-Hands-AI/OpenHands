@@ -38,7 +38,6 @@ export const useRate = (config = DEFAULT_CONFIG) => {
   };
 
   React.useEffect(() => {
-    // Update the rate whenever the items change
     updateRate();
   }, [items]);
 
