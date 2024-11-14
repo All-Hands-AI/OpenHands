@@ -111,6 +111,9 @@ class LogBuffer:
     def close(self, timeout: float = 5.0):
         self._stop_event.set()
         self.log_stream_thread.join(timeout)
+        # Close the log generator to release the file descriptor
+        if hasattr(self.log_generator, 'close'):
+            self.log_generator.close()
 
 
 class EventStreamRuntime(Runtime):
