@@ -47,7 +47,7 @@ SUPPORTED_AGENT_CLS = {'BrowsingAgent', 'CodeActAgent'}
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
-    'BrowsingAgent': "Continue the task. IMPORTANT: do not talk to the user until you have finished the task",
+    'BrowsingAgent': 'Continue the task. IMPORTANT: do not talk to the user until you have finished the task',
 }
 
 
