@@ -69,6 +69,11 @@ class BashSession:
         ).stdout[0]
         return self._pwd
 
+    def _is_special_key(self, command: str) -> bool:
+        """Check if the command is a special key."""
+        # Special keys are of the form C-<key>
+        return command.startswith('C-') and len(command) == 3
+
     def _clear_screen(self):
         """Clear the tmux pane screen and history."""
         self.pane.send_keys('C-l', enter=False)
@@ -121,13 +126,19 @@ class BashSession:
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
         assert len(ps1_matches) == 2, 'Expected exactly two PS1 metadata blocks'
         metadata = CmdOutputMetadata.from_ps1_match(ps1_matches[1])
-
+        is_special_key = self._is_special_key(command)
         # Extract the command output between the two PS1 prompts
-        command_output = full_output[ps1_matches[0].end() + 1 : ps1_matches[1].start()]
+        raw_command_output = full_output[
+            ps1_matches[0].end() + 1 : ps1_matches[1].start()
+        ]
         command_output = self._get_command_output(
             command,
-            command_output,
-            suffix=f'\n\n[The command completed with exit code {metadata.exit_code}.]',
+            raw_command_output,
+            suffix=(
+                f'\n\n[The command completed with exit code {metadata.exit_code}.]'
+                if not is_special_key
+                else f'\n\n[The command completed with exit code {metadata.exit_code}. CTRL+{command[-1].upper()} was sent.]'
+            ),
         )
         self.prev_status = BashCommandStatus.COMPLETED
         self.prev_output = ''  # Reset previous command output
@@ -234,7 +245,11 @@ class BashSession:
         assert (
             len(CmdOutputMetadata.matches_ps1_metadata(last_pane_output)) == 1
         ), 'Expected exactly one PS1 metadata block BEFORE the execution of a command'
-        self.pane.send_keys(action.command)
+        self.pane.send_keys(
+            action.command,
+            # do not send enter for special keys
+            enter=not self._is_special_key(action.command),
+        )
 
         while True:
             cur_pane_output = self._get_pane_content()
