@@ -230,6 +230,13 @@ class CodeActAgent(Agent):
         message: Message
         max_message_chars = self.llm.config.max_message_chars
         if isinstance(obs, CmdOutputObservation):
+            # if the cause of this observation is a user action, show that clearly
+            if (
+                obs.cause
+                and isinstance(obs.cause, CmdRunAction)
+                and obs.cause.source == 'user'
+            ):
+                obs.content += f'\n[Observed result of command executed by user:\n{obs.cause.command}]'
             text = truncate_content(
                 obs.content + obs.interpreter_details, max_message_chars
             )
