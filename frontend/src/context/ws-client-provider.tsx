@@ -5,6 +5,10 @@ import ActionType from "#/types/ActionType";
 import EventLogger from "#/utils/event-logger";
 import AgentState from "#/types/AgentState";
 import { handleAssistantMessage } from "#/services/actions";
+import { useRate } from "#/utils/get-rate";
+
+const isOpenHandsMessage = (event: Record<string, unknown>) =>
+  event.action === "message";
 
 const RECONNECT_RETRIES = 5;
 
@@ -17,12 +21,14 @@ export enum WsClientProviderStatus {
 
 interface UseWsClient {
   status: WsClientProviderStatus;
+  isLoadingMessages: boolean;
   events: Record<string, unknown>[];
   send: (event: Record<string, unknown>) => void;
 }
 
 const WsClientContext = React.createContext<UseWsClient>({
   status: WsClientProviderStatus.STOPPED,
+  isLoadingMessages: true,
   events: [],
   send: () => {
     throw new Error("not connected");
@@ -50,6 +56,8 @@ export function WsClientProvider({
   const [status, setStatus] = React.useState(WsClientProviderStatus.STOPPED);
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const [retryCount, setRetryCount] = React.useState(RECONNECT_RETRIES);
+  const [isLoadingMessages, setIsLoadingMessages] = React.useState(false);
+  const rateHandler = useRate({ threshold: 500 });
 
   function send(event: Record<string, unknown>) {
     if (!wsRef.current) {
@@ -71,6 +79,9 @@ export function WsClientProvider({
 
   function handleMessage(messageEvent: MessageEvent) {
     const event = JSON.parse(messageEvent.data);
+    if (isOpenHandsMessage(event)) {
+      rateHandler.record(new Date().getTime());
+    }
     setEvents((prevEvents) => [...prevEvents, event]);
     if (event.extras?.agent_state === AgentState.INIT) {
       setStatus(WsClientProviderStatus.ACTIVE);
@@ -174,13 +185,18 @@ export function WsClientProvider({
     };
   }, []);
 
+  React.useEffect(() => {
+    setIsLoadingMessages(rateHandler.isUnderThreshold);
+  }, [rateHandler.isUnderThreshold, rateHandler.rate]);
+
   const value = React.useMemo<UseWsClient>(
     () => ({
       status,
+      isLoadingMessages,
       events,
       send,
     }),
-    [status, events],
+    [status, isLoadingMessages, events],
   );
 
   return (

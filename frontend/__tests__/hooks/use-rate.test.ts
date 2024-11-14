@@ -1,0 +1,75 @@
+import { act, renderHook } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { useRate } from "#/utils/get-rate";
+
+describe("useRate", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("should initialize", () => {
+    const { result } = renderHook(() => useRate());
+
+    expect(result.current.items).toHaveLength(0);
+    expect(result.current.rate).toBeNull();
+    expect(result.current.lastUpdated).toBeNull();
+    expect(result.current.isUnderThreshold).toBe(true);
+  });
+
+  it("should handle the case of a single element", () => {
+    const { result } = renderHook(() => useRate());
+
+    act(() => {
+      result.current.record(123);
+    });
+
+    expect(result.current.items).toHaveLength(1);
+    expect(result.current.lastUpdated).not.toBeNull();
+  });
+
+  it("should return the difference between the last two elements", () => {
+    const { result } = renderHook(() => useRate());
+
+    vi.setSystemTime(500);
+    act(() => {
+      result.current.record(4);
+    });
+
+    vi.advanceTimersByTime(500);
+    act(() => {
+      result.current.record(9);
+    });
+
+    expect(result.current.items).toHaveLength(2);
+    expect(result.current.rate).toBe(5);
+    expect(result.current.lastUpdated).toBe(1000);
+  });
+
+  it("should return an isExceeding boolean", () => {
+    const { result } = renderHook(() => useRate({ threshold: 500 }));
+
+    vi.setSystemTime(500);
+    act(() => {
+      result.current.record(400);
+    });
+    act(() => {
+      result.current.record(1000);
+    });
+
+    expect(result.current.isUnderThreshold).toBe(false);
+
+    act(() => {
+      result.current.record(1500);
+    });
+
+    expect(result.current.isUnderThreshold).toBe(true);
+
+    vi.advanceTimersByTime(600);
+
+    expect(result.current.isUnderThreshold).toBe(false);
+  });
+});
