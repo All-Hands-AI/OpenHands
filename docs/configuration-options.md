@@ -1,5 +1,7 @@
 ---
 id: configuration-options
+title: Configuration Options
+sidebar_label: Configuration Options
 ---
 
 # Configuration Options
