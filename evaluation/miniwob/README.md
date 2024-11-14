@@ -16,6 +16,20 @@ Access with browser the above MiniWoB URLs and see if they load correctly.
 ./evaluation/miniwob/scripts/run_infer.sh llm.claude-35-sonnet-eval
 ```
 
+### Run Inference on `RemoteRuntime` (experimental)
+
+This is in limited beta. Contact Xingyao over slack if you want to try this out!
+
+```bash
+./evaluation/miniwob/scripts/run_infer.sh [model_config] [git-version] [agent] [note] [eval_limit] [num_workers]
+
+# Example - This runs evaluation on BrowsingAgent for 125 instances on miniwob, with 2 workers running in parallel
+export ALLHANDS_API_KEY="YOUR-API-KEY"
+export RUNTIME=remote
+export SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev"
+./evaluation/miniwob/scripts/run_infer.sh llm.eval HEAD BrowsingAgent "" 125 2
+```
+
 Results will be in `evaluation/evaluation_outputs/outputs/miniwob/`
 
 To calculate the average reward, run:
