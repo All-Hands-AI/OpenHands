@@ -65,6 +65,7 @@ class AgentController:
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
     _pending_action: Action | None = None
+    _closed: bool = False
     filter_out: ClassVar[tuple[type[Event], ...]] = (
         NullAction,
         NullObservation,
@@ -160,6 +161,7 @@ class AgentController:
 
         # unsubscribe from the event stream
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER, self.id)
+        self._closed = True
 
     def log(self, level: str, message: str, extra: dict | None = None):
         """Logs a message to the agent controller's logger.
@@ -194,6 +196,8 @@ class AgentController:
 
         self.log('info', 'Starting step loop...')
         while should_continue():
+            if self._closed:
+                break
             try:
                 await self._step()
             except asyncio.CancelledError:
