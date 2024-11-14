@@ -17,6 +17,11 @@ export function ol({
   React.HTMLAttributes<HTMLElement> &
   ExtraProps) {
   return (
-    <ol className="list-decimal ml-5 pl-2 whitespace-normal" style={{ counterReset: "list-item" }}>{children}</ol>
+    <ol
+      className="list-decimal ml-5 pl-2 whitespace-normal"
+      style={{ counterReset: "list-item" }}
+    >
+      {children}
+    </ol>
   );
 }
