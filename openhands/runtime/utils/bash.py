@@ -203,6 +203,7 @@ class BashSession:
 
     def _handle_empty_command(self) -> CmdOutputObservation:
         if self.prev_status not in {
+            BashCommandStatus.CONTINUE,
             BashCommandStatus.COMPLETED,
             BashCommandStatus.NO_CHANGE_TIMEOUT,
             BashCommandStatus.HARD_TIMEOUT,
