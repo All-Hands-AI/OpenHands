@@ -68,7 +68,7 @@ If you prefer to run the resolver programmatically instead of using GitHub Actio
 1. Install the package:
 
 ```bash
-pip install openhands-resolver
+pip install openhands-ai
 ```
 
 2. Create a GitHub access token:
@@ -100,7 +100,7 @@ Note: OpenHands works best with powerful models like Anthropic's Claude or OpenA
 The resolver can automatically attempt to fix a single issue in your repository using the following command:
 
 ```bash
-python -m openhands_resolver.resolve_issue --repo [OWNER]/[REPO] --issue-number [NUMBER]
+python -m openhands.resolver.resolve_issue --repo [OWNER]/[REPO] --issue-number [NUMBER]
 ```
 
 For instance, if you want to resolve issue #100 in this repo, you would run:
