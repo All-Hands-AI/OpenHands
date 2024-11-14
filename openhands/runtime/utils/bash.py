@@ -94,17 +94,25 @@ class BashSession:
         self,
         command: str,
         raw_command_output: str,
-        custom_prefix: str = '',
-        custom_suffix: str = '',
+        continue_prefix: str = '',
+        suffix: str = '',
     ) -> str:
+        """Get the command output with the previous command output removed.
+
+        Args:
+            continue_prefix: The prefix to add to the command output if it's a continuation of the previous command.
+            suffix: The suffix to add to the command output.
+        """
         # remove the previous command output from the new output if any
+        custom_prefix = ''
         if self.prev_output:
             command_output = raw_command_output.removeprefix(self.prev_output)
+            custom_prefix = continue_prefix
         else:
             command_output = raw_command_output
         self.prev_output = raw_command_output  # update current command output anyway
         command_output = _remove_command_prefix(command_output, command)
-        command_output = f'{custom_prefix}{command_output}{custom_suffix}'
+        command_output = f'{custom_prefix}{command_output}{suffix}'
         return command_output
 
     def _handle_completed_command(self, command: str) -> CmdOutputObservation:
@@ -119,7 +127,7 @@ class BashSession:
         command_output = self._get_command_output(
             command,
             command_output,
-            custom_suffix=f'\n\n[The command completed with exit code {metadata.exit_code}.]',
+            suffix=f'\n\n[The command completed with exit code {metadata.exit_code}.]',
         )
         self.prev_status = BashCommandStatus.COMPLETED
         self.prev_output = ''  # Reset previous command output
@@ -141,8 +149,8 @@ class BashSession:
         command_output = self._get_command_output(
             command,
             raw_command_output,
-            custom_prefix='[Command output continued from previous command]\n',
-            custom_suffix=(
+            continue_prefix='[Command output continued from previous command]\n',
+            suffix=(
                 f'[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
                 "You may wait longer to see additional output by sending empty command '', "
                 'send other commands to interact with the current process, '
@@ -167,8 +175,8 @@ class BashSession:
         command_output = self._get_command_output(
             command,
             raw_command_output,
-            custom_prefix='[Command output continued from previous command]\n',
-            custom_suffix=(
+            continue_prefix='[Command output continued from previous command]\n',
+            suffix=(
                 f'\n\n[The command timed out after {timeout} seconds. '
                 "You may wait longer to see additional output by sending empty command '', "
                 'send other commands to interact with the current process, '
@@ -205,7 +213,7 @@ class BashSession:
         command_output = self._get_command_output(
             '',
             raw_command_output,
-            custom_prefix='[Command output continued from previous command]\n',
+            continue_prefix='[Command output continued from previous command]\n',
         )
 
         return CmdOutputObservation(
