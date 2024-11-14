@@ -63,6 +63,7 @@ We have a few guides for running OpenHands with specific model providers:
 - [Azure](llms/azure-llms)
 - [Google](llms/google-llms)
 - [Groq](llms/groq)
+- [LiteLLM Proxy](llms/litellm-proxy)
 - [OpenAI](llms/openai-llms)
 - [OpenRouter](llms/openrouter)
 

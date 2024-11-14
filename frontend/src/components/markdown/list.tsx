@@ -4,8 +4,8 @@ import { ExtraProps } from "react-markdown";
 // Custom component to render <ul> in markdown
 export function ul({
   children,
-}: React.ClassAttributes<HTMLElement> &
-  React.HTMLAttributes<HTMLElement> &
+}: React.ClassAttributes<HTMLUListElement> &
+  React.HTMLAttributes<HTMLUListElement> &
   ExtraProps) {
   return <ul className="list-disc ml-5 pl-2 whitespace-normal">{children}</ul>;
 }
@@ -13,10 +13,13 @@ export function ul({
 // Custom component to render <ol> in markdown
 export function ol({
   children,
-}: React.ClassAttributes<HTMLElement> &
-  React.HTMLAttributes<HTMLElement> &
+  start,
+}: React.ClassAttributes<HTMLOListElement> &
+  React.OlHTMLAttributes<HTMLOListElement> &
   ExtraProps) {
   return (
-    <ol className="list-decimal ml-5 pl-2 whitespace-normal">{children}</ol>
+    <ol className="list-decimal ml-5 pl-2 whitespace-normal" start={start}>
+      {children}
+    </ol>
   );
 }

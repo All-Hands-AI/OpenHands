@@ -171,6 +171,8 @@ export default function MainApp() {
         company: user.company,
         name: user.name,
         email: user.email,
+        user: user.login,
+        mode: window.__APP_MODE__ || "oss",
       });
     }
   }, [user]);
@@ -241,7 +243,7 @@ export default function MainApp() {
               type="button"
               aria-label="All Hands Logo"
               onClick={() => {
-                if (location.pathname === "/app")
+                if (location.pathname.startsWith("/app"))
                   setStartNewProjectModalIsOpen(true);
               }}
             >

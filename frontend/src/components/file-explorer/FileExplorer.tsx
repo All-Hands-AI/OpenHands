@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { twMerge } from "tailwind-merge";
 import AgentState from "#/types/AgentState";
 import { setRefreshID } from "#/state/codeSlice";
+import { addAssistantMessage } from "#/state/chatSlice";
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
 import toast from "#/utils/toast";
@@ -20,6 +21,7 @@ import { I18nKey } from "#/i18n/declaration";
 import OpenHands from "#/api/open-hands";
 import { useFiles } from "#/context/files";
 import { isOpenHandsErrorResponse } from "#/api/open-hands.utils";
+import VSCodeIcon from "#/assets/vscode-alt.svg?react";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
@@ -168,6 +170,35 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
     }
   };
 
+  const handleVSCodeClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      const response = await OpenHands.getVSCodeUrl();
+      if (response.vscode_url) {
+        dispatch(
+          addAssistantMessage(
+            "You opened VS Code. Please inform the agent of any changes you made to the workspace or environment. To avoid conflicts, it's best to pause the agent before making any changes.",
+          ),
+        );
+        window.open(response.vscode_url, "_blank");
+      } else {
+        toast.error(
+          `open-vscode-error-${new Date().getTime()}`,
+          t(I18nKey.EXPLORER$VSCODE_SWITCHING_ERROR_MESSAGE, {
+            error: response.error,
+          }),
+        );
+      }
+    } catch (exp_error) {
+      toast.error(
+        `open-vscode-error-${new Date().getTime()}`,
+        t(I18nKey.EXPLORER$VSCODE_SWITCHING_ERROR_MESSAGE, {
+          error: String(exp_error),
+        }),
+      );
+    }
+  };
+
   React.useEffect(() => {
     refreshWorkspace();
   }, [curAgentState]);
@@ -210,7 +241,7 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
           !isOpen ? "w-12" : "w-60",
         )}
       >
-        <div className="flex flex-col relative h-full px-3 py-2">
+        <div className="flex flex-col relative h-full px-3 py-2 overflow-hidden">
           <div className="sticky top-0 bg-neutral-800">
             <div
               className={twMerge(
@@ -232,7 +263,7 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
             </div>
           </div>
           {!error && (
-            <div className="overflow-auto flex-grow">
+            <div className="overflow-auto flex-grow min-h-0">
               <div style={{ display: !isOpen ? "none" : "block" }}>
                 <ExplorerTree files={paths} />
               </div>
@@ -242,6 +273,27 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
             <div className="flex flex-col items-center justify-center h-full">
               <p className="text-neutral-300 text-sm">{error}</p>
             </div>
+          )}
+          {isOpen && (
+            <button
+              type="button"
+              onClick={handleVSCodeClick}
+              disabled={
+                curAgentState === AgentState.INIT ||
+                curAgentState === AgentState.LOADING
+              }
+              className={twMerge(
+                "mt-auto mb-2 w-full h-10 text-white rounded flex items-center justify-center gap-2 transition-colors",
+                curAgentState === AgentState.INIT ||
+                  curAgentState === AgentState.LOADING
+                  ? "bg-neutral-600 cursor-not-allowed"
+                  : "bg-[#4465DB] hover:bg-[#3451C7]",
+              )}
+              aria-label="Open in VS Code"
+            >
+              <VSCodeIcon width={20} height={20} />
+              Open in VS Code
+            </button>
           )}
         </div>
         <input
