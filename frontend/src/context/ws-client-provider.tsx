@@ -52,7 +52,6 @@ export function WsClientProvider({
   );
   const [status, setStatus] = React.useState(WsClientProviderStatus.STOPPED);
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
-  const [retryCount, setRetryCount] = React.useState(RECONNECT_RETRIES);
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
@@ -63,7 +62,6 @@ export function WsClientProvider({
   }
 
   function handleConnect() {
-    setRetryCount(RECONNECT_RETRIES);
     setStatus(WsClientProviderStatus.OPENING);
     const initEvent = {
       action: ActionType.INIT,
@@ -89,14 +87,8 @@ export function WsClientProvider({
   }
 
   function handleDisconnect() {
-    if (retryCount) {
-      setTimeout(() => {
-        setRetryCount(retryCount - 1);
-      }, 1000);
-    } else {
-      setStatus(WsClientProviderStatus.STOPPED);
-      setEvents([]);
-    }
+    setStatus(WsClientProviderStatus.STOPPED);
+    setEvents([]);
     sioRef.current = null;
   }
 
@@ -110,7 +102,7 @@ export function WsClientProvider({
     let sio = sioRef.current;
 
     // If disabled disconnect any existing websockets...
-    if (!enabled || !retryCount) {
+    if (!enabled) {
       if (sio) {
         sio.disconnect();
       }
@@ -163,7 +155,7 @@ export function WsClientProvider({
       sio.off("connect_failed", handleError);
       sio.off("disconnect", handleDisconnect);
     };
-  }, [enabled, token, ghToken, retryCount]);
+  }, [enabled, token, ghToken]);
 
   // Strict mode mounts and unmounts each component twice, so we have to wait in the destructor
   // before actually disconnecting the socket and cancel the operation if the component gets remounted.
