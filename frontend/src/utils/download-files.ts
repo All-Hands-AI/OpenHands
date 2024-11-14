@@ -62,9 +62,18 @@ export async function downloadFiles(initialPath?: string, options?: DownloadOpti
     // First, recursively get all files
     const files = await getAllFiles(initialPath || "", progress, options);
 
-    // Create a zip file using JSZip
-    const JSZip = (await import("jszip")).default;
-    const zip = new JSZip();
+    // Create a directory picker if the browser supports it
+    let directoryHandle: FileSystemDirectoryHandle | null = null;
+    if ('showDirectoryPicker' in window) {
+      try {
+        directoryHandle = await window.showDirectoryPicker();
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw new Error("Download cancelled");
+        }
+        console.warn('Directory picker not supported or cancelled, falling back to individual downloads');
+      }
+    }
 
     // Download each file
     for (const path of files) {
@@ -76,8 +85,34 @@ export async function downloadFiles(initialPath?: string, options?: DownloadOpti
         progress.currentFile = path;
         const content = await OpenHands.getFile(path);
         
-        // Add file to zip, preserving directory structure
-        zip.file(path, content);
+        if (directoryHandle) {
+          // Save to the selected directory preserving structure
+          const pathParts = path.split('/').filter(Boolean);
+          let currentHandle = directoryHandle;
+
+          // Create subdirectories as needed
+          for (let i = 0; i < pathParts.length - 1; i++) {
+            currentHandle = await currentHandle.getDirectoryHandle(pathParts[i], { create: true });
+          }
+
+          // Create and write the file
+          const fileName = pathParts[pathParts.length - 1];
+          const fileHandle = await currentHandle.getFileHandle(fileName, { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(content);
+          await writable.close();
+        } else {
+          // Fallback: Download directly using <a> tag
+          const blob = new Blob([content], { type: 'application/octet-stream' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = path.split('/').pop() || 'file';
+          document.body.appendChild(link);
+          link.click();
+          link.parentNode?.removeChild(link);
+          URL.revokeObjectURL(url);
+        }
 
         // Update progress
         progress.filesDownloaded++;
@@ -88,21 +123,6 @@ export async function downloadFiles(initialPath?: string, options?: DownloadOpti
         console.error(`Error downloading file ${path}:`, error);
       }
     }
-
-    if (options?.signal?.aborted) {
-      throw new Error("Download cancelled");
-    }
-
-    // Generate and download the zip file
-    const blob = await zip.generateAsync({ type: "blob" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", initialPath ? `${initialPath.replace(/\/$/, "")}.zip` : "workspace.zip");
-    document.body.appendChild(link);
-    link.click();
-    link.parentNode?.removeChild(link);
-    URL.revokeObjectURL(url);
   } catch (error) {
     if (error instanceof Error && error.message === "Download cancelled") {
       throw error;
