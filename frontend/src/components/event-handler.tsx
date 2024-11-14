@@ -14,7 +14,6 @@ import {
 } from "#/context/ws-client-provider";
 import { ErrorObservation } from "#/types/core/observations";
 import { addErrorMessage, addUserMessage } from "#/state/chatSlice";
-import { handleAssistantMessage } from "#/services/actions";
 import {
   getCloneRepoCommand,
   getGitHubTokenCommand,
@@ -112,9 +111,7 @@ export function EventHandler({ children }: React.PropsWithChildren) {
           message: event.message,
         }),
       );
-      return;
     }
-    handleAssistantMessage(event);
   }, [events.length]);
 
   React.useEffect(() => {
