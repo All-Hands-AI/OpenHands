@@ -185,7 +185,7 @@ export function EventHandler({ children }: React.PropsWithChildren) {
   }, [runtimeActive, importedProjectZip]);
 
   React.useEffect(() => {
-    if (userSettings.LLM_API_KEY) {
+    if (userSettings.LLM_API_KEY && window.__APP_MODE__ === "saas") {
       posthog.capture("user_activated");
     }
   }, [userSettings.LLM_API_KEY]);
