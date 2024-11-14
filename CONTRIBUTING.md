@@ -92,3 +92,28 @@ You may also check out previous PRs in the [PR list](https://github.com/All-Hand
 
 If your changes are user-facing (e.g. a new feature in the UI, a change in behavior, or a bugfix)
 please include a short message that we can add to our changelog.
+
+## How to Make Effective Contributions
+
+### Opening Issues
+
+Definitely go ahead and open, we'll discuss and implement the ones that the community has interest/effort for.
+
+### Making Pull Requests
+
+We're generally happy to consider all PRs, with the evaluation process varying based on the type of change:
+
+#### For Small Improvements
+
+- Small improvements with few downsides are typically easy to approve
+
+#### For Core Agent Changes
+
+We need to be more careful with changes to the core agent. These PRs are evaluated based on three key metrics:
+
+1. **Accuracy**
+2. **Efficiency**
+3. **Code Complexity**
+
+If it improves 1 and 2 with only a minimal change in 3 then we're 100% happy to merge it in.
+If there are bigger tradeoffs (e.g. helping efficiency a lot and hurting accuracy a little) we might want to put it behind a feature flag.
