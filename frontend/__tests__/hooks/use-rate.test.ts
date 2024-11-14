@@ -49,7 +49,7 @@ describe("useRate", () => {
     expect(result.current.lastUpdated).toBe(1000);
   });
 
-  it("should update isExceeding after [threshold]ms of no activity", () => {
+  it("should update isUnderThreshold after [threshold]ms of no activity", () => {
     const { result } = renderHook(() => useRate({ threshold: 500 }));
 
     expect(result.current.isUnderThreshold).toBe(true);
