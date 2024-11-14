@@ -12,11 +12,21 @@ export const useRate = (config = DEFAULT_CONFIG) => {
   const [lastUpdated, setLastUpdated] = React.useState<number | null>(null);
   const [isUnderThreshold, setIsUnderThreshold] = React.useState(true);
 
+  /**
+   * Record an entry in order to calculate the rate
+   * @param entry Entry to record
+   *
+   * @example
+   * record(new Date().getTime());
+   */
   const record = (entry: number) => {
     setItems((prev) => [...prev, entry]);
     setLastUpdated(new Date().getTime());
   };
 
+  /**
+   * Update the rate based on the last two entries (if available)
+   */
   const updateRate = () => {
     if (items.length > 1) {
       const newRate = items[items.length - 1] - items[items.length - 2];
@@ -28,10 +38,14 @@ export const useRate = (config = DEFAULT_CONFIG) => {
   };
 
   React.useEffect(() => {
+    // Update the rate whenever the items change
     updateRate();
   }, [items]);
 
   React.useEffect(() => {
+    // Set up an interval to check if the time since the last update exceeds the threshold
+    // If it does, set isUnderThreshold to false, otherwise set it to true
+    // This ensures that the component can react to periods of inactivity
     const intervalId = setInterval(() => {
       if (lastUpdated !== null) {
         const timeSinceLastUpdate = new Date().getTime() - lastUpdated;
