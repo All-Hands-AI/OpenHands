@@ -105,6 +105,11 @@ const sidebars: SidebarsConfig = {
           label: 'Custom Sandbox',
           id: 'usage/how-to/custom-sandbox-guide',
         },
+        {
+          type: 'doc',
+          label: 'Configuration Options',
+          id: 'configuration-options',
+        },        
       ],
     },
     {
