@@ -18,6 +18,7 @@ interface ChatInputProps {
   onBlur?: () => void;
   onImagePaste?: (files: File[]) => void;
   className?: React.HTMLAttributes<HTMLDivElement>["className"];
+  buttonClassName?: React.HTMLAttributes<HTMLButtonElement>["className"];
 }
 
 export function ChatInput({
@@ -35,6 +36,7 @@ export function ChatInput({
   onBlur,
   onImagePaste,
   className,
+  buttonClassName,
 }: ChatInputProps) {
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
   const [isDraggingOver, setIsDraggingOver] = React.useState(false);
@@ -100,7 +102,7 @@ export function ChatInput({
   return (
     <div
       data-testid="chat-input"
-      className="flex items-end justify-end grow gap-1 min-h-6"
+      className="flex items-end justify-end grow gap-1 min-h-6 w-full"
     >
       <TextareaAutosize
         ref={textareaRef}
@@ -128,7 +130,7 @@ export function ChatInput({
         )}
       />
       {showButton && (
-        <>
+        <div className={buttonClassName}>
           {button === "submit" && (
             <button
               aria-label="Send"
@@ -152,7 +154,7 @@ export function ChatInput({
               <div className="w-[10px] h-[10px] bg-white" />
             </button>
           )}
-        </>
+        </div>
       )}
     </div>
   );

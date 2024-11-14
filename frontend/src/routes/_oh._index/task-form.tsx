@@ -67,7 +67,7 @@ export function TaskForm() {
         />
         <div
           className={cn(
-            "border border-neutral-600 px-4 py-[17px] rounded-lg text-[17px] leading-5 w-full transition-colors duration-200",
+            "border border-neutral-600 px-4 rounded-lg text-[17px] leading-5 w-full transition-colors duration-200",
             inputIsFocused ? "bg-neutral-600" : "bg-neutral-700",
             "hover:border-neutral-500 focus-within:border-neutral-500",
           )}
@@ -91,7 +91,8 @@ export function TaskForm() {
             value={text}
             maxRows={15}
             showButton={!!text}
-            className="text-[17px] leading-5"
+            className="text-[17px] leading-5 py-[17px]"
+            buttonClassName="pb-[17px]"
             disabled={navigation.state === "submitting"}
           />
         </div>
