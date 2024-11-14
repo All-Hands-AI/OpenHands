@@ -151,7 +151,7 @@ class BashSession:
             raw_command_output,
             continue_prefix='[Command output continued from previous command]\n',
             suffix=(
-                f'[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
+                f'\n\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
                 "You may wait longer to see additional output by sending empty command '', "
                 'send other commands to interact with the current process, '
                 'or send keys to interrupt/kill the command.]'
