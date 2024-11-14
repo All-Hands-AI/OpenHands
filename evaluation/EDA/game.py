@@ -87,9 +87,7 @@ class Q20Game:
         # others
         bingo, anwser_reply = self.judge_winner(response)
         if bingo:
-            return (
-                'You are bingo! quit now, run: <execute_bash> exit </execute_bash>.\n'
-            )
+            return 'You are bingo! Use the "finish" tool to finish the interaction.\n'
         if self.curr_turn == self.num_turns - 2:
             anwser_reply += " You must guess now, what's it?"
         return anwser_reply

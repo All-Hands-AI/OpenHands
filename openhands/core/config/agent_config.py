@@ -20,7 +20,6 @@ class AgentConfig:
         disabled_microagents: A list of microagents to disable. Default is None.
     """
 
-    function_calling: bool = True
     codeact_enable_browsing: bool = True
     codeact_enable_llm_editor: bool = False
     codeact_enable_jupyter: bool = True
