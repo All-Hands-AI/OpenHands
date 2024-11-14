@@ -187,7 +187,9 @@ class CodeActAgent(Agent):
                 )
             ]
         elif isinstance(action, CmdRunAction) and action.source == 'user':
-            content = [TextContent(text=f'User executed the command:\n{action.command}')]
+            content = [
+                TextContent(text=f'User executed the command:\n{action.command}')
+            ]
             return [
                 Message(
                     role='user',
@@ -452,18 +454,23 @@ class CodeActAgent(Agent):
                         messages.append(message)
 
         if self.llm.is_caching_prompt_active():
-            # NOTE: this is only needed for anthropic
-            # following logic here:
-            # https://github.com/anthropics/anthropic-quickstarts/blob/8f734fd08c425c6ec91ddd613af04ff87d70c5a0/computer-use-demo/computer_use_demo/loop.py#L241-L262
-            breakpoints_remaining = 3  # remaining 1 for system/tool
-            for message in reversed(messages):
-                if message.role == 'user' or message.role == 'tool':
-                    if breakpoints_remaining > 0:
-                        message.content[
-                            -1
-                        ].cache_prompt = True  # Last item inside the message content
-                        breakpoints_remaining -= 1
-                    else:
+            # For models that only support one checkpoint, just cache the last user/tool message
+            if self.llm.is_single_checkpoint_model():
+                for message in reversed(messages):
+                    if message.role == 'user' or message.role == 'tool':
+                        message.content[-1].cache_prompt = True
                         break
+            else:
+                # NOTE: this is only needed for anthropic
+                # following logic here:
+                # https://github.com/anthropics/anthropic-quickstarts/blob/8f734fd08c425c6ec91ddd613af04ff87d70c5a0/computer-use-demo/computer_use_demo/loop.py#L241-L262
+                breakpoints_remaining = 3  # remaining 1 for system/tool
+                for message in reversed(messages):
+                    if message.role == 'user' or message.role == 'tool':
+                        if breakpoints_remaining > 0:
+                            message.content[-1].cache_prompt = True
+                            breakpoints_remaining -= 1
+                        else:
+                            break
 
         return messages

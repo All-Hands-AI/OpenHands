@@ -70,6 +70,10 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'gpt-4o',
 ]
 
+SINGLE_CHECKPOINT_MODELS = [
+    'gemini',  # Gemini only supports one checkpoint for prompt caching
+]
+
 
 class LLM(RetryMixin, DebugMixin):
     """The LLM class represents a Language Model instance.
@@ -570,3 +574,13 @@ class LLM(RetryMixin, DebugMixin):
 
         # let pydantic handle the serialization
         return [message.model_dump() for message in messages]
+
+    def is_single_checkpoint_model(self) -> bool:
+        """Check if model only supports a single prompt cache checkpoint.
+
+        Returns:
+            bool: True if model only supports one checkpoint (e.g. Gemini)
+        """
+        return any(
+            model in self.config.model.lower() for model in SINGLE_CHECKPOINT_MODELS
+        )
