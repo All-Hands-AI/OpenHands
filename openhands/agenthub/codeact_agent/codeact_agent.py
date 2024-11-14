@@ -5,7 +5,6 @@ from collections import deque
 from litellm import ModelResponse
 
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
-from openhands.agenthub.codeact_agent.function_calling import action_to_str
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
