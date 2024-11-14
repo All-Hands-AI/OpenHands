@@ -230,16 +230,16 @@ class CodeActAgent(Agent):
         message: Message
         max_message_chars = self.llm.config.max_message_chars
         if isinstance(obs, CmdOutputObservation):
-            # if the cause of this observation is a user action, show that clearly
-            if (
-                obs.cause
-                and isinstance(obs.cause, CmdRunAction)
-                and obs.cause.source == 'user'
-            ):
-                obs.content += f'\n[Observed result of command executed by user:\n{obs.cause.command}]'
-            text = truncate_content(
-                obs.content + obs.interpreter_details, max_message_chars
-            )
+            # if it doesn't have tool call metadata, it was triggered by a user action
+            if obs.tool_call_metadata is None:
+                text = truncate_content(
+                    f'\nObserved result of command executed by user:\n{obs.content}',
+                    max_message_chars,
+                )
+            else:
+                text = truncate_content(
+                    obs.content + obs.interpreter_details, max_message_chars
+                )
             text += f'\n[Command finished with exit code {obs.exit_code}]'
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
