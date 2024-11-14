@@ -56,6 +56,20 @@ You can update the arguments in the script
 ./evaluation/aider_bench/scripts/run_infer.sh eval_gpt35_turbo HEAD CodeActAgent 100 1 "1,3,10"
 ```
 
+### Run Inference on `RemoteRuntime` (experimental)
+
+This is in limited beta. Contact Xingyao over slack if you want to try this out!
+
+```bash
+./evaluation/aider_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [eval-num-workers] [eval_ids]
+
+# Example - This runs evaluation on CodeActAgent for 133 instances on aider_bench test set, with 2 workers running in parallel
+export ALLHANDS_API_KEY="YOUR-API-KEY"
+export RUNTIME=remote
+export SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev"
+./evaluation/aider_bench/scripts/run_infer.sh llm.eval HEAD CodeActAgent 133 2
+```
+
 ## Summarize Results
 
 ```bash

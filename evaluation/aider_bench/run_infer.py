@@ -58,6 +58,9 @@ def get_config(
             use_host_network=False,
             timeout=100,
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
+            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
+            keep_runtime_alive=False,
+            remote_runtime_init_timeout=1800,
         ),
         # do not mount workspace
         workspace_base=None,
