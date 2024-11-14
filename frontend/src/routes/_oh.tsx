@@ -243,7 +243,7 @@ export default function MainApp() {
               type="button"
               aria-label="All Hands Logo"
               onClick={() => {
-                if (location.pathname === "/app")
+                if (location.pathname.startsWith("/app"))
                   setStartNewProjectModalIsOpen(true);
               }}
             >
