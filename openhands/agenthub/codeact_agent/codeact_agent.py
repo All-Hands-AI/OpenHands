@@ -188,7 +188,7 @@ class CodeActAgent(Agent):
                 )
             ]
         elif isinstance(action, CmdRunAction) and action.source == 'user':
-            content = [TextContent(text=action_to_str(action))]
+            content = [TextContent(text=f'User executed the command:\n{action.command}')]
             return [
                 Message(
                     role='user',
