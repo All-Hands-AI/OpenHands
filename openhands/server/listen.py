@@ -11,6 +11,7 @@ import requests
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
+from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
 from openhands.server.github import (
@@ -571,10 +572,14 @@ async def get_remote_runtime_config(request: Request):
     Currently, this is the runtime ID.
     """
     try:
-        runtime: Runtime = request.state.conversation.runtime
-        runtime_id = runtime.runtime_id  # type: ignore
-
-        return JSONResponse(content={runtime_id})
+        runtime = request.state.conversation.runtime
+        if isinstance(runtime, RemoteRuntime):
+            return JSONResponse(content={'runtime_id': runtime.runtime_id})
+        else:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={'error': 'Runtime ID not available in this environment'},
+            )
     except Exception as e:
         logger.error(e)
         return JSONResponse(

@@ -46,7 +46,7 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
-  const [runtimeId, setRuntimeId] = React.useState<string | null>("ABC123");
+  const [runtimeId, setRuntimeId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (status === WsClientProviderStatus.ACTIVE) {
