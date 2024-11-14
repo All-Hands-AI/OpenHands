@@ -64,7 +64,7 @@ describe("useRate", () => {
     expect(result.current.isUnderThreshold).toBe(false);
   });
 
-  it("should return an isExceeding boolean", () => {
+  it("should return an isUnderThreshold boolean", () => {
     const { result } = renderHook(() => useRate({ threshold: 500 }));
 
     vi.setSystemTime(500);
