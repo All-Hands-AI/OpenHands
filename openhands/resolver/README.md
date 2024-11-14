@@ -114,7 +114,7 @@ The output will be written to the `output/` directory.
 If you've installed the package from source using poetry, you can use:
 
 ```bash
-poetry run python openhands.resolver/resolve_issue.py --repo all-hands-ai/openhands-resolver --issue-number 100
+poetry run python openhands/resolver/resolve_issue.py --repo all-hands-ai/openhands-resolver --issue-number 100
 ```
 
 For resolving multiple issues at once (e.g., in a batch process), you can use the `resolve_all_issues` command:
