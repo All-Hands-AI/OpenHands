@@ -4,6 +4,7 @@ import {
   IoIosArrowForward,
   IoIosRefresh,
   IoIosCloudUpload,
+  IoIosCloudDownload,
 } from "react-icons/io";
 import { useRevalidator } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
@@ -22,10 +23,12 @@ import OpenHands from "#/api/open-hands";
 import { useFiles } from "#/context/files";
 import { isOpenHandsErrorResponse } from "#/api/open-hands.utils";
 import VSCodeIcon from "#/assets/vscode-alt.svg?react";
+import { DownloadProgress } from "../download-progress";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
   onUpload: () => void;
+  onDownload: () => void;
   toggleHidden: () => void;
   isHidden: boolean;
 }
@@ -34,6 +37,7 @@ function ExplorerActions({
   toggleHidden,
   onRefresh,
   onUpload,
+  onDownload,
   isHidden,
 }: ExplorerActionsProps) {
   return (
@@ -66,6 +70,17 @@ function ExplorerActions({
             testId="upload"
             ariaLabel="Upload File"
             onClick={onUpload}
+          />
+          <IconButton
+            icon={
+              <IoIosCloudDownload
+                size={16}
+                className="text-neutral-400 hover:text-neutral-100 transition"
+              />
+            }
+            testId="download"
+            ariaLabel="Download Files"
+            onClick={onDownload}
           />
         </>
       )}
@@ -103,6 +118,7 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
 
   const { paths, setPaths } = useFiles();
   const [isDragging, setIsDragging] = React.useState(false);
+  const [isDownloading, setIsDownloading] = React.useState(false);
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -110,6 +126,14 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
   const { t } = useTranslation();
   const selectFileInput = () => {
     fileInputRef.current?.click(); // Trigger the file browser
+  };
+
+  const handleDownload = () => {
+    setIsDownloading(true);
+  };
+
+  const handleDownloadClose = () => {
+    setIsDownloading(false);
   };
 
   const refreshWorkspace = () => {
@@ -235,6 +259,12 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
           </p>
         </div>
       )}
+      {isDownloading && (
+        <DownloadProgress
+          initialPath=""
+          onClose={handleDownloadClose}
+        />
+      )}
       <div
         className={twMerge(
           "bg-neutral-800 h-full border-r-1 border-r-neutral-600 flex flex-col",
@@ -259,6 +289,7 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
                 toggleHidden={onToggle}
                 onRefresh={refreshWorkspace}
                 onUpload={selectFileInput}
+                onDownload={handleDownload}
               />
             </div>
           </div>
