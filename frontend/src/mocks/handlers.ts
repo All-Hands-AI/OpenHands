@@ -71,8 +71,6 @@ const openHandsHandlers = [
 export const handlers = [
   ...openHandsHandlers,
   http.get("https://api.github.com/user/repos", async ({ request }) => {
-    if (import.meta.env.MODE !== "test") await delay(3500);
-
     const token = request.headers
       .get("Authorization")
       ?.replace("Bearer", "")

@@ -21,9 +21,9 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
-from openhands.runtime.utils.shutdown_listener import should_continue
 from openhands.server.session.agent_session import AgentSession
 from openhands.storage.files import FileStore
+from openhands.utils.shutdown_listener import should_continue
 
 
 class Session:
@@ -163,7 +163,7 @@ class Session:
             return
         event = event_from_dict(data.copy())
         # This checks if the model supports images
-        if isinstance(event, MessageAction) and event.images_urls:
+        if isinstance(event, MessageAction) and event.image_urls:
             controller = self.agent_session.controller
             if controller:
                 if controller.agent.llm.config.disable_vision:
