@@ -43,12 +43,14 @@ class TestTruncation:
         cmd1 = CmdRunAction(command='ls')
         cmd1._id = 2
         obs1 = CmdOutputObservation(command='ls', content='file1.txt', command_id=2)
+        obs1._id = 3
         obs1._cause = 2
 
         cmd2 = CmdRunAction(command='pwd')
-        cmd2._id = 3
-        obs2 = CmdOutputObservation(command='pwd', content='/home', command_id=3)
-        obs2._cause = 3
+        cmd2._id = 4
+        obs2 = CmdOutputObservation(command='pwd', content='/home', command_id=4)
+        obs2._id = 5
+        obs2._cause = 4
 
         events = [first_msg, cmd1, obs1, cmd2, obs2]
 
@@ -83,15 +85,36 @@ class TestTruncation:
         first_msg._source = EventSource.USER
         first_msg._id = 1
 
-        cmd1 = CmdRunAction(command='ls')
-        cmd1._id = 2
-        obs1 = CmdOutputObservation(command='ls', content='file1.txt', command_id=2)
-        obs1._id = 3
-        obs1._cause = 2
+        # Add agent question
+        agent_msg = MessageAction(
+            content='What task would you like me to perform?', wait_for_response=True
+        )
+        agent_msg._source = EventSource.AGENT
+        agent_msg._id = 2
 
-        # Set up mock event stream to return our events
-        mock_event_stream.get_events.return_value = [first_msg, cmd1, obs1]
-        controller.state.history = [first_msg, cmd1, obs1]
+        # Add user response
+        user_response = MessageAction(
+            content='Please list all files and show me current directory',
+            wait_for_response=False,
+        )
+        user_response._source = EventSource.USER
+        user_response._id = 3
+
+        cmd1 = CmdRunAction(command='ls')
+        cmd1._id = 4
+        obs1 = CmdOutputObservation(command='ls', content='file1.txt', command_id=4)
+        obs1._id = 5
+        obs1._cause = 4
+
+        # Update mock event stream to include new messages
+        mock_event_stream.get_events.return_value = [
+            first_msg,
+            agent_msg,
+            user_response,
+            cmd1,
+            obs1,
+        ]
+        controller.state.history = [first_msg, agent_msg, user_response, cmd1, obs1]
         original_history_len = len(controller.state.history)
 
         # Simulate ContextWindowExceededError and truncation

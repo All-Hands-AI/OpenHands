@@ -699,7 +699,7 @@ class AgentController:
         events: list[Event] = []
 
         # If we have a truncation point, get first user message and then rest of history
-        if hasattr(self.state, 'truncation_id') and self.state.truncation_id:
+        if hasattr(self.state, 'truncation_id') and self.state.truncation_id > 0:
             # Find first user message from stream
             first_user_msg = next(
                 (
@@ -822,7 +822,7 @@ class AgentController:
 
         # Handle first event in truncated history
         if kept_events:
-            i = mid_point
+            i = 0
             while i < len(kept_events):
                 first_event = kept_events[i]
                 if isinstance(first_event, Observation) and first_event.cause:
