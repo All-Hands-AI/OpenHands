@@ -23,11 +23,17 @@ def _remove_command_prefix(command_output: str, command: str) -> str:
 
 
 class BashSession:
-    NO_CHANGE_TIMEOUT_SECONDS = 10.0
     POLL_INTERVAL = 0.5
     PS1 = CmdOutputMetadata.to_ps1_prompt()
 
-    def __init__(self, work_dir: str, username: str | None = None):
+    def __init__(
+        self,
+        work_dir: str,
+        username: str | None = None,
+        no_change_timeout_seconds: float = 30.0,
+    ):
+        self.NO_CHANGE_TIMEOUT_SECONDS = no_change_timeout_seconds
+
         self.server = libtmux.Server()
         window_command = '/bin/bash'
         if username:
