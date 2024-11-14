@@ -61,7 +61,7 @@ You can update the arguments in the script
 This is in limited beta. Contact Xingyao over slack if you want to try this out!
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
+./evaluation/aider_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [eval-num-workers] [eval_ids]
 
 # Example - This runs evaluation on CodeActAgent for 133 instances on aider_bench test set, with 2 workers running in parallel
 export ALLHANDS_API_KEY="YOUR-API-KEY"
