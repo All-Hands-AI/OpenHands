@@ -189,6 +189,7 @@ class AgentSession:
             sid=self.sid,
             plugins=agent.sandbox_plugins,
             status_callback=self._status_callback,
+            headless_mode=False,
         )
 
         try:

@@ -42,7 +42,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
-from openhands.runtime.utils.shutdown_listener import should_continue
+from openhands.utils.shutdown_listener import should_continue
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (

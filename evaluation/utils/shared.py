@@ -346,6 +346,7 @@ def run_evaluation(
             f'model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.\n'
         )
     else:
+        logger.warning('Running evaluation without metadata.')
         logger.info(f'Evaluation started with {num_workers} workers.')
 
     total_instances = len(dataset)
