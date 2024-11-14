@@ -1,6 +1,6 @@
 CODEACT_SWE_PROMPT = """Now, you're going to solve this issue on your own. Your terminal session has started and you're in the repository's root directory. You can use any bash commands or the special interface to help you. Edit all the files you need to and run any checks or tests that you want.
 Remember, YOU CAN ONLY ENTER ONE COMMAND AT A TIME. You should always wait for feedback after every command.
-When you're satisfied with all of the changes you've made, you can run the following command: <execute_bash> exit </execute_bash>.
+When you're satisfied with all of the changes you've made, you can use the "finish" tool to finish the interaction.
 Note however that you cannot use any interactive session commands (e.g. vim) in this environment, but you can write scripts and run them. E.g. you can write a python script and then run it with `python <script_name>.py`.
 
 NOTE ABOUT THE EDIT COMMAND: Indentation really matters! When editing a file, make sure to insert appropriate indentation before each line!
