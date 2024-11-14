@@ -28,7 +28,8 @@ const isErrorMessage = (
 ): message is ErrorMessage => "error" in message;
 
 export function ChatInterface() {
-  const { send } = useWsClient();
+  const { send, isLoadingMessages } = useWsClient();
+
   const dispatch = useDispatch();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
@@ -101,30 +102,36 @@ export function ChatInterface() {
         onScroll={(e) => onChatBodyScroll(e.currentTarget)}
         className="flex flex-col grow overflow-y-auto overflow-x-hidden px-4 pt-4 gap-2"
       >
-        {messages.map((message, index) =>
-          isErrorMessage(message) ? (
-            <ErrorMessage
-              key={index}
-              id={message.id}
-              message={message.message}
-            />
-          ) : (
-            <ChatMessage
-              key={index}
-              type={message.sender}
-              message={message.content}
-            >
-              {message.imageUrls.length > 0 && (
-                <ImageCarousel size="small" images={message.imageUrls} />
-              )}
-              {messages.length - 1 === index &&
-                message.sender === "assistant" &&
-                curAgentState === AgentState.AWAITING_USER_CONFIRMATION && (
-                  <ConfirmationButtons />
-                )}
-            </ChatMessage>
-          ),
+        {isLoadingMessages && (
+          <div className="flex justify-center">
+            <div className="w-6 h-6 border-2 border-t-[4px] border-primary-500 rounded-full animate-spin" />
+          </div>
         )}
+        {!isLoadingMessages &&
+          messages.map((message, index) =>
+            isErrorMessage(message) ? (
+              <ErrorMessage
+                key={index}
+                id={message.id}
+                message={message.message}
+              />
+            ) : (
+              <ChatMessage
+                key={index}
+                type={message.sender}
+                message={message.content}
+              >
+                {message.imageUrls.length > 0 && (
+                  <ImageCarousel size="small" images={message.imageUrls} />
+                )}
+                {messages.length - 1 === index &&
+                  message.sender === "assistant" &&
+                  curAgentState === AgentState.AWAITING_USER_CONFIRMATION && (
+                    <ConfirmationButtons />
+                  )}
+              </ChatMessage>
+            ),
+          )}
       </div>
 
       <div className="flex flex-col gap-[6px] px-4 pb-4">
