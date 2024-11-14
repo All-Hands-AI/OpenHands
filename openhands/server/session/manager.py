@@ -16,13 +16,14 @@ from openhands.storage.files import FileStore
 class SessionManager:
     config: AppConfig
     file_store: FileStore
-    sessions: dict[str, Session] = field(default_factory=dict)
+    local_sessions_by_sid: dict[str, Session] = field(default_factory=dict)
+    local_sessions_by_connection_id: dict[str, Session] = field(default_factory=dict)
 
+    # TODO: Delete me!
     def add_or_restart_session(self, sid: str, ws_conn: WebSocket) -> Session:
         session = Session(
             sid=sid, file_store=self.file_store, ws=ws_conn, config=self.config, sio=None
         )
-        self.sessions[sid] = session
         return session
 
     async def attach_to_conversation(self, sid: str) -> Conversation | None:
@@ -40,24 +41,36 @@ class SessionManager:
     async def detach_from_conversation(self, conversation: Conversation):
         await conversation.disconnect()
 
+    # TODO: Delete me!
     async def stop_session(self, sid: str) -> bool:
         session = self.sessions.pop(sid, None)
         if session:
             session.close()
         return bool(session)
 
-    def get_existing_session(self, sid: str):
-        return self.sessions.get(sid)
-    
-    def add_new_session(self, sio: socketio.AsyncServer | None, sid: str = None):
-        session = Session(
-            sid=sid, file_store=self.file_store, config=self.config, sio=sio, ws=None
-        )
-        self.sessions[sid] = session
+    async def init_or_join_local_session(self, sio: socketio.AsyncServer, sid: str, connection_id: str, data: dict):
+        """ If there is no local session running, initialize one """
+        if sid not in self.local_sessions_by_sid:
+            session = Session(
+                sid=sid, file_store=self.file_store, config=self.config, sio=sio, ws=None
+            )
+            session.connect(connection_id)
+            self.local_sessions_by_sid[sid] = session
+            self.local_sessions_by_connection_id[connection_id] = session
+            await session.initialize_agent(data)
+        else:
+            session.connect(connection_id)
+            self.local_sessions_by_connection_id[connection_id] = session
         return session
     
-    def alias_existing_session(self, old_sid: str, new_sid: str):
-        session = self.sessions.pop(old_sid)
+    def get_local_session(self, connection_id: str) -> Session:
+        return self.local_sessions_by_connection_id[connection_id]
+    
+    def disconnect_from_local_session(self, connection_id: str):
+        session = self.local_sessions_by_connection_id.pop(connection_id, None)
         if not session:
-            raise RuntimeError(f'unknown_session:{old_sid}')
-        self.sessions[new_sid] = session
+            # This can occur if the init action was never run.
+            logger.warning(f'disconnect_from_uninitialized_session:{connection_id}')
+            return
+        if session.disconnect(connection_id):
+            self.local_sessions_by_sid.pop(session.sid)

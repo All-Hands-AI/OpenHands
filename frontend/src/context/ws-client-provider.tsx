@@ -63,6 +63,21 @@ export function WsClientProvider({
 
   function handleConnect() {
     setStatus(WsClientProviderStatus.OPENING);
+
+    // Send the init event that starts / reconnects a session...
+    const args: Record<string, unknown> = { ...settings }
+    if (token) {
+      args.token = token
+    }
+    if (ghToken) {
+      args.github_token = ghToken;
+    }
+    if (events.length) {
+      extraHeaders.latest_event_id = `${events[events.length - 1].id}`;
+    }
+    */
+
+
     const initEvent = {
       action: ActionType.INIT,
       args: settings,
@@ -83,7 +98,9 @@ export function WsClientProvider({
       setStatus(WsClientProviderStatus.ERROR);
     }
 
-    handleAssistantMessage(event);
+    if (!event.token) {
+      handleAssistantMessage(event);
+    }
   }
 
   function handleDisconnect() {
@@ -93,6 +110,7 @@ export function WsClientProvider({
   }
 
   function handleError() {
+    console.log("TRACE:SIO:Error")
     posthog.capture("socket_error");
     setStatus(WsClientProviderStatus.ERROR);
   }
@@ -106,7 +124,6 @@ export function WsClientProvider({
       if (sio) {
         sio.disconnect();
       }
-      sioRef.current = null;
       return () => {};
     }
 
@@ -115,27 +132,40 @@ export function WsClientProvider({
     if (
       !sio ||
       (tokenRef.current && token !== tokenRef.current) ||
-      ghToken !== ghTokenRef.current ||
-      !sio.connected
+      ghToken !== ghTokenRef.current
     ) {
       sio?.disconnect();
 
+      /*
       const extraHeaders: Record<string, string> = {};
       if (token) {
-        extraHeaders.TOKEN = token;
+        extraHeaders.token = token;
       }
       if (ghToken) {
-        extraHeaders.GITHUB_TOKEN = ghToken;
+        extraHeaders.github_token = ghToken;
       }
       if (events.length) {
-        extraHeaders.LATEST_EVENT_ID = `${events[events.length - 1].id}`;
+        extraHeaders.latest_event_id = `${events[events.length - 1].id}`;
       }
+      */
 
       const baseUrl =
         import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
-      sio = io(`${window.location.protocol}//${baseUrl}`, {
+      sio = io(baseUrl, {
         transports: ["websocket"],
-        extraHeaders,
+        //extraHeaders: {
+        //  Testy: "TESTER"
+        //},
+        // We force a new connection, because the headers may have changed.
+        //forceNew: true,
+        
+        // Had to do this for now because reconnection actually starts a new session,
+        // which we don't want - The reconnect has the same headers as the original
+        // which don't include the original session id
+        reconnection: false,
+        //reconnectionDelay: 1000,
+        //reconnectionDelayMax : 5000,
+        //reconnectionAttempts: 5
       });
     }
     sio.on("connect", handleConnect);

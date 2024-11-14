@@ -31,9 +31,11 @@ class Session:
     sid: str
     websocket: WebSocket | None
     sio: socketio.AsyncServer | None
+    connection_ids: set[str]
     last_active_ts: int = 0
     is_alive: bool = True
     agent_session: AgentSession
+    # TODO: Delete me!
     loop: asyncio.AbstractEventLoop
 
     def __init__(
@@ -50,12 +52,24 @@ class Session:
             EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
         self.config = config
+        self.connection_ids = set()
         self.loop = asyncio.get_event_loop()
+
+    def connect(self, connection_id: str):
+        self.connection_ids.add(connection_id)
+
+    def disconnect(self, connection_id: str) -> bool:
+        self.connection_ids.remove(connection_id)
+        if self.connection_ids:
+            return False
+        self.close()
+        return True
 
     def close(self):
         self.is_alive = False
         self.agent_session.close()
 
+    # TODO: Delete me!
     async def loop_recv(self):
         try:
             if self.websocket is None:
@@ -74,7 +88,7 @@ class Session:
             logger.exception('Error in loop_recv: %s', e)
             self.close()
 
-    async def _initialize_agent(self, data: dict):
+    async def initialize_agent(self, data: dict):
         self.agent_session.event_stream.add_event(
             ChangeAgentStateAction(AgentState.LOADING), EventSource.ENVIRONMENT
         )

@@ -14,6 +14,7 @@ from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 import socketio
 
+from openhands.core.schema.action import ActionType
 from openhands.events.serialization.event import event_from_dict
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
@@ -940,9 +941,12 @@ app = socketio.ASGIApp(sio, other_asgi_app=app)
 
 
 @sio.event
-async def connect(session_id: str, environ):
-    logger.info(f"sio:connect: {session_id}")
+async def connect(connection_id: str, environ):
+    logger.info(f"sio:connect: {connection_id}")
 
+    # Change this protocol.
+    # Init should now include the session id...
+    """
     jwt_token = environ.get("HTTP_OH_TOKEN", '')
     if jwt_token:
         old_session_id = get_sid_from_token(jwt_token, config.jwt_secret)
@@ -979,20 +983,68 @@ async def connect(session_id: str, environ):
         ):
             continue
         await session.send(event_to_dict(event))
+    """
 
 
 @sio.event
-async def oh_action(session_id: str, data: dict):
+async def oh_action(connection_id: str, data: dict):
 
-    logger.info(f"sio:oh_action:{session_id}")
-    session = session_manager.get_existing_session(session_id)
-    if session is None:
-        raise ValueError(f'no_such_session_id:{session_id}')
+    # If it's an init, we do it here.
+    action = data.get('action', '')
+    if action == ActionType.INIT:
+        await init_connection(connection_id, data)
+        return
+
+    logger.info(f"sio:oh_action:{connection_id}")
+    session = session_manager.get_local_session(connection_id)
     await session.dispatch(data)
     # session.on_event(event_from_dict(json.loads(data)))
 
 
+
+async def init_connection(connection_id: str, data: dict):
+    gh_token = data.pop('gh_token', None)
+    if not await authenticate_github_user(gh_token):
+        raise RuntimeError(status.WS_1008_POLICY_VIOLATION)
+    
+    token = data.pop('token', None)
+    if token:
+        sid = get_sid_from_token(token, config.jwt_secret)
+        if sid == '':
+            sio.send({'error': 'Invalid token', 'error_code': 401})
+            return
+        logger.info(f'Existing session: {sid}')
+    else:
+        sid = connection_id
+        logger.info(f'New session: {sid}')
+
+    token = sign_token({'sid': sid}, config.jwt_secret)
+    await sio.emit("oh_event", {'token': token, 'status': 'ok'}, to=connection_id)
+
+    latest_event_id = data.pop("latest_event_id", -1)
+
+    # The session in question should exist, but may not actually be running locally...
+    session = await session_manager.init_or_join_local_session(sio, sid, connection_id, data)
+
+    # Send events
+    async_stream = AsyncEventStreamWrapper(
+        session.agent_session.event_stream, latest_event_id + 1
+    )
+    async for event in async_stream:
+        if isinstance(
+            event,
+            (
+                NullAction,
+                NullObservation,
+                ChangeAgentStateAction,
+                AgentStateChangedObservation,
+            ),
+        ):
+            continue
+        await sio.emit("oh_event", data, to=connection_id)
+
+
 @sio.event
-def disconnect(sid):
-    logger.info(f'sio:disconnect:{sid}')
-    session_manager.stop_session(sid)
+async def disconnect(connection_id: str):
+    logger.info(f'sio:disconnect:{connection_id}')
+    session_manager.disconnect_from_local_session(connection_id)

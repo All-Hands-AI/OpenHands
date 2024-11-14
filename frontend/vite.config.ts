@@ -87,6 +87,7 @@ export default defineConfig(({ mode }) => {
           ws: true,
           changeOrigin: true,
           secure: !INSECURE_SKIP_VERIFY,
+          //rewriteWsOrigin: true,
         }
       },
     },
