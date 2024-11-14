@@ -49,6 +49,19 @@ describe("useRate", () => {
     expect(result.current.lastUpdated).toBe(1000);
   });
 
+  it("should update isExceeding after [threshold]ms of no activity", () => {
+    const { result } = renderHook(() => useRate({ threshold: 500 }));
+
+    expect(result.current.isUnderThreshold).toBe(true);
+
+    act(() => {
+      vi.advanceTimersToNextTimer();
+      vi.advanceTimersToNextTimer();
+    });
+
+    expect(result.current.isUnderThreshold).toBe(false);
+  });
+
   it("should return an isExceeding boolean", () => {
     const { result } = renderHook(() => useRate({ threshold: 500 }));
 
@@ -68,7 +81,10 @@ describe("useRate", () => {
 
     expect(result.current.isUnderThreshold).toBe(true);
 
-    vi.advanceTimersByTime(600);
+    act(() => {
+      vi.advanceTimersToNextTimer();
+      vi.advanceTimersToNextTimer();
+    });
 
     expect(result.current.isUnderThreshold).toBe(false);
   });

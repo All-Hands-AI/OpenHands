@@ -10,7 +10,7 @@ export const useRate = (config = DEFAULT_CONFIG) => {
   const [items, setItems] = React.useState<number[]>([]);
   const [rate, setRate] = React.useState<number | null>(null);
   const [lastUpdated, setLastUpdated] = React.useState<number | null>(null);
-  const [isUnderThreshold, setIsUnderThreshold] = React.useState(false);
+  const [isUnderThreshold, setIsUnderThreshold] = React.useState(true);
 
   const record = (entry: number) => {
     setItems((prev) => [...prev, entry]);
@@ -36,6 +36,8 @@ export const useRate = (config = DEFAULT_CONFIG) => {
       if (lastUpdated !== null) {
         const timeSinceLastUpdate = new Date().getTime() - lastUpdated;
         setIsUnderThreshold(timeSinceLastUpdate <= config.threshold);
+      } else {
+        setIsUnderThreshold(false);
       }
     }, config.threshold);
 
