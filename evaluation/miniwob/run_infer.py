@@ -70,7 +70,6 @@ def get_config(
             remote_runtime_init_timeout=1800,
             keep_runtime_alive=False,
             timeout=120,
-            remote_runtime_init_timeout=1800,
         ),
         # do not mount workspace
         workspace_base=None,
