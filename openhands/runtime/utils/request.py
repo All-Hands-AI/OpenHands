@@ -58,5 +58,9 @@ def send_request(
     **kwargs: Any,
 ) -> requests.Response:
     response = session.request(method, url, **kwargs)
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    finally:
+        response.close()
+
     return response
