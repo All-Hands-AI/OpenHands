@@ -5,7 +5,7 @@ import ActionType from "#/types/ActionType";
 import EventLogger from "#/utils/event-logger";
 import AgentState from "#/types/AgentState";
 import { handleAssistantMessage } from "#/services/actions";
-import { useRate } from "#/utils/get-rate";
+import { useRate } from "#/utils/use-rate";
 
 const isOpenHandsMessage = (event: Record<string, unknown>) =>
   event.action === "message";
