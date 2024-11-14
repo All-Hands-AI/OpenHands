@@ -12,4 +12,4 @@ To use the OpenHands GitHub Action in the OpenHands repository, an OpenHands mai
 
 ## Installing the Action in a New Repository
 
-To install the OpenHands GitHub Action in your own repository, follow the [directions in the OpenHands Resolver repo](https://github.com/All-Hands-AI/OpenHands-resolver?tab=readme-ov-file#using-the-github-actions-workflow).
+To install the OpenHands GitHub Action in your own repository, follow the [directions in the OpenHands Resolver repo](https://github.com/All-Hands-AI/openhands/resolver?tab=readme-ov-file#using-the-github-actions-workflow).
