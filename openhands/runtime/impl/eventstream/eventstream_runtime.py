@@ -232,6 +232,8 @@ class EventStreamRuntime(Runtime):
                 f'Container started: {self.container_name}. VSCode URL: {self.vscode_url}',
             )
 
+        self.log_buffer = LogBuffer(self.container, self.log)
+
         if not self.attach_to_existing:
             self.log('info', f'Waiting for client to become ready at {self.api_url}...')
             self.send_status_message('STATUS$WAITING_FOR_CLIENT')
@@ -358,7 +360,6 @@ class EventStreamRuntime(Runtime):
                 environment=environment,
                 volumes=volumes,
             )
-            self.log_buffer = LogBuffer(self.container, self.log)
             self.log('debug', f'Container started. Server url: {self.api_url}')
             self.send_status_message('STATUS$CONTAINER_STARTED')
         except docker.errors.APIError as e:
@@ -385,11 +386,9 @@ class EventStreamRuntime(Runtime):
             raise e
 
     def _attach_to_container(self):
-        container = self.docker_client.containers.get(self.container_name)
-        self.log_buffer = LogBuffer(container, self.log)
-        self.container = container
         self._container_port = 0
-        for port in container.attrs['NetworkSettings']['Ports']:
+        self.container = self.docker_client.containers.get(self.container_name)
+        for port in self.container.attrs['NetworkSettings']['Ports']:  # type: ignore
             self._container_port = int(port.split('/')[0])
             break
         self._host_port = self._container_port
