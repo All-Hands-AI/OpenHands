@@ -36,13 +36,15 @@ class AsyncPostgresManager(AsyncPubSubManager):
         self,
         channel='socketio',
         write_only=False,
-        logger=None,
     ):
         logger.info('Initializing PostgresManager')
         self.conn = None
         super().__init__(channel=channel, write_only=write_only, logger=logger)
 
-    async def _get_gcp_connection(self):
+    async def setup(self):
+        await self._create_database_if_not_exists()
+
+    async def _get_gcp_connection(self, db_name=DB_NAME):
         instance_string = f'{GCP_PROJECT}:{GCP_REGION}:{GCP_DB_INSTANCE}'
         logger.info(f'Connecting to GCP instance: {instance_string}')
 
@@ -52,19 +54,19 @@ class AsyncPostgresManager(AsyncPubSubManager):
                 driver='asyncpg',
                 user=DB_USER,
                 password=DB_PASS,
-                db=DB_NAME,
+                db=db_name,
             )
             return conn
 
         return await get_async_conn()
 
-    async def _get_postgres_connection(self):
+    async def _get_postgres_connection(self, db_name=DB_NAME):
         logger.info(f'Connecting to Postgres: {DB_HOST}')
         return await asyncpg.connect(
             user=DB_USER,
             password=DB_PASS,
-            database=DB_NAME,
             host=DB_HOST,
+            database=db_name,
         )
 
     async def _postgres_connect(self):
@@ -161,3 +163,23 @@ class AsyncPostgresManager(AsyncPubSubManager):
             await self._listen_queue.put(decoded_data)
         except (json.JSONDecodeError, KeyError, pickle.UnpicklingError) as e:
             self._get_logger().error(f'Error processing notification: {e}')
+
+    async def _create_database_if_not_exists(self):
+        if GCP_DB_INSTANCE:
+            sys_conn = await self._get_gcp_connection('postgres')
+        else:
+            sys_conn = await self._get_postgres_connection('postgres')
+
+        try:
+            # Check if database exists
+            exists = await sys_conn.fetchval(
+                'SELECT 1 FROM pg_database WHERE datname = $1',
+                DB_NAME,
+            )
+            if not exists:
+                # Create database if it doesn't exist
+                await sys_conn.execute(f'CREATE DATABASE "{DB_NAME}"')
+        except Exception as e:
+            raise e
+        finally:
+            await sys_conn.close()

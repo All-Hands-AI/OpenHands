@@ -21,7 +21,7 @@ from openhands.server.github import (
 )
 from openhands.server.pg_socket import AsyncPostgresManager
 from openhands.storage import get_file_store
-from openhands.utils.async_utils import call_sync_from_async
+from openhands.utils.async_utils import call_async_from_sync, call_sync_from_async
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -816,6 +816,8 @@ app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='di
 
 use_manager = os.getenv('DB_HOST') or os.getenv('GCP_DB_INSTANCE')
 manager = AsyncPostgresManager() if use_manager else None
+if manager:
+    call_async_from_sync(manager.setup, 10)
 sio = socketio.AsyncServer(
     async_mode='asgi', cors_allowed_origins='*', client_manager=manager
 )
