@@ -10,7 +10,6 @@ import { GitHubRepositorySelector } from "#/routes/_oh._index/github-repo-select
 import ModalButton from "./buttons/ModalButton";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 
-
 interface GitHubRepositoriesSuggestionBoxProps {
   handleSubmit: () => void;
   repositories: Awaited<
