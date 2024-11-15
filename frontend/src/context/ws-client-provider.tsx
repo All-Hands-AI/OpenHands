@@ -7,8 +7,6 @@ import EventLogger from "#/utils/event-logger";
 import AgentState from "#/types/AgentState";
 import { handleAssistantMessage } from "#/services/actions";
 
-const RECONNECT_RETRIES = 5;
-
 export enum WsClientProviderStatus {
   STOPPED,
   OPENING,
@@ -64,24 +62,19 @@ export function WsClientProvider({
   function handleConnect() {
     setStatus(WsClientProviderStatus.OPENING);
 
-    // Send the init event that starts / reconnects a session...
-    const args: Record<string, unknown> = { ...settings }
-    if (token) {
-      args.token = token
-    }
-    if (ghToken) {
-      args.github_token = ghToken;
-    }
-    if (events.length) {
-      extraHeaders.latest_event_id = `${events[events.length - 1].id}`;
-    }
-    */
-
-
-    const initEvent = {
+    const initEvent: Record<string, unknown> = {
       action: ActionType.INIT,
       args: settings,
     };
+    if (token) {
+      initEvent.token = token;
+    }
+    if (ghToken) {
+      initEvent.github_token = ghToken;
+    }
+    if (events.length) {
+      initEvent.latest_event_id = `${events[events.length - 1].id}`;
+    }
     send(initEvent);
   }
 
@@ -110,9 +103,10 @@ export function WsClientProvider({
   }
 
   function handleError() {
-    console.log("TRACE:SIO:Error")
+    console.log("TRACE:SIO:Error");
     posthog.capture("socket_error");
     setStatus(WsClientProviderStatus.ERROR);
+    sioRef.current?.disconnect();
   }
 
   // Connect websocket
@@ -153,19 +147,19 @@ export function WsClientProvider({
         import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
       sio = io(baseUrl, {
         transports: ["websocket"],
-        //extraHeaders: {
+        // extraHeaders: {
         //  Testy: "TESTER"
-        //},
+        // },
         // We force a new connection, because the headers may have changed.
-        //forceNew: true,
-        
+        // forceNew: true,
+
         // Had to do this for now because reconnection actually starts a new session,
         // which we don't want - The reconnect has the same headers as the original
         // which don't include the original session id
         reconnection: false,
-        //reconnectionDelay: 1000,
-        //reconnectionDelayMax : 5000,
-        //reconnectionAttempts: 5
+        // reconnectionDelay: 1000,
+        // reconnectionDelayMax : 5000,
+        // reconnectionAttempts: 5
       });
     }
     sio.on("connect", handleConnect);
