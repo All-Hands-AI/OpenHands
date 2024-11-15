@@ -449,7 +449,7 @@ def convert_fncall_messages_to_non_fncall_messages(
 
         # 4. TOOL MESSAGES (tool outputs)
         elif role == 'tool':
-            # Convert tool result as assistant message
+            # Convert tool result as user message
             tool_name = message.get('name', 'function')
             prefix = f'EXECUTION RESULT of [{tool_name}]:\n'
             # and omit "tool_call_id" AND "name"
