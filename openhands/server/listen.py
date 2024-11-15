@@ -921,10 +921,13 @@ async def init_connection(connection_id: str, data: dict):
     session = await session_manager.init_or_join_local_session(sio, sid, connection_id, data)
 
     # Send events
-    async_stream = AsyncEventStreamWrapper(
-        session.agent_session.event_stream, latest_event_id + 1
-    )
-    async for event in async_stream:
+    #async_stream = AsyncEventStreamWrapper(
+    #    session.agent_session.event_stream, latest_event_id + 1
+    #)
+    #async for event in async_stream:
+    events = list(session.agent_session.event_stream.get_events(latest_event_id + 1))
+    logger.info(len(events))
+    for event in events:
         if isinstance(
             event,
             (

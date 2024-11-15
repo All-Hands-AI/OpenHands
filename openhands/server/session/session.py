@@ -148,10 +148,6 @@ class Session:
             await self.send(event_dict)
 
     async def dispatch(self, data: dict):
-        action = data.get('action', '')
-        if action == ActionType.INIT:
-            await self._initialize_agent(data)
-            return
         event = event_from_dict(data.copy())
         # This checks if the model supports images
         if isinstance(event, MessageAction) and event.image_urls:

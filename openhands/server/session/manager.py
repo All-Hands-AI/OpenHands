@@ -15,6 +15,7 @@ from openhands.events.stream import session_exists
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import Session
 from openhands.storage.files import FileStore
+from openhands.utils.shutdown_listener import should_continue
 
 
 @dataclass
@@ -43,9 +44,7 @@ class SessionManager:
         """ If there is no local session running, initialize one """
         session = self.local_sessions_by_sid.get(sid)
         if not session:
-
-            # I think we need to rehydrate here
-
+            # I think we need to rehydrate here, but it does not seem to be working
             session = Session(
                 sid=sid, file_store=self.file_store, config=self.config, sio=sio, ws=None
             )
@@ -69,7 +68,10 @@ class SessionManager:
             logger.warning(f'disconnect_from_uninitialized_session:{connection_id}')
             return
         if session.disconnect(connection_id):
-            asyncio.create_task(self._check_and_close_session(session))
+            if should_continue():
+                asyncio.create_task(self._check_and_close_session(session))
+            else:
+                await self._check_and_close_session(session)
             
     async def _check_and_close_session(self, session: Session):
         # Once there have been no connections to a session for a reasonable period, we close it
