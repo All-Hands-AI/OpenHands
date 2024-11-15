@@ -47,13 +47,17 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
-  const [runtimeId, setRuntimeId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (status === WsClientProviderStatus.ACTIVE) {
       try {
         OpenHands.getRuntimeId().then(({ runtime_id }) => {
-          setRuntimeId(runtime_id);
+          // eslint-disable-next-line no-console
+          console.log(
+            "Runtime ID: %c%s",
+            "background: #444; color: #ffeb3b; font-weight: bold; padding: 2px 4px; border-radius: 4px;",
+            runtime_id,
+          );
         });
       } catch (e) {
         console.warn("Runtime ID not available in this environment");
@@ -92,11 +96,6 @@ export function ChatInterface() {
 
   return (
     <div className="h-full flex flex-col justify-between">
-      {runtimeId && (
-        <span className="text-xs text-neutral-300 p-2">
-          Runtime ID: <code>{runtimeId}</code>
-        </span>
-      )}
       {messages.length === 0 && (
         <div className="flex flex-col gap-6 h-full px-4 items-center justify-center">
           <div className="flex flex-col items-center p-4 bg-neutral-700 rounded-xl w-full">
