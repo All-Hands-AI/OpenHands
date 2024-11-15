@@ -97,7 +97,9 @@ please include a short message that we can add to our changelog.
 
 ### Opening Issues
 
-Definitely go ahead and open, we'll discuss and implement the ones that the community has interest/effort for.
+If you notice any bugs or have any feature requests please open them via the [issues page](https://github.com/All-Hands-AI/OpenHands/issues). We will triage based on how critical the bug is or how potentially useful the improvement is, discuss, and implement the ones that the community has interest/effort for.
+
+Further, if you see an issue you like, please leave a "thumbs-up" or a comment, which will help us prioritize.
 
 ### Making Pull Requests
 
@@ -105,15 +107,17 @@ We're generally happy to consider all PRs, with the evaluation process varying b
 
 #### For Small Improvements
 
-- Small improvements with few downsides are typically easy to approve
+Small improvements with few downsides are typically reviewed and approved quickly.
+One thing to check when making changes is to ensure that all continuous integration tests pass, which you can check before getting a review.
 
 #### For Core Agent Changes
 
-We need to be more careful with changes to the core agent. These PRs are evaluated based on three key metrics:
+We need to be more careful with changes to the core agent, as it is imperative to maintain high quality. These PRs are evaluated based on three key metrics:
 
 1. **Accuracy**
 2. **Efficiency**
 3. **Code Complexity**
 
-If it improves 1 and 2 with only a minimal change in 3 then we're 100% happy to merge it in.
+If it improves accuracy, efficiency, or both with only a minimal change to code quality, that's great we're happy to merge it in!
 If there are bigger tradeoffs (e.g. helping efficiency a lot and hurting accuracy a little) we might want to put it behind a feature flag.
+Either way, please feel free to discuss on github issues or slack, and we will give guidance and preliminary feedback.
