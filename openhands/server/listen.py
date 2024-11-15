@@ -814,8 +814,10 @@ class SPAStaticFiles(StaticFiles):
 
 app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist')
 
+use_manager = os.getenv('DB_HOST') or os.getenv('GCP_DB_INSTANCE')
+manager = AsyncPostgresManager() if use_manager else None
 sio = socketio.AsyncServer(
-    async_mode='asgi', cors_allowed_origins='*', client_manager=AsyncPostgresManager()
+    async_mode='asgi', cors_allowed_origins='*', client_manager=manager
 )
 app = socketio.ASGIApp(sio, other_asgi_app=app)
 

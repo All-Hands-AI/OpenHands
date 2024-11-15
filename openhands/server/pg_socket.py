@@ -3,14 +3,19 @@ import json
 import os
 import pickle
 
-try:
-    import asyncpg
-    from asyncpg.exceptions import PostgresError
-except ImportError:
-    asyncpg = None
-    PostgresError = None
+import asyncpg
+from asyncpg.exceptions import PostgresError
 
 from .async_pubsub_manager import AsyncPubSubManager
+
+DB_HOST = os.environ.get('DB_HOST')  # for non-GCP environments
+DB_USER = os.environ.get('DB_USER')
+DB_PASS = os.environ.get('DB_PASS', '').strip()
+DB_NAME = os.environ.get('DB_NAME')
+
+GCP_DB_INSTANCE = os.environ.get('GCP_DB_INSTANCE')  # for GCP environments
+GCP_PROJECT = os.environ.get('GCP_PROJECT')
+GCP_REGION = os.environ.get('GCP_REGION')
 
 
 class AsyncPostgresManager(AsyncPubSubManager):
@@ -32,31 +37,43 @@ class AsyncPostgresManager(AsyncPubSubManager):
         write_only=False,
         logger=None,
     ):
-        if asyncpg is None:
-            raise RuntimeError(
-                'asyncpg package is not installed '
-                '(Run "pip install asyncpg" in your virtualenv).'
-            )
         self.conn = None
         super().__init__(channel=channel, write_only=write_only, logger=logger)
 
-    async def _postgres_connect(self):
+    async def _get_gcp_connection(self):
+        instance_string = f'{GCP_PROJECT}:{GCP_REGION}:{GCP_DB_INSTANCE}'
+
+        async def get_async_conn():
+            conn = await self.connector.connect_async(
+                instance_connection_string=instance_string,
+                driver='asyncpg',
+                user=DB_USER,
+                password=DB_PASS,
+                db=DB_NAME,
+            )
+            return conn
+
+        return await get_async_conn()
+
+    async def _get_postgres_connection(self):
         if self.conn:
             try:
                 await self.conn.close()
             except PostgresError:
                 pass
-        db_user = os.getenv('DB_USER', 'postgres')
-        db_password = os.getenv('DB_PASS', 'postgres')
-        db_host = os.getenv('DB_HOST', 'localhost')
-        db_name = os.getenv('DB_NAME', 'socketio')
 
-        self.conn = await asyncpg.connect(
-            user=db_user,
-            password=db_password,
-            database=db_name,
-            host=db_host,
+        return await asyncpg.connect(
+            user=DB_USER,
+            password=DB_PASS,
+            database=DB_NAME,
+            host=DB_HOST,
         )
+
+    async def _postgres_connect(self):
+        if GCP_DB_INSTANCE:
+            self.conn = await self._get_gcp_connection()
+        else:
+            self.conn = await self._get_postgres_connection()
 
     async def _publish(self, data):
         retry = True
