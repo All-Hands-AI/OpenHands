@@ -319,9 +319,8 @@ def convert_fncall_messages_to_non_fncall_messages(
     converted_messages = []
     first_user_message_encountered = False
     for message in messages:
-        role, content = message['role'], message['content']
-        if content is None:
-            content = ''
+        role = message['role']
+        content = message.get('content', '')
 
         # 1. SYSTEM MESSAGES
         # append system prompt suffix to content
@@ -338,6 +337,7 @@ def convert_fncall_messages_to_non_fncall_messages(
                     f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
                 )
             converted_messages.append({'role': 'system', 'content': content})
+
         # 2. USER MESSAGES (no change)
         elif role == 'user':
             # Add in-context learning example for the first user message
@@ -446,10 +446,12 @@ def convert_fncall_messages_to_non_fncall_messages(
                         f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
                     )
             converted_messages.append({'role': 'assistant', 'content': content})
+
         # 4. TOOL MESSAGES (tool outputs)
         elif role == 'tool':
             # Convert tool result as assistant message
-            prefix = f'EXECUTION RESULT of [{message["name"]}]:\n'
+            tool_name = message.get('name', 'function')
+            prefix = f'EXECUTION RESULT of [{tool_name}]:\n'
             # and omit "tool_call_id" AND "name"
             if isinstance(content, str):
                 content = prefix + content
