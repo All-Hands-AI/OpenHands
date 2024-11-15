@@ -10,14 +10,14 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy application code first (needed for pip install -e .)
+COPY . .
+
 # Install Python dependencies
-COPY pyproject.toml poetry.lock ./
 RUN pip install --no-cache-dir poetry && \
     poetry config virtualenvs.create false && \
-    poetry install --only main --no-interaction --no-ansi
-
-# Copy application code
-COPY . .
+    poetry install --only main --no-interaction --no-ansi && \
+    pip install -e .
 
 # Set environment variables
 ENV PYTHONPATH=/workspace
