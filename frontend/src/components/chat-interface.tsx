@@ -1,6 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
+import { useRouteLoaderData } from "@remix-run/react";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { ChatMessage } from "./chat-message";
 import { FeedbackActions } from "./feedback-actions";
@@ -23,6 +24,9 @@ import { SUGGESTIONS } from "#/utils/suggestions";
 import BuildIt from "#/icons/build-it.svg?react";
 import { useWsClient } from "#/context/ws-client-provider";
 import { SuggestionItem } from "./suggestion-item";
+import { clientLoader } from "#/routes/_oh";
+import { downloadWorkspace } from "#/utils/download-workspace";
+import { LoadingSpinner } from "./modals/LoadingProject";
 
 const isErrorMessage = (
   message: Message | ErrorMessage,
@@ -34,6 +38,7 @@ export function ChatInterface() {
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
+  const rootLoaderData = useRouteLoaderData<typeof clientLoader>("routes/_oh");
 
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -43,6 +48,8 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
+
+  const [isDownloading, setIsDownloading] = React.useState(false);
 
   const handleSendMessage = async (content: string, files: File[]) => {
     posthog.capture("user_message_sent", {
@@ -73,7 +80,16 @@ export function ChatInterface() {
     setFeedbackPolarity(polarity);
   };
 
-  const lastMessage = messages[messages.length - 1];
+  const handleDownloadWorkspace = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadWorkspace();
+    } catch (error) {
+      // TODO: Handle error
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   return (
     <div className="h-full flex flex-col justify-between">
@@ -130,18 +146,28 @@ export function ChatInterface() {
         )}
 
         {messages.length > 2 &&
-          !isErrorMessage(lastMessage) &&
-          lastMessage.sender === "assistant" && (
-            <div className="mb-2">
+          curAgentState === AgentState.AWAITING_USER_INPUT && (
+            <div className="flex flex-col gap-2 mb-2">
+              {rootLoaderData?.ghToken && (
+                <SuggestionItem
+                  suggestion={{
+                    label: "Push to GitHub",
+                    value:
+                      "Please push the changes to GitHub and open a pull request.",
+                  }}
+                  onClick={(value) => {
+                    handleSendMessage(value, []);
+                  }}
+                />
+              )}
               <SuggestionItem
                 suggestion={{
-                  label: "Push to GitHub",
-                  value:
-                    "Please push the changes to GitHub and open a pull request.",
+                  label: !isDownloading
+                    ? "Download .zip"
+                    : "Downloading, please wait...",
+                  value: "Download .zip",
                 }}
-                onClick={(value) => {
-                  handleSendMessage(value, []);
-                }}
+                onClick={handleDownloadWorkspace}
               />
             </div>
           )}
