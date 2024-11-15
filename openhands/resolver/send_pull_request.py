@@ -194,7 +194,7 @@ def branch_exists(base_url: str, branch_name: str, headers: dict) -> bool:
     return exists
 
 
-async def send_pull_request(
+def send_pull_request(
     github_issue: GithubIssue,
     github_token: str,
     github_username: str | None,
@@ -326,7 +326,7 @@ def reply_to_comment(github_token: str, comment_id: str, reply: str):
     response.raise_for_status()
 
 
-async def update_existing_pull_request(
+def update_existing_pull_request(
     github_issue: GithubIssue,
     github_token: str,
     github_username: str | None,
@@ -426,20 +426,21 @@ async def update_existing_pull_request(
     return pr_url
 
 
-async def process_single_issue(
+def process_single_issue(
     output_dir: str,
     resolver_output: ResolverOutput,
     github_token: str,
-    github_username: str | None,
+    github_username: str,
     pr_type: str,
     llm_config: LLMConfig,
     fork_owner: str | None,
     send_on_failure: bool,
-) -> str:
+) -> None:
     if not resolver_output.success and not send_on_failure:
-        msg = f'Issue {resolver_output.issue.number} was not successfully resolved. Skipping PR creation.'
-        print(msg)
-        return msg
+        print(
+            f'Issue {resolver_output.issue.number} was not successfully resolved. Skipping PR creation.'
+        )
+        return
 
     issue_type = resolver_output.issue_type
 
@@ -465,7 +466,7 @@ async def process_single_issue(
     make_commit(patched_repo_dir, resolver_output.issue, issue_type)
 
     if issue_type == 'pr':
-        url = await update_existing_pull_request(
+        update_existing_pull_request(
             github_issue=resolver_output.issue,
             github_token=github_token,
             github_username=github_username,
@@ -474,7 +475,7 @@ async def process_single_issue(
             llm_config=llm_config,
         )
     else:
-        url = await send_pull_request(
+        send_pull_request(
             github_issue=resolver_output.issue,
             github_token=github_token,
             github_username=github_username,
@@ -484,10 +485,9 @@ async def process_single_issue(
             fork_owner=fork_owner,
             additional_message=resolver_output.success_explanation,
         )
-    return url
 
 
-async def process_all_successful_issues(
+def process_all_successful_issues(
     output_dir: str,
     github_token: str,
     github_username: str,
@@ -499,7 +499,7 @@ async def process_all_successful_issues(
     for resolver_output in load_all_resolver_outputs(output_path):
         if resolver_output.success:
             print(f'Processing issue {resolver_output.issue.number}')
-            await process_single_issue(
+            process_single_issue(
                 output_dir,
                 resolver_output,
                 github_token,
