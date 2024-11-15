@@ -4,6 +4,7 @@ import { io, Socket } from "socket.io-client";
 import { Settings } from "#/services/settings";
 import ActionType from "#/types/ActionType";
 import EventLogger from "#/utils/event-logger";
+import AgentState from "#/types/AgentState";
 import { handleAssistantMessage } from "#/services/actions";
 
 export enum WsClientProviderStatus {
@@ -72,7 +73,8 @@ export function WsClientProvider({
       initEvent.github_token = ghToken;
     }
     if (events.length) {
-      // Wrong. Events is out of sync here...
+      console.log("TRACE");
+      // Wrong. Events is out of sync
       initEvent.latest_event_id = `${events[events.length - 1].id}`;
     }
     send(initEvent);
@@ -81,6 +83,9 @@ export function WsClientProvider({
   function handleMessage(event: Record<string, unknown>) {
     setEvents((prevEvents) => [...prevEvents, event]);
     const extras = event.extras as Record<string, unknown>;
+    if (extras?.agent_state === AgentState.INIT) {
+      setStatus(WsClientProviderStatus.ACTIVE);
+    }
     if (
       status !== WsClientProviderStatus.ACTIVE &&
       event?.observation === "error"
@@ -88,9 +93,7 @@ export function WsClientProvider({
       setStatus(WsClientProviderStatus.ERROR);
     }
 
-    if (event.token) {
-      setStatus(WsClientProviderStatus.ACTIVE);
-    } else {
+    if (!event.token) {
       handleAssistantMessage(event);
     }
   }
@@ -164,7 +167,7 @@ export function WsClientProvider({
       sio.off("connect_failed", handleError);
       sio.off("disconnect", handleDisconnect);
     };
-  }, [enabled, token, ghToken, events]);
+  }, [enabled, token, ghToken]);
 
   // Strict mode mounts and unmounts each component twice, so we have to wait in the destructor
   // before actually disconnecting the socket and cancel the operation if the component gets remounted.
