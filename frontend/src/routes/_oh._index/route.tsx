@@ -99,6 +99,7 @@ function Home() {
             <Await resolve={repositories}>
               {(resolvedRepositories) => (
                 <GitHubRepositoriesSuggestionBox
+                  handleSubmit={() => formRef.current?.requestSubmit()}
                   repositories={resolvedRepositories}
                   gitHubAuthUrl={githubAuthUrl}
                   user={rootData?.user || null}
