@@ -50,6 +50,7 @@ export function WsClientProvider({
   );
   const [status, setStatus] = React.useState(WsClientProviderStatus.STOPPED);
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
+  const lastEventRef = React.useRef<Record<string, unknown> | null>(null)
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
@@ -72,40 +73,39 @@ export function WsClientProvider({
     if (ghToken) {
       initEvent.github_token = ghToken;
     }
-    if (events.length) {
-      initEvent.latest_event_id = `${events[events.length - 1].id}`;
+    const lastEvent = lastEventRef.current
+    if (lastEvent) {
+      initEvent.latest_event_id = lastEvent.id;
     }
     send(initEvent);
   }
 
   function handleMessage(event: Record<string, unknown>) {
     setEvents((prevEvents) => [...prevEvents, event]);
+    lastEventRef.current = event;
     const extras = event.extras as Record<string, unknown>;
-    if (extras?.agent_state === AgentState.INIT) {
-      setStatus(WsClientProviderStatus.ACTIVE);
-    }
     if (
       status !== WsClientProviderStatus.ACTIVE &&
       event?.observation === "error"
     ) {
       setStatus(WsClientProviderStatus.ERROR);
+      return
     }
 
-    if (!event.token) {
+    if (event.token) {
+      setStatus(WsClientProviderStatus.ACTIVE);
+    } else {
       handleAssistantMessage(event);
     }
   }
 
   function handleDisconnect() {
     setStatus(WsClientProviderStatus.STOPPED);
-    // setEvents([]);
-    // sioRef.current = null;
   }
 
   function handleError() {
     posthog.capture("socket_error");
     setStatus(WsClientProviderStatus.ERROR);
-    sioRef.current?.disconnect();
   }
 
   // Connect websocket
@@ -142,7 +142,7 @@ export function WsClientProvider({
         // Had to do this for now because reconnection actually starts a new session,
         // which we don't want - The reconnect has the same headers as the original
         // which don't include the original session id
-        // reconnection: false,
+        // reconnection: true,
         // reconnectionDelay: 1000,
         // reconnectionDelayMax : 5000,
         // reconnectionAttempts: 5
