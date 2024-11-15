@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import pickle
 
 try:
@@ -27,19 +28,15 @@ class AsyncPostgresManager(AsyncPubSubManager):
 
     def __init__(
         self,
-        url='postgresql://localhost:5432/socketio',
         channel='socketio',
         write_only=False,
         logger=None,
-        postgres_options=None,
     ):
         if asyncpg is None:
             raise RuntimeError(
                 'asyncpg package is not installed '
                 '(Run "pip install asyncpg" in your virtualenv).'
             )
-        self.postgres_url = url
-        self.postgres_options = postgres_options or {}
         self.conn = None
         super().__init__(channel=channel, write_only=write_only, logger=logger)
 
@@ -49,7 +46,17 @@ class AsyncPostgresManager(AsyncPubSubManager):
                 await self.conn.close()
             except PostgresError:
                 pass
-        self.conn = await asyncpg.connect(self.postgres_url, **self.postgres_options)
+        db_user = os.getenv('DB_USER', 'postgres')
+        db_password = os.getenv('DB_PASS', 'postgres')
+        db_host = os.getenv('DB_HOST', 'localhost')
+        db_name = os.getenv('DB_NAME', 'socketio')
+
+        self.conn = await asyncpg.connect(
+            user=db_user,
+            password=db_password,
+            database=db_name,
+            host=db_host,
+        )
 
     async def _publish(self, data):
         retry = True
