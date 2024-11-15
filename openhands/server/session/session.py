@@ -11,7 +11,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
 from openhands.core.schema.action import ActionType
 from openhands.core.schema.config import ConfigType
-from openhands.events.action import ChangeAgentStateAction, MessageAction, NullAction
+from openhands.events.action import MessageAction, NullAction
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import (
     AgentStateChangedObservation,
@@ -25,7 +25,6 @@ from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import wait_all
-from openhands.utils.shutdown_listener import should_continue
 
 
 class Session:
@@ -67,9 +66,6 @@ class Session:
         self.agent_session.close()
 
     async def initialize_agent(self, data: dict):
-        self.agent_session.event_stream.add_event(
-            ChangeAgentStateAction(AgentState.LOADING), EventSource.ENVIRONMENT
-        )
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,

@@ -7,6 +7,10 @@ import socketio
 
 from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.schema.agent import AgentState
+from openhands.events.event import EventSource
+from openhands.events.observation.agent import AgentStateChangedObservation
+from openhands.events.serialization.event import event_to_dict
 from openhands.events.stream import session_exists
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import Session
@@ -39,6 +43,9 @@ class SessionManager:
         """ If there is no local session running, initialize one """
         session = self.local_sessions_by_sid.get(sid)
         if not session:
+
+            # I think we need to rehydrate here
+
             session = Session(
                 sid=sid, file_store=self.file_store, config=self.config, sio=sio, ws=None
             )
@@ -49,6 +56,7 @@ class SessionManager:
         else:
             session.connect(connection_id)
             self.local_sessions_by_connection_id[connection_id] = session
+            session.agent_session.event_stream.add_event(AgentStateChangedObservation('', AgentState.INIT), EventSource.ENVIRONMENT)
         return session
     
     def get_local_session(self, connection_id: str) -> Session:
@@ -71,4 +79,4 @@ class SessionManager:
             # If the sleep was cancelled, we still want to close these
             if not session.connection_ids:
                 session.close()
-                self.local_sessions_by_sid.pop(session.sid)
+                self.local_sessions_by_sid.pop(session.sid, None)

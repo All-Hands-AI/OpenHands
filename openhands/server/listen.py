@@ -15,7 +15,6 @@ from pathspec.patterns import GitWildMatchPattern
 import socketio
 
 from openhands.core.schema.action import ActionType
-from openhands.events.serialization.event import event_from_dict
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
 from openhands.server.github import (
@@ -57,7 +56,6 @@ from openhands.events.action import (
     NullAction,
 )
 from openhands.events.observation import (
-    AgentStateChangedObservation,
     ErrorObservation,
     FileReadObservation,
     FileWriteObservation,

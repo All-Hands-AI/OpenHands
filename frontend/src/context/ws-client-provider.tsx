@@ -61,6 +61,7 @@ export function WsClientProvider({
   }
 
   function handleConnect() {
+    console.log("TRACE:SIO:SET_STATUS:OPENING");
     setStatus(WsClientProviderStatus.OPENING);
 
     const initEvent: Record<string, unknown> = {
@@ -74,7 +75,7 @@ export function WsClientProvider({
       initEvent.github_token = ghToken;
     }
     const lastEvent = lastEventRef.current
-    if (lastEvent) {
+    if (lastEvent && !isNaN(parseInt(lastEvent.id as string))) {
       initEvent.latest_event_id = lastEvent.id;
     }
     send(initEvent);
@@ -84,6 +85,9 @@ export function WsClientProvider({
     setEvents((prevEvents) => [...prevEvents, event]);
     lastEventRef.current = event;
     const extras = event.extras as Record<string, unknown>;
+    if (extras?.agent_state === AgentState.INIT) {
+      setStatus(WsClientProviderStatus.ACTIVE);
+    }
     if (
       status !== WsClientProviderStatus.ACTIVE &&
       event?.observation === "error"
@@ -92,9 +96,9 @@ export function WsClientProvider({
       return
     }
 
-    if (event.token) {
-      setStatus(WsClientProviderStatus.ACTIVE);
-    } else {
+    if (!event.token) {
+      //setStatus(WsClientProviderStatus.ACTIVE);
+    //} else {
       handleAssistantMessage(event);
     }
   }
