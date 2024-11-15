@@ -60,6 +60,7 @@ export function WsClientProvider({
   }
 
   function handleConnect() {
+    console.log("TRACE:connect");
     setStatus(WsClientProviderStatus.OPENING);
 
     const initEvent: Record<string, unknown> = {
@@ -156,7 +157,7 @@ export function WsClientProvider({
         // Had to do this for now because reconnection actually starts a new session,
         // which we don't want - The reconnect has the same headers as the original
         // which don't include the original session id
-        reconnection: false,
+        // reconnection: false,
         // reconnectionDelay: 1000,
         // reconnectionDelayMax : 5000,
         // reconnectionAttempts: 5
