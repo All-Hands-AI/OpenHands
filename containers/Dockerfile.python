@@ -2,12 +2,14 @@ FROM python:3.12-slim
 
 WORKDIR /workspace
 
-# Install system dependencies including C++ compiler
+# Install system dependencies including C++ compiler and Node.js
 RUN apt-get update && apt-get install -y \
     git \
     curl \
     build-essential \
     python3-dev \
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy application code first (needed for pip install -e .)
@@ -18,6 +20,11 @@ RUN pip install --no-cache-dir poetry && \
     poetry config virtualenvs.create false && \
     poetry install --only main --no-interaction --no-ansi && \
     pip install -e .
+
+# Build frontend
+RUN cd frontend && \
+    npm install && \
+    npm run build
 
 # Set environment variables
 ENV PYTHONPATH=/workspace
