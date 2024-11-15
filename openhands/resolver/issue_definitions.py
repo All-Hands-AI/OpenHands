@@ -469,17 +469,20 @@ class PRHandler(IssueHandler):
         )
 
         for issue_number in unique_issue_references:
-            url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{issue_number}'
-            headers = {
-                'Authorization': f'Bearer {self.token}',
-                'Accept': 'application/vnd.github.v3+json',
-            }
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            issue_data = response.json()
-            issue_body = issue_data.get('body', '')
-            if issue_body:
-                closing_issues.append(issue_body)
+            try:
+                url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{issue_number}'
+                headers = {
+                    'Authorization': f'Bearer {self.token}',
+                    'Accept': 'application/vnd.github.v3+json',
+                }
+                response = requests.get(url, headers=headers)
+                response.raise_for_status()
+                issue_data = response.json()
+                issue_body = issue_data.get('body', '')
+                if issue_body:
+                    closing_issues.append(issue_body)
+            except requests.exceptions.RequestException as e:
+                logger.warning(f'Failed to fetch issue {issue_number}: {str(e)}')
 
         return closing_issues
 
