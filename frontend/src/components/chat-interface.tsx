@@ -22,17 +22,21 @@ import { ScrollToBottomButton } from "./scroll-to-bottom-button";
 import { Suggestions } from "./suggestions";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import BuildIt from "#/icons/build-it.svg?react";
-import { useWsClient } from "#/context/ws-client-provider";
-import { SuggestionItem } from "./suggestion-item";
+import {
+  useWsClient,
+  WsClientProviderStatus,
+} from "#/context/ws-client-provider";
+import OpenHands from "#/api/open-hands";
 import { clientLoader } from "#/routes/_oh";
 import { downloadWorkspace } from "#/utils/download-workspace";
+import { SuggestionItem } from "./suggestion-item";
 
 const isErrorMessage = (
   message: Message | ErrorMessage,
 ): message is ErrorMessage => "error" in message;
 
 export function ChatInterface() {
-  const { send, isLoadingMessages } = useWsClient();
+  const { send, status, isLoadingMessages } = useWsClient();
 
   const dispatch = useDispatch();
   const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -48,8 +52,24 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
-
   const [isDownloading, setIsDownloading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (status === WsClientProviderStatus.ACTIVE) {
+      try {
+        OpenHands.getRuntimeId().then(({ runtime_id }) => {
+          // eslint-disable-next-line no-console
+          console.log(
+            "Runtime ID: %c%s",
+            "background: #444; color: #ffeb3b; font-weight: bold; padding: 2px 4px; border-radius: 4px;",
+            runtime_id,
+          );
+        });
+      } catch (e) {
+        console.warn("Runtime ID not available in this environment");
+      }
+    }
+  }, [status]);
 
   const handleSendMessage = async (content: string, files: File[]) => {
     posthog.capture("user_message_sent", {
