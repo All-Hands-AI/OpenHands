@@ -2,12 +2,12 @@ import pytest
 import requests
 from unittest.mock import patch, MagicMock
 
-from openhands.resolver.issue_definitions import IssueHandler
+from openhands.resolver.issue_definitions import PRHandler
 from openhands.resolver.github_issue import ReviewThread
 
 
 def test_handle_nonexistent_issue_reference():
-    handler = IssueHandler("test-owner", "test-repo", "test-token")
+    handler = PRHandler("test-owner", "test-repo", "test-token")
     
     # Mock the requests.get to simulate a 404 error
     mock_response = MagicMock()
@@ -15,7 +15,7 @@ def test_handle_nonexistent_issue_reference():
     
     with patch('requests.get', return_value=mock_response):
         # Call the method with a non-existent issue reference
-        result = handler._IssueHandler__get_context_from_external_issues_references(
+        result = handler._PRHandler__get_context_from_external_issues_references(
             closing_issues=[],
             closing_issue_numbers=[],
             issue_body="This references #999999",  # Non-existent issue
@@ -29,7 +29,7 @@ def test_handle_nonexistent_issue_reference():
 
 
 def test_handle_rate_limit_error():
-    handler = IssueHandler("test-owner", "test-repo", "test-token")
+    handler = PRHandler("test-owner", "test-repo", "test-token")
     
     # Mock the requests.get to simulate a rate limit error
     mock_response = MagicMock()
@@ -39,7 +39,7 @@ def test_handle_rate_limit_error():
     
     with patch('requests.get', return_value=mock_response):
         # Call the method with an issue reference
-        result = handler._IssueHandler__get_context_from_external_issues_references(
+        result = handler._PRHandler__get_context_from_external_issues_references(
             closing_issues=[],
             closing_issue_numbers=[],
             issue_body="This references #123",
@@ -53,12 +53,12 @@ def test_handle_rate_limit_error():
 
 
 def test_handle_network_error():
-    handler = IssueHandler("test-owner", "test-repo", "test-token")
+    handler = PRHandler("test-owner", "test-repo", "test-token")
     
     # Mock the requests.get to simulate a network error
     with patch('requests.get', side_effect=requests.exceptions.ConnectionError("Network Error")):
         # Call the method with an issue reference
-        result = handler._IssueHandler__get_context_from_external_issues_references(
+        result = handler._PRHandler__get_context_from_external_issues_references(
             closing_issues=[],
             closing_issue_numbers=[],
             issue_body="This references #123",
@@ -72,7 +72,7 @@ def test_handle_network_error():
 
 
 def test_successful_issue_reference():
-    handler = IssueHandler("test-owner", "test-repo", "test-token")
+    handler = PRHandler("test-owner", "test-repo", "test-token")
     
     # Mock a successful response
     mock_response = MagicMock()
@@ -81,7 +81,7 @@ def test_successful_issue_reference():
     
     with patch('requests.get', return_value=mock_response):
         # Call the method with an issue reference
-        result = handler._IssueHandler__get_context_from_external_issues_references(
+        result = handler._PRHandler__get_context_from_external_issues_references(
             closing_issues=[],
             closing_issue_numbers=[],
             issue_body="This references #123",
