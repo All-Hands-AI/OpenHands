@@ -122,14 +122,17 @@ def mock_resolve_issue():
 def mock_send_pr():
     """Create a mock for send_pull_request."""
     with patch('openhands.server.listen.process_single_issue') as mock:
-        mock.return_value = ProcessIssueResult(success=True, url='https://github.com/test/test/pull/123')
+        mock.return_value = ProcessIssueResult(
+            success=True, url='https://github.com/test/test/pull/123'
+        )
         yield mock
 
 
 def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
     """Test the resolve issue endpoint."""
-    with patch('openhands.server.listen.config', mock_config), \
-         patch('openhands.server.listen.get_sid_from_token', return_value='test-sid'):
+    with patch('openhands.server.listen.config', mock_config), patch(
+        'openhands.server.listen.get_sid_from_token', return_value='test-sid'
+    ):
         # Test successful resolution
         request_data = {
             'owner': 'test-owner',
@@ -154,7 +157,7 @@ def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
                 response = test_client.post(
                     '/api/resolver/resolve-issue',
                     json=request_data,
-                    headers={'Authorization': 'Bearer test-token'}
+                    headers={'Authorization': 'Bearer test-token'},
                 )
 
             assert response.status_code == 200
@@ -172,7 +175,7 @@ def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
         response = test_client.post(
             '/api/resolver/resolve-issue',
             json=request_data,
-            headers={'Authorization': 'Bearer test-token'}
+            headers={'Authorization': 'Bearer test-token'},
         )
         assert response.status_code == 200
         assert response.json()['status'] == 'error'
@@ -185,7 +188,7 @@ def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
                 response = test_client.post(
                     '/api/resolver/resolve-issue',
                     json=request_data,
-                    headers={'Authorization': 'Bearer test-token'}
+                    headers={'Authorization': 'Bearer test-token'},
                 )
             assert response.status_code == 200
             assert response.json()['status'] == 'error'
@@ -194,10 +197,14 @@ def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
 
 def test_send_pull_request_endpoint(test_client, mock_send_pr, mock_config):
     """Test the send pull request endpoint."""
-    with patch('openhands.server.listen.config', mock_config), \
-         patch('openhands.server.listen.get_sid_from_token', return_value='test-sid'), \
-         patch.dict('os.environ', {'GITHUB_TOKEN': 'test-token', 'GITHUB_USERNAME': 'test-user'}), \
-         patch('openhands.server.listen.load_single_resolver_output', return_value={'test': 'data'}):
+    with patch('openhands.server.listen.config', mock_config), patch(
+        'openhands.server.listen.get_sid_from_token', return_value='test-sid'
+    ), patch.dict(
+        'os.environ', {'GITHUB_TOKEN': 'test-token', 'GITHUB_USERNAME': 'test-user'}
+    ), patch(
+        'openhands.server.listen.load_single_resolver_output',
+        return_value={'test': 'data'},
+    ):
         request_data = {
             'issue_number': 123,
             'pr_type': 'draft',
@@ -218,12 +225,15 @@ def test_send_pull_request_endpoint(test_client, mock_send_pr, mock_config):
                 response = test_client.post(
                     '/api/resolver/send-pr',
                     json=request_data,
-                    headers={'Authorization': 'Bearer test-token'}
+                    headers={'Authorization': 'Bearer test-token'},
                 )
 
                 assert response.status_code == 200
                 assert response.json()['status'] == 'success'
-                assert response.json()['result']['url'] == 'https://github.com/test/test/pull/123'
+                assert (
+                    response.json()['result']['url']
+                    == 'https://github.com/test/test/pull/123'
+                )
 
                 # Verify mock was called correctly
                 mock_send_pr.assert_called_once()
@@ -233,7 +243,7 @@ def test_send_pull_request_endpoint(test_client, mock_send_pr, mock_config):
                 response = test_client.post(
                     '/api/resolver/send-pr',
                     json=request_data,
-                    headers={'Authorization': 'Bearer test-token'}
+                    headers={'Authorization': 'Bearer test-token'},
                 )
                 assert response.status_code == 200
                 assert response.json()['status'] == 'error'
