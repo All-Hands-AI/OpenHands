@@ -1,8 +1,8 @@
 import asyncio
 import time
 
-from fastapi import WebSocket, WebSocketDisconnect
 import socketio
+from fastapi import WebSocket, WebSocketDisconnect
 
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
@@ -25,7 +25,6 @@ from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import wait_all
-from openhands.utils.shutdown_listener import should_continue
 
 
 class Session:
@@ -39,7 +38,12 @@ class Session:
     loop: asyncio.AbstractEventLoop
 
     def __init__(
-        self, sid: str, ws: WebSocket | None, config: AppConfig, file_store: FileStore, sio: socketio.AsyncServer | None
+        self,
+        sid: str,
+        ws: WebSocket | None,
+        config: AppConfig,
+        file_store: FileStore,
+        sio: socketio.AsyncServer | None,
     ):
         self.sid = sid
         self.websocket = ws
@@ -154,7 +158,7 @@ class Session:
     async def dispatch(self, data: dict):
         action = data.get('action', '')
         if action == ActionType.INIT:
-            await self._initialize_agent(data)
+            await self.initialize_agent(data)
             return
         event = event_from_dict(data.copy())
         # This checks if the model supports images
@@ -181,7 +185,7 @@ class Session:
                 await self.websocket.send_json(data)
             if self.sio:
                 await wait_all(
-                    self.sio.emit("oh_event", data, to=connection_id)
+                    self.sio.emit('oh_event', data, to=connection_id)
                     for connection_id in self.connection_ids
                 )
             await asyncio.sleep(0.001)  # This flushes the data to the client
