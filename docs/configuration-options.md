@@ -10,95 +10,456 @@ This guide details all configuration options available for OpenHands, helping yo
 
 ---
 
-## Table of Contents
-1. [General Settings](#general-settings)
-2. [AWS Configuration](#aws-configuration)
-3. [Base Image and Caching](#base-image-and-caching)
-4. [File Uploads](#file-uploads)
-5. [Language Model (LLM) Settings](#language-model-llm-settings)
-6. [Execution and Security](#execution-and-security)
-7. [Workspace Configuration](#workspace-configuration)
+# Table of Contents
+
+1. [Core Configuration](#core-configuration)
+   - [API Keys](#api-keys)
+   - [Workspace](#workspace)
+   - [Debugging and Logging](#debugging-and-logging)
+   - [Session Management](#session-management)
+   - [Trajectories](#trajectories)
+   - [File Store](#file-store)
+   - [Task Management](#task-management)
+   - [Sandbox Configuration](#sandbox-configuration)
+   - [Miscellaneous](#miscellaneous)
+2. [LLM Configuration](#llm-configuration)
+   - [AWS Credentials](#aws-credentials)
+   - [API Configuration](#api-configuration)
+   - [Custom LLM Provider](#custom-llm-provider)
+   - [Embeddings](#embeddings)
+   - [Message Handling](#message-handling)
+   - [Model Selection](#model-selection)
+   - [Retrying](#retrying)
+   - [Advanced Options](#advanced-options)
+3. [Agent Configuration](#agent-configuration)
+   - [Microagent Configuration](#microagent-configuration)
+   - [Memory Configuration](#memory-configuration)
+   - [LLM Configuration](#llm-configuration-2)
+   - [ActionSpace Configuration](#actionspace-configuration)
+   - [Microagent Usage](#microagent-usage)
+4. [Sandbox Configuration](#sandbox-configuration-2)
+   - [Execution](#execution)
+   - [Container Image](#container-image)
+   - [Networking](#networking)
+   - [Linting and Plugins](#linting-and-plugins)
+   - [Dependencies and Environment](#dependencies-and-environment)
+   - [Evaluation](#evaluation)
+5. [Security Configuration](#security-configuration)
+   - [Confirmation Mode](#confirmation-mode)
+   - [Security Analyzer](#security-analyzer)
+
 
 ---
 
-## General Settings
-- **AGENT** (Type: `string`, Default: `null`): Defines the agent type used by OpenHands.
-  - **Example**: `"AGENT": "default"`
-  
-- **AGENT_MEMORY_ENABLED** (Type: `boolean`, Default: `false`): Enables memory persistence for the agent.
-  - **Use Case**: Enable to maintain agent state between sessions.
-  
-- **AGENT_MEMORY_MAX_THREADS** (Type: `integer`, Default: `4`): Maximum threads allocated for agent memory operations.
-  - **Example**: Set to `8` for high-memory environments.
+## Core Configuration
+The core configuration options are defined in the `[core]` section of the `config.toml` file.
 
-## AWS Configuration
-- **AWS_ACCESS_KEY_ID** (Type: `string`, Required): Access key for AWS services.
-  - **Example**: `"AWS_ACCESS_KEY_ID": "your_aws_key"`
-  
-- **AWS_REGION_NAME** (Type: `string`, Default: `"us-west-1"`): AWS region for deployment.
-  - **Example**: `"AWS_REGION_NAME": "us-east-1"`
-  
-- **AWS_SECRET_ACCESS_KEY** (Type: `string`, Required): Secret key for AWS API access.
+**API Keys**
+- `e2b_api_key`
+  - Type: `str`
+  - Default: `""`
+  - Description: API key for E2B
 
-## Base Image and Caching
-- **BASE_CONTAINER_IMAGE** (Type: `string`, Default: `"openhands/base:latest"`): Base image for containerized setups.
-- **CACHE_DIR** (Type: `string`, Default: `"/tmp/openhands/cache"`): Directory for caching data.
-- **CONFIRMATION_MODE** (Type: `boolean`, Default: `true`): Enables confirmation prompts for critical actions.
+- `modal_api_token_id`
+  - Type: `str` 
+  - Default: `""`
+  - Description: API token ID for Modal
 
-## File Uploads
-- **FILE_UPLOADS_ALLOWED_EXTENSIONS** (Type: `array`, Default: `["pdf", "jpg", "png"]`): Permitted file extensions for uploads.
-- **FILE_UPLOADS_MAX_FILE_SIZE_MB** (Type: `integer`, Default: `10`): Maximum file size for uploads (MB).
-- **FILE_UPLOADS_RESTRICT_FILE_TYPES** (Type: `boolean`, Default: `true`): Restricts file types to those allowed in `FILE_UPLOADS_ALLOWED_EXTENSIONS`.
+- `modal_api_token_secret`
+  - Type: `str`
+  - Default: `""`
+  - Description: API token secret for Modal
 
-## Language Model (LLM) Settings
-These settings configure language model integration.
+**Workspace**
+- `workspace_base`
+  - Type: `str`
+  - Default: `"./workspace"`
+  - Description: Base path for the workspace
 
-- **LLM_API_KEY** (Type: `string`, Required): API key to access the LLM service.
-  - **Example**: `"LLM_API_KEY": "api_key_123"`
-  
-- **LLM_API_VERSION** (Type: `string`, Default: `"v1"`): Version of the LLM API.
-- **LLM_BASE_URL** (Type: `string`, Default: `"https://api.llmprovider.com"`): Base URL for the LLM service.
-- **LLM_CACHING_PROMPT** (Type: `boolean`, Default: `false`): Caches prompts for faster processing.
-- **LLM_CUSTOM_LLM_PROVIDER** (Type: `string`, Default: `null`): Allows setting a custom provider.
-  - **Example**: `"LLM_CUSTOM_LLM_PROVIDER": "myLLMProvider"`
-  
-- **LLM_DROP_PARAMS** (Type: `array`, Default: `[]`): Parameters to exclude from LLM requests.
-  - **Example**: `"LLM_DROP_PARAMS": ["param1", "param2"]`
-  
-- **LLM_EMBEDDING_BASE_URL** (Type: `string`, Default: `null`): URL for LLM embedding service.
-- **LLM_EMBEDDING_DEPLOYMENT_NAME** (Type: `string`, Default: `null`): Name for embedding deployment.
-- **LLM_EMBEDDING_MODEL** (Type: `string`, Default: `"default_embedding_model"`): Embedding model used.
-- **LLM_MAX_INPUT_TOKENS** (Type: `integer`, Default: `2048`): Maximum tokens for input.
-- **LLM_MAX_OUTPUT_TOKENS** (Type: `integer`, Default: `512`): Maximum tokens for output.
-- **LLM_MODEL** (Type: `string`, Default: `"default"`): Model type for language processing.
-- **LLM_NUM_RETRIES** (Type: `integer`, Default: `3`): Retry attempts for request failures.
-- **LLM_RETRY_MAX_WAIT** (Type: `integer`, Default: `60`): Maximum wait time between retries (seconds).
-- **LLM_RETRY_MIN_WAIT** (Type: `integer`, Default: `1`): Minimum wait time between retries (seconds).
-- **LLM_TEMPERATURE** (Type: `float`, Default: `0.7`): Controls response creativity (range 0-1).
-  - **Recommended Setting**: Use `0.5` for factual responses, `0.9` for creative tasks.
-  
-- **LLM_TIMEOUT** (Type: `integer`, Default: `30`): Timeout for LLM requests (seconds).
-- **LLM_TOP_P** (Type: `float`, Default: `0.9`): Controls diversity in output.
-- **LLM_DISABLE_VISION** (Type: `boolean`, Default: `false`): Disables vision processing if supported.
+- `cache_dir`
+  - Type: `str`
+  - Default: `"/tmp/cache"`
+  - Description: Cache directory path
 
-## Execution and Security
-- **MAX_ITERATIONS** (Type: `integer`, Default: `10`): Maximum iterations per operation.
-  - **Example**: Increase to handle larger processes.
-  
-- **RUN_AS_OPENHANDS** (Type: `boolean`, Default: `false`): Runs the instance as OpenHands.
-- **SANDBOX_TIMEOUT** (Type: `integer`, Default: `300`): Timeout for sandboxed environments (seconds).
-- **SANDBOX_USER_ID** (Type: `string`, Default: `null`): User ID for sandbox environments.
-- **SECURITY_ANALYZER** (Type: `boolean`, Default: `true`): Enables security analysis tools.
-- **USE_HOST_NETWORK** (Type: `boolean`, Default: `false`): Enables use of the host network for container operations.
+**Debugging and Logging**
+- `debug`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Enable debugging
 
-## Workspace Configuration
-- **WORKSPACE_BASE** (Type: `string`, Default: `"/var/workspace"`): Root directory for workspace files.
-- **WORKSPACE_MOUNT_PATH** (Type: `string`, Default: `"/mnt/workspace"`): Path where workspace is mounted.
-- **WORKSPACE_MOUNT_PATH_IN_SANDBOX** (Type: `string`, Default: `"/sandbox/mnt/workspace"`): Workspace mount path in a sandboxed environment.
-- **WORKSPACE_MOUNT_REWRITE** (Type: `boolean`, Default: `false`): Enables mount path rewriting.
+- `disable_color`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Disable color in terminal output
+
+**Session Management**
+- `enable_cli_session`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Enable saving and restoring the session when run from CLI
+
+**Trajectories**
+- `trajectories_path`
+  - Type: `str`
+  - Default: `"./trajectories"`
+  - Description: Path to store trajectories (can be a folder or a file)
+
+**File Store**
+- `file_store_path`
+  - Type: `str`
+  - Default: `"/tmp/file_store"`
+  - Description: File store path
+
+- `file_store`
+  - Type: `str`
+  - Default: `"memory"`
+  - Description: File store type
+
+- `file_uploads_allowed_extensions`
+  - Type: `list of str`
+  - Default: `[".*"]`
+  - Description: List of allowed file extensions for uploads
+
+- `file_uploads_max_file_size_mb`
+  - Type: `int`
+  - Default: `0`
+  - Description: Maximum file size for uploads, in megabytes
+
+- `file_uploads_restrict_file_types`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Restrict file types for file uploads
+
+- `file_uploads_allowed_extensions`
+  - Type: `list of str`
+  - Default: `[".*"]`
+  - Description: List of allowed file extensions for uploads
+
+**Task Management**
+- `max_budget_per_task`
+  - Type: `float`
+  - Default: `0.0`
+  - Description: Maximum budget per task (0.0 means no limit)
+
+- `max_iterations`
+  - Type: `int`
+  - Default: `100`
+  - Description: Maximum number of iterations
+
+**Sandbox Configuration**
+- `workspace_mount_path_in_sandbox`
+  - Type: `str`
+  - Default: `"/workspace"`
+  - Description: Path to mount the workspace in the sandbox
+
+- `workspace_mount_path`
+  - Type: `str`
+  - Default: `""`
+  - Description: Path to mount the workspace
+
+- `workspace_mount_rewrite`
+  - Type: `str`
+  - Default: `""`
+  - Description: Path to rewrite the workspace mount path to
+
+**Miscellaneous**
+- `run_as_openhands`
+  - Type: `bool`
+  - Default: `true`
+  - Description: Run as OpenHands
+
+- `runtime`
+  - Type: `str`
+  - Default: `"eventstream"`
+  - Description: Runtime environment
+
+- `default_agent`
+  - Type: `str`
+  - Default: `"CodeActAgent"`
+  - Description: Name of the default agent
+
+- `jwt_secret`
+  - Type: `str`
+  - Default: `""`
+  - Description: JWT secret for authentication
+
+## LLM Configuration
+The LLM (Large Language Model) configuration options are defined in the `[llm]` section of the `config.toml` file.
+
+**AWS Credentials**
+- `aws_access_key_id`
+  - Type: `str`
+  - Default: `""`
+  - Description: AWS access key ID
+
+- `aws_region_name`
+  - Type: `str`
+  - Default: `""`
+  - Description: AWS region name
+
+- `aws_secret_access_key`
+  - Type: `str`
+  - Default: `""`
+  - Description: AWS secret access key
+
+**API Configuration**
+- `api_key`
+  - Type: `str`
+  - Default: `"your-api-key"`
+  - Description: API key to use
+
+- `base_url`
+  - Type: `str`
+  - Default: `""`
+  - Description: API base URL
+
+- `api_version`
+  - Type: `str`
+  - Default: `""`
+  - Description: API version
+
+- `input_cost_per_token`
+  - Type: `float`
+  - Default: `0.0`
+  - Description: Cost per input token
+
+- `output_cost_per_token`
+  - Type: `float`
+  - Default: `0.0`
+  - Description: Cost per output token
+
+**Custom LLM Provider**
+- `custom_llm_provider`
+  - Type: `str`
+  - Default: `""`
+  - Description: Custom LLM provider
+
+**Embeddings**
+- `embedding_base_url`
+  - Type: `str`
+  - Default: `""`
+  - Description: Embedding API base URL
+
+- `embedding_deployment_name`
+  - Type: `str`
+  - Default: `""`
+  - Description: Embedding deployment name
+
+- `embedding_model`
+  - Type: `str`
+  - Default: `"local"`
+  - Description: Embedding model to use
+
+**Message Handling**
+- `max_message_chars`
+  - Type: `int`
+  - Default: `10000`
+  - Description: Maximum number of characters in an observation's content
+
+- `max_input_tokens`
+  - Type: `int`
+  - Default: `0`
+  - Description: Maximum number of input tokens
+
+- `max_output_tokens`
+  - Type: `int`
+  - Default: `0`
+  - Description: Maximum number of output tokens
+
+**Model Selection**
+- `model`
+  - Type: `str`
+  - Default: `"gpt-4o"`
+  - Description: Model to use
+
+**Retrying**
+- `num_retries`
+  - Type: `int`
+  - Default: `8`
+  - Description: Number of retries to attempt
+
+- `retry_max_wait`
+  - Type: `int`
+  - Default: `120`
+  - Description: Maximum wait time (in seconds) between retry attempts
+
+- `retry_min_wait`
+  - Type: `int`
+  - Default: `15`
+  - Description: Minimum wait time (in seconds) between retry attempts
+
+- `retry_multiplier`
+  - Type: `float`
+  - Default: `2.0`
+  - Description: Multiplier for exponential backoff calculation
+
+**Advanced Options**
+- `drop_params`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Drop any unmapped (unsupported) params without causing an exception
+
+- `caching_prompt`
+  - Type: `bool`
+  - Default: `true`
+  - Description: Using the prompt caching feature if provided by the LLM and supported
+
+- `ollama_base_url`
+  - Type: `str`
+  - Default: `""`
+  - Description: Base URL for the OLLAMA API
+
+- `temperature`
+  - Type: `float`
+  - Default: `0.0`
+  - Description: Temperature for the API
+
+- `timeout`
+  - Type: `int`
+  - Default: `0`
+  - Description: Timeout for the API
+
+- `top_p`
+  - Type: `float`
+  - Default: `1.0`
+  - Description: Top p for the API
+
+- `disable_vision`
+  - Type: `bool`
+  - Default: `true`
+  - Description: If model is vision capable, this option allows to disable image processing (useful for cost reduction)
+
+## Agent Configuration
+The agent configuration options are defined in the `[agent]` and `[agent.<agent_name>]` sections of the `config.toml` file.
+
+**Microagent Configuration**
+- `micro_agent_name`
+  - Type: `str`
+  - Default: `""`
+  - Description: Name of the micro agent to use for this agent
+
+**Memory Configuration**
+- `memory_enabled`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Whether long-term memory (embeddings) is enabled
+
+- `memory_max_threads`
+  - Type: `int`
+  - Default: `3`
+  - Description: The maximum number of threads indexing at the same time for embeddings
+
+**LLM Configuration**
+- `llm_config`
+  - Type: `str`
+  - Default: `'your-llm-config-group'`
+  - Description: The name of the LLM config to use
+
+**ActionSpace Configuration**
+- `function_calling`
+  - Type: `bool`
+  - Default: `true`
+  - Description: Whether function calling is enabled
+
+- `codeact_enable_browsing`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Whether browsing delegate is enabled in the action space (only works with function calling)
+
+- `codeact_enable_llm_editor`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Whether LLM editor is enabled in the action space (only works with function calling)
+
+- `codeact_enable_jupyter`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Whether Jupyter is enabled in the action space
+
+**Microagent Usage**
+- `use_microagents`
+  - Type: `bool`
+  - Default: `true`
+  - Description: Whether to use microagents at all
+
+- `disabled_microagents`
+  - Type: `list of str`
+  - Default: `None`
+  - Description: A list of microagents to disable
+
+## Sandbox Configuration
+The sandbox configuration options are defined in the `[sandbox]` section of the `config.toml` file.
+
+**Execution**
+- `timeout`
+  - Type: `int`
+  - Default: `120`
+  - Description: Sandbox timeout in seconds
+
+- `user_id`
+  - Type: `int`
+  - Default: `1000`
+  - Description: Sandbox user ID
+
+**Container Image**
+- `base_container_image`
+  - Type: `str`
+  - Default: `"nikolaik/python-nodejs:python3.12-nodejs22"`
+  - Description: Container image to use for the sandbox
+
+**Networking**
+- `use_host_network`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Use host network
+
+**Linting and Plugins**
+- `enable_auto_lint`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Enable auto linting after editing
+
+- `initialize_plugins`
+  - Type: `bool`
+  - Default: `true`
+  - Description: Whether to initialize plugins
+
+**Dependencies and Environment**
+- `runtime_extra_deps`
+  - Type: `str`
+  - Default: `""`
+  - Description: Extra dependencies to install in the runtime image
+
+- `runtime_startup_env_vars`
+  - Type: `dict`
+  - Default: `{}`
+  - Description: Environment variables to set at the launch of the runtime
+
+**Evaluation**
+- `browsergym_eval_env`
+  - Type: `str`
+  - Default: `""`
+  - Description: BrowserGym environment to use for evaluation
+
+## Security Configuration
+The security configuration options are defined in the `[security]` section of the `config.toml` file.
+
+**Confirmation Mode**
+- `confirmation_mode`
+  - Type: `bool`
+  - Default: `false`
+  - Description: Enable confirmation mode
+
+**Security Analyzer**
+- `security_analyzer`
+  - Type: `str`
+  - Default: `""`
+  - Description: The security analyzer to use
+
 
 ---
 
 > **Note**: Adjust configurations carefully, especially for memory, security, and network-related settings to ensure optimal performance and security.
+Please note that the configuration options may be subject to change in future versions of OpenHands. It's recommended to refer to the official documentation for the most up-to-date information.
 
 
