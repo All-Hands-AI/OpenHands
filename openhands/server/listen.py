@@ -828,47 +828,6 @@ app = socketio.ASGIApp(sio, other_asgi_app=app)
 async def connect(connection_id: str, environ):
     logger.info(f"sio:connect: {connection_id}")
 
-    # Change this protocol.
-    # Init should now include the session id...
-    """
-    jwt_token = environ.get("HTTP_OH_TOKEN", '')
-    if jwt_token:
-        old_session_id = get_sid_from_token(jwt_token, config.jwt_secret)
-        if old_session_id == '':
-            sio.send({'error': 'Invalid token', 'error_code': 401})
-            return
-        logger.info(f'Renaming existing session: {old_session_id} to {session_id}')
-        session = session_manager.alias_existing_session(old_session_id, session_id)
-    else:
-        jwt_token = sign_token({'sid': session_id}, config.jwt_secret)
-        logger.info(f'New session: {session_id}')
-        session = session_manager.add_new_session(sio, session_id)
-    
-    github_token = environ.get('HTTP_GITHUB_TOKEN', '')
-    if not await authenticate_github_user(github_token):
-        raise RuntimeError(status.WS_1008_POLICY_VIOLATION)
-    
-    await session.send({'token': jwt_token, 'status': 'ok'})
-
-    latest_event_id = int(environ.get('HTTP_LATEST_EVENT_ID', -1))
-    async_stream = AsyncEventStreamWrapper(
-        session.agent_session.event_stream, latest_event_id + 1
-    )
-
-    async for event in async_stream:
-        if isinstance(
-            event,
-            (
-                NullAction,
-                NullObservation,
-                ChangeAgentStateAction,
-                AgentStateChangedObservation,
-            ),
-        ):
-            continue
-        await session.send(event_to_dict(event))
-    """
-
 
 @sio.event
 async def oh_action(connection_id: str, data: dict):
@@ -937,8 +896,6 @@ async def oh_action(connection_id: str, data: dict):
     logger.info(f"sio:oh_action:{connection_id}")
     session = session_manager.get_local_session(connection_id)
     await session.dispatch(data)
-    # session.on_event(event_from_dict(json.loads(data)))
-
 
 
 async def init_connection(connection_id: str, data: dict):
@@ -986,4 +943,4 @@ async def init_connection(connection_id: str, data: dict):
 @sio.event
 async def disconnect(connection_id: str):
     logger.info(f'sio:disconnect:{connection_id}')
-    session_manager.disconnect_from_local_session(connection_id)
+    await session_manager.disconnect_from_local_session(connection_id)

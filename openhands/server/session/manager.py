@@ -1,3 +1,4 @@
+import asyncio
 import time
 from dataclasses import dataclass, field
 
@@ -53,11 +54,21 @@ class SessionManager:
     def get_local_session(self, connection_id: str) -> Session:
         return self.local_sessions_by_connection_id[connection_id]
     
-    def disconnect_from_local_session(self, connection_id: str):
+    async def disconnect_from_local_session(self, connection_id: str):
         session = self.local_sessions_by_connection_id.pop(connection_id, None)
         if not session:
             # This can occur if the init action was never run.
             logger.warning(f'disconnect_from_uninitialized_session:{connection_id}')
             return
         if session.disconnect(connection_id):
-            self.local_sessions_by_sid.pop(session.sid)
+            asyncio.create_task(self._check_and_close_session(session))
+            
+    async def _check_and_close_session(self, session: Session):
+        # Once there have been no connections to a session for a reasonable period, we close it
+        try:
+            await asyncio.sleep(15)
+        finally:
+            # If the sleep was cancelled, we still want to close these
+            if not session.connection_ids:
+                session.close()
+                self.local_sessions_by_sid.pop(session.sid)

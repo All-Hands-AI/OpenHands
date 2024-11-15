@@ -36,6 +36,7 @@ class Session:
     last_active_ts: int = 0
     is_alive: bool = True
     agent_session: AgentSession
+    loop: asyncio.AbstractEventLoop
 
     def __init__(
         self, sid: str, ws: WebSocket | None, config: AppConfig, file_store: FileStore, sio: socketio.AsyncServer | None
@@ -52,16 +53,14 @@ class Session:
         )
         self.config = config
         self.connection_ids = set()
+        self.loop = asyncio.get_event_loop()
 
     def connect(self, connection_id: str):
         self.connection_ids.add(connection_id)
 
     def disconnect(self, connection_id: str) -> bool:
         self.connection_ids.remove(connection_id)
-        if self.connection_ids:
-            return False
-        self.close()
-        return True
+        return not self.connection_ids
 
     def close(self):
         self.is_alive = False
@@ -207,4 +206,6 @@ class Session:
 
     def queue_status_message(self, msg_type: str, id: str, message: str):
         """Queues a status message to be sent asynchronously."""
-        asyncio.create_task(self._send_status_message(msg_type, id, message))
+        asyncio.run_coroutine_threadsafe(
+            self._send_status_message(msg_type, id, message), self.loop
+        )
