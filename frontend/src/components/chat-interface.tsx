@@ -152,21 +152,21 @@ export function ChatInterface() {
             ),
           )}
 
-        {messages.length > 2 &&
-          curAgentState === AgentState.AWAITING_USER_INPUT && (
-            <div className="flex flex-col gap-2 mb-2">
-              {rootLoaderData?.ghToken && (
-                <SuggestionItem
-                  suggestion={{
-                    label: "Push to GitHub",
-                    value:
-                      "Please push the changes to GitHub and open a pull request.",
-                  }}
-                  onClick={(value) => {
-                    handleSendMessage(value, []);
-                  }}
-                />
-              )}
+        {(curAgentState === AgentState.AWAITING_USER_INPUT ||
+          curAgentState === AgentState.FINISHED) && (
+          <div className="flex flex-col gap-2 mb-2">
+            {rootLoaderData?.ghToken ? (
+              <SuggestionItem
+                suggestion={{
+                  label: "Push to GitHub",
+                  value:
+                    "Please push the changes to GitHub and open a pull request.",
+                }}
+                onClick={(value) => {
+                  handleSendMessage(value, []);
+                }}
+              />
+            ) : (
               <SuggestionItem
                 suggestion={{
                   label: !isDownloading
@@ -176,8 +176,9 @@ export function ChatInterface() {
                 }}
                 onClick={handleDownloadWorkspace}
               />
-            </div>
-          )}
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-[6px] px-4 pb-4">
