@@ -113,7 +113,7 @@ def mock_config():
 @pytest.fixture
 def mock_resolve_issue():
     """Create a mock for resolve_github_issue."""
-    with patch('openhands.server.listen.resolve_github_issue') as mock:
+    with patch('openhands.resolver.resolve_issue.resolve_issue') as mock:
         mock.return_value = None
         yield mock
 
@@ -121,7 +121,7 @@ def mock_resolve_issue():
 @pytest.fixture
 def mock_send_pr():
     """Create a mock for send_pull_request."""
-    with patch('openhands.server.listen.process_single_issue') as mock:
+    with patch('openhands.resolver.send_pull_request.process_single_issue') as mock:
         mock.return_value = ProcessIssueResult(
             success=True, url='https://github.com/test/test/pull/123'
         )
@@ -130,9 +130,8 @@ def mock_send_pr():
 
 def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
     """Test the resolve issue endpoint."""
-    with patch('openhands.server.listen.config', mock_config), patch(
-        'openhands.server.listen.get_sid_from_token', return_value='test-sid'
-    ):
+    with patch('openhands.server.listen.config', mock_config), \
+         patch('openhands.server.listen.get_sid_from_token', return_value='test-sid'):
         # Test successful resolution
         request_data = {
             'owner': 'test-owner',
@@ -197,14 +196,10 @@ def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
 
 def test_send_pull_request_endpoint(test_client, mock_send_pr, mock_config):
     """Test the send pull request endpoint."""
-    with patch('openhands.server.listen.config', mock_config), patch(
-        'openhands.server.listen.get_sid_from_token', return_value='test-sid'
-    ), patch.dict(
-        'os.environ', {'GITHUB_TOKEN': 'test-token', 'GITHUB_USERNAME': 'test-user'}
-    ), patch(
-        'openhands.server.listen.load_single_resolver_output',
-        return_value={'test': 'data'},
-    ):
+    with patch('openhands.server.listen.config', mock_config), \
+         patch('openhands.server.listen.get_sid_from_token', return_value='test-sid'), \
+         patch.dict('os.environ', {'GITHUB_TOKEN': 'test-token', 'GITHUB_USERNAME': 'test-user'}), \
+         patch('openhands.resolver.io_utils.load_single_resolver_output', return_value={'test': 'data'}):
         request_data = {
             'issue_number': 123,
             'pr_type': 'draft',

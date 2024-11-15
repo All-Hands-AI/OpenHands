@@ -70,31 +70,12 @@ with warnings.catch_warnings():
     import litellm
 
 
-# Data models for resolver endpoints
-class ResolveIssueRequest(BaseModel):
-    owner: str = Field(..., description='Github owner of the repo')
-    repo: str = Field(..., description='Github repository name')
-    token: str = Field(..., description='Github token to access the repository')
-    username: str = Field(..., description='Github username to access the repository')
-    max_iterations: int = Field(50, description='Maximum number of iterations to run')
-    issue_type: Literal['issue', 'pr'] = Field(
-        ..., description='Type of issue to resolve (issue or pr)'
-    )
-    issue_number: int = Field(..., description='Issue number to resolve')
-    comment_id: int | None = Field(
-        None, description='Optional ID of a specific comment to focus on'
-    )
-
-
-class SendPullRequestRequest(BaseModel):
-    issue_number: int = Field(..., description='Issue number to create PR for')
-    pr_type: Literal['branch', 'draft', 'ready'] = Field(
-        ..., description='Type of PR to create (branch, draft, ready)'
-    )
-    fork_owner: str | None = Field(None, description='Optional owner to fork to')
-    send_on_failure: bool = Field(
-        False, description='Whether to send PR even if resolution failed'
-    )
+from openhands.server.data_models.resolver import (
+    ResolveIssueDataModel,
+    SendPullRequestDataModel,
+    resolve_github_issue_with_model,
+    send_pull_request_with_model,
+)
 
 
 load_dotenv()
@@ -483,9 +464,7 @@ async def get_security_analyzers():
 
 
 @app.post('/api/resolver/resolve-issue')
-async def resolve_issue(
-    request: Request, resolve_request: ResolveIssueRequest
-) -> dict[str, str]:
+async def resolve_issue(request: Request) -> dict[str, str]:
     """Resolve a GitHub issue using OpenHands.
 
     This endpoint attempts to automatically resolve a GitHub issue by:
@@ -495,7 +474,6 @@ async def resolve_issue(
 
     Args:
         request: The incoming request object
-        resolve_request: The issue resolution request parameters
 
     Returns:
         A dictionary containing the resolution results with keys:
@@ -506,42 +484,27 @@ async def resolve_issue(
     # Create temporary output directory
     output_dir = tempfile.mkdtemp()
 
-    # Get LLM config from current session
-    llm_config = config.get_llm_config()
-
-    # Get runtime container image from config
-    runtime_container_image = config.sandbox.runtime_container_image
-    if not runtime_container_image:
-        raise ValueError('Runtime container image not configured')
-
-    # Get prompt template - for now using default
-    prompt_template = ''
-
     try:
-        await resolve_github_issue(
-            owner=resolve_request.owner,
-            repo=resolve_request.repo,
-            token=resolve_request.token,
-            username=resolve_request.username,
-            max_iterations=resolve_request.max_iterations,
-            output_dir=output_dir,
+        # Get LLM config from current session
+        llm_config = config.get_llm_config()
+
+        # Get runtime container image from config
+        runtime_container_image = config.sandbox.runtime_container_image
+        if not runtime_container_image:
+            raise ValueError('Runtime container image not configured')
+
+        # Parse request data
+        body = await request.json()
+        data = ResolveIssueDataModel(**body)
+
+        # Process the request
+        result = await resolve_github_issue_with_model(
+            data=data,
             llm_config=llm_config,
             runtime_container_image=runtime_container_image,
-            prompt_template=prompt_template,
-            issue_type=resolve_request.issue_type,
-            repo_instruction=None,
-            issue_number=resolve_request.issue_number,
-            comment_id=resolve_request.comment_id,
-            reset_logger=True,
+            output_dir=output_dir,
         )
-
-        # Read output.jsonl file
-        output_file = os.path.join(output_dir, 'output.jsonl')
-        if os.path.exists(output_file):
-            with open(output_file, 'r') as f:
-                return {'status': 'success', 'output': f.read()}
-        else:
-            return {'status': 'error', 'message': 'No output file generated'}
+        return result
 
     except Exception as e:
         return {'status': 'error', 'message': str(e)}
@@ -549,14 +512,11 @@ async def resolve_issue(
         # Cleanup temp directory
         if os.path.exists(output_dir):
             import shutil
-
             shutil.rmtree(output_dir)
 
 
 @app.post('/api/resolver/send-pr')
-async def send_pull_request(
-    request: Request, pr_request: SendPullRequestRequest
-) -> dict[str, str | dict[str, Any]]:
+async def send_pull_request(request: Request) -> dict[str, str | dict[str, Any]]:
     """Create a pull request or branch for resolved issue.
 
     This endpoint creates either:
@@ -568,7 +528,6 @@ async def send_pull_request(
 
     Args:
         request: The incoming request object
-        pr_request: The PR creation request parameters
 
     Returns:
         A dictionary containing the PR/branch creation results with keys:
@@ -577,16 +536,6 @@ async def send_pull_request(
         - message: Error message (on error)
     """
     try:
-        # Load the resolver output for this issue
-        output_dir = os.path.join(tempfile.gettempdir(), 'openhands_resolver')
-        resolver_output = load_single_resolver_output(
-            output_dir, pr_request.issue_number
-        )
-        if not resolver_output:
-            raise ValueError(
-                f'No resolver output found for issue {pr_request.issue_number}'
-            )
-
         # Get LLM config from current session
         llm_config = config.get_llm_config()
 
@@ -598,21 +547,20 @@ async def send_pull_request(
         # Get GitHub username from environment
         github_username = os.environ.get('GITHUB_USERNAME')
 
-        # Process the issue
-        result = process_single_issue(
+        # Parse request data
+        body = await request.json()
+        data = SendPullRequestDataModel(**body)
+
+        # Process the request
+        output_dir = os.path.join(tempfile.gettempdir(), 'openhands_resolver')
+        result = await send_pull_request_with_model(
+            data=data,
+            llm_config=llm_config,
             output_dir=output_dir,
-            resolver_output=resolver_output,
             github_token=github_token,
             github_username=github_username,
-            pr_type=pr_request.pr_type,
-            llm_config=llm_config,
-            fork_owner=pr_request.fork_owner,
-            send_on_failure=pr_request.send_on_failure,
         )
-        if result.success:
-            return {'status': 'success', 'result': {'url': result.url}}
-        else:
-            return {'status': 'error', 'message': result.error or 'Unknown error'}
+        return result
     except Exception as e:
         return {'status': 'error', 'message': str(e)}
 
