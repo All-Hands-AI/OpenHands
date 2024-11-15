@@ -26,7 +26,6 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { SuggestionItem } from "./suggestion-item";
 import { clientLoader } from "#/routes/_oh";
 import { downloadWorkspace } from "#/utils/download-workspace";
-import { LoadingSpinner } from "./modals/LoadingProject";
 
 const isErrorMessage = (
   message: Message | ErrorMessage,
