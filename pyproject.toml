@@ -65,6 +65,7 @@ runloop-api-client = "0.7.0"
 pygithub = "^2.5.0"
 openhands-aci = "^0.1.0"
 python-socketio = "^5.11.4"
+asyncpg = "^0.30.0"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
@@ -96,6 +97,7 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -125,6 +127,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
