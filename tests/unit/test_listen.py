@@ -6,11 +6,18 @@ import pytest
 from fastapi.testclient import TestClient
 
 from openhands.core.config import AppConfig, LLMConfig, SandboxConfig
+from openhands.resolver.send_pull_request import ProcessIssueResult
 
 
 # Mock the SessionManager to avoid asyncio issues
 class MockSessionManager:
     def __init__(self, *args, **kwargs):
+        pass
+
+    async def attach_to_conversation(self, sid):
+        return {'id': sid}
+
+    async def detach_from_conversation(self, conversation):
         pass
 
 
@@ -113,15 +120,16 @@ def mock_resolve_issue():
 
 @pytest.fixture
 def mock_send_pr():
-    """Create a mock for send_github_pr."""
-    with patch('openhands.server.listen.send_github_pr') as mock:
-        mock.return_value = {'pr_number': 123}
+    """Create a mock for send_pull_request."""
+    with patch('openhands.server.listen.process_single_issue') as mock:
+        mock.return_value = ProcessIssueResult(success=True, url='https://github.com/test/test/pull/123')
         yield mock
 
 
 def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
     """Test the resolve issue endpoint."""
-    with patch('openhands.server.listen.config', mock_config):
+    with patch('openhands.server.listen.config', mock_config), \
+         patch('openhands.server.listen.get_sid_from_token', return_value='test-sid'):
         # Test successful resolution
         request_data = {
             'owner': 'test-owner',
@@ -134,30 +142,38 @@ def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
             'comment_id': None,
         }
 
-        # Create a temp file with test output
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl') as tmp:
-            tmp.write('{"test": "data"}\\n')
-            tmp.flush()
+        # Create a temp directory for our test
+        with tempfile.TemporaryDirectory() as test_dir:
+            # Create a temp file with test output
+            output_file = os.path.join(test_dir, 'output.jsonl')
+            with open(output_file, 'w') as tmp:
+                tmp.write('{"test": "data"}\\n')
 
-            # Mock tempfile.mkdtemp to return our temp dir
-            with patch('tempfile.mkdtemp', return_value=os.path.dirname(tmp.name)):
+            # Mock tempfile.mkdtemp to return our test dir
+            with patch('tempfile.mkdtemp', return_value=test_dir):
                 response = test_client.post(
-                    '/api/resolver/resolve-issue', json=request_data
+                    '/api/resolver/resolve-issue',
+                    json=request_data,
+                    headers={'Authorization': 'Bearer test-token'}
                 )
 
-        assert response.status_code == 200
-        assert response.json()['status'] == 'success'
+            assert response.status_code == 200
+            assert response.json()['status'] == 'success'
 
-        # Verify mock was called correctly
-        mock_resolve_issue.assert_called_once()
-        call_args = mock_resolve_issue.call_args[1]
-        assert call_args['owner'] == request_data['owner']
-        assert call_args['repo'] == request_data['repo']
-        assert call_args['issue_number'] == request_data['issue_number']
+            # Verify mock was called correctly
+            mock_resolve_issue.assert_called_once()
+            call_args = mock_resolve_issue.call_args[1]
+            assert call_args['owner'] == request_data['owner']
+            assert call_args['repo'] == request_data['repo']
+            assert call_args['issue_number'] == request_data['issue_number']
 
         # Test error handling
         mock_resolve_issue.side_effect = Exception('Test error')
-        response = test_client.post('/api/resolver/resolve-issue', json=request_data)
+        response = test_client.post(
+            '/api/resolver/resolve-issue',
+            json=request_data,
+            headers={'Authorization': 'Bearer test-token'}
+        )
         assert response.status_code == 200
         assert response.json()['status'] == 'error'
         assert response.json()['message'] == 'Test error'
@@ -167,37 +183,58 @@ def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
         with tempfile.TemporaryDirectory() as tmp_dir:
             with patch('tempfile.mkdtemp', return_value=tmp_dir):
                 response = test_client.post(
-                    '/api/resolver/resolve-issue', json=request_data
+                    '/api/resolver/resolve-issue',
+                    json=request_data,
+                    headers={'Authorization': 'Bearer test-token'}
                 )
-        assert response.status_code == 200
-        assert response.json()['status'] == 'error'
-        assert response.json()['message'] == 'No output file generated'
+            assert response.status_code == 200
+            assert response.json()['status'] == 'error'
+            assert response.json()['message'] == 'No output file generated'
 
 
-def test_send_pull_request_endpoint(test_client, mock_send_pr):
+def test_send_pull_request_endpoint(test_client, mock_send_pr, mock_config):
     """Test the send pull request endpoint."""
-    request_data = {
-        'issue_number': 123,
-        'pr_type': 'draft',
-        'fork_owner': None,
-        'send_on_failure': False,
-    }
+    with patch('openhands.server.listen.config', mock_config), \
+         patch('openhands.server.listen.get_sid_from_token', return_value='test-sid'), \
+         patch.dict('os.environ', {'GITHUB_TOKEN': 'test-token', 'GITHUB_USERNAME': 'test-user'}), \
+         patch('openhands.server.listen.load_single_resolver_output', return_value={'test': 'data'}):
+        request_data = {
+            'issue_number': 123,
+            'pr_type': 'draft',
+            'fork_owner': None,
+            'send_on_failure': False,
+        }
 
-    # Test successful PR creation
-    response = test_client.post('/api/resolver/send-pr', json=request_data)
+        # Create a temp directory for our test
+        with tempfile.TemporaryDirectory() as test_dir:
+            # Create a temp file with test output
+            output_file = os.path.join(test_dir, 'output.jsonl')
+            with open(output_file, 'w') as tmp:
+                tmp.write('{"test": "data"}\\n')
 
-    assert response.status_code == 200
-    assert response.json()['status'] == 'success'
-    assert response.json()['result']['pr_number'] == 123
+            # Mock tempfile.mkdtemp to return our test dir
+            with patch('tempfile.mkdtemp', return_value=test_dir):
+                # Test successful PR creation
+                response = test_client.post(
+                    '/api/resolver/send-pr',
+                    json=request_data,
+                    headers={'Authorization': 'Bearer test-token'}
+                )
 
-    # Verify mock was called correctly
-    mock_send_pr.assert_called_once_with(
-        issue_number=123, pr_type='draft', fork_owner=None, send_on_failure=False
-    )
+                assert response.status_code == 200
+                assert response.json()['status'] == 'success'
+                assert response.json()['result']['url'] == 'https://github.com/test/test/pull/123'
 
-    # Test error handling
-    mock_send_pr.side_effect = Exception('PR creation failed')
-    response = test_client.post('/api/resolver/send-pr', json=request_data)
-    assert response.status_code == 200
-    assert response.json()['status'] == 'error'
-    assert response.json()['message'] == 'PR creation failed'
+                # Verify mock was called correctly
+                mock_send_pr.assert_called_once()
+
+                # Test error handling
+                mock_send_pr.side_effect = Exception('PR creation failed')
+                response = test_client.post(
+                    '/api/resolver/send-pr',
+                    json=request_data,
+                    headers={'Authorization': 'Bearer test-token'}
+                )
+                assert response.status_code == 200
+                assert response.json()['status'] == 'error'
+                assert response.json()['message'] == 'PR creation failed'
