@@ -5,20 +5,20 @@ default_agent = "SupervisorAgent"
 
 #################################### LLM #####################################
 [llm]
-base_url = "http://localhost:1234/v1"  # Default LM-Studio API endpoint
+base_url = "http://host.docker.internal:1234/v1"  # Default LM-Studio API endpoint
 api_key = "not-needed"  # LM-Studio doesn't require an API key
 model = "local"  # Will use whatever model is loaded in LM-Studio
 temperature = 0.7
 embedding_model = "local"
 
 [llm.openhands-1]  # Configuration for first OpenHands instance
-base_url = "http://localhost:1235/v1"
+base_url = "http://host.docker.internal:1235/v1"
 api_key = "not-needed"
 model = "local"
 temperature = 0.7
 
 [llm.openhands-2]  # Configuration for second OpenHands instance
-base_url = "http://localhost:1236/v1"
+base_url = "http://host.docker.internal:1236/v1"
 api_key = "not-needed"
 model = "local"
 temperature = 0.7
@@ -36,3 +36,5 @@ llm_config = "openhands-1"
 
 [agent.OpenHandsAgent-2]
 llm_config = "openhands-2"
+
+

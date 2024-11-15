@@ -4,7 +4,7 @@ services:
   supervisor:
     build:
       context: .
-      dockerfile: containers/Dockerfile
+      dockerfile: containers/Dockerfile.python
     volumes:
       - ./:/workspace
       - ./config.lmstudio.toml:/workspace/config.toml
@@ -12,42 +12,53 @@ services:
       - "8000:8000"  # Main API endpoint
     environment:
       - OPENHANDS_CONFIG=/workspace/config.toml
+      - LMSTUDIO_PORT=1234
     command: ["python", "-m", "openhands.cli.server"]
     networks:
       - openhands-net
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   openhands-1:
     build:
       context: .
-      dockerfile: containers/Dockerfile
+      dockerfile: containers/Dockerfile.python
     volumes:
       - ./:/workspace
       - ./config.lmstudio.toml:/workspace/config.toml
     environment:
       - OPENHANDS_CONFIG=/workspace/config.toml
       - OPENHANDS_AGENT=OpenHandsAgent-1
+      - LMSTUDIO_PORT=1235
     command: ["python", "-m", "openhands.cli.server", "--port", "8001"]
     ports:
       - "8001:8001"
     networks:
       - openhands-net
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   openhands-2:
     build:
       context: .
-      dockerfile: containers/Dockerfile
+      dockerfile: containers/Dockerfile.python
     volumes:
       - ./:/workspace
       - ./config.lmstudio.toml:/workspace/config.toml
     environment:
       - OPENHANDS_CONFIG=/workspace/config.toml
       - OPENHANDS_AGENT=OpenHandsAgent-2
+      - LMSTUDIO_PORT=1236
     command: ["python", "-m", "openhands.cli.server", "--port", "8002"]
     ports:
       - "8002:8002"
     networks:
       - openhands-net
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
 networks:
   openhands-net:
     driver: bridge
+
+
