@@ -220,7 +220,7 @@ class RunloopRuntime(EventStreamRuntime):
 
         # Hook up logs
         self.log_buffer = RunloopLogBuffer(self.runloop_api_client, self.devbox.id)
-        self.api_url = f'https://{tunnel.url}'
+        self.api_url = tunnel.url if tunnel.url.startswith("https://") else f'https://{tunnel.url}'
         logger.info(f'Container started. Server url: {self.api_url}')
 
         # End Runloop connect
