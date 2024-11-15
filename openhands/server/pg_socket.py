@@ -82,6 +82,7 @@ class AsyncPostgresManager(AsyncPubSubManager):
             self.conn = await self._get_postgres_connection()
 
     async def _publish(self, data):
+        print('PUBLISH')
         retry = True
         if not self.conn:
             raise RuntimeError('Postgres connection not established')
@@ -133,6 +134,7 @@ class AsyncPostgresManager(AsyncPubSubManager):
                     retry_sleep = 60
 
     async def _listen(self):
+        print('LISTEN')
         await self._postgres_connect()
         if not self.conn:
             raise RuntimeError('Postgres connection not established')
@@ -157,6 +159,7 @@ class AsyncPostgresManager(AsyncPubSubManager):
 
     async def _on_notification(self, connection, pid, channel, payload):
         """Handle incoming notifications from Postgres."""
+        print('ON NOTIF')
         try:
             data = json.loads(payload)
             decoded_data = pickle.loads(data['data'].encode('latin1'))
