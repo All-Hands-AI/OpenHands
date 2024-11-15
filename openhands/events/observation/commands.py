@@ -92,6 +92,18 @@ class CmdOutputObservation(Observation):
     # Whether the command output should be hidden from the user
     hidden: bool = False
 
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        metadata = kwargs.get('metadata')
+        if isinstance(metadata, dict):
+            self.metadata = CmdOutputMetadata(**metadata)
+        else:
+            self.metadata = metadata or CmdOutputMetadata()
+
     @property
     def command_id(self) -> int:
         return self.metadata.pid

@@ -30,27 +30,10 @@ def _run_cmd_action(runtime, custom_command: str, keep_prompt=True):
     return obs
 
 
-def test_bash_command_pexcept(temp_dir, runtime_cls, run_as_openhands):
+def test_bash_command_env(temp_dir, runtime_cls, run_as_openhands):
     runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
-        # We set env var PS1="\u@\h:\w $"
-        # and construct the PEXCEPT prompt base on it.
-        # When run `env`, bad implementation of CmdRunAction will be pexcepted by this
-        # and failed to pexcept the right content, causing it fail to get error code.
         obs = runtime.run_action(CmdRunAction(command='env'))
-
-        # For example:
-        # 02:16:13 - openhands:DEBUG: client.py:78 - Executing command: env
-        # 02:16:13 - openhands:DEBUG: client.py:82 - Command output: PYTHONUNBUFFERED=1
-        # CONDA_EXE=/openhands/miniforge3/bin/conda
-        # [...]
-        # LC_CTYPE=C.UTF-8
-        # PS1=\u@\h:\w $
-        # 02:16:13 - openhands:DEBUG: client.py:89 - Executing command for exit code: env
-        # 02:16:13 - openhands:DEBUG: client.py:92 - Exit code Output:
-        # CONDA_DEFAULT_ENV=base
-
-        # As long as the exit code is 0, the test will pass.
         assert isinstance(
             obs, CmdOutputObservation
         ), 'The observation should be a CmdOutputObservation.'
