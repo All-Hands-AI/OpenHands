@@ -73,8 +73,6 @@ export function WsClientProvider({
       initEvent.github_token = ghToken;
     }
     if (events.length) {
-      console.log("TRACE");
-      // Wrong. Events is out of sync
       initEvent.latest_event_id = `${events[events.length - 1].id}`;
     }
     send(initEvent);
