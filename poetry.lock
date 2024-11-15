@@ -5665,8 +5665,8 @@ whatthepatch = "^1.0.6"
 [package.source]
 type = "git"
 url = "https://github.com/All-Hands-AI/openhands-aci.git"
-reference = "ht/add-linter"
-resolved_reference = "cb65f471d8a762fd53494159ef99fc5b05113e2f"
+reference = "HEAD"
+resolved_reference = "6bcf1698a1dcbc9e06f437e8e514e24385cc3075"
 
 [[package]]
 name = "opentelemetry-api"
@@ -10217,4 +10217,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "f2b10eb65d4a6d11f4fff92c1609ca5876ca4521f504893cfd2772e495548096"
+content-hash = "dbe2569f613b6d687c1753fcd1c42b8f5bd44c8e0bda7d15160fff6e82bc9111"
