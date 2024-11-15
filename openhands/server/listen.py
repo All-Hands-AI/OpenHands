@@ -5,28 +5,10 @@ import tempfile
 import time
 import uuid
 import warnings
+from typing import Any, Literal
 
 import jwt
 import requests
-from pathspec import PathSpec
-from pathspec.patterns import GitWildMatchPattern
-
-from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
-from openhands.security.options import SecurityAnalyzers
-from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
-from openhands.server.github import (
-    GITHUB_CLIENT_ID,
-    GITHUB_CLIENT_SECRET,
-    UserVerifier,
-    authenticate_github_user,
-)
-from openhands.storage import get_file_store
-from openhands.utils.async_utils import call_sync_from_async
-
-with warnings.catch_warnings():
-    warnings.simplefilter('ignore')
-    import litellm
-
 from dotenv import load_dotenv
 from fastapi import (
     BackgroundTasks,
@@ -40,9 +22,10 @@ from fastapi import (
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pathspec import PathSpec
+from pathspec.patterns import GitWildMatchPattern
+from pydantic import BaseModel, Field
 
-import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller.agent import Agent
 from openhands.core.config import LLMConfig, load_app_config
 from openhands.core.logger import openhands_logger as logger
@@ -62,10 +45,57 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.llm import bedrock
+from openhands.resolver.io_utils import load_single_resolver_output
+from openhands.resolver.resolve_issue import resolve_issue as resolve_github_issue
+from openhands.resolver.send_pull_request import process_single_issue
 from openhands.runtime.base import Runtime
+from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
+from openhands.security.options import SecurityAnalyzers
 from openhands.server.auth.auth import get_sid_from_token, sign_token
+from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
+from openhands.server.github import (
+    GITHUB_CLIENT_ID,
+    GITHUB_CLIENT_SECRET,
+    UserVerifier,
+    authenticate_github_user,
+)
 from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware
 from openhands.server.session import SessionManager
+from openhands.storage import get_file_store
+from openhands.utils.async_utils import call_sync_from_async
+
+import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
+
+with warnings.catch_warnings():
+    warnings.simplefilter('ignore')
+    import litellm
+
+
+# Data models for resolver endpoints
+class ResolveIssueRequest(BaseModel):
+    owner: str = Field(..., description='Github owner of the repo')
+    repo: str = Field(..., description='Github repository name')
+    token: str = Field(..., description='Github token to access the repository')
+    username: str = Field(..., description='Github username to access the repository')
+    max_iterations: int = Field(50, description='Maximum number of iterations to run')
+    issue_type: Literal['issue', 'pr'] = Field(
+        ..., description='Type of issue to resolve (issue or pr)'
+    )
+    issue_number: int = Field(..., description='Issue number to resolve')
+    comment_id: int | None = Field(
+        None, description='Optional ID of a specific comment to focus on'
+    )
+
+
+class SendPullRequestRequest(BaseModel):
+    issue_number: int = Field(..., description='Issue number to create PR for')
+    pr_type: Literal['branch', 'draft', 'ready'] = Field(
+        ..., description='Type of PR to create (branch, draft, ready)'
+    )
+    fork_owner: str | None = Field(None, description='Optional owner to fork to')
+    send_on_failure: bool = Field(
+        False, description='Whether to send PR even if resolution failed'
+    )
 
 load_dotenv()
 
@@ -450,6 +480,138 @@ async def get_security_analyzers():
         list: A sorted list of security analyzer names.
     """
     return sorted(SecurityAnalyzers.keys())
+
+
+@app.post('/api/resolver/resolve-issue')
+async def resolve_issue(
+    request: Request, resolve_request: ResolveIssueRequest
+) -> dict[str, str]:
+    """Resolve a GitHub issue using OpenHands.
+
+    This endpoint attempts to automatically resolve a GitHub issue by:
+    1. Analyzing the issue content and comments
+    2. Making necessary code changes
+    3. Creating a pull request or branch with the changes
+
+    Args:
+        request: The incoming request object
+        resolve_request: The issue resolution request parameters
+
+    Returns:
+        A dictionary containing the resolution results with keys:
+        - status: 'success' or 'error'
+        - output: The output.jsonl contents (on success)
+        - message: Error message (on error)
+    """
+    # Create temporary output directory
+    output_dir = tempfile.mkdtemp()
+
+    # Get LLM config from current session
+    llm_config = config.get_llm_config()
+
+    # Get runtime container image from config
+    runtime_container_image = config.sandbox.runtime_container_image
+    if not runtime_container_image:
+        raise ValueError('Runtime container image not configured')
+
+    # Get prompt template - for now using default
+    prompt_template = ''
+
+    try:
+        await resolve_github_issue(
+            owner=resolve_request.owner,
+            repo=resolve_request.repo,
+            token=resolve_request.token,
+            username=resolve_request.username,
+            max_iterations=resolve_request.max_iterations,
+            output_dir=output_dir,
+            llm_config=llm_config,
+            runtime_container_image=runtime_container_image,
+            prompt_template=prompt_template,
+            issue_type=resolve_request.issue_type,
+            repo_instruction=None,
+            issue_number=resolve_request.issue_number,
+            comment_id=resolve_request.comment_id,
+            reset_logger=True,
+        )
+
+        # Read output.jsonl file
+        output_file = os.path.join(output_dir, 'output.jsonl')
+        if os.path.exists(output_file):
+            with open(output_file, 'r') as f:
+                return {'status': 'success', 'output': f.read()}
+        else:
+            return {'status': 'error', 'message': 'No output file generated'}
+
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}
+    finally:
+        # Cleanup temp directory
+        if os.path.exists(output_dir):
+            import shutil
+
+            shutil.rmtree(output_dir)
+
+
+@app.post('/api/resolver/send-pr')
+async def send_pull_request(
+    request: Request, pr_request: SendPullRequestRequest
+) -> dict[str, str | dict[str, Any]]:
+    """Create a pull request or branch for resolved issue.
+
+    This endpoint creates either:
+    - A draft PR
+    - A ready PR
+    - Just a branch
+
+    With the changes made by the resolver.
+
+    Args:
+        request: The incoming request object
+        pr_request: The PR creation request parameters
+
+    Returns:
+        A dictionary containing the PR/branch creation results with keys:
+        - status: 'success' or 'error'
+        - result: PR creation result (on success)
+        - message: Error message (on error)
+    """
+    try:
+        # Load the resolver output for this issue
+        output_dir = os.path.join(tempfile.gettempdir(), 'openhands_resolver')
+        resolver_output = load_single_resolver_output(
+            output_dir, pr_request.issue_number
+        )
+        if not resolver_output:
+            raise ValueError(
+                f'No resolver output found for issue {pr_request.issue_number}'
+            )
+
+        # Get LLM config from current session
+        llm_config = config.get_llm_config()
+
+        # Get GitHub token from environment
+        github_token = os.environ.get('GITHUB_TOKEN')
+        if not github_token:
+            raise ValueError('GITHUB_TOKEN environment variable not set')
+
+        # Get GitHub username from environment
+        github_username = os.environ.get('GITHUB_USERNAME')
+
+        # Process the issue
+        result = await process_single_issue(
+            output_dir=output_dir,
+            resolver_output=resolver_output,
+            github_token=github_token,
+            github_username=github_username,
+            pr_type=pr_request.pr_type,
+            llm_config=llm_config,
+            fork_owner=pr_request.fork_owner,
+            send_on_failure=pr_request.send_on_failure,
+        )
+        return {'status': 'success', 'result': result}
+    except Exception as e:
+        return {'status': 'error', 'message': str(e)}
 
 
 FILES_TO_IGNORE = [
