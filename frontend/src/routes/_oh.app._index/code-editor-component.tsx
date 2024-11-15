@@ -7,15 +7,15 @@ import { I18nKey } from "#/i18n/declaration";
 import { useFiles } from "#/context/files";
 import OpenHands from "#/api/open-hands";
 
-interface CodeEditorCompoonentProps {
+interface CodeEditorComponentProps {
   onMount: EditorProps["onMount"];
   isReadOnly: boolean;
 }
 
-function CodeEditorCompoonent({
+function CodeEditorComponent({
   onMount,
   isReadOnly,
-}: CodeEditorCompoonentProps) {
+}: CodeEditorComponentProps) {
   const { t } = useTranslation();
   const {
     files,
@@ -107,4 +107,4 @@ function CodeEditorCompoonent({
   );
 }
 
-export default React.memo(CodeEditorCompoonent);
+export default React.memo(CodeEditorComponent);

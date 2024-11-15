@@ -5,7 +5,6 @@ import {
   defer,
   redirect,
   useLoaderData,
-  useNavigate,
   useRouteLoaderData,
 } from "@remix-run/react";
 import React from "react";
@@ -73,10 +72,10 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 };
 
 function Home() {
-  const navigate = useNavigate();
   const dispatch = useDispatch();
   const rootData = useRouteLoaderData<typeof rootClientLoader>("routes/_oh");
   const { repositories, githubAuthUrl } = useLoaderData<typeof clientLoader>();
+  const formRef = React.useRef<HTMLFormElement>(null);
 
   return (
     <div
@@ -86,7 +85,7 @@ function Home() {
       <HeroHeading />
       <div className="flex flex-col gap-16 w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
-          <TaskForm />
+          <TaskForm ref={formRef} />
         </div>
         <div className="flex gap-4 w-full">
           <React.Suspense
@@ -100,6 +99,7 @@ function Home() {
             <Await resolve={repositories}>
               {(resolvedRepositories) => (
                 <GitHubRepositoriesSuggestionBox
+                  handleSubmit={() => formRef.current?.requestSubmit()}
                   repositories={resolvedRepositories}
                   gitHubAuthUrl={githubAuthUrl}
                   user={rootData?.user || null}
@@ -129,7 +129,7 @@ function Home() {
                       dispatch(
                         setImportedProjectZip(await convertZipToBase64(zip)),
                       );
-                      navigate("/app");
+                      formRef.current?.requestSubmit();
                     } else {
                       // TODO: handle error
                     }
