@@ -50,7 +50,7 @@ export function WsClientProvider({
   );
   const [status, setStatus] = React.useState(WsClientProviderStatus.STOPPED);
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
-  const lastEventRef = React.useRef<Record<string, unknown> | null>(null)
+  const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
@@ -74,8 +74,8 @@ export function WsClientProvider({
     if (ghToken) {
       initEvent.github_token = ghToken;
     }
-    const lastEvent = lastEventRef.current
-    if (lastEvent && !isNaN(parseInt(lastEvent.id as string))) {
+    const lastEvent = lastEventRef.current;
+    if (lastEvent && !Number.isNaN(parseInt(lastEvent.id as string, 10))) {
       initEvent.latest_event_id = lastEvent.id;
     }
     send(initEvent);
@@ -93,12 +93,12 @@ export function WsClientProvider({
       event?.observation === "error"
     ) {
       setStatus(WsClientProviderStatus.ERROR);
-      return
+      return;
     }
 
     if (!event.token) {
-      //setStatus(WsClientProviderStatus.ACTIVE);
-    //} else {
+      // setStatus(WsClientProviderStatus.ACTIVE);
+      // } else {
       handleAssistantMessage(event);
     }
   }
@@ -137,9 +137,6 @@ export function WsClientProvider({
         import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
       sio = io(baseUrl, {
         transports: ["websocket"],
-        // extraHeaders: {
-        //  Testy: "TESTER"
-        // },
         // We force a new connection, because the headers may have changed.
         // forceNew: true,
 
