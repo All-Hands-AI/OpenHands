@@ -7,6 +7,7 @@ import subprocess
 import jinja2
 import litellm
 import requests
+from pydantic import BaseModel
 
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
@@ -426,21 +427,36 @@ def update_existing_pull_request(
     return pr_url
 
 
+class ProcessIssueResult(BaseModel):
+    success: bool
+    url: str | None = None
+    error: str | None = None
+
+
 def process_single_issue(
     output_dir: str,
     resolver_output: ResolverOutput,
     github_token: str,
-    github_username: str,
+    github_username: str | None,
     pr_type: str,
     llm_config: LLMConfig,
     fork_owner: str | None,
     send_on_failure: bool,
-) -> None:
+) -> ProcessIssueResult:
+    if github_username is None:
+        return ProcessIssueResult(
+            success=False,
+            error='GITHUB_USERNAME environment variable not set',
+        )
+
     if not resolver_output.success and not send_on_failure:
         print(
             f'Issue {resolver_output.issue.number} was not successfully resolved. Skipping PR creation.'
         )
-        return
+        return ProcessIssueResult(
+            success=False,
+            error='Issue was not successfully resolved',
+        )
 
     issue_type = resolver_output.issue_type
 
@@ -465,26 +481,30 @@ def process_single_issue(
 
     make_commit(patched_repo_dir, resolver_output.issue, issue_type)
 
-    if issue_type == 'pr':
-        update_existing_pull_request(
-            github_issue=resolver_output.issue,
-            github_token=github_token,
-            github_username=github_username,
-            patch_dir=patched_repo_dir,
-            additional_message=resolver_output.success_explanation,
-            llm_config=llm_config,
-        )
-    else:
-        send_pull_request(
-            github_issue=resolver_output.issue,
-            github_token=github_token,
-            github_username=github_username,
-            patch_dir=patched_repo_dir,
-            pr_type=pr_type,
-            llm_config=llm_config,
-            fork_owner=fork_owner,
-            additional_message=resolver_output.success_explanation,
-        )
+    try:
+        if issue_type == 'pr':
+            url = update_existing_pull_request(
+                github_issue=resolver_output.issue,
+                github_token=github_token,
+                github_username=github_username,
+                patch_dir=patched_repo_dir,
+                additional_message=resolver_output.success_explanation,
+                llm_config=llm_config,
+            )
+        else:
+            url = send_pull_request(
+                github_issue=resolver_output.issue,
+                github_token=github_token,
+                github_username=github_username,
+                patch_dir=patched_repo_dir,
+                pr_type=pr_type,
+                llm_config=llm_config,
+                fork_owner=fork_owner,
+                additional_message=resolver_output.success_explanation,
+            )
+        return ProcessIssueResult(success=True, url=url)
+    except Exception as e:
+        return ProcessIssueResult(success=False, error=str(e))
 
 
 def process_all_successful_issues(

@@ -26,6 +26,7 @@ from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 from pydantic import BaseModel, Field
 
+import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller.agent import Agent
 from openhands.core.config import LLMConfig, load_app_config
 from openhands.core.logger import openhands_logger as logger
@@ -64,8 +65,6 @@ from openhands.server.session import SessionManager
 from openhands.storage import get_file_store
 from openhands.utils.async_utils import call_sync_from_async
 
-import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
-
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
@@ -96,6 +95,7 @@ class SendPullRequestRequest(BaseModel):
     send_on_failure: bool = Field(
         False, description='Whether to send PR even if resolution failed'
     )
+
 
 load_dotenv()
 
@@ -599,7 +599,7 @@ async def send_pull_request(
         github_username = os.environ.get('GITHUB_USERNAME')
 
         # Process the issue
-        result = await process_single_issue(
+        result = process_single_issue(
             output_dir=output_dir,
             resolver_output=resolver_output,
             github_token=github_token,
@@ -609,7 +609,10 @@ async def send_pull_request(
             fork_owner=pr_request.fork_owner,
             send_on_failure=pr_request.send_on_failure,
         )
-        return {'status': 'success', 'result': result}
+        if result.success:
+            return {'status': 'success', 'result': {'url': result.url}}
+        else:
+            return {'status': 'error', 'message': result.error or 'Unknown error'}
     except Exception as e:
         return {'status': 'error', 'message': str(e)}
 
