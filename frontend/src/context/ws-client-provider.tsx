@@ -60,7 +60,6 @@ export function WsClientProvider({
   }
 
   function handleConnect() {
-    console.log("TRACE:connect");
     setStatus(WsClientProviderStatus.OPENING);
 
     const initEvent: Record<string, unknown> = {
@@ -104,7 +103,6 @@ export function WsClientProvider({
   }
 
   function handleError() {
-    console.log("TRACE:SIO:Error");
     posthog.capture("socket_error");
     setStatus(WsClientProviderStatus.ERROR);
     sioRef.current?.disconnect();
@@ -130,19 +128,6 @@ export function WsClientProvider({
       ghToken !== ghTokenRef.current
     ) {
       sio?.disconnect();
-
-      /*
-      const extraHeaders: Record<string, string> = {};
-      if (token) {
-        extraHeaders.token = token;
-      }
-      if (ghToken) {
-        extraHeaders.github_token = ghToken;
-      }
-      if (events.length) {
-        extraHeaders.latest_event_id = `${events[events.length - 1].id}`;
-      }
-      */
 
       const baseUrl =
         import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
