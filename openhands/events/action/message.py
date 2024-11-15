@@ -24,6 +24,7 @@ class MessageAction(Action):
     @images_urls.setter
     def images_urls(self, value):
         self.image_urls = value
+
     def __str__(self) -> str:
         ret = f'**MessageAction** (source={self.source})\n'
         ret += f'CONTENT: {self.content}'
