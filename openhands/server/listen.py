@@ -19,7 +19,7 @@ from openhands.server.github import (
     UserVerifier,
     authenticate_github_user,
 )
-from openhands.server.pg_socket import AsyncPostgresManager
+from openhands.server.pg_socket import AsyncPostgresAdapter
 from openhands.storage import get_file_store
 from openhands.utils.async_utils import call_async_from_sync, call_sync_from_async
 
@@ -815,7 +815,7 @@ class SPAStaticFiles(StaticFiles):
 app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist')
 
 use_manager = os.getenv('DB_HOST') or os.getenv('GCP_DB_INSTANCE')
-manager = AsyncPostgresManager() if use_manager else None
+manager = AsyncPostgresAdapter() if use_manager else None
 if manager:
     call_async_from_sync(manager.setup, 10)
 sio = socketio.AsyncServer(

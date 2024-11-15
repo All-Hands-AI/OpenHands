@@ -2,187 +2,241 @@ import asyncio
 import json
 import os
 import pickle
+from asyncio import Task
+from typing import Any, Dict, Optional
 
 import asyncpg
 from asyncpg.exceptions import PostgresError
+from asyncpg.pool import Pool
+from google.cloud.sql.connector import Connector
 from socketio.async_pubsub_manager import AsyncPubSubManager
 
-from openhands.core.logger import openhands_logger as logger
 
-DB_HOST = os.environ.get('DB_HOST')  # for non-GCP environments
-DB_USER = os.environ.get('DB_USER')
-DB_PASS = os.environ.get('DB_PASS', '').strip()
-DB_NAME = os.environ.get('DB_NAME')
+def has_binary(obj: Any, to_json: bool = False) -> bool:
+    if not obj or not isinstance(obj, (dict, list, bytes, bytearray, memoryview)):
+        return False
 
-GCP_DB_INSTANCE = os.environ.get('GCP_DB_INSTANCE')  # for GCP environments
-GCP_PROJECT = os.environ.get('GCP_PROJECT')
-GCP_REGION = os.environ.get('GCP_REGION')
+    if isinstance(obj, (bytes, bytearray, memoryview)):
+        return True
+
+    if isinstance(obj, list):
+        return any(has_binary(item) for item in obj)
+
+    if isinstance(obj, dict):
+        return any(has_binary(v) for v in obj.values())
+
+    if hasattr(obj, 'to_json') and callable(obj.to_json) and not to_json:
+        return has_binary(obj.to_json(), True)
+
+    return False
 
 
-class AsyncPostgresManager(AsyncPubSubManager):
-    """PostgreSQL based client manager for asyncio servers.
-
-    Uses PostgreSQL's LISTEN/NOTIFY functionality for event sharing across processes.
-
-    Usage:
-        url = 'postgresql://user:pass@hostname:port/dbname'
-        server = socketio.AsyncServer(
-            client_manager=socketio.AsyncPostgresManager(url))
-    """
-
-    name = 'asyncpg'
-
+class AsyncPostgresAdapter(AsyncPubSubManager):
     def __init__(
         self,
-        channel='socketio',
-        write_only=False,
+        channel: str = 'socketio',
+        table_name: str = 'socket_io_attachments',
+        payload_threshold: int = 8000,
+        cleanup_interval: int = 30000,
     ):
-        logger.info('Initializing PostgresManager')
-        self.conn = None
-        super().__init__(channel=channel, write_only=write_only, logger=logger)
+        self.channel = channel
+        super().__init__(channel=channel)
+        self.table_name = table_name
+        self.payload_threshold = payload_threshold
+        self.cleanup_interval = cleanup_interval
+        self._cleanup_timer: Optional[Task] = None
+        self._client: Optional[asyncpg.Connection] = None
+        self.pool: Optional[Pool] = None
+
+        # Connection configs
+        self.db_host = os.environ.get('DB_HOST')
+        self.db_user = os.environ.get('DB_USER')
+        self.db_pass = os.environ.get('DB_PASS', '').strip()
+        self.db_name = os.environ.get('DB_NAME')
+
+        # GCP configs
+        self.gcp_instance = os.environ.get('GCP_DB_INSTANCE')
+        self.gcp_project = os.environ.get('GCP_PROJECT')
+        self.gcp_region = os.environ.get('GCP_REGION')
+
+        self.connector = Connector() if self.gcp_instance else None
 
     async def setup(self):
-        await self._create_database_if_not_exists()
+        if not self.pool:
+            self.pool = await self._create_pool()
+            await self._create_db()
+            await self._init_client()
 
-    async def _get_gcp_connection(self, db_name=DB_NAME):
-        instance_string = f'{GCP_PROJECT}:{GCP_REGION}:{GCP_DB_INSTANCE}'
-        logger.info(f'Connecting to GCP instance: {instance_string}')
-
-        async def get_async_conn():
-            conn = await self.connector.connect_async(
-                instance_connection_string=instance_string,
-                driver='asyncpg',
-                user=DB_USER,
-                password=DB_PASS,
-                db=db_name,
+    async def _create_pool(self) -> Pool:
+        if self.gcp_instance:
+            return await asyncpg.create_pool(
+                lambda: self._get_gcp_connection(self.db_name)
             )
-            return conn
+        else:
+            return await asyncpg.create_pool(
+                user=self.db_user,
+                password=self.db_pass,
+                host=self.db_host,
+                database=self.db_name,
+            )
 
-        return await get_async_conn()
+    async def _get_gcp_connection(
+        self, db_name: Optional[str] = None
+    ) -> asyncpg.Connection:
+        instance_string = f'{self.gcp_project}:{self.gcp_region}:{self.gcp_instance}'
 
-    async def _get_postgres_connection(self, db_name=DB_NAME):
-        logger.info(f'Connecting to Postgres: {DB_HOST}')
-        return await asyncpg.connect(
-            user=DB_USER,
-            password=DB_PASS,
-            host=DB_HOST,
-            database=db_name,
+        conn = await self.connector.connect_async(
+            instance_connection_string=instance_string,
+            driver='asyncpg',
+            user=self.db_user,
+            password=self.db_pass,
+            db=db_name or self.db_name,
+        )
+        return conn
+
+    async def _init_client(self) -> None:
+        if not self.pool:
+            raise RuntimeError('Pool not initialized')
+
+        try:
+            self._client = await self.pool.acquire()
+            await self._client.execute(f'LISTEN "{self.channel}"')
+
+            self._client.add_listener(self.channel, self._on_notification)
+
+            if not self._cleanup_timer:
+                self._schedule_cleanup()
+
+        except PostgresError as e:
+            self.logger.error(f'Error initializing client: {e}')
+            await asyncio.sleep(2)
+            await self._init_client()
+
+    def _schedule_cleanup(self) -> None:
+        async def cleanup() -> None:
+            if not self.pool:
+                return
+
+            try:
+                await self.pool.execute(
+                    f"DELETE FROM {self.table_name} WHERE created_at < now() - interval '{self.cleanup_interval} milliseconds'"
+                )
+            except PostgresError as e:
+                self.logger.error(f'Cleanup error: {e}')
+
+            self._cleanup_timer = asyncio.create_task(cleanup())
+            await asyncio.sleep(self.cleanup_interval / 1000)
+
+        self._cleanup_timer = asyncio.create_task(cleanup())
+
+    async def _publish_with_attachment(self, data: Dict) -> None:
+        if not self.pool:
+            raise RuntimeError('Pool not initialized')
+
+        payload = pickle.dumps(data)
+        result = await self.pool.fetchrow(
+            f'INSERT INTO {self.table_name} (payload) VALUES ($1) RETURNING id', payload
+        )
+        if not result:
+            raise RuntimeError('Failed to insert payload')
+
+        notification = {
+            'uid': self.uid,
+            'type': data['type'],
+            'attachmentId': result['id'],
+        }
+        await self.pool.execute(
+            'SELECT pg_notify($1, $2)', self.channel, json.dumps(notification)
         )
 
-    async def _postgres_connect(self):
-        if self.conn:
-            try:
-                await self.conn.close()
-            except PostgresError:
-                pass
-
-        if GCP_DB_INSTANCE:
-            self.conn = await self._get_gcp_connection()
-        else:
-            self.conn = await self._get_postgres_connection()
-
-    async def _publish(self, data):
-        print('PUBLISH')
-        retry = True
-        if not self.conn:
-            raise RuntimeError('Postgres connection not established')
-        while True:
-            try:
-                if not retry:
-                    await self._postgres_connect()
-                # Convert data to JSON string since NOTIFY payload must be str
-                await self.conn.execute(
-                    'SELECT pg_notify($1, $2)',
-                    self.channel,
-                    json.dumps({'data': pickle.dumps(data).decode('latin1')}),
-                )
-                return
-            except PostgresError:
-                if retry:
-                    self._get_logger().error(
-                        'Cannot publish to postgres... ' 'retrying'
-                    )
-                    retry = False
-                else:
-                    self._get_logger().error(
-                        'Cannot publish to postgres... ' 'giving up'
-                    )
-                    break
-
-    async def _postgres_listen_with_retries(self):
-        retry_sleep = 1
-        connect = False
-        while True:
-            try:
-                if connect:
-                    await self._postgres_connect()
-                    if not self.conn:
-                        raise RuntimeError('Postgres connection not established')
-                    await self.conn.add_listener(self.channel, self._on_notification)
-                    retry_sleep = 1
-                # Keep connection alive
-                while True:
-                    await asyncio.sleep(1)
-            except PostgresError:
-                self._get_logger().error(
-                    'Cannot receive from postgres... ' f'retrying in {retry_sleep} secs'
-                )
-                connect = True
-                await asyncio.sleep(retry_sleep)
-                retry_sleep *= 2
-                if retry_sleep > 60:
-                    retry_sleep = 60
-
-    async def _listen(self):
-        print('LISTEN')
-        await self._postgres_connect()
-        if not self.conn:
-            raise RuntimeError('Postgres connection not established')
-        await self.conn.add_listener(self.channel, self._on_notification)
-        self._listen_queue: asyncio.Queue = asyncio.Queue()
-
-        # Start background listener
-        self._listen_task = asyncio.create_task(self._postgres_listen_with_retries())
+    async def _publish(self, data: Dict) -> None:
+        if not self.pool:
+            raise RuntimeError('Pool not initialized')
 
         try:
-            while True:
-                data = await self._listen_queue.get()
-                yield data
-        finally:
-            if self.conn:
-                await self.conn.remove_listener(self.channel, self._on_notification)
-                self._listen_task.cancel()
-                try:
-                    await self._listen_task
-                except asyncio.CancelledError:
-                    pass
+            data['uid'] = self.uid
 
-    async def _on_notification(self, connection, pid, channel, payload):
-        """Handle incoming notifications from Postgres."""
-        print('ON NOTIF')
+            if has_binary(data) or len(json.dumps(data)) > self.payload_threshold:
+                await self._publish_with_attachment(data)
+                return
+
+            await self.pool.execute(
+                'SELECT pg_notify($1, $2)', self.channel, json.dumps(data)
+            )
+
+        except PostgresError as e:
+            self.logger.error(f'Publish error: {e}')
+            raise
+
+    async def _on_notification(self, conn, pid, channel, payload) -> None:
+        if not self.pool:
+            return
+
         try:
             data = json.loads(payload)
-            decoded_data = pickle.loads(data['data'].encode('latin1'))
-            await self._listen_queue.put(decoded_data)
-        except (json.JSONDecodeError, KeyError, pickle.UnpicklingError) as e:
-            self._get_logger().error(f'Error processing notification: {e}')
 
-    async def _create_database_if_not_exists(self):
-        if GCP_DB_INSTANCE:
-            sys_conn = await self._get_gcp_connection('postgres')
-        else:
-            sys_conn = await self._get_postgres_connection('postgres')
+            if data.get('uid') == self.uid:
+                return
 
-        try:
-            # Check if database exists
-            exists = await sys_conn.fetchval(
-                'SELECT 1 FROM pg_database WHERE datname = $1',
-                DB_NAME,
-            )
-            if not exists:
-                # Create database if it doesn't exist
-                await sys_conn.execute(f'CREATE DATABASE "{DB_NAME}"')
+            if 'attachmentId' in data:
+                result = await self.pool.fetchrow(
+                    f'SELECT payload FROM {self.table_name} WHERE id = $1',
+                    data['attachmentId'],
+                )
+                if not result:
+                    self.logger.error(f"Attachment {data['attachmentId']} not found")
+                    return
+
+                data = pickle.loads(result['payload'])
+
+            await self._handle_message(data)
+
         except Exception as e:
-            raise e
-        finally:
-            await sys_conn.close()
+            self.logger.error(f'Notification error: {e}')
+
+    async def close(self) -> None:
+        if self._cleanup_timer:
+            self._cleanup_timer.cancel()
+        if self._client and self.pool:
+            await self.pool.release(self._client)
+        if self.connector:
+            await self.connector.close_async()
+        await super().close()
+
+    async def _create_db(self) -> None:
+        try:
+            # Connect to default postgres DB first
+            if self.gcp_instance:
+                sys_conn = await self._get_gcp_connection('postgres')
+            else:
+                sys_conn = await asyncpg.connect(
+                    user=self.db_user,
+                    password=self.db_pass,
+                    host=self.db_host,
+                    database='postgres',
+                )
+
+            try:
+                # Create DB if needed
+                exists = await sys_conn.fetchval(
+                    'SELECT 1 FROM pg_database WHERE datname = $1', self.db_name
+                )
+                if not exists:
+                    await sys_conn.execute(f'CREATE DATABASE "{self.db_name}"')
+            finally:
+                await sys_conn.close()
+
+            # Create attachments table
+            if not self.pool:
+                raise RuntimeError('Pool not initialized')
+
+            await self.pool.execute(f"""
+                CREATE TABLE IF NOT EXISTS {self.table_name} (
+                    id SERIAL PRIMARY KEY,
+                    payload BYTEA NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+        except Exception as e:
+            self.logger.error(f'Database creation error: {e}')
+            raise
