@@ -1,6 +1,6 @@
 import React from "react";
 import TextareaAutosize from "react-textarea-autosize";
-import ArrowSendIcon from "#/assets/arrow-send.svg?react";
+import ArrowSendIcon from "#/icons/arrow-send.svg?react";
 import { cn } from "#/utils/utils";
 
 interface ChatInputProps {
@@ -16,7 +16,9 @@ interface ChatInputProps {
   onChange?: (message: string) => void;
   onFocus?: () => void;
   onBlur?: () => void;
+  onImagePaste?: (files: File[]) => void;
   className?: React.HTMLAttributes<HTMLDivElement>["className"];
+  buttonClassName?: React.HTMLAttributes<HTMLButtonElement>["className"];
 }
 
 export function ChatInput({
@@ -32,9 +34,52 @@ export function ChatInput({
   onChange,
   onFocus,
   onBlur,
+  onImagePaste,
   className,
+  buttonClassName,
 }: ChatInputProps) {
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+  const [isDraggingOver, setIsDraggingOver] = React.useState(false);
+
+  const handlePaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    // Only handle paste if we have an image paste handler and there are files
+    if (onImagePaste && event.clipboardData.files.length > 0) {
+      const files = Array.from(event.clipboardData.files).filter((file) =>
+        file.type.startsWith("image/"),
+      );
+      // Only prevent default if we found image files to handle
+      if (files.length > 0) {
+        event.preventDefault();
+        onImagePaste(files);
+      }
+    }
+    // For text paste, let the default behavior handle it
+  };
+
+  const handleDragOver = (event: React.DragEvent<HTMLTextAreaElement>) => {
+    event.preventDefault();
+    if (event.dataTransfer.types.includes("Files")) {
+      setIsDraggingOver(true);
+    }
+  };
+
+  const handleDragLeave = (event: React.DragEvent<HTMLTextAreaElement>) => {
+    event.preventDefault();
+    setIsDraggingOver(false);
+  };
+
+  const handleDrop = (event: React.DragEvent<HTMLTextAreaElement>) => {
+    event.preventDefault();
+    setIsDraggingOver(false);
+    if (onImagePaste && event.dataTransfer.files.length > 0) {
+      const files = Array.from(event.dataTransfer.files).filter((file) =>
+        file.type.startsWith("image/"),
+      );
+      if (files.length > 0) {
+        onImagePaste(files);
+      }
+    }
+  };
 
   const handleSubmitMessage = () => {
     if (textareaRef.current?.value) {
@@ -57,7 +102,7 @@ export function ChatInput({
   return (
     <div
       data-testid="chat-input"
-      className="flex items-end justify-end grow gap-1 min-h-6"
+      className="flex items-end justify-end grow gap-1 min-h-6 w-full"
     >
       <TextareaAutosize
         ref={textareaRef}
@@ -67,17 +112,25 @@ export function ChatInput({
         onChange={handleChange}
         onFocus={onFocus}
         onBlur={onBlur}
+        onPaste={handlePaste}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
         value={value}
         minRows={1}
         maxRows={maxRows}
+        data-dragging-over={isDraggingOver}
         className={cn(
-          "grow text-sm self-center placeholder:text-neutral-400 text-white resize-none bg-transparent outline-none ring-0",
-          "transition-[height] duration-200 ease-in-out",
+          "grow text-sm self-center placeholder:text-neutral-400 text-white resize-none outline-none ring-0",
+          "transition-all duration-200 ease-in-out",
+          isDraggingOver
+            ? "bg-neutral-600/50 rounded-lg px-2"
+            : "bg-transparent",
           className,
         )}
       />
       {showButton && (
-        <>
+        <div className={buttonClassName}>
           {button === "submit" && (
             <button
               aria-label="Send"
@@ -101,7 +154,7 @@ export function ChatInput({
               <div className="w-[10px] h-[10px] bg-white" />
             </button>
           )}
-        </>
+        </div>
       )}
     </div>
   );

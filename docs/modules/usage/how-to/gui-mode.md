@@ -19,6 +19,15 @@ OpenHands provides a user-friendly Graphical User Interface (GUI) mode for inter
 3. Enter the corresponding `API Key` for your chosen provider.
 4. Click "Save" to apply the settings.
 
+### GitHub Token Setup
+
+OpenHands automatically exports a `GITHUB_TOKEN` to the shell environment if it is available. This can happen in two ways:
+
+1. Locally (OSS): The user directly inputs their GitHub token.
+2. Online (SaaS): The token is obtained through GitHub OAuth authentication.
+
+When you reach the `/app` route, the app checks if a token is present. If it finds one, it sets it in the environment for the agent to use.
+
 ### Advanced Settings
 
 1. Toggle `Advanced Options` to access additional settings.

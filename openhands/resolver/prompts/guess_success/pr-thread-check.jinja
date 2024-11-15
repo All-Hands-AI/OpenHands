@@ -1,0 +1,21 @@
+You are given one or more issue descriptions, the PR thread comments, and the last message from an AI agent attempting to address the feedback. Determine if the feedback has been successfully resolved.
+
+Issue descriptions:
+{{ issue_context }}
+
+PR Thread Comments:
+{{ thread_context }}
+
+Last message from AI agent:
+{{ last_message }}
+
+(1) has the feedback been successfully incorporated?
+(2) If the feedback has been incorporated, please provide an explanation of what was done that can be sent to a human reviewer on github. If the feedback has not been resolved, please provide an explanation of why.
+
+Answer in exactly the format below, with only true or false for success, and an explanation of the result.
+
+--- success
+true/false
+
+--- explanation
+...

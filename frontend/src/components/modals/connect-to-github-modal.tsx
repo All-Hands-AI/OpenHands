@@ -1,4 +1,5 @@
 import { useFetcher, useRouteLoaderData } from "@remix-run/react";
+import { useTranslation } from "react-i18next";
 import ModalBody from "./ModalBody";
 import { CustomInput } from "../form/custom-input";
 import ModalButton from "../buttons/ModalButton";
@@ -8,6 +9,7 @@ import {
 } from "./confirmation-modals/BaseModal";
 import { clientLoader } from "#/routes/_oh";
 import { clientAction } from "#/routes/login";
+import { I18nKey } from "#/i18n/declaration";
 
 interface ConnectToGitHubModalProps {
   onClose: () => void;
@@ -16,6 +18,7 @@ interface ConnectToGitHubModalProps {
 export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
   const data = useRouteLoaderData<typeof clientLoader>("routes/_oh");
   const fetcher = useFetcher<typeof clientAction>({ key: "login" });
+  const { t } = useTranslation();
 
   return (
     <ModalBody>
@@ -24,14 +27,14 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
         <BaseModalDescription
           description={
             <span>
-              Get your token{" "}
+              {t(I18nKey.CONNECT_TO_GITHUB_MODAL$GET_YOUR_TOKEN)}{" "}
               <a
                 href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
                 target="_blank"
                 rel="noreferrer noopener"
                 className="text-[#791B80] underline"
               >
-                here
+                {t(I18nKey.CONNECT_TO_GITHUB_MODAL$HERE)}
               </a>
             </span>
           }
@@ -53,14 +56,15 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
 
         <div className="flex flex-col gap-2 w-full">
           <ModalButton
+            testId="connect-to-github"
             type="submit"
-            text="Connect"
+            text={t(I18nKey.CONNECT_TO_GITHUB_MODAL$CONNECT)}
             disabled={fetcher.state === "submitting"}
             className="bg-[#791B80] w-full"
           />
           <ModalButton
             onClick={onClose}
-            text="Close"
+            text={t(I18nKey.CONNECT_TO_GITHUB_MODAL$CLOSE)}
             className="bg-[#737373] w-full"
           />
         </div>

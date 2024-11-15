@@ -1,4 +1,4 @@
-import Clip from "#/assets/clip.svg?react";
+import Clip from "#/icons/clip.svg?react";
 
 interface UploadImageInputProps {
   onUpload: (files: File[]) => void;
@@ -11,7 +11,7 @@ export function UploadImageInput({ onUpload, label }: UploadImageInputProps) {
   };
 
   return (
-    <label className="cursor-pointer">
+    <label className="cursor-pointer py-[10px]">
       {label || <Clip data-testid="default-label" width={24} height={24} />}
       <input
         data-testid="upload-image-input"

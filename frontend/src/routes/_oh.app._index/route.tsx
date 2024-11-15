@@ -8,9 +8,21 @@ import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import FileExplorer from "#/components/file-explorer/FileExplorer";
 import OpenHands from "#/api/open-hands";
-import CodeEditorCompoonent from "./code-editor-component";
+import CodeEditorComponent from "./code-editor-component";
 import { useFiles } from "#/context/files";
 import { EditorActions } from "#/components/editor-actions";
+
+const ASSET_FILE_TYPES = [
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".bmp",
+  ".gif",
+  ".pdf",
+  ".mp4",
+  ".webm",
+  ".ogg",
+];
 
 export const clientLoader = async () => {
   const token = localStorage.getItem("token");
@@ -104,6 +116,10 @@ function CodeEditor() {
     if (selectedPath) discardChanges(selectedPath);
   };
 
+  const isAssetFileType = selectedPath
+    ? ASSET_FILE_TYPES.some((ext) => selectedPath.endsWith(ext))
+    : false;
+
   return (
     <div className="flex h-full bg-neutral-900 relative">
       <FileExplorer
@@ -112,7 +128,7 @@ function CodeEditor() {
         error={errors.getFiles}
       />
       <div className="w-full">
-        {selectedPath && (
+        {selectedPath && !isAssetFileType && (
           <div className="flex w-full items-center justify-between self-end p-2">
             <span className="text-sm text-neutral-500">{selectedPath}</span>
             <EditorActions
@@ -122,7 +138,7 @@ function CodeEditor() {
             />
           </div>
         )}
-        <CodeEditorCompoonent
+        <CodeEditorComponent
           onMount={handleEditorDidMount}
           isReadOnly={!isEditingAllowed}
         />

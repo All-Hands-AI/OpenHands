@@ -13,6 +13,7 @@ from evaluation.mint.tasks import Task
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    compatibility_for_eval_history_pairs,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -28,6 +29,7 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import (
+    Action,
     CmdRunAction,
     MessageAction,
 )
@@ -45,7 +47,10 @@ def codeact_user_response_mint(state: State, task: Task, task_config: dict[str, 
         task=task,
         task_config=task_config,
     )
-    last_action = state.history.get_last_action()
+    last_action = next(
+        (event for event in reversed(state.history) if isinstance(event, Action)),
+        None,
+    )
     result_state: TaskState = env.step(last_action.message or '')
 
     state.extra_data['task_state'] = result_state
@@ -65,7 +70,7 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': '\nIMPORTANT: When your answer is confirmed by the user to be correct, you can exit using the following command: <execute_bash> exit </execute_bash>.\n'
+    'CodeActAgent': 'IMPORTANT: When your answer is confirmed by the user to be correct, you can use the "finish" tool to finish the interaction.\n'
 }
 
 with open(os.path.join(os.path.dirname(__file__), 'requirements.txt'), 'r') as f:
@@ -202,7 +207,7 @@ def process_instance(
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
-    histories = state.history.compatibility_for_eval_history_pairs()
+    histories = compatibility_for_eval_history_pairs(state.history)
 
     # Save the output
     output = EvalOutput(

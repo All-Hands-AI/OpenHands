@@ -2,12 +2,12 @@ import ActionType from "#/types/ActionType";
 
 export function createChatMessage(
   message: string,
-  images_urls: string[],
+  image_urls: string[],
   timestamp: string,
 ) {
   const event = {
     action: ActionType.MESSAGE,
-    args: { content: message, images_urls, timestamp },
+    args: { content: message, image_urls, timestamp },
   };
-  return JSON.stringify(event);
+  return event;
 }

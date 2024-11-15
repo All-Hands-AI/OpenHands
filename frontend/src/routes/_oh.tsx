@@ -10,6 +10,7 @@ import {
   Outlet,
   ClientLoaderFunctionArgs,
 } from "@remix-run/react";
+import posthog from "posthog-js";
 import { useDispatch } from "react-redux";
 import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
@@ -20,15 +21,15 @@ import { DangerModal } from "#/components/modals/confirmation-modals/danger-moda
 import { LoadingSpinner } from "#/components/modals/LoadingProject";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { UserActions } from "#/components/user-actions";
-import { useSocket } from "#/context/socket";
 import i18n from "#/i18n";
 import { getSettings, settingsAreUpToDate } from "#/services/settings";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
-import NewProjectIcon from "#/assets/new-project.svg?react";
-import DocsIcon from "#/assets/docs.svg?react";
+import NewProjectIcon from "#/icons/new-project.svg?react";
+import DocsIcon from "#/icons/docs.svg?react";
 import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { WaitlistModal } from "#/components/waitlist-modal";
+import { AnalyticsConsentFormModal } from "#/components/analytics-consent-form-modal";
 import { setCurrentAgentState } from "#/state/agentSlice";
 import AgentState from "#/types/AgentState";
 
@@ -44,10 +45,18 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
 
   let token = localStorage.getItem("token");
   const ghToken = localStorage.getItem("ghToken");
+  const analyticsConsent = localStorage.getItem("analytics-consent");
+  const userConsents = analyticsConsent === "true";
 
-  let isAuthed: boolean = false;
+  if (!userConsents) {
+    posthog.opt_out_capturing();
+  } else if (userConsents && !posthog.has_opted_in_capturing()) {
+    posthog.opt_in_capturing();
+  }
+
+  let isAuthed = false;
   let githubAuthUrl: string | null = null;
-
+  let user: GitHubUser | GitHubErrorReponse | null = null;
   try {
     isAuthed = await userIsAuthenticated();
     if (!isAuthed && window.__GITHUB_CLIENT_ID__) {
@@ -62,7 +71,6 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
     githubAuthUrl = null;
   }
 
-  let user: GitHubUser | GitHubErrorReponse | null = null;
   if (ghToken) user = await retrieveGitHubUser(ghToken);
 
   const settings = getSettings();
@@ -74,6 +82,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
     token = null;
   }
 
+  // Store the results in cache
   return defer({
     token,
     ghToken,
@@ -82,6 +91,7 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
     user,
     settingsIsUpdated,
     settings,
+    analyticsConsent,
   });
 };
 
@@ -124,7 +134,6 @@ type SettingsFormData = {
 };
 
 export default function MainApp() {
-  const { stop, isConnected } = useSocket();
   const navigation = useNavigation();
   const location = useLocation();
   const {
@@ -135,6 +144,7 @@ export default function MainApp() {
     githubAuthUrl,
     settingsIsUpdated,
     settings,
+    analyticsConsent,
   } = useLoaderData<typeof clientLoader>();
   const logoutFetcher = useFetcher({ key: "logout" });
   const endSessionFetcher = useFetcher({ key: "end-session" });
@@ -154,6 +164,18 @@ export default function MainApp() {
   const [settingsFormError, setSettingsFormError] = React.useState<
     string | null
   >(null);
+
+  React.useEffect(() => {
+    if (user && !isGitHubErrorReponse(user)) {
+      posthog.identify(user.login, {
+        company: user.company,
+        name: user.name,
+        email: user.email,
+        user: user.login,
+        mode: window.__APP_MODE__ || "oss",
+      });
+    }
+  }, [user]);
 
   React.useEffect(() => {
     // We fetch this here instead of the data loader because the server seems to block
@@ -179,14 +201,6 @@ export default function MainApp() {
       setAccountSettingsModalOpen(true);
     }
   }, [user]);
-
-  React.useEffect(() => {
-    if (location.pathname === "/") {
-      // If the user is on the home page, we should stop the socket connection.
-      // This is relevant when the user redirects here for whatever reason.
-      if (isConnected) stop();
-    }
-  }, [location.pathname]);
 
   const handleUserLogout = () => {
     logoutFetcher.submit(
@@ -217,7 +231,10 @@ export default function MainApp() {
   };
 
   return (
-    <div className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3">
+    <div
+      data-testid="root-layout"
+      className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3"
+    >
       <aside className="px-1 flex flex-col gap-1">
         <div className="w-[34px] h-[34px] flex items-center justify-center">
           {navigation.state === "loading" && <LoadingSpinner size="small" />}
@@ -226,7 +243,7 @@ export default function MainApp() {
               type="button"
               aria-label="All Hands Logo"
               onClick={() => {
-                if (location.pathname === "/app")
+                if (location.pathname.startsWith("/app"))
                   setStartNewProjectModalIsOpen(true);
               }}
             >
@@ -288,11 +305,9 @@ export default function MainApp() {
             <p className="text-xs text-[#A3A3A3]">
               To continue, connect an OpenAI, Anthropic, or other LLM account
             </p>
-            {isConnected && (
-              <p className="text-xs text-danger">
-                Changing settings during an active session will end the session
-              </p>
-            )}
+            <p className="text-xs text-danger">
+              Changing settings during an active session will end the session
+            </p>
             <SettingsForm
               settings={settings}
               models={settingsFormData.models}
@@ -309,6 +324,7 @@ export default function MainApp() {
             onClose={handleAccountSettingsModalClose}
             selectedLanguage={settings.LANGUAGE}
             gitHubError={isGitHubErrorReponse(user)}
+            analyticsConsent={analyticsConsent}
           />
         </ModalBackdrop>
       )}
@@ -333,6 +349,7 @@ export default function MainApp() {
       {!isAuthed && (
         <WaitlistModal ghToken={ghToken} githubAuthUrl={githubAuthUrl} />
       )}
+      {!analyticsConsent && <AnalyticsConsentFormModal />}
     </div>
   );
 }

@@ -1,7 +1,9 @@
 import asyncio
 import logging
 import os
+import sys
 from typing import Type
+from uuid import uuid4
 
 from termcolor import colored
 
@@ -14,6 +16,7 @@ from openhands.core.config import (
     load_app_config,
 )
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
@@ -149,8 +152,8 @@ async def main():
         event_stream=event_stream,
         sid=sid,
         plugins=agent_cls.sandbox_plugins,
+        headless_mode=True,
     )
-    await runtime.connect()
 
     controller = AgentController(
         agent=agent,
@@ -161,11 +164,7 @@ async def main():
         event_stream=event_stream,
     )
 
-    if controller is not None:
-        controller.agent_task = asyncio.create_task(controller.start_step_loop())
-
     async def prompt_for_next_task():
-        # Run input() in a thread pool to avoid blocking the event loop
         await controller.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
         loop = asyncio.get_event_loop()
         next_message = await loop.run_in_executor(
@@ -184,26 +183,21 @@ async def main():
     async def on_event(event: Event):
         display_event(event)
         if isinstance(event, AgentStateChangedObservation):
-            if event.agent_state == AgentState.ERROR:
-                print('An error occurred. Please try again.')
             if event.agent_state in [
                 AgentState.AWAITING_USER_INPUT,
                 AgentState.FINISHED,
-                AgentState.ERROR,
             ]:
                 await prompt_for_next_task()
 
-    event_stream.subscribe(EventStreamSubscriber.MAIN, on_event)
+    event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, str(uuid4()))
 
-    await prompt_for_next_task()
+    await runtime.connect()
 
-    while controller.state.agent_state not in [
-        AgentState.STOPPED,
-    ]:
-        await asyncio.sleep(1)  # Give back control for a tick, so the agent can run
+    asyncio.create_task(prompt_for_next_task())
 
-    print('Exiting...')
-    await controller.close()
+    await run_agent_until_done(
+        controller, runtime, [AgentState.STOPPED, AgentState.ERROR]
+    )
 
     # Stop file watcher if it was started
     if args.watch and 'file_watcher' in locals():
@@ -213,7 +207,26 @@ async def main():
 
 if __name__ == '__main__':
     loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
     try:
         loop.run_until_complete(main())
+    except KeyboardInterrupt:
+        print('Received keyboard interrupt, shutting down...')
+    except ConnectionRefusedError as e:
+        print(f'Connection refused: {e}')
+        sys.exit(1)
+    except Exception as e:
+        print(f'An error occurred: {e}')
+        sys.exit(1)
     finally:
-        pass
+        try:
+            # Cancel all running tasks
+            pending = asyncio.all_tasks(loop)
+            for task in pending:
+                task.cancel()
+            # Wait for all tasks to complete with a timeout
+            loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+            loop.close()
+        except Exception as e:
+            print(f'Error during cleanup: {e}')
+            sys.exit(1)

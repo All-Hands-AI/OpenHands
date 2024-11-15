@@ -1,9 +1,12 @@
 import os
 
-import httpx
+from github import Github
+from github.GithubException import GithubException
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.sheets_client import GoogleSheetsClient
+from openhands.utils.async_utils import call_sync_from_async
 
 GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', '').strip()
 GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '').strip()
@@ -11,7 +14,7 @@ GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', '').strip()
 
 class UserVerifier:
     def __init__(self) -> None:
-        logger.info('Initializing UserVerifier')
+        logger.debug('Initializing UserVerifier')
         self.file_users: list[str] | None = None
         self.sheets_client: GoogleSheetsClient | None = None
         self.spreadsheet_id: str | None = None
@@ -24,7 +27,7 @@ class UserVerifier:
         """Load users from text file if configured"""
         waitlist = os.getenv('GITHUB_USER_LIST_FILE')
         if not waitlist:
-            logger.info('GITHUB_USER_LIST_FILE not configured')
+            logger.debug('GITHUB_USER_LIST_FILE not configured')
             return
 
         if not os.path.exists(waitlist):
@@ -45,10 +48,10 @@ class UserVerifier:
         sheet_id = os.getenv('GITHUB_USERS_SHEET_ID')
 
         if not sheet_id:
-            logger.info('GITHUB_USERS_SHEET_ID not configured')
+            logger.debug('GITHUB_USERS_SHEET_ID not configured')
             return
 
-        logger.info('Initializing Google Sheets integration')
+        logger.debug('Initializing Google Sheets integration')
         self.sheets_client = GoogleSheetsClient()
         self.spreadsheet_id = sheet_id
 
@@ -60,21 +63,21 @@ class UserVerifier:
         if not self.is_active():
             return True
 
-        logger.info(f'Checking if GitHub user {username} is allowed')
+        logger.debug(f'Checking if GitHub user {username} is allowed')
         if self.file_users:
             if username in self.file_users:
-                logger.info(f'User {username} found in text file allowlist')
+                logger.debug(f'User {username} found in text file allowlist')
                 return True
             logger.debug(f'User {username} not found in text file allowlist')
 
         if self.sheets_client and self.spreadsheet_id:
             sheet_users = self.sheets_client.get_usernames(self.spreadsheet_id)
             if username in sheet_users:
-                logger.info(f'User {username} found in Google Sheets allowlist')
+                logger.debug(f'User {username} found in Google Sheets allowlist')
                 return True
             logger.debug(f'User {username} not found in Google Sheets allowlist')
 
-        logger.info(f'User {username} not found in any allowlist')
+        logger.debug(f'User {username} not found in any allowlist')
         return False
 
 
@@ -82,10 +85,10 @@ async def authenticate_github_user(auth_token) -> bool:
     user_verifier = UserVerifier()
 
     if not user_verifier.is_active():
-        logger.info('No user verification sources configured - allowing all users')
+        logger.debug('No user verification sources configured - allowing all users')
         return True
 
-    logger.info('Checking GitHub token')
+    logger.debug('Checking GitHub token')
 
     if not auth_token:
         logger.warning('No GitHub token provided')
@@ -101,6 +104,7 @@ async def authenticate_github_user(auth_token) -> bool:
     return True
 
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
 async def get_github_user(token: str) -> str:
     """Get GitHub user info from token.
 
@@ -108,21 +112,18 @@ async def get_github_user(token: str) -> str:
         token: GitHub access token
 
     Returns:
-        Tuple of (login, error_message)
-        If successful, error_message is None
-        If failed, login is None and error_message contains the error
+        github handle of the user
     """
-    logger.info('Fetching GitHub user info from token')
-    headers = {
-        'Accept': 'application/vnd.github+json',
-        'Authorization': f'Bearer {token}',
-        'X-GitHub-Api-Version': '2022-11-28',
-    }
-    async with httpx.AsyncClient() as client:
-        logger.debug('Making request to GitHub API')
-        response = await client.get('https://api.github.com/user', headers=headers)
-        response.raise_for_status()
-        user_data = response.json()
-        login = user_data.get('login')
-        logger.info(f'Successfully retrieved GitHub user: {login}')
-        return login
+    logger.debug('Fetching GitHub user info from token')
+    g = Github(token)
+    try:
+        user = await call_sync_from_async(g.get_user)
+    except GithubException as e:
+        logger.error(f'Error making request to GitHub API: {str(e)}')
+        logger.error(e)
+        raise
+    finally:
+        g.close()
+    login = user.login
+    logger.info(f'Successfully retrieved GitHub user: {login}')
+    return login

@@ -95,9 +95,9 @@ class CodeActSWEAgent(Agent):
             if (
                 self.llm.vision_is_active()
                 and isinstance(action, MessageAction)
-                and action.images_urls
+                and action.image_urls
             ):
-                content.append(ImageContent(image_urls=action.images_urls))
+                content.append(ImageContent(image_urls=action.image_urls))
 
             return Message(
                 role='user' if action.source == 'user' else 'assistant', content=content
@@ -154,8 +154,8 @@ class CodeActSWEAgent(Agent):
         - AgentFinishAction() - end the interaction
         """
         # if we're done, go back
-        latest_user_message = state.history.get_last_user_message()
-        if latest_user_message and latest_user_message.strip() == '/exit':
+        last_user_message = state.get_last_user_message()
+        if last_user_message and last_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
         # prepare what we want to send to the LLM
@@ -176,7 +176,7 @@ class CodeActSWEAgent(Agent):
             Message(role='user', content=[TextContent(text=self.in_context_example)]),
         ]
 
-        for event in state.history.get_events():
+        for event in state.history:
             # create a regular message from an event
             if isinstance(event, Action):
                 message = self.get_action_message(event)

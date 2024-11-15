@@ -15,6 +15,7 @@ from evaluation.aider_bench.helper import (
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    compatibility_for_eval_history_pairs,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -57,6 +58,9 @@ def get_config(
             use_host_network=False,
             timeout=100,
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
+            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
+            keep_runtime_alive=False,
+            remote_runtime_init_timeout=1800,
         ),
         # do not mount workspace
         workspace_base=None,
@@ -250,7 +254,7 @@ def process_instance(
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
-    histories = state.history.compatibility_for_eval_history_pairs()
+    histories = compatibility_for_eval_history_pairs(state.history)
     metrics = state.metrics.get() if state.metrics else None
 
     # Save the output

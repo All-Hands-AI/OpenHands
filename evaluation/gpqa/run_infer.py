@@ -28,6 +28,7 @@ from datasets import load_dataset
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    compatibility_for_eval_history_pairs,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -86,11 +87,10 @@ def gpqa_codeact_user_response(
     msg = (
         'Please continue working on the task on whatever approach you think is suitable.\n'
         'Feel free to use all tools for calculations and solving the problem, and web-search for finding relevant facts during the process if needed\n'
-        'If you have finished reporting the answer in the expected format, (and only once that is done), please run the following command to submit: <execute_bash> exit </execute_bash>.\n'
+        'If you have finished reporting the answer in the expected format, (and only once that is done), please use the "finish" tool to finish the interaction.\n'
         'Again you are being told a million times to first report the answer in the requested format (see again below for reference) before exiting. DO NOT EXIT WITHOUT REPORTING THE ANSWER FIRST.\n'
         'That is, when you have decided on the answer report in the following format:\n'
         f'{ACTION_FORMAT}\n'
-        '<execute_bash> exit </execute_bash>\n'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP TO SOLVE THIS TASK.\n'
     )
     return msg
@@ -99,7 +99,7 @@ def gpqa_codeact_user_response(
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {'CodeActAgent': gpqa_codeact_user_response}
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': '\n\n SUPER IMPORTANT: When you think you have solved the question, first report it back to the user in the requested format. Only once that is done, in the next turn, please run the following command: <execute_bash> exit </execute_bash>.\n'
+    'CodeActAgent': '\n\n SUPER IMPORTANT: When you think you have solved the question, first report it back to the user in the requested format. Only once that is done, in the next turn, please finish the interaction using the "finish" tool.\n'
 }
 
 
@@ -204,12 +204,11 @@ Additional Instructions:
 - Do not try to solve the question in a single step. Break it down into smaller steps.
 - You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.
 
-- SUPER IMPORTANT: When you have reported the answer to the user in the requested format, (and only once that is done) in the next turn, please run the following command: <execute_bash> exit </execute_bash>.
+- SUPER IMPORTANT: When you have reported the answer to the user in the requested format, (and only once that is done) in the next turn, please finish the interaction using the "finish" tool.
 - Again you are being told a million times to first report the answer in the requested format (see again below for reference) before exiting. DO NOT EXIT WITHOUT REPORTING THE ANSWER FIRST.
     That is, when you have decided on the answer report in the following format:
 
 {ACTION_FORMAT}
-<execute_bash> exit </execute_bash>
 
 Again do not quit without reporting the answer first.
 Ok now its time to start solving the question. Good luck!
@@ -244,7 +243,7 @@ Ok now its time to start solving the question. Good luck!
         'C': False,
         'D': False,
     }
-    for event in state.history.get_events(reverse=True):
+    for event in reversed(state.history):
         if (
             isinstance(event, AgentFinishAction)
             and event.source != 'user'
@@ -300,7 +299,7 @@ Ok now its time to start solving the question. Good luck!
         instance_id=str(instance.instance_id),
         instruction=instruction,
         metadata=metadata,
-        history=state.history.compatibility_for_eval_history_pairs(),
+        history=compatibility_for_eval_history_pairs(state.history),
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
         test_result={

@@ -1,21 +1,23 @@
 import asyncio
-import io
 import os
 import re
 import tempfile
+import time
 import uuid
 import warnings
-from contextlib import asynccontextmanager
 
+import jwt
 import requests
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
+from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
 from openhands.server.github import (
     GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET,
+    UserVerifier,
     authenticate_github_user,
 )
 from openhands.storage import get_file_store
@@ -27,6 +29,7 @@ with warnings.catch_warnings():
 
 from dotenv import load_dotenv
 from fastapi import (
+    BackgroundTasks,
     FastAPI,
     HTTPException,
     Request,
@@ -34,7 +37,7 @@ from fastapi import (
     WebSocket,
     status,
 )
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -57,9 +60,10 @@ from openhands.events.observation import (
     NullObservation,
 )
 from openhands.events.serialization import event_to_dict
+from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.llm import bedrock
 from openhands.runtime.base import Runtime
-from openhands.server.auth import get_sid_from_token, sign_token
+from openhands.server.auth.auth import get_sid_from_token, sign_token
 from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware
 from openhands.server.session import SessionManager
 
@@ -70,14 +74,7 @@ file_store = get_file_store(config.file_store, config.file_store_path)
 session_manager = SessionManager(config, file_store)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global session_manager
-    async with session_manager:
-        yield
-
-
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 app.add_middleware(
     LocalhostCORSMiddleware,
     allow_credentials=True,
@@ -203,12 +200,22 @@ async def attach_session(request: Request, call_next):
         response = await call_next(request)
         return response
 
-    github_token = request.headers.get('X-GitHub-Token')
-    if not await authenticate_github_user(github_token):
-        return JSONResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': 'Not authenticated'},
-        )
+    user_verifier = UserVerifier()
+    if user_verifier.is_active():
+        signed_token = request.cookies.get('github_auth')
+        if not signed_token:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={'error': 'Not authenticated'},
+            )
+        try:
+            jwt.decode(signed_token, config.jwt_secret, algorithms=['HS256'])
+        except Exception as e:
+            logger.warning(f'Invalid token: {e}')
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={'error': 'Invalid token'},
+            )
 
     if not request.headers.get('Authorization'):
         logger.warning('Missing Authorization header')
@@ -262,7 +269,7 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Send a message:
         ```json
-        {"action": "message", "args": {"content": "Hello, how are you?", "images_urls": ["base64_url1", "base64_url2"]}}
+        {"action": "message", "args": {"content": "Hello, how are you?", "image_urls": ["base64_url1", "base64_url2"]}}
         ```
     - Write contents to a file:
         ```json
@@ -339,9 +346,12 @@ async def websocket_endpoint(websocket: WebSocket):
     latest_event_id = -1
     if websocket.query_params.get('latest_event_id'):
         latest_event_id = int(websocket.query_params.get('latest_event_id'))
-    for event in session.agent_session.event_stream.get_events(
-        start_id=latest_event_id + 1
-    ):
+
+    async_stream = AsyncEventStreamWrapper(
+        session.agent_session.event_stream, latest_event_id + 1
+    )
+
+    async for event in async_stream:
         if isinstance(
             event,
             (
@@ -479,19 +489,17 @@ async def list_files(request: Request, path: str | None = None):
         )
 
     runtime: Runtime = request.state.conversation.runtime
-    file_list = await asyncio.create_task(
-        call_sync_from_async(runtime.list_files, path)
-    )
+    file_list = await call_sync_from_async(runtime.list_files, path)
     if path:
         file_list = [os.path.join(path, f) for f in file_list]
 
     file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
 
-    def filter_for_gitignore(file_list, base_path):
+    async def filter_for_gitignore(file_list, base_path):
         gitignore_path = os.path.join(base_path, '.gitignore')
         try:
             read_action = FileReadAction(gitignore_path)
-            observation = runtime.run_action(read_action)
+            observation = await call_sync_from_async(runtime.run_action, read_action)
             spec = PathSpec.from_lines(
                 GitWildMatchPattern, observation.content.splitlines()
             )
@@ -501,7 +509,7 @@ async def list_files(request: Request, path: str | None = None):
         file_list = [entry for entry in file_list if not spec.match_file(entry)]
         return file_list
 
-    file_list = filter_for_gitignore(file_list, '')
+    file_list = await filter_for_gitignore(file_list, '')
 
     return file_list
 
@@ -555,6 +563,29 @@ def sanitize_filename(filename):
         name, ext = os.path.splitext(filename)
         filename = name[: max_length - len(ext)] + ext
     return filename
+
+
+@app.get('/api/config')
+async def get_remote_runtime_config(request: Request):
+    """Retrieve the remote runtime configuration.
+
+    Currently, this is the runtime ID.
+    """
+    try:
+        runtime = request.state.conversation.runtime
+        if isinstance(runtime, RemoteRuntime):
+            return JSONResponse(content={'runtime_id': runtime.runtime_id})
+        else:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={'error': 'Runtime ID not available in this environment'},
+            )
+    except Exception as e:
+        logger.error(e)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong'},
+        )
 
 
 @app.post('/api/upload-files')
@@ -667,9 +698,11 @@ async def submit_feedback(request: Request):
     # Assuming the storage service is already configured in the backend
     # and there is a function to handle the storage.
     body = await request.json()
-    events = request.state.conversation.event_stream.get_events(filter_hidden=True)
+    async_stream = AsyncEventStreamWrapper(
+        request.state.conversation.event_stream, filter_hidden=True
+    )
     trajectory = []
-    for event in events:
+    async for event in async_stream:
         trajectory.append(event_to_dict(event))
     feedback = FeedbackDataModel(
         email=body.get('email', ''),
@@ -680,7 +713,7 @@ async def submit_feedback(request: Request):
         trajectory=trajectory,
     )
     try:
-        feedback_data = store_feedback(feedback)
+        feedback_data = await call_sync_from_async(store_feedback, feedback)
         return JSONResponse(status_code=200, content=feedback_data)
     except Exception as e:
         logger.error(f'Error submitting feedback: {e}')
@@ -786,19 +819,20 @@ async def security_api(request: Request):
 
 
 @app.get('/api/zip-directory')
-async def zip_current_workspace(request: Request):
+async def zip_current_workspace(request: Request, background_tasks: BackgroundTasks):
     try:
         logger.debug('Zipping workspace')
         runtime: Runtime = request.state.conversation.runtime
-
         path = runtime.config.workspace_mount_path_in_sandbox
-        zip_file_bytes = await call_sync_from_async(runtime.copy_from, path)
-        zip_stream = io.BytesIO(zip_file_bytes)  # Wrap to behave like a file stream
-        response = StreamingResponse(
-            zip_stream,
+        zip_file = await call_sync_from_async(runtime.copy_from, path)
+        response = FileResponse(
+            path=zip_file,
+            filename='workspace.zip',
             media_type='application/x-zip-compressed',
-            headers={'Content-Disposition': 'attachment; filename=workspace.zip'},
         )
+
+        # This will execute after the response is sent (So the file is not deleted before being sent)
+        background_tasks.add_task(zip_file.unlink)
 
         return response
     except Exception as e:
@@ -859,11 +893,55 @@ async def authenticate(request: Request):
             content={'error': 'Not authorized via GitHub waitlist'},
         )
 
+    # Create a signed JWT token with 1-hour expiration
+    cookie_data = {
+        'github_token': token,
+        'exp': int(time.time()) + 3600,  # 1 hour expiration
+    }
+    signed_token = sign_token(cookie_data, config.jwt_secret)
+
     response = JSONResponse(
         status_code=status.HTTP_200_OK, content={'message': 'User authenticated'}
     )
 
+    # Set secure cookie with signed token
+    response.set_cookie(
+        key='github_auth',
+        value=signed_token,
+        max_age=3600,  # 1 hour in seconds
+        httponly=True,
+        secure=True,
+        samesite='strict',
+    )
     return response
+
+
+@app.get('/api/vscode-url')
+async def get_vscode_url(request: Request):
+    """Get the VSCode URL.
+
+    This endpoint allows getting the VSCode URL.
+
+    Args:
+        request (Request): The incoming FastAPI request object.
+
+    Returns:
+        JSONResponse: A JSON response indicating the success of the operation.
+    """
+    try:
+        runtime: Runtime = request.state.conversation.runtime
+        logger.debug(f'Runtime type: {type(runtime)}')
+        logger.debug(f'Runtime VSCode URL: {runtime.vscode_url}')
+        return JSONResponse(status_code=200, content={'vscode_url': runtime.vscode_url})
+    except Exception as e:
+        logger.error(f'Error getting VSCode URL: {e}', exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={
+                'vscode_url': None,
+                'error': f'Error getting VSCode URL: {e}',
+            },
+        )
 
 
 class SPAStaticFiles(StaticFiles):

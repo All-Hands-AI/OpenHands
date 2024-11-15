@@ -3,10 +3,12 @@ import { useDispatch } from "react-redux";
 import { setSelectedRepository } from "#/state/initial-query-slice";
 
 interface GitHubRepositorySelectorProps {
+  onSelect: () => void;
   repositories: GitHubRepository[];
 }
 
 export function GitHubRepositorySelector({
+  onSelect,
   repositories,
 }: GitHubRepositorySelectorProps) {
   const dispatch = useDispatch();
@@ -16,6 +18,7 @@ export function GitHubRepositorySelector({
     if (repo) {
       // set query param
       dispatch(setSelectedRepository(repo.full_name));
+      onSelect();
     }
   };
 
@@ -26,6 +29,7 @@ export function GitHubRepositorySelector({
 
   return (
     <Autocomplete
+      data-testid="github-repo-selector"
       name="repo"
       aria-label="GitHub Repository"
       placeholder="Select a GitHub project"
@@ -39,7 +43,11 @@ export function GitHubRepositorySelector({
       clearButtonProps={{ onClick: handleClearSelection }}
     >
       {repositories.map((repo) => (
-        <AutocompleteItem key={repo.id} value={repo.id}>
+        <AutocompleteItem
+          data-testid="github-repo-item"
+          key={repo.id}
+          value={repo.id}
+        >
           {repo.full_name}
         </AutocompleteItem>
       ))}

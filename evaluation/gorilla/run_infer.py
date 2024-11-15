@@ -10,6 +10,7 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     codeact_user_response,
+    compatibility_for_eval_history_pairs,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -32,7 +33,7 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': 'When you think you have completed the request, please run the following command: <execute_bash> exit </execute_bash>.\n'
+    'CodeActAgent': 'When you think you have completed the request, please finish the interaction using the "finish" tool.\n'
 }
 
 
@@ -101,7 +102,8 @@ def process_instance(
         raise ValueError('State should not be None.')
 
     # retrieve the last message from the agent
-    model_answer_raw = state.history.get_last_agent_message()
+    last_agent_message = state.get_last_agent_message()
+    model_answer_raw = last_agent_message.content if last_agent_message else ''
 
     # attempt to parse model_answer
     ast_eval_fn = instance['ast_eval']
@@ -114,7 +116,7 @@ def process_instance(
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
-    histories = state.history.compatibility_for_eval_history_pairs()
+    histories = compatibility_for_eval_history_pairs(state.history)
 
     output = EvalOutput(
         instance_id=instance_id,

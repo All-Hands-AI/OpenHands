@@ -2,7 +2,7 @@ import ActionType from "#/types/ActionType";
 
 export function getTerminalCommand(command: string, hidden: boolean = false) {
   const event = { action: ActionType.RUN, args: { command, hidden } };
-  return JSON.stringify(event);
+  return event;
 }
 
 export function getGitHubTokenCommand(gitHubToken: string) {
