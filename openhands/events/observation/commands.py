@@ -94,11 +94,17 @@ class CmdOutputObservation(Observation):
 
     def __init__(
         self,
-        *args,
+        content: str,
+        command: str,
+        observation: str = ObservationType.RUN,
+        metadata: dict | CmdOutputMetadata | None = None,
+        hidden: bool = False,
         **kwargs,
     ):
-        super().__init__(*args, **kwargs)
-        metadata = kwargs.get('metadata')
+        super().__init__(content)
+        self.command = command
+        self.observation = observation
+        self.hidden = hidden
         if isinstance(metadata, dict):
             self.metadata = CmdOutputMetadata(**metadata)
         else:
