@@ -111,6 +111,9 @@ class LogBuffer:
     def close(self, timeout: float = 5.0):
         self._stop_event.set()
         self.log_stream_thread.join(timeout)
+        # Close the log generator to release the file descriptor
+        if hasattr(self.log_generator, 'close'):
+            self.log_generator.close()
 
 
 class EventStreamRuntime(Runtime):
@@ -232,6 +235,8 @@ class EventStreamRuntime(Runtime):
                 'info',
                 f'Container started: {self.container_name}. VSCode URL: {self.vscode_url}',
             )
+
+        self.log_buffer = LogBuffer(self.container, self.log)
 
         if not self.attach_to_existing:
             self.log('info', f'Waiting for client to become ready at {self.api_url}...')
@@ -359,7 +364,6 @@ class EventStreamRuntime(Runtime):
                 environment=environment,
                 volumes=volumes,
             )
-            self.log_buffer = LogBuffer(self.container, self.log)
             self.log('debug', f'Container started. Server url: {self.api_url}')
             self.send_status_message('STATUS$CONTAINER_STARTED')
         except docker.errors.APIError as e:
@@ -386,11 +390,9 @@ class EventStreamRuntime(Runtime):
             raise e
 
     def _attach_to_container(self):
-        container = self.docker_client.containers.get(self.container_name)
-        self.log_buffer = LogBuffer(container, self.log)
-        self.container = container
         self._container_port = 0
-        for port in container.attrs['NetworkSettings']['Ports']:
+        self.container = self.docker_client.containers.get(self.container_name)
+        for port in self.container.attrs['NetworkSettings']['Ports']:  # type: ignore
             self._container_port = int(port.split('/')[0])
             break
         self._host_port = self._container_port
@@ -431,12 +433,13 @@ class EventStreamRuntime(Runtime):
         if not self.log_buffer:
             raise RuntimeError('Runtime client is not ready.')
 
-        send_request(
+        with send_request(
             self.session,
             'GET',
             f'{self.api_url}/alive',
             timeout=5,
-        )
+        ):
+            pass
 
     def close(self):
         """Closes the EventStreamRuntime and associated objects
@@ -495,17 +498,17 @@ class EventStreamRuntime(Runtime):
             assert action.timeout is not None
 
             try:
-                response = send_request(
+                with send_request(
                     self.session,
                     'POST',
                     f'{self.api_url}/execute_action',
                     json={'action': event_to_dict(action)},
                     # wait a few more seconds to get the timeout error from client side
                     timeout=action.timeout + 5,
-                )
-                output = response.json()
-                obs = observation_from_dict(output)
-                obs._cause = action.id  # type: ignore[attr-defined]
+                ) as response:
+                    output = response.json()
+                    obs = observation_from_dict(output)
+                    obs._cause = action.id  # type: ignore[attr-defined]
             except requests.Timeout:
                 raise RuntimeError(
                     f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
@@ -566,14 +569,15 @@ class EventStreamRuntime(Runtime):
 
             params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
 
-            send_request(
+            with send_request(
                 self.session,
                 'POST',
                 f'{self.api_url}/upload_file',
                 files=upload_data,
                 params=params,
                 timeout=300,
-            )
+            ):
+                pass
 
         except requests.Timeout:
             raise TimeoutError('Copy operation timed out')
@@ -598,16 +602,16 @@ class EventStreamRuntime(Runtime):
             if path is not None:
                 data['path'] = path
 
-            response = send_request(
+            with send_request(
                 self.session,
                 'POST',
                 f'{self.api_url}/list_files',
                 json=data,
                 timeout=10,
-            )
-            response_json = response.json()
-            assert isinstance(response_json, list)
-            return response_json
+            ) as response:
+                response_json = response.json()
+                assert isinstance(response_json, list)
+                return response_json
         except requests.Timeout:
             raise TimeoutError('List files operation timed out')
 
@@ -616,19 +620,19 @@ class EventStreamRuntime(Runtime):
         self._refresh_logs()
         try:
             params = {'path': path}
-            response = send_request(
+            with send_request(
                 self.session,
                 'GET',
                 f'{self.api_url}/download_files',
                 params=params,
                 stream=True,
                 timeout=30,
-            )
-            temp_file = tempfile.NamedTemporaryFile(delete=False)
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:  # filter out keep-alive new chunks
-                    temp_file.write(chunk)
-            return Path(temp_file.name)
+            ) as response:
+                temp_file = tempfile.NamedTemporaryFile(delete=False)
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:  # filter out keep-alive new chunks
+                        temp_file.write(chunk)
+                return Path(temp_file.name)
         except requests.Timeout:
             raise TimeoutError('Copy operation timed out')
 
@@ -657,21 +661,21 @@ class EventStreamRuntime(Runtime):
             ):  # cached value
                 return self._vscode_url
 
-            response = send_request(
+            with send_request(
                 self.session,
                 'GET',
                 f'{self.api_url}/vscode/connection_token',
                 timeout=10,
-            )
-            response_json = response.json()
-            assert isinstance(response_json, dict)
-            if response_json['token'] is None:
-                return None
-            self._vscode_url = f'http://localhost:{self._host_port + 1}/?tkn={response_json["token"]}&folder={self.config.workspace_mount_path_in_sandbox}'
-            self.log(
-                'debug',
-                f'VSCode URL: {self._vscode_url}',
-            )
-            return self._vscode_url
+            ) as response:
+                response_json = response.json()
+                assert isinstance(response_json, dict)
+                if response_json['token'] is None:
+                    return None
+                self._vscode_url = f'http://localhost:{self._host_port + 1}/?tkn={response_json["token"]}&folder={self.config.workspace_mount_path_in_sandbox}'
+                self.log(
+                    'debug',
+                    f'VSCode URL: {self._vscode_url}',
+                )
+                return self._vscode_url
         else:
             return None

@@ -6,6 +6,10 @@ import ActionType from "#/types/ActionType";
 import EventLogger from "#/utils/event-logger";
 import AgentState from "#/types/AgentState";
 import { handleAssistantMessage } from "#/services/actions";
+import { useRate } from "#/utils/use-rate";
+
+const isOpenHandsMessage = (event: Record<string, unknown>) =>
+  event.action === "message";
 
 export enum WsClientProviderStatus {
   STOPPED,
@@ -16,12 +20,14 @@ export enum WsClientProviderStatus {
 
 interface UseWsClient {
   status: WsClientProviderStatus;
+  isLoadingMessages: boolean;
   events: Record<string, unknown>[];
   send: (event: Record<string, unknown>) => void;
 }
 
 const WsClientContext = React.createContext<UseWsClient>({
   status: WsClientProviderStatus.STOPPED,
+  isLoadingMessages: true,
   events: [],
   send: () => {
     throw new Error("not connected");
@@ -51,6 +57,8 @@ export function WsClientProvider({
   const [status, setStatus] = React.useState(WsClientProviderStatus.STOPPED);
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
+
+  const messageRateHandler = useRate({ threshold: 500 });
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
@@ -82,6 +90,9 @@ export function WsClientProvider({
   }
 
   function handleMessage(event: Record<string, unknown>) {
+    if (isOpenHandsMessage(event)) {
+      messageRateHandler.record(new Date().getTime());
+    }
     setEvents((prevEvents) => [...prevEvents, event]);
     lastEventRef.current = event;
     const extras = event.extras as Record<string, unknown>;
@@ -190,10 +201,11 @@ export function WsClientProvider({
   const value = React.useMemo<UseWsClient>(
     () => ({
       status,
+      isLoadingMessages: messageRateHandler.isUnderThreshold,
       events,
       send,
     }),
-    [status, events],
+    [status, messageRateHandler.isUnderThreshold, events],
   );
 
   return (

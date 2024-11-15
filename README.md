@@ -38,16 +38,16 @@ See the [Installation](https://docs.all-hands.dev/modules/usage/installation) gu
 system requirements and more information.
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.13-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.14-nikolaik
 
 docker run -it --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.13-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.14-nikolaik \
+    -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
-    -e LOG_ALL_EVENTS=true \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.13
+    docker.all-hands.dev/all-hands-ai/openhands:0.14
 ```
 
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
@@ -61,7 +61,7 @@ works best, but you have [many options](https://docs.all-hands.dev/modules/usage
 You can also [connect OpenHands to your local filesystem](https://docs.all-hands.dev/modules/usage/runtimes),
 run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
 interact with it via a [friendly CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode),
-or run it on tagged issues with [a github action](https://github.com/All-Hands-AI/OpenHands-resolver).
+or run it on tagged issues with [a github action](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/resolver/README.md).
 
 Visit [Installation](https://docs.all-hands.dev/modules/usage/installation) for more information and setup instructions.
 

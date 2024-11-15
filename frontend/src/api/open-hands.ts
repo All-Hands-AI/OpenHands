@@ -183,6 +183,13 @@ class OpenHands {
   static async getVSCodeUrl(): Promise<GetVSCodeUrlResponse> {
     return request(`/api/vscode-url`, {}, false, false, 1);
   }
+
+  static async getRuntimeId(): Promise<{ runtime_id: string }> {
+    const response = await request("/api/config");
+    const data = await response.json();
+
+    return data;
+  }
 }
 
 export default OpenHands;
