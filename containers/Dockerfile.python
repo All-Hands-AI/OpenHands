@@ -2,10 +2,12 @@ FROM python:3.12-slim
 
 WORKDIR /workspace
 
-# Install system dependencies
+# Install system dependencies including C++ compiler
 RUN apt-get update && apt-get install -y \
     git \
     curl \
+    build-essential \
+    python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -23,5 +25,4 @@ ENV OPENHANDS_CONFIG=/workspace/config.toml
 
 # Default command
 CMD ["python", "-m", "openhands.cli.server"]
-
 
