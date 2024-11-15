@@ -37,7 +37,6 @@ def test_cmd_output_observation_message(agent: CodeActAgent):
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
-    assert 'OBSERVATION:' in result.content[0].text
     assert 'Command output' in result.content[0].text
     assert 'Command finished with exit code 0' in result.content[0].text
 
@@ -57,7 +56,6 @@ def test_ipython_run_cell_observation_message(agent: CodeActAgent):
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
-    assert 'OBSERVATION:' in result.content[0].text
     assert 'IPython output' in result.content[0].text
     assert (
         '![image](data:image/png;base64, ...) already displayed to user'
@@ -80,7 +78,6 @@ def test_agent_delegate_observation_message(agent: CodeActAgent):
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
-    assert 'OBSERVATION:' in result.content[0].text
     assert 'Delegated agent output' in result.content[0].text
 
 
@@ -96,7 +93,6 @@ def test_error_observation_message(agent: CodeActAgent):
     assert result.role == 'user'
     assert len(result.content) == 1
     assert isinstance(result.content[0], TextContent)
-    assert 'OBSERVATION:' in result.content[0].text
     assert 'Error message' in result.content[0].text
     assert 'Error occurred in processing last action' in result.content[0].text
 

@@ -70,7 +70,7 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': '\nIMPORTANT: When your answer is confirmed by the user to be correct, you can exit using the following command: <execute_bash> exit </execute_bash>.\n'
+    'CodeActAgent': 'IMPORTANT: When your answer is confirmed by the user to be correct, you can use the "finish" tool to finish the interaction.\n'
 }
 
 with open(os.path.join(os.path.dirname(__file__), 'requirements.txt'), 'r') as f:

@@ -176,6 +176,9 @@ evaluation/gorilla/data
 evaluation/toolqa/data
 evaluation/scienceagentbench/benchmark
 
+# openhands resolver
+output/
+
 # frontend
 
 # dependencies

@@ -11,6 +11,7 @@ import requests
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
+from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
 from openhands.server.github import (
@@ -562,6 +563,29 @@ def sanitize_filename(filename):
         name, ext = os.path.splitext(filename)
         filename = name[: max_length - len(ext)] + ext
     return filename
+
+
+@app.get('/api/config')
+async def get_remote_runtime_config(request: Request):
+    """Retrieve the remote runtime configuration.
+
+    Currently, this is the runtime ID.
+    """
+    try:
+        runtime = request.state.conversation.runtime
+        if isinstance(runtime, RemoteRuntime):
+            return JSONResponse(content={'runtime_id': runtime.runtime_id})
+        else:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={'error': 'Runtime ID not available in this environment'},
+            )
+    except Exception as e:
+        logger.error(e)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': 'Something went wrong'},
+        )
 
 
 @app.post('/api/upload-files')

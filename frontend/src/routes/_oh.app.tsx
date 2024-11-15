@@ -18,7 +18,6 @@ import { useEffectOnce } from "#/utils/use-effect-once";
 import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
 import ListIcon from "#/icons/list-type-number.svg?react";
-import { clearInitialQuery } from "#/state/initial-query-slice";
 import { isGitHubErrorReponse, retrieveLatestGitHubCommit } from "#/api/github";
 import { clearJupyter } from "#/state/jupyterSlice";
 import { FilesProvider } from "#/context/files";
@@ -28,8 +27,6 @@ import { EventHandler } from "#/components/event-handler";
 
 export const clientLoader = async () => {
   const ghToken = localStorage.getItem("ghToken");
-
-  const q = store.getState().initalQuery.initialQuery;
   const repo =
     store.getState().initalQuery.selectedRepository ||
     localStorage.getItem("repo");
@@ -55,7 +52,6 @@ export const clientLoader = async () => {
     token,
     ghToken,
     repo,
-    q,
     lastCommit,
   });
 };
@@ -91,7 +87,6 @@ function App() {
     dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
-    dispatch(clearInitialQuery()); // Clear initial query when navigating to /app
   });
 
   const {

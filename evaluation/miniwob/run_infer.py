@@ -47,6 +47,7 @@ SUPPORTED_AGENT_CLS = {'BrowsingAgent', 'CodeActAgent'}
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
+    'BrowsingAgent': 'Continue the task. IMPORTANT: do not talk to the user until you have finished the task',
 }
 
 
@@ -66,7 +67,9 @@ def get_config(
             browsergym_eval_env=env_id,
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
+            remote_runtime_init_timeout=1800,
             keep_runtime_alive=False,
+            timeout=120,
         ),
         # do not mount workspace
         workspace_base=None,
