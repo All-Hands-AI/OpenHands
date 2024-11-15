@@ -24,6 +24,7 @@ from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
 from openhands.storage.files import FileStore
+from openhands.utils.async_utils import wait_all
 from openhands.utils.shutdown_listener import should_continue
 
 
@@ -202,7 +203,10 @@ class Session:
             if self.websocket:
                 await self.websocket.send_json(data)
             if self.sio:
-                await self.sio.emit("oh_event", data, to=self.sid)
+                await wait_all(
+                    self.sio.emit("oh_event", data, to=connection_id)
+                    for connection_id in self.connection_ids
+                )
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True

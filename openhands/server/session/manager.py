@@ -50,7 +50,8 @@ class SessionManager:
 
     async def init_or_join_local_session(self, sio: socketio.AsyncServer, sid: str, connection_id: str, data: dict):
         """ If there is no local session running, initialize one """
-        if sid not in self.local_sessions_by_sid:
+        session = self.local_sessions_by_sid.get(sid)
+        if not session:
             session = Session(
                 sid=sid, file_store=self.file_store, config=self.config, sio=sio, ws=None
             )
