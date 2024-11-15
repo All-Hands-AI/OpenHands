@@ -97,8 +97,8 @@ poetry run pytest ./tests/unit/test_*.py
 2. Update the poetry.lock file via `poetry lock --no-update`
 
 ### 9. Use existing Docker image
-To reduce build time (e.g., if no changes were made to the client-runtime component), you can use an existing Docker container image.
-Set the SANDBOX_RUNTIME_CONTAINER_IMAGE environment variable to the desired Docker image.
+To reduce build time (e.g., if no changes were made to the client-runtime component), you can use an existing Docker container image by
+setting the SANDBOX_RUNTIME_CONTAINER_IMAGE environment variable to the desired Docker image.
 
 Example: `export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.14-nikolaik`
 
