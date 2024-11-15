@@ -1,0 +1,38 @@
+#################################### Core ####################################
+[core]
+workspace_base = "./workspace"
+default_agent = "SupervisorAgent"
+
+#################################### LLM #####################################
+[llm]
+base_url = "http://localhost:1234/v1"  # Default LM-Studio API endpoint
+api_key = "not-needed"  # LM-Studio doesn't require an API key
+model = "local"  # Will use whatever model is loaded in LM-Studio
+temperature = 0.7
+embedding_model = "local"
+
+[llm.openhands-1]  # Configuration for first OpenHands instance
+base_url = "http://localhost:1235/v1"
+api_key = "not-needed"
+model = "local"
+temperature = 0.7
+
+[llm.openhands-2]  # Configuration for second OpenHands instance
+base_url = "http://localhost:1236/v1"
+api_key = "not-needed"
+model = "local"
+temperature = 0.7
+
+#################################### Agent ###################################
+[agent]
+memory_enabled = true
+memory_max_threads = 3
+
+[agent.SupervisorAgent]
+llm_config = "llm"  # Uses default LLM config
+
+[agent.OpenHandsAgent-1]
+llm_config = "openhands-1"
+
+[agent.OpenHandsAgent-2]
+llm_config = "openhands-2"

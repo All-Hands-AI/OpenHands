@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  supervisor:
+    build:
+      context: .
+      dockerfile: containers/Dockerfile
+    volumes:
+      - ./:/workspace
+      - ./config.lmstudio.toml:/workspace/config.toml
+    ports:
+      - "8000:8000"  # Main API endpoint
+    environment:
+      - OPENHANDS_CONFIG=/workspace/config.toml
+    command: ["python", "-m", "openhands.cli.server"]
+    networks:
+      - openhands-net
+
+  openhands-1:
+    build:
+      context: .
+      dockerfile: containers/Dockerfile
+    volumes:
+      - ./:/workspace
+      - ./config.lmstudio.toml:/workspace/config.toml
+    environment:
+      - OPENHANDS_CONFIG=/workspace/config.toml
+      - OPENHANDS_AGENT=OpenHandsAgent-1
+    command: ["python", "-m", "openhands.cli.server", "--port", "8001"]
+    ports:
+      - "8001:8001"
+    networks:
+      - openhands-net
+
+  openhands-2:
+    build:
+      context: .
+      dockerfile: containers/Dockerfile
+    volumes:
+      - ./:/workspace
+      - ./config.lmstudio.toml:/workspace/config.toml
+    environment:
+      - OPENHANDS_CONFIG=/workspace/config.toml
+      - OPENHANDS_AGENT=OpenHandsAgent-2
+    command: ["python", "-m", "openhands.cli.server", "--port", "8002"]
+    ports:
+      - "8002:8002"
+    networks:
+      - openhands-net
+
+networks:
+  openhands-net:
+    driver: bridge
