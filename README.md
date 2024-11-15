@@ -5,7 +5,6 @@
   <h1 align="center">OpenHands: Code Less, Make More</h1>
 </div>
 
-
 <div align="center">
   <a href="https://github.com/All-Hands-AI/OpenHands/graphs/contributors"><img src="https://img.shields.io/github/contributors/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Contributors"></a>
   <a href="https://github.com/All-Hands-AI/OpenHands/stargazers"><img src="https://img.shields.io/github/stars/All-Hands-AI/OpenHands?style=for-the-badge&color=blue" alt="Stargazers"></a>
@@ -61,7 +60,7 @@ works best, but you have [many options](https://docs.all-hands.dev/modules/usage
 You can also [connect OpenHands to your local filesystem](https://docs.all-hands.dev/modules/usage/runtimes),
 run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/modules/usage/how-to/headless-mode),
 interact with it via a [friendly CLI](https://docs.all-hands.dev/modules/usage/how-to/cli-mode),
-or run it on tagged issues with [a github action](https://github.com/All-Hands-AI/OpenHands-resolver).
+or run it on tagged issues with [a github action](https://github.com/All-Hands-AI/OpenHands/tree/main/openhands/resolver).
 
 Visit [Installation](https://docs.all-hands.dev/modules/usage/installation) for more information and setup instructions.
 
