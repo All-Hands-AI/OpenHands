@@ -937,7 +937,7 @@ async def init_connection(connection_id: str, data: dict):
             ),
         ):
             continue
-        await sio.emit("oh_event", data, to=connection_id)
+        await sio.emit("oh_event", event_to_dict(event), to=connection_id)
 
 
 @sio.event
