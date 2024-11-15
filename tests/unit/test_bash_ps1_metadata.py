@@ -3,11 +3,11 @@ import json
 import pytest
 
 from openhands.events.observation.commands import (
-    CmdOutputMetadata,
-    CmdOutputObservation,
+    CMD_OUTPUT_METADATA_PS1_REGEX,
     CMD_OUTPUT_PS1_BEGIN,
     CMD_OUTPUT_PS1_END,
-    CMD_OUTPUT_METADATA_PS1_REGEX,
+    CmdOutputMetadata,
+    CmdOutputObservation,
 )
 
 
@@ -17,7 +17,7 @@ def test_ps1_metadata_format():
     print(prompt)
     assert prompt.startswith('###PS1JSON###\n')
     assert prompt.endswith('\n###PS1END###\n')
-    assert r'\"exit_code\"' in prompt, "PS1 prompt should contain escaped double quotes"
+    assert r'\"exit_code\"' in prompt, 'PS1 prompt should contain escaped double quotes'
 
 
 def test_ps1_metadata_json_structure():
@@ -101,7 +101,7 @@ def test_ps1_metadata_parsing_additional_prefix():
 
     ps1_str = f"""
 This is something that not part of the PS1 prompt
-    
+
     ###PS1JSON###
 {json.dumps(test_data, indent=2)}
 ###PS1END###
@@ -146,7 +146,7 @@ def test_ps1_metadata_parsing_invalid():
 
     # Test with whitespace in PS1 metadata
     whitespace_metadata = """###PS1JSON###
-    
+
     {
         "exit_code": "0",
         "pid": "123",
@@ -155,7 +155,7 @@ def test_ps1_metadata_parsing_invalid():
         "working_dir": "/home/test",
         "py_interpreter_path": "/usr/bin/python"
     }
-    
+
 ###PS1END###
 """
     matches = CmdOutputMetadata.matches_ps1_metadata(whitespace_metadata)
@@ -168,10 +168,7 @@ def test_ps1_metadata_parsing_invalid():
 def test_ps1_metadata_missing_fields():
     """Test handling of missing fields in PS1 metadata"""
     # Test with only required fields
-    minimal_data = {
-        'exit_code': 0,
-        'pid': 123
-    }
+    minimal_data = {'exit_code': 0, 'pid': 123}
     ps1_str = f"""###PS1JSON###
 {json.dumps(minimal_data)}
 ###PS1END###
@@ -187,10 +184,7 @@ def test_ps1_metadata_missing_fields():
     assert metadata.py_interpreter_path is None
 
     # Test with missing exit_code but valid pid
-    no_exit_code = {
-        'pid': 123,
-        'username': 'test'
-    }
+    no_exit_code = {'pid': 123, 'username': 'test'}
     ps1_str = f"""###PS1JSON###
 {json.dumps(no_exit_code)}
 ###PS1END###
@@ -233,47 +227,47 @@ Some other content
 def test_ps1_metadata_regex_pattern():
     """Test the regex pattern used to extract PS1 metadata"""
     # Test basic pattern matching
-    test_str = f"{CMD_OUTPUT_PS1_BEGIN}test\n{CMD_OUTPUT_PS1_END}"
+    test_str = f'{CMD_OUTPUT_PS1_BEGIN}test\n{CMD_OUTPUT_PS1_END}'
     matches = CMD_OUTPUT_METADATA_PS1_REGEX.finditer(test_str)
     match = next(matches)
-    assert match.group(1).strip() == "test"
+    assert match.group(1).strip() == 'test'
 
     # Test with content before and after
-    test_str = f"prefix\n{CMD_OUTPUT_PS1_BEGIN}test\n{CMD_OUTPUT_PS1_END}suffix"
+    test_str = f'prefix\n{CMD_OUTPUT_PS1_BEGIN}test\n{CMD_OUTPUT_PS1_END}suffix'
     matches = CMD_OUTPUT_METADATA_PS1_REGEX.finditer(test_str)
     match = next(matches)
-    assert match.group(1).strip() == "test"
+    assert match.group(1).strip() == 'test'
 
     # Test with multiline content
-    test_str = f"{CMD_OUTPUT_PS1_BEGIN}line1\nline2\nline3\n{CMD_OUTPUT_PS1_END}"
+    test_str = f'{CMD_OUTPUT_PS1_BEGIN}line1\nline2\nline3\n{CMD_OUTPUT_PS1_END}'
     matches = CMD_OUTPUT_METADATA_PS1_REGEX.finditer(test_str)
     match = next(matches)
-    assert match.group(1).strip() == "line1\nline2\nline3"
+    assert match.group(1).strip() == 'line1\nline2\nline3'
 
 
 def test_cmd_output_observation_properties():
     """Test CmdOutputObservation class properties"""
     # Test with successful command
     metadata = CmdOutputMetadata(exit_code=0, pid=123)
-    obs = CmdOutputObservation(command="ls", content="file1\nfile2", metadata=metadata)
+    obs = CmdOutputObservation(command='ls', content='file1\nfile2', metadata=metadata)
     assert obs.command_id == 123
     assert obs.exit_code == 0
     assert not obs.error
-    assert "exit code 0" in obs.message
-    assert "ls" in obs.message
-    assert "file1" in str(obs)
-    assert "file2" in str(obs)
-    assert "metadata" in str(obs)
+    assert 'exit code 0' in obs.message
+    assert 'ls' in obs.message
+    assert 'file1' in str(obs)
+    assert 'file2' in str(obs)
+    assert 'metadata' in str(obs)
 
     # Test with failed command
     metadata = CmdOutputMetadata(exit_code=1, pid=456)
-    obs = CmdOutputObservation(command="invalid", content="error", metadata=metadata)
+    obs = CmdOutputObservation(command='invalid', content='error', metadata=metadata)
     assert obs.command_id == 456
     assert obs.exit_code == 1
     assert obs.error
-    assert "exit code 1" in obs.message
-    assert "invalid" in obs.message
-    assert "error" in str(obs)
+    assert 'exit code 1' in obs.message
+    assert 'invalid' in obs.message
+    assert 'error' in str(obs)
 
 
 def test_ps1_metadata_empty_fields():
@@ -285,7 +279,7 @@ def test_ps1_metadata_empty_fields():
         'username': '',
         'hostname': '',
         'working_dir': '',
-        'py_interpreter_path': ''
+        'py_interpreter_path': '',
     }
     ps1_str = f"""###PS1JSON###
 {json.dumps(empty_data)}
