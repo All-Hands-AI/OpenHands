@@ -534,5 +534,10 @@ if __name__ == '__main__':
             instances[col] = instances[col].apply(lambda x: str(x))
 
     run_evaluation(
-        instances, metadata, output_file, args.eval_num_workers, process_instance
+        instances,
+        metadata,
+        output_file,
+        args.eval_num_workers,
+        process_instance,
+        timeout_seconds=120 * 60,  # 2 hour PER instance should be more than enough
     )
