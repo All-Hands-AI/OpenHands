@@ -19,13 +19,6 @@ class SessionManager:
     local_sessions_by_sid: dict[str, Session] = field(default_factory=dict)
     local_sessions_by_connection_id: dict[str, Session] = field(default_factory=dict)
 
-    # TODO: Delete me!
-    def add_or_restart_session(self, sid: str, ws_conn: WebSocket) -> Session:
-        session = Session(
-            sid=sid, file_store=self.file_store, ws=ws_conn, config=self.config, sio=None
-        )
-        return session
-
     async def attach_to_conversation(self, sid: str) -> Conversation | None:
         start_time = time.time()
         if not await session_exists(sid, self.file_store):
@@ -40,13 +33,6 @@ class SessionManager:
 
     async def detach_from_conversation(self, conversation: Conversation):
         await conversation.disconnect()
-
-    # TODO: Delete me!
-    async def stop_session(self, sid: str) -> bool:
-        session = self.sessions.pop(sid, None)
-        if session:
-            session.close()
-        return bool(session)
 
     async def init_or_join_local_session(self, sio: socketio.AsyncServer, sid: str, connection_id: str, data: dict):
         """ If there is no local session running, initialize one """

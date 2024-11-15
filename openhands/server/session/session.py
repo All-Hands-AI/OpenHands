@@ -36,8 +36,6 @@ class Session:
     last_active_ts: int = 0
     is_alive: bool = True
     agent_session: AgentSession
-    # TODO: Delete me!
-    loop: asyncio.AbstractEventLoop
 
     def __init__(
         self, sid: str, ws: WebSocket | None, config: AppConfig, file_store: FileStore, sio: socketio.AsyncServer | None
@@ -54,7 +52,6 @@ class Session:
         )
         self.config = config
         self.connection_ids = set()
-        self.loop = asyncio.get_event_loop()
 
     def connect(self, connection_id: str):
         self.connection_ids.add(connection_id)
@@ -69,25 +66,6 @@ class Session:
     def close(self):
         self.is_alive = False
         self.agent_session.close()
-
-    # TODO: Delete me!
-    async def loop_recv(self):
-        try:
-            if self.websocket is None:
-                return
-            while should_continue():
-                try:
-                    data = await self.websocket.receive_json()
-                except ValueError:
-                    await self.send_error('Invalid JSON')
-                    continue
-                await self.dispatch(data)
-        except WebSocketDisconnect:
-            logger.info('WebSocket disconnected, sid: %s', self.sid)
-            self.close()
-        except RuntimeError as e:
-            logger.exception('Error in loop_recv: %s', e)
-            self.close()
 
     async def initialize_agent(self, data: dict):
         self.agent_session.event_stream.add_event(
@@ -229,6 +207,4 @@ class Session:
 
     def queue_status_message(self, msg_type: str, id: str, message: str):
         """Queues a status message to be sent asynchronously."""
-        asyncio.run_coroutine_threadsafe(
-            self._send_status_message(msg_type, id, message), self.loop
-        )
+        asyncio.create_task(self._send_status_message(msg_type, id, message))
