@@ -917,7 +917,7 @@ async def init_connection(connection_id: str, data: dict):
     token = sign_token({'sid': sid}, config.jwt_secret)
     await sio.emit("oh_event", {'token': token, 'status': 'ok'}, to=connection_id)
 
-    latest_event_id = data.pop("latest_event_id", -1)
+    latest_event_id = int(data.pop("latest_event_id", -1))
 
     # The session in question should exist, but may not actually be running locally...
     session = await session_manager.init_or_join_local_session(sio, sid, connection_id, data)
