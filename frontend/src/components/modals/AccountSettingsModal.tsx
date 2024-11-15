@@ -1,7 +1,10 @@
 import { useFetcher, useRouteLoaderData } from "@remix-run/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { BaseModalTitle } from "./confirmation-modals/BaseModal";
+import {
+  BaseModalDescription,
+  BaseModalTitle,
+} from "./confirmation-modals/BaseModal";
 import ModalBody from "./ModalBody";
 import ModalButton from "../buttons/ModalButton";
 import FormFieldset from "../form/FormFieldset";
@@ -87,6 +90,17 @@ function AccountSettingsModal({
             type="password"
             defaultValue={data?.ghToken ?? ""}
           />
+          <BaseModalDescription>
+            {t(I18nKey.CONNECT_TO_GITHUB_MODAL$GET_YOUR_TOKEN)}{" "}
+            <a
+              href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="text-[#791B80] underline"
+            >
+              {t(I18nKey.CONNECT_TO_GITHUB_MODAL$HERE)}
+            </a>
+          </BaseModalDescription>
           {gitHubError && (
             <p className="text-danger text-xs">
               {t(I18nKey.ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID)}

@@ -47,14 +47,11 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
-from openhands.runtime.plugins import (
-    ALL_PLUGINS,
-    JupyterPlugin,
-    Plugin,
-)
+from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
+from openhands.runtime.utils.system import check_port_available
 from openhands.utils.async_utils import wait_all
 
 
@@ -116,7 +113,10 @@ class ActionExecutor:
         return self._initial_pwd
 
     async def ainit(self):
-        await wait_all(self._init_plugin(plugin) for plugin in self.plugins_to_load)
+        await wait_all(
+            (self._init_plugin(plugin) for plugin in self.plugins_to_load),
+            timeout=30,
+        )
 
         # This is a temporary workaround
         # TODO: refactor AgentSkills to be part of JupyterPlugin
@@ -345,6 +345,8 @@ if __name__ == '__main__':
     )
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
+    os.environ['VSCODE_PORT'] = str(int(args.port) + 1)
+    assert check_port_available(int(os.environ['VSCODE_PORT']))
 
     plugins_to_load: list[Plugin] = []
     if args.plugins:
@@ -526,6 +528,19 @@ if __name__ == '__main__':
     @app.get('/alive')
     async def alive():
         return {'status': 'ok'}
+
+    # ================================
+    # VSCode-specific operations
+    # ================================
+
+    @app.get('/vscode/connection_token')
+    async def get_vscode_connection_token():
+        assert client is not None
+        if 'vscode' in client.plugins:
+            plugin: VSCodePlugin = client.plugins['vscode']  # type: ignore
+            return {'token': plugin.vscode_connection_token}
+        else:
+            return {'token': None}
 
     # ================================
     # File-specific operations for UI

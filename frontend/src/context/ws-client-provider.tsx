@@ -4,6 +4,13 @@ import { Settings } from "#/services/settings";
 import ActionType from "#/types/ActionType";
 import EventLogger from "#/utils/event-logger";
 import AgentState from "#/types/AgentState";
+import { handleAssistantMessage } from "#/services/actions";
+import { useRate } from "#/utils/use-rate";
+
+const isOpenHandsMessage = (event: Record<string, unknown>) =>
+  event.action === "message";
+
+const RECONNECT_RETRIES = 5;
 
 export enum WsClientProviderStatus {
   STOPPED,
@@ -14,12 +21,14 @@ export enum WsClientProviderStatus {
 
 interface UseWsClient {
   status: WsClientProviderStatus;
+  isLoadingMessages: boolean;
   events: Record<string, unknown>[];
   send: (event: Record<string, unknown>) => void;
 }
 
 const WsClientContext = React.createContext<UseWsClient>({
   status: WsClientProviderStatus.STOPPED,
+  isLoadingMessages: true,
   events: [],
   send: () => {
     throw new Error("not connected");
@@ -46,6 +55,9 @@ export function WsClientProvider({
   const closeRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [status, setStatus] = React.useState(WsClientProviderStatus.STOPPED);
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
+  const [retryCount, setRetryCount] = React.useState(RECONNECT_RETRIES);
+
+  const messageRateHandler = useRate({ threshold: 500 });
 
   function send(event: Record<string, unknown>) {
     if (!wsRef.current) {
@@ -56,6 +68,7 @@ export function WsClientProvider({
   }
 
   function handleOpen() {
+    setRetryCount(RECONNECT_RETRIES);
     setStatus(WsClientProviderStatus.OPENING);
     const initEvent = {
       action: ActionType.INIT,
@@ -66,6 +79,9 @@ export function WsClientProvider({
 
   function handleMessage(messageEvent: MessageEvent) {
     const event = JSON.parse(messageEvent.data);
+    if (isOpenHandsMessage(event)) {
+      messageRateHandler.record(new Date().getTime());
+    }
     setEvents((prevEvents) => [...prevEvents, event]);
     if (event.extras?.agent_state === AgentState.INIT) {
       setStatus(WsClientProviderStatus.ACTIVE);
@@ -76,11 +92,19 @@ export function WsClientProvider({
     ) {
       setStatus(WsClientProviderStatus.ERROR);
     }
+
+    handleAssistantMessage(event);
   }
 
   function handleClose() {
-    setStatus(WsClientProviderStatus.STOPPED);
-    setEvents([]);
+    if (retryCount) {
+      setTimeout(() => {
+        setRetryCount(retryCount - 1);
+      }, 1000);
+    } else {
+      setStatus(WsClientProviderStatus.STOPPED);
+      setEvents([]);
+    }
     wsRef.current = null;
   }
 
@@ -95,7 +119,7 @@ export function WsClientProvider({
     let ws = wsRef.current;
 
     // If disabled close any existing websockets...
-    if (!enabled) {
+    if (!enabled || !retryCount) {
       if (ws) {
         ws.close();
       }
@@ -116,7 +140,11 @@ export function WsClientProvider({
       const baseUrl =
         import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      ws = new WebSocket(`${protocol}//${baseUrl}/ws`, [
+      let wsUrl = `${protocol}//${baseUrl}/ws`;
+      if (events.length) {
+        wsUrl += `?latest_event_id=${events[events.length - 1].id}`;
+      }
+      ws = new WebSocket(wsUrl, [
         "openhands",
         token || "NO_JWT",
         ghToken || "NO_GITHUB",
@@ -136,7 +164,7 @@ export function WsClientProvider({
       ws.removeEventListener("error", handleError);
       ws.removeEventListener("close", handleClose);
     };
-  }, [enabled, token, ghToken]);
+  }, [enabled, token, ghToken, retryCount]);
 
   // Strict mode mounts and unmounts each component twice, so we have to wait in the destructor
   // before actually closing the socket and cancel the operation if the component gets remounted.
@@ -148,7 +176,11 @@ export function WsClientProvider({
 
     return () => {
       closeRef.current = setTimeout(() => {
-        wsRef.current?.close();
+        const ws = wsRef.current;
+        if (ws) {
+          ws.removeEventListener("close", handleClose);
+          ws.close();
+        }
       }, 100);
     };
   }, []);
@@ -156,10 +188,11 @@ export function WsClientProvider({
   const value = React.useMemo<UseWsClient>(
     () => ({
       status,
+      isLoadingMessages: messageRateHandler.isUnderThreshold,
       events,
       send,
     }),
-    [status, events],
+    [status, messageRateHandler.isUnderThreshold, events],
   );
 
   return (

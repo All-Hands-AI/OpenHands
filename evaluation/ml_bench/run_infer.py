@@ -52,7 +52,7 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': 'When you think you have completed the task, please run the following command: <execute_bash> exit </execute_bash>.\n'
+    'CodeActAgent': 'When you think you have completed the task, please finish the interaction using the "finish" tool.\n'
 }
 
 ID2CONDA = {

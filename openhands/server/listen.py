@@ -5,7 +5,6 @@ import tempfile
 import time
 import uuid
 import warnings
-from contextlib import asynccontextmanager
 
 import jwt
 import requests
@@ -74,14 +73,7 @@ file_store = get_file_store(config.file_store, config.file_store_path)
 session_manager = SessionManager(config, file_store)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global session_manager
-    async with session_manager:
-        yield
-
-
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 app.add_middleware(
     LocalhostCORSMiddleware,
     allow_credentials=True,
@@ -898,6 +890,34 @@ async def authenticate(request: Request):
         samesite='strict',
     )
     return response
+
+
+@app.get('/api/vscode-url')
+async def get_vscode_url(request: Request):
+    """Get the VSCode URL.
+
+    This endpoint allows getting the VSCode URL.
+
+    Args:
+        request (Request): The incoming FastAPI request object.
+
+    Returns:
+        JSONResponse: A JSON response indicating the success of the operation.
+    """
+    try:
+        runtime: Runtime = request.state.conversation.runtime
+        logger.debug(f'Runtime type: {type(runtime)}')
+        logger.debug(f'Runtime VSCode URL: {runtime.vscode_url}')
+        return JSONResponse(status_code=200, content={'vscode_url': runtime.vscode_url})
+    except Exception as e:
+        logger.error(f'Error getting VSCode URL: {e}', exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={
+                'vscode_url': None,
+                'error': f'Error getting VSCode URL: {e}',
+            },
+        )
 
 
 class SPAStaticFiles(StaticFiles):
