@@ -57,12 +57,14 @@ export function ChatInterface() {
   React.useEffect(() => {
     if (status === WsClientProviderStatus.ACTIVE) {
       try {
-        OpenHands.getRuntimeId().then(({ runtime_id }) => {
+        OpenHands.getRuntimeId().then(({ runtime_id, sid }) => {
           // eslint-disable-next-line no-console
           console.log(
-            "Runtime ID: %c%s",
+            "Runtime ID: %c%s\nSession ID: %c%s",
             "background: #444; color: #ffeb3b; font-weight: bold; padding: 2px 4px; border-radius: 4px;",
             runtime_id,
+            "background: #444; color: #4caf50; font-weight: bold; padding: 2px 4px; border-radius: 4px;",
+            sid,
           );
         });
       } catch (e) {
