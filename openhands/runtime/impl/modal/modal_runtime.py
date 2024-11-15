@@ -77,6 +77,7 @@ class ModalRuntime(EventStreamRuntime):
         env_vars: dict[str, str] | None = None,
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
+        headless_mode: bool = True,
     ):
         assert config.modal_api_token_id, 'Modal API token id is required'
         assert config.modal_api_token_secret, 'Modal API token secret is required'
@@ -124,6 +125,7 @@ class ModalRuntime(EventStreamRuntime):
             env_vars,
             status_callback,
             attach_to_existing,
+            headless_mode,
         )
 
     async def connect(self):

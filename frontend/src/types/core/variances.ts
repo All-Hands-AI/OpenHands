@@ -27,7 +27,7 @@ interface LocalUserMessageAction {
   action: "message";
   args: {
     content: string;
-    images_urls: string[];
+    image_urls: string[];
   };
 }
 

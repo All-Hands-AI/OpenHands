@@ -95,9 +95,9 @@ class CodeActSWEAgent(Agent):
             if (
                 self.llm.vision_is_active()
                 and isinstance(action, MessageAction)
-                and action.images_urls
+                and action.image_urls
             ):
-                content.append(ImageContent(image_urls=action.images_urls))
+                content.append(ImageContent(image_urls=action.image_urls))
 
             return Message(
                 role='user' if action.source == 'user' else 'assistant', content=content

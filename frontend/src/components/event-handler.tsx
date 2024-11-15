@@ -14,7 +14,6 @@ import {
 } from "#/context/ws-client-provider";
 import { ErrorObservation } from "#/types/core/observations";
 import { addErrorMessage, addUserMessage } from "#/state/chatSlice";
-import { handleAssistantMessage } from "#/services/actions";
 import {
   getCloneRepoCommand,
   getGitHubTokenCommand,
@@ -35,6 +34,7 @@ import { base64ToBlob } from "#/utils/base64-to-blob";
 import { setCurrentAgentState } from "#/state/agentSlice";
 import AgentState from "#/types/AgentState";
 import { getSettings } from "#/services/settings";
+import { generateAgentStateChangeEvent } from "#/services/agentStateService";
 
 interface ServerError {
   error: boolean | string;
@@ -94,6 +94,14 @@ export function EventHandler({ children }: React.PropsWithChildren) {
       return;
     }
 
+    if (event.type === "error") {
+      const message: string = `${event.message}`;
+      if (message.startsWith("Agent reached maximum")) {
+        // We set the agent state to paused here - if the user clicks resume, it auto updates the max iterations
+        send(generateAgentStateChangeEvent(AgentState.PAUSED));
+      }
+    }
+
     if (isErrorObservation(event)) {
       dispatch(
         addErrorMessage({
@@ -101,9 +109,7 @@ export function EventHandler({ children }: React.PropsWithChildren) {
           message: event.message,
         }),
       );
-      return;
     }
-    handleAssistantMessage(event);
   }, [events.length]);
 
   React.useEffect(() => {

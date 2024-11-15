@@ -137,7 +137,7 @@ def codeact_user_response(
             # let the agent know that it can give up when it has tried 3 times
             return (
                 msg
-                + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
+                + 'If you want to give up, use the "finish" tool to finish the interaction.\n'
             )
     return msg
 
@@ -346,6 +346,7 @@ def run_evaluation(
             f'model {metadata.llm_config.model}, max iterations {metadata.max_iterations}.\n'
         )
     else:
+        logger.warning('Running evaluation without metadata.')
         logger.info(f'Evaluation started with {num_workers} workers.')
 
     total_instances = len(dataset)

@@ -23,7 +23,7 @@ if __name__ == '__main__':
             data = json.loads(line)
             actual_num += 1
             total_cost += data['metrics']['accumulated_cost']
-            total_reward += data['test_result']
+            total_reward += data['test_result']['reward']
 
     avg_reward = total_reward / total_num
     print('Avg Reward: ', avg_reward)
