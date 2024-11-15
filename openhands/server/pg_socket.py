@@ -5,8 +5,7 @@ import pickle
 
 import asyncpg
 from asyncpg.exceptions import PostgresError
-
-from .async_pubsub_manager import AsyncPubSubManager
+from socketio.async_pubsub_manager import AsyncPubSubManager
 
 DB_HOST = os.environ.get('DB_HOST')  # for non-GCP environments
 DB_USER = os.environ.get('DB_USER')
