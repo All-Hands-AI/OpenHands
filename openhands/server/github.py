@@ -115,13 +115,15 @@ async def get_github_user(token: str) -> str:
         github handle of the user
     """
     logger.debug('Fetching GitHub user info from token')
+    g = Github(token)
     try:
-        g = Github(token)
         user = await call_sync_from_async(g.get_user)
-        login = user.login
-        logger.info(f'Successfully retrieved GitHub user: {login}')
-        return login
     except GithubException as e:
         logger.error(f'Error making request to GitHub API: {str(e)}')
         logger.error(e)
         raise
+    finally:
+        g.close()
+    login = user.login
+    logger.info(f'Successfully retrieved GitHub user: {login}')
+    return login

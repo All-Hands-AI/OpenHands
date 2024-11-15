@@ -51,7 +51,12 @@ class Session:
 
     def close(self):
         self.is_alive = False
-        self.agent_session.close()
+        try:
+            if self.websocket is not None:
+                asyncio.run_coroutine_threadsafe(self.websocket.close(), self.loop)
+                self.websocket = None
+        finally:
+            self.agent_session.close()
 
     async def loop_recv(self):
         try:
@@ -107,7 +112,6 @@ class Session:
         agent_config = self.config.get_agent_config(agent_cls)
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
-        # Create the agent session
         try:
             await self.agent_session.start(
                 runtime_name=self.config.runtime,
