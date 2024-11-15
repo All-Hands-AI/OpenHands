@@ -13,6 +13,17 @@ files = [
 ]
 
 [[package]]
+name = "aiofiles"
+version = "24.1.0"
+description = "File support for asyncio."
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "aiofiles-24.1.0-py3-none-any.whl", hash = "sha256:b4ec55f4195e3eb5d7abd1bf7e061763e864dd4954231fb8539a0ef8bb8260e5"},
+    {file = "aiofiles-24.1.0.tar.gz", hash = "sha256:22a075c9e5a3810f0c2e48f3008c94d68c65d763b9b03857924c99e57355166c"},
+]
+
+[[package]]
 name = "aiohappyeyeballs"
 version = "2.4.3"
 description = "Happy Eyeballs for asyncio"
@@ -1172,6 +1183,30 @@ files = [
 
 [package.dependencies]
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
+
+[[package]]
+name = "cloud-sql-python-connector"
+version = "1.13.0"
+description = "The Cloud SQL Python Connector is a library that can be used alongside a database driver to allow users with sufficient permissions to connect to a Cloud SQL database without having to manually allowlist IPs or manage SSL certificates."
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "cloud_sql_python_connector-1.13.0-py2.py3-none-any.whl", hash = "sha256:238d963225761031648da8b208e2664a773fc27bc362538a381166297dbad687"},
+    {file = "cloud_sql_python_connector-1.13.0.tar.gz", hash = "sha256:f68d40e47a36a999ba8a4586da4b14995769de52884844d7cdd4de4b6d12e87e"},
+]
+
+[package.dependencies]
+aiofiles = "*"
+aiohttp = "*"
+cryptography = ">=42.0.0"
+google-auth = ">=2.28.0"
+Requests = "*"
+
+[package.extras]
+asyncpg = ["asyncpg (>=0.29.0)"]
+pg8000 = ["pg8000 (>=1.31.1)"]
+pymysql = ["PyMySQL (>=1.1.0)"]
+pytds = ["python-tds (>=1.15.0)"]
 
 [[package]]
 name = "cloudpickle"
@@ -10326,4 +10361,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "fdcd47c56e18dbdc4adcedb4c216da0b5f66d77889c99061db796436185c0269"
+content-hash = "725dbfdcfa3b27468112f1b4365644ef2b8ef3c0f9e7f0bbb52a391eca8ea795"
