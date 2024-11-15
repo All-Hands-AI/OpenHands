@@ -12,8 +12,8 @@ services:
       - "8000:8000"  # Main API endpoint
     environment:
       - OPENHANDS_CONFIG=/workspace/config.toml
-      - LMSTUDIO_PORT=1234
-    command: ["python", "-m", "openhands.cli.server"]
+      - OPENHANDS_AGENT=SupervisorAgent
+    command: ["python", "-m", "uvicorn", "openhands.server.listen:app", "--host", "0.0.0.0", "--port", "8000"]
     networks:
       - openhands-net
     extra_hosts:
@@ -29,8 +29,7 @@ services:
     environment:
       - OPENHANDS_CONFIG=/workspace/config.toml
       - OPENHANDS_AGENT=OpenHandsAgent-1
-      - LMSTUDIO_PORT=1235
-    command: ["python", "-m", "openhands.cli.server", "--port", "8001"]
+    command: ["python", "-m", "uvicorn", "openhands.server.listen:app", "--host", "0.0.0.0", "--port", "8001"]
     ports:
       - "8001:8001"
     networks:
@@ -48,8 +47,7 @@ services:
     environment:
       - OPENHANDS_CONFIG=/workspace/config.toml
       - OPENHANDS_AGENT=OpenHandsAgent-2
-      - LMSTUDIO_PORT=1236
-    command: ["python", "-m", "openhands.cli.server", "--port", "8002"]
+    command: ["python", "-m", "uvicorn", "openhands.server.listen:app", "--host", "0.0.0.0", "--port", "8002"]
     ports:
       - "8002:8002"
     networks:
@@ -60,5 +58,4 @@ services:
 networks:
   openhands-net:
     driver: bridge
-
 
