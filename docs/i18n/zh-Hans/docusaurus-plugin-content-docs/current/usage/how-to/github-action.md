@@ -12,4 +12,4 @@
 
 ## 在新仓库中安装 Action
 
-要在你自己的仓库中安装 OpenHands GitHub Action，请按照 [OpenHands Resolver 仓库中的说明](https://github.com/All-Hands-AI/openhands/resolver?tab=readme-ov-file#using-the-github-actions-workflow) 进行操作。
+要在你自己的仓库中安装 OpenHands GitHub Action，请按照 [OpenHands Resolver 仓库中的说明](https://github.com/All-Hands-AI/openhands/resolver#using-the-github-actions-workflow) 进行操作。
