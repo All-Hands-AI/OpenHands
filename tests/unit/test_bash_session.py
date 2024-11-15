@@ -186,6 +186,19 @@ def test_empty_command_errors():
     session.close()
 
 
+def test_env_command():
+    session = BashSession(work_dir=os.getcwd())
+
+    # Test empty command without previous command
+    obs = session.execute(CmdRunAction('env'))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert 'PS1=###PS1JSON###' in obs.content
+    assert 'PS2=' in obs.content
+    assert obs.metadata.exit_code == 0
+    assert session.prev_status == BashCommandStatus.COMPLETED
+    session.close()
+
+
 def test_command_output_continuation():
     session = BashSession(work_dir=os.getcwd(), no_change_timeout_seconds=2)
 

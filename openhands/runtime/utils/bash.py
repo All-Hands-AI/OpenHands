@@ -3,6 +3,7 @@ from enum import Enum
 
 import libtmux
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.events.observation.commands import (
     CMD_OUTPUT_PS1_END,
@@ -58,6 +59,7 @@ class BashSession:
         # Store the last command for interactive input handling
         self.prev_status: BashCommandStatus | None = None
         self.prev_output: str = ''
+        logger.debug(f'Bash session initialized with work dir: {work_dir}')
 
     def close(self):
         self.session.kill_session()
