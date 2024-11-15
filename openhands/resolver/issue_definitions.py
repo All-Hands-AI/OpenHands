@@ -83,7 +83,21 @@ class IssueHandler(IssueHandlerInterface):
         return re.findall(image_pattern, issue_body)
 
     def _extract_issue_references(self, body: str) -> list[int]:
-        pattern = r'#(\d+)'
+        # First, remove code blocks as they may contain false positives
+        body = re.sub(r'```.*?```', '', body, flags=re.DOTALL)
+        
+        # Remove inline code
+        body = re.sub(r'`[^`]*`', '', body)
+        
+        # Remove URLs that contain hash symbols
+        body = re.sub(r'https?://[^\s)]*#\d+[^\s)]*', '', body)
+        
+        # Now extract issue numbers, making sure they're not part of other text
+        # The pattern matches #number that:
+        # 1. Is at the start of text or after whitespace/punctuation
+        # 2. Is followed by whitespace, punctuation, or end of text
+        # 3. Is not part of a URL
+        pattern = r'(?:^|[\s\[({]|[^\w#])#(\d+)(?=[\s,.\])}]|$)'
         return [int(match) for match in re.findall(pattern, body)]
 
     def _get_issue_comments(
