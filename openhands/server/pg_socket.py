@@ -7,6 +7,8 @@ import asyncpg
 from asyncpg.exceptions import PostgresError
 from socketio.async_pubsub_manager import AsyncPubSubManager
 
+from openhands.core.logger import openhands_logger as logger
+
 DB_HOST = os.environ.get('DB_HOST')  # for non-GCP environments
 DB_USER = os.environ.get('DB_USER')
 DB_PASS = os.environ.get('DB_PASS', '').strip()
@@ -36,11 +38,13 @@ class AsyncPostgresManager(AsyncPubSubManager):
         write_only=False,
         logger=None,
     ):
+        logger.info('Initializing PostgresManager')
         self.conn = None
         super().__init__(channel=channel, write_only=write_only, logger=logger)
 
     async def _get_gcp_connection(self):
         instance_string = f'{GCP_PROJECT}:{GCP_REGION}:{GCP_DB_INSTANCE}'
+        logger.info(f'Connecting to GCP instance: {instance_string}')
 
         async def get_async_conn():
             conn = await self.connector.connect_async(
@@ -55,12 +59,7 @@ class AsyncPostgresManager(AsyncPubSubManager):
         return await get_async_conn()
 
     async def _get_postgres_connection(self):
-        if self.conn:
-            try:
-                await self.conn.close()
-            except PostgresError:
-                pass
-
+        logger.info(f'Connecting to Postgres: {DB_HOST}')
         return await asyncpg.connect(
             user=DB_USER,
             password=DB_PASS,
@@ -69,6 +68,12 @@ class AsyncPostgresManager(AsyncPubSubManager):
         )
 
     async def _postgres_connect(self):
+        if self.conn:
+            try:
+                await self.conn.close()
+            except PostgresError:
+                pass
+
         if GCP_DB_INSTANCE:
             self.conn = await self._get_gcp_connection()
         else:
