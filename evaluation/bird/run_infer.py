@@ -40,7 +40,7 @@ from openhands.utils.async_utils import call_async_from_sync
 def codeact_user_response(state: State) -> str:
     msg = (
         'Please continue working on the task on whatever approach you think is suitable.\n'
-        'If you think you have completed the SQL, please run the following command: <execute_bash> exit </execute_bash>.\n'
+        'If you think you have completed the SQL, please finish the interaction using the "finish" tool.\n'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP OR USE THE INTERNET TO SOLVE THIS TASK.\n'
     )
     if state.history:
@@ -54,7 +54,7 @@ def codeact_user_response(state: State) -> str:
             # let the agent know that it can give up when it has tried 3 times
             return (
                 msg
-                + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
+                + 'If you want to give up, use the "finish" tool to finish the interaction.\n'
             )
     return msg
 
@@ -64,7 +64,7 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': 'When you think you have fixed the issue through code changes, please run the following command: <execute_bash> exit </execute_bash>.\n'
+    'CodeActAgent': 'When you think you have fixed the issue through code changes, please finish the interaction using the "finish" tool.\n'
 }
 
 

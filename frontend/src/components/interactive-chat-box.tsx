@@ -56,7 +56,7 @@ export function InteractiveChatBox({
       <div
         className={cn(
           "flex items-end gap-1",
-          "bg-neutral-700 border border-neutral-600 rounded-lg px-2 py-[10px]",
+          "bg-neutral-700 border border-neutral-600 rounded-lg px-2",
           "transition-colors duration-200",
           "hover:border-neutral-500 focus-within:border-neutral-500",
         )}
@@ -71,6 +71,8 @@ export function InteractiveChatBox({
           onStop={onStop}
           value={value}
           onImagePaste={handleUpload}
+          className="py-[10px]"
+          buttonClassName="py-[10px]"
         />
       </div>
     </div>

@@ -12,6 +12,7 @@ from openhands.core.config import LLMConfig
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
+from litellm import Message as LiteLLMMessage
 from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
@@ -28,6 +29,11 @@ from openhands.core.exceptions import CloudFlareBlockageError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.llm.debug_mixin import DebugMixin
+from openhands.llm.fn_call_converter import (
+    STOP_WORDS,
+    convert_fncall_messages_to_non_fncall_messages,
+    convert_non_fncall_messages_to_fncall_messages,
+)
 from openhands.llm.metrics import Metrics
 from openhands.llm.retry_mixin import RetryMixin
 
@@ -56,11 +62,12 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
 
 # function calling supporting models
 FUNCTION_CALLING_SUPPORTED_MODELS = [
+    'claude-3-5-sonnet',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-sonnet-20241022',
     'claude-3-5-haiku-20241022',
-    'gpt-4o',
     'gpt-4o-mini',
+    'gpt-4o',
 ]
 
 
@@ -136,6 +143,9 @@ class LLM(RetryMixin, DebugMixin):
             drop_params=self.config.drop_params,
         )
 
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            self.init_model_info()
         if self.vision_is_active():
             logger.debug('LLM: model has vision enabled')
         if self.is_caching_prompt_active():
@@ -143,7 +153,7 @@ class LLM(RetryMixin, DebugMixin):
         if self.is_function_calling_active():
             logger.debug('LLM: model supports function calling')
 
-        completion_unwrapped = self._completion
+        self._completion_unwrapped = self._completion
 
         @self.retry_decorator(
             num_retries=self.config.num_retries,
@@ -154,8 +164,11 @@ class LLM(RetryMixin, DebugMixin):
         )
         def wrapper(*args, **kwargs):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
-            self.init_model_info()
+
+            from openhands.core.utils import json
+
             messages: list[dict[str, Any]] | dict[str, Any] = []
+            mock_function_calling = kwargs.pop('mock_function_calling', False)
 
             # some callers might send the model and messages directly
             # litellm allows positional args, like completion(model, messages, **kwargs)
@@ -174,6 +187,18 @@ class LLM(RetryMixin, DebugMixin):
 
             # ensure we work with a list of messages
             messages = messages if isinstance(messages, list) else [messages]
+            original_fncall_messages = copy.deepcopy(messages)
+            mock_fncall_tools = None
+            if mock_function_calling:
+                assert (
+                    'tools' in kwargs
+                ), "'tools' must be in kwargs when mock_function_calling is True"
+                messages = convert_fncall_messages_to_non_fncall_messages(
+                    messages, kwargs['tools']
+                )
+                kwargs['messages'] = messages
+                kwargs['stop'] = STOP_WORDS
+                mock_fncall_tools = kwargs.pop('tools')
 
             # if we have no messages, something went very wrong
             if not messages:
@@ -193,7 +218,25 @@ class LLM(RetryMixin, DebugMixin):
 
             try:
                 # we don't support streaming here, thus we get a ModelResponse
-                resp: ModelResponse = completion_unwrapped(*args, **kwargs)
+                resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+
+                non_fncall_response = copy.deepcopy(resp)
+                if mock_function_calling:
+                    assert len(resp.choices) == 1
+                    assert mock_fncall_tools is not None
+                    non_fncall_response_message = resp.choices[0].message
+                    fn_call_messages_with_response = (
+                        convert_non_fncall_messages_to_fncall_messages(
+                            messages + [non_fncall_response_message], mock_fncall_tools
+                        )
+                    )
+                    fn_call_response_message = fn_call_messages_with_response[-1]
+                    if not isinstance(fn_call_response_message, LiteLLMMessage):
+                        fn_call_response_message = LiteLLMMessage(
+                            **fn_call_response_message
+                        )
+                    resp.choices[0].message = fn_call_response_message
+
                 # log for evals or other scripts that need the raw completion
                 if self.config.log_completions:
                     assert self.config.log_completions_folder is not None
@@ -202,25 +245,23 @@ class LLM(RetryMixin, DebugMixin):
                         # use the metric model name (for draft editor)
                         f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
                     )
-                    from openhands.core.utils import json
 
+                    _d = {
+                        'messages': messages,
+                        'response': resp,
+                        'args': args,
+                        'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
+                        'timestamp': time.time(),
+                        'cost': self._completion_cost(resp),
+                    }
+                    if mock_function_calling:
+                        # Overwrite response as non-fncall to be consistent with `messages``
+                        _d['response'] = non_fncall_response
+                        # Save fncall_messages/response separately
+                        _d['fncall_messages'] = original_fncall_messages
+                        _d['fncall_response'] = resp
                     with open(log_file, 'w') as f:
-                        f.write(
-                            json.dumps(
-                                {
-                                    'messages': messages,
-                                    'response': resp,
-                                    'args': args,
-                                    'kwargs': {
-                                        k: v
-                                        for k, v in kwargs.items()
-                                        if k != 'messages'
-                                    },
-                                    'timestamp': time.time(),
-                                    'cost': self._completion_cost(resp),
-                                },
-                            )
-                        )
+                        f.write(json.dumps(_d))
 
                 message_back: str = resp['choices'][0]['message']['content']
 
@@ -330,7 +371,9 @@ class LLM(RetryMixin, DebugMixin):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
     def vision_is_active(self):
-        return not self.config.disable_vision and self._supports_vision()
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            return not self.config.disable_vision and self._supports_vision()
 
     def _supports_vision(self):
         """Acquire from litellm if model is vision capable.
@@ -358,15 +401,13 @@ class LLM(RetryMixin, DebugMixin):
         Returns:
             boolean: True if prompt caching is supported and enabled for the given model.
         """
-        return self.config.caching_prompt is True and (
-            (
+        return (
+            self.config.caching_prompt is True
+            and (
                 self.config.model in CACHE_PROMPT_SUPPORTED_MODELS
                 or self.config.model.split('/')[-1] in CACHE_PROMPT_SUPPORTED_MODELS
             )
-            or (
-                self.model_info is not None
-                and self.model_info.get('supports_prompt_caching', False)
-            )
+            # We don't need to look-up model_info, because only Anthropic models needs the explicit caching breakpoint
         )
 
     def is_function_calling_active(self) -> bool:
@@ -376,10 +417,7 @@ class LLM(RetryMixin, DebugMixin):
             or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
             or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
         )
-        return model_name_supported or (
-            self.model_info is not None
-            and self.model_info.get('supports_function_calling', False)
-        )
+        return model_name_supported
 
     def _post_completion(self, response: ModelResponse) -> None:
         """Post-process the completion response.
