@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 WORKDIR /workspace
 
@@ -10,9 +10,9 @@ RUN apt-get update && apt-get install -y \
 
 # Install Python dependencies
 COPY pyproject.toml poetry.lock ./
-RUN pip install poetry && \
+RUN pip install --no-cache-dir poetry && \
     poetry config virtualenvs.create false && \
-    poetry install --no-dev
+    poetry install --only main --no-interaction --no-ansi
 
 # Copy application code
 COPY . .
@@ -23,3 +23,5 @@ ENV OPENHANDS_CONFIG=/workspace/config.toml
 
 # Default command
 CMD ["python", "-m", "openhands.cli.server"]
+
+
