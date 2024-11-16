@@ -220,6 +220,7 @@ class TestTruncation:
 
         # Set initial history
         controller.state.history = events[:3]  # Start with a few events
+        controller.state.start_id = first_msg._id  # Explicitly set start_id
         initial_history_len = len(controller.state.history)
 
         # Add a new event that should trigger truncation due to token count

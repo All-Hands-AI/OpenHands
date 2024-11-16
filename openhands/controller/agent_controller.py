@@ -228,11 +228,11 @@ class AgentController:
             # Create temporary history with new event
             temp_history = self.state.history + [event]
             token_count = self.agent.llm.get_token_count(temp_history)
-            
+
             if token_count > self.context_window:
                 # Truncate existing history before adding new event
                 self.state.history = self._apply_conversation_window(self.state.history)
-        
+
         # Now add the new event
         self.state.history.append(event)
 
@@ -839,6 +839,10 @@ class AgentController:
             None,
         )
 
+        # Always set start_id to first user message id if found, regardless of truncation
+        if first_user_msg:
+            self.state.start_id = first_user_msg.id
+
         # cut in half
         mid_point = max(1, len(events) // 2)
         kept_events = events[mid_point:]
@@ -889,9 +893,16 @@ class AgentController:
         if first_user_msg and first_user_msg not in kept_events:
             kept_events = [first_user_msg] + kept_events
 
-        # start_id points to first user message
-        if first_user_msg:
-            self.state.start_id = first_user_msg.id
+        # Verify truncated history fits in context window
+        while (
+            self.context_window is not None
+            and self.agent.llm.get_token_count(kept_events) > self.context_window
+        ):
+            # Need to truncate more - remove oldest non-first-message event
+            if len(kept_events) > 2:  # Keep at least first message and one more event
+                kept_events.pop(1)
+            else:
+                break
 
         return kept_events
 
