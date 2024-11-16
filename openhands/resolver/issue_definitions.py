@@ -55,10 +55,15 @@ class IssueHandler(IssueHandlerInterface):
             'Authorization': f'token {self.token}',
             'Accept': 'application/vnd.github.v3+json',
         }
-        params: dict[str, int | str] = {'state': 'open', 'per_page': 100, 'page': 1}
+        page = 1
         all_issues = []
 
         while True:
+            params: dict[str, int | str] = {
+                'state': 'all',
+                'per_page': 100,
+                'page': page,
+            }
             response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()
             issues = response.json()
@@ -72,8 +77,7 @@ class IssueHandler(IssueHandlerInterface):
                 raise ValueError('Expected list of dictionaries from Github API.')
 
             all_issues.extend(issues)
-            assert isinstance(params['page'], int)
-            params['page'] += 1
+            page += 1
 
         return all_issues
 
