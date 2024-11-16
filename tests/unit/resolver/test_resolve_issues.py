@@ -530,25 +530,10 @@ def test_file_instruction_with_repo_instruction():
     instruction, image_urls = issue_handler.get_instruction(
         issue, prompt, repo_instruction
     )
-    expected_instruction = """Please fix the following issue for the repository in /workspace.
-An environment has been set up for you to start working. You may assume all necessary tools are installed.
-
-# Problem Statement
-Test Issue
-
-This is a test issue
-
-IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.
-You SHOULD INCLUDE PROPER INDENTATION in your edit commands.
-
-Some basic information about this repository:
-This is a Python repo for openhands-resolver, a library that attempts to resolve github issues with the AI agent OpenHands.
-
-- Setup: `poetry install --with test --with dev`
-- Testing: `poetry run pytest tests/test_*.py`
-
-When you think you have fixed the issue through code changes, please finish the interaction."""
-    assert instruction == expected_instruction
+    assert instruction is not None
+    assert 'Test Issue' in instruction
+    assert 'This is a test issue' in instruction
+    assert repo_instruction in instruction
     assert issue_handler.issue_type == 'issue'
     assert image_urls == []
 

@@ -113,18 +113,8 @@ def mock_config():
 @pytest.fixture
 def mock_resolve_issue():
     """Create a mock for resolve_github_issue."""
-    with patch('openhands.resolver.resolve_issue.resolve_issue') as mock:
+    with patch('openhands.server.listen.resolve_github_issue') as mock:
         mock.return_value = None
-        yield mock
-
-
-@pytest.fixture
-def mock_send_pr():
-    """Create a mock for send_pull_request."""
-    with patch('openhands.resolver.send_pull_request.process_single_issue') as mock:
-        mock.return_value = ProcessIssueResult(
-            success=True, url='https://github.com/test/test/pull/123'
-        )
         yield mock
 
 
@@ -195,7 +185,7 @@ def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
             assert response.json()['message'] == 'No output file generated'
 
 
-def test_send_pull_request_endpoint(test_client, mock_send_pr, mock_config):
+def test_send_pull_request_endpoint(test_client, mock_config):
     """Test the send pull request endpoint."""
     with patch('openhands.server.listen.config', mock_config), patch(
         'openhands.server.listen.get_sid_from_token', return_value='test-sid'
@@ -204,7 +194,12 @@ def test_send_pull_request_endpoint(test_client, mock_send_pr, mock_config):
     ), patch(
         'openhands.resolver.io_utils.load_single_resolver_output',
         return_value={'test': 'data'},
-    ):
+    ), patch(
+        'openhands.server.listen.process_single_issue',
+        return_value=ProcessIssueResult(
+            success=True, url='https://github.com/test/test/pull/123'
+        ),
+    ) as mock_send_pr:
         request_data = {
             'issue_number': 123,
             'pr_type': 'draft',
@@ -214,13 +209,17 @@ def test_send_pull_request_endpoint(test_client, mock_send_pr, mock_config):
 
         # Create a temp directory for our test
         with tempfile.TemporaryDirectory() as test_dir:
+            # Create the openhands_resolver directory
+            output_dir = os.path.join(test_dir, 'openhands_resolver')
+            os.makedirs(output_dir)
+
             # Create a temp file with test output
-            output_file = os.path.join(test_dir, 'output.jsonl')
+            output_file = os.path.join(output_dir, 'output.jsonl')
             with open(output_file, 'w') as tmp:
                 tmp.write('{"test": "data"}\\n')
 
-            # Mock tempfile.mkdtemp to return our test dir
-            with patch('tempfile.mkdtemp', return_value=test_dir):
+            # Mock tempfile.gettempdir to return our test dir
+            with patch('tempfile.gettempdir', return_value=test_dir):
                 # Test successful PR creation
                 response = test_client.post(
                     '/api/resolver/send-pr',
@@ -236,7 +235,16 @@ def test_send_pull_request_endpoint(test_client, mock_send_pr, mock_config):
                 )
 
                 # Verify mock was called correctly
-                mock_send_pr.assert_called_once()
+                mock_send_pr.assert_called_once_with(
+                    output_dir=output_dir,
+                    resolver_output={'test': 'data'},
+                    github_token='test-token',
+                    github_username='test-user',
+                    pr_type='draft',
+                    llm_config=mock_config.get_llm_config(),
+                    fork_owner=None,
+                    send_on_failure=False,
+                )
 
                 # Test error handling
                 mock_send_pr.side_effect = Exception('PR creation failed')
