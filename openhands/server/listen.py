@@ -529,7 +529,10 @@ async def resolve_issue(request: Request) -> dict[str, str | dict[str, Any]]:
         # Load the resolver output
         resolver_output = load_single_resolver_output(output_file, data.issue_number)
         if not resolver_output:
-            return {'status': 'error', 'message': f'No resolver output found for issue {data.issue_number}'}
+            return {
+                'status': 'error',
+                'message': f'No resolver output found for issue {data.issue_number}',
+            }
 
         # Create pull request
         result = process_single_issue(

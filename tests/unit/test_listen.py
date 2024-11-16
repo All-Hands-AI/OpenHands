@@ -145,7 +145,9 @@ def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
     )
 
     # Set environment variables before creating the test client
-    with patch.dict('os.environ', {'GITHUB_TOKEN': 'test-token', 'GITHUB_USERNAME': 'test-user'}):
+    with patch.dict(
+        'os.environ', {'GITHUB_TOKEN': 'test-token', 'GITHUB_USERNAME': 'test-user'}
+    ):
         with patch('openhands.server.listen.config', mock_config), patch(
             'openhands.server.listen.get_sid_from_token', return_value='test-sid'
         ), patch(
@@ -177,7 +179,9 @@ def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
                 # Create a temp file with test output
                 output_file = os.path.join(test_dir, 'output.jsonl')
                 with open(output_file, 'w') as tmp:
-                    tmp.write('{"issue": {"owner": "test-owner", "repo": "test-repo", "number": 123, "title": "Test Issue", "body": "Test body"}, "issue_type": "issue", "instruction": "Test instruction", "base_commit": "abc123", "git_patch": "test patch", "history": [], "metrics": {}, "success": true, "success_explanation": "Test success", "error": null, "comment_success": []}\n')
+                    tmp.write(
+                        '{"issue": {"owner": "test-owner", "repo": "test-repo", "number": 123, "title": "Test Issue", "body": "Test body"}, "issue_type": "issue", "instruction": "Test instruction", "base_commit": "abc123", "git_patch": "test patch", "history": [], "metrics": {}, "success": true, "success_explanation": "Test success", "error": null, "comment_success": []}\n'
+                    )
 
                 # Mock tempfile.mkdtemp to return our test dir
                 with patch('tempfile.mkdtemp', return_value=test_dir):
@@ -189,7 +193,10 @@ def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
 
                 assert response.status_code == 200
                 assert response.json()['status'] == 'success'
-                assert response.json()['result']['url'] == 'https://github.com/test/test/pull/123'
+                assert (
+                    response.json()['result']['url']
+                    == 'https://github.com/test/test/pull/123'
+                )
 
                 # Verify mocks were called correctly
                 mock_resolve_issue.assert_called_once()
