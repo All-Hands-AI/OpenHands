@@ -234,7 +234,7 @@ class AgentController:
             token_count = self.agent.llm.get_token_count(temp_history)
 
             if token_count > self.max_input_tokens:
-                # Truncate existing history before adding new event
+                # Need to truncate history if there are too many tokens
                 self.state.history = self._apply_conversation_window(self.state.history)
 
         # Now add the new event
@@ -896,17 +896,6 @@ class AgentController:
         # Ensure first user message is included
         if first_user_msg and first_user_msg not in kept_events:
             kept_events = [first_user_msg] + kept_events
-
-        # Verify truncated history fits in context window
-        while (
-            self.max_input_tokens is not None
-            and self.agent.llm.get_token_count(kept_events) > self.max_input_tokens
-        ):
-            # Need to truncate more - remove oldest non-first-message event
-            if len(kept_events) > 2:  # Keep at least first message and one more event
-                kept_events.pop(1)
-            else:
-                break
 
         return kept_events
 
