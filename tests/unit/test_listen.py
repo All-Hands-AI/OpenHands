@@ -1,4 +1,3 @@
-import os
 import tempfile
 from unittest.mock import patch
 
@@ -193,8 +192,6 @@ def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
 
             # Create a temp directory for our test
             with tempfile.TemporaryDirectory() as test_dir:
-
-
                 # Mock tempfile.mkdtemp to return our test dir
                 with patch('tempfile.mkdtemp', return_value=test_dir):
                     response = test_client.post(
@@ -249,4 +246,7 @@ def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
             )
             assert response.status_code == 200
             assert response.json()['status'] == 'error'
-            assert response.json()['message'] == 'No resolver output generated for issue 123'
+            assert (
+                response.json()['message']
+                == 'No resolver output generated for issue 123'
+            )
