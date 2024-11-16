@@ -5,7 +5,7 @@ import tempfile
 import time
 import uuid
 import warnings
-from typing import Any, Literal
+from typing import Any
 
 import jwt
 import requests
@@ -24,7 +24,7 @@ from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.controller.agent import Agent
@@ -46,9 +46,6 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.llm import bedrock
-from openhands.resolver.io_utils import load_single_resolver_output
-from openhands.resolver.resolve_issue import resolve_issue as resolve_github_issue
-from openhands.resolver.send_pull_request import process_single_issue
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.security.options import SecurityAnalyzers
@@ -76,7 +73,6 @@ from openhands.server.data_models.resolver import (
     resolve_github_issue_with_model,
     send_pull_request_with_model,
 )
-
 
 load_dotenv()
 
@@ -512,6 +508,7 @@ async def resolve_issue(request: Request) -> dict[str, str]:
         # Cleanup temp directory
         if os.path.exists(output_dir):
             import shutil
+
             shutil.rmtree(output_dir)
 
 
