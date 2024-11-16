@@ -64,7 +64,6 @@ class AgentController:
     agent_task: asyncio.Future | None = None
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
-    max_input_tokens: int | None
     _pending_action: Action | None = None
     _closed: bool = False
     filter_out: ClassVar[tuple[type[Event], ...]] = (
@@ -88,7 +87,6 @@ class AgentController:
         is_delegate: bool = False,
         headless_mode: bool = True,
         status_callback: Callable | None = None,
-        max_input_tokens: int | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -132,8 +130,6 @@ class AgentController:
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
         self.status_callback = status_callback
-
-        self.max_input_tokens = max_input_tokens
 
     async def close(self):
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -228,7 +224,7 @@ class AgentController:
             self.state.history.append(event)
 
         # Check if adding this event would exceed context window
-        if self.max_input_tokens is not None:
+        if self.agent.llm.config.max_input_tokens is not None:
             # Create temporary history with new event
             temp_history = self.state.history + [event]
             try:
@@ -237,7 +233,7 @@ class AgentController:
                 logger.error(f'NO TRUNCATION: Error getting token count: {e}.')
                 token_count = float('inf')
 
-            if token_count > self.max_input_tokens:
+            if token_count > self.agent.llm.config.max_input_tokens:
                 # Need to truncate history if there are too many tokens
                 self.state.history = self._apply_conversation_window(self.state.history)
 
