@@ -653,6 +653,7 @@ def test_process_single_issue(
     mock_initialize_repo,
     mock_output_dir,
     mock_llm_config,
+    pr_type,
 ):
     # Initialize test data
     github_token = 'test_token'
@@ -728,7 +729,169 @@ def test_process_single_issue_unsuccessful(
     mock_initialize_repo,
     mock_output_dir,
     mock_llm_config,
-    pr_type,
+):
+    # Initialize test data
+    github_token = 'test_token'
+    github_username = 'test_user'
+    pr_type = 'draft'
+
+    resolver_output = ResolverOutput(
+        issue=GithubIssue(
+            owner='test-owner',
+            repo='test-repo',
+            number=1,
+            title='Issue 1',
+            body='Body 1',
+        ),
+        issue_type='issue',
+        instruction='Test instruction 1',
+        base_commit='def456',
+        git_patch='Test patch 1',
+        history=[],
+        metrics={},
+        success=False,
+        comment_success=None,
+        success_explanation='',
+        error='Test error',
+    )
+
+    # Call the function
+    process_single_issue(
+        mock_output_dir,
+        resolver_output,
+        github_token,
+        github_username,
+        pr_type,
+        mock_llm_config,
+        None,
+        False,
+    )
+
+    # Assert that none of the mocked functions were called
+    mock_initialize_repo.assert_not_called()
+    mock_apply_patch.assert_not_called()
+    mock_make_commit.assert_not_called()
+    mock_send_pull_request.assert_not_called()
+
+
+@patch('openhands.resolver.send_pull_request.load_all_resolver_outputs')
+@patch('openhands.resolver.send_pull_request.process_single_issue')
+def test_process_all_successful_issues(
+    mock_process_single_issue, mock_load_all_resolver_outputs, mock_llm_config
+):
+    # Create ResolverOutput objects with properly initialized GithubIssue instances
+    resolver_output_1 = ResolverOutput(
+        issue=GithubIssue(
+            owner='test-owner',
+            repo='test-repo',
+            number=1,
+            title='Issue 1',
+            body='Body 1',
+        ),
+        issue_type='issue',
+        instruction='Test instruction 1',
+        base_commit='def456',
+        git_patch='Test patch 1',
+        history=[],
+        metrics={},
+        success=True,
+        comment_success=None,
+        success_explanation='Test success 1',
+        error=None,
+    )
+
+    resolver_output_2 = ResolverOutput(
+        issue=GithubIssue(
+            owner='test-owner',
+            repo='test-repo',
+            number=2,
+            title='Issue 2',
+            body='Body 2',
+        ),
+        issue_type='issue',
+        instruction='Test instruction 2',
+        base_commit='ghi789',
+        git_patch='Test patch 2',
+        history=[],
+        metrics={},
+        success=False,
+        comment_success=None,
+        success_explanation='',
+        error='Test error 2',
+    )
+
+    resolver_output_3 = ResolverOutput(
+        issue=GithubIssue(
+            owner='test-owner',
+            repo='test-repo',
+            number=3,
+            title='Issue 3',
+            body='Body 3',
+        ),
+        issue_type='issue',
+        instruction='Test instruction 3',
+        base_commit='jkl012',
+        git_patch='Test patch 3',
+        history=[],
+        metrics={},
+        success=True,
+        comment_success=None,
+        success_explanation='Test success 3',
+        error=None,
+    )
+
+    mock_load_all_resolver_outputs.return_value = [
+        resolver_output_1,
+        resolver_output_2,
+        resolver_output_3,
+    ]
+
+    # Call the function
+    process_all_successful_issues(
+        'output_dir',
+        'github_token',
+        'github_username',
+        'draft',
+        mock_llm_config,  # llm_config
+        None,  # fork_owner
+    )
+
+    # Assert that process_single_issue was called for successful issues only
+    assert mock_process_single_issue.call_count == 2
+
+    # Check that the function was called with the correct arguments for successful issues
+    mock_process_single_issue.assert_has_calls(
+        [
+            call(
+                'output_dir',
+                resolver_output_1,
+                'github_token',
+                'github_username',
+                'draft',
+                mock_llm_config,
+                None,
+                False,
+            ),
+            call(
+                'output_dir',
+                resolver_output_3,
+                'github_token',
+                'github_username',
+                'draft',
+                mock_llm_config,
+                None,
+                False,
+            ),
+        ]
+    )
+
+    # Add more assertions as needed to verify the behavior of the function
+
+
+@patch('requests.get')
+@patch('subprocess.run')
+def test_send_pull_request_branch_naming(
+    mock_run, mock_get, mock_github_issue, mock_output_dir, mock_llm_config
 ):
     repo_path = os.path.join(mock_output_dir, 'repo')
     source_branch = 'feature-branch'
