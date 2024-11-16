@@ -568,7 +568,8 @@ async def send_pull_request(request: Request) -> dict[str, str | dict[str, Any]]
 
         # Process the request
         output_dir = os.path.join(tempfile.gettempdir(), 'openhands_resolver')
-        resolver_output = load_single_resolver_output(output_dir, data.issue_number)
+        output_file = os.path.join(output_dir, 'output.jsonl')
+        resolver_output = load_single_resolver_output(output_file, data.issue_number)
         if not resolver_output:
             raise ValueError(f'No resolver output found for issue {data.issue_number}')
 
