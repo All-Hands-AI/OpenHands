@@ -897,6 +897,10 @@ class AgentController:
         if first_user_msg and first_user_msg not in kept_events:
             kept_events = [first_user_msg] + kept_events
 
+        # start_id points to first user message
+        if first_user_msg:
+            self.state.start_id = first_user_msg.id
+
         return kept_events
 
     def _is_stuck(self):
