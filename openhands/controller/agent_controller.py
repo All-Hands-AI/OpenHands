@@ -64,7 +64,7 @@ class AgentController:
     agent_task: asyncio.Future | None = None
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
-    context_window: int | None
+    max_input_tokens: int | None
     _pending_action: Action | None = None
     _closed: bool = False
     filter_out: ClassVar[tuple[type[Event], ...]] = (
@@ -88,7 +88,7 @@ class AgentController:
         is_delegate: bool = False,
         headless_mode: bool = True,
         status_callback: Callable | None = None,
-        context_window: int | None = None,
+        max_input_tokens: int | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -133,7 +133,7 @@ class AgentController:
         self._stuck_detector = StuckDetector(self.state)
         self.status_callback = status_callback
 
-        self.context_window = context_window
+        self.max_input_tokens = max_input_tokens
 
     async def close(self):
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -224,12 +224,12 @@ class AgentController:
             return
 
         # Check if adding this event would exceed context window
-        if self.context_window is not None:
+        if self.max_input_tokens is not None:
             # Create temporary history with new event
             temp_history = self.state.history + [event]
             token_count = self.agent.llm.get_token_count(temp_history)
 
-            if token_count > self.context_window:
+            if token_count > self.max_input_tokens:
                 # Truncate existing history before adding new event
                 self.state.history = self._apply_conversation_window(self.state.history)
 
@@ -895,8 +895,8 @@ class AgentController:
 
         # Verify truncated history fits in context window
         while (
-            self.context_window is not None
-            and self.agent.llm.get_token_count(kept_events) > self.context_window
+            self.max_input_tokens is not None
+            and self.agent.llm.get_token_count(kept_events) > self.max_input_tokens
         ):
             # Need to truncate more - remove oldest non-first-message event
             if len(kept_events) > 2:  # Keep at least first message and one more event
