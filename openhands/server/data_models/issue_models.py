@@ -26,12 +26,3 @@ class ResolveIssueDataModel(BaseModel):
     )
 
 
-class SendPullRequestDataModel(BaseModel):
-    issue_number: int = Field(..., description='Issue number to create PR for')
-    pr_type: Literal['branch', 'draft', 'ready'] = Field(
-        ..., description='Type of PR to create (branch, draft, ready)'
-    )
-    fork_owner: str | None = Field(None, description='Optional owner to fork to')
-    send_on_failure: bool = Field(
-        False, description='Whether to send PR even if resolution failed'
-    )
