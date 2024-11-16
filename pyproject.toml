@@ -63,7 +63,7 @@ opentelemetry-exporter-otlp-proto-grpc = "1.25.0"
 modal = "^0.64.145"
 runloop-api-client = "0.7.0"
 pygithub = "^2.5.0"
-openhands-aci = "^0.1.0"
+openhands-aci = "^0.1.1"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
