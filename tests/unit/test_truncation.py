@@ -199,7 +199,7 @@ class TestTruncation:
             sid='test_truncation',
             confirmation_mode=False,
             headless_mode=True,
-            context_window=80,
+            max_input_tokens=80,
         )
 
         # Create initial events
