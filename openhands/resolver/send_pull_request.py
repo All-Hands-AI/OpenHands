@@ -433,7 +433,7 @@ class ProcessIssueResult(BaseModel):
     error: str | None = None
 
 
-def process_single_issue(
+def create_pull_request_from_resolver_output(
     output_dir: str,
     resolver_output: ResolverOutput,
     github_token: str,
@@ -519,7 +519,7 @@ def process_all_successful_issues(
     for resolver_output in load_all_resolver_outputs(output_path):
         if resolver_output.success:
             print(f'Processing issue {resolver_output.issue.number}')
-            process_single_issue(
+            create_pull_request_from_resolver_output(
                 output_dir,
                 resolver_output,
                 github_token,
@@ -636,7 +636,7 @@ def main():
         resolver_output = load_single_resolver_output(output_path, issue_number)
         if not github_username:
             raise ValueError('Github username is required.')
-        process_single_issue(
+        create_pull_request_from_resolver_output(
             my_args.output_dir,
             resolver_output,
             github_token,

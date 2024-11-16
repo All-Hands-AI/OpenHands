@@ -13,7 +13,7 @@ from openhands.resolver.send_pull_request import (
     load_single_resolver_output,
     make_commit,
     process_all_successful_issues,
-    process_single_issue,
+    create_pull_request_from_resolver_output,
     reply_to_comment,
     send_pull_request,
     update_existing_pull_request,
@@ -607,7 +607,7 @@ def test_process_single_pr_update(
     )
     mock_initialize_repo.return_value = f'{mock_output_dir}/patches/pr_1'
 
-    process_single_issue(
+    create_pull_request_from_resolver_output(
         mock_output_dir,
         resolver_output,
         github_token,
@@ -639,7 +639,7 @@ def test_process_single_pr_update(
 @patch('openhands.resolver.send_pull_request.apply_patch')
 @patch('openhands.resolver.send_pull_request.send_pull_request')
 @patch('openhands.resolver.send_pull_request.make_commit')
-def test_process_single_issue(
+def test_create_pull_request_from_resolver_output(
     mock_make_commit,
     mock_send_pull_request,
     mock_apply_patch,
@@ -679,7 +679,7 @@ def test_process_single_issue(
     mock_initialize_repo.return_value = f'{mock_output_dir}/patches/issue_1'
 
     # Call the function
-    process_single_issue(
+    create_pull_request_from_resolver_output(
         mock_output_dir,
         resolver_output,
         github_token,
@@ -714,7 +714,7 @@ def test_process_single_issue(
 @patch('openhands.resolver.send_pull_request.apply_patch')
 @patch('openhands.resolver.send_pull_request.send_pull_request')
 @patch('openhands.resolver.send_pull_request.make_commit')
-def test_process_single_issue_unsuccessful(
+def test_create_pull_request_from_resolver_output_unsuccessful(
     mock_make_commit,
     mock_send_pull_request,
     mock_apply_patch,
@@ -748,7 +748,7 @@ def test_process_single_issue_unsuccessful(
     )
 
     # Call the function
-    process_single_issue(
+    create_pull_request_from_resolver_output(
         mock_output_dir,
         resolver_output,
         github_token,
@@ -767,9 +767,9 @@ def test_process_single_issue_unsuccessful(
 
 
 @patch('openhands.resolver.send_pull_request.load_all_resolver_outputs')
-@patch('openhands.resolver.send_pull_request.process_single_issue')
+@patch('openhands.resolver.send_pull_request.create_pull_request_from_resolver_output')
 def test_process_all_successful_issues(
-    mock_process_single_issue, mock_load_all_resolver_outputs, mock_llm_config
+    mock_create_pull_request, mock_load_all_resolver_outputs, mock_llm_config
 ):
     # Create ResolverOutput objects with properly initialized GithubIssue instances
     resolver_output_1 = ResolverOutput(
@@ -849,10 +849,10 @@ def test_process_all_successful_issues(
     )
 
     # Assert that process_single_issue was called for successful issues only
-    assert mock_process_single_issue.call_count == 2
+    assert mock_create_pull_request.call_count == 2
 
     # Check that the function was called with the correct arguments for successful issues
-    mock_process_single_issue.assert_has_calls(
+    mock_create_pull_request.assert_has_calls(
         [
             call(
                 'output_dir',
@@ -945,7 +945,7 @@ def test_send_pull_request_branch_naming(
 
 @patch('openhands.resolver.send_pull_request.argparse.ArgumentParser')
 @patch('openhands.resolver.send_pull_request.process_all_successful_issues')
-@patch('openhands.resolver.send_pull_request.process_single_issue')
+@patch('openhands.resolver.send_pull_request.create_pull_request_from_resolver_output')
 @patch('openhands.resolver.send_pull_request.load_single_resolver_output')
 @patch('os.path.exists')
 @patch('os.getenv')
@@ -953,7 +953,7 @@ def test_main(
     mock_getenv,
     mock_path_exists,
     mock_load_single_resolver_output,
-    mock_process_single_issue,
+    mock_create_pull_request,
     mock_process_all_successful_issues,
     mock_parser,
 ):
@@ -999,7 +999,7 @@ def test_main(
     mock_getenv.assert_any_call('GITHUB_TOKEN')
     mock_path_exists.assert_called_with('/mock/output')
     mock_load_single_resolver_output.assert_called_with('/mock/output/output.jsonl', 42)
-    mock_process_single_issue.assert_called_with(
+    mock_create_pull_request.assert_called_with(
         '/mock/output',
         mock_resolver_output,
         'mock_token',

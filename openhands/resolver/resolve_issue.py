@@ -316,7 +316,7 @@ async def resolve_issue(
     issue_number: int,
     comment_id: int | None,
     reset_logger: bool = False,
-) -> None:
+) -> ResolverOutput:
     """Resolve a single github issue.
 
     Args:
@@ -412,9 +412,9 @@ async def resolve_issue(
                 data = ResolverOutput.model_validate_json(line)
                 if data.issue.number == issue_number:
                     logger.warning(
-                        f'Issue {issue_number} was already processed. Skipping.'
+                        f'Issue {issue_number} was already processed. Returning existing output.'
                     )
-                    return
+                    return data
 
     output_fp = open(output_file, 'a')
 
@@ -458,6 +458,7 @@ async def resolve_issue(
     finally:
         output_fp.close()
         logger.info('Finished.')
+    return output
 
 
 def main():

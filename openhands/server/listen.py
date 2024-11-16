@@ -67,12 +67,10 @@ with warnings.catch_warnings():
     import litellm
 
 
-from openhands.resolver.io_utils import load_single_resolver_output
 from openhands.resolver.resolve_issue import resolve_issue as resolve_github_issue
-from openhands.resolver.send_pull_request import process_single_issue
+from openhands.resolver.send_pull_request import create_pull_request_from_resolver_output
 from openhands.server.data_models.issue_models import (
     ResolveIssueDataModel,
-    SendPullRequestDataModel,
 )
 
 load_dotenv()
@@ -475,13 +473,10 @@ async def resolve_issue(request: Request) -> dict[str, str | dict[str, Any]]:
     Returns:
         A dictionary containing the resolution results with keys:
         - status: 'success' or 'error'
-        - output: The output.jsonl contents (on success)
+        - output: The resolver output (on success)
         - result: PR creation result (on success)
         - message: Error message (on error)
     """
-    # Create temporary output directory
-    output_dir = tempfile.mkdtemp()
-
     try:
         # Get LLM config from current session
         llm_config = config.get_llm_config()
@@ -503,39 +498,41 @@ async def resolve_issue(request: Request) -> dict[str, str | dict[str, Any]]:
         body = await request.json()
         data = ResolveIssueDataModel(**body)
 
-        # Process the issue resolution
-        await resolve_github_issue(
-            owner=data.owner,
-            repo=data.repo,
-            token=data.token,
-            username=data.username,
-            max_iterations=data.max_iterations,
-            output_dir=output_dir,
-            llm_config=llm_config,
-            runtime_container_image=runtime_container_image,
-            prompt_template='',  # Using default for now
-            issue_type=data.issue_type,
-            repo_instruction=None,
-            issue_number=data.issue_number,
-            comment_id=data.comment_id,
-            reset_logger=True,
-        )
+        # Create temporary output directory for any intermediate files
+        output_dir = tempfile.mkdtemp()
+        try:
+            # Process the issue resolution
+            resolver_output = await resolve_github_issue(
+                owner=data.owner,
+                repo=data.repo,
+                token=data.token,
+                username=data.username,
+                max_iterations=data.max_iterations,
+                output_dir=output_dir,
+                llm_config=llm_config,
+                runtime_container_image=runtime_container_image,
+                prompt_template='',  # Using default for now
+                issue_type=data.issue_type,
+                repo_instruction=None,
+                issue_number=data.issue_number,
+                comment_id=data.comment_id,
+                reset_logger=True,
+            )
+        finally:
+            # Cleanup temp directory
+            if os.path.exists(output_dir):
+                import shutil
 
-        # Read output.jsonl file
-        output_file = os.path.join(output_dir, 'output.jsonl')
-        if not os.path.exists(output_file):
-            return {'status': 'error', 'message': 'No output file generated'}
+                shutil.rmtree(output_dir)
 
-        # Load the resolver output
-        resolver_output = load_single_resolver_output(output_file, data.issue_number)
         if not resolver_output:
             return {
                 'status': 'error',
-                'message': f'No resolver output found for issue {data.issue_number}',
+                'message': f'No resolver output generated for issue {data.issue_number}',
             }
 
         # Create pull request
-        result = process_single_issue(
+        result = create_pull_request_from_resolver_output(
             output_dir=output_dir,
             resolver_output=resolver_output,
             github_token=github_token,
@@ -546,90 +543,19 @@ async def resolve_issue(request: Request) -> dict[str, str | dict[str, Any]]:
             send_on_failure=data.send_on_failure,
         )
 
-        # Read the output file for the response
-        with open(output_file, 'r') as f:
-            output = f.read()
-
         if result.success:
             return {
                 'status': 'success',
-                'output': output,
+                'output': resolver_output,
                 'result': {'url': result.url},
             }
         else:
             return {
                 'status': 'error',
-                'output': output,
+                'output': resolver_output,
                 'message': result.error or 'Unknown error',
             }
 
-    except Exception as e:
-        return {'status': 'error', 'message': str(e)}
-    finally:
-        # Cleanup temp directory
-        if os.path.exists(output_dir):
-            import shutil
-
-            shutil.rmtree(output_dir)
-
-
-@app.post('/api/resolver/send-pr')
-async def send_pull_request(request: Request) -> dict[str, str | dict[str, Any]]:
-    """Create a pull request or branch for resolved issue.
-
-    This endpoint creates either:
-    - A draft PR
-    - A ready PR
-    - Just a branch
-
-    With the changes made by the resolver.
-
-    Args:
-        request: The incoming request object
-
-    Returns:
-        A dictionary containing the PR/branch creation results with keys:
-        - status: 'success' or 'error'
-        - result: PR creation result (on success)
-        - message: Error message (on error)
-    """
-    try:
-        # Get LLM config from current session
-        llm_config = config.get_llm_config()
-
-        # Get GitHub token from environment
-        github_token = os.environ.get('GITHUB_TOKEN')
-        if not github_token:
-            raise ValueError('GITHUB_TOKEN environment variable not set')
-
-        # Get GitHub username from environment
-        github_username = os.environ.get('GITHUB_USERNAME')
-
-        # Parse request data
-        body = await request.json()
-        data = SendPullRequestDataModel(**body)
-
-        # Process the request
-        output_dir = os.path.join(tempfile.gettempdir(), 'openhands_resolver')
-        output_file = os.path.join(output_dir, 'output.jsonl')
-        resolver_output = load_single_resolver_output(output_file, data.issue_number)
-        if not resolver_output:
-            raise ValueError(f'No resolver output found for issue {data.issue_number}')
-
-        result = process_single_issue(
-            output_dir=output_dir,
-            resolver_output=resolver_output,
-            github_token=github_token,
-            github_username=github_username,
-            pr_type=data.pr_type,
-            llm_config=llm_config,
-            fork_owner=data.fork_owner,
-            send_on_failure=data.send_on_failure,
-        )
-        if result.success:
-            return {'status': 'success', 'result': {'url': result.url}}
-        else:
-            return {'status': 'error', 'message': result.error or 'Unknown error'}
     except Exception as e:
         return {'status': 'error', 'message': str(e)}
 
