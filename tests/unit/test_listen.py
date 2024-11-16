@@ -116,7 +116,27 @@ def mock_config():
 def mock_resolve_issue():
     """Create a mock for resolve_github_issue."""
     with patch('openhands.server.listen.resolve_github_issue') as mock:
-        mock.return_value = None
+        test_issue = GithubIssue(
+            owner='test-owner',
+            repo='test-repo',
+            number=123,
+            title='Test Issue',
+            body='Test body',
+        )
+        test_output = ResolverOutput(
+            issue=test_issue,
+            issue_type='issue',
+            instruction='Test instruction',
+            base_commit='abc123',
+            git_patch='test patch',
+            history=[],
+            metrics={},
+            success=True,
+            success_explanation='Test success',
+            error=None,
+            comment_success=[],
+        )
+        mock.return_value = test_output
         yield mock
 
 
@@ -151,10 +171,7 @@ def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
         with patch('openhands.server.listen.config', mock_config), patch(
             'openhands.server.listen.get_sid_from_token', return_value='test-sid'
         ), patch(
-            'openhands.resolver.io_utils.load_single_resolver_output',
-            return_value=test_output,
-        ), patch(
-            'openhands.server.listen.process_single_issue',
+            'openhands.server.listen.create_pull_request_from_resolver_output',
             return_value=ProcessIssueResult(
                 success=True, url='https://github.com/test/test/pull/123'
             ),
@@ -176,12 +193,7 @@ def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
 
             # Create a temp directory for our test
             with tempfile.TemporaryDirectory() as test_dir:
-                # Create a temp file with test output
-                output_file = os.path.join(test_dir, 'output.jsonl')
-                with open(output_file, 'w') as tmp:
-                    tmp.write(
-                        '{"issue": {"owner": "test-owner", "repo": "test-repo", "number": 123, "title": "Test Issue", "body": "Test body"}, "issue_type": "issue", "instruction": "Test instruction", "base_commit": "abc123", "git_patch": "test patch", "history": [], "metrics": {}, "success": true, "success_explanation": "Test success", "error": null, "comment_success": []}\n'
-                    )
+
 
                 # Mock tempfile.mkdtemp to return our test dir
                 with patch('tempfile.mkdtemp', return_value=test_dir):
@@ -227,15 +239,14 @@ def test_resolve_issue_endpoint(test_client, mock_config, mock_resolve_issue):
             assert response.json()['status'] == 'error'
             assert response.json()['message'] == 'Test error'
 
-            # Test missing output file
+            # Test missing resolver output
             mock_resolve_issue.side_effect = None
-            with tempfile.TemporaryDirectory() as tmp_dir:
-                with patch('tempfile.mkdtemp', return_value=tmp_dir):
-                    response = test_client.post(
-                        '/api/resolver/resolve-issue',
-                        json=request_data,
-                        headers={'Authorization': 'Bearer test-token'},
-                    )
-                assert response.status_code == 200
-                assert response.json()['status'] == 'error'
-                assert response.json()['message'] == 'No output file generated'
+            mock_resolve_issue.return_value = None
+            response = test_client.post(
+                '/api/resolver/resolve-issue',
+                json=request_data,
+                headers={'Authorization': 'Bearer test-token'},
+            )
+            assert response.status_code == 200
+            assert response.json()['status'] == 'error'
+            assert response.json()['message'] == 'No resolver output generated for issue 123'

@@ -548,13 +548,13 @@ async def resolve_issue(request: Request) -> dict[str, str | dict[str, Any]]:
         if result.success:
             return {
                 'status': 'success',
-                'output': resolver_output,
+                'output': resolver_output.model_dump(),
                 'result': {'url': result.url},
             }
         else:
             return {
                 'status': 'error',
-                'output': resolver_output,
+                'output': resolver_output.model_dump(),
                 'message': result.error or 'Unknown error',
             }
 
