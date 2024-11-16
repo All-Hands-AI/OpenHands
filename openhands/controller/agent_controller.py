@@ -64,6 +64,7 @@ class AgentController:
     agent_task: asyncio.Future | None = None
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
+    context_window: int | None
     _pending_action: Action | None = None
     _closed: bool = False
     filter_out: ClassVar[tuple[type[Event], ...]] = (
@@ -87,6 +88,7 @@ class AgentController:
         is_delegate: bool = False,
         headless_mode: bool = True,
         status_callback: Callable | None = None,
+        context_window: int | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -130,6 +132,8 @@ class AgentController:
         # stuck helper
         self._stuck_detector = StuckDetector(self.state)
         self.status_callback = status_callback
+
+        self.context_window = context_window
 
     async def close(self):
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
@@ -222,6 +226,12 @@ class AgentController:
         # if the event is not filtered out, add it to the history
         if not any(isinstance(event, filter_type) for filter_type in self.filter_out):
             self.state.history.append(event)
+            
+            # Check if we need to apply conversation window due to context length
+            if self.context_window is not None:
+                token_count = self.agent.llm.get_token_count(self.state.history)
+                if token_count > self.context_window:
+                    self.state.history = self._apply_conversation_window(self.state.history)
 
         if isinstance(event, Action):
             await self._handle_action(event)
