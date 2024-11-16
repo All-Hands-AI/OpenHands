@@ -68,7 +68,9 @@ with warnings.catch_warnings():
 
 
 from openhands.resolver.resolve_issue import resolve_issue as resolve_github_issue
-from openhands.resolver.send_pull_request import create_pull_request_from_resolver_output
+from openhands.resolver.send_pull_request import (
+    create_pull_request_from_resolver_output,
+)
 from openhands.server.data_models.issue_models import (
     ResolveIssueDataModel,
 )
