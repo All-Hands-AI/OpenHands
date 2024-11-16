@@ -223,15 +223,18 @@ class AgentController:
         if hasattr(event, 'hidden') and event.hidden:
             return
 
-        # if the event is not filtered out, add it to the history
-        if not any(isinstance(event, filter_type) for filter_type in self.filter_out):
-            self.state.history.append(event)
+        # Check if adding this event would exceed context window
+        if self.context_window is not None:
+            # Create temporary history with new event
+            temp_history = self.state.history + [event]
+            token_count = self.agent.llm.get_token_count(temp_history)
             
-            # Check if we need to apply conversation window due to context length
-            if self.context_window is not None:
-                token_count = self.agent.llm.get_token_count(self.state.history)
-                if token_count > self.context_window:
-                    self.state.history = self._apply_conversation_window(self.state.history)
+            if token_count > self.context_window:
+                # Truncate existing history before adding new event
+                self.state.history = self._apply_conversation_window(self.state.history)
+        
+        # Now add the new event
+        self.state.history.append(event)
 
         if isinstance(event, Action):
             await self._handle_action(event)
