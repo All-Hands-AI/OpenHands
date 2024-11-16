@@ -16,6 +16,14 @@ class ResolveIssueDataModel(BaseModel):
     comment_id: int | None = Field(
         None, description='Optional ID of a specific comment to focus on'
     )
+    # PR-related fields
+    pr_type: Literal['branch', 'draft', 'ready'] = Field(
+        'draft', description='Type of PR to create (branch, draft, ready)'
+    )
+    fork_owner: str | None = Field(None, description='Optional owner to fork to')
+    send_on_failure: bool = Field(
+        False, description='Whether to send PR even if resolution failed'
+    )
 
 
 class SendPullRequestDataModel(BaseModel):

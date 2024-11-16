@@ -461,13 +461,13 @@ async def get_security_analyzers():
 
 
 @app.post('/api/resolver/resolve-issue')
-async def resolve_issue(request: Request) -> dict[str, str]:
-    """Resolve a GitHub issue using OpenHands.
+async def resolve_issue(request: Request) -> dict[str, str | dict[str, Any]]:
+    """Resolve a GitHub issue using OpenHands and create a pull request.
 
-    This endpoint attempts to automatically resolve a GitHub issue by:
-    1. Analyzing the issue content and comments
-    2. Making necessary code changes
-    3. Creating a pull request or branch with the changes
+    This endpoint:
+    1. Analyzes the issue content and comments
+    2. Makes necessary code changes
+    3. Creates a pull request or branch with the changes
 
     Args:
         request: The incoming request object
@@ -476,6 +476,7 @@ async def resolve_issue(request: Request) -> dict[str, str]:
         A dictionary containing the resolution results with keys:
         - status: 'success' or 'error'
         - output: The output.jsonl contents (on success)
+        - result: PR creation result (on success)
         - message: Error message (on error)
     """
     # Create temporary output directory
@@ -490,11 +491,19 @@ async def resolve_issue(request: Request) -> dict[str, str]:
         if not runtime_container_image:
             raise ValueError('Runtime container image not configured')
 
+        # Get GitHub token from environment
+        github_token = os.environ.get('GITHUB_TOKEN')
+        if not github_token:
+            raise ValueError('GITHUB_TOKEN environment variable not set')
+
+        # Get GitHub username from environment
+        github_username = os.environ.get('GITHUB_USERNAME')
+
         # Parse request data
         body = await request.json()
         data = ResolveIssueDataModel(**body)
 
-        # Process the request
+        # Process the issue resolution
         await resolve_github_issue(
             owner=data.owner,
             repo=data.repo,
@@ -514,11 +523,42 @@ async def resolve_issue(request: Request) -> dict[str, str]:
 
         # Read output.jsonl file
         output_file = os.path.join(output_dir, 'output.jsonl')
-        if os.path.exists(output_file):
-            with open(output_file, 'r') as f:
-                return {'status': 'success', 'output': f.read()}
-        else:
+        if not os.path.exists(output_file):
             return {'status': 'error', 'message': 'No output file generated'}
+
+        # Load the resolver output
+        resolver_output = load_single_resolver_output(output_file, data.issue_number)
+        if not resolver_output:
+            return {'status': 'error', 'message': f'No resolver output found for issue {data.issue_number}'}
+
+        # Create pull request
+        result = process_single_issue(
+            output_dir=output_dir,
+            resolver_output=resolver_output,
+            github_token=github_token,
+            github_username=github_username,
+            pr_type=data.pr_type,
+            llm_config=llm_config,
+            fork_owner=data.fork_owner,
+            send_on_failure=data.send_on_failure,
+        )
+
+        # Read the output file for the response
+        with open(output_file, 'r') as f:
+            output = f.read()
+
+        if result.success:
+            return {
+                'status': 'success',
+                'output': output,
+                'result': {'url': result.url},
+            }
+        else:
+            return {
+                'status': 'error',
+                'output': output,
+                'message': result.error or 'Unknown error',
+            }
 
     except Exception as e:
         return {'status': 'error', 'message': str(e)}
