@@ -83,7 +83,21 @@ class IssueHandler(IssueHandlerInterface):
         return re.findall(image_pattern, issue_body)
 
     def _extract_issue_references(self, body: str) -> list[int]:
-        pattern = r'#(\d+)'
+        # First, remove code blocks as they may contain false positives
+        body = re.sub(r'```.*?```', '', body, flags=re.DOTALL)
+
+        # Remove inline code
+        body = re.sub(r'`[^`]*`', '', body)
+
+        # Remove URLs that contain hash symbols
+        body = re.sub(r'https?://[^\s)]*#\d+[^\s)]*', '', body)
+
+        # Now extract issue numbers, making sure they're not part of other text
+        # The pattern matches #number that:
+        # 1. Is at the start of text or after whitespace/punctuation
+        # 2. Is followed by whitespace, punctuation, or end of text
+        # 3. Is not part of a URL
+        pattern = r'(?:^|[\s\[({]|[^\w#])#(\d+)(?=[\s,.\])}]|$)'
         return [int(match) for match in re.findall(pattern, body)]
 
     def _get_issue_comments(
@@ -455,17 +469,20 @@ class PRHandler(IssueHandler):
         )
 
         for issue_number in unique_issue_references:
-            url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{issue_number}'
-            headers = {
-                'Authorization': f'Bearer {self.token}',
-                'Accept': 'application/vnd.github.v3+json',
-            }
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            issue_data = response.json()
-            issue_body = issue_data.get('body', '')
-            if issue_body:
-                closing_issues.append(issue_body)
+            try:
+                url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{issue_number}'
+                headers = {
+                    'Authorization': f'Bearer {self.token}',
+                    'Accept': 'application/vnd.github.v3+json',
+                }
+                response = requests.get(url, headers=headers)
+                response.raise_for_status()
+                issue_data = response.json()
+                issue_body = issue_data.get('body', '')
+                if issue_body:
+                    closing_issues.append(issue_body)
+            except requests.exceptions.RequestException as e:
+                logger.warning(f'Failed to fetch issue {issue_number}: {str(e)}')
 
         return closing_issues
 
