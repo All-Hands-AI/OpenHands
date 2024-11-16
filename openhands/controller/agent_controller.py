@@ -223,6 +223,10 @@ class AgentController:
         if hasattr(event, 'hidden') and event.hidden:
             return
 
+        # if the event is not filtered out, add it to the history
+        if not any(isinstance(event, filter_type) for filter_type in self.filter_out):
+            self.state.history.append(event)
+
         # Check if adding this event would exceed context window
         if self.max_input_tokens is not None:
             # Create temporary history with new event
