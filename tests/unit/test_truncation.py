@@ -230,9 +230,13 @@ class TestTruncation:
         assert len(controller.state.history) < initial_history_len + 1
         assert controller.state.start_id == first_msg._id
         assert controller.state.truncation_id is not None
-        assert first_msg in controller.state.history  # First message should be preserved
+        assert (
+            first_msg in controller.state.history
+        )  # First message should be preserved
 
         # Verify action-observation pairs weren't split
         for i, event in enumerate(controller.state.history[1:]):
             if isinstance(event, CmdOutputObservation):
-                assert any(e._id == event._cause for e in controller.state.history[:i+1])
+                assert any(
+                    e._id == event._cause for e in controller.state.history[: i + 1]
+                )
