@@ -1,0 +1,100 @@
+
+
+# 💻 OpenHands
+
+OpenHands هو **مهندس برمجيات ذكاء اصطناعي ذاتي التشغيل**، قادر على تنفيذ مهام هندسية معقدة والتعاون النشط مع المستخدمين في مشاريع تطوير البرمجيات.  
+هذا المشروع مفتوح المصدر بالكامل، مما يعني أنه يمكنك استخدامه وتعديله بحرية كما تشاء.
+
+:::tip
+استكشف الكود المصدري لـ OpenHands على [GitHub](https://github.com/All-Hands-AI/OpenHands) أو انضم إلى إحدى مجتمعاتنا!
+
+<a href="https://github.com/All-Hands-AI/OpenHands/graphs/contributors">
+  <img
+    src="https://img.shields.io/github/contributors/All-Hands-AI/OpenHands?style=for-the-badge"
+    alt="المساهمون"
+  />
+</a>
+<a href="https://github.com/All-Hands-AI/OpenHands/network/members">
+  <img
+    src="https://img.shields.io/github/forks/All-Hands-AI/OpenHands?style=for-the-badge"
+    alt="التفرعات"
+  />
+</a>
+<a href="https://github.com/All-Hands-AI/OpenHands/stargazers">
+  <img
+    src="https://img.shields.io/github/stars/All-Hands-AI/OpenHands?style=for-the-badge"
+    alt="الإعجابات"
+  />
+</a>
+<a href="https://github.com/All-Hands-AI/OpenHands/issues">
+  <img
+    src="https://img.shields.io/github/issues/All-Hands-AI/OpenHands?style=for-the-badge"
+    alt="المشاكل"
+  />
+</a>
+<br></br>
+<a href="https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE">
+  <img
+    src="https://img.shields.io/github/license/All-Hands-AI/OpenHands?style=for-the-badge"
+    alt="ترخيص MIT"
+  />
+</a>
+<br></br>
+<a href="https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA">
+  <img
+    src="https://img.shields.io/badge/Slack-Join%20Us-red?logo=slack&logoColor=white&style=for-the-badge"
+    alt="انضم إلى مجتمعنا على Slack"
+  />
+</a>
+<a href="https://discord.gg/ESHStjSjD4">
+  <img
+    src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge"
+    alt="انضم إلى مجتمعنا على Discord"
+  />
+</a>
+:::
+
+---
+
+## 🛠️ للبدء
+
+أفضل طريقة لتشغيل OpenHands هي داخل حاوية Docker. يعمل البرنامج بشكل أفضل مع أحدث إصدار من Docker، `26.0.0`.  
+يجب عليك استخدام Linux أو Mac OS أو WSL على Windows.
+
+لتشغيل OpenHands داخل حاوية Docker، نفذ الأوامر التالية في الطرفية:
+
+:::warning
+عند تنفيذ الأمر التالي، قد يتم تعديل الملفات داخل `./workspace` أو حذفها.
+:::
+
+```bash
+WORKSPACE_BASE=$(pwd)/workspace
+docker run -it \
+    --pull=always \
+    -e SANDBOX_USER_ID=$(id -u) \
+    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+    -v $WORKSPACE_BASE:/opt/workspace_base \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -p 3000:3000 \
+    --add-host host.docker.internal:host-gateway \
+    --name openhands-app-$(date +%Y%m%d%H%M%S) \
+    ghcr.io/all-hands-ai/openhands:main
+```
+
+ستجد OpenHands قيد التشغيل على الرابط التالي: [http://localhost:3000](http://localhost:3000)، مع إمكانية الوصول إلى `./workspace`.  
+لتعمل OpenHands على مشروعك الخاص، ضع الكود داخل مجلد `./workspace`.
+
+سيقتصر وصول OpenHands على هذا المجلد فقط، حيث يتم تشغيله داخل بيئة معزولة وآمنة باستخدام Docker.
+
+:::tip
+إذا كنت ترغب في استخدام الإصدار الأحدث **(غير مستقر!)**، يمكنك استخدام `ghcr.io/all-hands-ai/openhands:main` كصورة (آخر سطر).
+:::
+
+للتعرف على سير العمل الخاص بالتطوير، راجع [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
+
+**هل تواجه مشاكل؟**  
+اطلع على [دليل استكشاف الأخطاء وإصلاحها](https://docs.all-hands.dev/modules/usage/troubleshooting).
+
+:::warning
+OpenHands قيد التطوير حاليًا، لكن يمكنك تشغيل النسخة الأولية (Alpha) لمشاهدة النظام يعمل بشكل كامل.
+:::

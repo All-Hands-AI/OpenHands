@@ -1,0 +1,159 @@
+{
+  "footer.title": {
+    "message": "OpenHands"
+  },
+  "footer.docs": {
+    "message": "المستندات"
+  },
+  "footer.community": {
+    "message": "المجتمع"
+  },
+  "footer.copyright": {
+    "message": "© {year} OpenHands"
+  },
+  "faq.title": {
+    "message": "الأسئلة الشائعة",
+    "description": "عنوان الأسئلة الشائعة"
+  },
+  "faq.description": {
+    "message": "الأسئلة الشائعة"
+  },
+  "faq.section.title.1": {
+    "message": "ما هو OpenHands؟",
+    "description": "عنوان القسم الأول"
+  },
+  "faq.section.highlight": {
+    "message": "OpenHands",
+    "description": "النص المميز"
+  },
+  "faq.section.description.1": {
+    "message": "هو مهندس برمجيات مستقل يمكنه حل مهام هندسة البرمجيات والتنقل عبر الويب في أي وقت. يمكنه تنفيذ استفسارات في علوم البيانات مثل \"إيجاد عدد طلبات السحب في مستودع OpenHands في الأشهر الأخيرة\" والمهام البرمجية مثل \"يرجى إضافة اختبارات إلى هذا الملف والتحقق مما إذا كانت جميع الاختبارات تمر. إذا لم يكن الأمر كذلك، قم بإصلاح الملف.\"",
+    "description": "وصف لـ OpenHands"
+  },
+  "faq.section.description.2": {
+    "message": "بالإضافة إلى ذلك، OpenHands هو منصة ومجتمع للمطورين الذين يرغبون في اختبار وتقييم الوكلاء الجدد.",
+    "description": "وصف إضافي لـ OpenHands"
+  },
+  "faq.section.title.2": {
+    "message": "الدعم",
+    "description": "عنوان قسم الدعم"
+  },
+  "faq.section.support.answer": {
+    "message": "إذا كنت تواجه مشكلة قد يواجهها آخرون أيضًا، يرجى الإبلاغ عنها على {githubLink}. إذا كنت تواجه صعوبة في التثبيت أو لديك أسئلة عامة، انضم إلى {discordLink} أو {slackLink}.",
+    "description": "إجابة الدعم"
+  },
+  "faq.section.title.3": {
+    "message": "كيف تحل مشكلة على GitHub باستخدام OpenHands؟",
+    "description": "عنوان قسم مشاكل GitHub"
+  },
+  "faq.section.github.steps.intro": {
+    "message": "لحل مشكلة على GitHub باستخدام OpenHands، أرسل أمرًا إلى OpenHands يطلب منه اتباع خطوات مثل:",
+    "description": "مقدمة خطوات GitHub"
+  },
+  "faq.section.github.step1": {
+    "message": "اقرأ المشكلة https://github.com/All-Hands-AI/OpenHands/issues/1611",
+    "description": "خطوة GitHub 1"
+  },
+  "faq.section.github.step2": {
+    "message": "استنساخ المستودع والتحقق من فرع جديد",
+    "description": "خطوة GitHub 2"
+  },
+  "faq.section.github.step3": {
+    "message": "استنادًا إلى التعليمات في وصف المشكلة، قم بتعديل الملفات لحل المشكلة",
+    "description": "خطوة GitHub 3"
+  },
+  "faq.section.github.step4": {
+    "message": "دفع النتيجة إلى GitHub باستخدام متغير البيئة GITHUB_TOKEN",
+    "description": "خطوة GitHub 4"
+  },
+  "faq.section.github.step5": {
+    "message": "أخبرني بالرابط الذي يجب علي استخدامه لإرسال طلب سحب",
+    "description": "خطوة GitHub 5"
+  },
+  "faq.section.github.steps.preRun": {
+    "message": "قبل تشغيل OpenHands، يمكنك فعل ما يلي:",
+    "description": "خطوات GitHub قبل التشغيل"
+  },
+  "faq.section.github.steps.tokenInfo": {
+    "message": "حيث XXX هو رمز GitHub الذي أنشأته ولديه الأذونات لدفع التغييرات إلى مستودع OpenHands. إذا لم يكن لديك أذونات تعديل للمستودع، قد تحتاج إلى تغيير ذلك إلى:",
+    "description": "معلومات رمز GitHub"
+  },
+  "faq.section.github.steps.usernameInfo": {
+    "message": "حيث USERNAME هو اسمك على GitHub.",
+    "description": "معلومات اسم المستخدم GitHub"
+  },
+  "faq.section.title.4": {
+    "message": "كيف يختلف OpenHands عن Devin؟",
+    "description": "عنوان قسم Devin"
+  },
+  "faq.section.openhands.linkText": {
+    "message": "Devin",
+    "description": "نص رابط Devin"
+  },
+  "faq.section.openhands.description": {
+    "message": "هو منتج تجاري من شركة Cognition Inc. الذي كان مصدر الإلهام الأول لـ OpenHands. كلاهما يهدف إلى أداء مهام هندسة البرمجيات بشكل جيد، لكن يمكنك تنزيل واستخدام وتعديل OpenHands، في حين أن Devin يمكن استخدامه فقط عبر موقع Cognition. بالإضافة إلى ذلك، تطور OpenHands ليصبح أكثر من مجرد مصدر إلهام أولي، وأصبح الآن نظامًا بيئيًا مجتمعيًا لتطوير الوكلاء بشكل عام، ويسعدنا أن نراك تنضم و",
+    "description": "وصف Devin"
+  },
+  "faq.section.openhands.contribute": {
+    "message": "مساهمة",
+    "description": "رابط المساهمة"
+  },
+  "faq.section.title.5": {
+    "message": "كيف يختلف OpenHands عن ChatGPT؟",
+    "description": "عنوان قسم ChatGPT"
+  },
+  "faq.section.chatgpt.description": {
+    "message": "يمكنك الوصول إلى ChatGPT عبر الإنترنت، ولا يتصل بالملفات المحلية وقدراته في تنفيذ الشيفرة محدودة. بينما يمكنه كتابة الشيفرة، لكن من الصعب اختبارها أو تنفيذها.",
+    "description": "وصف ChatGPT"
+  },
+  "homepage.description": {
+    "message": "توليد الشيفرة باستخدام الذكاء الاصطناعي للهندسة البرمجية.",
+    "description": "وصف الصفحة الرئيسية"
+  },
+  "homepage.getStarted": {
+    "message": "ابدأ"
+  },
+  "welcome.message": {
+    "message": "مرحبًا بك في OpenHands، نظام ذكاء صناعي مستقل هندسي برمجي قادر على تنفيذ مهام الهندسة المعقدة والتعاون بنشاط مع المستخدمين في مشاريع تطوير البرمجيات."
+  },
+  "theme.ErrorPageContent.title": {
+    "message": "هذه الصفحة تعطلت.",
+    "description": "عنوان صفحة البديل عند تعطل الصفحة"
+  },
+  "theme.BackToTopButton.buttonAriaLabel": {
+    "message": "العودة إلى أعلى الصفحة",
+    "description": "التسمية ARIA لزر العودة إلى أعلى الصفحة"
+  },
+  "theme.blog.archive.title": {
+    "message": "الأرشيف",
+    "description": "عنوان الصفحة وبطل صفحة الأرشيف"
+  },
+  "theme.blog.archive.description": {
+    "message": "الأرشيف",
+    "description": "وصف الصفحة وبطل صفحة الأرشيف"
+  },
+  "theme.blog.paginator.navAriaLabel": {
+    "message": "الترقيم لصفحات المقالات في المدونة",
+    "description": "التسمية ARIA لترقيم المدونة"
+  },
+  "theme.blog.paginator.newerEntries": {
+    "message": "مشاركات جديدة",
+    "description": "التسمية المستخدمة للتنقل إلى صفحة المدونة الأحدث (الصفحة السابقة)"
+  },
+  "theme.blog.paginator.olderEntries": {
+    "message": "مشاركات قديمة",
+    "description": "التسمية المستخدمة للتنقل إلى صفحة المدونة الأقدم (الصفحة التالية)"
+  },
+  "theme.blog.post.paginator.navAriaLabel": {
+    "message": "الترقيم للمقالات في المدونة",
+    "description": "التسمية ARIA لصفحات المقالات"
+  },
+  "theme.blog.post.paginator.newerPost": {
+    "message": "مقالة أحدث",
+    "description": "التسمية للمقالة الأحدث"
+  },
+  "theme.blog.post.paginator.olderPost": {
+    "message": "مقالة أقدم",
+    "description": "التسمية للمقالة الأقدم"
+  }
+}
