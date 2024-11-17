@@ -21,6 +21,11 @@ describe("Empty state", () => {
   }));
 
   beforeAll(() => {
+    vi.mock("@remix-run/react", async (importActual) => ({
+      ...(await importActual<typeof import("@remix-run/react")>()),
+      useRouteLoaderData: vi.fn(() => ({})),
+    }));
+
     vi.mock("#/context/socket", async (importActual) => ({
       ...(await importActual<typeof import("#/context/ws-client-provider")>()),
       useWsClient: useWsClientMock,

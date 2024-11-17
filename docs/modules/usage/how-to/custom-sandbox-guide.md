@@ -62,25 +62,3 @@ Run OpenHands by running ```make run``` in the top level directory.
 ## Technical Explanation
 
 Please refer to [custom docker image section of the runtime documentation](https://docs.all-hands.dev/modules/usage/architecture/runtime#advanced-how-openhands-builds-and-maintains-od-runtime-images) for more details.
-
-## Troubleshooting / Errors
-
-### Error: ```useradd: UID 1000 is not unique```
-
-If you see this error in the console output it is because OpenHands is trying to create the openhands user in the sandbox with a UID of 1000, however this UID is already being used in the image (for some reason). To fix this change the sandbox_user_id field in the config.toml file to a different value:
-
-```toml
-[core]
-workspace_base="./workspace"
-run_as_openhands=true
-sandbox_base_container_image="custom_image"
-sandbox_user_id="1001"
-```
-
-### Port use errors
-
-If you see an error about a port being in use or unavailable, try deleting all running Docker Containers (run `docker ps` and `docker rm` relevant containers) and then re-running ```make run``` .
-
-## Discuss
-
-For other issues or questions join the [Slack](https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA) or [Discord](https://discord.gg/ESHStjSjD4) and ask!

@@ -38,16 +38,16 @@ See the [Installation](https://docs.all-hands.dev/modules/usage/installation) gu
 system requirements and more information.
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.13-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.14-nikolaik
 
 docker run -it --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.13-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.14-nikolaik \
+    -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -p 3000:3000 \
-    -e LOG_ALL_EVENTS=true \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.13
+    docker.all-hands.dev/all-hands-ai/openhands:0.14
 ```
 
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
@@ -77,25 +77,15 @@ To learn more about the project, and for tips on using OpenHands,
 There you'll find resources on how to use different LLM providers,
 troubleshooting resources, and advanced configuration options.
 
-## 🤝 How to Contribute
+## 🤝 How to Join the Community
 
-OpenHands is a community-driven project, and we welcome contributions from everyone.
-Whether you're a developer, a researcher, or simply enthusiastic about advancing the field of
-software engineering with AI, there are many ways to get involved:
+OpenHands is a community-driven project, and we welcome contributions from everyone. As a first step, you can:
 
-- **Code Contributions:** Help us develop new agents, core functionality, the frontend and other interfaces, or sandboxing solutions.
-- **Research and Evaluation:** Contribute to our understanding of LLMs in software engineering, participate in evaluating the models, or suggest improvements.
-- **Feedback and Testing:** Use the OpenHands toolset, report bugs, suggest features, or provide feedback on usability.
+- [Join our Slack workspace](https://join.slack.com/t/openhands-ai/shared_invite/zt-2tom0er4l-JeNUGHt_AxpEfIBstbLPiw) - Here we talk about research, architecture, and future development.
+- [Join our Discord server](https://discord.gg/ESHStjSjD4) - This is a community-run server for general discussion, questions, and feedback.
+- [Read or post Github Issues](https://github.com/All-Hands-AI/OpenHands/issues) - Check out the issues we're working on, or add your own ideas.
 
-For details, please check [CONTRIBUTING.md](./CONTRIBUTING.md).
-
-## 🤖 Join Our Community
-
-Whether you're a developer, a researcher, or simply enthusiastic about OpenHands, we'd love to have you in our community.
-Let's make software engineering better together!
-
-- [Slack workspace](https://join.slack.com/t/openhands-ai/shared_invite/zt-2tom0er4l-JeNUGHt_AxpEfIBstbLPiw) - Here we talk about research, architecture, and future development.
-- [Discord server](https://discord.gg/ESHStjSjD4) - This is a community-run server for general discussion, questions, and feedback.
+See more about the community in [COMMUNITY.md](./COMMUNITY.md) or find details on contributing in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## 📈 Progress
 
