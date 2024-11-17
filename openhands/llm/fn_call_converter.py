@@ -50,7 +50,7 @@ STOP_WORDS = ['</function']
 IN_CONTEXT_LEARNING_EXAMPLE_PREFIX = """
 Here's a running example of how to perform a task with the provided tools.
 
---------------------- START OF EXAMPLE ---------------------
+--------------------- START OF EXAMPLE 1 ---------------------
 
 USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.
 
@@ -213,7 +213,140 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 <function=finish>
 </function>
 
---------------------- END OF EXAMPLE ---------------------
+--------------------- END OF EXAMPLE 1 ---------------------
+
+
+--------------------- START OF EXAMPLE 2 ---------------------
+
+USER: I'm working on an issue about HTTP timeouts in our data ingestion pipeline. The logs show
+TimeoutError is being raised in fetch_customer_data() but I'm not sure if we need to increase the
+timeout or if there's a deeper issue. Can you help me trace this function?
+
+ASSISTANT: I'll help track down the timeout issue in fetch_customer_data. Let me see its definition first:
+
+<function=str_replace_editor>
+<parameter=command>jump_to_definition</parameter>
+<parameter=symbol_name>fetch_customer_data</parameter>
+</function>
+
+USER: EXECUTION RESULT of [str_replace_editor]:
+Found definition in /workspace/services/data_ingestion.py:
+async def fetch_customer_data(customer_id: str) -> Dict[str, Any]:
+    '''Fetches customer data from multiple endpoints and aggregates results.
+
+    Args:
+        customer_id: Unique identifier for customer
+
+    Returns:
+        Combined customer data from all sources
+    '''
+    async with CustomerClient(timeout=DEFAULT_TIMEOUT) as client:
+        # Core profile data has 30s timeout
+        profile = await client.get_profile(customer_id)
+
+        # Transaction history needs more time
+        transactions = await _fetch_transactions(
+            customer_id,
+            timeout=TRANSACTION_TIMEOUT
+        )
+
+        return {
+            "profile": profile,
+            "transactions": transactions,
+            "last_updated": datetime.now()
+        }
+
+ASSISTANT: Interesting - it looks like fetch_customer_data relies on _fetch_transactions which has a separate timeout. Let me check the definition of that internal function:
+
+<function=str_replace_editor>
+<parameter=command>jump_to_definition</parameter>
+<parameter=symbol_name>_fetch_transactions</parameter>
+</function>
+
+USER: EXECUTION RESULT of [str_replace_editor]:
+Found definition in /workspace/services/data_ingestion.py:
+async def _fetch_transactions(customer_id: str, timeout: int) -> List[Dict]:
+    '''Fetches detailed transaction history for customer.
+    Handles pagination and retries on network errors.
+    '''
+    results = []
+    page = 1
+
+    while True:
+        try:
+            async with TransactionClient(timeout=timeout) as client:
+                batch = await client.get_transactions(
+                    customer_id,
+                    page=page,
+                    batch_size=BATCH_SIZE
+                )
+                if not batch:
+                    break
+
+                results.extend(batch)
+                page += 1
+
+        except TimeoutError:
+            logger.error(
+                f"Timeout fetching transactions for {customer_id} "
+                f"on page {page}"
+            )
+            raise
+
+    return results
+
+ASSISTANT: Now, let me see where fetch_customer_data is being called to understand the usage patterns:
+
+<function=str_replace_editor>
+<parameter=command>find_references</parameter>
+<parameter=symbol_name>fetch_customer_data</parameter>
+</function>
+
+USER: EXECUTION RESULT of [str_replace_editor]:
+Found references in:
+/workspace/api/customers.py:
+    @router.get("/customers/{customer_id}/full")
+    async def get_full_customer_data(customer_id: str):
+        try:
+            data = await fetch_customer_data(customer_id)
+            return data
+        except TimeoutError:
+            raise HTTPException(status_code=504, detail="Data fetch timed out")
+
+/workspace/jobs/daily_report.py:
+    async def generate_customer_report(customer_ids: List[str]):
+        results = []
+        for id in customer_ids:
+            try:
+                data = await fetch_customer_data(id)
+                results.append(summarize_customer_data(data))
+            except TimeoutError:
+                logger.warning(f"Skipping customer {id} due to timeout")
+                continue
+        return results
+
+/workspace/tests/test_services.py:
+    @pytest.mark.asyncio
+    async def test_fetch_customer_data_large_history():
+        # Test with customer having 50+ pages of transactions
+        data = await fetch_customer_data("customer_with_large_history")
+        assert len(data["transactions"]) > 500
+
+ASSISTANT:
+I see the issue now - the TimeoutError is likely happening because _fetch_transactions has to paginate through transaction history, and while each individual request uses TRANSACTION_TIMEOUT, we're not limiting the total time for all pages.
+
+Some customers might have hundreds of transaction pages, causing the overall fetch_customer_data call to take much longer than expected. This explains why we see timeouts in both the API endpoint and daily report job.
+
+We should probably:
+1. Add a max_pages parameter to _fetch_transactions to limit total pagination
+2. Add a total_timeout parameter separate from the per-request timeout
+3. Consider implementing parallel page fetching for large transaction histories
+
+Would you like me to implement any of these solutions for the issue?
+
+... (continue the conversation)
+
+--------------------- END OF EXAMPLE 2 ---------------------
 
 Do NOT assume the environment is the same as in the example above.
 
