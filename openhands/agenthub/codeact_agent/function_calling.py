@@ -214,6 +214,8 @@ _STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for viewing, creating a
 * The `create` command cannot be used if the specified `path` already exists as a file
 * If a `command` generates a long output, it will be truncated and marked with `<response clipped>`
 * The `undo_edit` command will revert the last edit made to the file at `path`
+* The `jump_to_definition` command will print out possible FULL definition(s) of the class or function/method in the whole codebase. Can be useful for navigating large repositories
+* The `find_references` command will print out possible references (or usages) to the class or function/method in the whole codebase. This can be useful to understand how a class or function/method is used in a repository
 
 Notes for using the `str_replace` command:
 * The `old_str` parameter should match EXACTLY one or more consecutive lines from the original file. Be mindful of whitespaces!
@@ -235,7 +237,7 @@ StrReplaceEditorTool = ChatCompletionToolParam(
                     'type': 'string',
                 },
                 'path': {
-                    'description': 'Absolute path to file or directory, e.g. `/workspace/file.py` or `/workspace`.',
+                    'description': 'Absolute path to file or directory, e.g. `/workspace/file.py` or `/workspace`. Required for all commands, except `jump_to_definition` and `find_references`.',
                     'type': 'string',
                 },
                 'file_text': {
@@ -259,8 +261,11 @@ StrReplaceEditorTool = ChatCompletionToolParam(
                     'items': {'type': 'integer'},
                     'type': 'array',
                 },
+                'symbol_name': {
+                    'description': 'Required parameter of `jump_to_definition` and `find_references` commands. The name of the class or function/method to search for.',
+                },
             },
-            'required': ['command', 'path'],
+            'required': ['command'],
         },
     ),
 )
