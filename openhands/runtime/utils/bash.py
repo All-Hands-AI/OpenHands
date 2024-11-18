@@ -157,14 +157,12 @@ class BashSession:
         raw_command_output: str,
         continue_prefix: str = '',
         suffix: str = '',
-        keep_prompt: bool = False,
     ) -> str:
         """Get the command output with the previous command output removed.
 
         Args:
             continue_prefix: The prefix to add to the command output if it's a continuation of the previous command.
             suffix: The suffix to add to the command output.
-            keep_prompt: If True, keep the prompt in the output.
         """
         # remove the previous command output from the new output if any
         custom_prefix = ''
@@ -174,12 +172,11 @@ class BashSession:
         else:
             command_output = raw_command_output
         self.prev_output = raw_command_output  # update current command output anyway
-        if not keep_prompt:
-            command_output = _remove_command_prefix(command_output, command)
+        command_output = _remove_command_prefix(command_output, command)
         command_output = f'{custom_prefix}{command_output}{suffix}'
         return command_output
 
-    def _handle_completed_command(self, command: str, keep_prompt: bool = False) -> CmdOutputObservation:
+    def _handle_completed_command(self, command: str) -> CmdOutputObservation:
         full_output = self._get_pane_content(full=True)
 
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
@@ -198,7 +195,6 @@ class BashSession:
                 if not is_special_key
                 else f'\n\n[The command completed with exit code {metadata.exit_code}. CTRL+{command[-1].upper()} was sent.]'
             ),
-            keep_prompt=keep_prompt,
         )
         self.prev_status = BashCommandStatus.COMPLETED
         self.prev_output = ''  # Reset previous command output
@@ -209,7 +205,7 @@ class BashSession:
             metadata=metadata,
         )
 
-    def _handle_nochange_timeout_command(self, command: str, keep_prompt: bool = False) -> CmdOutputObservation:
+    def _handle_nochange_timeout_command(self, command: str) -> CmdOutputObservation:
         self.prev_status = BashCommandStatus.NO_CHANGE_TIMEOUT
         full_output = self._get_pane_content(full=True)
 
@@ -227,7 +223,6 @@ class BashSession:
                 'send other commands to interact with the current process, '
                 'or send keys to interrupt/kill the command.]'
             ),
-            keep_prompt=keep_prompt,
         )
         return CmdOutputObservation(
             content=command_output,
@@ -236,7 +231,7 @@ class BashSession:
         )
 
     def _handle_hard_timeout_command(
-        self, command: str, timeout: float, keep_prompt: bool = False
+        self, command: str, timeout: float
     ) -> CmdOutputObservation:
         self.prev_status = BashCommandStatus.HARD_TIMEOUT
         full_output = self._get_pane_content(full=True)
@@ -254,7 +249,6 @@ class BashSession:
                 'send other commands to interact with the current process, '
                 'or send keys to interrupt/kill the command.]'
             ),
-            keep_prompt=keep_prompt,
         )
 
         return CmdOutputObservation(
@@ -314,7 +308,7 @@ class BashSession:
             # 1) Execution completed
             # if the last command output contains the end marker
             if cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip()):
-                return self._handle_completed_command(action.command, action.keep_prompt)
+                return self._handle_completed_command(action.command)
 
             # 2) Execution timed out since there's no change in output
             # for a while (self.NO_CHANGE_TIMEOUT_SECONDS)
@@ -324,10 +318,10 @@ class BashSession:
                 not action.blocking
                 and time_since_last_change >= self.NO_CHANGE_TIMEOUT_SECONDS
             ):
-                return self._handle_nochange_timeout_command(action.command, action.keep_prompt)
+                return self._handle_nochange_timeout_command(action.command)
 
             # 3) Execution timed out due to hard timeout
             if action.timeout and time.time() - start_time >= action.timeout:
-                return self._handle_hard_timeout_command(action.command, action.timeout, action.keep_prompt)
+                return self._handle_hard_timeout_command(action.command, action.timeout)
 
             time.sleep(self.POLL_INTERVAL)

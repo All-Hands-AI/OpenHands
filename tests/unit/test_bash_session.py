@@ -259,42 +259,6 @@ def test_ansi_escape_codes():
     session.close()
 
 
-def test_keep_prompt():
-    session = BashSession(work_dir=os.getcwd())
-
-    # Test command with keep_prompt=False (default)
-    obs = session.execute(CmdRunAction('echo "test"'))
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert 'test' in obs.content
-    assert 'echo "test"' not in obs.content
-    assert obs.metadata.exit_code == 0
-
-    # Test command with keep_prompt=True
-    obs = session.execute(CmdRunAction('echo "test"', keep_prompt=True))
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert 'test' in obs.content
-    assert 'echo "test"' in obs.content
-    assert obs.metadata.exit_code == 0
-
-    # Test long-running command with keep_prompt=True
-    obs = session.execute(
-        CmdRunAction('for i in {1..2}; do echo $i; sleep 3; done', keep_prompt=True, blocking=False)
-    )
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert 'for i in {1..2}; do echo $i; sleep 3; done' in obs.content
-    assert '1' in obs.content
-    assert obs.metadata.exit_code == -1
-
-    # Continue watching output with keep_prompt=True
-    obs = session.execute(CmdRunAction('', keep_prompt=True))
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert '[Command output continued from previous command]' in obs.content
-    assert '2' in obs.content
-    assert obs.metadata.exit_code == -1
-
-    session.close()
-
-
 def test_long_output():
     session = BashSession(work_dir=os.getcwd())
 
