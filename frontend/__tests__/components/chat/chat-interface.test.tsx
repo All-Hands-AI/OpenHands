@@ -13,12 +13,12 @@ const renderChatInterface = (messages: (Message | ErrorMessage)[]) =>
   renderWithProviders(<ChatInterface />);
 
 describe("Empty state", () => {
-  const { emit: emitMock } = vi.hoisted(() => ({
-    emit: vi.fn(),
+  const { send: sendMock } = vi.hoisted(() => ({
+    send: vi.fn(),
   }));
 
   const { useWsClient: useWsClientMock } = vi.hoisted(() => ({
-    useWsClient: vi.fn(() => ({ emit: emitMock, status: WsClientProviderStatus.ACTIVE, isLoadingMessages: false })),
+    useWsClient: vi.fn(() => ({ send: sendMock, status: WsClientProviderStatus.ACTIVE, isLoadingMessages: false })),
   }));
 
   beforeAll(() => {
@@ -84,7 +84,7 @@ describe("Empty state", () => {
     async () => {
       // this is to test that the message is in the UI before the socket is called
       useWsClientMock.mockImplementation(() => ({
-        emit: emitMock, status: WsClientProviderStatus.ACTIVE, isLoadingMessages: false
+        send: sendMock, status: WsClientProviderStatus.ACTIVE, isLoadingMessages: false
       }));
       const addUserMessageSpy = vi.spyOn(ChatSlice, "addUserMessage");
       const user = userEvent.setup();
@@ -112,7 +112,7 @@ describe("Empty state", () => {
     "should send the message to the socket only if the runtime is active",
     async () => {
       useWsClientMock.mockImplementation(() => ({
-        emit: emitMock, status: WsClientProviderStatus.ACTIVE, isLoadingMessages: false
+        send: sendMock, status: WsClientProviderStatus.ACTIVE, isLoadingMessages: false
       }));
       const user = userEvent.setup();
       const { rerender } = renderWithProviders(<ChatInterface />, {
@@ -121,19 +121,20 @@ describe("Empty state", () => {
         },
       });
 
+
       const suggestions = screen.getByTestId("suggestions");
       const displayedSuggestions = within(suggestions).getAllByRole("button");
 
       await user.click(displayedSuggestions[0]);
-      expect(emitMock).not.toHaveBeenCalled();
+      expect(sendMock).not.toHaveBeenCalled();
 
       useWsClientMock.mockImplementation(() => ({
-        emit: emitMock, status: WsClientProviderStatus.ACTIVE, isLoadingMessages: false
+        send: sendMock, status: WsClientProviderStatus.ACTIVE, isLoadingMessages: false
       }));
       rerender(<ChatInterface />);
 
       await waitFor(() =>
-        expect(emitMock).toHaveBeenCalledWith(expect.any(String)),
+        expect(sendMock).toHaveBeenCalledWith(expect.any(String)),
       );
     },
   );

@@ -55,7 +55,7 @@ export const handlers: WebSocketHandler[] = [
   api.addEventListener("connection", ({ client }) => {
     client.send(
       JSON.stringify({
-        status: "ok",
+        status: 200,
         token: Math.random().toString(36).substring(7),
       } satisfies TokenConfigSuccess),
     );

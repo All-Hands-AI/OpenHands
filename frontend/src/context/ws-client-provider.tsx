@@ -69,7 +69,6 @@ export function WsClientProvider({
   }
 
   function handleConnect() {
-    console.log("TRACE:SIO:SET_STATUS:OPENING");
     setStatus(WsClientProviderStatus.OPENING);
 
     const initEvent: Record<string, unknown> = {

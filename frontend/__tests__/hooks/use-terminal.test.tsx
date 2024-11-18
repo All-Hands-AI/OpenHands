@@ -3,7 +3,6 @@ import { render } from "@testing-library/react";
 import { afterEach } from "node:test";
 import { useTerminal } from "#/hooks/useTerminal";
 import { Command } from "#/state/commandSlice";
-import { WsClientProvider } from "#/context/ws-client-provider";
 import { ReactNode } from "react";
 
 interface TestTerminalComponentProps {
@@ -26,7 +25,7 @@ interface WrapperProps {
 
 function Wrapper({children}: WrapperProps) {
   return (
-    <WsClientProvider enabled={true} token="NO_JWT" ghToken="NO_GITHUB" settings={null}>{children}</WsClientProvider>
+    <div>{children}</div>
   )
 }
 
