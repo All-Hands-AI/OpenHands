@@ -22,9 +22,9 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: '3.12'
-    - name: install git, github cli
+    - name: install git, github cli, and tmux
       run: |
-        sudo apt-get install -y git gh
+        sudo apt-get update && sudo apt-get install -y git gh tmux
         git config --global --add safe.directory $PWD
     - name: Checkout Repository
       uses: actions/checkout@v4
