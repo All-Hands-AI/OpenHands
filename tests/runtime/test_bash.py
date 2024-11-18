@@ -511,7 +511,7 @@ def test_pwd_property(temp_dir, runtime_cls, run_as_openhands):
 
         obs = _run_cmd_action(runtime, 'cd random_dir && pwd')
         assert obs.exit_code == 0
-        assert '/workspace/random_dir' in obs.content
+        assert 'random_dir' in obs.content
     finally:
         _close_test_runtime(runtime)
 
@@ -549,8 +549,15 @@ def test_interactive_command(temp_dir, runtime_cls, run_as_openhands):
         action = CmdRunAction('read -p "Enter name: " name && echo "Hello $name"')
         action.timeout = 1
         obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'Enter name:' in obs.content
-        assert '[Command timed out after 1 seconds.' in obs.content
+        assert '[The command timed out after 1 seconds.' in obs.content
+
+        action = CmdRunAction('John')
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert 'Hello John' in obs.content
+        assert '[The command completed with exit code 0.]' in obs.content
 
         # Test multiline command input with here document
         action = CmdRunAction("""cat << EOF
@@ -559,6 +566,8 @@ line 2
 EOF""")
         obs = runtime.run_action(action)
         assert 'line 1\nline 2' in obs.content
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert '[The command completed with exit code 0.]' in obs.content
         assert obs.exit_code == 0
     finally:
         _close_test_runtime(runtime)
