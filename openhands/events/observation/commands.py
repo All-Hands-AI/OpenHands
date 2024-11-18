@@ -9,10 +9,11 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import ObservationType
 from openhands.events.observation.observation import Observation
 
-CMD_OUTPUT_PS1_BEGIN = '###PS1JSON###\n'
+CMD_OUTPUT_PS1_BEGIN = '\n###PS1JSON###\n'
 CMD_OUTPUT_PS1_END = '\n###PS1END###'
 CMD_OUTPUT_METADATA_PS1_REGEX = re.compile(
-    f'^{CMD_OUTPUT_PS1_BEGIN}(.*?){CMD_OUTPUT_PS1_END}', re.DOTALL | re.MULTILINE
+    f'^{CMD_OUTPUT_PS1_BEGIN.lstrip()}(.*?){CMD_OUTPUT_PS1_END}',
+    re.DOTALL | re.MULTILINE,
 )
 
 
@@ -25,8 +26,8 @@ class CmdOutputMetadata(BaseModel):
     hostname: str | None = None
     working_dir: str | None = None
     py_interpreter_path: str | None = None
-    prefix: str = ""  # Prefix to add to command output
-    suffix: str = ""  # Suffix to add to command output
+    prefix: str = ''  # Prefix to add to command output
+    suffix: str = ''  # Suffix to add to command output
 
     @classmethod
     def to_ps1_prompt(cls) -> str:
@@ -138,7 +139,7 @@ class CmdOutputObservation(Observation):
         )
 
     def to_agent_observation(self) -> str:
-        ret = f"{self.metadata.prefix}{self.content}{self.metadata.suffix}"
+        ret = f'{self.metadata.prefix}{self.content}{self.metadata.suffix}'
         if self.metadata.py_interpreter_path:
             ret += f'\n[Python interpreter: {self.metadata.py_interpreter_path}]'
         return ret

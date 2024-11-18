@@ -181,7 +181,10 @@ class BashSession:
 
         is_special_key = self._is_special_key(command)
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
-        assert len(ps1_matches) >= 2, 'Expected at least two PS1 metadata blocks'
+        assert len(ps1_matches) >= 2, (
+            f'Expected at least two PS1 metadata blocks, but got {len(ps1_matches)}.\n'
+            f'---FULL OUTPUT---\n{full_output}\n---END OF OUTPUT---'
+        )
         metadata = CmdOutputMetadata.from_ps1_match(ps1_matches[-1])
         # Extract the command output between the two PS1 prompts
         raw_command_output = ''
