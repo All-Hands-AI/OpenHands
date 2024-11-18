@@ -19,13 +19,13 @@ from openhands.events.action import (
 )
 from openhands.events.observation import (
     AgentStateChangedObservation,
+    CmdOutputMetadata,
     CmdOutputObservation,
     FileReadObservation,
     FileWriteObservation,
     NullObservation,
     Observation,
 )
-from openhands.events.observation.commands import CmdOutputMetadata
 from openhands.events.serialization.event import event_to_dict
 from openhands.llm.llm import LLM
 
