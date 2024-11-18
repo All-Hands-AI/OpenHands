@@ -410,3 +410,33 @@ def test_multiple_multiline_commands():
         assert 'hello\nworld "' in results[6]  # echo -e with quote
     finally:
         session.close()
+
+
+def test_multiline_command_loop():
+    session = BashSession(work_dir=os.getcwd())
+    init_cmd = """mkdir -p _modules && \
+for month in {01..04}; do
+    for day in {01..05}; do
+        touch "_modules/2024-${month}-${day}-sample.md"
+    done
+done && echo "created files"
+"""
+    follow_up_cmd = """for file in _modules/*.md; do
+    new_date=$(echo $file | sed -E 's/2024-(01|02|03|04)-/2024-/;s/2024-01/2024-08/;s/2024-02/2024-09/;s/2024-03/2024-10/;s/2024-04/2024-11/')
+    mv "$file" "$new_date"
+done && echo "success"
+"""
+    try:
+        # Test multiline command with loop
+        obs = session.execute(CmdRunAction(init_cmd))
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert 'created files' in obs.content
+        assert obs.metadata.exit_code == 0
+        assert obs.metadata.prefix == ''
+        assert obs.metadata.suffix == '\n\n[The command completed with exit code 0.]'
+
+        obs = session.execute(CmdRunAction(follow_up_cmd))
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert 'success' in obs.content
+    finally:
+        session.close()

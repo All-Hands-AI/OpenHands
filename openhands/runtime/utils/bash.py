@@ -179,14 +179,16 @@ class BashSession:
     def _handle_completed_command(self, command: str) -> CmdOutputObservation:
         full_output = self._get_pane_content(full=True)
 
-        ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
-        assert len(ps1_matches) == 2, 'Expected exactly two PS1 metadata blocks'
-        metadata = CmdOutputMetadata.from_ps1_match(ps1_matches[1])
         is_special_key = self._is_special_key(command)
+        ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
+        assert len(ps1_matches) >= 2, 'Expected at least two PS1 metadata blocks'
+        metadata = CmdOutputMetadata.from_ps1_match(ps1_matches[-1])
         # Extract the command output between the two PS1 prompts
-        raw_command_output = full_output[
-            ps1_matches[0].end() + 1 : ps1_matches[1].start()
-        ]
+        raw_command_output = ''
+        for i in range(len(ps1_matches) - 1):
+            raw_command_output += full_output[
+                ps1_matches[i].end() + 1 : ps1_matches[i + 1].start()
+            ]
         metadata.suffix = (
             f'\n\n[The command completed with exit code {metadata.exit_code}.]'
             if not is_special_key

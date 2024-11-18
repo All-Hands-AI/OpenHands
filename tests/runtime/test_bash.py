@@ -54,7 +54,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         assert 'Serving HTTP on 0.0.0.0 port 8080' in obs.content
         assert (
             "[The command timed out after 1 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
-            in obs.content
+            in obs.metadata.suffix
         )
 
         action = CmdRunAction(command='C-c')
@@ -169,21 +169,17 @@ def test_no_ps2_in_output(temp_dir, runtime_cls, run_as_openhands):
 
 def test_multiline_command_loop(temp_dir, runtime_cls):
     # https://github.com/All-Hands-AI/OpenHands/issues/3143
-    init_cmd = """
-mkdir -p _modules && \
+    init_cmd = """mkdir -p _modules && \
 for month in {01..04}; do
     for day in {01..05}; do
         touch "_modules/2024-${month}-${day}-sample.md"
     done
-done
-echo "created files"
+done && echo "created files"
 """
-    follow_up_cmd = """
-for file in _modules/*.md; do
+    follow_up_cmd = """for file in _modules/*.md; do
     new_date=$(echo $file | sed -E 's/2024-(01|02|03|04)-/2024-/;s/2024-01/2024-08/;s/2024-02/2024-09/;s/2024-03/2024-10/;s/2024-04/2024-11/')
     mv "$file" "$new_date"
-done
-echo "success"
+done && echo "success"
 """
     runtime = _load_runtime(temp_dir, runtime_cls)
     try:
@@ -551,13 +547,13 @@ def test_interactive_command(temp_dir, runtime_cls, run_as_openhands):
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'Enter name:' in obs.content
-        assert '[The command timed out after 1 seconds.' in obs.content
+        assert '[The command timed out after 1 seconds.' in obs.metadata.suffix
 
         action = CmdRunAction('John')
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert 'Hello John' in obs.content
-        assert '[The command completed with exit code 0.]' in obs.content
+        assert '[The command completed with exit code 0.]' in obs.metadata.suffix
 
         # Test multiline command input with here document
         action = CmdRunAction("""cat << EOF
@@ -567,7 +563,7 @@ EOF""")
         obs = runtime.run_action(action)
         assert 'line 1\nline 2' in obs.content
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert '[The command completed with exit code 0.]' in obs.content
+        assert '[The command completed with exit code 0.]' in obs.metadata.suffix
         assert obs.exit_code == 0
     finally:
         _close_test_runtime(runtime)
