@@ -257,7 +257,7 @@ def test_env_command():
     # Test empty command without previous command
     obs = session.execute(CmdRunAction('env'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert 'PS1=###PS1JSON###' in obs.content
+    assert 'PS1=\n###PS1JSON###' in obs.content
     assert 'PS2=' in obs.content
     assert obs.metadata.exit_code == 0
     assert obs.metadata.prefix == ''
