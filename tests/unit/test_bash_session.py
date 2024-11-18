@@ -3,6 +3,7 @@ import tempfile
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
+from openhands.events.observation import ErrorObservation
 from openhands.runtime.utils.bash import BashCommandStatus, BashSession
 
 
@@ -285,3 +286,49 @@ fi""")
     assert obs.metadata.exit_code == 0
 
     session.close()
+
+
+def test_multiple_multiline_commands():
+    session = BashSession(work_dir=os.getcwd())
+    try:
+        cmds = [
+            'ls -l',
+            'echo -e "hello\nworld"',
+            """echo -e "hello it's me\"""",
+            """echo \\
+        -e 'hello' \\
+        -v""",
+            """echo -e 'hello\\nworld\\nare\\nyou\\nthere?'""",
+            """echo -e 'hello\nworld\nare\nyou\n\nthere?'""",
+            """echo -e 'hello\nworld "'""",
+        ]
+        joined_cmds = '\n'.join(cmds)
+
+        # Test that running multiple commands at once fails
+        obs = session.execute(CmdRunAction(joined_cmds))
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, ErrorObservation)
+        assert 'Cannot execute multiple commands at once' in obs.content
+
+        # Now run each command individually and verify they work
+        results = []
+        for cmd in cmds:
+            obs = session.execute(CmdRunAction(cmd))
+            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+            assert obs.metadata.exit_code == 0
+            results.append(obs.content)
+
+        # Verify all expected outputs are present
+        assert 'total' in results[0]  # ls -l
+        assert 'hello\nworld' in results[1]  # echo -e "hello\nworld"
+        assert "hello it's me" in results[2]  # echo -e "hello it\'s me"
+        assert 'hello -v' in results[3]  # echo -e 'hello' -v
+        assert (
+            'hello\nworld\nare\nyou\nthere?' in results[4]
+        )  # echo -e 'hello\nworld\nare\nyou\nthere?'
+        assert (
+            'hello\nworld\nare\nyou\n\nthere?' in results[5]
+        )  # echo -e with literal newlines
+        assert 'hello\nworld "' in results[6]  # echo -e with quote
+    finally:
+        session.close()
