@@ -185,7 +185,7 @@ class OpenHands {
   }
 
   static async getRuntimeId(): Promise<{ runtime_id: string }> {
-    const response = await request("/api/config");
+    const response = await request("/api/conversation");
     const data = await response.json();
 
     return data;
