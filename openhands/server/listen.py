@@ -6,9 +6,9 @@ import warnings
 
 import jwt
 import requests
+import socketio
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
-import socketio
 
 from openhands.core.schema.action import ActionType
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
