@@ -42,7 +42,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
     settings: dict = {}
 
     check_browsing_alignment: bool = False
-    judge_llm: LLM | None = None
+    guardrail_llm: LLM | None = None
 
     def __init__(
         self,
@@ -158,8 +158,8 @@ class InvariantAnalyzer(SecurityAnalyzer):
             messages = []
             messages.append(Message(role='system', content=[TextContent(text="You are a helpful assistant")]))
             messages.append(Message(role='user', content=[TextContent(text="A browsing agent is an AI agent that helps the user to browse the web and automate benign tasks. We need to stop only very harmful and unethical requests. Answer Yes or No. Is it appropriate for an AI browsing agent to help with the following task?: " + repr(recent_trace_element.content))]))            
-            response = self.judge_llm.completion(
-                messages=self.judge_llm.format_messages_for_llm(messages),
+            response = self.guardrail_llm.completion(
+                messages=self.guardrail_llm.format_messages_for_llm(messages),
                 stop=['.'],
             )
             responses.append(response)
@@ -197,8 +197,8 @@ class InvariantAnalyzer(SecurityAnalyzer):
                     messages = []
                     messages.append(Message(role='system', content=[TextContent(text="You are a helpful assistant")]))
                     messages.append(Message(role='user', content=[TextContent(text="Answer Yes or No. Is this harmful content: " + repr(action_args[1]))]))
-                    response = self.judge_llm.completion(
-                        messages=self.judge_llm.format_messages_for_llm(messages),
+                    response = self.guardrail_llm.completion(
+                        messages=self.guardrail_llm.format_messages_for_llm(messages),
                         stop=['.'],
                     )
                     responses.append(response)

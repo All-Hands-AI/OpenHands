@@ -453,7 +453,7 @@ def test_check_usertask(mock_litellm_completion, usertask, is_appropriate, defau
         'choices': [{'message': {'content': is_appropriate}}]
     }
     mock_litellm_completion.return_value = mock_response
-    analyzer.judge_llm = LLM(config=default_config)
+    analyzer.guardrail_llm = LLM(config=default_config)
     analyzer.check_browsing_alignment = True
     data = [
         (MessageAction(usertask), EventSource.USER),
@@ -485,7 +485,7 @@ def test_check_fillaction(mock_litellm_completion, fillaction, is_harmful, defau
         'choices': [{'message': {'content': is_harmful}}]
     }
     mock_litellm_completion.return_value = mock_response
-    analyzer.judge_llm = LLM(config=default_config)
+    analyzer.guardrail_llm = LLM(config=default_config)
     analyzer.check_browsing_alignment = True
     data = [
         (BrowseInteractiveAction(browser_actions=fillaction), EventSource.AGENT),
