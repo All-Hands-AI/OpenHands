@@ -8,12 +8,10 @@ import {
   useLoaderData,
   useFetcher,
   Outlet,
-  ClientLoaderFunctionArgs,
 } from "@remix-run/react";
 import posthog from "posthog-js";
 import { useDispatch } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
-import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
 import CogTooth from "#/assets/cog-tooth";
 import { SettingsForm } from "#/components/form/settings-form";
@@ -33,17 +31,10 @@ import { WaitlistModal } from "#/components/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/analytics-consent-form-modal";
 import { setCurrentAgentState } from "#/state/agentSlice";
 import AgentState from "#/types/AgentState";
+import { useConfig } from "#/hooks/query/use-config";
+import { useGitHubUser } from "#/hooks/query/use-github-user";
 
-export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
-  try {
-    const config = await OpenHands.getConfig();
-    window.__APP_MODE__ = config.APP_MODE;
-    window.__GITHUB_CLIENT_ID__ = config.GITHUB_CLIENT_ID;
-  } catch (error) {
-    window.__APP_MODE__ = "oss";
-    window.__GITHUB_CLIENT_ID__ = null;
-  }
-
+export const clientLoader = async () => {
   let token = localStorage.getItem("token");
   const ghToken = localStorage.getItem("ghToken");
   const analyticsConsent = localStorage.getItem("analytics-consent");
@@ -54,25 +45,6 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   } else if (userConsents && !posthog.has_opted_in_capturing()) {
     posthog.opt_in_capturing();
   }
-
-  let isAuthed = false;
-  let githubAuthUrl: string | null = null;
-  let user: GitHubUser | GitHubErrorReponse | null = null;
-  try {
-    isAuthed = await userIsAuthenticated();
-    if (!isAuthed && window.__GITHUB_CLIENT_ID__) {
-      const requestUrl = new URL(request.url);
-      githubAuthUrl = generateGitHubAuthUrl(
-        window.__GITHUB_CLIENT_ID__,
-        requestUrl,
-      );
-    }
-  } catch (error) {
-    isAuthed = false;
-    githubAuthUrl = null;
-  }
-
-  if (ghToken) user = await retrieveGitHubUser(ghToken);
 
   const settings = getSettings();
   await i18n.changeLanguage(settings.LANGUAGE);
@@ -87,9 +59,6 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   return defer({
     token,
     ghToken,
-    isAuthed,
-    githubAuthUrl,
-    user,
     settingsIsUpdated,
     settings,
     analyticsConsent,
@@ -137,16 +106,8 @@ const fetchAiConfigOptions = async () => ({
 export default function MainApp() {
   const navigation = useNavigation();
   const location = useLocation();
-  const {
-    token,
-    ghToken,
-    user,
-    isAuthed,
-    githubAuthUrl,
-    settingsIsUpdated,
-    settings,
-    analyticsConsent,
-  } = useLoaderData<typeof clientLoader>();
+  const { token, ghToken, settingsIsUpdated, settings, analyticsConsent } =
+    useLoaderData<typeof clientLoader>();
   const logoutFetcher = useFetcher({ key: "logout" });
   const endSessionFetcher = useFetcher({ key: "end-session" });
   const dispatch = useDispatch();
@@ -157,29 +118,24 @@ export default function MainApp() {
   const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
     React.useState(false);
 
+  const config = useConfig();
+  const user = useGitHubUser(ghToken);
+  const { data: isAuthed } = useQuery({
+    queryKey: ["user", "authenticated", ghToken],
+    queryFn: userIsAuthenticated,
+    enabled: config.data?.APP_MODE === "saas" && !!ghToken,
+  });
   const aiConfigOptions = useQuery({
     queryKey: ["ai-config-options"],
     queryFn: fetchAiConfigOptions,
   });
 
   React.useEffect(() => {
-    if (user && !isGitHubErrorReponse(user)) {
-      posthog.identify(user.login, {
-        company: user.company,
-        name: user.name,
-        email: user.email,
-        user: user.login,
-        mode: window.__APP_MODE__ || "oss",
-      });
-    }
-  }, [user]);
-
-  React.useEffect(() => {
     // If the github token is invalid, open the account settings modal again
-    if (isGitHubErrorReponse(user)) {
+    if (user.isError) {
       setAccountSettingsModalOpen(true);
     }
-  }, [user]);
+  }, [user.isError]);
 
   const handleUserLogout = () => {
     logoutFetcher.submit(
@@ -195,7 +151,7 @@ export default function MainApp() {
     // If the user closes the modal without connecting to GitHub,
     // we need to log them out to clear the invalid token from the
     // local storage
-    if (isGitHubErrorReponse(user)) handleUserLogout();
+    if (user.isError) handleUserLogout();
     setAccountSettingsModalOpen(false);
   };
 
@@ -232,11 +188,7 @@ export default function MainApp() {
         </div>
         <nav className="py-[18px] flex flex-col items-center gap-[18px]">
           <UserActions
-            user={
-              user && !isGitHubErrorReponse(user)
-                ? { avatar_url: user.avatar_url }
-                : undefined
-            }
+            user={user.data ? { avatar_url: user.data.avatar_url } : undefined}
             onLogout={handleUserLogout}
             onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
           />
@@ -311,7 +263,7 @@ export default function MainApp() {
           <AccountSettingsModal
             onClose={handleAccountSettingsModalClose}
             selectedLanguage={settings.LANGUAGE}
-            gitHubError={isGitHubErrorReponse(user)}
+            gitHubError={user.isError}
             analyticsConsent={analyticsConsent}
           />
         </ModalBackdrop>
@@ -334,8 +286,14 @@ export default function MainApp() {
           />
         </ModalBackdrop>
       )}
-      {!isAuthed && (
-        <WaitlistModal ghToken={ghToken} githubAuthUrl={githubAuthUrl} />
+      {!isAuthed && config.data?.APP_MODE === "saas" && (
+        <WaitlistModal
+          ghToken={ghToken}
+          githubAuthUrl={generateGitHubAuthUrl(
+            config.data?.GITHUB_CLIENT_ID || "",
+            new URL(window.location.href),
+          )}
+        />
       )}
       {!analyticsConsent && <AnalyticsConsentFormModal />}
     </div>

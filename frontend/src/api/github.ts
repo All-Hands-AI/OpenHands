@@ -51,6 +51,11 @@ export const retrieveGitHubUser = async (
   const response = await fetch("https://api.github.com/user", {
     headers: generateGitHubAPIHeaders(token),
   });
+
+  if (!response.ok) {
+    throw new Error("Failed to retrieve user data");
+  }
+
   const data = await response.json();
 
   if (!isGitHubErrorReponse(data)) {

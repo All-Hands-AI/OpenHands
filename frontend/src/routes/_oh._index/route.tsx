@@ -4,7 +4,6 @@ import {
   defer,
   redirect,
   useLoaderData,
-  useRouteLoaderData,
 } from "@remix-run/react";
 import React from "react";
 import { useDispatch } from "react-redux";
@@ -17,12 +16,12 @@ import {
   setImportedProjectZip,
   setInitialQuery,
 } from "#/state/initial-query-slice";
-import { clientLoader as rootClientLoader } from "#/routes/_oh";
 import OpenHands from "#/api/open-hands";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { GitHubRepositoriesSuggestionBox } from "#/components/github-repositories-suggestion-box";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
+import { useGitHubUser } from "#/hooks/query/use-github-user";
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   let isSaas = false;
@@ -64,10 +63,10 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 
 function Home() {
   const dispatch = useDispatch();
-  const rootData = useRouteLoaderData<typeof rootClientLoader>("routes/_oh");
   const { githubAuthUrl, ghToken } = useLoaderData<typeof clientLoader>();
   const formRef = React.useRef<HTMLFormElement>(null);
 
+  const { data: user } = useGitHubUser(ghToken);
   const { data: repositories } = useUserRepositories(ghToken);
 
   return (
@@ -93,7 +92,7 @@ function Home() {
               handleSubmit={() => formRef.current?.requestSubmit()}
               repositories={repositories || []}
               gitHubAuthUrl={githubAuthUrl}
-              user={rootData?.user || null}
+              user={user || null}
               // onEndReached={}
             />
           </React.Suspense>
