@@ -196,9 +196,10 @@ export default function MainApp() {
   }, []);
 
   React.useEffect(() => {
-    // If the github token is invalid, open the account settings modal again
+    // If the github token is invalid, clear it and show the reconnect screen
     if (isGitHubErrorReponse(user)) {
-      setAccountSettingsModalOpen(true);
+      localStorage.removeItem("ghToken");
+      setAccountSettingsModalOpen(false);
     }
   }, [user]);
 
@@ -213,10 +214,6 @@ export default function MainApp() {
   };
 
   const handleAccountSettingsModalClose = () => {
-    // If the user closes the modal without connecting to GitHub,
-    // we need to log them out to clear the invalid token from the
-    // local storage
-    if (isGitHubErrorReponse(user)) handleUserLogout();
     setAccountSettingsModalOpen(false);
   };
 
