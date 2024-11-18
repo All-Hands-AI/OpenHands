@@ -29,6 +29,10 @@ jobs:
         run: |
           cd frontend
           npm install --frozen-lockfile
+      - name: Generate i18n declaration files
+        run: |
+          cd frontend
+          npm run make-i18n
       - name: Fix frontend lint issues
         run: |
           cd frontend
