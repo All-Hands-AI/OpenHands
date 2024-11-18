@@ -1,5 +1,4 @@
 import {
-  Await,
   ClientActionFunctionArgs,
   ClientLoaderFunctionArgs,
   defer,
@@ -13,7 +12,6 @@ import posthog from "posthog-js";
 import { SuggestionBox } from "./suggestion-box";
 import { TaskForm } from "./task-form";
 import { HeroHeading } from "./hero-heading";
-import { retrieveAllGitHubUserRepositories } from "#/api/github";
 import store from "#/store";
 import {
   setImportedProjectZip,
@@ -24,6 +22,7 @@ import OpenHands from "#/api/open-hands";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { GitHubRepositoriesSuggestionBox } from "#/components/github-repositories-suggestion-box";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
+import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   let isSaas = false;
@@ -42,21 +41,13 @@ export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   const token = localStorage.getItem("token");
   if (token) return redirect("/app");
 
-  let repositories: ReturnType<
-    typeof retrieveAllGitHubUserRepositories
-  > | null = null;
-  if (ghToken) {
-    const data = retrieveAllGitHubUserRepositories(ghToken);
-    repositories = data;
-  }
-
   let githubAuthUrl: string | null = null;
   if (isSaas && githubClientId) {
     const requestUrl = new URL(request.url);
     githubAuthUrl = generateGitHubAuthUrl(githubClientId, requestUrl);
   }
 
-  return defer({ repositories, githubAuthUrl });
+  return defer({ githubAuthUrl, ghToken });
 };
 
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
@@ -74,8 +65,10 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 function Home() {
   const dispatch = useDispatch();
   const rootData = useRouteLoaderData<typeof rootClientLoader>("routes/_oh");
-  const { repositories, githubAuthUrl } = useLoaderData<typeof clientLoader>();
+  const { githubAuthUrl, ghToken } = useLoaderData<typeof clientLoader>();
   const formRef = React.useRef<HTMLFormElement>(null);
+
+  const { data: repositories } = useUserRepositories(ghToken);
 
   return (
     <div
@@ -96,16 +89,13 @@ function Home() {
               />
             }
           >
-            <Await resolve={repositories}>
-              {(resolvedRepositories) => (
-                <GitHubRepositoriesSuggestionBox
-                  handleSubmit={() => formRef.current?.requestSubmit()}
-                  repositories={resolvedRepositories}
-                  gitHubAuthUrl={githubAuthUrl}
-                  user={rootData?.user || null}
-                />
-              )}
-            </Await>
+            <GitHubRepositoriesSuggestionBox
+              handleSubmit={() => formRef.current?.requestSubmit()}
+              repositories={repositories || []}
+              gitHubAuthUrl={githubAuthUrl}
+              user={rootData?.user || null}
+              // onEndReached={}
+            />
           </React.Suspense>
           <SuggestionBox
             title="+ Import Project"
