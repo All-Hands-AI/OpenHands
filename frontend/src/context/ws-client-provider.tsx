@@ -147,16 +147,6 @@ export function WsClientProvider({
         import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
       sio = io(baseUrl, {
         transports: ["websocket"],
-        // We force a new connection, because the headers may have changed.
-        // forceNew: true,
-
-        // Had to do this for now because reconnection actually starts a new session,
-        // which we don't want - The reconnect has the same headers as the original
-        // which don't include the original session id
-        // reconnection: true,
-        // reconnectionDelay: 1000,
-        // reconnectionDelayMax : 5000,
-        // reconnectionAttempts: 5
       });
     }
     sio.on("connect", handleConnect);

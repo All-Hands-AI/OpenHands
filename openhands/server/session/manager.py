@@ -2,7 +2,6 @@ import asyncio
 import time
 from dataclasses import dataclass, field
 
-from fastapi import WebSocket
 import socketio
 
 from openhands.core.config import AppConfig
@@ -46,7 +45,7 @@ class SessionManager:
         if not session:
             # I think we need to rehydrate here, but it does not seem to be working
             session = Session(
-                sid=sid, file_store=self.file_store, config=self.config, sio=sio, ws=None
+                sid=sid, file_store=self.file_store, config=self.config, sio=sio
             )
             session.connect(connection_id)
             self.local_sessions_by_sid[sid] = session

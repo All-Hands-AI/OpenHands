@@ -838,7 +838,6 @@ class SPAStaticFiles(StaticFiles):
 app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist')
 
 client_manager = None
-# This is where we add the redis manager
 redis_host = os.environ.get('REDIS_HOST')
 if redis_host:
     client_manager = socketio.AsyncRedisManager(redis_host)

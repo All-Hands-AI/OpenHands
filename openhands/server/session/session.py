@@ -1,7 +1,6 @@
 import asyncio
 import time
 
-from fastapi import WebSocket, WebSocketDisconnect
 import socketio
 
 from openhands.controller.agent import Agent
@@ -29,7 +28,6 @@ from openhands.utils.async_utils import wait_all
 
 class Session:
     sid: str
-    websocket: WebSocket | None
     sio: socketio.AsyncServer | None
     connection_ids: set[str]
     last_active_ts: int = 0
@@ -38,10 +36,9 @@ class Session:
     loop: asyncio.AbstractEventLoop
 
     def __init__(
-        self, sid: str, ws: WebSocket | None, config: AppConfig, file_store: FileStore, sio: socketio.AsyncServer | None
+        self, sid: str, config: AppConfig, file_store: FileStore, sio: socketio.AsyncServer | None
     ):
         self.sid = sid
-        self.websocket = ws
         self.sio = sio
         self.last_active_ts = int(time.time())
         self.agent_session = AgentSession(
@@ -63,12 +60,7 @@ class Session:
 
     def close(self):
         self.is_alive = False
-        try:
-            if self.websocket is not None:
-                asyncio.run_coroutine_threadsafe(self.websocket.close(), self.loop)
-                self.websocket = None
-        finally:
-            self.agent_session.close()
+        self.agent_session.close()
 
     async def initialize_agent(self, data: dict):
         self.agent_session.event_stream.add_event(
@@ -173,8 +165,6 @@ class Session:
         try:
             if not self.is_alive:
                 return False
-            if self.websocket:
-                await self.websocket.send_json(data)
             if self.sio:
                 await wait_all(
                     self.sio.emit("oh_event", data, to=connection_id)
@@ -183,7 +173,7 @@ class Session:
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True
-        except (RuntimeError, WebSocketDisconnect):
+        except RuntimeError:
             self.is_alive = False
             return False
 
