@@ -14,4 +14,4 @@ Pour utiliser l'Action GitHub OpenHands dans le dépôt OpenHands, un mainteneur
 
 ## Installation de l'Action dans un nouveau dépôt
 
-Pour installer l'Action GitHub OpenHands dans votre propre dépôt, suivez les [instructions dans le dépôt OpenHands Resolver](https://github.com/All-Hands-AI/OpenHands-resolver?tab=readme-ov-file#using-the-github-actions-workflow).
+Pour installer l'Action GitHub OpenHands dans votre propre dépôt, suivez les [instructions dans le dépôt OpenHands Resolver](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/resolver/README.md).
