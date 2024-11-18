@@ -552,11 +552,7 @@ def test_guess_success():
         title='Test Issue',
         body='This is a test issue',
     )
-    mock_history = [
-        create_cmd_output(
-            exit_code=0, content='', command_id=1, command='cd /workspace'
-        )
-    ]
+    mock_history = [create_cmd_output(exit_code=0, content='', command='cd /workspace')]
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
 
     mock_completion_response = MagicMock()
@@ -689,11 +685,7 @@ def test_guess_success_negative_case():
         title='Test Issue',
         body='This is a test issue',
     )
-    mock_history = [
-        create_cmd_output(
-            exit_code=0, content='', command_id=1, command='cd /workspace'
-        )
-    ]
+    mock_history = [create_cmd_output(exit_code=0, content='', command='cd /workspace')]
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
 
     mock_completion_response = MagicMock()
@@ -724,11 +716,7 @@ def test_guess_success_invalid_output():
         title='Test Issue',
         body='This is a test issue',
     )
-    mock_history = [
-        create_cmd_output(
-            exit_code=0, content='', command_id=1, command='cd /workspace'
-        )
-    ]
+    mock_history = [create_cmd_output(exit_code=0, content='', command='cd /workspace')]
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
 
     mock_completion_response = MagicMock()
