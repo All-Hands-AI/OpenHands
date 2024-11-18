@@ -13,7 +13,7 @@ from conftest import (
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
-from openhands.events.observation import CmdOutputObservation
+from openhands.events.observation import CmdOutputObservation, ErrorObservation
 from openhands.runtime.base import Runtime
 
 # ============================================================================================================================
@@ -21,11 +21,11 @@ from openhands.runtime.base import Runtime
 # ============================================================================================================================
 
 
-def _run_cmd_action(runtime, custom_command: str, keep_prompt=True):
-    action = CmdRunAction(command=custom_command, keep_prompt=keep_prompt)
+def _run_cmd_action(runtime, custom_command: str):
+    action = CmdRunAction(command=custom_command)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
-    assert isinstance(obs, CmdOutputObservation)
+    assert isinstance(obs, (CmdOutputObservation, ErrorObservation))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     return obs
 
@@ -42,52 +42,7 @@ def test_bash_command_env(temp_dir, runtime_cls, run_as_openhands):
         _close_test_runtime(runtime)
 
 
-def test_bash_timeout_and_keyboard_interrupt(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
-    try:
-        action = CmdRunAction(command='python -c "import time; time.sleep(10)"')
-        action.timeout = 1
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
-        assert (
-            '[Command timed out after 1 seconds. SIGINT was sent to interrupt the command.]'
-            in obs.content
-        )
-        assert 'KeyboardInterrupt' in obs.content
-
-        # follow up command should not be affected
-        action = CmdRunAction(command='ls')
-        action.timeout = 1
-        obs = runtime.run_action(action)
-        assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 0
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-
-        # run it again!
-        action = CmdRunAction(command='python -c "import time; time.sleep(10)"')
-        action.timeout = 1
-        obs = runtime.run_action(action)
-        assert isinstance(obs, CmdOutputObservation)
-        assert (
-            '[Command timed out after 1 seconds. SIGINT was sent to interrupt the command.]'
-            in obs.content
-        )
-        assert 'KeyboardInterrupt' in obs.content
-
-        # things should still work
-        action = CmdRunAction(command='ls')
-        action.timeout = 1
-        obs = runtime.run_action(action)
-        assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 0
-        assert '/workspace' in obs.interpreter_details
-
-    finally:
-        _close_test_runtime(runtime)
-
-
-def test_bash_pexcept_eof(temp_dir, runtime_cls, run_as_openhands):
+def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
     runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         action = CmdRunAction(command='python3 -m http.server 8080')
@@ -95,9 +50,21 @@ def test_bash_pexcept_eof(temp_dir, runtime_cls, run_as_openhands):
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 130  # script was killed by SIGINT
+        assert obs.exit_code == -1
         assert 'Serving HTTP on 0.0.0.0 port 8080' in obs.content
+        assert (
+            "[The command timed out after 1 seconds. You may wait longer to see additional output by sending empty command '', send other commands to interact with the current process, or send keys to interrupt/kill the command.]"
+            in obs.content
+        )
+
+        action = CmdRunAction(command='C-c')
+        action.timeout = 1
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0
         assert 'Keyboard interrupt received, exiting.' in obs.content
+        assert '/workspace' in obs.metadata.working_dir
 
         action = CmdRunAction(command='ls')
         action.timeout = 1
@@ -105,7 +72,8 @@ def test_bash_pexcept_eof(temp_dir, runtime_cls, run_as_openhands):
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
         assert obs.exit_code == 0
-        assert '/workspace' in obs.interpreter_details
+        assert 'Keyboard interrupt received, exiting.' not in obs.content
+        assert '/workspace' in obs.metadata.working_dir
 
         # run it again!
         action = CmdRunAction(command='python3 -m http.server 8080')
@@ -113,122 +81,8 @@ def test_bash_pexcept_eof(temp_dir, runtime_cls, run_as_openhands):
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 130  # script was killed by SIGINT
+        assert obs.exit_code == -1
         assert 'Serving HTTP on 0.0.0.0 port 8080' in obs.content
-        assert 'Keyboard interrupt received, exiting.' in obs.content
-
-        # things should still work
-        action = CmdRunAction(command='ls')
-        action.timeout = 1
-        obs = runtime.run_action(action)
-        assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 0
-        assert '/workspace' in obs.interpreter_details
-    finally:
-        _close_test_runtime(runtime)
-
-
-def test_process_resistant_to_one_sigint(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
-    try:
-        # Create a bash script that ignores SIGINT up to 1 times
-        script_content = """
-#!/bin/bash
-trap_count=0
-trap 'echo "Caught SIGINT ($((++trap_count))/1), ignoring..."; [ $trap_count -ge 1 ] && trap - INT && exit' INT
-while true; do
-    echo "Still running..."
-    sleep 1
-done
-        """.strip()
-
-        with open(f'{temp_dir}/resistant_script.sh', 'w') as f:
-            f.write(script_content)
-        os.chmod(f'{temp_dir}/resistant_script.sh', 0o777)
-
-        runtime.copy_to(
-            os.path.join(temp_dir, 'resistant_script.sh'),
-            runtime.config.workspace_mount_path_in_sandbox,
-        )
-
-        # Run the resistant script
-        action = CmdRunAction(command='sudo bash ./resistant_script.sh')
-        action.timeout = 5
-        action.blocking = True
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 130  # script was killed by SIGINT
-        assert 'Still running...' in obs.content
-        assert 'Caught SIGINT (1/1), ignoring...' in obs.content
-        assert 'Stopped' not in obs.content
-        assert (
-            '[Command timed out after 5 seconds. SIGINT was sent to interrupt the command.]'
-            in obs.content
-        )
-
-        # Normal command should still work
-        action = CmdRunAction(command='ls')
-        action.timeout = 10
-        obs = runtime.run_action(action)
-        assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 0
-        assert '/workspace' in obs.interpreter_details
-        assert 'resistant_script.sh' in obs.content
-
-    finally:
-        _close_test_runtime(runtime)
-
-
-def test_process_resistant_to_multiple_sigint(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
-    try:
-        # Create a bash script that ignores SIGINT up to 2 times
-        script_content = """
-#!/bin/bash
-trap_count=0
-trap 'echo "Caught SIGINT ($((++trap_count))/3), ignoring..."; [ $trap_count -ge 3 ] && trap - INT && exit' INT
-while true; do
-    echo "Still running..."
-    sleep 1
-done
-        """.strip()
-
-        with open(f'{temp_dir}/resistant_script.sh', 'w') as f:
-            f.write(script_content)
-        os.chmod(f'{temp_dir}/resistant_script.sh', 0o777)
-
-        runtime.copy_to(
-            os.path.join(temp_dir, 'resistant_script.sh'),
-            runtime.config.workspace_mount_path_in_sandbox,
-        )
-
-        # Run the resistant script
-        action = CmdRunAction(command='sudo bash ./resistant_script.sh')
-        action.timeout = 2
-        action.blocking = True
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 0
-        assert 'Still running...' in obs.content
-        assert 'Caught SIGINT (1/3), ignoring...' in obs.content
-        assert '[1]+' and 'Stopped' in obs.content
-        assert (
-            '[Command timed out after 2 seconds. SIGINT was sent to interrupt the command, but failed. The command was killed.]'
-            in obs.content
-        )
-
-        # Normal command should still work
-        action = CmdRunAction(command='ls')
-        action.timeout = 10
-        obs = runtime.run_action(action)
-        assert isinstance(obs, CmdOutputObservation)
-        assert obs.exit_code == 0
-        assert '/workspace' in obs.interpreter_details
-        assert 'resistant_script.sh' in obs.content
 
     finally:
         _close_test_runtime(runtime)
@@ -245,12 +99,12 @@ def test_multiline_commands(temp_dir, runtime_cls):
         # test multiline echo
         obs = _run_cmd_action(runtime, 'echo -e "hello\nworld"')
         assert obs.exit_code == 0, 'The exit code should be 0.'
-        assert 'hello\r\nworld' in obs.content
+        assert 'hello\nworld' in obs.content
 
         # test whitespace
         obs = _run_cmd_action(runtime, 'echo -e "a\\n\\n\\nz"')
         assert obs.exit_code == 0, 'The exit code should be 0.'
-        assert '\r\n\r\n\r\n' in obs.content
+        assert '\n\n\n' in obs.content
     finally:
         _close_test_runtime(runtime)
 
@@ -259,43 +113,43 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
     cmds = [
         'ls -l',
         'echo -e "hello\nworld"',
-        """
-echo -e "hello it\\'s me"
-""".strip(),
-        """
-echo \\
+        """echo -e "hello it's me\"""",
+        """echo \\
     -e 'hello' \\
-    -v
-""".strip(),
-        """
-echo -e 'hello\\nworld\\nare\\nyou\\nthere?'
-""".strip(),
-        """
-echo -e 'hello
-world
-are
-you\\n
-there?'
-""".strip(),
-        """
-echo -e 'hello
-world "
-'
-""".strip(),
+    -v""",
+        """echo -e 'hello\\nworld\\nare\\nyou\\nthere?'""",
+        """echo -e 'hello\nworld\nare\nyou\n\nthere?'""",
+        """echo -e 'hello\nworld "'""",
     ]
     joined_cmds = '\n'.join(cmds)
 
     runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
+        # First test that running multiple commands at once fails
         obs = _run_cmd_action(runtime, joined_cmds)
-        assert obs.exit_code == 0, 'The exit code should be 0.'
+        assert isinstance(obs, ErrorObservation)
+        assert 'Cannot execute multiple commands at once' in obs.content
 
-        assert 'total 0' in obs.content
-        assert 'hello\r\nworld' in obs.content
-        assert "hello it\\'s me" in obs.content
-        assert 'hello -v' in obs.content
-        assert 'hello\r\nworld\r\nare\r\nyou\r\nthere?' in obs.content
-        assert 'hello\r\nworld\r\nare\r\nyou\r\n\r\nthere?' in obs.content
+        # Now run each command individually and verify they work
+        results = []
+        for cmd in cmds:
+            obs = _run_cmd_action(runtime, cmd)
+            assert isinstance(obs, CmdOutputObservation)
+            assert obs.exit_code == 0
+            results.append(obs.content)
+
+        # Verify all expected outputs are present
+        assert 'total 0' in results[0]  # ls -l
+        assert 'hello\nworld' in results[1]  # echo -e "hello\nworld"
+        assert "hello it's me" in results[2]  # echo -e "hello it\'s me"
+        assert 'hello -v' in results[3]  # echo -e 'hello' -v
+        assert (
+            'hello\nworld\nare\nyou\nthere?' in results[4]
+        )  # echo -e 'hello\nworld\nare\nyou\nthere?'
+        assert (
+            'hello\nworld\nare\nyou\n\nthere?' in results[5]
+        )  # echo -e with literal newlines
+        assert 'hello\nworld "' in results[6]  # echo -e with quote
     finally:
         _close_test_runtime(runtime)
 
@@ -307,7 +161,7 @@ def test_no_ps2_in_output(temp_dir, runtime_cls, run_as_openhands):
         obs = _run_cmd_action(runtime, 'echo -e "hello\nworld"')
         assert obs.exit_code == 0, 'The exit code should be 0.'
 
-        assert 'hello\r\nworld' in obs.content
+        assert 'hello\nworld' in obs.content
         assert '>' not in obs.content
     finally:
         _close_test_runtime(runtime)
@@ -578,28 +432,6 @@ def test_copy_from_directory(temp_dir, runtime_cls):
         _close_test_runtime(runtime)
 
 
-def test_keep_prompt(runtime_cls, temp_dir):
-    runtime = _load_runtime(
-        temp_dir,
-        runtime_cls=runtime_cls,
-        run_as_openhands=False,
-    )
-    try:
-        sandbox_dir = _get_sandbox_folder(runtime)
-
-        obs = _run_cmd_action(runtime, f'touch {sandbox_dir}/test_file.txt')
-        assert obs.exit_code == 0
-        assert 'root@' in obs.interpreter_details
-
-        obs = _run_cmd_action(
-            runtime, f'cat {sandbox_dir}/test_file.txt', keep_prompt=False
-        )
-        assert obs.exit_code == 0
-        assert 'root@' not in obs.interpreter_details
-    finally:
-        _close_test_runtime(runtime)
-
-
 @pytest.mark.skipif(
     TEST_IN_CI != 'True',
     reason='This test is not working in WSL (file ownership)',
@@ -622,7 +454,7 @@ def test_git_operation(runtime_cls):
         assert obs.exit_code == 0
         # drwx--S--- 2 openhands root   64 Aug  7 23:32 .
         # drwxr-xr-x 1 root      root 4.0K Aug  7 23:33 ..
-        for line in obs.content.split('\r\n'):
+        for line in obs.content.split('\n'):
             if ' ..' in line:
                 # parent directory should be owned by root
                 assert 'root' in line
@@ -666,5 +498,93 @@ def test_python_version(temp_dir, runtime_cls, run_as_openhands):
         ), 'The observation should be a CmdOutputObservation.'
         assert obs.exit_code == 0, 'The exit code should be 0.'
         assert 'Python 3' in obs.content, 'The output should contain "Python 3".'
+    finally:
+        _close_test_runtime(runtime)
+
+
+def test_pwd_property(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        # Create a subdirectory and verify pwd updates
+        obs = _run_cmd_action(runtime, 'mkdir -p random_dir')
+        assert obs.exit_code == 0
+
+        obs = _run_cmd_action(runtime, 'cd random_dir && pwd')
+        assert obs.exit_code == 0
+        assert '/workspace/random_dir' in obs.content
+    finally:
+        _close_test_runtime(runtime)
+
+
+def test_basic_command(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        # Test simple command
+        obs = _run_cmd_action(runtime, "echo 'hello world'")
+        assert 'hello world' in obs.content
+        assert obs.exit_code == 0
+
+        # Test command with error
+        obs = _run_cmd_action(runtime, 'nonexistent_command')
+        assert obs.exit_code == 127
+        assert 'nonexistent_command: command not found' in obs.content
+
+        # Test command with special characters
+        obs = _run_cmd_action(runtime, "echo 'hello   world    with\nspecial  chars'")
+        assert 'hello   world    with\nspecial  chars' in obs.content
+        assert obs.exit_code == 0
+
+        # Test multiple commands in sequence
+        obs = _run_cmd_action(runtime, 'echo "first" && echo "second" && echo "third"')
+        assert 'first\nsecond\nthird' in obs.content
+        assert obs.exit_code == 0
+    finally:
+        _close_test_runtime(runtime)
+
+
+def test_interactive_command(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        # Test interactive command
+        action = CmdRunAction('read -p "Enter name: " name && echo "Hello $name"')
+        action.timeout = 1
+        obs = runtime.run_action(action)
+        assert 'Enter name:' in obs.content
+        assert '[Command timed out after 1 seconds.' in obs.content
+
+        # Test multiline command input with here document
+        action = CmdRunAction("""cat << EOF
+line 1
+line 2
+EOF""")
+        obs = runtime.run_action(action)
+        assert 'line 1\nline 2' in obs.content
+        assert obs.exit_code == 0
+    finally:
+        _close_test_runtime(runtime)
+
+
+def test_long_output(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        # Generate a long output
+        action = CmdRunAction('for i in $(seq 1 1000); do echo "Line $i"; done')
+        action.timeout = 5
+        obs = runtime.run_action(action)
+        assert obs.exit_code == 0
+        assert 'Line 1' in obs.content
+        assert 'Line 1000' in obs.content
+    finally:
+        _close_test_runtime(runtime)
+
+
+def test_ansi_escape_codes(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        # Test command with ANSI escape codes
+        obs = _run_cmd_action(runtime, 'echo -e "\033[31mRed Text\033[0m"')
+        assert obs.exit_code == 0
+        # The escape codes should be stripped from the output
+        assert 'Red Text' in obs.content
     finally:
         _close_test_runtime(runtime)
