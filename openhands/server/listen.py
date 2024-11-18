@@ -34,7 +34,6 @@ from fastapi import (
     HTTPException,
     Request,
     UploadFile,
-    WebSocket,
     status,
 )
 from fastapi.responses import FileResponse, JSONResponse
