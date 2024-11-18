@@ -16,6 +16,8 @@ class CmdRunAction(Action):
     blocking: bool = False
     # If blocking is True, the command will be run in a blocking manner.
     # e.g., it will NOT return early due to soft timeout.
+    keep_prompt: bool = False
+    # If keep_prompt is True, the command output will include the prompt
     thought: str = ''
     hidden: bool = False
     action: str = ActionType.RUN
