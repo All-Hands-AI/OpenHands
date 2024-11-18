@@ -31,6 +31,8 @@ jobs:
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
+      - name: Install tmux
+        run: brew install tmux
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Install Python dependencies using Poetry
