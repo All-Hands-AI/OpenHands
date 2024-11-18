@@ -58,5 +58,8 @@ def send_request(
     **kwargs: Any,
 ) -> requests.Response:
     response = session.request(method, url, **kwargs)
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    except requests.HTTPError as e:
+        raise RuntimeError(f'{e}\n{response.json().get("message", "")}') from e
     return response
