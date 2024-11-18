@@ -267,7 +267,6 @@ def test_unsafe_bash_command(temp_dir: str):
                             'blocking': False,
                             'command': 'ls',
                             'hidden': False,
-                            'keep_prompt': True,
                             'confirmation_state': ActionConfirmationStatus.CONFIRMED,
                         },
                     ),
