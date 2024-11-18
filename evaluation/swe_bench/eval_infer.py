@@ -177,7 +177,7 @@ def process_instance(
         "(patch --batch --fuzz=5 -p1 -i /tmp/patch.diff && echo 'APPLY_PATCH_PASS' || "
         "echo 'APPLY_PATCH_FAIL')))"
     )
-    action = CmdRunAction(command=exec_command, keep_prompt=False)
+    action = CmdRunAction(command=exec_command)
     action.timeout = 600
     obs = runtime.run_action(action)
     assert isinstance(obs, CmdOutputObservation)
@@ -200,9 +200,7 @@ def process_instance(
 
             # Run eval script in background and save output to log file
             log_file = '/tmp/eval_output.log'
-            action = CmdRunAction(
-                command=f'/tmp/eval.sh > {log_file} 2>&1 & echo $!', keep_prompt=False
-            )
+            action = CmdRunAction(command=f'/tmp/eval.sh > {log_file} 2>&1 & echo $!')
             action.timeout = 60  # Short timeout just to get the process ID
             obs = runtime.run_action(action)
 
@@ -224,7 +222,7 @@ def process_instance(
                         instance['test_result']['report']['test_timeout'] = True
                         break
                     check_action = CmdRunAction(
-                        command=f'ps -p {pid} > /dev/null; echo $?', keep_prompt=False
+                        command=f'ps -p {pid} > /dev/null; echo $?'
                     )
                     check_action.timeout = 60
                     check_obs = runtime.run_action(check_action)
@@ -242,7 +240,7 @@ def process_instance(
                     time.sleep(30)  # Wait for 30 seconds before checking again
 
                 # Read the log file
-                cat_action = CmdRunAction(command=f'cat {log_file}', keep_prompt=False)
+                cat_action = CmdRunAction(command=f'cat {log_file}')
                 cat_action.timeout = 300
                 cat_obs = runtime.run_action(cat_action)
 

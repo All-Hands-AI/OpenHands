@@ -121,10 +121,7 @@ def initialize_runtime(
     runtime.copy_to(dataset_dir, '/workspace/benchmark/datasets', recursive=True)
 
     # Check the dataset exists
-    action = CmdRunAction(
-        command='cd /workspace/benchmark/datasets && ls',
-        keep_prompt=False,
-    )
+    action = CmdRunAction(command='cd /workspace/benchmark/datasets && ls')
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
@@ -154,10 +151,7 @@ def complete_runtime(
 
     assert obs.exit_code == 0
 
-    action = CmdRunAction(
-        command=f'cat pred_programs/{instance.pred_program_name}',
-        keep_prompt=False,
-    )
+    action = CmdRunAction(command=f'cat pred_programs/{instance.pred_program_name}')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
 
