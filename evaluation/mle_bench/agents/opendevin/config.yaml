@@ -1,0 +1,13 @@
+opendevin:
+  start: opendevin/start.sh
+  dockerfile: opendevin/Dockerfile
+  kwargs_type: argparse
+  kwargs:
+    agent: CodeActAgent
+    model: gpt-4o
+    max_time_in_hours: 24
+    max_steps: 500
+    shm_size: "100G"
+  env_vars:
+    OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  privileged: true

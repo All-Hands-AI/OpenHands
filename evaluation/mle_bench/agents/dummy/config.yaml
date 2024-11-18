@@ -1,0 +1,3 @@
+dummy:
+  start: dummy/start.sh
+  dockerfile: dummy/Dockerfile
