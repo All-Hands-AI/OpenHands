@@ -155,25 +155,25 @@ class BashSession:
         self,
         command: str,
         raw_command_output: str,
+        metadata: CmdOutputMetadata,
         continue_prefix: str = '',
-        suffix: str = '',
     ) -> str:
         """Get the command output with the previous command output removed.
 
         Args:
+            command: The command that was executed.
+            raw_command_output: The raw output from the command.
+            metadata: The metadata object to store prefix/suffix in.
             continue_prefix: The prefix to add to the command output if it's a continuation of the previous command.
-            suffix: The suffix to add to the command output.
         """
         # remove the previous command output from the new output if any
-        custom_prefix = ''
         if self.prev_output:
             command_output = raw_command_output.removeprefix(self.prev_output)
-            custom_prefix = continue_prefix
+            metadata.prefix = continue_prefix
         else:
             command_output = raw_command_output
         self.prev_output = raw_command_output  # update current command output anyway
         command_output = _remove_command_prefix(command_output, command)
-        command_output = f'{custom_prefix}{command_output}{suffix}'
         return command_output
 
     def _handle_completed_command(self, command: str) -> CmdOutputObservation:
@@ -187,14 +187,15 @@ class BashSession:
         raw_command_output = full_output[
             ps1_matches[0].end() + 1 : ps1_matches[1].start()
         ]
+        metadata.suffix = (
+            f'\n\n[The command completed with exit code {metadata.exit_code}.]'
+            if not is_special_key
+            else f'\n\n[The command completed with exit code {metadata.exit_code}. CTRL+{command[-1].upper()} was sent.]'
+        )
         command_output = self._get_command_output(
             command,
             raw_command_output,
-            suffix=(
-                f'\n\n[The command completed with exit code {metadata.exit_code}.]'
-                if not is_special_key
-                else f'\n\n[The command completed with exit code {metadata.exit_code}. CTRL+{command[-1].upper()} was sent.]'
-            ),
+            metadata,
         )
         self.prev_status = BashCommandStatus.COMPLETED
         self.prev_output = ''  # Reset previous command output
@@ -213,21 +214,23 @@ class BashSession:
         assert len(ps1_matches) == 1, 'Expected exactly one PS1 metadata block'
 
         raw_command_output = full_output[ps1_matches[0].end() + 1 :]
+        metadata = CmdOutputMetadata()  # No metadata available
+        metadata.suffix = (
+            f'\n\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
+            "You may wait longer to see additional output by sending empty command '', "
+            'send other commands to interact with the current process, '
+            'or send keys to interrupt/kill the command.]'
+        )
         command_output = self._get_command_output(
             command,
             raw_command_output,
+            metadata,
             continue_prefix='[Command output continued from previous command]\n',
-            suffix=(
-                f'\n\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
-                "You may wait longer to see additional output by sending empty command '', "
-                'send other commands to interact with the current process, '
-                'or send keys to interrupt/kill the command.]'
-            ),
         )
         return CmdOutputObservation(
             content=command_output,
             command=command,
-            metadata=CmdOutputMetadata(),  # No metadata available
+            metadata=metadata,
         )
 
     def _handle_hard_timeout_command(
@@ -239,22 +242,24 @@ class BashSession:
         assert len(ps1_matches) == 1, 'Expected exactly one PS1 metadata block'
 
         raw_command_output = full_output[ps1_matches[0].end() + 1 :]
+        metadata = CmdOutputMetadata()  # No metadata available
+        metadata.suffix = (
+            f'\n\n[The command timed out after {timeout} seconds. '
+            "You may wait longer to see additional output by sending empty command '', "
+            'send other commands to interact with the current process, '
+            'or send keys to interrupt/kill the command.]'
+        )
         command_output = self._get_command_output(
             command,
             raw_command_output,
+            metadata,
             continue_prefix='[Command output continued from previous command]\n',
-            suffix=(
-                f'\n\n[The command timed out after {timeout} seconds. '
-                "You may wait longer to see additional output by sending empty command '', "
-                'send other commands to interact with the current process, '
-                'or send keys to interrupt/kill the command.]'
-            ),
         )
 
         return CmdOutputObservation(
             command=command,
             content=command_output,
-            metadata=CmdOutputMetadata(),  # No metadata available
+            metadata=metadata,
         )
 
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:

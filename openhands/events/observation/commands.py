@@ -25,6 +25,8 @@ class CmdOutputMetadata(BaseModel):
     hostname: str | None = None
     working_dir: str | None = None
     py_interpreter_path: str | None = None
+    prefix: str = ""  # Prefix to add to command output
+    suffix: str = ""  # Suffix to add to command output
 
     @classmethod
     def to_ps1_prompt(cls) -> str:
@@ -136,7 +138,7 @@ class CmdOutputObservation(Observation):
         )
 
     def to_agent_observation(self) -> str:
-        ret = self.content
+        ret = f"{self.metadata.prefix}{self.content}{self.metadata.suffix}"
         if self.metadata.py_interpreter_path:
             ret += f'\n[Python interpreter: {self.metadata.py_interpreter_path}]'
         return ret
