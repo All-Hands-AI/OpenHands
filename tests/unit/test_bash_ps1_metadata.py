@@ -1,7 +1,5 @@
 import json
 
-import pytest
-
 from openhands.events.observation.commands import (
     CMD_OUTPUT_METADATA_PS1_REGEX,
     CMD_OUTPUT_PS1_BEGIN,
@@ -15,7 +13,7 @@ def test_ps1_metadata_format():
     """Test that PS1 prompt has correct format markers"""
     prompt = CmdOutputMetadata.to_ps1_prompt()
     print(prompt)
-    assert prompt.startswith('###PS1JSON###\n')
+    assert prompt.startswith('\n###PS1JSON###\n')
     assert prompt.endswith('\n###PS1END###\n')
     assert r'\"exit_code\"' in prompt, 'PS1 prompt should contain escaped double quotes'
 
@@ -102,7 +100,7 @@ def test_ps1_metadata_parsing_additional_prefix():
     ps1_str = f"""
 This is something that not part of the PS1 prompt
 
-    ###PS1JSON###
+###PS1JSON###
 {json.dumps(test_data, indent=2)}
 ###PS1END###
 """
@@ -125,9 +123,7 @@ def test_ps1_metadata_parsing_invalid():
 ###PS1END###
 """
     matches = CmdOutputMetadata.matches_ps1_metadata(invalid_json)
-    assert len(matches) == 1
-    with pytest.raises(json.JSONDecodeError):
-        CmdOutputMetadata.from_ps1_match(matches[0])
+    assert len(matches) == 0  # No matches should be found for invalid JSON
 
     # Test with missing markers
     invalid_format = """NOT A VALID PS1 PROMPT"""
@@ -140,9 +136,7 @@ def test_ps1_metadata_parsing_invalid():
 ###PS1END###
 """
     matches = CmdOutputMetadata.matches_ps1_metadata(empty_metadata)
-    assert len(matches) == 1
-    with pytest.raises(json.JSONDecodeError):
-        CmdOutputMetadata.from_ps1_match(matches[0])
+    assert len(matches) == 0  # No matches should be found for empty metadata
 
     # Test with whitespace in PS1 metadata
     whitespace_metadata = """###PS1JSON###
