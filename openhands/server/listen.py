@@ -1,11 +1,7 @@
-from ast import parse
-import asyncio
-import json
 import os
 import re
 import tempfile
 import time
-import uuid
 import warnings
 
 import jwt
@@ -848,7 +844,7 @@ app = socketio.ASGIApp(sio, other_asgi_app=app)
 
 @sio.event
 async def connect(connection_id: str, environ):
-    logger.info(f"sio:connect: {connection_id}")
+    logger.info(f'sio:connect: {connection_id}')
 
 
 @sio.event
@@ -915,7 +911,7 @@ async def oh_action(connection_id: str, data: dict):
         await init_connection(connection_id, data)
         return
 
-    logger.info(f"sio:oh_action:{connection_id}")
+    logger.info(f'sio:oh_action:{connection_id}')
     session = session_manager.get_local_session(connection_id)
     await session.dispatch(data)
 
@@ -924,7 +920,7 @@ async def init_connection(connection_id: str, data: dict):
     gh_token = data.pop('gh_token', None)
     if not await authenticate_github_user(gh_token):
         raise RuntimeError(status.WS_1008_POLICY_VIOLATION)
-    
+
     token = data.pop('token', None)
     if token:
         sid = get_sid_from_token(token, config.jwt_secret)
@@ -937,12 +933,14 @@ async def init_connection(connection_id: str, data: dict):
         logger.info(f'New session: {sid}')
 
     token = sign_token({'sid': sid}, config.jwt_secret)
-    await sio.emit("oh_event", {'token': token, 'status': 'ok'}, to=connection_id)
+    await sio.emit('oh_event', {'token': token, 'status': 'ok'}, to=connection_id)
 
-    latest_event_id = int(data.pop("latest_event_id", -1))
+    latest_event_id = int(data.pop('latest_event_id', -1))
 
     # The session in question should exist, but may not actually be running locally...
-    session = await session_manager.init_or_join_local_session(sio, sid, connection_id, data)
+    session = await session_manager.init_or_join_local_session(
+        sio, sid, connection_id, data
+    )
 
     # Send events
     async_stream = AsyncEventStreamWrapper(
@@ -958,7 +956,7 @@ async def init_connection(connection_id: str, data: dict):
             ),
         ):
             continue
-        await sio.emit("oh_event", event_to_dict(event), to=connection_id)
+        await sio.emit('oh_event', event_to_dict(event), to=connection_id)
 
 
 @sio.event
