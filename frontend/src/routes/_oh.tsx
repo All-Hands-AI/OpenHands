@@ -12,6 +12,7 @@ import {
 } from "@remix-run/react";
 import posthog from "posthog-js";
 import { useDispatch } from "react-redux";
+import { useQuery } from "@tanstack/react-query";
 import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
 import CogTooth from "#/assets/cog-tooth";
@@ -127,11 +128,11 @@ export function ErrorBoundary() {
   );
 }
 
-type SettingsFormData = {
-  models: string[];
-  agents: string[];
-  securityAnalyzers: string[];
-};
+const fetchAiConfigOptions = async () => ({
+  models: await OpenHands.getModels(),
+  agents: await OpenHands.getAgents(),
+  securityAnalyzers: await OpenHands.getSecurityAnalyzers(),
+});
 
 export default function MainApp() {
   const navigation = useNavigation();
@@ -155,15 +156,11 @@ export default function MainApp() {
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
   const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
     React.useState(false);
-  const [settingsFormData, setSettingsFormData] =
-    React.useState<SettingsFormData>({
-      models: [],
-      agents: [],
-      securityAnalyzers: [],
-    });
-  const [settingsFormError, setSettingsFormError] = React.useState<
-    string | null
-  >(null);
+
+  const aiConfigOptions = useQuery({
+    queryKey: ["ai-config-options"],
+    queryFn: fetchAiConfigOptions,
+  });
 
   React.useEffect(() => {
     if (user && !isGitHubErrorReponse(user)) {
@@ -176,24 +173,6 @@ export default function MainApp() {
       });
     }
   }, [user]);
-
-  React.useEffect(() => {
-    // We fetch this here instead of the data loader because the server seems to block
-    // the retrieval when the session is closing -- preventing the screen from rendering until
-    // the fetch is complete
-    (async () => {
-      try {
-        const [models, agents, securityAnalyzers] = await Promise.all([
-          OpenHands.getModels(),
-          OpenHands.getAgents(),
-          OpenHands.getSecurityAnalyzers(),
-        ]);
-        setSettingsFormData({ models, agents, securityAnalyzers });
-      } catch (error) {
-        setSettingsFormError("Failed to load settings, please reload the page");
-      }
-    })();
-  }, []);
 
   React.useEffect(() => {
     // If the github token is invalid, open the account settings modal again
@@ -296,8 +275,10 @@ export default function MainApp() {
       {isAuthed && (!settingsIsUpdated || settingsModalIsOpen) && (
         <ModalBackdrop onClose={() => setSettingsModalIsOpen(false)}>
           <div className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2">
-            {settingsFormError && (
-              <p className="text-danger text-xs">{settingsFormError}</p>
+            {aiConfigOptions.error && (
+              <p className="text-danger text-xs">
+                {aiConfigOptions.error.message}
+              </p>
             )}
             <span className="text-xl leading-6 font-semibold -tracking-[0.01em">
               AI Provider Configuration
@@ -308,13 +289,20 @@ export default function MainApp() {
             <p className="text-xs text-danger">
               Changing settings during an active session will end the session
             </p>
-            <SettingsForm
-              settings={settings}
-              models={settingsFormData.models}
-              agents={settingsFormData.agents}
-              securityAnalyzers={settingsFormData.securityAnalyzers}
-              onClose={() => setSettingsModalIsOpen(false)}
-            />
+            {aiConfigOptions.isLoading && (
+              <div className="flex justify-center">
+                <LoadingSpinner size="small" />
+              </div>
+            )}
+            {aiConfigOptions.data && (
+              <SettingsForm
+                settings={settings}
+                models={aiConfigOptions.data?.models}
+                agents={aiConfigOptions.data?.agents}
+                securityAnalyzers={aiConfigOptions.data?.securityAnalyzers}
+                onClose={() => setSettingsModalIsOpen(false)}
+              />
+            )}
           </div>
         </ModalBackdrop>
       )}

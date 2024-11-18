@@ -11,6 +11,7 @@ import { hydrateRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import posthog from "posthog-js";
 import "./i18n";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import store from "./store";
 import OpenHands from "./api/open-hands";
 
@@ -48,14 +49,18 @@ async function prepareApp() {
   }
 }
 
+const queryClient = new QueryClient();
+
 prepareApp().then(() =>
   startTransition(() => {
     hydrateRoot(
       document,
       <StrictMode>
         <Provider store={store}>
-          <RemixBrowser />
-          <PosthogInit />
+          <QueryClientProvider client={queryClient}>
+            <RemixBrowser />
+            <PosthogInit />
+          </QueryClientProvider>
         </Provider>
       </StrictMode>,
     );
