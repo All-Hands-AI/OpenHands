@@ -1,5 +1,6 @@
 import os
 import tempfile
+from unittest.mock import MagicMock, patch
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
@@ -40,7 +41,8 @@ def test_basic_command():
     obs = session.execute(CmdRunAction("echo 'hello world'"))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'hello world' in obs.content
-    assert '[The command completed with exit code 0.]' in obs.content
+    assert obs.metadata.suffix == '\n\n[The command completed with exit code 0.]'
+    assert obs.metadata.prefix == ''
     assert obs.metadata.exit_code == 0
     assert session.prev_status == BashCommandStatus.COMPLETED
 
@@ -49,20 +51,23 @@ def test_basic_command():
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.metadata.exit_code == 127
     assert 'bash: nonexistent_command: command not found' in obs.content
-    assert '[The command completed with exit code 127.]' in obs.content
+    assert obs.metadata.suffix == '\n\n[The command completed with exit code 127.]'
+    assert obs.metadata.prefix == ''
     assert session.prev_status == BashCommandStatus.COMPLETED
 
     # Test command with special characters
     obs = session.execute(CmdRunAction("echo 'hello   world    with\nspecial  chars'"))
     assert 'hello   world    with\nspecial  chars' in obs.content
-    assert '[The command completed with exit code 0.]' in obs.content
+    assert obs.metadata.suffix == '\n\n[The command completed with exit code 0.]'
+    assert obs.metadata.prefix == ''
     assert obs.metadata.exit_code == 0
     assert session.prev_status == BashCommandStatus.COMPLETED
 
     # Test multiple commands in sequence
     obs = session.execute(CmdRunAction('echo "first" && echo "second" && echo "third"'))
     assert 'first\nsecond\nthird' in obs.content
-    assert '[The command completed with exit code 0.]' in obs.content
+    assert obs.metadata.suffix == '\n\n[The command completed with exit code 0.]'
+    assert obs.metadata.prefix == ''
     assert obs.metadata.exit_code == 0
     assert session.prev_status == BashCommandStatus.COMPLETED
 
@@ -80,22 +85,39 @@ def test_long_running_command_follow_by_execute():
     assert '1' in obs.content  # First number should appear before timeout
     assert obs.metadata.exit_code == -1  # -1 indicates command is still running
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
+    assert obs.metadata.suffix == (
+        '\n\n[The command has no new output after 2 seconds. '
+        "You may wait longer to see additional output by sending empty command '', "
+        'send other commands to interact with the current process, '
+        'or send keys to interrupt/kill the command.]'
+    )
+    assert obs.metadata.prefix == ''
 
     # Continue watching output
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert '[Command output continued from previous command]' in obs.content
     assert '2' in obs.content
-    assert '[The command has no new output after 2 seconds.' in obs.content
+    assert obs.metadata.prefix == '[Command output continued from previous command]\n'
+    assert obs.metadata.suffix == (
+        '\n\n[The command has no new output after 2 seconds. '
+        "You may wait longer to see additional output by sending empty command '', "
+        'send other commands to interact with the current process, '
+        'or send keys to interrupt/kill the command.]'
+    )
     assert obs.metadata.exit_code == -1  # -1 indicates command is still running
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     # Test command that produces no output
     obs = session.execute(CmdRunAction('sleep 15'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert '[Command output continued from previous command]' in obs.content
     assert '3' in obs.content
-    assert '[The command has no new output after 2 seconds.' in obs.content
+    assert obs.metadata.prefix == '[Command output continued from previous command]\n'
+    assert obs.metadata.suffix == (
+        '\n\n[The command has no new output after 2 seconds. '
+        "You may wait longer to see additional output by sending empty command '', "
+        'send other commands to interact with the current process, '
+        'or send keys to interrupt/kill the command.]'
+    )
     assert obs.metadata.exit_code == -1  # -1 indicates command is still running
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
@@ -115,13 +137,21 @@ def test_interactive_command():
     assert 'Enter name:' in obs.content
     assert obs.metadata.exit_code == -1  # -1 indicates command is still running
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
+    assert obs.metadata.suffix == (
+        '\n\n[The command has no new output after 3 seconds. '
+        "You may wait longer to see additional output by sending empty command '', "
+        'send other commands to interact with the current process, '
+        'or send keys to interrupt/kill the command.]'
+    )
+    assert obs.metadata.prefix == ''
 
     # Send input
     obs = session.execute(CmdRunAction('John'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'Hello John' in obs.content
     assert obs.metadata.exit_code == 0
-    assert '[The command completed with exit code 0.]' in obs.content
+    assert obs.metadata.suffix == '\n\n[The command completed with exit code 0.]'
+    assert obs.metadata.prefix == ''
     assert session.prev_status == BashCommandStatus.COMPLETED
 
     # Test multiline command input
@@ -129,24 +159,44 @@ def test_interactive_command():
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.metadata.exit_code == -1
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
-    assert '[The command has no new output after 3 seconds.' in obs.content
+    assert obs.metadata.suffix == (
+        '\n\n[The command has no new output after 3 seconds. '
+        "You may wait longer to see additional output by sending empty command '', "
+        'send other commands to interact with the current process, '
+        'or send keys to interrupt/kill the command.]'
+    )
+    assert obs.metadata.prefix == ''
 
     obs = session.execute(CmdRunAction('line 1'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.metadata.exit_code == -1
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
-    assert '[The command has no new output after 3 seconds.' in obs.content
+    assert obs.metadata.suffix == (
+        '\n\n[The command has no new output after 3 seconds. '
+        "You may wait longer to see additional output by sending empty command '', "
+        'send other commands to interact with the current process, '
+        'or send keys to interrupt/kill the command.]'
+    )
+    assert obs.metadata.prefix == ''
 
     obs = session.execute(CmdRunAction('line 2'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.metadata.exit_code == -1
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
-    assert '[The command has no new output after 3 seconds.' in obs.content
+    assert obs.metadata.suffix == (
+        '\n\n[The command has no new output after 3 seconds. '
+        "You may wait longer to see additional output by sending empty command '', "
+        'send other commands to interact with the current process, '
+        'or send keys to interrupt/kill the command.]'
+    )
+    assert obs.metadata.prefix == ''
 
     obs = session.execute(CmdRunAction('EOF'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'line 1\nline 2' in obs.content
     assert obs.metadata.exit_code == 0
+    assert obs.metadata.suffix == '\n\n[The command completed with exit code 0.]'
+    assert obs.metadata.prefix == ''
 
     session.close()
 
@@ -160,7 +210,13 @@ def test_ctrl_c():
     )
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'looping' in obs.content
-    assert '[The command has no new output after 2 seconds.' in obs.content
+    assert obs.metadata.suffix == (
+        '\n\n[The command has no new output after 2 seconds. '
+        "You may wait longer to see additional output by sending empty command '', "
+        'send other commands to interact with the current process, '
+        'or send keys to interrupt/kill the command.]'
+    )
+    assert obs.metadata.prefix == ''
     assert obs.metadata.exit_code == -1  # -1 indicates command is still running
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
@@ -168,7 +224,8 @@ def test_ctrl_c():
     obs = session.execute(CmdRunAction('C-c'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.metadata.exit_code == 1  # Standard exit code for Ctrl+C
-    assert 'CTRL+C was sent.]' in obs.content
+    assert obs.metadata.suffix == '\n\n[The command completed with exit code 1. CTRL+C was sent.]'
+    assert obs.metadata.prefix == ''
     assert session.prev_status == BashCommandStatus.COMPLETED
 
     session.close()
@@ -180,8 +237,10 @@ def test_empty_command_errors():
     # Test empty command without previous command
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert 'ERROR: No previous command to continue from' in obs.content
+    assert obs.content == 'ERROR: No previous command to continue from. Previous command has to be timeout to be continued.'
     assert obs.metadata.exit_code == -1
+    assert obs.metadata.prefix == ''
+    assert obs.metadata.suffix == ''
     assert session.prev_status is None
 
     session.close()
@@ -196,6 +255,8 @@ def test_env_command():
     assert 'PS1=###PS1JSON###' in obs.content
     assert 'PS2=' in obs.content
     assert obs.metadata.exit_code == 0
+    assert obs.metadata.prefix == ''
+    assert obs.metadata.suffix == '\n\n[The command completed with exit code 0.]'
     assert session.prev_status == BashCommandStatus.COMPLETED
     session.close()
 
@@ -255,6 +316,8 @@ def test_ansi_escape_codes():
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'Red Green' in obs.content  # ANSI codes should be stripped
     assert obs.metadata.exit_code == 0
+    assert obs.metadata.prefix == ''
+    assert obs.metadata.suffix == '\n\n[The command completed with exit code 0.]'
 
     session.close()
 
@@ -268,6 +331,8 @@ def test_long_output():
     assert 'Line 1' in obs.content
     assert 'Line 1000' in obs.content
     assert obs.metadata.exit_code == 0
+    assert obs.metadata.prefix == ''
+    assert obs.metadata.suffix == '\n\n[The command completed with exit code 0.]'
 
     session.close()
 
@@ -284,6 +349,8 @@ fi""")
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'inside if' in obs.content
     assert obs.metadata.exit_code == 0
+    assert obs.metadata.prefix == ''
+    assert obs.metadata.suffix == '\n\n[The command completed with exit code 0.]'
 
     session.close()
 
@@ -316,6 +383,8 @@ def test_multiple_multiline_commands():
             obs = session.execute(CmdRunAction(cmd))
             logger.info(obs, extra={'msg_type': 'OBSERVATION'})
             assert obs.metadata.exit_code == 0
+            assert obs.metadata.prefix == ''
+            assert obs.metadata.suffix == '\n\n[The command completed with exit code 0.]'
             results.append(obs.content)
 
         # Verify all expected outputs are present
