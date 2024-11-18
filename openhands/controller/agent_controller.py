@@ -12,6 +12,7 @@ from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.exceptions import (
+    FunctionCallNotExistsError,
     FunctionCallValidationError,
     LLMMalformedActionError,
     LLMNoActionError,
@@ -488,6 +489,7 @@ class AgentController:
             LLMNoActionError,
             LLMResponseError,
             FunctionCallValidationError,
+            FunctionCallNotExistsError,
         ) as e:
             self.event_stream.add_event(
                 ErrorObservation(
