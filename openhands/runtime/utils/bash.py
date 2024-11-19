@@ -104,6 +104,7 @@ class BashSession:
             kill_session=True,
         )
         self.pane = self.session.attached_window.attached_pane
+        self.pane.resize(rows=1000, cols=1000)
 
         # Configure bash to use simple PS1 and disable PS2
         self.pane.send_keys(
