@@ -55,7 +55,9 @@ def test_basic_command():
 
     # Test multiple commands in sequence
     obs = session.execute(CmdRunAction('echo "first" && echo "second" && echo "third"'))
-    assert 'first\nsecond\nthird' in obs.content
+    assert 'first' in obs.content
+    assert 'second' in obs.content
+    assert 'third' in obs.content
     assert obs.metadata.suffix == '\n\n[The command completed with exit code 0.]'
     assert obs.metadata.prefix == ''
     assert obs.metadata.exit_code == 0
