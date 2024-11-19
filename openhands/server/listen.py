@@ -90,7 +90,7 @@ app.add_middleware(
 
 app.add_middleware(NoCacheMiddleware)
 app.add_middleware(
-    RateLimitMiddleware, rate_limiter=InMemoryRateLimiter(requests=2, seconds=1)
+    RateLimitMiddleware, rate_limiter=InMemoryRateLimiter(requests=10, seconds=1)
 )
 
 
