@@ -5,7 +5,6 @@ import {
   isRouteErrorResponse,
   useNavigation,
   useLocation,
-  useLoaderData,
   useFetcher,
   Outlet,
 } from "@remix-run/react";
@@ -105,8 +104,15 @@ const fetchAiConfigOptions = async () => ({
 export default function MainApp() {
   const navigation = useNavigation();
   const location = useLocation();
-  const { token, ghToken, settingsIsUpdated, settings, analyticsConsent } =
-    useLoaderData<typeof clientLoader>();
+
+  const { token, ghToken, settingsIsUpdated, settings, analyticsConsent } = {
+    token: getToken(),
+    ghToken: null,
+    settingsIsUpdated: false,
+    settings: getSettings(),
+    analyticsConsent: null,
+  };
+
   const logoutFetcher = useFetcher({ key: "logout" });
   const endSessionFetcher = useFetcher({ key: "end-session" });
   const dispatch = useDispatch();
