@@ -36,8 +36,6 @@ from openhands.storage import get_file_store
 
 from openhands.llm.llm import LLM
 from openhands.core.config import LLMConfig
-from collections import namedtuple
-
 
 @pytest.fixture
 def temp_dir(monkeypatch):
