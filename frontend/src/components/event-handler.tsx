@@ -54,7 +54,7 @@ export function EventHandler({ children }: React.PropsWithChildren) {
   const fetcher = useFetcher();
   const dispatch = useDispatch();
   const { files, importedProjectZip, initialQuery } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
   const { ghToken, repo } = useLoaderData<typeof appClientLoader>();
 

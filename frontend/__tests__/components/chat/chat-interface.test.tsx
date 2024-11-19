@@ -40,6 +40,7 @@ describe("Empty state", () => {
     const { store } = renderWithProviders(<ChatInterface />, {
       preloadedState: {
         chat: { messages: [] },
+        initialQuery: { selectedRepository: null, files: [], initialQuery: null, importedProjectZip: null },
       },
     });
 
@@ -62,6 +63,7 @@ describe("Empty state", () => {
     renderWithProviders(<ChatInterface />, {
       preloadedState: {
         chat: { messages: [] },
+        initialQuery: { selectedRepository: null, files: [], initialQuery: null, importedProjectZip: null },
       },
     });
 
@@ -91,6 +93,7 @@ describe("Empty state", () => {
       const { store } = renderWithProviders(<ChatInterface />, {
         preloadedState: {
           chat: { messages: [] },
+          initialQuery: { selectedRepository: null, files: [], initialQuery: null, importedProjectZip: null },
         },
       });
 
@@ -119,6 +122,7 @@ describe("Empty state", () => {
       const { rerender } = renderWithProviders(<ChatInterface />, {
         preloadedState: {
           chat: { messages: [] },
+          initialQuery: { selectedRepository: null, files: [], initialQuery: null, importedProjectZip: null },
         },
       });
 

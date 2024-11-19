@@ -28,7 +28,7 @@ import { EventHandler } from "#/components/event-handler";
 export const clientLoader = async () => {
   const ghToken = localStorage.getItem("ghToken");
   const repo =
-    store.getState().initalQuery.selectedRepository ||
+    store.getState().initialQuery.selectedRepository ||
     localStorage.getItem("repo");
 
   const settings = getSettings();

@@ -77,6 +77,7 @@ Please push the changes to GitHub and open a pull request.
       {!working && contextMenuIsOpen && (
         <ProjectMenuCardContextMenu
           isConnectedToGitHub={isConnectedToGitHub}
+          githubData={githubData}
           onConnectToGitHub={() => setConnectToGitHubModalOpen(true)}
           onPushToGitHub={handlePushToGitHub}
           onDownloadWorkspace={handleDownloadWorkspace}
