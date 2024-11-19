@@ -123,7 +123,6 @@ export default function MainApp() {
   const { data: isAuthed } = useQuery({
     queryKey: ["user", "authenticated", ghToken],
     queryFn: userIsAuthenticated,
-    enabled: config.data?.APP_MODE === "saas" && !!ghToken,
   });
   const aiConfigOptions = useQuery({
     queryKey: ["ai-config-options"],
