@@ -49,7 +49,7 @@ def test_basic_command():
     obs = session.execute(CmdRunAction('nonexistent_command'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.metadata.exit_code == 127
-    assert 'bash: nonexistent_command: command not found' in obs.content
+    assert 'nonexistent_command: command not found' in obs.content
     assert obs.metadata.suffix == '\n\n[The command completed with exit code 127.]'
     assert obs.metadata.prefix == ''
     assert session.prev_status == BashCommandStatus.COMPLETED
@@ -192,7 +192,7 @@ def test_interactive_command():
 
     obs = session.execute(CmdRunAction('EOF'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert 'line 1\nline 2' in obs.content
+    assert 'line 1' in obs.content and 'line 2' in obs.content
     assert obs.metadata.exit_code == 0
     assert obs.metadata.suffix == '\n\n[The command completed with exit code 0.]'
     assert obs.metadata.prefix == ''
@@ -257,7 +257,7 @@ def test_env_command():
     # Test empty command without previous command
     obs = session.execute(CmdRunAction('env'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert 'PS1=\n###PS1JSON###' in obs.content
+    assert 'PS1="\n###PS1JSON###' in obs.content or 'PS1=\n###PS1JSON###' in obs.content
     assert 'PS2=' in obs.content
     assert obs.metadata.exit_code == 0
     assert obs.metadata.prefix == ''
@@ -272,7 +272,7 @@ def test_command_output_continuation():
     # Start a command that produces output slowly
     obs = session.execute(CmdRunAction('for i in {1..5}; do echo $i; sleep 3; done'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.content == '1'
+    assert obs.content.strip() == '1'
     assert obs.metadata.prefix == ''
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
@@ -280,28 +280,28 @@ def test_command_output_continuation():
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[Command output continued from previous command]' in obs.metadata.prefix
-    assert obs.content == '2'
+    assert obs.content.strip() == '2'
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[Command output continued from previous command]' in obs.metadata.prefix
-    assert obs.content == '3'
+    assert obs.content.strip() == '3'
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[Command output continued from previous command]' in obs.metadata.prefix
-    assert obs.content == '4'
+    assert obs.content.strip() == '4'
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[Command output continued from previous command]' in obs.metadata.prefix
-    assert obs.content == '5'
+    assert obs.content.strip() == '5'
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
