@@ -163,7 +163,11 @@ class Session:
         self.agent_session.event_stream.add_event(event, EventSource.USER)
 
     async def send(self, data: dict[str, object]) -> bool:
-        logger.info(f"TRACE:send:{data}")
+        task = self.loop.create_task(self._send(data))
+        await task
+        return task.result
+
+    async def _send(self, data: dict[str, object]) -> bool:
         try:
             if not self.is_alive:
                 return False
@@ -176,6 +180,7 @@ class Session:
             self.last_active_ts = int(time.time())
             return True
         except RuntimeError:
+            logger.error("Error sending", stack_info=True, exc_info=True)
             self.is_alive = False
             return False
 
