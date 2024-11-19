@@ -98,7 +98,7 @@ See more about the community in [COMMUNITY.md](./COMMUNITY.md) or find details o
 
 ## 📜 License
 
-Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more information.
+Distributed under the MIT License. See [`LICENSE`](./LICENSE) for more informations.
 
 ## 🙏 Acknowledgements
 
