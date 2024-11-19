@@ -261,17 +261,10 @@ async def test_complete_runtime():
         create_cmd_output(
             exit_code=0,
             content='',
-            command='git config --global core.pager ""',
-        ),
-        create_cmd_output(
-            exit_code=0,
-            content='',
             command='git config --global --add safe.directory /workspace',
         ),
         create_cmd_output(
-            exit_code=0,
-            content='',
-            command='git diff base_commit_hash fix',
+            exit_code=0, content='', command='git diff base_commit_hash fix'
         ),
         create_cmd_output(exit_code=0, content='git diff content', command='git apply'),
     ]
