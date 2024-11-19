@@ -1,4 +1,5 @@
 import time
+import uuid
 from enum import Enum
 
 import bashlex
@@ -93,8 +94,9 @@ class BashSession:
         if username:
             window_command = f'su {username}'
 
+        session_name = f'openhands-{username}-{uuid.uuid4()}'
         self.session = self.server.new_session(
-            session_name=f'openhands-{username}',
+            session_name=session_name,
             window_name='bash',
             window_command=window_command,
             start_directory=work_dir,
