@@ -1,3 +1,4 @@
+import os
 import time
 import uuid
 from enum import Enum
@@ -116,14 +117,14 @@ class BashSession:
         self.prev_output: str = ''
         logger.debug(f'Bash session initialized with work dir: {work_dir}')
 
+        # Maintain the current working directory
+        self._pwd = os.path.abspath(work_dir)
+
     def close(self):
         self.session.kill_session()
 
     @property
     def pwd(self):
-        self._pwd = self.pane.cmd(
-            'display-message', '-p', '#{pane_current_path}'
-        ).stdout[0]
         return self._pwd
 
     def _is_special_key(self, command: str) -> bool:
@@ -188,6 +189,9 @@ class BashSession:
             f'---FULL OUTPUT---\n{full_output}\n---END OF OUTPUT---'
         )
         metadata = CmdOutputMetadata.from_ps1_match(ps1_matches[-1])
+        # Update the current working directory if it has changed
+        if metadata.working_dir != self._pwd and metadata.working_dir:
+            self._pwd = metadata.working_dir
         # Extract the command output between the two PS1 prompts
         raw_command_output = ''
         for i in range(len(ps1_matches) - 1):
