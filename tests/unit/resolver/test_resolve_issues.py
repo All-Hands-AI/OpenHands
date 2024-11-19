@@ -273,9 +273,7 @@ async def test_complete_runtime():
             content='',
             command='git diff base_commit_hash fix',
         ),
-        create_cmd_output(
-            exit_code=0, content='git diff content', command_id=5, command='git apply'
-        ),
+        create_cmd_output(exit_code=0, content='git diff content', command='git apply'),
     ]
 
     result = await complete_runtime(mock_runtime, 'base_commit_hash')
