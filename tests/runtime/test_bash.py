@@ -681,7 +681,7 @@ def test_empty_command_errors(temp_dir, runtime_cls, run_as_openhands):
     try:
         # Test empty command without previous command
         obs = runtime.run_action(CmdRunAction(''))
-        assert isinstance(obs, ErrorObservation)
-        assert 'No previous command to continue from' in obs.content
+        assert isinstance(obs, CmdOutputObservation)
+        assert 'ERROR: No previous command to continue from' in obs.content
     finally:
         _close_test_runtime(runtime)
