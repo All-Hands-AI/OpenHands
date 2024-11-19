@@ -87,6 +87,33 @@ def test_ps1_metadata_parsing_string():
     assert metadata.py_interpreter_path == '/my/python/path'
 
 
+def test_ps1_metadata_parsing_string_real_example():
+    """Test parsing PS1 output into CmdOutputMetadata"""
+    ps1_str = r"""
+###PS1JSON###
+{
+  "pid": "",
+  "exit_code": "0",
+  "username": "runner",
+  "hostname": "fv-az1055-610",
+  "working_dir": "/home/runner/work/OpenHands/OpenHands",
+  "py_interpreter_path": "/home/runner/.cache/pypoetry/virtualenvs/openhands-ai-ULPBlkAi-py3.12/bin/python"
+}
+###PS1END###
+"""
+    matches = CmdOutputMetadata.matches_ps1_metadata(ps1_str)
+    assert len(matches) == 1
+    metadata = CmdOutputMetadata.from_ps1_match(matches[0])
+    assert metadata.exit_code == 0
+    assert metadata.username == 'runner'
+    assert metadata.hostname == 'fv-az1055-610'
+    assert metadata.working_dir == '/home/runner/work/OpenHands/OpenHands'
+    assert (
+        metadata.py_interpreter_path
+        == '/home/runner/.cache/pypoetry/virtualenvs/openhands-ai-ULPBlkAi-py3.12/bin/python'
+    )
+
+
 def test_ps1_metadata_parsing_additional_prefix():
     """Test parsing PS1 output into CmdOutputMetadata"""
     test_data = {

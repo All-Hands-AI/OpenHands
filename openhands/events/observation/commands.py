@@ -12,7 +12,7 @@ from openhands.events.observation.observation import Observation
 CMD_OUTPUT_PS1_BEGIN = '\n###PS1JSON###\n'
 CMD_OUTPUT_PS1_END = '\n###PS1END###'
 CMD_OUTPUT_METADATA_PS1_REGEX = re.compile(
-    f'^{CMD_OUTPUT_PS1_BEGIN.lstrip()}(.*?){CMD_OUTPUT_PS1_END}',
+    f'^{CMD_OUTPUT_PS1_BEGIN.strip()}(.*?){CMD_OUTPUT_PS1_END.strip()}',
     re.DOTALL | re.MULTILINE,
 )
 
@@ -55,7 +55,7 @@ class CmdOutputMetadata(BaseModel):
         matches = []
         for match in CMD_OUTPUT_METADATA_PS1_REGEX.finditer(string):
             try:
-                json.loads(match.group(1))  # Try to parse as JSON
+                json.loads(match.group(1).strip())  # Try to parse as JSON
                 matches.append(match)
             except json.JSONDecodeError:
                 continue  # Skip if not valid JSON
