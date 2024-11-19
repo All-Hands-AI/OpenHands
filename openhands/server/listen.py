@@ -833,7 +833,7 @@ app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='di
 client_manager = None
 redis_host = os.environ.get('REDIS_HOST')
 if redis_host:
-    client_manager = socketio.AsyncRedisManager(redis_host)
+    client_manager = socketio.AsyncRedisManager(f'redis://{redis_host}')
 sio = socketio.AsyncServer(
     async_mode='asgi', cors_allowed_origins='*', client_manager=client_manager
 )
