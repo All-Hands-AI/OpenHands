@@ -59,7 +59,8 @@ def create_runtime(
     """Create a runtime for the agent to run on.
 
     config: The app config.
-    sid: The session id.
+    sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
+        Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
     headless_mode: Whether the agent is run in headless mode. `create_runtime` is typically called within evaluation scripts,
         where we don't want to have the VSCode UI open, so it defaults to True.
     """
@@ -105,6 +106,8 @@ async def run_controller(
     Args:
         config: The app config.
         initial_user_action: An Action object containing initial user input
+        sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
+            Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
         runtime: (optional) A runtime for the agent to run on.
         agent: (optional) A agent to run.
         exit_on_message: quit if agent asks for a message from user (optional)
