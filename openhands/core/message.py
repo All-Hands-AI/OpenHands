@@ -105,6 +105,7 @@ class Message(BaseModel):
         message_dict: dict = {'content': content, 'role': self.role}
 
         # pop content if it's empty
+        # this fixes a bedrock error on empty content
         if not content or (
             len(content) == 1
             and content[0]['type'] == 'text'
