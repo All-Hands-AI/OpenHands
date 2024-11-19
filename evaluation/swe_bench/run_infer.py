@@ -145,7 +145,7 @@ def get_config(
             platform='linux/amd64',
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
-            keep_remote_runtime_alive=False,
+            keep_runtime_alive=False,
             remote_runtime_init_timeout=3600,
         ),
         # do not mount workspace

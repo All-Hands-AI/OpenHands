@@ -55,7 +55,7 @@ def mock_prompt_template():
 
 @pytest.fixture
 def mock_followup_prompt_template():
-    return 'Issue context: {{ issues }}\n\nReview comments: {{ review_comments }}\n\nReview threads: {{ review_threads }}\n\nFiles: {{ files }}\n\nPlease fix this issue.'
+    return 'Issue context: {{ issues }}\n\nReview comments: {{ review_comments }}\n\nReview threads: {{ review_threads }}\n\nFiles: {{ files }}\n\nThread comments: {{ thread_context }}\n\nPlease fix this issue.'
 
 
 def create_cmd_output(exit_code: int, content: str, command: str):
@@ -261,12 +261,21 @@ async def test_complete_runtime():
         create_cmd_output(
             exit_code=0,
             content='',
+            command='git config --global core.pager ""',
+        ),
+        create_cmd_output(
+            exit_code=0,
+            content='',
             command='git config --global --add safe.directory /workspace',
         ),
         create_cmd_output(
-            exit_code=0, content='', command='git diff base_commit_hash fix'
+            exit_code=0,
+            content='',
+            command='git diff base_commit_hash fix',
         ),
-        create_cmd_output(exit_code=0, content='git diff content', command='git apply'),
+        create_cmd_output(
+            exit_code=0, content='git diff content', command_id=5, command='git apply'
+        ),
     ]
 
     result = await complete_runtime(mock_runtime, 'base_commit_hash')
@@ -454,13 +463,17 @@ def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
                 comment="There is still a typo 'pthon' instead of 'python'", files=[]
             )
         ],
+        thread_comments=[
+            "I've left review comments, please address them",
+            'This is a valid concern.',
+        ],
     )
 
     pr_handler = PRHandler('owner', 'repo', 'token')
     instruction, images_urls = pr_handler.get_instruction(
         issue, mock_followup_prompt_template, None
     )
-    expected_instruction = 'Issue context: [\n    "Issue 1 fix the type"\n]\n\nReview comments: None\n\nReview threads: [\n    "There is still a typo \'pthon\' instead of \'python\'"\n]\n\nFiles: []\n\nPlease fix this issue.'
+    expected_instruction = "Issue context: [\n    \"Issue 1 fix the type\"\n]\n\nReview comments: None\n\nReview threads: [\n    \"There is still a typo 'pthon' instead of 'python'\"\n]\n\nFiles: []\n\nThread comments: I've left review comments, please address them\n---\nThis is a valid concern.\n\nPlease fix this issue."
 
     assert images_urls == []
     assert pr_handler.issue_type == 'pr'
