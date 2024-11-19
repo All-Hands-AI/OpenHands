@@ -54,7 +54,7 @@ The agent needs a place to run code and commands. When you run OpenHands on your
 to do this by default. But there are other ways of creating a sandbox for the agent.
 
 If you work for a company that provides a cloud-based runtime, you could help us add support for that runtime
-by implementing the [interface specified here](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/runtime.py).
+by implementing the [interface specified here](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/base.py).
 
 #### Testing
 When you write code, it is also good to write tests. Please navigate to the `tests` folder to see existing test suites.

@@ -12,6 +12,7 @@ from litellm import (
     ModelResponse,
 )
 
+from openhands.core.exceptions import FunctionCallNotExistsError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
@@ -484,7 +485,9 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             elif tool_call.function.name == 'browser':
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
             else:
-                raise RuntimeError(f'Unknown tool call: {tool_call.function.name}')
+                raise FunctionCallNotExistsError(
+                    f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
+                )
 
             # We only add thought to the first action
             if i == 0:
