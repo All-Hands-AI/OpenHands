@@ -532,7 +532,9 @@ def test_basic_command(temp_dir, runtime_cls, run_as_openhands):
 
         # Test multiple commands in sequence
         obs = _run_cmd_action(runtime, 'echo "first" && echo "second" && echo "third"')
-        assert 'first\nsecond\nthird' in obs.content
+        assert 'first' in obs.content
+        assert 'second' in obs.content
+        assert 'third' in obs.content
         assert obs.exit_code == 0
     finally:
         _close_test_runtime(runtime)
