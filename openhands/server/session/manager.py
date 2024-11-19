@@ -11,6 +11,7 @@ from openhands.events.event import EventSource
 from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.serialization.event import event_to_dict
 from openhands.events.stream import session_exists
+from openhands.runtime.base import RuntimeUnavailableError
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import Session
 from openhands.storage.files import FileStore
@@ -29,7 +30,11 @@ class SessionManager:
         if not await session_exists(sid, self.file_store):
             return None
         c = Conversation(sid, file_store=self.file_store, config=self.config)
-        await c.connect()
+        try:
+            await c.connect()
+        except RuntimeUnavailableError as e:
+            logger.error(f'Error connecting to conversation {c.sid}: {e}')
+            return None
         end_time = time.time()
         logger.info(
             f'Conversation {c.sid} connected in {end_time - start_time} seconds'
