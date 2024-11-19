@@ -8,7 +8,6 @@ workspace_mount_path="${workspace_base}"
 workspace_mount_path_in_sandbox="${workspace_mount_path_in_sandbox}"
 default_agent="${agent}"
 max_iterations=${max_steps}
-persist_sandbox=false
 
 [llm]
 model="${model}"
@@ -19,7 +18,6 @@ embedding_model=""
 user_id=1000
 use_host_network=true
 timeout=86400
-shm_size="${shm_size}"
 """
 )
 

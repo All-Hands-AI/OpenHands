@@ -5,9 +5,10 @@ import logging
 import os
 import time
 import traceback
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import docker
 from agents.registry import Agent
@@ -16,9 +17,50 @@ from agents.run import run_in_container
 from environment.defaults import DEFAULT_CONTAINER_CONFIG_PATH
 from mlebench.data import is_dataset_prepared
 from mlebench.registry import Competition, registry
-from mlebench.utils import create_run_dir, get_logger, get_timestamp
+from mlebench.utils import generate_run_id, get_logger, get_timestamp
 
 logger = get_logger(__name__)
+
+
+def get_runs_dir():
+    return Path(os.path.join(os.path.curdir, 'runs'))
+
+
+def create_run_dir(
+    competition_id: Optional[str] = None,
+    agent_id: Optional[str] = None,
+    run_group: Optional[str] = None,
+) -> Path:
+    """Creates a directory for the run."""
+
+    assert competition_id is None or isinstance(
+        competition_id, str
+    ), f'Expected a string or None, but got `{type(competition_id).__name__}`.'
+
+    assert agent_id is None or isinstance(
+        agent_id, str
+    ), f'Expected a string or None, but got `{type(agent_id).__name__}`.'
+
+    assert run_group is None or isinstance(
+        run_group, str
+    ), f'Expected a string or None, but got `{type(run_group).__name__}`.'
+
+    run_id = str(uuid.uuid4())
+
+    if competition_id and agent_id:
+        run_id = generate_run_id(competition_id, agent_id, run_group)
+
+    run_dir = get_runs_dir() / run_id
+
+    if run_group:
+        run_dir = get_runs_dir() / run_group / run_id
+
+    run_dir.mkdir(parents=True, exist_ok=False)
+
+    assert isinstance(run_dir, Path), f'Expected a `Path`, but got `{type(run_dir)}`.'
+    assert run_dir.is_dir(), f'Expected a directory, but got `{run_dir}`.'
+
+    return run_dir
 
 
 @dataclass(frozen=True)
@@ -167,13 +209,12 @@ async def main(args):
         'created_at': get_timestamp(),
         'runs': tasks_outputs,
     }
-    run_group_dir = os.path.join(os.path.curdir, 'runs', run_group)
 
+    run_group_dir = get_runs_dir() / run_group
     if not os.path.exists(run_group_dir):
         os.mkdir(run_group_dir)
 
-    with open(os.path.join(run_group_dir, 'metadata.json'), 'w') as f:
-        logger.info(f"Writing results to {run_group_dir + '/metadata.json'}")
+    with open(run_group_dir / 'metadata.json', 'w') as f:
         json.dump(metadata, f, indent=4, sort_keys=False, default=str)
     logger.info(f'{args.n_workers} workers ran for {time_taken:.2f} seconds in total')
 

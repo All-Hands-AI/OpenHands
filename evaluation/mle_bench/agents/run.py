@@ -57,7 +57,7 @@ def execute_agent(container: Container, agent: Agent, logger: logging.Logger):
         cmd += [f'{key}={value}' for key, value in agent.kwargs.items()]
 
     logger.info('Running agent...')
-    exit_code, output = container.exec_run(cmd, stream=True, user='nonroot')
+    _exit_code, output = container.exec_run(cmd, stream=True, user='nonroot')
 
     for chunk in output:
         logger.info(f"[Container] {chunk.decode('utf-8').strip()}")
@@ -140,13 +140,33 @@ def run_in_container(
     try:
         time_start = time.monotonic()
         container.start()
+        print('TEST RUN>PY')
         exit_code, _ = container.exec_run(
-            'timeout 60s sh -c "while ! curl -s http://localhost:5000/health > /dev/null; do sleep 1; done"'
+            'timeout 60s sh -c "while ! curl -s http://localhost:5000/health > /dev/null; do sleep 1; done"',
         )
+
         if exit_code != 0:
             raise RuntimeError(
                 'The grading server failed to start within 60 seconds. This is likely due to an error in `entrypoint.sh`; check the logs.'
             )
+
+        exit_code, output = container.exec_run(
+            ' '.join(
+                [
+                    'docker',
+                    'buildx',
+                    'build',
+                    '--progress=plain',
+                    '--build-arg=OPENHANDS_RUNTIME_VERSION=0.14.0',
+                    '--build-arg=OPENHANDS_RUNTIME_BUILD_TIME=2024-11-19T21:01:38.353125',
+                    '--tag=ghcr.io/all-hands-ai/runtime:oh_v0.14.0_4jgqg088oqwrl1d8_943wj498fiupdhg1',
+                ]
+            )
+        )
+
+        print(exit_code)
+        print(output.decode('utf-8'))
+
         execute_agent(container, agent, logger)
         save_output(container, run_dir, container_config)
         time_end = time.monotonic()

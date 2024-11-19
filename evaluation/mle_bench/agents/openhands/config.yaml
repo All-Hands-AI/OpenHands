@@ -1,6 +1,6 @@
-opendevin:
-  start: opendevin/start.sh
-  dockerfile: opendevin/Dockerfile
+openhands:
+  start: openhands/start.sh
+  dockerfile: openhands/Dockerfile
   kwargs_type: argparse
   kwargs:
     agent: CodeActAgent

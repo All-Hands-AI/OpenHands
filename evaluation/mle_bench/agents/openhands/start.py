@@ -1,20 +1,30 @@
+"""
+Main entrypoint for the OpenHands agent.
+"""
+
 import argparse
 import asyncio
 import json
 import os
-import random
 from pathlib import Path
-from typing import Iterable
+from typing import Callable, Iterable
 
-from openhands.controller.state.state import State  # type: ignore
-from openhands.core.config import load_app_config  # type: ignore
-from openhands.core.main import create_runtime, run_controller  # type: ignore
-from openhands.events.action import CmdRunAction, IPythonRunCellAction  # type: ignore
-from openhands.events.event import Event  # type: ignore
-from openhands.events.observation import (  # type: ignore
+from openhands.controller.state.state import State
+from openhands.core.config import load_app_config
+from openhands.core.main import create_runtime, run_controller
+from openhands.events import Event, EventStreamSubscriber
+from openhands.events.action import (
+    Action,
+    CmdRunAction,
+    IPythonRunCellAction,
+    MessageAction,
+)
+from openhands.events.observation import (
     CmdOutputObservation,
     IPythonRunCellObservation,
 )
+
+# pylint: disable=unspecified-encoding
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--max_time_in_hours', type=float, required=True)
@@ -23,11 +33,15 @@ args, other_args = parser.parse_known_args()
 global_events = []
 global_events_lock = asyncio.Lock()
 
-CODE_DIR = Path(os.getenv('CODE_DIR'))
+CODE_DIR = Path(os.getenv('CODE_DIR'))  # type: ignore
 MAX_TIME_IN_SECONDS = args.max_time_in_hours * 60 * 60
 
 
-def fake_user_response_fn(state: State) -> str:
+def fake_user_response_fn(
+    _state: State,
+    _encapsulate_solution: bool = False,
+    _try_parse: Callable[[Action], str] | None = None,
+) -> str:
     return 'Please continue working on the approach you think is most promising. You should complete the task without any human input.'
 
 
@@ -48,14 +62,15 @@ async def on_event(event: Event):
 
 async def run(instructions: str) -> State:
     config = load_app_config()
-    runtime = await create_runtime(config)
-    sid = random.randint(10_000, 100_000)
-    event_stream = runtime.event_stream
-    event_stream.subscribe(sid, on_event)
-    state = await asyncio.wait_for(
+
+    runtime = create_runtime(config)
+    runtime.event_stream.subscribe(EventStreamSubscriber.TEST, on_event, 'mle-bench')
+    await runtime.connect()
+
+    state: State | None = await asyncio.wait_for(
         run_controller(
             config=config,
-            task_str=instructions,
+            initial_user_action=MessageAction(content=instructions),
             runtime=runtime,
             exit_on_message=False,
             fake_user_response_fn=fake_user_response_fn,
@@ -63,6 +78,7 @@ async def run(instructions: str) -> State:
         timeout=MAX_TIME_IN_SECONDS,
     )
 
+    assert state, 'Controller produced no final state.'
     return state
 
 

@@ -4,11 +4,6 @@
 set -x
 
 {
-  # Check that we can use the GPU in PyTorch
-  conda run -n agent python -c "import torch; print(torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'WARNING: No GPU')"
-  # Check that we can use the GPU in TensorFlow
-  conda run -n agent python -c "import tensorflow as tf; print('GPUs Available: ', tf.config.list_physical_devices('GPU'))"
-
   # wait for agent entrypoint to finish with timeout
   timeout=300 # 5 minutes in seconds
   elapsed=0

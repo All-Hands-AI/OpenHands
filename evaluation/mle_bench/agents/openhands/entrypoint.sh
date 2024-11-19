@@ -3,8 +3,11 @@
 # Print commands and their arguments as they are executed
 set -x
 
-# run the root entrypoint in the background
+# Run the root entrypoint in the background
 /entrypoint.sh &
+
+# Start the docker daemon in the background
+sudo dockerd &
 
 mkdir -p $LOGS_DIR
 mkdir -p $AGENT_DIR

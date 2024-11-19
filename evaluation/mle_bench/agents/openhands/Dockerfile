@@ -20,8 +20,7 @@ ARG AGENT_DIR=/home/agent
 ENV AGENT_DIR=${AGENT_DIR}
 
 ARG CONDA_ENV_NAME=agent
-ARG PYTHON_VERSION=3.11
-ARG OD_VERSION=v2.1.0
+ARG OH_VERSION=main
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN mkdir -p ${LOGS_DIR} ${AGENT_DIR} ${CODE_DIR} ${SUBMISSION_DIR} && \
@@ -29,7 +28,10 @@ RUN mkdir -p ${LOGS_DIR} ${AGENT_DIR} ${CODE_DIR} ${SUBMISSION_DIR} && \
     chmod 700 /tmp/get-docker.sh && \
     /tmp/get-docker.sh && \
     sudo usermod -aG docker nonroot && \
-    git clone --branch ${OD_VERSION} --single-branch https://github.com/thesofakillers/OpenHands.git ${AGENT_DIR}
+    git clone --branch ${OH_VERSION} --single-branch https://github.com/All-Hands-AI/OpenHands.git ${AGENT_DIR}
+
+# We need fuse for docker.
+RUN sudo apt-get install -y fuse-overlayfs
 
 WORKDIR ${AGENT_DIR}
 
@@ -37,8 +39,9 @@ WORKDIR ${AGENT_DIR}
 RUN conda install -y -n ${CONDA_ENV_NAME} -c conda-forge nodejs=18.17.1 && \
     conda run -n ${CONDA_ENV_NAME} pip install poetry>=1.8 && \
     conda run -n ${CONDA_ENV_NAME} poetry install && \
-    conda run -n ${CONDA_ENV_NAME} poetry add build && \
-    conda clean -afy
+    conda run -n ${CONDA_ENV_NAME} poetry add build
+
+RUN conda clean -afy
 
 COPY setup.py start.py templates.py utils.py start.sh build.sh ${AGENT_DIR}/
 COPY entrypoint.sh /agent_entrypoint.sh
