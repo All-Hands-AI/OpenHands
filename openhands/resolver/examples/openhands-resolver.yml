@@ -20,7 +20,6 @@ permissions:
 jobs:
   call-openhands-resolver:
     if: |
-      github.event_name == 'workflow_call' ||
       github.event.label.name == 'fix-me' ||
 
       (
