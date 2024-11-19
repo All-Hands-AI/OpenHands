@@ -64,7 +64,12 @@ from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.llm import bedrock
 from openhands.runtime.base import Runtime
 from openhands.server.auth.auth import get_sid_from_token, sign_token
-from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware
+from openhands.server.middleware import (
+    InMemoryRateLimiter,
+    LocalhostCORSMiddleware,
+    NoCacheMiddleware,
+    RateLimitMiddleware,
+)
 from openhands.server.session import SessionManager
 
 load_dotenv()
@@ -84,6 +89,10 @@ app.add_middleware(
 
 
 app.add_middleware(NoCacheMiddleware)
+app.add_middleware(
+    RateLimitMiddleware, rate_limiter=InMemoryRateLimiter(requests=2, seconds=1)
+)
+
 
 security_scheme = HTTPBearer()
 
