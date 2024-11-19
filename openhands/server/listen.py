@@ -34,6 +34,7 @@ from fastapi import (
     Request,
     UploadFile,
     WebSocket,
+    WebSocketDisconnect,
     status,
 )
 from fastapi.responses import FileResponse, JSONResponse
@@ -63,7 +64,12 @@ from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.llm import bedrock
 from openhands.runtime.base import Runtime
 from openhands.server.auth.auth import get_sid_from_token, sign_token
-from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware
+from openhands.server.middleware import (
+    InMemoryRateLimiter,
+    LocalhostCORSMiddleware,
+    NoCacheMiddleware,
+    RateLimitMiddleware,
+)
 from openhands.server.session import SessionManager
 
 load_dotenv()
@@ -83,6 +89,15 @@ app.add_middleware(
 
 
 app.add_middleware(NoCacheMiddleware)
+app.add_middleware(
+    RateLimitMiddleware, rate_limiter=InMemoryRateLimiter(requests=10, seconds=1)
+)
+
+
+@app.get('/health')
+async def health():
+    return 'OK'
+
 
 security_scheme = HTTPBearer()
 
@@ -238,7 +253,8 @@ async def attach_session(request: Request, call_next):
     request.state.conversation = await session_manager.attach_to_conversation(
         request.state.sid
     )
-    if request.state.conversation is None:
+    if not request.state.conversation:
+        logger.error(f'Runtime not found for session: {request.state.sid}')
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Session not found'},
@@ -344,7 +360,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
     latest_event_id = -1
     if websocket.query_params.get('latest_event_id'):
-        latest_event_id = int(websocket.query_params.get('latest_event_id'))
+        try:
+            latest_event_id = int(websocket.query_params.get('latest_event_id'))
+        except ValueError:
+            logger.warning(
+                f'Invalid latest_event_id: {websocket.query_params.get("latest_event_id")}'
+            )
+            pass
 
     async_stream = AsyncEventStreamWrapper(
         session.agent_session.event_stream, latest_event_id + 1
@@ -361,7 +383,14 @@ async def websocket_endpoint(websocket: WebSocket):
             ),
         ):
             continue
-        await websocket.send_json(event_to_dict(event))
+        try:
+            await websocket.send_json(event_to_dict(event))
+        except WebSocketDisconnect:
+            logger.warning(
+                'Websocket disconnected while sending event history, before loop started'
+            )
+            session.close()
+            return
 
     await session.loop_recv()
 
