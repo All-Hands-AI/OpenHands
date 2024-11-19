@@ -165,7 +165,7 @@ class Session:
     async def send(self, data: dict[str, object]) -> bool:
         task = self.loop.create_task(self._send(data))
         await task
-        return task.result
+        return task.result()
 
     async def _send(self, data: dict[str, object]) -> bool:
         try:
