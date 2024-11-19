@@ -83,11 +83,10 @@ async def resolve_issues(
     issue_handler = issue_handler_factory(issue_type, owner, repo, token)
 
     # Load dataset
-    issues: list[GithubIssue] = issue_handler.get_converted_issues()
+    issues: list[GithubIssue] = issue_handler.get_converted_issues(
+        issue_numbers=issue_numbers
+    )
 
-    if issue_numbers is not None:
-        issues = [issue for issue in issues if issue.number in issue_numbers]
-        logger.info(f'Limiting resolving to issues {issue_numbers}.')
     if limit_issues is not None:
         issues = issues[:limit_issues]
         logger.info(f'Limiting resolving to first {limit_issues} issues.')

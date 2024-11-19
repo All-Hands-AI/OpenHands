@@ -18,7 +18,9 @@ class IssueHandlerInterface(ABC):
     issue_type: ClassVar[str]
 
     @abstractmethod
-    def get_converted_issues(self, comment_id: int | None = None) -> list[GithubIssue]:
+    def get_converted_issues(
+        self, issue_numbers: list[int] | None = None, comment_id: int | None = None
+    ) -> list[GithubIssue]:
         """Download issues from GitHub."""
         pass
 
@@ -138,22 +140,35 @@ class IssueHandler(IssueHandlerInterface):
 
         return all_comments if all_comments else None
 
-    def get_converted_issues(self, comment_id: int | None = None) -> list[GithubIssue]:
+    def get_converted_issues(
+        self, issue_numbers: list[int] | None = None, comment_id: int | None = None
+    ) -> list[GithubIssue]:
         """Download issues from Github.
 
         Returns:
             List of Github issues.
         """
+
+        if not issue_numbers:
+            raise ValueError('Unspecified issue number')
+
         all_issues = self._download_issues_from_github()
+        logger.info(f'Limiting resolving to issues {issue_numbers}.')
+        all_issues = [
+            issue
+            for issue in all_issues
+            if issue['number'] in issue_numbers and 'pull_request' not in issue
+        ]
+
+        if len(issue_numbers) == 1 and not all_issues:
+            raise ValueError(f'Issue {issue_numbers[0]} not found')
+
         converted_issues = []
         for issue in all_issues:
             if any([issue.get(key) is None for key in ['number', 'title', 'body']]):
                 logger.warning(
                     f'Skipping issue {issue} as it is missing number, title, or body.'
                 )
-                continue
-
-            if 'pull_request' in issue:
                 continue
 
             # Get issue thread comments
@@ -486,8 +501,16 @@ class PRHandler(IssueHandler):
 
         return closing_issues
 
-    def get_converted_issues(self, comment_id: int | None = None) -> list[GithubIssue]:
+    def get_converted_issues(
+        self, issue_numbers: list[int] | None = None, comment_id: int | None = None
+    ) -> list[GithubIssue]:
+        if not issue_numbers:
+            raise ValueError('Unspecified issue numbers')
+
         all_issues = self._download_issues_from_github()
+        logger.info(f'Limiting resolving to issues {issue_numbers}.')
+        all_issues = [issue for issue in all_issues if issue['number'] in issue_numbers]
+
         converted_issues = []
         for issue in all_issues:
             # For PRs, body can be None
