@@ -26,13 +26,13 @@ import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import NewProjectIcon from "#/icons/new-project.svg?react";
 import DocsIcon from "#/icons/docs.svg?react";
 import { userIsAuthenticated } from "#/utils/user-is-authenticated";
-import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { WaitlistModal } from "#/components/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/analytics-consent-form-modal";
 import { setCurrentAgentState } from "#/state/agentSlice";
 import AgentState from "#/types/AgentState";
 import { useConfig } from "#/hooks/query/use-config";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
+import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 
 export const clientLoader = async () => {
   let token = localStorage.getItem("token");
@@ -128,6 +128,12 @@ export default function MainApp() {
   const aiConfigOptions = useQuery({
     queryKey: ["ai-config-options"],
     queryFn: fetchAiConfigOptions,
+  });
+
+  const gitHubAuthUrl = useGitHubAuthUrl({
+    gitHubToken: ghToken,
+    appMode: config.data?.APP_MODE || null,
+    gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
   });
 
   React.useEffect(() => {
@@ -287,13 +293,7 @@ export default function MainApp() {
         </ModalBackdrop>
       )}
       {!isAuthed && config.data?.APP_MODE === "saas" && (
-        <WaitlistModal
-          ghToken={ghToken}
-          githubAuthUrl={generateGitHubAuthUrl(
-            config.data?.GITHUB_CLIENT_ID || "",
-            new URL(window.location.href),
-          )}
-        />
+        <WaitlistModal ghToken={ghToken} githubAuthUrl={gitHubAuthUrl} />
       )}
       {!analyticsConsent && <AnalyticsConsentFormModal />}
     </div>

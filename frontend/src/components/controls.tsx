@@ -1,12 +1,9 @@
 import { IoLockClosed } from "react-icons/io5";
-import { useRouteLoaderData } from "@remix-run/react";
 import React from "react";
 import AgentControlBar from "./AgentControlBar";
 import AgentStatusBar from "./AgentStatusBar";
 import { ProjectMenuCard } from "./project-menu/ProjectMenuCard";
-import { clientLoader as rootClientLoader } from "#/routes/_oh";
-import { clientLoader as appClientLoader } from "#/routes/_oh.app";
-import { isGitHubErrorReponse } from "#/api/github";
+import { useGitHubUser } from "#/hooks/query/use-github-user";
 
 interface ControlsProps {
   setSecurityOpen: (isOpen: boolean) => void;
@@ -19,22 +16,21 @@ export function Controls({
   showSecurityLock,
   lastCommitData,
 }: ControlsProps) {
-  const rootData = useRouteLoaderData<typeof rootClientLoader>("routes/_oh");
-  const appData = useRouteLoaderData<typeof appClientLoader>("routes/_oh.app");
+  const ghToken = localStorage.getItem("ghToken");
+  const repo = localStorage.getItem("repo");
+
+  const { data: user } = useGitHubUser(ghToken);
 
   const projectMenuCardData = React.useMemo(
     () =>
-      rootData?.user &&
-      !isGitHubErrorReponse(rootData.user) &&
-      appData?.repo &&
-      lastCommitData
+      user && repo && lastCommitData
         ? {
-            avatar: rootData.user.avatar_url,
-            repoName: appData.repo,
+            avatar: user.avatar_url,
+            repoName: repo,
             lastCommit: lastCommitData,
           }
         : null,
-    [rootData, appData, lastCommitData],
+    [user, repo, lastCommitData],
   );
 
   return (
@@ -55,7 +51,7 @@ export function Controls({
       </div>
 
       <ProjectMenuCard
-        isConnectedToGitHub={!!rootData?.ghToken}
+        isConnectedToGitHub={!!ghToken}
         githubData={projectMenuCardData}
       />
     </div>

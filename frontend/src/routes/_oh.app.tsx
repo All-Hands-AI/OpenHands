@@ -7,6 +7,7 @@ import {
   ClientActionFunctionArgs,
 } from "@remix-run/react";
 import { useDispatch } from "react-redux";
+import { useQuery } from "@tanstack/react-query";
 import { getSettings } from "#/services/settings";
 import Security from "../components/modals/security/Security";
 import { Controls } from "#/components/controls";
@@ -36,23 +37,11 @@ export const clientLoader = async () => {
 
   if (repo) localStorage.setItem("repo", repo);
 
-  let lastCommit: GitHubCommit | null = null;
-  if (ghToken && repo) {
-    const data = await retrieveLatestGitHubCommit(ghToken, repo);
-    if (isGitHubErrorReponse(data)) {
-      // TODO: Handle error
-      console.error("Failed to retrieve latest commit", data);
-    } else {
-      [lastCommit] = data;
-    }
-  }
-
   return json({
     settings,
     token,
     ghToken,
     repo,
-    lastCommit,
   });
 };
 
@@ -70,8 +59,21 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 
 function App() {
   const dispatch = useDispatch();
-  const { settings, token, ghToken, lastCommit } =
+  const { settings, token, ghToken, repo } =
     useLoaderData<typeof clientLoader>();
+
+  const { data: latestGitHubCommit } = useQuery({
+    queryKey: ["latest_commit", ghToken, repo],
+    queryFn: async () => {
+      const data = await retrieveLatestGitHubCommit(ghToken!, repo!);
+      if (isGitHubErrorReponse(data)) {
+        throw new Error("Failed to retrieve latest commit");
+      }
+
+      return data[0];
+    },
+    enabled: !!ghToken && !!repo,
+  });
 
   const secrets = React.useMemo(
     () => [ghToken, token].filter((secret) => secret !== null),
@@ -141,7 +143,7 @@ function App() {
             <Controls
               setSecurityOpen={onSecurityModalOpen}
               showSecurityLock={!!settings.SECURITY_ANALYZER}
-              lastCommitData={lastCommit}
+              lastCommitData={latestGitHubCommit || null}
             />
           </div>
           <Security

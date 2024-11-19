@@ -91,5 +91,9 @@ export const retrieveLatestGitHubCommit = async (
     headers: generateGitHubAPIHeaders(token),
   });
 
+  if (!response.ok) {
+    throw new Error("Failed to retrieve latest commit");
+  }
+
   return response.json();
 };

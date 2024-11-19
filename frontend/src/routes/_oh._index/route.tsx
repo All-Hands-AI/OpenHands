@@ -1,6 +1,5 @@
 import {
   ClientActionFunctionArgs,
-  ClientLoaderFunctionArgs,
   defer,
   redirect,
   useLoaderData,
@@ -16,37 +15,19 @@ import {
   setImportedProjectZip,
   setInitialQuery,
 } from "#/state/initial-query-slice";
-import OpenHands from "#/api/open-hands";
-import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { GitHubRepositoriesSuggestionBox } from "#/components/github-repositories-suggestion-box";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
+import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
+import { useConfig } from "#/hooks/query/use-config";
 
-export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
-  let isSaas = false;
-  let githubClientId: string | null = null;
-
-  try {
-    const config = await OpenHands.getConfig();
-    isSaas = config.APP_MODE === "saas";
-    githubClientId = config.GITHUB_CLIENT_ID;
-  } catch (error) {
-    isSaas = false;
-    githubClientId = null;
-  }
-
+export const clientLoader = async () => {
   const ghToken = localStorage.getItem("ghToken");
   const token = localStorage.getItem("token");
   if (token) return redirect("/app");
 
-  let githubAuthUrl: string | null = null;
-  if (isSaas && githubClientId) {
-    const requestUrl = new URL(request.url);
-    githubAuthUrl = generateGitHubAuthUrl(githubClientId, requestUrl);
-  }
-
-  return defer({ githubAuthUrl, ghToken });
+  return defer({ ghToken });
 };
 
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
@@ -63,11 +44,18 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
 
 function Home() {
   const dispatch = useDispatch();
-  const { githubAuthUrl, ghToken } = useLoaderData<typeof clientLoader>();
+  const { ghToken } = useLoaderData<typeof clientLoader>();
   const formRef = React.useRef<HTMLFormElement>(null);
 
+  const { data: config } = useConfig();
   const { data: user } = useGitHubUser(ghToken);
   const { data: repositories } = useUserRepositories(ghToken);
+
+  const gitHubAuthUrl = useGitHubAuthUrl({
+    gitHubToken: ghToken,
+    appMode: config?.APP_MODE || null,
+    gitHubClientId: config?.GITHUB_CLIENT_ID || null,
+  });
 
   return (
     <div
@@ -80,22 +68,13 @@ function Home() {
           <TaskForm ref={formRef} />
         </div>
         <div className="flex gap-4 w-full">
-          <React.Suspense
-            fallback={
-              <SuggestionBox
-                title="Open a Repo"
-                content="Loading repositories..."
-              />
-            }
-          >
-            <GitHubRepositoriesSuggestionBox
-              handleSubmit={() => formRef.current?.requestSubmit()}
-              repositories={repositories || []}
-              gitHubAuthUrl={githubAuthUrl}
-              user={user || null}
-              // onEndReached={}
-            />
-          </React.Suspense>
+          <GitHubRepositoriesSuggestionBox
+            handleSubmit={() => formRef.current?.requestSubmit()}
+            repositories={repositories || []}
+            gitHubAuthUrl={gitHubAuthUrl}
+            user={user || null}
+            // onEndReached={}
+          />
           <SuggestionBox
             title="+ Import Project"
             content={

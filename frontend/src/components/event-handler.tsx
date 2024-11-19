@@ -1,9 +1,5 @@
 import React from "react";
-import {
-  useFetcher,
-  useLoaderData,
-  useRouteLoaderData,
-} from "@remix-run/react";
+import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 
@@ -27,7 +23,6 @@ import {
 import { clientLoader as appClientLoader } from "#/routes/_oh.app";
 import store, { RootState } from "#/store";
 import { createChatMessage } from "#/services/chatService";
-import { clientLoader as rootClientLoader } from "#/routes/_oh";
 import { isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
 import { base64ToBlob } from "#/utils/base64-to-blob";
@@ -35,6 +30,7 @@ import { setCurrentAgentState } from "#/state/agentSlice";
 import AgentState from "#/types/AgentState";
 import { getSettings } from "#/services/settings";
 import { generateAgentStateChangeEvent } from "#/services/agentStateService";
+import { useGitHubUser } from "#/hooks/query/use-github-user";
 
 interface ServerError {
   error: boolean | string;
@@ -58,15 +54,16 @@ export function EventHandler({ children }: React.PropsWithChildren) {
   );
   const { ghToken, repo } = useLoaderData<typeof appClientLoader>();
 
+  const { data: user } = useGitHubUser(ghToken);
+
   const sendInitialQuery = (query: string, base64Files: string[]) => {
     const timestamp = new Date().toISOString();
     send(createChatMessage(query, base64Files, timestamp));
   };
-  const data = useRouteLoaderData<typeof rootClientLoader>("routes/_oh");
   const userId = React.useMemo(() => {
-    if (data?.user && !isGitHubErrorReponse(data.user)) return data.user.id;
+    if (user && !isGitHubErrorReponse(user)) return user.id;
     return null;
-  }, [data?.user]);
+  }, [user]);
   const userSettings = getSettings();
 
   React.useEffect(() => {
