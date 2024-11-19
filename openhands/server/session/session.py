@@ -34,6 +34,7 @@ class Session:
     is_alive: bool = True
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
+    config: AppConfig
 
     def __init__(
         self, sid: str, config: AppConfig, file_store: FileStore, sio: socketio.AsyncServer | None

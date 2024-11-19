@@ -75,7 +75,7 @@ class SessionManager:
     async def _check_and_close_session(self, session: Session):
         # Once there have been no connections to a session for a reasonable period, we close it
         try:
-            await asyncio.sleep(15)
+            await asyncio.sleep(self.config.sandbox.close_delay)
         finally:
             # If the sleep was cancelled, we still want to close these
             if not session.connection_ids:
