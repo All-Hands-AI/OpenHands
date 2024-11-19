@@ -915,7 +915,7 @@ async def oh_action(connection_id: str, data: dict):
 
 
 async def init_connection(connection_id: str, data: dict):
-    gh_token = data.pop('gh_token', None)
+    gh_token = data.pop('github_token', None)
     if not await authenticate_github_user(gh_token):
         raise RuntimeError(status.WS_1008_POLICY_VIOLATION)
 
