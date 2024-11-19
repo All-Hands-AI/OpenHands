@@ -11,6 +11,7 @@ import OpenHands from "#/api/open-hands";
 import CodeEditorComponent from "./code-editor-component";
 import { useFiles } from "#/context/files";
 import { EditorActions } from "#/components/editor-actions";
+import { useGetFiles } from "#/hooks/query/use-get-files";
 
 const ASSET_FILE_TYPES = [
   ".png",
@@ -52,6 +53,10 @@ function CodeEditor() {
   const [fileExplorerIsOpen, setFileExplorerIsOpen] = React.useState(true);
   const editorRef = React.useRef<editor.IStandaloneCodeEditor | null>(null);
 
+  const { data: files, error } = useGetFiles({
+    token: localStorage.getItem("token"),
+  });
+
   const toggleFileExplorer = () => {
     setFileExplorerIsOpen((prev) => !prev);
     editorRef.current?.layout({ width: 0, height: 0 });
@@ -71,23 +76,15 @@ function CodeEditor() {
     monaco.editor.setTheme("oh-dark");
   };
 
-  const [errors, setErrors] = React.useState<{ getFiles: string | null }>({
-    getFiles: null,
-  });
-
   const agentState = useSelector(
     (state: RootState) => state.agent.curAgentState,
   );
 
   React.useEffect(() => {
-    if (curAgentState === AgentState.INIT) {
-      OpenHands.getFiles()
-        .then(setPaths)
-        .catch(() => {
-          setErrors({ getFiles: "Failed to retrieve files" });
-        });
+    if (curAgentState === AgentState.INIT && files) {
+      setPaths(files);
     }
-  }, [curAgentState]);
+  }, [curAgentState, files]);
 
   // Code editing is only allowed when the agent is paused, finished, or awaiting user input (server rules)
   const isEditingAllowed = React.useMemo(
@@ -105,7 +102,7 @@ function CodeEditor() {
         try {
           await OpenHands.saveFile(selectedPath, content);
           saveNewFileContent(selectedPath);
-        } catch (error) {
+        } catch (e) {
           toast.error("Failed to save file");
         }
       }
@@ -125,7 +122,7 @@ function CodeEditor() {
       <FileExplorer
         isOpen={fileExplorerIsOpen}
         onToggle={toggleFileExplorer}
-        error={errors.getFiles}
+        error={error?.message || null}
       />
       <div className="w-full">
         {selectedPath && !isAssetFileType && (

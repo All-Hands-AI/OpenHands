@@ -5,13 +5,11 @@ import {
   IoIosRefresh,
   IoIosCloudUpload,
 } from "react-icons/io";
-import { useRevalidator } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { IoFileTray } from "react-icons/io5";
 import { useTranslation } from "react-i18next";
 import { twMerge } from "tailwind-merge";
 import AgentState from "#/types/AgentState";
-import { setRefreshID } from "#/state/codeSlice";
 import { addAssistantMessage } from "#/state/chatSlice";
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
@@ -19,9 +17,9 @@ import toast from "#/utils/toast";
 import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
 import OpenHands from "#/api/open-hands";
-import { useFiles } from "#/context/files";
 import { isOpenHandsErrorResponse } from "#/api/open-hands.utils";
 import VSCodeIcon from "#/assets/vscode-alt.svg?react";
+import { useGetFiles } from "#/hooks/query/use-get-files";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
@@ -99,9 +97,6 @@ interface FileExplorerProps {
 }
 
 function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
-  const { revalidate } = useRevalidator();
-
-  const { paths, setPaths } = useFiles();
   const [isDragging, setIsDragging] = React.useState(false);
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -112,6 +107,10 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
     fileInputRef.current?.click(); // Trigger the file browser
   };
 
+  const { data: paths, refetch } = useGetFiles({
+    token: localStorage.getItem("token"),
+  });
+
   const refreshWorkspace = () => {
     if (
       curAgentState === AgentState.LOADING ||
@@ -119,9 +118,7 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
     ) {
       return;
     }
-    dispatch(setRefreshID(Math.random()));
-    OpenHands.getFiles().then(setPaths);
-    revalidate();
+    refetch();
   };
 
   const uploadFileData = async (files: FileList) => {
@@ -265,7 +262,7 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
           {!error && (
             <div className="overflow-auto flex-grow min-h-0">
               <div style={{ display: !isOpen ? "none" : "block" }}>
-                <ExplorerTree files={paths} />
+                <ExplorerTree files={paths || []} />
               </div>
             </div>
           )}

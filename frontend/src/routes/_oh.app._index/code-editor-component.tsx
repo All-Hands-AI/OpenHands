@@ -66,34 +66,42 @@ function CodeEditorComponent({
     );
   }
 
-  const fileContent = modifiedFiles[selectedPath] || files[selectedPath];
+  const fileContent: string | undefined =
+    modifiedFiles[selectedPath] || files[selectedPath];
 
-  if (isBase64Image(fileContent)) {
-    return (
-      <section className="flex flex-col relative items-center overflow-auto h-[90%]">
-        <img src={fileContent} alt={selectedPath} className="object-contain" />
-      </section>
-    );
+  if (fileContent) {
+    if (isBase64Image(fileContent)) {
+      return (
+        <section className="flex flex-col relative items-center overflow-auto h-[90%]">
+          <img
+            src={fileContent}
+            alt={selectedPath}
+            className="object-contain"
+          />
+        </section>
+      );
+    }
+
+    if (isPDF(fileContent)) {
+      return (
+        <iframe
+          src={fileContent}
+          title={selectedPath}
+          width="100%"
+          height="100%"
+        />
+      );
+    }
+
+    if (isVideo(fileContent)) {
+      return (
+        <video controls src={fileContent} width="100%" height="100%">
+          <track kind="captions" label="English captions" />
+        </video>
+      );
+    }
   }
 
-  if (isPDF(fileContent)) {
-    return (
-      <iframe
-        src={fileContent}
-        title={selectedPath}
-        width="100%"
-        height="100%"
-      />
-    );
-  }
-
-  if (isVideo(fileContent)) {
-    return (
-      <video controls src={fileContent} width="100%" height="100%">
-        <track kind="captions" label="English captions" />
-      </video>
-    );
-  }
   return (
     <Editor
       data-testid="code-editor"
