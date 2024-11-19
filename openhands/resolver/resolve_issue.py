@@ -199,7 +199,7 @@ async def process_issue(
     )
     config.set_llm_config(llm_config)
 
-    runtime = create_runtime(config, sid=f'{issue.number}')
+    runtime = create_runtime(config)
     await runtime.connect()
 
     async def on_event(evt):
