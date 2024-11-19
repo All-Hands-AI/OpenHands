@@ -593,3 +593,93 @@ def test_ansi_escape_codes(temp_dir, runtime_cls, run_as_openhands):
         assert 'Red Text' in obs.content
     finally:
         _close_test_runtime(runtime)
+
+
+def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        # Start a command that produces output slowly
+        action = CmdRunAction('for i in {1..5}; do echo $i; sleep 3; done')
+        action.timeout = 2  # Set timeout to 2 seconds
+        obs = runtime.run_action(action)
+        assert obs.content.strip() == '1'
+        assert obs.metadata.prefix == ''
+        assert '[The command timed out after 2 seconds.' in obs.metadata.suffix
+
+        # Continue watching output
+        action = CmdRunAction('')
+        action.timeout = 2
+        obs = runtime.run_action(action)
+        assert '[Command output continued from previous command]' in obs.metadata.prefix
+        assert obs.content.strip() == '2'
+        assert '[The command timed out after 2 seconds.' in obs.metadata.suffix
+
+        # Continue until completion
+        for expected in ['3', '4', '5']:
+            action = CmdRunAction('')
+            action.timeout = 2
+            obs = runtime.run_action(action)
+            assert (
+                '[Command output continued from previous command]'
+                in obs.metadata.prefix
+            )
+            assert obs.content.strip() == expected
+            assert '[The command timed out after 2 seconds.' in obs.metadata.suffix
+
+        # Final empty command to complete
+        action = CmdRunAction('')
+        obs = runtime.run_action(action)
+        assert '[The command completed with exit code 0.]' in obs.metadata.suffix
+    finally:
+        _close_test_runtime(runtime)
+
+
+def test_long_running_command_follow_by_execute(
+    temp_dir, runtime_cls, run_as_openhands
+):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        # Test command that produces output slowly
+        action = CmdRunAction('for i in {1..3}; do echo $i; sleep 3; done')
+        action.timeout = 2
+        action.blocking = False
+        obs = runtime.run_action(action)
+        assert '1' in obs.content  # First number should appear before timeout
+        assert obs.metadata.exit_code == -1  # -1 indicates command is still running
+        assert '[The command timed out after 2 seconds.' in obs.metadata.suffix
+        assert obs.metadata.prefix == ''
+
+        # Continue watching output
+        action = CmdRunAction('')
+        action.timeout = 2
+        obs = runtime.run_action(action)
+        assert '2' in obs.content
+        assert (
+            obs.metadata.prefix == '[Command output continued from previous command]\n'
+        )
+        assert '[The command timed out after 2 seconds.' in obs.metadata.suffix
+        assert obs.metadata.exit_code == -1  # -1 indicates command is still running
+
+        # Test command that produces no output
+        action = CmdRunAction('sleep 15')
+        action.timeout = 2
+        obs = runtime.run_action(action)
+        assert '3' in obs.content
+        assert (
+            obs.metadata.prefix == '[Command output continued from previous command]\n'
+        )
+        assert '[The command timed out after 2 seconds.' in obs.metadata.suffix
+        assert obs.metadata.exit_code == -1  # -1 indicates command is still running
+    finally:
+        _close_test_runtime(runtime)
+
+
+def test_empty_command_errors(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        # Test empty command without previous command
+        obs = runtime.run_action(CmdRunAction(''))
+        assert isinstance(obs, ErrorObservation)
+        assert 'No previous command to continue from' in obs.content
+    finally:
+        _close_test_runtime(runtime)
