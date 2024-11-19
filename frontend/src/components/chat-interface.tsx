@@ -46,6 +46,7 @@ export function ChatInterface() {
 
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { selectedRepository } = useSelector((state: RootState) => state.initialQuery);
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
@@ -175,7 +176,7 @@ export function ChatInterface() {
         {(curAgentState === AgentState.AWAITING_USER_INPUT ||
           curAgentState === AgentState.FINISHED) && (
           <div className="flex flex-col gap-2 mb-2">
-            {rootLoaderData?.ghToken ? (
+            {rootLoaderData?.ghToken && selectedRepository ? (
               <SuggestionItem
                 suggestion={{
                   label: "Push to GitHub",
