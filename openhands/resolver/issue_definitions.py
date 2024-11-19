@@ -576,9 +576,7 @@ class PRHandler(IssueHandler):
         # Format thread comments if they exist
         thread_context = ''
         if issue.thread_comments:
-            thread_context = '\n\nPR Thread Comments:\n' + '\n---\n'.join(
-                issue.thread_comments
-            )
+            thread_context = '\n---\n'.join(issue.thread_comments)
             images.extend(self._extract_image_urls(thread_context))
 
         instruction = template.render(
