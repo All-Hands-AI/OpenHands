@@ -436,15 +436,20 @@ async def resolve_issue(
                 f'Checking out to PR branch {branch_to_use} for issue {issue.number}'
             )
 
+            if not branch_to_use:
+                raise ValueError('Branch name cannot be None')
+
             # Fetch the branch first to ensure it exists locally
+            fetch_cmd = ['git', 'fetch', 'origin', branch_to_use]
             subprocess.check_output(
-                ['git', 'fetch', 'origin', branch_to_use],
+                fetch_cmd,
                 cwd=repo_dir,
             )
 
             # Checkout the branch
+            checkout_cmd = ['git', 'checkout', branch_to_use]
             subprocess.check_output(
-                ['git', 'checkout', branch_to_use],
+                checkout_cmd,
                 cwd=repo_dir,
             )
 
@@ -584,13 +589,13 @@ def main():
         '--source-branch',
         type=str,
         default=None,
-        help='Source branch to pull from (for PRs). If not specified, uses the PR\'s head branch.',
+        help="Source branch to pull from (for PRs). If not specified, uses the PR's head branch.",
     )
     parser.add_argument(
         '--target-branch',
         type=str,
         default=None,
-        help='Target branch to create PR against (for PRs). If not specified, uses the PR\'s base branch.',
+        help="Target branch to create PR against (for PRs). If not specified, uses the PR's base branch.",
     )
 
     my_args = parser.parse_args()
