@@ -339,13 +339,10 @@ async def resolve_issue(
 
     # Load dataset
     issues: list[GithubIssue] = issue_handler.get_converted_issues(
-        comment_id=comment_id
+        issue_numbers=[issue_number], comment_id=comment_id
     )
 
-    # Find the specific issue
-    issue = next((i for i in issues if i.number == issue_number), None)
-    if not issue:
-        raise ValueError(f'Issue {issue_number} not found')
+    issue = issues[0]
 
     if comment_id is not None:
         if (
