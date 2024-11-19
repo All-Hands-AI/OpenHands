@@ -13,6 +13,7 @@ export function AnalyticsConsentFormModal() {
   return (
     <ModalBackdrop>
       <fetcher.Form
+        data-testid="user-capture-consent-form"
         method="POST"
         action="/set-consent"
         className="flex flex-col gap-2"

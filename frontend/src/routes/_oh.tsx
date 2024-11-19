@@ -9,7 +9,6 @@ import {
   useFetcher,
   Outlet,
 } from "@remix-run/react";
-import posthog from "posthog-js";
 import { useDispatch } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
@@ -33,18 +32,18 @@ import AgentState from "#/types/AgentState";
 import { useConfig } from "#/hooks/query/use-config";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
+import { getGitHubToken, getToken } from "#/services/auth";
+import { handleCaptureConsent } from "#/utils/handle-capture-consent";
+
+const getAnalyticsConsent = () => localStorage.getItem("analytics-consent");
 
 export const clientLoader = async () => {
-  let token = localStorage.getItem("token");
-  const ghToken = localStorage.getItem("ghToken");
-  const analyticsConsent = localStorage.getItem("analytics-consent");
+  let token = getToken();
+  const ghToken = getGitHubToken();
+  const analyticsConsent = getAnalyticsConsent();
   const userConsents = analyticsConsent === "true";
 
-  if (!userConsents) {
-    posthog.opt_out_capturing();
-  } else if (userConsents && !posthog.has_opted_in_capturing()) {
-    posthog.opt_in_capturing();
-  }
+  handleCaptureConsent(userConsents);
 
   const settings = getSettings();
   await i18n.changeLanguage(settings.LANGUAGE);
@@ -216,6 +215,7 @@ export default function MainApp() {
           </a>
           {!!token && (
             <button
+              data-testid="new-project-button"
               type="button"
               aria-label="Start new project"
               onClick={() => setStartNewProjectModalIsOpen(true)}
@@ -231,7 +231,10 @@ export default function MainApp() {
 
       {isAuthed && (!settingsIsUpdated || settingsModalIsOpen) && (
         <ModalBackdrop onClose={() => setSettingsModalIsOpen(false)}>
-          <div className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2">
+          <div
+            data-testid="ai-config-modal"
+            className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2"
+          >
             {aiConfigOptions.error && (
               <p className="text-danger text-xs">
                 {aiConfigOptions.error.message}

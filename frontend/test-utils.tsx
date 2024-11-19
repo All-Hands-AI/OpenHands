@@ -5,6 +5,7 @@ import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { RenderOptions, render } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppStore, RootState, rootReducer } from "./src/store";
 import { WsClientProvider } from "#/context/ws-client-provider";
 
@@ -35,7 +36,11 @@ export function renderWithProviders(
   function Wrapper({ children }: PropsWithChildren<object>): JSX.Element {
     return (
       <Provider store={store}>
-        <WsClientProvider enabled={true} token={null} ghToken={null} settings={null}>{children}</WsClientProvider>
+        <QueryClientProvider client={new QueryClient()}>
+          <WsClientProvider enabled token={null} ghToken={null} settings={null}>
+            {children}
+          </WsClientProvider>
+        </QueryClientProvider>
       </Provider>
     );
   }
