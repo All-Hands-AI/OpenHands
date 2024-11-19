@@ -72,11 +72,17 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Get latest versions and create requirements.txt
+      - name: Get latest replay OpenHands commit SHA
+        id: get-sha
         run: |
-          python -m pip index versions openhands-ai > openhands_versions.txt
-          OPENHANDS_VERSION=$(head -n 1 openhands_versions.txt | awk '{print $2}' | tr -d '()')
-          echo "openhands-ai==${OPENHANDS_VERSION}" >> requirements.txt
+          LATEST_SHA=$(curl -s -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/replayio-public/OpenHands/branches/toshok/ghcr-build \
+            | jq -r .commit.sha)
+          echo "SHA=$LATEST_SHA" >> $GITHUB_OUTPUT
+
+      - name: Add a pinned dep to requirements.txt
+        run: |
+          echo "openhands-ai @ git+https://github.com/replayio-public/OpenHands@${{ steps.get-sha.outputs.SHA }}" >> requirements.txt
           cat requirements.txt
 
       - name: Cache pip dependencies
@@ -153,7 +159,7 @@ jobs:
               issue_number: ${{ env.ISSUE_NUMBER }},
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `[OpenHands](https://github.com/All-Hands-AI/OpenHands) started fixing the ${issueType}! You can monitor the progress [here](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`
+              body: `[OpenHands](https://github.com/replayio-public/OpenHands) started fixing the ${issueType}! You can monitor the progress [here](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`
             });
 
       - name: Install OpenHands
@@ -164,7 +170,7 @@ jobs:
              ([[ "${{ github.event_name }}" == "pull_request_review" ]] &&
               [[ "${{ github.event.review.body }}" == "@openhands-agent-exp"* ]]); then
             python -m pip install --upgrade pip
-            pip install git+https://github.com/all-hands-ai/openhands.git
+            pip install git+https://github.com/replayio-public/openhands.git
           else
             python -m pip install --upgrade -r requirements.txt
           fi

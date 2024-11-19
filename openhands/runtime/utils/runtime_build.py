@@ -25,7 +25,7 @@ class BuildFromImageType(Enum):
 
 
 def get_runtime_image_repo():
-    return os.getenv('OH_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/all-hands-ai/runtime')
+    return os.getenv('OH_RUNTIME_RUNTIME_IMAGE_REPO', 'ghcr.io/replayio-public/runtime')
 
 
 def _generate_dockerfile(

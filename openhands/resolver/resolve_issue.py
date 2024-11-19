@@ -584,7 +584,7 @@ def main():
     runtime_container_image = my_args.runtime_container_image
     if runtime_container_image is None:
         runtime_container_image = (
-            f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
+            f'ghcr.io/replayio-public/runtime:{openhands.__version__}-nikolaik'
         )
 
     owner, repo = my_args.repo.split('/')
