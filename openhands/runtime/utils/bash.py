@@ -91,6 +91,7 @@ class BashSession:
         self.NO_CHANGE_TIMEOUT_SECONDS = no_change_timeout_seconds
 
         self.server = libtmux.Server()
+        self.server.cmd('set-option', '-g', 'history-limit', '999999999')
         window_command = '/bin/bash'
         if username:
             window_command = f'su {username}'
