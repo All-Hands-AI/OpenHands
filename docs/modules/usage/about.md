@@ -21,9 +21,6 @@ OpenHands is built using a combination of powerful frameworks and libraries, pro
 
 Please note that the selection of these technologies is in progress, and additional technologies may be added or existing ones may be removed as the project evolves. We strive to adopt the most suitable and efficient tools to enhance the capabilities of OpenHands.
 
-## Licensing, Contributing, Community Servers
+## License
 
 Distributed under MIT [License](https://github.com/All-Hands-AI/OpenHands/blob/main/LICENSE).
-
-For guides on how to contribute to OpenHands, joining our Discord and Slack servers
-[check out the OpenHands README.](https://github.com/All-Hands-AI/OpenHands?tab=readme-ov-file#-how-to-contribute)
