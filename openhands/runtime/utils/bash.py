@@ -276,20 +276,8 @@ class BashSession:
 
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
         """Execute a command in the bash session."""
-        logger.debug(f'Executing command: {action.command}')
-        splited_commands = split_bash_commands(action.command)
-        if len(splited_commands) > 1:
-            return ErrorObservation(
-                content=(
-                    f'ERROR: Cannot execute multiple commands at once.\n'
-                    f'Please run each command separately OR chain them into a single command via && or ;\n'
-                    f'Provided commands:\n{"\n".join(f"({i+1}) {cmd}" for i, cmd in enumerate(splited_commands))}'
-                )
-            )
-
         if action.command.strip() == '' and self.prev_status not in {
             BashCommandStatus.CONTINUE,
-            BashCommandStatus.COMPLETED,
             BashCommandStatus.NO_CHANGE_TIMEOUT,
             BashCommandStatus.HARD_TIMEOUT,
         }:
@@ -298,6 +286,16 @@ class BashSession:
                 + 'Previous command has to be timeout to be continued.',
                 command='',
                 metadata=CmdOutputMetadata(),
+            )
+
+        splited_commands = split_bash_commands(action.command)
+        if len(splited_commands) > 1:
+            return ErrorObservation(
+                content=(
+                    f'ERROR: Cannot execute multiple commands at once.\n'
+                    f'Please run each command separately OR chain them into a single command via && or ;\n'
+                    f'Provided commands:\n{"\n".join(f"({i+1}) {cmd}" for i, cmd in enumerate(splited_commands))}'
+                )
             )
 
         start_time = time.time()
