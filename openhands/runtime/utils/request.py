@@ -61,5 +61,8 @@ def send_request(
     try:
         response.raise_for_status()
     except requests.HTTPError as e:
-        raise RuntimeError(f'{e}\n{response.json().get("message", "")}') from e
+        if e.response.status_code >= 500:
+            raise RuntimeError(f'{e}\n{response.json().get("message", "")}') from e
+        else:
+            raise e
     return response
