@@ -31,6 +31,7 @@ from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.base import (
     Runtime,
     RuntimeDisconnectedError,
+    RuntimeNotFoundError,
     RuntimeNotReadyError,
 )
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
@@ -109,7 +110,9 @@ class RemoteRuntime(Runtime):
         if existing_runtime:
             self.log('debug', f'Using existing runtime with ID: {self.runtime_id}')
         elif self.attach_to_existing:
-            raise RuntimeError('Could not find existing runtime to attach to.')
+            raise RuntimeNotFoundError(
+                f'Could not find existing runtime for SID: {self.sid}'
+            )
         else:
             self.send_status_message('STATUS$STARTING_CONTAINER')
             if self.config.sandbox.runtime_container_image is None:

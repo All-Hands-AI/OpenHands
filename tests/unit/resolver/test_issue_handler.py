@@ -30,7 +30,7 @@ def test_get_converted_issues_initializes_review_comments():
         handler = IssueHandler('test-owner', 'test-repo', 'test-token')
 
         # Get converted issues
-        issues = handler.get_converted_issues()
+        issues = handler.get_converted_issues(issue_numbers=[1])
 
         # Verify that we got exactly one issue
         assert len(issues) == 1
@@ -158,7 +158,7 @@ def test_pr_handler_get_converted_issues_with_comments():
             handler = PRHandler('test-owner', 'test-repo', 'test-token')
 
             # Get converted issues
-            prs = handler.get_converted_issues()
+            prs = handler.get_converted_issues(issue_numbers=[1])
 
             # Verify that we got exactly one PR
             assert len(prs) == 1
@@ -364,7 +364,9 @@ def test_pr_handler_get_converted_issues_with_specific_thread_comment():
             handler = PRHandler('test-owner', 'test-repo', 'test-token')
 
             # Get converted issues
-            prs = handler.get_converted_issues(comment_id=specific_comment_id)
+            prs = handler.get_converted_issues(
+                issue_numbers=[1], comment_id=specific_comment_id
+            )
 
             # Verify that we got exactly one PR
             assert len(prs) == 1
@@ -464,7 +466,9 @@ def test_pr_handler_get_converted_issues_with_specific_review_thread_comment():
             handler = PRHandler('test-owner', 'test-repo', 'test-token')
 
             # Get converted issues
-            prs = handler.get_converted_issues(comment_id=specific_comment_id)
+            prs = handler.get_converted_issues(
+                issue_numbers=[1], comment_id=specific_comment_id
+            )
 
             # Verify that we got exactly one PR
             assert len(prs) == 1
@@ -584,7 +588,9 @@ def test_pr_handler_get_converted_issues_with_specific_comment_and_issue_refs():
             handler = PRHandler('test-owner', 'test-repo', 'test-token')
 
             # Get converted issues
-            prs = handler.get_converted_issues(comment_id=specific_comment_id)
+            prs = handler.get_converted_issues(
+                issue_numbers=[1], comment_id=specific_comment_id
+            )
 
             # Verify that we got exactly one PR
             assert len(prs) == 1
@@ -681,7 +687,7 @@ def test_pr_handler_get_converted_issues_with_duplicate_issue_refs():
             handler = PRHandler('test-owner', 'test-repo', 'test-token')
 
             # Get converted issues
-            prs = handler.get_converted_issues()
+            prs = handler.get_converted_issues(issue_numbers=[1])
 
             # Verify that we got exactly one PR
             assert len(prs) == 1
