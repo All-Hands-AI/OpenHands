@@ -164,7 +164,6 @@ class LLM(RetryMixin, DebugMixin):
         )
         def wrapper(*args, **kwargs):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
-
             from openhands.core.utils import json
 
             messages: list[dict[str, Any]] | dict[str, Any] = []
