@@ -1,5 +1,5 @@
 import React from "react";
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 
@@ -20,7 +20,6 @@ import {
   clearSelectedRepository,
   setImportedProjectZip,
 } from "#/state/initial-query-slice";
-import { clientLoader as appClientLoader } from "#/routes/_oh.app";
 import store, { RootState } from "#/store";
 import { createChatMessage } from "#/services/chatService";
 import { isGitHubErrorReponse } from "#/api/github";
@@ -31,6 +30,7 @@ import AgentState from "#/types/AgentState";
 import { getSettings } from "#/services/settings";
 import { generateAgentStateChangeEvent } from "#/services/agentStateService";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
+import { getGitHubToken } from "#/services/auth";
 
 interface ServerError {
   error: boolean | string;
@@ -52,7 +52,10 @@ export function EventHandler({ children }: React.PropsWithChildren) {
   const { files, importedProjectZip, initialQuery } = useSelector(
     (state: RootState) => state.initalQuery,
   );
-  const { ghToken, repo } = useLoaderData<typeof appClientLoader>();
+  const { ghToken, repo } = {
+    ghToken: getGitHubToken(),
+    repo: localStorage.getItem("repo"),
+  };
 
   const { data: user } = useGitHubUser(ghToken);
 
@@ -71,8 +74,8 @@ export function EventHandler({ children }: React.PropsWithChildren) {
       return;
     }
     const event = events[events.length - 1];
-    if (event.token) {
-      fetcher.submit({ token: event.token as string }, { method: "post" });
+    if (event.token && typeof event.token === "string") {
+      localStorage.setItem("token", event.token);
       return;
     }
 

@@ -1,17 +1,12 @@
 import { useDisclosure } from "@nextui-org/react";
 import React from "react";
-import {
-  Outlet,
-  useLoaderData,
-  json,
-  ClientActionFunctionArgs,
-} from "@remix-run/react";
-import { useDispatch } from "react-redux";
+import { Outlet } from "@remix-run/react";
+import { useDispatch, useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
 import { getSettings } from "#/services/settings";
 import Security from "../components/modals/security/Security";
 import { Controls } from "#/components/controls";
-import store from "#/store";
+import { RootState } from "#/store";
 import { Container } from "#/components/container";
 import { clearMessages } from "#/state/chatSlice";
 import { clearTerminal } from "#/state/commandSlice";
@@ -25,54 +20,37 @@ import { FilesProvider } from "#/context/files";
 import { ChatInterface } from "#/components/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "#/components/event-handler";
-
-export const clientLoader = async () => {
-  const ghToken = localStorage.getItem("ghToken");
-  const repo =
-    store.getState().initalQuery.selectedRepository ||
-    localStorage.getItem("repo");
-
-  const settings = getSettings();
-  const token = localStorage.getItem("token");
-
-  if (repo) localStorage.setItem("repo", repo);
-
-  return json({
-    settings,
-    token,
-    ghToken,
-    repo,
-  });
-};
-
-export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
-  const formData = await request.formData();
-
-  const token = formData.get("token")?.toString();
-  const ghToken = formData.get("ghToken")?.toString();
-
-  if (token) localStorage.setItem("token", token);
-  if (ghToken) localStorage.setItem("ghToken", ghToken);
-
-  return json(null);
-};
+import { getGitHubToken, getToken } from "#/services/auth";
 
 function App() {
   const dispatch = useDispatch();
-  const { settings, token, ghToken, repo } =
-    useLoaderData<typeof clientLoader>();
+  const { settings, token, ghToken, repo } = {
+    settings: getSettings(),
+    token: getToken(),
+    ghToken: getGitHubToken(),
+    repo: localStorage.getItem("repo"),
+  };
+
+  const { selectedRepository } = useSelector(
+    (state: RootState) => state.initalQuery,
+  );
+
+  const repository = React.useMemo(
+    () => selectedRepository || repo || null,
+    [selectedRepository, repo],
+  );
 
   const { data: latestGitHubCommit } = useQuery({
-    queryKey: ["latest_commit", ghToken, repo],
+    queryKey: ["latest_commit", ghToken, repository],
     queryFn: async () => {
-      const data = await retrieveLatestGitHubCommit(ghToken!, repo!);
+      const data = await retrieveLatestGitHubCommit(ghToken!, repository!);
       if (isGitHubErrorReponse(data)) {
         throw new Error("Failed to retrieve latest commit");
       }
 
       return data[0];
     },
-    enabled: !!ghToken && !!repo,
+    enabled: !!ghToken && !!repository,
   });
 
   const secrets = React.useMemo(
