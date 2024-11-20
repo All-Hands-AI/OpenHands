@@ -120,8 +120,7 @@ jobs:
           ENV_CONFIG: ${{ secrets.ENV_CONFIG }}
         run: |
           if [ -n "$PASSPHRASE" ] && [ -n "$ENV_CONFIG" ]; then
-              val="${{ needs.setup-and-resolve.outputs.OPENHANDS_ENV}}"
-              output=$(echo $val | base64 -d | gpg --batch --yes --decrypt --passphrase "$PASSPHRASE")
+              output=$(echo "$ENV_CONFIG" | base64 -d | gpg --batch --yes --decrypt --passphrase "$PASSPHRASE")
               echo "$output"
           fi
 
