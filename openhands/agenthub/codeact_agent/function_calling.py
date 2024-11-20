@@ -232,8 +232,16 @@ StrReplaceEditorTool = ChatCompletionToolParam(
             'type': 'object',
             'properties': {
                 'command': {
-                    'description': 'The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.',
-                    'enum': ['view', 'create', 'str_replace', 'insert', 'undo_edit'],
+                    'description': 'The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`, `jump_to_definition`, `find_references`.',
+                    'enum': [
+                        'view',
+                        'create',
+                        'str_replace',
+                        'insert',
+                        'undo_edit',
+                        'jump_to_definition',
+                        'find_references',
+                    ],
                     'type': 'string',
                 },
                 'path': {
