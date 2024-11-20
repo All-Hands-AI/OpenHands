@@ -13,7 +13,6 @@ from openhands.core.message import (
     ImageContent,
     Message,
     TextContent,
-    ToolCallContent,
     ToolResponseContent,
 )
 from openhands.events.action import (
@@ -149,7 +148,6 @@ class CodeActAgent(Agent):
             rather than being returned immediately. They will be processed later when all corresponding
             tool call results are available.
         """
-        # create a regular message from an event
         if isinstance(
             action,
             (
@@ -167,33 +165,17 @@ class CodeActAgent(Agent):
             llm_response: ModelResponse = tool_metadata.model_response
             assistant_msg = llm_response.choices[0].message
 
-            # Create content list with text if present
-            content = [TextContent(text=assistant_msg.content or '')] if assistant_msg.content else []
-
-            if self.llm.is_function_calling_active():
-                # Native function calling - use message-level tool_calls
-                pending_tool_call_action_messages[llm_response.id] = Message(
-                    role=assistant_msg.role,
-                    content=content,
-                    tool_calls=assistant_msg.tool_calls,
-                    function_calling_enabled=True
-                )
-            else:
-                # Non-native function calling - use ToolCallContent
-                if assistant_msg.tool_calls:
-                    for tool_call in assistant_msg.tool_calls:
-                        content.append(
-                            ToolCallContent(
-                                function_name=tool_call.function.name,
-                                function_arguments=tool_call.function.arguments,
-                                tool_call_id=tool_call.id
-                            )
-                        )
-                pending_tool_call_action_messages[llm_response.id] = Message(
-                    role=assistant_msg.role,
-                    content=content,
-                    function_calling_enabled=False
-                )
+            # Add the LLM message (assistant) that initiated the tool calls
+            # (overwrites any previous message with the same response_id)
+            pending_tool_call_action_messages[llm_response.id] = Message(
+                role=assistant_msg.role,
+                # tool call content SHOULD BE a string
+                content=[TextContent(text=assistant_msg.content or '')]
+                if assistant_msg.content is not None
+                else [],
+                tool_calls=assistant_msg.tool_calls,
+                function_calling_enabled=self.llm.is_function_calling_active(),
+            )
             return []
         elif isinstance(action, MessageAction):
             role = 'user' if action.source == 'user' else 'assistant'
@@ -306,7 +288,7 @@ class CodeActAgent(Agent):
         # Update the message as tool response properly
         if (tool_call_metadata := obs.tool_call_metadata) is not None:
             content_text = message.content[0].text if message.content else ''
-            
+
             if self.llm.is_function_calling_active():
                 # Native function calling - use message-level fields
                 tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(
@@ -314,7 +296,7 @@ class CodeActAgent(Agent):
                     content=[TextContent(text=content_text)],
                     tool_call_id=tool_call_metadata.tool_call_id,
                     name=tool_call_metadata.function_name,
-                    function_calling_enabled=True
+                    function_calling_enabled=True,
                 )
             else:
                 # Non-native function calling - use ToolResponseContent
@@ -324,10 +306,10 @@ class CodeActAgent(Agent):
                         ToolResponseContent(
                             tool_call_id=tool_call_metadata.tool_call_id,
                             name=tool_call_metadata.function_name,
-                            content=content_text
+                            content=content_text,
                         )
                     ],
-                    function_calling_enabled=False
+                    function_calling_enabled=False,
                 )
             return []
 
