@@ -122,21 +122,17 @@ jobs:
 
               ::add-mask::$sanitized_secrets
 
-              # Extract and write key-value pairs to $GITHUB_ENV
+              # Extract and process key-value pairs
               echo "$sanitized_secrets" | jq -r '
                 to_entries |
                 .[] |
                 "\(.key | sub("^OPENHANDS_ENV_"; "SANDBOX_ENV_"))=\(.value)"
-              ' >> "$GITHUB_ENV"
+              ' | while IFS="=" read -r new_key new_value; do
+                  # Mask the new value
+                  echo "::add-mask::$new_value"
 
-              # Mask each new environment variable individually
-              echo "$sanitized_secrets" | jq -r '
-                to_entries |
-                .[] |
-                "\(.key | sub("^OPENHANDS_ENV_"; "SANDBOX_ENV_"))"
-              ' | while read -r new_key; do
-                  value=$(printenv "$new_key")
-                  echo "::add-mask::$value"
+                  # Add to $GITHUB_ENV
+                  echo "$new_key=$new_value" >> "$GITHUB_ENV"
               done
           fi
 
