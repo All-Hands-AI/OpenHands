@@ -24,8 +24,6 @@ on:
         required: true
       ENV_CONFIG:
         required: false
-      PASSPHRASE:
-        required: false
 
   issues:
     types: [labeled]
@@ -116,12 +114,15 @@ jobs:
 
       - name: Check custom environment variables
         env:
-          PASSPHRASE: ${{ secrets.PASSPHRASE }}
           ENV_CONFIG: ${{ secrets.ENV_CONFIG }}
         run: |
-          if [ -n "$PASSPHRASE" ] && [ -n "$ENV_CONFIG" ]; then
-              output=$(echo "$ENV_CONFIG" | base64 -d | gpg --batch --yes --decrypt --passphrase "$PASSPHRASE")
-              echo "$output"
+          if [ -n "$ENV_CONFIG" ]; then
+              echo "$ENV_CONFIG"
+              echo "$ENV_CONFIG" | jq -r '
+                to_entries |
+                .[] |
+                "\(.key | sub("^OPENHANDS_ENV_"; "SANDBOX_ENV_"))=\(.value)"
+              ' >> "$GITHUB_ENV"
           fi
 
       - name: Set environment variables
