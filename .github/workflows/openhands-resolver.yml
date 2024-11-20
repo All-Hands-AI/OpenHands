@@ -121,13 +121,15 @@ jobs:
               secrets=$(echo "$ENV_CONFIG" | jq 'with_entries(select(.key | startswith("OPENHANDS_ENV_")))')
               sanitized_secrets=$(echo "$secrets" | jq -c .)
 
+              echo "::add-mask::$sanitized_secrets"
+
               echo "$sanitized_secrets" | jq -r '
                 to_entries |
                 .[] |
                 "\(.key | sub("^OPENHANDS_ENV_"; "SANDBOX_ENV_"))=\(.value)"
               ' >> "$GITHUB_ENV"
 
-              echo "::add-mask::$sanitized_secrets"
+
           fi
 
           echo "$SANBOX_ENV_OPENHANDS_TEST"
