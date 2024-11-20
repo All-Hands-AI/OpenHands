@@ -7,8 +7,6 @@ import {
   useNavigate,
 } from "@remix-run/react";
 import { useDispatch } from "react-redux";
-import { useQuery } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
 import CogTooth from "#/assets/cog-tooth";
 import { SettingsForm } from "#/components/form/settings-form";
 import AccountSettingsModal from "#/components/modals/AccountSettingsModal";
@@ -21,7 +19,6 @@ import { getSettings, settingsAreUpToDate } from "#/services/settings";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import NewProjectIcon from "#/icons/new-project.svg?react";
 import DocsIcon from "#/icons/docs.svg?react";
-import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 import { WaitlistModal } from "#/components/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/analytics-consent-form-modal";
 import { setCurrentAgentState } from "#/state/agentSlice";
@@ -32,6 +29,8 @@ import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { getGitHubToken, getToken } from "#/services/auth";
 import { logoutCleanup } from "#/utils/logout-cleanup";
 import { clearSession } from "#/utils/clear-session";
+import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
+import { useIsAuthed } from "#/hooks/query/use-is-authed";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -65,12 +64,6 @@ export function ErrorBoundary() {
   );
 }
 
-const fetchAiConfigOptions = async () => ({
-  models: await OpenHands.getModels(),
-  agents: await OpenHands.getAgents(),
-  securityAnalyzers: await OpenHands.getSecurityAnalyzers(),
-});
-
 export default function MainApp() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -95,14 +88,8 @@ export default function MainApp() {
 
   const config = useConfig();
   const user = useGitHubUser(ghToken);
-  const { data: isAuthed } = useQuery({
-    queryKey: ["user", "authenticated", ghToken],
-    queryFn: userIsAuthenticated,
-  });
-  const aiConfigOptions = useQuery({
-    queryKey: ["ai-config-options"],
-    queryFn: fetchAiConfigOptions,
-  });
+  const { data: isAuthed } = useIsAuthed({ gitHubToken: ghToken });
+  const aiConfigOptions = useAIConfigOptions();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
     gitHubToken: ghToken,

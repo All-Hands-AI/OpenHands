@@ -1,11 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
-import OpenHands from "#/api/open-hands";
+import { GetConfigResponse } from "#/api/open-hands.types";
+
+const getConfigQueryFn = async (): Promise<GetConfigResponse> => {
+  const response = await fetch("/config.json");
+  return response.json();
+};
 
 export const useConfig = () => {
   const config = useQuery({
     queryKey: ["config"],
-    queryFn: OpenHands.getConfig,
+    queryFn: getConfigQueryFn,
   });
 
   // Remove this. Instead, we should retrieve the data directly from the config query
