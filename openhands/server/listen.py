@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 import os
 import re
 import tempfile
@@ -73,10 +74,25 @@ load_dotenv()
 
 config = load_app_config()
 file_store = get_file_store(config.file_store, config.file_store_path)
-session_manager = SessionManager(config, file_store)
+client_manager = None
+redis_host = os.environ.get('REDIS_HOST')
+if redis_host:
+    client_manager = socketio.AsyncRedisManager(
+        f'redis://{redis_host}',
+        redis_options={'password': os.environ.get('REDIS_PASSWORD')},
+    )
+sio = socketio.AsyncServer(
+    async_mode='asgi', cors_allowed_origins='*', client_manager=client_manager
+)
+session_manager = SessionManager(sio, config, file_store)
 
 
-app = FastAPI()
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    async with session_manager:
+        yield
+
+app = FastAPI(lifespan=_lifespan)
 app.add_middleware(
     LocalhostCORSMiddleware,
     allow_credentials=True,
@@ -840,16 +856,6 @@ class SPAStaticFiles(StaticFiles):
 
 app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist')
 
-client_manager = None
-redis_host = os.environ.get('REDIS_HOST')
-if redis_host:
-    client_manager = socketio.AsyncRedisManager(
-        f'redis://{redis_host}',
-        redis_options={'password': os.environ.get('REDIS_PASSWORD')},
-    )
-sio = socketio.AsyncServer(
-    async_mode='asgi', cors_allowed_origins='*', client_manager=client_manager
-)
 app = socketio.ASGIApp(sio, other_asgi_app=app)
 
 
@@ -923,9 +929,7 @@ async def oh_action(connection_id: str, data: dict):
         return
 
     logger.info(f'sio:oh_action:{connection_id}')
-    session = session_manager.get_local_session(connection_id)
-    await session.dispatch(data)
-
+    await session_manager.send_to_event_stream(connection_id, data)
 
 async def init_connection(connection_id: str, data: dict):
     gh_token = data.pop('github_token', None)
@@ -949,13 +953,11 @@ async def init_connection(connection_id: str, data: dict):
     latest_event_id = int(data.pop('latest_event_id', -1))
 
     # The session in question should exist, but may not actually be running locally...
-    session = await session_manager.init_or_join_local_session(
-        sio, sid, connection_id, data
-    )
+    event_stream = await session_manager.init_or_join_session(sid, connection_id, data)
 
     # Send events
     async_stream = AsyncEventStreamWrapper(
-        session.agent_session.event_stream, latest_event_id + 1
+        event_stream, latest_event_id + 1
     )
     async for event in async_stream:
         if isinstance(
@@ -973,4 +975,4 @@ async def init_connection(connection_id: str, data: dict):
 @sio.event
 async def disconnect(connection_id: str):
     logger.info(f'sio:disconnect:{connection_id}')
-    await session_manager.disconnect_from_local_session(connection_id)
+    await session_manager.disconnect_from_session(connection_id)

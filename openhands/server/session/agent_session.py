@@ -14,6 +14,7 @@ from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime, RuntimeUnavailableError
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
+from openhands.utils.async_utils import call_async_from_sync
 
 
 class AgentSession:
@@ -129,13 +130,8 @@ class AgentSession:
         """Closes the Agent session"""
         if self._closed:
             return
-
         self._closed = True
-
-        def inner_close():
-            asyncio.run(self._close())
-
-        asyncio.get_event_loop().run_in_executor(None, inner_close)
+        call_async_from_sync(self._close)
 
     async def _close(self):
         if self.controller is not None:

@@ -23,13 +23,14 @@ from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import wait_all
+from openhands.utils.async_utils import call_coro_in_bg_thread
+
+ROOM_KEY = "room:{sid}"
 
 
 class Session:
     sid: str
     sio: socketio.AsyncServer | None
-    connection_ids: set[str]
     last_active_ts: int = 0
     is_alive: bool = True
     agent_session: AgentSession
@@ -49,15 +50,7 @@ class Session:
             EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
         self.config = config
-        self.connection_ids = set()
         self.loop = asyncio.get_event_loop()
-
-    def connect(self, connection_id: str):
-        self.connection_ids.add(connection_id)
-
-    def disconnect(self, connection_id: str) -> bool:
-        self.connection_ids.remove(connection_id)
-        return not self.connection_ids
 
     def close(self):
         self.is_alive = False
@@ -163,19 +156,21 @@ class Session:
         self.agent_session.event_stream.add_event(event, EventSource.USER)
 
     async def send(self, data: dict[str, object]) -> bool:
-        task = self.loop.create_task(self._send(data))
-        await task
-        return task.result()
+        if asyncio.get_running_loop() != self.loop:
+            # Complete hack. Server whines about different event loops. This seems to shut it up,
+            # but means we don't get the result of the operation. I think this is okay, because
+            # we don't seem to care either way
+            self.loop.create_task(self._send(data))
+            return True
+        return await self._send(data)
 
     async def _send(self, data: dict[str, object]) -> bool:
         try:
             if not self.is_alive:
                 return False
             if self.sio:
-                await wait_all(
-                    self.sio.emit("oh_event", data, to=connection_id)
-                    for connection_id in self.connection_ids
-                )
+                #await self.loop.create_task(self.sio.emit("oh_event", data, to=ROOM_KEY.format(sid=self.sid)))
+                await self.sio.emit("oh_event", data, to=ROOM_KEY.format(sid=self.sid))
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True
