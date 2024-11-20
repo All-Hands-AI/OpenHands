@@ -120,8 +120,6 @@ jobs:
               secrets=$(echo "$ENV_CONFIG" | jq 'with_entries(select(.key | startswith("OPENHANDS_ENV_")))')
               sanitized_secrets=$(echo "$secrets" | jq -c .)
 
-              ::add-mask::$sanitized_secrets
-
               # Extract and process key-value pairs
               echo "$sanitized_secrets" | jq -r '
                 to_entries |
