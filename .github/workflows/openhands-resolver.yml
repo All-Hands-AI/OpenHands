@@ -125,6 +125,8 @@ jobs:
                 .[] |
                 "\(.key | sub("^OPENHANDS_ENV_"; "SANDBOX_ENV_"))=\(.value)"
               ' >> "$GITHUB_ENV"
+
+              echo "::add-mask::$sanitized_secrets"
           fi
 
           echo "$SANBOX_ENV_OPENHANDS_TEST"
