@@ -1,4 +1,4 @@
-import { useFetcher, useRouteLoaderData } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -9,11 +9,11 @@ import ModalBody from "./ModalBody";
 import ModalButton from "../buttons/ModalButton";
 import FormFieldset from "../form/FormFieldset";
 import { CustomInput } from "../form/custom-input";
-import { clientLoader } from "#/routes/_oh";
 import { clientAction as settingsClientAction } from "#/routes/settings";
 import { clientAction as loginClientAction } from "#/routes/login";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
+import { getGitHubToken } from "#/services/auth";
 
 interface AccountSettingsModalProps {
   onClose: () => void;
@@ -29,7 +29,6 @@ function AccountSettingsModal({
   analyticsConsent,
 }: AccountSettingsModalProps) {
   const { t } = useTranslation();
-  const data = useRouteLoaderData<typeof clientLoader>("routes/_oh");
   const settingsFetcher = useFetcher<typeof settingsClientAction>({
     key: "settings",
   });
@@ -88,7 +87,7 @@ function AccountSettingsModal({
             name="ghToken"
             label="GitHub Token"
             type="password"
-            defaultValue={data?.ghToken ?? ""}
+            defaultValue={getGitHubToken() ?? ""}
           />
           <BaseModalDescription>
             {t(I18nKey.CONNECT_TO_GITHUB_MODAL$GET_YOUR_TOKEN)}{" "}
@@ -106,7 +105,7 @@ function AccountSettingsModal({
               {t(I18nKey.ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID)}
             </p>
           )}
-          {data?.ghToken && !gitHubError && (
+          {getGitHubToken() && !gitHubError && (
             <ModalButton
               variant="text-like"
               text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$DISCONNECT)}

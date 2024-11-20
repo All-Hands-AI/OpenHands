@@ -89,6 +89,9 @@ describe("frontend/routes/_oh", () => {
     // The user has now consented to tracking
     expect(handleCaptureConsentSpy).toHaveBeenCalledWith(true);
     expect(localStorage.getItem("analytics-consent")).toBe("true");
+    expect(
+      screen.queryByTestId("user-capture-consent-form"),
+    ).not.toBeInTheDocument();
   });
 
   it("should not render the user consent form if the user has already made a decision", async () => {

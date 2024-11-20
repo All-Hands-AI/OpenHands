@@ -7,7 +7,13 @@ import {
 } from "./modals/confirmation-modals/BaseModal";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 
-export function AnalyticsConsentFormModal() {
+interface AnalyticsConsentFormModalProps {
+  onClose: () => void;
+}
+
+export function AnalyticsConsentFormModal({
+  onClose,
+}: AnalyticsConsentFormModalProps) {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -15,6 +21,8 @@ export function AnalyticsConsentFormModal() {
 
     handleCaptureConsent(analytics);
     localStorage.setItem("analytics-consent", analytics.toString());
+
+    onClose();
   };
 
   return (

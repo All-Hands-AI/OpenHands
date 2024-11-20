@@ -1,4 +1,4 @@
-import { useFetcher, useRouteLoaderData } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import ModalBody from "./ModalBody";
 import { CustomInput } from "../form/custom-input";
@@ -7,16 +7,15 @@ import {
   BaseModalDescription,
   BaseModalTitle,
 } from "./confirmation-modals/BaseModal";
-import { clientLoader } from "#/routes/_oh";
 import { clientAction } from "#/routes/login";
 import { I18nKey } from "#/i18n/declaration";
+import { getGitHubToken } from "#/services/auth";
 
 interface ConnectToGitHubModalProps {
   onClose: () => void;
 }
 
 export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
-  const data = useRouteLoaderData<typeof clientLoader>("routes/_oh");
   const fetcher = useFetcher<typeof clientAction>({ key: "login" });
   const { t } = useTranslation();
 
@@ -51,7 +50,7 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
           name="ghToken"
           required
           type="password"
-          defaultValue={data?.ghToken ?? ""}
+          defaultValue={getGitHubToken() ?? ""}
         />
 
         <div className="flex flex-col gap-2 w-full">

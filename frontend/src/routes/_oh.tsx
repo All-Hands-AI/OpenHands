@@ -18,7 +18,7 @@ import { LoadingSpinner } from "#/components/modals/LoadingProject";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { UserActions } from "#/components/user-actions";
 import i18n from "#/i18n";
-import { getSettings } from "#/services/settings";
+import { getSettings, settingsAreUpToDate } from "#/services/settings";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import NewProjectIcon from "#/icons/new-project.svg?react";
 import DocsIcon from "#/icons/docs.svg?react";
@@ -30,7 +30,7 @@ import AgentState from "#/types/AgentState";
 import { useConfig } from "#/hooks/query/use-config";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
-import { getToken } from "#/services/auth";
+import { getGitHubToken, getToken } from "#/services/auth";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -76,8 +76,8 @@ export default function MainApp() {
 
   const { token, ghToken, settingsIsUpdated, settings, analyticsConsent } = {
     token: getToken(),
-    ghToken: null,
-    settingsIsUpdated: false,
+    ghToken: getGitHubToken(),
+    settingsIsUpdated: settingsAreUpToDate(),
     settings: getSettings(),
     analyticsConsent: localStorage.getItem("analytics-consent"),
   };
@@ -91,6 +91,9 @@ export default function MainApp() {
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
   const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
     React.useState(false);
+  const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(
+    !localStorage.getItem("analytics-consent"),
+  );
 
   const config = useConfig();
   const user = useGitHubUser(ghToken);
@@ -283,7 +286,11 @@ export default function MainApp() {
       {!isAuthed && config.data?.APP_MODE === "saas" && (
         <WaitlistModal ghToken={ghToken} githubAuthUrl={gitHubAuthUrl} />
       )}
-      {!analyticsConsent && <AnalyticsConsentFormModal />}
+      {consentFormIsOpen && (
+        <AnalyticsConsentFormModal
+          onClose={() => setConsentFormIsOpen(false)}
+        />
+      )}
     </div>
   );
 }
