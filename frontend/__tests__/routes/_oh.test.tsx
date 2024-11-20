@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import MainApp from "#/routes/_oh";
 import * as CaptureConsent from "#/utils/handle-capture-consent";
 import i18n from "#/i18n";
+import * as LogoutCleanup from "#/utils/logout-cleanup";
 
 describe("frontend/routes/_oh", () => {
   const RemixStub = createRemixStub([{ Component: MainApp, path: "/" }]);
@@ -136,5 +137,23 @@ describe("frontend/routes/_oh", () => {
     rerender(<RemixStub />);
     // The language has not changed, so the spy should not have been called again
     expect(changeLanguageSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("should call logoutCleanup after a logout", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem("ghToken", "test-token");
+
+    const logoutCleanupSpy = vi.spyOn(LogoutCleanup, "logoutCleanup");
+    renderWithProviders(<RemixStub />);
+
+    const userActions = await screen.findByTestId("user-actions");
+    const userAvatar = within(userActions).getByTestId("user-avatar");
+    await user.click(userAvatar);
+
+    const logout = within(userActions).getByRole("button", { name: /logout/i });
+    await user.click(logout);
+
+    expect(logoutCleanupSpy).toHaveBeenCalled();
+    expect(localStorage.getItem("ghToken")).toBeNull();
   });
 });

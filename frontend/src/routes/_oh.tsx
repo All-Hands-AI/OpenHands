@@ -2,10 +2,9 @@ import React from "react";
 import {
   useRouteError,
   isRouteErrorResponse,
-  useNavigation,
   useLocation,
-  useFetcher,
   Outlet,
+  useNavigate,
 } from "@remix-run/react";
 import { useDispatch } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
@@ -31,6 +30,8 @@ import { useConfig } from "#/hooks/query/use-config";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { getGitHubToken, getToken } from "#/services/auth";
+import { logoutCleanup } from "#/utils/logout-cleanup";
+import { clearSession } from "#/utils/clear-session";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -71,8 +72,9 @@ const fetchAiConfigOptions = async () => ({
 });
 
 export default function MainApp() {
-  const navigation = useNavigation();
+  const navigate = useNavigate();
   const location = useLocation();
+  const dispatch = useDispatch();
 
   const { token, ghToken, settingsIsUpdated, settings, analyticsConsent } = {
     token: getToken(),
@@ -81,10 +83,6 @@ export default function MainApp() {
     settings: getSettings(),
     analyticsConsent: localStorage.getItem("analytics-consent"),
   };
-
-  const logoutFetcher = useFetcher({ key: "logout" });
-  const endSessionFetcher = useFetcher({ key: "end-session" });
-  const dispatch = useDispatch();
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
@@ -130,21 +128,11 @@ export default function MainApp() {
     }
   }, [user.isError]);
 
-  const handleUserLogout = () => {
-    logoutFetcher.submit(
-      {},
-      {
-        method: "POST",
-        action: "/logout",
-      },
-    );
-  };
-
   const handleAccountSettingsModalClose = () => {
     // If the user closes the modal without connecting to GitHub,
     // we need to log them out to clear the invalid token from the
     // local storage
-    if (user.isError) handleUserLogout();
+    if (user.isError) logoutCleanup();
     setAccountSettingsModalOpen(false);
   };
 
@@ -152,10 +140,8 @@ export default function MainApp() {
     setStartNewProjectModalIsOpen(false);
     dispatch(setCurrentAgentState(AgentState.LOADING));
     // call new session action and redirect to '/'
-    endSessionFetcher.submit(new FormData(), {
-      method: "POST",
-      action: "/end-session",
-    });
+    clearSession();
+    navigate("/");
   };
 
   return (
@@ -165,8 +151,8 @@ export default function MainApp() {
     >
       <aside className="px-1 flex flex-col gap-1">
         <div className="w-[34px] h-[34px] flex items-center justify-center">
-          {navigation.state === "loading" && <LoadingSpinner size="small" />}
-          {navigation.state !== "loading" && (
+          {user.isLoading && <LoadingSpinner size="small" />}
+          {!user.isLoading && (
             <button
               type="button"
               aria-label="All Hands Logo"
@@ -182,7 +168,7 @@ export default function MainApp() {
         <nav className="py-[18px] flex flex-col items-center gap-[18px]">
           <UserActions
             user={user.data ? { avatar_url: user.data.avatar_url } : undefined}
-            onLogout={handleUserLogout}
+            onLogout={logoutCleanup}
             onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
           />
           <button
