@@ -128,15 +128,38 @@ class ToolResponseContent(Content):
 
 
 class Message(BaseModel):
+    """A message in a conversation with an LLM.
+    
+    The message can be serialized in different formats depending on two independent factors:
+    
+    1. Content Format (controlled by vision_enabled or cache_enabled):
+       - String format: content is a simple string (when both are False)
+       - List format: content is a list of typed dicts (when either is True)
+    
+    2. Function Calling Format (controlled by function_calling_enabled):
+       - Native: tool calls are at message level (when True)
+       - Non-native: tool calls are in content as XML strings (when False)
+    
+    This gives us four possible serialization formats:
+    
+                    String Content     |    List Content
+                    (no vision/cache)  |   (vision/cache)
+    ----------------------------------------------------
+    Native Function | content: "text"  | content: [{type:..}]
+    Calling        | tool_calls: [..] | tool_calls: [..]
+    ----------------------------------------------------
+    String Function| content: "text    | content: [{type:..},
+    Calling        | <function>.."    |  {type:tool_call..}]
+    """
     role: Literal['user', 'system', 'assistant', 'tool']
-    content: list[
-        TextContent | ImageContent | ToolCallContent | ToolResponseContent
-    ] = Field(default_factory=list)
-    cache_enabled: bool = False
-    vision_enabled: bool = False
-    function_calling_enabled: bool = False
-
-    # Tool call fields at message level, as per API spec
+    content: list[TextContent | ImageContent | ToolCallContent | ToolResponseContent] = Field(default_factory=list)
+    
+    # Feature flags that control serialization format
+    cache_enabled: bool = False    # Affects content format (string vs list)
+    vision_enabled: bool = False   # Affects content format (string vs list)
+    function_calling_enabled: bool = False  # Affects function calling format (native vs non-native)
+    
+    # Tool call fields at message level, used in native function calling format
     tool_calls: list[ChatCompletionMessageToolCall] | None = None
     tool_call_id: str | None = None
     name: str | None = None
@@ -147,16 +170,25 @@ class Message(BaseModel):
 
     @model_serializer
     def serialize_model(self) -> dict:
-        # First, determine if we need list format for content
+        """Serialize the message based on enabled features.
+        
+        The serialization format depends on two factors:
+        1. Whether we need list format for content (vision/cache)
+        2. Whether we use native function calling
+        """
         needs_list_format = self.cache_enabled or self.vision_enabled
         
-        # Then handle function calling format
         if self.function_calling_enabled:
             return self._native_function_serializer(needs_list_format)
         return self._string_function_serializer(needs_list_format)
 
     def _string_function_serializer(self, use_list_format: bool) -> dict:
-        """For non-native function calling"""
+        """Serialize for non-native function calling.
+        
+        In this format:
+        - Tool calls are converted to XML-like strings
+        - Content is either a string or list based on use_list_format
+        """
         message_dict = {'role': self.role}
         
         if use_list_format:
@@ -185,7 +217,13 @@ class Message(BaseModel):
         return message_dict
 
     def _native_function_serializer(self, use_list_format: bool) -> dict:
-        """For native function calling"""
+        """Serialize for native function calling.
+        
+        In this format:
+        - Tool calls use message-level fields (tool_calls, tool_call_id, name)
+        - Content is either a string or list based on use_list_format
+        - Content is null for messages with tool calls
+        """
         message_dict = {'role': self.role}
 
         # Handle tool calls
@@ -277,28 +315,36 @@ class Message(BaseModel):
                 if len(tool_calls) != 1:
                     raise ValueError(f'Expected exactly one tool call, got {len(tool_calls)}')
                 
-                tool_content = cls._tool_call_to_string(tool_calls[0])
-                if isinstance(content, str):
-                    content = (content or '') + '\n\n' + tool_content
-                elif isinstance(content, list):
-                    if content and content[-1]['type'] == 'text':
-                        content[-1]['text'] += '\n\n' + tool_content
-                    else:
-                        content.append({'type': 'text', 'text': tool_content})
-                converted_messages.append({'role': 'assistant', 'content': content})
+                # Create a Message with both text and tool call content
+                content = []
+                if message.get('content'):
+                    content.append(TextContent(text=message['content']))
+                content.append(ToolCallContent(
+                    function_name=tool_calls[0]['function']['name'],
+                    function_arguments=tool_calls[0]['function']['arguments'],
+                    tool_call_id=tool_calls[0]['id']
+                ))
+                converted_messages.append(Message(
+                    role='assistant',
+                    content=content,
+                    function_calling_enabled=False
+                ).model_dump())
                 continue
 
             # Handle tool responses
             if role == 'tool':
-                prefix = f'EXECUTION RESULT of [{message.get("name", "function")}]:\n'
-                if isinstance(content, str):
-                    content = prefix + content
-                elif isinstance(content, list):
-                    if content and content[-1]['type'] == 'text':
-                        content[-1]['text'] = prefix + content[-1]['text']
-                    else:
-                        content = [{'type': 'text', 'text': prefix}] + content
-                converted_messages.append({'role': 'user', 'content': content})
+                content = [
+                    ToolResponseContent(
+                        tool_call_id=message['tool_call_id'],
+                        name=message['name'],
+                        content=message['content']
+                    )
+                ]
+                converted_messages.append(Message(
+                    role='tool',
+                    content=content,
+                    function_calling_enabled=False
+                ).model_dump())
                 continue
 
             # Pass through other messages unchanged
