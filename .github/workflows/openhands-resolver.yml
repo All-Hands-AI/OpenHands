@@ -22,6 +22,8 @@ on:
         required: true
       PAT_USERNAME:
         required: true
+      ENV_CONFIG:
+        required: false
 
   issues:
     types: [labeled]
