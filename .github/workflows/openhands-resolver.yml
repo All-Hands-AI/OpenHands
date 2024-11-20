@@ -11,16 +11,11 @@ on:
         required: false
         type: string
         default: "@openhands-agent"
-      source_branch:
-        required: false
-        type: string
-        default: "main"
-        description: 'Source branch to pull from (for PRs)'
       target_branch:
         required: false
         type: string
         default: "main"
-        description: 'Target branch to create PR against (for PRs)'
+        description: 'Target branch to pull and create PR against'
     secrets:
       LLM_MODEL:
         required: true
@@ -144,15 +139,9 @@ jobs:
 
           echo "MAX_ITERATIONS=${{ inputs.max_iterations || 50 }}" >> $GITHUB_ENV
           echo "SANDBOX_ENV_GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
-          
+
           # Set branch variables
-          echo "SOURCE_BRANCH=${{ inputs.source_branch }}" >> $GITHUB_ENV
-          # If source_branch is specified but target_branch isn't, use source_branch for both
-          if [ -n "${{ inputs.source_branch }}" ] && [ "${{ inputs.target_branch }}" == "main" ]; then
-            echo "TARGET_BRANCH=${{ inputs.source_branch }}" >> $GITHUB_ENV
-          else
-            echo "TARGET_BRANCH=${{ inputs.target_branch }}" >> $GITHUB_ENV
-          fi
+          echo "SOURCE_BRANCH=${{ inputs.target_branch }}" >> $GITHUB_ENV
 
       - name: Comment on issue with start message
         uses: actions/github-script@v7
@@ -195,7 +184,6 @@ jobs:
             --issue-type ${{ env.ISSUE_TYPE }} \
             --max-iterations ${{ env.MAX_ITERATIONS }} \
             --comment-id ${{ env.COMMENT_ID }} \
-            --source-branch ${{ env.SOURCE_BRANCH }} \
             --target-branch ${{ env.TARGET_BRANCH }}
 
       - name: Check resolution result

@@ -161,8 +161,6 @@ async def process_issue(
     issue_handler: IssueHandlerInterface,
     repo_instruction: str | None = None,
     reset_logger: bool = False,
-    source_branch: str | None = None,
-    target_branch: str | None = None,
 ) -> ResolverOutput:
     # Setup the logger properly, so you can run multi-processing to parallelize processing
     if reset_logger:
@@ -317,7 +315,6 @@ async def resolve_issue(
     repo_instruction: str | None,
     issue_number: int,
     comment_id: int | None,
-    source_branch: str | None = None,
     target_branch: str | None = None,
     reset_logger: bool = False,
 ) -> None:
@@ -337,7 +334,6 @@ async def resolve_issue(
         repo_instruction: Repository instruction to use.
         issue_number: Issue number to resolve.
         comment_id: Optional ID of a specific comment to focus on.
-        source_branch: Optional source branch to pull from (for PRs).
         target_branch: Optional target branch to create PR against (for PRs).
         reset_logger: Whether to reset the logger for multiprocessing.
     """
@@ -428,9 +424,9 @@ async def resolve_issue(
     try:
         # checkout to pr branch if needed
         if issue_type == 'pr':
-            branch_to_use = source_branch if source_branch else issue.head_branch
+            branch_to_use = target_branch if target_branch else issue.head_branch
             logger.info(
-                f'Checking out to PR branch {branch_to_use} for issue {issue.number}'
+                f'Checking out to PR branch {target_branch} for issue {issue.number}'
             )
 
             if not branch_to_use:
@@ -449,10 +445,6 @@ async def resolve_issue(
                 checkout_cmd,
                 cwd=repo_dir,
             )
-
-            # Update issue's head_branch if using custom source branch
-            if source_branch:
-                issue.head_branch = source_branch
 
             # Update issue's base_branch if using custom target branch
             if target_branch:
@@ -475,8 +467,6 @@ async def resolve_issue(
             issue_handler,
             repo_instruction,
             reset_logger,
-            source_branch,
-            target_branch,
         )
         output_fp.write(output.model_dump_json() + '\n')
         output_fp.flush()
@@ -583,16 +573,10 @@ def main():
         help='Type of issue to resolve, either open issue or pr comments.',
     )
     parser.add_argument(
-        '--source-branch',
-        type=str,
-        default=None,
-        help="Source branch to pull from (for PRs). If not specified, uses the PR's head branch.",
-    )
-    parser.add_argument(
         '--target-branch',
         type=str,
         default=None,
-        help="Target branch to create PR against (for PRs). If not specified, uses the PR's base branch.",
+        help="Target branch to pull and create PR against (for PRs). If not specified, uses the PR's base branch.",
     )
 
     my_args = parser.parse_args()
@@ -654,7 +638,6 @@ def main():
             repo_instruction=repo_instruction,
             issue_number=my_args.issue_number,
             comment_id=my_args.comment_id,
-            source_branch=my_args.source_branch,
             target_branch=my_args.target_branch,
         )
     )
