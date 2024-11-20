@@ -10,7 +10,6 @@ from typing import Awaitable, TextIO
 
 from tqdm import tqdm
 
-import openhands
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.resolver.github_issue import GithubIssue
@@ -319,7 +318,11 @@ def main():
     runtime_container_image = my_args.runtime_container_image
     if runtime_container_image is None:
         runtime_container_image = (
-            f'ghcr.io/replayio-public/runtime:{openhands.__version__}-nikolaik'
+            # BEGIN REPLAY
+            # if we start publishing versions of the runtime image, we can use this line.  until then just use the latest main build
+            # f'ghcr.io/replayio-public/runtime:{openhands.__version__}-nikolaik'
+            'ghcr.io/replayio-public/runtime:main-nikolaik'
+            # END REPLAY
         )
 
     owner, repo = my_args.repo.split('/')
