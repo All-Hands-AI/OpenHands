@@ -241,6 +241,7 @@ def get_llm_config_arg(
 
     Args:
         llm_config_arg: The group of llm settings to get from the config.toml file.
+        toml_file: Path to the configuration file to read from. Defaults to 'config.toml'.
 
     Returns:
         LLMConfig: The LLMConfig object with the settings from the config file.
