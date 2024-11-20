@@ -1,4 +1,3 @@
-import { useFetcher } from "@remix-run/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -9,11 +8,11 @@ import ModalBody from "./ModalBody";
 import ModalButton from "../buttons/ModalButton";
 import FormFieldset from "../form/FormFieldset";
 import { CustomInput } from "../form/custom-input";
-import { clientAction as settingsClientAction } from "#/routes/settings";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import { getGitHubToken, setGitHubToken } from "#/services/auth";
 import { logoutCleanup } from "#/utils/logout-cleanup";
+import { saveSettings } from "#/services/settings";
 
 interface AccountSettingsModalProps {
   onClose: () => void;
@@ -29,33 +28,29 @@ function AccountSettingsModal({
   analyticsConsent,
 }: AccountSettingsModalProps) {
   const { t } = useTranslation();
-  const settingsFetcher = useFetcher<typeof settingsClientAction>({
-    key: "settings",
-  });
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const language = formData.get("language")?.toString();
+
     const ghToken = formData.get("ghToken")?.toString();
+    const language = formData.get("language")?.toString();
     const analytics = formData.get("analytics")?.toString() === "on";
 
-    const accountForm = new FormData();
+    if (ghToken) setGitHubToken(ghToken);
 
-    accountForm.append("intent", "account");
+    // The form returns the language label, so we need to find the corresponding
+    // language key to save it in the settings
     if (language) {
       const languageKey = AvailableLanguages.find(
         ({ label }) => label === language,
       )?.value;
-      accountForm.append("language", languageKey ?? "en");
-    }
-    if (ghToken) setGitHubToken(ghToken);
-    accountForm.append("analytics", analytics.toString());
 
-    settingsFetcher.submit(accountForm, {
-      method: "POST",
-      action: "/settings",
-    });
+      if (languageKey) saveSettings({ LANGUAGE: languageKey });
+    }
+
+    const ANALYTICS = analytics.toString();
+    localStorage.setItem("analytics-consent", ANALYTICS);
 
     onClose();
   };
@@ -123,7 +118,6 @@ function AccountSettingsModal({
 
         <div className="flex flex-col gap-2 w-full">
           <ModalButton
-            disabled={settingsFetcher.state === "submitting"}
             type="submit"
             intent="account"
             text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$SAVE)}
