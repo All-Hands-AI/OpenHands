@@ -139,7 +139,6 @@ export default function MainApp() {
   const handleEndSession = () => {
     setStartNewProjectModalIsOpen(false);
     dispatch(setCurrentAgentState(AgentState.LOADING));
-    // call new session action and redirect to '/'
     clearSession();
     navigate("/");
   };

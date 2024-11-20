@@ -1,18 +1,17 @@
 import React from "react";
 import { useSelector } from "react-redux";
 import { useRouteError } from "@remix-run/react";
-import toast from "react-hot-toast";
 import { editor } from "monaco-editor";
 import { EditorProps } from "@monaco-editor/react";
 import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import FileExplorer from "#/components/file-explorer/FileExplorer";
-import OpenHands from "#/api/open-hands";
 import CodeEditorComponent from "./code-editor-component";
 import { useFiles } from "#/context/files";
 import { EditorActions } from "#/components/editor-actions";
 import { useGetFiles } from "#/hooks/query/use-get-files";
 import { getToken } from "#/services/auth";
+import { useSaveFile } from "#/hooks/mutation/use-save-file";
 
 const ASSET_FILE_TYPES = [
   ".png",
@@ -49,9 +48,11 @@ function CodeEditor() {
   const [fileExplorerIsOpen, setFileExplorerIsOpen] = React.useState(true);
   const editorRef = React.useRef<editor.IStandaloneCodeEditor | null>(null);
 
-  const { data: files, error } = useGetFiles({
+  const { data: files, error: getFilesError } = useGetFiles({
     token: getToken(),
   });
+
+  const { mutate: saveFile } = useSaveFile();
 
   const toggleFileExplorer = () => {
     setFileExplorerIsOpen((prev) => !prev);
@@ -95,12 +96,8 @@ function CodeEditor() {
     if (selectedPath) {
       const content = modifiedFiles[selectedPath];
       if (content) {
-        try {
-          await OpenHands.saveFile(selectedPath, content);
-          saveNewFileContent(selectedPath);
-        } catch (e) {
-          toast.error("Failed to save file");
-        }
+        saveFile({ path: selectedPath, content });
+        saveNewFileContent(selectedPath);
       }
     }
   };
@@ -118,7 +115,7 @@ function CodeEditor() {
       <FileExplorer
         isOpen={fileExplorerIsOpen}
         onToggle={toggleFileExplorer}
-        error={error?.message || null}
+        error={getFilesError?.message || null}
       />
       <div className="w-full">
         {selectedPath && !isAssetFileType && (

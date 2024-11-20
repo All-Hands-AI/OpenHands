@@ -23,7 +23,6 @@ import {
 import store, { RootState } from "#/store";
 import { createChatMessage } from "#/services/chatService";
 import { isGitHubErrorReponse } from "#/api/github";
-import OpenHands from "#/api/open-hands";
 import { base64ToBlob } from "#/utils/base64-to-blob";
 import { setCurrentAgentState } from "#/state/agentSlice";
 import AgentState from "#/types/AgentState";
@@ -32,6 +31,7 @@ import { generateAgentStateChangeEvent } from "#/services/agentStateService";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { getGitHubToken } from "#/services/auth";
 import { clearSession } from "#/utils/clear-session";
+import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 
 interface ServerError {
   error: boolean | string;
@@ -59,6 +59,7 @@ export function EventHandler({ children }: React.PropsWithChildren) {
   };
 
   const { data: user } = useGitHubUser(ghToken);
+  const { mutate: uploadFiles } = useUploadFiles();
 
   const sendInitialQuery = (query: string, base64Files: string[]) => {
     const timestamp = new Date().toISOString();
@@ -166,21 +167,21 @@ export function EventHandler({ children }: React.PropsWithChildren) {
   }, [userId, ghToken, runtimeActive]);
 
   React.useEffect(() => {
-    (async () => {
-      if (runtimeActive && importedProjectZip) {
-        // upload files action
-        try {
-          const blob = base64ToBlob(importedProjectZip);
-          const file = new File([blob], "imported-project.zip", {
-            type: blob.type,
-          });
-          await OpenHands.uploadFiles([file]);
-          dispatch(setImportedProjectZip(null));
-        } catch (error) {
-          toast.error("Failed to upload project files.");
-        }
-      }
-    })();
+    if (runtimeActive && importedProjectZip) {
+      const blob = base64ToBlob(importedProjectZip);
+      const file = new File([blob], "imported-project.zip", {
+        type: blob.type,
+      });
+      uploadFiles(
+        { files: [file] },
+        {
+          onError: () => {
+            toast.error("Failed to upload project files.");
+          },
+        },
+      );
+      dispatch(setImportedProjectZip(null));
+    }
   }, [runtimeActive, importedProjectZip]);
 
   React.useEffect(() => {

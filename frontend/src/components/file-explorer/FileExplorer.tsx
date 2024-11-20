@@ -17,9 +17,11 @@ import toast from "#/utils/toast";
 import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
 import OpenHands from "#/api/open-hands";
-import { isOpenHandsErrorResponse } from "#/api/open-hands.utils";
 import VSCodeIcon from "#/assets/vscode-alt.svg?react";
 import { useGetFiles } from "#/hooks/query/use-get-files";
+import { getToken } from "#/services/auth";
+import { FileUploadSuccessResponse } from "#/api/open-hands.types";
+import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
@@ -108,63 +110,58 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
   };
 
   const { data: paths, refetch } = useGetFiles({
-    token: localStorage.getItem("token"),
+    token: getToken(),
   });
+
+  const handleUploadSuccess = (data: FileUploadSuccessResponse) => {
+    const uploadedCount = data.uploaded_files.length;
+    const skippedCount = data.skipped_files.length;
+
+    if (uploadedCount > 0) {
+      toast.success(
+        `upload-success-${new Date().getTime()}`,
+        t(I18nKey.EXPLORER$UPLOAD_SUCCESS_MESSAGE, {
+          count: uploadedCount,
+        }),
+      );
+    }
+
+    if (skippedCount > 0) {
+      const message = t(I18nKey.EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE, {
+        count: skippedCount,
+      });
+      toast.info(message);
+    }
+
+    if (uploadedCount === 0 && skippedCount === 0) {
+      toast.info(t(I18nKey.EXPLORER$NO_FILES_UPLOADED_MESSAGE));
+    }
+  };
+
+  const handleUploadError = (e: Error) => {
+    toast.error(
+      `upload-error-${new Date().getTime()}`,
+      e.message || t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE),
+    );
+  };
+
+  const { mutate: uploadFiles } = useUploadFiles();
 
   const refreshWorkspace = () => {
     if (
-      curAgentState === AgentState.LOADING ||
-      curAgentState === AgentState.STOPPED
+      curAgentState !== AgentState.LOADING &&
+      curAgentState !== AgentState.STOPPED
     ) {
-      return;
+      refetch();
     }
-    refetch();
   };
 
-  const uploadFileData = async (files: FileList) => {
-    try {
-      const result = await OpenHands.uploadFiles(Array.from(files));
-
-      if (isOpenHandsErrorResponse(result)) {
-        // Handle error response
-        toast.error(
-          `upload-error-${new Date().getTime()}`,
-          result.error || t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE),
-        );
-        return;
-      }
-
-      const uploadedCount = result.uploaded_files.length;
-      const skippedCount = result.skipped_files.length;
-
-      if (uploadedCount > 0) {
-        toast.success(
-          `upload-success-${new Date().getTime()}`,
-          t(I18nKey.EXPLORER$UPLOAD_SUCCESS_MESSAGE, {
-            count: uploadedCount,
-          }),
-        );
-      }
-
-      if (skippedCount > 0) {
-        const message = t(I18nKey.EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE, {
-          count: skippedCount,
-        });
-        toast.info(message);
-      }
-
-      if (uploadedCount === 0 && skippedCount === 0) {
-        toast.info(t(I18nKey.EXPLORER$NO_FILES_UPLOADED_MESSAGE));
-      }
-
-      refreshWorkspace();
-    } catch (e) {
-      // Handle unexpected errors (network issues, etc.)
-      toast.error(
-        `upload-error-${new Date().getTime()}`,
-        t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE),
-      );
-    }
+  const uploadFileData = (files: FileList) => {
+    uploadFiles(
+      { files: Array.from(files) },
+      { onSuccess: handleUploadSuccess, onError: handleUploadError },
+    );
+    refreshWorkspace();
   };
 
   const handleVSCodeClick = async (e: React.MouseEvent) => {

@@ -8,6 +8,7 @@ export const useConfig = () => {
     queryFn: OpenHands.getConfig,
   });
 
+  // Remove this. Instead, we should retrieve the data directly from the config query
   React.useEffect(() => {
     if (config.data) {
       window.__APP_MODE__ = config.data.APP_MODE;

@@ -2,10 +2,9 @@ import { Editor, EditorProps } from "@monaco-editor/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { VscCode } from "react-icons/vsc";
-import toast from "react-hot-toast";
 import { I18nKey } from "#/i18n/declaration";
 import { useFiles } from "#/context/files";
-import OpenHands from "#/api/open-hands";
+import { useSaveFile } from "#/hooks/mutation/use-save-file";
 
 interface CodeEditorComponentProps {
   onMount: EditorProps["onMount"];
@@ -25,6 +24,8 @@ function CodeEditorComponent({
     saveFileContent: saveNewFileContent,
   } = useFiles();
 
+  const { mutate: saveFile } = useSaveFile();
+
   const handleEditorChange = (value: string | undefined) => {
     if (selectedPath && value) modifyFileContent(selectedPath, value);
   };
@@ -39,11 +40,7 @@ function CodeEditorComponent({
         const content = saveNewFileContent(selectedPath);
 
         if (content) {
-          try {
-            await OpenHands.saveFile(selectedPath, content);
-          } catch (error) {
-            toast.error("Failed to save file");
-          }
+          saveFile({ path: selectedPath, content });
         }
       }
     };
