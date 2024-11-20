@@ -13,7 +13,7 @@ import { getRandomKey } from "#/utils/get-random-key";
 import { AttachImageLabel } from "#/components/attach-image-label";
 import { cn } from "#/utils/utils";
 
-export function TaskForm() {
+export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
 
@@ -21,7 +21,6 @@ export function TaskForm() {
     (state: RootState) => state.initalQuery,
   );
 
-  const formRef = React.useRef<HTMLFormElement>(null);
   const [text, setText] = React.useState("");
   const [suggestion, setSuggestion] = React.useState(
     getRandomKey(SUGGESTIONS["non-repo"]),
@@ -55,7 +54,7 @@ export function TaskForm() {
   return (
     <div className="flex flex-col gap-2 w-full">
       <Form
-        ref={formRef}
+        ref={ref}
         method="post"
         className="flex flex-col items-center gap-2"
         replace
@@ -75,7 +74,7 @@ export function TaskForm() {
           <ChatInput
             name="q"
             onSubmit={() => {
-              formRef.current?.requestSubmit();
+              if (typeof ref !== "function") ref?.current?.requestSubmit();
             }}
             onChange={(message) => setText(message)}
             onFocus={() => setInputIsFocused(true)}
@@ -116,4 +115,6 @@ export function TaskForm() {
       )}
     </div>
   );
-}
+});
+
+TaskForm.displayName = "TaskForm";

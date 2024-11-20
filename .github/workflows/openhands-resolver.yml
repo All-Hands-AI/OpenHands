@@ -40,7 +40,6 @@ permissions:
   issues: write
 
 jobs:
-
   auto-fix:
     if: |
       github.event_name == 'workflow_call' ||
@@ -76,7 +75,18 @@ jobs:
           cat requirements.txt
 
       - name: Cache pip dependencies
-        if: github.event.label.name != 'fix-me-experimental'
+        if: |
+          !(
+            github.event.label.name == 'fix-me-experimental' ||
+            (
+              (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
+              startsWith(github.event.comment.body, inputs.macro || '@openhands-agent-exp')
+            ) ||
+            (
+              github.event_name == 'pull_request_review' &&
+              startsWith(github.event.review.body, inputs.macro || '@openhands-agent-exp')
+            )
+          )
         uses: actions/cache@v3
         with:
           path: ${{ env.pythonLocation }}/lib/python3.12/site-packages/*
@@ -135,12 +145,16 @@ jobs:
               issue_number: ${{ env.ISSUE_NUMBER }},
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `OpenHands started fixing the ${issueType}! You can monitor the progress [here](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`
+              body: `[OpenHands](https://github.com/All-Hands-AI/OpenHands) started fixing the ${issueType}! You can monitor the progress [here](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`
             });
 
       - name: Install OpenHands
         run: |
-          if [ "${{ github.event.label.name }}" == "fix-me-experimental" ]; then
+          if [[ "${{ github.event.label.name }}" == "fix-me-experimental" ]] ||
+             ([[ "${{ github.event_name }}" == "issue_comment" || "${{ github.event_name }}" == "pull_request_review_comment" ]] &&
+              [[ "${{ github.event.comment.body }}" == "@openhands-agent-exp"* ]]) ||
+             ([[ "${{ github.event_name }}" == "pull_request_review" ]] &&
+              [[ "${{ github.event.review.body }}" == "@openhands-agent-exp"* ]]); then
             python -m pip install --upgrade pip
             pip install git+https://github.com/all-hands-ai/openhands.git
           else
@@ -181,6 +195,7 @@ jobs:
           retention-days: 30 # Keep the artifact for 30 days
 
       - name: Create draft PR or push branch
+        if: always() # Create PR or branch even if the previous steps fail
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
           GITHUB_USERNAME: ${{ secrets.PAT_USERNAME }}
@@ -204,6 +219,7 @@ jobs:
 
       - name: Comment on issue
         uses: actions/github-script@v7
+        if: always() # Comment on issue even if the previous steps fail
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -262,6 +278,6 @@ jobs:
                 issue_number: issueNumber,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: `The workflow to fix this issue encountered an error. Please check the workflow logs for more information.`
+                body: `The workflow to fix this issue encountered an error. Please check the [workflow logs](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) for more information.`
               });
             }

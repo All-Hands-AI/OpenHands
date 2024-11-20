@@ -18,7 +18,9 @@ class IssueHandlerInterface(ABC):
     issue_type: ClassVar[str]
 
     @abstractmethod
-    def get_converted_issues(self, comment_id: int | None = None) -> list[GithubIssue]:
+    def get_converted_issues(
+        self, issue_numbers: list[int] | None = None, comment_id: int | None = None
+    ) -> list[GithubIssue]:
         """Download issues from GitHub."""
         pass
 
@@ -83,7 +85,21 @@ class IssueHandler(IssueHandlerInterface):
         return re.findall(image_pattern, issue_body)
 
     def _extract_issue_references(self, body: str) -> list[int]:
-        pattern = r'#(\d+)'
+        # First, remove code blocks as they may contain false positives
+        body = re.sub(r'```.*?```', '', body, flags=re.DOTALL)
+
+        # Remove inline code
+        body = re.sub(r'`[^`]*`', '', body)
+
+        # Remove URLs that contain hash symbols
+        body = re.sub(r'https?://[^\s)]*#\d+[^\s)]*', '', body)
+
+        # Now extract issue numbers, making sure they're not part of other text
+        # The pattern matches #number that:
+        # 1. Is at the start of text or after whitespace/punctuation
+        # 2. Is followed by whitespace, punctuation, or end of text
+        # 3. Is not part of a URL
+        pattern = r'(?:^|[\s\[({]|[^\w#])#(\d+)(?=[\s,.\])}]|$)'
         return [int(match) for match in re.findall(pattern, body)]
 
     def _get_issue_comments(
@@ -124,22 +140,35 @@ class IssueHandler(IssueHandlerInterface):
 
         return all_comments if all_comments else None
 
-    def get_converted_issues(self, comment_id: int | None = None) -> list[GithubIssue]:
+    def get_converted_issues(
+        self, issue_numbers: list[int] | None = None, comment_id: int | None = None
+    ) -> list[GithubIssue]:
         """Download issues from Github.
 
         Returns:
             List of Github issues.
         """
+
+        if not issue_numbers:
+            raise ValueError('Unspecified issue number')
+
         all_issues = self._download_issues_from_github()
+        logger.info(f'Limiting resolving to issues {issue_numbers}.')
+        all_issues = [
+            issue
+            for issue in all_issues
+            if issue['number'] in issue_numbers and 'pull_request' not in issue
+        ]
+
+        if len(issue_numbers) == 1 and not all_issues:
+            raise ValueError(f'Issue {issue_numbers[0]} not found')
+
         converted_issues = []
         for issue in all_issues:
             if any([issue.get(key) is None for key in ['number', 'title', 'body']]):
                 logger.warning(
                     f'Skipping issue {issue} as it is missing number, title, or body.'
                 )
-                continue
-
-            if 'pull_request' in issue:
                 continue
 
             # Get issue thread comments
@@ -455,22 +484,33 @@ class PRHandler(IssueHandler):
         )
 
         for issue_number in unique_issue_references:
-            url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{issue_number}'
-            headers = {
-                'Authorization': f'Bearer {self.token}',
-                'Accept': 'application/vnd.github.v3+json',
-            }
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            issue_data = response.json()
-            issue_body = issue_data.get('body', '')
-            if issue_body:
-                closing_issues.append(issue_body)
+            try:
+                url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{issue_number}'
+                headers = {
+                    'Authorization': f'Bearer {self.token}',
+                    'Accept': 'application/vnd.github.v3+json',
+                }
+                response = requests.get(url, headers=headers)
+                response.raise_for_status()
+                issue_data = response.json()
+                issue_body = issue_data.get('body', '')
+                if issue_body:
+                    closing_issues.append(issue_body)
+            except requests.exceptions.RequestException as e:
+                logger.warning(f'Failed to fetch issue {issue_number}: {str(e)}')
 
         return closing_issues
 
-    def get_converted_issues(self, comment_id: int | None = None) -> list[GithubIssue]:
+    def get_converted_issues(
+        self, issue_numbers: list[int] | None = None, comment_id: int | None = None
+    ) -> list[GithubIssue]:
+        if not issue_numbers:
+            raise ValueError('Unspecified issue numbers')
+
         all_issues = self._download_issues_from_github()
+        logger.info(f'Limiting resolving to issues {issue_numbers}.')
+        all_issues = [issue for issue in all_issues if issue['number'] in issue_numbers]
+
         converted_issues = []
         for issue in all_issues:
             # For PRs, body can be None
@@ -559,9 +599,7 @@ class PRHandler(IssueHandler):
         # Format thread comments if they exist
         thread_context = ''
         if issue.thread_comments:
-            thread_context = '\n\nPR Thread Comments:\n' + '\n---\n'.join(
-                issue.thread_comments
-            )
+            thread_context = '\n---\n'.join(issue.thread_comments)
             images.extend(self._extract_image_urls(thread_context))
 
         instruction = template.render(
