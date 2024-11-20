@@ -232,6 +232,7 @@ class CodeActAgent(Agent):
         """
         message: Message
         max_message_chars = self.llm.config.max_message_chars
+
         if isinstance(obs, CmdOutputObservation):
             # if it doesn't have tool call metadata, it was triggered by a user action
             if obs.tool_call_metadata is None:
@@ -262,10 +263,7 @@ class CodeActAgent(Agent):
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, BrowserOutputObservation):
             text = obs.get_agent_obs_text()
-            message = Message(
-                role='user',
-                content=[TextContent(text=text)],
-            )
+            message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentDelegateObservation):
             text = truncate_content(
                 obs.outputs['content'] if 'content' in obs.outputs else '',
@@ -281,36 +279,18 @@ class CodeActAgent(Agent):
             text += '\n[Last action has been rejected by the user]'
             message = Message(role='user', content=[TextContent(text=text)])
         else:
-            # If an observation message is not returned, it will cause an error
-            # when the LLM tries to return the next message
             raise ValueError(f'Unknown observation type: {type(obs)}')
 
         # Update the message as tool response properly
         if (tool_call_metadata := obs.tool_call_metadata) is not None:
             content_text = message.content[0].text if message.content else ''
-
-            if self.llm.is_function_calling_active():
-                # Native function calling - use message-level fields
-                tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(
-                    role='tool',
-                    content=[TextContent(text=content_text)],
-                    tool_call_id=tool_call_metadata.tool_call_id,
-                    name=tool_call_metadata.function_name,
-                    function_calling_enabled=True,
-                )
-            else:
-                # Non-native function calling - use ToolResponseContent
-                tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(
-                    role='tool',
-                    content=[
-                        ToolResponseContent(
-                            tool_call_id=tool_call_metadata.tool_call_id,
-                            name=tool_call_metadata.function_name,
-                            content=content_text,
-                        )
-                    ],
-                    function_calling_enabled=False,
-                )
+            tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(
+                role='tool',
+                content=[TextContent(text=content_text)],
+                tool_call_id=tool_call_metadata.tool_call_id,
+                name=tool_call_metadata.function_name,
+                function_calling_enabled=self.llm.is_function_calling_active(),
+            )
             return []
 
         return [message]
