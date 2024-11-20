@@ -183,12 +183,8 @@ class LLM(RetryMixin, DebugMixin):
             original_fncall_messages = copy.deepcopy(messages)
             mock_fncall_tools = None
             if mock_function_calling:
-                assert (
-                    'tools' in kwargs
-                ), "'tools' must be in kwargs when mock_function_calling is True"
-                messages = convert_fncall_messages_to_non_fncall_messages(
-                    messages, kwargs['tools']
-                )
+                assert 'tools' in kwargs, "'tools' must be in kwargs when mock_function_calling is True"
+                messages = Message.convert_messages_to_non_native(messages, kwargs['tools'])
                 kwargs['messages'] = messages
                 kwargs['stop'] = STOP_WORDS
                 mock_fncall_tools = kwargs.pop('tools')
