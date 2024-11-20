@@ -117,13 +117,17 @@ jobs:
           ENV_CONFIG: ${{ secrets.ENV_CONFIG }}
         run: |
           if [ -n "$ENV_CONFIG" ]; then
-              echo "$ENV_CONFIG"
-              echo "$ENV_CONFIG" | jq -r '
+              secrets=$(echo "$ENV_CONFIG" | jq 'with_entries(select(.key | startswith("OPENHANDS_ENV_")))')
+              sanitized_secrets=$(echo "$secrets" | jq -c .)
+
+              echo "$sanitized_secrets" | jq -r '
                 to_entries |
                 .[] |
                 "\(.key | sub("^OPENHANDS_ENV_"; "SANDBOX_ENV_"))=\(.value)"
               ' >> "$GITHUB_ENV"
           fi
+
+          echo "$SANBOX_ENV_OPENHANDS_TEST"
 
       - name: Set environment variables
         run: |
