@@ -151,7 +151,7 @@ class BashSession:
     def _clear_screen(self):
         """Clear the tmux pane screen and history."""
         self.pane.send_keys('C-l', enter=False)
-        self.pane.reset()
+        time.sleep(0.1)
         self.pane.cmd('clear-history')
 
     def _get_pane_content(self, full: bool = False) -> str:
