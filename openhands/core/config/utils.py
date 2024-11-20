@@ -384,7 +384,7 @@ def load_app_config(
     """Load the configuration from the specified config file and environment variables.
 
     Args:
-        set_logger_levels: Whether to set the global variables for logging levels.
+        set_logging_levels: Whether to set the global variables for logging levels.
         config_file: Path to the config file. Defaults to 'config.toml' in the current directory.
     """
     config = AppConfig()
