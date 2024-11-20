@@ -235,7 +235,9 @@ export default function MainApp() {
                 models={aiConfigOptions.data?.models}
                 agents={aiConfigOptions.data?.agents}
                 securityAnalyzers={aiConfigOptions.data?.securityAnalyzers}
-                onClose={() => setSettingsModalIsOpen(false)}
+                onClose={() => {
+                  setSettingsModalIsOpen(false);
+                }}
               />
             )}
           </div>
