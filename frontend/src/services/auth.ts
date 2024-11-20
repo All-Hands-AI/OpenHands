@@ -13,7 +13,7 @@ const setToken = (token: string): void => {
 
 const getGitHubToken = () => localStorage.getItem(GITHUB_TOKEN_KEY);
 
-const setGitHubToken = (token: string): void => {
+const setGitHubToken = (token: string) => {
   localStorage.setItem(GITHUB_TOKEN_KEY, token);
 };
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { useFetcher } from "@remix-run/react";
+import { useNavigate } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 
@@ -31,6 +31,7 @@ import { getSettings } from "#/services/settings";
 import { generateAgentStateChangeEvent } from "#/services/agentStateService";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { getGitHubToken } from "#/services/auth";
+import { clearSession } from "#/utils/clear-session";
 
 interface ServerError {
   error: boolean | string;
@@ -45,9 +46,9 @@ const isErrorObservation = (data: object): data is ErrorObservation =>
 
 export function EventHandler({ children }: React.PropsWithChildren) {
   const { events, status, send } = useWsClient();
+  const navigate = useNavigate();
   const statusRef = React.useRef<WsClientProviderStatus | null>(null);
   const runtimeActive = status === WsClientProviderStatus.ACTIVE;
-  const fetcher = useFetcher();
   const dispatch = useDispatch();
   const { files, importedProjectZip, initialQuery } = useSelector(
     (state: RootState) => state.initalQuery,
@@ -82,7 +83,8 @@ export function EventHandler({ children }: React.PropsWithChildren) {
     if (isServerError(event)) {
       if (event.error_code === 401) {
         toast.error("Session expired.");
-        fetcher.submit({}, { method: "POST", action: "/end-session" });
+        clearSession();
+        navigate("/");
         return;
       }
 

@@ -10,10 +10,10 @@ import ModalButton from "../buttons/ModalButton";
 import FormFieldset from "../form/FormFieldset";
 import { CustomInput } from "../form/custom-input";
 import { clientAction as settingsClientAction } from "#/routes/settings";
-import { clientAction as loginClientAction } from "#/routes/login";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
-import { getGitHubToken } from "#/services/auth";
+import { getGitHubToken, setGitHubToken } from "#/services/auth";
+import { logoutCleanup } from "#/utils/logout-cleanup";
 
 interface AccountSettingsModalProps {
   onClose: () => void;
@@ -32,7 +32,6 @@ function AccountSettingsModal({
   const settingsFetcher = useFetcher<typeof settingsClientAction>({
     key: "settings",
   });
-  const loginFetcher = useFetcher<typeof loginClientAction>({ key: "login" });
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -42,7 +41,6 @@ function AccountSettingsModal({
     const analytics = formData.get("analytics")?.toString() === "on";
 
     const accountForm = new FormData();
-    const loginForm = new FormData();
 
     accountForm.append("intent", "account");
     if (language) {
@@ -51,16 +49,12 @@ function AccountSettingsModal({
       )?.value;
       accountForm.append("language", languageKey ?? "en");
     }
-    if (ghToken) loginForm.append("ghToken", ghToken);
+    if (ghToken) setGitHubToken(ghToken);
     accountForm.append("analytics", analytics.toString());
 
     settingsFetcher.submit(accountForm, {
       method: "POST",
       action: "/settings",
-    });
-    loginFetcher.submit(loginForm, {
-      method: "POST",
-      action: "/login",
     });
 
     onClose();
@@ -110,10 +104,7 @@ function AccountSettingsModal({
               variant="text-like"
               text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$DISCONNECT)}
               onClick={() => {
-                settingsFetcher.submit(
-                  {},
-                  { method: "POST", action: "/logout" },
-                );
+                logoutCleanup();
                 onClose();
               }}
               className="text-danger self-start"
@@ -132,10 +123,7 @@ function AccountSettingsModal({
 
         <div className="flex flex-col gap-2 w-full">
           <ModalButton
-            disabled={
-              settingsFetcher.state === "submitting" ||
-              loginFetcher.state === "submitting"
-            }
+            disabled={settingsFetcher.state === "submitting"}
             type="submit"
             intent="account"
             text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$SAVE)}
