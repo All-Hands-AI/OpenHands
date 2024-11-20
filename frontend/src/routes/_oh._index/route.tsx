@@ -1,50 +1,27 @@
-import {
-  ClientActionFunctionArgs,
-  defer,
-  redirect,
-  useLoaderData,
-} from "@remix-run/react";
+import { useLocation, useNavigate } from "@remix-run/react";
 import React from "react";
 import { useDispatch } from "react-redux";
-import posthog from "posthog-js";
 import { SuggestionBox } from "./suggestion-box";
 import { TaskForm } from "./task-form";
 import { HeroHeading } from "./hero-heading";
-import store from "#/store";
-import {
-  setImportedProjectZip,
-  setInitialQuery,
-} from "#/state/initial-query-slice";
+import { setImportedProjectZip } from "#/state/initial-query-slice";
 import { GitHubRepositoriesSuggestionBox } from "#/components/github-repositories-suggestion-box";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
-
-export const clientLoader = async () => {
-  const ghToken = localStorage.getItem("ghToken");
-  const token = localStorage.getItem("token");
-  if (token) return redirect("/app");
-
-  return defer({ ghToken });
-};
-
-export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
-  const formData = await request.formData();
-  const q = formData.get("q")?.toString();
-  if (q) store.dispatch(setInitialQuery(q));
-
-  posthog.capture("initial_query_submitted", {
-    query_character_length: q?.length,
-  });
-
-  return redirect("/app");
-};
+import { getGitHubToken, getToken } from "#/services/auth";
 
 function Home() {
   const dispatch = useDispatch();
-  const { ghToken } = useLoaderData<typeof clientLoader>();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const { ghToken } = {
+    ghToken: getGitHubToken(),
+  };
+
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const { data: config } = useConfig();
@@ -56,6 +33,11 @@ function Home() {
     appMode: config?.APP_MODE || null,
     gitHubClientId: config?.GITHUB_CLIENT_ID || null,
   });
+
+  React.useEffect(() => {
+    const token = getToken();
+    if (token) navigate("/app");
+  }, [location.pathname]);
 
   return (
     <div

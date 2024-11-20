@@ -1,8 +1,13 @@
 import React from "react";
-import { Form, useNavigation } from "@remix-run/react";
+import { useNavigate, useNavigation } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
+import posthog from "posthog-js";
 import { RootState } from "#/store";
-import { addFile, removeFile } from "#/state/initial-query-slice";
+import {
+  addFile,
+  removeFile,
+  setInitialQuery,
+} from "#/state/initial-query-slice";
 import { SuggestionBubble } from "#/components/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
@@ -16,6 +21,7 @@ import { cn } from "#/utils/utils";
 export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
+  const navigate = useNavigate();
 
   const { selectedRepository, files } = useSelector(
     (state: RootState) => state.initalQuery,
@@ -51,13 +57,26 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
     return "What do you want to build?";
   }, [selectedRepository]);
 
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    const q = formData.get("q")?.toString();
+    if (q) dispatch(setInitialQuery(q));
+
+    posthog.capture("initial_query_submitted", {
+      query_character_length: q?.length,
+    });
+
+    navigate("/app");
+  };
+
   return (
     <div className="flex flex-col gap-2 w-full">
-      <Form
+      <form
         ref={ref}
-        method="post"
+        onSubmit={handleSubmit}
         className="flex flex-col items-center gap-2"
-        replace
       >
         <SuggestionBubble
           suggestion={suggestion}
@@ -95,7 +114,7 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
             disabled={navigation.state === "submitting"}
           />
         </div>
-      </Form>
+      </form>
       <UploadImageInput
         onUpload={async (uploadedFiles) => {
           const promises = uploadedFiles.map(convertImageToBase64);

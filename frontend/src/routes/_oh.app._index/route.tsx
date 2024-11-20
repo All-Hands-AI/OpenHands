@@ -1,6 +1,6 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { json, useRouteError } from "@remix-run/react";
+import { useRouteError } from "@remix-run/react";
 import toast from "react-hot-toast";
 import { editor } from "monaco-editor";
 import { EditorProps } from "@monaco-editor/react";
@@ -12,6 +12,7 @@ import CodeEditorComponent from "./code-editor-component";
 import { useFiles } from "#/context/files";
 import { EditorActions } from "#/components/editor-actions";
 import { useGetFiles } from "#/hooks/query/use-get-files";
+import { getToken } from "#/services/auth";
 
 const ASSET_FILE_TYPES = [
   ".png",
@@ -24,11 +25,6 @@ const ASSET_FILE_TYPES = [
   ".webm",
   ".ogg",
 ];
-
-export const clientLoader = async () => {
-  const token = localStorage.getItem("token");
-  return json({ token });
-};
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -54,7 +50,7 @@ function CodeEditor() {
   const editorRef = React.useRef<editor.IStandaloneCodeEditor | null>(null);
 
   const { data: files, error } = useGetFiles({
-    token: localStorage.getItem("token"),
+    token: getToken(),
   });
 
   const toggleFileExplorer = () => {
