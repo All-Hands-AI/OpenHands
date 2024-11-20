@@ -9,7 +9,7 @@ from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import ImageContent, Message, TextContent
+from openhands.core.message import ImageContent, Message, TextContent, ToolCallContent, ToolResponseContent
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -157,22 +157,15 @@ class CodeActAgent(Agent):
             and action.source == 'agent'
         ):
             tool_metadata = action.tool_call_metadata
-            assert tool_metadata is not None, (
-                'Tool call metadata should NOT be None when function calling is enabled. Action: '
-                + str(action)
-            )
-
+            assert tool_metadata is not None
             llm_response: ModelResponse = tool_metadata.model_response
             assistant_msg = llm_response.choices[0].message
             # Add the LLM message (assistant) that initiated the tool calls
-            # (overwrites any previous message with the same response_id)
             pending_tool_call_action_messages[llm_response.id] = Message(
                 role=assistant_msg.role,
-                # tool call content SHOULD BE a string
-                content=[TextContent(text=assistant_msg.content or '')]
-                if assistant_msg.content is not None
-                else [],
-                tool_calls=assistant_msg.tool_calls,
+                content=[TextContent(text=assistant_msg.content or '')] if assistant_msg.content else [],
+                tool_calls=assistant_msg.tool_calls,  # Pass tool_calls directly at message level
+                function_calling_enabled=self.llm.is_function_calling_active()
             )
             return []
         elif isinstance(action, MessageAction):
@@ -285,9 +278,10 @@ class CodeActAgent(Agent):
         if (tool_call_metadata := obs.tool_call_metadata) is not None:
             tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(
                 role='tool',
-                content=message.content,
-                tool_call_id=tool_call_metadata.tool_call_id,
+                content=[TextContent(text=message.content[0].text if message.content else '')],
+                tool_call_id=tool_call_metadata.tool_call_id,  # Tool response fields at message level
                 name=tool_call_metadata.function_name,
+                function_calling_enabled=self.llm.is_function_calling_active()
             )
             # No need to return the observation message
             # because it will be added by get_action_message when all the corresponding

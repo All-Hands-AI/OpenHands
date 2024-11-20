@@ -1,7 +1,7 @@
-import pytest
+from openhands.core.message import ImageContent, Message, TextContent, ToolCallContent, ToolResponseContent
 from litellm import ChatCompletionMessageToolCall
 
-from openhands.core.message import ImageContent, Message, TextContent
+import pytest
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def test_serializer_prompt_caching_enabled(base_message):
     # Enable cache_prompt on TextContent
     base_message.content[0].cache_prompt = True
     serialized = base_message.serialize_model()
-
+    
     expected = {
         'role': 'user',
         'content': [
@@ -32,7 +32,7 @@ def test_serializer_prompt_caching_enabled(base_message):
             },
         ],
     }
-
+    
     assert serialized == expected
 
 
@@ -42,7 +42,7 @@ def test_serializer_vision_enabled(base_message):
     base_message.vision_enabled = True
     base_message.content.append(image)
     serialized = base_message.serialize_model()
-
+    
     expected = {
         'role': 'user',
         'content': [
@@ -56,7 +56,7 @@ def test_serializer_vision_enabled(base_message):
             },
         ],
     }
-
+    
     assert serialized == expected
     assert base_message.contains_image is True
 
@@ -65,7 +65,7 @@ def test_serializer_function_calling_enabled(base_message):
     """Test serialization with function calling enabled and others disabled."""
     base_message.function_calling_enabled = True
     serialized = base_message.serialize_model()
-
+    
     expected = {
         'role': 'user',
         'content': [
@@ -75,7 +75,7 @@ def test_serializer_function_calling_enabled(base_message):
             },
         ],
     }
-
+    
     assert serialized == expected
 
 
@@ -89,7 +89,7 @@ def test_serializer_all_enabled(base_message):
     base_message.content[0].cache_prompt = True
     base_message.content.append(image)
     serialized = base_message.serialize_model()
-
+    
     expected = {
         'role': 'user',
         'content': [
@@ -104,7 +104,7 @@ def test_serializer_all_enabled(base_message):
             },
         ],
     }
-
+    
     assert serialized == expected
     assert base_message.contains_image is True
 
@@ -112,12 +112,12 @@ def test_serializer_all_enabled(base_message):
 def test_serializer_all_disabled(base_message):
     """Test serialization with prompt caching, vision, and function calling disabled."""
     serialized = base_message.serialize_model()
-
+    
     expected = {
         'role': 'user',
         'content': 'Sample message',
     }
-
+    
     assert serialized == expected
     assert base_message.contains_image is False
 
@@ -139,7 +139,7 @@ def test_serializer_combined_features():
     # Enable cache_prompt on the first TextContent
     message.content[0].cache_prompt = True
     serialized = message.serialize_model()
-
+    
     expected = {
         'role': 'assistant',
         'content': [
@@ -158,7 +158,7 @@ def test_serializer_combined_features():
             },
         ],
     }
-
+    
     assert serialized == expected
     assert message.contains_image is True
 
@@ -173,12 +173,12 @@ def test_serializer_no_content():
         function_calling_enabled=False,
     )
     serialized = message.serialize_model()
-
+    
     expected = {
         'role': 'system',
         'content': '',
     }
-
+    
     assert serialized == expected
     assert message.contains_image is False
 
@@ -197,7 +197,7 @@ def test_serializer_partial_content():
         function_calling_enabled=False,
     )
     serialized = message.serialize_model()
-
+    
     expected = {
         'role': 'user',
         'content': [
@@ -216,7 +216,7 @@ def test_serializer_partial_content():
             },
         ],
     }
-
+    
     assert serialized == expected
     assert message.contains_image is True
 
@@ -346,16 +346,12 @@ def test_serializer_function_calling_enabled_with_tool_calls():
             'id': 'tool-call-123',
             'name': 'execute_bash',
             'arguments': '{"command": "ls -la"}',
-        },
+        }
     )
 
     assistant_message = Message(
         role='assistant',
-        content=[
-            TextContent(
-                text='Sure, executing the command.', type='text', cache_prompt=False
-            )
-        ],
+        content=[TextContent(text='Sure, executing the command.', type='text', cache_prompt=False)],
         cache_enabled=True,
         vision_enabled=False,
         function_calling_enabled=True,
@@ -392,7 +388,7 @@ def test_serializer_function_calling_enabled_with_tool_calls():
                     'id': 'tool-call-123',
                     'name': 'execute_bash',
                     'arguments': '{"command": "ls -la"}',
-                },
+                }
             }
         ],
     }
@@ -417,6 +413,11 @@ def test_serializer_function_calling_enabled_with_tool_calls():
     assert serialized_tool == expected_tool
 
 
+from openhands.core.message import Message, TextContent
+from litellm import ChatCompletionMessageToolCall
+import pytest
+
+
 def test_serializer_function_calling_disabled_with_tool_calls():
     """Test serialization with function calling disabled, assistant calling a tool, and tool responding."""
     # Create a tool call from the assistant
@@ -427,16 +428,12 @@ def test_serializer_function_calling_disabled_with_tool_calls():
             'id': 'tool-call-456',
             'name': 'execute_ipython_cell',
             'arguments': '{"code": "print(\\"Hello World\\")"}',
-        },
+        }
     )
 
     assistant_message = Message(
         role='assistant',
-        content=[
-            TextContent(
-                text='Executing your Python code.', type='text', cache_prompt=False
-            )
-        ],
+        content=[TextContent(text='Executing your Python code.', type='text', cache_prompt=False)],
         cache_enabled=False,
         vision_enabled=False,
         function_calling_enabled=False,
@@ -446,9 +443,7 @@ def test_serializer_function_calling_disabled_with_tool_calls():
     # Create a tool response message
     tool_response = Message(
         role='tool',
-        content=[
-            TextContent(text='Hello World', type='text')
-        ],  # Tool response content can be empty or have relevant data
+        content=[TextContent(text='Hello World', type='text')],  # Tool response content can be empty or have relevant data
         cache_enabled=False,
         vision_enabled=False,
         function_calling_enabled=False,
@@ -473,9 +468,7 @@ def test_serializer_function_calling_disabled_with_tool_calls():
         'content': expected_assistant_content,
     }
 
-    assert (
-        serialized_assistant == expected_assistant
-    ), f'Serialized assistant message does not match expected output.\nSerialized: {serialized_assistant}\nExpected: {expected_assistant}'
+    assert serialized_assistant == expected_assistant, f"Serialized assistant message does not match expected output.\nSerialized: {serialized_assistant}\nExpected: {expected_assistant}"
 
     # Serialize tool response message
     serialized_tool = tool_response.serialize_model()
@@ -486,6 +479,100 @@ def test_serializer_function_calling_disabled_with_tool_calls():
         'content': 'Hello World',
     }
 
-    assert (
-        serialized_tool == expected_tool
-    ), f'Serialized tool message does not match expected output.\nSerialized: {serialized_tool}\nExpected: {expected_tool}'
+    assert serialized_tool == expected_tool, f"Serialized tool message does not match expected output.\nSerialized: {serialized_tool}\nExpected: {expected_tool}"
+
+
+def test_tool_call_native_serialization():
+    """Test serialization of tool calls with native function calling"""
+    tool_call = ChatCompletionMessageToolCall(
+        id="call-123",
+        type="function",
+        function={
+            'name': 'execute_bash',
+            'arguments': '{"command": "ls -la"}'
+        }
+    )
+    message = Message(
+        role="assistant",
+        content=[],  # Empty content for tool calls
+        tool_calls=[tool_call],
+        function_calling_enabled=True
+    )
+    serialized = message.serialize_model()
+    
+    expected = {
+        'role': 'assistant',
+        'content': None,  # null content as per API
+        'tool_calls': [{
+            'id': 'call-123',
+            'type': 'function',
+            'function': {
+                'name': 'execute_bash',
+                'arguments': '{"command": "ls -la"}'
+            }
+        }]
+    }
+    
+    assert serialized == expected
+
+def test_tool_call_string_serialization():
+    """Test serialization of tool calls with string format"""
+    tool_call = ToolCallContent(
+        function_name="execute_bash",
+        function_arguments='{"command": "ls -la"}',
+        tool_call_id="call-123"
+    )
+    message = Message(
+        role="assistant",
+        content=[tool_call],
+        function_calling_enabled=False
+    )
+    serialized = message.serialize_model()
+    
+    expected = {
+        'role': 'assistant',
+        'content': '<function=execute_bash>\n<parameter=command>ls -la</parameter>\n</function>'
+    }
+    
+    assert serialized == expected
+
+def test_tool_response_native_serialization():
+    """Test serialization of tool responses with native function calling"""
+    message = Message(
+        role="tool",
+        content=[TextContent(text="total 0\ndrwxr-xr-x  3 user  group   96 Mar 17 10:00 .")],
+        tool_call_id="call-123",
+        name="execute_bash",
+        function_calling_enabled=True
+    )
+    serialized = message.serialize_model()
+    
+    expected = {
+        'role': 'tool',
+        'content': 'total 0\ndrwxr-xr-x  3 user  group   96 Mar 17 10:00 .',
+        'tool_call_id': 'call-123',
+        'name': 'execute_bash'
+    }
+    
+    assert serialized == expected
+
+def test_tool_response_string_serialization():
+    """Test serialization of tool responses with string format"""
+    tool_response = ToolResponseContent(
+        tool_call_id="call-123",
+        name="execute_bash",
+        content="total 0\ndrwxr-xr-x  3 user  group   96 Mar 17 10:00 ."
+    )
+    message = Message(
+        role="tool",
+        content=[tool_response],
+        function_calling_enabled=False
+    )
+    serialized = message.serialize_model()
+    
+    expected = {
+        'role': 'tool',
+        'content': 'EXECUTION RESULT of [execute_bash]:\ntotal 0\ndrwxr-xr-x  3 user  group   96 Mar 17 10:00 .'
+    }
+    
+    assert serialized == expected
