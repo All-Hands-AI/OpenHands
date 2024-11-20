@@ -91,7 +91,6 @@ class BashSession:
         self.NO_CHANGE_TIMEOUT_SECONDS = no_change_timeout_seconds
 
         self.server = libtmux.Server()
-        self.server.cmd('set-option', '-g', 'history-limit', '999999999')
         window_command = '/bin/bash'
         if username:
             window_command = f'su {username}'
@@ -103,9 +102,20 @@ class BashSession:
             window_command=window_command,
             start_directory=work_dir,
             kill_session=True,
+            x=1000,
+            y=1000,
         )
-        self.pane = self.session.attached_window.attached_pane
-        self.pane.resize(height=1000, width=1000)
+        # https://unix.stackexchange.com/questions/43414/unlimited-history-in-tmux
+        _history_limit = 999999999
+        self.session.set_option('history-limit', str(_history_limit), _global=True)
+        self.session.history_limit = _history_limit
+
+        # We need to create a new pane because the initial pane's history limit is (default) 2000
+        _initial_window = self.session.attached_window
+        self.window = self.session.new_window(window_shell=window_command)
+        self.pane = self.window.attached_pane
+        logger.debug(f'pane: {self.pane}; history_limit: {self.session.history_limit}')
+        _initial_window.kill_window()
 
         # Configure bash to use simple PS1 and disable PS2
         self.pane.send_keys(

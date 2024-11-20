@@ -575,12 +575,45 @@ def test_long_output(temp_dir, runtime_cls, run_as_openhands):
     runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Generate a long output
-        action = CmdRunAction('for i in $(seq 1 10000); do echo "Line $i"; done')
+        action = CmdRunAction('for i in $(seq 1 100000); do echo "Line $i"; done')
         action.timeout = 5
         obs = runtime.run_action(action)
         assert obs.exit_code == 0
         assert 'Line 1' in obs.content
-        assert 'Line 10000' in obs.content
+        assert 'Line 100000' in obs.content
+    finally:
+        _close_test_runtime(runtime)
+
+
+def test_long_output_from_nested_directories(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        # Create nested directories with many files
+        setup_cmd = """
+            cd /workspace && mkdir -p test_dir && cd test_dir && \
+            for i in $(seq 1 100); do \
+                mkdir -p "folder_$i" && \
+                for j in $(seq 1 100); do \
+                    touch "folder_$i/file_$j.txt" \
+                done \
+            done
+        """
+        setup_action = CmdRunAction(setup_cmd)
+        setup_action.timeout = 10
+        obs = runtime.run_action(setup_action)
+        assert obs.exit_code == 0
+
+        # List the directory structure recursively
+        action = CmdRunAction('ls -R /workspace/test_dir')
+        action.timeout = 10
+        obs = runtime.run_action(action)
+        assert obs.exit_code == 0
+
+        # Verify output contains expected files
+        assert 'folder_1' in obs.content
+        assert 'file_1.txt' in obs.content
+        assert 'folder_100' in obs.content
+        assert 'file_100.txt' in obs.content
     finally:
         _close_test_runtime(runtime)
 

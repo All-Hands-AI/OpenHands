@@ -311,10 +311,12 @@ def test_long_output():
     session = BashSession(work_dir=os.getcwd())
 
     # Generate a long output that may exceed buffer size
-    obs = session.execute(CmdRunAction('for i in {1..10000}; do echo "Line $i"; done'))
+    obs = session.execute(
+        CmdRunAction('for i in {1..1000000}; do echo "Line $i"; done')
+    )
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'Line 1' in obs.content
-    assert 'Line 10000' in obs.content
+    assert 'Line 1000000' in obs.content
     assert obs.metadata.exit_code == 0
     assert obs.metadata.prefix == ''
     assert obs.metadata.suffix == '\n\n[The command completed with exit code 0.]'
