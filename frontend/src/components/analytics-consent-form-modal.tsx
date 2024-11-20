@@ -1,4 +1,3 @@
-import { useFetcher } from "@remix-run/react";
 import { ModalBackdrop } from "./modals/modal-backdrop";
 import ModalBody from "./modals/ModalBody";
 import ModalButton from "./buttons/ModalButton";
@@ -6,16 +5,23 @@ import {
   BaseModalTitle,
   BaseModalDescription,
 } from "./modals/confirmation-modals/BaseModal";
+import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 
 export function AnalyticsConsentFormModal() {
-  const fetcher = useFetcher({ key: "set-consent" });
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const analytics = formData.get("analytics") === "on";
+
+    handleCaptureConsent(analytics);
+    localStorage.setItem("analytics-consent", analytics.toString());
+  };
 
   return (
     <ModalBackdrop>
-      <fetcher.Form
+      <form
         data-testid="user-capture-consent-form"
-        method="POST"
-        action="/set-consent"
+        onSubmit={handleSubmit}
         className="flex flex-col gap-2"
       >
         <ModalBody>
@@ -37,7 +43,7 @@ export function AnalyticsConsentFormModal() {
             className="bg-primary text-white w-full hover:opacity-80"
           />
         </ModalBody>
-      </fetcher.Form>
+      </form>
     </ModalBackdrop>
   );
 }

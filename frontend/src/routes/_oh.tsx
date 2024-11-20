@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  defer,
   useRouteError,
   isRouteErrorResponse,
   useNavigation,
@@ -19,7 +18,7 @@ import { LoadingSpinner } from "#/components/modals/LoadingProject";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { UserActions } from "#/components/user-actions";
 import i18n from "#/i18n";
-import { getSettings, settingsAreUpToDate } from "#/services/settings";
+import { getSettings } from "#/services/settings";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import NewProjectIcon from "#/icons/new-project.svg?react";
 import DocsIcon from "#/icons/docs.svg?react";
@@ -31,37 +30,7 @@ import AgentState from "#/types/AgentState";
 import { useConfig } from "#/hooks/query/use-config";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
-import { getGitHubToken, getToken } from "#/services/auth";
-import { handleCaptureConsent } from "#/utils/handle-capture-consent";
-
-const getAnalyticsConsent = () => localStorage.getItem("analytics-consent");
-
-export const clientLoader = async () => {
-  let token = getToken();
-  const ghToken = getGitHubToken();
-  const analyticsConsent = getAnalyticsConsent();
-  const userConsents = analyticsConsent === "true";
-
-  handleCaptureConsent(userConsents);
-
-  const settings = getSettings();
-  await i18n.changeLanguage(settings.LANGUAGE);
-
-  const settingsIsUpdated = settingsAreUpToDate();
-  if (!settingsIsUpdated) {
-    localStorage.removeItem("token");
-    token = null;
-  }
-
-  // Store the results in cache
-  return defer({
-    token,
-    ghToken,
-    settingsIsUpdated,
-    settings,
-    analyticsConsent,
-  });
-};
+import { getToken } from "#/services/auth";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -110,7 +79,7 @@ export default function MainApp() {
     ghToken: null,
     settingsIsUpdated: false,
     settings: getSettings(),
-    analyticsConsent: null,
+    analyticsConsent: localStorage.getItem("analytics-consent"),
   };
 
   const logoutFetcher = useFetcher({ key: "logout" });
@@ -139,6 +108,17 @@ export default function MainApp() {
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
   });
+
+  React.useEffect(() => {
+    if (!isAuthed) localStorage.removeItem("token");
+  }, [isAuthed]);
+
+  React.useEffect(() => {
+    // i18n.language
+    if (settings.LANGUAGE) {
+      i18n.changeLanguage(settings.LANGUAGE);
+    }
+  }, [settings.LANGUAGE]);
 
   React.useEffect(() => {
     // If the github token is invalid, open the account settings modal again
