@@ -115,8 +115,7 @@ class ToolResponseContent(Content):
 
     @model_serializer
     def serialize_model(self):
-        # Tool responses are always serialized at the message level
-        # with tool_call_id and name
+        # TODO: is this correct?
         return {
             'type': self.type,
             'content': self.content,
@@ -286,27 +285,41 @@ class Message(BaseModel):
 
             # Handle system messages
             if role == 'system':
+                # Create a Message with the system prompt suffix
+                content_list = []
                 if isinstance(content, str):
-                    content += system_prompt_suffix
+                    content_list.append(TextContent(text=content + system_prompt_suffix))
                 elif isinstance(content, list):
-                    if content and content[-1]['type'] == 'text':
-                        content[-1]['text'] += system_prompt_suffix
-                    else:
-                        content.append({'type': 'text', 'text': system_prompt_suffix})
-                converted_messages.append({'role': 'system', 'content': content})
+                    content_list.extend(
+                        TextContent(text=item['text']) if item['type'] == 'text' else ImageContent(image_urls=[item['image_url']['url']])
+                        for item in content
+                    )
+                    content_list.append(TextContent(text=system_prompt_suffix))
+                converted_messages.append(Message(
+                    role='system',
+                    content=content_list,
+                    function_calling_enabled=False
+                ).model_dump())
                 continue
 
             # Handle first user message - add in-context learning example
             if role == 'user' and not first_user_message_encountered:
                 first_user_message_encountered = True
+                content_list = []
                 if isinstance(content, str):
-                    content = IN_CONTEXT_LEARNING_EXAMPLE_PREFIX + content + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
+                    content_list.append(TextContent(text=IN_CONTEXT_LEARNING_EXAMPLE_PREFIX + content + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX))
                 elif isinstance(content, list):
-                    if content and content[0]['type'] == 'text':
-                        content[0]['text'] = IN_CONTEXT_LEARNING_EXAMPLE_PREFIX + content[0]['text'] + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
-                    else:
-                        content = [{'type': 'text', 'text': IN_CONTEXT_LEARNING_EXAMPLE_PREFIX}] + content + [{'type': 'text', 'text': IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX}]
-                converted_messages.append({'role': 'user', 'content': content})
+                    content_list.append(TextContent(text=IN_CONTEXT_LEARNING_EXAMPLE_PREFIX))
+                    content_list.extend(
+                        TextContent(text=item['text']) if item['type'] == 'text' else ImageContent(image_urls=[item['image_url']['url']])
+                        for item in content
+                    )
+                    content_list.append(TextContent(text=IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX))
+                converted_messages.append(Message(
+                    role='user',
+                    content=content_list,
+                    function_calling_enabled=False
+                ).model_dump())
                 continue
 
             # Handle tool calls
@@ -315,34 +328,33 @@ class Message(BaseModel):
                 if len(tool_calls) != 1:
                     raise ValueError(f'Expected exactly one tool call, got {len(tool_calls)}')
                 
-                # Create a Message with both text and tool call content
-                content = []
+                content_list = []
                 if message.get('content'):
-                    content.append(TextContent(text=message['content']))
-                content.append(ToolCallContent(
+                    content_list.append(TextContent(text=message['content']))
+                content_list.append(ToolCallContent(
                     function_name=tool_calls[0]['function']['name'],
                     function_arguments=tool_calls[0]['function']['arguments'],
                     tool_call_id=tool_calls[0]['id']
                 ))
                 converted_messages.append(Message(
                     role='assistant',
-                    content=content,
+                    content=content_list,
                     function_calling_enabled=False
                 ).model_dump())
                 continue
 
             # Handle tool responses
             if role == 'tool':
-                content = [
+                content_list = [
                     ToolResponseContent(
                         tool_call_id=message['tool_call_id'],
-                        name=message['name'],
+                        name=message.get('name', 'function'),
                         content=message['content']
                     )
                 ]
                 converted_messages.append(Message(
                     role='tool',
-                    content=content,
+                    content=content_list,
                     function_calling_enabled=False
                 ).model_dump())
                 continue
