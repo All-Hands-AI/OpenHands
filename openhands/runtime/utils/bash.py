@@ -112,7 +112,10 @@ class BashSession:
 
         # We need to create a new pane because the initial pane's history limit is (default) 2000
         _initial_window = self.session.attached_window
-        self.window = self.session.new_window(window_shell=window_command)
+        self.window = self.session.new_window(
+            window_shell=window_command,
+            start_directory=work_dir,
+        )
         self.pane = self.window.attached_pane
         logger.debug(f'pane: {self.pane}; history_limit: {self.session.history_limit}')
         _initial_window.kill_window()
@@ -148,7 +151,7 @@ class BashSession:
     def _clear_screen(self):
         """Clear the tmux pane screen and history."""
         self.pane.send_keys('C-l', enter=False)
-        time.sleep(0.1)
+        self.pane.reset()
         self.pane.cmd('clear-history')
 
     def _get_pane_content(self, full: bool = False) -> str:
