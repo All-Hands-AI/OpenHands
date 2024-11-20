@@ -1,6 +1,6 @@
 # Commit0 Evaluation with OpenHands
 
-Step 1: git clone https://github.com/commit-0/commit0.git evaluation/commit0_bench/commit0
+Step 1: `git clone https://github.com/commit-0/commit0.git evaluation/commit0_bench/commit0`
 
 Step 2: adding `commit0 = { path = "evaluation/commit0_bench/commit0" }` to pyproject.toml
 

@@ -10,7 +10,7 @@ import toml
 from datasets import load_dataset
 
 import openhands.agenthub
-from evaluation.swe_bench.prompt import CODEACT_SWE_PROMPT
+from evaluation.commit0_bench.prompt import CODEACT_COMMIT0_PROMPT
 from evaluation.utils.shared import (
     EvalException,
     EvalMetadata,
@@ -122,7 +122,7 @@ def get_config(
 ) -> AppConfig:
     # COMMIT0_CONTAINER_IMAGE = 'wentingzhao/'
     assert USE_INSTANCE_IMAGE
-    # We use a different instance image for the each instance of swe-bench eval
+    # We use a different instance image for the each instance of commit0 eval
     base_container_image = get_instance_docker_image(instance['instance_id'])
     logger.info(
         f'Using instance container image: {base_container_image}. '
@@ -304,12 +304,12 @@ def process_instance(
         ):
             raise EvalException('Fatal error detected: ' + state.last_error)
 
-        # ======= THIS IS SWE-Bench specific =======
+        # ======= THIS IS Commit0 specific =======
         # Get git patch
         return_val = complete_runtime(runtime, instance)
-        git_patch = return_val['git_patch']
+        eval_result = return_val['eval_result']
         logger.info(
-            f'Got git diff for instance {instance.instance_id}:\n--------\n{git_patch}\n--------'
+            f'Got evaluation result for repo {instance.instance_id}:\n--------\n{eval_result}\n--------'
         )
     finally:
         runtime.close()
@@ -319,7 +319,7 @@ def process_instance(
     # we use eval_infer.sh to evaluate the agent's edits, not here
     # because the agent may alter the environment / testcases
     test_result = {
-        'git_patch': git_patch,
+        'eval_result': eval_result,
     }
 
     # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
@@ -335,7 +335,7 @@ def process_instance(
     output = EvalOutput(
         instance_id=instance.instance_id,
         instruction=instruction,
-        instance=instance.to_dict(),  # SWE Bench specific
+        instance=instance.to_dict(), 
         test_result=test_result,
         metadata=metadata,
         history=histories,
@@ -365,6 +365,15 @@ def commit0_setup(dataset: pd.DataFrame, repo_split: str, base_dir: str, commit0
     # Replace all forward slashes in instance_id with hyphens
     filtered_dataset['instance_id'] = filtered_dataset['instance_id'].str.replace('/', '-')
 
+    # Checkout openhands branch for each repo
+    for repo in SPLIT.get(repo_split, []):
+        repo_path = os.path.join(base_dir, repo)
+        if os.path.exists(repo_path):
+            logger.info(f'Checking out openhands branch for {repo}')
+            os.system(f'cd {repo_path} && git checkout -b openhands')
+        else:
+            raise ValueError(f'Repo {repo} does not exist in {base_dir}')
+        
     return filtered_dataset
 
 
