@@ -1,4 +1,5 @@
 #!/bin/bash
+# args: <custom_base_image> <custom_image_tag>
 
 set -euo pipefail
 

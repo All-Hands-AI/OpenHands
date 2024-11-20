@@ -14,7 +14,7 @@ services:
       poetry run
       python -u -m openhands.runtime.action_execution_server 3000
       --working-dir /workspace
-      --plugins agent_skills jupyter
+      --plugins agent_skills jupyter vscode
       --username openhands
     # the publicly exposed port 8000 must match the port in remote_runtime_api_url defined in the config.toml
     ports:

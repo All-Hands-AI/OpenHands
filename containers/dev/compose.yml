@@ -15,7 +15,7 @@ services:
       - SANDBOX_USER_ID=${SANDBOX_USER_ID:-1234}
       - WORKSPACE_MOUNT_PATH=${WORKSPACE_BASE:-$PWD/workspace}
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -29,6 +29,7 @@ services:
       - $HOME/.npmrc:/root/.npmrc:ro
       # cache
       - cache-data:/root/.cache
+      - venv-data:/app/.venv
     pull_policy: never
     stdin_open: true
     tty: true
@@ -36,3 +37,4 @@ services:
 ##
 volumes:
   cache-data:
+  venv-data:

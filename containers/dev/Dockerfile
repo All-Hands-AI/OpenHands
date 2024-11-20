@@ -106,18 +106,13 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# cache build dependencies
+#
 RUN \
-  --mount=type=bind,source=./,target=/app/ \
+  --mount=type=bind,rw,source=./,target=/app/ \
   <<EOF
 #!/bin/bash
 make -s clean
 make -s check-dependencies
-make -s install-python-dependencies
-
-# NOTE
-# node_modules are .dockerignore-d therefore not mountable
-# make -s install-frontend-dependencies
 EOF
 
 #

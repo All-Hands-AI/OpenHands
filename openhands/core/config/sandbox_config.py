@@ -32,8 +32,8 @@ class SandboxConfig:
         browsergym_eval_env: The BrowserGym environment to use for evaluation.
             Default is None for general purpose browsing. Check evaluation/miniwob and evaluation/webarena for examples.
         platform: The platform on which the image should be built. Default is None.
-        container_name: The name of the container. Default is None.
-        docker_url: The URL for the Docker daemon. Default is unix:///var/run/docker.sock.
+        container_name: The name of the container.
+        docker_endpoint: The context endpoint for the sandbox Docker daemon.
     """
 
     remote_runtime_api_url: str = 'http://localhost:8000'
@@ -56,7 +56,7 @@ class SandboxConfig:
     browsergym_eval_env: str | None = None
     platform: str | None = None
     container_name: str | None = None
-    docker_url: str | None = None
+    docker_endpoint: str | None = None
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""

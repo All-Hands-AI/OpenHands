@@ -10,8 +10,14 @@ services:
       - SANDBOX_RUNTIME_CONTAINER_IMAGE=${SANDBOX_RUNTIME_CONTAINER_IMAGE:-ghcr.io/all-hands-ai/runtime:0.14-nikolaik}
       - SANDBOX_USER_ID=${SANDBOX_USER_ID:-1234}
       - WORKSPACE_MOUNT_PATH=${WORKSPACE_BASE:-$PWD/workspace}
+      #
+      - LOG_ALL_EVENTS=true
+      # See containers/custom-sandbox/README.md
+      - SANDBOX_REMOTE_RUNTIME_API_URL=http://host.docker.internal:8000/
+      - SANDBOX_CONTAINER_NAME=${SANDBOX_CONTAINER_NAME:-}
+      - SANDBOX_DOCKER_ENDPOINT=${SANDBOX_DOCKER_ENDPOINT:-}
     ports:
-      - "3000:3000"
+      - "${FRONTEND_PORT:-3000}:3000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

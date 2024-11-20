@@ -171,8 +171,9 @@ class EventStreamRuntime(Runtime):
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.session = requests.Session()
         self.status_callback = status_callback
-
-        self.docker_client: docker.DockerClient = self._init_docker_client()
+        self.docker_client: docker.DockerClient = self._init_docker_client(
+            self.config.sandbox.docker_endpoint
+        )
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
         self.container_name = CONTAINER_NAME_PREFIX + sid
@@ -189,6 +190,14 @@ class EventStreamRuntime(Runtime):
                 'debug',
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
             )
+
+        # if docker context endpoint is set, custom sandbox is assumed.
+        if self.config.sandbox.docker_endpoint:
+            attach_to_existing = True
+            self.api_url = self.config.sandbox.remote_runtime_api_url
+            if not self.config.sandbox.container_name:
+                raise ValueError('sandbox container_name cannot be None')
+            self.container_name = self.config.sandbox.container_name
 
         self.init_base_runtime(
             config,
@@ -259,8 +268,10 @@ class EventStreamRuntime(Runtime):
 
     @staticmethod
     @lru_cache(maxsize=1)
-    def _init_docker_client() -> docker.DockerClient:
+    def _init_docker_client(docker_endpoint: str | None) -> docker.DockerClient:
         try:
+            if docker_endpoint:
+                return docker.DockerClient(docker_endpoint)
             return docker.from_env()
         except Exception as ex:
             logger.error(
@@ -391,6 +402,14 @@ class EventStreamRuntime(Runtime):
     def _attach_to_container(self):
         self._container_port = 0
         self.container = self.docker_client.containers.get(self.container_name)
+
+        if self.config.sandbox.docker_endpoint:
+            self.log(
+                'debug',
+                f'attached to sandbox: {self.container_name} {self.api_url}',
+            )
+            return
+
         for port in self.container.attrs['NetworkSettings']['Ports']:  # type: ignore
             self._container_port = int(port.split('/')[0])
             break

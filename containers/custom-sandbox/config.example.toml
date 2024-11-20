@@ -1,10 +1,11 @@
 [core]
-runtime="docker"
 
 [sandbox]
-container_name="custom-sandbox"
-remote_runtime_api_url="http://host.docker.internal:8000/"
-
-docker_url="unix:///var/run/docker.sock"
+# http://<host>:<published sandbox port>/
+remote_runtime_api_url = "http://host.docker.internal:8000/"
+# <sandbox container_name>
+container_name = "custom-sandbox"
+# docker context endpoint
+docker_endpoint = "unix:///var/run/docker.sock"
 
 ###
