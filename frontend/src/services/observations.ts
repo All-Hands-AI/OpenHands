@@ -5,7 +5,7 @@ import { ObservationMessage } from "#/types/Message";
 import { appendOutput } from "#/state/commandSlice";
 import { appendJupyterOutput } from "#/state/jupyterSlice";
 import ObservationType from "#/types/ObservationType";
-import { addAssistantMessage } from "#/state/chatSlice";
+import { addAssistantMessage, addAssistantObservation } from "#/state/chatSlice";
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {
@@ -45,5 +45,8 @@ export function handleObservationMessage(message: ObservationMessage) {
     default:
       store.dispatch(addAssistantMessage(message.message));
       break;
+  }
+  if (!message.extras?.hidden) {
+    store.dispatch(addAssistantObservation(message));
   }
 }

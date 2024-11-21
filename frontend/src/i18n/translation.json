@@ -2024,5 +2024,11 @@
   },
   "ACTION_MESSAGE$WRITE": {
     "en": "Wrote to a file"
+  },
+  "OBSERVATION_MESSAGE$RUN": {
+    "en": "Bash output"
+  },
+  "OBSERVATION_MESSAGE$RUN_IPYTHON": {
+    "en": "Jupyter output"
   }
 }
