@@ -122,6 +122,9 @@ class LLM(RetryMixin, DebugMixin):
             drop_params=self.config.drop_params,
         )
 
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            self.init_model_info()
         if self.vision_is_active():
             logger.debug('LLM: model has vision enabled')
         if self.is_caching_prompt_active():
@@ -142,16 +145,6 @@ class LLM(RetryMixin, DebugMixin):
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
         )
-
-        with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            self.init_model_info()
-        if self.vision_is_active():
-            logger.debug('LLM: model has vision enabled')
-        if self.is_caching_prompt_active():
-            logger.debug('LLM: caching prompt enabled')
-        if self.is_function_calling_active():
-            logger.debug('LLM: model supports function calling')
 
         self._completion_unwrapped = self._completion
 
@@ -341,6 +334,13 @@ class LLM(RetryMixin, DebugMixin):
             except Exception:
                 pass
         logger.debug(f'Model info: {self.model_info}')
+
+        if self.config.model.startswith('huggingface'):
+            # HF doesn't support the OpenAI default value for top_p (1)
+            logger.debug(
+                f'Setting top_p to 0.9 for Hugging Face model: {self.config.model}'
+            )
+            self.config.top_p = 0.9 if self.config.top_p == 1 else self.config.top_p
 
         # Set the max tokens in an LM-specific way if not set
         if self.config.max_input_tokens is None:
@@ -566,6 +566,7 @@ class LLM(RetryMixin, DebugMixin):
         for message in messages:
             message.cache_enabled = self.is_caching_prompt_active()
             message.vision_enabled = self.vision_is_active()
+            message.function_calling_enabled = self.is_function_calling_active()
 
         # let pydantic handle the serialization
         return [message.model_dump() for message in messages]
