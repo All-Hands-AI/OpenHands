@@ -7,10 +7,10 @@ Contributors from different backgrounds and interests can choose to contribute t
 
 ## Constructing an Agent
 
-The abstraction for an agent can be found [here](../openhands/controller/agent.py).
+The abstraction for an agent can be found [here](../controller/agent.py).
 
 Agents are run inside of a loop. At each iteration, `agent.step()` is called with a
-[State](../openhands/controller/state/state.py) input, and the agent must output an [Action](../openhands/events/action).
+[State](../controller/state/state.py) input, and the agent must output an [Action](../events/action).
 
 Every agent also has a `self.llm` which it can use to interact with the LLM configured by the user.
 See the [LiteLLM docs for `self.llm.completion`](https://docs.litellm.ai/docs/completion).
@@ -46,17 +46,17 @@ The agent can add and modify subtasks through the `AddTaskAction` and `ModifyTas
 
 Here is a list of available Actions, which can be returned by `agent.step()`:
 
-- [`CmdRunAction`](../openhands/events/action/commands.py) - Runs a command inside a sandboxed terminal
-- [`IPythonRunCellAction`](../openhands/events/action/commands.py) - Execute a block of Python code interactively (in Jupyter notebook) and receives `CmdOutputObservation`. Requires setting up `jupyter` [plugin](../openhands/runtime/plugins) as a requirement.
-- [`FileReadAction`](../openhands/events/action/files.py) - Reads the content of a file
-- [`FileWriteAction`](../openhands/events/action/files.py) - Writes new content to a file
-- [`BrowseURLAction`](../openhands/events/action/browse.py) - Gets the content of a URL
-- [`AddTaskAction`](../openhands/events/action/tasks.py) - Adds a subtask to the plan
-- [`ModifyTaskAction`](../openhands/events/action/tasks.py) - Changes the state of a subtask.
-- [`AgentFinishAction`](../openhands/events/action/agent.py) - Stops the control loop, allowing the user/delegator agent to enter a new task
-- [`AgentRejectAction`](../openhands/events/action/agent.py) - Stops the control loop, allowing the user/delegator agent to enter a new task
-- [`AgentFinishAction`](../openhands/events/action/agent.py) - Stops the control loop, allowing the user to enter a new task
-- [`MessageAction`](../openhands/events/action/message.py) - Represents a message from an agent or the user
+- [`CmdRunAction`](../events/action/commands.py) - Runs a command inside a sandboxed terminal
+- [`IPythonRunCellAction`](../events/action/commands.py) - Execute a block of Python code interactively (in Jupyter notebook) and receives `CmdOutputObservation`. Requires setting up `jupyter` [plugin](../runtime/plugins) as a requirement.
+- [`FileReadAction`](../events/action/files.py) - Reads the content of a file
+- [`FileWriteAction`](../events/action/files.py) - Writes new content to a file
+- [`BrowseURLAction`](../events/action/browse.py) - Gets the content of a URL
+- [`AddTaskAction`](../events/action/tasks.py) - Adds a subtask to the plan
+- [`ModifyTaskAction`](../events/action/tasks.py) - Changes the state of a subtask.
+- [`AgentFinishAction`](../events/action/agent.py) - Stops the control loop, allowing the user/delegator agent to enter a new task
+- [`AgentRejectAction`](../events/action/agent.py) - Stops the control loop, allowing the user/delegator agent to enter a new task
+- [`AgentFinishAction`](../events/action/agent.py) - Stops the control loop, allowing the user to enter a new task
+- [`MessageAction`](../events/action/message.py) - Represents a message from an agent or the user
 
 To serialize and deserialize an action, you can use:
 - `action.to_dict()` to serialize the action to a dictionary to be sent to the UI, including a user-friendly string representation of the message
@@ -70,12 +70,12 @@ But they may also appear as a result of asynchronous events (e.g. a message from
 
 Here is a list of available Observations:
 
-- [`CmdOutputObservation`](../openhands/events/observation/commands.py)
-- [`BrowserOutputObservation`](../openhands/events/observation/browse.py)
-- [`FileReadObservation`](../openhands/events/observation/files.py)
-- [`FileWriteObservation`](../openhands/events/observation/files.py)
-- [`ErrorObservation`](../openhands/events/observation/error.py)
-- [`SuccessObservation`](../openhands/events/observation/success.py)
+- [`CmdOutputObservation`](../events/observation/commands.py)
+- [`BrowserOutputObservation`](../events/observation/browse.py)
+- [`FileReadObservation`](../events/observation/files.py)
+- [`FileWriteObservation`](../events/observation/files.py)
+- [`ErrorObservation`](../events/observation/error.py)
+- [`SuccessObservation`](../events/observation/success.py)
 
 You can use `observation.to_dict()` and `observation_from_dict` to serialize and deserialize observations.
 

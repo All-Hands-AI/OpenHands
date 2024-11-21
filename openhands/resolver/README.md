@@ -15,6 +15,8 @@ Follow these steps to use this workflow in your own repository:
 
 1. [Create a personal access token](https://github.com/settings/tokens?type=beta) with read/write scope for "contents", "issues", "pull requests", and "workflows"
 
+   Note: If you're working with an organizational repository, you may need to configure the organization's personal access token policy first. See [Setting a personal access token policy for your organization](https://docs.github.com/en/organizations/managing-programmatic-access-to-your-organization/setting-a-personal-access-token-policy-for-your-organization) for details.
+
 2. Create an API key for the [Claude API](https://www.anthropic.com/api) (recommended) or another supported LLM service
 
 3. Copy `examples/openhands-resolver.yml` to your repository's `.github/workflows/` directory
@@ -83,11 +85,14 @@ pip install openhands-ai
 3. Set up environment variables:
 
 ```bash
+
 # GitHub credentials
+
 export GITHUB_TOKEN="your-github-token"
 export GITHUB_USERNAME="your-github-username"  # Optional, defaults to token owner
 
 # LLM configuration
+
 export LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"  # Recommended
 export LLM_API_KEY="your-llm-api-key"
 export LLM_BASE_URL="your-api-url"  # Optional, for API proxies

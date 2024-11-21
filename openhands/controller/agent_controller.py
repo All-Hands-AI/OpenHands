@@ -12,11 +12,13 @@ from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.exceptions import (
+    FunctionCallNotExistsError,
     FunctionCallValidationError,
     LLMMalformedActionError,
     LLMNoActionError,
     LLMResponseError,
 )
+from openhands.core.logger import LOG_ALL_EVENTS
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
@@ -488,6 +490,7 @@ class AgentController:
             LLMNoActionError,
             LLMResponseError,
             FunctionCallValidationError,
+            FunctionCallNotExistsError,
         ) as e:
             self.event_stream.add_event(
                 ErrorObservation(
@@ -526,8 +529,7 @@ class AgentController:
 
         await self.update_state_after_step()
 
-        # Use info level if LOG_ALL_EVENTS is set
-        log_level = 'info' if os.getenv('LOG_ALL_EVENTS') in ('true', '1') else 'debug'
+        log_level = 'info' if LOG_ALL_EVENTS else 'debug'
         self.log(log_level, str(action), extra={'msg_type': 'ACTION'})
 
     async def _delegate_step(self):

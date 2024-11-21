@@ -57,6 +57,9 @@ class Session:
                 self.websocket = None
         finally:
             self.agent_session.close()
+            del (
+                self.agent_session
+            )  # FIXME: this should not be necessary but it mitigates a memory leak
 
     async def loop_recv(self):
         try:
