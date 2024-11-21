@@ -107,7 +107,6 @@ export function ChatInterface() {
     }
   };
 
-  console.log('messages', messages);
   return (
     <div className="h-full flex flex-col justify-between">
       {messages.length === 0 && (
