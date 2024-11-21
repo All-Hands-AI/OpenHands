@@ -44,3 +44,10 @@ jobs:
           slack_text="PR $PR_URL has triggered evaluation on $EVAL_INSTANCES instances..."
           curl -X POST -H 'Content-type: application/json' --data '{"text":"'"$slack_text"'"}' \
             https://hooks.slack.com/services/${{ secrets.SLACK_TOKEN }}
+
+      - name: Comment on PR
+        uses: KeisukeYamashita/create-comment@v1
+        with:
+          unique: false
+          comment: |
+            Running evaluation on the PR. Once eval is done, the results will be posted.
