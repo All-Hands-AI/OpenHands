@@ -155,14 +155,11 @@ class Session:
                     return
         self.agent_session.event_stream.add_event(event, EventSource.USER)
 
-    async def send(self, data: dict[str, object]) -> bool:
+    async def send(self, data: dict[str, object]):
         if asyncio.get_running_loop() != self.loop:
-            # Complete hack. Server whines about different event loops. This seems to shut it up,
-            # but means we don't get the result of the operation. I think this is okay, because
-            # we don't seem to care either way
             self.loop.create_task(self._send(data))
-            return True
-        return await self._send(data)
+            return
+        await self._send(data)
 
     async def _send(self, data: dict[str, object]) -> bool:
         try:
@@ -178,16 +175,16 @@ class Session:
             self.is_alive = False
             return False
 
-    async def send_error(self, message: str) -> bool:
+    async def send_error(self, message: str):
         """Sends an error message to the client."""
-        return await self.send({'error': True, 'message': message})
+        await self.send({'error': True, 'message': message})
 
-    async def _send_status_message(self, msg_type: str, id: str, message: str) -> bool:
+    async def _send_status_message(self, msg_type: str, id: str, message: str):
         """Sends a status message to the client."""
         if msg_type == 'error':
             await self.agent_session.stop_agent_loop_for_error()
 
-        return await self.send(
+        await self.send(
             {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
         )
 

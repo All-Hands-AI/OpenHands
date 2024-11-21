@@ -110,11 +110,12 @@ class SessionManager:
     
     async def send_to_event_stream(self, connection_id: str, data: dict):
         # If there is a local session running, send to that
-        sid = self.local_connection_id_to_session_id[connection_id]
-        session = self.local_sessions_by_sid.get(sid)
-        if session:
-            await session.dispatch(data)
-            return
+        sid = self.local_connection_id_to_session_id.get(connection_id)
+        if sid:
+            session = self.local_sessions_by_sid.get(sid)
+            if session:
+                await session.dispatch(data)
+                return
         
         # If there is a remote session running, send to that
         redis_client = self._get_redis_client()
