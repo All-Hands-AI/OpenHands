@@ -62,7 +62,7 @@ class SessionManager:
                     elif message_type == "restart":
                         connection_id = data["connection_id"]
                         if self.local_connection_id_to_session_id.get(connection_id) == sid:
-                            self.init_or_join_session(sid, connection_id, data["settings"])
+                            await self.init_or_join_session(sid, connection_id, data["settings"])
             except asyncio.CancelledError:
                 return
             except:
@@ -175,14 +175,21 @@ class SessionManager:
             if redis_client:
                 key = _CONNECTION_KEY.format(sid=session.sid)
                 redis_connections = await redis_client.lrange(key, 0, -1)
+                redis_connections = [
+                    c.decode() for c in redis_connections
+                ]
                 if not redis_connections:
                     await redis_client.delete(key)
-            
+                redis_connections = [
+                    c for c in redis_connections
+                    if c not in self.local_connection_id_to_session_id
+                ]
+
             if force and redis_connections:
                 await redis_client.publish("oh_event", json.dumps({
                     "sid": session.sid,
                     "message_type": "restart",
-                    "connection_id": redis_connections[0].decode(),
+                    "connection_id": redis_connections[0],
                     "settings": session.settings,
                 }))
 
