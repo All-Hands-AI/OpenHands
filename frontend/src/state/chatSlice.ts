@@ -1,5 +1,8 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
+import { OpenHandsObservation } from "#/types/core/observations";
+import { OpenHandsAction } from "#/types/core/actions";
+
 type SliceState = { messages: Message[] };
 
 const MAX_CONTENT_LENGTH = 1000;
@@ -41,7 +44,7 @@ export const chatSlice = createSlice({
       state.messages.push(message);
     },
 
-    addAssistantAction(state, action: PayloadAction<object>) {
+    addAssistantAction(state, action: PayloadAction<OpenHandsAction>) {
       const actionID = action.payload.action;
       if (!HANDLED_ACTIONS.includes(actionID)) {
         return;
@@ -73,7 +76,10 @@ export const chatSlice = createSlice({
       state.messages.push(message);
     },
 
-    addAssistantObservation(state, observation: PayloadAction<object>) {
+    addAssistantObservation(
+      state,
+      observation: PayloadAction<OpenHandsObservation>,
+    ) {
       const observationID = observation.payload.observation;
       if (!HANDLED_ACTIONS.includes(observationID)) {
         return;
