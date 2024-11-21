@@ -13,7 +13,7 @@ from pathspec.patterns import GitWildMatchPattern
 
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
-from openhands.server.github import (
+from openhands.server.github_utils import (
     GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET,
     UserVerifier,
