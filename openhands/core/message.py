@@ -277,90 +277,33 @@ class Message(BaseModel):
         return message_dict
 
     @classmethod
-    def convert_messages_to_non_native(
-        cls, messages: list[dict], tools: list[dict]
-    ) -> list[dict]:
+    def convert_messages_to_non_native(cls, messages: list[dict], tools: list[dict]) -> list[dict]:
         """Convert a list of messages from native to non-native format.
         Used when the API doesn't support native function calling."""
-        formatted_tools = cls._tools_to_description(tools)
-        system_prompt_suffix = SYSTEM_PROMPT_SUFFIX_TEMPLATE.format(
-            description=formatted_tools
-        )
-
         converted_messages = []
         first_user_message_encountered = False
 
         for message in messages:
             role = message['role']
-            content = message.get('content', '')
 
-            # Handle system messages
+            # Handle system messages - add tools description
             if role == 'system':
-                # Create a Message with the system prompt suffix
-                content_list = []
-                if isinstance(content, str):
-                    content_list.append(
-                        TextContent(text=content + system_prompt_suffix)
-                    )
-                elif isinstance(content, list):
-                    content_list.extend(
-                        TextContent(text=item['text'])
-                        if item['type'] == 'text'
-                        else ImageContent(image_urls=[item['image_url']['url']])
-                        for item in content
-                    )
-                    content_list.append(TextContent(text=system_prompt_suffix))
-                converted_messages.append(
-                    Message(
-                        role='system',
-                        content=content_list,
-                        function_calling_enabled=False,
-                    ).model_dump()
-                )
+                converted_messages.append(cls._add_tools_description(message, tools))
                 continue
 
-            # Handle first user message - add in-context learning example
+            # Handle first user message - add in-context learning
             if role == 'user' and not first_user_message_encountered:
                 first_user_message_encountered = True
-                content_list = []
-                if isinstance(content, str):
-                    content_list.append(
-                        TextContent(
-                            text=IN_CONTEXT_LEARNING_EXAMPLE_PREFIX
-                            + content
-                            + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
-                        )
-                    )
-                elif isinstance(content, list):
-                    content_list.append(
-                        TextContent(text=IN_CONTEXT_LEARNING_EXAMPLE_PREFIX)
-                    )
-                    content_list.extend(
-                        TextContent(text=item['text'])
-                        if item['type'] == 'text'
-                        else ImageContent(image_urls=[item['image_url']['url']])
-                        for item in content
-                    )
-                    content_list.append(
-                        TextContent(text=IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX)
-                    )
-                converted_messages.append(
-                    Message(
-                        role='user',
-                        content=content_list,
-                        function_calling_enabled=False,
-                    ).model_dump()
-                )
+                converted_messages.append(cls._add_in_context_learning(message))
                 continue
 
             # Handle tool calls
             if role == 'assistant' and 'tool_calls' in message:
                 tool_calls = message['tool_calls']
                 if len(tool_calls) != 1:
-                    raise ValueError(
-                        f'Expected exactly one tool call, got {len(tool_calls)}'
-                    )
+                    raise ValueError(f'Expected exactly one tool call, got {len(tool_calls)}')
 
+                # Create Message with both text and tool call content
                 content_list = []
                 if message.get('content'):
                     content_list.append(TextContent(text=message['content']))
@@ -368,14 +311,14 @@ class Message(BaseModel):
                     ToolCallContent(
                         function_name=tool_calls[0]['function']['name'],
                         function_arguments=tool_calls[0]['function']['arguments'],
-                        tool_call_id=tool_calls[0]['id'],
+                        tool_call_id=tool_calls[0]['id']
                     )
                 )
                 converted_messages.append(
                     Message(
                         role='assistant',
                         content=content_list,
-                        function_calling_enabled=False,
+                        function_calling_enabled=False
                     ).model_dump()
                 )
                 continue
@@ -386,14 +329,14 @@ class Message(BaseModel):
                     ToolResponseContent(
                         tool_call_id=message['tool_call_id'],
                         name=message.get('name', 'function'),
-                        content=message['content'],
+                        content=message['content']
                     )
                 ]
                 converted_messages.append(
                     Message(
                         role='tool',
                         content=content_list,
-                        function_calling_enabled=False,
+                        function_calling_enabled=False
                     ).model_dump()
                 )
                 continue
@@ -468,3 +411,60 @@ class Message(BaseModel):
             ) from e
         ret += '</function>'
         return ret
+
+    @classmethod
+    def _add_tools_description(cls, message: dict, tools: list[dict]) -> dict:
+        """Add tools description to a system message."""
+        formatted_tools = cls._tools_to_description(tools)
+        system_prompt_suffix = SYSTEM_PROMPT_SUFFIX_TEMPLATE.format(description=formatted_tools)
+        
+        content = message.get('content', '')
+        content_list = []
+        
+        if isinstance(content, str):
+            content_list.append(TextContent(text=content + system_prompt_suffix))
+        elif isinstance(content, list):
+            # Convert raw dicts to Content objects - use extend for multiple items
+            content_list.extend(
+                TextContent(text=item['text'])
+                if item['type'] == 'text'
+                else ImageContent(image_urls=[item['image_url']['url']])
+                for item in content
+            )
+            # Add single suffix - use append
+            content_list.append(TextContent(text=system_prompt_suffix))
+        
+        return {
+            **message,
+            'content': content_list,
+        }
+
+    @classmethod
+    def _add_in_context_learning(cls, message: dict) -> dict:
+        """Add in-context learning example to first user message."""
+        content = message.get('content', '')
+        content_list = []
+        
+        if isinstance(content, str):
+            content_list.append(
+                TextContent(
+                    text=IN_CONTEXT_LEARNING_EXAMPLE_PREFIX + content + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
+                )
+            )
+        elif isinstance(content, list):
+            # First add the prefix
+            content_list.append(TextContent(text=IN_CONTEXT_LEARNING_EXAMPLE_PREFIX))
+            # Convert raw dicts to Content objects - use extend for multiple items
+            content_list.extend(
+                TextContent(text=item['text'])
+                if item['type'] == 'text'
+                else ImageContent(image_urls=[item['image_url']['url']])
+                for item in content
+            )
+            # Add the suffix
+            content_list.append(TextContent(text=IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX))
+        
+        return {
+            **message,
+            'content': content_list,
+        }
