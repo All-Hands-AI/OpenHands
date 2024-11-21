@@ -31,7 +31,8 @@ export function DownloadProgress({
       if (error instanceof Error && error.message === "Download cancelled") {
         onClose();
       } else {
-        console.error("Download error:", error);
+        // Let the error propagate to the parent component
+        throw error;
       }
     }
   }, [initialPath, onClose]);
@@ -47,7 +48,7 @@ export function DownloadProgress({
     let unitIndex = 0;
     while (size >= 1024 && unitIndex < units.length - 1) {
       size /= 1024;
-      unitIndex++;
+      unitIndex += 1;
     }
     return `${size.toFixed(1)} ${units[unitIndex]}`;
   };
@@ -82,6 +83,7 @@ export function DownloadProgress({
 
         <div className="mt-4 flex justify-end">
           <button
+            type="button"
             onClick={() => abortController.current.abort()}
             className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
           >
