@@ -32,7 +32,8 @@ def test_handle_nonexistent_issue_reference():
 
 
 def test_handle_rate_limit_error():
-    handler = PRHandler('test-owner', 'test-repo', 'test-token')
+    llm_config = LLMConfig(model='test', api_key='test')
+    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
     # Mock the requests.get to simulate a rate limit error
     mock_response = MagicMock()
