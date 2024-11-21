@@ -107,8 +107,6 @@ export function WsClientProvider({
     }
 
     if (!event.token) {
-      // setStatus(WsClientProviderStatus.ACTIVE);
-      // } else {
       handleAssistantMessage(event);
     }
   }
