@@ -24,12 +24,12 @@ import { isGitHubErrorReponse } from "#/api/github";
 import { base64ToBlob } from "#/utils/base64-to-blob";
 import { setCurrentAgentState } from "#/state/agentSlice";
 import AgentState from "#/types/AgentState";
-import { getSettings } from "#/services/settings";
 import { generateAgentStateChangeEvent } from "#/services/agentStateService";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 import { useAuth } from "#/context/auth-context";
 import { useEndSession } from "#/hooks/use-end-session";
+import { useUserPrefs } from "#/context/user-prefs-context";
 
 interface ServerError {
   error: boolean | string;
@@ -44,6 +44,7 @@ const isErrorObservation = (data: object): data is ErrorObservation =>
 
 export function EventHandler({ children }: React.PropsWithChildren) {
   const { setToken, gitHubToken } = useAuth();
+  const { settings } = useUserPrefs();
   const { events, status, send } = useWsClient();
   const statusRef = React.useRef<WsClientProviderStatus | null>(null);
   const runtimeActive = status === WsClientProviderStatus.ACTIVE;
@@ -69,7 +70,6 @@ export function EventHandler({ children }: React.PropsWithChildren) {
     if (user && !isGitHubErrorReponse(user)) return user.id;
     return null;
   }, [user]);
-  const userSettings = getSettings();
 
   React.useEffect(() => {
     if (!events.length) {
@@ -184,10 +184,10 @@ export function EventHandler({ children }: React.PropsWithChildren) {
   }, [runtimeActive, importedProjectZip]);
 
   React.useEffect(() => {
-    if (userSettings.LLM_API_KEY) {
+    if (settings.LLM_API_KEY) {
       posthog.capture("user_activated");
     }
-  }, [userSettings.LLM_API_KEY]);
+  }, [settings.LLM_API_KEY]);
 
   return children;
 }

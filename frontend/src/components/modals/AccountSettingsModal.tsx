@@ -10,8 +10,8 @@ import FormFieldset from "../form/FormFieldset";
 import { CustomInput } from "../form/custom-input";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
-import { saveSettings } from "#/services/settings";
 import { useAuth } from "#/context/auth-context";
+import { useUserPrefs } from "#/context/user-prefs-context";
 
 interface AccountSettingsModalProps {
   onClose: () => void;
@@ -27,6 +27,7 @@ function AccountSettingsModal({
   analyticsConsent,
 }: AccountSettingsModalProps) {
   const { gitHubToken, setGitHubToken, logout } = useAuth();
+  const { saveSettings } = useUserPrefs();
   const { t } = useTranslation();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {

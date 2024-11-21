@@ -2,7 +2,6 @@ import { useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { Outlet } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
-import { getSettings } from "#/services/settings";
 import Security from "../components/modals/security/Security";
 import { Controls } from "#/components/controls";
 import { RootState } from "#/store";
@@ -20,18 +19,17 @@ import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "#/components/event-handler";
 import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
 import { useAuth } from "#/context/auth-context";
+import { useUserPrefs } from "#/context/user-prefs-context";
 
 function App() {
   const { token, gitHubToken } = useAuth();
+  const { settings } = useUserPrefs();
 
   const dispatch = useDispatch();
 
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initalQuery,
   );
-
-  // FIXME: Bad practice - should be handled within state
-  const settings = getSettings();
 
   const { data: latestGitHubCommit } = useLatestRepoCommit({
     gitHubToken,
