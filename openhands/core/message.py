@@ -75,6 +75,7 @@ class Message(BaseModel):
         # NOTE: remove this when litellm or providers support the new API
         if self.cache_enabled or self.vision_enabled or self.function_calling_enabled:
             return self._list_serializer()
+        # some providers, like HF and Groq/llama, don't support a list here, but a single string
         return self._string_serializer()
 
     def _string_serializer(self) -> dict:
@@ -111,11 +112,6 @@ class Message(BaseModel):
             and content[0]['text'] == ''
         ):
             message_dict.pop('content')
-
-        # some providers, like HF and Groq/llama, don't support a list here, but a single string
-        # if not self.function_calling_enabled:
-        #    content_str = '\n'.join([item['text'] for item in content])
-        #    message_dict['content'] = [{'type': 'text', 'text': content_str}]
 
         if role_tool_with_prompt_caching:
             message_dict['cache_control'] = {'type': 'ephemeral'}
