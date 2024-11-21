@@ -8,7 +8,7 @@ import { RootState } from "#/store";
 import AgentState from "#/types/AgentState";
 import FileExplorer from "#/components/file-explorer/FileExplorer";
 import OpenHands from "#/api/open-hands";
-import CodeEditorCompoonent from "./code-editor-component";
+import CodeEditorComponent from "./code-editor-component";
 import { useFiles } from "#/context/files";
 import { EditorActions } from "#/components/editor-actions";
 
@@ -138,7 +138,7 @@ function CodeEditor() {
             />
           </div>
         )}
-        <CodeEditorCompoonent
+        <CodeEditorComponent
           onMount={handleEditorDidMount}
           isReadOnly={!isEditingAllowed}
         />

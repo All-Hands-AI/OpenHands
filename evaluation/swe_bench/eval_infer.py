@@ -263,23 +263,29 @@ def process_instance(
                         test_output_path = os.path.join(log_dir, 'test_output.txt')
                         with open(test_output_path, 'w') as f:
                             f.write(test_output)
-
-                        _report = get_eval_report(
-                            test_spec=test_spec,
-                            prediction={
-                                'model_patch': model_patch,
-                                'instance_id': instance_id,
-                            },
-                            log_path=test_output_path,
-                            include_tests_status=True,
-                        )
-                        report = _report[instance_id]
-                        logger.info(
-                            f"[{instance_id}] report: {report}\nResult for {instance_id}: resolved: {report['resolved']}"
-                        )
-                        instance['test_result']['report']['resolved'] = report[
-                            'resolved'
-                        ]
+                        try:
+                            _report = get_eval_report(
+                                test_spec=test_spec,
+                                prediction={
+                                    'model_patch': model_patch,
+                                    'instance_id': instance_id,
+                                },
+                                log_path=test_output_path,
+                                include_tests_status=True,
+                            )
+                            report = _report[instance_id]
+                            logger.info(
+                                f"[{instance_id}] report: {report}\nResult for {instance_id}: resolved: {report['resolved']}"
+                            )
+                            instance['test_result']['report']['resolved'] = report[
+                                'resolved'
+                            ]
+                        except Exception as e:
+                            logger.error(
+                                f'[{instance_id}] Error when getting eval report: {e}'
+                            )
+                            instance['test_result']['report']['resolved'] = False
+                            instance['test_result']['report']['error_eval'] = True
             else:
                 logger.info(f'[{instance_id}] Error when starting eval:\n{obs.content}')
                 instance['test_result']['report']['error_eval'] = True
@@ -355,7 +361,7 @@ if __name__ == '__main__':
 
     if 'model_patch' not in predictions.columns:
         predictions['model_patch'] = predictions['test_result'].apply(
-            lambda x: x['git_patch']
+            lambda x: x.get('git_patch', '')
         )
     assert {'instance_id', 'model_patch'}.issubset(
         set(predictions.columns)

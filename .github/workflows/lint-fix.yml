@@ -1,0 +1,65 @@
+name: Lint Fix
+
+on:
+  pull_request:
+    types: [labeled]
+
+jobs:
+  lint-fix:
+    if: github.event.label.name == 'lint-fix'
+    name: Fix linting issues
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Frontend lint fixes
+      - name: Install Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install --frozen-lockfile
+      - name: Fix frontend lint issues
+        run: |
+          cd frontend
+          npm run lint:fix
+
+      # Python lint fixes
+      - name: Set up python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+          cache: 'pip'
+      - name: Install pre-commit
+        run: pip install pre-commit==3.7.0
+      - name: Fix python lint issues
+        run: |
+          pre-commit run trailing-whitespace --files openhands/**/* evaluation/**/* tests/**/* --config ./dev_config/python/.pre-commit-config.yaml
+          pre-commit run end-of-file-fixer --files openhands/**/* evaluation/**/* tests/**/* --config ./dev_config/python/.pre-commit-config.yaml
+          pre-commit run pyproject-fmt --files openhands/**/* evaluation/**/* tests/**/* --config ./dev_config/python/.pre-commit-config.yaml
+          pre-commit run ruff --files openhands/**/* evaluation/**/* tests/**/* --config ./dev_config/python/.pre-commit-config.yaml
+          pre-commit run ruff-format --files openhands/**/* evaluation/**/* tests/**/* --config ./dev_config/python/.pre-commit-config.yaml
+
+      # Commit and push changes if any
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --quiet || echo "changes=true" >> $GITHUB_OUTPUT
+      - name: Commit and push if there are changes
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          git config --local user.email "openhands@all-hands.dev"
+          git config --local user.name "OpenHands Bot"
+          git add -A
+          git commit -m "🤖 Auto-fix linting issues"
+          git push
