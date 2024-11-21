@@ -111,7 +111,7 @@ The changes successfully address the feedback."""
     ]
 
     # Test the guess_success method
-    with patch('litellm.completion', return_value=mock_response):
+    with patch.object(LLM, 'completion', return_value=mock_response):
         success, success_list, explanation = handler.guess_success(issue, history)
 
         # Verify the results
@@ -160,7 +160,7 @@ The changes successfully address the review comments."""
     ]
 
     # Test the guess_success method
-    with patch('litellm.completion', return_value=mock_response):
+    with patch.object(LLM, 'completion', return_value=mock_response):
         success, success_list, explanation = handler.guess_success(issue, history)
 
         # Verify the results
