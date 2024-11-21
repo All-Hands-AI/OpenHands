@@ -36,6 +36,7 @@ class Session:
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
     config: AppConfig
+    settings: dict
 
     def __init__(
         self, sid: str, config: AppConfig, file_store: FileStore, sio: socketio.AsyncServer | None
@@ -51,12 +52,14 @@ class Session:
         )
         self.config = config
         self.loop = asyncio.get_event_loop()
+        self.settings = None
 
     def close(self):
         self.is_alive = False
         self.agent_session.close()
 
     async def initialize_agent(self, data: dict):
+        self.settings = data
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,

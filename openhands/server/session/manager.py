@@ -54,9 +54,15 @@ class SessionManager:
                 if message:
                     data = json.loads(message['data'])
                     sid = data["sid"]
-                    session = self.local_sessions_by_sid.get(sid)
-                    if session:
-                        await session.dispatch(data["data"])
+                    message_type = data["message_type"]
+                    if message_type == "event":
+                        session = self.local_sessions_by_sid.get(sid)
+                        if session:
+                            await session.dispatch(data["data"])
+                    elif message_type == "restart":
+                        connection_id = data["connection_id"]
+                        if self.local_connection_id_to_session_id.get(connection_id) == sid:
+                            self.init_or_join_session(sid, connection_id, data["settings"])
             except asyncio.CancelledError:
                 return
             except:
@@ -122,7 +128,8 @@ class SessionManager:
         if redis_client:
             await redis_client.publish("oh_event", json.dumps({
                 "sid": sid,
-                "data": data
+                "message_type": "event",
+                "data": data,
             }))
             return
         
@@ -171,6 +178,14 @@ class SessionManager:
                 if not redis_connections:
                     await redis_client.delete(key)
             
+            if force and redis_connections:
+                await redis_client.publish("oh_event", json.dumps({
+                    "sid": session.sid,
+                    "message_type": "restart",
+                    "connection_id": redis_connections[0].decode(),
+                    "settings": session.settings,
+                }))
+
             # If no connections, close session
             if force or (not has_local_connections and not redis_connections):
                 session.close()
