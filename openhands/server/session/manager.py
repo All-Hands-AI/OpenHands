@@ -1,4 +1,5 @@
 import asyncio
+import json
 import time
 from dataclasses import dataclass, field
 
@@ -26,7 +27,7 @@ class SessionManager:
     file_store: FileStore
     local_sessions_by_sid: dict[str, Session] = field(default_factory=dict)
     local_connection_id_to_session_id: dict[str, str] = field(default_factory=dict)
-    _redis_listen: bool = False
+    _redis_listen_task: asyncio.Task | None = None
 
     async def __aenter__(self):
         redis_client = self._get_redis_client()
@@ -35,7 +36,9 @@ class SessionManager:
         return self
     
     async def __aexit__(self, exc_type, exc_value, traceback):
-        self._redis_listen_task.cancel()
+        if self._redis_listen_task:
+            self._redis_listen_task.cancel()
+            self._redis_listen_task = None
 
     def _get_redis_client(self):
         redis_client = getattr(self.sio.manager, "redis", None)
@@ -48,16 +51,17 @@ class SessionManager:
         redis_client = self._get_redis_client()
         pubsub = redis_client.pubsub()
         await pubsub.subscribe("oh_event")
-        while should_continue():
-            try:
-                message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=None)
+        try:
+            while should_continue():
+                message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=5)
                 if message:
-                    sid = message["sid"]
+                    data = json.loads(message['data'])
+                    sid = data["sid"]
                     session = self.local_sessions_by_sid.get(sid)
                     if session:
-                        await session.dispatch(message["data"])
-            except asyncio.CancelledError:
-                return
+                        await session.dispatch(data)
+        except asyncio.CancelledError:
+            return
 
     async def attach_to_conversation(self, sid: str) -> Conversation | None:
         start_time = time.time()
@@ -116,10 +120,10 @@ class SessionManager:
         # If there is a remote session running, send to that
         redis_client = self._get_redis_client()
         if redis_client:
-            await redis_client.publish("oh_event", {
+            await redis_client.publish("oh_event", json.dumps({
                 "sid": sid,
                 "data": data
-            })
+            }))
             return
         
         raise RuntimeError(f'no_connected_session:{sid}')
