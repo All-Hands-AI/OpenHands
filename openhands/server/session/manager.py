@@ -167,7 +167,6 @@ class SessionManager:
                 if redis_client:
                     key = _CONNECTION_KEY.format(sid=session.sid)
                     connections_for_session = await redis_client.lrange(key, 0, -1)
-                    testy = await redis_client.get(key+"no_exist")
                     if not connections_for_session:
                         await redis_client.delete(key)
             
