@@ -19,7 +19,7 @@ interface DownloadOptions {
 async function getAllFiles(
   path: string,
   progress: DownloadProgress,
-  options?: DownloadOptions
+  options?: DownloadOptions,
 ): Promise<string[]> {
   const files: string[] = [];
   const entries = await OpenHands.getFiles(path);
@@ -48,14 +48,17 @@ async function getAllFiles(
  * @param initialPath Initial path to start downloading from. If not provided, downloads from root
  * @param options Download options including progress callback and abort signal
  */
-export async function downloadFiles(initialPath?: string, options?: DownloadOptions): Promise<void> {
+export async function downloadFiles(
+  initialPath?: string,
+  options?: DownloadOptions,
+): Promise<void> {
   const startTime = Date.now();
   const progress: DownloadProgress = {
     filesTotal: 0,
     filesDownloaded: 0,
     currentFile: "",
     totalBytesDownloaded: 0,
-    bytesDownloadedPerSecond: 0
+    bytesDownloadedPerSecond: 0,
   };
 
   try {
@@ -64,14 +67,16 @@ export async function downloadFiles(initialPath?: string, options?: DownloadOpti
 
     // Create a directory picker if the browser supports it
     let directoryHandle: FileSystemDirectoryHandle | null = null;
-    if ('showDirectoryPicker' in window) {
+    if ("showDirectoryPicker" in window) {
       try {
         directoryHandle = await window.showDirectoryPicker();
       } catch (error) {
-        if (error instanceof Error && error.name === 'AbortError') {
+        if (error instanceof Error && error.name === "AbortError") {
           throw new Error("Download cancelled");
         }
-        console.warn('Directory picker not supported or cancelled, falling back to individual downloads');
+        console.warn(
+          "Directory picker not supported or cancelled, falling back to individual downloads",
+        );
       }
     }
 
@@ -84,30 +89,37 @@ export async function downloadFiles(initialPath?: string, options?: DownloadOpti
       try {
         progress.currentFile = path;
         const content = await OpenHands.getFile(path);
-        
+
         if (directoryHandle) {
           // Save to the selected directory preserving structure
-          const pathParts = path.split('/').filter(Boolean);
+          const pathParts = path.split("/").filter(Boolean);
           let currentHandle = directoryHandle;
 
           // Create subdirectories as needed
           for (let i = 0; i < pathParts.length - 1; i++) {
-            currentHandle = await currentHandle.getDirectoryHandle(pathParts[i], { create: true });
+            currentHandle = await currentHandle.getDirectoryHandle(
+              pathParts[i],
+              { create: true },
+            );
           }
 
           // Create and write the file
           const fileName = pathParts[pathParts.length - 1];
-          const fileHandle = await currentHandle.getFileHandle(fileName, { create: true });
+          const fileHandle = await currentHandle.getFileHandle(fileName, {
+            create: true,
+          });
           const writable = await fileHandle.createWritable();
           await writable.write(content);
           await writable.close();
         } else {
           // Fallback: Download directly using <a> tag
-          const blob = new Blob([content], { type: 'application/octet-stream' });
+          const blob = new Blob([content], {
+            type: "application/octet-stream",
+          });
           const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
+          const link = document.createElement("a");
           link.href = url;
-          link.download = path.split('/').pop() || 'file';
+          link.download = path.split("/").pop() || "file";
           document.body.appendChild(link);
           link.click();
           link.parentNode?.removeChild(link);
@@ -117,7 +129,8 @@ export async function downloadFiles(initialPath?: string, options?: DownloadOpti
         // Update progress
         progress.filesDownloaded++;
         progress.totalBytesDownloaded += new Blob([content]).size;
-        progress.bytesDownloadedPerSecond = progress.totalBytesDownloaded / ((Date.now() - startTime) / 1000);
+        progress.bytesDownloadedPerSecond =
+          progress.totalBytesDownloaded / ((Date.now() - startTime) / 1000);
         options?.onProgress?.(progress);
       } catch (error) {
         console.error(`Error downloading file ${path}:`, error);

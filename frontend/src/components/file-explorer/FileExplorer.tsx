@@ -260,10 +260,7 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
         </div>
       )}
       {isDownloading && (
-        <DownloadProgress
-          initialPath=""
-          onClose={handleDownloadClose}
-        />
+        <DownloadProgress initialPath="" onClose={handleDownloadClose} />
       )}
       <div
         className={twMerge(

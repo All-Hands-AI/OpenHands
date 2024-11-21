@@ -6,13 +6,16 @@ interface DownloadProgressProps {
   onClose: () => void;
 }
 
-export function DownloadProgress({ initialPath, onClose }: DownloadProgressProps) {
+export function DownloadProgress({
+  initialPath,
+  onClose,
+}: DownloadProgressProps) {
   const [progress, setProgress] = useState({
     filesTotal: 0,
     filesDownloaded: 0,
     currentFile: "",
     totalBytesDownloaded: 0,
-    bytesDownloadedPerSecond: 0
+    bytesDownloadedPerSecond: 0,
   });
 
   const abortController = useRef(new AbortController());
@@ -21,7 +24,7 @@ export function DownloadProgress({ initialPath, onClose }: DownloadProgressProps
     try {
       await downloadFiles(initialPath, {
         onProgress: setProgress,
-        signal: abortController.current.signal
+        signal: abortController.current.signal,
       });
       onClose();
     } catch (error) {
@@ -54,15 +57,17 @@ export function DownloadProgress({ initialPath, onClose }: DownloadProgressProps
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
         <div className="mb-4">
           <h3 className="text-lg font-semibold mb-2">Downloading Files</h3>
-          <p className="text-sm text-gray-600 truncate">{progress.currentFile}</p>
+          <p className="text-sm text-gray-600 truncate">
+            {progress.currentFile}
+          </p>
         </div>
 
         <div className="mb-4">
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-blue-500 transition-all duration-300"
-              style={{ 
-                width: `${(progress.filesDownloaded / progress.filesTotal) * 100}%`
+              style={{
+                width: `${(progress.filesDownloaded / progress.filesTotal) * 100}%`,
               }}
             />
           </div>
