@@ -7,9 +7,9 @@ from litellm import ChatCompletionMessageToolCall
 from pydantic import BaseModel, Field, model_serializer
 
 from openhands.llm.fn_call_converter import (
-    SYSTEM_PROMPT_SUFFIX_TEMPLATE,
     IN_CONTEXT_LEARNING_EXAMPLE_PREFIX,
     IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX,
+    SYSTEM_PROMPT_SUFFIX_TEMPLATE,
 )
 
 
@@ -128,19 +128,19 @@ class ToolResponseContent(Content):
 
 class Message(BaseModel):
     """A message in a conversation with an LLM.
-    
+
     The message can be serialized in different formats depending on two independent factors:
-    
+
     1. Content Format (controlled by vision_enabled or cache_enabled):
        - String format: content is a simple string (when both are False)
        - List format: content is a list of typed dicts (when either is True)
-    
+
     2. Function Calling Format (controlled by function_calling_enabled):
        - Native: tool calls are at message level (when True)
        - Non-native: tool calls are in content as XML strings (when False)
-    
+
     This gives us four possible serialization formats:
-    
+
                     String Content     |    List Content
                     (no vision/cache)  |   (vision/cache)
     ----------------------------------------------------
@@ -150,14 +150,19 @@ class Message(BaseModel):
     String Function| content: "text    | content: [{type:..},
     Calling        | <function>.."    |  {type:tool_call..}]
     """
+
     role: Literal['user', 'system', 'assistant', 'tool']
-    content: list[TextContent | ImageContent | ToolCallContent | ToolResponseContent] = Field(default_factory=list)
-    
+    content: list[
+        TextContent | ImageContent | ToolCallContent | ToolResponseContent
+    ] = Field(default_factory=list)
+
     # Feature flags that control serialization format
-    cache_enabled: bool = False    # Affects content format (string vs list)
-    vision_enabled: bool = False   # Affects content format (string vs list)
-    function_calling_enabled: bool = False  # Affects function calling format (native vs non-native)
-    
+    cache_enabled: bool = False  # Affects content format (string vs list)
+    vision_enabled: bool = False  # Affects content format (string vs list)
+    function_calling_enabled: bool = (
+        False  # Affects function calling format (native vs non-native)
+    )
+
     # Tool call fields at message level, used in native function calling format
     tool_calls: list[ChatCompletionMessageToolCall] | None = None
     tool_call_id: str | None = None
@@ -170,26 +175,26 @@ class Message(BaseModel):
     @model_serializer
     def serialize_model(self) -> dict:
         """Serialize the message based on enabled features.
-        
+
         The serialization format depends on two factors:
         1. Whether we need list format for content (vision/cache)
         2. Whether we use native function calling
         """
         needs_list_format = self.cache_enabled or self.vision_enabled
-        
+
         if self.function_calling_enabled:
             return self._native_function_serializer(needs_list_format)
         return self._string_function_serializer(needs_list_format)
 
     def _string_function_serializer(self, use_list_format: bool) -> dict:
         """Serialize for non-native function calling.
-        
+
         In this format:
         - Tool calls are converted to XML-like strings
         - Content is either a string or list based on use_list_format
         """
         message_dict = {'role': self.role}
-        
+
         if use_list_format:
             # Each content item becomes a dict in the list
             content = []
@@ -212,12 +217,12 @@ class Message(BaseModel):
                     content_parts.append(item.to_string_format())
                 # Skip ImageContent in string format
             message_dict['content'] = '\n'.join(content_parts)
-        
+
         return message_dict
 
     def _native_function_serializer(self, use_list_format: bool) -> dict:
         """Serialize for native function calling.
-        
+
         In this format:
         - Tool calls use message-level fields (tool_calls, tool_call_id, name)
         - Content is either a string or list based on use_list_format
@@ -231,14 +236,16 @@ class Message(BaseModel):
         )
         if tool_call_content:
             message_dict['content'] = None  # Tool calls have null content
-            message_dict['tool_calls'] = [{
-                'id': tool_call_content.tool_call_id,
-                'type': 'function',
-                'function': {
-                    'name': tool_call_content.function_name,
-                    'arguments': tool_call_content.function_arguments
+            message_dict['tool_calls'] = [
+                {
+                    'id': tool_call_content.tool_call_id,
+                    'type': 'function',
+                    'function': {
+                        'name': tool_call_content.function_name,
+                        'arguments': tool_call_content.function_arguments,
+                    },
                 }
-            }]
+            ]
             return message_dict
 
         # Handle tool responses
@@ -270,15 +277,19 @@ class Message(BaseModel):
         return message_dict
 
     @classmethod
-    def convert_messages_to_non_native(cls, messages: list[dict], tools: list[dict]) -> list[dict]:
+    def convert_messages_to_non_native(
+        cls, messages: list[dict], tools: list[dict]
+    ) -> list[dict]:
         """Convert a list of messages from native to non-native format.
         Used when the API doesn't support native function calling."""
         formatted_tools = cls._tools_to_description(tools)
-        system_prompt_suffix = SYSTEM_PROMPT_SUFFIX_TEMPLATE.format(description=formatted_tools)
-        
+        system_prompt_suffix = SYSTEM_PROMPT_SUFFIX_TEMPLATE.format(
+            description=formatted_tools
+        )
+
         converted_messages = []
         first_user_message_encountered = False
-        
+
         for message in messages:
             role = message['role']
             content = message.get('content', '')
@@ -288,18 +299,24 @@ class Message(BaseModel):
                 # Create a Message with the system prompt suffix
                 content_list = []
                 if isinstance(content, str):
-                    content_list.append(TextContent(text=content + system_prompt_suffix))
+                    content_list.append(
+                        TextContent(text=content + system_prompt_suffix)
+                    )
                 elif isinstance(content, list):
                     content_list.extend(
-                        TextContent(text=item['text']) if item['type'] == 'text' else ImageContent(image_urls=[item['image_url']['url']])
+                        TextContent(text=item['text'])
+                        if item['type'] == 'text'
+                        else ImageContent(image_urls=[item['image_url']['url']])
                         for item in content
                     )
                     content_list.append(TextContent(text=system_prompt_suffix))
-                converted_messages.append(Message(
-                    role='system',
-                    content=content_list,
-                    function_calling_enabled=False
-                ).model_dump())
+                converted_messages.append(
+                    Message(
+                        role='system',
+                        content=content_list,
+                        function_calling_enabled=False,
+                    ).model_dump()
+                )
                 continue
 
             # Handle first user message - add in-context learning example
@@ -307,40 +324,60 @@ class Message(BaseModel):
                 first_user_message_encountered = True
                 content_list = []
                 if isinstance(content, str):
-                    content_list.append(TextContent(text=IN_CONTEXT_LEARNING_EXAMPLE_PREFIX + content + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX))
+                    content_list.append(
+                        TextContent(
+                            text=IN_CONTEXT_LEARNING_EXAMPLE_PREFIX
+                            + content
+                            + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
+                        )
+                    )
                 elif isinstance(content, list):
-                    content_list.append(TextContent(text=IN_CONTEXT_LEARNING_EXAMPLE_PREFIX))
+                    content_list.append(
+                        TextContent(text=IN_CONTEXT_LEARNING_EXAMPLE_PREFIX)
+                    )
                     content_list.extend(
-                        TextContent(text=item['text']) if item['type'] == 'text' else ImageContent(image_urls=[item['image_url']['url']])
+                        TextContent(text=item['text'])
+                        if item['type'] == 'text'
+                        else ImageContent(image_urls=[item['image_url']['url']])
                         for item in content
                     )
-                    content_list.append(TextContent(text=IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX))
-                converted_messages.append(Message(
-                    role='user',
-                    content=content_list,
-                    function_calling_enabled=False
-                ).model_dump())
+                    content_list.append(
+                        TextContent(text=IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX)
+                    )
+                converted_messages.append(
+                    Message(
+                        role='user',
+                        content=content_list,
+                        function_calling_enabled=False,
+                    ).model_dump()
+                )
                 continue
 
             # Handle tool calls
             if role == 'assistant' and 'tool_calls' in message:
                 tool_calls = message['tool_calls']
                 if len(tool_calls) != 1:
-                    raise ValueError(f'Expected exactly one tool call, got {len(tool_calls)}')
-                
+                    raise ValueError(
+                        f'Expected exactly one tool call, got {len(tool_calls)}'
+                    )
+
                 content_list = []
                 if message.get('content'):
                     content_list.append(TextContent(text=message['content']))
-                content_list.append(ToolCallContent(
-                    function_name=tool_calls[0]['function']['name'],
-                    function_arguments=tool_calls[0]['function']['arguments'],
-                    tool_call_id=tool_calls[0]['id']
-                ))
-                converted_messages.append(Message(
-                    role='assistant',
-                    content=content_list,
-                    function_calling_enabled=False
-                ).model_dump())
+                content_list.append(
+                    ToolCallContent(
+                        function_name=tool_calls[0]['function']['name'],
+                        function_arguments=tool_calls[0]['function']['arguments'],
+                        tool_call_id=tool_calls[0]['id'],
+                    )
+                )
+                converted_messages.append(
+                    Message(
+                        role='assistant',
+                        content=content_list,
+                        function_calling_enabled=False,
+                    ).model_dump()
+                )
                 continue
 
             # Handle tool responses
@@ -349,14 +386,16 @@ class Message(BaseModel):
                     ToolResponseContent(
                         tool_call_id=message['tool_call_id'],
                         name=message.get('name', 'function'),
-                        content=message['content']
+                        content=message['content'],
                     )
                 ]
-                converted_messages.append(Message(
-                    role='tool',
-                    content=content_list,
-                    function_calling_enabled=False
-                ).model_dump())
+                converted_messages.append(
+                    Message(
+                        role='tool',
+                        content=content_list,
+                        function_calling_enabled=False,
+                    ).model_dump()
+                )
                 continue
 
             # Pass through other messages unchanged

@@ -31,7 +31,6 @@ from openhands.core.message import Message
 from openhands.llm.debug_mixin import DebugMixin
 from openhands.llm.fn_call_converter import (
     STOP_WORDS,
-    convert_fncall_messages_to_non_fncall_messages,
     convert_non_fncall_messages_to_fncall_messages,
 )
 from openhands.llm.metrics import Metrics
@@ -157,7 +156,6 @@ class LLM(RetryMixin, DebugMixin):
         )
         def wrapper(*args, **kwargs):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
-
             from openhands.core.utils import json
 
             messages: list[dict[str, Any]] | dict[str, Any] = []
@@ -183,8 +181,12 @@ class LLM(RetryMixin, DebugMixin):
             original_fncall_messages = copy.deepcopy(messages)
             mock_fncall_tools = None
             if mock_function_calling:
-                assert 'tools' in kwargs, "'tools' must be in kwargs when mock_function_calling is True"
-                messages = Message.convert_messages_to_non_native(messages, kwargs['tools'])
+                assert (
+                    'tools' in kwargs
+                ), "'tools' must be in kwargs when mock_function_calling is True"
+                messages = Message.convert_messages_to_non_native(
+                    messages, kwargs['tools']
+                )
                 kwargs['messages'] = messages
                 kwargs['stop'] = STOP_WORDS
                 mock_fncall_tools = kwargs.pop('tools')
@@ -366,16 +368,16 @@ class LLM(RetryMixin, DebugMixin):
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
-    def vision_is_active(self):
+    def vision_is_active(self) -> bool:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             return not self.config.disable_vision and self._supports_vision()
 
-    def _supports_vision(self):
+    def _supports_vision(self) -> bool:
         """Acquire from litellm if model is vision capable.
 
         Returns:
-            bool: True if model is vision capable. If model is not supported by litellm, it will return False.
+            bool: True if model is vision capable. Return False if model not supported by litellm.
         """
         # litellm.supports_vision currently returns False for 'openai/gpt-...' or 'anthropic/claude-...' (with prefixes)
         # but model_info will have the correct value for some reason.
@@ -473,7 +475,7 @@ class LLM(RetryMixin, DebugMixin):
         if stats:
             logger.debug(stats)
 
-    def get_token_count(self, messages):
+    def get_token_count(self, messages) -> int:
         """Get the number of tokens in a list of messages.
 
         Args:
@@ -488,7 +490,7 @@ class LLM(RetryMixin, DebugMixin):
             # TODO: this is to limit logspam in case token count is not supported
             return 0
 
-    def _is_local(self):
+    def _is_local(self) -> bool:
         """Determines if the system is using a locally running LLM.
 
         Returns:
@@ -503,7 +505,7 @@ class LLM(RetryMixin, DebugMixin):
                 return True
         return False
 
-    def _completion_cost(self, response):
+    def _completion_cost(self, response) -> float:
         """Calculate the cost of a completion response based on the model.  Local models are treated as free.
         Add the current cost into total cost in metrics.
 
@@ -552,7 +554,7 @@ class LLM(RetryMixin, DebugMixin):
     def __repr__(self):
         return str(self)
 
-    def reset(self):
+    def reset(self) -> None:
         self.metrics.reset()
 
     def format_messages_for_llm(self, messages: Message | list[Message]) -> list[dict]:
