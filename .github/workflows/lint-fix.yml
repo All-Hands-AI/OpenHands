@@ -57,6 +57,6 @@ jobs:
         run: |
           git config --local user.email "openhands@all-hands.dev"
           git config --local user.name "OpenHands Bot"
-          git add -A
-          git commit -m "🤖 Auto-fix linting issues"
+          SKIP_PRE_COMMIT=1 git add -A
+          SKIP_PRE_COMMIT=1 git commit -m "🤖 Auto-fix linting issues"
           git push
