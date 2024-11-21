@@ -65,28 +65,6 @@ The `.openhands_instructions` file is a file that you can put in the root direct
    - How to run specific test suites
    - Any testing conventions or requirements
 
-### Best Practices
-
-1. **Environment Setup**:
-   - List all prerequisites (e.g., Node.js, Python versions)
-   - Include package manager commands (e.g., npm, poetry)
-   - Document required environment variables
-
-2. **Code Organization**:
-   - Explain the project's architecture
-   - Highlight important configuration files
-   - Note any code generation or build processes
-
-3. **Quality Standards**:
-   - Document code style requirements
-   - Specify linting and formatting tools
-   - Include pre-commit hook configurations
-
-4. **Common Operations**:
-   - List frequently used development commands
-   - Provide examples of typical workflows
-   - Include troubleshooting tips for common issues
-
 ### Example Structure
 
 ```markdown
