@@ -1,18 +1,18 @@
 {
   "version.label": {
     "message": "التالي",
-    "description": "The label for version current"
+    "description": "العلامة الخاصة بالإصدار الحالي"
   },
-  "sidebar.docsSidebar.category.🤖 Backends LLM": {
+  "sidebar.docsSidebar.category.BackendsLLM": {
     "message": "🤖 Backends LLM",
-    "description": "The label for category 🤖 Backends LLM in sidebar docsSidebar"
+    "description": "العلامة الخاصة بفئة Backends LLM في مستندات الشريط الجانبي الشريط الجانبي"
   },
-  "sidebar.docsSidebar.category.🚧 Dépannage": {
+  "sidebar.docsSidebar.category.Troubleshooting": {
     "message": "🚧 استكشاف الأخطاء وإصلاحها",
-    "description": "The label for category 🚧 Troubleshooting in sidebar docsSidebar"
+    "description": "علامة الفئة استكشاف الأخطاء وإصلاحها في مستندات الشريط الجانبي الشريط الجانبي"
   },
   "sidebar.apiSidebar.category.Backend": {
     "message": "Backend",
-    "description": "The label for category Backend in sidebar apiSidebar"
+    "description": "العلامة الخاصة بفئة Backend في واجهة برمجة تطبيقات الشريط الجانبي Sidebar"
   }
 }
