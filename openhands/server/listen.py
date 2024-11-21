@@ -107,6 +107,11 @@ app.add_middleware(
 )
 
 
+@app.get('/health')
+async def health():
+    return 'OK'
+
+
 security_scheme = HTTPBearer()
 
 
