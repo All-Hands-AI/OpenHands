@@ -55,7 +55,7 @@ class SessionManager:
                     sid = message["sid"]
                     session = self.local_sessions_by_sid.get(sid)
                     if session:
-                        session.dispatch(message["data"])
+                        await session.dispatch(message["data"])
             except asyncio.CancelledError:
                 return
 
