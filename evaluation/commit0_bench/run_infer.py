@@ -1,5 +1,8 @@
 import asyncio
+import bz2
+import json
 import os
+from collections import Counter
 from typing import Any
 
 import pandas as pd
@@ -30,10 +33,11 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
-from openhands.events.observation import CmdOutputObservation
+from openhands.events.observation import CmdOutputObservation, ErrorObservation
 from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
+from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false').lower() == 'true'
@@ -45,8 +49,19 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 }
 
 
+def get_test_ids(instance: pd.Series) -> str:
+    repo_name = instance['repo'].split('/')[1]
+    repo_name = repo_name.replace('.', '-')
+    commit0_evaluation_path = os.path.dirname(__file__)
+    bz2_file = f'{commit0_evaluation_path}/data/test_ids/{repo_name}.bz2'
+    with bz2.open(bz2_file, 'rt') as f:
+        test_ids = f.read()
+    test_ids = test_ids.split('\n')
+    return test_ids
+
+
 def _get_commit0_workspace_dir_name(instance: pd.Series) -> str:
-    return f'{instance.repo}'.replace('/', '__')
+    return instance['repo'].split('/')[1]
 
 
 def get_instruction(instance: pd.Series, metadata: EvalMetadata):
@@ -66,6 +81,8 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         #     )
         # instruction += CODEACT_SWE_PROMPT.format(workspace_dir_name=workspace_dir_name)
     else:
+        test_cmd = instance['test']['test_cmd']
+        test_dir = instance['test']['test_dir']
         # Instruction based on Anthropic's official trajectory
         # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
         instruction = (
@@ -85,8 +102,9 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
             '\n\n'
             'Here is the command to run the unit tests:\n'
             '<test_command>\n'
-            f'commit0 test /workspace/{workspace_dir_name} test_ids --branch openhands --commit0-config-file /workspace/.commit0.yaml\n'
+            f'{test_cmd} {test_dir}\n'
             '</test_command>\n\n'
+            'Make a local git commit for each agent step for all code changes. If there is not change in current step, do not make a commit.'
         )
 
     if RUN_WITH_BROWSING:
@@ -105,12 +123,8 @@ DOCKER_IMAGE_PREFIX = os.environ.get(
 logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
 
 
-def get_instance_docker_image(instance_id: str) -> str:
-    image_name = instance_id.replace('commit-0-', '')
-    image_name = image_name.replace(
-        '__', '_s_'
-    )  # to comply with docker image naming convention
-    return (DOCKER_IMAGE_PREFIX.rstrip('/') + '/' + image_name).lower() + ':v0'
+def get_instance_docker_image(repo_name: str) -> str:
+    return (DOCKER_IMAGE_PREFIX.rstrip('/') + '/' + repo_name).lower() + ':v0'
 
 
 def get_config(
@@ -120,7 +134,8 @@ def get_config(
     # COMMIT0_CONTAINER_IMAGE = 'wentingzhao/'
     assert USE_INSTANCE_IMAGE
     # We use a different instance image for the each instance of commit0 eval
-    base_container_image = get_instance_docker_image(instance['instance_id'])
+    repo_name = instance['repo'].split('/')[1]
+    base_container_image = get_instance_docker_image(repo_name)
     logger.info(
         f'Using instance container image: {base_container_image}. '
         f'Please make sure this image exists. '
@@ -179,6 +194,18 @@ def initialize_runtime(
     workspace_dir_name = _get_commit0_workspace_dir_name(instance)
     obs: CmdOutputObservation
 
+    action = CmdRunAction(
+        command=f'git clone -b commit0_combined https://github.com/{instance["repo"]}.git'
+    )
+    action.timeout = 600
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        obs.exit_code == 0,
+        f'Failed to git clone -b commit0_combined https://github.com/{instance["repo"]}.git: {str(obs)}',
+    )
+
     action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
     action.timeout = 600
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -189,21 +216,14 @@ def initialize_runtime(
         f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
     )
 
-    action = CmdRunAction(command='git reset --hard')
+    action = CmdRunAction(command='git checkout -b openhands')
     action.timeout = 600
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(obs.exit_code == 0, f'Failed to git reset --hard: {str(obs)}')
-
-    action = CmdRunAction(
-        command='for remote_name in $(git remote); do git remote remove "${remote_name}"; done'
+    assert_and_raise(
+        obs.exit_code == 0, f'Failed to git checkout new branch openhands: {str(obs)}'
     )
-    action.timeout = 600
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(obs.exit_code == 0, f'Failed to remove git remotes: {str(obs)}')
 
     logger.info('-' * 30)
     logger.info('END Runtime Initialization Fn')
@@ -226,17 +246,7 @@ def complete_runtime(
     obs: CmdOutputObservation
     workspace_dir_name = _get_commit0_workspace_dir_name(instance)
 
-    action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
-    action.timeout = 600
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(
-        isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
-        f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
-    )
-
-    action = CmdRunAction(command='git add -A')
+    action = CmdRunAction(command='git add .')
     action.timeout = 600
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
@@ -246,19 +256,152 @@ def complete_runtime(
         f'Failed to git add -A: {str(obs)}',
     )
 
+    action = CmdRunAction(command='git commit -m "openhands edits"')
+    action.timeout = 600
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        isinstance(obs, CmdOutputObservation)
+        and (obs.exit_code == 0 or obs.exit_code == 1),
+        f'Failed to git commit -m "openhands": {str(obs)}',
+    )
+
+    # Generate diff patch compared to base commit, excluding spec.pdf.bz2 files
+    n_retries = 0
+    git_patch = None
+    while n_retries < 5:
+        action = CmdRunAction(
+            command=f"git diff {instance['base_commit']} HEAD -- . ':(exclude)spec.pdf.bz2'"
+        )
+        action.timeout = 600 + 100 * n_retries
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        n_retries += 1
+        if isinstance(obs, CmdOutputObservation):
+            if obs.exit_code == 0:
+                git_patch = obs.content.strip()
+                break
+            else:
+                logger.info('Failed to get git diff, retrying...')
+                sleep_if_should_continue(10)
+        elif isinstance(obs, ErrorObservation):
+            logger.error(f'Error occurred: {obs.content}. Retrying...')
+            sleep_if_should_continue(10)
+        else:
+            assert_and_raise(False, f'Unexpected observation type: {str(obs)}')
+
+    assert_and_raise(git_patch is not None, 'Failed to get git diff (None)')
+
+    test_dir = instance['test']['test_dir']
     action = CmdRunAction(
-        command=f'commit0 evaluate {instance["repo"].split("/")[1]} --branch openhands --commit0-config-file /workspace/.commit0.yaml'
+        command=f"{instance['test']['test_cmd']} --json-report --json-report-file=report.json --continue-on-collection-errors {test_dir} > test_output.txt 2>&1"
     )
     action.timeout = 600
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(
+        isinstance(obs, CmdOutputObservation),
+        f'Failed to run test command: {str(obs)}',
+    )
+    # Read test output
+    action = CmdRunAction(command='cat test_output.txt')
+    action.timeout = 600
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        isinstance(obs, CmdOutputObservation),
+        f'Failed to read test output: {str(obs)}',
+    )
+    test_output = obs.content.strip()
+    # logger.info(f'Test output: {test_output}')
+
+    # Save pytest exit code
+    action = CmdRunAction(command='echo $?')
+    action.timeout = 600
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
         isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
-        f'Failed to commit0 evaluate: {str(obs)}',
+        f'Failed to save pytest exit code: {str(obs)}',
+    )
+    pytest_exit_code = obs.content.strip()
+    # logger.info(f'Pytest exit code: {pytest_exit_code}')
+
+    # Read the test report
+    action = CmdRunAction(command='cat report.json')
+    action.timeout = 600
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        isinstance(obs, CmdOutputObservation),
+        f'Failed to read test report: {str(obs)}',
     )
 
-    return {'eval_result': obs.content.strip()}
+    # Get test IDs from instance
+    test_ids = get_test_ids(instance)
+
+    try:
+        report = json.loads(obs.content)
+        tests = {x['nodeid']: x['call'] for x in report['tests'] if 'call' in x}
+
+        # Calculate test statistics
+        status = []
+        runtimes = []
+        no_runs = 0
+
+        for test_id in test_ids:
+            if test_id in tests and tests[test_id] is not None:
+                status.append(tests[test_id]['outcome'])
+                runtimes.append(tests[test_id]['duration'])
+                no_runs += 1
+            else:
+                status.append('failed')
+                runtimes.append(0)
+
+        status_counts = Counter(status)
+        total_runtime = sum(runtimes) if no_runs > 0 else 0
+        num_passed = status_counts.get('passed', 0) + status_counts.get('xfail', 0)
+        passed_ratio = num_passed / len(status) if status else 0
+
+        eval_result = {
+            'name': workspace_dir_name,
+            'sum': total_runtime,
+            'passed': passed_ratio,
+            'num_passed': num_passed,
+            'num_tests': len(test_ids),
+        }
+
+    except json.JSONDecodeError:
+        logger.error('Failed to parse test report JSON')
+        eval_result = {
+            'name': workspace_dir_name,
+            'sum': 0,
+            'passed': 0,
+            'num_passed': 0,
+            'num_tests': len(test_ids),
+        }
+
+    # Create tarball of workspace
+    temp_zip = runtime.copy_from(f'/workspace/{workspace_dir_name}')
+
+    commit0_dir = os.path.dirname(__file__)
+    persistent_zip = os.path.join(commit0_dir, f'{workspace_dir_name}.zip')
+    with open(temp_zip, 'rb') as src, open(persistent_zip, 'wb') as dst:
+        dst.write(src.read())
+    zip_file = persistent_zip
+    return {
+        'eval_result': eval_result,
+        'git_patch': git_patch,
+        'test_output': test_output,
+        'pytest_exit_code': pytest_exit_code,
+        'zip_file': zip_file,
+    }
 
 
 def process_instance(
@@ -305,6 +448,41 @@ def process_instance(
         # Get git patch
         return_val = complete_runtime(runtime, instance)
         eval_result = return_val['eval_result']
+        git_patch = return_val['git_patch']
+        test_output = return_val['test_output']
+        pytest_exit_code = return_val['pytest_exit_code']
+        zip_file = return_val['zip_file']
+
+        repo_name = instance['repo'].split('/')[1]
+        zip_dest = os.path.join(
+            metadata.eval_output_dir, 'repos', repo_name, f'{repo_name}.zip'
+        )
+        patch_file = os.path.join(
+            metadata.eval_output_dir, 'repos', repo_name, f'{repo_name}_patch.diff'
+        )
+        test_output_file = os.path.join(
+            metadata.eval_output_dir, 'repos', repo_name, f'{repo_name}_test_output.txt'
+        )
+        pytest_exit_code_file = os.path.join(
+            metadata.eval_output_dir,
+            'repos',
+            repo_name,
+            f'{repo_name}_pytest_exit_code.txt',
+        )
+
+        os.makedirs(os.path.dirname(zip_dest), exist_ok=True)
+        os.rename(zip_file, zip_dest)
+
+        write_targets = [
+            (patch_file, git_patch),
+            (test_output_file, test_output),
+            (pytest_exit_code_file, pytest_exit_code),
+        ]
+
+        for write_target in write_targets:
+            with open(write_target[0], 'w') as f:
+                f.write(write_target[1])
+
         logger.info(
             f'Got evaluation result for repo {instance.instance_id}:\n--------\n{eval_result}\n--------'
         )
@@ -358,9 +536,9 @@ def commit0_setup(
     """
     # Run commit0 setup command directly
 
-    os.system(
-        f'commit0 setup {repo_split} --base-dir {base_dir} --commit0-config-file {commit0_config_file}'
-    )
+    # os.system(
+    #     f'commit0 setup {repo_split} --base-dir {base_dir} --commit0-config-file {commit0_config_file}'
+    # )
 
     filtered_dataset = pd.concat(
         [
@@ -369,19 +547,21 @@ def commit0_setup(
         ]
     )
 
-    # Replace all forward slashes in instance_id with hyphens
-    filtered_dataset['instance_id'] = filtered_dataset['instance_id'].str.replace(
-        '/', '-'
-    )
+    # Drop setup column if it exists
+    if 'setup' in filtered_dataset.columns:
+        filtered_dataset = filtered_dataset.drop('setup', axis=1)
 
-    # Checkout openhands branch for each repo
-    for repo in SPLIT.get(repo_split, []):
-        repo_path = os.path.join(base_dir, repo)
-        if os.path.exists(repo_path):
-            logger.info(f'Checking out openhands branch for {repo}')
-            os.system(f'cd {repo_path} && git checkout -b openhands')
-        else:
-            raise ValueError(f'Repo {repo} does not exist in {base_dir}')
+    # Replace all forward slashes in instance_id with hyphens
+    filtered_dataset['instance_id'] = filtered_dataset['repo'].str.split('/').str[1]
+
+    # # Checkout openhands branch for each repo
+    # for repo in SPLIT.get(repo_split, []):
+    #     repo_path = os.path.join(base_dir, repo)
+    #     if os.path.exists(repo_path):
+    #         logger.info(f'Checking out openhands branch for {repo}')
+    #         os.system(f'cd {repo_path} && git checkout -b openhands')
+    #     else:
+    #         raise ValueError(f'Repo {repo} does not exist in {base_dir}')
 
     return filtered_dataset
 
@@ -412,12 +592,6 @@ if __name__ == '__main__':
         default='repos',
         help='directory to store the repos',
     )
-    parser.add_argument(
-        '--commit0_file_name',
-        type=str,
-        default='.commit0.yaml',
-        help='commit0 config file name',
-    )
     args, _ = parser.parse_known_args()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
@@ -426,7 +600,7 @@ if __name__ == '__main__':
 
     # Setup Commit0
     base_dir = os.path.join(os.path.dirname(__file__), args.repo_dir)
-    commit0_config_file = os.path.join(base_dir, args.commit0_file_name)
+    commit0_config_file = os.path.join(base_dir, '.commit0.yaml')
 
     commit0_datasets = commit0_setup(
         dataset.to_pandas(), args.repo_split, base_dir, commit0_config_file
