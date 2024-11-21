@@ -38,7 +38,7 @@ class SessionManager:
         self._redis_listen_task.cancel()
 
     def _get_redis_client(self):
-        redis_client = getattr(self.sio.manager, "redis")
+        redis_client = getattr(self.sio.manager, "redis", None)
         return redis_client
     
     async def _redis_subscribe(self):
@@ -85,7 +85,6 @@ class SessionManager:
         # If we have a local session running, use that
         session = self.local_sessions_by_sid.get(sid)
         if session:
-            self.sio.emit(event_to_dict(AgentStateChangedObservation('', AgentState.INIT)), to=connection_id)
             return session.agent_session.event_stream        
 
         # If there is a remote session running, mark a connection to that
@@ -94,7 +93,6 @@ class SessionManager:
             num_connections = await redis_client.rpush(_CONNECTION_KEY.format(sid=sid), connection_id)
             # More than one remote connection implies session is already running remotely...
             if num_connections != 1:
-                await self.sio.emit(event_to_dict(AgentStateChangedObservation('', AgentState.INIT)), to=connection_id)
                 event_stream = EventStream(sid, self.file_store)
                 return event_stream
 

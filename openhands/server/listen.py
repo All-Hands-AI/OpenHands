@@ -965,7 +965,6 @@ async def init_connection(connection_id: str, data: dict):
             (
                 NullAction,
                 NullObservation,
-                ChangeAgentStateAction,
             ),
         ):
             continue
