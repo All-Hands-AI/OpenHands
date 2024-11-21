@@ -23,7 +23,7 @@ function Home() {
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const { data: config } = useConfig();
-  const { data: user } = useGitHubUser({ gitHubToken });
+  const { data: user } = useGitHubUser();
   const { data: repositories } = useUserRepositories(gitHubToken);
 
   const gitHubAuthUrl = useGitHubAuthUrl({

@@ -1,3 +1,4 @@
+import posthog from "posthog-js";
 import React from "react";
 
 interface AuthContextType {
@@ -7,6 +8,7 @@ interface AuthContextType {
   setGitHubToken: (token: string | null) => void;
   clearToken: () => void;
   clearGitHubToken: () => void;
+  logout: () => void;
 }
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
@@ -23,6 +25,11 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     setGitHubToken(null);
   };
 
+  const logout = () => {
+    clearGitHubToken();
+    posthog.reset();
+  };
+
   const value = React.useMemo(
     () => ({
       token,
@@ -31,6 +38,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
       setGitHubToken,
       clearToken,
       clearGitHubToken,
+      logout,
     }),
     [token, gitHubToken],
   );

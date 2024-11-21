@@ -10,7 +10,6 @@ import FormFieldset from "../form/FormFieldset";
 import { CustomInput } from "../form/custom-input";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
-import { logoutCleanup } from "#/utils/logout-cleanup";
 import { saveSettings } from "#/services/settings";
 import { useAuth } from "#/context/auth-context";
 
@@ -27,7 +26,7 @@ function AccountSettingsModal({
   gitHubError,
   analyticsConsent,
 }: AccountSettingsModalProps) {
-  const { gitHubToken, setGitHubToken } = useAuth();
+  const { gitHubToken, setGitHubToken, logout } = useAuth();
   const { t } = useTranslation();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -100,7 +99,7 @@ function AccountSettingsModal({
               variant="text-like"
               text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$DISCONNECT)}
               onClick={() => {
-                logoutCleanup();
+                logout();
                 onClose();
               }}
               className="text-danger self-start"

@@ -26,22 +26,16 @@ function App() {
 
   const dispatch = useDispatch();
 
-  // FIXME: Bad practice - should be handled within state
-  const settings = getSettings();
-  const repo = localStorage.getItem("repo");
-
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initalQuery,
   );
 
-  const repository = React.useMemo(
-    () => selectedRepository || repo || null,
-    [selectedRepository, repo],
-  );
+  // FIXME: Bad practice - should be handled within state
+  const settings = getSettings();
 
   const { data: latestGitHubCommit } = useLatestRepoCommit({
     gitHubToken,
-    repository,
+    repository: selectedRepository,
   });
 
   const secrets = React.useMemo(

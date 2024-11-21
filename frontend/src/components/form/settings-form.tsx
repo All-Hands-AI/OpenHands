@@ -4,7 +4,7 @@ import {
   Input,
   Switch,
 } from "@nextui-org/react";
-import { useLocation, useNavigate } from "@remix-run/react";
+import { useLocation } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import React from "react";
@@ -26,7 +26,7 @@ import {
   saveSettingsView,
   updateSettingsVersion,
 } from "#/utils/settings-utils";
-import { useAuth } from "#/context/auth-context";
+import { useEndSession } from "#/hooks/use-end-session";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -45,20 +45,17 @@ export function SettingsForm({
   securityAnalyzers,
   onClose,
 }: SettingsFormProps) {
-  const { clearToken } = useAuth();
+  const endSession = useEndSession();
 
   const location = useLocation();
-  const navigate = useNavigate();
   const { t } = useTranslation();
 
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const resetOngoingSession = () => {
     if (location.pathname.startsWith("/app")) {
-      clearToken();
-      localStorage.removeItem("repo");
-
-      navigate("/");
+      endSession();
+      onClose();
     }
   };
 

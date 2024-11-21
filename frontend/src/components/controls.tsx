@@ -1,9 +1,11 @@
 import { IoLockClosed } from "react-icons/io5";
 import React from "react";
+import { useSelector } from "react-redux";
 import AgentControlBar from "./AgentControlBar";
 import AgentStatusBar from "./AgentStatusBar";
 import { ProjectMenuCard } from "./project-menu/ProjectMenuCard";
 import { useAuth } from "#/context/auth-context";
+import { RootState } from "#/store";
 
 interface ControlsProps {
   setSecurityOpen: (isOpen: boolean) => void;
@@ -17,19 +19,20 @@ export function Controls({
   lastCommitData,
 }: ControlsProps) {
   const { gitHubToken } = useAuth();
-
-  const repo = localStorage.getItem("repo");
+  const { selectedRepository } = useSelector(
+    (state: RootState) => state.initalQuery,
+  );
 
   const projectMenuCardData = React.useMemo(
     () =>
-      repo && lastCommitData
+      selectedRepository && lastCommitData
         ? {
-            repoName: repo,
+            repoName: selectedRepository,
             lastCommit: lastCommitData,
             avatar: null, // TODO: fetch repo avatar
           }
         : null,
-    [repo, lastCommitData],
+    [selectedRepository, lastCommitData],
   );
 
   return (

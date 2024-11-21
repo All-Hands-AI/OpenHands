@@ -4,7 +4,6 @@ import {
   isRouteErrorResponse,
   useLocation,
   Outlet,
-  useNavigate,
 } from "@remix-run/react";
 import { useDispatch } from "react-redux";
 import CogTooth from "#/assets/cog-tooth";
@@ -26,11 +25,10 @@ import AgentState from "#/types/AgentState";
 import { useConfig } from "#/hooks/query/use-config";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
-import { logoutCleanup } from "#/utils/logout-cleanup";
-import { clearSession } from "#/utils/clear-session";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useAuth } from "#/context/auth-context";
+import { useEndSession } from "#/hooks/use-end-session";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -65,11 +63,11 @@ export function ErrorBoundary() {
 }
 
 export default function MainApp() {
-  const { token, gitHubToken, clearToken } = useAuth();
+  const { token, gitHubToken, clearToken, logout } = useAuth();
 
-  const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+  const endSession = useEndSession();
 
   const { settingsIsUpdated, settings, analyticsConsent } = {
     settingsIsUpdated: settingsAreUpToDate(),
@@ -118,16 +116,14 @@ export default function MainApp() {
     // If the user closes the modal without connecting to GitHub,
     // we need to log them out to clear the invalid token from the
     // local storage
-    if (user.isError) logoutCleanup();
+    if (user.isError) logout();
     setAccountSettingsModalOpen(false);
   };
 
   const handleEndSession = () => {
     setStartNewProjectModalIsOpen(false);
     dispatch(setCurrentAgentState(AgentState.LOADING));
-    // TODO: Refactor the code below to a useEndSession hook (since it is used in multiple places)
-    clearSession();
-    navigate("/");
+    endSession();
   };
 
   return (
@@ -154,7 +150,7 @@ export default function MainApp() {
         <nav className="py-[18px] flex flex-col items-center gap-[18px]">
           <UserActions
             user={user.data ? { avatar_url: user.data.avatar_url } : undefined}
-            onLogout={logoutCleanup}
+            onLogout={logout}
             onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
           />
           <button
