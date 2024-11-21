@@ -70,11 +70,14 @@ export function WsClientProvider({
   function handleOpen() {
     setRetryCount(RECONNECT_RETRIES);
     setStatus(WsClientProviderStatus.OPENING);
-    const initEvent = {
-      action: ActionType.INIT,
-      args: settings,
-    };
-    send(initEvent);
+    // Only send INIT event if there are no existing events (new session)
+    if (events.length === 0) {
+      const initEvent = {
+        action: ActionType.INIT,
+        args: settings,
+      };
+      send(initEvent);
+    }
   }
 
   function handleMessage(messageEvent: MessageEvent) {
