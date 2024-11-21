@@ -16,7 +16,7 @@ import { FeedbackModal } from "./feedback-modal";
 import { useScrollToBottom } from "#/hooks/useScrollToBottom";
 import TypingIndicator from "./chat/TypingIndicator";
 import ConfirmationButtons from "./chat/ConfirmationButtons";
-import { ErrorMessage } from "./error-message";
+import { ExpandableMessage } from "./expandable-message";
 import { ContinueButton } from "./continue-button";
 import { ScrollToBottomButton } from "./scroll-to-bottom-button";
 import { Suggestions } from "./suggestions";
@@ -30,10 +30,6 @@ import OpenHands from "#/api/open-hands";
 import { clientLoader } from "#/routes/_oh";
 import { downloadWorkspace } from "#/utils/download-workspace";
 import { SuggestionItem } from "./suggestion-item";
-
-const isErrorMessage = (
-  message: Message | ErrorMessage,
-): message is ErrorMessage => "error" in message;
 
 export function ChatInterface() {
   const { send, status, isLoadingMessages } = useWsClient();
@@ -111,6 +107,7 @@ export function ChatInterface() {
     }
   };
 
+  console.log('messages', messages);
   return (
     <div className="h-full flex flex-col justify-between">
       {messages.length === 0 && (
@@ -148,11 +145,12 @@ export function ChatInterface() {
 
         {!isLoadingMessages &&
           messages.map((message, index) =>
-            isErrorMessage(message) ? (
-              <ErrorMessage
+            message.type && message.type !== "thought" ? (
+              <ExpandableMessage
                 key={index}
                 id={message.id}
-                message={message.message}
+                type={message.type}
+                message={message.content}
               />
             ) : (
               <ChatMessage

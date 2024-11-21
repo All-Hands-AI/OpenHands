@@ -1782,11 +1782,11 @@
     "fr": "Privé",
     "tr": "Özel"
   },
-  "ERROR_MESSAGE$SHOW_DETAILS": {
+  "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
     "en": "Show details",
     "es": "Mostrar detalles"
   },
-  "ERROR_MESSAGE$HIDE_DETAILS": {
+  "EXPANDABLE_MESSAGE$HIDE_DETAILS": {
     "en": "Hide details",
     "es": "Ocultar detalles"
   },

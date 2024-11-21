@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
-interface ErrorMessageProps {
+interface ExpandableMessageProps {
   id?: string;
   message: string;
+  type: string;
 }
 
-export function ErrorMessage({ id, message }: ErrorMessageProps) {
+export function ExpandableMessage({ id, message, type }: ExpandableMessageProps) {
   const { t, i18n } = useTranslation();
   const [showDetails, setShowDetails] = useState(true);
   const [headline, setHeadline] = useState("");
@@ -20,8 +21,10 @@ export function ErrorMessage({ id, message }: ErrorMessageProps) {
     }
   }, [id, message, i18n.language]);
 
+  const border = type === "error" ? "border-danger" : "border-neutral-300";
+
   return (
-    <div className="flex gap-2 items-center justify-start border-l-2 border-danger pl-2 my-2 py-2">
+    <div className="flex gap-2 items-center justify-start border-l-2 pl-2 my-2 py-2 {border}">
       <div className="text-sm leading-4 flex flex-col gap-2">
         {headline && <p className="text-danger font-bold">{headline}</p>}
         {headline && (
@@ -31,8 +34,8 @@ export function ErrorMessage({ id, message }: ErrorMessageProps) {
             className="cursor-pointer text-left"
           >
             {showDetails
-              ? t("ERROR_MESSAGE$HIDE_DETAILS")
-              : t("ERROR_MESSAGE$SHOW_DETAILS")}
+              ? t("EXPANDABLE_MESSAGE$HIDE_DETAILS")
+              : t("EXPANDABLE_MESSAGE$SHOW_DETAILS")}
           </button>
         )}
         {showDetails && <p className="text-neutral-300">{details}</p>}

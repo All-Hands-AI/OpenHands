@@ -1,5 +1,6 @@
 import {
   addAssistantMessage,
+  addAssistantAction,
   addUserMessage,
   addErrorMessage,
 } from "#/state/chatSlice";
@@ -20,16 +21,6 @@ import {
 import { handleObservationMessage } from "./observations";
 
 const messageActions = {
-  [ActionType.BROWSE]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.message));
-  },
-  [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
-    if (message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
-    } else {
-      store.dispatch(addAssistantMessage(message.message));
-    }
-  },
   [ActionType.WRITE]: (message: ActionMessage) => {
     const { path, content } = message.args;
     store.dispatch(setActiveFilepath(path));
@@ -44,29 +35,9 @@ const messageActions = {
           timestamp: message.timestamp,
         }),
       );
-    } else {
-      store.dispatch(addAssistantMessage(message.args.content));
-    }
-  },
-  [ActionType.FINISH]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.message));
-  },
-  [ActionType.REJECT]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.message));
-  },
-  [ActionType.DELEGATE]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.message));
-  },
-  [ActionType.RUN]: (message: ActionMessage) => {
-    if (message.args.hidden) return;
-    if (message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
     }
   },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
-    if (message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
-    }
     if (message.args.confirmation_state !== "rejected") {
       store.dispatch(appendJupyterInput(message.args.code));
     }
@@ -116,6 +87,13 @@ export function handleActionMessage(message: ActionMessage) {
       store.dispatch(addAssistantMessage(message.message));
     }
     return;
+  }
+
+  if (message.source !== "user" && !message.args?.hidden) {
+    if (message.args && message.args.thought) {
+      store.dispatch(addAssistantMessage(message.args.thought));
+    }
+    store.dispatch(addAssistantAction(message));
   }
 
   if (message.action in messageActions) {

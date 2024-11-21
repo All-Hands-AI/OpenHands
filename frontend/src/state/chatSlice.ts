@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-type SliceState = { messages: (Message | ErrorMessage)[] };
+type SliceState = { messages: (Message)[] };
 
 const initialState: SliceState = {
   messages: [],
@@ -37,12 +37,36 @@ export const chatSlice = createSlice({
       state.messages.push(message);
     },
 
+    addAssistantAction(state, action: PayloadAction<object>) {
+      const actionID = action.payload.action;
+      let text = "";
+      if (actionID === "run") {
+        text = "Ran a bash command";
+      } else if (actionID === "run_ipython") {
+        text = "Ran an IPython command";
+      } else if (actionID === "write") {
+        text = "Wrote to a file";
+      } else if (actionID === "read") {
+        text = "Read from a file";
+      } else {
+        return;
+      }
+      const message: Message = {
+        type: "action",
+        sender: "assistant",
+        content: text,
+        imageUrls: [],
+        timestamp: new Date().toISOString(),
+      };
+      state.messages.push(message);
+    },
+
     addErrorMessage(
       state,
       action: PayloadAction<{ id?: string; message: string }>,
     ) {
       const { id, message } = action.payload;
-      state.messages.push({ id, message, error: true });
+      state.messages.push({ id, message, type: "error" });
     },
 
     clearMessages(state) {
@@ -54,6 +78,7 @@ export const chatSlice = createSlice({
 export const {
   addUserMessage,
   addAssistantMessage,
+  addAssistantAction,
   addErrorMessage,
   clearMessages,
 } = chatSlice.actions;
