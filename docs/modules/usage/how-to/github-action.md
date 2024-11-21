@@ -46,7 +46,7 @@ To customize the default macro (`@openhands-agent`):
 
 ## Writing Effective .openhands_instructions Files
 
-The `.openhands_instructions` file is crucial for guiding OpenHands in understanding and working with your repository effectively. Here are key tips for writing high-quality instructions:
+The `.openhands_instructions` file is a file that you can put in the root directory of your repository to guide OpenHands in understanding and working with your repository effectively. Here are key tips for writing high-quality instructions:
 
 ### Core Principles
 
