@@ -76,7 +76,7 @@ jobs:
         id: get-sha
         run: |
           LATEST_SHA=$(curl -s -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/replayio-public/OpenHands/branches/toshok/ghcr-build \
+            https://api.github.com/repos/replayio-public/OpenHands/branches/main \
             | jq -r .commit.sha)
           echo "SHA=$LATEST_SHA" >> $GITHUB_OUTPUT
 
