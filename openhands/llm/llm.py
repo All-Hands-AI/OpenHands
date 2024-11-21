@@ -122,30 +122,10 @@ class LLM(RetryMixin, DebugMixin):
             drop_params=self.config.drop_params,
         )
 
-        if self.vision_is_active():
-            logger.debug('LLM: model has vision enabled')
-        if self.is_caching_prompt_active():
-            logger.debug('LLM: caching prompt enabled')
-        if self.is_function_calling_active():
-            logger.debug('LLM: model supports function calling')
-
-        self._completion = partial(
-            litellm_completion,
-            model=self.config.model,
-            api_key=self.config.api_key,
-            base_url=self.config.base_url,
-            api_version=self.config.api_version,
-            custom_llm_provider=self.config.custom_llm_provider,
-            max_tokens=self.config.max_output_tokens,
-            timeout=self.config.timeout,
-            temperature=self.config.temperature,
-            top_p=self.config.top_p,
-            drop_params=self.config.drop_params,
-        )
-
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             self.init_model_info()
+
         if self.vision_is_active():
             logger.debug('LLM: model has vision enabled')
         if self.is_caching_prompt_active():
