@@ -4,6 +4,8 @@ type SliceState = { messages: (Message)[] };
 
 const MAX_CONTENT_LENGTH = 1000;
 
+const HANDLED_ACTIONS = ["run", "run_ipython", "write", "read"];
+
 const initialState: SliceState = {
   messages: [],
 };
@@ -41,6 +43,9 @@ export const chatSlice = createSlice({
 
     addAssistantAction(state, action: PayloadAction<object>) {
       const actionID = action.payload.action;
+      if (!HANDLED_ACTIONS.includes(actionID)) {
+        return;
+      }
       const messageID = `ACTION_MESSAGE\$${actionID.toUpperCase()}`;
       let text = "";
       if (actionID === "run") {
@@ -55,13 +60,12 @@ export const chatSlice = createSlice({
         text = `${action.payload.args.path}\n${content}`;
       } else if (actionID === "read") {
         text = action.payload.args.path;
-      } else {
-        return;
       }
       const message: Message = {
         type: "action",
         sender: "assistant",
         id: messageID,
+        eventID: action.payload.id,
         content: text,
         imageUrls: [],
         timestamp: new Date().toISOString(),
@@ -71,25 +75,26 @@ export const chatSlice = createSlice({
 
     addAssistantObservation(state, observation: PayloadAction<object>) {
       const observationID = observation.payload.observation;
-      if (observationID !== 'run' && observationID !== 'run_ipython') {
+      if (!HANDLED_ACTIONS.includes(observationID)) {
         return;
       }
       const messageID = `OBSERVATION_MESSAGE\$${observationID.toUpperCase()}`;
-      console.log('obs message', messageID);
-      let content = observation.payload.content;
-      if (content.length > MAX_CONTENT_LENGTH) {
-        content = content.slice(0, MAX_CONTENT_LENGTH) + '...';
+      const causeID = observation.payload.cause;
+      const causeMessage = state.messages.find(
+        (message) => message.eventID === causeID,
+      );
+      if (!causeMessage) {
+        return;
       }
-      const text = `\`\`\`\n${observation.payload.content}\n\`\`\``;
-      const message: Message = {
-        type: "observation",
-        sender: "assistant",
-        id: messageID,
-        content: text,
-        imageUrls: [],
-        timestamp: new Date().toISOString(),
-      };
-      state.messages.push(message);
+      causeMessage.id = messageID;
+      if (observationID === 'run' || observationID === 'run_ipython') {
+        let content = observation.payload.content;
+        if (content.length > MAX_CONTENT_LENGTH) {
+          content = content.slice(0, MAX_CONTENT_LENGTH) + '...';
+        }
+        content = `\`\`\`\n${content}\n\`\`\``;
+        causeMessage.content = content;  // Observation content includes the action
+      }
     },
 
     addErrorMessage(

@@ -2014,21 +2014,27 @@
     "es": "Descargar como .zip"
   },
   "ACTION_MESSAGE$RUN": {
-    "en": "Ran a bash command"
+    "en": "Running a bash command"
   },
   "ACTION_MESSAGE$RUN_IPYTHON": {
-    "en": "Ran a Jupyter command"
+    "en": "Running a Jupyter command"
   },
   "ACTION_MESSAGE$READ": {
-    "en": "Read the contents of a file"
+    "en": "Reading the contents of a file"
   },
   "ACTION_MESSAGE$WRITE": {
-    "en": "Wrote to a file"
+    "en": "Writing to a file"
   },
   "OBSERVATION_MESSAGE$RUN": {
-    "en": "Bash output"
+    "en": "Ran a bash command"
   },
   "OBSERVATION_MESSAGE$RUN_IPYTHON": {
-    "en": "Jupyter output"
+    "en": "Ran a Jupyter command"
+  },
+  "OBSERVATION_MESSAGE$READ": {
+    "en": "Read the contents of a file"
+  },
+  "OBSERVATION_MESSAGE$WRITE": {
+    "en": "Wrote to a file"
   }
 }
