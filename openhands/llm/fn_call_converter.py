@@ -320,7 +320,8 @@ def convert_fncall_messages_to_non_fncall_messages(
     converted_messages = []
     first_user_message_encountered = False
     for message in messages:
-        role, content = message['role'], message['content']
+        role = message['role']
+        content = message.get('content')
         if content is None:
             content = ''
 
@@ -573,8 +574,8 @@ def convert_non_fncall_messages_to_fncall_messages(
 
     first_user_message_encountered = False
     for message in messages:
-        role, content = message['role'], message['content']
-        content = content or ''  # handle cases where content is None
+        role = message['role']
+        content = message.get('content') or ''  # handle cases where content is None or missing
         # For system messages, remove the added suffix
         if role == 'system':
             if isinstance(content, str):
@@ -759,7 +760,8 @@ def convert_from_multiple_tool_calls_to_single_tool_call_messages(
 
     pending_tool_calls: dict[str, dict] = {}
     for message in messages:
-        role, content = message['role'], message['content']
+        role = message['role']
+        content = message.get('content')  # Don't set default here as we need to handle function calls
         if role == 'assistant':
             if message.get('tool_calls') and len(message['tool_calls']) > 1:
                 # handle multiple tool calls by breaking them into multiple messages
