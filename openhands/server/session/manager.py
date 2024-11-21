@@ -7,9 +7,6 @@ import socketio
 
 from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.schema.agent import AgentState
-from openhands.events.observation.agent import AgentStateChangedObservation
-from openhands.events.serialization.event import event_to_dict
 from openhands.events.stream import EventStream, session_exists
 from openhands.runtime.base import RuntimeUnavailableError
 from openhands.server.session.conversation import Conversation
@@ -51,17 +48,19 @@ class SessionManager:
         redis_client = self._get_redis_client()
         pubsub = redis_client.pubsub()
         await pubsub.subscribe("oh_event")
-        try:
-            while should_continue():
+        while should_continue():
+            try:
                 message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=5)
                 if message:
                     data = json.loads(message['data'])
                     sid = data["sid"]
                     session = self.local_sessions_by_sid.get(sid)
                     if session:
-                        await session.dispatch(data)
-        except asyncio.CancelledError:
-            return
+                        await session.dispatch(data["data"])
+            except asyncio.CancelledError:
+                return
+            except:
+                logger.warning("error_reading_from_redis", exc_info=True, stack_info=True)
 
     async def attach_to_conversation(self, sid: str) -> Conversation | None:
         start_time = time.time()
