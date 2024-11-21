@@ -60,7 +60,7 @@ whatthepatch = "^1.0.6"
 protobuf = "^4.21.6,<5.0.0" # chromadb currently fails on 5.0+
 opentelemetry-api = "1.25.0"
 opentelemetry-exporter-otlp-proto-grpc = "1.25.0"
-modal = "^0.64.145"
+modal = "^0.66.26"
 runloop-api-client = "0.7.0"
 pygithub = "^2.5.0"
 openhands-aci = "^0.1.1"
@@ -95,6 +95,7 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -125,12 +126,14 @@ ignore = ["D1"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
 retry = "*"
 evaluate = "*"
 swebench = { git = "https://github.com/All-Hands-AI/SWE-bench.git" }
+commit0 = "*"
 func_timeout = "*"
 sympy = "*"
 gdown = "*"
