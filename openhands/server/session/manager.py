@@ -166,8 +166,9 @@ class SessionManager:
                 redis_client = self._get_redis_client()
                 if redis_client:
                     key = _CONNECTION_KEY.format(sid=session.sid)
-                    has_connections_for_session = bool(await redis_client.get(key))
-                    if not has_connections_for_session:
+                    connections_for_session = await redis_client.lrange(key, 0, -1)
+                    testy = await redis_client.get(key+"no_exist")
+                    if not connections_for_session:
                         await redis_client.delete(key)
             
             # If no connections, close session
