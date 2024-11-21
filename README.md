@@ -88,6 +88,8 @@ through Slack, so this is the best place to start, but we also are happy to have
 
 See more about the community in [COMMUNITY.md](./COMMUNITY.md) or find details on contributing in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
+See the monthly All Hands product roadmap [here](https://github.com/orgs/All-Hands-AI/projects/1) (updated at the maintainer's meeting at the end of each month).
+
 ## 📈 Progress
 
 <p align="center">
