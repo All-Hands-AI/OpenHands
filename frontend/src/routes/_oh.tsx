@@ -14,7 +14,6 @@ import { LoadingSpinner } from "#/components/modals/LoadingProject";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { UserActions } from "#/components/user-actions";
 import i18n from "#/i18n";
-import { getSettings, settingsAreUpToDate } from "#/services/settings";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import NewProjectIcon from "#/icons/new-project.svg?react";
 import DocsIcon from "#/icons/docs.svg?react";
@@ -29,6 +28,7 @@ import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useAuth } from "#/context/auth-context";
 import { useEndSession } from "#/hooks/use-end-session";
+import { useUserPrefs } from "#/context/user-prefs-context";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -64,16 +64,13 @@ export function ErrorBoundary() {
 
 export default function MainApp() {
   const { token, gitHubToken, clearToken, logout } = useAuth();
+  const { settings, settingsAreUpToDate } = useUserPrefs();
 
   const location = useLocation();
   const dispatch = useDispatch();
   const endSession = useEndSession();
 
-  const { settingsIsUpdated, settings, analyticsConsent } = {
-    settingsIsUpdated: settingsAreUpToDate(),
-    settings: getSettings(),
-    analyticsConsent: localStorage.getItem("analytics-consent"),
-  };
+  const analyticsConsent = localStorage.getItem("analytics-consent");
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
@@ -186,7 +183,7 @@ export default function MainApp() {
         <Outlet />
       </div>
 
-      {isAuthed && (!settingsIsUpdated || settingsModalIsOpen) && (
+      {isAuthed && (!settingsAreUpToDate || settingsModalIsOpen) && (
         <ModalBackdrop onClose={() => setSettingsModalIsOpen(false)}>
           <div
             data-testid="ai-config-modal"

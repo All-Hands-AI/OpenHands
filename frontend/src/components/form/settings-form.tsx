@@ -11,11 +11,7 @@ import React from "react";
 import posthog from "posthog-js";
 import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
 import { ModelSelector } from "#/components/modals/settings/ModelSelector";
-import {
-  getDefaultSettings,
-  saveSettings,
-  Settings,
-} from "#/services/settings";
+import { getDefaultSettings, Settings } from "#/services/settings";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { extractModelAndProvider } from "#/utils/extractModelAndProvider";
 import ModalButton from "../buttons/ModalButton";
@@ -27,6 +23,7 @@ import {
   updateSettingsVersion,
 } from "#/utils/settings-utils";
 import { useEndSession } from "#/hooks/use-end-session";
+import { useUserPrefs } from "#/context/user-prefs-context";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -45,6 +42,7 @@ export function SettingsForm({
   securityAnalyzers,
   onClose,
 }: SettingsFormProps) {
+  const { saveSettings } = useUserPrefs();
   const endSession = useEndSession();
 
   const location = useLocation();
