@@ -1,4 +1,5 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
+import React from "react";
 import {
   isGitHubErrorReponse,
   retrieveGitHubUserRepositories,
@@ -15,7 +16,11 @@ const userRepositoriesQueryFn = async ({
   pageParam,
   ghToken,
 }: UserRepositoriesQueryFnProps) => {
-  const response = await retrieveGitHubUserRepositories(ghToken, pageParam);
+  const response = await retrieveGitHubUserRepositories(
+    ghToken,
+    pageParam,
+    100,
+  );
 
   if (!response.ok) {
     throw new Error("Failed to fetch repositories");
@@ -36,13 +41,23 @@ const userRepositoriesQueryFn = async ({
 export const useUserRepositories = () => {
   const { gitHubToken } = useAuth();
 
-  return useInfiniteQuery({
+  const repos = useInfiniteQuery({
     queryKey: ["repositories", gitHubToken],
     queryFn: async ({ pageParam }) =>
       userRepositoriesQueryFn({ pageParam, ghToken: gitHubToken! }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
     enabled: !!gitHubToken,
-    select: (data) => data.pages.flatMap((page) => page.data),
   });
+
+  // TODO: Once we create our custom dropdown component, we should fetch data onEndReached
+  // (nextui autocomplete doesn't support onEndReached nor is it compatible for extending)
+  const { isSuccess, isFetchingNextPage, hasNextPage, fetchNextPage } = repos;
+  React.useEffect(() => {
+    if (!isFetchingNextPage && isSuccess && hasNextPage) {
+      fetchNextPage();
+    }
+  }, [isFetchingNextPage, isSuccess, hasNextPage, fetchNextPage]);
+
+  return repos;
 };

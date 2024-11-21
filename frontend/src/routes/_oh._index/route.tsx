@@ -24,7 +24,7 @@ function Home() {
 
   const { data: config } = useConfig();
   const { data: user } = useGitHubUser();
-  const { data: repositories } = useUserRepositories(gitHubToken);
+  const { data: repositories } = useUserRepositories();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
     gitHubToken,
@@ -49,7 +49,9 @@ function Home() {
         <div className="flex gap-4 w-full">
           <GitHubRepositoriesSuggestionBox
             handleSubmit={() => formRef.current?.requestSubmit()}
-            repositories={repositories || []}
+            repositories={
+              repositories?.pages.flatMap((page) => page.data) || []
+            }
             gitHubAuthUrl={gitHubAuthUrl}
             user={user || null}
             // onEndReached={}

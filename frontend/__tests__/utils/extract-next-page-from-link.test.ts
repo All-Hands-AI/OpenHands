@@ -7,4 +7,7 @@ test("extractNextPageFromLink", () => {
 
   const noNextLink = `<https://api.github.com/repositories/1300192/issues?page=2>; rel="prev", <https://api.github.com/repositories/1300192/issues?page=1>; rel="first"`;
   expect(extractNextPageFromLink(noNextLink)).toBeNull();
+
+  const extra = `<https://api.github.com/user/repos?sort=pushed&page=2&per_page=3>; rel="next", <https://api.github.com/user/repos?sort=pushed&page=22&per_page=3>; rel="last"`;
+  expect(extractNextPageFromLink(extra)).toBe(2);
 });

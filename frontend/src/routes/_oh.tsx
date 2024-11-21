@@ -70,6 +70,7 @@ export default function MainApp() {
   const dispatch = useDispatch();
   const endSession = useEndSession();
 
+  // FIXME: Bad practice to use localStorage directly
   const analyticsConsent = localStorage.getItem("analytics-consent");
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
@@ -83,7 +84,7 @@ export default function MainApp() {
 
   const config = useConfig();
   const user = useGitHubUser();
-  const { data: isAuthed, isFetched } = useIsAuthed({ gitHubToken });
+  const { data: isAuthed, isFetched } = useIsAuthed();
   const aiConfigOptions = useAIConfigOptions();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
