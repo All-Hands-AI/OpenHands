@@ -1,16 +1,12 @@
 import asyncio
-import json
 import os
-import tempfile
 from typing import Any
-from commit0.harness.constants import SPLIT
-import time
+
 import pandas as pd
-import toml
+from commit0.harness.constants import SPLIT
 from datasets import load_dataset
 
 import openhands.agenthub
-from evaluation.commit0_bench.prompt import CODEACT_COMMIT0_PROMPT
 from evaluation.utils.shared import (
     EvalException,
     EvalMetadata,
@@ -34,11 +30,10 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
-from openhands.events.observation import CmdOutputObservation, ErrorObservation
+from openhands.events.observation import CmdOutputObservation
 from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
-from openhands.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false').lower() == 'true'
@@ -104,7 +99,9 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
 
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
-DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/wentingzhao/')
+DOCKER_IMAGE_PREFIX = os.environ.get(
+    'EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/wentingzhao/'
+)
 logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
 
 
@@ -131,8 +128,8 @@ def get_config(
     )
     # else:
     #     raise
-        # base_container_image = SWE_BENCH_CONTAINER_IMAGE
-        # logger.info(f'Using swe-bench container image: {base_container_image}')
+    # base_container_image = SWE_BENCH_CONTAINER_IMAGE
+    # logger.info(f'Using swe-bench container image: {base_container_image}')
 
     config = AppConfig(
         default_agent=metadata.agent_class,
@@ -145,8 +142,6 @@ def get_config(
             use_host_network=False,
             # large enough timeout, since some testcases take very long to run
             timeout=300,
-            # Add platform to the sandbox config to solve issue 4401
-            platform='linux/amd64',
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
             keep_runtime_alive=False,
@@ -251,7 +246,9 @@ def complete_runtime(
         f'Failed to git add -A: {str(obs)}',
     )
 
-    action = CmdRunAction(command=f'commit0 evaluate {instance["repo"].split("/")[1]} --branch openhands --commit0-config-file /workspace/.commit0.yaml')
+    action = CmdRunAction(
+        command=f'commit0 evaluate {instance["repo"].split("/")[1]} --branch openhands --commit0-config-file /workspace/.commit0.yaml'
+    )
     action.timeout = 600
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
@@ -335,7 +332,7 @@ def process_instance(
     output = EvalOutput(
         instance_id=instance.instance_id,
         instruction=instruction,
-        instance=instance.to_dict(), 
+        instance=instance.to_dict(),
         test_result=test_result,
         metadata=metadata,
         history=histories,
@@ -344,7 +341,10 @@ def process_instance(
     )
     return output
 
-def commit0_setup(dataset: pd.DataFrame, repo_split: str, base_dir: str, commit0_config_file: str) -> pd.DataFrame:
+
+def commit0_setup(
+    dataset: pd.DataFrame, repo_split: str, base_dir: str, commit0_config_file: str
+) -> pd.DataFrame:
     """Setup Commit0 dataset based on split type.
 
     Args:
@@ -358,12 +358,21 @@ def commit0_setup(dataset: pd.DataFrame, repo_split: str, base_dir: str, commit0
     """
     # Run commit0 setup command directly
 
-    os.system(f'commit0 setup {repo_split} --base-dir {base_dir} --commit0-config-file {commit0_config_file}')
+    os.system(
+        f'commit0 setup {repo_split} --base-dir {base_dir} --commit0-config-file {commit0_config_file}'
+    )
 
-    filtered_dataset = pd.concat([dataset[dataset['repo'].str.split('/').str[1] == repo] for repo in SPLIT.get(repo_split, [])])
+    filtered_dataset = pd.concat(
+        [
+            dataset[dataset['repo'].str.split('/').str[1] == repo]
+            for repo in SPLIT.get(repo_split, [])
+        ]
+    )
 
     # Replace all forward slashes in instance_id with hyphens
-    filtered_dataset['instance_id'] = filtered_dataset['instance_id'].str.replace('/', '-')
+    filtered_dataset['instance_id'] = filtered_dataset['instance_id'].str.replace(
+        '/', '-'
+    )
 
     # Checkout openhands branch for each repo
     for repo in SPLIT.get(repo_split, []):
@@ -373,7 +382,7 @@ def commit0_setup(dataset: pd.DataFrame, repo_split: str, base_dir: str, commit0
             os.system(f'cd {repo_path} && git checkout -b openhands')
         else:
             raise ValueError(f'Repo {repo} does not exist in {base_dir}')
-        
+
     return filtered_dataset
 
 
@@ -419,10 +428,11 @@ if __name__ == '__main__':
     base_dir = os.path.join(os.path.dirname(__file__), args.repo_dir)
     commit0_config_file = os.path.join(base_dir, args.commit0_file_name)
 
-    commit0_datasets = commit0_setup(dataset.to_pandas(), args.repo_split, base_dir, commit0_config_file)
+    commit0_datasets = commit0_setup(
+        dataset.to_pandas(), args.repo_split, base_dir, commit0_config_file
+    )
 
     logger.info(f'Loaded dataset {args.dataset} with reposplit {args.repo_split}')
-
 
     llm_config = None
     if args.llm_config:
