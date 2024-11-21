@@ -3,8 +3,16 @@ from unittest.mock import MagicMock, patch
 
 from openhands.core.config import LLMConfig
 from openhands.events.action.message import MessageAction
+from openhands.llm.llm import LLM
 from openhands.resolver.github_issue import GithubIssue, ReviewThread
 from openhands.resolver.issue_definitions import PRHandler
+
+
+def mock_llm_response(content):
+    """Helper function to create a mock LLM response."""
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock(message=MagicMock(content=content))]
+    return mock_response
 
 
 def test_guess_success_review_threads_litellm_call():
@@ -65,7 +73,7 @@ The changes successfully address the feedback."""
     ]
 
     # Test the guess_success method
-    with patch('litellm.completion') as mock_completion:
+    with patch.object(LLM, 'completion') as mock_completion:
         mock_completion.return_value = mock_response
         success, success_list, explanation = handler.guess_success(issue, history)
 
@@ -162,7 +170,7 @@ The changes successfully address the feedback."""
     ]
 
     # Test the guess_success method
-    with patch('litellm.completion') as mock_completion:
+    with patch.object(LLM, 'completion') as mock_completion:
         mock_completion.return_value = mock_response
         success, success_list, explanation = handler.guess_success(issue, history)
 
@@ -216,7 +224,7 @@ def test_check_feedback_with_llm():
         mock_response.choices = [MagicMock(message=MagicMock(content=case['response']))]
 
         # Test the function
-        with patch('litellm.completion', return_value=mock_response):
+        with patch.object(LLM, 'completion', return_value=mock_response):
             success, explanation = handler._check_feedback_with_llm('test prompt')
             assert (success, explanation) == case['expected']
 
@@ -252,7 +260,7 @@ Changes look good"""
     ]
 
     # Test the function
-    with patch('litellm.completion') as mock_completion:
+    with patch.object(LLM, 'completion') as mock_completion:
         mock_completion.return_value = mock_response
         success, explanation = handler._check_review_thread(
             review_thread, issues_context, last_message
@@ -308,7 +316,7 @@ Changes look good"""
     ]
 
     # Test the function
-    with patch('litellm.completion') as mock_completion:
+    with patch.object(LLM, 'completion') as mock_completion:
         mock_completion.return_value = mock_response
         success, explanation = handler._check_thread_comments(
             thread_comments, issues_context, last_message
@@ -361,7 +369,7 @@ Changes look good"""
     ]
 
     # Test the function
-    with patch('litellm.completion') as mock_completion:
+    with patch.object(LLM, 'completion') as mock_completion:
         mock_completion.return_value = mock_response
         success, explanation = handler._check_review_comments(
             review_comments, issues_context, last_message
@@ -431,7 +439,7 @@ The changes successfully address the feedback."""
     ]
 
     # Test the guess_success method
-    with patch('litellm.completion') as mock_completion:
+    with patch.object(LLM, 'completion') as mock_completion:
         mock_completion.return_value = mock_response
         success, success_list, explanation = handler.guess_success(issue, history)
 
