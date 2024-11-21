@@ -208,19 +208,25 @@ LLMBasedFileEditTool = ChatCompletionToolParam(
     ),
 )
 
-_STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for viewing, creating and editing files
-* State is persistent across command calls and discussions with the user
-* If `path` is a file, `view` displays the result of applying `cat -n`. If `path` is a directory, `view` lists non-hidden files and directories up to 2 levels deep
-* The `create` command cannot be used if the specified `path` already exists as a file
-* If a `command` generates a long output, it will be truncated and marked with `<response clipped>`
-* The `undo_edit` command will revert the last edit made to the file at `path`
-* The `jump_to_definition` command will print out possible FULL definition(s) of the class or function/method in the whole codebase. Can be useful for navigating large repositories
-* The `find_references` command will print out possible references (or usages) to the class or function/method in the whole codebase. This can be useful to understand how a class or function/method is used in a repository
+_STR_REPLACE_EDITOR_DESCRIPTION = """Custom file editing tool with persistent state across interactions.
+Key Commands:
+* `view`:
+  * For files: displays content with line numbers similar to `cat -n`
+  * For directories: lists non-hidden files/directories up to 2 levels deep
+* `create`: cannot create file if path already exists
+* `str_replace`: replaces text in a file
+* `undo_edit`: reverts last edit
+* `jump_to_definition`: finds full definition of a class/function/method
+* `find_references`: locates usages of a class/function/method
 
-Notes for using the `str_replace` command:
-* The `old_str` parameter should match EXACTLY one or more consecutive lines from the original file. Be mindful of whitespaces!
-* If the `old_str` parameter is not unique in the file, the replacement will not be performed. Make sure to include enough context in `old_str` to make it unique
-* The `new_str` parameter should contain the edited lines that should replace the `old_str`
+`str_replace` Command Notes:
+* `old_str` must match EXACTLY one or more consecutive lines
+* `old_str` must be unique in the file
+* Include sufficient context to ensure uniqueness
+* Be careful with whitespaces
+
+Output Characteristics:
+* Long outputs are truncated and marked with <response clipped>
 """
 
 StrReplaceEditorTool = ChatCompletionToolParam(
