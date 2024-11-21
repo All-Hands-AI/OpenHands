@@ -1,9 +1,9 @@
-from contextlib import asynccontextmanager
 import os
 import re
 import tempfile
 import time
 import warnings
+from contextlib import asynccontextmanager
 
 import jwt
 import requests
@@ -46,7 +46,6 @@ from openhands.controller.agent import Agent
 from openhands.core.config import LLMConfig, load_app_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
-    ChangeAgentStateAction,
     FileReadAction,
     FileWriteAction,
     NullAction,
@@ -91,6 +90,7 @@ session_manager = SessionManager(sio, config, file_store)
 async def _lifespan(app: FastAPI):
     async with session_manager:
         yield
+
 
 app = FastAPI(lifespan=_lifespan)
 app.add_middleware(
@@ -931,6 +931,7 @@ async def oh_action(connection_id: str, data: dict):
     logger.info(f'sio:oh_action:{connection_id}')
     await session_manager.send_to_event_stream(connection_id, data)
 
+
 async def init_connection(connection_id: str, data: dict):
     gh_token = data.pop('github_token', None)
     if not await authenticate_github_user(gh_token):
@@ -956,9 +957,7 @@ async def init_connection(connection_id: str, data: dict):
     event_stream = await session_manager.init_or_join_session(sid, connection_id, data)
 
     # Send events
-    async_stream = AsyncEventStreamWrapper(
-        event_stream, latest_event_id + 1
-    )
+    async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
     async for event in async_stream:
         if isinstance(
             event,
