@@ -24,7 +24,6 @@ function Home() {
   const { data: config } = useConfig();
   const { data: user } = useGitHubUser({
     gitHubToken: ghToken,
-    appMode: config?.APP_MODE,
   });
   const { data: repositories } = useUserRepositories(ghToken);
 

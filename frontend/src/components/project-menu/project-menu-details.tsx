@@ -5,7 +5,7 @@ import { I18nKey } from "#/i18n/declaration";
 
 interface ProjectMenuDetailsProps {
   repoName: string;
-  avatar: string;
+  avatar: string | null;
   lastCommit: GitHubCommit;
 }
 
@@ -23,7 +23,7 @@ export function ProjectMenuDetails({
         rel="noreferrer noopener"
         className="flex items-center gap-2"
       >
-        <img src={avatar} alt="" className="w-4 h-4 rounded-full" />
+        {avatar && <img src={avatar} alt="" className="w-4 h-4 rounded-full" />}
         <span className="text-sm leading-6 font-semibold">{repoName}</span>
         <ExternalLinkIcon width={16} height={16} />
       </a>

@@ -30,5 +30,5 @@ export const useGetFile = (config: UseGetFileConfig) =>
   useQuery({
     queryKey: ["file", config.token, config.path],
     queryFn: () => getFileQueryFn(config.token, config.path),
-    enabled: false,
+    enabled: false, // don't fetch by default, trigger manually via `refetch`
   });

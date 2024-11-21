@@ -89,7 +89,6 @@ export default function MainApp() {
   const config = useConfig();
   const user = useGitHubUser({
     gitHubToken: ghToken,
-    appMode: config.data?.APP_MODE,
   });
   const { data: isAuthed } = useIsAuthed({ gitHubToken: ghToken });
   const aiConfigOptions = useAIConfigOptions();
