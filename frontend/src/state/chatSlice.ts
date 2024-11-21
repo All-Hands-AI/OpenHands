@@ -39,21 +39,24 @@ export const chatSlice = createSlice({
 
     addAssistantAction(state, action: PayloadAction<object>) {
       const actionID = action.payload.action;
+      const messageID = `ACTION_MESSAGE\$${actionID.toUpperCase()}`;
       let text = "";
+      console.log('action', action.payload);
       if (actionID === "run") {
-        text = "Ran a bash command";
+        text = `\`${action.payload.args.command}\``;
       } else if (actionID === "run_ipython") {
-        text = "Ran an IPython command";
+        text = `\`\`\`\n${action.payload.args.code}\n\`\`\``;
       } else if (actionID === "write") {
-        text = "Wrote to a file";
+        text = `${action.payload.args.path}\n${action.payload.args.content}`;
       } else if (actionID === "read") {
-        text = "Read from a file";
+        text = action.payload.args.path;
       } else {
         return;
       }
       const message: Message = {
         type: "action",
         sender: "assistant",
+        id: messageID,
         content: text,
         imageUrls: [],
         timestamp: new Date().toISOString(),

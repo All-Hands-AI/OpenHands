@@ -2012,5 +2012,17 @@
   "PROJECT_MENU_CARD_CONTEXT_MENU$DOWNLOAD_AS_ZIP_LABEL": {
     "en": "Download as .zip",
     "es": "Descargar como .zip"
+  },
+  "ACTION_MESSAGE$RUN": {
+    "en": "Ran a bash command"
+  },
+  "ACTION_MESSAGE$RUN_IPYTHON": {
+    "en": "Ran a Jupyter command"
+  },
+  "ACTION_MESSAGE$READ": {
+    "en": "Read the contents of a file"
+  },
+  "ACTION_MESSAGE$WRITE": {
+    "en": "Wrote to a file"
   }
 }
