@@ -23,8 +23,8 @@ workspace_base = "./workspace"
 # Cache directory path
 #cache_dir = "/tmp/cache"
 
-# Debugging enabled
-#debug = false
+# Debugging enabled (recommended: true to monitor token usage)
+debug = true
 
 # Disable color in terminal output
 #disable_color = false
@@ -95,11 +95,11 @@ workspace_base = "./workspace"
 # AWS secret access key
 #aws_secret_access_key = ""
 
-# API key to use
-api_key = "your-api-key"
+# API key to use (required)
+api_key = "YOUR_ANTHROPIC_API_KEY"
 
-# API base URL
-#base_url = ""
+# API base URL for Anthropic
+base_url = "https://api.anthropic.com/v1"
 
 # API version
 #api_version = ""
@@ -123,19 +123,16 @@ api_key = "your-api-key"
 embedding_model = "local"
 
 # Maximum number of characters in an observation's content
-#max_message_chars = 10000
+max_message_chars = 80000
 
-# Maximum number of input tokens (recommended: 20000 to prevent TPM limits)
-#max_input_tokens = 20000
+# Maximum number of input tokens (set to prevent TPM limits)
+max_input_tokens = 20000
 
-# Maximum number of output tokens
+# Maximum number of output tokens (optional)
 #max_output_tokens = 0
 
-# Maximum number of characters in messages (recommended: 80000 when using max_input_tokens)
-#max_message_chars = 80000
-
-# Model to use
-model = "gpt-4o"
+# Model to use (Claude 3 Sonnet)
+model = "claude-3-sonnet-20240229"
 
 # Number of retries to attempt when an operation fails with the LLM.
 # Increase this value to allow more attempts before giving up
