@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-type SliceState = { messages: (Message)[] };
+type SliceState = { messages: Message[] };
 
 const MAX_CONTENT_LENGTH = 1000;
 
@@ -46,16 +46,16 @@ export const chatSlice = createSlice({
       if (!HANDLED_ACTIONS.includes(actionID)) {
         return;
       }
-      const messageID = `ACTION_MESSAGE\$${actionID.toUpperCase()}`;
+      const messageID = `ACTION_MESSAGE$${actionID.toUpperCase()}`;
       let text = "";
       if (actionID === "run") {
         text = `\`${action.payload.args.command}\``;
       } else if (actionID === "run_ipython") {
         text = `\`\`\`\n${action.payload.args.code}\n\`\`\``;
       } else if (actionID === "write") {
-        let content = action.payload.args.content;
+        let { content } = action.payload.args;
         if (content.length > MAX_CONTENT_LENGTH) {
-          content = content.slice(0, MAX_CONTENT_LENGTH) + '...';
+          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
         }
         text = `${action.payload.args.path}\n${content}`;
       } else if (actionID === "read") {
@@ -78,7 +78,7 @@ export const chatSlice = createSlice({
       if (!HANDLED_ACTIONS.includes(observationID)) {
         return;
       }
-      const messageID = `OBSERVATION_MESSAGE\$${observationID.toUpperCase()}`;
+      const messageID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
       const causeID = observation.payload.cause;
       const causeMessage = state.messages.find(
         (message) => message.eventID === causeID,
@@ -87,13 +87,13 @@ export const chatSlice = createSlice({
         return;
       }
       causeMessage.id = messageID;
-      if (observationID === 'run' || observationID === 'run_ipython') {
-        let content = observation.payload.content;
+      if (observationID === "run" || observationID === "run_ipython") {
+        let { content } = observation.payload;
         if (content.length > MAX_CONTENT_LENGTH) {
-          content = content.slice(0, MAX_CONTENT_LENGTH) + '...';
+          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
         }
         content = `\`\`\`\n${content}\n\`\`\``;
-        causeMessage.content = content;  // Observation content includes the action
+        causeMessage.content = content; // Observation content includes the action
       }
     },
 
