@@ -36,7 +36,7 @@ class Session:
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
     config: AppConfig
-    settings: dict
+    settings: dict | None
 
     def __init__(
         self, sid: str, config: AppConfig, file_store: FileStore, sio: socketio.AsyncServer | None
