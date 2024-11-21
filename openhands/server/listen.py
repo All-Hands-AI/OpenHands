@@ -917,62 +917,6 @@ async def connect(connection_id: str, environ):
 
 @sio.event
 async def oh_action(connection_id: str, data: dict):
-    """WebSocket endpoint for receiving events from the client (i.e., the browser).
-    Once connected, the client can send various actions:
-    - Initialize the agent:
-    session management, and event streaming.
-        ```json
-        {"action": "initialize", "args": {"LLM_MODEL": "ollama/llama3", "AGENT": "CodeActAgent", "LANGUAGE": "en", "LLM_API_KEY": "ollama"}}
-
-    Args:
-        ```
-        websocket (WebSocket): The WebSocket connection object.
-    - Start a new development task:
-        ```json
-        {"action": "start", "args": {"task": "write a bash script that prints hello"}}
-        ```
-    - Send a message:
-        ```json
-        {"action": "message", "args": {"content": "Hello, how are you?", "image_urls": ["base64_url1", "base64_url2"]}}
-        ```
-    - Write contents to a file:
-        ```json
-        {"action": "write", "args": {"path": "./greetings.txt", "content": "Hello, OpenHands?"}}
-        ```
-    - Read the contents of a file:
-        ```json
-        {"action": "read", "args": {"path": "./greetings.txt"}}
-        ```
-    - Run a command:
-        ```json
-        {"action": "run", "args": {"command": "ls -l", "thought": "", "confirmation_state": "confirmed"}}
-        ```
-    - Run an IPython command:
-        ```json
-        {"action": "run_ipython", "args": {"command": "print('Hello, IPython!')"}}
-        ```
-    - Open a web page:
-        ```json
-        {"action": "browse", "args": {"url": "https://arxiv.org/html/2402.01030v2"}}
-        ```
-    - Add a task to the root_task:
-        ```json
-        {"action": "add_task", "args": {"task": "Implement feature X"}}
-        ```
-    - Update a task in the root_task:
-        ```json
-        {"action": "modify_task", "args": {"id": "0", "state": "in_progress", "thought": ""}}
-        ```
-    - Change the agent's state:
-        ```json
-        {"action": "change_agent_state", "args": {"state": "paused"}}
-        ```
-    - Finish the task:
-        ```json
-        {"action": "finish", "args": {}}
-        ```
-    """
-
     # If it's an init, we do it here.
     action = data.get('action', '')
     if action == ActionType.INIT:
