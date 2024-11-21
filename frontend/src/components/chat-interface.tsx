@@ -176,16 +176,26 @@ export function ChatInterface() {
           curAgentState === AgentState.FINISHED) && (
           <div className="flex flex-col gap-2 mb-2">
             {rootLoaderData?.ghToken ? (
-              <SuggestionItem
-                suggestion={{
-                  label: "Push to GitHub",
-                  value:
-                    "Please push the changes to GitHub and open a pull request.",
-                }}
-                onClick={(value) => {
-                  handleSendMessage(value, []);
-                }}
-              />
+              <div className="flex flex-col gap-2">
+                <SuggestionItem
+                  suggestion={{
+                    label: "Push to GitHub",
+                    value: "Please push the changes to GitHub.",
+                  }}
+                  onClick={(value) => {
+                    handleSendMessage(value, []);
+                  }}
+                />
+                <SuggestionItem
+                  suggestion={{
+                    label: "Push & Create PR",
+                    value: "Please push the changes to GitHub and open a pull request.",
+                  }}
+                  onClick={(value) => {
+                    handleSendMessage(value, []);
+                  }}
+                />
+              </div>
             ) : (
               <SuggestionItem
                 suggestion={{

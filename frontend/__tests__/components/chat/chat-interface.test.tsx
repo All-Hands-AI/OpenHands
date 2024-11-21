@@ -281,6 +281,31 @@ describe.skip("ChatInterface", () => {
     expect(within(error).getByText("Something went wrong")).toBeInTheDocument();
   });
 
+  it("should render both GitHub buttons when ghToken is available", () => {
+    vi.mock("@remix-run/react", async (importActual) => ({
+      ...(await importActual<typeof import("@remix-run/react")>()),
+      useRouteLoaderData: vi.fn(() => ({ ghToken: "test-token" })),
+    }));
+
+    const messages: Message[] = [
+      {
+        sender: "assistant",
+        content: "Hello",
+        imageUrls: [],
+        timestamp: new Date().toISOString(),
+      },
+    ];
+    renderChatInterface(messages);
+
+    const pushButton = screen.getByRole("button", { name: "Push to GitHub" });
+    const prButton = screen.getByRole("button", { name: "Push & Create PR" });
+
+    expect(pushButton).toBeInTheDocument();
+    expect(prButton).toBeInTheDocument();
+    expect(pushButton).toHaveTextContent("Push to GitHub");
+    expect(prButton).toHaveTextContent("Push & Create PR");
+  });
+
   it("should render feedback actions if there are more than 3 messages", () => {
     const messages: Message[] = [
       {
