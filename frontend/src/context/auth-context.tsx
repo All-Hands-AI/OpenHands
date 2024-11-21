@@ -14,15 +14,40 @@ interface AuthContextType {
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 function AuthProvider({ children }: React.PropsWithChildren) {
-  const [token, setToken] = React.useState<string | null>(null);
-  const [gitHubToken, setGitHubToken] = React.useState<string | null>(null);
+  const [tokenState, setTokenState] = React.useState<string | null>(() =>
+    localStorage.getItem("token"),
+  );
+  const [gitHubTokenState, setGitHubTokenState] = React.useState<string | null>(
+    () => localStorage.getItem("ghToken"),
+  );
+
+  React.useLayoutEffect(() => {
+    setTokenState(localStorage.getItem("token"));
+    setGitHubTokenState(localStorage.getItem("ghToken"));
+  });
+
+  const setToken = (token: string | null) => {
+    setTokenState(token);
+
+    if (token) localStorage.setItem("token", token);
+    else localStorage.removeItem("token");
+  };
+
+  const setGitHubToken = (token: string | null) => {
+    setGitHubTokenState(token);
+
+    if (token) localStorage.setItem("ghToken", token);
+    else localStorage.removeItem("ghToken");
+  };
 
   const clearToken = () => {
-    setToken(null);
+    setTokenState(null);
+    localStorage.removeItem("token");
   };
 
   const clearGitHubToken = () => {
-    setGitHubToken(null);
+    setGitHubTokenState(null);
+    localStorage.removeItem("ghToken");
   };
 
   const logout = () => {
@@ -32,15 +57,15 @@ function AuthProvider({ children }: React.PropsWithChildren) {
 
   const value = React.useMemo(
     () => ({
-      token,
-      gitHubToken,
+      token: tokenState,
+      gitHubToken: gitHubTokenState,
       setToken,
       setGitHubToken,
       clearToken,
       clearGitHubToken,
       logout,
     }),
-    [token, gitHubToken],
+    [tokenState, gitHubTokenState],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

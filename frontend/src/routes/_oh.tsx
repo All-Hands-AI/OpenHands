@@ -83,7 +83,7 @@ export default function MainApp() {
 
   const config = useConfig();
   const user = useGitHubUser();
-  const { data: isAuthed } = useIsAuthed({ gitHubToken });
+  const { data: isAuthed, isFetched } = useIsAuthed({ gitHubToken });
   const aiConfigOptions = useAIConfigOptions();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
@@ -93,8 +93,8 @@ export default function MainApp() {
   });
 
   React.useEffect(() => {
-    if (!isAuthed) clearToken();
-  }, [isAuthed]);
+    if (isFetched && !isAuthed) clearToken();
+  }, [isFetched, isAuthed]);
 
   React.useEffect(() => {
     if (settings.LANGUAGE) {
