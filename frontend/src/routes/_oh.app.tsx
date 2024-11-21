@@ -18,17 +18,17 @@ import { FilesProvider } from "#/context/files";
 import { ChatInterface } from "#/components/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "#/components/event-handler";
-import { getGitHubToken, getToken } from "#/services/auth";
 import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
+import { useAuth } from "#/context/auth-context";
 
 function App() {
+  const { token, gitHubToken } = useAuth();
+
   const dispatch = useDispatch();
-  const { settings, token, ghToken, repo } = {
-    settings: getSettings(),
-    token: getToken(),
-    ghToken: getGitHubToken(),
-    repo: localStorage.getItem("repo"),
-  };
+
+  // FIXME: Bad practice - should be handled within state
+  const settings = getSettings();
+  const repo = localStorage.getItem("repo");
 
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initalQuery,
@@ -40,13 +40,13 @@ function App() {
   );
 
   const { data: latestGitHubCommit } = useLatestRepoCommit({
-    gitHubToken: ghToken,
+    gitHubToken,
     repository,
   });
 
   const secrets = React.useMemo(
-    () => [ghToken, token].filter((secret) => secret !== null),
-    [ghToken, token],
+    () => [gitHubToken, token].filter((secret) => secret !== null),
+    [gitHubToken, token],
   );
 
   const Terminal = React.useMemo(
@@ -70,7 +70,7 @@ function App() {
     <WsClientProvider
       enabled
       token={token}
-      ghToken={ghToken}
+      ghToken={gitHubToken}
       settings={settings}
     >
       <EventHandler>

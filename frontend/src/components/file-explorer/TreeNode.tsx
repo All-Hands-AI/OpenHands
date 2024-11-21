@@ -5,6 +5,7 @@ import { useFiles } from "#/context/files";
 import { cn } from "#/utils/utils";
 import { useGetFiles } from "#/hooks/query/use-get-files";
 import { useGetFile } from "#/hooks/query/use-get-file";
+import { useAuth } from "#/context/auth-context";
 
 interface TitleProps {
   name: string;
@@ -41,18 +42,20 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
     files,
     selectedPath,
   } = useFiles();
+  const { token } = useAuth();
+
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
 
   const isDirectory = path.endsWith("/");
 
   const { data: paths } = useGetFiles({
-    token: localStorage.getItem("token"),
+    token,
     path,
     enabled: isDirectory && isOpen,
   });
 
   const { data: fileContent, refetch } = useGetFile({
-    token: localStorage.getItem("token"),
+    token,
     path,
   });
 

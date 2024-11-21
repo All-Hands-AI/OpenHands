@@ -7,22 +7,22 @@ import {
   BaseModalTitle,
 } from "./confirmation-modals/BaseModal";
 import { I18nKey } from "#/i18n/declaration";
-import { getGitHubToken, setGitHubToken } from "#/services/auth";
+import { useAuth } from "#/context/auth-context";
 
 interface ConnectToGitHubModalProps {
   onClose: () => void;
 }
 
 export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
+  const { gitHubToken, setGitHubToken } = useAuth();
   const { t } = useTranslation();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const githubToken = formData.get("ghToken")?.toString();
+    const ghToken = formData.get("ghToken")?.toString();
 
-    if (githubToken) setGitHubToken(githubToken);
-
+    if (ghToken) setGitHubToken(ghToken);
     onClose();
   };
 
@@ -52,7 +52,7 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
           name="ghToken"
           required
           type="password"
-          defaultValue={getGitHubToken() ?? ""}
+          defaultValue={gitHubToken ?? ""}
         />
 
         <div className="flex flex-col gap-2 w-full">

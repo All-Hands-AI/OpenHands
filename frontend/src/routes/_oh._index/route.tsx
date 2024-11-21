@@ -11,30 +11,28 @@ import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
-import { getGitHubToken, getToken } from "#/services/auth";
+import { useAuth } from "#/context/auth-context";
 
 function Home() {
+  const { token, gitHubToken } = useAuth();
+
   const dispatch = useDispatch();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const ghToken = getGitHubToken();
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const { data: config } = useConfig();
-  const { data: user } = useGitHubUser({
-    gitHubToken: ghToken,
-  });
-  const { data: repositories } = useUserRepositories(ghToken);
+  const { data: user } = useGitHubUser({ gitHubToken });
+  const { data: repositories } = useUserRepositories(gitHubToken);
 
   const gitHubAuthUrl = useGitHubAuthUrl({
-    gitHubToken: ghToken,
+    gitHubToken,
     appMode: config?.APP_MODE || null,
     gitHubClientId: config?.GITHUB_CLIENT_ID || null,
   });
 
   React.useEffect(() => {
-    const token = getToken();
     if (token) navigate("/app");
   }, [location.pathname]);
 

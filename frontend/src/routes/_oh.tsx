@@ -26,11 +26,11 @@ import AgentState from "#/types/AgentState";
 import { useConfig } from "#/hooks/query/use-config";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
-import { clearToken, getGitHubToken, getToken } from "#/services/auth";
 import { logoutCleanup } from "#/utils/logout-cleanup";
 import { clearSession } from "#/utils/clear-session";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
+import { useAuth } from "#/context/auth-context";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -65,13 +65,13 @@ export function ErrorBoundary() {
 }
 
 export default function MainApp() {
+  const { token, gitHubToken, clearToken } = useAuth();
+
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
 
-  const { token, ghToken, settingsIsUpdated, settings, analyticsConsent } = {
-    token: getToken(),
-    ghToken: getGitHubToken(),
+  const { settingsIsUpdated, settings, analyticsConsent } = {
     settingsIsUpdated: settingsAreUpToDate(),
     settings: getSettings(),
     analyticsConsent: localStorage.getItem("analytics-consent"),
@@ -87,14 +87,12 @@ export default function MainApp() {
   );
 
   const config = useConfig();
-  const user = useGitHubUser({
-    gitHubToken: ghToken,
-  });
-  const { data: isAuthed } = useIsAuthed({ gitHubToken: ghToken });
+  const user = useGitHubUser();
+  const { data: isAuthed } = useIsAuthed({ gitHubToken });
   const aiConfigOptions = useAIConfigOptions();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
-    gitHubToken: ghToken,
+    gitHubToken,
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
   });
@@ -260,7 +258,7 @@ export default function MainApp() {
         </ModalBackdrop>
       )}
       {!isAuthed && config.data?.APP_MODE === "saas" && (
-        <WaitlistModal ghToken={ghToken} githubAuthUrl={gitHubAuthUrl} />
+        <WaitlistModal ghToken={gitHubToken} githubAuthUrl={gitHubAuthUrl} />
       )}
       {consentFormIsOpen && (
         <AnalyticsConsentFormModal

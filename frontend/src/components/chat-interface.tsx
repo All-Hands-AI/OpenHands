@@ -28,13 +28,14 @@ import {
 import OpenHands from "#/api/open-hands";
 import { downloadWorkspace } from "#/utils/download-workspace";
 import { SuggestionItem } from "./suggestion-item";
-import { getGitHubToken } from "#/services/auth";
+import { useAuth } from "#/context/auth-context";
 
 const isErrorMessage = (
   message: Message | ErrorMessage,
 ): message is ErrorMessage => "error" in message;
 
 export function ChatInterface() {
+  const { gitHubToken } = useAuth();
   const { send, status, isLoadingMessages } = useWsClient();
 
   const dispatch = useDispatch();
@@ -173,7 +174,7 @@ export function ChatInterface() {
         {(curAgentState === AgentState.AWAITING_USER_INPUT ||
           curAgentState === AgentState.FINISHED) && (
           <div className="flex flex-col gap-2 mb-2">
-            {getGitHubToken() ? (
+            {gitHubToken ? (
               <SuggestionItem
                 suggestion={{
                   label: "Push to GitHub",

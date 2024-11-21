@@ -14,6 +14,7 @@ import "./i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
+import { AuthProvider } from "./context/auth-context";
 
 function PosthogInit() {
   const { data: config } = useConfig();
@@ -51,10 +52,12 @@ prepareApp().then(() =>
       document,
       <StrictMode>
         <Provider store={store}>
-          <QueryClientProvider client={queryClient}>
-            <RemixBrowser />
-            <PosthogInit />
-          </QueryClientProvider>
+          <AuthProvider>
+            <QueryClientProvider client={queryClient}>
+              <RemixBrowser />
+              <PosthogInit />
+            </QueryClientProvider>
+          </AuthProvider>
         </Provider>
       </StrictMode>,
     );

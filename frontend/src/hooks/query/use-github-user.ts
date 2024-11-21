@@ -1,24 +1,18 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import posthog from "posthog-js";
 import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
+import { useAuth } from "#/context/auth-context";
 import { useConfig } from "./use-config";
 
-interface UseGitHubUserConfig {
-  gitHubToken: string | null;
-}
-
-export const useGitHubUser = (config: UseGitHubUserConfig) => {
-  const queryClient = useQueryClient();
-  // Ensure that the app mode is available before fetching user data
-  const appMode = queryClient.getQueryData<ReturnType<typeof useConfig>>([
-    "config",
-  ])?.data?.APP_MODE;
+export const useGitHubUser = () => {
+  const { gitHubToken } = useAuth();
+  const { data: config } = useConfig();
 
   const user = useQuery({
-    queryKey: ["user", config.gitHubToken],
+    queryKey: ["user", gitHubToken],
     queryFn: async () => {
-      const data = await retrieveGitHubUser(config.gitHubToken!);
+      const data = await retrieveGitHubUser(gitHubToken!);
 
       if (isGitHubErrorReponse(data)) {
         throw new Error("Failed to retrieve user data");
@@ -26,7 +20,7 @@ export const useGitHubUser = (config: UseGitHubUserConfig) => {
 
       return data;
     },
-    enabled: !!config.gitHubToken && !!appMode,
+    enabled: !!gitHubToken && !!config?.APP_MODE,
     retry: false,
   });
 
@@ -37,7 +31,7 @@ export const useGitHubUser = (config: UseGitHubUserConfig) => {
         name: user.data.name,
         email: user.data.email,
         user: user.data.login,
-        mode: appMode || "oss",
+        mode: config?.APP_MODE || "oss",
       });
     }
   }, [user.data]);

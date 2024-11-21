@@ -10,9 +10,9 @@ import FormFieldset from "../form/FormFieldset";
 import { CustomInput } from "../form/custom-input";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
-import { getGitHubToken, setGitHubToken } from "#/services/auth";
 import { logoutCleanup } from "#/utils/logout-cleanup";
 import { saveSettings } from "#/services/settings";
+import { useAuth } from "#/context/auth-context";
 
 interface AccountSettingsModalProps {
   onClose: () => void;
@@ -27,6 +27,7 @@ function AccountSettingsModal({
   gitHubError,
   analyticsConsent,
 }: AccountSettingsModalProps) {
+  const { gitHubToken, setGitHubToken } = useAuth();
   const { t } = useTranslation();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -76,7 +77,7 @@ function AccountSettingsModal({
             name="ghToken"
             label="GitHub Token"
             type="password"
-            defaultValue={getGitHubToken() ?? ""}
+            defaultValue={gitHubToken ?? ""}
           />
           <BaseModalDescription>
             {t(I18nKey.CONNECT_TO_GITHUB_MODAL$GET_YOUR_TOKEN)}{" "}
@@ -94,7 +95,7 @@ function AccountSettingsModal({
               {t(I18nKey.ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID)}
             </p>
           )}
-          {getGitHubToken() && !gitHubError && (
+          {gitHubToken && !gitHubError && (
             <ModalButton
               variant="text-like"
               text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$DISCONNECT)}

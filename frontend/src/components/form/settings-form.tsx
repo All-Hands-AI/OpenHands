@@ -26,6 +26,7 @@ import {
   saveSettingsView,
   updateSettingsVersion,
 } from "#/utils/settings-utils";
+import { useAuth } from "#/context/auth-context";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -44,6 +45,8 @@ export function SettingsForm({
   securityAnalyzers,
   onClose,
 }: SettingsFormProps) {
+  const { clearToken } = useAuth();
+
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -52,7 +55,7 @@ export function SettingsForm({
 
   const resetOngoingSession = () => {
     if (location.pathname.startsWith("/app")) {
-      localStorage.removeItem("token");
+      clearToken();
       localStorage.removeItem("repo");
 
       navigate("/");

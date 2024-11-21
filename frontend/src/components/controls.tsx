@@ -3,7 +3,7 @@ import React from "react";
 import AgentControlBar from "./AgentControlBar";
 import AgentStatusBar from "./AgentStatusBar";
 import { ProjectMenuCard } from "./project-menu/ProjectMenuCard";
-import { getGitHubToken } from "#/services/auth";
+import { useAuth } from "#/context/auth-context";
 
 interface ControlsProps {
   setSecurityOpen: (isOpen: boolean) => void;
@@ -16,7 +16,8 @@ export function Controls({
   showSecurityLock,
   lastCommitData,
 }: ControlsProps) {
-  const ghToken = getGitHubToken();
+  const { gitHubToken } = useAuth();
+
   const repo = localStorage.getItem("repo");
 
   const projectMenuCardData = React.useMemo(
@@ -49,7 +50,7 @@ export function Controls({
       </div>
 
       <ProjectMenuCard
-        isConnectedToGitHub={!!ghToken}
+        isConnectedToGitHub={!!gitHubToken}
         githubData={projectMenuCardData}
       />
     </div>

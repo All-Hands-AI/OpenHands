@@ -1,13 +1,16 @@
 import { useMutation } from "@tanstack/react-query";
-import { getToken } from "#/services/auth";
 import OpenHands from "#/api/open-hands";
+import { useAuth } from "#/context/auth-context";
 
 type UploadFilesArgs = {
   files: File[];
 };
 
-export const useUploadFiles = () =>
-  useMutation({
+export const useUploadFiles = () => {
+  const { token } = useAuth();
+
+  return useMutation({
     mutationFn: ({ files }: UploadFilesArgs) =>
-      OpenHands.uploadFiles(getToken() || "", files),
+      OpenHands.uploadFiles(token || "", files),
   });
+};

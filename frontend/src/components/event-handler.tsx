@@ -2,7 +2,6 @@ import React from "react";
 import { useNavigate } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
-
 import posthog from "posthog-js";
 import {
   useWsClient,
@@ -29,9 +28,9 @@ import AgentState from "#/types/AgentState";
 import { getSettings } from "#/services/settings";
 import { generateAgentStateChangeEvent } from "#/services/agentStateService";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
-import { getGitHubToken } from "#/services/auth";
 import { clearSession } from "#/utils/clear-session";
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
+import { useAuth } from "#/context/auth-context";
 
 interface ServerError {
   error: boolean | string;
@@ -45,6 +44,7 @@ const isErrorObservation = (data: object): data is ErrorObservation =>
   "observation" in data && data.observation === "error";
 
 export function EventHandler({ children }: React.PropsWithChildren) {
+  const { setToken, gitHubToken } = useAuth();
   const { events, status, send } = useWsClient();
   const navigate = useNavigate();
   const statusRef = React.useRef<WsClientProviderStatus | null>(null);
@@ -53,12 +53,11 @@ export function EventHandler({ children }: React.PropsWithChildren) {
   const { files, importedProjectZip, initialQuery } = useSelector(
     (state: RootState) => state.initalQuery,
   );
-  const { ghToken, repo } = {
-    ghToken: getGitHubToken(),
-    repo: localStorage.getItem("repo"),
-  };
 
-  const { data: user } = useGitHubUser({ gitHubToken: ghToken });
+  // FIXME: Bad practice - should be handled with state
+  const repo = localStorage.getItem("repo");
+
+  const { data: user } = useGitHubUser({ gitHubToken });
   const { mutate: uploadFiles } = useUploadFiles();
 
   const sendInitialQuery = (query: string, base64Files: string[]) => {
@@ -77,7 +76,7 @@ export function EventHandler({ children }: React.PropsWithChildren) {
     }
     const event = events[events.length - 1];
     if (event.token && typeof event.token === "string") {
-      localStorage.setItem("token", event.token);
+      setToken(event.token);
       return;
     }
 
@@ -123,8 +122,8 @@ export function EventHandler({ children }: React.PropsWithChildren) {
 
     if (status === WsClientProviderStatus.ACTIVE) {
       let additionalInfo = "";
-      if (ghToken && repo) {
-        send(getCloneRepoCommand(ghToken, repo));
+      if (gitHubToken && repo) {
+        send(getCloneRepoCommand(gitHubToken, repo));
         additionalInfo = `Repository ${repo} has been cloned to /workspace. Please check the /workspace for files.`;
         dispatch(clearSelectedRepository()); // reset selected repository; maybe better to move this to '/'?
       }
@@ -160,11 +159,11 @@ export function EventHandler({ children }: React.PropsWithChildren) {
   }, [status]);
 
   React.useEffect(() => {
-    if (runtimeActive && userId && ghToken) {
+    if (runtimeActive && userId && gitHubToken) {
       // Export if the user valid, this could happen mid-session so it is handled here
-      send(getGitHubTokenCommand(ghToken));
+      send(getGitHubTokenCommand(gitHubToken));
     }
-  }, [userId, ghToken, runtimeActive]);
+  }, [userId, gitHubToken, runtimeActive]);
 
   React.useEffect(() => {
     if (runtimeActive && importedProjectZip) {
