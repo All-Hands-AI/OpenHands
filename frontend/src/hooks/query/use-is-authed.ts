@@ -1,12 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
 import { useConfig } from "./use-config";
+import { useAuth } from "#/context/auth-context";
 
-interface UseIsAuthedConfig {
-  gitHubToken: string | null;
-}
-
-export const useIsAuthed = ({ gitHubToken }: UseIsAuthedConfig) => {
+export const useIsAuthed = () => {
+  const { gitHubToken } = useAuth();
   const { data: config } = useConfig();
 
   return useQuery({

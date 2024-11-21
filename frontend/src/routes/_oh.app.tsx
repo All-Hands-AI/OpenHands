@@ -32,7 +32,6 @@ function App() {
   );
 
   const { data: latestGitHubCommit } = useLatestRepoCommit({
-    gitHubToken,
     repository: selectedRepository,
   });
 

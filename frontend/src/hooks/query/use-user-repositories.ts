@@ -4,6 +4,7 @@ import {
   retrieveGitHubUserRepositories,
 } from "#/api/github";
 import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
+import { useAuth } from "#/context/auth-context";
 
 interface UserRepositoriesQueryFnProps {
   pageParam: number;
@@ -32,13 +33,16 @@ const userRepositoriesQueryFn = async ({
   return { data, nextPage };
 };
 
-export const useUserRepositories = (ghToken: string | null) =>
-  useInfiniteQuery({
-    queryKey: ["repositories", ghToken],
+export const useUserRepositories = () => {
+  const { gitHubToken } = useAuth();
+
+  return useInfiniteQuery({
+    queryKey: ["repositories", gitHubToken],
     queryFn: async ({ pageParam }) =>
-      userRepositoriesQueryFn({ pageParam, ghToken: ghToken! }),
+      userRepositoriesQueryFn({ pageParam, ghToken: gitHubToken! }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
-    enabled: !!ghToken,
+    enabled: !!gitHubToken,
     select: (data) => data.pages.flatMap((page) => page.data),
   });
+};

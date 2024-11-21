@@ -55,13 +55,13 @@ class OpenHands {
   }
 
   static async getConfig(): Promise<GetConfigResponse> {
-    const cachedData = cache.get<GetConfigResponse>("config");
-    if (cachedData) return cachedData;
+    const response = await fetch("/config.json");
 
-    const data = await request("/config.json");
-    cache.set("config", data);
+    if (!response.ok) {
+      throw new Error("Failed to fetch config");
+    }
 
-    return data;
+    return response.json();
   }
 
   /**

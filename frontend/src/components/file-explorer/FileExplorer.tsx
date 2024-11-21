@@ -21,7 +21,6 @@ import VSCodeIcon from "#/assets/vscode-alt.svg?react";
 import { useGetFiles } from "#/hooks/query/use-get-files";
 import { FileUploadSuccessResponse } from "#/api/open-hands.types";
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
-import { useAuth } from "#/context/auth-context";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
@@ -98,8 +97,6 @@ interface FileExplorerProps {
 }
 
 function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
-  const { token } = useAuth();
-
   const [isDragging, setIsDragging] = React.useState(false);
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -110,7 +107,7 @@ function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
     fileInputRef.current?.click(); // Trigger the file browser
   };
 
-  const { data: paths, refetch, error } = useGetFiles({ token });
+  const { data: paths, refetch, error } = useGetFiles();
 
   const handleUploadSuccess = (data: FileUploadSuccessResponse) => {
     const uploadedCount = data.uploaded_files.length;

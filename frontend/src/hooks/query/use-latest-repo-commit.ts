@@ -1,17 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { retrieveLatestGitHubCommit, isGitHubErrorReponse } from "#/api/github";
+import { useAuth } from "#/context/auth-context";
 
 interface UseLatestRepoCommitConfig {
-  gitHubToken: string | null;
   repository: string | null;
 }
 
-export const useLatestRepoCommit = (config: UseLatestRepoCommitConfig) =>
-  useQuery({
-    queryKey: ["latest_commit", config.gitHubToken, config.repository],
+export const useLatestRepoCommit = (config: UseLatestRepoCommitConfig) => {
+  const { gitHubToken } = useAuth();
+
+  return useQuery({
+    queryKey: ["latest_commit", gitHubToken, config.repository],
     queryFn: async () => {
       const data = await retrieveLatestGitHubCommit(
-        config.gitHubToken!,
+        gitHubToken!,
         config.repository!,
       );
 
@@ -21,5 +23,6 @@ export const useLatestRepoCommit = (config: UseLatestRepoCommitConfig) =>
 
       return data[0];
     },
-    enabled: !!config.gitHubToken && !!config.repository,
+    enabled: !!gitHubToken && !!config.repository,
   });
+};
