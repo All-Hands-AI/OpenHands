@@ -2,7 +2,6 @@ import { useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { Outlet } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
-import { useQuery } from "@tanstack/react-query";
 import { getSettings } from "#/services/settings";
 import Security from "../components/modals/security/Security";
 import { Controls } from "#/components/controls";
@@ -14,13 +13,13 @@ import { useEffectOnce } from "#/utils/use-effect-once";
 import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
 import ListIcon from "#/icons/list-type-number.svg?react";
-import { isGitHubErrorReponse, retrieveLatestGitHubCommit } from "#/api/github";
 import { clearJupyter } from "#/state/jupyterSlice";
 import { FilesProvider } from "#/context/files";
 import { ChatInterface } from "#/components/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "#/components/event-handler";
 import { getGitHubToken, getToken } from "#/services/auth";
+import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
 
 function App() {
   const dispatch = useDispatch();
@@ -40,17 +39,9 @@ function App() {
     [selectedRepository, repo],
   );
 
-  const { data: latestGitHubCommit } = useQuery({
-    queryKey: ["latest_commit", ghToken, repository],
-    queryFn: async () => {
-      const data = await retrieveLatestGitHubCommit(ghToken!, repository!);
-      if (isGitHubErrorReponse(data)) {
-        throw new Error("Failed to retrieve latest commit");
-      }
-
-      return data[0];
-    },
-    enabled: !!ghToken && !!repository,
+  const { data: latestGitHubCommit } = useLatestRepoCommit({
+    gitHubToken: ghToken,
+    repository,
   });
 
   const secrets = React.useMemo(

@@ -58,7 +58,7 @@ export function EventHandler({ children }: React.PropsWithChildren) {
     repo: localStorage.getItem("repo"),
   };
 
-  const { data: user } = useGitHubUser(ghToken);
+  const { data: user } = useGitHubUser({ gitHubToken: ghToken });
   const { mutate: uploadFiles } = useUploadFiles();
 
   const sendInitialQuery = (query: string, base64Files: string[]) => {

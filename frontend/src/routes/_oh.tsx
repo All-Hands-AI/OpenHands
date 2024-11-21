@@ -26,7 +26,7 @@ import AgentState from "#/types/AgentState";
 import { useConfig } from "#/hooks/query/use-config";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
-import { getGitHubToken, getToken } from "#/services/auth";
+import { clearToken, getGitHubToken, getToken } from "#/services/auth";
 import { logoutCleanup } from "#/utils/logout-cleanup";
 import { clearSession } from "#/utils/clear-session";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
@@ -87,7 +87,10 @@ export default function MainApp() {
   );
 
   const config = useConfig();
-  const user = useGitHubUser(ghToken);
+  const user = useGitHubUser({
+    gitHubToken: ghToken,
+    appMode: config.data?.APP_MODE,
+  });
   const { data: isAuthed } = useIsAuthed({ gitHubToken: ghToken });
   const aiConfigOptions = useAIConfigOptions();
 
@@ -98,11 +101,10 @@ export default function MainApp() {
   });
 
   React.useEffect(() => {
-    if (!isAuthed) localStorage.removeItem("token");
+    if (!isAuthed) clearToken();
   }, [isAuthed]);
 
   React.useEffect(() => {
-    // i18n.language
     if (settings.LANGUAGE) {
       i18n.changeLanguage(settings.LANGUAGE);
     }
@@ -126,6 +128,7 @@ export default function MainApp() {
   const handleEndSession = () => {
     setStartNewProjectModalIsOpen(false);
     dispatch(setCurrentAgentState(AgentState.LOADING));
+    // TODO: Refactor the code below to a useEndSession hook (since it is used in multiple places)
     clearSession();
     navigate("/");
   };

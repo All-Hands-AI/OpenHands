@@ -9,8 +9,6 @@ import FileExplorer from "#/components/file-explorer/FileExplorer";
 import CodeEditorComponent from "./code-editor-component";
 import { useFiles } from "#/context/files";
 import { EditorActions } from "#/components/editor-actions";
-import { useGetFiles } from "#/hooks/query/use-get-files";
-import { getToken } from "#/services/auth";
 import { useSaveFile } from "#/hooks/mutation/use-save-file";
 
 const ASSET_FILE_TYPES = [
@@ -37,20 +35,15 @@ export function ErrorBoundary() {
 }
 
 function CodeEditor() {
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const {
-    setPaths,
     selectedPath,
     modifiedFiles,
     saveFileContent: saveNewFileContent,
     discardChanges,
   } = useFiles();
+
   const [fileExplorerIsOpen, setFileExplorerIsOpen] = React.useState(true);
   const editorRef = React.useRef<editor.IStandaloneCodeEditor | null>(null);
-
-  const { data: files, error: getFilesError } = useGetFiles({
-    token: getToken(),
-  });
 
   const { mutate: saveFile } = useSaveFile();
 
@@ -76,12 +69,6 @@ function CodeEditor() {
   const agentState = useSelector(
     (state: RootState) => state.agent.curAgentState,
   );
-
-  React.useEffect(() => {
-    if (curAgentState === AgentState.INIT && files) {
-      setPaths(files);
-    }
-  }, [curAgentState, files]);
 
   // Code editing is only allowed when the agent is paused, finished, or awaiting user input (server rules)
   const isEditingAllowed = React.useMemo(
@@ -112,11 +99,7 @@ function CodeEditor() {
 
   return (
     <div className="flex h-full bg-neutral-900 relative">
-      <FileExplorer
-        isOpen={fileExplorerIsOpen}
-        onToggle={toggleFileExplorer}
-        error={getFilesError?.message || null}
-      />
+      <FileExplorer isOpen={fileExplorerIsOpen} onToggle={toggleFileExplorer} />
       <div className="w-full">
         {selectedPath && !isAssetFileType && (
           <div className="flex w-full items-center justify-between self-end p-2">

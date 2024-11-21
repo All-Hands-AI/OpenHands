@@ -1,4 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import {
+  useWsClient,
+  WsClientProviderStatus,
+} from "#/context/ws-client-provider";
 
 interface UseListFilesConfig {
   token: string | null;
@@ -25,9 +29,13 @@ const getFilesQueryFn = async (
   return response.json();
 };
 
-export const useGetFiles = (config: UseListFilesConfig) =>
-  useQuery({
+export const useGetFiles = (config: UseListFilesConfig) => {
+  const { status } = useWsClient();
+  const isActive = status === WsClientProviderStatus.ACTIVE;
+
+  return useQuery({
     queryKey: ["files", config.token, config.path],
     queryFn: () => getFilesQueryFn(config.token, config.path),
-    enabled: config.enabled && !!config.token,
+    enabled: isActive && config.enabled && !!config.token,
   });
+};

@@ -2,19 +2,25 @@ import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import posthog from "posthog-js";
 import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
+import { GetConfigResponse } from "#/api/open-hands.types";
 
-export const useGitHubUser = (gitHubToken: string | null) => {
+interface UseGitHubUserConfig {
+  gitHubToken: string | null;
+  appMode?: GetConfigResponse["APP_MODE"];
+}
+
+export const useGitHubUser = (config: UseGitHubUserConfig) => {
   const user = useQuery({
-    queryKey: ["user", gitHubToken],
+    queryKey: ["user", config.gitHubToken],
     queryFn: async () => {
-      const data = await retrieveGitHubUser(gitHubToken!);
+      const data = await retrieveGitHubUser(config.gitHubToken!);
       if (isGitHubErrorReponse(data)) {
         throw new Error("Failed to retrieve user data");
       }
 
       return data;
     },
-    enabled: !!gitHubToken,
+    enabled: !!config.gitHubToken,
     retry: false,
   });
 
@@ -25,7 +31,7 @@ export const useGitHubUser = (gitHubToken: string | null) => {
         name: user.data.name,
         email: user.data.email,
         user: user.data.login,
-        mode: window.__APP_MODE__ || "oss",
+        mode: config.appMode || "oss",
       });
     }
   }, [user.data]);

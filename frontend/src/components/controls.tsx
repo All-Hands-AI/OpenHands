@@ -4,6 +4,7 @@ import AgentControlBar from "./AgentControlBar";
 import AgentStatusBar from "./AgentStatusBar";
 import { ProjectMenuCard } from "./project-menu/ProjectMenuCard";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
+import { getGitHubToken } from "#/services/auth";
 
 interface ControlsProps {
   setSecurityOpen: (isOpen: boolean) => void;
@@ -16,10 +17,10 @@ export function Controls({
   showSecurityLock,
   lastCommitData,
 }: ControlsProps) {
-  const ghToken = localStorage.getItem("ghToken");
+  const ghToken = getGitHubToken();
   const repo = localStorage.getItem("repo");
 
-  const { data: user } = useGitHubUser(ghToken);
+  const { data: user } = useGitHubUser({ gitHubToken: ghToken });
 
   const projectMenuCardData = React.useMemo(
     () =>

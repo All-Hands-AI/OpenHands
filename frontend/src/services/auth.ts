@@ -3,7 +3,7 @@ const GITHUB_TOKEN_KEY = "ghToken";
 
 const getToken = () => localStorage.getItem(TOKEN_KEY);
 
-const clearToken = (): void => {
+const clearToken = () => {
   localStorage.removeItem(TOKEN_KEY);
 };
 

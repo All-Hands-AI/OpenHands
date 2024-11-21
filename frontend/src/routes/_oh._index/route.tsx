@@ -18,14 +18,14 @@ function Home() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { ghToken } = {
-    ghToken: getGitHubToken(),
-  };
-
+  const ghToken = getGitHubToken();
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const { data: config } = useConfig();
-  const { data: user } = useGitHubUser(ghToken);
+  const { data: user } = useGitHubUser({
+    gitHubToken: ghToken,
+    appMode: config?.APP_MODE,
+  });
   const { data: repositories } = useUserRepositories(ghToken);
 
   const gitHubAuthUrl = useGitHubAuthUrl({

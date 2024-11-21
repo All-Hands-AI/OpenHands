@@ -36,7 +36,7 @@ export const useUserRepositories = (ghToken: string | null) =>
   useInfiniteQuery({
     queryKey: ["repositories", ghToken],
     queryFn: async ({ pageParam }) =>
-      userRepositoriesQueryFn({ pageParam, ghToken: ghToken! }), // only called when ghToken is not null
+      userRepositoriesQueryFn({ pageParam, ghToken: ghToken! }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,
     enabled: !!ghToken,

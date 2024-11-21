@@ -21,4 +21,5 @@ export const useIsAuthed = ({ gitHubToken }: UseIsAuthedConfig) =>
   useQuery({
     queryKey: ["user", "authenticated", gitHubToken],
     queryFn: () => authenticateUserQueryFn(gitHubToken || ""),
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });

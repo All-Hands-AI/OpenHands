@@ -95,10 +95,9 @@ function ExplorerActions({
 interface FileExplorerProps {
   isOpen: boolean;
   onToggle: () => void;
-  error: string | null;
 }
 
-function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
+function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
   const [isDragging, setIsDragging] = React.useState(false);
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -109,7 +108,11 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
     fileInputRef.current?.click(); // Trigger the file browser
   };
 
-  const { data: paths, refetch } = useGetFiles({
+  const {
+    data: paths,
+    refetch,
+    error,
+  } = useGetFiles({
     token: getToken(),
   });
 
@@ -265,7 +268,7 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
           )}
           {error && (
             <div className="flex flex-col items-center justify-center h-full">
-              <p className="text-neutral-300 text-sm">{error}</p>
+              <p className="text-neutral-300 text-sm">{error.message}</p>
             </div>
           )}
           {isOpen && (
