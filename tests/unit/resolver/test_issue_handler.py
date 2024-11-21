@@ -27,7 +27,8 @@ def test_get_converted_issues_initializes_review_comments():
         ]  # Need two comment responses because we make two API calls
 
         # Create an instance of IssueHandler
-        handler = IssueHandler('test-owner', 'test-repo', 'test-token')
+        llm_config = LLMConfig(model='test', api_key='test')
+        handler = IssueHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
         # Get converted issues
         issues = handler.get_converted_issues(issue_numbers=[1])
@@ -48,7 +49,8 @@ def test_get_converted_issues_initializes_review_comments():
 
 def test_pr_handler_guess_success_with_thread_comments():
     # Create a PR handler instance
-    handler = PRHandler('test-owner', 'test-repo', 'test-token')
+    llm_config = LLMConfig(model='test', api_key='test')
+    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
     # Create a mock issue with thread comments but no review comments
     issue = GithubIssue(
@@ -86,9 +88,7 @@ The changes successfully address the feedback."""
 
     # Test the guess_success method
     with patch('litellm.completion', return_value=mock_response):
-        success, success_list, explanation = handler.guess_success(
-            issue, history, llm_config
-        )
+        success, success_list, explanation = handler.guess_success(issue, history)
 
         # Verify the results
         assert success is True
@@ -155,7 +155,8 @@ def test_pr_handler_get_converted_issues_with_comments():
             mock_post.return_value = mock_graphql_response
 
             # Create an instance of PRHandler
-            handler = PRHandler('test-owner', 'test-repo', 'test-token')
+            llm_config = LLMConfig(model='test', api_key='test')
+            handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
             # Get converted issues
             prs = handler.get_converted_issues(issue_numbers=[1])
@@ -180,7 +181,8 @@ def test_pr_handler_get_converted_issues_with_comments():
 
 def test_pr_handler_guess_success_only_review_comments():
     # Create a PR handler instance
-    handler = PRHandler('test-owner', 'test-repo', 'test-token')
+    llm_config = LLMConfig(model='test', api_key='test')
+    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
     # Create a mock issue with only review comments
     issue = GithubIssue(
@@ -218,9 +220,7 @@ The changes successfully address the review comments."""
 
     # Test the guess_success method
     with patch('litellm.completion', return_value=mock_response):
-        success, success_list, explanation = handler.guess_success(
-            issue, history, llm_config
-        )
+        success, success_list, explanation = handler.guess_success(issue, history)
 
         # Verify the results
         assert success is True
@@ -230,7 +230,8 @@ The changes successfully address the review comments."""
 
 def test_pr_handler_guess_success_no_comments():
     # Create a PR handler instance
-    handler = PRHandler('test-owner', 'test-repo', 'test-token')
+    llm_config = LLMConfig(model='test', api_key='test')
+    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
     # Create a mock issue with no comments
     issue = GithubIssue(
@@ -253,9 +254,7 @@ def test_pr_handler_guess_success_no_comments():
     llm_config = LLMConfig(model='test-model', api_key='test-key')
 
     # Test that it returns appropriate message when no comments are present
-    success, success_list, explanation = handler.guess_success(
-        issue, history, llm_config
-    )
+    success, success_list, explanation = handler.guess_success(issue, history)
     assert success is False
     assert success_list is None
     assert explanation == 'No feedback was found to process'
@@ -274,7 +273,8 @@ def test_get_issue_comments_with_specific_comment_id():
         mock_get.return_value = mock_comments_response
 
         # Create an instance of IssueHandler
-        handler = IssueHandler('test-owner', 'test-repo', 'test-token')
+        llm_config = LLMConfig(model='test', api_key='test')
+        handler = IssueHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
         # Get comments with a specific comment_id
         specific_comment = handler._get_issue_comments(issue_number=1, comment_id=123)
@@ -361,7 +361,8 @@ def test_pr_handler_get_converted_issues_with_specific_thread_comment():
             mock_post.return_value = mock_graphql_response
 
             # Create an instance of PRHandler
-            handler = PRHandler('test-owner', 'test-repo', 'test-token')
+            llm_config = LLMConfig(model='test', api_key='test')
+            handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
             # Get converted issues
             prs = handler.get_converted_issues(
@@ -463,7 +464,8 @@ def test_pr_handler_get_converted_issues_with_specific_review_thread_comment():
             mock_post.return_value = mock_graphql_response
 
             # Create an instance of PRHandler
-            handler = PRHandler('test-owner', 'test-repo', 'test-token')
+            llm_config = LLMConfig(model='test', api_key='test')
+            handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
             # Get converted issues
             prs = handler.get_converted_issues(
@@ -585,7 +587,8 @@ def test_pr_handler_get_converted_issues_with_specific_comment_and_issue_refs():
             mock_post.return_value = mock_graphql_response
 
             # Create an instance of PRHandler
-            handler = PRHandler('test-owner', 'test-repo', 'test-token')
+            llm_config = LLMConfig(model='test', api_key='test')
+            handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
             # Get converted issues
             prs = handler.get_converted_issues(
@@ -684,7 +687,8 @@ def test_pr_handler_get_converted_issues_with_duplicate_issue_refs():
             mock_post.return_value = mock_graphql_response
 
             # Create an instance of PRHandler
-            handler = PRHandler('test-owner', 'test-repo', 'test-token')
+            llm_config = LLMConfig(model='test', api_key='test')
+            handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
             # Get converted issues
             prs = handler.get_converted_issues(issue_numbers=[1])
