@@ -30,18 +30,12 @@ RUN mkdir -p ${LOGS_DIR} ${AGENT_DIR} ${CODE_DIR} ${SUBMISSION_DIR} && \
     sudo usermod -aG docker nonroot && \
     git clone --branch ${OH_VERSION} --single-branch https://github.com/All-Hands-AI/OpenHands.git ${AGENT_DIR}
 
-# We need fuse for docker.
-RUN sudo apt-get install -y fuse-overlayfs
-
 WORKDIR ${AGENT_DIR}
 
 # Assumes that the `agent` conda env already exists, which is created in the `mlebench-env` base image.
-RUN conda install -y -n ${CONDA_ENV_NAME} -c conda-forge nodejs=18.17.1 && \
-    conda run -n ${CONDA_ENV_NAME} pip install poetry>=1.8 && \
+RUN conda install -y -n ${CONDA_ENV_NAME} -c conda-forge nodejs=18.17.1 python=3.12 poetry=1.8 && \
     conda run -n ${CONDA_ENV_NAME} poetry install && \
-    conda run -n ${CONDA_ENV_NAME} poetry add build
-
-RUN conda clean -afy
+    conda clean -afy
 
 COPY setup.py start.py templates.py utils.py start.sh build.sh ${AGENT_DIR}/
 COPY entrypoint.sh /agent_entrypoint.sh

@@ -121,6 +121,7 @@ def run_in_container(
             'bind': f'/private/data/{competition.id}/prepared/private/',
             'mode': 'ro',
         },
+        # "/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"},
     }
 
     container = create_competition_container(
@@ -140,7 +141,6 @@ def run_in_container(
     try:
         time_start = time.monotonic()
         container.start()
-        print('TEST RUN>PY')
         exit_code, _ = container.exec_run(
             'timeout 60s sh -c "while ! curl -s http://localhost:5000/health > /dev/null; do sleep 1; done"',
         )
@@ -149,23 +149,6 @@ def run_in_container(
             raise RuntimeError(
                 'The grading server failed to start within 60 seconds. This is likely due to an error in `entrypoint.sh`; check the logs.'
             )
-
-        exit_code, output = container.exec_run(
-            ' '.join(
-                [
-                    'docker',
-                    'buildx',
-                    'build',
-                    '--progress=plain',
-                    '--build-arg=OPENHANDS_RUNTIME_VERSION=0.14.0',
-                    '--build-arg=OPENHANDS_RUNTIME_BUILD_TIME=2024-11-19T21:01:38.353125',
-                    '--tag=ghcr.io/all-hands-ai/runtime:oh_v0.14.0_4jgqg088oqwrl1d8_943wj498fiupdhg1',
-                ]
-            )
-        )
-
-        print(exit_code)
-        print(output.decode('utf-8'))
 
         execute_agent(container, agent, logger)
         save_output(container, run_dir, container_config)

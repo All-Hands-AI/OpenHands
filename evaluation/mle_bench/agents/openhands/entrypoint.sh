@@ -6,9 +6,6 @@ set -x
 # Run the root entrypoint in the background
 /entrypoint.sh &
 
-# Start the docker daemon in the background
-sudo dockerd &
-
 mkdir -p $LOGS_DIR
 mkdir -p $AGENT_DIR
 {
