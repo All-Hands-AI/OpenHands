@@ -9,8 +9,7 @@ on:
 jobs:
   trigger-job:
     name: Trigger remote eval job
-    # TODO: Add different labels for different eval instances
-    if: ${{ github.event.label.name == 'run-eval-s' }}
+    if: ${{ github.event.label.name == 'run-eval-xs' || github.event.label.name == 'run-eval-s' || github.event.label.name == 'run-eval-m' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -26,10 +25,18 @@ jobs:
           echo "Repository URL: $REPO_URL"
           echo "PR Branch: $PR_BRANCH"
 
+          if [[ "${{ github.event.label.name }}" == "run-eval-xs" ]]; then
+            EVAL_INSTANCES="1"
+          elif [[ "${{ github.event.label.name }}" == "run-eval-s" ]]; then
+            EVAL_INSTANCES="5"
+          elif [[ "${{ github.event.label.name }}" == "run-eval-m" ]]; then
+            EVAL_INSTANCES="30"
+          fi
+
           curl -X POST \
             -H "Authorization: Bearer ${{ secrets.PAT_TOKEN }}" \
             -H "Accept: application/vnd.github+json" \
-            -d "{\"ref\": \"main\", \"inputs\": {\"github-repo\": \"${REPO_URL}\", \"github-branch\": \"${PR_BRANCH}\", \"pr-number\": \"${{ github.event.pull_request.number }}\"}}" \
+            -d "{\"ref\": \"main\", \"inputs\": {\"github-repo\": \"${REPO_URL}\", \"github-branch\": \"${PR_BRANCH}\", \"pr-number\": \"${{ github.event.pull_request.number }}\", \"eval-instances\": \"${EVAL_INSTANCES}\"}}" \
             https://api.github.com/repos/All-Hands-AI/evaluation/actions/workflows/create-branch.yml/dispatches
 
           # Send Slack message
