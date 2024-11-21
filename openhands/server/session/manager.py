@@ -143,35 +143,35 @@ class SessionManager:
         session = self.local_sessions_by_sid.get(sid)
         if session:
             if should_continue():
-                asyncio.create_task(self._check_and_close_session_later(session))
+                asyncio.create_task(self._close_orphaned_session_later(session))
             else:
-                await self._check_and_close_session(session)
+                await self._close_orphaned_session(session, True)
             
-    async def _check_and_close_session_later(self, session: Session):
+    async def _close_orphaned_session_later(self, session: Session):
         # Once there have been no connections to a session for a reasonable period, we close it
         try:
             await asyncio.sleep(self.config.sandbox.close_delay)
         finally:
             # If the sleep was cancelled, we still want to close these
-            await self._check_and_close_session(session)
+            await self._close_orphaned_session(session, False)
     
-    async def _check_and_close_session(self, session: Session):
+    async def _close_orphaned_session(self, session: Session, force: bool):
             # Get local connections
-            has_connections_for_session = next((
+            has_local_connections = next((
                 True for v in self.local_connection_id_to_session_id.values()
                 if v == session.sid
             ), False)
 
             # If no local connections, get connections through redis
-            if not has_connections_for_session:
-                redis_client = self._get_redis_client()
-                if redis_client:
-                    key = _CONNECTION_KEY.format(sid=session.sid)
-                    connections_for_session = await redis_client.lrange(key, 0, -1)
-                    if not connections_for_session:
-                        await redis_client.delete(key)
+            redis_connections = None
+            redis_client = self._get_redis_client()
+            if redis_client:
+                key = _CONNECTION_KEY.format(sid=session.sid)
+                redis_connections = await redis_client.lrange(key, 0, -1)
+                if not redis_connections:
+                    await redis_client.delete(key)
             
             # If no connections, close session
-            if not has_connections_for_session:    
+            if force or (not has_local_connections and not redis_connections):
                 session.close()
                 self.local_sessions_by_sid.pop(session.sid, None)
