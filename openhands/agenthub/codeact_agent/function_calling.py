@@ -208,25 +208,17 @@ LLMBasedFileEditTool = ChatCompletionToolParam(
     ),
 )
 
-_STR_REPLACE_EDITOR_DESCRIPTION = """Custom file editing tool with persistent state across interactions.
-Key Commands:
-* `view`:
-  * For files: displays content with line numbers similar to `cat -n`
-  * For directories: lists non-hidden files/directories up to 2 levels deep
-* `create`: cannot create file if path already exists
-* `str_replace`: replaces text in a file
-* `undo_edit`: reverts last edit
-* `jump_to_definition`: finds full definition of a class/function/method
-* `find_references`: locates usages of a class/function/method
+_STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for viewing, creating and editing files, with persistent state across interactions
+* If `path` is a file, `view` displays the result of applying `cat -n`. Otherwise `view` lists non-hidden files and directories up to 2 levels deep
+* The `create` command cannot be used if the specified `path` already exists as a file
+* The command output will be truncated and marked with `<response clipped>` if it's too long
+* The `undo_edit` command will revert the last edit made to the file
+* Use `jump_to_definition` and `find_references` to quickly navigate through large codebases
 
-`str_replace` Command Notes:
-* `old_str` must match EXACTLY one or more consecutive lines
-* `old_str` must be unique in the file
-* Include sufficient context to ensure uniqueness
-* Be careful with whitespaces
-
-Output Characteristics:
-* Long outputs are truncated and marked with <response clipped>
+Notes for using the `str_replace` command:
+* The `old_str` parameter should match EXACTLY one or more consecutive lines from the original file. Be mindful of whitespaces!
+* If the `old_str` parameter is not unique in the file, the replacement will not be performed. Make sure to include enough context in `old_str` to make it unique
+* The `new_str` parameter should contain the edited lines that should replace the `old_str`
 """
 
 StrReplaceEditorTool = ChatCompletionToolParam(
