@@ -125,11 +125,14 @@ embedding_model = "local"
 # Maximum number of characters in an observation's content
 #max_message_chars = 10000
 
-# Maximum number of input tokens
-#max_input_tokens = 0
+# Maximum number of input tokens (recommended: 20000 to prevent TPM limits)
+#max_input_tokens = 20000
 
 # Maximum number of output tokens
 #max_output_tokens = 0
+
+# Maximum number of characters in messages (recommended: 80000 when using max_input_tokens)
+#max_message_chars = 80000
 
 # Model to use
 model = "gpt-4o"
