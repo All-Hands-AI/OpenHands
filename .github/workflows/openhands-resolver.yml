@@ -114,10 +114,9 @@ jobs:
 
       - name: Check custom environment variables
         env:
-          ENV_CONFIG: ${{ fromJSON(secrets.ENV_CONFIG) }}
+          ENV_CONFIG: ${{ secrets.ENV_CONFIG }}
         run: |
           if [ -n "$ENV_CONFIG" ]; then
-
               secrets=$(echo "$ENV_CONFIG" | jq 'with_entries(select(.key | startswith("OPENHANDS_ENV_")))')
               sanitized_secrets=$(echo "$secrets" | jq -c .)
 
