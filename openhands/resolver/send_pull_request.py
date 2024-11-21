@@ -203,6 +203,7 @@ def send_pull_request(
     pr_type: str,
     fork_owner: str | None = None,
     additional_message: str | None = None,
+    target_branch: str | None = None,
 ) -> str:
     if pr_type not in ['branch', 'draft', 'ready']:
         raise ValueError(f'Invalid pr_type: {pr_type}')
@@ -224,12 +225,19 @@ def send_pull_request(
         attempt += 1
         branch_name = f'{base_branch_name}-try{attempt}'
 
-    # Get the default branch
-    print('Getting default branch...')
-    response = requests.get(f'{base_url}', headers=headers)
-    response.raise_for_status()
-    default_branch = response.json()['default_branch']
-    print(f'Default branch: {default_branch}')
+    # Get the default branch or use specified target branch
+    print('Getting base branch...')
+    if target_branch:
+        base_branch = target_branch
+        # Verify the target branch exists
+        response = requests.get(f'{base_url}/branches/{target_branch}', headers=headers)
+        if response.status_code != 200:
+            raise ValueError(f'Target branch {target_branch} does not exist')
+    else:
+        response = requests.get(f'{base_url}', headers=headers)
+        response.raise_for_status()
+        base_branch = response.json()['default_branch']
+    print(f'Base branch: {base_branch}')
 
     # Create and checkout the new branch
     print('Creating new branch...')
@@ -279,7 +287,7 @@ def send_pull_request(
             'title': pr_title,  # No need to escape title for GitHub API
             'body': pr_body,
             'head': branch_name,
-            'base': default_branch,
+            'base': base_branch,
             'draft': pr_type == 'draft',
         }
         response = requests.post(f'{base_url}/pulls', headers=headers, json=data)
@@ -435,6 +443,7 @@ def process_single_issue(
     llm_config: LLMConfig,
     fork_owner: str | None,
     send_on_failure: bool,
+    target_branch: str | None = None,
 ) -> None:
     if not resolver_output.success and not send_on_failure:
         print(
@@ -484,6 +493,7 @@ def process_single_issue(
             llm_config=llm_config,
             fork_owner=fork_owner,
             additional_message=resolver_output.success_explanation,
+            target_branch=target_branch,
         )
 
 
@@ -508,6 +518,7 @@ def process_all_successful_issues(
                 llm_config,
                 fork_owner,
                 False,
+                None,
             )
 
 
@@ -573,6 +584,12 @@ def main():
         default=None,
         help='Base URL for the LLM model.',
     )
+    parser.add_argument(
+        '--target-branch',
+        type=str,
+        default=None,
+        help='Target branch to create the pull request against (defaults to repository default branch)',
+    )
     my_args = parser.parse_args()
 
     github_token = (
@@ -625,6 +642,7 @@ def main():
             llm_config,
             my_args.fork_owner,
             my_args.send_on_failure,
+            my_args.target_branch,
         )
 
 

@@ -21,11 +21,9 @@ Here are some instructions for pushing, but ONLY do this if the user asks you to
 * After opening or updating a pull request, send the user a short message with a link to the pull request.
 * Do all of the above in as few steps as possible. E.g. you could open a PR with one step by running the following bash commands:
 ```bash
-git checkout -b create-widget
-git add .
-git commit -m "Create widget"
-git push origin create-widget
-curl -X POST "https://api.github.com/repos/CodeActOrg/openhands/pulls" \
+git remote -v && git branch # to find the current org, repo and branch
+git checkout -b create-widget && git add . && git commit -m "Create widget" && git push -u origin create-widget
+curl -X POST "https://api.github.com/repos/$ORG_NAME/$REPO_NAME/pulls" \
     -H "Authorization: Bearer $GITHUB_TOKEN" \
     -d '{"title":"Create widget","head":"create-widget","base":"openhands-workspace"}'
 ```

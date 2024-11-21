@@ -79,7 +79,8 @@ troubleshooting resources, and advanced configuration options.
 
 ## 🤝 How to Join the Community
 
-OpenHands is a community-driven project, and we welcome contributions from everyone. As a first step, you can:
+OpenHands is a community-driven project, and we welcome contributions from everyone. We do most of our communication
+through Slack, so this is the best place to start, but we also are happy to have you contact us on Discord or Github:
 
 - [Join our Slack workspace](https://join.slack.com/t/openhands-ai/shared_invite/zt-2tom0er4l-JeNUGHt_AxpEfIBstbLPiw) - Here we talk about research, architecture, and future development.
 - [Join our Discord server](https://discord.gg/ESHStjSjD4) - This is a community-run server for general discussion, questions, and feedback.
