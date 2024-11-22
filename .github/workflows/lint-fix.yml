@@ -44,11 +44,8 @@ jobs:
         run: pip install pre-commit==3.7.0
       - name: Fix python lint issues
         run: |
-          pre-commit run trailing-whitespace --files openhands/**/* evaluation/**/* tests/**/* --config ./dev_config/python/.pre-commit-config.yaml
-          pre-commit run end-of-file-fixer --files openhands/**/* evaluation/**/* tests/**/* --config ./dev_config/python/.pre-commit-config.yaml
-          pre-commit run pyproject-fmt --files openhands/**/* evaluation/**/* tests/**/* --config ./dev_config/python/.pre-commit-config.yaml
-          pre-commit run ruff --files openhands/**/* evaluation/**/* tests/**/* --config ./dev_config/python/.pre-commit-config.yaml
-          pre-commit run ruff-format --files openhands/**/* evaluation/**/* tests/**/* --config ./dev_config/python/.pre-commit-config.yaml
+          # Run all pre-commit hooks and continue even if they modify files (exit code 1)
+          pre-commit run --config ./dev_config/python/.pre-commit-config.yaml --files openhands/**/* evaluation/**/* tests/**/* || true
 
       # Commit and push changes if any
       - name: Check for changes

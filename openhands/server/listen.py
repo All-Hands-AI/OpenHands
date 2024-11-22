@@ -13,7 +13,7 @@ from pathspec.patterns import GitWildMatchPattern
 
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
-from openhands.server.github import (
+from openhands.server.github_utils import (
     GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET,
     UserVerifier,
@@ -34,6 +34,7 @@ from fastapi import (
     Request,
     UploadFile,
     WebSocket,
+    WebSocketDisconnect,
     status,
 )
 from fastapi.responses import FileResponse, JSONResponse
@@ -61,9 +62,14 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.llm import bedrock
-from openhands.runtime.base import Runtime
+from openhands.runtime.base import Runtime, RuntimeUnavailableError
 from openhands.server.auth.auth import get_sid_from_token, sign_token
-from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware
+from openhands.server.middleware import (
+    InMemoryRateLimiter,
+    LocalhostCORSMiddleware,
+    NoCacheMiddleware,
+    RateLimitMiddleware,
+)
 from openhands.server.session import SessionManager
 
 load_dotenv()
@@ -83,6 +89,15 @@ app.add_middleware(
 
 
 app.add_middleware(NoCacheMiddleware)
+app.add_middleware(
+    RateLimitMiddleware, rate_limiter=InMemoryRateLimiter(requests=10, seconds=1)
+)
+
+
+@app.get('/health')
+async def health():
+    return 'OK'
+
 
 security_scheme = HTTPBearer()
 
@@ -238,7 +253,8 @@ async def attach_session(request: Request, call_next):
     request.state.conversation = await session_manager.attach_to_conversation(
         request.state.sid
     )
-    if request.state.conversation is None:
+    if not request.state.conversation:
+        logger.error(f'Runtime not found for session: {request.state.sid}')
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Session not found'},
@@ -344,7 +360,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
     latest_event_id = -1
     if websocket.query_params.get('latest_event_id'):
-        latest_event_id = int(websocket.query_params.get('latest_event_id'))
+        try:
+            latest_event_id = int(websocket.query_params.get('latest_event_id'))
+        except ValueError:
+            logger.warning(
+                f'Invalid latest_event_id: {websocket.query_params.get("latest_event_id")}'
+            )
+            pass
 
     async_stream = AsyncEventStreamWrapper(
         session.agent_session.event_stream, latest_event_id + 1
@@ -361,7 +383,14 @@ async def websocket_endpoint(websocket: WebSocket):
             ),
         ):
             continue
-        await websocket.send_json(event_to_dict(event))
+        try:
+            await websocket.send_json(event_to_dict(event))
+        except WebSocketDisconnect:
+            logger.warning(
+                'Websocket disconnected while sending event history, before loop started'
+            )
+            session.close()
+            return
 
     await session.loop_recv()
 
@@ -488,7 +517,14 @@ async def list_files(request: Request, path: str | None = None):
         )
 
     runtime: Runtime = request.state.conversation.runtime
-    file_list = await call_sync_from_async(runtime.list_files, path)
+    try:
+        file_list = await call_sync_from_async(runtime.list_files, path)
+    except RuntimeUnavailableError as e:
+        logger.error(f'Error listing files: {e}', exc_info=True)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': f'Error listing files: {e}'},
+        )
     if path:
         file_list = [os.path.join(path, f) for f in file_list]
 
@@ -508,7 +544,14 @@ async def list_files(request: Request, path: str | None = None):
         file_list = [entry for entry in file_list if not spec.match_file(entry)]
         return file_list
 
-    file_list = await filter_for_gitignore(file_list, '')
+    try:
+        file_list = await filter_for_gitignore(file_list, '')
+    except RuntimeUnavailableError as e:
+        logger.error(f'Error filtering files: {e}', exc_info=True)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': f'Error filtering files: {e}'},
+        )
 
     return file_list
 
@@ -537,7 +580,14 @@ async def select_file(file: str, request: Request):
 
     file = os.path.join(runtime.config.workspace_mount_path_in_sandbox, file)
     read_action = FileReadAction(file)
-    observation = await call_sync_from_async(runtime.run_action, read_action)
+    try:
+        observation = await call_sync_from_async(runtime.run_action, read_action)
+    except RuntimeUnavailableError as e:
+        logger.error(f'Error opening file {file}: {e}', exc_info=True)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': f'Error opening file: {e}'},
+        )
 
     if isinstance(observation, FileReadObservation):
         content = observation.content
@@ -633,9 +683,20 @@ async def upload_file(request: Request, files: list[UploadFile]):
                     tmp_file.flush()
 
                 runtime: Runtime = request.state.conversation.runtime
-                runtime.copy_to(
-                    tmp_file_path, runtime.config.workspace_mount_path_in_sandbox
-                )
+                try:
+                    await call_sync_from_async(
+                        runtime.copy_to,
+                        tmp_file_path,
+                        runtime.config.workspace_mount_path_in_sandbox,
+                    )
+                except RuntimeUnavailableError as e:
+                    logger.error(
+                        f'Error saving file {safe_filename}: {e}', exc_info=True
+                    )
+                    return JSONResponse(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        content={'error': f'Error saving file: {e}'},
+                    )
             uploaded_files.append(safe_filename)
 
         response_content = {
@@ -766,7 +827,14 @@ async def save_file(request: Request):
             runtime.config.workspace_mount_path_in_sandbox, file_path
         )
         write_action = FileWriteAction(file_path, content)
-        observation = await call_sync_from_async(runtime.run_action, write_action)
+        try:
+            observation = await call_sync_from_async(runtime.run_action, write_action)
+        except RuntimeUnavailableError as e:
+            logger.error(f'Error saving file: {e}', exc_info=True)
+            return JSONResponse(
+                status_code=500,
+                content={'error': f'Error saving file: {e}'},
+            )
 
         if isinstance(observation, FileWriteObservation):
             return JSONResponse(
@@ -817,7 +885,14 @@ async def zip_current_workspace(request: Request, background_tasks: BackgroundTa
         logger.debug('Zipping workspace')
         runtime: Runtime = request.state.conversation.runtime
         path = runtime.config.workspace_mount_path_in_sandbox
-        zip_file = await call_sync_from_async(runtime.copy_from, path)
+        try:
+            zip_file = await call_sync_from_async(runtime.copy_from, path)
+        except RuntimeUnavailableError as e:
+            logger.error(f'Error zipping workspace: {e}', exc_info=True)
+            return JSONResponse(
+                status_code=500,
+                content={'error': f'Error zipping workspace: {e}'},
+            )
         response = FileResponse(
             path=zip_file,
             filename='workspace.zip',
