@@ -42,8 +42,8 @@ You can try modifying the prompts to see how they change the behavior of the age
 locally, but we will need to do an end-to-end evaluation of any changes here to ensure that the agent
 is getting better over time.
 
-We use the [SWE-bench](https://www.swebench.com/) benchmark to test our agent. You can join the [#evaluation
-channel in Slack](https://join.slack.com/t/openhands-ai/shared_invite/zt-2tom0er4l-JeNUGHt_AxpEfIBstbLPiw) to learn more.
+We use the [SWE-bench](https://www.swebench.com/) benchmark to test our agent. You can join the #evaluation
+channel in Slack to learn more.
 
 #### Adding a new agent
 You may want to experiment with building new types of agents. You can add an agent to [`openhands/agenthub`](./openhands/agenthub)
