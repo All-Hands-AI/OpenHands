@@ -66,7 +66,7 @@ You'll need to fork our repository to send us a Pull Request. You can learn more
 about how to fork a GitHub repo and open a PR with your changes in [this article](https://medium.com/swlh/forks-and-pull-requests-how-to-contribute-to-github-repos-8843fac34ce8)
 
 ### Pull Request title
-As described in [Conventional Commits](https://github.com/commitizen/conventional-commit-types/blob/master/index.json), a valid PR title should begin with one of the following prefixes:
+As described [here](https://github.com/commitizen/conventional-commit-types/blob/master/index.json), a valid PR title should begin with one of the following prefixes:
 
 - `feat`: A new feature
 - `fix`: A bug fix
