@@ -43,3 +43,53 @@ To customize the default macro (`@openhands-agent`):
 
 1. [Create a repository variable](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#creating-configuration-variables-for-a-repository) named `OPENHANDS_MACRO`
 2. Assign the variable a custom value
+
+## Writing Effective .openhands_instructions Files
+
+The `.openhands_instructions` file is a file that you can put in the root directory of your repository to guide OpenHands in understanding and working with your repository effectively. Here are key tips for writing high-quality instructions:
+
+### Core Principles
+
+1. **Concise but Informative**: Provide a clear, focused overview of the repository that emphasizes the most common actions OpenHands will need to perform.
+
+2. **Repository Structure**: Explain the key directories and their purposes, especially highlighting where different types of code (e.g., frontend, backend) are located.
+
+3. **Development Workflows**: Document the essential commands for:
+   - Building and setting up the project
+   - Running tests
+   - Linting and code quality checks
+   - Any environment-specific requirements
+
+4. **Testing Guidelines**: Specify:
+   - Where tests are located
+   - How to run specific test suites
+   - Any testing conventions or requirements
+
+### Example Structure
+
+```markdown
+# Repository Overview
+[Brief description of the project]
+
+## General Setup
+- Main build command
+- Development environment setup
+- Pre-commit checks
+
+## Backend
+- Location and structure
+- Testing instructions
+- Environment requirements
+
+## Frontend
+- Setup prerequisites
+- Build and test commands
+- Environment variables
+
+## Additional Guidelines
+- Code style requirements
+- Special considerations
+- Common workflows
+```
+
+For a real-world example, refer to the [OpenHands repository's .openhands_instructions](https://github.com/All-Hands-AI/OpenHands/blob/main/.openhands_instructions).
