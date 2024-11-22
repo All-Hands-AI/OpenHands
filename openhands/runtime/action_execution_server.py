@@ -11,6 +11,7 @@ import base64
 import io
 import mimetypes
 import os
+import psutil
 import shutil
 import tempfile
 import time
@@ -420,7 +421,38 @@ if __name__ == '__main__':
         current_time = time.time()
         uptime = current_time - client.start_time
         idle_time = current_time - client.last_execution_time
-        return {'uptime': uptime, 'idle_time': idle_time}
+        
+        # Get system resource usage
+        process = psutil.Process()
+        cpu_percent = process.cpu_percent()
+        memory_info = process.memory_info()
+        disk_usage = psutil.disk_usage('/')
+        io_counters = process.io_counters()
+        
+        return {
+            'uptime': uptime,
+            'idle_time': idle_time,
+            'resources': {
+                'cpu_percent': cpu_percent,
+                'memory': {
+                    'rss': memory_info.rss,
+                    'vms': memory_info.vms,
+                    'percent': process.memory_percent()
+                },
+                'disk': {
+                    'total': disk_usage.total,
+                    'used': disk_usage.used,
+                    'free': disk_usage.free,
+                    'percent': disk_usage.percent
+                },
+                'io': {
+                    'read_bytes': io_counters.read_bytes,
+                    'write_bytes': io_counters.write_bytes,
+                    'read_count': io_counters.read_count,
+                    'write_count': io_counters.write_count
+                }
+            }
+        }
 
     @app.post('/execute_action')
     async def execute_action(action_request: ActionRequest):
