@@ -37,6 +37,7 @@ Update config.toml
 [core]
 
 [sandbox]
+attach_to_existing = true
 # http://<host>:<published sandbox port>/
 remote_runtime_api_url = "http://host.docker.internal:8000/"
 # <sandbox container_name>
@@ -48,6 +49,7 @@ docker_endpoint = "unix:///var/run/docker.sock"
 or use env.
 
 ```bash
+export SANDBOX_ATTACH_TO_EXISTING=true
 export SANDBOX_REMOTE_RUNTIME_API_URL=http://host.docker.internal:8000/
 export SANDBOX_CONTAINER_NAME=custom-sandbox
 export SANDBOX_DOCKER_ENDPOINT=unix:///var/run/docker.sock

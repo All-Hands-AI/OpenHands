@@ -13,6 +13,7 @@ services:
       #
       - LOG_ALL_EVENTS=true
       # See containers/custom-sandbox/README.md
+      - SANDBOX_ATTACH_TO_EXISTING=${SANDBOX_ATTACH_TO_EXISTING:-false}
       - SANDBOX_REMOTE_RUNTIME_API_URL=http://host.docker.internal:8000/
       - SANDBOX_CONTAINER_NAME=${SANDBOX_CONTAINER_NAME:-}
       - SANDBOX_DOCKER_ENDPOINT=${SANDBOX_DOCKER_ENDPOINT:-}

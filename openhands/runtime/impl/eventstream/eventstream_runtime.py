@@ -191,8 +191,8 @@ class EventStreamRuntime(Runtime):
                 f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
             )
 
-        # if docker context endpoint is set, custom sandbox is assumed.
-        if self.config.sandbox.docker_endpoint:
+        #
+        if self.config.sandbox.attach_to_existing:
             attach_to_existing = True
             self.api_url = self.config.sandbox.remote_runtime_api_url
             if not self.config.sandbox.container_name:
@@ -403,7 +403,7 @@ class EventStreamRuntime(Runtime):
         self._container_port = 0
         self.container = self.docker_client.containers.get(self.container_name)
 
-        if self.config.sandbox.docker_endpoint:
+        if self.config.sandbox.attach_to_existing:
             self.log(
                 'debug',
                 f'attached to sandbox: {self.container_name} {self.api_url}',

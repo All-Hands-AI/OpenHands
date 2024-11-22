@@ -34,6 +34,7 @@ class SandboxConfig:
         platform: The platform on which the image should be built. Default is None.
         container_name: The name of the container.
         docker_endpoint: The context endpoint for the sandbox Docker daemon.
+        attach_to_existing: Whether to attach to an existing container.
     """
 
     remote_runtime_api_url: str = 'http://localhost:8000'
@@ -57,6 +58,7 @@ class SandboxConfig:
     platform: str | None = None
     container_name: str | None = None
     docker_endpoint: str | None = None
+    attach_to_existing: bool = False
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
