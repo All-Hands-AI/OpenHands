@@ -1,81 +1,40 @@
-import {
-  Await,
-  ClientActionFunctionArgs,
-  ClientLoaderFunctionArgs,
-  defer,
-  redirect,
-  useLoaderData,
-  useRouteLoaderData,
-} from "@remix-run/react";
+import { useLocation, useNavigate } from "@remix-run/react";
 import React from "react";
 import { useDispatch } from "react-redux";
-import posthog from "posthog-js";
 import { SuggestionBox } from "./suggestion-box";
 import { TaskForm } from "./task-form";
 import { HeroHeading } from "./hero-heading";
-import { retrieveAllGitHubUserRepositories } from "#/api/github";
-import store from "#/store";
-import {
-  setImportedProjectZip,
-  setInitialQuery,
-} from "#/state/initial-query-slice";
-import { clientLoader as rootClientLoader } from "#/routes/_oh";
-import OpenHands from "#/api/open-hands";
-import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
+import { setImportedProjectZip } from "#/state/initial-query-slice";
 import { GitHubRepositoriesSuggestionBox } from "#/components/github-repositories-suggestion-box";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
-
-export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
-  let isSaas = false;
-  let githubClientId: string | null = null;
-
-  try {
-    const config = await OpenHands.getConfig();
-    isSaas = config.APP_MODE === "saas";
-    githubClientId = config.GITHUB_CLIENT_ID;
-  } catch (error) {
-    isSaas = false;
-    githubClientId = null;
-  }
-
-  const ghToken = localStorage.getItem("ghToken");
-  const token = localStorage.getItem("token");
-  if (token) return redirect("/app");
-
-  let repositories: ReturnType<
-    typeof retrieveAllGitHubUserRepositories
-  > | null = null;
-  if (ghToken) {
-    const data = retrieveAllGitHubUserRepositories(ghToken);
-    repositories = data;
-  }
-
-  let githubAuthUrl: string | null = null;
-  if (isSaas && githubClientId) {
-    const requestUrl = new URL(request.url);
-    githubAuthUrl = generateGitHubAuthUrl(githubClientId, requestUrl);
-  }
-
-  return defer({ repositories, githubAuthUrl });
-};
-
-export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
-  const formData = await request.formData();
-  const q = formData.get("q")?.toString();
-  if (q) store.dispatch(setInitialQuery(q));
-
-  posthog.capture("initial_query_submitted", {
-    query_character_length: q?.length,
-  });
-
-  return redirect("/app");
-};
+import { useUserRepositories } from "#/hooks/query/use-user-repositories";
+import { useGitHubUser } from "#/hooks/query/use-github-user";
+import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
+import { useConfig } from "#/hooks/query/use-config";
+import { useAuth } from "#/context/auth-context";
 
 function Home() {
+  const { token, gitHubToken } = useAuth();
+
   const dispatch = useDispatch();
-  const rootData = useRouteLoaderData<typeof rootClientLoader>("routes/_oh");
-  const { repositories, githubAuthUrl } = useLoaderData<typeof clientLoader>();
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const formRef = React.useRef<HTMLFormElement>(null);
+
+  const { data: config } = useConfig();
+  const { data: user } = useGitHubUser();
+  const { data: repositories } = useUserRepositories();
+
+  const gitHubAuthUrl = useGitHubAuthUrl({
+    gitHubToken,
+    appMode: config?.APP_MODE || null,
+    gitHubClientId: config?.GITHUB_CLIENT_ID || null,
+  });
+
+  React.useEffect(() => {
+    if (token) navigate("/app");
+  }, [location.pathname]);
 
   return (
     <div
@@ -88,25 +47,15 @@ function Home() {
           <TaskForm ref={formRef} />
         </div>
         <div className="flex gap-4 w-full">
-          <React.Suspense
-            fallback={
-              <SuggestionBox
-                title="Open a Repo"
-                content="Loading repositories..."
-              />
+          <GitHubRepositoriesSuggestionBox
+            handleSubmit={() => formRef.current?.requestSubmit()}
+            repositories={
+              repositories?.pages.flatMap((page) => page.data) || []
             }
-          >
-            <Await resolve={repositories}>
-              {(resolvedRepositories) => (
-                <GitHubRepositoriesSuggestionBox
-                  handleSubmit={() => formRef.current?.requestSubmit()}
-                  repositories={resolvedRepositories}
-                  gitHubAuthUrl={githubAuthUrl}
-                  user={rootData?.user || null}
-                />
-              )}
-            </Await>
-          </React.Suspense>
+            gitHubAuthUrl={gitHubAuthUrl}
+            user={user || null}
+            // onEndReached={}
+          />
           <SuggestionBox
             title="+ Import Project"
             content={

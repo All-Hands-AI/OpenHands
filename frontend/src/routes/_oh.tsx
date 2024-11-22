@@ -1,19 +1,11 @@
 import React from "react";
 import {
-  defer,
   useRouteError,
   isRouteErrorResponse,
-  useNavigation,
   useLocation,
-  useLoaderData,
-  useFetcher,
   Outlet,
-  ClientLoaderFunctionArgs,
 } from "@remix-run/react";
-import posthog from "posthog-js";
 import { useDispatch } from "react-redux";
-import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
-import OpenHands from "#/api/open-hands";
 import CogTooth from "#/assets/cog-tooth";
 import { SettingsForm } from "#/components/form/settings-form";
 import AccountSettingsModal from "#/components/modals/AccountSettingsModal";
@@ -22,78 +14,21 @@ import { LoadingSpinner } from "#/components/modals/LoadingProject";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { UserActions } from "#/components/user-actions";
 import i18n from "#/i18n";
-import { getSettings, settingsAreUpToDate } from "#/services/settings";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import NewProjectIcon from "#/icons/new-project.svg?react";
 import DocsIcon from "#/icons/docs.svg?react";
-import { userIsAuthenticated } from "#/utils/user-is-authenticated";
-import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { WaitlistModal } from "#/components/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/analytics-consent-form-modal";
 import { setCurrentAgentState } from "#/state/agentSlice";
 import AgentState from "#/types/AgentState";
-
-export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
-  try {
-    const config = await OpenHands.getConfig();
-    window.__APP_MODE__ = config.APP_MODE;
-    window.__GITHUB_CLIENT_ID__ = config.GITHUB_CLIENT_ID;
-  } catch (error) {
-    window.__APP_MODE__ = "oss";
-    window.__GITHUB_CLIENT_ID__ = null;
-  }
-
-  let token = localStorage.getItem("token");
-  const ghToken = localStorage.getItem("ghToken");
-  const analyticsConsent = localStorage.getItem("analytics-consent");
-  const userConsents = analyticsConsent === "true";
-
-  if (!userConsents) {
-    posthog.opt_out_capturing();
-  } else if (userConsents && !posthog.has_opted_in_capturing()) {
-    posthog.opt_in_capturing();
-  }
-
-  let isAuthed = false;
-  let githubAuthUrl: string | null = null;
-  let user: GitHubUser | GitHubErrorReponse | null = null;
-  try {
-    isAuthed = await userIsAuthenticated();
-    if (!isAuthed && window.__GITHUB_CLIENT_ID__) {
-      const requestUrl = new URL(request.url);
-      githubAuthUrl = generateGitHubAuthUrl(
-        window.__GITHUB_CLIENT_ID__,
-        requestUrl,
-      );
-    }
-  } catch (error) {
-    isAuthed = false;
-    githubAuthUrl = null;
-  }
-
-  if (ghToken) user = await retrieveGitHubUser(ghToken);
-
-  const settings = getSettings();
-  await i18n.changeLanguage(settings.LANGUAGE);
-
-  const settingsIsUpdated = settingsAreUpToDate();
-  if (!settingsIsUpdated) {
-    localStorage.removeItem("token");
-    token = null;
-  }
-
-  // Store the results in cache
-  return defer({
-    token,
-    ghToken,
-    isAuthed,
-    githubAuthUrl,
-    user,
-    settingsIsUpdated,
-    settings,
-    analyticsConsent,
-  });
-};
+import { useConfig } from "#/hooks/query/use-config";
+import { useGitHubUser } from "#/hooks/query/use-github-user";
+import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
+import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
+import { useIsAuthed } from "#/hooks/query/use-is-authed";
+import { useAuth } from "#/context/auth-context";
+import { useEndSession } from "#/hooks/use-end-session";
+import { useUserPrefs } from "#/context/user-prefs-context";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -127,107 +62,70 @@ export function ErrorBoundary() {
   );
 }
 
-type SettingsFormData = {
-  models: string[];
-  agents: string[];
-  securityAnalyzers: string[];
-};
-
 export default function MainApp() {
-  const navigation = useNavigation();
+  const { token, gitHubToken, clearToken, logout } = useAuth();
+  const { settings, settingsAreUpToDate } = useUserPrefs();
+
   const location = useLocation();
-  const {
-    token,
-    ghToken,
-    user,
-    isAuthed,
-    githubAuthUrl,
-    settingsIsUpdated,
-    settings,
-    analyticsConsent,
-  } = useLoaderData<typeof clientLoader>();
-  const logoutFetcher = useFetcher({ key: "logout" });
-  const endSessionFetcher = useFetcher({ key: "end-session" });
   const dispatch = useDispatch();
+  const endSession = useEndSession();
+
+  // FIXME: Bad practice to use localStorage directly
+  const analyticsConsent = localStorage.getItem("analytics-consent");
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
   const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
     React.useState(false);
-  const [settingsFormData, setSettingsFormData] =
-    React.useState<SettingsFormData>({
-      models: [],
-      agents: [],
-      securityAnalyzers: [],
-    });
-  const [settingsFormError, setSettingsFormError] = React.useState<
-    string | null
-  >(null);
+  const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(
+    !localStorage.getItem("analytics-consent"),
+  );
+
+  const config = useConfig();
+  const user = useGitHubUser();
+  const {
+    data: isAuthed,
+    isFetched,
+    isFetching: isFetchingAuth,
+  } = useIsAuthed();
+  const aiConfigOptions = useAIConfigOptions();
+
+  const gitHubAuthUrl = useGitHubAuthUrl({
+    gitHubToken,
+    appMode: config.data?.APP_MODE || null,
+    gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
+  });
 
   React.useEffect(() => {
-    if (user && !isGitHubErrorReponse(user)) {
-      posthog.identify(user.login, {
-        company: user.company,
-        name: user.name,
-        email: user.email,
-        user: user.login,
-        mode: window.__APP_MODE__ || "oss",
-      });
+    if (isFetched && !isAuthed) clearToken();
+  }, [isFetched, isAuthed]);
+
+  React.useEffect(() => {
+    if (settings.LANGUAGE) {
+      i18n.changeLanguage(settings.LANGUAGE);
     }
-  }, [user]);
-
-  React.useEffect(() => {
-    // We fetch this here instead of the data loader because the server seems to block
-    // the retrieval when the session is closing -- preventing the screen from rendering until
-    // the fetch is complete
-    (async () => {
-      try {
-        const [models, agents, securityAnalyzers] = await Promise.all([
-          OpenHands.getModels(),
-          OpenHands.getAgents(),
-          OpenHands.getSecurityAnalyzers(),
-        ]);
-        setSettingsFormData({ models, agents, securityAnalyzers });
-      } catch (error) {
-        setSettingsFormError("Failed to load settings, please reload the page");
-      }
-    })();
-  }, []);
+  }, [settings.LANGUAGE]);
 
   React.useEffect(() => {
     // If the github token is invalid, open the account settings modal again
-    if (isGitHubErrorReponse(user)) {
+    if (user.isError) {
       setAccountSettingsModalOpen(true);
     }
-  }, [user]);
-
-  const handleUserLogout = () => {
-    logoutFetcher.submit(
-      {},
-      {
-        method: "POST",
-        action: "/logout",
-      },
-    );
-  };
+  }, [user.isError]);
 
   const handleAccountSettingsModalClose = () => {
     // If the user closes the modal without connecting to GitHub,
     // we need to log them out to clear the invalid token from the
     // local storage
-    if (isGitHubErrorReponse(user)) handleUserLogout();
+    if (user.isError) logout();
     setAccountSettingsModalOpen(false);
   };
 
   const handleEndSession = () => {
     setStartNewProjectModalIsOpen(false);
     dispatch(setCurrentAgentState(AgentState.LOADING));
-    // call new session action and redirect to '/'
-    endSessionFetcher.submit(new FormData(), {
-      method: "POST",
-      action: "/end-session",
-    });
+    endSession();
   };
 
   return (
@@ -237,8 +135,8 @@ export default function MainApp() {
     >
       <aside className="px-1 flex flex-col gap-1">
         <div className="w-[34px] h-[34px] flex items-center justify-center">
-          {navigation.state === "loading" && <LoadingSpinner size="small" />}
-          {navigation.state !== "loading" && (
+          {user.isLoading && <LoadingSpinner size="small" />}
+          {!user.isLoading && (
             <button
               type="button"
               aria-label="All Hands Logo"
@@ -253,12 +151,8 @@ export default function MainApp() {
         </div>
         <nav className="py-[18px] flex flex-col items-center gap-[18px]">
           <UserActions
-            user={
-              user && !isGitHubErrorReponse(user)
-                ? { avatar_url: user.avatar_url }
-                : undefined
-            }
-            onLogout={handleUserLogout}
+            user={user.data ? { avatar_url: user.data.avatar_url } : undefined}
+            onLogout={logout}
             onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
           />
           <button
@@ -280,6 +174,7 @@ export default function MainApp() {
           </a>
           {!!token && (
             <button
+              data-testid="new-project-button"
               type="button"
               aria-label="Start new project"
               onClick={() => setStartNewProjectModalIsOpen(true)}
@@ -293,11 +188,16 @@ export default function MainApp() {
         <Outlet />
       </div>
 
-      {isAuthed && (!settingsIsUpdated || settingsModalIsOpen) && (
+      {isAuthed && (!settingsAreUpToDate || settingsModalIsOpen) && (
         <ModalBackdrop onClose={() => setSettingsModalIsOpen(false)}>
-          <div className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2">
-            {settingsFormError && (
-              <p className="text-danger text-xs">{settingsFormError}</p>
+          <div
+            data-testid="ai-config-modal"
+            className="bg-root-primary w-[384px] p-6 rounded-xl flex flex-col gap-2"
+          >
+            {aiConfigOptions.error && (
+              <p className="text-danger text-xs">
+                {aiConfigOptions.error.message}
+              </p>
             )}
             <span className="text-xl leading-6 font-semibold -tracking-[0.01em">
               AI Provider Configuration
@@ -308,13 +208,22 @@ export default function MainApp() {
             <p className="text-xs text-danger">
               Changing settings during an active session will end the session
             </p>
-            <SettingsForm
-              settings={settings}
-              models={settingsFormData.models}
-              agents={settingsFormData.agents}
-              securityAnalyzers={settingsFormData.securityAnalyzers}
-              onClose={() => setSettingsModalIsOpen(false)}
-            />
+            {aiConfigOptions.isLoading && (
+              <div className="flex justify-center">
+                <LoadingSpinner size="small" />
+              </div>
+            )}
+            {aiConfigOptions.data && (
+              <SettingsForm
+                settings={settings}
+                models={aiConfigOptions.data?.models}
+                agents={aiConfigOptions.data?.agents}
+                securityAnalyzers={aiConfigOptions.data?.securityAnalyzers}
+                onClose={() => {
+                  setSettingsModalIsOpen(false);
+                }}
+              />
+            )}
           </div>
         </ModalBackdrop>
       )}
@@ -323,7 +232,7 @@ export default function MainApp() {
           <AccountSettingsModal
             onClose={handleAccountSettingsModalClose}
             selectedLanguage={settings.LANGUAGE}
-            gitHubError={isGitHubErrorReponse(user)}
+            gitHubError={user.isError}
             analyticsConsent={analyticsConsent}
           />
         </ModalBackdrop>
@@ -346,10 +255,14 @@ export default function MainApp() {
           />
         </ModalBackdrop>
       )}
-      {!isAuthed && (
-        <WaitlistModal ghToken={ghToken} githubAuthUrl={githubAuthUrl} />
+      {!isFetchingAuth && !isAuthed && config.data?.APP_MODE === "saas" && (
+        <WaitlistModal ghToken={gitHubToken} githubAuthUrl={gitHubAuthUrl} />
       )}
-      {!analyticsConsent && <AnalyticsConsentFormModal />}
+      {consentFormIsOpen && (
+        <AnalyticsConsentFormModal
+          onClose={() => setConsentFormIsOpen(false)}
+        />
+      )}
     </div>
   );
 }

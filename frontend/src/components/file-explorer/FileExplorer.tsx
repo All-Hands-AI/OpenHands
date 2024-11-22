@@ -5,13 +5,11 @@ import {
   IoIosRefresh,
   IoIosCloudUpload,
 } from "react-icons/io";
-import { useRevalidator } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import { IoFileTray } from "react-icons/io5";
 import { useTranslation } from "react-i18next";
 import { twMerge } from "tailwind-merge";
 import AgentState from "#/types/AgentState";
-import { setRefreshID } from "#/state/codeSlice";
 import { addAssistantMessage } from "#/state/chatSlice";
 import IconButton from "../IconButton";
 import ExplorerTree from "./ExplorerTree";
@@ -19,9 +17,10 @@ import toast from "#/utils/toast";
 import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
 import OpenHands from "#/api/open-hands";
-import { useFiles } from "#/context/files";
-import { isOpenHandsErrorResponse } from "#/api/open-hands.utils";
 import VSCodeIcon from "#/assets/vscode-alt.svg?react";
+import { useListFiles } from "#/hooks/query/use-list-files";
+import { FileUploadSuccessResponse } from "#/api/open-hands.types";
+import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
@@ -95,13 +94,9 @@ function ExplorerActions({
 interface FileExplorerProps {
   isOpen: boolean;
   onToggle: () => void;
-  error: string | null;
 }
 
-function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
-  const { revalidate } = useRevalidator();
-
-  const { paths, setPaths } = useFiles();
+function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
   const [isDragging, setIsDragging] = React.useState(false);
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -112,62 +107,57 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
     fileInputRef.current?.click(); // Trigger the file browser
   };
 
-  const refreshWorkspace = () => {
-    if (
-      curAgentState === AgentState.LOADING ||
-      curAgentState === AgentState.STOPPED
-    ) {
-      return;
-    }
-    dispatch(setRefreshID(Math.random()));
-    OpenHands.getFiles().then(setPaths);
-    revalidate();
-  };
+  const { data: paths, refetch, error } = useListFiles();
 
-  const uploadFileData = async (files: FileList) => {
-    try {
-      const result = await OpenHands.uploadFiles(Array.from(files));
+  const handleUploadSuccess = (data: FileUploadSuccessResponse) => {
+    const uploadedCount = data.uploaded_files.length;
+    const skippedCount = data.skipped_files.length;
 
-      if (isOpenHandsErrorResponse(result)) {
-        // Handle error response
-        toast.error(
-          `upload-error-${new Date().getTime()}`,
-          result.error || t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE),
-        );
-        return;
-      }
-
-      const uploadedCount = result.uploaded_files.length;
-      const skippedCount = result.skipped_files.length;
-
-      if (uploadedCount > 0) {
-        toast.success(
-          `upload-success-${new Date().getTime()}`,
-          t(I18nKey.EXPLORER$UPLOAD_SUCCESS_MESSAGE, {
-            count: uploadedCount,
-          }),
-        );
-      }
-
-      if (skippedCount > 0) {
-        const message = t(I18nKey.EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE, {
-          count: skippedCount,
-        });
-        toast.info(message);
-      }
-
-      if (uploadedCount === 0 && skippedCount === 0) {
-        toast.info(t(I18nKey.EXPLORER$NO_FILES_UPLOADED_MESSAGE));
-      }
-
-      refreshWorkspace();
-    } catch (e) {
-      // Handle unexpected errors (network issues, etc.)
-      toast.error(
-        `upload-error-${new Date().getTime()}`,
-        t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE),
+    if (uploadedCount > 0) {
+      toast.success(
+        `upload-success-${new Date().getTime()}`,
+        t(I18nKey.EXPLORER$UPLOAD_SUCCESS_MESSAGE, {
+          count: uploadedCount,
+        }),
       );
     }
+
+    if (skippedCount > 0) {
+      const message = t(I18nKey.EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE, {
+        count: skippedCount,
+      });
+      toast.info(message);
+    }
+
+    if (uploadedCount === 0 && skippedCount === 0) {
+      toast.info(t(I18nKey.EXPLORER$NO_FILES_UPLOADED_MESSAGE));
+    }
+  };
+
+  const handleUploadError = (e: Error) => {
+    toast.error(
+      `upload-error-${new Date().getTime()}`,
+      e.message || t(I18nKey.EXPLORER$UPLOAD_ERROR_MESSAGE),
+    );
+  };
+
+  const { mutate: uploadFiles } = useUploadFiles();
+
+  const refreshWorkspace = () => {
+    if (
+      curAgentState !== AgentState.LOADING &&
+      curAgentState !== AgentState.STOPPED
+    ) {
+      refetch();
+    }
+  };
+
+  const uploadFileData = (files: FileList) => {
+    uploadFiles(
+      { files: Array.from(files) },
+      { onSuccess: handleUploadSuccess, onError: handleUploadError },
+    );
+    refreshWorkspace();
   };
 
   const handleVSCodeClick = async (e: React.MouseEvent) => {
@@ -265,13 +255,13 @@ function FileExplorer({ error, isOpen, onToggle }: FileExplorerProps) {
           {!error && (
             <div className="overflow-auto flex-grow min-h-0">
               <div style={{ display: !isOpen ? "none" : "block" }}>
-                <ExplorerTree files={paths} />
+                <ExplorerTree files={paths || []} />
               </div>
             </div>
           )}
           {error && (
             <div className="flex flex-col items-center justify-center h-full">
-              <p className="text-neutral-300 text-sm">{error}</p>
+              <p className="text-neutral-300 text-sm">{error.message}</p>
             </div>
           )}
           {isOpen && (
