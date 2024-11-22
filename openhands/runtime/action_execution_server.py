@@ -53,6 +53,7 @@ from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system import check_port_available
+from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
 
 
@@ -422,44 +423,10 @@ if __name__ == '__main__':
         uptime = current_time - client.start_time
         idle_time = current_time - client.last_execution_time
         
-        # Get system resource usage
-        process = psutil.Process()
-        # Get initial CPU percentage (this will return 0.0)
-        process.cpu_percent()
-        # Wait a bit and get the actual CPU percentage
-        time.sleep(0.1)
-        
-        with process.oneshot():
-            cpu_percent = process.cpu_percent()
-            memory_info = process.memory_info()
-            memory_percent = process.memory_percent()
-            io_counters = process.io_counters()
-        
-        disk_usage = psutil.disk_usage('/')
-        
         return {
             'uptime': uptime,
             'idle_time': idle_time,
-            'resources': {
-                'cpu_percent': cpu_percent,
-                'memory': {
-                    'rss': memory_info.rss,
-                    'vms': memory_info.vms,
-                    'percent': memory_percent
-                },
-                'disk': {
-                    'total': disk_usage.total,
-                    'used': disk_usage.used,
-                    'free': disk_usage.free,
-                    'percent': disk_usage.percent
-                },
-                'io': {
-                    'read_bytes': io_counters.read_bytes,
-                    'write_bytes': io_counters.write_bytes,
-                    'read_count': io_counters.read_count,
-                    'write_count': io_counters.write_count
-                }
-            }
+            'resources': get_system_stats()
         }
 
     @app.post('/execute_action')
