@@ -2,11 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 
-interface UseGetFileConfig {
+interface UseListFileConfig {
   path: string;
 }
 
-export const useGetFile = (config: UseGetFileConfig) => {
+export const useListFile = (config: UseListFileConfig) => {
   const { token } = useAuth();
 
   return useQuery({

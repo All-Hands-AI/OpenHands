@@ -18,7 +18,7 @@ import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
 import OpenHands from "#/api/open-hands";
 import VSCodeIcon from "#/assets/vscode-alt.svg?react";
-import { useGetFiles } from "#/hooks/query/use-get-files";
+import { useListFiles } from "#/hooks/query/use-list-files";
 import { FileUploadSuccessResponse } from "#/api/open-hands.types";
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 
@@ -107,7 +107,7 @@ function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
     fileInputRef.current?.click(); // Trigger the file browser
   };
 
-  const { data: paths, refetch, error } = useGetFiles();
+  const { data: paths, refetch, error } = useListFiles();
 
   const handleUploadSuccess = (data: FileUploadSuccessResponse) => {
     const uploadedCount = data.uploaded_files.length;

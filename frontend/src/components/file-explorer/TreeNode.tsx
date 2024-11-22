@@ -3,8 +3,8 @@ import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
 import { useFiles } from "#/context/files";
 import { cn } from "#/utils/utils";
-import { useGetFiles } from "#/hooks/query/use-get-files";
-import { useGetFile } from "#/hooks/query/use-get-file";
+import { useListFiles } from "#/hooks/query/use-list-files";
+import { useListFile } from "#/hooks/query/use-list-file";
 
 interface TitleProps {
   name: string;
@@ -45,12 +45,12 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
 
   const isDirectory = path.endsWith("/");
 
-  const { data: paths } = useGetFiles({
+  const { data: paths } = useListFiles({
     path,
     enabled: isDirectory && isOpen,
   });
 
-  const { data: fileContent, refetch } = useGetFile({ path });
+  const { data: fileContent, refetch } = useListFile({ path });
 
   React.useEffect(() => {
     if (fileContent) {

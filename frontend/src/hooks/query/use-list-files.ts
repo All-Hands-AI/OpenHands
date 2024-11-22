@@ -11,7 +11,7 @@ interface UseListFilesConfig {
   enabled?: boolean;
 }
 
-export const useGetFiles = (config?: UseListFilesConfig) => {
+export const useListFiles = (config?: UseListFilesConfig) => {
   const { token } = useAuth();
   const { status } = useWsClient();
   const isActive = status === WsClientProviderStatus.ACTIVE;
