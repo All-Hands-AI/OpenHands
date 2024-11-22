@@ -174,7 +174,7 @@ export function ChatInterface() {
         {(curAgentState === AgentState.AWAITING_USER_INPUT ||
           curAgentState === AgentState.FINISHED) && (
           <div className="flex flex-col gap-2 mb-2">
-            {rootLoaderData?.ghToken ? (
+            {gitHubToken ? (
               <div className="flex flex-col gap-2">
                 <SuggestionItem
                   suggestion={{
