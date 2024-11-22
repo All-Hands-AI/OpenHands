@@ -108,20 +108,8 @@ class LLM(RetryMixin, DebugMixin):
                 )
             os.makedirs(self.config.log_completions_folder, exist_ok=True)
 
-        self._completion = partial(
-            litellm_completion,
-            model=self.config.model,
-            api_key=self.config.api_key,
-            base_url=self.config.base_url,
-            api_version=self.config.api_version,
-            custom_llm_provider=self.config.custom_llm_provider,
-            max_tokens=self.config.max_output_tokens,
-            timeout=self.config.timeout,
-            temperature=self.config.temperature,
-            top_p=self.config.top_p,
-            drop_params=self.config.drop_params,
-        )
-
+        # call init_model_info to initialize config.max_output_tokens
+        # which is used in partial function
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             self.init_model_info()
