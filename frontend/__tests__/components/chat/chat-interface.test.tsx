@@ -8,7 +8,7 @@ import { SUGGESTIONS } from "#/utils/suggestions";
 import * as ChatSlice from "#/state/chatSlice";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const renderChatInterface = (messages: (Message | ErrorMessage)[]) =>
+const renderChatInterface = (messages: (Message)[]) =>
   renderWithProviders(<ChatInterface />);
 
 describe("Empty state", () => {
@@ -262,7 +262,7 @@ describe.skip("ChatInterface", () => {
   });
 
   it("should render inline errors", () => {
-    const messages: (Message | ErrorMessage)[] = [
+    const messages: (Message)[] = [
       {
         sender: "assistant",
         content: "Hello",
@@ -270,9 +270,9 @@ describe.skip("ChatInterface", () => {
         timestamp: new Date().toISOString(),
       },
       {
-        error: true,
+        type: "error",
         id: "",
-        message: "Something went wrong",
+        content: "Something went wrong",
       },
     ];
     renderChatInterface(messages);

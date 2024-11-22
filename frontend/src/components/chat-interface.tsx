@@ -157,8 +157,11 @@ export function ChatInterface() {
                 type={message.sender}
                 message={message.content}
               >
-                {message.imageUrls.length > 0 && (
-                  <ImageCarousel size="small" images={message.imageUrls} />
+                {message.imageUrls?.length && (
+                  <ImageCarousel
+                    size="small"
+                    images={message.imageUrls || []}
+                  />
                 )}
                 {messages.length - 1 === index &&
                   message.sender === "assistant" &&
