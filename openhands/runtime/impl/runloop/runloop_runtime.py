@@ -171,6 +171,7 @@ class RunloopRuntime(EventStreamRuntime):
             self.config.sandbox.user_id,
             plugin_args,
             browsergym_args,
+            is_root=not self.config.run_as_openhands,  # is_root=True when running as root
         )
 
         # Add some additional commands based on our image
