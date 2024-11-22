@@ -77,32 +77,9 @@ To clean-up all existing runtime you've already started, run:
 ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/commit0_bench/scripts/cleanup_remote_runtime.sh
 ```
 
-## Visualize Results
+### Specify a subset of tasks to run infer
 
-First you need to clone `https://huggingface.co/spaces/OpenHands/evaluation` and add your own running results from openhands into the `outputs` of the cloned repo.
-
-```bash
-git clone https://huggingface.co/spaces/OpenHands/evaluation
-```
-
-**(optional) setup streamlit environment with conda**:
-```bash
-cd evaluation
-conda create -n streamlit python=3.10
-conda activate streamlit
-pip install -r requirements.txt
-```
-
-**run the visualizer**:
-Then, in a separate Python environment with `streamlit` library, you can run the following:
-
-```bash
-# Make sure you are inside the cloned `evaluation` repo
-conda activate streamlit # if you follow the optional conda env setup above
-streamlit app.py --server.port 8501 --server.address 0.0.0.0
-```
-
-Then you can access the Commit0 trajectory visualizer at `localhost:8501`.
+If you would like to specify a list of tasks you'd like to benchmark on, you just need to pass selected repo through `repo_split` option.
 
 ## Submit your evaluation results
 
