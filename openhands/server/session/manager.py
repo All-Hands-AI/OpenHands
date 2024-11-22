@@ -94,18 +94,22 @@ class SessionManager:
         # If we have a local session running, use that
         session = self.local_sessions_by_sid.get(sid)
         if session:
+            logger.info(f'found_local_session:{sid}')
             return session.agent_session.event_stream        
 
         # If there is a remote session running, mark a connection to that
         redis_client = self._get_redis_client()
         if redis_client:
             num_connections = await redis_client.rpush(_CONNECTION_KEY.format(sid=sid), connection_id)
+            logger.info(f'num_redis_connections:{sid}:{num_connections}')
             # More than one remote connection implies session is already running remotely...
             if num_connections != 1:
+                logger.info('session_running_elsewhere_in_cluster:{sid}')
                 event_stream = EventStream(sid, self.file_store)
                 return event_stream
 
         # Start a new local session
+        logger.info('start_new_local_session:{sid}')
         session = Session(
             sid=sid, file_store=self.file_store, config=self.config, sio=self.sio
         )
@@ -145,10 +149,12 @@ class SessionManager:
         # Disconnect from redis if present
         redis_client = self._get_redis_client()
         if redis_client:
+            logger.info('disconnect_connection_from_session:{connection_id}:{sid}')
             await redis_client.lrem(_CONNECTION_KEY.format(sid=sid), 0, connection_id)
 
         session = self.local_sessions_by_sid.get(sid)
         if session:
+            logger.info('close_session:{connection_id}:{sid}')
             if should_continue():
                 asyncio.create_task(self._close_orphaned_session_later(session))
             else:
@@ -178,6 +184,7 @@ class SessionManager:
                 redis_connections = [
                     c.decode() for c in redis_connections
                 ]
+                logger.info('close_orphaned_session:{redis_connections}')
                 if not redis_connections:
                     await redis_client.delete(key)
                 redis_connections = [
