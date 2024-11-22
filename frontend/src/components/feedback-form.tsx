@@ -74,7 +74,7 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
       { feedback },
       {
         onSuccess: (data) => {
-        const { message, feedback_id, password } = data.body; // eslint-disable-line
+          const { message, feedback_id, password } = data.body; // eslint-disable-line
           const link = `${VIEWER_PAGE}?share_id=${feedback_id}`;
           shareFeedbackToast(message, link, password);
           onClose();
