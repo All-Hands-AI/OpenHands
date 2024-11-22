@@ -5667,7 +5667,7 @@ whatthepatch = "^1.0.6"
 type = "git"
 url = "https://github.com/All-Hands-AI/openhands-aci.git"
 reference = "ht/jump-commands"
-resolved_reference = "08ca8cc85a161d2c271451bd49ba35251e41889d"
+resolved_reference = "e07a6c329ff3b712c0cb06777e901892f4e0a93d"
 
 [[package]]
 name = "opentelemetry-api"
