@@ -1,0 +1,78 @@
+
+
+# التثبيت
+
+## المتطلبات اللازمة
+
+- **إصدار Docker**: 26.0.0+ أو Docker Desktop 4.31.0+.
+- يجب أن تستخدم **Linux** أو **Mac OS**.
+  - إذا كنت تستخدم Windows، ستحتاج إلى استخدام [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+
+---
+
+## بدء تشغيل التطبيق
+
+أسهل طريقة لتشغيل OpenHands هي استخدام Docker. يمكنك تعديل متغير البيئة `WORKSPACE_BASE` أدناه لتوجيه OpenHands إلى 
+الكود الموجود الذي ترغب في تعديله.
+
+```bash
+export WORKSPACE_BASE=$(pwd)/workspace
+
+docker pull ghcr.io/all-hands-ai/runtime:0.11-nikolaik
+
+docker run -it --pull=always \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.11-nikolaik \
+    -e SANDBOX_USER_ID=$(id -u) \
+    -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \
+    -v $WORKSPACE_BASE:/opt/workspace_base \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    -p 3000:3000 \
+    --add-host host.docker.internal:host-gateway \
+    --name openhands-app-$(date +%Y%m%d%H%M%S) \
+    ghcr.io/all-hands-ai/openhands:0.11
+```
+
+يمكنك أيضًا تشغيل OpenHands في وضع [scriptable بدون واجهة](https://docs.all-hands.dev/modules/usage/how-to/headless-mode)، أو استخدامه كـ [واجهة CLI تفاعلية](https://docs.all-hands.dev/modules/usage/how-to/cli-mode)، أو من خلال [Action GitHub لـ OpenHands](https://docs.all-hands.dev/modules/usage/how-to/github-action).
+
+---
+
+## الإعداد
+
+بعد تنفيذ الأمر أعلاه، ستجد OpenHands قيد التشغيل على الرابط التالي: [http://localhost:3000](http://localhost:3000).
+
+سيكون لدى الوكيل حق الوصول إلى المجلد `./workspace` لتنفيذ مهامه. يمكنك نسخ الكود الموجود إلى هذا المجلد، أو تعديل متغير `WORKSPACE_BASE` في الأمر لتوجيهه إلى مجلد موجود بالفعل.
+
+عند تشغيل OpenHands لأول مرة، ستظهر نافذة إعدادات. يجب عليك تحديد **مزود نموذج LLM** و**النموذج** المناسب وإدخال **مفتاح API** الخاص بك.  
+يمكنك تعديل هذه الإعدادات لاحقًا بالنقر على زر "الإعدادات" (رمز الترس) في واجهة المستخدم.
+
+إذا كان **نموذج LLM** المطلوب غير موجود في القائمة، يمكنك تفعيل **الخيارات المتقدمة** وإدخاله يدويًا مع البادئة الصحيحة في حقل النص "النموذج المخصص".  
+تتيح لك **الخيارات المتقدمة** أيضًا تحديد **عنوان URL الأساسي** إذا لزم الأمر.
+
+<div style="display: flex; justify-content: center; gap: 20px;">
+  <img src="/img/settings-screenshot.png" alt="نافذة الإعدادات" width="340" />
+  <img src="/img/settings-advanced.png" alt="الإعدادات المتقدمة" width="335" />
+</div>
+
+---
+
+## الإصدارات
+
+الأمر أعلاه يقوم بتنزيل أحدث إصدار مستقر من OpenHands. لكن يمكنك اختيار إصدارات أخرى:
+
+- للحصول على إصدار محدد، استخدم:  
+  `ghcr.io/all-hands-ai/openhands:$VERSION`  
+  واستبدل `$VERSION` برقم الإصدار المطلوب.
+  
+- نحن نستخدم نظام **semver** ونصدر علامات رئيسية وفرعية وإصلاحية. على سبيل المثال:  
+  `0.9` سيشير تلقائيًا إلى آخر إصدار من `0.9.x`، و`0` سيشير إلى أحدث إصدار من `0.x.x`.
+
+- للحصول على أحدث إصدار تطويري، استخدم:  
+  `ghcr.io/all-hands-ai/openhands:main`  
+  **ملحوظة**: هذا الإصدار غير مستقر وينصح باستخدامه فقط لأغراض الاختبار أو التطوير.
+
+اختر العلامة التي تناسب احتياجاتك بناءً على متطلباتك من حيث الثبات والميزات المطلوبة.
+
+للحصول على المزيد حول سير العمل في التطوير، قم بزيارة [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
+
+**هل تواجه مشاكل؟**  
+راجع [دليل استكشاف الأخطاء وإصلاحها](https://docs.all-hands.dev/modules/usage/troubleshooting).

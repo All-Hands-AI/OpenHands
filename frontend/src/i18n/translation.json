@@ -680,11 +680,13 @@
   },
   "EXPLORER$VSCODE_SWITCHING_MESSAGE": {
     "en": "Switching to VS Code in 3 seconds...\nImportant: Please inform the agent of any changes you make in VS Code. To avoid conflicts, wait for the assistant to complete its work before making your own changes.",
+    "ar": "التحويل إلى VS Code في 3 ثوانٍ...\nهام: يُرجى إبلاغ الوكيل بأي تغييرات تجريها في VS Code. لتجنب التعارضات، انتظر حتى يكمل المساعد عمله قبل إجراء التغييرات الخاصة بك.",
     "zh-CN": "3 秒后切换到 VS Code\n重要提示：请告知 OpenHands 您在 VS Code 中进行的任何更改。为了避免冲突，请在 OpenHands 完成工作后再进行自己的更改。",
     "zh-TW": "3 秒後切換到 VS Code\n重要提示：請告知 OpenHands 您在 VS Code 中進行的任何更改。為避免衝突，請在 OpenHands 完成工作後再進行自己的更改。"
   },
   "EXPLORER$VSCODE_SWITCHING_ERROR_MESSAGE": {
     "en": "Error switching to VS Code: {{error}}",
+    "ar": "حدث خطأ في تحويل الى VS Code: {{error}}",
     "zh-CN": "切换到 VS Code 时发生错误: {{error}}",
     "zh-TW": "切換到 VS Code 時發生錯誤: {{error}}"
   },
@@ -1784,10 +1786,12 @@
   },
   "ERROR_MESSAGE$SHOW_DETAILS": {
     "en": "Show details",
+    "ar": "إظهار التفاصيل",
     "es": "Mostrar detalles"
   },
   "ERROR_MESSAGE$HIDE_DETAILS": {
     "en": "Hide details",
+    "ar": "إحفاء التفاصيل",
     "es": "Ocultar detalles"
   },
   "STATUS$STARTING_RUNTIME": {
@@ -1862,155 +1866,194 @@
   },
   "ACCOUNT_SETTINGS_MODAL$DISCONNECT":{
     "en": "Disconnect",
+    "ar": "قطع الاتصال",
     "es": "Desconectar"
   },
   "ACCOUNT_SETTINGS_MODAL$SAVE":{
     "en": "Save",
+    "ar": "حفظ",
     "es": "Guardar"
   },
   "ACCOUNT_SETTINGS_MODAL$CLOSE":{
     "en": "Close",
+    "ar": "غلق",
     "es": "Cerrar"
   },
   "ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID":{
     "en": "GitHub token is invalid. Please try again.",
+    "ar": "رمز GitHub غير صالح. يرجى المحاولة مرة أخرى.",
     "es": ""
   },
   "CONNECT_TO_GITHUB_MODAL$GET_YOUR_TOKEN": {
     "en": "Get your token",
+    "ar": "احصل على الرمز الخاص بك",
     "es": "Obten tu token"
   },
   "CONNECT_TO_GITHUB_MODAL$HERE": {
     "en": "here",
+    "ar": "هنا",
     "es": "aquí"
   },
   "CONNECT_TO_GITHUB_MODAL$CONNECT": {
     "en": "Connect",
+    "ar": "يتصل",
     "es": "Conectar"
   },
   "CONNECT_TO_GITHUB_MODAL$CLOSE": {
     "en": "Close",
+    "ar": "غلق",
     "es": "Cerrar"
   },
   "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$BY_CONNECTING_YOU_AGREE": {
     "en": "By connecting you agree to our",
+    "ar": "من خلال الاتصال فإنك توافق على شروطنا",
     "es": "Al conectarte tu aceptas nuestros"
   },
   "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$TERMS_OF_SERVICE": {
     "en": "terms of service",
+    "ar": "شروط الخدمة",
     "es": "términos de servicio"
   },
   "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$CONTINUE": {
     "en": "Continue",
+    "ar": "استمرار",
     "es": "Continuar"
   },
   "LOADING_PROJECT$LOADING": {
     "en": "Loading...",
+    "ar": "جار تحميل...",
     "es": "Cargando..."
   },
   "CUSTOM_INPUT$OPTIONAL_LABEL": {
     "en": "(Optional)",
+    "ar": "(اختياري)",
     "es": "(Opcional)"
   },
   "SETTINGS_FORM$ADVANCED_OPTIONS_LABEL": {
     "en": "Advanced Options",
+    "ar": "خيارات متقدمة",
     "es": "Opciones avanzadas"
   },
   "SETTINGS_FORM$CUSTOM_MODEL_LABEL": {
     "en": "Custom Model",
+    "ar": "النموذج الخاص",
     "es": "Modelo personalizado"
   },
   "SETTINGS_FORM$BASE_URL_LABEL": {
     "en": "Base URL",
+    "ar": "عنوان URL",
     "es": "URL base"
   },
   "SETTINGS_FORM$API_KEY_LABEL": {
     "en": "API Key",
+    "ar": "رمز API",
     "es": "API Key"
   },
   "SETTINGS_FORM$DONT_KNOW_API_KEY_LABEL": {
     "en": "Don't know your API key?",
+    "ar": "لا تعرف مفتاح API الخاص بك؟",
     "es": "¿No sabes tu API key?"
   },
   "SETTINGS_FORM$CLICK_HERE_FOR_INSTRUCTIONS_LABEL": {
     "en": "Click here for instructions",
+    "ar": "انقر هنا للحصول على التعليمات",
     "es": "Clic aquí para instrucciones"
   },
   "SETTINGS_FORM$AGENT_LABEL": {
     "en": "Agent",
+    "ar": "وكيل",
     "es": "Agente"
   },
   "SETTINGS_FORM$SECURITY_ANALYZER_LABEL": {
     "en": "Security Analyzer (Optional)",
+    "ar": "محلل الأمان (اختياري)",
     "es": "Analizador de seguridad (opcional)"
   },
   "SETTINGS_FORM$ENABLE_CONFIRMATION_MODE_LABEL": {
     "en": "Enable Confirmation Mode",
+    "ar": "تفعيل وضع التأكيد",
     "es": "Habilitar modo de confirmación"
   },
   "SETTINGS_FORM$SAVE_LABEL": {
     "en": "Save",
+    "ar": "حفظ",
     "es": "Guardar"
   },
   "SETTINGS_FORM$CLOSE_LABEL": {
     "en": "Close",
+    "ar": "اغلاق",
     "es": "Cerrar"
   },
   "SETTINGS_FORM$RESET_TO_DEFAULTS_LABEL": {
     "en": "Reset to defaults",
+    "ar": "إعادة التعيين إلى الإعدادات الافتراضية",
     "es": "Reiniciar valores por defect"
   },
   "SETTINGS_FORM$CANCEL_LABEL": {
     "en": "Cancel",
+    "ar": "الغاء",
     "es": "Cancelar"
   },
   "SETTINGS_FORM$END_SESSION_LABEL": {
     "en": "End Session",
+    "ar": "انهاء الجلسة",
     "es": "Terminar sesión"
   },
   "SETTINGS_FORM$CHANGING_WORKSPACE_WARNING_MESSAGE": {
     "en": "Changing your settings will clear your workspace and start a new session. Are you sure you want to continue?",
+    "ar": "تغيير اعداداتك سوف يحذف مساحة العمل الخاصة بك وسوف يبدء جلسة جديدة. هل تريد المتابعة؟",
     "es": "Cambiar tu configuración limpiará tu espacio de trabajo e iniciará una nueva sesión. ¿Estás seguro de continuar?"
   },
   "SETTINGS_FORM$ARE_YOU_SURE_LABEL": {
     "en": "Are you sure?",
+    "ar": "هل تريد المتابعة؟",
     "es": "¿Estás seguro?"
   },
   "SETTINGS_FORM$ALL_INFORMATION_WILL_BE_DELETED_MESSAGE": {
     "en": "All saved information in your AI settings will be deleted, including any API keys.",
+    "ar": "سوف يتم حذف جميع المعلومات المحفوظة في اعداداتك الذكية، بما في ذلك مفاتيح API.",
     "es": "Toda la información guardada en tu configuración de IA será eliminada, incluyendo tus API Keys"
   },
   "PROJECT_MENU_DETAILS_PLACEHOLDER$NEW_PROJECT_LABEL": {
     "en":"New Project",
+    "ar":"مشروع جديد",
     "es":"Nuevo proyecto"
   },
   "PROJECT_MENU_DETAILS$AGO_LABEL": {
     "en":"ago",
+    "ar":"منذ",
     "es":"atrás"
   },
   "STATUS$ERROR_LLM_AUTHENTICATION": {
     "en": "Error authenticating with the LLM provider. Please check your API key",
+    "ar": "حدث خطأ أثناء المصادقة مع موفر LLM. يرجى التحقق من مفتاح API الخاص بك",
     "es": "Error autenticando con el proveedor de LLM. Por favor revisa tu API key"
   },
   "STATUS$ERROR_RUNTIME_DISCONNECTED": {
-    "en": "There was an error while connecting to the runtime. Please refresh the page."
+    "en": "There was an error while connecting to the runtime. Please refresh the page.",
+    "ar": "حدث خطأ في الاتصال بمستند التشغيل. يرجى تحديث الصفحة"
   },
   "AGENT_ERROR$BAD_ACTION": {
-    "en": "Agent tried to execute a malformed action."
+    "en": "Agent tried to execute a malformed action.",
+    "ar": "حاول العميل تنفيذ إجراء مشوه."
   },
   "AGENT_ERROR$ACTION_TIMEOUT": {
-    "en": "Action timed out."
+    "en": "Action timed out.",
+    "ar": "انتهت المدة المسموحة للاجراء."
   },
   "PROJECT_MENU_CARD_CONTEXT_MENU$CONNECT_TO_GITHUB_LABEL": {
     "en": "Connect to GitHub",
+    "ar": "اتصال ب GitHub",
     "es": "Conectar a GitHub"
   },
   "PROJECT_MENU_CARD_CONTEXT_MENU$PUSH_TO_GITHUB_LABEL": {
     "en": "Push to GitHub",
+    "ar": "رفع في GitHub",
     "es": "Subir a GitHub"
   },
   "PROJECT_MENU_CARD_CONTEXT_MENU$DOWNLOAD_AS_ZIP_LABEL": {
     "en": "Download as .zip",
+    "ar": "تحميل ك .zip",
     "es": "Descargar como .zip"
   }
 }
