@@ -30,7 +30,7 @@ mkdir -p $AGENT_DIR
     if sudo pgrep dockerd > /dev/null; then
       sudo pkill dockerd
     fi
-    sudo dockerd > $LOGS_DIR/docker.log 2>&1 &
+    # sudo dockerd > $LOGS_DIR/docker.log 2>&1 &
     sleep 5
   else
     echo "Docker not installed. Skipping Docker startup."

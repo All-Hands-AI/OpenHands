@@ -121,7 +121,7 @@ def run_in_container(
             'bind': f'/private/data/{competition.id}/prepared/private/',
             'mode': 'ro',
         },
-        # "/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"},
+        '/var/run/docker.sock': {'bind': '/var/run/docker.sock', 'mode': 'rw'},
     }
 
     container = create_competition_container(
