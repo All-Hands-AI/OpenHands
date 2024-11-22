@@ -16,9 +16,9 @@ import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
 import OpenHands from "#/api/open-hands";
 import CogTooth from "#/assets/cog-tooth";
 import { SettingsForm } from "#/components/form/settings-form";
-import AccountSettingsModal from "#/components/modals/AccountSettingsModal";
+import AccountSettingsModal from "#/components/modals/account-settings-modal";
 import { DangerModal } from "#/components/modals/confirmation-modals/danger-modal";
-import { LoadingSpinner } from "#/components/modals/LoadingProject";
+import { LoadingSpinner } from "#/components/modals/loading-project";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { UserActions } from "#/components/user-actions";
 import i18n from "#/i18n";
@@ -30,8 +30,8 @@ import { userIsAuthenticated } from "#/utils/user-is-authenticated";
 import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
 import { WaitlistModal } from "#/components/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/analytics-consent-form-modal";
-import { setCurrentAgentState } from "#/state/agentSlice";
-import AgentState from "#/types/AgentState";
+import { setCurrentAgentState } from "#/state/agent-slice";
+import AgentState from "#/types/agent-state";
 
 export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
   try {

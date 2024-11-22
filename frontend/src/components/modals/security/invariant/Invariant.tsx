@@ -9,8 +9,8 @@ import { RootState } from "#/store";
 import {
   ActionSecurityRisk,
   SecurityAnalyzerLog,
-} from "#/state/securityAnalyzerSlice";
-import { useScrollToBottom } from "#/hooks/useScrollToBottom";
+} from "#/state/security-analyzer-slice";
+import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { I18nKey } from "#/i18n/declaration";
 import { request } from "#/services/api";
 import toast from "#/utils/toast";

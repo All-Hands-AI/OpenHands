@@ -1,8 +1,8 @@
 import { IoLockClosed } from "react-icons/io5";
 import { useRouteLoaderData } from "@remix-run/react";
 import React from "react";
-import AgentControlBar from "./AgentControlBar";
-import AgentStatusBar from "./AgentStatusBar";
+import AgentControlBar from "./agent-control-bar";
+import AgentStatusBar from "./agent-status-bar";
 import { ProjectMenuCard } from "./project-menu/ProjectMenuCard";
 import { clientLoader as rootClientLoader } from "#/routes/_oh";
 import { clientLoader as appClientLoader } from "#/routes/_oh.app";

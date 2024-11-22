@@ -45,5 +45,4 @@ describe("FeedbackForm", () => {
 
     expect(onCloseMock).toHaveBeenCalled();
   });
-
 });

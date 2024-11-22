@@ -1,6 +1,6 @@
 import React from "react";
 import hotToast from "react-hot-toast";
-import ModalButton from "./buttons/ModalButton";
+import ModalButton from "./buttons/modal-button";
 import { Feedback } from "#/api/open-hands.types";
 import OpenHands from "#/api/open-hands";
 

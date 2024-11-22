@@ -6,8 +6,8 @@ import { VscArrowDown } from "react-icons/vsc";
 import { useTranslation } from "react-i18next";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { RootState } from "#/store";
-import { Cell } from "#/state/jupyterSlice";
-import { useScrollToBottom } from "#/hooks/useScrollToBottom";
+import { Cell } from "#/state/jupyter-slice";
+import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { I18nKey } from "#/i18n/declaration";
 
 interface IJupyterCell {

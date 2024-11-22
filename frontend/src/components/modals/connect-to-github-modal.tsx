@@ -1,12 +1,12 @@
 import { useFetcher, useRouteLoaderData } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
-import ModalBody from "./ModalBody";
+import ModalBody from "./modal-body";
 import { CustomInput } from "../form/custom-input";
-import ModalButton from "../buttons/ModalButton";
+import ModalButton from "../buttons/modal-button";
 import {
   BaseModalDescription,
   BaseModalTitle,
-} from "./confirmation-modals/BaseModal";
+} from "./confirmation-modals/base-modal";
 import { clientLoader } from "#/routes/_oh";
 import { clientAction } from "#/routes/login";
 import { I18nKey } from "#/i18n/declaration";

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { clearSession } from "../src/utils/clear-session";
 import store from "../src/store";
-import { initialState as browserInitialState } from "../src/state/browserSlice";
+import { initialState as browserInitialState } from "../src/state/browser-slice";
 
 describe("clearSession", () => {
   beforeEach(() => {

@@ -1,5 +1,5 @@
 import store from "#/store";
-import { initialState as browserInitialState } from "#/state/browserSlice";
+import { initialState as browserInitialState } from "#/state/browser-slice";
 
 /**
  * Clear the session data from the local storage and reset relevant Redux state
