@@ -89,7 +89,6 @@ class AgentController:
         is_delegate: bool = False,
         headless_mode: bool = True,
         status_callback: Callable | None = None,
-        max_input_tokens: int | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -111,10 +110,6 @@ class AgentController:
         self.id = sid
         self.agent = agent
         self.headless_mode = headless_mode
-
-        # Set max input tokens if provided
-        if max_input_tokens is not None:
-            self.agent.llm.config.max_input_tokens = max_input_tokens
 
         # subscribe to the event stream
         self.event_stream = event_stream

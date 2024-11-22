@@ -190,8 +190,11 @@ class TestTruncation:
     def test_context_window_parameter_truncation(self, mock_event_stream, mock_agent):
         # Configure mock agent's LLM to return specific token counts
         mock_agent.llm.get_token_count.return_value = 100
+        
+        # Set max_input_tokens in LLM config
+        mock_agent.llm.config.max_input_tokens = 80
 
-        # Create controller with context window of 80 tokens
+        # Create controller
         controller = AgentController(
             agent=mock_agent,
             event_stream=mock_event_stream,
@@ -199,7 +202,6 @@ class TestTruncation:
             sid='test_truncation',
             confirmation_mode=False,
             headless_mode=True,
-            max_input_tokens=80,
         )
 
         # Create initial events
