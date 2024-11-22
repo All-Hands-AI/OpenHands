@@ -1,5 +1,4 @@
 import asyncio
-import bz2
 import json
 import os
 from collections import Counter
@@ -49,17 +48,6 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
 }
 
 
-def get_test_ids(instance: pd.Series) -> str:
-    repo_name = instance['repo'].split('/')[1]
-    repo_name = repo_name.replace('.', '-')
-    commit0_evaluation_path = os.path.dirname(__file__)
-    bz2_file = f'{commit0_evaluation_path}/data/test_ids/{repo_name}.bz2'
-    with bz2.open(bz2_file, 'rt') as f:
-        test_ids = f.read()
-    test_ids = test_ids.split('\n')
-    return test_ids
-
-
 def _get_commit0_workspace_dir_name(instance: pd.Series) -> str:
     return instance['repo'].split('/')[1]
 
@@ -67,45 +55,31 @@ def _get_commit0_workspace_dir_name(instance: pd.Series) -> str:
 def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     workspace_dir_name = _get_commit0_workspace_dir_name(instance)
     # Prepare instruction
-    if metadata.agent_class == 'CodeActCommit0Agent':
-        raise NotImplementedError
-        # instruction = (
-        #     'We are currently solving the following issue within our repository. Here is the issue text:\n'
-        #     '--- BEGIN ISSUE ---\n'
-        #     f'{instance.problem_statement}\n'
-        #     '--- END ISSUE ---\n\n'
-        # )
-        # if USE_HINT_TEXT and instance.hints_text:
-        #     instruction += (
-        #         f'--- BEGIN HINTS ---\n{instance.hints_text}\n--- END HINTS ---\n'
-        #     )
-        # instruction += CODEACT_SWE_PROMPT.format(workspace_dir_name=workspace_dir_name)
-    else:
-        test_cmd = instance['test']['test_cmd']
-        test_dir = instance['test']['test_dir']
-        # Instruction based on Anthropic's official trajectory
-        # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
-        instruction = (
-            '<uploaded_files>\n'
-            f'/workspace/{workspace_dir_name}\n'
-            '</uploaded_files>\n'
-            f"I've uploaded a python code repository in the directory {workspace_dir_name}. Here is your task:\n\n"
-            'Here is your task:\n\n'
-            '  You need to complete the implementations for all functions (i.e., those with pass\n'
-            '  statements) and pass the unit tests.\n\n'
-            '  Do not change the names of existing functions or classes, as they may be referenced\n'
-            '  from other code like unit tests, etc.\n\n'
-            '  When you generate code, you must maintain the original formatting of the function\n'
-            '  stubs (such as whitespaces), otherwise we will not able to search/replace blocks\n'
-            '  for code modifications, and therefore you will receive a score of 0 for your generated\n'
-            '  code.'
-            '\n\n'
-            'Here is the command to run the unit tests:\n'
-            '<test_command>\n'
-            f'{test_cmd} {test_dir}\n'
-            '</test_command>\n\n'
-            'Make a local git commit for each agent step for all code changes. If there is not change in current step, do not make a commit.'
-        )
+    test_cmd = instance['test']['test_cmd']
+    test_dir = instance['test']['test_dir']
+    # Instruction based on Anthropic's official trajectory
+    # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
+    instruction = (
+        '<uploaded_files>\n'
+        f'/workspace/{workspace_dir_name}\n'
+        '</uploaded_files>\n'
+        f"I've uploaded a python code repository in the directory {workspace_dir_name}. Here is your task:\n\n"
+        'Here is your task:\n\n'
+        '  You need to complete the implementations for all functions (i.e., those with pass\n'
+        '  statements) and pass the unit tests.\n\n'
+        '  Do not change the names of existing functions or classes, as they may be referenced\n'
+        '  from other code like unit tests, etc.\n\n'
+        '  When you generate code, you must maintain the original formatting of the function\n'
+        '  stubs (such as whitespaces), otherwise we will not able to search/replace blocks\n'
+        '  for code modifications, and therefore you will receive a score of 0 for your generated\n'
+        '  code.'
+        '\n\n'
+        'Here is the command to run the unit tests:\n'
+        '<test_command>\n'
+        f'{test_cmd} {test_dir}\n'
+        '</test_command>\n\n'
+        'Make a local git commit for each agent step for all code changes. If there is not change in current step, do not make a commit.'
+    )
 
     if RUN_WITH_BROWSING:
         instruction += (
@@ -225,6 +199,16 @@ def initialize_runtime(
         obs.exit_code == 0, f'Failed to git checkout new branch openhands: {str(obs)}'
     )
 
+    # Install commit0
+    action = CmdRunAction(command='/root/.cargo/bin/uv pip install commit0')
+    action.timeout = 600
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        obs.exit_code == 0,
+        f'Failed to install commit0: {str(obs)}',
+    )
     logger.info('-' * 30)
     logger.info('END Runtime Initialization Fn')
     logger.info('-' * 30)
@@ -342,9 +326,15 @@ def complete_runtime(
         isinstance(obs, CmdOutputObservation),
         f'Failed to read test report: {str(obs)}',
     )
-
     # Get test IDs from instance
-    test_ids = get_test_ids(instance)
+    repo_name = instance['repo'].split('/')[1]
+    repo_name = repo_name.replace('.', '-')
+    action = CmdRunAction(command=f'commit0 get-tests {repo_name}')
+    action.timeout = 600
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    test_ids = obs.content.strip().split('\n')
 
     try:
         report = json.loads(obs.content)
@@ -520,25 +510,16 @@ def process_instance(
     return output
 
 
-def commit0_setup(
-    dataset: pd.DataFrame, repo_split: str, base_dir: str, commit0_config_file: str
-) -> pd.DataFrame:
+def commit0_setup(dataset: pd.DataFrame, repo_split: str) -> pd.DataFrame:
     """Setup Commit0 dataset based on split type.
 
     Args:
         dataset: Full Commit0 dataset
         repo_split: Split type ('all', 'lite' or specific repo name)
-        base_dir: Base directory of the Commit0 repo
-        commit0_config_file: Commit0 config file path
 
     Returns:
         Filtered dataset based on split type
     """
-    # Run commit0 setup command directly
-
-    # os.system(
-    #     f'commit0 setup {repo_split} --base-dir {base_dir} --commit0-config-file {commit0_config_file}'
-    # )
 
     filtered_dataset = pd.concat(
         [
@@ -553,15 +534,6 @@ def commit0_setup(
 
     # Replace all forward slashes in instance_id with hyphens
     filtered_dataset['instance_id'] = filtered_dataset['repo'].str.split('/').str[1]
-
-    # # Checkout openhands branch for each repo
-    # for repo in SPLIT.get(repo_split, []):
-    #     repo_path = os.path.join(base_dir, repo)
-    #     if os.path.exists(repo_path):
-    #         logger.info(f'Checking out openhands branch for {repo}')
-    #         os.system(f'cd {repo_path} && git checkout -b openhands')
-    #     else:
-    #         raise ValueError(f'Repo {repo} does not exist in {base_dir}')
 
     return filtered_dataset
 
@@ -586,25 +558,13 @@ if __name__ == '__main__':
         default='lite',
         help='all, lite, or each repo name',
     )
-    parser.add_argument(
-        '--repo-dir',
-        type=str,
-        default='repos',
-        help='directory to store the repos',
-    )
     args, _ = parser.parse_known_args()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenHands's repo
     dataset = load_dataset(args.dataset, split=args.split)
 
-    # Setup Commit0
-    base_dir = os.path.join(os.path.dirname(__file__), args.repo_dir)
-    commit0_config_file = os.path.join(base_dir, '.commit0.yaml')
-
-    commit0_datasets = commit0_setup(
-        dataset.to_pandas(), args.repo_split, base_dir, commit0_config_file
-    )
+    commit0_datasets = commit0_setup(dataset.to_pandas(), args.repo_split)
 
     logger.info(f'Loaded dataset {args.dataset} with reposplit {args.repo_split}')
 
