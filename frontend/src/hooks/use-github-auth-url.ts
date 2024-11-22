@@ -10,7 +10,7 @@ interface UseGitHubAuthUrlConfig {
 
 export const useGitHubAuthUrl = (config: UseGitHubAuthUrlConfig) =>
   React.useMemo(() => {
-    if (config.appMode === "saas" && config.gitHubToken)
+    if (config.appMode === "saas" && !config.gitHubToken)
       return generateGitHubAuthUrl(
         config.gitHubClientId || "",
         new URL(window.location.href),
