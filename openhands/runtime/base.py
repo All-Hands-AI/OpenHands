@@ -196,7 +196,7 @@ class Runtime(FileEditRuntimeMixin):
                     e, RuntimeDisconnectedError
                 ):
                     err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
-                self.log('error', f'Unexpected error while running action {e}')
+                logger.error('Unexpected error while running action', exc_info=True, stack_info=True)    
                 self.log('error', f'Problematic action: {str(event)}')
                 self.send_error_message(err_id, str(e))
                 self.close()
