@@ -84,7 +84,11 @@ export default function MainApp() {
 
   const config = useConfig();
   const user = useGitHubUser();
-  const { data: isAuthed, isFetched } = useIsAuthed();
+  const {
+    data: isAuthed,
+    isFetched,
+    isFetching: isFetchingAuth,
+  } = useIsAuthed();
   const aiConfigOptions = useAIConfigOptions();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
@@ -251,7 +255,7 @@ export default function MainApp() {
           />
         </ModalBackdrop>
       )}
-      {!isAuthed && config.data?.APP_MODE === "saas" && (
+      {!isFetchingAuth && !isAuthed && config.data?.APP_MODE === "saas" && (
         <WaitlistModal ghToken={gitHubToken} githubAuthUrl={gitHubAuthUrl} />
       )}
       {consentFormIsOpen && (

@@ -239,13 +239,19 @@ class OpenHands {
   static async getGitHubAccessToken(
     code: string,
   ): Promise<GitHubAccessTokenResponse> {
-    return request(`/api/github/callback`, {
+    const response = await fetch("/api/github/callback", {
       method: "POST",
       body: JSON.stringify({ code }),
       headers: {
         "Content-Type": "application/json",
       },
     });
+
+    if (!response.ok) {
+      throw new Error("Failed to get GitHub access token");
+    }
+
+    return response.json();
   }
 
   /**
