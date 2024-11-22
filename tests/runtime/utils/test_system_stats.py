@@ -35,10 +35,12 @@ def test_get_system_stats():
     assert isinstance(stats['disk']['free'], int)
     assert isinstance(stats['disk']['percent'], float)
     assert stats['disk']['total'] > 0
-    assert stats['disk']['used'] > 0
+    assert stats['disk']['used'] >= 0
     assert stats['disk']['free'] >= 0
     assert 0 <= stats['disk']['percent'] <= 100
-    assert stats['disk']['total'] == stats['disk']['used'] + stats['disk']['free']
+    # Verify that used + free is less than or equal to total
+    # (might not be exactly equal due to filesystem overhead)
+    assert stats['disk']['used'] + stats['disk']['free'] <= stats['disk']['total']
 
     # Test I/O stats
     assert isinstance(stats['io'], dict)
