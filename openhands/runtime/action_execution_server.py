@@ -422,11 +422,13 @@ if __name__ == '__main__':
         uptime = current_time - client.start_time
         idle_time = current_time - client.last_execution_time
 
-        return {
+        response = {
             'uptime': uptime,
             'idle_time': idle_time,
             'resources': get_system_stats(),
         }
+        logger.info('Server info endpoint response: %s', response)
+        return response
 
     @app.post('/execute_action')
     async def execute_action(action_request: ActionRequest):
