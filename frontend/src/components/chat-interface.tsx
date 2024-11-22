@@ -180,7 +180,8 @@ export function ChatInterface() {
                 <SuggestionItem
                   suggestion={{
                     label: "Push to GitHub",
-                    value: "Please push the changes to GitHub.",
+                    value:
+                      "Please push the changes to a remote branch on GitHub, but do NOT create a pull request.",
                   }}
                   onClick={(value) => {
                     handleSendMessage(value, []);
