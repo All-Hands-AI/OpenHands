@@ -81,6 +81,3 @@ ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/commit0_bench/scripts/cleanup_remot
 
 If you would like to specify a list of tasks you'd like to benchmark on, you just need to pass selected repo through `repo_split` option.
 
-## Submit your evaluation results
-
-You can start your own fork of [our huggingface evaluation outputs](https://huggingface.co/spaces/OpenHands/evaluation) and submit a PR of your evaluation results following the guide [here](https://huggingface.co/docs/hub/en/repositories-pull-requests-discussions#pull-requests-and-discussions).
