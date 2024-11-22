@@ -89,6 +89,7 @@ class AgentController:
         is_delegate: bool = False,
         headless_mode: bool = True,
         status_callback: Callable | None = None,
+        max_input_tokens: int | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -110,6 +111,10 @@ class AgentController:
         self.id = sid
         self.agent = agent
         self.headless_mode = headless_mode
+
+        # Set max input tokens if provided
+        if max_input_tokens is not None:
+            self.agent.llm.config.max_input_tokens = max_input_tokens
 
         # subscribe to the event stream
         self.event_stream = event_stream
@@ -223,6 +228,21 @@ class AgentController:
 
         # if the event is not filtered out, add it to the history
         if not any(isinstance(event, filter_type) for filter_type in self.filter_out):
+            # Check if adding this event would exceed context window
+            if self.agent.llm.config.max_input_tokens is not None:
+                # Create temporary history with new event
+                temp_history = self.state.history + [event]
+                try:
+                    token_count = self.agent.llm.get_token_count(temp_history)
+                except Exception as e:
+                    logger.error(f'NO TRUNCATION: Error getting token count: {e}.')
+                    token_count = float('inf')
+
+                if token_count > self.agent.llm.config.max_input_tokens:
+                    # Need to truncate history if there are too many tokens
+                    self.state.history = self._apply_conversation_window(self.state.history)
+
+            # Now add the new event
             self.state.history.append(event)
 
         if isinstance(event, Action):
@@ -827,6 +847,10 @@ class AgentController:
             ),
             None,
         )
+
+        # Always set start_id to first user message id if found, regardless of truncation
+        if first_user_msg:
+            self.state.start_id = first_user_msg.id
 
         # cut in half
         mid_point = max(1, len(events) // 2)
