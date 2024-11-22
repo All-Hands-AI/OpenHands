@@ -1,0 +1,26 @@
+/* ThinkingAnimation.css */
+@keyframes gradientWave {
+    0% { background-position: 200% 50%; }
+    100% { background-position: -200% 50%; }
+}
+
+.thinking-animation {
+    font-size: 16px;
+    font-weight: bold;
+    background: linear-gradient(
+        90deg,
+        rgba(156, 163, 175, 0.7) 0%,
+        rgba(209, 213, 219, 1) 25%,
+        rgba(156, 163, 175, 0.7) 50%,
+        rgba(209, 213, 219, 1) 75%,
+        rgba(156, 163, 175, 0.7) 100%
+    );
+    background-size: 200% 100%;
+    animation: gradientWave 3s linear infinite;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    text-align: left;
+    margin-top: 0%;
+}

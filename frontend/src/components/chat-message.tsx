@@ -6,6 +6,7 @@ import CopyIcon from "#/icons/copy.svg?react";
 import { code } from "./markdown/code";
 import { cn } from "#/utils/utils";
 import { ul, ol } from "./markdown/list";
+import ChatThinkingAnimation from './chat-thinking-animation';
 
 interface ChatMessageProps {
   type: "user" | "assistant";
@@ -17,8 +18,22 @@ export function ChatMessage({
   message,
   children,
 }: React.PropsWithChildren<ChatMessageProps>) {
+  let thinkingContent = '';
+  let hasThought = false;
+  // check if message contains <thinking> and </thinking>
+  if (message.includes("<thinking>") && message.includes("</thinking>")) {
+    //   extract content between <thinking> and </thinking>
+    hasThought = true;
+    thinkingContent = message.slice(message.indexOf("<thinking>") + 10, message.indexOf("</thinking>"));
+    console.log(thinkingContent);
+    //   extract content behind </thinking>
+    message = message.slice(message.indexOf("</thinking>") + 11);
+    console.log(message);
+  }
   const [isHovering, setIsHovering] = React.useState(false);
   const [isCopy, setIsCopy] = React.useState(false);
+  const [showThought , setShowThought] = React.useState(false);
+
 
   const handleCopyToClipboard = async () => {
     await navigator.clipboard.writeText(message);
@@ -68,6 +83,23 @@ export function ChatMessage({
           <CheckmarkIcon width={15} height={15} />
         )}
       </button>
+      {/* if type = assistant show component ChatThinkingAnimation  */}
+      {hasThought === true && type === "assistant" && <ChatThinkingAnimation onThoughtChange={setShowThought}/>}
+
+      {showThought && (
+      <Markdown
+        className="text-sm overflow-auto"
+        components={{
+            code: (props) => <code {...props} />,
+            ul: (props) => <ul {...props} />,
+            ol: (props) => <ol {...props} />,
+        }}
+        remarkPlugins={[remarkGfm]}
+        >
+          {thinkingContent}
+        </Markdown>
+      )}
+      
       <Markdown
         className="text-sm overflow-auto"
         components={{
