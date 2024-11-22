@@ -12,6 +12,7 @@ import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
+import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 
 interface AccountSettingsModalProps {
   onClose: () => void;
@@ -50,6 +51,7 @@ function AccountSettingsModal({
       if (languageKey) saveSettings({ LANGUAGE: languageKey });
     }
 
+    handleCaptureConsent(analytics);
     const ANALYTICS = analytics.toString();
     localStorage.setItem("analytics-consent", ANALYTICS);
 
