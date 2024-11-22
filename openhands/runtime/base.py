@@ -200,7 +200,7 @@ class Runtime(FileEditRuntimeMixin):
                     'Unexpected error while running action',
                     exc_info=True,
                     stack_info=True,
-                )    
+                )
                 self.log('error', f'Problematic action: {str(event)}')
                 self.send_error_message(err_id, str(e))
                 self.close()
