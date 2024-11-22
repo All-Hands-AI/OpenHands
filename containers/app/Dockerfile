@@ -61,18 +61,10 @@ RUN chown -R openhands:app /app && chmod -R 770 /app
 RUN sudo chown -R openhands:app $WORKSPACE_BASE && sudo chmod -R 770 $WORKSPACE_BASE
 USER openhands
 
-RUN GIT_PATH=$(command -v git) && \
-    if [ -n "$GIT_PATH" ]; then \
-        echo "Git found at $GIT_PATH"; \
-        GIT_DIR=$(dirname "$GIT_PATH"); \
-        export PATH="$GIT_DIR:$PATH"; \
-    else \
-        echo "Error: Git not found" && exit 1; \
-    fi
-
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH" \
-    PYTHONPATH='/app'
+    PYTHONPATH='/app' \
+    PATH="$PATH:$(dirname $(command -v git))"
 
 COPY --chown=openhands:app --chmod=770 --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 RUN playwright install --with-deps chromium
