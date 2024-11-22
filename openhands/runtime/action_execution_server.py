@@ -424,10 +424,18 @@ if __name__ == '__main__':
         
         # Get system resource usage
         process = psutil.Process()
-        cpu_percent = process.cpu_percent()
-        memory_info = process.memory_info()
+        # Get initial CPU percentage (this will return 0.0)
+        process.cpu_percent()
+        # Wait a bit and get the actual CPU percentage
+        time.sleep(0.1)
+        
+        with process.oneshot():
+            cpu_percent = process.cpu_percent()
+            memory_info = process.memory_info()
+            memory_percent = process.memory_percent()
+            io_counters = process.io_counters()
+        
         disk_usage = psutil.disk_usage('/')
-        io_counters = process.io_counters()
         
         return {
             'uptime': uptime,
@@ -437,7 +445,7 @@ if __name__ == '__main__':
                 'memory': {
                     'rss': memory_info.rss,
                     'vms': memory_info.vms,
-                    'percent': process.memory_percent()
+                    'percent': memory_percent
                 },
                 'disk': {
                     'total': disk_usage.total,
