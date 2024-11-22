@@ -31,7 +31,7 @@ We're always looking to improve the look and feel of the application. If you've 
 for something that's bugging you, feel free to open up a PR that changes the [`./frontend`](./frontend) directory.
 
 If you're looking to make a bigger change, add a new UI element, or significantly alter the style
-of the application, please open an issue first, or better, join the [#frontend channel in our Slack](https://join.slack.com/t/openhands-ai/shared_invite/zt-2tom0er4l-JeNUGHt_AxpEfIBstbLPiw)
+of the application, please open an issue first, or better, join the #frontend channel in our Slack
 to gather consensus from our design team first.
 
 #### Improving the agent
