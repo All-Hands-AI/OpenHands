@@ -1,4 +1,3 @@
-import { useFetcher, useRouteLoaderData } from "@remix-run/react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -9,11 +8,11 @@ import ModalBody from "./ModalBody";
 import ModalButton from "../buttons/ModalButton";
 import FormFieldset from "../form/FormFieldset";
 import { CustomInput } from "../form/custom-input";
-import { clientLoader } from "#/routes/_oh";
-import { clientAction as settingsClientAction } from "#/routes/settings";
-import { clientAction as loginClientAction } from "#/routes/login";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
+import { useAuth } from "#/context/auth-context";
+import { useUserPrefs } from "#/context/user-prefs-context";
+import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 
 interface AccountSettingsModalProps {
   onClose: () => void;
@@ -28,41 +27,33 @@ function AccountSettingsModal({
   gitHubError,
   analyticsConsent,
 }: AccountSettingsModalProps) {
+  const { gitHubToken, setGitHubToken, logout } = useAuth();
+  const { saveSettings } = useUserPrefs();
   const { t } = useTranslation();
-  const data = useRouteLoaderData<typeof clientLoader>("routes/_oh");
-  const settingsFetcher = useFetcher<typeof settingsClientAction>({
-    key: "settings",
-  });
-  const loginFetcher = useFetcher<typeof loginClientAction>({ key: "login" });
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const language = formData.get("language")?.toString();
+
     const ghToken = formData.get("ghToken")?.toString();
+    const language = formData.get("language")?.toString();
     const analytics = formData.get("analytics")?.toString() === "on";
 
-    const accountForm = new FormData();
-    const loginForm = new FormData();
+    if (ghToken) setGitHubToken(ghToken);
 
-    accountForm.append("intent", "account");
+    // The form returns the language label, so we need to find the corresponding
+    // language key to save it in the settings
     if (language) {
       const languageKey = AvailableLanguages.find(
         ({ label }) => label === language,
       )?.value;
-      accountForm.append("language", languageKey ?? "en");
-    }
-    if (ghToken) loginForm.append("ghToken", ghToken);
-    accountForm.append("analytics", analytics.toString());
 
-    settingsFetcher.submit(accountForm, {
-      method: "POST",
-      action: "/settings",
-    });
-    loginFetcher.submit(loginForm, {
-      method: "POST",
-      action: "/login",
-    });
+      if (languageKey) saveSettings({ LANGUAGE: languageKey });
+    }
+
+    handleCaptureConsent(analytics);
+    const ANALYTICS = analytics.toString();
+    localStorage.setItem("analytics-consent", ANALYTICS);
 
     onClose();
   };
@@ -88,7 +79,7 @@ function AccountSettingsModal({
             name="ghToken"
             label="GitHub Token"
             type="password"
-            defaultValue={data?.ghToken ?? ""}
+            defaultValue={gitHubToken ?? ""}
           />
           <BaseModalDescription>
             {t(I18nKey.CONNECT_TO_GITHUB_MODAL$GET_YOUR_TOKEN)}{" "}
@@ -106,15 +97,12 @@ function AccountSettingsModal({
               {t(I18nKey.ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID)}
             </p>
           )}
-          {data?.ghToken && !gitHubError && (
+          {gitHubToken && !gitHubError && (
             <ModalButton
               variant="text-like"
               text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$DISCONNECT)}
               onClick={() => {
-                settingsFetcher.submit(
-                  {},
-                  { method: "POST", action: "/logout" },
-                );
+                logout();
                 onClose();
               }}
               className="text-danger self-start"
@@ -133,10 +121,6 @@ function AccountSettingsModal({
 
         <div className="flex flex-col gap-2 w-full">
           <ModalButton
-            disabled={
-              settingsFetcher.state === "submitting" ||
-              loginFetcher.state === "submitting"
-            }
             type="submit"
             intent="account"
             text={t(I18nKey.ACCOUNT_SETTINGS_MODAL$SAVE)}

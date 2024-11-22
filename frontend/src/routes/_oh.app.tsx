@@ -1,16 +1,10 @@
 import { useDisclosure } from "@nextui-org/react";
 import React from "react";
-import {
-  Outlet,
-  useLoaderData,
-  json,
-  ClientActionFunctionArgs,
-} from "@remix-run/react";
-import { useDispatch } from "react-redux";
-import { getSettings } from "#/services/settings";
+import { Outlet } from "@remix-run/react";
+import { useDispatch, useSelector } from "react-redux";
 import Security from "../components/modals/security/Security";
 import { Controls } from "#/components/controls";
-import store from "#/store";
+import { RootState } from "#/store";
 import { Container } from "#/components/container";
 import { clearMessages } from "#/state/chatSlice";
 import { clearTerminal } from "#/state/commandSlice";
@@ -18,64 +12,32 @@ import { useEffectOnce } from "#/utils/use-effect-once";
 import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
 import ListIcon from "#/icons/list-type-number.svg?react";
-import { isGitHubErrorReponse, retrieveLatestGitHubCommit } from "#/api/github";
 import { clearJupyter } from "#/state/jupyterSlice";
 import { FilesProvider } from "#/context/files";
 import { ChatInterface } from "#/components/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "#/components/event-handler";
-
-export const clientLoader = async () => {
-  const ghToken = localStorage.getItem("ghToken");
-  const repo =
-    store.getState().initalQuery.selectedRepository ||
-    localStorage.getItem("repo");
-
-  const settings = getSettings();
-  const token = localStorage.getItem("token");
-
-  if (repo) localStorage.setItem("repo", repo);
-
-  let lastCommit: GitHubCommit | null = null;
-  if (ghToken && repo) {
-    const data = await retrieveLatestGitHubCommit(ghToken, repo);
-    if (isGitHubErrorReponse(data)) {
-      // TODO: Handle error
-      console.error("Failed to retrieve latest commit", data);
-    } else {
-      [lastCommit] = data;
-    }
-  }
-
-  return json({
-    settings,
-    token,
-    ghToken,
-    repo,
-    lastCommit,
-  });
-};
-
-export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
-  const formData = await request.formData();
-
-  const token = formData.get("token")?.toString();
-  const ghToken = formData.get("ghToken")?.toString();
-
-  if (token) localStorage.setItem("token", token);
-  if (ghToken) localStorage.setItem("ghToken", ghToken);
-
-  return json(null);
-};
+import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
+import { useAuth } from "#/context/auth-context";
+import { useUserPrefs } from "#/context/user-prefs-context";
 
 function App() {
+  const { token, gitHubToken } = useAuth();
+  const { settings } = useUserPrefs();
+
   const dispatch = useDispatch();
-  const { settings, token, ghToken, lastCommit } =
-    useLoaderData<typeof clientLoader>();
+
+  const { selectedRepository } = useSelector(
+    (state: RootState) => state.initalQuery,
+  );
+
+  const { data: latestGitHubCommit } = useLatestRepoCommit({
+    repository: selectedRepository,
+  });
 
   const secrets = React.useMemo(
-    () => [ghToken, token].filter((secret) => secret !== null),
-    [ghToken, token],
+    () => [gitHubToken, token].filter((secret) => secret !== null),
+    [gitHubToken, token],
   );
 
   const Terminal = React.useMemo(
@@ -99,7 +61,7 @@ function App() {
     <WsClientProvider
       enabled
       token={token}
-      ghToken={ghToken}
+      ghToken={gitHubToken}
       settings={settings}
     >
       <EventHandler>
@@ -141,7 +103,7 @@ function App() {
             <Controls
               setSecurityOpen={onSecurityModalOpen}
               showSecurityLock={!!settings.SECURITY_ANALYZER}
-              lastCommitData={lastCommit}
+              lastCommitData={latestGitHubCommit || null}
             />
           </div>
           <Security

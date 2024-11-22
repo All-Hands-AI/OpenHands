@@ -52,6 +52,7 @@ from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system import check_port_available
+from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
 
 
@@ -420,7 +421,14 @@ if __name__ == '__main__':
         current_time = time.time()
         uptime = current_time - client.start_time
         idle_time = current_time - client.last_execution_time
-        return {'uptime': uptime, 'idle_time': idle_time}
+
+        response = {
+            'uptime': uptime,
+            'idle_time': idle_time,
+            'resources': get_system_stats(),
+        }
+        logger.info('Server info endpoint response: %s', response)
+        return response
 
     @app.post('/execute_action')
     async def execute_action(action_request: ActionRequest):
