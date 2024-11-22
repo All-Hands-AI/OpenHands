@@ -1,5 +1,4 @@
 import React from "react";
-import { useFetcher } from "@remix-run/react";
 import { AccountSettingsContextMenu } from "./context-menu/account-settings-context-menu";
 import { UserAvatar } from "./user-avatar";
 
@@ -14,8 +13,6 @@ export function UserActions({
   onLogout,
   user,
 }: UserActionsProps) {
-  const loginFetcher = useFetcher({ key: "login" });
-
   const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
     React.useState(false);
 
@@ -39,11 +36,7 @@ export function UserActions({
 
   return (
     <div data-testid="user-actions" className="w-8 h-8 relative">
-      <UserAvatar
-        isLoading={loginFetcher.state !== "idle"}
-        avatarUrl={user?.avatar_url}
-        onClick={toggleAccountMenu}
-      />
+      <UserAvatar avatarUrl={user?.avatar_url} onClick={toggleAccountMenu} />
 
       {accountContextMenuIsVisible && (
         <AccountSettingsContextMenu

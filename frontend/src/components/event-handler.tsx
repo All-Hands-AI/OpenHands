@@ -1,12 +1,6 @@
 import React from "react";
-import {
-  useFetcher,
-  useLoaderData,
-  useRouteLoaderData,
-} from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
-
 import posthog from "posthog-js";
 import {
   useWsClient,
@@ -24,17 +18,18 @@ import {
   clearSelectedRepository,
   setImportedProjectZip,
 } from "#/state/initial-query-slice";
-import { clientLoader as appClientLoader } from "#/routes/_oh.app";
 import store, { RootState } from "#/store";
 import { createChatMessage } from "#/services/chatService";
-import { clientLoader as rootClientLoader } from "#/routes/_oh";
 import { isGitHubErrorReponse } from "#/api/github";
-import OpenHands from "#/api/open-hands";
 import { base64ToBlob } from "#/utils/base64-to-blob";
 import { setCurrentAgentState } from "#/state/agentSlice";
 import AgentState from "#/types/AgentState";
-import { getSettings } from "#/services/settings";
 import { generateAgentStateChangeEvent } from "#/services/agentStateService";
+import { useGitHubUser } from "#/hooks/query/use-github-user";
+import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
+import { useAuth } from "#/context/auth-context";
+import { useEndSession } from "#/hooks/use-end-session";
+import { useUserPrefs } from "#/context/user-prefs-context";
 
 interface ServerError {
   error: boolean | string;
@@ -48,41 +43,48 @@ const isErrorObservation = (data: object): data is ErrorObservation =>
   "observation" in data && data.observation === "error";
 
 export function EventHandler({ children }: React.PropsWithChildren) {
+  const { setToken, gitHubToken } = useAuth();
+  const { settings } = useUserPrefs();
   const { events, status, send } = useWsClient();
   const statusRef = React.useRef<WsClientProviderStatus | null>(null);
   const runtimeActive = status === WsClientProviderStatus.ACTIVE;
-  const fetcher = useFetcher();
   const dispatch = useDispatch();
   const { files, importedProjectZip, initialQuery } = useSelector(
     (state: RootState) => state.initalQuery,
   );
-  const { ghToken, repo } = useLoaderData<typeof appClientLoader>();
+  const endSession = useEndSession();
+
+  // FIXME: Bad practice - should be handled with state
+  const { selectedRepository } = useSelector(
+    (state: RootState) => state.initalQuery,
+  );
+
+  const { data: user } = useGitHubUser();
+  const { mutate: uploadFiles } = useUploadFiles();
 
   const sendInitialQuery = (query: string, base64Files: string[]) => {
     const timestamp = new Date().toISOString();
     send(createChatMessage(query, base64Files, timestamp));
   };
-  const data = useRouteLoaderData<typeof rootClientLoader>("routes/_oh");
   const userId = React.useMemo(() => {
-    if (data?.user && !isGitHubErrorReponse(data.user)) return data.user.id;
+    if (user && !isGitHubErrorReponse(user)) return user.id;
     return null;
-  }, [data?.user]);
-  const userSettings = getSettings();
+  }, [user]);
 
   React.useEffect(() => {
     if (!events.length) {
       return;
     }
     const event = events[events.length - 1];
-    if (event.token) {
-      fetcher.submit({ token: event.token as string }, { method: "post" });
+    if (event.token && typeof event.token === "string") {
+      setToken(event.token);
       return;
     }
 
     if (isServerError(event)) {
       if (event.error_code === 401) {
         toast.error("Session expired.");
-        fetcher.submit({}, { method: "POST", action: "/end-session" });
+        endSession();
         return;
       }
 
@@ -120,9 +122,9 @@ export function EventHandler({ children }: React.PropsWithChildren) {
 
     if (status === WsClientProviderStatus.ACTIVE) {
       let additionalInfo = "";
-      if (ghToken && repo) {
-        send(getCloneRepoCommand(ghToken, repo));
-        additionalInfo = `Repository ${repo} has been cloned to /workspace. Please check the /workspace for files.`;
+      if (gitHubToken && selectedRepository) {
+        send(getCloneRepoCommand(gitHubToken, selectedRepository));
+        additionalInfo = `Repository ${selectedRepository} has been cloned to /workspace. Please check the /workspace for files.`;
         dispatch(clearSelectedRepository()); // reset selected repository; maybe better to move this to '/'?
       }
       // if there's an uploaded project zip, add it to the chat
@@ -157,35 +159,35 @@ export function EventHandler({ children }: React.PropsWithChildren) {
   }, [status]);
 
   React.useEffect(() => {
-    if (runtimeActive && userId && ghToken) {
+    if (runtimeActive && userId && gitHubToken) {
       // Export if the user valid, this could happen mid-session so it is handled here
-      send(getGitHubTokenCommand(ghToken));
+      send(getGitHubTokenCommand(gitHubToken));
     }
-  }, [userId, ghToken, runtimeActive]);
+  }, [userId, gitHubToken, runtimeActive]);
 
   React.useEffect(() => {
-    (async () => {
-      if (runtimeActive && importedProjectZip) {
-        // upload files action
-        try {
-          const blob = base64ToBlob(importedProjectZip);
-          const file = new File([blob], "imported-project.zip", {
-            type: blob.type,
-          });
-          await OpenHands.uploadFiles([file]);
-          dispatch(setImportedProjectZip(null));
-        } catch (error) {
-          toast.error("Failed to upload project files.");
-        }
-      }
-    })();
+    if (runtimeActive && importedProjectZip) {
+      const blob = base64ToBlob(importedProjectZip);
+      const file = new File([blob], "imported-project.zip", {
+        type: blob.type,
+      });
+      uploadFiles(
+        { files: [file] },
+        {
+          onError: () => {
+            toast.error("Failed to upload project files.");
+          },
+        },
+      );
+      dispatch(setImportedProjectZip(null));
+    }
   }, [runtimeActive, importedProjectZip]);
 
   React.useEffect(() => {
-    if (userSettings.LLM_API_KEY) {
+    if (settings.LLM_API_KEY) {
       posthog.capture("user_activated");
     }
-  }, [userSettings.LLM_API_KEY]);
+  }, [settings.LLM_API_KEY]);
 
   return children;
 }
