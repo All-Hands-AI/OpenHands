@@ -417,6 +417,7 @@ if __name__ == '__main__':
 
     @app.get('/server_info')
     async def get_server_info():
+        logger.info('Server info endpoint called')
         assert client is not None
         current_time = time.time()
         uptime = current_time - client.start_time
