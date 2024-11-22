@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { renderWithProviders } from "test-utils";
 import { FeedbackForm } from "#/components/feedback-form";
 
 describe("FeedbackForm", () => {
@@ -12,7 +13,9 @@ describe("FeedbackForm", () => {
   });
 
   it("should render correctly", () => {
-    render(<FeedbackForm polarity="positive" onClose={onCloseMock} />);
+    renderWithProviders(
+      <FeedbackForm polarity="positive" onClose={onCloseMock} />,
+    );
 
     screen.getByLabelText("Email");
     screen.getByLabelText("Private");
@@ -23,7 +26,9 @@ describe("FeedbackForm", () => {
   });
 
   it("should switch between private and public permissions", async () => {
-    render(<FeedbackForm polarity="positive" onClose={onCloseMock} />);
+    renderWithProviders(
+      <FeedbackForm polarity="positive" onClose={onCloseMock} />,
+    );
     const privateRadio = screen.getByLabelText("Private");
     const publicRadio = screen.getByLabelText("Public");
 
@@ -40,10 +45,11 @@ describe("FeedbackForm", () => {
   });
 
   it("should call onClose when the close button is clicked", async () => {
-    render(<FeedbackForm polarity="positive" onClose={onCloseMock} />);
+    renderWithProviders(
+      <FeedbackForm polarity="positive" onClose={onCloseMock} />,
+    );
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(onCloseMock).toHaveBeenCalled();
   });
-
 });

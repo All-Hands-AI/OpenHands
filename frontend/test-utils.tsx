@@ -8,6 +8,8 @@ import { RenderOptions, render } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppStore, RootState, rootReducer } from "./src/store";
 import { WsClientProvider } from "#/context/ws-client-provider";
+import { AuthProvider } from "#/context/auth-context";
+import { UserPrefsProvider } from "#/context/user-prefs-context";
 
 const setupStore = (preloadedState?: Partial<RootState>): AppStore =>
   configureStore({
@@ -36,11 +38,20 @@ export function renderWithProviders(
   function Wrapper({ children }: PropsWithChildren<object>): JSX.Element {
     return (
       <Provider store={store}>
-        <QueryClientProvider client={new QueryClient()}>
-          <WsClientProvider enabled token={null} ghToken={null} settings={null}>
-            {children}
-          </WsClientProvider>
-        </QueryClientProvider>
+        <UserPrefsProvider>
+          <AuthProvider>
+            <QueryClientProvider client={new QueryClient()}>
+              <WsClientProvider
+                enabled
+                token={null}
+                ghToken={null}
+                settings={null}
+              >
+                {children}
+              </WsClientProvider>
+            </QueryClientProvider>
+          </AuthProvider>
+        </UserPrefsProvider>
       </Provider>
     );
   }

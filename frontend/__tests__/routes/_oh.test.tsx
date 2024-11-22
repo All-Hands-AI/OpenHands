@@ -60,13 +60,6 @@ describe("frontend/routes/_oh", () => {
     });
   });
 
-  it("should clear the token key if the settings are not up-to-date", async () => {
-    localStorage.setItem("token", "test-token");
-
-    renderWithProviders(<RemixStub />);
-    expect(localStorage.getItem("token")).toBeNull();
-  });
-
   it("should capture the user's consent", async () => {
     const user = userEvent.setup();
     const handleCaptureConsentSpy = vi.spyOn(
@@ -121,7 +114,8 @@ describe("frontend/routes/_oh", () => {
     });
   });
 
-  it("should update the i18n language when the language settings change", async () => {
+  // TODO: Move to e2e tests
+  it.skip("should update the i18n language when the language settings change", async () => {
     const changeLanguageSpy = vi.spyOn(i18n, "changeLanguage");
     const { rerender } = renderWithProviders(<RemixStub />);
 

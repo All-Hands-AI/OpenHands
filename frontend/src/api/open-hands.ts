@@ -211,7 +211,6 @@ class OpenHands {
     gitHubToken: string,
     appMode: GetConfigResponse["APP_MODE"],
   ): Promise<boolean> {
-    console.log({ gitHubToken, appMode });
     if (appMode === "oss") return true;
 
     const response = await fetch("/api/authenticate", {
