@@ -49,11 +49,6 @@ default, it is set to 1.
 - `dataset`, a huggingface dataset name. e.g. `wentingzhao/commit0_combined`, specifies which dataset to evaluate on.
 - `dataset_split`, split for the huggingface dataset. Notice only `test` is supported for Commit0.
 
-There are also one optional environment variables you can set.
-```
-export USE_HINT_TEXT=true # if you want to use hint text in the evaluation. Default to false. Ignore this if you are not sure.
-```
-
 Note that the `USE_INSTANCE_IMAGE` environment variable is always set to `true` for Commit0.
 
 Let's say you'd like to run 10 instances using `llm.eval_sonnet` and CodeActAgent,
@@ -81,10 +76,6 @@ To clean-up all existing runtime you've already started, run:
 ```bash
 ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/commit0_bench/scripts/cleanup_remote_runtime.sh
 ```
-
-### Specify a subset of tasks to run infer
-
-If you would like to specify a list of tasks you'd like to benchmark on, you just need to pass selected repo through `repo_split` option.
 
 ## Visualize Results
 
