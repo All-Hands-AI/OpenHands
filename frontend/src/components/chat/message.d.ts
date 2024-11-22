@@ -4,6 +4,6 @@ type Message = {
   eventID?: int;
   sender: "user" | "assistant";
   content: string;
-  imageUrls: string[];
+  imageUrls?: string[];
   timestamp: string;
 };

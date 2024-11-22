@@ -26,6 +26,7 @@ export const chatSlice = createSlice({
       }>,
     ) {
       const message: Message = {
+        type: "thought",
         sender: "user",
         content: action.payload.content,
         imageUrls: action.payload.imageUrls,
@@ -36,6 +37,7 @@ export const chatSlice = createSlice({
 
     addAssistantMessage(state, action: PayloadAction<string>) {
       const message: Message = {
+        type: "thought",
         sender: "assistant",
         content: action.payload,
         imageUrls: [],
@@ -108,7 +110,13 @@ export const chatSlice = createSlice({
       action: PayloadAction<{ id?: string; message: string }>,
     ) {
       const { id, message } = action.payload;
-      state.messages.push({ id, message, type: "error" });
+      state.messages.push({
+        id,
+        content: message,
+        type: "error",
+        sender: "assistant",
+        timestamp: new Date().toISOString(),
+      });
     },
 
     clearMessages(state) {
