@@ -62,7 +62,7 @@ RUN sudo chown -R openhands:app $WORKSPACE_BASE && sudo chmod -R 770 $WORKSPACE_
 USER openhands
 
 ENV VIRTUAL_ENV=/app/.venv \
-    PATH="/app/.venv/bin:$PATH:$(dirname $(command -v git))" \
+    PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH='/app'
 
 COPY --chown=openhands:app --chmod=770 --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
