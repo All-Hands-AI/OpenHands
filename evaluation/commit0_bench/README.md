@@ -80,4 +80,3 @@ ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/commit0_bench/scripts/cleanup_remot
 ### Specify a subset of tasks to run infer
 
 If you would like to specify a list of tasks you'd like to benchmark on, you just need to pass selected repo through `repo_split` option.
-
