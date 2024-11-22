@@ -11,6 +11,11 @@ on:
         required: false
         type: string
         default: "@openhands-agent"
+      target_branch:
+        required: false
+        type: string
+        default: "main"
+        description: 'Target branch to pull and create PR against'
     secrets:
       LLM_MODEL:
         required: true
@@ -135,6 +140,9 @@ jobs:
           echo "MAX_ITERATIONS=${{ inputs.max_iterations || 50 }}" >> $GITHUB_ENV
           echo "SANDBOX_ENV_GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
 
+          # Set branch variables
+          echo "TARGET_BRANCH=${{ inputs.target_branch }}" >> $GITHUB_ENV
+
       - name: Comment on issue with start message
         uses: actions/github-script@v7
         with:
@@ -175,7 +183,8 @@ jobs:
             --issue-number ${{ env.ISSUE_NUMBER }} \
             --issue-type ${{ env.ISSUE_TYPE }} \
             --max-iterations ${{ env.MAX_ITERATIONS }} \
-            --comment-id ${{ env.COMMENT_ID }}
+            --comment-id ${{ env.COMMENT_ID }} \
+            --target-branch ${{ env.TARGET_BRANCH }}
 
       - name: Check resolution result
         id: check_result
