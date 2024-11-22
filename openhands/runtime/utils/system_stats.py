@@ -1,6 +1,7 @@
 """Utilities for getting system resource statistics."""
 
 import time
+
 import psutil
 
 
@@ -46,16 +47,16 @@ def get_system_stats() -> dict:
         'memory': {
             'rss': memory_info.rss,
             'vms': memory_info.vms,
-            'percent': memory_percent
+            'percent': memory_percent,
         },
         'disk': {
             'total': disk_usage.total,
             'used': disk_usage.used,
             'free': disk_usage.free,
-            'percent': disk_usage.percent
+            'percent': disk_usage.percent,
         },
         'io': {
             'read_bytes': io_stats.get('read_bytes', 0),
-            'write_bytes': io_stats.get('write_bytes', 0)
-        }
+            'write_bytes': io_stats.get('write_bytes', 0),
+        },
     }

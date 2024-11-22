@@ -1,7 +1,7 @@
 """Tests for system stats utilities."""
 
 import psutil
-import pytest
+
 from openhands.runtime.utils.system_stats import get_system_stats
 
 

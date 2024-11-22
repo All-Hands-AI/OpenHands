@@ -11,7 +11,6 @@ import base64
 import io
 import mimetypes
 import os
-import psutil
 import shutil
 import tempfile
 import time
@@ -422,11 +421,11 @@ if __name__ == '__main__':
         current_time = time.time()
         uptime = current_time - client.start_time
         idle_time = current_time - client.last_execution_time
-        
+
         return {
             'uptime': uptime,
             'idle_time': idle_time,
-            'resources': get_system_stats()
+            'resources': get_system_stats(),
         }
 
     @app.post('/execute_action')
