@@ -32,7 +32,7 @@ echo "AGENT: $AGENT"
 echo "AGENT_VERSION: $AGENT_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 
-COMMAND="poetry run python evaluation/scienceagentbench/run_infer.py \
+COMMAND="poetry run python evaluation/benchmarks/scienceagentbench/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --use_knowledge $USE_KNOWLEDGE \

@@ -91,7 +91,7 @@ fi
 
 function run_eval() {
   local eval_note=$1
-  COMMAND="poetry run python evaluation/commit0_bench/run_infer.py \
+  COMMAND="poetry run python evaluation/benchmarks/commit0_bench/run_infer.py \
     --agent-cls $AGENT \
     --llm-config $MODEL_CONFIG \
     --max-iterations $MAX_ITER \

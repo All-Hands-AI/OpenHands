@@ -4,7 +4,7 @@ set -eo pipefail
 source "evaluation/utils/version_control.sh"
 
 # configure webarena websites and environment
-source evaluation/webarena/scripts/webarena_env.sh
+source evaluation/benchmarks/webarena/scripts/webarena_env.sh
 
 # configure browsing agent
 export USE_NAV="false"
@@ -35,7 +35,7 @@ echo "MODEL_CONFIG: $MODEL_CONFIG"
 
 EVAL_NOTE="$AGENT_VERSION"
 
-COMMAND="poetry run python evaluation/webarena/run_infer.py \
+COMMAND="poetry run python evaluation/benchmarks/webarena/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 15 \

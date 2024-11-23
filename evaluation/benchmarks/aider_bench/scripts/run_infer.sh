@@ -39,7 +39,7 @@ if [ "$USE_UNIT_TESTS" = true ]; then
   EVAL_NOTE=$EVAL_NOTE-w-test
 fi
 
-COMMAND="export PYTHONPATH=evaluation/aider_bench:\$PYTHONPATH && poetry run python evaluation/aider_bench/run_infer.py \
+COMMAND="export PYTHONPATH=evaluation/benchmarks/aider_bench:\$PYTHONPATH && poetry run python evaluation/benchmarks/aider_bench/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 30 \

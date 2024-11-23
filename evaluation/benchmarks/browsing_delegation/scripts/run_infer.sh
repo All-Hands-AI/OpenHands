@@ -28,7 +28,7 @@ echo "MODEL_CONFIG: $MODEL_CONFIG"
 
 EVAL_NOTE="$AGENT_VERSION"
 
-COMMAND="poetry run python evaluation/browsing_delegation/run_infer.py \
+COMMAND="poetry run python evaluation/benchmarks/browsing_delegation/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 1 \

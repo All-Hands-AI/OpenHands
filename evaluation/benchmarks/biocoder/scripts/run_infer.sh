@@ -28,7 +28,7 @@ echo "AGENT_VERSION: $AGENT_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 echo "DATASET: $DATASET"
 
-COMMAND="poetry run python evaluation/biocoder/run_infer.py \
+COMMAND="poetry run python evaluation/benchmarks/biocoder/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 10 \
