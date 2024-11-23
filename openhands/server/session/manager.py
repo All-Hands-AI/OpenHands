@@ -65,6 +65,7 @@ class SessionManager:
                         if session:
                             await session.dispatch(data["data"])
                     elif message_type == "is_session_running":
+                        # Another node in the cluster is asking if the current node is running the session given.
                         session = self.local_sessions_by_sid.get(sid)
                         if session:
                             await redis_client.publish("oh_event", json.dumps({
@@ -75,6 +76,13 @@ class SessionManager:
                         flag = self._session_is_running_flags.get(sid)
                         if flag:
                             flag.set()
+                    elif message_type == "session_closing":
+                        logger.info(f"session_closing:{sid}")
+                        for connection_id, local_sid in self.local_connection_id_to_session_id.items():
+                            if sid == local_sid:
+                                logger.warning('local_connection_to_closing_session')
+
+
             except asyncio.CancelledError:
                 return
             except:
@@ -221,6 +229,14 @@ class SessionManager:
 
             # If no connections, close session
             if force or (not has_local_connections and not redis_connections):
+
+                # We alert the cluster in case they are interested
+                if redis_client:
+                    await redis_client.publish("oh_event", json.dumps({
+                        "sid": session.sid,
+                        "message_type": "session_closing"
+                    }))
+
                 logger.info(f'do_close_session')
                 session.close()
                 self.local_sessions_by_sid.pop(session.sid, None)
