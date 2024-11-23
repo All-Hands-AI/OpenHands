@@ -252,6 +252,7 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
                 self.config.sandbox.user_id,
                 plugin_args,
                 browsergym_args,
+                is_root=not self.config.run_as_openhands,  # is_root=True when running as root
             )
             self.log('debug', f'Starting container with command: {sandbox_start_cmd}')
             self.sandbox = modal.Sandbox.create(
