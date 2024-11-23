@@ -2,6 +2,7 @@ import asyncio
 import json
 import time
 from dataclasses import dataclass, field
+from typing import Callable
 
 import socketio
 
@@ -12,9 +13,11 @@ from openhands.runtime.base import RuntimeUnavailableError
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.storage.files import FileStore
+from openhands.utils.async_utils import wait_all
 from openhands.utils.shutdown_listener import should_continue
 
 _CONNECTION_KEY = "oh_session:{sid}"
+_SESSION_RUNNING_TIMEOUT = 1.5
 
 
 @dataclass
@@ -25,6 +28,7 @@ class SessionManager:
     local_sessions_by_sid: dict[str, Session] = field(default_factory=dict)
     local_connection_id_to_session_id: dict[str, str] = field(default_factory=dict)
     _redis_listen_task: asyncio.Task | None = None
+    _session_is_running_flags: dict[str, asyncio.Event] = field(default_factory=dict)
 
     async def __aenter__(self):
         redis_client = self._get_redis_client()
@@ -60,12 +64,17 @@ class SessionManager:
                         session = self.local_sessions_by_sid.get(sid)
                         if session:
                             await session.dispatch(data["data"])
-                    elif message_type == "restart":
-                        logger.info("got_transfer_request")
-                        connection_id = data["connection_id"]
-                        if self.local_connection_id_to_session_id.get(connection_id) == sid:
-                            logger.info("transferring_session_to_local")
-                            await self.init_or_join_session(sid, connection_id, data["settings"])
+                    elif message_type == "is_session_running":
+                        session = self.local_sessions_by_sid.get(sid)
+                        if session:
+                            await redis_client.publish("oh_event", json.dumps({
+                                "sid": sid,
+                                "message_type": "session_is_running"
+                            }))
+                    elif message_type == "session_is_running":
+                        flag = self._session_is_running_flags.get(sid)
+                        if flag:
+                            flag.set()
             except asyncio.CancelledError:
                 return
             except:
@@ -100,16 +109,35 @@ class SessionManager:
             logger.info(f'found_local_session:{sid}')
             return session.agent_session.event_stream        
 
-        # If there is a remote session running, mark a connection to that
+        # If there is a remote session running, retrieve existing events for that
         redis_client = self._get_redis_client()
-        if redis_client:
-            num_connections = await redis_client.rpush(_CONNECTION_KEY.format(sid=sid), connection_id)
-            logger.info(f'num_redis_connections:{sid}:{num_connections}')
-            # More than one remote connection implies session is already running remotely...
-            if num_connections != 1:
-                logger.info(f'session_running_elsewhere_in_cluster:{sid}')
-                event_stream = EventStream(sid, self.file_store)
-                return event_stream
+        if redis_client and await self._is_session_running_in_cluster(sid):
+                return EventStream(sid, self.file_store)
+        
+        return await self.start_local_session(sid, data)
+
+    async def _is_session_running_in_cluster(self, sid: str) -> bool:
+        """ As the rest of the cluster if a session is running. Wait a for a short timeout for a reply """
+        # Create a flag for the callback
+        flag = asyncio.Event()
+        self._session_is_running_flags[sid] = flag
+        try:
+            await self._get_redis_client().publish("oh_event", json.dumps({
+                "sid": sid,
+                "message_type": "is_session_running",
+            }))
+            async with asyncio.timeout(_SESSION_RUNNING_TIMEOUT):
+                await flag.wait()
+
+            result = flag.is_set()
+            return result
+        except TimeoutError:
+            # Nobody replied in time
+            return False
+        finally:
+            self._session_is_running_flags.pop(sid)
+
+    async def start_local_session(self, sid: str, data: dict):
 
         # Start a new local session
         logger.info(f'start_new_local_session:{sid}')
@@ -190,15 +218,6 @@ class SessionManager:
                     if c not in self.local_connection_id_to_session_id
                 ]
                 logger.info(f'close_orphaned_session:2:{redis_connections}')
-
-            if force and redis_connections:
-                logger.info(f'transferring_session')
-                await redis_client.publish("oh_event", json.dumps({
-                    "sid": session.sid,
-                    "message_type": "restart",
-                    "connection_id": redis_connections[0],
-                    "settings": session.settings,
-                }))
 
             # If no connections, close session
             if force or (not has_local_connections and not redis_connections):
