@@ -30,10 +30,12 @@ code {
 .markdown-body code {
   padding: 0.2em 0.4em;
   margin: 0;
-  font-size: 85%;
+  font-size: 90%;
   white-space: break-spaces;
-  background-color: var(--bg-neutral-muted);
-  border-radius: 6px;
+  background-color: var(--bg-editor-sidebar);
+  border-radius: 4px;
+  color: var(--text-editor-active);
+  border: 1px solid var(--border-editor-sidebar);
 }
 
 .markdown-body pre code {
