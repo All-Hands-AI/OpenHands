@@ -72,7 +72,7 @@ jobs:
           poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES
 
           # get evaluation report
-          REPORT_FILE=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/deepseek-chat_maxiter_10_N* -name "report.md" -type f | head -n 1)
+          REPORT_FILE=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/*_maxiter_10_N* -name "report.md" -type f | head -n 1)
           echo "REPORT_FILE: $REPORT_FILE"
           echo "INTEGRATION_TEST_REPORT<<EOF" >> $GITHUB_ENV
           cat $REPORT_FILE >> $GITHUB_ENV
