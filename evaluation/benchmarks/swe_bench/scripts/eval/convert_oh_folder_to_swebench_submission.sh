@@ -5,7 +5,7 @@ NEW_FOLDER_PATH=${FOLDER_PATH}.swebench_submission
 mkdir -p $NEW_FOLDER_PATH
 
 # Build all_preds.jsonl
-poetry run python evaluation/swe_bench/scripts/eval/convert_oh_output_to_swe_json.py $FOLDER_PATH/output.jsonl
+poetry run python evaluation/benchmarks/swe_bench/scripts/eval/convert_oh_output_to_swe_json.py $FOLDER_PATH/output.jsonl
 mv $FOLDER_PATH/output.swebench.jsonl $NEW_FOLDER_PATH/all_preds.jsonl
 
 # Build trajs/
