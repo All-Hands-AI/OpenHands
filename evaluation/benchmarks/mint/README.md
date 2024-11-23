@@ -6,7 +6,7 @@ We support evaluation of the [Eurus subset focus on math and code reasoning](htt
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## Start the evaluation
 
@@ -34,7 +34,7 @@ Note: in order to use `eval_limit`, you must also set `subset`.
 For example,
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview 0.6.2 gsm8k 3
+./evaluation/benchmarks/mint/scripts/run_infer.sh eval_gpt4_1106_preview 0.6.2 gsm8k 3
 ```
 
 ## Reference
