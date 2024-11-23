@@ -64,3 +64,32 @@ Tools can be enabled/disabled through configuration parameters:
 - `codeact_enable_browsing`: Enable browser interaction
 - `codeact_enable_jupyter`: Enable IPython code execution
 - `codeact_enable_llm_editor`: Enable LLM-based file editing (if disabled, uses string replacement editor instead)
+
+## Micro-Agents
+
+The CodeAct agent supports micro-agents, which are specialized configurations that modify the agent's behavior based on specific triggers or contexts. Micro-agents are defined in markdown files in the `micro` directory and follow this structure:
+
+```markdown
+---
+name: agent_name
+agent: CodeActAgent
+triggers:
+- trigger1
+- trigger2
+---
+
+Custom instructions and context for this micro-agent...
+```
+
+Each micro-agent file contains:
+1. A YAML frontmatter section with:
+   - `name`: Unique identifier for the micro-agent
+   - `agent`: The agent class to use (typically CodeActAgent)
+   - `triggers`: List of keywords that activate this micro-agent
+2. A markdown body with custom instructions and context
+
+For example, the GitHub micro-agent (`micro/github.md`) is triggered by "github" or "git" keywords and provides specialized instructions for GitHub API interactions and repository operations.
+
+Micro-agents can be enabled/disabled through configuration:
+- `use_microagents`: Enable/disable micro-agent functionality
+- `disabled_microagents`: List of micro-agents to disable even when `use_microagents` is true
