@@ -60,8 +60,10 @@ class SessionManager:
                         if session:
                             await session.dispatch(data["data"])
                     elif message_type == "restart":
+                        logger.info("got_transfer_request")
                         connection_id = data["connection_id"]
                         if self.local_connection_id_to_session_id.get(connection_id) == sid:
+                            logger.info("transferring_session_to_local")
                             await self.init_or_join_session(sid, connection_id, data["settings"])
             except asyncio.CancelledError:
                 return
