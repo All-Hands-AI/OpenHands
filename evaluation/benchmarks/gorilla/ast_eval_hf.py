@@ -40,7 +40,7 @@ def get_all_sub_trees(root_node):
 
 # Parse the program into AST trees
 def ast_parse(candidate, lang='python'):
-    LANGUAGE = Language('evaluation/benchmarks/gorilla/my-languages.so', lang)
+    LANGUAGE = Language('evaluation/gorilla/my-languages.so', lang)
     parser = Parser()
     parser.set_language(LANGUAGE)
 

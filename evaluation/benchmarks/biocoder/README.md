@@ -21,7 +21,7 @@ To reproduce this image, please see the Dockerfile_Openopenhands in the `biocode
 
 
 ```bash
-./evaluation/benchmarks/benchmarks/biocoder/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit]
+./evaluation/benchmarks/biocoder/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit]
 ```
 
 where `model_config` is mandatory, while `git-version`, `agent`, `dataset` and `eval_limit` are optional.
@@ -43,7 +43,7 @@ with current OpenHands version, then your command would be:
 ## Examples
 
 ```bash
-./evaluation/benchmarks/benchmarks/biocoder/scripts/run_infer.sh eval_gpt4o_2024_05_13 HEAD CodeActAgent 1
+./evaluation/benchmarks/biocoder/scripts/run_infer.sh eval_gpt4o_2024_05_13 HEAD CodeActAgent 1
 ```
 
 ## Reference

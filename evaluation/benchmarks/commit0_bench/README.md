@@ -24,10 +24,10 @@ Make sure your Docker daemon is running, and you have ample disk space (at least
 When the `run_infer.sh` script is started, it will automatically pull the `lite` split in Commit0. For example, for instance ID `commit-0/minitorch`, it will try to pull our pre-build docker image `wentingzhao/minitorch` from DockerHub. This image will be used create an OpenHands runtime image where the agent will operate on.
 
 ```bash
-./evaluation/benchmarks/benchmarks/commit0_bench/scripts/run_infer.sh [repo_split] [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
+./evaluation/benchmarks/commit0_bench/scripts/run_infer.sh [repo_split] [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
 
 # Example
-./evaluation/benchmarks/benchmarks/commit0_bench/scripts/run_infer.sh lite llm.eval_sonnet HEAD CodeActAgent 16 100 8 wentingzhao/commit0_combined test
+./evaluation/benchmarks/commit0_bench/scripts/run_infer.sh lite llm.eval_sonnet HEAD CodeActAgent 16 100 8 wentingzhao/commit0_combined test
 ```
 
 where `model_config` is mandatory, and the rest are optional.
@@ -56,7 +56,7 @@ Let's say you'd like to run 10 instances using `llm.eval_sonnet` and CodeActAgen
 then your command would be:
 
 ```bash
-./evaluation/benchmarks/benchmarks/commit0_bench/scripts/run_infer.sh lite llm.eval_sonnet HEAD CodeActAgent 10 30 1 wentingzhao/commit0_combined test
+./evaluation/benchmarks/commit0_bench/scripts/run_infer.sh lite llm.eval_sonnet HEAD CodeActAgent 10 30 1 wentingzhao/commit0_combined test
 ```
 
 ### Run Inference on `RemoteRuntime` (experimental)
@@ -64,17 +64,17 @@ then your command would be:
 This is in limited beta. Contact Xingyao over slack if you want to try this out!
 
 ```bash
-./evaluation/benchmarks/benchmarks/commit0_bench/scripts/run_infer.sh [repo_split] [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
+./evaluation/benchmarks/commit0_bench/scripts/run_infer.sh [repo_split] [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
 
 # Example - This runs evaluation on CodeActAgent for 10 instances on "wentingzhao/commit0_combined"'s test set, with max 30 iteration per instances, with 1 number of workers running in parallel
 ALLHANDS_API_KEY="YOUR-API-KEY" RUNTIME=remote SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev" EVAL_DOCKER_IMAGE_PREFIX="docker.io/wentingzhao" \
-./evaluation/benchmarks/benchmarks/commit0_bench/scripts/run_infer.sh lite llm.eval_sonnet HEAD CodeActAgent 10 30 1 wentingzhao/commit0_combined test
+./evaluation/benchmarks/commit0_bench/scripts/run_infer.sh lite llm.eval_sonnet HEAD CodeActAgent 10 30 1 wentingzhao/commit0_combined test
 ```
 
 To clean-up all existing runtime you've already started, run:
 
 ```bash
-ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/benchmarks/benchmarks/commit0_bench/scripts/cleanup_remote_runtime.sh
+ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/benchmarks/commit0_bench/scripts/cleanup_remote_runtime.sh
 ```
 
 ### Specify a subset of tasks to run infer

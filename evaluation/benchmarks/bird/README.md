@@ -9,7 +9,7 @@ Please follow instruction [here](../README.md#setup) to setup your local develop
 ## Run Inference on Bird
 
 ```bash
-./evaluation/benchmarks/benchmarks/bird/scripts/run_infer.sh [model_config] [git-version]
+./evaluation/benchmarks/bird/scripts/run_infer.sh [model_config] [git-version]
 ```
 
 - `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
@@ -31,7 +31,7 @@ For each problem, OpenHands is given a set number of iterations to fix the faili
     "agent_class": "CodeActAgent",
     "model_name": "gpt-4-1106-preview",
     "max_iterations": 5,
-    "eval_output_dir": "evaluation/benchmarks/evaluation_outputs/outputs/bird/CodeActAgent/gpt-4-1106-preview_maxiter_5_N_v1.5",
+    "eval_output_dir": "evaluation/evaluation_outputs/outputs/bird/CodeActAgent/gpt-4-1106-preview_maxiter_5_N_v1.5",
     "start_time": "2024-05-29 02:00:22",
     "git_commit": "ae105c2fafc64ad3eeb7a8bea09119fcb5865bc4"
   },

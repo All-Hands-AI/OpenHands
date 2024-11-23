@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eo pipefail
 
-source "evaluation/benchmarks/utils/version_control.sh"
+source "evaluation/utils/version_control.sh"
 
 REPO_SPLIT=$1
 MODEL_CONFIG=$2
@@ -91,7 +91,7 @@ fi
 
 function run_eval() {
   local eval_note=$1
-  COMMAND="poetry run python evaluation/benchmarks/benchmarks/commit0_bench/run_infer.py \
+  COMMAND="poetry run python evaluation/benchmarks/commit0_bench/run_infer.py \
     --agent-cls $AGENT \
     --llm-config $MODEL_CONFIG \
     --max-iterations $MAX_ITER \

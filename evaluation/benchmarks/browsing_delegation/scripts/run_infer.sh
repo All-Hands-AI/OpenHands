@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eo pipefail
 
-source "evaluation/benchmarks/utils/version_control.sh"
+source "evaluation/utils/version_control.sh"
 
 MODEL_CONFIG=$1
 COMMIT_HASH=$2
@@ -28,7 +28,7 @@ echo "MODEL_CONFIG: $MODEL_CONFIG"
 
 EVAL_NOTE="$AGENT_VERSION"
 
-COMMAND="poetry run python evaluation/benchmarks/benchmarks/browsing_delegation/run_infer.py \
+COMMAND="poetry run python evaluation/benchmarks/browsing_delegation/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 1 \

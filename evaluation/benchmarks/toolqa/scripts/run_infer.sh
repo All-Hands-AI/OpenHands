@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eo pipefail
 
-source "evaluation/benchmarks/utils/version_control.sh"
+source "evaluation/utils/version_control.sh"
 
 MODEL_CONFIG=$1
 COMMIT_HASH=$2
@@ -47,7 +47,7 @@ echo "DATASET: $DATASET"
 echo "HARDNESS: $HARDNESS"
 echo "WOLFRAM_APPID: $WOLFRAM_APPID"
 
-COMMAND="poetry run python evaluation/benchmarks/benchmarks/toolqa/run_infer.py \
+COMMAND="poetry run python evaluation/benchmarks/toolqa/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 30 \

@@ -58,7 +58,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     test_cmd = instance['test']['test_cmd']
     test_dir = instance['test']['test_dir']
     # Instruction based on Anthropic's official trajectory
-    # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/benchmarks/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
+    # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
     instruction = (
         '<uploaded_files>\n'
         f'/workspace/{workspace_dir_name}\n'

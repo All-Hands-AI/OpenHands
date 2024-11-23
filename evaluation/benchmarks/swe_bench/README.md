@@ -27,10 +27,10 @@ Make sure your Docker daemon is running, and you have ample disk space (at least
 When the `run_infer.sh` script is started, it will automatically pull the relevant SWE-Bench images. For example, for instance ID `django_django-11011`, it will try to pull our pre-build docker image `sweb.eval.x86_64.django_s_django-11011` from DockerHub. This image will be used create an OpenHands runtime image where the agent will operate on.
 
 ```bash
-./evaluation/benchmarks/benchmarks/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
+./evaluation/benchmarks/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
 
 # Example
-./evaluation/benchmarks/benchmarks/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 300 30 1 princeton-nlp/SWE-bench_Lite test
+./evaluation/benchmarks/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 300 30 1 princeton-nlp/SWE-bench_Lite test
 ```
 
 where `model_config` is mandatory, and the rest are optional.
@@ -62,7 +62,7 @@ Let's say you'd like to run 10 instances using `llm.eval_gpt4_1106_preview` and 
 then your command would be:
 
 ```bash
-./evaluation/benchmarks/benchmarks/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 10
+./evaluation/benchmarks/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 10
 ```
 
 ### Run Inference on `RemoteRuntime` (experimental)
@@ -70,23 +70,23 @@ then your command would be:
 This is in limited beta. Contact Xingyao over slack if you want to try this out!
 
 ```bash
-./evaluation/benchmarks/benchmarks/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
+./evaluation/benchmarks/swe_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
 
 # Example - This runs evaluation on CodeActAgent for 300 instances on "princeton-nlp/SWE-bench_Lite"'s test set, with max 30 iteration per instances, with 16 number of workers running in parallel
 ALLHANDS_API_KEY="YOUR-API-KEY" RUNTIME=remote SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev" EVAL_DOCKER_IMAGE_PREFIX="us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images" \
-./evaluation/benchmarks/benchmarks/swe_bench/scripts/run_infer.sh llm.eval HEAD CodeActAgent 300 30 16 "princeton-nlp/SWE-bench_Lite" test
+./evaluation/benchmarks/swe_bench/scripts/run_infer.sh llm.eval HEAD CodeActAgent 300 30 16 "princeton-nlp/SWE-bench_Lite" test
 ```
 
 To clean-up all existing runtime you've already started, run:
 
 ```bash
-ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/benchmarks/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
+ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
 ```
 
 ### Specify a subset of tasks to run infer
 
 If you would like to specify a list of tasks you'd like to benchmark on, you could
-create a `config.toml` under `./evaluation/benchmarks/benchmarks/swe_bench/` folder, and put a list
+create a `config.toml` under `./evaluation/benchmarks/swe_bench/` folder, and put a list
 attribute named `selected_ids`, e.g.
 
 ```toml
@@ -105,19 +105,19 @@ After running the inference, you will obtain a `output.jsonl` (by default it wil
 **(Recommended for reproducibility)** If you have extra local space (e.g., 200GB), you can try pull the [instance-level docker images](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md#choosing-the-right-cache_level) we've prepared by running:
 
 ```bash
-evaluation/benchmarks/benchmarks/swe_bench/scripts/docker/pull_all_eval_docker.sh instance
+evaluation/benchmarks/swe_bench/scripts/docker/pull_all_eval_docker.sh instance
 ```
 
 If you want to save disk space a bit (e.g., with ~50GB free disk space), while speeding up the image pre-build process, you can pull the environment-level docker images:
 
 ```bash
-evaluation/benchmarks/benchmarks/swe_bench/scripts/docker/pull_all_eval_docker.sh env
+evaluation/benchmarks/swe_bench/scripts/docker/pull_all_eval_docker.sh env
 ```
 
 If you want to evaluate on the full SWE-Bench test set:
 
 ```bash
-evaluation/benchmarks/benchmarks/swe_bench/scripts/docker/pull_all_eval_docker.sh instance full
+evaluation/benchmarks/swe_bench/scripts/docker/pull_all_eval_docker.sh instance full
 ```
 
 ### Run evaluation
@@ -136,10 +136,10 @@ NOTE, you should have already pulled the instance-level OR env-level docker imag
 Then you can run the following:
 
 ```bash
-./evaluation/benchmarks/benchmarks/swe_bench/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL [instance_id] [dataset_name] [split]
+./evaluation/benchmarks/swe_bench/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL [instance_id] [dataset_name] [split]
 
 # Example
-./evaluation/benchmarks/benchmarks/swe_bench/scripts/eval_infer.sh evaluation/benchmarks/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/output.jsonl
+./evaluation/benchmarks/swe_bench/scripts/eval_infer.sh evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/output.jsonl
 ```
 
 The script now accepts optional arguments:
@@ -150,12 +150,12 @@ The script now accepts optional arguments:
 For example, to evaluate a specific instance with a custom dataset and split:
 
 ```bash
-./evaluation/benchmarks/benchmarks/swe_bench/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL instance_123 princeton-nlp/SWE-bench test
+./evaluation/benchmarks/swe_bench/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL instance_123 princeton-nlp/SWE-bench test
 ```
 
-> You can also pass in a JSONL with [SWE-Bench format](https://github.com/princeton-nlp/SWE-bench/blob/main/tutorials/evaluation.md#-creating-predictions) to `./evaluation/benchmarks/benchmarks/swe_bench/scripts/eval_infer.sh`, where each line is a JSON of `{"model_patch": "XXX", "model_name_or_path": "YYY", "instance_id": "ZZZ"}`.
+> You can also pass in a JSONL with [SWE-Bench format](https://github.com/princeton-nlp/SWE-bench/blob/main/tutorials/evaluation.md#-creating-predictions) to `./evaluation/benchmarks/swe_bench/scripts/eval_infer.sh`, where each line is a JSON of `{"model_patch": "XXX", "model_name_or_path": "YYY", "instance_id": "ZZZ"}`.
 
-The final results will be saved to `evaluation/benchmarks/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/` with the following files/directory:
+The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/` with the following files/directory:
 
 - `README.md`: a report showing what are the instances that passed, failed, etc.
 - `report.json`: a JSON file that contains keys like `"resolved_ids"` pointing to instance IDs that are resolved by the agent.
@@ -166,17 +166,17 @@ The final results will be saved to `evaluation/benchmarks/evaluation_outputs/out
 This is in limited beta. Contact Xingyao over slack if you want to try this out!
 
 ```bash
-./evaluation/benchmarks/benchmarks/swe_bench/scripts/eval_infer_remote.sh [output.jsonl filepath] [num_workers]
+./evaluation/benchmarks/swe_bench/scripts/eval_infer_remote.sh [output.jsonl filepath] [num_workers]
 
 # Example - This evaluates patches generated by CodeActAgent on Llama-3.1-70B-Instruct-Turbo on "princeton-nlp/SWE-bench_Lite"'s test set, with 16 number of workers running in parallel
 ALLHANDS_API_KEY="YOUR-API-KEY" RUNTIME=remote SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev" EVAL_DOCKER_IMAGE_PREFIX="us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images" \
-evaluation/benchmarks/benchmarks/swe_bench/scripts/eval_infer_remote.sh evaluation/benchmarks/evaluation_outputs/outputs/swe-bench-lite/CodeActAgent/Llama-3.1-70B-Instruct-Turbo_maxiter_30_N_v1.9-no-hint/output.jsonl 16 "princeton-nlp/SWE-bench_Lite" "test"
+evaluation/benchmarks/swe_bench/scripts/eval_infer_remote.sh evaluation/evaluation_outputs/outputs/swe-bench-lite/CodeActAgent/Llama-3.1-70B-Instruct-Turbo_maxiter_30_N_v1.9-no-hint/output.jsonl 16 "princeton-nlp/SWE-bench_Lite" "test"
 ```
 
 To clean-up all existing runtimes that you've already started, run:
 
 ```bash
-ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/benchmarks/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
+ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
 ```
 
 
