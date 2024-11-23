@@ -53,10 +53,12 @@ jobs:
         env:
           LLM_MODEL: ${{ secrets.HAIKU_LLM_MODEL }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
         run: |
           echo "[llm.eval]" > config.toml
-          echo "model = \"$HAIKU_LLM_MODEL\"" >> config.toml
+          echo "model = \"$LLM_MODEL\"" >> config.toml
           echo "api_key = \"$LLM_API_KEY\"" >> config.toml
+          echo "base_url = \"$LLM_BASE_URL\"" >> config.toml
           echo "temperature = 0.0" >> config.toml
 
       - name: Run integration test evaluation
