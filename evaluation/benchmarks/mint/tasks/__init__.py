@@ -1,6 +1,6 @@
-from evaluation.mint.tasks.base import Task
-from evaluation.mint.tasks.codegen import HumanEvalTask, MBPPTask
-from evaluation.mint.tasks.reasoning import (
+from evaluation.benchmarks.mint.tasks.base import Task
+from evaluation.benchmarks.mint.tasks.codegen import HumanEvalTask, MBPPTask
+from evaluation.benchmarks.mint.tasks.reasoning import (
     MultipleChoiceTask,
     ReasoningTask,
     TheoremqaTask,

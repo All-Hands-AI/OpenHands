@@ -7,7 +7,7 @@ from typing import Any
 import pandas as pd
 from datasets import load_dataset
 
-from evaluation.aider_bench.helper import (
+from evaluation.benchmarks.aider_bench.helper import (
     FAKE_RESPONSES,
     INST_SUFFIXES,
     INSTRUCTIONS_ADDENDUM,

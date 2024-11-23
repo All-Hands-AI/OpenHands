@@ -9,7 +9,7 @@ import toml
 from datasets import load_dataset
 
 import openhands.agenthub
-from evaluation.swe_bench.prompt import CODEACT_SWE_PROMPT
+from evaluation.benchmarks.swe_bench.prompt import CODEACT_SWE_PROMPT
 from evaluation.utils.shared import (
     EvalException,
     EvalMetadata,

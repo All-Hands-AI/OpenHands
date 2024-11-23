@@ -6,10 +6,10 @@ from typing import Any
 import pandas as pd
 from datasets import load_dataset
 
-from evaluation.mint.datatypes import TaskState
-from evaluation.mint.env import SimplifiedEnv
-from evaluation.mint.prompts import ToolPromptTemplate
-from evaluation.mint.tasks import Task
+from evaluation.benchmarks.mint.datatypes import TaskState
+from evaluation.benchmarks.mint.env import SimplifiedEnv
+from evaluation.benchmarks.mint.prompts import ToolPromptTemplate
+from evaluation.benchmarks.mint.tasks import Task
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,

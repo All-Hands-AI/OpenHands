@@ -4,7 +4,7 @@ import os
 import pandas as pd
 from datasets import load_dataset
 
-from evaluation.EDA.game import Q20Game, Q20GameCelebrity
+from evaluation.benchmarks.EDA.game import Q20Game, Q20GameCelebrity
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,

@@ -7,7 +7,7 @@ from typing import Any
 import pandas as pd
 from datasets import load_dataset
 
-from evaluation.agent_bench.helper import (
+from evaluation.benchmarks.agent_bench.helper import (
     FAKE_RESPONSES,
     INST_SUFFIXES,
     compare_results,
