@@ -124,12 +124,4 @@ jobs:
               ${{ env.INTEGRATION_TEST_REPORT }}
               ---
               You can download the full evaluation outputs [here](${{ env.ARTIFACT_URL }}).
-
-      - name: Post to a Slack channel
-        id: slack
-        uses: slackapi/slack-github-action@v1.27.0
-        with:
-          channel-id: 'C07SVQSCR6F'
-          slack-message: "*Integration Tests Trigger:* ${{ github.event_name == 'pull_request' && format('Pull Request (integration-test label on PR #{0})', github.event.pull_request.number) || format('Manual Trigger: {0}', github.event.inputs.reason) }}\n\nLink to summary: [here](https://github.com/${{ github.repository }}/issues/${{ github.event_name == 'pull_request' && github.event.pull_request.number || 4504 }}#issuecomment-${{ steps.create_comment.outputs.comment-id }})"
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.EVAL_NOTIF_SLACK_BOT_TOKEN }}
+  
