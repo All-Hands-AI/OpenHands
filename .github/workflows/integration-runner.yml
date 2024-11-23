@@ -51,11 +51,12 @@ jobs:
 
       - name: Configure config.toml for evaluation
         env:
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_LLM_API_KEY }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
         run: |
           echo "[llm.eval]" > config.toml
-          echo "model = \"deepseek/deepseek-chat\"" >> config.toml
-          echo "api_key = \"$DEEPSEEK_API_KEY\"" >> config.toml
+          echo "model = \"$LLM_MODEL\"" >> config.toml
+          echo "api_key = \"$LLM_API_KEY\"" >> config.toml
           echo "temperature = 0.0" >> config.toml
 
       - name: Run integration test evaluation
@@ -91,10 +92,10 @@ jobs:
       - name: Get artifact URL
         run: echo "ARTIFACT_URL=${{ steps.upload_results_artifact.outputs.artifact-url }}" >> $GITHUB_ENV
 
-      - name: Authenticate to Google Cloud
-        uses: 'google-github-actions/auth@v2'
-        with:
-          credentials_json: ${{ secrets.GCP_RESEARCH_OBJECT_CREATOR_SA_KEY }}
+      # - name: Authenticate to Google Cloud
+      #   uses: 'google-github-actions/auth@v2'
+      #   with:
+      #     credentials_json: ${{ secrets.GCP_RESEARCH_OBJECT_CREATOR_SA_KEY }}
 
       - name: Set timestamp and trigger reason
         run: |
@@ -105,11 +106,11 @@ jobs:
             echo "TRIGGER_REASON=manual-${{ github.event.inputs.reason }}" >> $GITHUB_ENV
           fi
 
-      - name: Upload evaluation results to Google Cloud Storage
-        uses: 'google-github-actions/upload-cloud-storage@v2'
-        with:
-          path: 'evaluation/evaluation_outputs/outputs'
-          destination: 'openhands-oss-eval-results/${{ env.TIMESTAMP }}-${{ env.TRIGGER_REASON }}'
+      # - name: Upload evaluation results to Google Cloud Storage
+      #   uses: 'google-github-actions/upload-cloud-storage@v2'
+      #   with:
+      #     path: 'evaluation/evaluation_outputs/outputs'
+      #     destination: 'openhands-oss-eval-results/${{ env.TIMESTAMP }}-${{ env.TRIGGER_REASON }}'
 
       - name: Comment with evaluation results and artifact link
         id: create_comment
@@ -124,4 +125,3 @@ jobs:
               ${{ env.INTEGRATION_TEST_REPORT }}
               ---
               You can download the full evaluation outputs [here](${{ env.ARTIFACT_URL }}).
-  
