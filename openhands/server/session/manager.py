@@ -53,6 +53,7 @@ class SessionManager:
                 message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=5)
                 if message:
                     data = json.loads(message['data'])
+                    logger.info(f"got_published_message:{message}")
                     sid = data["sid"]
                     message_type = data["message_type"]
                     if message_type == "event":
