@@ -13,10 +13,10 @@ To prevent benchmark data contamination, we only provide the annotation sheet on
 ## Run Inference on ScienceAgentBench
 
 ```bash
-./evaluation/scienceagentbench/scripts/run_infer.sh [model_config] [git-version] [use_knowledge] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
+./evaluation/benchmarks/scienceagentbench/scripts/run_infer.sh [model_config] [git-version] [use_knowledge] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
 
 # Example
-./evaluation/scienceagentbench/scripts/run_infer.sh llm.eval_gpt4o 0.9.3
+./evaluation/benchmarks/scienceagentbench/scripts/run_infer.sh llm.eval_gpt4o 0.9.3
 ```
 
 where `model_config` is mandatory, and the rest are optional.

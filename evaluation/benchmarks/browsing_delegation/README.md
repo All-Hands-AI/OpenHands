@@ -12,7 +12,7 @@ Please follow instruction [here](../README.md#setup) to setup your local develop
 ## Run Inference
 
 ```bash
-./evaluation/browsing_delegation/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit]
+./evaluation/benchmarks/browsing_delegation/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit]
 # e.g., ./evaluation/swe_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview_llm HEAD CodeActAgent 300
 ```
 

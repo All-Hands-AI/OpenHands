@@ -80,13 +80,13 @@ ALLHANDS_API_KEY="YOUR-API-KEY" RUNTIME=remote SANDBOX_REMOTE_RUNTIME_API_URL="h
 To clean-up all existing runtime you've already started, run:
 
 ```bash
-ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/swe_bench/scripts/cleanup_remote_runtime.sh
+ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
 ```
 
 ### Specify a subset of tasks to run infer
 
 If you would like to specify a list of tasks you'd like to benchmark on, you could
-create a `config.toml` under `./evaluation/swe_bench/` folder, and put a list
+create a `config.toml` under `./evaluation/benchmarks/swe_bench/` folder, and put a list
 attribute named `selected_ids`, e.g.
 
 ```toml
@@ -153,7 +153,7 @@ For example, to evaluate a specific instance with a custom dataset and split:
 ./evaluation/benchmarks/swe_bench/scripts/eval_infer.sh $YOUR_OUTPUT_JSONL instance_123 princeton-nlp/SWE-bench test
 ```
 
-> You can also pass in a JSONL with [SWE-Bench format](https://github.com/princeton-nlp/SWE-bench/blob/main/tutorials/evaluation.md#-creating-predictions) to `./evaluation/swe_bench/scripts/eval_infer.sh`, where each line is a JSON of `{"model_patch": "XXX", "model_name_or_path": "YYY", "instance_id": "ZZZ"}`.
+> You can also pass in a JSONL with [SWE-Bench format](https://github.com/princeton-nlp/SWE-bench/blob/main/tutorials/evaluation.md#-creating-predictions) to `./evaluation/benchmarks/swe_bench/scripts/eval_infer.sh`, where each line is a JSON of `{"model_patch": "XXX", "model_name_or_path": "YYY", "instance_id": "ZZZ"}`.
 
 The final results will be saved to `evaluation/evaluation_outputs/outputs/swe_bench/CodeActAgent/gpt-4-1106-preview_maxiter_50_N_v1.0/` with the following files/directory:
 
@@ -176,7 +176,7 @@ evaluation/benchmarks/swe_bench/scripts/eval_infer_remote.sh evaluation/evaluati
 To clean-up all existing runtimes that you've already started, run:
 
 ```bash
-ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/swe_bench/scripts/cleanup_remote_runtime.sh
+ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
 ```
 
 

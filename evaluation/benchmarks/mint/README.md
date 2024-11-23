@@ -15,7 +15,7 @@ We are using the MINT dataset hosted on [Hugging Face](https://huggingface.co/da
 Following is the basic command to start the evaluation. Currently, the only agent supported with MINT is `CodeActAgent`.
 
 ```bash
-./evaluation/mint/scripts/run_infer.sh [model_config] [git-version] [subset] [eval_limit]
+./evaluation/benchmarks/mint/scripts/run_infer.sh [model_config] [git-version] [subset] [eval_limit]
 ```
 
 where `model_config` is mandatory, while others are optional.

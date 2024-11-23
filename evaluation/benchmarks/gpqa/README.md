@@ -23,7 +23,7 @@ Please follow instruction [here](../README.md#setup) to setup your local develop
 'gpqa_main', 'gqpa_diamond', 'gpqa_experts', 'gpqa_extended' -- data split options
 From the root of the OpenHands repo, run the following command:
 ```bash
-./evaluation/gpqa/scripts/run_infer.sh [model_config_name] [git-version] [num_samples_eval] [data_split] [AgentClass]
+./evaluation/benchmarks/gpqa/scripts/run_infer.sh [model_config_name] [git-version] [num_samples_eval] [data_split] [AgentClass]
 ```
 You can replace `model_config_name` with any model you set up in `config.toml`.
 

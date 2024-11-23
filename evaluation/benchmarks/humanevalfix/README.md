@@ -9,7 +9,7 @@ Please follow instruction [here](../README.md#setup) to setup your local develop
 ## Run Inference on HumanEvalFix
 
 ```bash
-./evaluation/humanevalfix/scripts/run_infer.sh eval_gpt4_1106_preview
+./evaluation/benchmarks/humanevalfix/scripts/run_infer.sh eval_gpt4_1106_preview
 ```
 
 You can replace `eval_gpt4_1106_preview` with any model you set up in `config.toml`.

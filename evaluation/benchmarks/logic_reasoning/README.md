@@ -10,5 +10,5 @@ Please follow instruction [here](../README.md#setup) to setup your local develop
 The following code will run inference on the first example of the ProofWriter dataset,
 
 ```bash
-./evaluation/logic_reasoning/scripts/run_infer.sh eval_gpt4_1106_preview_llm ProofWriter
+./evaluation/benchmarks/logic_reasoning/scripts/run_infer.sh eval_gpt4_1106_preview_llm ProofWriter
 ```

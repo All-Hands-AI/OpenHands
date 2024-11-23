@@ -9,7 +9,7 @@ Please follow instruction [here](../README.md#setup) to setup your local develop
 ## Run Inference on Bird
 
 ```bash
-./evaluation/bird/scripts/run_infer.sh [model_config] [git-version]
+./evaluation/benchmarks/bird/scripts/run_infer.sh [model_config] [git-version]
 ```
 
 - `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for your
