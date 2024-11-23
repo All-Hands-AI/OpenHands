@@ -34,7 +34,11 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.runtime.base import Runtime
+from openhands.runtime.base import (
+    Runtime,
+    RuntimeDisconnectedError,
+    RuntimeNotFoundError,
+)
 from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.impl.eventstream.containers import remove_all_containers
 from openhands.runtime.plugins import PluginRequirement
@@ -424,10 +428,22 @@ class EventStreamRuntime(Runtime):
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
-        reraise=(ConnectionRefusedError,),
+        retry=tenacity.retry_if_exception_type(
+            (ConnectionError, requests.exceptions.ConnectionError)
+        ),
+        reraise=True,
         wait=tenacity.wait_fixed(2),
     )
     def _wait_until_alive(self):
+        try:
+            container = self.docker_client.containers.get(self.container_name)
+            if container.status == 'exited':
+                raise RuntimeDisconnectedError(
+                    f'Container {self.container_name} has exited.'
+                )
+        except docker.errors.NotFound:
+            raise RuntimeNotFoundError(f'Container {self.container_name} not found.')
+
         self._refresh_logs()
         if not self.log_buffer:
             raise RuntimeError('Runtime client is not ready.')

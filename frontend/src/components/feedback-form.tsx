@@ -2,7 +2,7 @@ import React from "react";
 import hotToast from "react-hot-toast";
 import ModalButton from "./buttons/ModalButton";
 import { Feedback } from "#/api/open-hands.types";
-import OpenHands from "#/api/open-hands";
+import { useSubmitFeedback } from "#/hooks/mutation/use-submit-feedback";
 
 const FEEDBACK_VERSION = "1.0";
 const VIEWER_PAGE = "https://www.all-hands.dev/share";
@@ -13,8 +13,6 @@ interface FeedbackFormProps {
 }
 
 export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-
   const copiedToClipboardToast = () => {
     hotToast("Password copied to clipboard", {
       icon: "📋",
@@ -53,10 +51,11 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
     );
   };
 
+  const { mutate: submitFeedback, isPending } = useSubmitFeedback();
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
     const formData = new FormData(event.currentTarget);
-    setIsSubmitting(true);
 
     const email = formData.get("email")?.toString() || "";
     const permissions = (formData.get("permissions")?.toString() ||
@@ -71,11 +70,17 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
       token: "",
     };
 
-    const response = await OpenHands.submitFeedback(feedback);
-    const { message, feedback_id, password } = response.body; // eslint-disable-line
-    const link = `${VIEWER_PAGE}?share_id=${feedback_id}`;
-    shareFeedbackToast(message, link, password);
-    setIsSubmitting(false);
+    submitFeedback(
+      { feedback },
+      {
+        onSuccess: (data) => {
+          const { message, feedback_id, password } = data.body; // eslint-disable-line
+          const link = `${VIEWER_PAGE}?share_id=${feedback_id}`;
+          shareFeedbackToast(message, link, password);
+          onClose();
+        },
+      },
+    );
   };
 
   return (
@@ -109,13 +114,13 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
 
       <div className="flex gap-2">
         <ModalButton
-          disabled={isSubmitting}
+          disabled={isPending}
           type="submit"
           text="Submit"
           className="bg-[#4465DB] grow"
         />
         <ModalButton
-          disabled={isSubmitting}
+          disabled={isPending}
           text="Cancel"
           onClick={onClose}
           className="bg-[#737373] grow"

@@ -199,7 +199,7 @@ async def process_issue(
     )
     config.set_llm_config(llm_config)
 
-    runtime = create_runtime(config, sid=f'{issue.number}')
+    runtime = create_runtime(config)
     await runtime.connect()
 
     async def on_event(evt):
@@ -315,6 +315,7 @@ async def resolve_issue(
     repo_instruction: str | None,
     issue_number: int,
     comment_id: int | None,
+    target_branch: str | None = None,
     reset_logger: bool = False,
 ) -> None:
     """Resolve a single github issue.
@@ -333,19 +334,17 @@ async def resolve_issue(
         repo_instruction: Repository instruction to use.
         issue_number: Issue number to resolve.
         comment_id: Optional ID of a specific comment to focus on.
+        target_branch: Optional target branch to create PR against (for PRs).
         reset_logger: Whether to reset the logger for multiprocessing.
     """
     issue_handler = issue_handler_factory(issue_type, owner, repo, token)
 
     # Load dataset
     issues: list[GithubIssue] = issue_handler.get_converted_issues(
-        comment_id=comment_id
+        issue_numbers=[issue_number], comment_id=comment_id
     )
 
-    # Find the specific issue
-    issue = next((i for i in issues if i.number == issue_number), None)
-    if not issue:
-        raise ValueError(f'Issue {issue_number} not found')
+    issue = issues[0]
 
     if comment_id is not None:
         if (
@@ -425,14 +424,31 @@ async def resolve_issue(
     try:
         # checkout to pr branch if needed
         if issue_type == 'pr':
+            branch_to_use = target_branch if target_branch else issue.head_branch
             logger.info(
-                f'Checking out to PR branch {issue.head_branch} for issue {issue.number}'
+                f'Checking out to PR branch {target_branch} for issue {issue.number}'
             )
 
+            if not branch_to_use:
+                raise ValueError('Branch name cannot be None')
+
+            # Fetch the branch first to ensure it exists locally
+            fetch_cmd = ['git', 'fetch', 'origin', branch_to_use]
             subprocess.check_output(
-                ['git', 'checkout', f'{issue.head_branch}'],
+                fetch_cmd,
                 cwd=repo_dir,
             )
+
+            # Checkout the branch
+            checkout_cmd = ['git', 'checkout', branch_to_use]
+            subprocess.check_output(
+                checkout_cmd,
+                cwd=repo_dir,
+            )
+
+            # Update issue's base_branch if using custom target branch
+            if target_branch:
+                issue.base_branch = target_branch
 
             base_commit = (
                 subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
@@ -556,6 +572,12 @@ def main():
         choices=['issue', 'pr'],
         help='Type of issue to resolve, either open issue or pr comments.',
     )
+    parser.add_argument(
+        '--target-branch',
+        type=str,
+        default=None,
+        help="Target branch to pull and create PR against (for PRs). If not specified, uses the PR's base branch.",
+    )
 
     my_args = parser.parse_args()
 
@@ -616,6 +638,7 @@ def main():
             repo_instruction=repo_instruction,
             issue_number=my_args.issue_number,
             comment_id=my_args.comment_id,
+            target_branch=my_args.target_branch,
         )
     )
 

@@ -4,19 +4,26 @@ import {
   Input,
   Switch,
 } from "@nextui-org/react";
-import { useFetcher, useLocation, useNavigate } from "@remix-run/react";
+import { useLocation } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import React from "react";
+import posthog from "posthog-js";
 import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
 import { ModelSelector } from "#/components/modals/settings/ModelSelector";
-import { Settings } from "#/services/settings";
+import { getDefaultSettings, Settings } from "#/services/settings";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
-import { clientAction } from "#/routes/settings";
 import { extractModelAndProvider } from "#/utils/extractModelAndProvider";
 import ModalButton from "../buttons/ModalButton";
 import { DangerModal } from "../modals/confirmation-modals/danger-modal";
 import { I18nKey } from "#/i18n/declaration";
+import {
+  extractSettings,
+  saveSettingsView,
+  updateSettingsVersion,
+} from "#/utils/settings-utils";
+import { useEndSession } from "#/hooks/use-end-session";
+import { useUserPrefs } from "#/context/user-prefs-context";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -35,19 +42,36 @@ export function SettingsForm({
   securityAnalyzers,
   onClose,
 }: SettingsFormProps) {
+  const { saveSettings } = useUserPrefs();
+  const endSession = useEndSession();
+
   const location = useLocation();
-  const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const fetcher = useFetcher<typeof clientAction>();
   const formRef = React.useRef<HTMLFormElement>(null);
 
-  React.useEffect(() => {
-    if (fetcher.data?.success) {
-      navigate("/");
+  const resetOngoingSession = () => {
+    if (location.pathname.startsWith("/app")) {
+      endSession();
       onClose();
     }
-  }, [fetcher.data, navigate, onClose]);
+  };
+
+  const handleFormSubmission = (formData: FormData) => {
+    const keys = Array.from(formData.keys());
+    const isUsingAdvancedOptions = keys.includes("use-advanced-options");
+    const newSettings = extractSettings(formData);
+
+    saveSettings(newSettings);
+    saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
+    updateSettingsVersion();
+    resetOngoingSession();
+
+    posthog.capture("settings_saved", {
+      LLM_MODEL: newSettings.LLM_MODEL,
+      LLM_API_KEY: newSettings.LLM_API_KEY ? "SET" : "UNSET",
+    });
+  };
 
   const advancedAlreadyInUse = React.useMemo(() => {
     if (models.length > 0) {
@@ -83,20 +107,17 @@ export function SettingsForm({
     React.useState(false);
   const [showWarningModal, setShowWarningModal] = React.useState(false);
 
-  const submitForm = (formData: FormData) => {
-    if (location.pathname === "/app") formData.set("end-session", "true");
-    fetcher.submit(formData, { method: "POST", action: "/settings" });
-  };
-
   const handleConfirmResetSettings = () => {
-    const formData = new FormData(formRef.current ?? undefined);
-    formData.set("intent", "reset");
-    submitForm(formData);
+    saveSettings(getDefaultSettings());
+    resetOngoingSession();
+    posthog.capture("settings_reset");
+
+    onClose();
   };
 
   const handleConfirmEndSession = () => {
     const formData = new FormData(formRef.current ?? undefined);
-    submitForm(formData);
+    handleFormSubmission(formData);
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -106,10 +127,11 @@ export function SettingsForm({
 
     if (!apiKey) {
       setShowWarningModal(true);
-    } else if (location.pathname === "/app") {
+    } else if (location.pathname.startsWith("/app")) {
       setConfirmEndSessionModalOpen(true);
     } else {
-      submitForm(formData);
+      handleFormSubmission(formData);
+      onClose();
     }
   };
 
@@ -117,18 +139,15 @@ export function SettingsForm({
     const formData = new FormData(formRef.current ?? undefined);
     const apiKey = formData.get("api-key");
 
-    if (!apiKey) {
-      setShowWarningModal(true);
-    } else {
-      onClose();
-    }
+    if (!apiKey) setShowWarningModal(true);
+    else onClose();
   };
 
   const handleWarningConfirm = () => {
     setShowWarningModal(false);
     const formData = new FormData(formRef.current ?? undefined);
     formData.set("api-key", ""); // Set null value for API key
-    submitForm(formData);
+    handleFormSubmission(formData);
     onClose();
   };
 
@@ -138,11 +157,9 @@ export function SettingsForm({
 
   return (
     <div>
-      <fetcher.Form
+      <form
         ref={formRef}
         data-testid="settings-form"
-        method="POST"
-        action="/settings"
         className="flex flex-col gap-6"
         onSubmit={handleSubmit}
       >
@@ -267,9 +284,7 @@ export function SettingsForm({
                 aria-label="Agent"
                 data-testid="agent-input"
                 name="agent"
-                defaultSelectedKey={
-                  fetcher.formData?.get("agent")?.toString() ?? settings.AGENT
-                }
+                defaultSelectedKey={settings.AGENT}
                 isClearable={false}
                 inputProps={{
                   classNames: {
@@ -302,10 +317,7 @@ export function SettingsForm({
                   id="security-analyzer"
                   name="security-analyzer"
                   aria-label="Security Analyzer"
-                  defaultSelectedKey={
-                    fetcher.formData?.get("security-analyzer")?.toString() ??
-                    settings.SECURITY_ANALYZER
-                  }
+                  defaultSelectedKey={settings.SECURITY_ANALYZER}
                   inputProps={{
                     classNames: {
                       inputWrapper:
@@ -346,7 +358,7 @@ export function SettingsForm({
         <div className="flex flex-col gap-2">
           <div className="flex gap-2">
             <ModalButton
-              disabled={disabled || fetcher.state === "submitting"}
+              disabled={disabled}
               type="submit"
               text={t(I18nKey.SETTINGS_FORM$SAVE_LABEL)}
               className="bg-[#4465DB] w-full"
@@ -367,7 +379,7 @@ export function SettingsForm({
             }}
           />
         </div>
-      </fetcher.Form>
+      </form>
 
       {confirmResetDefaultsModalOpen && (
         <ModalBackdrop>

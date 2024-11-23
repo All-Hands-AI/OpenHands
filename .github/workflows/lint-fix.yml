@@ -16,6 +16,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -43,7 +44,8 @@ jobs:
         run: pip install pre-commit==3.7.0
       - name: Fix python lint issues
         run: |
-          pre-commit run --files openhands/**/* evaluation/**/* tests/**/* --config ./dev_config/python/.pre-commit-config.yaml --all-files
+          # Run all pre-commit hooks and continue even if they modify files (exit code 1)
+          pre-commit run --config ./dev_config/python/.pre-commit-config.yaml --files openhands/**/* evaluation/**/* tests/**/* || true
 
       # Commit and push changes if any
       - name: Check for changes
