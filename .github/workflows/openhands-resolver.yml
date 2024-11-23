@@ -15,7 +15,7 @@ on:
         required: false
         type: string
         default: "main"
-        description: 'Target branch to pull and create PR against'
+        description: "Target branch to pull and create PR against"
     secrets:
       LLM_MODEL:
         required: true
@@ -184,7 +184,6 @@ jobs:
             --issue-type ${{ env.ISSUE_TYPE }} \
             --max-iterations ${{ env.MAX_ITERATIONS }} \
             --comment-id ${{ env.COMMENT_ID }} \
-            --target-branch ${{ env.TARGET_BRANCH }}
 
       - name: Check resolution result
         id: check_result
