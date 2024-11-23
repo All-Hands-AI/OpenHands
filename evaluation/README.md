@@ -54,11 +54,14 @@ The OpenHands evaluation harness supports a wide variety of benchmarks across so
 - APIBench: [`evaluation/benchmarks/gorilla`](./benchmarks/gorilla/)
 - ToolQA: [`evaluation/benchmarks/toolqa`](./benchmarks/toolqa/)
 - AiderBench: [`evaluation/benchmarks/aider_bench`](./benchmarks/aider_bench/)
+- Commit0: [`evaluation/benchmarks/commit0_bench`](./benchmarks/commit0_bench/)
+- DiscoveryBench: [`evaluation/benchmarks/discoverybench`](./benchmarks/discoverybench/)
 
 ### Web Browsing
 
 - WebArena: [`evaluation/benchmarks/webarena`](./benchmarks/webarena/)
 - MiniWob++: [`evaluation/benchmarks/miniwob`](./benchmarks/miniwob/)
+- Browsing Delegation: [`evaluation/benchmarks/browsing_delegation`](./benchmarks/browsing_delegation/)
 
 ### Misc. Assistance
 
@@ -68,6 +71,7 @@ The OpenHands evaluation harness supports a wide variety of benchmarks across so
 - MINT: [`evaluation/benchmarks/mint`](./benchmarks/mint)
 - Entity deduction Arena (EDA): [`evaluation/benchmarks/EDA`](./benchmarks/EDA)
 - ProofWriter: [`evaluation/benchmarks/logic_reasoning`](./benchmarks/logic_reasoning)
+- ScienceAgentBench: [`evaluation/benchmarks/scienceagentbench`](./benchmarks/scienceagentbench)
 
 ## Result Visualization
 
