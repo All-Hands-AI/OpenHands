@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "commonjs",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "./dist",
+    "rootDir": "./tests/unit/resolver",
+    "types": ["jest", "node"]
+  },
+  "include": ["tests/unit/resolver/**/*.ts"],
+  "exclude": ["node_modules"]
+}
