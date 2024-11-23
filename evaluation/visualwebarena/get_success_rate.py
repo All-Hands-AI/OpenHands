@@ -25,11 +25,16 @@ if __name__ == '__main__':
             data = json.loads(line)
             actual_num += 1
             total_cost += data['metrics']['accumulated_cost']
-            total_reward += data['test_result']['reward']
+            reward = data['test_result']['reward']
+            if reward >= 0:
+                total_reward += data['test_result']['reward']
+            else:
+                actual_num -= 1
     avg_reward = total_reward / total_num
     print('Total reward: ', total_reward)
     print('Success Rate: ', avg_reward)
 
     avg_cost = total_cost / actual_num
     print('Avg Cost: ', avg_cost)
+    print('Total Cost: ', total_cost)
     print('Actual number of tasks finished: ', actual_num)

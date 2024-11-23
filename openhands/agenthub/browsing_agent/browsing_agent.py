@@ -1,10 +1,7 @@
-import json
 import os
-import re
 
 from browsergym.core.action.highlevel import HighLevelActionSet
 from browsergym.utils.obs import flatten_axtree_to_str
-from PIL import Image
 
 from openhands.agenthub.browsing_agent.response_parser import BrowsingResponseParser
 from openhands.controller.agent import Agent
@@ -22,7 +19,6 @@ from openhands.events.event import EventSource
 from openhands.events.observation import BrowserOutputObservation
 from openhands.events.observation.observation import Observation
 from openhands.llm.llm import LLM
-from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import (
     PluginRequirement,
 )
@@ -40,16 +36,14 @@ else:
     EVAL_MODE = False
 
 
-def get_error_prefix(last_browser_action: str) -> str:
-    return f'IMPORTANT! Last action is incorrect:\n{last_browser_action}\nThink again with the current observation of the page.\n'
+def get_error_prefix(obs: BrowserOutputObservation) -> str:
+    return f'## Error from previous action:\n{obs.last_browser_action_error}\n'
 
 
 def get_system_message(goal: str, action_space: str) -> str:
     return f"""\
 # Instructions
-Review the current state of the page and all other information to find the best
-possible next action to accomplish your goal. Your answer will be interpreted
-and executed by a program, make sure to follow the formatting instructions.
+Review the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
 
 # Goal:
 {goal}
@@ -95,136 +89,91 @@ In order to accomplish my goal I need to click on the button with bid 12
     return prompt
 
 
-# class BrowsingAgent(Agent):
-#     VERSION = '1.0'
-#     """
-#     An agent that interacts with the browser.
-#     """
+def create_goal_prompt(goal: str, image_urls: list[str] | None):
+    goal_txt: str = f"""\
+# Instructions
+Review the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
 
-#     sandbox_plugins: list[PluginRequirement] = []
-#     response_parser = BrowsingResponseParser()
+## Goal:
+{goal}
+"""
+    goal_image_urls = []
+    if image_urls is not None:
+        for idx, url in enumerate(image_urls):
+            goal_txt = goal_txt + f'Images: Goal input image ({idx+1})\n'
+            goal_image_urls.append(url)
+    goal_txt += '\n'
+    return goal_txt, goal_image_urls
 
-#     def __init__(
-#         self,
-#         llm: LLM,
-#         config: AgentConfig,
-#     ) -> None:
-#         """Initializes a new instance of the BrowsingAgent class.
 
-#         Parameters:
-#         - llm (LLM): The llm to be used by this agent
-#         """
-#         super().__init__(llm, config)
-#         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
-#         # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
-#         action_subsets = ['chat', 'bid']
-#         if USE_NAV:
-#             action_subsets.append('nav')
-#         self.action_space = HighLevelActionSet(
-#             subsets=action_subsets,
-#             strict=False,  # less strict on the parsing of the actions
-#             multiaction=True,  # enable to agent to take multiple actions at once
-#         )
+def create_observation_prompt(
+    axtree_txt: str,
+    tabs: str,
+    focused_element: str,
+    error_prefix: str,
+    som_screenshot: str | None,
+):
+    txt_observation = f"""
+# Observation of current step:
+{tabs}{axtree_txt}{focused_element}{error_prefix}
+"""
 
-#         self.reset()
+    # screenshot + som: will be a non-empty string if present in observation
+    screenshot_url = None
+    if (som_screenshot is not None) and (len(som_screenshot) > 0):
+        txt_observation += 'Image: Current page screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.\n'
+        screenshot_url = som_screenshot
+    else:
+        logger.info('SOM Screenshot not present in observation!')
+    txt_observation += '\n'
+    return txt_observation, screenshot_url
 
-#     def reset(self) -> None:
-#         """Resets the Browsing Agent."""
-#         super().reset()
-#         self.cost_accumulator = 0
-#         self.error_accumulator = 0
 
-#     def step(self, state: State) -> Action:
-#         """Performs one step using the Browsing Agent.
-#         This includes gathering information on previous steps and prompting the model to make a browsing command to execute.
+def get_tabs(obs: BrowserOutputObservation) -> str:
+    prompt_pieces = ['\n## Currently open tabs:']
+    for page_index, page_url in enumerate(obs.open_pages_urls):
+        active_or_not = ' (active tab)' if page_index == obs.active_page_index else ''
+        prompt_piece = f"""\
+Tab {page_index+1}{active_or_not}:
+URL: {page_url}
+"""
+        prompt_pieces.append(prompt_piece)
+    return '\n'.join(prompt_pieces) + '\n'
 
-#         Parameters:
-#         - state (State): used to get updated info
 
-#         Returns:
-#         - BrowseInteractiveAction(browsergym_command) - BrowserGym commands to run
-#         - MessageAction(content) - Message action to run (e.g. ask for clarification)
-#         - AgentFinishAction() - end the interaction
-#         """
-#         messages: list[Message] = []
-#         prev_actions = []
-#         cur_url = ''
-#         cur_axtree_txt = ''
-#         error_prefix = ''
-#         last_obs = None
-#         last_action = None
+def get_axtree(axtree_txt: str) -> str:
+    bid_info = """\
+Note: [bid] is the unique alpha-numeric identifier at the beginning of lines for each element in the AXTree. Always use bid to refer to elements in your actions.
 
-#         if EVAL_MODE and len(state.history.get_events_as_list()) == 1:
-#             # for webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
-#             # initialize and retrieve the first observation by issuing an noop OP
-#             # For non-benchmark browsing, the browser env starts with a blank page, and the agent is expected to first navigate to desired websites
-#             return BrowseInteractiveAction(browser_actions='noop()')
+"""
+    visible_tag_info = """\
+Note: You can only interact with visible elements. If the "visible" tag is not present, the element is not visible on the page.
 
-#         for event in state.history.get_events():
-#             if isinstance(event, BrowseInteractiveAction):
-#                 prev_actions.append(event.browser_actions)
-#                 last_action = event
-#             elif isinstance(event, MessageAction) and event.source == EventSource.AGENT:
-#                 # agent has responded, task finished.
-#                 return AgentFinishAction(outputs={'content': event.content})
-#             elif isinstance(event, Observation):
-#                 last_obs = event
+"""
+    return f'\n## AXTree:\n{bid_info}{visible_tag_info}{axtree_txt}\n'
 
-#         if EVAL_MODE:
-#             prev_actions = prev_actions[1:]  # remove the first noop action
 
-#         prev_action_str = '\n'.join(prev_actions)
-#         # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
-#         # we should also send a message back to the user in OpenHands and call it a day
-#         if (
-#             isinstance(last_action, BrowseInteractiveAction)
-#             and last_action.browsergym_send_msg_to_user
-#         ):
-#             return MessageAction(last_action.browsergym_send_msg_to_user)
+def get_action_prompt(action_set: HighLevelActionSet) -> str:
+    action_set_generic_info = """\
+Note: This action set allows you to interact with your environment. Most of them are python function executing playwright code. The primary way of referring to elements in the page is through bid which are specified in your observations.
 
-#         if isinstance(last_obs, BrowserOutputObservation):
-#             if last_obs.error:
-#                 # add error recovery prompt prefix
-#                 error_prefix = get_error_prefix(last_obs.last_browser_action)
-#                 self.error_accumulator += 1
-#                 if self.error_accumulator > 5:
-#                     return MessageAction('Too many errors encountered. Task failed.')
+"""
+    action_description = action_set.describe(
+        with_long_description=False,
+        with_examples=False,
+    )
+    action_prompt = f'# Action space:\n{action_set_generic_info}{action_description}\n'
+    return action_prompt
 
-#             cur_url = last_obs.url
 
-#             try:
-#                 cur_axtree_txt = flatten_axtree_to_str(
-#                     last_obs.axtree_object,
-#                     extra_properties=last_obs.extra_element_properties,
-#                     with_clickable=True,
-#                     filter_visible_only=True,
-#                 )
-#             except Exception as e:
-#                 logger.error(
-#                     'Error when trying to process the accessibility tree: %s', e
-#                 )
-#                 return MessageAction('Error encountered when browsing.')
-
-#         goal, _ = state.get_current_user_intent()
-
-#         if goal is None:
-#             goal = state.inputs['task']
-
-#         system_msg = get_system_message(
-#             goal,
-#             self.action_space.describe(with_long_description=False, with_examples=True),
-#         )
-
-#         messages.append(Message(role='system', content=[TextContent(text=system_msg)]))
-
-#         prompt = get_prompt(error_prefix, cur_url, cur_axtree_txt, prev_action_str)
-#         messages.append(Message(role='user', content=[TextContent(text=prompt)]))
-
-#         response = self.llm.completion(
-#             messages=self.llm.format_messages_for_llm(messages),
-#             stop=[')```', ')\n```'],
-#         )
-#         return self.response_parser.parse(response)
+def get_history_prompt(prev_actions: list[BrowseInteractiveAction]) -> str:
+    history_prompt = ['# History of all previous interactions with the task:\n']
+    for i in range(len(prev_actions)):
+        history_prompt.append(f'## step {i+1}')
+        history_prompt.append(
+            f'\nOuput thought and action: {prev_actions[i].thought} ```{prev_actions[i].browser_actions}```\n'
+        )
+    return '\n'.join(history_prompt) + '\n'
 
 
 class BrowsingAgent(Agent):
@@ -261,6 +210,27 @@ class BrowsingAgent(Agent):
             strict=False,  # less strict on the parsing of the actions
             multiaction=False,  # VWA Agent does not allow multi-action setting
         )
+        self.action_prompt = get_action_prompt(self.action_space)
+        self.abstract_example = f"""
+# Abstract Example
+
+Here is an abstract version of the answer with description of the content of each tag. Make sure you follow this structure, but replace the content with your answer:
+
+You must mandatorily think step by step. If you need to make calculations such as coordinates, write them here. Describe the effect that your previous action had on the current content of the page. In summary the next action I will perform is ```{self.action_space.example_action(abstract=True)}```
+"""
+        self.concrete_example = """
+# Concrete Example
+
+Here is a concrete example of how to format your answer. Make sure to generate the action in the correct format ensuring that the action is present inside ``````:
+
+Let's think step-by-step. From previous action I tried to set the value of year to "2022", using select_option, but it doesn't appear to be in the form. It may be a dynamic dropdown, I will try using click with the bid "324" and look at the response from the page. In summary the next action I will perform is ```click('324')```
+"""
+        self.hints = """
+Note:
+* Make sure to use bid to identify elements when using commands.
+* Interacting with combobox, dropdowns and auto-complete fields can be tricky, sometimes you need to use select_option, while other times you need to use fill or click and wait for the reaction of the page.
+
+"""
         self.reset()
 
     def reset(self) -> None:
@@ -269,42 +239,9 @@ class BrowsingAgent(Agent):
         self.cost_accumulator = 0
         self.error_accumulator = 0
 
-    def get_textual_som(self, accessibility_tree: str):
-        """Get textual representation of Set-of-Marks annotation by processing accessibility tree."""
-        accessibility_tree = accessibility_tree.replace('\t', '')
-        elements = accessibility_tree.split('\n')
-        text_som = []
-        for element in elements:
-            if 'clickable' in element:
-                element = element.split(', clickable')[0]
-                element_items = element.split(' ')
-                bid = element_items[0]
-                type_element = element_items[1]
-                description = ' '.join(element_items[2:])
-                description = description.encode('ascii', 'ignore').decode('ascii')
-                description = re.sub(r'\\u[0-9a-fA-F]{4}', '', description)
-                description = re.sub(r'\'', '', description)
-                text_som.append(f'{bid} [{type_element}] [{description}]')
-            elif 'StaticText' in element:
-                description = element.split('StaticText ')[-1]
-                description = description.encode('ascii', 'ignore').decode('ascii')
-                description = re.sub(r'\\u[0-9a-fA-F]{4}', '', description)
-                description = re.sub(r'\'', '', description)
-                if len(description) > 0:
-                    text_som.append(f'[] [StaticText] [{description}]')
-            elif 'combobox' in element or 'button' in element or 'hasPopup' in element:
-                element_items = element.split(' ')
-                bid = element_items[0]
-                type_element = element_items[1]
-                description = ' '.join(element_items[2:])
-                description = description.encode('ascii', 'ignore').decode('ascii')
-                description = re.sub(r'\\u[0-9a-fA-F]{4}', '', description)
-                description = re.sub(r'\'', '', description)
-                text_som.append(f'{bid} [{type_element}] [{description}]')
-        return '\n'.join(text_som)
-
     def step(self, state: State) -> Action:
         """Performs one step using the VWABrowsing Agent.
+
         This includes gathering information on previous steps and prompting the model to make a browsing command to execute.
 
         Parameters:
@@ -317,10 +254,10 @@ class BrowsingAgent(Agent):
         """
         messages: list[Message] = []
         prev_actions = []
-        user_content = []
-        cur_url = ''
         cur_axtree_txt = ''
-        # error_prefix = '' #VWA Agent does not use error prefix
+        error_prefix = ''
+        focused_element = ''
+        tabs = ''
         last_obs = None
         last_action = None
 
@@ -333,7 +270,7 @@ class BrowsingAgent(Agent):
 
         for event in state.history.get_events():
             if isinstance(event, BrowseInteractiveAction):
-                prev_actions.append(event.browser_actions)
+                prev_actions.append(event)
                 last_action = event
             elif isinstance(event, MessageAction) and event.source == EventSource.AGENT:
                 # agent has responded, task finished.
@@ -343,11 +280,8 @@ class BrowsingAgent(Agent):
 
         # VWA Agent only uses immediately previous action
         # if EVAL_MODE:
-        prev_action_str = 'None'
-        if len(prev_actions) > 1:  # ignore noop()
+        if len(prev_actions) >= 1:  # ignore noop()
             prev_actions = prev_actions[1:]  # remove the first noop action
-            prev_action_str = prev_actions[-1]
-
         # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
         # we should also send a message back to the user in OpenHands and call it a day
         if (
@@ -356,115 +290,81 @@ class BrowsingAgent(Agent):
         ):
             return MessageAction(last_action.browsergym_send_msg_to_user)
 
+        history_prompt = get_history_prompt(prev_actions)
         if isinstance(last_obs, BrowserOutputObservation):
-            # VWA Agent does not add error recovery prompt prefix
-            # if last_obs.error:
-            #     # add error recovery prompt prefix
-            #     error_prefix = get_error_prefix(last_obs.last_browser_action)
-            #     self.error_accumulator += 1
-            #     if self.error_accumulator > 5:
-            #         return MessageAction('Too many errors encountered. Task failed.')
-
-            cur_url = last_obs.url
-
-            # screenshot + som: will be a non-empty string if present in observation
-            if (last_obs.set_of_marks is not None) and (len(last_obs.set_of_marks) > 0):
-                user_content.append(
-                    TextContent(
-                        text='IMAGES FOR USER QUERY: (1) current page screenshot'
-                    )
+            if last_obs.error:
+                # add error recovery prompt prefix
+                error_prefix = get_error_prefix(last_obs)
+                self.error_accumulator += 1
+                if self.error_accumulator > 5:
+                    return MessageAction('Too many errors encountered. Task failed.')
+            focused_element = '## Focused element:\nNone\n'
+            if last_obs.focused_element_bid is not None:
+                focused_element = (
+                    f"## Focused element:\nbid='{last_obs.focused_element_bid}'\n"
                 )
-                user_content.append(ImageContent(image_urls=[last_obs.set_of_marks]))
+            tabs = get_tabs(last_obs)
             try:
+                # IMPORTANT: keep AX Tree of full webpage, add visible and clickable tags
                 cur_axtree_txt = flatten_axtree_to_str(
                     last_obs.axtree_object,
                     extra_properties=last_obs.extra_element_properties,
+                    with_visible=True,
                     with_clickable=True,
-                    filter_visible_only=True,
+                    with_center_coords=False,
+                    with_bounding_box_coords=False,
+                    filter_visible_only=False,
+                    filter_with_bid_only=False,
+                    filter_som_only=False,
                 )
+                cur_axtree_txt = get_axtree(axtree_txt=cur_axtree_txt)
             except Exception as e:
                 logger.error(
                     'Error when trying to process the accessibility tree: %s', e
                 )
                 return MessageAction('Error encountered when browsing.')
-
+            set_of_marks = last_obs.set_of_marks
         goal, image_urls = state.get_current_user_intent()
-        if image_urls is not None:
-            for idx, url in enumerate(image_urls):
-                user_content.append(TextContent(text=f'({idx+2}) input image {idx+1}'))
-                user_content.append(ImageContent(image_urls=[url]))
+
         if goal is None:
             goal = state.inputs['task']
-        text_som = self.get_textual_som(cur_axtree_txt)
-
+        goal_txt, goal_images = create_goal_prompt(goal, image_urls)
+        observation_txt, som_screenshot = create_observation_prompt(
+            cur_axtree_txt, tabs, focused_element, error_prefix, set_of_marks
+        )
+        human_prompt = [TextContent(type='text', text=goal_txt, cache_prompt=True)]
+        if len(goal_images) > 0:
+            human_prompt.append(ImageContent(type='image_url', image_urls=goal_images))
+        human_prompt.append(TextContent(type='text', text=observation_txt))
+        if som_screenshot is not None:
+            human_prompt.append(
+                ImageContent(type='image_url', image_urls=[som_screenshot])
+            )
+        remaining_content = f"""
+{history_prompt}\
+{self.action_prompt}\
+{self.hints}\
+{self.abstract_example}\
+{self.concrete_example}\
+"""
+        human_prompt.append(TextContent(type='text', text=remaining_content))
         # currently keeping all prompts inside agent, can change once code evolves
-        system_msg = f"""\
-You are an autonomous intelligent agent tasked with navigating a web browser. You will be given web-based tasks. These tasks will be accomplished through the use of specific actions you can issue.
-
-Here's the information you'll have:
-The user's objective: This is the task you're trying to complete.
-The observation: This text lists the IDs of all interactable elements on the current web page with their text content if any, in the format [id] [tagType] [description]. tagType is the type of the element, such as button, link, or textbox. description is the textual content describing the element and its properties. For example, [1234] [button] [Add to Cart] means that there is a button with id '1234' and text content 'Add to Cart' on the current web page. [] [StaticText] [text] means that the element is of some text that is not interactable.
-The current web page screenshot: This is a screenshot of the webpage, with each interactable element assigned a unique id.
-The current web page's URL: This is the page you're currently navigating.
-The previous action: This is the action you just performed. It may be helpful to track your progress.
-You will be given 3 example inputs and their corresponding example outputs and then finally you will get the user query.
-The actions you can perform are described below:
-
-{self.action_space.describe(with_long_description=True, with_examples=False)}
-
-To be successful, it is very important to follow the following rules:
-1. You should only issue an action that is valid given the current observation
-2. You should only issue one action at a time.
-3. You should follow the examples to reason step by step and then issue the next action.
-4. Generate the action in the correct format. Start with a \"In summary, the next action I will perform is\" phrase, followed by action inside ``````. For example, \"In summary, the next action I will perform is ```fill('237', 'example value')```\".
-5. The examples are given only for reference, and you must generate all actions to only solve the objective of the user query.
-6. If you have completed the task, issue send_msg_to_user action. For example, if you are asked what is the color of the sky, return
-"
-```send_msg_to_user("blue")```
-"
+        system_msg = """\
+You are an agent trying to solve a web task based on the content of the page and user instructions. You can interact with the page and explore, and send messages to the user. Each time you submit an action it will be sent to the browser and you will receive a new page.
 """.strip()
         # TODO: caching of prompt is not working right now
-        messages.append(Message(role='system', content=[TextContent(text=system_msg)]))
-        with open('openhands/agenthub/browsing_agent/few_shot_prompts.json', 'r') as f:
-            few_shot_data = json.load(f)
-        for i, example in enumerate(few_shot_data['examples']):
-            example_img = Image.open(example[2])
-            example_content = [
-                TextContent(text=f'EXAMPLE INPUT {i+1}\n\n' + example[0]),
-                TextContent(
-                    text=f'IMAGES FOR EXAMPLE INPUT {i+1}: (1) current page screenshot'
-                ),
-                ImageContent(
-                    image_urls=[
-                        BrowserEnv.image_to_png_base64_url(
-                            image=example_img, add_data_prefix=True
-                        )
-                    ]
-                ),
-            ]
-            messages.append(Message(role='user', content=example_content))
-            messages.append(
-                Message(
-                    role='assistant',
-                    content=[
-                        TextContent(text=f'EXAMPLE OUTPUT {i+1}\n\n' + example[1])
-                    ],
-                )
-            )
-
-        user_prompt = f"""\
-USER QUERY\n\n
-OBSERVATION:\n{text_som}
-URL: {cur_url}
-OBJECTIVE: {goal}
-PREVIOUS ACTION: {prev_action_str}
-""".strip()
         messages.append(
-            Message(role='user', content=[TextContent(text=user_prompt)] + user_content)
+            Message(
+                role='system', content=[TextContent(text=system_msg, cache_prompt=True)]
+            )
         )
+        messages.append(Message(role='user', content=human_prompt))
 
         flat_messages = self.llm.format_messages_for_llm(messages)
-
+        # with open("example_input.jsonl", "a") as f:
+        #     for msg in flat_messages:
+        #         f.write(json.dumps(msg))
+        #         f.write("\n")
         response = self.llm.completion(
             messages=flat_messages,
             temperature=0.0,

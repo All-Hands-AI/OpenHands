@@ -238,3 +238,7 @@ openhands/agenthub/browsing_agent/browsing_agent2.py
 openhands/agenthub/browsing_agent/som_example1_vwa.png
 openhands/agenthub/browsing_agent/som_example2_vwa.png
 openhands/agenthub/browsing_agent/som_example3_vwa.png
+example_input.jsonl
+input_format.txt
+openhands/agenthub/browsing_agent/servicenow_browsing_agent.py
+openhands/agenthub/browsing_agent/temp.py
