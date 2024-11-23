@@ -24,24 +24,33 @@ OpenHands includes and adapts the following open source projects. We are gratefu
 ### Reference Implementations for Evaluation Benchmarks
 OpenHands integrates code of the reference implementations for the following agent evaluation benchmarks:
 
-#### [HumanEval](https://github.com/openai/human-eval)
-   - License: MIT License
-
-#### [DSP](https://github.com/microsoft/DataScienceProblems)
-   - License: MIT License
-
-#### [HumanEvalPack](https://github.com/bigcode-project/bigcode-evaluation-harness)
-   - License: Apache License 2.0
+#### [EDA](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/benchmarks/EDA)
+   - Description: Exploratory Data Analysis benchmark
 
 #### [AgentBench](https://github.com/THUDM/AgentBench)
    - License: Apache License 2.0
 
-#### [SWE-Bench](https://github.com/princeton-nlp/SWE-bench)
-   - License: MIT License
+#### [Aider Bench](https://github.com/paul-gauthier/aider)
+   - License: Apache License 2.0
+
+#### [BioCoder](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/benchmarks/biocoder)
+   - Description: Benchmark for biological code generation tasks
 
 #### [BIRD](https://bird-bench.github.io/)
    - License: MIT License
    - Dataset: CC-BY-SA 4.0
+
+#### [Browsing Delegation](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/benchmarks/browsing_delegation)
+   - Description: Web browsing delegation benchmark
+
+#### [Commit0 Bench](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/benchmarks/commit0_bench)
+   - Description: Git commit analysis benchmark
+
+#### [DiscoveryBench](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/benchmarks/discoverybench)
+   - Description: Benchmark for discovery tasks
+
+#### [GAIA](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/benchmarks/gaia)
+   - Description: General AI Assistant benchmark
 
 #### [Gorilla APIBench](https://github.com/ShishirPatil/gorilla)
    - License: Apache License 2.0
@@ -49,8 +58,32 @@ OpenHands integrates code of the reference implementations for the following age
 #### [GPQA](https://github.com/idavidrein/gpqa)
    - License: MIT License
 
-#### [ProntoQA](https://github.com/asaparov/prontoqa)
-   - License: Apache License 2.0
+#### [HumanEvalFix](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/benchmarks/humanevalfix)
+   - Description: Code fixing benchmark based on HumanEval
+
+#### [Logic Reasoning](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/benchmarks/logic_reasoning)
+   - Description: Benchmark for logical reasoning tasks
+
+#### [MiniWoB](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/benchmarks/miniwob)
+   - Description: Mini World of Bits benchmark
+
+#### [MINT](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/benchmarks/mint)
+   - Description: Machine learning INTerpretation benchmark
+
+#### [ML Bench](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/benchmarks/ml_bench)
+   - Description: Machine Learning benchmark
+
+#### [ScienceAgentBench](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/benchmarks/scienceagentbench)
+   - Description: Benchmark for scientific tasks
+
+#### [SWE-Bench](https://github.com/princeton-nlp/SWE-bench)
+   - License: MIT License
+
+#### [ToolQA](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/benchmarks/toolqa)
+   - Description: Tool-based Question Answering benchmark
+
+#### [WebArena](https://github.com/All-Hands-AI/OpenHands/tree/main/evaluation/benchmarks/webarena)
+   - Description: Web interaction benchmark
 
 
 ## Open Source licenses

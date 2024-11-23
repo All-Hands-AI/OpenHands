@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eo pipefail
 
-source "evaluation/utils/version_control.sh"
+source "evaluation/benchmarks/utils/version_control.sh"
 
 # configure browsing agent
 export USE_NAV="false"
@@ -33,7 +33,7 @@ echo "MODEL_CONFIG: $MODEL_CONFIG"
 
 EVAL_NOTE="${AGENT_VERSION}_${NOTE}"
 
-COMMAND="export PYTHONPATH=evaluation/benchmarks/miniwob:\$PYTHONPATH && poetry run python evaluation/benchmarks/miniwob/run_infer.py \
+COMMAND="export PYTHONPATH=evaluation/benchmarks/benchmarks/miniwob:\$PYTHONPATH && poetry run python evaluation/benchmarks/benchmarks/miniwob/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 10 \

@@ -15,7 +15,7 @@ We are using the MINT dataset hosted on [Hugging Face](https://huggingface.co/da
 Following is the basic command to start the evaluation. Currently, the only agent supported with MINT is `CodeActAgent`.
 
 ```bash
-./evaluation/benchmarks/mint/scripts/run_infer.sh [model_config] [git-version] [subset] [eval_limit]
+./evaluation/benchmarks/benchmarks/mint/scripts/run_infer.sh [model_config] [git-version] [subset] [eval_limit]
 ```
 
 where `model_config` is mandatory, while others are optional.
@@ -34,7 +34,7 @@ Note: in order to use `eval_limit`, you must also set `subset`.
 For example,
 
 ```bash
-./evaluation/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview 0.6.2 gsm8k 3
+./evaluation/benchmarks/swe_bench/scripts/run_infer.sh eval_gpt4_1106_preview 0.6.2 gsm8k 3
 ```
 
 ## Reference

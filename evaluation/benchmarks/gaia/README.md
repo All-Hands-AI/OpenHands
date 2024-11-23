@@ -10,11 +10,11 @@ Please follow instruction [here](../README.md#setup) to setup your local develop
 We are using the GAIA dataset hosted on [Hugging Face](https://huggingface.co/datasets/gaia-benchmark/GAIA).
 Please accept the terms and make sure to have logged in on your computer by `huggingface-cli login` before running the evaluation.
 
-Following is the basic command to start the evaluation. Here we are evaluating on the validation set for the `2023_all` split. You can adjust `./evaluation/benchmarks/gaia/scripts/run_infer.sh` to change the subset you want to evaluate on.
+Following is the basic command to start the evaluation. Here we are evaluating on the validation set for the `2023_all` split. You can adjust `./evaluation/benchmarks/benchmarks/gaia/scripts/run_infer.sh` to change the subset you want to evaluate on.
 
 ```bash
-./evaluation/benchmarks/gaia/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [gaia_subset]
-# e.g., ./evaluation/benchmarks/gaia/scripts/run_infer.sh eval_gpt4_1106_preview 0.6.2 CodeActAgent 300
+./evaluation/benchmarks/benchmarks/gaia/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [gaia_subset]
+# e.g., ./evaluation/benchmarks/benchmarks/gaia/scripts/run_infer.sh eval_gpt4_1106_preview 0.6.2 CodeActAgent 300
 ```
 
 where `model_config` is mandatory, while `git-version`, `agent`, `eval_limit` and `gaia_subset` are optional.
@@ -35,13 +35,13 @@ to `CodeActAgent`.
 For example,
 
 ```bash
-./evaluation/benchmarks/gaia/scripts/run_infer.sh eval_gpt4_1106_preview 0.6.2 CodeActAgent 10
+./evaluation/benchmarks/benchmarks/gaia/scripts/run_infer.sh eval_gpt4_1106_preview 0.6.2 CodeActAgent 10
 ```
 
 ## Get score
 
 Then you can get stats by running the following command:
 ```bash
-python ./evaluation/benchmarks/gaia/get_score.py \
+python ./evaluation/benchmarks/benchmarks/gaia/get_score.py \
 --file <path_to/output.json>
 ```

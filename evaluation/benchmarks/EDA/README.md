@@ -12,7 +12,7 @@ Please follow instruction [here](../README.md#setup) to setup your local develop
 
 ```bash
 export OPENAI_API_KEY="sk-XXX"; # This is required for evaluation (to simulate another party of conversation)
-./evaluation/benchmarks/EDA/scripts/run_infer.sh [model_config] [git-version] [agent] [dataset] [eval_limit]
+./evaluation/benchmarks/benchmarks/EDA/scripts/run_infer.sh [model_config] [git-version] [agent] [dataset] [eval_limit]
 ```
 
 where `model_config` is mandatory, while `git-version`, `agent`, `dataset` and `eval_limit` are optional.
@@ -33,7 +33,7 @@ to `CodeActAgent`.
 For example,
 
 ```bash
-./evaluation/benchmarks/EDA/scripts/run_infer.sh eval_gpt4o_2024_05_13 0.6.2 CodeActAgent things
+./evaluation/benchmarks/benchmarks/EDA/scripts/run_infer.sh eval_gpt4o_2024_05_13 0.6.2 CodeActAgent things
 ```
 
 ## Reference

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eo pipefail
 
-source "evaluation/utils/version_control.sh"
+source "evaluation/benchmarks/utils/version_control.sh"
 
 MODEL_CONFIG=$1
 COMMIT_HASH=$2
@@ -39,7 +39,7 @@ if [ "$USE_UNIT_TESTS" = true ]; then
   EVAL_NOTE=$EVAL_NOTE-w-test
 fi
 
-COMMAND="export PYTHONPATH=evaluation/benchmarks/aider_bench:\$PYTHONPATH && poetry run python evaluation/benchmarks/aider_bench/run_infer.py \
+COMMAND="export PYTHONPATH=evaluation/benchmarks/benchmarks/aider_bench:\$PYTHONPATH && poetry run python evaluation/benchmarks/benchmarks/aider_bench/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 30 \

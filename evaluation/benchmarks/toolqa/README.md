@@ -11,7 +11,7 @@ Please follow instruction [here](../README.md#setup) to setup your local develop
 Make sure your Docker daemon is running, then run this bash script:
 
 ```bash
-bash evaluation/benchmarks/toolqa/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [dataset] [hardness] [wolfram_alpha_appid]
+bash evaluation/benchmarks/benchmarks/toolqa/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [dataset] [hardness] [wolfram_alpha_appid]
 ```
 
 where `model_config` is mandatory, while all other arguments are optional.
@@ -40,5 +40,5 @@ Let's say you'd like to run 10 instances using `llm` and CodeActAgent on `coffee
 then your command would be:
 
 ```bash
-bash evaluation/benchmarks/toolqa/scripts/run_infer.sh llm CodeActAgent 10 coffee easy
+bash evaluation/benchmarks/benchmarks/toolqa/scripts/run_infer.sh llm CodeActAgent 10 coffee easy
 ```

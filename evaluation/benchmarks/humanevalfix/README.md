@@ -9,7 +9,7 @@ Please follow instruction [here](../README.md#setup) to setup your local develop
 ## Run Inference on HumanEvalFix
 
 ```bash
-./evaluation/benchmarks/humanevalfix/scripts/run_infer.sh eval_gpt4_1106_preview
+./evaluation/benchmarks/benchmarks/humanevalfix/scripts/run_infer.sh eval_gpt4_1106_preview
 ```
 
 You can replace `eval_gpt4_1106_preview` with any model you set up in `config.toml`.
@@ -28,7 +28,7 @@ For each problem, OpenHands is given a set number of iterations to fix the faili
         "agent_class": "CodeActAgent",
         "model_name": "gpt-4",
         "max_iterations": 10,
-        "eval_output_dir": "evaluation/evaluation_outputs/outputs/humanevalfix/CodeActAgent/gpt-4_maxiter_10_N_v1.4",
+        "eval_output_dir": "evaluation/benchmarks/evaluation_outputs/outputs/humanevalfix/CodeActAgent/gpt-4_maxiter_10_N_v1.4",
         "start_time": "2024-05-22 20:54:15",
         "git_commit": "4d3253696f5a9d9de02ab86969fe9796fa40331f"
     },

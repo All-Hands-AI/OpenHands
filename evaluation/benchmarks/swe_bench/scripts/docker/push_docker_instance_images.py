@@ -19,7 +19,7 @@ python -m swebench.harness.run_evaluation \
 
 To push the docker images for "princeton-nlp/SWE-bench_Lite" test set to the docker hub (e.g., under `docker.io/xingyaoww/`), run:
 ```bash
-EVAL_DOCKER_IMAGE_PREFIX='docker.io/xingyaoww/' python3 evaluation/swe_bench/scripts/docker/push_docker_instance_images.py --dataset princeton-nlp/SWE-bench_Lite --split test
+EVAL_DOCKER_IMAGE_PREFIX='docker.io/xingyaoww/' python3 evaluation/benchmarks/swe_bench/scripts/docker/push_docker_instance_images.py --dataset princeton-nlp/SWE-bench_Lite --split test
 ```
 """
 
