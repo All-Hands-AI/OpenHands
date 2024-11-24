@@ -112,12 +112,8 @@ jobs:
 
       - name: Install OpenHands
         run: |
-          if [[ "${{ github.event.label.name }}" == "review-pr" ]]; then
-            python -m pip install --upgrade pip
-            pip install git+https://github.com/all-hands-ai/openhands.git
-          else
-            python -m pip install --upgrade -r requirements.txt
-          fi
+          python -m pip install --upgrade pip
+          pip install git+https://github.com/all-hands-ai/openhands.git
 
       - name: Review PR
         env:
