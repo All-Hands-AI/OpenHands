@@ -157,7 +157,7 @@ class CodeActAgent(Agent):
                 BrowseInteractiveAction,
             ),
         ) or (
-            isinstance(action, (AgentFinishAction, CmdRunAction))
+            isinstance(action, CmdRunAction)
             and action.source == 'agent'
         ):
             tool_metadata = action.tool_call_metadata
@@ -196,6 +196,22 @@ class CodeActAgent(Agent):
                 Message(
                     role='user',
                     content=content,
+                )
+            ]
+        elif isinstance(action, AgentFinishAction) and action.source == 'agent':
+            # For agent-sourced FinishAction, treat it as a message action
+            # This way it won't expect a tool response
+            tool_metadata = action.tool_call_metadata
+            assert tool_metadata is not None, (
+                'Tool call metadata should NOT be None when function calling is enabled. Action: '
+                + str(action)
+            )
+            llm_response: ModelResponse = tool_metadata.model_response
+            assistant_msg = llm_response.choices[0].message
+            return [
+                Message(
+                    role=assistant_msg.role,
+                    content=[TextContent(text=assistant_msg.content or '')],
                 )
             ]
         return []
