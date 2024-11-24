@@ -70,7 +70,7 @@ llama-index = "*"
 llama-index-vector-stores-chroma = "*"
 chromadb = "*"
 llama-index-embeddings-huggingface = "*"
-torch = "2.5.0"
+torch = "2.5.1"
 llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
