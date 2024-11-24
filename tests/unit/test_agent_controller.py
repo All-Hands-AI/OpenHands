@@ -355,3 +355,22 @@ async def test_step_max_budget_headless(mock_agent, mock_event_stream):
     # In headless mode, throttling results in an error
     assert controller.state.agent_state == AgentState.ERROR
     await controller.close()
+
+
+@pytest.mark.asyncio
+async def test_message_action_user_input_headless(mock_agent, mock_event_stream):
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+    )
+    controller.state.agent_state = AgentState.RUNNING
+    message_action = MessageAction(content='Test message', wait_for_response=True)
+    message_action._source = EventSource.AGENT
+    await controller.on_event(message_action)
+    # In headless mode, requesting user input results in an error
+    assert controller.state.agent_state == AgentState.ERROR
+    await controller.close()

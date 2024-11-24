@@ -307,7 +307,13 @@ class AgentController:
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
-            await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+            if self.headless_mode:
+                e = RuntimeError(
+                    f'Agent requested user input in headless mode. Message: {action.content}'
+                )
+                await self._react_to_exception(e)
+            else:
+                await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
     def reset_task(self):
         """Resets the agent's task."""
