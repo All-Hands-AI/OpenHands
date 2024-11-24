@@ -102,9 +102,11 @@ class AgentController:
             agent_configs: A dictionary mapping agent names to agent configurations in the case that
                 we delegate to a different agent.
             sid: The session ID of the agent.
+            confirmation_mode: Whether to enable confirmation mode for agent actions.
             initial_state: The initial state of the controller.
             is_delegate: Whether this controller is a delegate.
             headless_mode: Whether the agent is run in headless mode.
+            status_callback: Optional callback function to handle status updates.
         """
         self._step_lock = asyncio.Lock()
         self.id = sid
@@ -136,7 +138,8 @@ class AgentController:
     async def close(self):
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
 
-        Note that it's fairly important that this closes properly, otherwise the state is incomplete."""
+        Note that it's fairly important that this closes properly, otherwise the state is incomplete.
+        """
         await self.set_agent_state_to(AgentState.STOPPED)
 
         # we made history, now is the time to rewrite it!
@@ -169,7 +172,9 @@ class AgentController:
         """Logs a message to the agent controller's logger.
 
         Args:
+            level (str): The logging level to use (e.g., 'info', 'debug', 'error').
             message (str): The message to log.
+            extra (dict | None, optional): Additional fields to include in the log. Defaults to None.
         """
         message = f'[Agent Controller {self.id}] {message}'
         getattr(logger, level)(message, extra=extra, stacklevel=2)
@@ -195,7 +200,6 @@ class AgentController:
 
     async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
-
         self.log('info', 'Starting step loop...')
         while should_continue():
             if self._closed:
@@ -311,7 +315,6 @@ class AgentController:
 
     def reset_task(self):
         """Resets the agent's task."""
-
         self.almost_stuck = 0
         self.agent.reset()
 
@@ -688,7 +691,6 @@ class AgentController:
 
         Otherwise loads normally from start_id.
         """
-
         # define range of events to fetch
         # delegates start with a start_id and initially won't find any events
         # otherwise we're restoring a previous session
