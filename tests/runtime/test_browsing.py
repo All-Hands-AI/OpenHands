@@ -2,6 +2,7 @@
 
 import json
 
+import pytest
 from conftest import _close_test_runtime, _load_runtime
 
 from openhands.core.logger import openhands_logger as logger
@@ -68,6 +69,19 @@ def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
     _close_test_runtime(runtime)
 
 
+def has_miniwob():
+    try:
+        import browsergym.miniwob  # noqa: F401
+
+        return True
+    except ImportError:
+        return False
+
+
+@pytest.mark.skipif(
+    not has_miniwob(),
+    reason='Requires browsergym-miniwob package, which is enabled only with poetry evaluation',
+)
 def test_browsergym_eval_env(runtime_cls, temp_dir):
     runtime = _load_runtime(
         temp_dir,
