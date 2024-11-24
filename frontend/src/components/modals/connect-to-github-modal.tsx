@@ -1,4 +1,3 @@
-import { useFetcher, useRouteLoaderData } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import ModalBody from "./ModalBody";
 import { CustomInput } from "../form/custom-input";
@@ -7,18 +6,25 @@ import {
   BaseModalDescription,
   BaseModalTitle,
 } from "./confirmation-modals/BaseModal";
-import { clientLoader } from "#/routes/_oh";
-import { clientAction } from "#/routes/login";
 import { I18nKey } from "#/i18n/declaration";
+import { useAuth } from "#/context/auth-context";
 
 interface ConnectToGitHubModalProps {
   onClose: () => void;
 }
 
 export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
-  const data = useRouteLoaderData<typeof clientLoader>("routes/_oh");
-  const fetcher = useFetcher<typeof clientAction>({ key: "login" });
+  const { gitHubToken, setGitHubToken } = useAuth();
   const { t } = useTranslation();
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const ghToken = formData.get("ghToken")?.toString();
+
+    if (ghToken) setGitHubToken(ghToken);
+    onClose();
+  };
 
   return (
     <ModalBody>
@@ -40,18 +46,13 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
           }
         />
       </div>
-      <fetcher.Form
-        method="POST"
-        action="/login"
-        className="w-full flex flex-col gap-6"
-        onSubmit={onClose}
-      >
+      <form onSubmit={handleSubmit} className="w-full flex flex-col gap-6">
         <CustomInput
           label="GitHub Token"
           name="ghToken"
           required
           type="password"
-          defaultValue={data?.ghToken ?? ""}
+          defaultValue={gitHubToken ?? ""}
         />
 
         <div className="flex flex-col gap-2 w-full">
@@ -59,7 +60,6 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
             testId="connect-to-github"
             type="submit"
             text={t(I18nKey.CONNECT_TO_GITHUB_MODAL$CONNECT)}
-            disabled={fetcher.state === "submitting"}
             className="bg-[#791B80] w-full"
           />
           <ModalButton
@@ -68,7 +68,7 @@ export function ConnectToGitHubModal({ onClose }: ConnectToGitHubModalProps) {
             className="bg-[#737373] w-full"
           />
         </div>
-      </fetcher.Form>
+      </form>
     </ModalBody>
   );
 }
