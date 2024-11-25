@@ -12,7 +12,7 @@ export const useIsAuthed = () => {
 
   return useQuery({
     queryKey: ["user", "authenticated", gitHubToken, appMode],
-    queryFn: () => OpenHands.authenticate(gitHubToken || "", appMode!),
+    queryFn: () => OpenHands.authenticate(appMode!),
     enabled: !!appMode,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
