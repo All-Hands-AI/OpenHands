@@ -377,12 +377,12 @@ async def test_message_action_user_input_headless(mock_agent, mock_event_stream)
     mock_event_stream.add_event.assert_called_once()
     args = mock_event_stream.add_event.call_args[0]
     assert isinstance(args[0], MessageAction)
-    assert args[0].content == "continue"
+    assert args[0].content == 'continue'
     await controller.close()
 
     # Test with custom fake response
     mock_event_stream.reset_mock()
-    custom_response = "custom response"
+    custom_response = 'custom response'
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
@@ -403,6 +403,7 @@ async def test_message_action_user_input_headless(mock_agent, mock_event_stream)
     assert isinstance(args[0], MessageAction)
     assert args[0].content == custom_response
     await controller.close()
+
 
 @pytest.mark.asyncio
 async def test_message_action_user_input_non_headless(mock_agent, mock_event_stream):

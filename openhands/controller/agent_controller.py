@@ -68,6 +68,7 @@ class AgentController:
     delegate: 'AgentController | None' = None
     _pending_action: Action | None = None
     _closed: bool = False
+    fake_user_response_fn: Callable[[str], str] | None = None
     filter_out: ClassVar[tuple[type[Event], ...]] = (
         NullAction,
         NullObservation,
@@ -114,10 +115,10 @@ class AgentController:
         self.id = sid
         self.agent = agent
         self.headless_mode = headless_mode
-        
+
         # Set up default fake user response function for headless mode
         if headless_mode and fake_user_response_fn is None:
-            self.fake_user_response_fn = lambda _: "continue"
+            self.fake_user_response_fn = lambda _: 'continue'
         else:
             self.fake_user_response_fn = fake_user_response_fn
 
@@ -319,7 +320,7 @@ class AgentController:
         elif action.source == EventSource.AGENT and action.wait_for_response:
             if self.headless_mode:
                 # In headless mode, we should use a fake user response if provided
-                if self.fake_user_response_fn:
+                if self.fake_user_response_fn is not None:
                     response = self.fake_user_response_fn(action.content)
                     self.event_stream.add_event(
                         MessageAction(content=response),
@@ -333,8 +334,8 @@ class AgentController:
                     )
             else:
                 # Display the message content to help user understand what input is expected
-                print(f"\nAgent is requesting input: {action.content}")
-                print("Request user input >> ", end="", flush=True)
+                print(f'\nAgent is requesting input: {action.content}')
+                print('Request user input >> ', end='', flush=True)
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
     def reset_task(self):
