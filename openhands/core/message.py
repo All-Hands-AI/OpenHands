@@ -127,6 +127,9 @@ class ToolResponseContent(Content):
         return f'EXECUTION RESULT of [{self.name}]:\n{self.content}'
 
 
+MessageRole = Literal['user', 'system', 'assistant', 'tool']
+
+
 class Message(BaseModel):
     """A message in a conversation with an LLM.
 
@@ -152,7 +155,7 @@ class Message(BaseModel):
     Calling        | <function>.."    |  {type:tool_call..}]
     """
 
-    role: Literal['user', 'system', 'assistant', 'tool']
+    role: MessageRole
     content: list[
         TextContent | ImageContent | ToolCallContent | ToolResponseContent
     ] = Field(default_factory=list)
@@ -287,7 +290,7 @@ class Message(BaseModel):
         first_user_message_encountered = False
 
         for message in messages:
-            role = message['role']
+            role: MessageRole = message['role']  # type: ignore
 
             # Handle system messages - add tools description
             if role == 'system':
@@ -354,18 +357,31 @@ class Message(BaseModel):
     @classmethod
     def _tools_to_description(cls, tools: list[dict]) -> str:
         """Convert tools to text description.
-        Used in non-native format to describe available tools to the LLM."""
-        ret = ''
+
+        Used in non-native format to describe available tools to the LLM.
+        The resulting string looks like this:
+        ---- BEGIN FUNCTION #1: name ----
+        Description: description
+        Parameters:
+          (1) param_name (type, required/optional): description
+        ---- END FUNCTION #1 ----
+        """
+        tool_info_str = ''
         for i, tool in enumerate(tools):
             assert tool['type'] == 'function'
             fn = tool['function']
             if i > 0:
-                ret += '\n'
-            ret += f'---- BEGIN FUNCTION #{i+1}: {fn["name"]} ----\n'
-            ret += f'Description: {fn["description"]}\n'
+                tool_info_str += '\n'
+            
+            # start with function name
+            tool_info_str += f'---- BEGIN FUNCTION #{i+1}: {fn["name"]} ----\n'
 
+            # add description
+            tool_info_str += f'Description: {fn["description"]}\n'
+
+            # add parameters
             if 'parameters' in fn:
-                ret += 'Parameters:\n'
+                tool_info_str += 'Parameters:\n'
                 properties = fn['parameters'].get('properties', {})
                 required_params = set(fn['parameters'].get('required', []))
 
@@ -379,16 +395,27 @@ class Message(BaseModel):
                         enum_values = ', '.join(f'`{v}`' for v in param_info['enum'])
                         desc += f'\nAllowed values: [{enum_values}]'
 
-                    ret += f'  ({j+1}) {param_name} ({param_type}, {param_status}): {desc}\n'
+                    tool_info_str += f'  ({j+1}) {param_name} ({param_type}, {param_status}): {desc}\n'
             else:
-                ret += 'No parameters are required for this function.\n'
+                tool_info_str += 'No parameters are required for this function.\n'
 
-            ret += f'---- END FUNCTION #{i+1} ----\n'
-        return ret
+            # end with closing tag
+            tool_info_str += f'---- END FUNCTION #{i+1} ----\n'
+
+        return tool_info_str
 
     @classmethod
     def _tool_call_to_string(cls, tool_call: dict) -> str:
-        """Convert a tool call to XML format."""
+        """Convert a tool call to an XML format string.
+
+        Used in non-native function calling.
+        The resulting string looks like this:
+        <function=name>
+        <parameter=param_name>param_value</parameter>
+        </function>
+        """
+
+        # sanity checks
         if 'function' not in tool_call:
             raise ValueError("Tool call must contain 'function' key.")
         if 'id' not in tool_call:
@@ -398,51 +425,62 @@ class Message(BaseModel):
         if tool_call['type'] != 'function':
             raise ValueError("Tool call type must be 'function'.")
 
-        ret = f'<function={tool_call["function"]["name"]}>\n'
+        # start with function name
+        tool_call_str = f'<function={tool_call["function"]["name"]}>\n'
         try:
+            # parse arguments
             args = json.loads(tool_call['function']['arguments'])
             for param_name, param_value in args.items():
                 is_multiline = isinstance(param_value, str) and '\n' in param_value
-                ret += f'<parameter={param_name}>'
+                tool_call_str += f'<parameter={param_name}>'
                 if is_multiline:
-                    ret += '\n'
-                ret += f'{param_value}'
+                    tool_call_str += '\n'
+                tool_call_str += f'{param_value}'
                 if is_multiline:
-                    ret += '\n'
-                ret += '</parameter>\n'
+                    tool_call_str += '\n'
+                tool_call_str += '</parameter>\n'
         except json.JSONDecodeError as e:
             raise ValueError(
                 f'Failed to parse arguments as JSON. Arguments: {tool_call["function"]["arguments"]}'
             ) from e
-        ret += '</function>'
-        return ret
+
+        # end with closing tag
+        tool_call_str += '</function>'
+        return tool_call_str
 
     @classmethod
-    def _add_tools_description(cls, message: dict, tools: list[dict]) -> dict:
-        """Add tools description to a system message."""
+    def _add_tools_description(cls, system_msg_dict: dict, tools: list[dict]) -> dict:
+        """Add tools description to a system message, at the end of the message."""
+
+        # get the formatted tools description
         formatted_tools = cls._tools_to_description(tools)
+
+        # format the suffix
         system_prompt_suffix = SYSTEM_PROMPT_SUFFIX_TEMPLATE.format(
             description=formatted_tools
         )
 
-        content = message.get('content', '')
+        # get the content of the system message
+        content = system_msg_dict.get('content', '')
         content_list = []
 
+        # add the suffix to the content, depending on its format as a string or list
         if isinstance(content, str):
             content_list.append(TextContent(text=content + system_prompt_suffix))
         elif isinstance(content, list):
-            # Convert raw dicts to Content objects - use extend for multiple items
+            # convert existing raw dicts to Content objects - use extend for multiple items
             content_list.extend(
                 TextContent(text=item['text'])
                 if item['type'] == 'text'
                 else ImageContent(image_urls=[item['image_url']['url']])
                 for item in content
             )
-            # Add single suffix - use append
+
+            # add the tool description suffix
             content_list.append(TextContent(text=system_prompt_suffix))
 
         return {
-            **message,
+            **system_msg_dict,
             'content': content_list,
         }
 
