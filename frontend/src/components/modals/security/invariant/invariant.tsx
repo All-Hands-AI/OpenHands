@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Editor, Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
 import { Button, Select, SelectItem } from "@nextui-org/react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { RootState } from "#/store";
 import {
   ActionSecurityRisk,
@@ -18,6 +18,9 @@ import InvariantLogoIcon from "./assets/logo";
 import { getFormattedDateTime } from "#/utils/gget-formatted-datetime";
 import { downloadJSON } from "#/utils/download-json";
 import InvariantService from "#/api/invariant-service";
+import { useGetPolicy } from "#/hooks/query/use-get-policy";
+import { useGetRiskSeverity } from "#/hooks/query/use-get-risk-severity";
+import { useGetTraces } from "#/hooks/query/use-get-traces";
 
 type SectionType = "logs" | "policy" | "settings";
 
@@ -33,46 +36,26 @@ function SecurityInvariant(): JSX.Element {
 
   const logsRef = React.useRef<HTMLDivElement>(null);
 
-  const { data: fetchedPolicy } = useQuery<string>({
-    queryKey: ["policy"],
-    queryFn: InvariantService.getPolicy,
-  });
+  useGetPolicy({ onSuccess: setPolicy });
 
-  const { data: riskSeverity } = useQuery<number>({
-    queryKey: ["risk_severity"],
-    queryFn: InvariantService.getRiskSeverity,
-  });
-
-  const { data: traces, refetch: exportTraces } = useQuery({
-    queryKey: ["traces"],
-    queryFn: InvariantService.getTraces,
-    enabled: false,
-  });
-
-  React.useEffect(() => {
-    if (fetchedPolicy) {
-      setPolicy(fetchedPolicy);
-    }
-  }, [fetchedPolicy]);
-
-  React.useEffect(() => {
-    if (traces) {
-      toast.info(t(I18nKey.INVARIANT$TRACE_EXPORTED_MESSAGE));
-
-      const filename = `openhands-trace-${getFormattedDateTime()}.json`;
-      downloadJSON(traces, filename);
-    }
-  }, [traces]);
-
-  React.useEffect(() => {
-    if (riskSeverity) {
+  useGetRiskSeverity({
+    onSuccess: (riskSeverity) => {
       setSelectedRisk(
         riskSeverity === 0
           ? ActionSecurityRisk.LOW
           : riskSeverity || ActionSecurityRisk.MEDIUM,
       );
-    }
-  }, [riskSeverity]);
+    },
+  });
+
+  const { refetch: exportTraces } = useGetTraces({
+    onSuccess: (traces) => {
+      toast.info(t(I18nKey.INVARIANT$TRACE_EXPORTED_MESSAGE));
+
+      const filename = `openhands-trace-${getFormattedDateTime()}.json`;
+      downloadJSON(traces, filename);
+    },
+  });
 
   const { mutate: updatePolicy } = useMutation({
     mutationFn: (variables: { policy: string }) =>

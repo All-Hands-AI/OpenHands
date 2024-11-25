@@ -15,5 +15,6 @@ export const useIsAuthed = () => {
     queryFn: () => OpenHands.authenticate(appMode!),
     enabled: !!appMode,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: false,
   });
 };
