@@ -63,7 +63,7 @@ jobs:
           echo "base_url = \"$LLM_BASE_URL\"" >> config.toml
           echo "temperature = 0.0" >> config.toml
 
-      - name: Run integration test evaluation
+      - name: Run integration test evaluation for Haiku
         env:
           ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
           RUNTIME: remote
@@ -81,20 +81,57 @@ jobs:
           echo >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
-      - name: Create tar.gz of evaluation outputs
+      - name: Configure config.toml for testing with DeepSeek
+        env:
+          LLM_MODEL: "deepseek/deepseek-chat"
+          LLM_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          echo "[llm.eval]" > config.toml
+          echo "model = \"$LLM_MODEL\"" >> config.toml
+          echo "api_key = \"$LLM_API_KEY\"" >> config.toml
+          echo "temperature = 0.0" >> config.toml
+
+      - name: Run integration test evaluation for DeepSeek
+        env:
+          ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
+          RUNTIME: remote
+          SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
+          EVAL_DOCKER_IMAGE_PREFIX: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images
+
+        run: |
+          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES
+
+          # get integration tests report
+          REPORT_FILE=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/*_maxiter_10_N* -name "report.md" -type f | head -n 1)
+          echo "REPORT_FILE: $REPORT_FILE"
+          echo "INTEGRATION_TEST_REPORT_DEEPSEEK<<EOF" >> $GITHUB_ENV
+          cat $REPORT_FILE >> $GITHUB_ENV
+          echo >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Create tar.gz of Haiku evaluation outputs
         run: |
           TIMESTAMP=$(date +'%y-%m-%d-%H-%M')
           tar -czvf outputs_haiku_${TIMESTAMP}.tar.gz evaluation/evaluation_outputs/outputs
+
+      - name: Create tar.gz of DeepSeek evaluation outputs
+        run: |
+          TIMESTAMP=$(date +'%y-%m-%d-%H-%M')
+          tar -czvf outputs_deepseek_${TIMESTAMP}.tar.gz evaluation/evaluation_outputs/outputs
 
       - name: Upload evaluation results as artifact
         uses: actions/upload-artifact@v4
         id: upload_results_artifact
         with:
           name: integration-test-outputs
-          path: outputs_haiku_*.tar.gz
+          path: |
+            outputs_haiku_*.tar.gz
+            outputs_deepseek_*.tar.gz
 
-      - name: Get artifact URL
-        run: echo "ARTIFACT_URL_HAIKU=${{ steps.upload_results_artifact.outputs.artifact-url }}" >> $GITHUB_ENV
+      - name: Get artifact URLs
+        run: |
+          echo "ARTIFACT_URL_HAIKU=${{ steps.upload_results_artifact.outputs.artifact-url }}" >> $GITHUB_ENV
+          echo "ARTIFACT_URL_DEEPSEEK=${{ steps.upload_results_artifact.outputs.artifact-url }}" >> $GITHUB_ENV
 
       # - name: Authenticate to Google Cloud
       #   uses: 'google-github-actions/auth@v2'
@@ -129,6 +166,12 @@ jobs:
               Trigger by: ${{ github.event_name == 'pull_request' && format('Pull Request (integration-test label on PR #{0})', github.event.pull_request.number) || (github.event_name == 'workflow_dispatch' && format('Manual Trigger: {0}', github.event.inputs.reason)) || 'Nightly Scheduled Run' }}
               Commit: ${{ github.sha }}
               **Integration Tests Report (Haiku)**
+              Haiku LLM Test Results:
               ${{ env.INTEGRATION_TEST_REPORT_HAIKU }}
               ---
-              You can download the full evaluation outputs [here](${{ env.ARTIFACT_URL_HAIKU }}).
+              **Integration Tests Report (DeepSeek)**
+              DeepSeek LLM Test Results:
+              ${{ env.INTEGRATION_TEST_REPORT_DEEPSEEK }}
+              ---
+              Haiku Evaluation Outputs: [Download](${{ env.ARTIFACT_URL_HAIKU }})
+              DeepSeek Evaluation Outputs: [Download](${{ env.ARTIFACT_URL_DEEPSEEK }})
