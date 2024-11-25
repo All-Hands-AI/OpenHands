@@ -26,6 +26,7 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import MessageAction
+from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
@@ -147,7 +148,7 @@ def process_instance(
         instance=instance.to_dict(),
         instruction=instruction,
         metadata=metadata,
-        history=histories,
+        history=[event_to_dict(event) for event in histories],
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
         test_result=test_result.model_dump(),
