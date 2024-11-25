@@ -292,7 +292,7 @@ class SessionManager:
 
         # If no local connections, get connections through redis
         redis_client = self._get_redis_client()
-        if redis_client and self._has_remote_connections(session.sid):
+        if redis_client and await self._has_remote_connections(session.sid):
             return False
 
         # We alert the cluster in case they are interested
