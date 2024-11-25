@@ -80,15 +80,18 @@ jobs:
           echo >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
-      - name: Cleanup Haiku runtimes
-        if: always()
-        env:
-          ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
-          SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
-        run: |
-          poetry run ./evaluation/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
-          # Add a small delay to ensure cleanup is complete
-          sleep 10
+      #- name: Cleanup Haiku runtimes
+      #  if: always()
+      #  env:
+      #    ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
+      #    SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
+      #  run: |
+      #    poetry run ./evaluation/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
+      #    # Add a small delay to ensure cleanup is complete
+      #    sleep 10
+
+      - name: Wait a little bit
+        run: sleep 40
 
       - name: Configure config.toml for testing with DeepSeek
         env:
