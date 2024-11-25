@@ -1,5 +1,5 @@
 import { delay, WebSocketHandler, ws } from "msw";
-import AgentState from "#/types/AgentState";
+import AgentState from "#/types/agent-state";
 import {
   AgentStateChangeObservation,
   CommandObservation,
@@ -29,7 +29,7 @@ const generateAgentResponse = (message: string): AssistantMessageAction => ({
   action: "message",
   args: {
     content: message,
-    images_urls: [],
+    image_urls: [],
     wait_for_response: false,
   },
 });

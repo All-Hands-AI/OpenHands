@@ -1,21 +1,22 @@
 import asyncio
-import io
 import os
 import re
 import tempfile
+import time
 import uuid
 import warnings
-from contextlib import asynccontextmanager
 
+import jwt
 import requests
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
-from openhands.server.github import (
+from openhands.server.github_utils import (
     GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET,
+    UserVerifier,
     authenticate_github_user,
 )
 from openhands.storage import get_file_store
@@ -27,14 +28,16 @@ with warnings.catch_warnings():
 
 from dotenv import load_dotenv
 from fastapi import (
+    BackgroundTasks,
     FastAPI,
     HTTPException,
     Request,
     UploadFile,
     WebSocket,
+    WebSocketDisconnect,
     status,
 )
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import HTTPBearer
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -59,9 +62,14 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.llm import bedrock
-from openhands.runtime.base import Runtime
-from openhands.server.auth import get_sid_from_token, sign_token
-from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware
+from openhands.runtime.base import Runtime, RuntimeUnavailableError
+from openhands.server.auth.auth import get_sid_from_token, sign_token
+from openhands.server.middleware import (
+    InMemoryRateLimiter,
+    LocalhostCORSMiddleware,
+    NoCacheMiddleware,
+    RateLimitMiddleware,
+)
 from openhands.server.session import SessionManager
 
 load_dotenv()
@@ -71,14 +79,7 @@ file_store = get_file_store(config.file_store, config.file_store_path)
 session_manager = SessionManager(config, file_store)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    global session_manager
-    async with session_manager:
-        yield
-
-
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 app.add_middleware(
     LocalhostCORSMiddleware,
     allow_credentials=True,
@@ -88,6 +89,15 @@ app.add_middleware(
 
 
 app.add_middleware(NoCacheMiddleware)
+app.add_middleware(
+    RateLimitMiddleware, rate_limiter=InMemoryRateLimiter(requests=10, seconds=1)
+)
+
+
+@app.get('/health')
+async def health():
+    return 'OK'
+
 
 security_scheme = HTTPBearer()
 
@@ -204,12 +214,22 @@ async def attach_session(request: Request, call_next):
         response = await call_next(request)
         return response
 
-    github_token = request.headers.get('X-GitHub-Token')
-    if not await authenticate_github_user(github_token):
-        return JSONResponse(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            content={'error': 'Not authenticated'},
-        )
+    user_verifier = UserVerifier()
+    if user_verifier.is_active():
+        signed_token = request.cookies.get('github_auth')
+        if not signed_token:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={'error': 'Not authenticated'},
+            )
+        try:
+            jwt.decode(signed_token, config.jwt_secret, algorithms=['HS256'])
+        except Exception as e:
+            logger.warning(f'Invalid token: {e}')
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={'error': 'Invalid token'},
+            )
 
     if not request.headers.get('Authorization'):
         logger.warning('Missing Authorization header')
@@ -233,7 +253,8 @@ async def attach_session(request: Request, call_next):
     request.state.conversation = await session_manager.attach_to_conversation(
         request.state.sid
     )
-    if request.state.conversation is None:
+    if not request.state.conversation:
+        logger.error(f'Runtime not found for session: {request.state.sid}')
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Session not found'},
@@ -263,7 +284,7 @@ async def websocket_endpoint(websocket: WebSocket):
         ```
     - Send a message:
         ```json
-        {"action": "message", "args": {"content": "Hello, how are you?", "images_urls": ["base64_url1", "base64_url2"]}}
+        {"action": "message", "args": {"content": "Hello, how are you?", "image_urls": ["base64_url1", "base64_url2"]}}
         ```
     - Write contents to a file:
         ```json
@@ -339,7 +360,13 @@ async def websocket_endpoint(websocket: WebSocket):
 
     latest_event_id = -1
     if websocket.query_params.get('latest_event_id'):
-        latest_event_id = int(websocket.query_params.get('latest_event_id'))
+        try:
+            latest_event_id = int(websocket.query_params.get('latest_event_id'))
+        except ValueError:
+            logger.warning(
+                f'Invalid latest_event_id: {websocket.query_params.get("latest_event_id")}'
+            )
+            pass
 
     async_stream = AsyncEventStreamWrapper(
         session.agent_session.event_stream, latest_event_id + 1
@@ -356,7 +383,14 @@ async def websocket_endpoint(websocket: WebSocket):
             ),
         ):
             continue
-        await websocket.send_json(event_to_dict(event))
+        try:
+            await websocket.send_json(event_to_dict(event))
+        except WebSocketDisconnect:
+            logger.warning(
+                'Websocket disconnected while sending event history, before loop started'
+            )
+            session.close()
+            return
 
     await session.loop_recv()
 
@@ -483,7 +517,14 @@ async def list_files(request: Request, path: str | None = None):
         )
 
     runtime: Runtime = request.state.conversation.runtime
-    file_list = await call_sync_from_async(runtime.list_files, path)
+    try:
+        file_list = await call_sync_from_async(runtime.list_files, path)
+    except RuntimeUnavailableError as e:
+        logger.error(f'Error listing files: {e}', exc_info=True)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': f'Error listing files: {e}'},
+        )
     if path:
         file_list = [os.path.join(path, f) for f in file_list]
 
@@ -503,7 +544,14 @@ async def list_files(request: Request, path: str | None = None):
         file_list = [entry for entry in file_list if not spec.match_file(entry)]
         return file_list
 
-    file_list = await filter_for_gitignore(file_list, '')
+    try:
+        file_list = await filter_for_gitignore(file_list, '')
+    except RuntimeUnavailableError as e:
+        logger.error(f'Error filtering files: {e}', exc_info=True)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': f'Error filtering files: {e}'},
+        )
 
     return file_list
 
@@ -532,7 +580,14 @@ async def select_file(file: str, request: Request):
 
     file = os.path.join(runtime.config.workspace_mount_path_in_sandbox, file)
     read_action = FileReadAction(file)
-    observation = await call_sync_from_async(runtime.run_action, read_action)
+    try:
+        observation = await call_sync_from_async(runtime.run_action, read_action)
+    except RuntimeUnavailableError as e:
+        logger.error(f'Error opening file {file}: {e}', exc_info=True)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': f'Error opening file: {e}'},
+        )
 
     if isinstance(observation, FileReadObservation):
         content = observation.content
@@ -557,6 +612,23 @@ def sanitize_filename(filename):
         name, ext = os.path.splitext(filename)
         filename = name[: max_length - len(ext)] + ext
     return filename
+
+
+@app.get('/api/conversation')
+async def get_remote_runtime_config(request: Request):
+    """Retrieve the remote runtime configuration.
+
+    Currently, this is the runtime ID.
+    """
+    runtime = request.state.conversation.runtime
+    runtime_id = runtime.runtime_id if hasattr(runtime, 'runtime_id') else None
+    session_id = runtime.sid if hasattr(runtime, 'sid') else None
+    return JSONResponse(
+        content={
+            'runtime_id': runtime_id,
+            'session_id': session_id,
+        }
+    )
 
 
 @app.post('/api/upload-files')
@@ -611,9 +683,20 @@ async def upload_file(request: Request, files: list[UploadFile]):
                     tmp_file.flush()
 
                 runtime: Runtime = request.state.conversation.runtime
-                runtime.copy_to(
-                    tmp_file_path, runtime.config.workspace_mount_path_in_sandbox
-                )
+                try:
+                    await call_sync_from_async(
+                        runtime.copy_to,
+                        tmp_file_path,
+                        runtime.config.workspace_mount_path_in_sandbox,
+                    )
+                except RuntimeUnavailableError as e:
+                    logger.error(
+                        f'Error saving file {safe_filename}: {e}', exc_info=True
+                    )
+                    return JSONResponse(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        content={'error': f'Error saving file: {e}'},
+                    )
             uploaded_files.append(safe_filename)
 
         response_content = {
@@ -744,7 +827,14 @@ async def save_file(request: Request):
             runtime.config.workspace_mount_path_in_sandbox, file_path
         )
         write_action = FileWriteAction(file_path, content)
-        observation = await call_sync_from_async(runtime.run_action, write_action)
+        try:
+            observation = await call_sync_from_async(runtime.run_action, write_action)
+        except RuntimeUnavailableError as e:
+            logger.error(f'Error saving file: {e}', exc_info=True)
+            return JSONResponse(
+                status_code=500,
+                content={'error': f'Error saving file: {e}'},
+            )
 
         if isinstance(observation, FileWriteObservation):
             return JSONResponse(
@@ -790,19 +880,27 @@ async def security_api(request: Request):
 
 
 @app.get('/api/zip-directory')
-async def zip_current_workspace(request: Request):
+async def zip_current_workspace(request: Request, background_tasks: BackgroundTasks):
     try:
         logger.debug('Zipping workspace')
         runtime: Runtime = request.state.conversation.runtime
-
         path = runtime.config.workspace_mount_path_in_sandbox
-        zip_file_bytes = await call_sync_from_async(runtime.copy_from, path)
-        zip_stream = io.BytesIO(zip_file_bytes)  # Wrap to behave like a file stream
-        response = StreamingResponse(
-            zip_stream,
+        try:
+            zip_file = await call_sync_from_async(runtime.copy_from, path)
+        except RuntimeUnavailableError as e:
+            logger.error(f'Error zipping workspace: {e}', exc_info=True)
+            return JSONResponse(
+                status_code=500,
+                content={'error': f'Error zipping workspace: {e}'},
+            )
+        response = FileResponse(
+            path=zip_file,
+            filename='workspace.zip',
             media_type='application/x-zip-compressed',
-            headers={'Content-Disposition': 'attachment; filename=workspace.zip'},
         )
+
+        # This will execute after the response is sent (So the file is not deleted before being sent)
+        background_tasks.add_task(zip_file.unlink)
 
         return response
     except Exception as e:
@@ -863,11 +961,55 @@ async def authenticate(request: Request):
             content={'error': 'Not authorized via GitHub waitlist'},
         )
 
+    # Create a signed JWT token with 1-hour expiration
+    cookie_data = {
+        'github_token': token,
+        'exp': int(time.time()) + 3600,  # 1 hour expiration
+    }
+    signed_token = sign_token(cookie_data, config.jwt_secret)
+
     response = JSONResponse(
         status_code=status.HTTP_200_OK, content={'message': 'User authenticated'}
     )
 
+    # Set secure cookie with signed token
+    response.set_cookie(
+        key='github_auth',
+        value=signed_token,
+        max_age=3600,  # 1 hour in seconds
+        httponly=True,
+        secure=True,
+        samesite='strict',
+    )
     return response
+
+
+@app.get('/api/vscode-url')
+async def get_vscode_url(request: Request):
+    """Get the VSCode URL.
+
+    This endpoint allows getting the VSCode URL.
+
+    Args:
+        request (Request): The incoming FastAPI request object.
+
+    Returns:
+        JSONResponse: A JSON response indicating the success of the operation.
+    """
+    try:
+        runtime: Runtime = request.state.conversation.runtime
+        logger.debug(f'Runtime type: {type(runtime)}')
+        logger.debug(f'Runtime VSCode URL: {runtime.vscode_url}')
+        return JSONResponse(status_code=200, content={'vscode_url': runtime.vscode_url})
+    except Exception as e:
+        logger.error(f'Error getting VSCode URL: {e}', exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={
+                'vscode_url': None,
+                'error': f'Error getting VSCode URL: {e}',
+            },
+        )
 
 
 class SPAStaticFiles(StaticFiles):

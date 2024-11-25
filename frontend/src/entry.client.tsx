@@ -10,17 +10,24 @@ import React, { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import posthog from "posthog-js";
-import { SocketProvider } from "./context/socket";
 import "./i18n";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import store from "./store";
+import { useConfig } from "./hooks/query/use-config";
+import { AuthProvider } from "./context/auth-context";
+import { UserPrefsProvider } from "./context/user-prefs-context";
 
 function PosthogInit() {
+  const { data: config } = useConfig();
+
   React.useEffect(() => {
-    posthog.init("phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA", {
-      api_host: "https://us.i.posthog.com",
-      person_profiles: "identified_only",
-    });
-  }, []);
+    if (config?.POSTHOG_CLIENT_KEY) {
+      posthog.init(config.POSTHOG_CLIENT_KEY, {
+        api_host: "https://us.i.posthog.com",
+        person_profiles: "identified_only",
+      });
+    }
+  }, [config]);
 
   return null;
 }
@@ -38,17 +45,23 @@ async function prepareApp() {
   }
 }
 
+const queryClient = new QueryClient();
+
 prepareApp().then(() =>
   startTransition(() => {
     hydrateRoot(
       document,
       <StrictMode>
-        <SocketProvider>
-          <Provider store={store}>
-            <RemixBrowser />
-            <PosthogInit />
-          </Provider>
-        </SocketProvider>
+        <Provider store={store}>
+          <UserPrefsProvider>
+            <AuthProvider>
+              <QueryClientProvider client={queryClient}>
+                <RemixBrowser />
+                <PosthogInit />
+              </QueryClientProvider>
+            </AuthProvider>
+          </UserPrefsProvider>
+        </Provider>
       </StrictMode>,
     );
   }),

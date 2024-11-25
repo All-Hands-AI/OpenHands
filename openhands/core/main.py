@@ -35,8 +35,8 @@ class FakeUserResponseFunc(Protocol):
     def __call__(
         self,
         state: State,
-        encapsulate_solution: bool = ...,
-        try_parse: Callable[[Action], str] = ...,
+        encapsulate_solution: bool = False,
+        try_parse: Callable[[Action | None], str] | None = None,
     ) -> str: ...
 
 
@@ -54,11 +54,15 @@ def read_task_from_stdin() -> str:
 def create_runtime(
     config: AppConfig,
     sid: str | None = None,
+    headless_mode: bool = True,
 ) -> Runtime:
     """Create a runtime for the agent to run on.
 
     config: The app config.
-    sid: The session id.
+    sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
+        Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
+    headless_mode: Whether the agent is run in headless mode. `create_runtime` is typically called within evaluation scripts,
+        where we don't want to have the VSCode UI open, so it defaults to True.
     """
     # if sid is provided on the command line, use it as the name of the event stream
     # otherwise generate it on the basis of the configured jwt_secret
@@ -80,6 +84,7 @@ def create_runtime(
         event_stream=event_stream,
         sid=session_id,
         plugins=agent_cls.sandbox_plugins,
+        headless_mode=headless_mode,
     )
 
     return runtime
@@ -101,6 +106,8 @@ async def run_controller(
     Args:
         config: The app config.
         initial_user_action: An Action object containing initial user input
+        sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
+            Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
         runtime: (optional) A runtime for the agent to run on.
         agent: (optional) A agent to run.
         exit_on_message: quit if agent asks for a message from user (optional)
@@ -122,7 +129,8 @@ async def run_controller(
     sid = sid or generate_sid(config)
 
     if runtime is None:
-        runtime = create_runtime(config, sid=sid)
+        runtime = create_runtime(config, sid=sid, headless_mode=headless_mode)
+        await runtime.connect()
 
     event_stream = runtime.event_stream
 
@@ -188,8 +196,6 @@ async def run_controller(
 
     event_stream.subscribe(EventStreamSubscriber.MAIN, on_event, sid)
 
-    await runtime.connect()
-
     end_states = [
         AgentState.FINISHED,
         AgentState.REJECTED,
@@ -213,7 +219,11 @@ async def run_controller(
 
     # save trajectories if applicable
     if config.trajectories_path is not None:
-        file_path = os.path.join(config.trajectories_path, sid + '.json')
+        # if trajectories_path is a folder, use session id as file name
+        if os.path.isdir(config.trajectories_path):
+            file_path = os.path.join(config.trajectories_path, sid + '.json')
+        else:
+            file_path = config.trajectories_path
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         histories = [event_to_trajectory(event) for event in state.history]
         with open(file_path, 'w') as f:

@@ -3,9 +3,9 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
 import { ChatInterface } from "#/components/chat-interface";
-import { addUserMessage } from "#/state/chatSlice";
+import { addUserMessage } from "#/state/chat-slice";
 import { SUGGESTIONS } from "#/utils/suggestions";
-import * as ChatSlice from "#/state/chatSlice";
+import * as ChatSlice from "#/state/chat-slice";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const renderChatInterface = (messages: (Message | ErrorMessage)[]) =>
@@ -16,14 +16,19 @@ describe("Empty state", () => {
     send: vi.fn(),
   }));
 
-  const { useSocket: useSocketMock } = vi.hoisted(() => ({
-    useSocket: vi.fn(() => ({ send: sendMock, runtimeActive: true })),
+  const { useWsClient: useWsClientMock } = vi.hoisted(() => ({
+    useWsClient: vi.fn(() => ({ send: sendMock, runtimeActive: true })),
   }));
 
   beforeAll(() => {
+    vi.mock("@remix-run/react", async (importActual) => ({
+      ...(await importActual<typeof import("@remix-run/react")>()),
+      useRouteLoaderData: vi.fn(() => ({})),
+    }));
+
     vi.mock("#/context/socket", async (importActual) => ({
-      ...(await importActual<typeof import("#/context/socket")>()),
-      useSocket: useSocketMock,
+      ...(await importActual<typeof import("#/context/ws-client-provider")>()),
+      useWsClient: useWsClientMock,
     }));
   });
 
@@ -77,7 +82,7 @@ describe("Empty state", () => {
     "should load the a user message to the input when selecting",
     async () => {
       // this is to test that the message is in the UI before the socket is called
-      useSocketMock.mockImplementation(() => ({
+      useWsClientMock.mockImplementation(() => ({
         send: sendMock,
         runtimeActive: false, // mock an inactive runtime setup
       }));
@@ -106,7 +111,7 @@ describe("Empty state", () => {
   it.fails(
     "should send the message to the socket only if the runtime is active",
     async () => {
-      useSocketMock.mockImplementation(() => ({
+      useWsClientMock.mockImplementation(() => ({
         send: sendMock,
         runtimeActive: false, // mock an inactive runtime setup
       }));
@@ -123,7 +128,7 @@ describe("Empty state", () => {
       await user.click(displayedSuggestions[0]);
       expect(sendMock).not.toHaveBeenCalled();
 
-      useSocketMock.mockImplementation(() => ({
+      useWsClientMock.mockImplementation(() => ({
         send: sendMock,
         runtimeActive: true, // mock an active runtime setup
       }));

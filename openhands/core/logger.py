@@ -1,3 +1,4 @@
+import copy
 import logging
 import os
 import re
@@ -15,6 +16,8 @@ if DEBUG:
 
 LOG_TO_FILE = os.getenv('LOG_TO_FILE', 'False').lower() in ['true', '1', 'yes']
 DISABLE_COLOR_PRINTING = False
+
+LOG_ALL_EVENTS = os.getenv('LOG_ALL_EVENTS', 'False').lower() in ['true', '1', 'yes']
 
 ColorType = Literal[
     'red',
@@ -45,6 +48,29 @@ LOG_COLORS: Mapping[str, ColorType] = {
 }
 
 
+class NoColorFormatter(logging.Formatter):
+    """Formatter for non-colored logging in files."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        # Create a deep copy of the record to avoid modifying the original
+        new_record: logging.LogRecord = copy.deepcopy(record)
+        # Strip ANSI color codes from the message
+        new_record.msg = strip_ansi(new_record.msg)
+
+        return super().format(new_record)
+
+
+def strip_ansi(s: str) -> str:
+    """
+    Removes ANSI escape sequences from str, as defined by ECMA-048 in
+    http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-048.pdf
+    # https://github.com/ewen-lbh/python-strip-ansi/blob/master/strip_ansi/__init__.py
+    """
+    pattern = re.compile(r'\x1B\[\d+(;\d+){0,2}m')
+    stripped = pattern.sub('', s)
+    return stripped
+
+
 class ColoredFormatter(logging.Formatter):
     def format(self, record):
         msg_type = record.__dict__.get('msg_type')
@@ -65,12 +91,15 @@ class ColoredFormatter(logging.Formatter):
                 return f'{time_str} - {name_str}:{level_str}: {record.filename}:{record.lineno}\n{msg_type_color}\n{msg}'
             return f'{time_str} - {msg_type_color}\n{msg}'
         elif msg_type == 'STEP':
-            msg = '\n\n==============\n' + record.msg + '\n'
-            return f'{msg}'
+            if LOG_ALL_EVENTS:
+                msg = '\n\n==============\n' + record.msg + '\n'
+                return f'{msg}'
+            else:
+                return record.msg
         return super().format(record)
 
 
-file_formatter = logging.Formatter(
+file_formatter = NoColorFormatter(
     '%(asctime)s - %(name)s:%(levelname)s: %(filename)s:%(lineno)s - %(message)s',
     datefmt='%H:%M:%S',
 )
@@ -177,7 +206,7 @@ class SensitiveDataFilter(logging.Filter):
         return True
 
 
-def get_console_handler(log_level=logging.INFO, extra_info: str | None = None):
+def get_console_handler(log_level: int = logging.INFO, extra_info: str | None = None):
     """Returns a console handler for logging."""
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level)
@@ -188,7 +217,7 @@ def get_console_handler(log_level=logging.INFO, extra_info: str | None = None):
     return console_handler
 
 
-def get_file_handler(log_dir, log_level=logging.INFO):
+def get_file_handler(log_dir: str, log_level: int = logging.INFO):
     """Returns a file handler for logging."""
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime('%Y-%m-%d')

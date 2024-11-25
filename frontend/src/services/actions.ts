@@ -2,18 +2,21 @@ import {
   addAssistantMessage,
   addUserMessage,
   addErrorMessage,
-} from "#/state/chatSlice";
-import { setCode, setActiveFilepath } from "#/state/codeSlice";
-import { appendJupyterInput } from "#/state/jupyterSlice";
+} from "#/state/chat-slice";
+import { setCode, setActiveFilepath } from "#/state/code-slice";
+import { appendJupyterInput } from "#/state/jupyter-slice";
 import {
   ActionSecurityRisk,
   appendSecurityAnalyzerInput,
-} from "#/state/securityAnalyzerSlice";
-import { setCurStatusMessage } from "#/state/statusSlice";
+} from "#/state/security-analyzer-slice";
+import { setCurStatusMessage } from "#/state/status-slice";
 import store from "#/store";
-import ActionType from "#/types/ActionType";
-import { ActionMessage, StatusMessage } from "#/types/Message";
-import { SocketMessage } from "#/types/ResponseType";
+import ActionType from "#/types/action-type";
+import {
+  ActionMessage,
+  ObservationMessage,
+  StatusMessage,
+} from "#/types/message";
 import { handleObservationMessage } from "./observations";
 
 const messageActions = {
@@ -138,22 +141,14 @@ export function handleStatusMessage(message: StatusMessage) {
   }
 }
 
-export function handleAssistantMessage(data: string | SocketMessage) {
-  let socketMessage: SocketMessage;
-
-  if (typeof data === "string") {
-    socketMessage = JSON.parse(data) as SocketMessage;
+export function handleAssistantMessage(message: Record<string, unknown>) {
+  if (message.action) {
+    handleActionMessage(message as unknown as ActionMessage);
+  } else if (message.observation) {
+    handleObservationMessage(message as unknown as ObservationMessage);
+  } else if (message.status_update) {
+    handleStatusMessage(message as unknown as StatusMessage);
   } else {
-    socketMessage = data;
-  }
-
-  if ("action" in socketMessage) {
-    handleActionMessage(socketMessage);
-  } else if ("observation" in socketMessage) {
-    handleObservationMessage(socketMessage);
-  } else if ("status_update" in socketMessage) {
-    handleStatusMessage(socketMessage);
-  } else {
-    console.error("Unknown message type", socketMessage);
+    console.error("Unknown message type", message);
   }
 }

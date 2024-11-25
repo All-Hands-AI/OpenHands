@@ -7,6 +7,7 @@ import {
   GitHubAccessTokenResponse,
   ErrorResponse,
   GetConfigResponse,
+  GetVSCodeUrlResponse,
 } from "./open-hands.types";
 
 class OpenHands {
@@ -15,7 +16,13 @@ class OpenHands {
    * @returns List of models available
    */
   static async getModels(): Promise<string[]> {
-    return request("/api/options/models");
+    const response = await fetch("/api/options/models");
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch models");
+    }
+
+    return response.json();
   }
 
   /**
@@ -23,7 +30,13 @@ class OpenHands {
    * @returns List of agents available
    */
   static async getAgents(): Promise<string[]> {
-    return request(`/api/options/agents`);
+    const response = await fetch("/api/options/agents");
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch agents");
+    }
+
+    return response.json();
   }
 
   /**
@@ -31,11 +44,23 @@ class OpenHands {
    * @returns List of security analyzers available
    */
   static async getSecurityAnalyzers(): Promise<string[]> {
-    return request(`/api/options/security-analyzers`);
+    const response = await fetch("/api/options/security-analyzers");
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch security analyzers");
+    }
+
+    return response.json();
   }
 
   static async getConfig(): Promise<GetConfigResponse> {
-    return request("/config.json");
+    const response = await fetch("/config.json");
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch config");
+    }
+
+    return response.json();
   }
 
   /**
@@ -43,10 +68,21 @@ class OpenHands {
    * @param path Path to list files from
    * @returns List of files available in the given path. If path is not provided, it lists all the files in the workspace
    */
-  static async getFiles(path?: string): Promise<string[]> {
-    let url = "/api/list-files";
-    if (path) url += `?path=${encodeURIComponent(path)}`;
-    return request(url);
+  static async getFiles(token: string, path?: string): Promise<string[]> {
+    const url = new URL("/api/list-files", window.location.origin);
+    if (path) url.searchParams.append("path", path);
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch files");
+    }
+
+    return response.json();
   }
 
   /**
@@ -54,9 +90,21 @@ class OpenHands {
    * @param path Full path of the file to retrieve
    * @returns Content of the file
    */
-  static async getFile(path: string): Promise<string> {
-    const url = `/api/select-file?file=${encodeURIComponent(path)}`;
-    const data = await request(url);
+  static async getFile(token: string, path: string): Promise<string> {
+    const url = new URL("/api/select-file", window.location.origin);
+    url.searchParams.append("file", path);
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch file");
+    }
+
+    const data = await response.json();
     return data.code;
   }
 
@@ -67,16 +115,32 @@ class OpenHands {
    * @returns Success message or error message
    */
   static async saveFile(
+    token: string,
     path: string,
     content: string,
-  ): Promise<SaveFileSuccessResponse | ErrorResponse> {
-    return request(`/api/save-file`, {
+  ): Promise<SaveFileSuccessResponse> {
+    const response = await fetch("/api/save-file", {
       method: "POST",
       body: JSON.stringify({ filePath: path, content }),
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
     });
+
+    if (!response.ok) {
+      throw new Error("Failed to save file");
+    }
+
+    const data = (await response.json()) as
+      | SaveFileSuccessResponse
+      | ErrorResponse;
+
+    if ("error" in data) {
+      throw new Error(data.error);
+    }
+
+    return data;
   }
 
   /**
@@ -85,15 +149,78 @@ class OpenHands {
    * @returns Success message or error message
    */
   static async uploadFiles(
-    file: File[],
-  ): Promise<FileUploadSuccessResponse | ErrorResponse> {
+    token: string,
+    files: File[],
+  ): Promise<FileUploadSuccessResponse> {
     const formData = new FormData();
-    file.forEach((f) => formData.append("files", f));
+    files.forEach((file) => formData.append("files", file));
 
-    return request(`/api/upload-files`, {
+    const response = await fetch("/api/upload-files", {
       method: "POST",
       body: formData,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
+
+    if (!response.ok) {
+      throw new Error("Failed to upload files");
+    }
+
+    const data = (await response.json()) as
+      | FileUploadSuccessResponse
+      | ErrorResponse;
+
+    if ("error" in data) {
+      throw new Error(data.error);
+    }
+
+    return data;
+  }
+
+  /**
+   * Send feedback to the server
+   * @param data Feedback data
+   * @returns The stored feedback data
+   */
+  static async submitFeedback(
+    token: string,
+    feedback: Feedback,
+  ): Promise<FeedbackResponse> {
+    const response = await fetch("/api/submit-feedback", {
+      method: "POST",
+      body: JSON.stringify(feedback),
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to submit feedback");
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Authenticate with GitHub token
+   * @returns Response with authentication status and user info if successful
+   */
+  static async authenticate(
+    gitHubToken: string,
+    appMode: GetConfigResponse["APP_MODE"],
+  ): Promise<boolean> {
+    if (appMode === "oss") return true;
+
+    const response = await fetch("/api/authenticate", {
+      method: "POST",
+      headers: {
+        "X-GitHub-Token": gitHubToken,
+      },
+    });
+
+    return response.ok;
   }
 
   /**
@@ -106,48 +233,39 @@ class OpenHands {
   }
 
   /**
-   * Send feedback to the server
-   * @param data Feedback data
-   * @returns The stored feedback data
-   */
-  static async submitFeedback(data: Feedback): Promise<FeedbackResponse> {
-    return request(`/api/submit-feedback`, {
-      method: "POST",
-      body: JSON.stringify(data),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-  }
-
-  /**
    * @param code Code provided by GitHub
    * @returns GitHub access token
    */
   static async getGitHubAccessToken(
     code: string,
   ): Promise<GitHubAccessTokenResponse> {
-    return request(`/api/github/callback`, {
+    const response = await fetch("/api/github/callback", {
       method: "POST",
       body: JSON.stringify({ code }),
       headers: {
         "Content-Type": "application/json",
       },
     });
+
+    if (!response.ok) {
+      throw new Error("Failed to get GitHub access token");
+    }
+
+    return response.json();
   }
 
   /**
-   * Authenticate with GitHub token
-   * @returns Response with authentication status and user info if successful
+   * Get the VSCode URL
+   * @returns VSCode URL
    */
-  static async authenticate(): Promise<Response> {
-    return request(
-      `/api/authenticate`,
-      {
-        method: "POST",
-      },
-      true,
-    );
+  static async getVSCodeUrl(): Promise<GetVSCodeUrlResponse> {
+    return request(`/api/vscode-url`, {}, false, false, 1);
+  }
+
+  static async getRuntimeId(): Promise<{ runtime_id: string }> {
+    const data = await request("/api/conversation");
+
+    return data;
   }
 }
 

@@ -21,9 +21,9 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
-from openhands.runtime.utils.shutdown_listener import should_continue
 from openhands.server.session.agent_session import AgentSession
 from openhands.storage.files import FileStore
+from openhands.utils.shutdown_listener import should_continue
 
 
 class Session:
@@ -51,7 +51,15 @@ class Session:
 
     def close(self):
         self.is_alive = False
-        self.agent_session.close()
+        try:
+            if self.websocket is not None:
+                asyncio.run_coroutine_threadsafe(self.websocket.close(), self.loop)
+                self.websocket = None
+        finally:
+            self.agent_session.close()
+            del (
+                self.agent_session
+            )  # FIXME: this should not be necessary but it mitigates a memory leak
 
     async def loop_recv(self):
         try:
@@ -107,7 +115,6 @@ class Session:
         agent_config = self.config.get_agent_config(agent_cls)
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
-        # Create the agent session
         try:
             await self.agent_session.start(
                 runtime_name=self.config.runtime,
@@ -163,7 +170,7 @@ class Session:
             return
         event = event_from_dict(data.copy())
         # This checks if the model supports images
-        if isinstance(event, MessageAction) and event.images_urls:
+        if isinstance(event, MessageAction) and event.image_urls:
             controller = self.agent_session.controller
             if controller:
                 if controller.agent.llm.config.disable_vision:

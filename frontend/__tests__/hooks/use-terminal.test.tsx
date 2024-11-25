@@ -1,9 +1,10 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
 import { afterEach } from "node:test";
-import { useTerminal } from "#/hooks/useTerminal";
-import { SocketProvider } from "#/context/socket";
-import { Command } from "#/state/commandSlice";
+import { ReactNode } from "react";
+import { useTerminal } from "#/hooks/use-terminal";
+import { Command } from "#/state/command-slice";
+import { WsClientProvider } from "#/context/ws-client-provider";
 
 interface TestTerminalComponentProps {
   commands: Command[];
@@ -16,6 +17,23 @@ function TestTerminalComponent({
 }: TestTerminalComponentProps) {
   const ref = useTerminal(commands, secrets);
   return <div ref={ref} />;
+}
+
+interface WrapperProps {
+  children: ReactNode;
+}
+
+function Wrapper({ children }: WrapperProps) {
+  return (
+    <WsClientProvider
+      enabled
+      token="NO_JWT"
+      ghToken="NO_GITHUB"
+      settings={null}
+    >
+      {children}
+    </WsClientProvider>
+  );
 }
 
 describe("useTerminal", () => {
@@ -50,7 +68,7 @@ describe("useTerminal", () => {
 
   it("should render", () => {
     render(<TestTerminalComponent commands={[]} secrets={[]} />, {
-      wrapper: SocketProvider,
+      wrapper: Wrapper,
     });
   });
 
@@ -61,7 +79,7 @@ describe("useTerminal", () => {
     ];
 
     render(<TestTerminalComponent commands={commands} secrets={[]} />, {
-      wrapper: SocketProvider,
+      wrapper: Wrapper,
     });
 
     expect(mockTerminal.writeln).toHaveBeenNthCalledWith(1, "echo hello");
@@ -85,7 +103,7 @@ describe("useTerminal", () => {
         secrets={[secret, anotherSecret]}
       />,
       {
-        wrapper: SocketProvider,
+        wrapper: Wrapper,
       },
     );
 

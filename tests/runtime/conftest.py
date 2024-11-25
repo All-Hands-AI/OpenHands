@@ -14,6 +14,7 @@ from openhands.events import EventStream
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.eventstream.eventstream_runtime import EventStreamRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
+from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from openhands.storage import get_file_store
 from openhands.utils.async_utils import call_async_from_sync
@@ -131,6 +132,8 @@ def get_runtime_classes():
         return [EventStreamRuntime]
     elif runtime.lower() == 'remote':
         return [RemoteRuntime]
+    elif runtime.lower() == 'runloop':
+        return [RunloopRuntime]
     else:
         raise ValueError(f'Invalid runtime: {runtime}')
 
@@ -221,6 +224,7 @@ def _load_runtime(
     config = load_app_config()
     config.run_as_openhands = run_as_openhands
     config.sandbox.force_rebuild_runtime = force_rebuild_runtime
+    config.sandbox.keep_runtime_alive = False
     # Folder where all tests create their own folder
     global test_mount_path
     if use_workspace:
