@@ -1,12 +1,10 @@
 import React from "react";
-import { useSelector } from "react-redux";
-import toast from "react-hot-toast";
-import { RootState } from "#/store";
 import FolderIcon from "../FolderIcon";
 import FileIcon from "../FileIcons";
-import OpenHands from "#/api/open-hands";
 import { useFiles } from "#/context/files";
 import { cn } from "#/utils/utils";
+import { useListFiles } from "#/hooks/query/use-list-files";
+import { useListFile } from "#/hooks/query/use-list-file";
 
 interface TitleProps {
   name: string;
@@ -44,50 +42,34 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
     selectedPath,
   } = useFiles();
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
-  const [children, setChildren] = React.useState<string[] | null>(null);
-  const refreshID = useSelector((state: RootState) => state.code.refreshID);
+
+  const isDirectory = path.endsWith("/");
+
+  const { data: paths } = useListFiles({
+    path,
+    enabled: isDirectory && isOpen,
+  });
+
+  const { data: fileContent, refetch } = useListFile({ path });
+
+  React.useEffect(() => {
+    if (fileContent) {
+      const code = modifiedFiles[path] || files[path];
+      if (!code || fileContent !== files[path]) {
+        setFileContent(path, fileContent);
+      }
+    }
+  }, [fileContent, path]);
 
   const fileParts = path.split("/");
   const filename =
     fileParts[fileParts.length - 1] || fileParts[fileParts.length - 2];
 
-  const isDirectory = path.endsWith("/");
-
-  const refreshChildren = async () => {
-    if (!isDirectory || !isOpen) {
-      setChildren(null);
-      return;
-    }
-
-    try {
-      const newChildren = await OpenHands.getFiles(path);
-      setChildren(newChildren);
-    } catch (error) {
-      toast.error("Failed to fetch files");
-    }
-  };
-
-  React.useEffect(() => {
-    (async () => {
-      await refreshChildren();
-    })();
-  }, [refreshID, isOpen]);
-
   const handleClick = async () => {
-    if (isDirectory) {
-      setIsOpen((prev) => !prev);
-    } else {
-      const code = modifiedFiles[path] || files[path];
-
-      try {
-        const fetchedCode = await OpenHands.getFile(path);
-        setSelectedPath(path);
-        if (!code || fetchedCode !== files[path]) {
-          setFileContent(path, fetchedCode);
-        }
-      } catch (error) {
-        toast.error("Failed to fetch file");
-      }
+    if (isDirectory) setIsOpen((prev) => !prev);
+    else {
+      setSelectedPath(path);
+      await refetch();
     }
   };
 
@@ -116,9 +98,9 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
         )}
       </button>
 
-      {isOpen && children && (
+      {isOpen && paths && (
         <div className="ml-5">
-          {children.map((child, index) => (
+          {paths.map((child, index) => (
             <TreeNode key={index} path={child} />
           ))}
         </div>

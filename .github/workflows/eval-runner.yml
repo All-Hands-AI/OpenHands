@@ -3,8 +3,6 @@ name: Run Evaluation
 on:
   pull_request:
     types: [labeled]
-  schedule:
-    - cron: "0 1 * * *" # Run daily at 1 AM UTC
   workflow_dispatch:
     inputs:
       reason:
