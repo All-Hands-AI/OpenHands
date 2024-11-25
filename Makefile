@@ -184,6 +184,8 @@ test:
 	@$(MAKE) -s test-frontend
 
 build-frontend:
+	@echo "$(YELLOW)Cleaning TypeScript build cache...$(RESET)"
+	@cd frontend && npx tsc --build --clean
 	@echo "$(YELLOW)Building frontend...$(RESET)"
 	@cd frontend && npm run build
 
