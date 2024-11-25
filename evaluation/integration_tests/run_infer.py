@@ -130,6 +130,14 @@ def process_instance(
     # # =============================================
 
     histories = [event_to_dict(event) for event in state.history]
+    
+    # Debug logging
+    logger.info(f"Total events in history: {len(histories)}")
+    for event in histories:
+        logger.info(f"Event type: {event.get('type', 'Unknown')}")
+        if 'content' in event:
+            logger.info(f"Event content: {event['content']}")
+    
     test_result: TestResult = test_class.verify_result(runtime, histories)
     metrics = state.metrics.get() if state.metrics else None
 
