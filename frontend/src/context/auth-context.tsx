@@ -1,5 +1,10 @@
 import posthog from "posthog-js";
 import React from "react";
+import {
+  removeAxiosAuthToken,
+  removeAxiosGitHubToken,
+  setAxiosAuthToken,
+} from "#/api/open-hands-axios";
 
 interface AuthContextType {
   token: string | null;
@@ -21,34 +26,49 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     () => localStorage.getItem("ghToken"),
   );
 
-  React.useLayoutEffect(() => {
-    setTokenState(localStorage.getItem("token"));
-    setGitHubTokenState(localStorage.getItem("ghToken"));
-  });
-
-  const setToken = (token: string | null) => {
-    setTokenState(token);
-
-    if (token) localStorage.setItem("token", token);
-    else localStorage.removeItem("token");
-  };
-
-  const setGitHubToken = (token: string | null) => {
-    setGitHubTokenState(token);
-
-    if (token) localStorage.setItem("ghToken", token);
-    else localStorage.removeItem("ghToken");
-  };
-
   const clearToken = () => {
     setTokenState(null);
     localStorage.removeItem("token");
+
+    removeAxiosAuthToken();
   };
 
   const clearGitHubToken = () => {
     setGitHubTokenState(null);
     localStorage.removeItem("ghToken");
+
+    removeAxiosGitHubToken();
   };
+
+  const setToken = (token: string | null) => {
+    setTokenState(token);
+
+    if (token) {
+      localStorage.setItem("token", token);
+      setAxiosAuthToken(token);
+    } else {
+      clearToken();
+    }
+  };
+
+  const setGitHubToken = (token: string | null) => {
+    setGitHubTokenState(token);
+
+    if (token) {
+      localStorage.setItem("ghToken", token);
+      setAxiosAuthToken(token);
+    } else {
+      clearGitHubToken();
+    }
+  };
+
+  React.useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    const storedGitHubToken = localStorage.getItem("ghToken");
+
+    setToken(storedToken);
+    setGitHubToken(storedGitHubToken);
+  }, []);
 
   const logout = () => {
     clearGitHubToken();

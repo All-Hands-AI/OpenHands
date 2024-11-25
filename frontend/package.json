@@ -18,6 +18,7 @@
     "@vitejs/plugin-react": "^4.3.2",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.4.0",
+    "axios": "^1.7.7",
     "clsx": "^2.1.1",
     "eslint-config-airbnb-typescript": "^18.0.0",
     "i18next": "^23.15.2",

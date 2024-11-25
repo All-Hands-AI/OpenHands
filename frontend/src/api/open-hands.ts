@@ -9,6 +9,7 @@ import {
   GetConfigResponse,
   GetVSCodeUrlResponse,
 } from "./open-hands.types";
+import { openHands } from "./open-hands-axios";
 
 class OpenHands {
   /**
@@ -16,13 +17,8 @@ class OpenHands {
    * @returns List of models available
    */
   static async getModels(): Promise<string[]> {
-    const response = await fetch("/api/options/models");
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch models");
-    }
-
-    return response.json();
+    const response = await openHands.get("/api/options/models");
+    return response.data;
   }
 
   /**
@@ -30,13 +26,8 @@ class OpenHands {
    * @returns List of agents available
    */
   static async getAgents(): Promise<string[]> {
-    const response = await fetch("/api/options/agents");
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch agents");
-    }
-
-    return response.json();
+    const response = await openHands.get("/api/options/agents");
+    return response.data;
   }
 
   /**
@@ -44,23 +35,13 @@ class OpenHands {
    * @returns List of security analyzers available
    */
   static async getSecurityAnalyzers(): Promise<string[]> {
-    const response = await fetch("/api/options/security-analyzers");
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch security analyzers");
-    }
-
-    return response.json();
+    const response = await openHands.get("/api/options/security-analyzers");
+    return response.data;
   }
 
   static async getConfig(): Promise<GetConfigResponse> {
-    const response = await fetch("/config.json");
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch config");
-    }
-
-    return response.json();
+    const response = await openHands.get("/config.json");
+    return response.data;
   }
 
   /**
@@ -68,21 +49,12 @@ class OpenHands {
    * @param path Path to list files from
    * @returns List of files available in the given path. If path is not provided, it lists all the files in the workspace
    */
-  static async getFiles(token: string, path?: string): Promise<string[]> {
-    const url = new URL("/api/list-files", window.location.origin);
-    if (path) url.searchParams.append("path", path);
-
-    const response = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+  static async getFiles(path?: string): Promise<string[]> {
+    const response = await openHands.get("/api/list-files", {
+      params: { path },
     });
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch files");
-    }
-
-    return response.json();
+    return response.data;
   }
 
   /**
