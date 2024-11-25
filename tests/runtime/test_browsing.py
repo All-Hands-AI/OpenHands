@@ -72,6 +72,7 @@ def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
 def has_miniwob():
     try:
         import importlib.util
+
         spec = importlib.util.find_spec('browsergym.miniwob')
         return spec is not None
     except ImportError:
