@@ -2,7 +2,7 @@ import { useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { Outlet } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
-import Security from "../components/modals/security/Security";
+import Security from "../components/modals/security/security";
 import { Controls } from "#/components/controls";
 import { RootState } from "#/store";
 import { Container } from "#/components/container";
