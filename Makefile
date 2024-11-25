@@ -184,10 +184,6 @@ test:
 	@$(MAKE) -s test-frontend
 
 build-frontend:
-	@echo "$(YELLOW)Cleaning TypeScript build cache...$(RESET)"
-	@cd frontend && npx tsc --build --clean
-	@echo "$(YELLOW)Cleaning Git cache for casing issues...$(RESET)"
-	@cd frontend && git rm -r --cached . && git add . && git commit -m "Fix Git cache" || echo "No changes to commit"
 	@echo "$(YELLOW)Building frontend...$(RESET)"
 	@cd frontend && npm run build
 
