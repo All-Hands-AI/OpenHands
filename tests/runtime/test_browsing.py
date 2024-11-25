@@ -1,13 +1,9 @@
 """Browsing-related tests for the EventStreamRuntime, which connects to the ActionExecutor running in the sandbox."""
 
-import json
-
-import pytest
 from conftest import _close_test_runtime, _load_runtime
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
-    BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
 )
@@ -96,18 +92,18 @@ def has_miniwob():
 #         BROWSER_EVAL_GET_GOAL_ACTION,
 #         BROWSER_EVAL_GET_REWARDS_ACTION,
 #     )
-# 
+#
 #     # Test browse
 #     action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_GOAL_ACTION)
 #     logger.info(action, extra={'msg_type': 'ACTION'})
 #     obs = runtime.run_action(action)
 #     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-# 
+#
 #     assert isinstance(obs, BrowserOutputObservation)
 #     assert not obs.error
 #     assert 'Select' in obs.content
 #     assert 'from the list and click Submit' in obs.content
-# 
+#
 #     # Make sure the browser can produce observation in eva[l
 #     action = BrowseInteractiveAction(browser_actions='noop()')
 #     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -117,12 +113,12 @@ def has_miniwob():
 #         obs.url.strip()
 #         == 'file:///miniwob-plusplus/miniwob/html/miniwob/choose-list.html'
 #     )
-# 
+#
 #     # Make sure the rewards are working
 #     action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_REWARDS_ACTION)
 #     logger.info(action, extra={'msg_type': 'ACTION'})
 #     obs = runtime.run_action(action)
 #     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 #     assert json.loads(obs.content) == [0.0]
-# 
+#
 #     _close_test_runtime(runtime)
