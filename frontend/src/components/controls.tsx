@@ -1,8 +1,8 @@
 import { IoLockClosed } from "react-icons/io5";
 import React from "react";
 import { useSelector } from "react-redux";
-import AgentControlBar from "./AgentControlBar";
-import AgentStatusBar from "./AgentStatusBar";
+import AgentControlBar from "./agent-control-bar";
+import AgentStatusBar from "./agent-status-bar";
 import { ProjectMenuCard } from "./project-menu/ProjectMenuCard";
 import { useAuth } from "#/context/auth-context";
 import { RootState } from "#/store";
