@@ -186,6 +186,7 @@ export function ChatInterface() {
                           "Please push the changes to a remote branch on GitHub, but do NOT create a pull request.",
                       }}
                       onClick={(value) => {
+                        posthog.capture("push_to_branch_clicked");
                         handleSendMessage(value, []);
                       }}
                     />
@@ -196,6 +197,7 @@ export function ChatInterface() {
                           "Please push the changes to GitHub and open a pull request.",
                       }}
                       onClick={(value) => {
+                        posthog.capture("create_pr_clicked");
                         handleSendMessage(value, []);
                         setHasPullRequest(true);
                       }}
@@ -209,6 +211,7 @@ export function ChatInterface() {
                         "Please push the latest changes to the existing pull request.",
                     }}
                     onClick={(value) => {
+                      posthog.capture("update_pr_clicked");
                       handleSendMessage(value, []);
                     }}
                   />
