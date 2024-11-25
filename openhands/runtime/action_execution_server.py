@@ -172,6 +172,8 @@ class ActionExecutor:
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
         obs = await call_sync_from_async(self.bash_session.run, action)
+        if isinstance(obs, CmdOutputObservation):
+            print(obs.content, flush=True)
         return obs
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
@@ -203,6 +205,7 @@ class ActionExecutor:
                     f'\n[Jupyter current working directory: {self.bash_session.pwd}]'
                 )
                 obs.content += f'\n[Jupyter Python interpreter: {_jupyter_plugin.python_interpreter_path}]'
+            print(obs.content, flush=True)
             return obs
         else:
             raise RuntimeError(
