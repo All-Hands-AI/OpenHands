@@ -156,6 +156,14 @@ jobs:
       #     path: 'evaluation/evaluation_outputs/outputs'
       #     destination: 'openhands-oss-eval-results/${{ env.TIMESTAMP }}-${{ env.TRIGGER_REASON }}'
 
+      - name: Cleanup remote runtimes
+        if: always()  # run this step even if previous steps failed
+        env:
+          ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
+          SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
+        run: |
+          poetry run ./evaluation/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
+
       - name: Comment with results and artifact link
         id: create_comment
         uses: KeisukeYamashita/create-comment@v1
