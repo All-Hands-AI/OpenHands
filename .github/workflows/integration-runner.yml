@@ -63,12 +63,16 @@ jobs:
           echo "base_url = \"$LLM_BASE_URL\"" >> config.toml
           echo "temperature = 0.0" >> config.toml
 
+      - name: Build environment
+        run: make build
+
       - name: Run integration test evaluation for Haiku
         env:
-          ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
-          RUNTIME: remote
-          SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
-          EVAL_DOCKER_IMAGE_PREFIX: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images
+          #ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
+          #RUNTIME: remote
+          #SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
+          #EVAL_DOCKER_IMAGE_PREFIX: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images
+          SANDBOX_FORCE_REBUILD_RUNTIME: True
         run: |
           poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES '' 'haiku_run'
 
@@ -91,7 +95,7 @@ jobs:
       #    sleep 10
 
       - name: Wait a little bit
-        run: sleep 40
+        run: sleep 10
 
       - name: Configure config.toml for testing with DeepSeek
         env:
@@ -105,11 +109,11 @@ jobs:
 
       - name: Run integration test evaluation for DeepSeek
         env:
-          ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
-          RUNTIME: remote
-          SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
-          EVAL_DOCKER_IMAGE_PREFIX: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images
-
+          #ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
+          #RUNTIME: remote
+          #SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
+          #EVAL_DOCKER_IMAGE_PREFIX: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images
+          SANDBOX_FORCE_REBUILD_RUNTIME: True
         run: |
           poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES '' 'deepseek_run'
 
@@ -168,13 +172,13 @@ jobs:
       #     path: 'evaluation/evaluation_outputs/outputs'
       #     destination: 'openhands-oss-eval-results/${{ env.TIMESTAMP }}-${{ env.TRIGGER_REASON }}'
 
-      - name: Cleanup remote runtimes
-        if: always()  # run this step even if previous steps failed
-        env:
-          ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
-          SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
-        run: |
-          poetry run ./evaluation/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
+      # - name: Cleanup remote runtimes
+      #   if: always()  # run this step even if previous steps failed
+      #   env:
+      #     ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
+      #     SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
+      #   run: |
+      #     poetry run ./evaluation/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
 
       - name: Comment with results and artifact link
         id: create_comment
