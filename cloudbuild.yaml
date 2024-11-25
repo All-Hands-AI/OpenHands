@@ -1,0 +1,22 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args:
+    - 'build'
+    - '-t'
+    - 'us-central1-docker.pkg.dev/dynamic-ai-openhands/openhands/app'
+    - '--build-arg'
+    - 'OPENHANDS_BUILD_VERSION=${_VERSION}'
+    - '-f'
+    - 'containers/app/Dockerfile'
+    - '.'
+  env:
+    - 'DOCKER_BUILDKIT=1'
+substitutions:
+  _VERSION: 'dev'
+images:
+- 'us-central1-docker.pkg.dev/dynamic-ai-openhands/openhands/app'
+timeout: '3600s'
+options:
+  machineType: 'N1_HIGHCPU_8'
+  diskSizeGb: '100'
+logging: LEGACY
