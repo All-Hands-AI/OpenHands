@@ -251,10 +251,24 @@ class BashSession:
         kill_on_timeout: bool = True,
     ) -> tuple[str, int]:
         logger.debug(f'Continuing bash with timeout={timeout}')
+        output = ''
         try:
-            self.shell.expect(self.__bash_expect_regex, timeout=timeout)
-
-            output = self.shell.before
+            # Instead of waiting for the full output, read character by character
+            while True:
+                try:
+                    # Try to match the prompt pattern
+                    index = self.shell.expect([self.__bash_expect_regex, '.'], timeout=0.1)
+                    if index == 0:  # Found the prompt pattern
+                        break
+                    elif index == 1:  # Found a character
+                        char = self.shell.after
+                        output += char
+                        print(char, end='', flush=True)  # Print in real-time
+                except pexpect.TIMEOUT:
+                    # No output available, continue waiting
+                    continue
+                except pexpect.EOF:
+                    break
 
             # Get exit code
             self.shell.sendline('echo $?')
