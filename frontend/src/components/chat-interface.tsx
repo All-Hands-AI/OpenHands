@@ -1,6 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
+import { RootState } from "#/store";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { ChatMessage } from "./chat-message";
 import { FeedbackActions } from "./feedback-actions";
@@ -71,10 +72,23 @@ export function ChatInterface() {
     }
   }, [status]);
 
+  const { selectedRepository, files: uploadedFiles } = useSelector(
+    (state: RootState) => state.initalQuery,
+  );
+
   const handleSendMessage = async (content: string, files: File[]) => {
-    posthog.capture("user_message_sent", {
-      current_message_count: messages.length,
-    });
+    if (messages.length === 0) {
+      posthog.capture("first_message_after_context", {
+        entry_point: selectedRepository ? "github" : uploadedFiles.length > 0 ? "zip" : "direct",
+        message_length: content.length,
+        has_repository: !!selectedRepository,
+        has_files: uploadedFiles.length > 0
+      });
+    } else {
+      posthog.capture("user_message_sent", {
+        current_message_count: messages.length,
+      });
+    }
     const promises = files.map((file) => convertImageToBase64(file));
     const imageUrls = await Promise.all(promises);
 
