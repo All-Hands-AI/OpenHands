@@ -2,17 +2,17 @@ import { useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { Outlet } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
-import Security from "../components/modals/security/Security";
+import Security from "../components/modals/security/security";
 import { Controls } from "#/components/controls";
 import { RootState } from "#/store";
 import { Container } from "#/components/container";
-import { clearMessages } from "#/state/chatSlice";
-import { clearTerminal } from "#/state/commandSlice";
+import { clearMessages } from "#/state/chat-slice";
+import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/utils/use-effect-once";
 import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
 import ListIcon from "#/icons/list-type-number.svg?react";
-import { clearJupyter } from "#/state/jupyterSlice";
+import { clearJupyter } from "#/state/jupyter-slice";
 import { FilesProvider } from "#/context/files";
 import { ChatInterface } from "#/components/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
@@ -41,7 +41,7 @@ function App() {
   );
 
   const Terminal = React.useMemo(
-    () => React.lazy(() => import("../components/terminal/Terminal")),
+    () => React.lazy(() => import("../components/terminal/terminal")),
     [],
   );
 
