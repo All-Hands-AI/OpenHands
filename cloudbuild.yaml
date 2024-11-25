@@ -1,4 +1,12 @@
 steps:
+# Clone the repository first
+- name: 'gcr.io/cloud-builders/git'
+  args:
+    - clone
+    - 'https://github.com/AhmedProab/OpenHands.git'
+    - '.'
+
+# Build the Docker image
 - name: 'gcr.io/cloud-builders/docker'
   args:
     - 'build'
@@ -9,9 +17,9 @@ steps:
     - '-f'
     - 'containers/app/Dockerfile'
     - '.'
-  dir: '.' # هذا سيضمن أن السياق هو المجلد الرئيسي
   env:
     - 'DOCKER_BUILDKIT=1'
+
 substitutions:
   _VERSION: 'dev'
 images:
