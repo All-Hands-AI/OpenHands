@@ -359,6 +359,7 @@ async def test_step_max_budget_headless(mock_agent, mock_event_stream):
 
 @pytest.mark.asyncio
 async def test_message_action_user_input_headless(mock_agent, mock_event_stream):
+    # Test with default fake response
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
@@ -371,6 +372,53 @@ async def test_message_action_user_input_headless(mock_agent, mock_event_stream)
     message_action = MessageAction(content='Test message', wait_for_response=True)
     message_action._source = EventSource.AGENT
     await controller.on_event(message_action)
-    # In headless mode, requesting user input results in an error
-    assert controller.state.agent_state == AgentState.ERROR
+    # In headless mode with default fake response, should continue running
+    assert controller.state.agent_state == AgentState.RUNNING
+    mock_event_stream.add_event.assert_called_once()
+    args = mock_event_stream.add_event.call_args[0]
+    assert isinstance(args[0], MessageAction)
+    assert args[0].content == "continue"
+    await controller.close()
+
+    # Test with custom fake response
+    mock_event_stream.reset_mock()
+    custom_response = "custom response"
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=True,
+        fake_user_response_fn=lambda _: custom_response,
+    )
+    controller.state.agent_state = AgentState.RUNNING
+    message_action = MessageAction(content='Test message', wait_for_response=True)
+    message_action._source = EventSource.AGENT
+    await controller.on_event(message_action)
+    # In headless mode with custom fake response, should continue running
+    assert controller.state.agent_state == AgentState.RUNNING
+    mock_event_stream.add_event.assert_called_once()
+    args = mock_event_stream.add_event.call_args[0]
+    assert isinstance(args[0], MessageAction)
+    assert args[0].content == custom_response
+    await controller.close()
+
+@pytest.mark.asyncio
+async def test_message_action_user_input_non_headless(mock_agent, mock_event_stream):
+    controller = AgentController(
+        agent=mock_agent,
+        event_stream=mock_event_stream,
+        max_iterations=10,
+        sid='test',
+        confirmation_mode=False,
+        headless_mode=False,
+    )
+    controller.state.agent_state = AgentState.RUNNING
+    message_action = MessageAction(content='Test message', wait_for_response=True)
+    message_action._source = EventSource.AGENT
+    await controller.on_event(message_action)
+    # In non-headless mode, should wait for user input
+    assert controller.state.agent_state == AgentState.AWAITING_USER_INPUT
+    mock_event_stream.add_event.assert_not_called()
     await controller.close()

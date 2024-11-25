@@ -108,12 +108,18 @@ class AgentController:
             headless_mode: Whether the agent is run in headless mode.
             status_callback: Callback function for status updates.
             fake_user_response_fn: Function to generate fake user responses in headless mode.
+                If not provided and headless_mode is True, a default function will be used.
         """
         self._step_lock = asyncio.Lock()
         self.id = sid
         self.agent = agent
         self.headless_mode = headless_mode
-        self.fake_user_response_fn = fake_user_response_fn
+        
+        # Set up default fake user response function for headless mode
+        if headless_mode and fake_user_response_fn is None:
+            self.fake_user_response_fn = lambda _: "continue"
+        else:
+            self.fake_user_response_fn = fake_user_response_fn
 
         # subscribe to the event stream
         self.event_stream = event_stream
@@ -313,7 +319,7 @@ class AgentController:
         elif action.source == EventSource.AGENT and action.wait_for_response:
             if self.headless_mode:
                 # In headless mode, we should use a fake user response if provided
-                if hasattr(self, 'fake_user_response_fn'):
+                if self.fake_user_response_fn:
                     response = self.fake_user_response_fn(action.content)
                     self.event_stream.add_event(
                         MessageAction(content=response),
