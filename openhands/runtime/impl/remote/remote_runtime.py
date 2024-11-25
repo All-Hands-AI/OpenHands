@@ -56,7 +56,7 @@ class RemoteRuntime(Runtime):
         self,
         config: AppConfig,
         event_stream: EventStream,
-        sid: str = "default",
+        sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_callback: Optional[Callable] = None,
@@ -113,7 +113,7 @@ class RemoteRuntime(Runtime):
             self.log('debug', f'Using existing runtime with ID: {self.runtime_id}')
         elif self.attach_to_existing:
             raise RuntimeNotFoundError(
-                f"Could not find existing runtime for SID: {self.sid}"
+                f'Could not find existing runtime for SID: {self.sid}'
             )
         else:
             self.send_status_message('STATUS$STARTING_CONTAINER')
@@ -136,7 +136,7 @@ class RemoteRuntime(Runtime):
         assert (
             self.runtime_url is not None
         ), 'Runtime URL is not set. This should never happen.'
-        self.send_status_message("STATUS$WAITING_FOR_CLIENT")
+        self.send_status_message('STATUS$WAITING_FOR_CLIENT')
         if not self.attach_to_existing:
             self.log('info', 'Waiting for runtime to be alive...')
         self._wait_until_alive()
