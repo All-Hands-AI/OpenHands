@@ -52,9 +52,7 @@ export const retrieveGitHubUserRepositories = async (
 export const retrieveGitHubUser = async () => {
   const response = await github.get<GitHubUser>("/user", {
     transformResponse: (data) => {
-      const parsedData: GitHubUser | GitHubErrorReponse = JSON.parse(
-        data as string,
-      );
+      const parsedData: GitHubUser | GitHubErrorReponse = JSON.parse(data);
 
       if (isGitHubErrorReponse(parsedData)) {
         throw new Error(parsedData.message);
