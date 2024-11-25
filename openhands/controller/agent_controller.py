@@ -89,6 +89,7 @@ class AgentController:
         is_delegate: bool = False,
         headless_mode: bool = True,
         status_callback: Callable | None = None,
+        fake_user_response_fn: Callable[[str], str] | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -105,11 +106,14 @@ class AgentController:
             initial_state: The initial state of the controller.
             is_delegate: Whether this controller is a delegate.
             headless_mode: Whether the agent is run in headless mode.
+            status_callback: Callback function for status updates.
+            fake_user_response_fn: Function to generate fake user responses in headless mode.
         """
         self._step_lock = asyncio.Lock()
         self.id = sid
         self.agent = agent
         self.headless_mode = headless_mode
+        self.fake_user_response_fn = fake_user_response_fn
 
         # subscribe to the event stream
         self.event_stream = event_stream
@@ -308,10 +312,19 @@ class AgentController:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
             if self.headless_mode:
-                e = RuntimeError(
-                    f'Agent requested user input in headless mode. Message: {action.content}'
-                )
-                await self._react_to_exception(e)
+                # In headless mode, we should use a fake user response if provided
+                if hasattr(self, 'fake_user_response_fn'):
+                    response = self.fake_user_response_fn(action.content)
+                    self.event_stream.add_event(
+                        MessageAction(content=response),
+                        EventSource.USER,
+                    )
+                else:
+                    # If no fake response function is provided, we continue with an empty response
+                    self.event_stream.add_event(
+                        MessageAction(content=''),
+                        EventSource.USER,
+                    )
             else:
                 # Display the message content to help user understand what input is expected
                 print(f"\nAgent is requesting input: {action.content}")
@@ -622,18 +635,21 @@ class AgentController:
         else:
             self.state.traffic_control_state = TrafficControlState.THROTTLING
             if self.headless_mode:
-                e = RuntimeError(
+                # In headless mode, we should stop the agent with an error
+                self.log(
+                    'warning',
                     f'Agent reached maximum {limit_type} in headless mode. '
-                    f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}'
+                    f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}',
                 )
-                await self._react_to_exception(e)
+                await self.set_agent_state_to(AgentState.ERROR)
             else:
-                e = RuntimeError(
+                self.log(
+                    'warning',
                     f'Agent reached maximum {limit_type}. '
                     f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}. '
+                    f'{TRAFFIC_CONTROL_REMINDER}',
                 )
-                # FIXME: this isn't really an exception--we should have a different path
-                await self._react_to_exception(e)
+                await self.set_agent_state_to(AgentState.PAUSED)
             stop_step = True
         return stop_step
 
