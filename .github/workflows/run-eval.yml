@@ -16,12 +16,14 @@ jobs:
       - name: Checkout PR branch
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
 
       - name: Trigger remote job
         run: |
-          REPO_URL="https://github.com/${{ github.repository }}"
-          PR_BRANCH="${{ github.head_ref }}"
+          REPO_URL="https://github.com/${{ github.event.pull_request.head.repo.full_name }}"
+          PR_BRANCH="${{ github.event.pull_request.head.ref }}"
           echo "Repository URL: $REPO_URL"
           echo "PR Branch: $PR_BRANCH"
 
