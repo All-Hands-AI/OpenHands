@@ -52,7 +52,8 @@ from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system import check_port_available
-from openhands.utils.async_utils import wait_all
+from openhands.runtime.utils.system_stats import get_system_stats
+from openhands.utils.async_utils import call_sync_from_async, wait_all
 
 
 class ActionRequest(BaseModel):
@@ -170,7 +171,8 @@ class ActionExecutor:
     async def run(
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
-        return self.bash_session.run(action)
+        obs = await call_sync_from_async(self.bash_session.run, action)
+        return obs
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         if 'jupyter' in self.plugins:
@@ -419,7 +421,14 @@ if __name__ == '__main__':
         current_time = time.time()
         uptime = current_time - client.start_time
         idle_time = current_time - client.last_execution_time
-        return {'uptime': uptime, 'idle_time': idle_time}
+
+        response = {
+            'uptime': uptime,
+            'idle_time': idle_time,
+            'resources': get_system_stats(),
+        }
+        logger.info('Server info endpoint response: %s', response)
+        return response
 
     @app.post('/execute_action')
     async def execute_action(action_request: ActionRequest):

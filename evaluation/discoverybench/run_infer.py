@@ -250,9 +250,6 @@ def process_instance(
 
     config = get_config(metadata)
 
-    # use a session id for concurrent evaluation
-    sid = 'ID_' + str(instance.instance_id)
-
     # Setup the logger properly, so you can run
     # multi-processing to parallelize the evaluation
     if reset_logger:
@@ -284,7 +281,7 @@ def process_instance(
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
     # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    runtime = create_runtime(config, sid=sid)
+    runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
     initialize_runtime(runtime, instance.data_files)
 

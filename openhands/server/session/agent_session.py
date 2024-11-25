@@ -11,7 +11,7 @@ from openhands.events.action.agent import ChangeAgentStateAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
-from openhands.runtime.base import Runtime
+from openhands.runtime.base import Runtime, RuntimeUnavailableError
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 
@@ -194,13 +194,13 @@ class AgentSession:
 
         try:
             await self.runtime.connect()
-        except Exception as e:
+        except RuntimeUnavailableError as e:
             logger.error(f'Runtime initialization failed: {e}', exc_info=True)
             if self._status_callback:
                 self._status_callback(
                     'error', 'STATUS$ERROR_RUNTIME_DISCONNECTED', str(e)
                 )
-            raise
+            return
 
         if self.runtime is not None:
             logger.debug(
