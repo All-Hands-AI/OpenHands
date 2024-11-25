@@ -77,10 +77,10 @@ jobs:
           poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES '' 'haiku_run'
 
           # get integration tests report
-          REPORT_FILE=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/*_maxiter_10_N* -name "report.md" -type f | head -n 1)
-          echo "REPORT_FILE: $REPORT_FILE"
+          REPORT_FILE_HAIKU=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/*haiku*_maxiter_10_N* -name "report.md" -type f | head -n 1)
+          echo "REPORT_FILE: $REPORT_FILE_HAIKU"
           echo "INTEGRATION_TEST_REPORT_HAIKU<<EOF" >> $GITHUB_ENV
-          cat $REPORT_FILE >> $GITHUB_ENV
+          cat $REPORT_FILE_HAIKU >> $GITHUB_ENV
           echo >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
@@ -118,37 +118,29 @@ jobs:
           poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES '' 'deepseek_run'
 
           # get integration tests report
-          REPORT_FILE=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/*_maxiter_10_N* -name "report.md" -type f | head -n 1)
-          echo "REPORT_FILE: $REPORT_FILE"
+          REPORT_FILE_DEEPSEEK=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/deepseek*_maxiter_10_N* -name "report.md" -type f | head -n 1)
+          echo "REPORT_FILE: $REPORT_FILE_DEEPSEEK"
           echo "INTEGRATION_TEST_REPORT_DEEPSEEK<<EOF" >> $GITHUB_ENV
-          cat $REPORT_FILE >> $GITHUB_ENV
+          cat $REPORT_FILE_DEEPSEEK >> $GITHUB_ENV
           echo >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
-      - name: Create tar.gz of Haiku evaluation outputs
+      - name: Create archive of evaluation outputs
         run: |
           TIMESTAMP=$(date +'%y-%m-%d-%H-%M')
-          tar -czvf outputs_haiku_${TIMESTAMP}.tar.gz evaluation/evaluation_outputs/outputs
-
-      - name: Create tar.gz of DeepSeek evaluation outputs
-        run: |
-          TIMESTAMP=$(date +'%y-%m-%d-%H-%M')
-          tar -czvf outputs_deepseek_${TIMESTAMP}.tar.gz evaluation/evaluation_outputs/outputs
+          cd evaluation/evaluation_outputs/outputs  # Change to the outputs directory
+          tar -czvf ../../../integration_tests_${TIMESTAMP}.tar.gz integration_tests/CodeActAgent/*  # Only include the actual result directories
 
       - name: Upload evaluation results as artifact
         uses: actions/upload-artifact@v4
         id: upload_results_artifact
         with:
-          # using a single artifact with both archives since they are related to same test run
           name: integration-test-outputs-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            outputs_haiku_*.tar.gz
-            outputs_deepseek_*.tar.gz
+          path: integration_tests_*.tar.gz
 
       - name: Get artifact URLs
         run: |
-          echo "ARTIFACT_URL_HAIKU=${{ steps.upload_results_artifact.outputs.artifact-url }}" >> $GITHUB_ENV
-          echo "ARTIFACT_URL_DEEPSEEK=${{ steps.upload_results_artifact.outputs.artifact-url }}" >> $GITHUB_ENV
+          echo "ARTIFACT_URL=${{ steps.upload_results_artifact.outputs.artifact-url }}" >> $GITHUB_ENV
 
       # - name: Authenticate to Google Cloud
       #   uses: 'google-github-actions/auth@v2'
