@@ -6,11 +6,11 @@ on:
   workflow_dispatch:
     inputs:
       reason:
-        description: "Reason for manual trigger"
+        description: 'Reason for manual trigger'
         required: true
-        default: ""
+        default: ''
   schedule:
-    - cron: '0 22 * * *'  # Runs at 10pm UTC every day
+    - cron: '30 22 * * *'  # Runs at 10:30pm UTC every day
 
 env:
   N_PROCESSES: 10 # Global configuration for number of parallel processes for evaluation
