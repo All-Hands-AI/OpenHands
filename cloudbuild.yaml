@@ -9,6 +9,7 @@ steps:
     - '-f'
     - 'containers/app/Dockerfile'
     - '.'
+  dir: '.' # هذا سيضمن أن السياق هو المجلد الرئيسي
   env:
     - 'DOCKER_BUILDKIT=1'
 substitutions:
@@ -19,4 +20,4 @@ timeout: '3600s'
 options:
   machineType: 'N1_HIGHCPU_8'
   diskSizeGb: '100'
-logging: LEGACY
+  logging: CLOUD_LOGGING_ONLY
