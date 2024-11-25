@@ -261,6 +261,7 @@ class RemoteRuntime(Runtime):
                 f'Runtime started. URL: {self.runtime_url}',
             )
         except requests.HTTPError as e:
+            self.log('error', f'Unable to start runtime: {e}')
             raise RuntimeUnavailableError() from e
 
     def _resume_runtime(self):
