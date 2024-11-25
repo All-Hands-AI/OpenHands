@@ -36,6 +36,7 @@ from openhands.events.action import (
     ModifyTaskAction,
     NullAction,
 )
+from openhands.events.cost import CostEvent
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentDelegateObservation,
@@ -181,6 +182,16 @@ class AgentController:
     async def update_state_after_step(self):
         # update metrics especially for cost. Use deepcopy to avoid it being modified by agent.reset()
         self.state.local_metrics = copy.deepcopy(self.agent.llm.metrics)
+        # Emit cost event
+        if self.state.local_metrics.accumulated_cost is not None:
+            self.event_stream.add_event(
+                CostEvent(
+                    step_cost=self.state.local_metrics.accumulated_cost - (self.state.metrics.accumulated_cost or 0),
+                    total_cost=self.state.local_metrics.accumulated_cost,
+                    description=f"Step {self.state.iteration}"
+                ),
+                EventSource.ENVIRONMENT
+            )
 
     async def _react_to_exception(
         self,

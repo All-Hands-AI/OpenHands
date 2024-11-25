@@ -10,6 +10,7 @@ import {
   appendSecurityAnalyzerInput,
 } from "#/state/security-analyzer-slice";
 import { setCurStatusMessage } from "#/state/status-slice";
+import { addStepCost } from "#/state/cost-slice";
 import store from "#/store";
 import ActionType from "#/types/action-type";
 import {
@@ -148,6 +149,12 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
     handleObservationMessage(message as unknown as ObservationMessage);
   } else if (message.status_update) {
     handleStatusMessage(message as unknown as StatusMessage);
+  } else if (message.event === "cost") {
+    store.dispatch(addStepCost({
+      stepCost: message.step_cost as number,
+      totalCost: message.total_cost as number,
+      description: message.description as string,
+    }));
   } else {
     console.error("Unknown message type", message);
   }

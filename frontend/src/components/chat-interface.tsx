@@ -29,6 +29,7 @@ import OpenHands from "#/api/open-hands";
 import { downloadWorkspace } from "#/utils/download-workspace";
 import { SuggestionItem } from "./suggestion-item";
 import { useAuth } from "#/context/auth-context";
+import { CostDisplay } from "./cost-display";
 
 const isErrorMessage = (
   message: Message | ErrorMessage,
@@ -238,6 +239,7 @@ export function ChatInterface() {
         onClose={() => setFeedbackModalIsOpen(false)}
         polarity={feedbackPolarity}
       />
+      <CostDisplay />
     </div>
   );
 }
