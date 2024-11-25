@@ -176,7 +176,7 @@ export function ChatInterface() {
           curAgentState === AgentState.FINISHED) && (
           <div className="flex flex-col gap-2 mb-2">
             {gitHubToken ? (
-              <div className="flex flex-row gap-2 justify-center">
+              <div className="flex flex-row gap-2 justify-center w-full">
                 {!hasPullRequest ? (
                   <>
                     <SuggestionItem
