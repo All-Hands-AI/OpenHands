@@ -21,7 +21,7 @@ export function GitHubRepositorySelector({
       dispatch(setSelectedRepository(repo.full_name));
       posthog.capture("repository_selected", {
         repository_name: repo.name,
-        repository_owner: repo.owner.login
+        repository_owner: repo.owner.login,
       });
       onSelect();
     }

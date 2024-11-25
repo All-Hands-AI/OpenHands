@@ -12,10 +12,10 @@ export const useUploadFiles = () => {
 
   return useMutation({
     mutationFn: ({ files }: UploadFilesArgs) => {
-      files.forEach(file => {
+      files.forEach((file) => {
         posthog.capture("zip_file_uploaded", {
           file_name: file.name,
-          file_size: file.size
+          file_size: file.size,
         });
       });
       return OpenHands.uploadFiles(token || "", files);

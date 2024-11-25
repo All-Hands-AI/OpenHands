@@ -9,7 +9,6 @@ import { ImageCarousel } from "./image-carousel";
 import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
 import { addUserMessage } from "#/state/chat-slice";
-import { RootState } from "#/store";
 import AgentState from "#/types/agent-state";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { FeedbackModal } from "./feedback-modal";
@@ -30,6 +29,15 @@ import OpenHands from "#/api/open-hands";
 import { downloadWorkspace } from "#/utils/download-workspace";
 import { SuggestionItem } from "./suggestion-item";
 import { useAuth } from "#/context/auth-context";
+
+function getEntryPoint(
+  hasRepository: boolean | string | null,
+  numFiles: number,
+): string {
+  if (hasRepository) return "github";
+  if (numFiles > 0) return "zip";
+  return "direct";
+}
 
 const isErrorMessage = (
   message: Message | ErrorMessage,
@@ -59,7 +67,7 @@ export function ChatInterface() {
     if (status === WsClientProviderStatus.ACTIVE) {
       try {
         OpenHands.getRuntimeId().then(({ runtime_id }) => {
-          // eslint-disable-next-line no-console
+          /* eslint-disable-next-line no-console -- Runtime ID is important for debugging */
           console.log(
             "Runtime ID: %c%s",
             "background: #444; color: #ffeb3b; font-weight: bold; padding: 2px 4px; border-radius: 4px;",
@@ -67,6 +75,7 @@ export function ChatInterface() {
           );
         });
       } catch (e) {
+        /* eslint-disable-next-line no-console -- Runtime ID error is important for debugging */
         console.warn("Runtime ID not available in this environment");
       }
     }
@@ -79,10 +88,10 @@ export function ChatInterface() {
   const handleSendMessage = async (content: string, files: File[]) => {
     if (messages.length === 0) {
       posthog.capture("first_message_after_context", {
-        entry_point: selectedRepository ? "github" : uploadedFiles.length > 0 ? "zip" : "direct",
+        entry_point: getEntryPoint(selectedRepository, uploadedFiles.length),
         message_length: content.length,
         has_repository: !!selectedRepository,
-        has_files: uploadedFiles.length > 0
+        has_files: uploadedFiles.length > 0,
       });
     } else {
       posthog.capture("user_message_sent", {
