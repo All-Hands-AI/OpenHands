@@ -38,7 +38,7 @@ def get_remote_startup_command(
             '-20',  # Highest priority
             'sh',
             '-c',
-            f'echo -1000 > /proc/self/oom_score_adj && exec {cmd_str}'
+            f'echo -1000 > /proc/self/oom_score_adj && exec {cmd_str}',
         ]
     else:
         # If not root, run with normal priority
