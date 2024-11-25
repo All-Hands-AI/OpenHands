@@ -123,7 +123,8 @@ jobs:
         uses: actions/upload-artifact@v4
         id: upload_results_artifact
         with:
-          name: integration-test-outputs
+          # using a single artifact with both archives since they are related to same test run
+          name: integration-test-outputs-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             outputs_haiku_*.tar.gz
             outputs_deepseek_*.tar.gz
@@ -173,5 +174,4 @@ jobs:
               DeepSeek LLM Test Results:
               ${{ env.INTEGRATION_TEST_REPORT_DEEPSEEK }}
               ---
-              Haiku Evaluation Outputs: [Download](${{ env.ARTIFACT_URL_HAIKU }})
-              DeepSeek Evaluation Outputs: [Download](${{ env.ARTIFACT_URL_DEEPSEEK }})
+              Download evaluation outputs (includes both Haiku and DeepSeek results): [Download](${{ steps.upload_results_artifact.outputs.artifact-url }})
