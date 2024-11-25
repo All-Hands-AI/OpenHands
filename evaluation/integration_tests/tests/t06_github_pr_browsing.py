@@ -14,10 +14,7 @@ class Test(BaseIntegrationTest):
 
     @classmethod
     def verify_result(cls, runtime: Runtime, histories: list[Event]) -> TestResult:
-        # Log all events for debugging
         from openhands.core.logger import openhands_logger as logger
-        logger.info("Verifying GitHub PR browsing test result")
-        logger.info(f"Total events: {len(histories)}")
 
         # check if the license information is in any message
         message_actions = [
@@ -27,7 +24,7 @@ class Test(BaseIntegrationTest):
                 event, (MessageAction, AgentFinishAction, AgentDelegateObservation)
             )
         ]
-        logger.info(f"Total message-like events: {len(message_actions)}")
+        logger.info(f'Total message-like events: {len(message_actions)}')
 
         for event in message_actions:
             try:
@@ -38,10 +35,9 @@ class Test(BaseIntegrationTest):
                 elif isinstance(event, MessageAction):
                     content = event.get('content', '')
                 else:
-                    logger.warning(f'Unknown event type: {type(event)}')
+                    logger.warning(f'Unexpected event type: {type(event)}')
                     continue
 
-                logger.info(f"Checking event content: {content}")
                 if (
                     'non-commercial' in content
                     or 'MIT' in content
@@ -49,7 +45,7 @@ class Test(BaseIntegrationTest):
                 ):
                     return TestResult(success=True)
             except Exception as e:
-                logger.error(f"Error processing event: {e}")
+                logger.error(f'Error processing event: {e}')
 
         return TestResult(
             success=False,

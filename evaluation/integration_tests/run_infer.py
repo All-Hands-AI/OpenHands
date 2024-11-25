@@ -26,7 +26,6 @@ from openhands.core.config import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import MessageAction
-from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
@@ -129,15 +128,12 @@ def process_instance(
     # # result evaluation
     # # =============================================
 
-    histories = [event_to_dict(event) for event in state.history]
-    
-    # Debug logging
-    logger.info(f"Total events in history: {len(histories)}")
-    for event in histories:
-        logger.info(f"Event type: {event.get('type', 'Unknown')}")
-        if 'content' in event:
-            logger.info(f"Event content: {event['content']}")
-    
+    histories = state.history
+
+    # some basic check
+    logger.info(f'Total events in history: {len(histories)}')
+    assert len(histories) > 0, 'History should not be empty'
+
     test_result: TestResult = test_class.verify_result(runtime, histories)
     metrics = state.metrics.get() if state.metrics else None
 
