@@ -69,7 +69,6 @@ jobs:
           RUNTIME: remote
           SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
           EVAL_DOCKER_IMAGE_PREFIX: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images
-
         run: |
           poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES
 
@@ -80,6 +79,16 @@ jobs:
           cat $REPORT_FILE >> $GITHUB_ENV
           echo >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
+
+      - name: Cleanup Haiku runtimes
+        if: always()
+        env:
+          ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
+          SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
+        run: |
+          poetry run ./evaluation/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
+          # Add a small delay to ensure cleanup is complete
+          sleep 10
 
       - name: Configure config.toml for testing with DeepSeek
         env:
