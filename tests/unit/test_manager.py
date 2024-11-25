@@ -1,8 +1,9 @@
 import asyncio
 import json
-import pytest
 from dataclasses import dataclass
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from openhands.core.config.app_config import AppConfig
 from openhands.server.session.manager import SessionManager
