@@ -3,6 +3,8 @@ name: Run Integration Tests
 on:
   pull_request:
     types: [labeled]
+  schedule:
+    - cron: "0 1 * * *" # 1 AM UTC every day
   workflow_dispatch:
     inputs:
       reason:
@@ -11,7 +13,7 @@ on:
         default: ""
 
 env:
-  N_PROCESSES: 4 # Global configuration for number of parallel processes for evaluation
+  N_PROCESSES: 10 # Global configuration for number of parallel processes for evaluation
 
 jobs:
   run-integration-tests:
@@ -47,9 +49,9 @@ jobs:
             Hi! I started running the integration tests on your PR. You will receive a comment with the results shortly.
 
       - name: Install Python dependencies using Poetry
-        run: poetry install
+        run: poetry install --without evaluation, llama-index
 
-      - name: Configure config.toml for evaluation
+      - name: Configure config.toml for testing with Haiku
         env:
           LLM_MODEL: ${{ secrets.HAIKU_LLM_MODEL }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
@@ -71,10 +73,10 @@ jobs:
         run: |
           poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES
 
-          # get evaluation report
+          # get integration tests report
           REPORT_FILE=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/*_maxiter_10_N* -name "report.md" -type f | head -n 1)
           echo "REPORT_FILE: $REPORT_FILE"
-          echo "INTEGRATION_TEST_REPORT<<EOF" >> $GITHUB_ENV
+          echo "INTEGRATION_TEST_REPORT_HAIKU<<EOF" >> $GITHUB_ENV
           cat $REPORT_FILE >> $GITHUB_ENV
           echo >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
@@ -82,17 +84,17 @@ jobs:
       - name: Create tar.gz of evaluation outputs
         run: |
           TIMESTAMP=$(date +'%y-%m-%d-%H-%M')
-          tar -czvf evaluation_outputs_${TIMESTAMP}.tar.gz evaluation/evaluation_outputs/outputs
+          tar -czvf outputs_haiku_${TIMESTAMP}.tar.gz evaluation/evaluation_outputs/outputs
 
       - name: Upload evaluation results as artifact
         uses: actions/upload-artifact@v4
         id: upload_results_artifact
         with:
           name: integration-test-outputs
-          path: evaluation_outputs_*.tar.gz
+          path: outputs_haiku_*.tar.gz
 
       - name: Get artifact URL
-        run: echo "ARTIFACT_URL=${{ steps.upload_results_artifact.outputs.artifact-url }}" >> $GITHUB_ENV
+        run: echo "ARTIFACT_URL_HAIKU=${{ steps.upload_results_artifact.outputs.artifact-url }}" >> $GITHUB_ENV
 
       # - name: Authenticate to Google Cloud
       #   uses: 'google-github-actions/auth@v2'
@@ -114,16 +116,17 @@ jobs:
       #     path: 'evaluation/evaluation_outputs/outputs'
       #     destination: 'openhands-oss-eval-results/${{ env.TIMESTAMP }}-${{ env.TRIGGER_REASON }}'
 
-      - name: Comment with evaluation results and artifact link
+      - name: Comment with results and artifact link
         id: create_comment
         uses: KeisukeYamashita/create-comment@v1
         with:
-          number: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || 5077 }}
+          # if triggered by PR, use PR number, otherwise use 9 as fallback issue number for manual triggers
+          number: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || 9 }}
           unique: false
           comment: |
               Trigger by: ${{ github.event_name == 'pull_request' && format('Pull Request (integration-test label on PR #{0})', github.event.pull_request.number) || format('Manual Trigger: {0}', github.event.inputs.reason) }}
               Commit: ${{ github.sha }}
-              **Integration Tests Evaluation Report**
-              ${{ env.INTEGRATION_TEST_REPORT }}
+              **Integration Tests Report (Haiku)**
+              ${{ env.INTEGRATION_TEST_REPORT_HAIKU }}
               ---
-              You can download the full evaluation outputs [here](${{ env.ARTIFACT_URL }}).
+              You can download the full evaluation outputs [here](${{ env.ARTIFACT_URL_HAIKU }}).
