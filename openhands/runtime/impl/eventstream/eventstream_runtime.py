@@ -179,7 +179,6 @@ class EventStreamRuntime(Runtime):
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
-        self.rm_all_containers = self.config.sandbox.rm_all_containers
         self.container_name = CONTAINER_NAME_PREFIX + sid
         self.container = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
@@ -472,7 +471,7 @@ class EventStreamRuntime(Runtime):
         if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
             return
         close_prefix = (
-            CONTAINER_NAME_PREFIX if self.rm_all_containers else self.container_name
+            CONTAINER_NAME_PREFIX if self.config.sandbox.rm_all_containers else self.container_name
         )
         remove_all_containers(close_prefix)
 
