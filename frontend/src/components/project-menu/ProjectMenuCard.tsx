@@ -5,13 +5,13 @@ import posthog from "posthog-js";
 import EllipsisH from "#/icons/ellipsis-h.svg?react";
 import { ModalBackdrop } from "../modals/modal-backdrop";
 import { ConnectToGitHubModal } from "../modals/connect-to-github-modal";
-import { addUserMessage } from "#/state/chatSlice";
-import { createChatMessage } from "#/services/chatService";
+import { addUserMessage } from "#/state/chat-slice";
+import { createChatMessage } from "#/services/chat-service";
 import { ProjectMenuCardContextMenu } from "./project.menu-card-context-menu";
 import { ProjectMenuDetailsPlaceholder } from "./project-menu-details-placeholder";
 import { ProjectMenuDetails } from "./project-menu-details";
 import { downloadWorkspace } from "#/utils/download-workspace";
-import { LoadingSpinner } from "../modals/LoadingProject";
+import { LoadingSpinner } from "../modals/loading-project";
 import { useWsClient } from "#/context/ws-client-provider";
 
 interface ProjectMenuCardProps {

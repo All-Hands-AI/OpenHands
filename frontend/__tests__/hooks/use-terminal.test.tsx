@@ -1,9 +1,10 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
 import { afterEach } from "node:test";
-import { useTerminal } from "#/hooks/useTerminal";
-import { Command } from "#/state/commandSlice";
 import { ReactNode } from "react";
+import { useTerminal } from "#/hooks/use-terminal";
+import { Command } from "#/state/command-slice";
+
 
 interface TestTerminalComponentProps {
   commands: Command[];
@@ -22,8 +23,7 @@ interface WrapperProps {
   children: ReactNode;
 }
 
-
-function Wrapper({children}: WrapperProps) {
+function Wrapper({ children }: WrapperProps) {
   return (
     <div>{children}</div>
   )

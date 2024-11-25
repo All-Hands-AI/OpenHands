@@ -9,12 +9,12 @@ import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import React from "react";
 import posthog from "posthog-js";
-import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
-import { ModelSelector } from "#/components/modals/settings/ModelSelector";
+import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
+import { ModelSelector } from "#/components/modals/settings/model-selector";
 import { getDefaultSettings, Settings } from "#/services/settings";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
-import { extractModelAndProvider } from "#/utils/extractModelAndProvider";
-import ModalButton from "../buttons/ModalButton";
+import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
+import ModalButton from "../buttons/modal-button";
 import { DangerModal } from "../modals/confirmation-modals/danger-modal";
 import { I18nKey } from "#/i18n/declaration";
 import {

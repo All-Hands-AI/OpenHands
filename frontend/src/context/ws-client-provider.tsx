@@ -2,9 +2,9 @@ import posthog from "posthog-js";
 import React from "react";
 import { io, Socket } from "socket.io-client";
 import { Settings } from "#/services/settings";
-import ActionType from "#/types/ActionType";
+import ActionType from "#/types/action-type";
 import EventLogger from "#/utils/event-logger";
-import AgentState from "#/types/AgentState";
+import AgentState from "#/types/agent-state";
 import { handleAssistantMessage } from "#/services/actions";
 import { useRate } from "#/utils/use-rate";
 
