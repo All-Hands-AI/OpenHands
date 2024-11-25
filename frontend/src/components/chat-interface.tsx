@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import React from "react";
-import posthog from "posthog-js";
+import { usePostHog } from "posthog-js/react";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { ChatMessage } from "./chat-message";
 import { FeedbackActions } from "./feedback-actions";
@@ -35,6 +35,7 @@ const isErrorMessage = (
 ): message is ErrorMessage => "error" in message;
 
 export function ChatInterface() {
+  const posthog = usePostHog();
   const { gitHubToken } = useAuth();
   const { send, status, isLoadingMessages } = useWsClient();
 

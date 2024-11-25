@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate, useNavigation } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
-import posthog from "posthog-js";
+import { usePostHog } from "posthog-js/react";
 import { RootState } from "#/store";
 import {
   addFile,
@@ -19,6 +19,7 @@ import { AttachImageLabel } from "#/components/attach-image-label";
 import { cn } from "#/utils/utils";
 
 export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
+  const posthog = usePostHog();
   const dispatch = useDispatch();
   const navigation = useNavigation();
   const navigate = useNavigate();

@@ -1,4 +1,4 @@
-import posthog from "posthog-js";
+import { usePostHog } from "posthog-js/react";
 import React from "react";
 
 interface AuthContextType {
@@ -14,6 +14,7 @@ interface AuthContextType {
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 function AuthProvider({ children }: React.PropsWithChildren) {
+  const posthog = usePostHog();
   const [tokenState, setTokenState] = React.useState<string | null>(() =>
     localStorage.getItem("token"),
   );

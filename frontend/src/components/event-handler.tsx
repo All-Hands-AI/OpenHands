@@ -1,7 +1,7 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
-import posthog from "posthog-js";
+import { usePostHog } from "posthog-js/react";
 import {
   useWsClient,
   WsClientProviderStatus,
@@ -43,6 +43,7 @@ const isErrorObservation = (data: object): data is ErrorObservation =>
   "observation" in data && data.observation === "error";
 
 export function EventHandler({ children }: React.PropsWithChildren) {
+  const posthog = usePostHog();
   const { setToken, gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
   const { events, status, send } = useWsClient();

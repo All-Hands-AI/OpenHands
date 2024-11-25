@@ -1,5 +1,5 @@
-import posthog from "posthog-js";
 import React from "react";
+import { usePostHog } from "posthog-js/react";
 import { Settings } from "#/services/settings";
 import ActionType from "#/types/action-type";
 import EventLogger from "#/utils/event-logger";
@@ -49,6 +49,7 @@ export function WsClientProvider({
   settings,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
+  const posthog = usePostHog();
   const wsRef = React.useRef<WebSocket | null>(null);
   const tokenRef = React.useRef<string | null>(token);
   const ghTokenRef = React.useRef<string | null>(ghToken);

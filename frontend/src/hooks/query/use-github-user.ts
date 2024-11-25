@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import React from "react";
-import posthog from "posthog-js";
+import { usePostHog } from "posthog-js/react";
 import { retrieveGitHubUser, isGitHubErrorReponse } from "#/api/github";
 import { useAuth } from "#/context/auth-context";
 import { useConfig } from "./use-config";
 
 export const useGitHubUser = () => {
+  const posthog = usePostHog();
   const { gitHubToken } = useAuth();
   const { data: config } = useConfig();
 

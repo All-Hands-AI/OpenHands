@@ -9,7 +9,7 @@ import { RemixBrowser } from "@remix-run/react";
 import React, { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { Provider } from "react-redux";
-import posthog from "posthog-js";
+import { PostHogProvider } from "posthog-js/react";
 import "./i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import store from "./store";
@@ -17,19 +17,22 @@ import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
 import { UserPrefsProvider } from "./context/user-prefs-context";
 
-function PosthogInit() {
+function PosthogInit({ children }: React.PropsWithChildren) {
   const { data: config } = useConfig();
 
-  React.useEffect(() => {
-    if (config?.POSTHOG_CLIENT_KEY) {
-      posthog.init(config.POSTHOG_CLIENT_KEY, {
+  // NOTE: The warning: [PostHog.js] was already loaded elsewhere. This may cause issues.
+  // is caused due to React's strict mode. In production, this warning will not appear.
+  return (
+    <PostHogProvider
+      apiKey={config?.POSTHOG_CLIENT_KEY}
+      options={{
         api_host: "https://us.i.posthog.com",
         person_profiles: "identified_only",
-      });
-    }
-  }, [config]);
-
-  return null;
+      }}
+    >
+      {children}
+    </PostHogProvider>
+  );
 }
 
 async function prepareApp() {
@@ -56,8 +59,9 @@ prepareApp().then(() =>
           <UserPrefsProvider>
             <AuthProvider>
               <QueryClientProvider client={queryClient}>
-                <RemixBrowser />
-                <PosthogInit />
+                <PosthogInit>
+                  <RemixBrowser />
+                </PosthogInit>
               </QueryClientProvider>
             </AuthProvider>
           </UserPrefsProvider>

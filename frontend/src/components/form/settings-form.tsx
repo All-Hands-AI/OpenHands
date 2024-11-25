@@ -8,7 +8,7 @@ import { useLocation } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import React from "react";
-import posthog from "posthog-js";
+import { usePostHog } from "posthog-js/react";
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { ModelSelector } from "#/components/modals/settings/model-selector";
 import { getDefaultSettings, Settings } from "#/services/settings";
@@ -42,6 +42,7 @@ export function SettingsForm({
   securityAnalyzers,
   onClose,
 }: SettingsFormProps) {
+  const posthog = usePostHog();
   const { saveSettings } = useUserPrefs();
   const endSession = useEndSession();
 

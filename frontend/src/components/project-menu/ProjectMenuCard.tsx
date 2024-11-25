@@ -1,7 +1,7 @@
 import React from "react";
 import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
-import posthog from "posthog-js";
+import { usePostHog } from "posthog-js/react";
 import EllipsisH from "#/icons/ellipsis-h.svg?react";
 import { ModalBackdrop } from "../modals/modal-backdrop";
 import { ConnectToGitHubModal } from "../modals/connect-to-github-modal";
@@ -27,6 +27,7 @@ export function ProjectMenuCard({
   isConnectedToGitHub,
   githubData,
 }: ProjectMenuCardProps) {
+  const posthog = usePostHog();
   const { send } = useWsClient();
   const dispatch = useDispatch();
 
