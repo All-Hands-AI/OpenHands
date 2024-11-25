@@ -70,7 +70,7 @@ jobs:
           SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
           EVAL_DOCKER_IMAGE_PREFIX: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images
         run: |
-          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES
+          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES '' 'haiku_run'
 
           # get integration tests report
           REPORT_FILE=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/*_maxiter_10_N* -name "report.md" -type f | head -n 1)
@@ -111,7 +111,7 @@ jobs:
           EVAL_DOCKER_IMAGE_PREFIX: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images
 
         run: |
-          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES
+          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES '' 'deepseek_run'
 
           # get integration tests report
           REPORT_FILE=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/*_maxiter_10_N* -name "report.md" -type f | head -n 1)
