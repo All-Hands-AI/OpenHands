@@ -1,20 +1,10 @@
 steps:
-# Clone the repository
-- name: 'gcr.io/cloud-builders/git'
-  id: 'clone'
-  args:
-    - clone
-    - '--recurse-submodules'
-    - 'https://github.com/AhmedProab/OpenHands.git'
-    - '.'
-
-# List files to verify clone
+# Display workspace contents
 - name: 'ubuntu'
-  id: 'verify'
+  id: 'debug_before'
   args: ['ls', '-la']
-  waitFor: ['clone']
 
-# Build Docker image
+# Build Docker image using the current context
 - name: 'gcr.io/cloud-builders/docker'
   id: 'build'
   args:
@@ -23,12 +13,13 @@ steps:
     - 'us-central1-docker.pkg.dev/dynamic-ai-openhands/openhands/app'
     - '--build-arg'
     - 'OPENHANDS_BUILD_VERSION=${_VERSION}'
+    - '--no-cache'
     - '-f'
     - 'containers/app/Dockerfile'
     - '.'
   env:
     - 'DOCKER_BUILDKIT=1'
-  waitFor: ['verify']
+    - 'DOCKER_CLI_EXPERIMENTAL=enabled'
 
 substitutions:
   _VERSION: 'dev'
@@ -39,3 +30,5 @@ options:
   machineType: 'N1_HIGHCPU_8'
   diskSizeGb: '100'
   logging: CLOUD_LOGGING_ONLY
+  env:
+    - 'DOCKER_BUILDKIT=1'
