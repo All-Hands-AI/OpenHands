@@ -281,6 +281,62 @@ describe.skip("ChatInterface", () => {
     expect(within(error).getByText("Something went wrong")).toBeInTheDocument();
   });
 
+  it("should render both GitHub buttons initially when ghToken is available", () => {
+    vi.mock("@remix-run/react", async (importActual) => ({
+      ...(await importActual<typeof import("@remix-run/react")>()),
+      useRouteLoaderData: vi.fn(() => ({ ghToken: "test-token" })),
+    }));
+
+    const messages: Message[] = [
+      {
+        sender: "assistant",
+        content: "Hello",
+        imageUrls: [],
+        timestamp: new Date().toISOString(),
+      },
+    ];
+    renderChatInterface(messages);
+
+    const pushButton = screen.getByRole("button", { name: "Push to Branch" });
+    const prButton = screen.getByRole("button", { name: "Push & Create PR" });
+
+    expect(pushButton).toBeInTheDocument();
+    expect(prButton).toBeInTheDocument();
+    expect(pushButton).toHaveTextContent("Push to Branch");
+    expect(prButton).toHaveTextContent("Push & Create PR");
+  });
+
+  it("should render only 'Push changes to PR' button after PR is created", async () => {
+    vi.mock("@remix-run/react", async (importActual) => ({
+      ...(await importActual<typeof import("@remix-run/react")>()),
+      useRouteLoaderData: vi.fn(() => ({ ghToken: "test-token" })),
+    }));
+
+    const messages: Message[] = [
+      {
+        sender: "assistant",
+        content: "Hello",
+        imageUrls: [],
+        timestamp: new Date().toISOString(),
+      },
+    ];
+    const { rerender } = renderChatInterface(messages);
+    const user = userEvent.setup();
+
+    // Click the "Push & Create PR" button
+    const prButton = screen.getByRole("button", { name: "Push & Create PR" });
+    await user.click(prButton);
+
+    // Re-render to trigger state update
+    rerender(<ChatInterface />);
+
+    // Verify only one button is shown
+    const pushToPrButton = screen.getByRole("button", { name: "Push changes to PR" });
+    expect(pushToPrButton).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Push to Branch" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Push & Create PR" })).not.toBeInTheDocument();
+  });
+
   it("should render feedback actions if there are more than 3 messages", () => {
     const messages: Message[] = [
       {
