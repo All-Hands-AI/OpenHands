@@ -59,7 +59,7 @@ async def test_session_is_running_in_cluster():
         )
     )
     with (
-        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.02),
+        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.05),
     ):
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
