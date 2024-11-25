@@ -8,7 +8,9 @@ MESSAGE_SEPARATOR = '\n\n----------\n\n'
 
 
 class DebugMixin:
-    def log_prompt(self, messages: list[Message | dict[str, Any]] | Message | dict[str, Any]):
+    def log_prompt(
+        self, messages: list[Message | dict[str, Any]] | Message | dict[str, Any]
+    ):
         if not messages:
             logger.debug('No completion messages!')
             return

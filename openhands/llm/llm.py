@@ -491,7 +491,7 @@ class LLM(RetryMixin, DebugMixin):
             else:
                 all_tokens_available = False
                 break
-        
+
         if all_tokens_available:
             return total_tokens
 
@@ -589,7 +589,9 @@ class LLM(RetryMixin, DebugMixin):
             formatted_messages.append(formatted_message)
         return formatted_messages
 
-    def _update_message_token_counts(self, message: Message, usage: Usage | None) -> None:
+    def _update_message_token_counts(
+        self, message: Message, usage: Usage | None
+    ) -> None:
         """Update token counts in a message from litellm Usage data.
 
         Args:
