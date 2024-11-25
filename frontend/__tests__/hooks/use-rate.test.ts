@@ -55,8 +55,8 @@ describe("useRate", () => {
     expect(result.current.isUnderThreshold).toBe(true);
 
     act(() => {
-       // not sure if fake timers is buggy with intervals,
-       // but I need to call it twice to register
+      // not sure if fake timers is buggy with intervals,
+      // but I need to call it twice to register
       vi.advanceTimersToNextTimer();
       vi.advanceTimersToNextTimer();
     });

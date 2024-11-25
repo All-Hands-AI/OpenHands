@@ -1,10 +1,10 @@
 import { ModalBackdrop } from "./modals/modal-backdrop";
-import ModalBody from "./modals/ModalBody";
-import ModalButton from "./buttons/ModalButton";
+import ModalBody from "./modals/modal-body";
+import ModalButton from "./buttons/modal-button";
 import {
   BaseModalTitle,
   BaseModalDescription,
-} from "./modals/confirmation-modals/BaseModal";
+} from "./modals/confirmation-modals/base-modal";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 
 interface AnalyticsConsentFormModalProps {

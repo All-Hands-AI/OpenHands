@@ -5,16 +5,16 @@ import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { ChatMessage } from "./chat-message";
 import { FeedbackActions } from "./feedback-actions";
 import { ImageCarousel } from "./image-carousel";
-import { createChatMessage } from "#/services/chatService";
+import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
-import { addUserMessage } from "#/state/chatSlice";
+import { addUserMessage } from "#/state/chat-slice";
 import { RootState } from "#/store";
-import AgentState from "#/types/AgentState";
-import { generateAgentStateChangeEvent } from "#/services/agentStateService";
+import AgentState from "#/types/agent-state";
+import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { FeedbackModal } from "./feedback-modal";
-import { useScrollToBottom } from "#/hooks/useScrollToBottom";
-import TypingIndicator from "./chat/TypingIndicator";
-import ConfirmationButtons from "./chat/ConfirmationButtons";
+import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
+import TypingIndicator from "./chat/typing-indicator";
+import ConfirmationButtons from "./chat/confirmation-buttons";
 import { ErrorMessage } from "./error-message";
 import { ContinueButton } from "./continue-button";
 import { ScrollToBottomButton } from "./scroll-to-bottom-button";
@@ -52,6 +52,7 @@ export function ChatInterface() {
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
   const [isDownloading, setIsDownloading] = React.useState(false);
+  const [hasPullRequest, setHasPullRequest] = React.useState(false);
 
   React.useEffect(() => {
     if (status === WsClientProviderStatus.ACTIVE) {
@@ -175,16 +176,44 @@ export function ChatInterface() {
           curAgentState === AgentState.FINISHED) && (
           <div className="flex flex-col gap-2 mb-2">
             {gitHubToken ? (
-              <SuggestionItem
-                suggestion={{
-                  label: "Push to GitHub",
-                  value:
-                    "Please push the changes to GitHub and open a pull request.",
-                }}
-                onClick={(value) => {
-                  handleSendMessage(value, []);
-                }}
-              />
+              <div className="flex flex-row gap-2 justify-center w-full">
+                {!hasPullRequest ? (
+                  <>
+                    <SuggestionItem
+                      suggestion={{
+                        label: "Push to Branch",
+                        value:
+                          "Please push the changes to a remote branch on GitHub, but do NOT create a pull request.",
+                      }}
+                      onClick={(value) => {
+                        handleSendMessage(value, []);
+                      }}
+                    />
+                    <SuggestionItem
+                      suggestion={{
+                        label: "Push & Create PR",
+                        value:
+                          "Please push the changes to GitHub and open a pull request.",
+                      }}
+                      onClick={(value) => {
+                        handleSendMessage(value, []);
+                        setHasPullRequest(true);
+                      }}
+                    />
+                  </>
+                ) : (
+                  <SuggestionItem
+                    suggestion={{
+                      label: "Push changes to PR",
+                      value:
+                        "Please push the latest changes to the existing pull request.",
+                    }}
+                    onClick={(value) => {
+                      handleSendMessage(value, []);
+                    }}
+                  />
+                )}
+              </div>
             ) : (
               <SuggestionItem
                 suggestion={{

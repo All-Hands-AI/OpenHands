@@ -53,12 +53,12 @@ jobs:
 
       (
         ((github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
-        startsWith(github.event.comment.body, inputs.macro || '@openhands-agent') &&
+        contains(github.event.comment.body, inputs.macro || '@openhands-agent') &&
         (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'COLLABORATOR' || github.event.comment.author_association == 'MEMBER')
         ) ||
 
         (github.event_name == 'pull_request_review' &&
-        startsWith(github.event.review.body, inputs.macro || '@openhands-agent') &&
+        contains(github.event.review.body, inputs.macro || '@openhands-agent') &&
         (github.event.review.author_association == 'OWNER' || github.event.review.author_association == 'COLLABORATOR' || github.event.review.author_association == 'MEMBER')
         )
       )
@@ -85,11 +85,11 @@ jobs:
             github.event.label.name == 'fix-me-experimental' ||
             (
               (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
-              startsWith(github.event.comment.body, '@openhands-agent-exp')
+              contains(github.event.comment.body, '@openhands-agent-exp')
             ) ||
             (
               github.event_name == 'pull_request_review' &&
-              startsWith(github.event.review.body, '@openhands-agent-exp')
+              contains(github.event.review.body, '@openhands-agent-exp')
             )
           )
         uses: actions/cache@v3
