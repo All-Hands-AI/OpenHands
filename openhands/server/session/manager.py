@@ -200,18 +200,20 @@ class SessionManager:
     async def send_to_event_stream(self, connection_id: str, data: dict):
         # If there is a local session running, send to that
         sid = self.local_connection_id_to_session_id.get(connection_id)
-        if sid:
-            session = self.local_sessions_by_sid.get(sid)
-            if session:
-                await session.dispatch(data)
-                return
-        
+        if not sid:
+            raise RuntimeError(f'no_connected_session:{connection_id}')
+
+        session = self.local_sessions_by_sid.get(sid)
+        if session:
+            await session.dispatch(data)
+            return
+    
         redis_client = self._get_redis_client()
         if redis_client:
             # If we have a recent report that the session is alive in another pod
             last_alive_at = self._last_alive_timestamps.get(sid) or 0
             next_alive_check = last_alive_at + _CHECK_ALIVE_INTERVAL
-            if next_alive_check > time.time() or self._is_session_running_in_cluster():
+            if next_alive_check > time.time() or self._is_session_running_in_cluster(sid):
                 # Send the event to the other pod
                 await redis_client.publish("oh_event", json.dumps({
                     "sid": sid,
@@ -220,7 +222,7 @@ class SessionManager:
                 }))
                 return
         
-        raise RuntimeError(f'no_connected_session:{sid}')
+        raise RuntimeError(f'no_connected_session:{connection_id}:{sid}')
     
     async def disconnect_from_session(self, connection_id: str):
         sid = self.local_connection_id_to_session_id.pop(connection_id, None)
@@ -266,7 +268,7 @@ class SessionManager:
                 "message_type": "session_closing"
             }))
 
-        self._close_session()
+        await self._close_session(session)
 
     async def _close_session(self, session: Session):
         logger.info(f'_close_session:{session.sid}')
