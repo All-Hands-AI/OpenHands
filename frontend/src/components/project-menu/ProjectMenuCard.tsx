@@ -17,7 +17,7 @@ import { useWsClient } from "#/context/ws-client-provider";
 interface ProjectMenuCardProps {
   isConnectedToGitHub: boolean;
   githubData: {
-    avatar: string;
+    avatar: string | null;
     repoName: string;
     lastCommit: GitHubCommit;
   } | null;

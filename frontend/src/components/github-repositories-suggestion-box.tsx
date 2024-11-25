@@ -1,8 +1,5 @@
 import React from "react";
-import {
-  isGitHubErrorReponse,
-  retrieveAllGitHubUserRepositories,
-} from "#/api/github";
+import { isGitHubErrorReponse } from "#/api/github";
 import { SuggestionBox } from "#/routes/_oh._index/suggestion-box";
 import { ConnectToGitHubModal } from "./modals/connect-to-github-modal";
 import { ModalBackdrop } from "./modals/modal-backdrop";
@@ -12,9 +9,7 @@ import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 
 interface GitHubRepositoriesSuggestionBoxProps {
   handleSubmit: () => void;
-  repositories: Awaited<
-    ReturnType<typeof retrieveAllGitHubUserRepositories>
-  > | null;
+  repositories: GitHubRepository[];
   gitHubAuthUrl: string | null;
   user: GitHubErrorReponse | GitHubUser | null;
 }
@@ -57,7 +52,7 @@ export function GitHubRepositoriesSuggestionBox({
           isLoggedIn ? (
             <GitHubRepositorySelector
               onSelect={handleSubmit}
-              repositories={repositories || []}
+              repositories={repositories}
             />
           ) : (
             <ModalButton

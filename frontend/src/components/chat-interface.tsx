@@ -1,7 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
-import { useRouteLoaderData } from "@remix-run/react";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { ChatMessage } from "./chat-message";
 import { FeedbackActions } from "./feedback-actions";
@@ -27,22 +26,22 @@ import {
   WsClientProviderStatus,
 } from "#/context/ws-client-provider";
 import OpenHands from "#/api/open-hands";
-import { clientLoader } from "#/routes/_oh";
 import { downloadWorkspace } from "#/utils/download-workspace";
 import { SuggestionItem } from "./suggestion-item";
+import { useAuth } from "#/context/auth-context";
 
 const isErrorMessage = (
   message: Message | ErrorMessage,
 ): message is ErrorMessage => "error" in message;
 
 export function ChatInterface() {
+  const { gitHubToken } = useAuth();
   const { send, status, isLoadingMessages } = useWsClient();
 
   const dispatch = useDispatch();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
-  const rootLoaderData = useRouteLoaderData<typeof clientLoader>("routes/_oh");
 
   const { messages } = useSelector((state: RootState) => state.chat);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
@@ -175,7 +174,7 @@ export function ChatInterface() {
         {(curAgentState === AgentState.AWAITING_USER_INPUT ||
           curAgentState === AgentState.FINISHED) && (
           <div className="flex flex-col gap-2 mb-2">
-            {rootLoaderData?.ghToken ? (
+            {gitHubToken ? (
               <SuggestionItem
                 suggestion={{
                   label: "Push to GitHub",
