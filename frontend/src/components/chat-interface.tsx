@@ -175,31 +175,27 @@ export function ChatInterface() {
           curAgentState === AgentState.FINISHED) && (
           <div className="flex flex-col gap-2 mb-2">
             {gitHubToken ? (
-              <div className="flex flex-row gap-2">
-                <div className="flex-1">
-                  <SuggestionItem
-                    suggestion={{
-                      label: "Push to GitHub",
-                      value:
-                        "Please push the changes to a remote branch on GitHub, but do NOT create a pull request.",
-                    }}
-                    onClick={(value) => {
-                      handleSendMessage(value, []);
-                    }}
-                  />
-                </div>
-                <div className="flex-1">
-                  <SuggestionItem
-                    suggestion={{
-                      label: "Push & Create PR",
-                      value:
-                        "Please push the changes to GitHub and open a pull request.",
-                    }}
-                    onClick={(value) => {
-                      handleSendMessage(value, []);
-                    }}
-                  />
-                </div>
+              <div className="flex flex-col gap-2">
+                <SuggestionItem
+                  suggestion={{
+                    label: "Push to GitHub Branch",
+                    value:
+                      "Please push the changes to a remote branch on GitHub, but do NOT create a pull request.",
+                  }}
+                  onClick={(value) => {
+                    handleSendMessage(value, []);
+                  }}
+                />
+                <SuggestionItem
+                  suggestion={{
+                    label: "Push & Create Pull Request",
+                    value:
+                      "Please push the changes to GitHub and open a pull request.",
+                  }}
+                  onClick={(value) => {
+                    handleSendMessage(value, []);
+                  }}
+                />
               </div>
             ) : (
               <SuggestionItem
