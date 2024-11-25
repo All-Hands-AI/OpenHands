@@ -29,6 +29,7 @@ import OpenHands from "#/api/open-hands";
 import { downloadWorkspace } from "#/utils/download-workspace";
 import { SuggestionItem } from "./suggestion-item";
 import { useAuth } from "#/context/auth-context";
+import EventLogger from "#/utils/event-logger";
 
 const isErrorMessage = (
   message: Message | ErrorMessage,
@@ -65,7 +66,7 @@ export function ChatInterface() {
           );
         });
       } catch (e) {
-        console.warn("Runtime ID not available in this environment");
+        EventLogger.error("Runtime ID not available in this environment");
       }
     }
   }, [status]);
