@@ -6,6 +6,7 @@ from typing import Literal
 from litellm import ChatCompletionMessageToolCall
 from pydantic import BaseModel, Field, model_serializer
 
+from openhands.core.exceptions import FunctionCallConversionError
 from openhands.llm.fn_call_converter import (
     IN_CONTEXT_LEARNING_EXAMPLE_PREFIX,
     IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX,
@@ -277,7 +278,9 @@ class Message(BaseModel):
         return message_dict
 
     @classmethod
-    def convert_messages_to_non_native(cls, messages: list[dict], tools: list[dict]) -> list[dict]:
+    def convert_messages_to_non_native(
+        cls, messages: list[dict], tools: list[dict]
+    ) -> list[dict]:
         """Convert a list of messages from native to non-native format.
         Used when the API doesn't support native function calling."""
         converted_messages = []
@@ -301,7 +304,9 @@ class Message(BaseModel):
             if role == 'assistant' and 'tool_calls' in message:
                 tool_calls = message['tool_calls']
                 if len(tool_calls) != 1:
-                    raise ValueError(f'Expected exactly one tool call, got {len(tool_calls)}')
+                    raise ValueError(
+                        f'Expected exactly one tool call, got {len(tool_calls)}'
+                    )
 
                 # Create Message with both text and tool call content
                 content_list = []
@@ -311,14 +316,14 @@ class Message(BaseModel):
                     ToolCallContent(
                         function_name=tool_calls[0]['function']['name'],
                         function_arguments=tool_calls[0]['function']['arguments'],
-                        tool_call_id=tool_calls[0]['id']
+                        tool_call_id=tool_calls[0]['id'],
                     )
                 )
                 converted_messages.append(
                     Message(
                         role='assistant',
                         content=content_list,
-                        function_calling_enabled=False
+                        function_calling_enabled=False,
                     ).model_dump()
                 )
                 continue
@@ -329,14 +334,14 @@ class Message(BaseModel):
                     ToolResponseContent(
                         tool_call_id=message['tool_call_id'],
                         name=message.get('name', 'function'),
-                        content=message['content']
+                        content=message['content'],
                     )
                 ]
                 converted_messages.append(
                     Message(
                         role='tool',
                         content=content_list,
-                        function_calling_enabled=False
+                        function_calling_enabled=False,
                     ).model_dump()
                 )
                 continue
@@ -416,11 +421,13 @@ class Message(BaseModel):
     def _add_tools_description(cls, message: dict, tools: list[dict]) -> dict:
         """Add tools description to a system message."""
         formatted_tools = cls._tools_to_description(tools)
-        system_prompt_suffix = SYSTEM_PROMPT_SUFFIX_TEMPLATE.format(description=formatted_tools)
-        
+        system_prompt_suffix = SYSTEM_PROMPT_SUFFIX_TEMPLATE.format(
+            description=formatted_tools
+        )
+
         content = message.get('content', '')
         content_list = []
-        
+
         if isinstance(content, str):
             content_list.append(TextContent(text=content + system_prompt_suffix))
         elif isinstance(content, list):
@@ -433,7 +440,7 @@ class Message(BaseModel):
             )
             # Add single suffix - use append
             content_list.append(TextContent(text=system_prompt_suffix))
-        
+
         return {
             **message,
             'content': content_list,
@@ -444,11 +451,13 @@ class Message(BaseModel):
         """Add in-context learning example to first user message."""
         content = message.get('content', '')
         content_list = []
-        
+
         if isinstance(content, str):
             content_list.append(
                 TextContent(
-                    text=IN_CONTEXT_LEARNING_EXAMPLE_PREFIX + content + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
+                    text=IN_CONTEXT_LEARNING_EXAMPLE_PREFIX
+                    + content
+                    + IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX
                 )
             )
         elif isinstance(content, list):
@@ -463,7 +472,7 @@ class Message(BaseModel):
             )
             # Add the suffix
             content_list.append(TextContent(text=IN_CONTEXT_LEARNING_EXAMPLE_SUFFIX))
-        
+
         return {
             **message,
             'content': content_list,

@@ -13,7 +13,6 @@ from openhands.core.message import (
     ImageContent,
     Message,
     TextContent,
-    ToolResponseContent,
 )
 from openhands.events.action import (
     Action,
@@ -156,10 +155,7 @@ class CodeActAgent(Agent):
                 FileEditAction,
                 BrowseInteractiveAction,
             ),
-        ) or (
-            isinstance(action, CmdRunAction)
-            and action.source == 'agent'
-        ):
+        ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
             tool_metadata = action.tool_call_metadata
             assert tool_metadata is not None
             llm_response: ModelResponse = tool_metadata.model_response
@@ -206,12 +202,19 @@ class CodeActAgent(Agent):
                 'Tool call metadata should NOT be None when function calling is enabled. Action: '
                 + str(action)
             )
-            llm_response: ModelResponse = tool_metadata.model_response
+            llm_response = tool_metadata.model_response
             assistant_msg = llm_response.choices[0].message
             return [
                 Message(
                     role=assistant_msg.role,
                     content=[TextContent(text=assistant_msg.content or '')],
+                )
+            ]
+        elif isinstance(action, AgentFinishAction) and action.source == 'user':
+            return [
+                Message(
+                    role='user',
+                    content=[TextContent(text=action.thought or '')],
                 )
             ]
         return []
