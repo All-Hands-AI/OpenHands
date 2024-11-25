@@ -305,7 +305,7 @@ class RemoteRuntime(Runtime):
             assert isinstance(_parsed_url.scheme, str) and isinstance(
                 _parsed_url.netloc, str
             )
-            self._vscode_url = f'{_parsed_url.scheme}://vscode-{_parsed_url.netloc}/?tkn={response_json['token']}&folder={self.config.workspace_mount_path_in_sandbox}'
+            self._vscode_url = f'{_parsed_url.scheme}://vscode-{_parsed_url.netloc}/?tkn={response_json["token"]}&folder={self.config.workspace_mount_path_in_sandbox}'
             self.log(
                 'debug',
                 f'VSCode URL: {self._vscode_url}',
@@ -545,7 +545,7 @@ class RemoteRuntime(Runtime):
         return response_json
 
     def copy_from(self, path: str) -> Path:
-        '''Zip all files in the sandbox and return as a stream of bytes.'''
+        """Zip all files in the sandbox and return as a stream of bytes."""
         params = {'path': path}
         with self._send_request(
             'GET',
