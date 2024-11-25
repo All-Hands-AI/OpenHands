@@ -40,7 +40,7 @@ async def test_session_not_running_in_cluster():
     ):  
         async with SessionManager(sio, AppConfig(), InMemoryFileStore()) as session_manager:
             result = await session_manager._is_session_running_in_cluster("non-existant-session")
-            assert result == False
+            assert result is False
             assert sio.manager.redis.publish.await_count == 1
             sio.manager.redis.publish.assert_called_once_with(
                 'oh_event', '{"sid": "non-existant-session", "message_type": "is_session_running"}'
@@ -55,7 +55,7 @@ async def test_session_is_running_in_cluster():
     ):  
         async with  SessionManager(sio, AppConfig(), InMemoryFileStore()) as session_manager:
             result = await session_manager._is_session_running_in_cluster("existing-session")
-            assert result == True
+            assert result is True
             assert sio.manager.redis.publish.await_count == 1
             sio.manager.redis.publish.assert_called_once_with(
                 'oh_event', '{"sid": "existing-session", "message_type": "is_session_running"}'
