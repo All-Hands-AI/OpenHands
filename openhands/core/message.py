@@ -62,6 +62,11 @@ class Message(BaseModel):
     # - tool execution result (to LLM)
     tool_call_id: str | None = None
     name: str | None = None  # name of the tool
+    # token counts from litellm Usage data
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    total_tokens: int | None = None
+    event_id: int | None = None  # link to the underlying Event
 
     @property
     def contains_image(self) -> bool:
