@@ -26,12 +26,15 @@ export const retrieveGitHubUserRepositories = async (
       page,
       per_page,
     },
-    transformResponse: (data: GitHubRepository[] | GitHubErrorReponse) => {
-      if (isGitHubErrorReponse(data)) {
-        throw new Error(data.message);
+    transformResponse: (data) => {
+      const parsedData: GitHubRepository[] | GitHubErrorReponse =
+        JSON.parse(data);
+
+      if (isGitHubErrorReponse(parsedData)) {
+        throw new Error(parsedData.message);
       }
 
-      return data;
+      return parsedData;
     },
   });
 
@@ -48,12 +51,16 @@ export const retrieveGitHubUserRepositories = async (
  */
 export const retrieveGitHubUser = async () => {
   const response = await github.get<GitHubUser>("/user", {
-    transformResponse: (data: GitHubUser | GitHubErrorReponse) => {
-      if (isGitHubErrorReponse(data)) {
-        throw new Error(data.message);
+    transformResponse: (data) => {
+      const parsedData: GitHubUser | GitHubErrorReponse = JSON.parse(
+        data as string,
+      );
+
+      if (isGitHubErrorReponse(parsedData)) {
+        throw new Error(parsedData.message);
       }
 
-      return data;
+      return parsedData;
     },
   });
 
@@ -80,12 +87,15 @@ export const retrieveLatestGitHubCommit = async (
       params: {
         per_page: 1,
       },
-      transformResponse: (data: GitHubCommit[] | GitHubErrorReponse) => {
-        if (isGitHubErrorReponse(data)) {
-          throw new Error(data.message);
+      transformResponse: (data) => {
+        const parsedData: GitHubCommit[] | GitHubErrorReponse =
+          JSON.parse(data);
+
+        if (isGitHubErrorReponse(parsedData)) {
+          throw new Error(parsedData.message);
         }
 
-        return data[0];
+        return parsedData[0];
       },
     },
   );
