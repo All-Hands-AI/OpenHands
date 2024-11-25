@@ -4,11 +4,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from openhands.core.config import AgentConfig, LLMConfig
-from openhands.events.event import Event, EventSource
-from openhands.events.stream import EventStream
-from openhands.memory.memory import LongTermMemory
-from openhands.storage.files import FileStore
+# Mock chromadb before importing LongTermMemory
+with patch.dict('sys.modules', {'chromadb': MagicMock()}):
+    from openhands.core.config import AgentConfig, LLMConfig
+    from openhands.events.event import Event, EventSource
+    from openhands.events.stream import EventStream
+    from openhands.memory.memory import LongTermMemory
+    from openhands.storage.files import FileStore
 
 
 @pytest.fixture
