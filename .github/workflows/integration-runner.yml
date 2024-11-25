@@ -3,8 +3,6 @@ name: Run Integration Tests
 on:
   pull_request:
     types: [labeled]
-  schedule:
-    - cron: "0 1 * * *" # 1 AM UTC every day
   workflow_dispatch:
     inputs:
       reason:
