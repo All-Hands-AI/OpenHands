@@ -11,13 +11,15 @@ on:
         description: "Reason for manual trigger"
         required: true
         default: ""
+  schedule:
+    - cron: '0 0 * * *'  # Runs at midnight UTC every day
 
 env:
   N_PROCESSES: 10 # Global configuration for number of parallel processes for evaluation
 
 jobs:
   run-integration-tests:
-    if: github.event.label.name == 'integration-test' || github.event_name == 'workflow_dispatch'
+    if: github.event.label.name == 'integration-test' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     permissions:
       contents: "read"
@@ -106,8 +108,10 @@ jobs:
           echo "TIMESTAMP=$(date +'%Y-%m-%d-%H-%M')" >> $GITHUB_ENV
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
             echo "TRIGGER_REASON=pr-${{ github.event.pull_request.number }}" >> $GITHUB_ENV
-          else
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "TRIGGER_REASON=manual-${{ github.event.inputs.reason }}" >> $GITHUB_ENV
+          else
+            echo "TRIGGER_REASON=nightly-scheduled" >> $GITHUB_ENV
           fi
 
       # - name: Upload evaluation results to Google Cloud Storage
@@ -124,7 +128,7 @@ jobs:
           number: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || 9 }}
           unique: false
           comment: |
-              Trigger by: ${{ github.event_name == 'pull_request' && format('Pull Request (integration-test label on PR #{0})', github.event.pull_request.number) || format('Manual Trigger: {0}', github.event.inputs.reason) }}
+              Trigger by: ${{ github.event_name == 'pull_request' && format('Pull Request (integration-test label on PR #{0})', github.event.pull_request.number) || (github.event_name == 'workflow_dispatch' && format('Manual Trigger: {0}', github.event.inputs.reason)) || 'Nightly Scheduled Run' }}
               Commit: ${{ github.sha }}
               **Integration Tests Report (Haiku)**
               ${{ env.INTEGRATION_TEST_REPORT_HAIKU }}
