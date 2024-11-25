@@ -25,7 +25,7 @@ from openhands.server.session.agent_session import AgentSession
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_coro_in_bg_thread
 
-ROOM_KEY = "room:{sid}"
+ROOM_KEY = 'room:{sid}'
 
 
 class Session:
@@ -39,7 +39,11 @@ class Session:
     settings: dict | None
 
     def __init__(
-        self, sid: str, config: AppConfig, file_store: FileStore, sio: socketio.AsyncServer | None
+        self,
+        sid: str,
+        config: AppConfig,
+        file_store: FileStore,
+        sio: socketio.AsyncServer | None,
     ):
         self.sid = sid
         self.sio = sio
@@ -169,12 +173,12 @@ class Session:
             if not self.is_alive:
                 return False
             if self.sio:
-                await self.sio.emit("oh_event", data, to=ROOM_KEY.format(sid=self.sid))
+                await self.sio.emit('oh_event', data, to=ROOM_KEY.format(sid=self.sid))
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True
         except RuntimeError:
-            logger.error("Error sending", stack_info=True, exc_info=True)
+            logger.error('Error sending', stack_info=True, exc_info=True)
             self.is_alive = False
             return False
 

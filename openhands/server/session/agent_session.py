@@ -139,7 +139,6 @@ class AgentSession:
             end_state.save_to_session(self.sid, self.file_store)
             await self.controller.close()
         if self.runtime is not None:
-            
             self.runtime.close()
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
