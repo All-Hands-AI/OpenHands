@@ -29,11 +29,11 @@ class Test(BaseIntegrationTest):
         for event in message_actions:
             try:
                 if isinstance(event, AgentDelegateObservation):
-                    content = event.get('content', '')
+                    content = event.content
                 elif isinstance(event, AgentFinishAction):
-                    content = event.get('outputs', {}).get('content', '')
+                    content = event.outputs.get('content', '')
                 elif isinstance(event, MessageAction):
-                    content = event.get('content', '')
+                    content = event.content
                 else:
                     logger.warning(f'Unexpected event type: {type(event)}')
                     continue
