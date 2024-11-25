@@ -905,7 +905,7 @@ class AgentController:
             f'state={self.state!r}, agent_task={self.agent_task!r}, '
             f'delegate={self.delegate!r}, _pending_action={self._pending_action!r})'
         )
-    
+
     def _is_awaiting_observation(self):
         events = self.event_stream.get_events(reverse=True)
         for event in events:
