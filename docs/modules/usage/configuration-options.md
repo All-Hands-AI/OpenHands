@@ -180,7 +180,7 @@ The core configuration options are defined in the `[core]` section of the `confi
 
 - `jwt_secret`
   - Type: `str`
-  - Default: `""`
+  - Default: `uuid.uuid4().hex`
   - Description: JWT secret for authentication
 
 ## LLM Configuration
