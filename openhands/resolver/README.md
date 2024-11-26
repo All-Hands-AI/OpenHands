@@ -32,11 +32,11 @@ Follow these steps to use this workflow in your own repository:
 
 5. Set up [GitHub secrets](https://docs.github.com/en/actions/security-for-github-actions/security-guides/using-secrets-in-github-actions):
    - Required:
+    - `LLM_API_KEY`: Your LLM API key
+   - Optional:
      - `PAT_USERNAME`: GitHub username for the personal access token
      - `PAT_TOKEN`: The personal access token
-     - `LLM_MODEL`: LLM model to use (e.g., "anthropic/claude-3-5-sonnet-20241022")
-     - `LLM_API_KEY`: Your LLM API key
-   - Optional:
+     - `LLM_MODEL`: LLM model to use (defaults to "anthropic/claude-3-5-sonnet-20241022")
      - `LLM_BASE_URL`: Base URL for LLM API (only if using a proxy)
 
    Note: You can set these secrets at the organization level to use across multiple repositories.
