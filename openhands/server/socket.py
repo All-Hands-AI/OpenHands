@@ -1,7 +1,14 @@
-import socketio
-
 from openhands.core.logger import openhands_logger as logger
+from openhands.events.action import (
+    NullAction,
+)
+from openhands.events.observation import (
+    NullObservation,
+)
+from openhands.events.serialization import event_to_dict
+from openhands.server.auth import sign_token, get_sid_from_token
 from openhands.server.shared import config, session_manager, sio
+from openhands.server.github_utils import authenticate_github_user
 
 
 @sio.event

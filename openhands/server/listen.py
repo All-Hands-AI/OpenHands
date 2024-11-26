@@ -22,8 +22,8 @@ from openhands.server.routes.feedback import app as feedback_api_router
 from openhands.server.routes.files import app as files_api_router
 from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.security import app as security_api_router
-from openhands.server.static import SPAStaticFiles
 from openhands.server.socket import sio
+from openhands.server.static import SPAStaticFiles
 
 app = FastAPI()
 app.add_middleware(
@@ -61,4 +61,3 @@ app.middleware('http')(AttachSessionMiddleware(app, target_router=feedback_api_r
 app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist')
 
 app = socketio.ASGIApp(sio, other_asgi_app=app)
-
