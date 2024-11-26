@@ -25,39 +25,47 @@ from openhands.server.routes.security import app as security_api_router
 from openhands.server.socket import sio
 from openhands.server.static import SPAStaticFiles
 
-app = FastAPI()
-app.add_middleware(
+base_app = FastAPI()
+base_app.add_middleware(
     LocalhostCORSMiddleware,
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
 )
 
-app.add_middleware(NoCacheMiddleware)
-app.add_middleware(
+base_app.add_middleware(NoCacheMiddleware)
+base_app.add_middleware(
     RateLimitMiddleware, rate_limiter=InMemoryRateLimiter(requests=10, seconds=1)
 )
 
 
-@app.get('/health')
+@base_app.get('/health')
 async def health():
     return 'OK'
 
 
-app.include_router(auth_api_router)
-app.include_router(public_api_router)
-app.include_router(files_api_router)
-app.include_router(conversation_api_router)
-app.include_router(security_api_router)
-app.include_router(feedback_api_router)
+base_app.include_router(auth_api_router)
+base_app.include_router(public_api_router)
+base_app.include_router(files_api_router)
+base_app.include_router(conversation_api_router)
+base_app.include_router(security_api_router)
+base_app.include_router(feedback_api_router)
 
-app.middleware('http')(AttachSessionMiddleware(app, target_router=files_api_router))
-app.middleware('http')(
-    AttachSessionMiddleware(app, target_router=conversation_api_router)
+base_app.middleware('http')(
+    AttachSessionMiddleware(base_app, target_router=files_api_router)
 )
-app.middleware('http')(AttachSessionMiddleware(app, target_router=security_api_router))
-app.middleware('http')(AttachSessionMiddleware(app, target_router=feedback_api_router))
+base_app.middleware('http')(
+    AttachSessionMiddleware(base_app, target_router=conversation_api_router)
+)
+base_app.middleware('http')(
+    AttachSessionMiddleware(base_app, target_router=security_api_router)
+)
+base_app.middleware('http')(
+    AttachSessionMiddleware(base_app, target_router=feedback_api_router)
+)
 
-app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist')
+base_app.mount(
+    '/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist'
+)
 
-app = socketio.ASGIApp(sio, other_asgi_app=app)
+app = socketio.ASGIApp(sio, other_asgi_app=base_app)
