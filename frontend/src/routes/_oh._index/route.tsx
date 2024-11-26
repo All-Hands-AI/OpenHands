@@ -1,7 +1,6 @@
 import { useLocation, useNavigate } from "@remix-run/react";
 import React from "react";
 import { useDispatch } from "react-redux";
-import { SuggestionBox } from "./suggestion-box";
 import { TaskForm } from "./task-form";
 import { HeroHeading } from "./hero-heading";
 import { setImportedProjectZip } from "#/state/initial-query-slice";
@@ -12,6 +11,7 @@ import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
 import { useAuth } from "#/context/auth-context";
+import { ImportProjectSuggestionBox } from "./import-project-suggestion-box";
 
 function Home() {
   const { token, gitHubToken } = useAuth();
@@ -46,6 +46,7 @@ function Home() {
         <div className="flex flex-col gap-2 w-full">
           <TaskForm ref={formRef} />
         </div>
+
         <div className="flex gap-4 w-full">
           <GitHubRepositoriesSuggestionBox
             handleSubmit={() => formRef.current?.requestSubmit()}
@@ -54,38 +55,17 @@ function Home() {
             }
             gitHubAuthUrl={gitHubAuthUrl}
             user={user || null}
-            // onEndReached={}
           />
-          <SuggestionBox
-            title="+ Import Project"
-            content={
-              <label
-                htmlFor="import-project"
-                className="w-full flex justify-center"
-              >
-                <span className="border-2 border-dashed border-neutral-600 rounded px-2 py-1 cursor-pointer">
-                  Upload a .zip
-                </span>
-                <input
-                  hidden
-                  type="file"
-                  accept="application/zip"
-                  id="import-project"
-                  multiple={false}
-                  onChange={async (event) => {
-                    if (event.target.files) {
-                      const zip = event.target.files[0];
-                      dispatch(
-                        setImportedProjectZip(await convertZipToBase64(zip)),
-                      );
-                      formRef.current?.requestSubmit();
-                    } else {
-                      // TODO: handle error
-                    }
-                  }}
-                />
-              </label>
-            }
+          <ImportProjectSuggestionBox
+            onChange={async (event) => {
+              if (event.target.files) {
+                const zip = event.target.files[0];
+                dispatch(setImportedProjectZip(await convertZipToBase64(zip)));
+                formRef.current?.requestSubmit();
+              } else {
+                // TODO: handle error
+              }
+            }}
           />
         </div>
       </div>
