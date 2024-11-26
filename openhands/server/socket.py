@@ -1,3 +1,9 @@
+import socketio
+
+from openhands.server.shared import sio, config, session_manager
+from openhands.core.logger import openhands_logger as logger
+
+
 app = socketio.ASGIApp(sio, other_asgi_app=app)
 
 
