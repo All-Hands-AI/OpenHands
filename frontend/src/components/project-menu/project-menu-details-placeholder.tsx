@@ -30,7 +30,9 @@ export function ProjectMenuDetailsPlaceholder({
             "hover:underline hover:underline-offset-2",
           )}
         >
-          {!isConnectedToGitHub ? "Connect to GitHub" : "Connected"}
+          {!isConnectedToGitHub
+            ? t(I18nKey.PROJECT_MENU_DETAILS_PLACEHOLDER$CONNECT_TO_GITHUB)
+            : t(I18nKey.PROJECT_MENU_DETAILS_PLACEHOLDER$CONNECTED)}
           <CloudConnection width={12} height={12} />
         </span>
       </button>

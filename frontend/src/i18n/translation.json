@@ -1984,6 +1984,12 @@
     "en": "New Project",
     "es": "Nuevo proyecto"
   },
+  "PROJECT_MENU_DETAILS_PLACEHOLDER$CONNECT_TO_GITHUB": {
+    "en": "Connect to GitHub"
+  },
+  "PROJECT_MENU_DETAILS_PLACEHOLDER$CONNECTED": {
+    "en": "Connected"
+  },
   "PROJECT_MENU_DETAILS$AGO_LABEL": {
     "en": "ago",
     "es": "atrás"
