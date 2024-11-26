@@ -8,10 +8,10 @@ from openhands.server.data_models.feedback import FeedbackDataModel, store_feedb
 from openhands.server.shared import config
 from openhands.utils.async_utils import call_sync_from_async
 
-app = APIRouter()
+app = APIRouter(prefix='/api')
 
 
-@app.post('/api/submit-feedback')
+@app.post('/submit-feedback')
 async def submit_feedback(request: Request):
     """Submit user feedback.
 

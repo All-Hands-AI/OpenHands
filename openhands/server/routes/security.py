@@ -1,12 +1,13 @@
 from fastapi import (
-    Request,
     APIRouter,
     HTTPException,
+    Request,
 )
 
-app = APIRouter()
+app = APIRouter(prefix='/api/security')
 
-@app.route('/api/security/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])
+
+@app.route('/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])
 async def security_api(request: Request):
     """Catch-all route for security analyzer API requests.
 
@@ -27,6 +28,3 @@ async def security_api(request: Request):
     return await request.state.conversation.security_analyzer.handle_api_request(
         request
     )
-
-
-

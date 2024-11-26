@@ -4,9 +4,10 @@ from fastapi.responses import JSONResponse
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.base import Runtime
 
-app = APIRouter()
+app = APIRouter(prefix='/api')
 
-@app.get('/api/conversation')
+
+@app.get('/conversation')
 async def get_remote_runtime_config(request: Request):
     """Retrieve the remote runtime configuration.
 
@@ -23,7 +24,7 @@ async def get_remote_runtime_config(request: Request):
     )
 
 
-@app.get('/api/vscode-url')
+@app.get('/vscode-url')
 async def get_vscode_url(request: Request):
     """Get the VSCode URL.
 
@@ -49,5 +50,3 @@ async def get_vscode_url(request: Request):
                 'error': f'Error getting VSCode URL: {e}',
             },
         )
-
-

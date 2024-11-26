@@ -31,7 +31,7 @@ class AuthCode(BaseModel):
     code: str
 
 
-@app.post('/api/github/callback')
+@app.post('/github/callback')
 def github_callback(auth_code: AuthCode):
     # Prepare data for the token exchange request
     data = {
@@ -68,7 +68,7 @@ def github_callback(auth_code: AuthCode):
     )
 
 
-@app.post('/api/authenticate')
+@app.post('/authenticate')
 async def authenticate(request: Request):
     token = request.headers.get('X-GitHub-Token')
     if not await authenticate_github_user(token):

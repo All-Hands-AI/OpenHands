@@ -20,7 +20,8 @@ from openhands.server.shared import config
 
 app = APIRouter(prefix='/api/options')
 
-@app.get('/api/options/models')
+
+@app.get('/models')
 async def get_litellm_models() -> list[str]:
     """
     Get all models supported by LiteLLM.
@@ -74,7 +75,7 @@ async def get_litellm_models() -> list[str]:
     return list(sorted(set(model_list)))
 
 
-@app.get('/api/options/agents')
+@app.get('/agents')
 async def get_agents():
     """Get all agents supported by LiteLLM.
 
@@ -90,7 +91,7 @@ async def get_agents():
     return agents
 
 
-@app.get('/api/options/security-analyzers')
+@app.get('/security-analyzers')
 async def get_security_analyzers():
     """Get all supported security analyzers.
 
@@ -103,4 +104,3 @@ async def get_security_analyzers():
         list: A sorted list of security analyzer names.
     """
     return sorted(SecurityAnalyzers.keys())
-

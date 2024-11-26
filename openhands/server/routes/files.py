@@ -32,10 +32,10 @@ from openhands.server.file_config import (
 )
 from openhands.utils.async_utils import call_sync_from_async
 
-app = APIRouter()
+app = APIRouter(prefix='/api')
 
 
-@app.get('/api/list-files')
+@app.get('/list-files')
 async def list_files(request: Request, path: str | None = None):
     """List files in the specified path.
 
@@ -103,7 +103,7 @@ async def list_files(request: Request, path: str | None = None):
     return file_list
 
 
-@app.get('/api/select-file')
+@app.get('/select-file')
 async def select_file(file: str, request: Request):
     """Retrieve the content of a specified file.
 
@@ -147,7 +147,7 @@ async def select_file(file: str, request: Request):
         )
 
 
-@app.post('/api/upload-files')
+@app.post('/upload-files')
 async def upload_file(request: Request, files: list[UploadFile]):
     """Upload a list of files to the workspace.
 
@@ -244,7 +244,7 @@ async def upload_file(request: Request, files: list[UploadFile]):
         )
 
 
-@app.post('/api/save-file')
+@app.post('/save-file')
 async def save_file(request: Request):
     """Save a file to the agent's runtime file store.
 
@@ -309,7 +309,7 @@ async def save_file(request: Request):
         raise HTTPException(status_code=500, detail=f'Error saving file: {e}')
 
 
-@app.get('/api/zip-directory')
+@app.get('/zip-directory')
 async def zip_current_workspace(request: Request, background_tasks: BackgroundTasks):
     try:
         logger.debug('Zipping workspace')
