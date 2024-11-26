@@ -326,7 +326,7 @@ The LLM (Large Language Model) configuration options are defined in the `[llm]` 
 
 - `disable_vision`
   - Type: `bool`
-  - Default: `true`
+  - Default: `None`
   - Description: If model is vision capable, this option allows to disable image processing (useful for cost reduction)
 
 ## Agent Configuration
