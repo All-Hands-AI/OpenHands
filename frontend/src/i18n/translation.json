@@ -2021,5 +2021,11 @@
   },
   "BROWSER$SCREENSHOT_ALT": {
     "en": "Browser Screenshot"
+  },
+  "ACCOUNT_SETTINGS$SETTINGS": {
+    "en": "Account Settings"
+  },
+  "ACCOUNT_SETTINGS$LOGOUT": {
+    "en": "Logout"
   }
 }
