@@ -1,0 +1,4 @@
+This is a node repo for an RSS parser.
+- Setup: `yes | npm install`
+- Testing: `SKIP_BROWSER_TESTS=1 npm test`
+- Writing Tests: Add to the `test` directory.

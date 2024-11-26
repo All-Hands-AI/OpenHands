@@ -49,7 +49,7 @@ but seems to work well on most systems.
 
 ## All Hands Runtime
 The All Hands Runtime is currently in beta. You can request access by joining
-the #remote-runtime-limited-beta channel on Slack (see the README for an invite).
+the #remote-runtime-limited-beta channel on Slack ([see the README](https://github.com/All-Hands-AI/OpenHands?tab=readme-ov-file#-join-our-community) for an invite).
 
 To use the All Hands Runtime, set the following environment variables when
 starting OpenHands:
@@ -66,7 +66,7 @@ docker run # ...
 ## Modal Runtime
 Our partners at [Modal](https://modal.com/) have also provided a runtime for OpenHands.
 
-To use the Modal Runtime, create an account, and then [create an API key](https://modal.com/settings)
+To use the Modal Runtime, create an account, and then [create an API key.](https://modal.com/settings)
 
 You'll then need to set the following environment variables when starting OpenHands:
 ```bash

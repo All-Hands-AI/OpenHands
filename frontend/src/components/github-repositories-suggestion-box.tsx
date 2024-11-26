@@ -1,49 +1,21 @@
 import React from "react";
-import {
-  isGitHubErrorReponse,
-  retrieveAllGitHubUserRepositories,
-} from "#/api/github";
+import { isGitHubErrorReponse } from "#/api/github";
 import { SuggestionBox } from "#/routes/_oh._index/suggestion-box";
 import { ConnectToGitHubModal } from "./modals/connect-to-github-modal";
 import { ModalBackdrop } from "./modals/modal-backdrop";
 import { GitHubRepositorySelector } from "#/routes/_oh._index/github-repo-selector";
-import ModalButton from "./buttons/ModalButton";
+import ModalButton from "./buttons/modal-button";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 
-interface GitHubAuthProps {
-  onConnectToGitHub: () => void;
-  repositories: GitHubRepository[];
-  isLoggedIn: boolean;
-}
-
-function GitHubAuth({
-  onConnectToGitHub,
-  repositories,
-  isLoggedIn,
-}: GitHubAuthProps) {
-  if (isLoggedIn) {
-    return <GitHubRepositorySelector repositories={repositories} />;
-  }
-
-  return (
-    <ModalButton
-      text="Connect to GitHub"
-      icon={<GitHubLogo width={20} height={20} />}
-      className="bg-[#791B80] w-full"
-      onClick={onConnectToGitHub}
-    />
-  );
-}
-
 interface GitHubRepositoriesSuggestionBoxProps {
-  repositories: Awaited<
-    ReturnType<typeof retrieveAllGitHubUserRepositories>
-  > | null;
+  handleSubmit: () => void;
+  repositories: GitHubRepository[];
   gitHubAuthUrl: string | null;
   user: GitHubErrorReponse | GitHubUser | null;
 }
 
 export function GitHubRepositoriesSuggestionBox({
+  handleSubmit,
   repositories,
   gitHubAuthUrl,
   user,
@@ -70,16 +42,26 @@ export function GitHubRepositoriesSuggestionBox({
     );
   }
 
+  const isLoggedIn = !!user && !isGitHubErrorReponse(user);
+
   return (
     <>
       <SuggestionBox
         title="Open a Repo"
         content={
-          <GitHubAuth
-            isLoggedIn={!!user && !isGitHubErrorReponse(user)}
-            repositories={repositories || []}
-            onConnectToGitHub={handleConnectToGitHub}
-          />
+          isLoggedIn ? (
+            <GitHubRepositorySelector
+              onSelect={handleSubmit}
+              repositories={repositories}
+            />
+          ) : (
+            <ModalButton
+              text="Connect to GitHub"
+              icon={<GitHubLogo width={20} height={20} />}
+              className="bg-[#791B80] w-full"
+              onClick={handleConnectToGitHub}
+            />
+          )
         }
       />
       {connectToGitHubModalOpen && (

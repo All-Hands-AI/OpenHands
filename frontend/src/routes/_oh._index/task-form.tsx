@@ -1,8 +1,13 @@
 import React from "react";
-import { Form, useNavigation } from "@remix-run/react";
+import { useNavigate, useNavigation } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
+import posthog from "posthog-js";
 import { RootState } from "#/store";
-import { addFile, removeFile } from "#/state/initial-query-slice";
+import {
+  addFile,
+  removeFile,
+  setInitialQuery,
+} from "#/state/initial-query-slice";
 import { SuggestionBubble } from "#/components/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
@@ -13,15 +18,15 @@ import { getRandomKey } from "#/utils/get-random-key";
 import { AttachImageLabel } from "#/components/attach-image-label";
 import { cn } from "#/utils/utils";
 
-export function TaskForm() {
+export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
   const dispatch = useDispatch();
   const navigation = useNavigation();
+  const navigate = useNavigate();
 
   const { selectedRepository, files } = useSelector(
     (state: RootState) => state.initalQuery,
   );
 
-  const formRef = React.useRef<HTMLFormElement>(null);
   const [text, setText] = React.useState("");
   const [suggestion, setSuggestion] = React.useState(
     getRandomKey(SUGGESTIONS["non-repo"]),
@@ -52,13 +57,26 @@ export function TaskForm() {
     return "What do you want to build?";
   }, [selectedRepository]);
 
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    const q = formData.get("q")?.toString();
+    if (q) dispatch(setInitialQuery(q));
+
+    posthog.capture("initial_query_submitted", {
+      query_character_length: q?.length,
+    });
+
+    navigate("/app");
+  };
+
   return (
     <div className="flex flex-col gap-2 w-full">
-      <Form
-        ref={formRef}
-        method="post"
+      <form
+        ref={ref}
+        onSubmit={handleSubmit}
         className="flex flex-col items-center gap-2"
-        replace
       >
         <SuggestionBubble
           suggestion={suggestion}
@@ -67,7 +85,7 @@ export function TaskForm() {
         />
         <div
           className={cn(
-            "border border-neutral-600 px-4 py-[17px] rounded-lg text-[17px] leading-5 w-full transition-colors duration-200",
+            "border border-neutral-600 px-4 rounded-lg text-[17px] leading-5 w-full transition-colors duration-200",
             inputIsFocused ? "bg-neutral-600" : "bg-neutral-700",
             "hover:border-neutral-500 focus-within:border-neutral-500",
           )}
@@ -75,7 +93,7 @@ export function TaskForm() {
           <ChatInput
             name="q"
             onSubmit={() => {
-              formRef.current?.requestSubmit();
+              if (typeof ref !== "function") ref?.current?.requestSubmit();
             }}
             onChange={(message) => setText(message)}
             onFocus={() => setInputIsFocused(true)}
@@ -91,11 +109,12 @@ export function TaskForm() {
             value={text}
             maxRows={15}
             showButton={!!text}
-            className="text-[17px] leading-5"
+            className="text-[17px] leading-5 py-[17px]"
+            buttonClassName="pb-[17px]"
             disabled={navigation.state === "submitting"}
           />
         </div>
-      </Form>
+      </form>
       <UploadImageInput
         onUpload={async (uploadedFiles) => {
           const promises = uploadedFiles.map(convertImageToBase64);
@@ -115,4 +134,6 @@ export function TaskForm() {
       )}
     </div>
   );
-}
+});
+
+TaskForm.displayName = "TaskForm";

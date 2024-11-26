@@ -1,11 +1,11 @@
-import { setCurrentAgentState } from "#/state/agentSlice";
-import { setUrl, setScreenshotSrc } from "#/state/browserSlice";
+import { setCurrentAgentState } from "#/state/agent-slice";
+import { setUrl, setScreenshotSrc } from "#/state/browser-slice";
 import store from "#/store";
-import { ObservationMessage } from "#/types/Message";
-import { appendOutput } from "#/state/commandSlice";
-import { appendJupyterOutput } from "#/state/jupyterSlice";
-import ObservationType from "#/types/ObservationType";
-import { addAssistantMessage } from "#/state/chatSlice";
+import { ObservationMessage } from "#/types/message";
+import { appendOutput } from "#/state/command-slice";
+import { appendJupyterOutput } from "#/state/jupyter-slice";
+import ObservationType from "#/types/observation-type";
+import { addAssistantMessage } from "#/state/chat-slice";
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {

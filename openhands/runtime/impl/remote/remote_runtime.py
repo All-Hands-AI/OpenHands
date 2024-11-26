@@ -10,6 +10,7 @@ import requests
 import tenacity
 
 from openhands.core.config import AppConfig
+from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
     BrowseInteractiveAction,
@@ -31,7 +32,9 @@ from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.base import (
     Runtime,
     RuntimeDisconnectedError,
+    RuntimeNotFoundError,
     RuntimeNotReadyError,
+    RuntimeUnavailableError,
 )
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
@@ -109,7 +112,9 @@ class RemoteRuntime(Runtime):
         if existing_runtime:
             self.log('debug', f'Using existing runtime with ID: {self.runtime_id}')
         elif self.attach_to_existing:
-            raise RuntimeError('Could not find existing runtime to attach to.')
+            raise RuntimeNotFoundError(
+                f'Could not find existing runtime for SID: {self.sid}'
+            )
         else:
             self.send_status_message('STATUS$STARTING_CONTAINER')
             if self.config.sandbox.runtime_container_image is None:
@@ -141,29 +146,29 @@ class RemoteRuntime(Runtime):
 
     def _check_existing_runtime(self) -> bool:
         try:
-            response = self._send_request(
+            with self._send_request(
                 'GET',
                 f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
                 is_retry=False,
                 timeout=5,
-            )
+            ) as response:
+                data = response.json()
+                status = data.get('status')
+                if status == 'running' or status == 'paused':
+                    self._parse_runtime_response(response)
         except requests.HTTPError as e:
             if e.response.status_code == 404:
                 return False
             self.log('debug', f'Error while looking for remote runtime: {e}')
             raise
 
-        data = response.json()
-        status = data.get('status')
         if status == 'running':
-            self._parse_runtime_response(response)
             return True
         elif status == 'stopped':
             self.log('debug', 'Found existing remote runtime, but it is stopped')
             return False
         elif status == 'paused':
             self.log('debug', 'Found existing remote runtime, but it is paused')
-            self._parse_runtime_response(response)
             self._resume_runtime()
             return True
         else:
@@ -172,13 +177,13 @@ class RemoteRuntime(Runtime):
 
     def _build_runtime(self):
         self.log('debug', f'Building RemoteRuntime config:\n{self.config}')
-        response = self._send_request(
+        with self._send_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
             is_retry=False,
             timeout=10,
-        )
-        response_json = response.json()
+        ) as response:
+            response_json = response.json()
         registry_prefix = response_json['registry_prefix']
         os.environ['OH_RUNTIME_RUNTIME_IMAGE_REPO'] = (
             registry_prefix.rstrip('/') + '/runtime'
@@ -203,15 +208,17 @@ class RemoteRuntime(Runtime):
             force_rebuild=self.config.sandbox.force_rebuild_runtime,
         )
 
-        response = self._send_request(
+        with self._send_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
             is_retry=False,
             params={'image': self.container_image},
             timeout=10,
-        )
-        if not response.json()['exists']:
-            raise RuntimeError(f'Container image {self.container_image} does not exist')
+        ) as response:
+            if not response.json()['exists']:
+                raise RuntimeError(
+                    f'Container image {self.container_image} does not exist'
+                )
 
     def _start_runtime(self):
         # Prepare the request body for the /start endpoint
@@ -230,6 +237,7 @@ class RemoteRuntime(Runtime):
             self.config.sandbox.user_id,
             plugin_args,
             browsergym_args,
+            is_root=not self.config.run_as_openhands,  # is_root=True when running as root
         )
         start_request = {
             'image': self.container_image,
@@ -240,26 +248,31 @@ class RemoteRuntime(Runtime):
         }
 
         # Start the sandbox using the /start endpoint
-        response = self._send_request(
-            'POST',
-            f'{self.config.sandbox.remote_runtime_api_url}/start',
-            is_retry=False,
-            json=start_request,
-        )
-        self._parse_runtime_response(response)
-        self.log(
-            'debug',
-            f'Runtime started. URL: {self.runtime_url}',
-        )
+        try:
+            with self._send_request(
+                'POST',
+                f'{self.config.sandbox.remote_runtime_api_url}/start',
+                is_retry=False,
+                json=start_request,
+            ) as response:
+                self._parse_runtime_response(response)
+            self.log(
+                'debug',
+                f'Runtime started. URL: {self.runtime_url}',
+            )
+        except requests.HTTPError as e:
+            self.log('error', f'Unable to start runtime: {e}')
+            raise RuntimeUnavailableError() from e
 
     def _resume_runtime(self):
-        self._send_request(
+        with self._send_request(
             'POST',
             f'{self.config.sandbox.remote_runtime_api_url}/resume',
             is_retry=False,
             json={'runtime_id': self.runtime_id},
             timeout=30,
-        )
+        ):
+            pass
         self.log('debug', 'Runtime resumed.')
 
     def _parse_runtime_response(self, response: requests.Response):
@@ -279,12 +292,12 @@ class RemoteRuntime(Runtime):
             ):  # cached value
                 return self._vscode_url
 
-            response = self._send_request(
+            with self._send_request(
                 'GET',
                 f'{self.runtime_url}/vscode/connection_token',
                 timeout=10,
-            )
-            response_json = response.json()
+            ) as response:
+                response_json = response.json()
             assert isinstance(response_json, dict)
             if response_json['token'] is None:
                 return None
@@ -302,12 +315,6 @@ class RemoteRuntime(Runtime):
         else:
             return None
 
-    @tenacity.retry(
-        stop=tenacity.stop_after_delay(180) | stop_if_should_exit(),
-        reraise=True,
-        retry=tenacity.retry_if_exception_type(RuntimeNotReadyError),
-        wait=tenacity.wait_fixed(2),
-    )
     def _wait_until_alive(self):
         retry_decorator = tenacity.retry(
             stop=tenacity.stop_after_delay(
@@ -322,11 +329,11 @@ class RemoteRuntime(Runtime):
 
     def _wait_until_alive_impl(self):
         self.log('debug', f'Waiting for runtime to be alive at url: {self.runtime_url}')
-        runtime_info_response = self._send_request(
+        with self._send_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
-        )
-        runtime_data = runtime_info_response.json()
+        ) as runtime_info_response:
+            runtime_data = runtime_info_response.json()
         assert 'runtime_id' in runtime_data
         assert runtime_data['runtime_id'] == self.runtime_id
         assert 'pod_status' in runtime_data
@@ -338,10 +345,11 @@ class RemoteRuntime(Runtime):
         # Retry a period of time to give the cluster time to start the pod
         if pod_status == 'Ready':
             try:
-                self._send_request(
+                with self._send_request(
                     'GET',
                     f'{self.runtime_url}/alive',
-                )  # will raise exception if we don't get 200 back.
+                ):  # will raise exception if we don't get 200 back.
+                    pass
             except requests.HTTPError as e:
                 self.log(
                     'warning', f"Runtime /alive failed, but pod says it's ready: {e}"
@@ -380,19 +388,13 @@ class RemoteRuntime(Runtime):
             return
         if self.runtime_id and self.session:
             try:
-                response = self._send_request(
+                with self._send_request(
                     'POST',
                     f'{self.config.sandbox.remote_runtime_api_url}/stop',
                     is_retry=False,
                     json={'runtime_id': self.runtime_id},
                     timeout=timeout,
-                )
-                if response.status_code != 200:
-                    self.log(
-                        'error',
-                        f'Failed to stop runtime: {response.text}',
-                    )
-                else:
+                ):
                     self.log('debug', 'Runtime stopped.')
             except Exception as e:
                 raise e
@@ -421,15 +423,15 @@ class RemoteRuntime(Runtime):
             try:
                 request_body = {'action': event_to_dict(action)}
                 self.log('debug', f'Request body: {request_body}')
-                response = self._send_request(
+                with self._send_request(
                     'POST',
                     f'{self.runtime_url}/execute_action',
                     is_retry=False,
                     json=request_body,
                     # wait a few more seconds to get the timeout error from client side
                     timeout=action.timeout + 5,
-                )
-                output = response.json()
+                ) as response:
+                    output = response.json()
                 obs = observation_from_dict(output)
                 obs._cause = action.id  # type: ignore[attr-defined]
             except requests.Timeout:
@@ -508,18 +510,18 @@ class RemoteRuntime(Runtime):
 
             params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
 
-            response = self._send_request(
+            with self._send_request(
                 'POST',
                 f'{self.runtime_url}/upload_file',
                 is_retry=False,
                 files=upload_data,
                 params=params,
                 timeout=300,
-            )
-            self.log(
-                'debug',
-                f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}',
-            )
+            ) as response:
+                self.log(
+                    'debug',
+                    f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}. Response: {response.text}',
+                )
         finally:
             if recursive:
                 os.unlink(temp_zip_path)
@@ -532,30 +534,30 @@ class RemoteRuntime(Runtime):
         if path is not None:
             data['path'] = path
 
-        response = self._send_request(
+        with self._send_request(
             'POST',
             f'{self.runtime_url}/list_files',
             is_retry=False,
             json=data,
             timeout=30,
-        )
-        response_json = response.json()
+        ) as response:
+            response_json = response.json()
         assert isinstance(response_json, list)
         return response_json
 
     def copy_from(self, path: str) -> Path:
         """Zip all files in the sandbox and return as a stream of bytes."""
         params = {'path': path}
-        response = self._send_request(
+        with self._send_request(
             'GET',
             f'{self.runtime_url}/download_files',
             is_retry=False,
             params=params,
             stream=True,
             timeout=30,
-        )
-        temp_file = tempfile.NamedTemporaryFile(delete=False)
-        for chunk in response.iter_content(chunk_size=8192):
-            if chunk:  # filter out keep-alive new chunks
-                temp_file.write(chunk)
-        return Path(temp_file.name)
+        ) as response:
+            temp_file = tempfile.NamedTemporaryFile(delete=False)
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:  # filter out keep-alive new chunks
+                    temp_file.write(chunk)
+            return Path(temp_file.name)

@@ -241,6 +241,7 @@ def get_llm_config_arg(
 
     Args:
         llm_config_arg: The group of llm settings to get from the config.toml file.
+        toml_file: Path to the configuration file to read from. Defaults to 'config.toml'.
 
     Returns:
         LLMConfig: The LLMConfig object with the settings from the config file.
@@ -384,7 +385,7 @@ def load_app_config(
     """Load the configuration from the specified config file and environment variables.
 
     Args:
-        set_logger_levels: Whether to set the global variables for logging levels.
+        set_logging_levels: Whether to set the global variables for logging levels.
         config_file: Path to the config file. Defaults to 'config.toml' in the current directory.
     """
     config = AppConfig()

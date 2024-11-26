@@ -82,6 +82,13 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: !INSECURE_SKIP_VERIFY,
         },
+        "/socket.io": {
+          target: WS_URL,
+          ws: true,
+          changeOrigin: true,
+          secure: !INSECURE_SKIP_VERIFY,
+          //rewriteWsOrigin: true,
+        }
       },
     },
     ssr: {
@@ -91,6 +98,7 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: "jsdom",
       setupFiles: ["vitest.setup.ts"],
+      reporters: "basic",
       exclude: [...configDefaults.exclude, "tests"],
       coverage: {
         reporter: ["text", "json", "html", "lcov", "text-summary"],

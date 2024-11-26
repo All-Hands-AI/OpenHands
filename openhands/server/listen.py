@@ -1,19 +1,20 @@
-import asyncio
 import os
 import re
 import tempfile
 import time
-import uuid
 import warnings
+from contextlib import asynccontextmanager
 
 import jwt
 import requests
+import socketio
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
+from openhands.core.schema.action import ActionType
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
-from openhands.server.github import (
+from openhands.server.github_utils import (
     GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET,
     UserVerifier,
@@ -33,7 +34,6 @@ from fastapi import (
     HTTPException,
     Request,
     UploadFile,
-    WebSocket,
     status,
 )
 from fastapi.responses import FileResponse, JSONResponse
@@ -46,13 +46,11 @@ from openhands.controller.agent import Agent
 from openhands.core.config import LLMConfig, load_app_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
-    ChangeAgentStateAction,
     FileReadAction,
     FileWriteAction,
     NullAction,
 )
 from openhands.events.observation import (
-    AgentStateChangedObservation,
     ErrorObservation,
     FileReadObservation,
     FileWriteObservation,
@@ -61,19 +59,40 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.llm import bedrock
-from openhands.runtime.base import Runtime
+from openhands.runtime.base import Runtime, RuntimeUnavailableError
 from openhands.server.auth.auth import get_sid_from_token, sign_token
-from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware
+from openhands.server.middleware import (
+    InMemoryRateLimiter,
+    LocalhostCORSMiddleware,
+    NoCacheMiddleware,
+    RateLimitMiddleware,
+)
 from openhands.server.session import SessionManager
 
 load_dotenv()
 
 config = load_app_config()
 file_store = get_file_store(config.file_store, config.file_store_path)
-session_manager = SessionManager(config, file_store)
+client_manager = None
+redis_host = os.environ.get('REDIS_HOST')
+if redis_host:
+    client_manager = socketio.AsyncRedisManager(
+        f'redis://{redis_host}',
+        redis_options={'password': os.environ.get('REDIS_PASSWORD')},
+    )
+sio = socketio.AsyncServer(
+    async_mode='asgi', cors_allowed_origins='*', client_manager=client_manager
+)
+session_manager = SessionManager(sio, config, file_store)
 
 
-app = FastAPI()
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    async with session_manager:
+        yield
+
+
+app = FastAPI(lifespan=_lifespan)
 app.add_middleware(
     LocalhostCORSMiddleware,
     allow_credentials=True,
@@ -83,6 +102,15 @@ app.add_middleware(
 
 
 app.add_middleware(NoCacheMiddleware)
+app.add_middleware(
+    RateLimitMiddleware, rate_limiter=InMemoryRateLimiter(requests=10, seconds=1)
+)
+
+
+@app.get('/health')
+async def health():
+    return 'OK'
+
 
 security_scheme = HTTPBearer()
 
@@ -238,7 +266,8 @@ async def attach_session(request: Request, call_next):
     request.state.conversation = await session_manager.attach_to_conversation(
         request.state.sid
     )
-    if request.state.conversation is None:
+    if not request.state.conversation:
+        logger.error(f'Runtime not found for session: {request.state.sid}')
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Session not found'},
@@ -248,122 +277,6 @@ async def attach_session(request: Request, call_next):
     finally:
         await session_manager.detach_from_conversation(request.state.conversation)
     return response
-
-
-@app.websocket('/ws')
-async def websocket_endpoint(websocket: WebSocket):
-    """WebSocket endpoint for receiving events from the client (i.e., the browser).
-    Once connected, the client can send various actions:
-    - Initialize the agent:
-    session management, and event streaming.
-        ```json
-        {"action": "initialize", "args": {"LLM_MODEL": "ollama/llama3", "AGENT": "CodeActAgent", "LANGUAGE": "en", "LLM_API_KEY": "ollama"}}
-
-    Args:
-        ```
-        websocket (WebSocket): The WebSocket connection object.
-    - Start a new development task:
-        ```json
-        {"action": "start", "args": {"task": "write a bash script that prints hello"}}
-        ```
-    - Send a message:
-        ```json
-        {"action": "message", "args": {"content": "Hello, how are you?", "image_urls": ["base64_url1", "base64_url2"]}}
-        ```
-    - Write contents to a file:
-        ```json
-        {"action": "write", "args": {"path": "./greetings.txt", "content": "Hello, OpenHands?"}}
-        ```
-    - Read the contents of a file:
-        ```json
-        {"action": "read", "args": {"path": "./greetings.txt"}}
-        ```
-    - Run a command:
-        ```json
-        {"action": "run", "args": {"command": "ls -l", "thought": "", "confirmation_state": "confirmed"}}
-        ```
-    - Run an IPython command:
-        ```json
-        {"action": "run_ipython", "args": {"command": "print('Hello, IPython!')"}}
-        ```
-    - Open a web page:
-        ```json
-        {"action": "browse", "args": {"url": "https://arxiv.org/html/2402.01030v2"}}
-        ```
-    - Add a task to the root_task:
-        ```json
-        {"action": "add_task", "args": {"task": "Implement feature X"}}
-        ```
-    - Update a task in the root_task:
-        ```json
-        {"action": "modify_task", "args": {"id": "0", "state": "in_progress", "thought": ""}}
-        ```
-    - Change the agent's state:
-        ```json
-        {"action": "change_agent_state", "args": {"state": "paused"}}
-        ```
-    - Finish the task:
-        ```json
-        {"action": "finish", "args": {}}
-        ```
-    """
-    # Get protocols from Sec-WebSocket-Protocol header
-    protocols = websocket.headers.get('sec-websocket-protocol', '').split(', ')
-
-    # The first protocol should be our real protocol (e.g. 'openhands')
-    # The second protocol should contain our auth token
-    if len(protocols) < 3:
-        logger.error('Expected 3 websocket protocols, got %d', len(protocols))
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        return
-
-    real_protocol = protocols[0]
-    jwt_token = protocols[1] if protocols[1] != 'NO_JWT' else ''
-    github_token = protocols[2] if protocols[2] != 'NO_GITHUB' else ''
-
-    if not await authenticate_github_user(github_token):
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        return
-
-    await asyncio.wait_for(websocket.accept(subprotocol=real_protocol), 10)
-
-    if jwt_token:
-        sid = get_sid_from_token(jwt_token, config.jwt_secret)
-
-        if sid == '':
-            await websocket.send_json({'error': 'Invalid token', 'error_code': 401})
-            await websocket.close()
-            return
-    else:
-        sid = str(uuid.uuid4())
-        jwt_token = sign_token({'sid': sid}, config.jwt_secret)
-
-    logger.info(f'New session: {sid}')
-    session = session_manager.add_or_restart_session(sid, websocket)
-    await websocket.send_json({'token': jwt_token, 'status': 'ok'})
-
-    latest_event_id = -1
-    if websocket.query_params.get('latest_event_id'):
-        latest_event_id = int(websocket.query_params.get('latest_event_id'))
-
-    async_stream = AsyncEventStreamWrapper(
-        session.agent_session.event_stream, latest_event_id + 1
-    )
-
-    async for event in async_stream:
-        if isinstance(
-            event,
-            (
-                NullAction,
-                NullObservation,
-                ChangeAgentStateAction,
-                AgentStateChangedObservation,
-            ),
-        ):
-            continue
-        await websocket.send_json(event_to_dict(event))
-
-    await session.loop_recv()
 
 
 @app.get('/api/events/search')
@@ -548,7 +461,14 @@ async def list_files(request: Request, path: str | None = None):
         )
 
     runtime: Runtime = request.state.conversation.runtime
-    file_list = await call_sync_from_async(runtime.list_files, path)
+    try:
+        file_list = await call_sync_from_async(runtime.list_files, path)
+    except RuntimeUnavailableError as e:
+        logger.error(f'Error listing files: {e}', exc_info=True)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': f'Error listing files: {e}'},
+        )
     if path:
         file_list = [os.path.join(path, f) for f in file_list]
 
@@ -568,7 +488,14 @@ async def list_files(request: Request, path: str | None = None):
         file_list = [entry for entry in file_list if not spec.match_file(entry)]
         return file_list
 
-    file_list = await filter_for_gitignore(file_list, '')
+    try:
+        file_list = await filter_for_gitignore(file_list, '')
+    except RuntimeUnavailableError as e:
+        logger.error(f'Error filtering files: {e}', exc_info=True)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': f'Error filtering files: {e}'},
+        )
 
     return file_list
 
@@ -597,7 +524,14 @@ async def select_file(file: str, request: Request):
 
     file = os.path.join(runtime.config.workspace_mount_path_in_sandbox, file)
     read_action = FileReadAction(file)
-    observation = await call_sync_from_async(runtime.run_action, read_action)
+    try:
+        observation = await call_sync_from_async(runtime.run_action, read_action)
+    except RuntimeUnavailableError as e:
+        logger.error(f'Error opening file {file}: {e}', exc_info=True)
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={'error': f'Error opening file: {e}'},
+        )
 
     if isinstance(observation, FileReadObservation):
         content = observation.content
@@ -622,6 +556,23 @@ def sanitize_filename(filename):
         name, ext = os.path.splitext(filename)
         filename = name[: max_length - len(ext)] + ext
     return filename
+
+
+@app.get('/api/conversation')
+async def get_remote_runtime_config(request: Request):
+    """Retrieve the remote runtime configuration.
+
+    Currently, this is the runtime ID.
+    """
+    runtime = request.state.conversation.runtime
+    runtime_id = runtime.runtime_id if hasattr(runtime, 'runtime_id') else None
+    session_id = runtime.sid if hasattr(runtime, 'sid') else None
+    return JSONResponse(
+        content={
+            'runtime_id': runtime_id,
+            'session_id': session_id,
+        }
+    )
 
 
 @app.post('/api/upload-files')
@@ -676,9 +627,20 @@ async def upload_file(request: Request, files: list[UploadFile]):
                     tmp_file.flush()
 
                 runtime: Runtime = request.state.conversation.runtime
-                runtime.copy_to(
-                    tmp_file_path, runtime.config.workspace_mount_path_in_sandbox
-                )
+                try:
+                    await call_sync_from_async(
+                        runtime.copy_to,
+                        tmp_file_path,
+                        runtime.config.workspace_mount_path_in_sandbox,
+                    )
+                except RuntimeUnavailableError as e:
+                    logger.error(
+                        f'Error saving file {safe_filename}: {e}', exc_info=True
+                    )
+                    return JSONResponse(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        content={'error': f'Error saving file: {e}'},
+                    )
             uploaded_files.append(safe_filename)
 
         response_content = {
@@ -809,7 +771,14 @@ async def save_file(request: Request):
             runtime.config.workspace_mount_path_in_sandbox, file_path
         )
         write_action = FileWriteAction(file_path, content)
-        observation = await call_sync_from_async(runtime.run_action, write_action)
+        try:
+            observation = await call_sync_from_async(runtime.run_action, write_action)
+        except RuntimeUnavailableError as e:
+            logger.error(f'Error saving file: {e}', exc_info=True)
+            return JSONResponse(
+                status_code=500,
+                content={'error': f'Error saving file: {e}'},
+            )
 
         if isinstance(observation, FileWriteObservation):
             return JSONResponse(
@@ -860,7 +829,14 @@ async def zip_current_workspace(request: Request, background_tasks: BackgroundTa
         logger.debug('Zipping workspace')
         runtime: Runtime = request.state.conversation.runtime
         path = runtime.config.workspace_mount_path_in_sandbox
-        zip_file = await call_sync_from_async(runtime.copy_from, path)
+        try:
+            zip_file = await call_sync_from_async(runtime.copy_from, path)
+        except RuntimeUnavailableError as e:
+            logger.error(f'Error zipping workspace: {e}', exc_info=True)
+            return JSONResponse(
+                status_code=500,
+                content={'error': f'Error zipping workspace: {e}'},
+            )
         response = FileResponse(
             path=zip_file,
             filename='workspace.zip',
@@ -990,3 +966,66 @@ class SPAStaticFiles(StaticFiles):
 
 
 app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist')
+
+app = socketio.ASGIApp(sio, other_asgi_app=app)
+
+
+@sio.event
+async def connect(connection_id: str, environ):
+    logger.info(f'sio:connect: {connection_id}')
+
+
+@sio.event
+async def oh_action(connection_id: str, data: dict):
+    # If it's an init, we do it here.
+    action = data.get('action', '')
+    if action == ActionType.INIT:
+        await init_connection(connection_id, data)
+        return
+
+    logger.info(f'sio:oh_action:{connection_id}')
+    await session_manager.send_to_event_stream(connection_id, data)
+
+
+async def init_connection(connection_id: str, data: dict):
+    gh_token = data.pop('github_token', None)
+    if not await authenticate_github_user(gh_token):
+        raise RuntimeError(status.WS_1008_POLICY_VIOLATION)
+
+    token = data.pop('token', None)
+    if token:
+        sid = get_sid_from_token(token, config.jwt_secret)
+        if sid == '':
+            await sio.send({'error': 'Invalid token', 'error_code': 401})
+            return
+        logger.info(f'Existing session: {sid}')
+    else:
+        sid = connection_id
+        logger.info(f'New session: {sid}')
+
+    token = sign_token({'sid': sid}, config.jwt_secret)
+    await sio.emit('oh_event', {'token': token, 'status': 'ok'}, to=connection_id)
+
+    latest_event_id = int(data.pop('latest_event_id', -1))
+
+    # The session in question should exist, but may not actually be running locally...
+    event_stream = await session_manager.init_or_join_session(sid, connection_id, data)
+
+    # Send events
+    async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
+    async for event in async_stream:
+        if isinstance(
+            event,
+            (
+                NullAction,
+                NullObservation,
+            ),
+        ):
+            continue
+        await sio.emit('oh_event', event_to_dict(event), to=connection_id)
+
+
+@sio.event
+async def disconnect(connection_id: str):
+    logger.info(f'sio:disconnect:{connection_id}')
+    await session_manager.disconnect_from_session(connection_id)

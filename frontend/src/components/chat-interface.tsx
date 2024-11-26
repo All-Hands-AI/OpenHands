@@ -5,30 +5,39 @@ import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { ChatMessage } from "./chat-message";
 import { FeedbackActions } from "./feedback-actions";
 import { ImageCarousel } from "./image-carousel";
-import { createChatMessage } from "#/services/chatService";
+import { createChatMessage } from "#/services/chat-service";
 import { InteractiveChatBox } from "./interactive-chat-box";
-import { addUserMessage } from "#/state/chatSlice";
+import { addUserMessage } from "#/state/chat-slice";
 import { RootState } from "#/store";
-import AgentState from "#/types/AgentState";
-import { generateAgentStateChangeEvent } from "#/services/agentStateService";
+import AgentState from "#/types/agent-state";
+import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { FeedbackModal } from "./feedback-modal";
-import { useScrollToBottom } from "#/hooks/useScrollToBottom";
-import TypingIndicator from "./chat/TypingIndicator";
-import ConfirmationButtons from "./chat/ConfirmationButtons";
+import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
+import TypingIndicator from "./chat/typing-indicator";
+import ConfirmationButtons from "./chat/confirmation-buttons";
 import { ErrorMessage } from "./error-message";
 import { ContinueButton } from "./continue-button";
 import { ScrollToBottomButton } from "./scroll-to-bottom-button";
 import { Suggestions } from "./suggestions";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import BuildIt from "#/icons/build-it.svg?react";
-import { useWsClient } from "#/context/ws-client-provider";
+import {
+  useWsClient,
+  WsClientProviderStatus,
+} from "#/context/ws-client-provider";
+import OpenHands from "#/api/open-hands";
+import { downloadWorkspace } from "#/utils/download-workspace";
+import { SuggestionItem } from "./suggestion-item";
+import { useAuth } from "#/context/auth-context";
 
 const isErrorMessage = (
   message: Message | ErrorMessage,
 ): message is ErrorMessage => "error" in message;
 
 export function ChatInterface() {
-  const { send } = useWsClient();
+  const { gitHubToken } = useAuth();
+  const { send, status, isLoadingMessages } = useWsClient();
+
   const dispatch = useDispatch();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
@@ -42,6 +51,25 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = React.useState(false);
+  const [hasPullRequest, setHasPullRequest] = React.useState(false);
+
+  React.useEffect(() => {
+    if (status === WsClientProviderStatus.ACTIVE) {
+      try {
+        OpenHands.getRuntimeId().then(({ runtime_id }) => {
+          // eslint-disable-next-line no-console
+          console.log(
+            "Runtime ID: %c%s",
+            "background: #444; color: #ffeb3b; font-weight: bold; padding: 2px 4px; border-radius: 4px;",
+            runtime_id,
+          );
+        });
+      } catch (e) {
+        console.warn("Runtime ID not available in this environment");
+      }
+    }
+  }, [status]);
 
   const handleSendMessage = async (content: string, files: File[]) => {
     posthog.capture("user_message_sent", {
@@ -70,6 +98,17 @@ export function ChatInterface() {
   ) => {
     setFeedbackModalIsOpen(true);
     setFeedbackPolarity(polarity);
+  };
+
+  const handleDownloadWorkspace = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadWorkspace();
+    } catch (error) {
+      // TODO: Handle error
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -101,29 +140,98 @@ export function ChatInterface() {
         onScroll={(e) => onChatBodyScroll(e.currentTarget)}
         className="flex flex-col grow overflow-y-auto overflow-x-hidden px-4 pt-4 gap-2"
       >
-        {messages.map((message, index) =>
-          isErrorMessage(message) ? (
-            <ErrorMessage
-              key={index}
-              id={message.id}
-              message={message.message}
-            />
-          ) : (
-            <ChatMessage
-              key={index}
-              type={message.sender}
-              message={message.content}
-            >
-              {message.imageUrls.length > 0 && (
-                <ImageCarousel size="small" images={message.imageUrls} />
-              )}
-              {messages.length - 1 === index &&
-                message.sender === "assistant" &&
-                curAgentState === AgentState.AWAITING_USER_CONFIRMATION && (
-                  <ConfirmationButtons />
+        {isLoadingMessages && (
+          <div className="flex justify-center">
+            <div className="w-6 h-6 border-2 border-t-[4px] border-primary-500 rounded-full animate-spin" />
+          </div>
+        )}
+
+        {!isLoadingMessages &&
+          messages.map((message, index) =>
+            isErrorMessage(message) ? (
+              <ErrorMessage
+                key={index}
+                id={message.id}
+                message={message.message}
+              />
+            ) : (
+              <ChatMessage
+                key={index}
+                type={message.sender}
+                message={message.content}
+              >
+                {message.imageUrls.length > 0 && (
+                  <ImageCarousel size="small" images={message.imageUrls} />
                 )}
-            </ChatMessage>
-          ),
+                {messages.length - 1 === index &&
+                  message.sender === "assistant" &&
+                  curAgentState === AgentState.AWAITING_USER_CONFIRMATION && (
+                    <ConfirmationButtons />
+                  )}
+              </ChatMessage>
+            ),
+          )}
+
+        {(curAgentState === AgentState.AWAITING_USER_INPUT ||
+          curAgentState === AgentState.FINISHED) && (
+          <div className="flex flex-col gap-2 mb-2">
+            {gitHubToken ? (
+              <div className="flex flex-row gap-2 justify-center w-full">
+                {!hasPullRequest ? (
+                  <>
+                    <SuggestionItem
+                      suggestion={{
+                        label: "Push to Branch",
+                        value:
+                          "Please push the changes to a remote branch on GitHub, but do NOT create a pull request.",
+                      }}
+                      onClick={(value) => {
+                        posthog.capture("push_to_branch_button_clicked");
+                        handleSendMessage(value, []);
+                      }}
+                    />
+                    <SuggestionItem
+                      suggestion={{
+                        label: "Push & Create PR",
+                        value:
+                          "Please push the changes to GitHub and open a pull request.",
+                      }}
+                      onClick={(value) => {
+                        posthog.capture("create_pr_button_clicked");
+                        handleSendMessage(value, []);
+                        setHasPullRequest(true);
+                      }}
+                    />
+                  </>
+                ) : (
+                  <SuggestionItem
+                    suggestion={{
+                      label: "Push changes to PR",
+                      value:
+                        "Please push the latest changes to the existing pull request.",
+                    }}
+                    onClick={(value) => {
+                      posthog.capture("push_to_pr_button_clicked");
+                      handleSendMessage(value, []);
+                    }}
+                  />
+                )}
+              </div>
+            ) : (
+              <SuggestionItem
+                suggestion={{
+                  label: !isDownloading
+                    ? "Download .zip"
+                    : "Downloading, please wait...",
+                  value: "Download .zip",
+                }}
+                onClick={() => {
+                  posthog.capture("download_workspace_button_clicked");
+                  handleDownloadWorkspace();
+                }}
+              />
+            )}
+          </div>
         )}
       </div>
 

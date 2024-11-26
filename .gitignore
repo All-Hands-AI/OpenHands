@@ -175,6 +175,10 @@ evaluation/gaia/data
 evaluation/gorilla/data
 evaluation/toolqa/data
 evaluation/scienceagentbench/benchmark
+evaluation/commit0_bench/repos
+
+# openhands resolver
+output/
 
 # frontend
 
