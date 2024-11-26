@@ -14,7 +14,7 @@ import GlobeIcon from "#/icons/globe.svg?react";
 import ListIcon from "#/icons/list-type-number.svg?react";
 import { clearJupyter } from "#/state/jupyter-slice";
 import { FilesProvider } from "#/context/files";
-import { ChatInterface } from "#/components/chat-interface";
+import { ChatInterface } from "./chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "./event-handler";
 import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
@@ -27,7 +27,6 @@ function App() {
   const { settings } = useUserPrefs();
 
   const dispatch = useDispatch();
-
   useConversationConfig();
 
   const { selectedRepository } = useSelector(
