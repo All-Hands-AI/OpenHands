@@ -107,7 +107,6 @@ jobs:
             });
 
         run: |
-          python -m pip install --upgrade pip
 
       - name: Review PR
         env:
