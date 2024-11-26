@@ -433,12 +433,7 @@ class LLM(RetryMixin, DebugMixin):
             output_tokens = usage.get('completion_tokens')
 
             # Update token counts in the assistant message
-            assistant_msg = Message(
-                role=response.choices[0].message.role,
-                content=[TextContent(text=response.choices[0].message.content or '')],
-                tool_calls=response.choices[0].message.tool_calls,
-            )
-            self._update_message_token_counts(assistant_msg, usage)
+            self._update_message_token_counts(response.choices[0].message, usage)
 
             if input_tokens:
                 stats += 'Input tokens: ' + str(input_tokens)
