@@ -176,6 +176,7 @@ evaluation/gorilla/data
 evaluation/toolqa/data
 evaluation/scienceagentbench/benchmark
 evaluation/commit0_bench/repos
+evaluation/visualcodebench/
 
 # openhands resolver
 output/
