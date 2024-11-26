@@ -7,7 +7,10 @@ interface ExplorerTreeProps {
   defaultOpen?: boolean;
 }
 
-function ExplorerTree({ files, defaultOpen = false }: ExplorerTreeProps) {
+export function ExplorerTree({
+  files,
+  defaultOpen = false,
+}: ExplorerTreeProps) {
   const { t } = useTranslation();
   if (!files?.length) {
     const message = !files
@@ -23,5 +26,3 @@ function ExplorerTree({ files, defaultOpen = false }: ExplorerTreeProps) {
     </div>
   );
 }
-
-export default ExplorerTree;

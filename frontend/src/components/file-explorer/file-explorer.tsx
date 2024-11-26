@@ -12,7 +12,7 @@ import { twMerge } from "tailwind-merge";
 import AgentState from "#/types/agent-state";
 import { addAssistantMessage } from "#/state/chat-slice";
 import IconButton from "../icon-button";
-import ExplorerTree from "./explorer-tree";
+import { ExplorerTree } from "./explorer-tree";
 import toast from "#/utils/toast";
 import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";

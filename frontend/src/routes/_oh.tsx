@@ -7,7 +7,7 @@ import {
 } from "@remix-run/react";
 import { useDispatch } from "react-redux";
 import CogTooth from "#/assets/cog-tooth";
-import { SettingsForm } from "#/components/form/settings-form";
+import { SettingsForm } from "#/components/settings-form";
 import AccountSettingsModal from "#/components/modals/account-settings-modal";
 import { DangerModal } from "#/components/modals/confirmation-modals/danger-modal";
 import { LoadingSpinner } from "#/components/modals/loading-project";

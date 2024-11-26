@@ -1,6 +1,4 @@
-import React from "react";
-
-function TypingIndicator(): React.ReactElement {
+export function TypingIndicator() {
   return (
     <div className="flex items-center space-x-1.5 bg-neutral-700 px-3 py-1.5 rounded-full">
       <span
@@ -18,5 +16,3 @@ function TypingIndicator(): React.ReactElement {
     </div>
   );
 }
-
-export default TypingIndicator;
