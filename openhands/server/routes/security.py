@@ -1,3 +1,9 @@
+from fastapi import (
+    APIRouter,
+)
+
+app = APIRouter()
+
 @app.route('/api/security/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])
 async def security_api(request: Request):
     """Catch-all route for security analyzer API requests.

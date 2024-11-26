@@ -13,6 +13,7 @@ from openhands.server.middleware import (
     LocalhostCORSMiddleware,
     NoCacheMiddleware,
     RateLimitMiddleware,
+    InMemoryRateLimiter,
 )
 from openhands.server.routes.auth import app as auth_api_router
 from openhands.server.routes.conversation import app as conversation_api_router
@@ -22,7 +23,7 @@ from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.security import app as security_api_router
 from openhands.server.static import SPAStaticFiles
 
-app = FastAPI(lifespan=_lifespan)
+app = FastAPI()
 app.add_middleware(
     LocalhostCORSMiddleware,
     allow_credentials=True,

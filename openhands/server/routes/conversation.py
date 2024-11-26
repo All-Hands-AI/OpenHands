@@ -1,3 +1,6 @@
+from fastapi import APIRouter, Request
+
+app = APIRouter()
 
 @app.get('/api/conversation')
 async def get_remote_runtime_config(request: Request):
