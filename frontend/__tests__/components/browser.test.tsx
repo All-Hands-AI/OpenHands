@@ -1,5 +1,5 @@
 import { screen } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 import { renderWithProviders } from "../../test-utils";
 import BrowserPanel from "#/components/browser";
 
