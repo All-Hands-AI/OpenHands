@@ -92,12 +92,6 @@ The core configuration options are defined in the `[core]` section of the `confi
   - Default: `false`
   - Description: Disable color in terminal output
 
-**Session Management**
-- `enable_cli_session`
-  - Type: `bool`
-  - Default: `false`
-  - Description: Enable saving and restoring the session when run from CLI
-
 **Trajectories**
 - `trajectories_path`
   - Type: `str`
