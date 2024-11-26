@@ -27,8 +27,8 @@ class Test(BaseIntegrationTest):
                 content = event.content
             elif isinstance(event, AgentFinishAction):
                 content = event.outputs.get('content', '')
-                if not content:
-                    content = event.thought
+                if event.thought:
+                    content += f'\n\n{event.thought}'
             elif isinstance(event, MessageAction):
                 content = event.content
             else:

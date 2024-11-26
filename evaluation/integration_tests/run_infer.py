@@ -130,7 +130,7 @@ def process_instance(
     # # =============================================
 
     histories = [event_to_dict(event) for event in state.history]
-    test_result: TestResult = test_class.verify_result(runtime, histories)
+    test_result: TestResult = test_class.verify_result(runtime, state.history)
     metrics = state.metrics.get() if state.metrics else None
 
     # Save the output
