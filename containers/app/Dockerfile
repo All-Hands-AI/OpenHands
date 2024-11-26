@@ -1,7 +1,7 @@
 ARG OPENHANDS_BUILD_VERSION=dev
 
 # Frontend builder stage
-FROM node:21.7.2-alpine AS frontend-builder
+FROM node:18-alpine AS frontend-builder
 WORKDIR /app
 COPY frontend/package*.json ./
 RUN npm install -g npm@10.5.1 && npm ci
@@ -9,7 +9,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # Backend builder stage
-FROM python:3.12.3-slim-buster AS backend-builder
+FROM python:3.11-slim-buster AS backend-builder
 WORKDIR /app
 COPY ./openhands ./openhands
 COPY ./pyproject.toml ./poetry.lock ./
@@ -30,7 +30,7 @@ RUN apt-get update -y && \
     rm -rf $POETRY_CACHE_DIR
 
 # Final stage
-FROM python:3.12.3-slim-buster AS openhands-app
+FROM python:3.11-slim-buster AS openhands-app
 WORKDIR /app
 
 ARG OPENHANDS_BUILD_VERSION
@@ -42,7 +42,7 @@ ENV RUN_AS_OPENHANDS=true \
     PYTHONPATH='/app'
 
 COPY --from=backend-builder /app/openhands ./openhands
-COPY --from=backend-builder /app/.venv/lib/python3.12/site-packages /app/.venv/lib/python3.12/site-packages
+COPY --from=backend-builder /app/.venv/lib/python3.11/site-packages /app/.venv/lib/python3.11/site-packages
 COPY --from=frontend-builder /app/build ./frontend/build
 COPY containers/app/entrypoint.sh /app/entrypoint.sh
 
