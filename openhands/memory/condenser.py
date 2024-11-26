@@ -38,11 +38,11 @@ class Condenser(ABC):
         Raises:
         - ValueError: If the condenser type is not recognized
         """
-        if isinstance(config, NoopCondenserConfig):
+        if config.type == "noop":
             return NoopCondenser()
-        elif isinstance(config, RecentEventsCondenserConfig):
+        elif config.type == "recent":
             return RecentEventsCondenser(max_events=config.max_events)
-        elif isinstance(config, LLMCondenserConfig):
+        elif config.type == "llm":
             return LLMCondenser(llm=LLM(config=config.llm_config))
         else:
             raise ValueError(f"Unknown condenser type: {config.type}")
@@ -105,7 +105,7 @@ class LLMCondenser(Condenser):
             # Create a new summary event with the condensed content
             summary_event = Event()
             summary_event._message = summary_response
-            summary_event.timestamp = events[-1].timestamp
+            summary_event._timestamp = events[-1].timestamp
             summary_event._source = events[-1].source
             
             return [summary_event]
