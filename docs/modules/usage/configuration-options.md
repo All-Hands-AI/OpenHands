@@ -160,7 +160,7 @@ The core configuration options are defined in the `[core]` section of the `confi
 - `workspace_mount_rewrite`
   - Type: `str`
   - Default: `""`
-  - Description: Path to rewrite the workspace mount path to
+  - Description: Path to rewrite the workspace mount path to. You can usually ignore this, it refers to special cases of running inside another container.
 
 **Miscellaneous**
 - `run_as_openhands`
