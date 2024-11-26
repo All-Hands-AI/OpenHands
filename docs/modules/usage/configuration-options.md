@@ -253,7 +253,7 @@ The LLM (Large Language Model) configuration options are defined in the `[llm]` 
 **Message Handling**
 - `max_message_chars`
   - Type: `int`
-  - Default: `10000`
+  - Default: `30000`
   - Description: Maximum number of characters in an observation's content
 
 - `max_input_tokens`
