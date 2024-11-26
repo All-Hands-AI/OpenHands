@@ -7,10 +7,11 @@ import subprocess
 import threading
 from functools import lru_cache
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Optional
 
 import requests
 import tenacity
+from requests import Response
 
 from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
@@ -55,7 +56,7 @@ class LocalRuntime(Runtime):
         self.api_url = f"{self.config.sandbox.local_runtime_url}:{self._host_port}"
         self.session = requests.Session()
         self.status_callback = status_callback
-        self.server_process = None
+        self.server_process: Optional[subprocess.Popen[str]] = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
         super().__init__(
@@ -106,11 +107,12 @@ class LocalRuntime(Runtime):
 
         # Start a thread to read and log server output
         def log_output():
-            while True:
-                line = self.server_process.stdout.readline()
-                if not line:
-                    break
-                self.log("debug", f"Server: {line.strip()}")
+            if self.server_process and self.server_process.stdout:
+                while True:
+                    line = self.server_process.stdout.readline()
+                    if not line:
+                        break
+                    self.log("debug", f"Server: {line.strip()}")
 
         log_thread = threading.Thread(target=log_output, daemon=True)
         log_thread.start()
@@ -160,21 +162,21 @@ class LocalRuntime(Runtime):
         if not self._runtime_initialized:
             return ErrorObservation("Runtime not initialized")
 
-        if self.server_process and self.server_process.poll() is not None:
+        if self.server_process is None or self.server_process.poll() is not None:
             return ErrorObservation("Server process died")
 
         with self.action_semaphore:
             try:
-                response = await send_request(
-                    self.session,
-                    "POST",
-                    f"{self.api_url}/action",
-                    json={"action": event_to_dict(action)},
+                response = await call_sync_from_async(
+                    lambda: self.session.post(
+                        f"{self.api_url}/action",
+                        json={"action": event_to_dict(action)},
+                    )
                 )
                 return observation_from_dict(response.json())
+            except requests.exceptions.ConnectionError:
+                raise RuntimeDisconnectedError("Server connection lost")
             except requests.exceptions.RequestException as e:
-                if isinstance(e, requests.exceptions.ConnectionError):
-                    raise RuntimeDisconnectedError("Server connection lost")
                 return ErrorObservation(f"Failed to execute action: {e}")
 
     def close(self):
