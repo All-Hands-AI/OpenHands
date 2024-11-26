@@ -114,18 +114,10 @@ class AttachSessionMiddleware:
         self.app = app
         self.target_router = target_router
         self.target_paths = {route.path for route in target_router.routes}
-        self.prefix = target_router.prefix or ''
 
     async def __call__(self, request: Request, call_next: Callable):
         do_attach = False
-        current_path = request.url.path
-        if current_path.startswith(self.prefix):
-            path_without_prefix = current_path[len(self.prefix) :]
-        else:
-            path_without_prefix = current_path
-        if not path_without_prefix.startswith('/'):
-            path_without_prefix = '/' + path_without_prefix
-        if path_without_prefix in self.target_paths:
+        if request.url.path in self.target_paths:
             do_attach = True
 
         if request.method == 'OPTIONS':
