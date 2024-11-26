@@ -35,6 +35,8 @@ function ExplorerActions({
   onUpload,
   isHidden,
 }: ExplorerActionsProps) {
+  const { t } = useTranslation();
+
   return (
     <div
       className={twMerge(
@@ -52,7 +54,7 @@ function ExplorerActions({
               />
             }
             testId="refresh"
-            ariaLabel="Refresh workspace"
+            ariaLabel={t(I18nKey.FILE_EXPLORER$REFRESH_WORKSPACE)}
             onClick={onRefresh}
           />
           <IconButton
@@ -63,7 +65,7 @@ function ExplorerActions({
               />
             }
             testId="upload"
-            ariaLabel="Upload File"
+            ariaLabel={t(I18nKey.FILE_EXPLORER$UPLOAD)}
             onClick={onUpload}
           />
         </>
@@ -84,7 +86,11 @@ function ExplorerActions({
           )
         }
         testId="toggle"
-        ariaLabel={isHidden ? "Open workspace" : "Close workspace"}
+        ariaLabel={
+          isHidden
+            ? t(I18nKey.FILE_EXPLORER$OPEN_WORKSPACE)
+            : t(I18nKey.FILE_EXPLORER$CLOSE_WORKSPACE)
+        }
         onClick={toggleHidden}
       />
     </div>

@@ -2030,5 +2030,17 @@
   },
   "ERROR_TOAST$CLOSE_BUTTON_LABEL": {
     "en": "Close"
+  },
+  "FILE_EXPLORER$UPLOAD": {
+    "en": "Upload File"
+  },
+  "FILE_EXPLORER$REFRESH_WORKSPACE": {
+    "en": "Refresh workspace"
+  },
+  "FILE_EXPLORER$OPEN_WORKSPACE": {
+    "en": "Open workspace"
+  },
+  "FILE_EXPLORER$CLOSE_WORKSPACE": {
+    "en": "Close workspace"
   }
 }
