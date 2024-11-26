@@ -338,7 +338,6 @@ class AgentController:
                         EventSource.USER,
                     )
             else:
-                print('Request user input >> ', end='', flush=True)
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
     def reset_task(self) -> None:
