@@ -1,15 +1,15 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from openhands.server.shared import config
-from openhands.server.models.feedback import FeedbackDataModel, store_feedback
 from openhands.core.logger import openhands_logger as logger
-from openhands.utils.async_utils import call_sync_from_async
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
-
+from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
+from openhands.server.shared import config
+from openhands.utils.async_utils import call_sync_from_async
 
 app = APIRouter()
+
 
 @app.post('/api/submit-feedback')
 async def submit_feedback(request: Request):
@@ -72,4 +72,3 @@ async def appconfig_defaults():
         dict: The default configuration settings.
     """
     return config.defaults_dict
-

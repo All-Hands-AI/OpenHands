@@ -1,6 +1,5 @@
 import os
 import tempfile
-from typing import Callable
 
 from fastapi import (
     APIRouter,
@@ -24,21 +23,13 @@ from openhands.events.observation import (
     FileReadObservation,
     FileWriteObservation,
 )
-from openhands.events.serialization import event_to_dict
-from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.runtime.base import Runtime, RuntimeUnavailableError
-from openhands.server.auth import get_sid_from_token
-from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
 from openhands.server.file_config import (
     FILES_TO_IGNORE,
     MAX_FILE_SIZE_MB,
     is_extension_allowed,
     sanitize_filename,
 )
-from openhands.server.github import (
-    UserVerifier,
-)
-from openhands.server.shared import config, session_manager
 from openhands.utils.async_utils import call_sync_from_async
 
 app = APIRouter()
@@ -110,6 +101,7 @@ async def list_files(request: Request, path: str | None = None):
         )
 
     return file_list
+
 
 @app.get('/api/select-file')
 async def select_file(file: str, request: Request):
@@ -347,5 +339,3 @@ async def zip_current_workspace(request: Request, background_tasks: BackgroundTa
             status_code=500,
             detail='Failed to zip workspace',
         )
-
-

@@ -3,7 +3,7 @@ import warnings
 
 import requests
 
-from openhands.server.github import (
+from openhands.server.github_utils import (
     GITHUB_CLIENT_ID,
     GITHUB_CLIENT_SECRET,
     authenticate_github_user,
@@ -26,8 +26,10 @@ from openhands.server.shared import config
 
 app = APIRouter(prefix='/api')
 
+
 class AuthCode(BaseModel):
     code: str
+
 
 @app.post('/api/github/callback')
 def github_callback(auth_code: AuthCode):
@@ -96,4 +98,3 @@ async def authenticate(request: Request):
         samesite='strict',
     )
     return response
-
