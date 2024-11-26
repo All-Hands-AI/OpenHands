@@ -7,7 +7,6 @@ import { configureStore } from "@reduxjs/toolkit";
 import { RenderOptions, render } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppStore, RootState, rootReducer } from "./src/store";
-import { WsClientProvider } from "#/context/ws-client-provider";
 import { AuthProvider } from "#/context/auth-context";
 import { UserPrefsProvider } from "#/context/user-prefs-context";
 
@@ -41,14 +40,7 @@ export function renderWithProviders(
         <UserPrefsProvider>
           <AuthProvider>
             <QueryClientProvider client={new QueryClient()}>
-              <WsClientProvider
-                enabled
-                token={null}
-                ghToken={null}
-                settings={null}
-              >
-                {children}
-              </WsClientProvider>
+              {children}
             </QueryClientProvider>
           </AuthProvider>
         </UserPrefsProvider>

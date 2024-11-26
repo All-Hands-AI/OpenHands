@@ -10,6 +10,7 @@ import requests
 import tenacity
 
 from openhands.core.config import AppConfig
+from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
     BrowseInteractiveAction,
@@ -33,6 +34,7 @@ from openhands.runtime.base import (
     RuntimeDisconnectedError,
     RuntimeNotFoundError,
     RuntimeNotReadyError,
+    RuntimeUnavailableError,
 )
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
@@ -246,17 +248,21 @@ class RemoteRuntime(Runtime):
         }
 
         # Start the sandbox using the /start endpoint
-        with self._send_request(
-            'POST',
-            f'{self.config.sandbox.remote_runtime_api_url}/start',
-            is_retry=False,
-            json=start_request,
-        ) as response:
-            self._parse_runtime_response(response)
-        self.log(
-            'debug',
-            f'Runtime started. URL: {self.runtime_url}',
-        )
+        try:
+            with self._send_request(
+                'POST',
+                f'{self.config.sandbox.remote_runtime_api_url}/start',
+                is_retry=False,
+                json=start_request,
+            ) as response:
+                self._parse_runtime_response(response)
+            self.log(
+                'debug',
+                f'Runtime started. URL: {self.runtime_url}',
+            )
+        except requests.HTTPError as e:
+            self.log('error', f'Unable to start runtime: {e}')
+            raise RuntimeUnavailableError() from e
 
     def _resume_runtime(self):
         with self._send_request(
