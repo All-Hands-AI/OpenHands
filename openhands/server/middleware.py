@@ -5,12 +5,13 @@ from typing import Callable
 from urllib.parse import urlparse
 
 import jwt
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
+from openhands.server.shared import session_manager
 
 class LocalhostCORSMiddleware(CORSMiddleware):
     """

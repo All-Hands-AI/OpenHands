@@ -1,4 +1,7 @@
+import os
+
 from dotenv import load_dotenv
+import socketio
 
 from openhands.core.config import load_app_config
 from openhands.server.session import SessionManager
