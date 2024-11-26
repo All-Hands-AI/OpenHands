@@ -9,9 +9,9 @@ app = APIRouter(prefix='/api')
 
 @app.get('/conversation')
 async def get_remote_runtime_config(request: Request):
-    """Retrieve the remote runtime configuration.
+    """Retrieve the runtime configuration.
 
-    Currently, this is the runtime ID.
+    Currently, this is the session ID and runtime ID (if available).
     """
     runtime = request.state.conversation.runtime
     runtime_id = runtime.runtime_id if hasattr(runtime, 'runtime_id') else None
