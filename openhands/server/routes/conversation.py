@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 
-from openhands.core.logger import logger
+from openhands.core.logger import openhands_logger as logger
+from openhands.runtime.base import Runtime
 
 app = APIRouter()
 

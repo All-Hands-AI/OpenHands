@@ -12,8 +12,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.server.auth import get_sid_from_token
 from openhands.server.shared import config, session_manager
-from openhands.server.auth import get_sid_from_token, sign_token
+from openhands.server.github_utils import UserVerifier
 
 
 class LocalhostCORSMiddleware(CORSMiddleware):
