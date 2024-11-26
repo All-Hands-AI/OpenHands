@@ -2,7 +2,7 @@ import { useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { Outlet } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
-import Security from "../components/modals/security/security";
+import Security from "#/components/modals/security/security";
 import { Controls } from "#/components/controls";
 import { RootState } from "#/store";
 import { Container } from "#/components/container";
@@ -16,7 +16,7 @@ import { clearJupyter } from "#/state/jupyter-slice";
 import { FilesProvider } from "#/context/files";
 import { ChatInterface } from "#/components/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
-import { EventHandler } from "#/components/event-handler";
+import { EventHandler } from "./event-handler";
 import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
 import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
@@ -41,7 +41,7 @@ function App() {
   );
 
   const Terminal = React.useMemo(
-    () => React.lazy(() => import("../components/terminal/terminal")),
+    () => React.lazy(() => import("#/components/terminal/terminal")),
     [],
   );
 
