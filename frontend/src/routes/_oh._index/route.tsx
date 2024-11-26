@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "@remix-run/react";
 import React from "react";
 import { useDispatch } from "react-redux";
+import posthog from "posthog-js";
 import { SuggestionBox } from "./suggestion-box";
 import { TaskForm } from "./task-form";
 import { HeroHeading } from "./hero-heading";
@@ -12,7 +13,6 @@ import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
 import { useAuth } from "#/context/auth-context";
-import posthog from "posthog-js";
 
 function Home() {
   const { token, gitHubToken } = useAuth();
