@@ -269,7 +269,7 @@ The LLM (Large Language Model) configuration options are defined in the `[llm]` 
 **Model Selection**
 - `model`
   - Type: `str`
-  - Default: `"gpt-4o"`
+  - Default: `"claude-3-5-sonnet-20241022"`
   - Description: Model to use
 
 **Retrying**
