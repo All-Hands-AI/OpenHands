@@ -50,7 +50,7 @@ export RUNTIME=remote
 export SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev"
 
 # Run the evaluation
-./evaluation/benchmarks/agent_bench/scripts/run_infer.sh eval HEAD CodeActAgent 1
+./evaluation/benchmarks/agent_bench/scripts/run_infer.sh llm.eval_gpt4_1106_preview HEAD CodeActAgent 1
 ```
 
 The remote runtime will build a container image and run the evaluation in a cloud environment. The results will be saved locally in the same way as when running with a local runtime.
