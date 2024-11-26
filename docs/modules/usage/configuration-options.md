@@ -181,7 +181,7 @@ The core configuration options are defined in the `[core]` section of the `confi
 - `jwt_secret`
   - Type: `str`
   - Default: `uuid.uuid4().hex`
-  - Description: JWT secret for authentication
+  - Description: JWT secret for authentication. Please set it to your own value.
 
 ## LLM Configuration
 The LLM (Large Language Model) configuration options are defined in the `[llm]` section of the `config.toml` file.
