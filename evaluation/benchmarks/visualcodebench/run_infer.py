@@ -1,5 +1,6 @@
 # FILE: run_infer.py
 
+import asyncio
 import os
 import shutil
 import tempfile
@@ -12,6 +13,7 @@ from evaluation.benchmarks.visualcodebench.eval import capture_screenshot
 from evaluation.benchmarks.visualcodebench.prepare import (
     REPO_DOWNLOAD_DIR,
     download_repository,
+    pil_image_to_base64,
     prepare_visualcodebench,
 )
 from evaluation.utils.shared import (
@@ -23,6 +25,7 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
+from openhands.controller.state.state import State
 from openhands.core.config import (
     AppConfig,
     SandboxConfig,
@@ -30,8 +33,9 @@ from openhands.core.config import (
 )
 from openhands.core.config.utils import parse_arguments
 from openhands.core.logger import openhands_logger as logger  # Import OpenHands logger
-from openhands.core.main import create_runtime
+from openhands.core.main import create_runtime, run_controller
 from openhands.events.action.commands import CmdRunAction
+from openhands.events.action.message import MessageAction
 from openhands.events.observation.commands import CmdOutputObservation
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
@@ -167,19 +171,19 @@ def process_instance(
     try:
         initialize_runtime(runtime, instance=instance)
 
-        # image_urls = pil_image_to_base64(instance['prev_image'])
+        image_urls = pil_image_to_base64(instance['prev_image'])
 
-        # action = MessageAction(content=instruction, image_urls=image_urls)
-        # state: State | None = asyncio.run(
-        #     run_controller(
-        #         config=config,
-        #         initial_user_action=action,
-        #         runtime=runtime,
-        #         fake_user_response_fn=FAKE_RESPONSES[metadata.agent_class],
-        #     )
-        # )
-        # if state is None:
-        #     raise ValueError('State should not be None.')
+        action = MessageAction(content=instruction, image_urls=image_urls)
+        state: State | None = asyncio.run(
+            run_controller(
+                config=config,
+                initial_user_action=action,
+                runtime=runtime,
+                fake_user_response_fn=FAKE_RESPONSES[metadata.agent_class],
+            )
+        )
+        if state is None:
+            raise ValueError('State should not be None.')
 
         # =============================================
         # result evaluation
