@@ -205,7 +205,7 @@ The LLM (Large Language Model) configuration options are defined in the `[llm]` 
 **API Configuration**
 - `api_key`
   - Type: `str`
-  - Default: `"your-api-key"`
+  - Default: `None`
   - Description: API key to use
 
 - `base_url`
