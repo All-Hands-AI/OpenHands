@@ -2013,6 +2013,9 @@
     "en": "Download as .zip",
     "es": "Descargar como .zip"
   },
+  "PROJECT_MENU_CARD$OPEN": {
+    "en": "Open project menu"
+  },
   "ACTION_BUTTON$RESUME": {
     "en": "Resume the agent task"
   },
