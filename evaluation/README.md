@@ -46,28 +46,32 @@ The OpenHands evaluation harness supports a wide variety of benchmarks across so
 
 ### Software Engineering
 
-- SWE-Bench: [`evaluation/swe_bench`](./swe_bench)
-- HumanEvalFix: [`evaluation/humanevalfix`](./humanevalfix)
-- BIRD: [`evaluation/bird`](./bird)
-- BioCoder: [`evaluation/ml_bench`](./ml_bench)
-- ML-Bench: [`evaluation/ml_bench`](./ml_bench)
-- APIBench: [`evaluation/gorilla`](./gorilla/)
-- ToolQA: [`evaluation/toolqa`](./toolqa/)
-- AiderBench: [`evaluation/aider_bench`](./aider_bench/)
+- SWE-Bench: [`evaluation/benchmarks/swe_bench`](./benchmarks/swe_bench)
+- HumanEvalFix: [`evaluation/benchmarks/humanevalfix`](./benchmarks/humanevalfix)
+- BIRD: [`evaluation/benchmarks/bird`](./benchmarks/bird)
+- BioCoder: [`evaluation/benchmarks/ml_bench`](./benchmarks/ml_bench)
+- ML-Bench: [`evaluation/benchmarks/ml_bench`](./benchmarks/ml_bench)
+- APIBench: [`evaluation/benchmarks/gorilla`](./benchmarks/gorilla/)
+- ToolQA: [`evaluation/benchmarks/toolqa`](./benchmarks/toolqa/)
+- AiderBench: [`evaluation/benchmarks/aider_bench`](./benchmarks/aider_bench/)
+- Commit0: [`evaluation/benchmarks/commit0_bench`](./benchmarks/commit0_bench/)
+- DiscoveryBench: [`evaluation/benchmarks/discoverybench`](./benchmarks/discoverybench/)
 
 ### Web Browsing
 
-- WebArena: [`evaluation/webarena`](./webarena/)
-- MiniWob++: [`evaluation/miniwob`](./miniwob/)
+- WebArena: [`evaluation/benchmarks/webarena`](./benchmarks/webarena/)
+- MiniWob++: [`evaluation/benchmarks/miniwob`](./benchmarks/miniwob/)
+- Browsing Delegation: [`evaluation/benchmarks/browsing_delegation`](./benchmarks/browsing_delegation/)
 
 ### Misc. Assistance
 
-- GAIA: [`evaluation/gaia`](./gaia)
-- GPQA: [`evaluation/gpqa`](./gpqa)
-- AgentBench: [`evaluation/agent_bench`](./agent_bench)
-- MINT: [`evaluation/mint`](./mint)
-- Entity deduction Arena (EDA): [`evaluation/EDA`](./EDA)
-- ProofWriter: [`evaluation/logic_reasoning`](./logic_reasoning)
+- GAIA: [`evaluation/benchmarks/gaia`](./benchmarks/gaia)
+- GPQA: [`evaluation/benchmarks/gpqa`](./benchmarks/gpqa)
+- AgentBench: [`evaluation/benchmarks/agent_bench`](./benchmarks/agent_bench)
+- MINT: [`evaluation/benchmarks/mint`](./benchmarks/mint)
+- Entity deduction Arena (EDA): [`evaluation/benchmarks/EDA`](./benchmarks/EDA)
+- ProofWriter: [`evaluation/benchmarks/logic_reasoning`](./benchmarks/logic_reasoning)
+- ScienceAgentBench: [`evaluation/benchmarks/scienceagentbench`](./benchmarks/scienceagentbench)
 
 ## Result Visualization
 
@@ -79,7 +83,7 @@ You can start your own fork of [our huggingface evaluation outputs](https://hugg
 
 To learn more about how to integrate your benchmark into OpenHands, check out [tutorial here](https://docs.all-hands.dev/modules/usage/how-to/evaluation-harness). Briefly,
 
-- Each subfolder contains a specific benchmark or experiment. For example, `evaluation/swe_bench` should contain
+- Each subfolder contains a specific benchmark or experiment. For example, `evaluation/benchmarks/swe_bench` should contain
 all the preprocessing/evaluation/analysis scripts.
 - Raw data and experimental records should not be stored within this repo.
 - For model outputs, they should be stored at [this huggingface space](https://huggingface.co/spaces/OpenHands/evaluation) for visualization.

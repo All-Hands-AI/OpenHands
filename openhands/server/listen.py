@@ -1,16 +1,17 @@
-import asyncio
 import os
 import re
 import tempfile
 import time
-import uuid
 import warnings
+from contextlib import asynccontextmanager
 
 import jwt
 import requests
+import socketio
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 
+from openhands.core.schema.action import ActionType
 from openhands.security.options import SecurityAnalyzers
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
 from openhands.server.github_utils import (
@@ -33,8 +34,6 @@ from fastapi import (
     HTTPException,
     Request,
     UploadFile,
-    WebSocket,
-    WebSocketDisconnect,
     status,
 )
 from fastapi.responses import FileResponse, JSONResponse
@@ -47,13 +46,11 @@ from openhands.controller.agent import Agent
 from openhands.core.config import LLMConfig, load_app_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
-    ChangeAgentStateAction,
     FileReadAction,
     FileWriteAction,
     NullAction,
 )
 from openhands.events.observation import (
-    AgentStateChangedObservation,
     ErrorObservation,
     FileReadObservation,
     FileWriteObservation,
@@ -76,10 +73,26 @@ load_dotenv()
 
 config = load_app_config()
 file_store = get_file_store(config.file_store, config.file_store_path)
-session_manager = SessionManager(config, file_store)
+client_manager = None
+redis_host = os.environ.get('REDIS_HOST')
+if redis_host:
+    client_manager = socketio.AsyncRedisManager(
+        f'redis://{redis_host}',
+        redis_options={'password': os.environ.get('REDIS_PASSWORD')},
+    )
+sio = socketio.AsyncServer(
+    async_mode='asgi', cors_allowed_origins='*', client_manager=client_manager
+)
+session_manager = SessionManager(sio, config, file_store)
 
 
-app = FastAPI()
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    async with session_manager:
+        yield
+
+
+app = FastAPI(lifespan=_lifespan)
 app.add_middleware(
     LocalhostCORSMiddleware,
     allow_credentials=True,
@@ -264,135 +277,6 @@ async def attach_session(request: Request, call_next):
     finally:
         await session_manager.detach_from_conversation(request.state.conversation)
     return response
-
-
-@app.websocket('/ws')
-async def websocket_endpoint(websocket: WebSocket):
-    """WebSocket endpoint for receiving events from the client (i.e., the browser).
-    Once connected, the client can send various actions:
-    - Initialize the agent:
-    session management, and event streaming.
-        ```json
-        {"action": "initialize", "args": {"LLM_MODEL": "ollama/llama3", "AGENT": "CodeActAgent", "LANGUAGE": "en", "LLM_API_KEY": "ollama"}}
-
-    Args:
-        ```
-        websocket (WebSocket): The WebSocket connection object.
-    - Start a new development task:
-        ```json
-        {"action": "start", "args": {"task": "write a bash script that prints hello"}}
-        ```
-    - Send a message:
-        ```json
-        {"action": "message", "args": {"content": "Hello, how are you?", "image_urls": ["base64_url1", "base64_url2"]}}
-        ```
-    - Write contents to a file:
-        ```json
-        {"action": "write", "args": {"path": "./greetings.txt", "content": "Hello, OpenHands?"}}
-        ```
-    - Read the contents of a file:
-        ```json
-        {"action": "read", "args": {"path": "./greetings.txt"}}
-        ```
-    - Run a command:
-        ```json
-        {"action": "run", "args": {"command": "ls -l", "thought": "", "confirmation_state": "confirmed"}}
-        ```
-    - Run an IPython command:
-        ```json
-        {"action": "run_ipython", "args": {"command": "print('Hello, IPython!')"}}
-        ```
-    - Open a web page:
-        ```json
-        {"action": "browse", "args": {"url": "https://arxiv.org/html/2402.01030v2"}}
-        ```
-    - Add a task to the root_task:
-        ```json
-        {"action": "add_task", "args": {"task": "Implement feature X"}}
-        ```
-    - Update a task in the root_task:
-        ```json
-        {"action": "modify_task", "args": {"id": "0", "state": "in_progress", "thought": ""}}
-        ```
-    - Change the agent's state:
-        ```json
-        {"action": "change_agent_state", "args": {"state": "paused"}}
-        ```
-    - Finish the task:
-        ```json
-        {"action": "finish", "args": {}}
-        ```
-    """
-    # Get protocols from Sec-WebSocket-Protocol header
-    protocols = websocket.headers.get('sec-websocket-protocol', '').split(', ')
-
-    # The first protocol should be our real protocol (e.g. 'openhands')
-    # The second protocol should contain our auth token
-    if len(protocols) < 3:
-        logger.error('Expected 3 websocket protocols, got %d', len(protocols))
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        return
-
-    real_protocol = protocols[0]
-    jwt_token = protocols[1] if protocols[1] != 'NO_JWT' else ''
-    github_token = protocols[2] if protocols[2] != 'NO_GITHUB' else ''
-
-    if not await authenticate_github_user(github_token):
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
-        return
-
-    await asyncio.wait_for(websocket.accept(subprotocol=real_protocol), 10)
-
-    if jwt_token:
-        sid = get_sid_from_token(jwt_token, config.jwt_secret)
-
-        if sid == '':
-            await websocket.send_json({'error': 'Invalid token', 'error_code': 401})
-            await websocket.close()
-            return
-    else:
-        sid = str(uuid.uuid4())
-        jwt_token = sign_token({'sid': sid}, config.jwt_secret)
-
-    logger.info(f'New session: {sid}')
-    session = session_manager.add_or_restart_session(sid, websocket)
-    await websocket.send_json({'token': jwt_token, 'status': 'ok'})
-
-    latest_event_id = -1
-    if websocket.query_params.get('latest_event_id'):
-        try:
-            latest_event_id = int(websocket.query_params.get('latest_event_id'))
-        except ValueError:
-            logger.warning(
-                f'Invalid latest_event_id: {websocket.query_params.get("latest_event_id")}'
-            )
-            pass
-
-    async_stream = AsyncEventStreamWrapper(
-        session.agent_session.event_stream, latest_event_id + 1
-    )
-
-    async for event in async_stream:
-        if isinstance(
-            event,
-            (
-                NullAction,
-                NullObservation,
-                ChangeAgentStateAction,
-                AgentStateChangedObservation,
-            ),
-        ):
-            continue
-        try:
-            await websocket.send_json(event_to_dict(event))
-        except WebSocketDisconnect:
-            logger.warning(
-                'Websocket disconnected while sending event history, before loop started'
-            )
-            session.close()
-            return
-
-    await session.loop_recv()
 
 
 @app.get('/api/options/models')
@@ -1022,3 +906,66 @@ class SPAStaticFiles(StaticFiles):
 
 
 app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist')
+
+app = socketio.ASGIApp(sio, other_asgi_app=app)
+
+
+@sio.event
+async def connect(connection_id: str, environ):
+    logger.info(f'sio:connect: {connection_id}')
+
+
+@sio.event
+async def oh_action(connection_id: str, data: dict):
+    # If it's an init, we do it here.
+    action = data.get('action', '')
+    if action == ActionType.INIT:
+        await init_connection(connection_id, data)
+        return
+
+    logger.info(f'sio:oh_action:{connection_id}')
+    await session_manager.send_to_event_stream(connection_id, data)
+
+
+async def init_connection(connection_id: str, data: dict):
+    gh_token = data.pop('github_token', None)
+    if not await authenticate_github_user(gh_token):
+        raise RuntimeError(status.WS_1008_POLICY_VIOLATION)
+
+    token = data.pop('token', None)
+    if token:
+        sid = get_sid_from_token(token, config.jwt_secret)
+        if sid == '':
+            await sio.send({'error': 'Invalid token', 'error_code': 401})
+            return
+        logger.info(f'Existing session: {sid}')
+    else:
+        sid = connection_id
+        logger.info(f'New session: {sid}')
+
+    token = sign_token({'sid': sid}, config.jwt_secret)
+    await sio.emit('oh_event', {'token': token, 'status': 'ok'}, to=connection_id)
+
+    latest_event_id = int(data.pop('latest_event_id', -1))
+
+    # The session in question should exist, but may not actually be running locally...
+    event_stream = await session_manager.init_or_join_session(sid, connection_id, data)
+
+    # Send events
+    async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
+    async for event in async_stream:
+        if isinstance(
+            event,
+            (
+                NullAction,
+                NullObservation,
+            ),
+        ):
+            continue
+        await sio.emit('oh_event', event_to_dict(event), to=connection_id)
+
+
+@sio.event
+async def disconnect(connection_id: str):
+    logger.info(f'sio:disconnect:{connection_id}')
+    await session_manager.disconnect_from_session(connection_id)
