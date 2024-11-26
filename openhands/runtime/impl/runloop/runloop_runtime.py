@@ -261,7 +261,7 @@ class RunloopRuntime(EventStreamRuntime):
             logger.error(msg)
             raise RuntimeError(msg)
 
-    def close(self, rm_all_containers: bool = True):
+    def close(self, rm_all_containers: bool | None = True):
         if self.log_buffer:
             self.log_buffer.close()
 

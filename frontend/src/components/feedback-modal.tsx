@@ -1,11 +1,10 @@
-import React from "react";
 import { FeedbackForm } from "./feedback-form";
 import {
   BaseModalTitle,
   BaseModalDescription,
-} from "./modals/confirmation-modals/BaseModal";
+} from "./modals/confirmation-modals/base-modal";
 import { ModalBackdrop } from "./modals/modal-backdrop";
-import ModalBody from "./modals/ModalBody";
+import ModalBody from "./modals/modal-body";
 
 interface FeedbackModalProps {
   onClose: () => void;

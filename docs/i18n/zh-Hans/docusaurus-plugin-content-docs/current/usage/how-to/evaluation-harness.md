@@ -73,7 +73,7 @@ OpenHands 的主要入口点在 `openhands/core/main.py` 中。以下是它工�
 
 ## 入门最简单的方法：探索现有基准
 
-我们鼓励您查看我们仓库的 [`evaluation/` 目录](https://github.com/All-Hands-AI/OpenHands/blob/main/evaluation)中提供的各种评估基准。
+我们鼓励您查看我们仓库的 [`evaluation/benchmarks/` 目录](https://github.com/All-Hands-AI/OpenHands/blob/main/evaluation/benchmarks)中提供的各种评估基准。
 
 要集成您自己的基准，我们建议从最接近您需求的基准开始。这种方法可以显著简化您的集成过程，允许您在现有结构的基础上进行构建并使其适应您的特定要求。
 
