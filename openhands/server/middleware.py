@@ -13,8 +13,8 @@ from starlette.types import ASGIApp
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.auth import get_sid_from_token
-from openhands.server.shared import config, session_manager
 from openhands.server.github_utils import UserVerifier
+from openhands.server.shared import config, session_manager
 
 
 class LocalhostCORSMiddleware(CORSMiddleware):
