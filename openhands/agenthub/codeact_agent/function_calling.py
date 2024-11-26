@@ -419,6 +419,68 @@ BrowserTool = ChatCompletionToolParam(
     ),
 )
 
+_GUI_USE_TOOL_DESCRIPTION = """The following 5 functions are available. Nothing else is supported.
+
+keyboard_type(text: str)
+    Types a string of text through the keyboard. Sends a keydown, keypress/input,
+    and keyup event for each character in the text. Modifier keys DO NOT affect
+    keyboard_type. Holding down Shift will not type the text in upper case.
+
+    Examples:
+        keyboard_type('Hello world!')
+
+mouse_move(x: float, y: float)
+    Description: Move the mouse to a location. Uses absolute client coordinates in pixels.
+    Dispatches a mousemove event.
+
+    Examples:
+        mouse_move(65.2, 158.5)
+
+mouse_click(x: float, y: float, button: Literal["left", "middle", "right"] = "left")
+    Description: Move the mouse to a location and click a mouse button. Dispatches mousemove,
+    mousedown and mouseup events.
+
+    Examples:
+        mouse_click(887.2, 68)
+        mouse_click(56, 712.56, 'right')
+
+mouse_dblclick(x: float, y: float, button: Literal["left", "middle", "right"] = "left")
+    Description: Move the mouse to a location and double click a mouse button. Dispatches
+    mousemove, mousedown and mouseup events.
+
+    Examples:
+        mouse_dblclick(5, 236)
+        mouse_dblclick(87.5, 354, 'right')
+
+mouse_drag_and_drop(from_x: float, from_y: float, to_x: float, to_y: float)
+    Description: Drag and drop from a location to a location. Uses absolute client
+    coordinates in pixels. Dispatches mousemove, mousedown and mouseup
+    events.
+
+    Examples:
+        mouse_drag_and_drop(10.7, 325, 235.6, 24.54)
+"""
+
+GUIUseTool = ChatCompletionToolParam(
+    type='function',
+    function=ChatCompletionToolParamFunctionChunk(
+        name='gui_use',
+        description=_GUI_USE_TOOL_DESCRIPTION,
+        parameters={
+            'type': 'object',
+            'properties': {
+                'code': {
+                    'type': 'string',
+                    'description': (
+                        'The Python code that interacts with the GUI.\n'
+                        + _GUI_USE_TOOL_DESCRIPTION
+                    ),
+                }
+            },
+        },
+    ),
+)
+
 _FINISH_DESCRIPTION = """Finish the interaction when the task is complete OR if the assistant cannot proceed further with the task."""
 
 FinishTool = ChatCompletionToolParam(
