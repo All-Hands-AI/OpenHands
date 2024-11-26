@@ -1,34 +1,20 @@
 steps:
-# Display workspace contents
+# Debug workspace
 - name: 'ubuntu'
-  id: 'debug_before'
-  args: ['ls', '-la']
+  id: 'debug'
+  args: ['bash', '-c', 'ls -la && echo "Frontend files:" && ls -la frontend/']
 
-# Build Docker image using the current context
+# Build the Docker image
 - name: 'gcr.io/cloud-builders/docker'
-  id: 'build'
   args:
-    - 'build'
-    - '-t'
-    - 'us-central1-docker.pkg.dev/dynamic-ai-openhands/openhands/app'
-    - '--build-arg'
-    - 'OPENHANDS_BUILD_VERSION=${_VERSION}'
-    - '--no-cache'
-    - '-f'
-    - 'containers/app/Dockerfile'
-    - '.'
-  env:
-    - 'DOCKER_BUILDKIT=1'
-    - 'DOCKER_CLI_EXPERIMENTAL=enabled'
+    - build
+    - -t
+    - us-central1-docker.pkg.dev/dynamic-ai-openhands/openhands/app
+    - --build-arg
+    - OPENHANDS_BUILD_VERSION=dev
+    - -f
+    - containers/app/Dockerfile
+    - .
 
-substitutions:
-  _VERSION: 'dev'
 images:
-- 'us-central1-docker.pkg.dev/dynamic-ai-openhands/openhands/app'
-timeout: '3600s'
-options:
-  machineType: 'N1_HIGHCPU_8'
-  diskSizeGb: '100'
-  logging: CLOUD_LOGGING_ONLY
-  env:
-    - 'DOCKER_BUILDKIT=1'
+- us-central1-docker.pkg.dev/dynamic-ai-openhands/openhands/app

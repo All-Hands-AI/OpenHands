@@ -1,5 +1,11 @@
-frontend/node_modules
-config.toml
-.envrc
-.env
+# Dependencies
+**/node_modules
+**/.env
+
+# Git
 .git
+.gitignore
+
+# Other
+.DS_Store
+*.log
