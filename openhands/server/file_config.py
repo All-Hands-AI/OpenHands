@@ -11,6 +11,7 @@ FILES_TO_IGNORE = [
     '__pycache__/',
 ]
 
+
 def sanitize_filename(filename):
     """Sanitize the filename to prevent directory traversal"""
     # Remove any directory components
@@ -105,4 +106,3 @@ def is_extension_allowed(filename):
         or file_ext in (ext.lower() for ext in ALLOWED_EXTENSIONS)
         or (file_ext == '' and '.' in ALLOWED_EXTENSIONS)
     )
-

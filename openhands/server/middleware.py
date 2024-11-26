@@ -1,11 +1,11 @@
-from typing import Callable
 import asyncio
 from collections import defaultdict
 from datetime import datetime, timedelta
+from typing import Callable
 from urllib.parse import urlparse
 
 import jwt
-from fastapi import Request, APIRouter
+from fastapi import APIRouter, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -102,6 +102,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 headers={'Retry-After': '1'},
             )
         return await call_next(request)
+
 
 class AttachSessionMiddleware:
     def __init__(self, app, target_router: APIRouter):

@@ -1,4 +1,3 @@
-
 import warnings
 
 with warnings.catch_warnings():
@@ -9,15 +8,19 @@ from fastapi import (
 )
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
-from openhands.server.middleware import LocalhostCORSMiddleware, NoCacheMiddleware, AttachSessionMiddleware, RateLimitMiddleware
+from openhands.server.middleware import (
+    AttachSessionMiddleware,
+    LocalhostCORSMiddleware,
+    NoCacheMiddleware,
+    RateLimitMiddleware,
+)
 from openhands.server.routes.auth import app as auth_api_router
 from openhands.server.routes.conversation import app as conversation_api_router
 from openhands.server.routes.feedback import app as feedback_api_router
-from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.files import app as files_api_router
+from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.security import app as security_api_router
 from openhands.server.static import SPAStaticFiles
-
 
 app = FastAPI(lifespan=_lifespan)
 app.add_middleware(
@@ -32,9 +35,11 @@ app.add_middleware(
     RateLimitMiddleware, rate_limiter=InMemoryRateLimiter(requests=10, seconds=1)
 )
 
+
 @app.get('/health')
 async def health():
     return 'OK'
+
 
 app.include_router(auth_api_router)
 app.include_router(public_api_router)
@@ -43,18 +48,11 @@ app.include_router(conversation_api_router)
 app.include_router(security_api_router)
 app.include_router(feedback_api_router)
 
-app.middleware('http')(
-    AttachSessionMiddleware(app, target_router=files_api_router)
-)
+app.middleware('http')(AttachSessionMiddleware(app, target_router=files_api_router))
 app.middleware('http')(
     AttachSessionMiddleware(app, target_router=conversation_api_router)
 )
-app.middleware('http')(
-    AttachSessionMiddleware(app, target_router=security_api_router)
-)
-app.middleware('http')(
-    AttachSessionMiddleware(app, target_router=feedback_api_router)
-)
+app.middleware('http')(AttachSessionMiddleware(app, target_router=security_api_router))
+app.middleware('http')(AttachSessionMiddleware(app, target_router=feedback_api_router))
 
 app.mount('/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist')
-

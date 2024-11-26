@@ -1,5 +1,6 @@
 from fastapi.staticfiles import StaticFiles
 
+
 class SPAStaticFiles(StaticFiles):
     async def get_response(self, path: str, scope):
         try:
@@ -7,6 +8,3 @@ class SPAStaticFiles(StaticFiles):
         except Exception:
             # FIXME: just making this HTTPException doesn't work for some reason
             return await super().get_response('index.html', scope)
-
-
-
