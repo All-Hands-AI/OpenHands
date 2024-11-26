@@ -31,12 +31,11 @@ def test_load_file_upload_config():
         file_uploads_restrict_file_types=True,
         file_uploads_allowed_extensions=['.txt', '.pdf'],
     )
-    with patch('openhands.server.shared.config', config):
-        max_size, restrict_types, allowed_extensions = load_file_upload_config()
+    max_size, restrict_types, allowed_extensions = load_file_upload_config(config)
 
-        assert max_size == 10
-        assert restrict_types is True
-        assert set(allowed_extensions) == {'.txt', '.pdf'}
+    assert max_size == 10
+    assert restrict_types is True
+    assert set(allowed_extensions) == {'.txt', '.pdf'}
 
 
 def test_load_file_upload_config_invalid_max_size():

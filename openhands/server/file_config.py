@@ -1,8 +1,9 @@
 import os
 import re
 
+from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.server.shared import config
+from openhands.server.shared import config as shared_config
 
 FILES_TO_IGNORE = [
     '.git/',
@@ -26,7 +27,9 @@ def sanitize_filename(filename):
     return filename
 
 
-def load_file_upload_config() -> tuple[int, bool, list[str]]:
+def load_file_upload_config(
+    config: AppConfig = shared_config,
+) -> tuple[int, bool, list[str]]:
     """Load file upload configuration from the config object.
 
     This function retrieves the file upload settings from the global config object.
