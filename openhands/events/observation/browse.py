@@ -41,7 +41,6 @@ class BrowserOutputObservation(Observation):
             f'Last browser action: {self.last_browser_action}\n'
             f'Last browser action error: {self.last_browser_action_error}\n'
             f'Focused element bid: {self.focused_element_bid}\n'
-            f'Content: {self.content}\n'
         )
         ret += '--- Agent Observation ---\n'
         ret += self.get_agent_obs_text()
