@@ -3,7 +3,7 @@
 ## Introduction
 
 The OpenHands Runtime folder contains the core components responsible for executing actions and managing the runtime environment for the OpenHands project. This README provides an overview of the main components and their interactions.
-You can learn more about how the runtime works in the [EventStream Runtime](https://docs.all-hands.dev/modules/usage/architecture/runtime) documentation.
+You can learn more about how the runtime works in the [Runtime Architecture](https://docs.all-hands.dev/modules/usage/architecture/runtime) documentation.
 
 ## Main Components
 
@@ -76,9 +76,9 @@ Key features of the `ActionExecutor` class:
 
 ## Runtime Types
 
-### EventStream Runtime
+### Local Docker Runtime
 
-The EventStream Runtime is designed for local execution using Docker containers:
+The Local Docker Runtime (formerly EventStream Runtime) is designed for local execution using Docker containers:
 
 - Creates and manages a Docker container for each session
 - Executes actions within the container
@@ -89,8 +89,26 @@ Key features:
 - Real-time logging and debugging capabilities
 - Direct access to the local file system
 - Faster execution due to local resources
+- Container isolation for security
 
 This is the default runtime used within OpenHands.
+
+### Local Runtime
+
+The Local Runtime is designed for direct execution on the local machine:
+
+- Runs the action_execution_server directly on the host
+- No Docker container overhead
+- Direct access to local system resources
+- Ideal for development and testing when Docker is not available or desired
+
+Key features:
+- Minimal setup required
+- Direct access to local resources
+- No container overhead
+- Fastest execution speed
+
+Note: This runtime provides less isolation than the Local Docker Runtime.
 
 ### Remote Runtime
 

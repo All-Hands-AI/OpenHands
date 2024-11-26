@@ -40,7 +40,7 @@ from openhands.runtime.base import (
     RuntimeNotFoundError,
 )
 from openhands.runtime.builder import DockerRuntimeBuilder
-from openhands.runtime.impl.eventstream.containers import remove_all_containers
+from openhands.runtime.impl.docker.containers import remove_all_containers
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.request import send_request
@@ -120,9 +120,9 @@ class LogBuffer:
             self.log_generator.close()
 
 
-class EventStreamRuntime(Runtime):
-    """This runtime will subscribe the event stream.
-    When receive an event, it will send the event to runtime-client which run inside the docker environment.
+class LocalDockerRuntime(Runtime):
+    """This runtime runs the action_execution_server inside a Docker container.
+    When receiving an event, it will send the event to the server via HTTP.
 
     Args:
         config (AppConfig): The application configuration.
@@ -133,7 +133,7 @@ class EventStreamRuntime(Runtime):
     """
 
     # Need to provide this method to allow inheritors to init the Runtime
-    # without initting the EventStreamRuntime.
+    # without initting the LocalDockerRuntime.
     def init_base_runtime(
         self,
         config: AppConfig,
