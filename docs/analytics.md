@@ -47,25 +47,23 @@ After entering through any of the above paths:
 
 ## Project Actions
 
-1. GitHub Integration
+1. Project Menu Card: GitHub Integration
    - User pushes changes to GitHub
    - Event: `push_to_github_button_clicked`
 
-2. Workspace Download
+2. Project Menu Card: Workspace Download
    - User downloads workspace as ZIP
    - Event: `download_workspace_button_clicked`
 
-3. Stop Action
+3. Chat Interface: Push to Branch
+   - Event: `push_to_branch_button_clicked`
+
+4. Chat Interface: Create PR
+   - Event: `create_pr_button_clicked`
+
+5. Chat Interface: Push changes to PR
+   - Event: `push_to_pr_button_clicked`
+
+6. Stop Action
    - User stops the agent
    - Event: `stop_button_clicked`
-
-## User Feedback
-
-1. Feedback Actions
-   - User provides feedback
-   - Events:
-     - `positive_feedback_submitted`
-     - `negative_feedback_submitted`
-   - Properties:
-     - `feedback_text`: User's feedback text
-     - `current_message_count`: Messages in conversation
