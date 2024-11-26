@@ -39,38 +39,81 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
     # helper function to set attributes based on env vars
     def set_attr_from_env(sub_config: Any, prefix=''):
         """Set attributes of a config dataclass based on environment variables."""
-        for field_name, field_type in sub_config.__annotations__.items():
-            # compute the expected env var name from the prefix and field name
-            # e.g. LLM_BASE_URL
-            env_var_name = (prefix + field_name).upper()
+        if hasattr(sub_config, "__annotations__"):
+            for field_name, field_type in sub_config.__annotations__.items():
+                # compute the expected env var name from the prefix and field name
+                # e.g. LLM_BASE_URL
+                env_var_name = (prefix + field_name).upper()
 
-            if is_dataclass(field_type):
-                # nested dataclass
-                nested_sub_config = getattr(sub_config, field_name)
-                set_attr_from_env(nested_sub_config, prefix=field_name + '_')
-            elif env_var_name in env_or_toml_dict:
-                # convert the env var to the correct type and set it
-                value = env_or_toml_dict[env_var_name]
+                if is_dataclass(field_type):
+                    # nested dataclass
+                    nested_sub_config = getattr(sub_config, field_name)
+                    set_attr_from_env(nested_sub_config, prefix=field_name + '_')
+                elif hasattr(field_type, "model_fields"):  # Pydantic model
+                    nested_sub_config = getattr(sub_config, field_name)
+                    # For Pydantic models, we need to construct a new instance with updated fields
+                    updated_fields = {}
+                    # First check if there's a direct type field
+                    type_env_var = (prefix + field_name + "_TYPE").upper()
+                    if type_env_var in env_or_toml_dict:
+                        type_val = env_or_toml_dict[type_env_var]
+                        # Then check for other fields based on the type
+                        if type_val == "recent":
+                            from openhands.core.config.condenser_config import RecentEventsCondenserConfig
+                            for pydantic_field in RecentEventsCondenserConfig.model_fields:
+                                pydantic_env_var = (prefix + field_name + "_" + pydantic_field).upper()
+                                if pydantic_env_var in env_or_toml_dict:
+                                    value = env_or_toml_dict[pydantic_env_var]
+                                    if value:
+                                        # Convert numeric values
+                                        if RecentEventsCondenserConfig.model_fields[pydantic_field].annotation == int:
+                                            value = int(value)
+                                        elif RecentEventsCondenserConfig.model_fields[pydantic_field].annotation == float:
+                                            value = float(value)
+                                        updated_fields[pydantic_field] = value
+                            new_instance = RecentEventsCondenserConfig(**updated_fields)
+                            setattr(sub_config, field_name, new_instance)
+                        elif type_val == "llm":
+                            from openhands.core.config.condenser_config import LLMCondenserConfig
+                            for pydantic_field in LLMCondenserConfig.model_fields:
+                                pydantic_env_var = (prefix + field_name + "_" + pydantic_field).upper()
+                                if pydantic_env_var in env_or_toml_dict:
+                                    value = env_or_toml_dict[pydantic_env_var]
+                                    if value:
+                                        updated_fields[pydantic_field] = value
+                            new_instance = LLMCondenserConfig(**updated_fields)
+                            setattr(sub_config, field_name, new_instance)
+                        elif type_val == "noop":
+                            from openhands.core.config.condenser_config import NoopCondenserConfig
+                            new_instance = NoopCondenserConfig()
+                            setattr(sub_config, field_name, new_instance)
+                        else:
+                            logger.openhands_logger.error(
+                                f'Unknown condenser type: {type_val}'
+                            )
+                elif env_var_name in env_or_toml_dict:
+                    # convert the env var to the correct type and set it
+                    value = env_or_toml_dict[env_var_name]
 
-                # skip empty config values (fall back to default)
-                if not value:
-                    continue
+                    # skip empty config values (fall back to default)
+                    if not value:
+                        continue
 
-                try:
-                    # if it's an optional type, get the non-None type
-                    if get_origin(field_type) is UnionType:
-                        field_type = get_optional_type(field_type)
+                    try:
+                        # if it's an optional type, get the non-None type
+                        if get_origin(field_type) is UnionType:
+                            field_type = get_optional_type(field_type)
 
-                    # Attempt to cast the env var to type hinted in the dataclass
-                    if field_type is bool:
-                        cast_value = str(value).lower() in ['true', '1']
-                    else:
-                        cast_value = field_type(value)
-                    setattr(sub_config, field_name, cast_value)
-                except (ValueError, TypeError):
-                    logger.openhands_logger.error(
-                        f'Error setting env var {env_var_name}={value}: check that the value is of the right type'
-                    )
+                        # Attempt to cast the env var to type hinted in the dataclass
+                        if field_type is bool:
+                            cast_value = str(value).lower() in ['true', '1']
+                        else:
+                            cast_value = field_type(value)
+                        setattr(sub_config, field_name, cast_value)
+                    except (ValueError, TypeError):
+                        logger.openhands_logger.error(
+                            f'Error setting env var {env_var_name}={value}: check that the value is of the right type'
+                        )
 
     # Start processing from the root of the config object
     set_attr_from_env(cfg)

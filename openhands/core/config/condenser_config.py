@@ -20,7 +20,7 @@ class NoopCondenserConfig(CondenserConfig):
 class RecentEventsCondenserConfig(CondenserConfig):
     """Configuration for RecentEventsCondenser."""
     type: Literal["recent"] = Field("recent")
-    max_events: int = Field(10, description="Maximum number of events to keep", ge=1)
+    max_events: int = Field(default=10, description="Maximum number of events to keep", ge=1)
 
 
 class LLMCondenserConfig(CondenserConfig):
