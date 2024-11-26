@@ -108,7 +108,7 @@ Key features:
 - No container overhead
 - Fastest execution speed
 
-Note: This runtime provides less isolation than the Local Docker Runtime.
+Important: This runtime provides no isolation as it runs directly on the host machine. All actions are executed with the same permissions as the user running OpenHands. For secure execution with proper isolation, use the Local Docker Runtime instead.
 
 ### Remote Runtime
 
