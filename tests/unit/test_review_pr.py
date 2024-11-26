@@ -1,6 +1,5 @@
 """Tests for the review_pr module."""
 
-import os
 import tempfile
 from unittest.mock import MagicMock, patch
 
@@ -76,7 +75,9 @@ def test_review_pr(mock_pr: GithubIssue, mock_llm_config: LLMConfig) -> None:
         # Setup mocks
         mock_handler.return_value.get_converted_issues.return_value = [mock_pr]
         mock_get_diff.return_value = 'test diff'
-        mock_completion.return_value.choices = [MagicMock(message=MagicMock(content='test review'))]
+        mock_completion.return_value.choices = [
+            MagicMock(message=MagicMock(content='test review'))
+        ]
 
         # Run review
         review_pr(
@@ -93,4 +94,6 @@ def test_review_pr(mock_pr: GithubIssue, mock_llm_config: LLMConfig) -> None:
         mock_handler.assert_called_once_with('owner', 'repo', 'token')
         mock_get_diff.assert_called_once_with('owner', 'repo', 1, 'token')
         mock_completion.assert_called_once()
-        mock_post_comment.assert_called_once_with('owner', 'repo', 1, 'token', 'test review')
+        mock_post_comment.assert_called_once_with(
+            'owner', 'repo', 1, 'token', 'test review'
+        )

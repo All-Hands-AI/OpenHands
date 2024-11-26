@@ -3,8 +3,6 @@
 import argparse
 import os
 import pathlib
-import subprocess
-from typing import Any
 
 import jinja2
 import litellm
@@ -28,7 +26,9 @@ def get_pr_diff(owner: str, repo: str, pr_number: int, token: str) -> str:
     return response.text
 
 
-def post_review_comment(owner: str, repo: str, pr_number: int, token: str, review: str) -> None:
+def post_review_comment(
+    owner: str, repo: str, pr_number: int, token: str, review: str
+) -> None:
     """Post a review comment on a pull request."""
     url = f'https://api.github.com/repos/{owner}/{repo}/issues/{pr_number}/comments'
     headers = {
@@ -62,7 +62,9 @@ def review_pr(
     """
     # Create output directory
     pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
-    pathlib.Path(os.path.join(output_dir, 'infer_logs')).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(os.path.join(output_dir, 'infer_logs')).mkdir(
+        parents=True, exist_ok=True
+    )
     logger.info(f'Using output directory: {output_dir}')
 
     # Get PR handler
@@ -106,8 +108,12 @@ def review_pr(
 def main() -> None:
     """Main function."""
     parser = argparse.ArgumentParser(description='Review a pull request.')
-    parser.add_argument('--repo', type=str, required=True, help='Repository in owner/repo format')
-    parser.add_argument('--issue-number', type=int, required=True, help='PR number to review')
+    parser.add_argument(
+        '--repo', type=str, required=True, help='Repository in owner/repo format'
+    )
+    parser.add_argument(
+        '--issue-number', type=int, required=True, help='PR number to review'
+    )
     parser.add_argument('--issue-type', type=str, required=True, help='Issue type (pr)')
 
     args = parser.parse_args()
@@ -126,6 +132,8 @@ def main() -> None:
     owner, repo = args.repo.split('/')
 
     # Configure LLM
+    assert llm_model is not None  # For type checker
+    assert llm_api_key is not None  # For type checker
     llm_config = LLMConfig(
         model=llm_model,
         api_key=llm_api_key,
@@ -133,6 +141,8 @@ def main() -> None:
     )
 
     # Review PR
+    assert token is not None  # For type checker
+    assert username is not None  # For type checker
     review_pr(
         owner=owner,
         repo=repo,
