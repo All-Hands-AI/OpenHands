@@ -11,6 +11,7 @@ from openhands.core.config import (
     load_from_env,
     load_from_toml,
 )
+from openhands.core.config.condenser_config import NoopCondenserConfig, RecentEventsCondenserConfig
 
 
 @pytest.fixture
@@ -404,6 +405,26 @@ def test_cache_dir_creation(default_config, tmpdir):
     default_config.cache_dir = str(tmpdir.join('test_cache'))
     finalize_config(default_config)
     assert os.path.exists(default_config.cache_dir)
+
+def test_agent_config_condenser():
+    # Test that agent config can be loaded with different condenser configs
+    config = AppConfig()
+    
+    # Default should be NoopCondenserConfig
+    agent_config = config.get_agent_config()
+    assert isinstance(agent_config.condenser, NoopCondenserConfig)
+    assert agent_config.condenser.type == "noop"
+
+    # Test loading from TOML-style dict
+    env_dict = {
+        'AGENT_CONDENSER_TYPE': 'recent',
+        'AGENT_CONDENSER_MAX_EVENTS': '5'
+    }
+    load_from_env(config, env_dict)
+    agent_config = config.get_agent_config()
+    assert isinstance(agent_config.condenser, RecentEventsCondenserConfig)
+    assert agent_config.condenser.type == "recent"
+    assert agent_config.condenser.max_events == 5
 
 
 def test_api_keys_repr_str():
