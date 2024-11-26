@@ -461,7 +461,7 @@ class EventStreamRuntime(Runtime):
         ):
             pass
 
-    def close(self, rm_all_containers: bool = True):
+    def close(self, rm_all_containers: bool | None = None):
         """Closes the EventStreamRuntime and associated objects
 
         Parameters:
@@ -472,6 +472,9 @@ class EventStreamRuntime(Runtime):
 
         if self.session:
             self.session.close()
+
+        if rm_all_containers is None:
+            rm_all_containers = self.config.sandbox.rm_all_containers
 
         if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
             return

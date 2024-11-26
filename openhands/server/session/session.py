@@ -1,7 +1,7 @@
 import asyncio
 import time
 
-from fastapi import WebSocket, WebSocketDisconnect
+import socketio
 
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
@@ -10,7 +10,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
 from openhands.core.schema.action import ActionType
 from openhands.core.schema.config import ConfigType
-from openhands.events.action import ChangeAgentStateAction, MessageAction, NullAction
+from openhands.events.action import MessageAction, NullAction
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import (
     AgentStateChangedObservation,
@@ -23,22 +23,30 @@ from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
 from openhands.storage.files import FileStore
-from openhands.utils.shutdown_listener import should_continue
+from openhands.utils.async_utils import call_coro_in_bg_thread
+
+ROOM_KEY = 'room:{sid}'
 
 
 class Session:
     sid: str
-    websocket: WebSocket | None
+    sio: socketio.AsyncServer | None
     last_active_ts: int = 0
     is_alive: bool = True
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
+    config: AppConfig
+    settings: dict | None
 
     def __init__(
-        self, sid: str, ws: WebSocket | None, config: AppConfig, file_store: FileStore
+        self,
+        sid: str,
+        config: AppConfig,
+        file_store: FileStore,
+        sio: socketio.AsyncServer | None,
     ):
         self.sid = sid
-        self.websocket = ws
+        self.sio = sio
         self.last_active_ts = int(time.time())
         self.agent_session = AgentSession(
             sid, file_store, status_callback=self.queue_status_message
@@ -48,41 +56,14 @@ class Session:
         )
         self.config = config
         self.loop = asyncio.get_event_loop()
+        self.settings = None
 
     def close(self):
         self.is_alive = False
-        try:
-            if self.websocket is not None:
-                asyncio.run_coroutine_threadsafe(self.websocket.close(), self.loop)
-                self.websocket = None
-        finally:
-            self.agent_session.close()
-            del (
-                self.agent_session
-            )  # FIXME: this should not be necessary but it mitigates a memory leak
+        self.agent_session.close()
 
-    async def loop_recv(self):
-        try:
-            if self.websocket is None:
-                return
-            while should_continue():
-                try:
-                    data = await self.websocket.receive_json()
-                except ValueError:
-                    await self.send_error('Invalid JSON')
-                    continue
-                await self.dispatch(data)
-        except WebSocketDisconnect:
-            logger.info('WebSocket disconnected, sid: %s', self.sid)
-            self.close()
-        except RuntimeError as e:
-            logger.exception('Error in loop_recv: %s', e)
-            self.close()
-
-    async def _initialize_agent(self, data: dict):
-        self.agent_session.event_stream.add_event(
-            ChangeAgentStateAction(AgentState.LOADING), EventSource.ENVIRONMENT
-        )
+    async def initialize_agent(self, data: dict):
+        self.settings = data
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
@@ -164,10 +145,6 @@ class Session:
             await self.send(event_dict)
 
     async def dispatch(self, data: dict):
-        action = data.get('action', '')
-        if action == ActionType.INIT:
-            await self._initialize_agent(data)
-            return
         event = event_from_dict(data.copy())
         # This checks if the model supports images
         if isinstance(event, MessageAction) and event.image_urls:
@@ -185,28 +162,36 @@ class Session:
                     return
         self.agent_session.event_stream.add_event(event, EventSource.USER)
 
-    async def send(self, data: dict[str, object]) -> bool:
+    async def send(self, data: dict[str, object]):
+        if asyncio.get_running_loop() != self.loop:
+            self.loop.create_task(self._send(data))
+            return
+        await self._send(data)
+
+    async def _send(self, data: dict[str, object]) -> bool:
         try:
-            if self.websocket is None or not self.is_alive:
+            if not self.is_alive:
                 return False
-            await self.websocket.send_json(data)
+            if self.sio:
+                await self.sio.emit('oh_event', data, to=ROOM_KEY.format(sid=self.sid))
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True
-        except (RuntimeError, WebSocketDisconnect):
+        except RuntimeError:
+            logger.error('Error sending', stack_info=True, exc_info=True)
             self.is_alive = False
             return False
 
-    async def send_error(self, message: str) -> bool:
+    async def send_error(self, message: str):
         """Sends an error message to the client."""
-        return await self.send({'error': True, 'message': message})
+        await self.send({'error': True, 'message': message})
 
-    async def _send_status_message(self, msg_type: str, id: str, message: str) -> bool:
+    async def _send_status_message(self, msg_type: str, id: str, message: str):
         """Sends a status message to the client."""
         if msg_type == 'error':
             await self.agent_session.stop_agent_loop_for_error()
 
-        return await self.send(
+        await self.send(
             {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
         )
 
