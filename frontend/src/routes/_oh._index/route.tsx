@@ -12,6 +12,7 @@ import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
 import { useAuth } from "#/context/auth-context";
+import posthog from "posthog-js";
 
 function Home() {
   const { token, gitHubToken } = useAuth();
@@ -78,6 +79,7 @@ function Home() {
                       dispatch(
                         setImportedProjectZip(await convertZipToBase64(zip)),
                       );
+                      posthog.capture("zip_file_uploaded");
                       formRef.current?.requestSubmit();
                     } else {
                       // TODO: handle error
