@@ -2018,5 +2018,8 @@
   },
   "ACTION_BUTTON$PAUSE": {
     "en": "Pause the current task"
+  },
+  "BROWSER$SCREENSHOT_ALT": {
+    "en": "Browser Screenshot"
   }
 }

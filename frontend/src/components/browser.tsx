@@ -27,7 +27,7 @@ function BrowserPanel() {
             src={imgSrc}
             style={{ objectFit: "contain", width: "100%", height: "auto" }}
             className="rounded-xl"
-            alt="Browser Screenshot"
+            alt={t(I18nKey.BROWSER$SCREENSHOT_ALT)}
           />
         ) : (
           <div className="flex flex-col items-center h-full justify-center">
