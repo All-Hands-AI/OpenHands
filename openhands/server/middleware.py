@@ -59,6 +59,7 @@ class InMemoryRateLimiter:
         self.seconds = seconds
         self.sleep_seconds = sleep_seconds
         self.history = defaultdict(list)
+        self.sleep_seconds = sleep_seconds
 
     def _clean_old_requests(self, key: str) -> None:
         now = datetime.now()

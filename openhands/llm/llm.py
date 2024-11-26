@@ -65,6 +65,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3-5-sonnet',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-sonnet-20241022',
+    'claude-3.5-haiku',
     'claude-3-5-haiku-20241022',
     'gpt-4o-mini',
     'gpt-4o',

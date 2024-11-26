@@ -7,11 +7,11 @@ import {
   WsClientProviderStatus,
 } from "#/context/ws-client-provider";
 import { ErrorObservation } from "#/types/core/observations";
-import { addErrorMessage, addUserMessage } from "#/state/chatSlice";
+import { addErrorMessage, addUserMessage } from "#/state/chat-slice";
 import {
   getCloneRepoCommand,
   getGitHubTokenCommand,
-} from "#/services/terminalService";
+} from "#/services/terminal-service";
 import {
   clearFiles,
   clearInitialQuery,
@@ -19,12 +19,12 @@ import {
   setImportedProjectZip,
 } from "#/state/initial-query-slice";
 import store, { RootState } from "#/store";
-import { createChatMessage } from "#/services/chatService";
+import { createChatMessage } from "#/services/chat-service";
 import { isGitHubErrorReponse } from "#/api/github";
 import { base64ToBlob } from "#/utils/base64-to-blob";
-import { setCurrentAgentState } from "#/state/agentSlice";
-import AgentState from "#/types/AgentState";
-import { generateAgentStateChangeEvent } from "#/services/agentStateService";
+import { setCurrentAgentState } from "#/state/agent-slice";
+import AgentState from "#/types/agent-state";
+import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 import { useAuth } from "#/context/auth-context";
