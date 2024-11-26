@@ -12,7 +12,8 @@ from openhands.core.config import load_app_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.base import Runtime
-from openhands.runtime.impl.eventstream.eventstream_runtime import EventStreamRuntime
+from openhands.runtime.impl.docker import LocalDockerRuntime
+from openhands.runtime.impl.local import LocalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
@@ -62,7 +63,7 @@ def _remove_folder(folder: str) -> bool:
 
 
 def _close_test_runtime(runtime: Runtime):
-    if isinstance(runtime, EventStreamRuntime):
+    if isinstance(runtime, LocalDockerRuntime):
         runtime.close(rm_all_containers=False)
     else:
         runtime.close()
@@ -129,7 +130,9 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
 def get_runtime_classes():
     runtime = TEST_RUNTIME
     if runtime.lower() == 'eventstream':
-        return [EventStreamRuntime]
+        return [LocalDockerRuntime]  # Previously EventStreamRuntime
+    elif runtime.lower() == 'local':
+        return [LocalRuntime]
     elif runtime.lower() == 'remote':
         return [RemoteRuntime]
     elif runtime.lower() == 'runloop':
