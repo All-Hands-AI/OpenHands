@@ -338,7 +338,6 @@ class AgentController:
                         EventSource.USER,
                     )
             else:
-                # Display the message content to help user understand what input is expected
                 print(f'\nAgent is requesting input: {action.content}')
                 print('Request user input >> ', end='', flush=True)
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
