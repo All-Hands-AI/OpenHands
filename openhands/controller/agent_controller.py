@@ -646,21 +646,18 @@ class AgentController:
         else:
             self.state.traffic_control_state = TrafficControlState.THROTTLING
             if self.headless_mode:
-                # In headless mode, we should stop the agent with an error
-                self.log(
-                    'warning',
+                e = RuntimeError(
                     f'Agent reached maximum {limit_type} in headless mode. '
-                    f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}',
+                    f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}'
                 )
-                await self.set_agent_state_to(AgentState.ERROR)
+                await self._react_to_exception(e)
             else:
-                self.log(
-                    'warning',
+                e = RuntimeError(
                     f'Agent reached maximum {limit_type}. '
                     f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}. '
-                    f'{TRAFFIC_CONTROL_REMINDER}',
                 )
-                await self.set_agent_state_to(AgentState.PAUSED)
+                # FIXME: this isn't really an exception--we should have a different path
+                await self._react_to_exception(e)
             stop_step = True
         return stop_step
 
