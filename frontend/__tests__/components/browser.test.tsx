@@ -3,11 +3,6 @@ import { describe, it, expect, vi } from "vitest";
 import { renderWithProviders } from "../../test-utils";
 import BrowserPanel from "#/components/browser";
 
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({
-    t: (key: string) => key === "browser.emptyMessage" ? "No browser content to display" : key,
-  }),
-}));
 
 describe("Browser", () => {
   it("renders a message if no screenshotSrc is provided", () => {
@@ -20,7 +15,8 @@ describe("Browser", () => {
       },
     });
 
-    expect(screen.getByText("No browser content to display")).toBeInTheDocument();
+    // i18n empty message key
+    expect(screen.getByText("BROWSER$EMPTY_MESSAGE")).toBeInTheDocument();
   });
 
   it("renders the url and a screenshot", () => {

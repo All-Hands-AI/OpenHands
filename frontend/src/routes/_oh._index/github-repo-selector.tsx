@@ -19,10 +19,7 @@ export function GitHubRepositorySelector({
     if (repo) {
       // set query param
       dispatch(setSelectedRepository(repo.full_name));
-      posthog.capture("repository_selected", {
-        repository_name: repo.name,
-        repository_owner: repo.owner.login,
-      });
+      posthog.capture("repository_selected");
       onSelect();
     }
   };
