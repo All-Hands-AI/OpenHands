@@ -9,10 +9,10 @@ from openhands.events.observation import (
     NullObservation,
 )
 from openhands.events.serialization import event_to_dict
+from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.auth import get_sid_from_token, sign_token
 from openhands.server.github_utils import authenticate_github_user
 from openhands.server.shared import config, session_manager, sio
-from openhands.events.stream import AsyncEventStreamWrapper
 
 
 @sio.event
