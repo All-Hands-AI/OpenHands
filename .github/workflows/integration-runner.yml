@@ -68,10 +68,6 @@ jobs:
 
       - name: Run integration test evaluation for Haiku
         env:
-          #ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
-          #RUNTIME: remote
-          #SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
-          #EVAL_DOCKER_IMAGE_PREFIX: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images
           SANDBOX_FORCE_REBUILD_RUNTIME: True
         run: |
           poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES '' 'haiku_run'
@@ -83,16 +79,6 @@ jobs:
           cat $REPORT_FILE_HAIKU >> $GITHUB_ENV
           echo >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
-
-      #- name: Cleanup Haiku runtimes
-      #  if: always()
-      #  env:
-      #    ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
-      #    SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
-      #  run: |
-      #    poetry run ./evaluation/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
-      #    # Add a small delay to ensure cleanup is complete
-      #    sleep 10
 
       - name: Wait a little bit
         run: sleep 10
@@ -109,10 +95,6 @@ jobs:
 
       - name: Run integration test evaluation for DeepSeek
         env:
-          #ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
-          #RUNTIME: remote
-          #SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
-          #EVAL_DOCKER_IMAGE_PREFIX: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images
           SANDBOX_FORCE_REBUILD_RUNTIME: True
         run: |
           poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES '' 'deepseek_run'
@@ -142,11 +124,6 @@ jobs:
         run: |
           echo "ARTIFACT_URL=${{ steps.upload_results_artifact.outputs.artifact-url }}" >> $GITHUB_ENV
 
-      # - name: Authenticate to Google Cloud
-      #   uses: 'google-github-actions/auth@v2'
-      #   with:
-      #     credentials_json: ${{ secrets.GCP_RESEARCH_OBJECT_CREATOR_SA_KEY }}
-
       - name: Set timestamp and trigger reason
         run: |
           echo "TIMESTAMP=$(date +'%Y-%m-%d-%H-%M')" >> $GITHUB_ENV
@@ -158,26 +135,12 @@ jobs:
             echo "TRIGGER_REASON=nightly-scheduled" >> $GITHUB_ENV
           fi
 
-      # - name: Upload evaluation results to Google Cloud Storage
-      #   uses: 'google-github-actions/upload-cloud-storage@v2'
-      #   with:
-      #     path: 'evaluation/evaluation_outputs/outputs'
-      #     destination: 'openhands-oss-eval-results/${{ env.TIMESTAMP }}-${{ env.TRIGGER_REASON }}'
-
-      # - name: Cleanup remote runtimes
-      #   if: always()  # run this step even if previous steps failed
-      #   env:
-      #     ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
-      #     SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
-      #   run: |
-      #     poetry run ./evaluation/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
-
       - name: Comment with results and artifact link
         id: create_comment
         uses: KeisukeYamashita/create-comment@v1
         with:
-          # if triggered by PR, use PR number, otherwise use 9 as fallback issue number for manual triggers
-          number: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || 9 }}
+          # if triggered by PR, use PR number, otherwise use 5077 as fallback issue number for manual triggers
+          number: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || 5077 }}
           unique: false
           comment: |
               Trigger by: ${{ github.event_name == 'pull_request' && format('Pull Request (integration-test label on PR #{0})', github.event.pull_request.number) || (github.event_name == 'workflow_dispatch' && format('Manual Trigger: {0}', github.event.inputs.reason)) || 'Nightly Scheduled Run' }}
