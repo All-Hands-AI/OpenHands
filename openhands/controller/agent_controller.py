@@ -104,12 +104,13 @@ class AgentController:
             agent_configs: A dictionary mapping agent names to agent configurations in the case that
                 we delegate to a different agent.
             sid: The session ID of the agent.
+            confirmation_mode: Whether to enable confirmation mode for agent actions.
             initial_state: The initial state of the controller.
             is_delegate: Whether this controller is a delegate.
             headless_mode: Whether the agent is run in headless mode.
-            status_callback: Callback function for status updates.
             fake_user_response_fn: Function to generate fake user responses in headless mode.
                 If not provided and headless_mode is True, a default function will be used.
+            status_callback: Optional callback function to handle status updates.
         """
         self._step_lock = asyncio.Lock()
         self.id = sid
@@ -144,10 +145,11 @@ class AgentController:
         self._stuck_detector = StuckDetector(self.state)
         self.status_callback = status_callback
 
-    async def close(self):
+    async def close(self) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
 
-        Note that it's fairly important that this closes properly, otherwise the state is incomplete."""
+        Note that it's fairly important that this closes properly, otherwise the state is incomplete.
+        """
         await self.set_agent_state_to(AgentState.STOPPED)
 
         # we made history, now is the time to rewrite it!
@@ -176,11 +178,13 @@ class AgentController:
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER, self.id)
         self._closed = True
 
-    def log(self, level: str, message: str, extra: dict | None = None):
+    def log(self, level: str, message: str, extra: dict | None = None) -> None:
         """Logs a message to the agent controller's logger.
 
         Args:
+            level (str): The logging level to use (e.g., 'info', 'debug', 'error').
             message (str): The message to log.
+            extra (dict | None, optional): Additional fields to include in the log. Defaults to None.
         """
         message = f'[Agent Controller {self.id}] {message}'
         getattr(logger, level)(message, extra=extra, stacklevel=2)
@@ -206,9 +210,10 @@ class AgentController:
 
     async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
-
         self.log('info', 'Starting step loop...')
-        while should_continue():
+        while True:
+            if not self._is_awaiting_observation() and not should_continue():
+                break
             if self._closed:
                 break
             try:
@@ -223,7 +228,7 @@ class AgentController:
 
             await asyncio.sleep(0.1)
 
-    async def on_event(self, event: Event):
+    async def on_event(self, event: Event) -> None:
         """Callback from the event stream. Notifies the controller of incoming events.
 
         Args:
@@ -241,7 +246,7 @@ class AgentController:
         elif isinstance(event, Observation):
             await self._handle_observation(event)
 
-    async def _handle_action(self, action: Action):
+    async def _handle_action(self, action: Action) -> None:
         """Handles actions from the event stream.
 
         Args:
@@ -268,7 +273,7 @@ class AgentController:
             self.state.metrics.merge(self.state.local_metrics)
             await self.set_agent_state_to(AgentState.REJECTED)
 
-    async def _handle_observation(self, observation: Observation):
+    async def _handle_observation(self, observation: Observation) -> None:
         """Handles observation from the event stream.
 
         Args:
@@ -299,7 +304,7 @@ class AgentController:
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
 
-    async def _handle_message_action(self, action: MessageAction):
+    async def _handle_message_action(self, action: MessageAction) -> None:
         """Handles message actions from the event stream.
 
         Args:
@@ -338,13 +343,12 @@ class AgentController:
                 print('Request user input >> ', end='', flush=True)
                 await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
-    def reset_task(self):
+    def reset_task(self) -> None:
         """Resets the agent's task."""
-
         self.almost_stuck = 0
         self.agent.reset()
 
-    async def set_agent_state_to(self, new_state: AgentState):
+    async def set_agent_state_to(self, new_state: AgentState) -> None:
         """Updates the agent's state and handles side effects. Can emit events to the event stream.
 
         Args:
@@ -405,7 +409,7 @@ class AgentController:
             await self.set_agent_state_to(self.state.resume_state)
             self.state.resume_state = None
 
-    def get_agent_state(self):
+    def get_agent_state(self) -> AgentState:
         """Returns the current state of the agent.
 
         Returns:
@@ -413,7 +417,7 @@ class AgentController:
         """
         return self.state.agent_state
 
-    async def start_delegate(self, action: AgentDelegateAction):
+    async def start_delegate(self, action: AgentDelegateAction) -> None:
         """Start a delegate agent to handle a subtask.
 
         OpenHands is a multi-agentic system. A `task` is a conversation between
@@ -561,7 +565,7 @@ class AgentController:
         log_level = 'info' if LOG_ALL_EVENTS else 'debug'
         self.log(log_level, str(action), extra={'msg_type': 'ACTION'})
 
-    async def _delegate_step(self):
+    async def _delegate_step(self) -> None:
         """Executes a single step of the delegate agent."""
         await self.delegate._step()  # type: ignore[union-attr]
         assert self.delegate is not None
@@ -625,7 +629,7 @@ class AgentController:
 
     async def _handle_traffic_control(
         self, limit_type: str, current_value: float, max_value: float
-    ):
+    ) -> bool:
         """Handles agent state after hitting the traffic control limit.
 
         Args:
@@ -660,7 +664,7 @@ class AgentController:
             stop_step = True
         return stop_step
 
-    def get_state(self):
+    def get_state(self) -> State:
         """Returns the current running state object.
 
         Returns:
@@ -673,7 +677,7 @@ class AgentController:
         state: State | None,
         max_iterations: int,
         confirmation_mode: bool = False,
-    ):
+    ) -> None:
         """Sets the initial state for the agent, either from the previous session, or from a parent agent, or by creating a new one.
 
         Args:
@@ -704,7 +708,7 @@ class AgentController:
 
             self._init_history()
 
-    def _init_history(self):
+    def _init_history(self) -> None:
         """Initializes the agent's history from the event stream.
 
         The history is a list of events that:
@@ -720,7 +724,6 @@ class AgentController:
 
         Otherwise loads normally from start_id.
         """
-
         # define range of events to fetch
         # delegates start with a start_id and initially won't find any events
         # otherwise we're restoring a previous session
@@ -916,7 +919,7 @@ class AgentController:
 
         return kept_events
 
-    def _is_stuck(self):
+    def _is_stuck(self) -> bool:
         """Checks if the agent or its delegate is stuck in a loop.
 
         Returns:
@@ -935,3 +938,11 @@ class AgentController:
             f'state={self.state!r}, agent_task={self.agent_task!r}, '
             f'delegate={self.delegate!r}, _pending_action={self._pending_action!r})'
         )
+
+    def _is_awaiting_observation(self):
+        events = self.event_stream.get_events(reverse=True)
+        for event in events:
+            if isinstance(event, AgentStateChangedObservation):
+                result = event.agent_state == AgentState.RUNNING
+                return result
+        return False

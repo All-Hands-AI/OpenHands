@@ -64,13 +64,15 @@ modal = "^0.66.26"
 runloop-api-client = "0.10.0"
 pygithub = "^2.5.0"
 openhands-aci = "^0.1.1"
+python-socketio = "^5.11.4"
+redis = "^5.2.0"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
 llama-index-vector-stores-chroma = "*"
 chromadb = "*"
 llama-index-embeddings-huggingface = "*"
-torch = "2.5.0"
+torch = "2.5.1"
 llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
 
@@ -94,6 +96,10 @@ reportlab = "*"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
+
+
+
+
 
 
 [tool.poetry.group.runtime.dependencies]
@@ -125,6 +131,10 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+
+
+
 
 
 [tool.poetry.group.evaluation.dependencies]
