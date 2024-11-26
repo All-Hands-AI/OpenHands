@@ -2027,5 +2027,8 @@
   },
   "ACCOUNT_SETTINGS$LOGOUT": {
     "en": "Logout"
+  },
+  "ERROR_TOAST$CLOSE_BUTTON_LABEL": {
+    "en": "Close"
   }
 }
