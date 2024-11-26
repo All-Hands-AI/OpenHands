@@ -1,12 +1,14 @@
 import { Tooltip } from "@nextui-org/react";
 import React from "react";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import PauseIcon from "#/assets/pause";
 import PlayIcon from "#/assets/play";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { RootState } from "#/store";
 import AgentState from "#/types/agent-state";
 import { useWsClient } from "#/context/ws-client-provider";
+import { I18nKey } from "#/i18n/declaration";
 
 const IgnoreTaskStateMap: Record<string, AgentState[]> = {
   [AgentState.PAUSED]: [
@@ -81,6 +83,8 @@ function AgentControlBar() {
     }
   };
 
+  const { t } = useTranslation();
+
   return (
     <div className="flex justify-between items-center gap-20">
       <ActionButton
@@ -90,8 +94,8 @@ function AgentControlBar() {
         }
         content={
           curAgentState === AgentState.PAUSED
-            ? "Resume the agent task"
-            : "Pause the current task"
+            ? t(I18nKey.ACTION_BUTTON$RESUME)
+            : t(I18nKey.ACTION_BUTTON$PAUSE)
         }
         action={
           curAgentState === AgentState.PAUSED
