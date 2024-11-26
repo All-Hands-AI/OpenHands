@@ -201,7 +201,9 @@ class AgentController:
     async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
         self.log('info', 'Starting step loop...')
-        while should_continue():
+        while True:
+            if not self._is_awaiting_observation() and not should_continue():
+                break
             if self._closed:
                 break
             try:
@@ -905,3 +907,11 @@ class AgentController:
             f'state={self.state!r}, agent_task={self.agent_task!r}, '
             f'delegate={self.delegate!r}, _pending_action={self._pending_action!r})'
         )
+
+    def _is_awaiting_observation(self):
+        events = self.event_stream.get_events(reverse=True)
+        for event in events:
+            if isinstance(event, AgentStateChangedObservation):
+                result = event.agent_state == AgentState.RUNNING
+                return result
+        return False

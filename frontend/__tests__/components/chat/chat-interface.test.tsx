@@ -6,6 +6,7 @@ import { ChatInterface } from "#/components/chat-interface";
 import { addUserMessage } from "#/state/chat-slice";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import * as ChatSlice from "#/state/chat-slice";
+import { WsClientProviderStatus } from "#/context/ws-client-provider";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const renderChatInterface = (messages: (Message | ErrorMessage)[]) =>
@@ -17,7 +18,7 @@ describe("Empty state", () => {
   }));
 
   const { useWsClient: useWsClientMock } = vi.hoisted(() => ({
-    useWsClient: vi.fn(() => ({ send: sendMock, runtimeActive: true })),
+    useWsClient: vi.fn(() => ({ send: sendMock, status: WsClientProviderStatus.ACTIVE, isLoadingMessages: false })),
   }));
 
   beforeAll(() => {
@@ -83,8 +84,7 @@ describe("Empty state", () => {
     async () => {
       // this is to test that the message is in the UI before the socket is called
       useWsClientMock.mockImplementation(() => ({
-        send: sendMock,
-        runtimeActive: false, // mock an inactive runtime setup
+        send: sendMock, status: WsClientProviderStatus.ACTIVE, isLoadingMessages: false
       }));
       const addUserMessageSpy = vi.spyOn(ChatSlice, "addUserMessage");
       const user = userEvent.setup();
@@ -112,8 +112,7 @@ describe("Empty state", () => {
     "should send the message to the socket only if the runtime is active",
     async () => {
       useWsClientMock.mockImplementation(() => ({
-        send: sendMock,
-        runtimeActive: false, // mock an inactive runtime setup
+        send: sendMock, status: WsClientProviderStatus.ACTIVE, isLoadingMessages: false
       }));
       const user = userEvent.setup();
       const { rerender } = renderWithProviders(<ChatInterface />, {
@@ -122,6 +121,7 @@ describe("Empty state", () => {
         },
       });
 
+
       const suggestions = screen.getByTestId("suggestions");
       const displayedSuggestions = within(suggestions).getAllByRole("button");
 
@@ -129,8 +129,7 @@ describe("Empty state", () => {
       expect(sendMock).not.toHaveBeenCalled();
 
       useWsClientMock.mockImplementation(() => ({
-        send: sendMock,
-        runtimeActive: true, // mock an active runtime setup
+        send: sendMock, status: WsClientProviderStatus.ACTIVE, isLoadingMessages: false
       }));
       rerender(<ChatInterface />);
 
