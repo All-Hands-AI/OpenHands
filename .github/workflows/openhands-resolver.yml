@@ -106,7 +106,6 @@ jobs:
               body: `[OpenHands](https://github.com/All-Hands-AI/OpenHands) started reviewing the PR! You can monitor the progress [here](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`
             });
 
-      - name: Install OpenHands
         run: |
           python -m pip install --upgrade pip
           python -m pip install --upgrade -r requirements.txt
