@@ -20,12 +20,15 @@ import { EventHandler } from "./event-handler";
 import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
 import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
+import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 
 function App() {
   const { token, gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
 
   const dispatch = useDispatch();
+
+  useConversationConfig();
 
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initalQuery,
