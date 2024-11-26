@@ -27,7 +27,7 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.runtime.base import Runtime, RuntimeUnavailableError
-from openhands.server.auth.auth import get_sid_from_token
+from openhands.server.auth import get_sid_from_token
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
 from openhands.server.file_config import (
     FILES_TO_IGNORE,

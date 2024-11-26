@@ -21,7 +21,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.server.auth.auth import sign_token
+from openhands.server.auth import sign_token
 from openhands.server.shared import config
 
 app = APIRouter(prefix='/api')
