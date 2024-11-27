@@ -69,7 +69,6 @@ export function WsClientProvider({
   }
 
   function handleConnect() {
-    // Connect - send init
     setStatus(WsClientProviderStatus.OPENING);
 
     const initEvent: Record<string, unknown> = {
@@ -113,7 +112,6 @@ export function WsClientProvider({
   }
 
   function handleDisconnect() {
-    console.log("Disconnected");
     setStatus(WsClientProviderStatus.STOPPED);
   }
 
