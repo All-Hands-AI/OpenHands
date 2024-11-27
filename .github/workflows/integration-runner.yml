@@ -53,7 +53,7 @@ jobs:
 
       - name: Configure config.toml for testing with Haiku
         env:
-          LLM_MODEL: ${{ secrets.HAIKU_LLM_MODEL }}
+          LLM_MODEL: "litellm_proxy/claude-3-5-haiku-20241022"
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
         run: |
@@ -85,12 +85,14 @@ jobs:
 
       - name: Configure config.toml for testing with DeepSeek
         env:
-          LLM_MODEL: "deepseek/deepseek-chat"
-          LLM_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          LLM_MODEL: "litellm_proxy/deepseek-chat"
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
         run: |
           echo "[llm.eval]" > config.toml
           echo "model = \"$LLM_MODEL\"" >> config.toml
           echo "api_key = \"$LLM_API_KEY\"" >> config.toml
+          echo "base_url = \"$LLM_BASE_URL\"" >> config.toml
           echo "temperature = 0.0" >> config.toml
 
       - name: Run integration test evaluation for DeepSeek
