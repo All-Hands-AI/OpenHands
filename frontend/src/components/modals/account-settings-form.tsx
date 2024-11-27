@@ -14,19 +14,19 @@ import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 
-interface AccountSettingsModalProps {
+interface AccountSettingsFormProps {
   onClose: () => void;
   selectedLanguage: string;
   gitHubError: boolean;
   analyticsConsent: string | null;
 }
 
-function AccountSettingsModal({
+export function AccountSettingsForm({
   onClose,
   selectedLanguage,
   gitHubError,
   analyticsConsent,
-}: AccountSettingsModalProps) {
+}: AccountSettingsFormProps) {
   const { gitHubToken, setGitHubToken, logout } = useAuth();
   const { saveSettings } = useUserPrefs();
   const { t } = useTranslation();
@@ -136,5 +136,3 @@ function AccountSettingsModal({
     </ModalBody>
   );
 }
-
-export default AccountSettingsModal;
