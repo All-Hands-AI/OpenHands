@@ -224,6 +224,27 @@ class OpenHands {
   }
 
   /**
+   * Refresh Github Token
+   * @returns Refreshed Github access token
+   */
+  static async refreshToken(
+    gitHubToken: string,
+    appMode: GetConfigResponse["APP_MODE"],
+  ): Promise<string> {
+    if (appMode === "oss") return "";
+
+    const response = await fetch("/api/refresh-token", {
+      method: "POST",
+      headers: {
+        "X-GitHub-Token": gitHubToken,
+      },
+    });
+
+    const payload: GitHubAccessTokenResponse = await response.json();
+    return payload.access_token;
+  }
+
+  /**
    * Get the blob of the workspace zip
    * @returns Blob of the workspace zip
    */

@@ -4,8 +4,8 @@ import warnings
 import requests
 
 from openhands.server.github_utils import (
-    GITHUB_CLIENT_ID,
-    GITHUB_CLIENT_SECRET,
+    GITHUB_APP_CLIENT_ID,
+    GITHUB_APP_CLIENT_SECRET,
     authenticate_github_user,
 )
 
@@ -21,7 +21,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.server.auth import sign_token
+from openhands.server.auth import TokenManager, sign_token
 from openhands.server.shared import config
 
 app = APIRouter(prefix='/api')
@@ -31,12 +31,15 @@ class AuthCode(BaseModel):
     code: str
 
 
+token_manager = TokenManager()
+
+
 @app.post('/github/callback')
 def github_callback(auth_code: AuthCode):
     # Prepare data for the token exchange request
     data = {
-        'client_id': GITHUB_CLIENT_ID,
-        'client_secret': GITHUB_CLIENT_SECRET,
+        'client_id': GITHUB_APP_CLIENT_ID,
+        'client_secret': GITHUB_APP_CLIENT_SECRET,
         'code': auth_code.code,
     }
 
@@ -56,11 +59,16 @@ def github_callback(auth_code: AuthCode):
 
     token_response = response.json()
 
-    if 'access_token' not in token_response:
+    if 'access_token' not in token_response or 'refresh_token' not in token_response:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={'error': 'No access token in response'},
         )
+
+    access_token = token_response['access_token']
+    refresh_token = token_response.get('refresh_token')
+
+    token_manager.store_tokens(access_token, refresh_token)
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -98,3 +106,14 @@ async def authenticate(request: Request):
         samesite='strict',
     )
     return response
+
+
+@app.post('/refresh-token')
+async def refresh_token(request: Request):
+    token = request.headers.get('X-GitHub-Token')
+    new_token = token_manager.get_token(token)
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={'access_token': new_token},
+    )
