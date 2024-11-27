@@ -1,4 +1,5 @@
 import os
+import shutil
 import time
 import uuid
 from enum import Enum
@@ -135,7 +136,46 @@ class BashSession:
         # Maintain the current working directory
         self._pwd = os.path.abspath(work_dir)
 
+        # Set up the output directory
+        if os.path.exists('/openhands'):
+            self.output_dir = '/openhands/commands'
+        else:
+            self.output_dir = '/tmp/openhands-commands'
+        self.output_dir = os.path.join(self.output_dir, str(uuid.uuid4()))
+        os.makedirs(self.output_dir, exist_ok=True)
+
+        # Initialize command counter
+        self.command_counter = 0
+        # Initialize the first output file
+        self._setup_new_output_file()
+
+    def _setup_new_output_file(self):
+        """Create a new output file and set up pipe-pane to write to it."""
+        # Stop any existing pipe
+        self.pane.cmd('pipe-pane')
+
+        # Increment command counter
+        self.command_counter += 1
+
+        # Create new output file
+        self.output_filename = os.path.join(
+            self.output_dir, f'command_{self.command_counter:03d}.log'
+        )
+        logger.debug(f'Setting up new pipe-pane to {self.output_filename}')
+        # Set up new pipe-pane
+        self.pane.cmd('pipe-pane', f'cat > {self.output_filename} 2>&1')
+        self.pane.enter()
+        time.sleep(0.01)
+
     def close(self):
+        """Clean up the session and all output files."""
+        # Stop piping output
+        self.pane.cmd('pipe-pane')
+
+        # Clean up all output files and directory
+        if os.path.exists(self.output_dir):
+            shutil.rmtree(self.output_dir)
+
         self.session.kill_session()
 
     @property
@@ -154,20 +194,10 @@ class BashSession:
         time.sleep(0.1)
         self.pane.cmd('clear-history')
 
-    def _get_pane_content(self, full: bool = False) -> str:
-        """Get the current content of the tmux pane.
-
-        Args:
-            full: If True, capture the entire history of the pane.
-        """
-        # https://man7.org/linux/man-pages/man1/tmux.1.html
-        # -J preserves trailing spaces and joins any wrapped lines;
-        # -p direct output to stdout
-        # -S -: start from the start of history
-        if full:
-            # Capture the entire history of the pane
-            return '\n'.join(self.pane.cmd('capture-pane', '-J', '-pS', '-').stdout)
-        return '\n'.join(self.pane.cmd('capture-pane', '-J', '-p').stdout)
+    def _get_pane_content(self) -> str:
+        """Get the current content of the tmux pane from the output file."""
+        with open(self.output_filename, 'r') as f:
+            return f.read()
 
     def _get_command_output(
         self,
@@ -195,7 +225,7 @@ class BashSession:
         return command_output
 
     def _handle_completed_command(self, command: str) -> CmdOutputObservation:
-        full_output = self._get_pane_content(full=True)
+        full_output = self._get_pane_content()
 
         is_special_key = self._is_special_key(command)
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
@@ -234,7 +264,7 @@ class BashSession:
 
     def _handle_nochange_timeout_command(self, command: str) -> CmdOutputObservation:
         self.prev_status = BashCommandStatus.NO_CHANGE_TIMEOUT
-        full_output = self._get_pane_content(full=True)
+        full_output = self._get_pane_content()
 
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
         assert len(ps1_matches) == 1, 'Expected exactly one PS1 metadata block'
@@ -263,7 +293,7 @@ class BashSession:
         self, command: str, timeout: float
     ) -> CmdOutputObservation:
         self.prev_status = BashCommandStatus.HARD_TIMEOUT
-        full_output = self._get_pane_content(full=True)
+        full_output = self._get_pane_content()
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
         assert len(ps1_matches) == 1, 'Expected exactly one PS1 metadata block'
 
@@ -302,6 +332,9 @@ class BashSession:
                 metadata=CmdOutputMetadata(),
             )
 
+        if self.prev_status == BashCommandStatus.COMPLETED:
+            self._setup_new_output_file()
+
         splited_commands = split_bash_commands(action.command)
         if len(splited_commands) > 1:
             return ErrorObservation(
@@ -325,7 +358,6 @@ class BashSession:
         if action.command.strip() != '':
             self.pane.send_keys(
                 action.command,
-                # do not send enter for special keys
                 enter=not self._is_special_key(action.command),
             )
 
