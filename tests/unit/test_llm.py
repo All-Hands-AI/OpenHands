@@ -452,5 +452,5 @@ def test_token_count_fallback(
     # litellm expects a list of dicts with role and content
     mock_token_counter.assert_called_once_with(
         model=default_config.model,
-        messages=[{'role': 'user', 'content': [{'type': 'text', 'text': 'Hello!'}]}]
+        messages=[{'role': 'user', 'content': [{'type': 'text', 'text': 'Hello!'}]}],
     )

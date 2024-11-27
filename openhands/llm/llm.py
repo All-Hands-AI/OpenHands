@@ -503,7 +503,9 @@ class LLM(RetryMixin, DebugMixin):
                     if item['type'] == 'text':
                         content.append({'type': 'text', 'text': item['text']})
                     elif item['type'] == 'image_url':
-                        content.append({'type': 'image_url', 'image_url': item['image_url']})
+                        content.append(
+                            {'type': 'image_url', 'image_url': item['image_url']}
+                        )
                 litellm_messages.append(
                     {
                         'role': msg_dict['role'],
@@ -523,15 +525,17 @@ class LLM(RetryMixin, DebugMixin):
                         **({'name': msg_dict['name']} if msg_dict.get('name') else {}),
                     }
                 )
-            logger.debug(f"Calling litellm.token_counter with messages: {litellm_messages}")
+            logger.debug(
+                f'Calling litellm.token_counter with messages: {litellm_messages}'
+            )
             result = litellm.token_counter(
                 model=self.config.model, messages=litellm_messages
             )
-            logger.debug(f"litellm.token_counter returned: {result}")
+            logger.debug(f'litellm.token_counter returned: {result}')
             return result
         except Exception as e:
             # TODO: this is to limit logspam in case token count is not supported
-            logger.debug(f"Error in token_counter: {e}")
+            logger.debug(f'Error in token_counter: {e}')
             return 0
 
     def _is_local(self) -> bool:
