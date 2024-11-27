@@ -7,8 +7,8 @@ import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConfig } from "#/hooks/query/use-config";
-import { AnalyticsConsentFormModal } from "#/components/analytics/analytics-consent-form-modal";
-import { Sidebar } from "#/components/sidebar/sidebar";
+import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
+import { Sidebar } from "#/components/features/sidebar/sidebar";
 
 export function ErrorBoundary() {
   const error = useRouteError();

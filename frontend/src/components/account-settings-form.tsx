@@ -7,7 +7,7 @@ import { useUserPrefs } from "#/context/user-prefs-context";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { CustomInput } from "./ui/custom-input";
 import { FormFieldset } from "./ui/form-fieldset";
-import { ModalButton } from "./buttons/modal-button";
+import { ModalButton } from "./ui/buttons/modal-button";
 import { ModalBody } from "./modals/modal-body";
 import {
   BaseModalTitle,

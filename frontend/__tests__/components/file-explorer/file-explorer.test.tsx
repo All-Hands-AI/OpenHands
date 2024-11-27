@@ -5,7 +5,7 @@ import { describe, it, expect, vi, Mock, afterEach } from "vitest";
 import toast from "#/utils/toast";
 import AgentState from "#/types/agent-state";
 import OpenHands from "#/api/open-hands";
-import { FileExplorer } from "#/components/file-explorer/file-explorer";
+import { FileExplorer } from "#/components/features/file-explorer/file-explorer";
 
 const toastSpy = vi.spyOn(toast, "error");
 const uploadFilesSpy = vi.spyOn(OpenHands, "uploadFiles");

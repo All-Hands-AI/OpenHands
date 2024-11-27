@@ -10,8 +10,8 @@ import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
 import { useAuth } from "#/context/auth-context";
-import { ImportProjectSuggestionBox } from "../../components/suggestions/import-project-suggestion-box";
-import { GitHubRepositoriesSuggestionBox } from "#/components/github/github-repositories-suggestion-box";
+import { ImportProjectSuggestionBox } from "../../components/features/suggestions/import-project-suggestion-box";
+import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
 
 function Home() {
   const { token, gitHubToken } = useAuth();

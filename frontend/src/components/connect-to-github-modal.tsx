@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { useAuth } from "#/context/auth-context";
 import { CustomInput } from "./ui/custom-input";
-import { ModalButton } from "./buttons/modal-button";
+import { ModalButton } from "./ui/buttons/modal-button";
 import { ModalBody } from "./modals/modal-body";
 import {
   BaseModalTitle,

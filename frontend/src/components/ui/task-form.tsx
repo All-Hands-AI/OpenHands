@@ -8,15 +8,15 @@ import {
   removeFile,
   setInitialQuery,
 } from "#/state/initial-query-slice";
-import { SuggestionBubble } from "#/components/suggestions/suggestion-bubble";
+import { SuggestionBubble } from "#/components/features/suggestions/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
-import { ChatInput } from "#/components/chat/chat-input";
+import { ChatInput } from "#/components/features/chat/chat-input";
 import { getRandomKey } from "#/utils/get-random-key";
 import { cn } from "#/utils/utils";
-import { AttachImageLabel } from "../images/attach-image-label";
-import { ImageCarousel } from "../images/image-carousel";
-import { UploadImageInput } from "../images/upload-image-input";
+import { AttachImageLabel } from "../features/images/attach-image-label";
+import { ImageCarousel } from "../features/images/image-carousel";
+import { UploadImageInput } from "../features/images/upload-image-input";
 
 export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
   const dispatch = useDispatch();
