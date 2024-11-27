@@ -27,7 +27,7 @@ describe("Empty state", () => {
 
   beforeAll(() => {
     vi.mock("react-router", async (importActual) => ({
-      ...(await importActual<typeof import("@remix-run/react")>()),
+      ...(await importActual<typeof import("react-router")>()),
       useRouteLoaderData: vi.fn(() => ({})),
     }));
 
