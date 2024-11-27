@@ -39,7 +39,7 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
     # helper function to set attributes based on env vars
     def set_attr_from_env(sub_config: Any, prefix=''):
         """Set attributes of a config dataclass based on environment variables."""
-        if hasattr(sub_config, "__annotations__"):
+        if hasattr(sub_config, '__annotations__'):
             for field_name, field_type in sub_config.__annotations__.items():
                 # compute the expected env var name from the prefix and field name
                 # e.g. LLM_BASE_URL
@@ -49,43 +49,68 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
                     # nested dataclass
                     nested_sub_config = getattr(sub_config, field_name)
                     set_attr_from_env(nested_sub_config, prefix=field_name + '_')
-                elif hasattr(field_type, "model_fields"):  # Pydantic model
+                elif hasattr(field_type, 'model_fields'):  # Pydantic model
                     nested_sub_config = getattr(sub_config, field_name)
                     # For Pydantic models, we need to construct a new instance with updated fields
                     updated_fields = {}
                     # First check if there's a direct type field
-                    type_env_var = (prefix + field_name + "_TYPE").upper()
+                    type_env_var = (prefix + field_name + '_TYPE').upper()
                     if type_env_var in env_or_toml_dict:
                         type_val = env_or_toml_dict[type_env_var]
                         # Then check for other fields based on the type
-                        if type_val == "recent":
-                            from openhands.core.config.condenser_config import RecentEventsCondenserConfig
-                            for pydantic_field in RecentEventsCondenserConfig.model_fields:
-                                pydantic_env_var = (prefix + field_name + "_" + pydantic_field).upper()
+                        if type_val == 'recent':
+                            from openhands.core.config.condenser_config import (
+                                RecentEventsCondenserConfig,
+                            )
+
+                            for (
+                                pydantic_field
+                            ) in RecentEventsCondenserConfig.model_fields:
+                                pydantic_env_var = (
+                                    prefix + field_name + '_' + pydantic_field
+                                ).upper()
                                 if pydantic_env_var in env_or_toml_dict:
                                     value = env_or_toml_dict[pydantic_env_var]
                                     if value:
                                         # Convert numeric values
-                                        if RecentEventsCondenserConfig.model_fields[pydantic_field].annotation == int:
+                                        if (
+                                            RecentEventsCondenserConfig.model_fields[
+                                                pydantic_field
+                                            ].annotation
+                                            == int
+                                        ):
                                             value = int(value)
-                                        elif RecentEventsCondenserConfig.model_fields[pydantic_field].annotation == float:
+                                        elif (
+                                            RecentEventsCondenserConfig.model_fields[
+                                                pydantic_field
+                                            ].annotation
+                                            == float
+                                        ):
                                             value = float(value)
                                         updated_fields[pydantic_field] = value
                             new_instance = RecentEventsCondenserConfig(**updated_fields)
                             setattr(sub_config, field_name, new_instance)
-                        elif type_val == "llm":
-                            from openhands.core.config.condenser_config import LLMCondenserConfig
+                        elif type_val == 'llm':
+                            from openhands.core.config.condenser_config import (
+                                LLMCondenserConfig,
+                            )
+
                             for pydantic_field in LLMCondenserConfig.model_fields:
-                                pydantic_env_var = (prefix + field_name + "_" + pydantic_field).upper()
+                                pydantic_env_var = (
+                                    prefix + field_name + '_' + pydantic_field
+                                ).upper()
                                 if pydantic_env_var in env_or_toml_dict:
                                     value = env_or_toml_dict[pydantic_env_var]
                                     if value:
                                         updated_fields[pydantic_field] = value
                             new_instance = LLMCondenserConfig(**updated_fields)
                             setattr(sub_config, field_name, new_instance)
-                        elif type_val == "noop":
-                            from openhands.core.config.condenser_config import NoopCondenserConfig
-                            new_instance = NoopCondenserConfig()
+                        elif type_val == 'noop':
+                            from openhands.core.config.condenser_config import (
+                                NoOpCondenserConfig,
+                            )
+
+                            new_instance = NoOpCondenserConfig()
                             setattr(sub_config, field_name, new_instance)
                         else:
                             logger.openhands_logger.error(
