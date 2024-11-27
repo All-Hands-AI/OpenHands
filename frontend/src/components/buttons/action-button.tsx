@@ -6,7 +6,6 @@ interface ActionButtonProps {
   content: string;
   action: AgentState;
   handleAction: (action: AgentState) => void;
-  large?: boolean;
 }
 
 export function ActionButton({
@@ -15,19 +14,13 @@ export function ActionButton({
   action,
   handleAction,
   children,
-  large = false,
 }: React.PropsWithChildren<ActionButtonProps>) {
   return (
     <Tooltip content={content} closeDelay={100}>
       <button
         onClick={() => handleAction(action)}
         disabled={isDisabled}
-        className={`
-          relative overflow-visible cursor-default hover:cursor-pointer group
-          disabled:cursor-not-allowed
-          ${large ? "rounded-full bg-neutral-800 p-3" : ""}
-          transition-all duration-300 ease-in-out
-        `}
+        className="relative overflow-visible cursor-default hover:cursor-pointer group disabled:cursor-not-allowed transition-all duration-300 ease-in-out"
         type="button"
       >
         <span className="relative z-10 group-hover:filter group-hover:drop-shadow-[0_0_5px_rgba(255,64,0,0.4)]">
