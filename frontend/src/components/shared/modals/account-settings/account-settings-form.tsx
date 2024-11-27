@@ -5,14 +5,14 @@ import {
   BaseModalTitle,
 } from "../confirmation-modals/base-modal";
 import { ModalBody } from "../modal-body";
-import { ModalButton } from "../../ui/buttons/modal-button";
-import { FormFieldset } from "../../ui/form-fieldset";
-import { CustomInput } from "../../ui/custom-input";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
+import { ModalButton } from "../../buttons/modal-button";
+import { CustomInput } from "../../custom-input";
+import { FormFieldset } from "../../form-fieldset";
 
 interface AccountSettingsFormProps {
   onClose: () => void;

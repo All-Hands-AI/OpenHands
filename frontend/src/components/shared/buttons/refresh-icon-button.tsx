@@ -1,5 +1,5 @@
 import { IoIosRefresh } from "react-icons/io";
-import { IconButton } from "#/components/ui/buttons/icon-button";
+import { IconButton } from "./icon-button";
 
 interface RefreshIconButtonProps {
   onClick: () => void;

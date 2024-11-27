@@ -1,7 +1,7 @@
-import { AccountSettingsForm } from "#/components/modals/account-settings/account-settings-form";
-import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { useUserPrefs } from "#/context/user-prefs-context";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
+import { ModalBackdrop } from "../modal-backdrop";
+import { AccountSettingsForm } from "./account-settings-form";
 
 interface AccountSettingsModalProps {
   onClose: () => void;

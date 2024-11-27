@@ -1,8 +1,6 @@
 import { useLocation, useNavigate } from "@remix-run/react";
 import React from "react";
 import { useDispatch } from "react-redux";
-import { TaskForm } from "../../components/ui/task-form";
-import { HeroHeading } from "../../components/ui/hero-heading";
 import { setImportedProjectZip } from "#/state/initial-query-slice";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
@@ -12,6 +10,8 @@ import { useConfig } from "#/hooks/query/use-config";
 import { useAuth } from "#/context/auth-context";
 import { ImportProjectSuggestionBox } from "../../components/features/suggestions/import-project-suggestion-box";
 import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
+import { HeroHeading } from "#/components/shared/hero-heading";
+import { TaskForm } from "#/components/shared/task-form";
 
 function Home() {
   const { token, gitHubToken } = useAuth();

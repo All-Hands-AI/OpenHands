@@ -13,7 +13,7 @@ import { cn } from "#/utils/utils";
 import { Dropzone } from "./dropzone";
 import { FileExplorerHeader } from "./file-explorer-header";
 import { useVSCodeUrl } from "#/hooks/query/use-vscode-url";
-import { OpenVSCodeButton } from "../../ui/buttons/open-vscode-button";
+import { OpenVSCodeButton } from "#/components/shared/buttons/open-vscode-button";
 
 interface FileExplorerProps {
   isOpen: boolean;

@@ -2,7 +2,6 @@ import { useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { Outlet } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
-import Security from "#/components/modals/security/security";
 import { Controls } from "#/components/features/controls/controls";
 import { RootState } from "#/store";
 import { clearMessages } from "#/state/chat-slice";
@@ -21,6 +20,7 @@ import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
+import Security from "#/components/shared/modals/security/security";
 
 function App() {
   const { token, gitHubToken } = useAuth();

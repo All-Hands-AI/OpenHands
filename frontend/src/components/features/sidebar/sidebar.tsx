@@ -4,15 +4,15 @@ import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
-import { AllHandsLogoButton } from "#/components/ui/buttons/all-hands-logo-button";
-import { DocsButton } from "#/components/ui/buttons/docs-button";
-import { SettingsButton } from "#/components/ui/buttons/settings-button";
-import { AccountSettingsModal } from "#/components/modals/account-settings/account-settings-modal";
-import { SettingsModal } from "#/components/modals/settings/settings-modal";
 import { UserActions } from "./user-actions";
-import { ExitProjectButton } from "../../ui/buttons/exit-project-button";
-import { ExitProjectConfirmationModal } from "#/components/modals/exit-project-confirmation-modal";
-import { LoadingSpinner } from "#/components/ui/loading-spinner";
+import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
+import { DocsButton } from "#/components/shared/buttons/docs-button";
+import { ExitProjectButton } from "#/components/shared/buttons/exit-project-button";
+import { SettingsButton } from "#/components/shared/buttons/settings-button";
+import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import { AccountSettingsModal } from "#/components/shared/modals/account-settings/account-settings-modal";
+import { ExitProjectConfirmationModal } from "#/components/shared/modals/exit-project-confirmation-modal";
+import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 
 export function Sidebar() {
   const location = useLocation();

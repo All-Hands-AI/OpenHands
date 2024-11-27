@@ -3,16 +3,16 @@ import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import posthog from "posthog-js";
 import EllipsisH from "#/icons/ellipsis-h.svg?react";
-import { ModalBackdrop } from "../../modals/modal-backdrop";
-import { ConnectToGitHubModal } from "../../modals/connect-to-github-modal";
 import { addUserMessage } from "#/state/chat-slice";
 import { createChatMessage } from "#/services/chat-service";
 import { ProjectMenuCardContextMenu } from "./project.menu-card-context-menu";
 import { ProjectMenuDetailsPlaceholder } from "./project-menu-details-placeholder";
 import { ProjectMenuDetails } from "./project-menu-details";
 import { downloadWorkspace } from "#/utils/download-workspace";
-import { LoadingSpinner } from "../../ui/loading-spinner";
 import { useWsClient } from "#/context/ws-client-provider";
+import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import { ConnectToGitHubModal } from "#/components/shared/modals/connect-to-github-modal";
+import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 
 interface ProjectMenuCardProps {
   isConnectedToGitHub: boolean;

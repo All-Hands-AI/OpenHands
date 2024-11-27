@@ -4,7 +4,7 @@ import remarkGfm from "remark-gfm";
 import { code } from "../markdown/code";
 import { cn } from "#/utils/utils";
 import { ul, ol } from "../markdown/list";
-import { CopyToClipboardButton } from "../../ui/buttons/copy-to-clipboard-button";
+import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
 
 interface ChatMessageProps {
   type: "user" | "assistant";

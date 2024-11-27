@@ -3,7 +3,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "#/store";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { JupyterCell } from "./jupyter-cell";
-import { ScrollToBottomButton } from "../../ui/buttons/scroll-to-bottom-button";
+import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 
 interface JupyterEditorProps {
   maxWidth: number;

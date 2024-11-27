@@ -1,5 +1,5 @@
 import { IoIosArrowForward, IoIosArrowBack } from "react-icons/io";
-import { IconButton } from "#/components/ui/buttons/icon-button";
+import { IconButton } from "./icon-button";
 
 interface ToggleWorkspaceIconButtonProps {
   onClick: () => void;

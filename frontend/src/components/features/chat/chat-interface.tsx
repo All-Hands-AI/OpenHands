@@ -12,13 +12,13 @@ import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { FeedbackModal } from "../feedback/feedback-modal";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { TypingIndicator } from "./typing-indicator";
-import { ContinueButton } from "../../ui/buttons/continue-button";
-import { ScrollToBottomButton } from "../../ui/buttons/scroll-to-bottom-button";
 import { useWsClient } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
-import { LoadingSpinner } from "#/components/ui/loading-spinner";
+import { ContinueButton } from "#/components/shared/buttons/continue-button";
+import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
+import { LoadingSpinner } from "#/components/shared/loading-spinner";
 
 export function ChatInterface() {
   const { send, isLoadingMessages } = useWsClient();

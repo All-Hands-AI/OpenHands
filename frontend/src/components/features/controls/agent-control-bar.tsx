@@ -6,7 +6,7 @@ import { RootState } from "#/store";
 import AgentState from "#/types/agent-state";
 import { useWsClient } from "#/context/ws-client-provider";
 import { IGNORE_TASK_STATE_MAP } from "#/ignore-task-state-map.constant";
-import { ActionButton } from "../../ui/buttons/action-button";
+import { ActionButton } from "#/components/shared/buttons/action-button";
 
 export function AgentControlBar() {
   const { send } = useWsClient();

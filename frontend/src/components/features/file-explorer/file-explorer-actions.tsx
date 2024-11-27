@@ -1,7 +1,7 @@
+import { RefreshIconButton } from "#/components/shared/buttons/refresh-icon-button";
+import { ToggleWorkspaceIconButton } from "#/components/shared/buttons/toggle-workspace-icon-button";
+import { UploadIconButton } from "#/components/shared/buttons/upload-icon-button";
 import { cn } from "#/utils/utils";
-import { RefreshIconButton } from "../../ui/buttons/refresh-icon-button";
-import { ToggleWorkspaceIconButton } from "../../ui/buttons/toggle-workspace-icon-button";
-import { UploadIconButton } from "../../ui/buttons/upload-icon-button";
 
 interface ExplorerActionsProps {
   onRefresh: () => void;
