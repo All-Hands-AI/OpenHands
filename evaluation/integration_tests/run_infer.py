@@ -48,13 +48,19 @@ def get_config(
             # use default base_container_image
             enable_auto_lint=True,
             use_host_network=False,
-            timeout=100,
+            timeout=300,
+            # Add platform to the sandbox config to solve issue 4401
+            platform='linux/amd64',
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
+            keep_runtime_alive=False,
+            remote_runtime_init_timeout=3600,
         ),
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
+        # debug
+        debug=True,
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(
@@ -129,7 +135,12 @@ def process_instance(
     # # result evaluation
     # # =============================================
 
-    histories = [event_to_dict(event) for event in state.history]
+    histories = state.history
+
+    # some basic check
+    logger.info(f'Total events in history: {len(histories)}')
+    assert len(histories) > 0, 'History should not be empty'
+
     test_result: TestResult = test_class.verify_result(runtime, histories)
     metrics = state.metrics.get() if state.metrics else None
 
@@ -139,7 +150,7 @@ def process_instance(
         instance=instance.to_dict(),
         instruction=instruction,
         metadata=metadata,
-        history=histories,
+        history=[event_to_dict(event) for event in histories],
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
         test_result=test_result.model_dump(),

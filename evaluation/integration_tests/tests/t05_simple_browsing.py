@@ -108,6 +108,8 @@ class Test(BaseIntegrationTest):
 
     @classmethod
     def verify_result(cls, runtime: Runtime, histories: list[Event]) -> TestResult:
+        from openhands.core.logger import openhands_logger as logger
+
         # check if the "The answer is OpenHands is all you need!" is in any message
         message_actions = [
             event
@@ -116,19 +118,29 @@ class Test(BaseIntegrationTest):
                 event, (MessageAction, AgentFinishAction, AgentDelegateObservation)
             )
         ]
-        for event in message_actions:
-            if isinstance(event, AgentDelegateObservation):
-                content = event.content
-            elif isinstance(event, AgentFinishAction):
-                content = event.outputs.get('content', '')
-            elif isinstance(event, MessageAction):
-                content = event.content
-            else:
-                raise ValueError(f'Unknown event type: {type(event)}')
+        logger.debug(f'Total message-like events: {len(message_actions)}')
 
-            if 'OpenHands is all you need!' in content:
-                return TestResult(success=True)
+        for event in message_actions:
+            try:
+                if isinstance(event, AgentDelegateObservation):
+                    content = event.content
+                elif isinstance(event, AgentFinishAction):
+                    content = event.outputs.get('content', '')
+                elif isinstance(event, MessageAction):
+                    content = event.content
+                else:
+                    logger.warning(f'Unexpected event type: {type(event)}')
+                    continue
+
+                if 'OpenHands is all you need!' in content:
+                    return TestResult(success=True)
+            except Exception as e:
+                logger.error(f'Error processing event: {e}')
+
+        logger.debug(
+            f'Total messages: {len(message_actions)}. Messages: {message_actions}'
+        )
         return TestResult(
             success=False,
-            reason=f'The answer is not found in any message. Total messages: {len(message_actions)}. Messages: {message_actions}',
+            reason=f'The answer is not found in any message. Total messages: {len(message_actions)}.',
         )
