@@ -410,9 +410,10 @@ def test_token_count_with_usage_data(mock_litellm_completion, default_config):
 
 
 @patch('openhands.llm.llm.litellm_completion')
+@patch('openhands.llm.llm.litellm.utils._select_tokenizer')
 @patch('openhands.llm.llm.litellm.token_counter')
 def test_token_count_fallback(
-    mock_token_counter, mock_litellm_completion, default_config
+    mock_token_counter, mock_select_tokenizer, mock_litellm_completion, default_config
 ):
     # Mock a response without usage data
     from litellm import Message as LiteLLMMessage
@@ -434,6 +435,7 @@ def test_token_count_fallback(
     )
     mock_litellm_completion.return_value = mock_response
     mock_token_counter.return_value = 42
+    mock_select_tokenizer.return_value = {'type': 'openai_tokenizer'}
 
     llm = LLM(default_config)
     response = llm.completion(

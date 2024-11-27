@@ -506,28 +506,33 @@ class LLM(RetryMixin, DebugMixin):
                         content.append(
                             {'type': 'image_url', 'image_url': item['image_url']}
                         )
-                litellm_messages.append(
-                    {
-                        'role': msg_dict['role'],
-                        'content': content,
-                        # Include tool calls if present
-                        **(
-                            {'tool_calls': msg_dict['tool_calls']}
-                            if msg_dict.get('tool_calls')
-                            else {}
-                        ),
-                        # Include tool response fields if present
-                        **(
-                            {'tool_call_id': msg_dict['tool_call_id']}
-                            if msg_dict.get('tool_call_id')
-                            else {}
-                        ),
-                        **({'name': msg_dict['name']} if msg_dict.get('name') else {}),
-                    }
-                )
+
+                litellm_msg = {
+                    'role': msg_dict['role'],
+                    'content': content,
+                }
+                # Include tool calls if present
+                if msg_dict.get('tool_calls'):
+                    litellm_msg['tool_calls'] = msg_dict['tool_calls']
+                # Include tool response fields if present
+                if msg_dict.get('tool_call_id'):
+                    litellm_msg['tool_call_id'] = msg_dict['tool_call_id']
+                if msg_dict.get('name'):
+                    litellm_msg['name'] = msg_dict['name']
+                litellm_messages.append(litellm_msg)
+
             logger.debug(
                 f'Calling litellm.token_counter with messages: {litellm_messages}'
             )
+            # Convert content to string for single text content
+            for msg in litellm_messages:
+                if (
+                    isinstance(msg['content'], list)
+                    and len(msg['content']) == 1
+                    and msg['content'][0]['type'] == 'text'
+                ):
+                    msg['content'] = msg['content'][0]['text']
+
             result = litellm.token_counter(
                 model=self.config.model, messages=litellm_messages
             )
@@ -626,15 +631,16 @@ class LLM(RetryMixin, DebugMixin):
         return formatted_messages
 
     def _update_message_token_counts(
-        self, message: Message, usage: Usage | None
+        self, message: LiteLLMMessage | Message, usage: Usage | None
     ) -> None:
         """Update token counts in a message from litellm Usage data.
 
         Args:
-            message (Message): The message to update.
+            message (LiteLLMMessage | Message): The message to update.
             usage (Usage | None): The usage data from litellm response.
         """
         if usage is not None:
+            # Update token counts in the message
             message.prompt_tokens = usage.prompt_tokens
             message.completion_tokens = usage.completion_tokens
             message.total_tokens = usage.total_tokens
