@@ -46,7 +46,7 @@ async def init_connection(connection_id: str, data: dict):
                 'oh_event',
                 event_to_dict(
                     ErrorObservation(
-                        content='Invalid token! (Maybe you need to specify a static jwt_secret?)'
+                        content='Invalid token! Please ensure a valid jwt_secret is specified or use -e JWT_TOKEN when running with Docker.'
                     )
                 ),
             )
