@@ -250,7 +250,7 @@ def test_command_output_continuation():
     # Start a command that produces output slowly
     obs = session.execute(CmdRunAction('for i in {1..5}; do echo $i; sleep 3; done'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert '1' in obs.content
+    assert obs.content.strip() == '1'
     assert obs.metadata.prefix == ''
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
@@ -258,28 +258,29 @@ def test_command_output_continuation():
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[Command output continued from previous command]' in obs.metadata.prefix
-    assert '2' in obs.content
+    assert obs.content.strip() == '2'
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[Command output continued from previous command]' in obs.metadata.prefix
-    assert '3' in obs.content
+    assert obs.content.strip() == '3'
+
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[Command output continued from previous command]' in obs.metadata.prefix
-    assert '4' in obs.content
+    assert obs.content.strip() == '4'
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[Command output continued from previous command]' in obs.metadata.prefix
-    assert '5' in obs.content
+    assert obs.content.strip() == '5'
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
@@ -287,6 +288,22 @@ def test_command_output_continuation():
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[The command completed with exit code 0.]' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.COMPLETED
+
+    session.close()
+
+
+def test_ansi_escape_codes():
+    session = BashSession(work_dir=os.getcwd())
+
+    # Test command that produces colored output
+    obs = session.execute(
+        CmdRunAction('echo -e "\\033[31mRed\\033[0m \\033[32mGreen\\033[0m"')
+    )
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert 'Red Green' in obs.content  # ANSI codes should be stripped
+    assert obs.metadata.exit_code == 0
+    assert obs.metadata.prefix == ''
+    assert obs.metadata.suffix == '\n\n[The command completed with exit code 0.]'
 
     session.close()
 
