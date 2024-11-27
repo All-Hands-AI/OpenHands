@@ -136,7 +136,7 @@ export function WsClientProvider({
     // create a new one
     if (
       !sio ||
-      (tokenRef.current && token !== tokenRef.current) ||
+      (tokenRef.current && token && token !== tokenRef.current) ||
       ghToken !== ghTokenRef.current
     ) {
       sio?.disconnect();

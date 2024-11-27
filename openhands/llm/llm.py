@@ -12,6 +12,7 @@ from openhands.core.config import LLMConfig
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
+
 from litellm import Message as LiteLLMMessage
 from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
@@ -245,6 +246,12 @@ class LLM(RetryMixin, DebugMixin):
                         f.write(json.dumps(_d))
 
                 message_back: str = resp['choices'][0]['message']['content']
+                tool_calls = resp['choices'][0]['message'].get('tool_calls', [])
+                if tool_calls:
+                    for tool_call in tool_calls:
+                        fn_name = tool_call.function.name
+                        fn_args = tool_call.function.arguments
+                        message_back += f'\nFunction call: {fn_name}({fn_args})'
 
                 # log the LLM response
                 self.log_response(message_back)
