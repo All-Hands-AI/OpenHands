@@ -1,6 +1,6 @@
 import React from "react";
 import { ModalButton } from "#/components/modal-button";
-import ModalBody from "../modal-body";
+import { ModalBody } from "../modal-body";
 
 interface ButtonConfig {
   text: string;

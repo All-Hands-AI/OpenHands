@@ -7,7 +7,7 @@ interface ModalBodyProps {
   className?: React.HTMLProps<HTMLDivElement>["className"];
 }
 
-function ModalBody({ testID, children, className }: ModalBodyProps) {
+export function ModalBody({ testID, children, className }: ModalBodyProps) {
   return (
     <div
       data-testid={testID}
@@ -20,5 +20,3 @@ function ModalBody({ testID, children, className }: ModalBodyProps) {
     </div>
   );
 }
-
-export default ModalBody;

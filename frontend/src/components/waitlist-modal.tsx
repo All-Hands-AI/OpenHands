@@ -2,7 +2,7 @@ import { ModalButton } from "./modal-button";
 import { ModalBackdrop } from "./modals/modal-backdrop";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
-import ModalBody from "./modals/modal-body";
+import { ModalBody } from "./modals/modal-body";
 import { JoinWaitlistAnchor } from "./join-waitlist-anchor";
 import { WaitlistMessage } from "./waitlist-message";
 

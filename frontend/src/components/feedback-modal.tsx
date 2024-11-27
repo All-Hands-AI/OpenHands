@@ -4,7 +4,7 @@ import {
   BaseModalDescription,
 } from "./modals/confirmation-modals/base-modal";
 import { ModalBackdrop } from "./modals/modal-backdrop";
-import ModalBody from "./modals/modal-body";
+import { ModalBody } from "./modals/modal-body";
 
 interface FeedbackModalProps {
   onClose: () => void;

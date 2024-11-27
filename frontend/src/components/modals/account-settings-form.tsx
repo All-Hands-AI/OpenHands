@@ -4,7 +4,7 @@ import {
   BaseModalDescription,
   BaseModalTitle,
 } from "./confirmation-modals/base-modal";
-import ModalBody from "./modal-body";
+import { ModalBody } from "./modal-body";
 import { ModalButton } from "../modal-button";
 import { FormFieldset } from "../form-fieldset";
 import { CustomInput } from "../custom-input";
