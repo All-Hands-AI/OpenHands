@@ -12,8 +12,8 @@ from openhands.core.config import (
     load_from_toml,
 )
 from openhands.core.config.condenser_config import (
+    LLMCondenserConfig,
     NoOpCondenserConfig,
-    RecentEventsCondenserConfig,
 )
 
 
@@ -410,22 +410,33 @@ def test_cache_dir_creation(default_config, tmpdir):
     assert os.path.exists(default_config.cache_dir)
 
 
-def test_agent_config_condenser():
-    # Test that agent config can be loaded with different condenser configs
+def test_agent_config_condenser_default():
+    """Test that default agent condenser is NoOpCondenser."""
     config = AppConfig()
-
-    # Default should be NoopCondenserConfig
     agent_config = config.get_agent_config()
     assert isinstance(agent_config.condenser, NoOpCondenserConfig)
-    assert agent_config.condenser.type == 'noop'
 
-    # Test loading from TOML-style dict
-    env_dict = {'AGENT_CONDENSER_TYPE': 'recent', 'AGENT_CONDENSER_MAX_EVENTS': '5'}
-    load_from_env(config, env_dict)
-    agent_config = config.get_agent_config()
-    assert isinstance(agent_config.condenser, RecentEventsCondenserConfig)
-    assert agent_config.condenser.type == 'recent'
-    assert agent_config.condenser.max_events == 5
+
+def test_agent_config_condenser_from_toml(monkeypatch, default_config, temp_toml_file):
+    """Test that agent condensers can be specified in TOML files."""
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write(
+            """
+[agent.condenser]
+type="llm"
+llm_config="llm.condenser"
+
+[llm.condenser]
+model="gpt-4o"
+"""
+        )
+    monkeypatch.setattr(os, 'environ', {})
+    load_from_toml(default_config, temp_toml_file)
+
+    agent_config = default_config.get_agent_config()
+    assert isinstance(agent_config.condenser, LLMCondenserConfig)
+    assert agent_config.condenser.type == 'llm'
+    assert agent_config.condenser.llm.config.model == 'gpt-4o'
 
 
 def test_api_keys_repr_str():
