@@ -44,11 +44,11 @@ async def init_connection(connection_id: str, data: dict):
         if sid == '':
             await sio.emit(
                 'oh_event',
-                 event_to_dict(
-                     ErrorObservation(
-                         content='Invalid token! (Maybe you need to specify a static jwt_secret?)'
-                     )
-                 ),
+                event_to_dict(
+                    ErrorObservation(
+                        content='Invalid token! (Maybe you need to specify a static jwt_secret?)'
+                    )
+                ),
             )
             return
         logger.info(f'Existing session: {sid}')
