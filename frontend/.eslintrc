@@ -31,7 +31,6 @@
       }
     ]
   },
-  "ignorePatterns": ["*.js"],
   "settings": {
     "react": {
       "version": "detect"
