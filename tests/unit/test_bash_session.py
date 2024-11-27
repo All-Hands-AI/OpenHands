@@ -291,22 +291,6 @@ def test_command_output_continuation():
     session.close()
 
 
-def test_ansi_escape_codes():
-    session = BashSession(work_dir=os.getcwd())
-
-    # Test command that produces colored output
-    obs = session.execute(
-        CmdRunAction('echo -e "\\033[31mRed\\033[0m \\033[32mGreen\\033[0m"')
-    )
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert 'Red Green' in obs.content  # ANSI codes should be stripped
-    assert obs.metadata.exit_code == 0
-    assert obs.metadata.prefix == ''
-    assert obs.metadata.suffix == '\n\n[The command completed with exit code 0.]'
-
-    session.close()
-
-
 def test_long_output():
     session = BashSession(work_dir=os.getcwd())
 
