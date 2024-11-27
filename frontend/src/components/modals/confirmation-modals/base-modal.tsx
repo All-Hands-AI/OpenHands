@@ -40,7 +40,7 @@ interface BaseModalProps {
   buttons: ButtonConfig[];
 }
 
-function BaseModal({ title, description, buttons }: BaseModalProps) {
+export function BaseModal({ title, description, buttons }: BaseModalProps) {
   return (
     <ModalBody>
       <div className="flex flex-col gap-2 self-start">
@@ -61,5 +61,3 @@ function BaseModal({ title, description, buttons }: BaseModalProps) {
     </ModalBody>
   );
 }
-
-export default BaseModal;

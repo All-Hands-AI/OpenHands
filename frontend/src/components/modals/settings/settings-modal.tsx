@@ -1,8 +1,8 @@
-import { SettingsForm } from "#/components/settings-form";
-import { LoadingSpinner } from "#/components/modals/loading-project";
+import { SettingsForm } from "#/components/modals/settings/settings-form";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { useUserPrefs } from "#/context/user-prefs-context";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
+import { LoadingSpinner } from "#/components/ui/loading-spinner";
 
 interface SettingsModalProps {
   onClose: () => void;

@@ -11,7 +11,7 @@ import { ProjectMenuCardContextMenu } from "./project.menu-card-context-menu";
 import { ProjectMenuDetailsPlaceholder } from "./project-menu-details-placeholder";
 import { ProjectMenuDetails } from "./project-menu-details";
 import { downloadWorkspace } from "#/utils/download-workspace";
-import { LoadingSpinner } from "../../modals/loading-project";
+import { LoadingSpinner } from "../../ui/loading-spinner";
 import { useWsClient } from "#/context/ws-client-provider";
 
 interface ProjectMenuCardProps {

@@ -22,7 +22,7 @@ interface BaseModalProps {
   testID?: string;
 }
 
-function BaseModal({
+export function BaseModal({
   isOpen,
   onOpenChange,
   title,
@@ -67,5 +67,3 @@ function BaseModal({
     </Modal>
   );
 }
-
-export default BaseModal;

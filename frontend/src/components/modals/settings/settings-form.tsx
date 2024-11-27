@@ -7,8 +7,8 @@ import { ModelSelector } from "#/components/modals/settings/model-selector";
 import { getDefaultSettings, Settings } from "#/services/settings";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
-import { ModalButton } from "./ui/buttons/modal-button";
-import { DangerModal } from "./modals/confirmation-modals/danger-modal";
+import { ModalButton } from "../../ui/buttons/modal-button";
+import { DangerModal } from "../confirmation-modals/danger-modal";
 import { I18nKey } from "#/i18n/declaration";
 import {
   extractSettings,
@@ -17,13 +17,13 @@ import {
 } from "#/utils/settings-utils";
 import { useEndSession } from "#/hooks/use-end-session";
 import { useUserPrefs } from "#/context/user-prefs-context";
-import { AdvancedOptionSwitch } from "./ui/inputs/advanced-option-switch";
-import { CustomModelInput } from "./ui/inputs/custom-model-input";
-import { BaseUrlInput } from "./ui/inputs/base-url-input";
-import { AgentInput } from "./ui/inputs/agent-input";
-import { APIKeyInput } from "./ui/inputs/api-key-input";
-import { SecurityAnalyzerInput } from "./ui/inputs/security-analyzers-input";
-import { ConfirmationModeSwitch } from "./ui/inputs/confirmation-mode-switch";
+import { AdvancedOptionSwitch } from "../../ui/inputs/advanced-option-switch";
+import { CustomModelInput } from "../../ui/inputs/custom-model-input";
+import { BaseUrlInput } from "../../ui/inputs/base-url-input";
+import { AgentInput } from "../../ui/inputs/agent-input";
+import { APIKeyInput } from "../../ui/inputs/api-key-input";
+import { SecurityAnalyzerInput } from "../../ui/inputs/security-analyzers-input";
+import { ConfirmationModeSwitch } from "../../ui/inputs/confirmation-mode-switch";
 
 interface SettingsFormProps {
   disabled?: boolean;

@@ -16,9 +16,9 @@ import { ContinueButton } from "../../ui/buttons/continue-button";
 import { ScrollToBottomButton } from "../../ui/buttons/scroll-to-bottom-button";
 import { useWsClient } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
-import { LoadingSpinner } from "../../ui/loading-spinner";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
+import { LoadingSpinner } from "#/components/ui/loading-spinner";
 
 export function ChatInterface() {
   const { send, isLoadingMessages } = useWsClient();
@@ -81,7 +81,11 @@ export function ChatInterface() {
         onScroll={(e) => onChatBodyScroll(e.currentTarget)}
         className="flex flex-col grow overflow-y-auto overflow-x-hidden px-4 pt-4 gap-2"
       >
-        {isLoadingMessages && <LoadingSpinner />}
+        {isLoadingMessages && (
+          <div className="flex justify-center">
+            <LoadingSpinner size="small" />
+          </div>
+        )}
 
         {!isLoadingMessages && (
           <Messages

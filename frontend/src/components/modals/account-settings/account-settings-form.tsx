@@ -3,11 +3,11 @@ import { useTranslation } from "react-i18next";
 import {
   BaseModalDescription,
   BaseModalTitle,
-} from "./confirmation-modals/base-modal";
-import { ModalBody } from "./modal-body";
-import { ModalButton } from "../ui/buttons/modal-button";
-import { FormFieldset } from "../ui/form-fieldset";
-import { CustomInput } from "../ui/custom-input";
+} from "../confirmation-modals/base-modal";
+import { ModalBody } from "../modal-body";
+import { ModalButton } from "../../ui/buttons/modal-button";
+import { FormFieldset } from "../../ui/form-fieldset";
+import { CustomInput } from "../../ui/custom-input";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import { useAuth } from "#/context/auth-context";
