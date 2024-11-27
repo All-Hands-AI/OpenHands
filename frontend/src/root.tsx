@@ -1,4 +1,11 @@
-import { Links, Meta, MetaFunction, Outlet, Scripts, ScrollRestoration } from "react-router";
+import {
+  Links,
+  Meta,
+  MetaFunction,
+  Outlet,
+  Scripts,
+  ScrollRestoration,
+} from "react-router";
 import "./tailwind.css";
 import "./index.css";
 import React from "react";
