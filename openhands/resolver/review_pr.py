@@ -118,36 +118,22 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Get environment variables
-    token = os.environ.get('GITHUB_TOKEN')
-    username = os.environ.get('GITHUB_USERNAME')
-    llm_model = os.environ.get('LLM_MODEL')
-    llm_api_key = os.environ.get('LLM_API_KEY')
-    llm_base_url = os.environ.get('LLM_BASE_URL')
-
-    if not all([token, username, llm_model, llm_api_key]):
-        raise ValueError('Missing required environment variables')
-
     # Split repo into owner and name
     owner, repo = args.repo.split('/')
 
     # Configure LLM
-    assert llm_model is not None  # For type checker
-    assert llm_api_key is not None  # For type checker
     llm_config = LLMConfig(
-        model=llm_model,
-        api_key=llm_api_key,
-        base_url=llm_base_url,
+        model=os.environ['LLM_MODEL'],
+        api_key=os.environ['LLM_API_KEY'],
+        base_url=os.environ.get('LLM_BASE_URL'),
     )
 
     # Review PR
-    assert token is not None  # For type checker
-    assert username is not None  # For type checker
     review_pr(
         owner=owner,
         repo=repo,
-        token=token,
-        username=username,
+        token=os.environ['GITHUB_TOKEN'],
+        username=os.environ['GITHUB_USERNAME'],
         output_dir='/tmp/output',
         llm_config=llm_config,
         issue_number=args.issue_number,
