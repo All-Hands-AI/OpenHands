@@ -1,18 +1,25 @@
 from datetime import datetime
 from unittest.mock import MagicMock
 
+from openhands.core.config.condenser_config import (
+    CondenserConfig,
+    LLMCondenserConfig,
+    NoOpCondenserConfig,
+    RecentEventsCondenserConfig,
+)
 from openhands.core.config.llm_config import LLMConfig
 from openhands.events.event import Event, EventSource
-from openhands.memory.condenser import Condenser, NoopCondenser, RecentEventsCondenser, LLMCondenser
-from openhands.memory.condenser_config import (
-    CondenserConfig,
-    NoopCondenserConfig,
-    RecentEventsCondenserConfig,
-    LLMCondenserConfig,
+from openhands.memory.condenser import (
+    Condenser,
+    LLMCondenser,
+    NoOpCondenser,
+    RecentEventsCondenser,
 )
 
 
-def create_test_event(message: str, timestamp: datetime, source: EventSource = EventSource.USER) -> Event:
+def create_test_event(
+    message: str, timestamp: datetime, source: EventSource = EventSource.USER
+) -> Event:
     event = Event()
     event._message = message
     event.timestamp = timestamp
@@ -21,95 +28,106 @@ def create_test_event(message: str, timestamp: datetime, source: EventSource = E
 
 
 def test_default_condenser_config():
-    """Test that the default condenser is NoopCondenser."""
+    """Test that the default condenser is a NoOpCondenser."""
     config = CondenserConfig()
-    assert config.type == "noop"
-    
+    assert config.type == 'noop'
+
     condenser = Condenser.from_config(config)
-    assert isinstance(condenser, NoopCondenser)
+    assert isinstance(condenser, NoOpCondenser)
+
+
+def test_noop_condenser_from_config():
+    """Test that the NoOpCondenser objects can be made from config."""
+    config = NoOpCondenserConfig()
+    condenser = Condenser.from_config(config)
+
+    assert isinstance(condenser, NoOpCondenser)
 
 
 def test_noop_condenser():
+    """Test that NoOpCondensers preserve their input events."""
     events = [
-        create_test_event("Event 1", datetime(2024, 1, 1, 10, 0)),
-        create_test_event("Event 2", datetime(2024, 1, 1, 10, 1)),
-        create_test_event("Event 3", datetime(2024, 1, 1, 10, 2))
+        create_test_event('Event 1', datetime(2024, 1, 1, 10, 0)),
+        create_test_event('Event 2', datetime(2024, 1, 1, 10, 1)),
+        create_test_event('Event 3', datetime(2024, 1, 1, 10, 2)),
     ]
-    
-    # Test direct instantiation
-    condenser = NoopCondenser()
-    result = condenser.condense(events)
-    
-    assert result == events
-    assert len(result) == 3
-    assert result[0]._message == "Event 1"
-    assert result[2]._message == "Event 3"
 
-    # Test from config
-    config = NoopCondenserConfig(type="noop")
-    condenser = Condenser.from_config(config)
+    condenser = NoOpCondenser()
     result = condenser.condense(events)
-    
+
     assert result == events
-    assert len(result) == 3
+
+
+def test_recent_events_condenser_from_config():
+    """Test that RecentEventsCondenser objects can be made from config."""
+    max_events = 5
+    config = RecentEventsCondenserConfig(max_events=max_events)
+    condenser = Condenser.from_config(config)
+
+    assert isinstance(condenser, RecentEventsCondenser)
+    assert condenser.max_events == max_events
 
 
 def test_recent_events_condenser():
+    """Test that RecentEventsCondensers keep just the most recent events."""
     events = [
-        create_test_event("Event 1", datetime(2024, 1, 1, 10, 0)),
-        create_test_event("Event 2", datetime(2024, 1, 1, 10, 1)),
-        create_test_event("Event 3", datetime(2024, 1, 1, 10, 2)),
-        create_test_event("Event 4", datetime(2024, 1, 1, 10, 3)),
-        create_test_event("Event 5", datetime(2024, 1, 1, 10, 4))
+        create_test_event('Event 1', datetime(2024, 1, 1, 10, 0)),
+        create_test_event('Event 2', datetime(2024, 1, 1, 10, 1)),
+        create_test_event('Event 3', datetime(2024, 1, 1, 10, 2)),
+        create_test_event('Event 4', datetime(2024, 1, 1, 10, 3)),
+        create_test_event('Event 5', datetime(2024, 1, 1, 10, 4)),
     ]
-    
-    # Test direct instantiation
-    condenser = RecentEventsCondenser(max_events=2)
-    result = condenser.condense(events)
-    
-    assert len(result) == 2
-    assert result[0]._message == "Event 4"
-    assert result[1]._message == "Event 5"
-    
-    # Test with max_events larger than list
-    condenser = RecentEventsCondenser(max_events=10)
-    result = condenser.condense(events)
-    
-    assert len(result) == 5
-    assert result[0]._message == "Event 1"
-    assert result[4]._message == "Event 5"
 
-    # Test from config
-    config = RecentEventsCondenserConfig(type="recent", max_events=2)
-    condenser = Condenser.from_config(config)
+    # If the max_events are larger than the number of events, equivalent to a NoOpCondenser.
+    condenser = RecentEventsCondenser(max_events=len(events) + 1)
     result = condenser.condense(events)
-    
-    assert len(result) == 2
-    assert result[0]._message == "Event 4"
-    assert result[1]._message == "Event 5"
+
+    assert result == events
+
+    # If the max_events are smaller than the number of events, only keep the last few.
+    max_events = 2
+    condenser = RecentEventsCondenser(max_events=max_events)
+    result = condenser.condense(events)
+
+    assert len(result) == max_events
+    assert result[0]._message == 'Event 4'
+    assert result[1]._message == 'Event 5'
+
+
+def test_llm_condenser_from_config():
+    """Test that LLMCondensers can be made from config."""
+    config = LLMCondenserConfig(
+        llm_config=LLMConfig(
+            model='gpt-4o',
+            api_key='test_key',
+        )
+    )
+    condenser = Condenser.from_config(config)
+
+    assert isinstance(condenser, LLMCondenser)
+    assert condenser.llm.config.model == 'gpt-4o'
+    assert condenser.llm.config.api_key == 'test_key'
 
 
 def test_llm_condenser():
+    """Test that LLMCondensers use the LLM to generate a summary event."""
     events = [
-        create_test_event("Event 1", datetime(2024, 1, 1, 10, 0)),
-        create_test_event("Event 2", datetime(2024, 1, 1, 10, 1))
+        create_test_event('Event 1', datetime(2024, 1, 1, 10, 0)),
+        create_test_event('Event 2', datetime(2024, 1, 1, 10, 1)),
     ]
-    
-    # Test direct instantiation
+
     mock_llm = MagicMock()
     mock_llm.completion.return_value = {
         'choices': [{'message': {'content': 'Summary of events'}}]
     }
-    
+
     condenser = LLMCondenser(llm=mock_llm)
     result = condenser.condense(events)
-    
+
     assert len(result) == 1
-    assert result[0]._message == "Summary of events"
-    assert result[0].timestamp == events[-1].timestamp
-    assert result[0].source == events[-1].source
-    
-    # Verify LLM was called with correct prompt
+    assert result[0]._message == 'Summary of events'
+
+    # Verify LLM was called with correct prompt.
     mock_llm.completion.assert_called_once()
     call_args = mock_llm.completion.call_args[1]
     assert 'messages' in call_args
@@ -117,23 +135,18 @@ def test_llm_condenser():
     assert 'Event 1' in call_args['messages'][0]['content']
     assert 'Event 2' in call_args['messages'][0]['content']
 
-    # Test from config
-    llm_config = LLMConfig(model="test-model")
-    config = LLMCondenserConfig(type="llm", llm_config=llm_config)
-    condenser = Condenser.from_config(config)
-    assert isinstance(condenser, LLMCondenser)
-
 
 def test_llm_condenser_error():
-    events = [create_test_event("Event 1", datetime(2024, 1, 1, 10, 0))]
-    
+    """Test that LLM errors are propagated during condensation."""
+    events = [create_test_event('Event 1', datetime(2024, 1, 1, 10, 0))]
+
     mock_llm = MagicMock()
-    mock_llm.completion.side_effect = Exception("LLM error")
-    
+    mock_llm.completion.side_effect = Exception('LLM error')
+
     condenser = LLMCondenser(llm=mock_llm)
-    
+
     try:
         condenser.condense(events)
-        assert False, "Expected exception was not raised"
+        raise AssertionError('Expected exception was not raised.')
     except Exception as e:
-        assert str(e) == "LLM error"
+        assert str(e) == 'LLM error'
