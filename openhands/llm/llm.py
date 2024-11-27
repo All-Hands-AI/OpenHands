@@ -245,7 +245,7 @@ class LLM(RetryMixin, DebugMixin):
                     with open(log_file, 'w') as f:
                         f.write(json.dumps(_d))
 
-                message_back: str = resp['choices'][0]['message']['content']
+                message_back: str = resp['choices'][0]['message']['content'] or ''
                 tool_calls = resp['choices'][0]['message'].get('tool_calls', [])
                 if tool_calls:
                     for tool_call in tool_calls:
