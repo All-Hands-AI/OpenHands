@@ -1,7 +1,6 @@
 import React from "react";
 import { useRouteError, isRouteErrorResponse, Outlet } from "@remix-run/react";
 import i18n from "#/i18n";
-import { WaitlistModal } from "#/components/waitlist/waitlist-modal";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useAuth } from "#/context/auth-context";
@@ -9,6 +8,7 @@ import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConfig } from "#/hooks/query/use-config";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
+import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
 
 export function ErrorBoundary() {
   const error = useRouteError();

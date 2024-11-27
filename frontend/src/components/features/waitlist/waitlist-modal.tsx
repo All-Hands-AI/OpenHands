@@ -1,10 +1,10 @@
-import { ModalButton } from "../ui/buttons/modal-button";
-import { ModalBackdrop } from "../modals/modal-backdrop";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
-import { ModalBody } from "../modals/modal-body";
 import { JoinWaitlistAnchor } from "./join-waitlist-anchor";
 import { WaitlistMessage } from "./waitlist-message";
+import { ModalBody } from "#/components/modals/modal-body";
+import { ModalBackdrop } from "#/components/modals/modal-backdrop";
+import { ModalButton } from "#/components/ui/buttons/modal-button";
 
 interface WaitlistModalProps {
   ghToken: string | null;
