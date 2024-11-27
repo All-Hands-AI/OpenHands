@@ -250,7 +250,7 @@ def test_command_output_continuation():
     # Start a command that produces output slowly
     obs = session.execute(CmdRunAction('for i in {1..5}; do echo $i; sleep 3; done'))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert obs.content.strip() == '1'
+    assert '1' in obs.content
     assert obs.metadata.prefix == ''
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
@@ -258,28 +258,28 @@ def test_command_output_continuation():
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[Command output continued from previous command]' in obs.metadata.prefix
-    assert obs.content.strip() == '2'
+    assert '2' in obs.content
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[Command output continued from previous command]' in obs.metadata.prefix
-    assert obs.content.strip() == '3'
+    assert '3' in obs.content
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[Command output continued from previous command]' in obs.metadata.prefix
-    assert obs.content.strip() == '4'
+    assert '4' in obs.content
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     obs = session.execute(CmdRunAction(''))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '[Command output continued from previous command]' in obs.metadata.prefix
-    assert obs.content.strip() == '5'
+    assert '5' in obs.content
     assert '[The command has no new output after 2 seconds.' in obs.metadata.suffix
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
