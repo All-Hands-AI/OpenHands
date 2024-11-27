@@ -8,7 +8,6 @@ from openhands.events.action import (
 from openhands.events.observation import (
     NullObservation,
 )
-from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.auth import get_sid_from_token, sign_token
@@ -42,14 +41,7 @@ async def init_connection(connection_id: str, data: dict):
     if token:
         sid = get_sid_from_token(token, config.jwt_secret)
         if sid == '':
-            await sio.emit(
-                'oh_event',
-                event_to_dict(
-                    ErrorObservation(
-                        content='Invalid token! Please ensure a valid jwt_secret is specified or use -e JWT_TOKEN when running with Docker.'
-                    )
-                ),
-            )
+            await sio.emit('oh_event', {'error': 'Invalid token', 'error_code': 401})
             return
         logger.info(f'Existing session: {sid}')
     else:
