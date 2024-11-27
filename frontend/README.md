@@ -9,6 +9,7 @@ This is the frontend of the OpenHands project. It is a React application that pr
 - Remix SPA Mode (React + Vite + React Router)
 - TypeScript
 - Redux
+- TanStack Query
 - Tailwind CSS
 - i18next
 - React Testing Library
@@ -85,7 +86,7 @@ frontend
 ├── src
 │   ├── api # API calls
 │   ├── assets
-│   ├── components # Reusable components
+│   ├── components
 │   ├── context # Local state management
 │   ├── hooks # Custom hooks
 │   ├── i18n # Internationalization
@@ -97,6 +98,18 @@ frontend
 │   ├── utils # Utility/helper functions
 │   └── root.tsx # Entry point
 └── .env.sample # Sample environment variables
+```
+
+#### Components
+
+Components are organized into folders based on their **domain**, **feature**, or **shared functionality**.
+
+```sh
+components
+├── features # Domain-specific components
+├── layout
+├── modals
+└── ui # Shared UI components
 ```
 
 ### Features
