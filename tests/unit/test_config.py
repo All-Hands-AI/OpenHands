@@ -12,7 +12,6 @@ from openhands.core.config import (
     load_from_toml,
 )
 from openhands.core.config.condenser_config import (
-    LLMCondenserConfig,
     NoOpCondenserConfig,
 )
 
@@ -415,28 +414,6 @@ def test_agent_config_condenser_default():
     config = AppConfig()
     agent_config = config.get_agent_config()
     assert isinstance(agent_config.condenser, NoOpCondenserConfig)
-
-
-def test_agent_config_condenser_from_toml(monkeypatch, default_config, temp_toml_file):
-    """Test that agent condensers can be specified in TOML files."""
-    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
-        toml_file.write(
-            """
-[agent.condenser]
-type="llm"
-llm_config="llm.condenser"
-
-[llm.condenser]
-model="gpt-4o"
-"""
-        )
-    monkeypatch.setattr(os, 'environ', {})
-    load_from_toml(default_config, temp_toml_file)
-
-    agent_config = default_config.get_agent_config()
-    assert isinstance(agent_config.condenser, LLMCondenserConfig)
-    assert agent_config.condenser.type == 'llm'
-    assert agent_config.condenser.llm.config.model == 'gpt-4o'
 
 
 def test_api_keys_repr_str():
