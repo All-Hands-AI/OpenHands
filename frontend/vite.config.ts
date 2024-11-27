@@ -60,6 +60,10 @@ export default defineConfig(({ mode }) => {
             v3_fetcherPersist: true,
             v3_relativeSplatPath: true,
             v3_throwAbortReason: true,
+            v3_lazyRouteDiscovery: true,
+            v3_singleFetch: true,
+            v3_routeConfig: true,
+            unstable_optimizeDeps: true,
           },
           appDirectory: "src",
           buildEnd: unpackClientDirectory,
@@ -87,8 +91,8 @@ export default defineConfig(({ mode }) => {
           ws: true,
           changeOrigin: true,
           secure: !INSECURE_SKIP_VERIFY,
-          //rewriteWsOrigin: true,
-        }
+          // rewriteWsOrigin: true,
+        },
       },
     },
     ssr: {
