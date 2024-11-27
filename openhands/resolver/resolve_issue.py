@@ -2,7 +2,6 @@
 
 import asyncio
 import dataclasses
-import json
 import os
 import pathlib
 import shutil
@@ -254,13 +253,8 @@ async def process_issue(
 
         if issue_handler.issue_type == 'pr' and comment_success:
             success_log = 'I have updated the PR and resolved some of the issues that were cited in the pull request review. Specifically, I identified the following revision requests, and all the ones that I think I successfully resolved are checked off. All the unchecked ones I was not able to resolve, so manual intervention may be required:\n'
-            try:
-                explanations = json.loads(success_explanation)
-            except json.JSONDecodeError:
-                logger.error(
-                    f'Failed to parse success_explanation as JSON: {success_explanation}'
-                )
-                explanations = [str(success_explanation)]  # Use raw string as fallback
+            # Split the explanation into a list by newlines since each explanation is separated by newlines
+            explanations = success_explanation.split('\n')
 
             for success_indicator, explanation in zip(comment_success, explanations):
                 status = (
