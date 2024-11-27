@@ -2,7 +2,7 @@ import React from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import AgentState from "#/types/agent-state";
-import { ExplorerTree } from "#/components/file-explorer/explorer-tree";
+import { ExplorerTree } from "#/components/explorer-tree";
 import toast from "#/utils/toast";
 import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
