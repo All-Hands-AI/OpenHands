@@ -14,7 +14,7 @@ export function FeedbackActionButton({
       type="button"
       data-testid={testId}
       onClick={onClick}
-      className="p-1 bg-neutral-700 border border-neutral-600 rounded hover:bg-neutral-500"
+      className="button-base p-1 hover:bg-neutral-500"
     >
       {icon}
     </button>

@@ -1,4 +1,3 @@
-import { cn } from "#/utils/utils";
 import CheckmarkIcon from "#/icons/checkmark.svg?react";
 import CopyIcon from "#/icons/copy.svg?react";
 
@@ -22,10 +21,7 @@ export function CopyToClipboardButton({
       data-testid="copy-to-clipboard"
       type="button"
       onClick={onClick}
-      className={cn(
-        "bg-neutral-700 border border-neutral-600 rounded p-1",
-        "absolute top-1 right-1",
-      )}
+      className="button-base p-1 absolute top-1 right-1"
     >
       {mode === "copy" && <CopyIcon width={15} height={15} />}
       {mode === "copied" && <CheckmarkIcon width={15} height={15} />}
