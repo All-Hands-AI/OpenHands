@@ -20,6 +20,29 @@ export const isGitHubErrorReponse = <T extends object | Array<unknown>>(
 ): data is GitHubErrorReponse =>
   !!data && "message" in data && data.message !== undefined;
 
+export const retrieveGitHubAppInstallations = async (
+  token: string,
+): Promise<string[]> => {
+  const installationsUrl = "https://api.github.com/user/installations";
+
+  const installationsResponse = await fetch(installationsUrl, {
+    headers: generateGitHubAPIHeaders(token),
+  });
+
+  if (!installationsResponse.ok) {
+    throw new Error(
+      `Failed to fetch installations: ${installationsResponse.statusText}`,
+    );
+  }
+
+  const installationsData = await installationsResponse.json();
+  const installationIds = installationsData.installations.map(
+    (installation: { id: number }) => installation.id,
+  );
+
+  return installationIds;
+};
+
 /**
  * Given a GitHub token, retrieves the repositories of the authenticated user
  * @param token The GitHub token
@@ -27,17 +50,43 @@ export const isGitHubErrorReponse = <T extends object | Array<unknown>>(
  */
 export const retrieveGitHubUserRepositories = async (
   token: string,
+  installationId: string,
   page = 1,
   per_page = 30,
 ): Promise<Response> => {
-  const url = new URL("https://api.github.com/user/repos");
-  url.searchParams.append("sort", "pushed"); // sort by most recently pushed
-  url.searchParams.append("page", page.toString());
-  url.searchParams.append("per_page", per_page.toString());
+  const reposUrl = new URL(
+    `https://api.github.com/user/installations/${installationId}/repositories`,
+  );
 
-  return fetch(url.toString(), {
+  reposUrl.searchParams.append("page", page.toString());
+  reposUrl.searchParams.append("per_page", per_page.toString());
+
+  return fetch(reposUrl, {
     headers: generateGitHubAPIHeaders(token),
   });
+
+  //   if (!reposResponse.ok) {
+  //     throw new Error(
+  //       `Failed to fetch repositories for installation ${installationId}: ${reposResponse.statusText}`,
+  //     );
+  //   }
+
+  // return reposResponse;
+  // const reposData = await reposResponse.json();
+
+  // writableRepositories.push(...writable);
+  // }
+
+  // return writableRepositories;
+
+  // const url = new URL("https://api.github.com/user/repos");
+  // url.searchParams.append("sort", "pushed"); // sort by most recently pushed
+  // url.searchParams.append("page", page.toString());
+  // url.searchParams.append("per_page", per_page.toString());
+
+  // return fetch(url.toString(), {
+  //   headers: generateGitHubAPIHeaders(token),
+  // });
 };
 
 /**

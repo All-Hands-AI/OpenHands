@@ -53,7 +53,6 @@ function AuthProvider({ children }: React.PropsWithChildren) {
   };
 
   const clearToken = () => {
-    console.log("clearing token");
     setTokenState(null);
     localStorage.removeItem("token");
   };

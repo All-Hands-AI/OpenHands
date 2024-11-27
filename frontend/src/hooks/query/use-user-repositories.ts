@@ -6,19 +6,26 @@ import {
 } from "#/api/github";
 import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
 import { useAuth } from "#/context/auth-context";
+import { useAppIntallations } from "./use-app-installations";
 
 interface UserRepositoriesQueryFnProps {
-  pageParam: number;
+  pageParam: {
+    installationIndex: number; // Tracks the current installation
+    repoPage: number; // Tracks the current repository page for that installation
+  };
   ghToken: string;
+  appInstallations: string[];
 }
 
 const userRepositoriesQueryFn = async ({
-  pageParam,
+  pageParam: { installationIndex, repoPage },
   ghToken,
+  appInstallations,
 }: UserRepositoriesQueryFnProps) => {
   const response = await retrieveGitHubUserRepositories(
     ghToken,
-    pageParam,
+    appInstallations[installationIndex],
+    repoPage,
     100,
   );
 
@@ -26,7 +33,9 @@ const userRepositoriesQueryFn = async ({
     throw new Error("Failed to fetch repositories");
   }
 
-  const data = (await response.json()) as GitHubRepository | GitHubErrorReponse;
+  const data = (await response.json()).repositories as
+    | GitHubRepository
+    | GitHubErrorReponse;
 
   if (isGitHubErrorReponse(data)) {
     throw new Error(data.message);
@@ -34,20 +43,48 @@ const userRepositoriesQueryFn = async ({
 
   const link = response.headers.get("link") ?? "";
   const nextPage = extractNextPageFromLink(link);
+  const nextInstallation =
+    !nextPage && installationIndex + 1 < appInstallations.length
+      ? installationIndex + 1
+      : null;
 
-  return { data, nextPage };
+  return {
+    data,
+    nextPage,
+    nextInstallation,
+    installationIndex,
+  };
 };
 
 export const useUserRepositories = () => {
   const { gitHubToken } = useAuth();
+  const { data: installations } = useAppIntallations();
 
   const repos = useInfiniteQuery({
-    queryKey: ["repositories", gitHubToken],
+    queryKey: ["repositories", gitHubToken, installations],
     queryFn: async ({ pageParam }) =>
-      userRepositoriesQueryFn({ pageParam, ghToken: gitHubToken! }),
-    initialPageParam: 1,
-    getNextPageParam: (lastPage) => lastPage.nextPage,
-    enabled: !!gitHubToken,
+      userRepositoriesQueryFn({
+        pageParam: pageParam || { installationIndex: 0, repoPage: 1 },
+        ghToken: gitHubToken!,
+        appInstallations: installations || [],
+      }),
+
+    initialPageParam: { installationIndex: 0, repoPage: 1 },
+    getNextPageParam: (lastPage) => {
+      if (lastPage.nextPage) {
+        return {
+          installationIndex: lastPage.installationIndex,
+          repoPage: lastPage.nextPage,
+        };
+      }
+
+      if (lastPage.nextInstallation !== null) {
+        return { installationIndex: lastPage.nextInstallation, repoPage: 1 };
+      }
+
+      return null;
+    },
+    enabled: !!gitHubToken && !!installations?.length,
   });
 
   // TODO: Once we create our custom dropdown component, we should fetch data onEndReached
