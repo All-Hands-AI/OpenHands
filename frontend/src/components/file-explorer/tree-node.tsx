@@ -1,6 +1,6 @@
 import React from "react";
-import FolderIcon from "../folder-icon";
-import FileIcon from "../file-icons";
+import { FolderIcon } from "../folder-icon";
+import { FileIcon } from "../file-icons";
 import { useFiles } from "#/context/files";
 import { cn } from "#/utils/utils";
 import { useListFiles } from "#/hooks/query/use-list-files";

@@ -11,7 +11,7 @@ import AgentState from "#/types/agent-state";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { FeedbackModal } from "../../components/feedback-modal";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
-import TypingIndicator from "../../components/chat/typing-indicator";
+import { TypingIndicator } from "../../components/typing-indicator";
 import { ContinueButton } from "../../components/continue-button";
 import { ScrollToBottomButton } from "../../components/scroll-to-bottom-button";
 import { useWsClient } from "#/context/ws-client-provider";

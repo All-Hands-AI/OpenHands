@@ -1,6 +1,6 @@
 import { ModalBackdrop } from "./modals/modal-backdrop";
 import ModalBody from "./modals/modal-body";
-import ModalButton from "./modal-button";
+import { ModalButton } from "./modal-button";
 import {
   BaseModalTitle,
   BaseModalDescription,

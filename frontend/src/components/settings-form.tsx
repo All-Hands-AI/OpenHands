@@ -7,7 +7,7 @@ import { ModelSelector } from "#/components/modals/settings/model-selector";
 import { getDefaultSettings, Settings } from "#/services/settings";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
-import ModalButton from "./modal-button";
+import { ModalButton } from "./modal-button";
 import { DangerModal } from "./modals/confirmation-modals/danger-modal";
 import { I18nKey } from "#/i18n/declaration";
 import {

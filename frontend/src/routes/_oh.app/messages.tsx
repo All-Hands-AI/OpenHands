@@ -1,5 +1,5 @@
 import { ChatMessage } from "#/components/chat-message";
-import ConfirmationButtons from "#/components/chat/confirmation-buttons";
+import { ConfirmationButtons } from "#/components/confirmation-buttons";
 import { ErrorMessage } from "#/components/error-message";
 import { ImageCarousel } from "#/components/image-carousel";
 

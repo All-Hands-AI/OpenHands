@@ -1,4 +1,4 @@
-import { SettingsForm } from "#/components/form/settings-form";
+import { SettingsForm } from "#/components/settings-form";
 import { LoadingSpinner } from "#/components/modals/loading-project";
 import { ModalBackdrop } from "#/components/modals/modal-backdrop";
 import { useUserPrefs } from "#/context/user-prefs-context";

@@ -13,7 +13,7 @@ interface ModalButtonProps {
   intent?: string;
 }
 
-function ModalButton({
+export function ModalButton({
   testId,
   variant = "default",
   onClick,
@@ -45,5 +45,3 @@ function ModalButton({
     </button>
   );
 }
-
-export default ModalButton;

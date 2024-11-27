@@ -43,7 +43,7 @@ function App() {
   );
 
   const Terminal = React.useMemo(
-    () => React.lazy(() => import("#/components/terminal/terminal")),
+    () => React.lazy(() => import("#/components/terminal")),
     [],
   );
 
