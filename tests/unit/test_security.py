@@ -382,6 +382,7 @@ def test_parse_action(action, expected_trace):
                 content='browser output content',
                 url='http://localhost:3000',
                 screenshot='screenshot',
+                trigger_by_action=ActionType.BROWSE,
             ),
             [
                 ToolOutput(

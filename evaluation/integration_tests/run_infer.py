@@ -113,36 +113,37 @@ def process_instance(
     # =============================================
     # create sandbox and run the agent
     # =============================================
-
     runtime: Runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
+    try:
+        test_class.initialize_runtime(runtime)
 
-    test_class.initialize_runtime(runtime)
-
-    # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            initial_user_action=MessageAction(content=instruction),
-            runtime=runtime,
-            fake_user_response_fn=FAKE_RESPONSES[metadata.agent_class],
+        # Here's how you can run the agent (similar to the `main` function) and get the final task state
+        state: State | None = asyncio.run(
+            run_controller(
+                config=config,
+                initial_user_action=MessageAction(content=instruction),
+                runtime=runtime,
+                fake_user_response_fn=FAKE_RESPONSES[metadata.agent_class],
+            )
         )
-    )
-    if state is None:
-        raise ValueError('State should not be None.')
+        if state is None:
+            raise ValueError('State should not be None.')
 
-    # # =============================================
-    # # result evaluation
-    # # =============================================
+        # # =============================================
+        # # result evaluation
+        # # =============================================
 
-    histories = state.history
+        histories = state.history
 
-    # some basic check
-    logger.info(f'Total events in history: {len(histories)}')
-    assert len(histories) > 0, 'History should not be empty'
+        # some basic check
+        logger.info(f'Total events in history: {len(histories)}')
+        assert len(histories) > 0, 'History should not be empty'
 
-    test_result: TestResult = test_class.verify_result(runtime, histories)
-    metrics = state.metrics.get() if state.metrics else None
+        test_result: TestResult = test_class.verify_result(runtime, histories)
+        metrics = state.metrics.get() if state.metrics else None
+    finally:
+        runtime.close()
 
     # Save the output
     output = EvalOutput(
