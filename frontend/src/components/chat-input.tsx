@@ -1,8 +1,8 @@
 import React from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import { cn } from "#/utils/utils";
-import { SubmitButton } from "./submit-button";
-import { StopButton } from "./stop-button";
+import { SubmitButton } from "./buttons/submit-button";
+import { StopButton } from "./buttons/stop-button";
 
 interface ChatInputProps {
   name?: string;

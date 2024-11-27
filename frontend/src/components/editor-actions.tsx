@@ -1,4 +1,4 @@
-import { EditorActionButton } from "./editor-action-button";
+import { EditorActionButton } from "./buttons/editor-action-button";
 
 interface EditorActionsProps {
   onSave: () => void;

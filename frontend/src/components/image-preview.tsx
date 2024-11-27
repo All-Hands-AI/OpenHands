@@ -1,4 +1,4 @@
-import { RemoveButton } from "./remove-button";
+import { RemoveButton } from "./buttons/remove-button";
 import { Thumbnail } from "./thumbnail";
 
 interface ImagePreviewProps {

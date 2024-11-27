@@ -3,7 +3,7 @@ import { I18nKey } from "#/i18n/declaration";
 import AgentState from "#/types/agent-state";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { useWsClient } from "#/context/ws-client-provider";
-import { ActionTooltip } from "./action-tooltip";
+import { ActionTooltip } from "../action-tooltip";
 
 export function ConfirmationButtons() {
   const { t } = useTranslation();

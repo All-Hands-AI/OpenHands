@@ -1,4 +1,4 @@
-import { ModalButton } from "./modal-button";
+import { ModalButton } from "./buttons/modal-button";
 import { ModalBackdrop } from "./modals/modal-backdrop";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";

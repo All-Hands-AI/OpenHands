@@ -1,5 +1,5 @@
 import Lightbulb from "#/icons/lightbulb.svg?react";
-import { RefreshButton } from "./refresh-button";
+import { RefreshButton } from "./buttons/refresh-button";
 
 interface SuggestionBubbleProps {
   suggestion: string;

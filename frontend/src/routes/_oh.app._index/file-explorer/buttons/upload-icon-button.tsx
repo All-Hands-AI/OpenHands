@@ -1,5 +1,5 @@
 import { IoIosCloudUpload } from "react-icons/io";
-import { IconButton } from "#/components/icon-button";
+import { IconButton } from "#/components/buttons/icon-button";
 
 interface UploadIconButtonProps {
   onClick: () => void;
