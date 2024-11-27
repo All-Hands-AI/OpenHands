@@ -69,6 +69,7 @@ export function WsClientProvider({
   }
 
   function handleConnect() {
+    // Connect - send init
     setStatus(WsClientProviderStatus.OPENING);
 
     const initEvent: Record<string, unknown> = {
@@ -112,6 +113,7 @@ export function WsClientProvider({
   }
 
   function handleDisconnect() {
+    console.log("Disconnected");
     setStatus(WsClientProviderStatus.STOPPED);
   }
 
@@ -136,7 +138,7 @@ export function WsClientProvider({
     // create a new one
     if (
       !sio ||
-      (tokenRef.current && token !== tokenRef.current) ||
+      (tokenRef.current && token && token !== tokenRef.current) ||
       ghToken !== ghTokenRef.current
     ) {
       sio?.disconnect();
