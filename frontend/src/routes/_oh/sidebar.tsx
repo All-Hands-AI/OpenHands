@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "react-router";
 import { LoadingSpinner } from "#/components/modals/loading-project";
 import { UserActions } from "#/components/user-actions";
 import { useAuth } from "#/context/auth-context";

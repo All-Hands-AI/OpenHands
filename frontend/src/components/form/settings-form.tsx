@@ -4,7 +4,7 @@ import {
   Input,
   Switch,
 } from "@nextui-org/react";
-import { useLocation } from "@remix-run/react";
+import { useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import React from "react";

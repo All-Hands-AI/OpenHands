@@ -1,4 +1,4 @@
-import { NavLink } from "@remix-run/react";
+import { NavLink } from "react-router";
 import clsx from "clsx";
 import React from "react";
 
