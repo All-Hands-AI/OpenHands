@@ -135,7 +135,7 @@ def process_instance(
         # # =============================================
 
         histories = state.history
-        
+
         # some basic check
         logger.info(f'Total events in history: {len(histories)}')
         assert len(histories) > 0, 'History should not be empty'
