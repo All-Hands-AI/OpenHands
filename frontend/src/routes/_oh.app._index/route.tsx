@@ -5,23 +5,12 @@ import { editor } from "monaco-editor";
 import { EditorProps } from "@monaco-editor/react";
 import { RootState } from "#/store";
 import AgentState from "#/types/agent-state";
-import FileExplorer from "#/components/file-explorer/file-explorer";
+import { FileExplorer } from "#/routes/_oh.app._index/file-explorer/file-explorer";
 import CodeEditorComponent from "./code-editor-component";
 import { useFiles } from "#/context/files";
 import { EditorActions } from "#/components/editor-actions";
 import { useSaveFile } from "#/hooks/mutation/use-save-file";
-
-const ASSET_FILE_TYPES = [
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".bmp",
-  ".gif",
-  ".pdf",
-  ".mp4",
-  ".webm",
-  ".ogg",
-];
+import { ASSET_FILE_TYPES } from "./constants";
 
 export function ErrorBoundary() {
   const error = useRouteError();
