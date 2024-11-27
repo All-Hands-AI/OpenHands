@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 from typing import Callable, Optional
 
 from openhands.controller import AgentController
@@ -7,7 +8,7 @@ from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, AppConfig, LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
-from openhands.events.action.agent import ChangeAgentStateAction
+from openhands.events.action import ChangeAgentStateAction, CmdRunAction, FileReadAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
@@ -60,6 +61,8 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
+        github_token: str | None = None,
+        selected_repository: str | None = None,
     ):
         """Starts the Agent session
         Parameters:
@@ -86,6 +89,8 @@ class AgentSession:
             max_budget_per_task,
             agent_to_llm_config,
             agent_configs,
+            github_token,
+            selected_repository,
         )
 
     def _start_thread(self, *args):
@@ -104,6 +109,8 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
+        github_token: str | None = None,
+        selected_repository: str | None = None,
     ):
         self._create_security_analyzer(config.security.security_analyzer)
         await self._create_runtime(
@@ -111,6 +118,9 @@ class AgentSession:
             config=config,
             agent=agent,
         )
+        self._clone_repo(github_token, selected_repository)
+        self._add_custom_microagents(agent, selected_repository)
+
         self._create_controller(
             agent,
             config.security.confirmation_mode,
@@ -159,6 +169,38 @@ class AgentSession:
             self.security_analyzer = options.SecurityAnalyzers.get(
                 security_analyzer, SecurityAnalyzer
             )(self.event_stream)
+
+    def _clone_repo(self, github_token: str | None, selected_repository: str | None):
+        if not github_token or not selected_repository or not self.runtime:
+            return
+        url = f'https://{github_token}@github.com/{selected_repository}.git'
+        dir_name = selected_repository.split('/')[1]
+        action = CmdRunAction(
+            command=f'git clone {url} {dir_name} ; cd {dir_name} ; git checkout -b openhands-workspace'
+        )
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        self.runtime.run_action(action)
+
+    def _add_custom_microagents(self, agent: Agent, selected_repository: str | None):
+        if not selected_repository or not self.runtime:
+            return
+        dir_name = Path(selected_repository.split('/')[1])
+        files = self.runtime.list_files(str(dir_name))
+        logger.info(files)
+        custom_microagents_dir = Path('.openhands') / 'microagents'
+        files = self.runtime.list_files(str(dir_name / custom_microagents_dir))
+        logger.info(files)
+
+        custom_microagents_content = []
+        for fname in files:
+            content = self.runtime.read(
+                FileReadAction(path=str(custom_microagents_dir / fname))
+            ).content
+            custom_microagents_content.append(content)
+            logger.info(content)
+
+        if agent.prompt_manager:
+            agent.prompt_manager.load_microagent_files(custom_microagents_content)
 
     async def _create_runtime(
         self,

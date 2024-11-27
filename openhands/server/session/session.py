@@ -72,7 +72,6 @@ class Session:
         self.config.security.security_analyzer = session_init_data.security_analyzer or self.config.security.security_analyzer
         max_iterations = session_init_data.max_iterations or self.config.max_iterations
         # override default LLM config
-        
 
         default_llm_config = self.config.get_llm_config()
         default_llm_config.model = session_init_data.llm_model or default_llm_config.model
@@ -94,6 +93,8 @@ class Session:
                 max_budget_per_task=self.config.max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
+                github_token=session_init_data.github_token,
+                selected_repository=session_init_data.selected_repository,
             )
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')

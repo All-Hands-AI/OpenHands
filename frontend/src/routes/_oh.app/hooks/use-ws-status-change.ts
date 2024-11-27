@@ -38,7 +38,7 @@ export const useWSStatusChange = () => {
   };
 
   const dispatchCloneRepoCommand = (ghToken: string, repository: string) => {
-    send(getCloneRepoCommand(ghToken, repository));
+    // send(getCloneRepoCommand(ghToken, repository));
     dispatch(clearSelectedRepository());
   };
 
@@ -58,7 +58,7 @@ export const useWSStatusChange = () => {
 
     if (gitHubToken && selectedRepository) {
       dispatchCloneRepoCommand(gitHubToken, selectedRepository);
-      additionalInfo = `Repository ${selectedRepository} has been cloned to /workspace. Please check the /workspace for files.`;
+      // additionalInfo = `Repository ${selectedRepository} has been cloned to /workspace. Please check the /workspace for files.`;
     } else if (importedProjectZip) {
       // if there's an uploaded project zip, add it to the chat
       additionalInfo =
