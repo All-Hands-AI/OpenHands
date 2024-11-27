@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { ModalBody } from "./modal-body";
-import { CustomInput } from "../custom-input";
+import { CustomInput } from "../ui/custom-input";
 import { ModalButton } from "../buttons/modal-button";
 import {
   BaseModalDescription,

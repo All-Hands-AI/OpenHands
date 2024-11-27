@@ -3,9 +3,8 @@ import React from "react";
 import { Outlet } from "@remix-run/react";
 import { useDispatch, useSelector } from "react-redux";
 import Security from "#/components/modals/security/security";
-import { Controls } from "#/components/controls";
+import { Controls } from "#/components/controls/controls";
 import { RootState } from "#/store";
-import { Container } from "#/components/container";
 import { clearMessages } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/utils/use-effect-once";
@@ -14,13 +13,14 @@ import GlobeIcon from "#/icons/globe.svg?react";
 import ListIcon from "#/icons/list-type-number.svg?react";
 import { clearJupyter } from "#/state/jupyter-slice";
 import { FilesProvider } from "#/context/files";
-import { ChatInterface } from "./chat-interface";
+import { ChatInterface } from "../../components/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "./event-handler";
 import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
 import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
+import { Container } from "#/components/layout/container";
 
 function App() {
   const { token, gitHubToken } = useAuth();
@@ -43,7 +43,7 @@ function App() {
   );
 
   const Terminal = React.useMemo(
-    () => React.lazy(() => import("#/components/terminal")),
+    () => React.lazy(() => import("#/components/terminal/terminal")),
     [],
   );
 
