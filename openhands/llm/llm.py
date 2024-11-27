@@ -8,7 +8,7 @@ from typing import Any
 import requests
 
 from openhands.core.config import LLMConfig
-from openhands.core.message import Message, TextContent
+from openhands.core.message import Message
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -468,11 +468,11 @@ class LLM(RetryMixin, DebugMixin):
         if stats:
             logger.debug(stats)
 
-    def get_token_count(self, messages) -> int:
+    def get_token_count(self, messages: list[Message]) -> int:
         """Get the number of tokens in a list of messages.
 
         Args:
-            messages (list): A list of messages.
+            messages (list[Message]): A list of Message objects.
 
         Returns:
             int: The number of tokens.
@@ -492,9 +492,46 @@ class LLM(RetryMixin, DebugMixin):
 
         # Fallback to litellm token counter
         try:
-            return litellm.token_counter(model=self.config.model, messages=messages)
-        except Exception:
+            # Convert Message objects to litellm format
+            litellm_messages = []
+            for msg in messages:
+                # Convert Message to dict in litellm format
+                msg_dict = msg.model_dump()
+                # litellm expects content to be a list of content items
+                content = []
+                for item in msg_dict['content']:
+                    if item['type'] == 'text':
+                        content.append({'type': 'text', 'text': item['text']})
+                    elif item['type'] == 'image_url':
+                        content.append({'type': 'image_url', 'image_url': item['image_url']})
+                litellm_messages.append(
+                    {
+                        'role': msg_dict['role'],
+                        'content': content,
+                        # Include tool calls if present
+                        **(
+                            {'tool_calls': msg_dict['tool_calls']}
+                            if msg_dict.get('tool_calls')
+                            else {}
+                        ),
+                        # Include tool response fields if present
+                        **(
+                            {'tool_call_id': msg_dict['tool_call_id']}
+                            if msg_dict.get('tool_call_id')
+                            else {}
+                        ),
+                        **({'name': msg_dict['name']} if msg_dict.get('name') else {}),
+                    }
+                )
+            logger.debug(f"Calling litellm.token_counter with messages: {litellm_messages}")
+            result = litellm.token_counter(
+                model=self.config.model, messages=litellm_messages
+            )
+            logger.debug(f"litellm.token_counter returned: {result}")
+            return result
+        except Exception as e:
             # TODO: this is to limit logspam in case token count is not supported
+            logger.debug(f"Error in token_counter: {e}")
             return 0
 
     def _is_local(self) -> bool:

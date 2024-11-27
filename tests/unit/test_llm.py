@@ -449,6 +449,8 @@ def test_token_count_fallback(
     messages = [Message(role='user', content=[TextContent(text='Hello!')])]
     token_count = llm.get_token_count(messages)
     assert token_count == 42
+    # litellm expects a list of dicts with role and content
     mock_token_counter.assert_called_once_with(
-        model=default_config.model, messages=messages
+        model=default_config.model,
+        messages=[{'role': 'user', 'content': [{'type': 'text', 'text': 'Hello!'}]}]
     )
