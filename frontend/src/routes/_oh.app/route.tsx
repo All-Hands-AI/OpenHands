@@ -21,10 +21,13 @@ import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
 import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
+import { useCloseWarning } from "#/hooks/use-close-warning";
+import { CloseWarningDialog } from "#/components/modals/close-warning-dialog";
 
 function App() {
   const { token, gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
+  const { showWarning, setShowWarning } = useCloseWarning();
 
   const dispatch = useDispatch();
   useConversationConfig();
@@ -112,6 +115,11 @@ function App() {
             isOpen={securityModalIsOpen}
             onOpenChange={onSecurityModalOpenChange}
             securityAnalyzer={settings.SECURITY_ANALYZER}
+          />
+          <CloseWarningDialog
+            isOpen={showWarning}
+            onClose={() => setShowWarning(false)}
+            onConfirm={() => window.close()}
           />
         </div>
       </EventHandler>

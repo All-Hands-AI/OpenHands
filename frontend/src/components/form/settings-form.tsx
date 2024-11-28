@@ -351,6 +351,39 @@ export function SettingsForm({
               >
                 {t(I18nKey.SETTINGS_FORM$ENABLE_CONFIRMATION_MODE_LABEL)}
               </Switch>
+
+              <fieldset className="flex flex-col gap-2">
+                <label
+                  htmlFor="close-warning"
+                  className="font-[500] text-[#A3A3A3] text-xs"
+                >
+                  {t("CONFIGURATION$CLOSE_WARNING_LABEL")}
+                </label>
+                <Autocomplete
+                  isDisabled={disabled}
+                  isRequired
+                  id="close-warning"
+                  name="close-warning"
+                  aria-label="Close Warning"
+                  defaultSelectedKey={settings.CLOSE_WARNING}
+                  inputProps={{
+                    classNames: {
+                      inputWrapper:
+                        "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
+                    },
+                  }}
+                >
+                  <AutocompleteItem key="always" value="always">
+                    Always
+                  </AutocompleteItem>
+                  <AutocompleteItem key="while_working" value="while_working">
+                    While agent is working
+                  </AutocompleteItem>
+                  <AutocompleteItem key="never" value="never">
+                    Never
+                  </AutocompleteItem>
+                </Autocomplete>
+              </fieldset>
             </>
           )}
         </div>

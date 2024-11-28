@@ -1,4 +1,6 @@
-export const LATEST_SETTINGS_VERSION = 3;
+export const LATEST_SETTINGS_VERSION = 4;
+
+export type CloseWarningMode = 'always' | 'while_working' | 'never';
 
 export type Settings = {
   LLM_MODEL: string;
@@ -8,6 +10,7 @@ export type Settings = {
   LLM_API_KEY: string;
   CONFIRMATION_MODE: boolean;
   SECURITY_ANALYZER: string;
+  CLOSE_WARNING: CloseWarningMode;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -18,6 +21,7 @@ export const DEFAULT_SETTINGS: Settings = {
   LLM_API_KEY: "",
   CONFIRMATION_MODE: false,
   SECURITY_ANALYZER: "",
+  CLOSE_WARNING: "while_working",
 };
 
 const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[];
@@ -53,6 +57,9 @@ export const maybeMigrateSettings = () => {
   if (currentVersion < 3) {
     localStorage.removeItem("token");
   }
+  if (currentVersion < 4) {
+    localStorage.setItem("CLOSE_WARNING", DEFAULT_SETTINGS.CLOSE_WARNING);
+  }
 };
 
 /**
@@ -71,6 +78,7 @@ export const getSettings = (): Settings => {
   const apiKey = localStorage.getItem("LLM_API_KEY");
   const confirmationMode = localStorage.getItem("CONFIRMATION_MODE") === "true";
   const securityAnalyzer = localStorage.getItem("SECURITY_ANALYZER");
+  const closeWarning = localStorage.getItem("CLOSE_WARNING") as CloseWarningMode;
 
   return {
     LLM_MODEL: model || DEFAULT_SETTINGS.LLM_MODEL,
@@ -80,6 +88,7 @@ export const getSettings = (): Settings => {
     LLM_API_KEY: apiKey || DEFAULT_SETTINGS.LLM_API_KEY,
     CONFIRMATION_MODE: confirmationMode || DEFAULT_SETTINGS.CONFIRMATION_MODE,
     SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
+    CLOSE_WARNING: closeWarning || DEFAULT_SETTINGS.CLOSE_WARNING,
   };
 };
 

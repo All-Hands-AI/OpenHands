@@ -2013,4 +2013,91 @@
     "en": "Download as .zip",
     "es": "Descargar como .zip"
   }
+
+,
+
+  "CONFIGURATION$CLOSE_WARNING_LABEL": {
+    "en": "Close warning",
+    "zh-CN": "关闭警告",
+    "de": "Schließen-Warnung",
+    "ko-KR": "닫기 경고",
+    "no": "Lukkevarsel",
+    "zh-TW": "關閉警告",
+    "it": "Avviso di chiusura",
+    "pt": "Aviso de fechamento",
+    "es": "Aviso de cierre",
+    "ar": "تحذير الإغلاق",
+    "fr": "Avertissement de fermeture",
+    "tr": "Kapatma uyarısı"
+  },
+  "CONFIGURATION$CLOSE_WARNING_PLACEHOLDER": {
+    "en": "When to show close warning",
+    "zh-CN": "何时显示关闭警告",
+    "de": "Wann die Schließen-Warnung anzeigen",
+    "ko-KR": "닫기 경고를 표시할 시기",
+    "no": "Når skal lukkevarsel vises",
+    "zh-TW": "何時顯示關閉警告",
+    "it": "Quando mostrare l'avviso di chiusura",
+    "pt": "Quando mostrar aviso de fechamento",
+    "es": "Cuándo mostrar aviso de cierre",
+    "ar": "متى يظهر تحذير الإغلاق",
+    "fr": "Quand afficher l'avertissement de fermeture",
+    "tr": "Kapatma uyarısı ne zaman gösterilsin"
+  },
+  "CLOSE_WARNING$DIALOG_TITLE": {
+    "en": "Close OpenHands?",
+    "zh-CN": "关闭 OpenHands？",
+    "de": "OpenHands schließen?",
+    "ko-KR": "OpenHands를 닫으시겠습니까?",
+    "no": "Lukk OpenHands?",
+    "zh-TW": "關閉 OpenHands？",
+    "it": "Chiudere OpenHands?",
+    "pt": "Fechar OpenHands?",
+    "es": "¿Cerrar OpenHands?",
+    "ar": "إغلاق OpenHands؟",
+    "fr": "Fermer OpenHands ?",
+    "tr": "OpenHands kapatılsın mı?"
+  },
+  "CLOSE_WARNING$DIALOG_MESSAGE": {
+    "en": "The agent is currently working. Closing the window will terminate its work and any progress will be lost.",
+    "zh-CN": "智能体正在工作中。关闭窗口将终止其工作，所有进度都将丢失。",
+    "de": "Der Agent arbeitet gerade. Wenn Sie das Fenster schließen, wird seine Arbeit beendet und der Fortschritt geht verloren.",
+    "ko-KR": "에이전트가 현재 작업 중입니다. 창을 닫으면 작업이 종료되고 모든 진행 상황이 손실됩니다.",
+    "no": "Agenten jobber for øyeblikket. Å lukke vinduet vil avslutte arbeidet og all fremgang vil gå tapt.",
+    "zh-TW": "智能體正在工作中。關閉視窗將終止其工作，所有進度都將丟失。",
+    "it": "L'agente sta attualmente lavorando. La chiusura della finestra terminerà il suo lavoro e qualsiasi progresso andrà perso.",
+    "pt": "O agente está trabalhando no momento. Fechar a janela encerrará seu trabalho e todo o progresso será perdido.",
+    "es": "El agente está trabajando actualmente. Cerrar la ventana terminará su trabajo y se perderá todo el progreso.",
+    "ar": "الوكيل يعمل حاليا. سيؤدي إغلاق النافذة إلى إنهاء عمله وسيتم فقد أي تقدم.",
+    "fr": "L'agent est en train de travailler. Fermer la fenêtre mettra fin à son travail et tout progrès sera perdu.",
+    "tr": "Ajan şu anda çalışıyor. Pencereyi kapatmak işini sonlandıracak ve tüm ilerleme kaybedilecek."
+  },
+  "CLOSE_WARNING$DIALOG_CONFIRM": {
+    "en": "Close anyway",
+    "zh-CN": "仍然关闭",
+    "de": "Trotzdem schließen",
+    "ko-KR": "그래도 닫기",
+    "no": "Lukk likevel",
+    "zh-TW": "仍然關閉",
+    "it": "Chiudi comunque",
+    "pt": "Fechar mesmo assim",
+    "es": "Cerrar de todos modos",
+    "ar": "إغلاق على أي حال",
+    "fr": "Fermer quand même",
+    "tr": "Yine de kapat"
+  },
+  "CLOSE_WARNING$DIALOG_CANCEL": {
+    "en": "Cancel",
+    "zh-CN": "取消",
+    "de": "Abbrechen",
+    "ko-KR": "취소",
+    "no": "Avbryt",
+    "zh-TW": "取消",
+    "it": "Annulla",
+    "pt": "Cancelar",
+    "es": "Cancelar",
+    "ar": "إلغاء",
+    "fr": "Annuler",
+    "tr": "İptal"
+  }
 }
