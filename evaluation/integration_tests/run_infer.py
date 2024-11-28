@@ -233,8 +233,8 @@ if __name__ == '__main__':
     )
     logger.info('-' * 100)
 
-    # record cost for each instance
-    df['cost'] = df['metrics'].apply(lambda x: x['accumulated_cost'])
+    # record cost for each instance, with 3 decimal places
+    df['cost'] = df['metrics'].apply(lambda x: round(x['accumulated_cost'], 3))
     logger.info(f'Total cost: USD {df["cost"].sum():.2f}')
 
     report_file = os.path.join(metadata.eval_output_dir, 'report.md')
