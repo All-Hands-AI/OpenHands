@@ -3,7 +3,7 @@
 This guide details all configuration options available for OpenHands, helping you customize its behavior and integrate it with other services.
 
 :::note
-If you are running in [GUI Mode](../usage/how-to/gui-mode.md), the settings available in the Settings UI will always
+If you are running in [GUI Mode](https://docs.all-hands.dev/modules/usage/how-to/gui-mode), the settings available in the Settings UI will always
 take precedence.
 :::
 
