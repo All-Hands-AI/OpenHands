@@ -1,0 +1,48 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+# A sample workflow which sets up periodic OSV-Scanner scanning for vulnerabilities,
+# in addition to a PR check which fails if new vulnerabilities are introduced.
+#
+# For more examples and options, including how to ignore specific vulnerabilities,
+# see https://google.github.io/osv-scanner/github-action/
+
+name: OSV-Scanner
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  merge_group:
+    branches: [ "main" ]
+  schedule:
+    - cron: '20 5 * * 3'
+  push:
+    branches: [ "main" ]
+
+permissions:
+  # Require writing security events to upload SARIF file to security tab
+  security-events: write
+  # Read commit contents
+  contents: read
+
+jobs:
+  scan-scheduled:
+    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' }}
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@1f1242919d8a60496dd1874b24b62b2370ed4c78" # v1.7.1
+    with:
+      # Example of specifying custom arguments
+      scan-args: |-
+        -r
+        --skip-git
+        ./
+  scan-pr:
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@1f1242919d8a60496dd1874b24b62b2370ed4c78" # v1.7.1
+    with:
+      # Example of specifying custom arguments
+      scan-args: |-
+        -r
+        --skip-git
+        ./
