@@ -1,4 +1,5 @@
 import React from "react";
+import posthog from "posthog-js";
 import {
   getSettings,
   Settings,
@@ -27,6 +28,12 @@ function UserPrefsProvider({ children }: React.PropsWithChildren) {
     setSettings(getSettings());
     setSettingsAreUpToDate(checkIfSettingsAreUpToDate());
   };
+
+  React.useEffect(() => {
+    if (settings.LLM_API_KEY) {
+      posthog.capture("user_activated");
+    }
+  }, [settings.LLM_API_KEY]);
 
   const value = React.useMemo(
     () => ({
