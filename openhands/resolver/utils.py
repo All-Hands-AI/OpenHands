@@ -2,6 +2,7 @@ import json
 import logging
 import multiprocessing as mp
 import os
+import re
 from typing import Callable
 
 import pandas as pd
@@ -137,3 +138,28 @@ def reset_logger_for_multiprocessing(
         logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     )
     logger.addHandler(file_handler)
+
+
+def extract_image_urls(issue_body: str) -> list[str]:
+    # Regular expression to match Markdown image syntax ![alt text](image_url)
+    image_pattern = r'!\[.*?\]\((https?://[^\s)]+)\)'
+    return re.findall(image_pattern, issue_body)
+
+
+def extract_issue_references(body: str) -> list[int]:
+    # First, remove code blocks as they may contain false positives
+    body = re.sub(r'```.*?```', '', body, flags=re.DOTALL)
+
+    # Remove inline code
+    body = re.sub(r'`[^`]*`', '', body)
+
+    # Remove URLs that contain hash symbols
+    body = re.sub(r'https?://[^\s)]*#\d+[^\s)]*', '', body)
+
+    # Now extract issue numbers, making sure they're not part of other text
+    # The pattern matches #number that:
+    # 1. Is at the start of text or after whitespace/punctuation
+    # 2. Is followed by whitespace, punctuation, or end of text
+    # 3. Is not part of a URL
+    pattern = r'(?:^|[\s\[({]|[^\w#])#(\d+)(?=[\s,.\])}]|$)'
+    return [int(match) for match in re.findall(pattern, body)]

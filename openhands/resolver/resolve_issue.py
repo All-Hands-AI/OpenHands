@@ -29,11 +29,11 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.stream import EventStreamSubscriber
-from openhands.resolver.github_issue import GithubIssue
+from openhands.resolver.github import GithubIssueHandler, GithubPRHandler
+from openhands.resolver.issue import Issue
 from openhands.resolver.issue_definitions import (
-    IssueHandler,
-    IssueHandlerInterface,
-    PRHandler,
+    ServiceContext,
+    ServiceContextPR,
 )
 from openhands.resolver.resolver_output import ResolverOutput
 from openhands.resolver.utils import (
@@ -151,14 +151,14 @@ async def complete_runtime(
 
 
 async def process_issue(
-    issue: GithubIssue,
+    issue: Issue,
     base_commit: str,
     max_iterations: int,
     llm_config: LLMConfig,
     output_dir: str,
     runtime_container_image: str,
     prompt_template: str,
-    issue_handler: IssueHandlerInterface,
+    issue_handler: ServiceContext | ServiceContextPR,
     repo_instruction: str | None = None,
     reset_logger: bool = False,
 ) -> ResolverOutput:
@@ -291,12 +291,19 @@ async def process_issue(
 
 
 def issue_handler_factory(
-    issue_type: str, owner: str, repo: str, token: str, llm_config: LLMConfig
-) -> IssueHandlerInterface:
+    issue_type: str,
+    owner: str,
+    repo: str,
+    token: str,
+    llm_config: LLMConfig,
+    username: str | None = None,
+) -> ServiceContext | ServiceContextPR:
     if issue_type == 'issue':
-        return IssueHandler(owner, repo, token, llm_config)
+        return ServiceContext(
+            GithubIssueHandler(owner, repo, token, username), llm_config
+        )
     elif issue_type == 'pr':
-        return PRHandler(owner, repo, token, llm_config)
+        return ServiceContextPR(GithubPRHandler(owner, repo, token), llm_config)
     else:
         raise ValueError(f'Invalid issue type: {issue_type}')
 
@@ -318,13 +325,13 @@ async def resolve_issue(
     target_branch: str | None = None,
     reset_logger: bool = False,
 ) -> None:
-    """Resolve a single github issue.
+    """Resolve a single issue.
 
     Args:
-        owner: Github owner of the repo.
-        repo: Github repository to resolve issues in form of `owner/repo`.
-        token: Github token to access the repository.
-        username: Github username to access the repository.
+        owner: owner of the repo.
+        repo: repository to resolve issues in form of `owner/repo`.
+        token: token to access the repository.
+        username: username to access the repository.
         max_iterations: Maximum number of iterations to run.
         output_dir: Output directory to write the results.
         llm_config: Configuration for the language model.
@@ -337,10 +344,12 @@ async def resolve_issue(
         target_branch: Optional target branch to create PR against (for PRs).
         reset_logger: Whether to reset the logger for multiprocessing.
     """
-    issue_handler = issue_handler_factory(issue_type, owner, repo, token, llm_config)
+    issue_handler = issue_handler_factory(
+        issue_type, owner, repo, token, llm_config, username
+    )
 
     # Load dataset
-    issues: list[GithubIssue] = issue_handler.get_converted_issues(
+    issues: list[Issue] = issue_handler.get_converted_issues(
         issue_numbers=[issue_number], comment_id=comment_id
     )
 
@@ -378,7 +387,7 @@ async def resolve_issue(
             [
                 'git',
                 'clone',
-                f'https://{username}:{token}@github.com/{owner}/{repo}',
+                issue_handler.get_clone_url(),
                 f'{output_dir}/repo',
             ]
         ).decode('utf-8')
@@ -485,24 +494,24 @@ def main():
         else:
             return int(value)
 
-    parser = argparse.ArgumentParser(description='Resolve a single issue from Github.')
+    parser = argparse.ArgumentParser(description='Resolve a single issue.')
     parser.add_argument(
         '--repo',
         type=str,
         required=True,
-        help='Github repository to resolve issues in form of `owner/repo`.',
+        help='repository to resolve issues in form of `owner/repo`.',
     )
     parser.add_argument(
         '--token',
         type=str,
         default=None,
-        help='Github token to access the repository.',
+        help='token to access the repository.',
     )
     parser.add_argument(
         '--username',
         type=str,
         default=None,
-        help='Github username to access the repository.',
+        help='username to access the repository.',
     )
     parser.add_argument(
         '--runtime-container-image',
@@ -591,10 +600,10 @@ def main():
     token = my_args.token if my_args.token else os.getenv('GITHUB_TOKEN')
     username = my_args.username if my_args.username else os.getenv('GITHUB_USERNAME')
     if not username:
-        raise ValueError('Github username is required.')
+        raise ValueError('username is required.')
 
     if not token:
-        raise ValueError('Github token is required.')
+        raise ValueError('token is required.')
 
     llm_config = LLMConfig(
         model=my_args.llm_model or os.environ['LLM_MODEL'],

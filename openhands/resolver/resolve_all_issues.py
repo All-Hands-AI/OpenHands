@@ -13,7 +13,7 @@ from tqdm import tqdm
 import openhands
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.resolver.github_issue import GithubIssue
+from openhands.resolver.issue import Issue
 from openhands.resolver.resolve_issue import (
     issue_handler_factory,
     process_issue,
@@ -83,7 +83,7 @@ async def resolve_issues(
     issue_handler = issue_handler_factory(issue_type, owner, repo, token, llm_config)
 
     # Load dataset
-    issues: list[GithubIssue] = issue_handler.get_converted_issues(
+    issues: list[Issue] = issue_handler.get_converted_issues(
         issue_numbers=issue_numbers
     )
 

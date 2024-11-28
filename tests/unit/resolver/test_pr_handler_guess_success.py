@@ -4,8 +4,9 @@ from unittest.mock import MagicMock, patch
 from openhands.core.config import LLMConfig
 from openhands.events.action.message import MessageAction
 from openhands.llm.llm import LLM
-from openhands.resolver.github_issue import GithubIssue, ReviewThread
-from openhands.resolver.issue_definitions import PRHandler
+from openhands.resolver.github import GithubPRHandler
+from openhands.resolver.issue import Issue, ReviewThread
+from openhands.resolver.issue_definitions import ServiceContextPR
 
 
 def mock_llm_response(content):
@@ -19,10 +20,12 @@ def test_guess_success_review_threads_litellm_call():
     """Test that the litellm.completion() call for review threads contains the expected content."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+    handler = ServiceContextPR(
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+    )
 
     # Create a mock issue with review threads
-    issue = GithubIssue(
+    issue = Issue(
         owner='test-owner',
         repo='test-repo',
         number=1,
@@ -122,10 +125,12 @@ def test_guess_success_thread_comments_litellm_call():
     """Test that the litellm.completion() call for thread comments contains the expected content."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+    handler = ServiceContextPR(
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+    )
 
     # Create a mock issue with thread comments
-    issue = GithubIssue(
+    issue = Issue(
         owner='test-owner',
         repo='test-repo',
         number=1,
@@ -193,7 +198,9 @@ def test_check_feedback_with_llm():
     """Test the _check_feedback_with_llm helper function."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+    handler = ServiceContextPR(
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+    )
 
     # Test cases for different LLM responses
     test_cases = [
@@ -233,7 +240,9 @@ def test_check_review_thread():
     """Test the _check_review_thread helper function."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+    handler = ServiceContextPR(
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+    )
 
     # Create test data
     review_thread = ReviewThread(
@@ -288,7 +297,9 @@ def test_check_thread_comments():
     """Test the _check_thread_comments helper function."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+    handler = ServiceContextPR(
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+    )
 
     # Create test data
     thread_comments = [
@@ -341,7 +352,9 @@ def test_check_review_comments():
     """Test the _check_review_comments helper function."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+    handler = ServiceContextPR(
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+    )
 
     # Create test data
     review_comments = [
@@ -394,10 +407,12 @@ def test_guess_success_review_comments_litellm_call():
     """Test that the litellm.completion() call for review comments contains the expected content."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
-    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
+    handler = ServiceContextPR(
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
+    )
 
     # Create a mock issue with review comments
-    issue = GithubIssue(
+    issue = Issue(
         owner='test-owner',
         repo='test-repo',
         number=1,
@@ -438,7 +453,6 @@ The changes successfully address the feedback."""
         )
     ]
 
-    # Test the guess_success method
     with patch.object(LLM, 'completion') as mock_completion:
         mock_completion.return_value = mock_response
         success, success_list, explanation = handler.guess_success(issue, history)
@@ -456,3 +470,5 @@ The changes successfully address the feedback."""
         )
         assert 'PR Review Comments:\n' + '\n---\n'.join(issue.review_comments) in prompt
         assert 'Last message from AI agent:\n' + history[0].content in prompt
+
+        assert len(json.loads(explanation)) == 1
