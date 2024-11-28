@@ -180,7 +180,7 @@ The core configuration options are defined in the `[core]` section of the `confi
 
 The LLM (Large Language Model) configuration options are defined in the `[llm]` section of the `config.toml` file.
 
-To use these with the docker command, pass in `-e LLM_<option>`. Example: `-e LLM_API_KEY`.
+To use these with the docker command, pass in `-e LLM_<option>`. Example: `-e LLM_NUM_RETRIES`.
 
 **AWS Credentials**
 - `aws_access_key_id`
