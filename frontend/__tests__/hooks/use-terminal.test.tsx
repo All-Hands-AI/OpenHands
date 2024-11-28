@@ -4,7 +4,7 @@ import { afterEach } from "node:test";
 import { ReactNode } from "react";
 import { useTerminal } from "#/hooks/use-terminal";
 import { Command } from "#/state/command-slice";
-import { WsClientProvider } from "#/context/ws-client-provider";
+
 
 interface TestTerminalComponentProps {
   commands: Command[];
@@ -25,15 +25,8 @@ interface WrapperProps {
 
 function Wrapper({ children }: WrapperProps) {
   return (
-    <WsClientProvider
-      enabled
-      token="NO_JWT"
-      ghToken="NO_GITHUB"
-      settings={null}
-    >
-      {children}
-    </WsClientProvider>
-  );
+    <div>{children}</div>
+  )
 }
 
 describe("useTerminal", () => {
