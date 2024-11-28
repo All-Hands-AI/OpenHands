@@ -343,6 +343,14 @@ class CodeActAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
+
+        # TODO:
+        # 1. [EnhanceAction] Return a new `ReplayCmdRunAction` from `step` to enhance the prompt if it contains a recording.
+        # 2. Make sure the `EnhanceAction` and its returned `EnhanceObservation` enhance the original user message, instead of adding new messages.
+        #    * NOTE: By default the `EnhanceAction` will automatically *add* 2 new messages:
+        #      * `Action` (via `get_action_message`) and
+        #      * `Observation` (via `get_observation_message`).
+
         # Continue with pending actions if any
         if self.pending_actions:
             return self.pending_actions.popleft()
