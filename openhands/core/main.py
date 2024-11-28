@@ -183,6 +183,10 @@ async def run_controller(
         event_stream.add_event(initial_user_action, EventSource.USER)
 
     async def on_event(event: Event):
+        # Log all events in headless mode
+        if headless_mode:
+            logger.info(event)
+
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state == AgentState.AWAITING_USER_INPUT:
                 if exit_on_message:
