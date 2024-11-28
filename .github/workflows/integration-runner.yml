@@ -155,4 +155,4 @@ jobs:
               DeepSeek LLM Test Results:
               ${{ env.INTEGRATION_TEST_REPORT_DEEPSEEK }}
               ---
-              Download evaluation outputs (includes both Haiku and DeepSeek results): [Download](${{ steps.upload_results_artifact.outputs.artifact-url }})
+              Download testing outputs (includes both Haiku and DeepSeek results): [Download](${{ steps.upload_results_artifact.outputs.artifact-url }})
