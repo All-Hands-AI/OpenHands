@@ -419,46 +419,14 @@ BrowserTool = ChatCompletionToolParam(
     ),
 )
 
-_GUI_USE_TOOL_DESCRIPTION = """The following 5 functions are available. Nothing else is supported.
-
-keyboard_type(text: str)
-    Types a string of text through the keyboard. Sends a keydown, keypress/input,
-    and keyup event for each character in the text. Modifier keys DO NOT affect
-    keyboard_type. Holding down Shift will not type the text in upper case.
-
-    Examples:
-        keyboard_type('Hello world!')
-
-mouse_move(x: float, y: float)
-    Description: Move the mouse to a location. Uses absolute client coordinates in pixels.
-    Dispatches a mousemove event.
-
-    Examples:
-        mouse_move(65.2, 158.5)
-
-mouse_click(x: float, y: float, button: Literal["left", "middle", "right"] = "left")
-    Description: Move the mouse to a location and click a mouse button. Dispatches mousemove,
-    mousedown and mouseup events.
-
-    Examples:
-        mouse_click(887.2, 68)
-        mouse_click(56, 712.56, 'right')
-
-mouse_dblclick(x: float, y: float, button: Literal["left", "middle", "right"] = "left")
-    Description: Move the mouse to a location and double click a mouse button. Dispatches
-    mousemove, mousedown and mouseup events.
-
-    Examples:
-        mouse_dblclick(5, 236)
-        mouse_dblclick(87.5, 354, 'right')
-
-mouse_drag_and_drop(from_x: float, from_y: float, to_x: float, to_y: float)
-    Description: Drag and drop from a location to a location. Uses absolute client
-    coordinates in pixels. Dispatches mousemove, mousedown and mouseup
-    events.
-
-    Examples:
-        mouse_drag_and_drop(10.7, 325, 235.6, 24.54)
+_GUI_USE_TOOL_DESCRIPTION = """Use a mouse and keyboard to interact with a computer, and take screenshots.
+* This is an interface to a desktop GUI. You do not have access to a terminal or applications menu. You must click on desktop icons to start applications.
+* Some applications may take time to start or process actions, so you may need to wait and take successive screenshots to see the results of your actions. E.g. if you click on Firefox and a window doesn't open, try taking another screenshot.
+* The screen's resolution is {{ display_width_px }}x{{ display_height_px }}.
+* The display number is {{ display_number }}
+* Whenever you intend to move the cursor to click on an element like an icon, you should consult a screenshot to determine the coordinates of the element before moving the cursor.
+* If you tried clicking on a program or link but it failed to load, even after waiting, try adjusting your cursor position so that the tip of the cursor visually falls on the element that you want to click.
+* Make sure to click any buttons, links, icons, etc with the cursor tip in the center of the element. Don't click boxes on their edges unless asked.
 """
 
 GUIUseTool = ChatCompletionToolParam(
@@ -469,14 +437,44 @@ GUIUseTool = ChatCompletionToolParam(
         parameters={
             'type': 'object',
             'properties': {
-                'code': {
+                'action': {
+                    'description': """The action to perform. The available actions are:
+* `key`: Press a key or key-combination on the keyboard.
+  - This supports xdotool's `key` syntax.
+  - Examples: "a", "Return", "alt+Tab", "ctrl+s", "Up", "KP_0" (for the numpad 0 key).
+* `type`: Type a string of text on the keyboard.
+* `cursor_position`: Get the current (x, y) pixel coordinate of the cursor on the screen.
+* `mouse_move`: Move the cursor to a specified (x, y) pixel coordinate on the screen.
+* `left_click`: Click the left mouse button.
+* `left_click_drag`: Click and drag the cursor to a specified (x, y) pixel coordinate on the screen.
+* `right_click`: Click the right mouse button.
+* `middle_click`: Click the middle mouse button.
+* `double_click`: Double-click the left mouse button.
+* `screenshot`: Take a screenshot of the screen.""",
+                    'enum': [
+                        'key',
+                        'type',
+                        'mouse_move',
+                        'left_click',
+                        'left_click_drag',
+                        'right_click',
+                        'middle_click',
+                        'double_click',
+                        'screenshot',
+                        'cursor_position',
+                    ],
                     'type': 'string',
-                    'description': (
-                        'The Python code that interacts with the GUI.\n'
-                        + _GUI_USE_TOOL_DESCRIPTION
-                    ),
-                }
+                },
+                'coordinate': {
+                    'description': '(x, y): The x (pixels from the left edge) and y (pixels from the top edge) coordinates to move the mouse to. Required only by `action=mouse_move` and `action=left_click_drag`.',
+                    'type': 'array',
+                },
+                'text': {
+                    'description': 'Required only by `action=type` and `action=key`.',
+                    'type': 'string',
+                },
             },
+            'required': ['action'],
         },
     ),
 )
