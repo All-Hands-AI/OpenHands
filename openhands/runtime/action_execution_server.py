@@ -50,6 +50,7 @@ from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
+from openhands.runtime.replay.replay_cli import ReplayCli
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
@@ -104,6 +105,7 @@ class ActionExecutor:
             work_dir=work_dir,
             username=username,
         )
+        self.replay_cli = ReplayCli(self.bash_session)
 
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
@@ -179,36 +181,7 @@ class ActionExecutor:
     async def run_replay(
         self, action: ReplayCmdRunAction
     ) -> ReplayCmdOutputObservation | ErrorObservation:
-        command = f'/replay/replayapi/scripts/run.sh {action.command}'
-        if action.recording_id != '':
-            command = command + f' -r {action.recording_id}'
-        if action.session_id != '':
-            command = command + f' -s {action.session_id}'
-
-        cmd_action = CmdRunAction(
-            command=command,
-            thought=action.thought,
-            blocking=action.blocking,
-            keep_prompt=action.keep_prompt,
-            hidden=action.hidden,
-            confirmation_state=action.confirmation_state,
-            security_risk=action.security_risk,
-        )
-        cmd_action.timeout = 600
-        obs = self.bash_session.run(cmd_action)
-
-        if isinstance(obs, ErrorObservation):
-            return obs
-
-        # we might not actually need a separate observation type for replay...
-        return ReplayCmdOutputObservation(
-            command_id=obs.command_id,
-            command=obs.command,
-            exit_code=obs.exit_code,
-            hidden=obs.hidden,
-            interpreter_details=obs.interpreter_details,
-            content=obs.content,
-        )
+        return await self.replay_cli.run_action(action)
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         if 'jupyter' in self.plugins:
