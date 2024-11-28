@@ -243,4 +243,6 @@ if __name__ == '__main__':
             f'Success rate: {df["success"].mean():.2%} ({df["success"].sum()}/{len(df)})\n'
         )
         f.write(f'\nTotal cost: USD {df["cost"].sum():.2f}\n')
-        f.write(df[['instance_id', 'success', 'reason']].to_markdown(index=False))
+        f.write(
+            df[['instance_id', 'success', 'reason', 'cost']].to_markdown(index=False)
+        )
