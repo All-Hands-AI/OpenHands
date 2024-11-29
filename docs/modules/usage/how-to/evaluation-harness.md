@@ -73,7 +73,7 @@ The `run_controller()` function is the core of OpenHands's execution. It manages
 
 ## Easiest way to get started: Exploring Existing Benchmarks
 
-We encourage you to review the various evaluation benchmarks available in the [`evaluation/` directory](https://github.com/All-Hands-AI/OpenHands/blob/main/evaluation) of our repository.
+We encourage you to review the various evaluation benchmarks available in the [`evaluation/benchmarks/` directory](https://github.com/All-Hands-AI/OpenHands/blob/main/evaluation/benchmarks) of our repository.
 
 To integrate your own benchmark, we suggest starting with the one that most closely resembles your needs. This approach can significantly streamline your integration process, allowing you to build upon existing structures and adapt them to your specific requirements.
 

@@ -5,7 +5,7 @@ import {
   initialState as browserInitialState,
   setScreenshotSrc,
   setUrl,
-} from "#/state/browserSlice";
+} from "#/state/browser-slice";
 import { clearSelectedRepository } from "#/state/initial-query-slice";
 
 export const useEndSession = () => {

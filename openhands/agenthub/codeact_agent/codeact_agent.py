@@ -19,6 +19,7 @@ from openhands.events.action import (
     AgentDelegateAction,
     AgentFinishAction,
     BrowseInteractiveAction,
+    BrowseURLAction,
     CmdRunAction,
     FileEditAction,
     IPythonRunCellAction,
@@ -154,6 +155,7 @@ class CodeActAgent(Agent):
                 IPythonRunCellAction,
                 FileEditAction,
                 BrowseInteractiveAction,
+                BrowseURLAction,
             ),
         ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
             tool_metadata = action.tool_call_metadata

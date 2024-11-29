@@ -2,10 +2,11 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
-import { ChatInterface } from "#/components/chat-interface";
-import { addUserMessage } from "#/state/chatSlice";
+import { addUserMessage } from "#/state/chat-slice";
 import { SUGGESTIONS } from "#/utils/suggestions";
-import * as ChatSlice from "#/state/chatSlice";
+import * as ChatSlice from "#/state/chat-slice";
+import { WsClientProviderStatus } from "#/context/ws-client-provider";
+import { ChatInterface } from "#/routes/_oh.app/chat-interface";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const renderChatInterface = (messages: (Message | ErrorMessage)[]) =>
@@ -17,7 +18,11 @@ describe("Empty state", () => {
   }));
 
   const { useWsClient: useWsClientMock } = vi.hoisted(() => ({
-    useWsClient: vi.fn(() => ({ send: sendMock, runtimeActive: true })),
+    useWsClient: vi.fn(() => ({
+      send: sendMock,
+      status: WsClientProviderStatus.ACTIVE,
+      isLoadingMessages: false,
+    })),
   }));
 
   beforeAll(() => {
@@ -84,7 +89,8 @@ describe("Empty state", () => {
       // this is to test that the message is in the UI before the socket is called
       useWsClientMock.mockImplementation(() => ({
         send: sendMock,
-        runtimeActive: false, // mock an inactive runtime setup
+        status: WsClientProviderStatus.ACTIVE,
+        isLoadingMessages: false,
       }));
       const addUserMessageSpy = vi.spyOn(ChatSlice, "addUserMessage");
       const user = userEvent.setup();
@@ -113,7 +119,8 @@ describe("Empty state", () => {
     async () => {
       useWsClientMock.mockImplementation(() => ({
         send: sendMock,
-        runtimeActive: false, // mock an inactive runtime setup
+        status: WsClientProviderStatus.ACTIVE,
+        isLoadingMessages: false,
       }));
       const user = userEvent.setup();
       const { rerender } = renderWithProviders(<ChatInterface />, {
@@ -130,7 +137,8 @@ describe("Empty state", () => {
 
       useWsClientMock.mockImplementation(() => ({
         send: sendMock,
-        runtimeActive: true, // mock an active runtime setup
+        status: WsClientProviderStatus.ACTIVE,
+        isLoadingMessages: false,
       }));
       rerender(<ChatInterface />);
 
@@ -279,6 +287,68 @@ describe.skip("ChatInterface", () => {
 
     const error = screen.getByTestId("error-message");
     expect(within(error).getByText("Something went wrong")).toBeInTheDocument();
+  });
+
+  it("should render both GitHub buttons initially when ghToken is available", () => {
+    vi.mock("@remix-run/react", async (importActual) => ({
+      ...(await importActual<typeof import("@remix-run/react")>()),
+      useRouteLoaderData: vi.fn(() => ({ ghToken: "test-token" })),
+    }));
+
+    const messages: Message[] = [
+      {
+        sender: "assistant",
+        content: "Hello",
+        imageUrls: [],
+        timestamp: new Date().toISOString(),
+      },
+    ];
+    renderChatInterface(messages);
+
+    const pushButton = screen.getByRole("button", { name: "Push to Branch" });
+    const prButton = screen.getByRole("button", { name: "Push & Create PR" });
+
+    expect(pushButton).toBeInTheDocument();
+    expect(prButton).toBeInTheDocument();
+    expect(pushButton).toHaveTextContent("Push to Branch");
+    expect(prButton).toHaveTextContent("Push & Create PR");
+  });
+
+  it("should render only 'Push changes to PR' button after PR is created", async () => {
+    vi.mock("@remix-run/react", async (importActual) => ({
+      ...(await importActual<typeof import("@remix-run/react")>()),
+      useRouteLoaderData: vi.fn(() => ({ ghToken: "test-token" })),
+    }));
+
+    const messages: Message[] = [
+      {
+        sender: "assistant",
+        content: "Hello",
+        imageUrls: [],
+        timestamp: new Date().toISOString(),
+      },
+    ];
+    const { rerender } = renderChatInterface(messages);
+    const user = userEvent.setup();
+
+    // Click the "Push & Create PR" button
+    const prButton = screen.getByRole("button", { name: "Push & Create PR" });
+    await user.click(prButton);
+
+    // Re-render to trigger state update
+    rerender(<ChatInterface />);
+
+    // Verify only one button is shown
+    const pushToPrButton = screen.getByRole("button", {
+      name: "Push changes to PR",
+    });
+    expect(pushToPrButton).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Push to Branch" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Push & Create PR" }),
+    ).not.toBeInTheDocument();
   });
 
   it("should render feedback actions if there are more than 3 messages", () => {

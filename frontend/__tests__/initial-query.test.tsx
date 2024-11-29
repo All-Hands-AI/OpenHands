@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import store from "../src/store";
-import { setInitialQuery, clearInitialQuery } from "../src/state/initial-query-slice";
+import {
+  setInitialQuery,
+  clearInitialQuery,
+} from "../src/state/initial-query-slice";
 
 describe("Initial Query Behavior", () => {
   it("should clear initial query when clearInitialQuery is dispatched", () => {
