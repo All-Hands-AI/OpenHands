@@ -131,7 +131,7 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
 def get_runtime_classes() -> list[type[Runtime]]:
     runtime = TEST_RUNTIME
     if runtime.lower() == 'eventstream':
-        return [LocalDockerRuntime]  # Previously EventStreamRuntime
+        return [DockerRuntime]
     elif runtime.lower() == 'local':
         return [LocalRuntime]
     elif runtime.lower() == 'remote':
