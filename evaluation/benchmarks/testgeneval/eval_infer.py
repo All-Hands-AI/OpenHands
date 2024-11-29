@@ -8,6 +8,7 @@ from testgeneval.constants import MUTATION_TIMEOUT, TESTS_SUFFIX, COVERAGE_PREFI
 from testgeneval.utils import load_testgeneval_dataset
 from testgeneval.pygments_utils import tokenize_code
 from testgeneval.metrics import code_bleu, bleu, exact_match, edit_sim, rouge_l
+from testgeneval.compute_readability import compute_readability
 
 from evaluation.benchmarks.testgeneval.run_infer import get_instance_docker_image
 from evaluation.utils.shared import (
@@ -57,6 +58,8 @@ def compute_lexical_metrics(pred_suite, gold_suite):
     gold_loc = get_lines_of_code(gold_suite)
     pred_methods = count_methods(pred_suite)
     gold_methods = count_methods(gold_suite)
+    readability_pred = compute_readability(pred_suite)
+    readability_gold = compute_readability(gold_suite)
 
     preds = tokenize_code(pred_suite)
     golds = tokenize_code(gold_suite)
@@ -64,6 +67,8 @@ def compute_lexical_metrics(pred_suite, gold_suite):
     return {
         "pred_loc": pred_loc,
         "gold_loc": gold_loc,
+        "pred_readability": readability_pred,
+        "gold_readability": readability_gold,
         "pred_methods": pred_methods,
         "gold_methods": gold_methods,
         "code_bleu": code_bleu(preds, golds, "Python3"),
@@ -203,6 +208,22 @@ def process_instance(instance, metadata=None, reset_logger=True) -> EvalOutput:
         'mutation_score': 0,
         'mutation_error_interval': -1,
         'num_mutants': -1,
+    }
+
+    instance['test_result']['lexical'] = {
+        'pred_loc': -1,
+        'gold_loc': -1,
+        'pred_readability': -1,
+        'gold_readability': -1,
+        'pred_methods': -1,
+        'gold_methods': -1,
+        'code_bleu': -1,
+        'bleu': -1,
+        'xmatch': -1,
+        'edit_sim': -1,
+        'rouge_f': -1,
+        'rouge_p': -1,
+        'rouge_r': -1,
     }
 
     if instance['test_suite'] == '' or instance['test_suite'] is None:
