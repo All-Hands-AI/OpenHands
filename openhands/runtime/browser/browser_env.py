@@ -147,7 +147,9 @@ class BrowserEnv:
                     html_str = flatten_dom_to_str(obs['dom_object'])
                     obs['text_content'] = self.html_text_converter.handle(html_str)
                     # make observation serializable
-                    obs['screenshot'] = self.image_to_png_base64_url(obs['screenshot'])
+                    obs['screenshot'] = self.image_to_png_base64_url(
+                        obs['screenshot'], add_data_prefix=True
+                    )
                     obs['active_page_index'] = obs['active_page_index'].item()
                     obs['elapsed_time'] = obs['elapsed_time'].item()
                     self.browser_side.send((unique_request_id, obs))
