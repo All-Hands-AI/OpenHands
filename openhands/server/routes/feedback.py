@@ -45,7 +45,7 @@ async def submit_feedback(request: Request):
     # Get model and agent info from config
     llm_config = request.state.conversation.config.get_llm_config()
     model = llm_config.model
-    provider = llm_config.custom_llm_provider
+    provider = llm_config.custom_llm_provider or ''
     agent = request.state.conversation.config.default_agent
 
     feedback = FeedbackDataModel(
