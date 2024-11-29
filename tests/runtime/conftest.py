@@ -63,7 +63,7 @@ def _remove_folder(folder: str) -> bool:
 
 
 def _close_test_runtime(runtime: Runtime) -> None:
-    if isinstance(runtime, LocalDockerRuntime):
+    if isinstance(runtime, DockerRuntime):
         runtime.close(rm_all_containers=False)
     else:
         runtime.close()
