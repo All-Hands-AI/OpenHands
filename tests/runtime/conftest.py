@@ -12,7 +12,7 @@ from openhands.core.config import load_app_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.base import Runtime
-from openhands.runtime.impl.docker import LocalDockerRuntime
+from openhands.runtime.impl.docker import DockerRuntime
 from openhands.runtime.impl.local import LocalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
