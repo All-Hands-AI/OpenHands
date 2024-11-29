@@ -30,16 +30,16 @@ project_dir = os.path.dirname(
 sandbox_test_folder = '/openhands/workspace'
 
 
-def _get_runtime_sid(runtime: Runtime):
+def _get_runtime_sid(runtime: Runtime) -> str:
     logger.debug(f'\nruntime.sid: {runtime.sid}')
     return runtime.sid
 
 
-def _get_host_folder(runtime: Runtime):
+def _get_host_folder(runtime: Runtime) -> str:
     return runtime.config.workspace_mount_path
 
 
-def _get_sandbox_folder(runtime: Runtime):
+def _get_sandbox_folder(runtime: Runtime) -> Path | None:
     sid = _get_runtime_sid(runtime)
     if sid:
         return Path(os.path.join(sandbox_test_folder, sid))
@@ -62,7 +62,7 @@ def _remove_folder(folder: str) -> bool:
     return success
 
 
-def _close_test_runtime(runtime: Runtime):
+def _close_test_runtime(runtime: Runtime) -> None:
     if isinstance(runtime, LocalDockerRuntime):
         runtime.close(rm_all_containers=False)
     else:
@@ -70,7 +70,7 @@ def _close_test_runtime(runtime: Runtime):
     time.sleep(1)
 
 
-def _reset_pwd():
+def _reset_pwd() -> None:
     global project_dir
     # Try to change back to project directory
     try:
@@ -98,6 +98,7 @@ def print_method_name(request):
 @pytest.fixture
 def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
     """Creates a unique temporary directory.
+
     Upon finalization, the temporary directory and its content is removed.
     The cleanup function is also called upon KeyboardInterrupt.
 
@@ -127,7 +128,7 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
 
 
 # Depending on TEST_RUNTIME, feed the appropriate box class(es) to the test.
-def get_runtime_classes():
+def get_runtime_classes() -> list[type[Runtime]]:
     runtime = TEST_RUNTIME
     if runtime.lower() == 'eventstream':
         return [LocalDockerRuntime]  # Previously EventStreamRuntime
@@ -141,7 +142,7 @@ def get_runtime_classes():
         raise ValueError(f'Invalid runtime: {runtime}')
 
 
-def get_run_as_openhands():
+def get_run_as_openhands() -> list[bool]:
     print(
         '\n\n########################################################################'
     )

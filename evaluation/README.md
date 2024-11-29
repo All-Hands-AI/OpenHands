@@ -6,9 +6,9 @@ This folder contains code and resources to run experiments and evaluations.
 
 ### Setup
 
-Before starting evaluation, follow the instructions here [here](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) to setup your local development environment and LLM.
+Before starting evaluation, follow the instructions [here](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md) to setup your local development environment and LLM.
 
-Once you are done with setup, you can follow the benchmark-specific instructions in each subdirectory of the evaluation directory.
+Once you are done with setup, you can follow the benchmark-specific instructions in each subdirectory of the [evaluation directory](#supported-benchmarks).
 Generally these will involve running `run_infer.py` to perform inference with the agents.
 
 ### Implementing and Evaluating an Agent
@@ -42,7 +42,7 @@ temperature = 0.0
 
 ## Supported Benchmarks
 
-The OpenHands evaluation harness supports a wide variety of benchmarks across software engineering, web browsing, and miscellaneous assistance tasks.
+The OpenHands evaluation harness supports a wide variety of benchmarks across [software engineering](#software-engineering), [web browsing](#web-browsing), and [miscellaneous assistance](#misc-assistance) tasks.
 
 ### Software Engineering
 
@@ -83,7 +83,7 @@ You can start your own fork of [our huggingface evaluation outputs](https://hugg
 
 To learn more about how to integrate your benchmark into OpenHands, check out [tutorial here](https://docs.all-hands.dev/modules/usage/how-to/evaluation-harness). Briefly,
 
-- Each subfolder contains a specific benchmark or experiment. For example, `evaluation/benchmarks/swe_bench` should contain
+- Each subfolder contains a specific benchmark or experiment. For example, [`evaluation/benchmarks/swe_bench`](./benchmarks/swe_bench) should contain
 all the preprocessing/evaluation/analysis scripts.
 - Raw data and experimental records should not be stored within this repo.
 - For model outputs, they should be stored at [this huggingface space](https://huggingface.co/spaces/OpenHands/evaluation) for visualization.
