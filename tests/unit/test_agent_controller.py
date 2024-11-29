@@ -13,6 +13,7 @@ from openhands.core.schema import AgentState
 from openhands.events import Event, EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import ChangeAgentStateAction, CmdRunAction, MessageAction
 from openhands.events.observation import (
+    AgentStateChangedObservation,
     ErrorObservation,
 )
 from openhands.events.serialization import event_to_dict
@@ -421,9 +422,11 @@ async def test_message_action_user_input_non_headless(mock_agent, mock_event_str
     await controller.on_event(message_action)
     # In non-headless mode, should wait for user input
     assert controller.state.agent_state == AgentState.AWAITING_USER_INPUT
-    # Verify that only the state change event is added, but no message action
-    mock_event_stream.add_event.assert_called_once_with(
-        mock_event_stream.add_event.call_args[0][0],
-        EventSource.ENVIRONMENT
-    )
+    # Verify that an AgentStateChangedObservation is added with the correct state
+    mock_event_stream.add_event.assert_called_once()
+    args = mock_event_stream.add_event.call_args[0]
+    assert len(args) == 2
+    assert isinstance(args[0], AgentStateChangedObservation)
+    assert args[0].agent_state == AgentState.AWAITING_USER_INPUT
+    assert args[1] == EventSource.ENVIRONMENT
     await controller.close()
