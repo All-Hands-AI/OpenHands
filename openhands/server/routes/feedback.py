@@ -41,6 +41,13 @@ async def submit_feedback(request: Request):
     trajectory = []
     async for event in async_stream:
         trajectory.append(event_to_dict(event))
+
+    # Get model and agent info from config
+    llm_config = request.state.conversation.config.get_llm_config()
+    model = llm_config.model
+    provider = llm_config.custom_llm_provider
+    agent = request.state.conversation.config.default_agent
+
     feedback = FeedbackDataModel(
         email=body.get('email', ''),
         version=body.get('version', ''),
@@ -48,6 +55,9 @@ async def submit_feedback(request: Request):
         polarity=body.get('polarity', ''),
         feedback=body.get('polarity', ''),
         trajectory=trajectory,
+        model=model,
+        provider=provider,
+        agent=agent,
     )
     try:
         feedback_data = await call_sync_from_async(store_feedback, feedback)

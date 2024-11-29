@@ -16,6 +16,9 @@ class FeedbackDataModel(BaseModel):
     ]  # TODO: remove this, its here for backward compatibility
     permissions: Literal['public', 'private']
     trajectory: Optional[list[dict[str, Any]]]
+    model: Optional[str] = None
+    provider: Optional[str] = None
+    agent: Optional[str] = None
 
 
 FEEDBACK_URL = 'https://share-od-trajectory-3u9bw9tx.uc.gateway.dev/share_od_trajectory'
