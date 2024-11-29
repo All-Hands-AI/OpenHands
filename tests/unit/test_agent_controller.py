@@ -421,5 +421,9 @@ async def test_message_action_user_input_non_headless(mock_agent, mock_event_str
     await controller.on_event(message_action)
     # In non-headless mode, should wait for user input
     assert controller.state.agent_state == AgentState.AWAITING_USER_INPUT
-    mock_event_stream.add_event.assert_not_called()
+    # Verify that only the state change event is added, but no message action
+    mock_event_stream.add_event.assert_called_once_with(
+        mock_event_stream.add_event.call_args[0][0],
+        EventSource.ENVIRONMENT
+    )
     await controller.close()
