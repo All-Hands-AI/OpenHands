@@ -1,0 +1,159 @@
+name: Smart Sync System
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # كل 24 ساعة
+  workflow_dispatch:      # تشغيل يدوي
+
+env:
+  MAIN_BRANCH: main
+  BACKUP_DIR: .backups
+  CUSTOM_FILES: |
+    .github/workflows/
+    config/
+    custom/
+    poetry.lock
+    pyproject.toml
+    secrets/
+    .env
+    api_keys.yml
+    authentication.yml
+  API_SECRETS: |
+    OpenHands-AI-Integration-GitHub-token
+    OpenHands-AI-Integration-Anthropic-api-key
+    OpenHands-AI-Integration-Vertex-api-key
+    OpenHands-AI-Integration-Qwen-api-key
+    OpenHands-AI-Integration-OpenAI-api-key
+    Dynamic-AI-Integration-Cloudflare-Full-Management-API-Token
+
+jobs:
+  prepare-sync:
+    runs-on: ubuntu-latest
+    outputs:
+      backup_id: ${{ steps.backup.outputs.backup_id }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Backup Secrets
+        run: |
+          mkdir -p ${{ env.BACKUP_DIR }}/secrets
+          for secret in ${{ env.API_SECRETS }}; do
+            if [ -f "secrets/$secret" ]; then
+              cp "secrets/$secret" "${{ env.BACKUP_DIR }}/secrets/"
+            fi
+          done
+      
+      - name: Create Backup
+        id: backup
+        run: |
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          BACKUP_BRANCH="backup/${TIMESTAMP}"
+          echo "Creating backup branch: $BACKUP_BRANCH"
+          git checkout -b $BACKUP_BRANCH
+          for path in ${{ env.CUSTOM_FILES }}; do
+            if [ -e "$path" ]; then
+              cp -r "$path" "${{ env.BACKUP_DIR }}/"
+            fi
+          done
+          git add ${{ env.BACKUP_DIR }}
+          git commit -m "Backup before sync ${TIMESTAMP}"
+          git push origin $BACKUP_BRANCH --force
+          echo "backup_id=${BACKUP_BRANCH}" >> $GITHUB_OUTPUT
+
+  analyze-changes:
+    needs: prepare-sync
+    runs-on: ubuntu-latest
+    outputs:
+      can_sync: ${{ steps.check.outputs.can_sync }}
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Upstream
+        run: |
+          git remote add upstream https://github.com/All-Hands-AI/OpenHands.git
+          git fetch upstream
+      
+      - name: Analyze Changes
+        id: check
+        run: |
+          git checkout -b temp_merge
+          if git merge-tree $(git merge-base upstream/main main) upstream/main main | grep -q "^<<<<<<<"; then
+            echo "Conflicts detected"
+            echo "can_sync=false" >> $GITHUB_OUTPUT
+          else
+            echo "No conflicts detected"
+            echo "can_sync=true" >> $GITHUB_OUTPUT
+          fi
+
+  sync-and-verify:
+    needs: [prepare-sync, analyze-changes]
+    if: needs.analyze-changes.outputs.can_sync == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Sync Changes
+        run: |
+          git checkout ${{ env.MAIN_BRANCH }}
+          git merge upstream/main
+      
+      - name: Restore Custom Files
+        run: |
+          for path in ${{ env.CUSTOM_FILES }}; do
+            if [ -e "${{ env.BACKUP_DIR }}/$path" ]; then
+              cp -r "${{ env.BACKUP_DIR }}/$path" .
+            fi
+          done
+      
+      - name: Run Tests
+        run: |
+          poetry install
+          poetry run pytest
+      
+      - name: Push Changes
+        if: success()
+        run: |
+          git add .
+          git commit -m "Sync with upstream and restore custom files"
+          git push origin ${{ env.MAIN_BRANCH }}
+
+      - name: Create Success Report
+        if: success()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Sync Completed Successfully',
+              body: 'Repository updated and custom files protected successfully'
+            })
+
+  notify-conflicts:
+    needs: [prepare-sync, analyze-changes]
+    if: needs.analyze-changes.outputs.can_sync == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Conflict Report
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Conflicts Detected',
+              body: `
+              # Sync Conflict Report
+              - Backup created: \`${{ needs.prepare-sync.outputs.backup_id }}\`
+              - Potential conflicts detected
+              - Files can be restored from backup
+              
+              ## Next Steps
+              1. Review upstream changes
+              2. Resolve conflicts manually
+              3. Re-run sync workflow
+              `
+            })
