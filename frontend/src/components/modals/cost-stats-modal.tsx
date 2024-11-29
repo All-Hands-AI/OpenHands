@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 
-interface Cost {
+export interface Cost {
   model: string;
   cost: number;
   timestamp: number;
 }
 
-interface CostStats {
+export interface CostStats {
   accumulated_cost: number;
   costs: Cost[];
 }

@@ -1,12 +1,12 @@
 import { Tooltip } from "@nextui-org/react";
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
+import { useWsClient } from "#/context/ws-client-provider";
 import PauseIcon from "#/assets/pause";
 import PlayIcon from "#/assets/play";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { RootState } from "#/store";
 import AgentState from "#/types/agent-state";
-import { useWsClient } from "#/context/ws-client-provider";
 import { CostStatsModal } from "./modals/cost-stats-modal";
 
 const IgnoreTaskStateMap: Record<string, AgentState[]> = {
@@ -40,6 +40,7 @@ interface ActionButtonProps {
   action: AgentState;
   handleAction: (action: AgentState) => void;
   large?: boolean;
+  children?: React.ReactNode;
 }
 
 function ActionButton({
@@ -49,7 +50,7 @@ function ActionButton({
   handleAction,
   children,
   large = false,
-}: React.PropsWithChildren<ActionButtonProps>) {
+}: ActionButtonProps) {
   return (
     <Tooltip content={content} closeDelay={100}>
       <button
