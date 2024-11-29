@@ -188,12 +188,6 @@ class EventStreamRuntime(Runtime):
         # Buffer for container logs
         self.log_buffer: LogBuffer | None = None
 
-        if self.config.sandbox.runtime_extra_deps:
-            self.log(
-                'debug',
-                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
-            )
-
         self.init_base_runtime(
             config,
             event_stream,
@@ -204,6 +198,12 @@ class EventStreamRuntime(Runtime):
             attach_to_existing,
             headless_mode,
         )
+
+        if self.config.sandbox.runtime_extra_deps:
+            self.log(
+                'debug',
+                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
+            )
 
     async def connect(self):
         self.send_status_message('STATUS$STARTING_RUNTIME')
