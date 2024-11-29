@@ -1,5 +1,4 @@
 import os
-from typing import get_args
 
 from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.schema import ActionType
@@ -9,7 +8,6 @@ from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.browser.transformer import (
     translate_computer_use_action_to_browsergym_action,
 )
-from openhands.runtime.browser.types import ComputerUseAction
 
 
 async def browse(
@@ -28,17 +26,20 @@ async def browse(
         action_str = f'goto("{asked_url}")'
 
     elif isinstance(action, BrowseInteractiveAction):
-        # received action_str defined by Anthropic's Computer Use feature: see https://docs.anthropic.com/en/docs/build-with-claude/computer-use#computer-tool
         _action_str = action.browser_actions
 
-        if _action_str not in get_args(ComputerUseAction):
-            raise ValueError(f'Invalid action: {_action_str}')
+        if _action_str.startswith('gui_use'):
+            # received action_str defined by Anthropic's Computer Use feature: see https://docs.anthropic.com/en/docs/build-with-claude/computer-use#computer-tool
+            _action_str = _action_str[8:-1]
 
-        # translate to BrowserGym actions
-        # action in BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/functions.py
-        action_str = translate_computer_use_action_to_browsergym_action(
-            _action_str, last_obs
-        )
+            # translate to BrowserGym actions
+            # action in BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/functions.py
+            action_str = translate_computer_use_action_to_browsergym_action(
+                _action_str, last_obs
+            )
+        else:
+            # received normal BrowserGym action
+            action_str = _action_str
     else:
         raise ValueError(f'Invalid action type: {action.action}')
 

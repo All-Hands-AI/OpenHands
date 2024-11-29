@@ -544,6 +544,20 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 action = IPythonRunCellAction(code=code, include_extra=False)
             elif tool_call.function.name == 'browser':
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
+            elif tool_call.function.name == 'gui_use':
+                arg_action = arguments['action']
+                # arguments is a python object, so need to consider when the property is not present
+                arg_coordinate = arguments.get('coordinate')
+                arg_text = arguments.get('text')
+
+                browser_action = f'{arg_action}('
+                if arg_coordinate:
+                    browser_action += f'coordinate={arg_coordinate}, '
+                if arg_text:
+                    browser_action += f'text="{arg_text}", '
+                browser_action += ')'
+                browser_action = f'gui_use({browser_action})'
+                action = BrowseInteractiveAction(browser_actions=browser_action)
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
@@ -576,7 +590,8 @@ def get_tools(
 ) -> list[ChatCompletionToolParam]:
     tools = [CmdRunTool, FinishTool]
     if codeact_enable_browsing:
-        tools.append(BrowserTool)
+        # tools.append(BrowserTool)
+        tools.append(GUIUseTool)
     if codeact_enable_jupyter:
         tools.append(IPythonTool)
     if codeact_enable_llm_editor:
