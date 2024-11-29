@@ -30,6 +30,8 @@ class S3FileStore(FileStore):
             raise FileNotFoundError(f'Failed to read from S3 at path {path}: {e}')
 
     def list(self, path: str) -> list[str]:
+        if path and path != '/' and not path.endswith('/'):
+            path += '/'
         try:
             return [
                 obj.object_name for obj in self.client.list_objects(self.bucket, path)
