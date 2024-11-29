@@ -545,19 +545,10 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
             elif tool_call.function.name == 'browser':
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
             elif tool_call.function.name == 'gui_use':
-                arg_action = arguments['action']
-                # arguments is a python object, so need to consider when the property is not present
-                arg_coordinate = arguments.get('coordinate')
-                arg_text = arguments.get('text')
-
-                browser_action = f'{arg_action}('
-                if arg_coordinate:
-                    browser_action += f'coordinate={arg_coordinate}, '
-                if arg_text:
-                    browser_action += f'text="{arg_text}", '
-                browser_action += ')'
-                browser_action = f'gui_use({browser_action})'
-                action = BrowseInteractiveAction(browser_actions=browser_action)
+                browser_action = 'gui_use'
+                action = BrowseInteractiveAction(
+                    browser_actions=browser_action, extra_args=arguments
+                )
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'

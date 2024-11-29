@@ -28,9 +28,15 @@ async def browse(
     elif isinstance(action, BrowseInteractiveAction):
         _action_str = action.browser_actions
 
-        if _action_str.startswith('gui_use'):
+        if _action_str == 'gui_use':
             # received action_str defined by Anthropic's Computer Use feature: see https://docs.anthropic.com/en/docs/build-with-claude/computer-use#computer-tool
-            _action_str = _action_str[8:-1]
+            extra_args = action.extra_args
+
+            # TODO: perform argument validation on extra_args
+            assert extra_args is not None
+
+            # construct a computer use action
+            _action_str = f'{extra_args["action"]}({", ".join([f"{k}={v}" for k, v in extra_args.items() if k != "action"])})'
 
             # translate to BrowserGym actions
             # action in BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/functions.py
