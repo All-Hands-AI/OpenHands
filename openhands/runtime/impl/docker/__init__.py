@@ -1,3 +1,3 @@
-from openhands.runtime.impl.docker.docker_runtime import LocalDockerRuntime
+from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 
-__all__ = ["LocalDockerRuntime"]
+__all__ = ["DockerRuntime"]

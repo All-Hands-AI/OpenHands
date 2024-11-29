@@ -10,12 +10,10 @@ import tenacity
 
 from openhands.core.config import AppConfig
 from openhands.events import EventStream
-from openhands.runtime.impl.eventstream.eventstream_runtime import (
-    EventStreamRuntime,
-    LogBuffer,
-)
+from openhands.runtime.impl.eventstream.eventstream_runtime import EventStreamRuntime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
+from openhands.runtime.utils.log_buffer import LogBuffer
 from openhands.runtime.utils.runtime_build import (
     BuildFromImageType,
     prep_build_folder,
