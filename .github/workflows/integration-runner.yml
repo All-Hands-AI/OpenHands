@@ -141,8 +141,8 @@ jobs:
         id: create_comment
         uses: KeisukeYamashita/create-comment@v1
         with:
-          # if triggered by PR, use PR number, otherwise use 5077 as fallback issue number for manual triggers
-          number: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || 5077 }}
+          # if triggered by PR, use PR number, otherwise use 5318 as fallback issue number for manual triggers
+          number: ${{ github.event_name == 'pull_request' && github.event.pull_request.number || 5318 }}
           unique: false
           comment: |
               Trigger by: ${{ github.event_name == 'pull_request' && format('Pull Request (integration-test label on PR #{0})', github.event.pull_request.number) || (github.event_name == 'workflow_dispatch' && format('Manual Trigger: {0}', github.event.inputs.reason)) || 'Nightly Scheduled Run' }}
@@ -155,4 +155,4 @@ jobs:
               DeepSeek LLM Test Results:
               ${{ env.INTEGRATION_TEST_REPORT_DEEPSEEK }}
               ---
-              Download evaluation outputs (includes both Haiku and DeepSeek results): [Download](${{ steps.upload_results_artifact.outputs.artifact-url }})
+              Download testing outputs (includes both Haiku and DeepSeek results): [Download](${{ steps.upload_results_artifact.outputs.artifact-url }})
