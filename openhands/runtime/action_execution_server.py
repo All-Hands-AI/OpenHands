@@ -37,6 +37,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
 )
 from openhands.events.observation import (
+    BrowserOutputObservation,
     CmdOutputObservation,
     ErrorObservation,
     FileReadObservation,
@@ -107,6 +108,7 @@ class ActionExecutor:
         self.browser = BrowserEnv(browsergym_eval_env)
         self.start_time = time.time()
         self.last_execution_time = self.start_time
+        self.last_browser_output_observation: BrowserOutputObservation | None = None
 
     @property
     def initial_pwd(self):
@@ -319,10 +321,18 @@ class ActionExecutor:
         return FileWriteObservation(content='', path=filepath)
 
     async def browse(self, action: BrowseURLAction) -> Observation:
-        return await browse(action, self.browser)
+        browser_obs = await browse(
+            action, self.browser, self.last_browser_output_observation
+        )
+        self.last_browser_output_observation = browser_obs
+        return browser_obs
 
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
-        return await browse(action, self.browser)
+        browser_obs = await browse(
+            action, self.browser, self.last_browser_output_observation
+        )
+        self.last_browser_output_observation = browser_obs
+        return browser_obs
 
     def close(self):
         self.bash_session.close()

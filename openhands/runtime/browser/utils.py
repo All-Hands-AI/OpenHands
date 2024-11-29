@@ -9,11 +9,13 @@ from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.browser.transformer import (
     translate_computer_use_action_to_browsergym_action,
 )
-from openhands.runtime.browser.typing import ComputerUseAction
+from openhands.runtime.browser.types import ComputerUseAction
 
 
 async def browse(
-    action: BrowseURLAction | BrowseInteractiveAction, browser: BrowserEnv | None
+    action: BrowseURLAction | BrowseInteractiveAction,
+    browser: BrowserEnv | None,
+    last_obs: BrowserOutputObservation | None,
 ) -> BrowserOutputObservation:
     if browser is None:
         raise BrowserUnavailableException()
@@ -34,7 +36,9 @@ async def browse(
 
         # translate to BrowserGym actions
         # action in BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/functions.py
-        action_str = translate_computer_use_action_to_browsergym_action(_action_str)
+        action_str = translate_computer_use_action_to_browsergym_action(
+            _action_str, last_obs
+        )
     else:
         raise ValueError(f'Invalid action type: {action.action}')
 
@@ -60,6 +64,7 @@ async def browse(
             ),  # last browser env action performed
             last_browser_action_error=obs.get('last_action_error', ''),
             error=True if obs.get('last_action_error', '') else False,  # error flag
+            mouse_position=obs.get('mouse_position', []),  # mouse position
         )
     except Exception as e:
         return BrowserOutputObservation(

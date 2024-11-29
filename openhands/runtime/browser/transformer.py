@@ -2,6 +2,8 @@ import ast
 
 import astor
 
+from openhands.events.observation import BrowserOutputObservation
+
 
 class ActionTransformer(ast.NodeTransformer):
     def __init__(self, mapping):
@@ -48,42 +50,96 @@ def coordinate_split(arg_node):
     return []
 
 
-def translate_computer_use_action_to_browsergym_action(code: str) -> str:
+def rename_argument(new_name):
+    def transformer(arg_node):
+        # Change the name of the argument
+        return [ast.keyword(arg=new_name, value=arg_node.value)]
+
+    return transformer
+
+
+def translate_computer_use_action_to_browsergym_action(
+    code: str, last_obs: BrowserOutputObservation | None
+) -> str:
+    last_mouse_position = last_obs.mouse_position if last_obs else None
+    if last_mouse_position is None or len(last_mouse_position) != 2:
+        last_mouse_position = [0, 0]
+
     mapping = {
         'type': {
             'target_func': 'keyboard_type',
+            'arg_transform': {'text': rename_argument('key')},
         },
         'key': {
-            'target_func': 'keyboard_type',
+            'target_func': 'keyboard_press',
+            'arg_transform': {'text': rename_argument('key')},
         },
         'mouse_move': {
             'target_func': 'mouse_move',
             'arg_transform': {'coordinate': coordinate_split},
+            'extra_args': [
+                {
+                    'name': 'from_x',
+                    'value': last_mouse_position[0],
+                },
+                {
+                    'name': 'from_y',
+                    'value': last_mouse_position[1],
+                },
+            ],
         },
         'left_click_drag': {
             'target_func': 'mouse_drag_and_drop',
             'arg_transform': {'coordinate': coordinate_split},
+            'extra_args': [
+                {
+                    'name': 'from_x',
+                    'value': last_mouse_position[0],
+                },
+                {
+                    'name': 'from_y',
+                    'value': last_mouse_position[1],
+                },
+            ],
         },
         'left_click': {
             'target_func': 'mouse_click',
-            'extra_args': [{'name': 'button', 'value': 'left'}],
+            'extra_args': [
+                {'name': 'button', 'value': 'left'},
+                {'name': 'x', 'value': last_mouse_position[0]},
+                {'name': 'y', 'value': last_mouse_position[1]},
+            ],
         },
         'right_click': {
             'target_func': 'mouse_click',
-            'extra_args': [{'name': 'button', 'value': 'right'}],
+            'extra_args': [
+                {'name': 'button', 'value': 'right'},
+                {'name': 'x', 'value': last_mouse_position[0]},
+                {'name': 'y', 'value': last_mouse_position[1]},
+            ],
         },
         'middle_click': {
             'target_func': 'mouse_click',
-            'extra_args': [{'name': 'button', 'value': 'middle'}],
+            'extra_args': [
+                {'name': 'button', 'value': 'middle'},
+                {'name': 'x', 'value': last_mouse_position[0]},
+                {'name': 'y', 'value': last_mouse_position[1]},
+            ],
         },
         'double_click': {
-            'target_func': 'mouse_double_click',
-            'extra_args': [{'name': 'button', 'value': 'left'}],
+            'target_func': 'mouse_dblclick',
+            'extra_args': [
+                {'name': 'button', 'value': 'left'},
+                {'name': 'x', 'value': last_mouse_position[0]},
+                {'name': 'y', 'value': last_mouse_position[1]},
+            ],
         },
         'screenshot': {
             'target_func': 'noop',
         },
-        'cursor_position': 'noop',
+        'cursor_position': {
+            'target_func': 'noop',
+        },
     }
 
     # Parse code to AST, transform, and generate new code
@@ -93,23 +149,3 @@ def translate_computer_use_action_to_browsergym_action(code: str) -> str:
     transformed_code = astor.to_source(transformed_tree)
 
     return transformed_code
-
-
-if __name__ == '__main__':
-    code = """result = type("Hello, World!")"""
-    assert (
-        translate_computer_use_action_to_browsergym_action(code)
-        == "result = keyboard_type('Hello, World!')\n"
-    )
-
-    code = """result = mouse_move(coordinate=(100, 200))"""
-    assert (
-        translate_computer_use_action_to_browsergym_action(code)
-        == 'result = mouse_move(to_x=100, to_y=200)\n'
-    )
-
-    code = """result = left_click()"""
-    assert (
-        translate_computer_use_action_to_browsergym_action(code)
-        == "result = mouse_click(button='left')\n"
-    )

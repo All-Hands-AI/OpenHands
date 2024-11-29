@@ -40,6 +40,8 @@ class BrowserEnv:
         self.init_browser()
         atexit.register(self.close)
 
+        self.last_obs = None
+
     def get_html_text_converter(self):
         html_text_converter = html2text.HTML2Text()
         # ignore links and images

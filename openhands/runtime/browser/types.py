@@ -13,8 +13,8 @@ class ScalingSource(StrEnum):
 
 
 ComputerUseAction = Literal[
-    'type',  # type sequence in chunks           --> keyboard_type
-    'key',  # key sequence pressed               --> keyboard_type
+    'type',  # type sequence                     --> keyboard_type
+    'key',  # press a key or key comb            --> keyboard_press
     'mouse_move',  # move mouse to a position    --> mouse_move
     'left_click',  # left click                  --> mouse_click
     'left_click_drag',  # left click and drag    --> mouse_drag_and_drop
