@@ -30,6 +30,7 @@ from openhands.events.observation import (
     UserRejectObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
+from openhands.llm.metrics import Metrics
 from openhands.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
@@ -123,6 +124,9 @@ class Runtime(FileEditRuntimeMixin):
         self._vscode_enabled = any(
             isinstance(plugin, VSCodeRequirement) for plugin in self.plugins
         )
+
+        # Initialize metrics
+        self.metrics = Metrics()
 
         # Load mixins
         FileEditRuntimeMixin.__init__(self)

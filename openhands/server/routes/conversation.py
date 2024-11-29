@@ -52,6 +52,17 @@ async def get_vscode_url(request: Request):
         )
 
 
+@app.get('/costs')
+async def get_costs(request: Request):
+    """Get the accumulated costs and cost history for the current session."""
+    if not request.state.conversation:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail='Conversation not found'
+        )
+    metrics = request.state.conversation.runtime.metrics
+    return JSONResponse(content=metrics.get())
+
+
 @app.get('/events/search')
 async def search_events(
     request: Request,

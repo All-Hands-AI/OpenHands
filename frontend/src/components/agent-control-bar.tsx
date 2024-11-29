@@ -1,5 +1,5 @@
 import { Tooltip } from "@nextui-org/react";
-import React from "react";
+import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import PauseIcon from "#/assets/pause";
 import PlayIcon from "#/assets/play";
@@ -7,6 +7,7 @@ import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { RootState } from "#/store";
 import AgentState from "#/types/agent-state";
 import { useWsClient } from "#/context/ws-client-provider";
+import { CostStatsModal } from "./modals/cost-stats-modal";
 
 const IgnoreTaskStateMap: Record<string, AgentState[]> = {
   [AgentState.PAUSED]: [
@@ -74,6 +75,7 @@ function ActionButton({
 function AgentControlBar() {
   const { send } = useWsClient();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const [isCostModalOpen, setIsCostModalOpen] = useState(false);
 
   const handleAction = (action: AgentState) => {
     if (!IgnoreTaskStateMap[action].includes(curAgentState)) {
@@ -82,28 +84,42 @@ function AgentControlBar() {
   };
 
   return (
-    <div className="flex justify-between items-center gap-20">
-      <ActionButton
-        isDisabled={
-          curAgentState !== AgentState.RUNNING &&
-          curAgentState !== AgentState.PAUSED
-        }
-        content={
-          curAgentState === AgentState.PAUSED
-            ? "Resume the agent task"
-            : "Pause the current task"
-        }
-        action={
-          curAgentState === AgentState.PAUSED
-            ? AgentState.RUNNING
-            : AgentState.PAUSED
-        }
-        handleAction={handleAction}
-        large
-      >
-        {curAgentState === AgentState.PAUSED ? <PlayIcon /> : <PauseIcon />}
-      </ActionButton>
-    </div>
+    <>
+      <div className="flex justify-between items-center gap-4">
+        <ActionButton
+          isDisabled={
+            curAgentState !== AgentState.RUNNING &&
+            curAgentState !== AgentState.PAUSED
+          }
+          content={
+            curAgentState === AgentState.PAUSED
+              ? "Resume the agent task"
+              : "Pause the current task"
+          }
+          action={
+            curAgentState === AgentState.PAUSED
+              ? AgentState.RUNNING
+              : AgentState.PAUSED
+          }
+          handleAction={handleAction}
+          large
+        >
+          {curAgentState === AgentState.PAUSED ? <PlayIcon /> : <PauseIcon />}
+        </ActionButton>
+
+        <button
+          onClick={() => setIsCostModalOpen(true)}
+          className="px-3 py-1 text-sm rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+        >
+          View Costs
+        </button>
+      </div>
+
+      <CostStatsModal
+        isOpen={isCostModalOpen}
+        onClose={() => setIsCostModalOpen(false)}
+      />
+    </>
   );
 }
 
