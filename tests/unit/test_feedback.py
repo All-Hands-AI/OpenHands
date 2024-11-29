@@ -1,14 +1,12 @@
 import pytest
-from fastapi import Request
 from fastapi.responses import JSONResponse
 
+from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.app_config import AppConfig
 from openhands.core.config.llm_config import LLMConfig
-from openhands.core.config.agent_config import AgentConfig
 from openhands.events.stream import EventStream
 from openhands.server.data_models.feedback import FeedbackDataModel
 from openhands.server.routes.feedback import submit_feedback
-from openhands.server.session.conversation import Conversation
 from openhands.storage.memory import InMemoryFileStore
 
 
