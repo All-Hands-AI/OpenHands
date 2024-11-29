@@ -199,6 +199,7 @@ class EventStreamRuntime(Runtime):
             headless_mode,
         )
 
+        # Log runtime_extra_deps after base class initialization so self.sid is available
         if self.config.sandbox.runtime_extra_deps:
             self.log(
                 'debug',
