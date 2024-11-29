@@ -22,5 +22,5 @@ ComputerUseAction = Literal[
     'middle_click',  # middle click              --> mouse_click
     'double_click',  # double left click         --> mouse_dblclick
     'screenshot',  # take a screenshot           --> noop
-    'cursor_position',  # get cursor position    -->
+    'cursor_position',  # get cursor position    --> noop
 ]
