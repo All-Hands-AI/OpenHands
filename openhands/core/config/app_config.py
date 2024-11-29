@@ -19,28 +19,30 @@ class AppConfig:
     """Configuration for the app.
 
     Attributes:
-        llms: A dictionary of name -> LLM configuration. Default config is under 'llm' key.
-        agents: A dictionary of name -> Agent configuration. Default config is under 'agent' key.
-        default_agent: The name of the default agent to use.
-        sandbox: The sandbox configuration.
-        runtime: The runtime environment.
-        file_store: The file store to use.
-        file_store_path: The path to the file store.
-        trajectories_path: The folder path to store trajectories.
-        workspace_base: The base path for the workspace. Defaults to ./workspace as an absolute path.
-        workspace_mount_path: The path to mount the workspace. This is set to the workspace base by default.
-        workspace_mount_path_in_sandbox: The path to mount the workspace in the sandbox. Defaults to /workspace.
-        workspace_mount_rewrite: The path to rewrite the workspace mount path to.
-        cache_dir: The path to the cache directory. Defaults to /tmp/cache.
-        run_as_openhands: Whether to run as openhands.
-        max_iterations: The maximum number of iterations.
-        max_budget_per_task: The maximum budget allowed per task, beyond which the agent will stop.
-        e2b_api_key: The E2B API key.
-        disable_color: Whether to disable color. For terminals that don't support color.
-        debug: Whether to enable debugging.
-        file_uploads_max_file_size_mb: Maximum file size for uploads in megabytes. 0 means no limit.
-        file_uploads_restrict_file_types: Whether to restrict file types for file uploads. Defaults to False.
-        file_uploads_allowed_extensions: List of allowed file extensions for uploads. ['.*'] means all extensions are allowed.
+        llms (dict[str, LLMConfig]): Dictionary mapping LLM names to their configurations.
+            The default configuration is stored under the 'llm' key.
+        agents (dict): Dictionary mapping agent names to their configurations.
+            The default configuration is stored under the 'agent' key.
+        default_agent (str): Name of the default agent to use.
+        sandbox (SandboxConfig): Sandbox configuration settings.
+        runtime (str): Runtime environment identifier.
+        file_store (str): Type of file store to use.
+        file_store_path (str): Path to the file store.
+        trajectories_path (str | None): Folder path to store trajectories.
+        workspace_base (str | None): Base path for the workspace. Defaults to `./workspace` as absolute path.
+        workspace_mount_path (str | None): Path to mount the workspace. Defaults to `workspace_base`.
+        workspace_mount_path_in_sandbox (str): Path to mount the workspace in sandbox. Defaults to `/workspace`.
+        workspace_mount_rewrite (str | None): Path to rewrite the workspace mount path.
+        cache_dir (str): Path to cache directory. Defaults to `/tmp/cache`.
+        run_as_openhands (bool): Whether to run as openhands.
+        max_iterations (int): Maximum number of iterations allowed.
+        max_budget_per_task (float | None): Maximum budget per task, agent stops if exceeded.
+        e2b_api_key (str): E2B API key.
+        disable_color (bool): Whether to disable terminal colors.
+        debug (bool): Whether to enable debugging mode.
+        file_uploads_max_file_size_mb (int): Maximum file upload size in MB. `0` means unlimited.
+        file_uploads_restrict_file_types (bool): Whether to restrict upload file types.
+        file_uploads_allowed_extensions (list[str]): Allowed file extensions. `['.*']` allows all.
     """
 
     llms: dict[str, LLMConfig] = field(default_factory=dict)
@@ -74,7 +76,7 @@ class AppConfig:
     defaults_dict: ClassVar[dict] = {}
 
     def get_llm_config(self, name='llm') -> LLMConfig:
-        """Llm is the name for default config (for backward compatibility prior to 0.8)"""
+        """'llm' is the name for default config (for backward compatibility prior to 0.8)."""
         if name in self.llms:
             return self.llms[name]
         if name is not None and name != 'llm':
@@ -89,7 +91,7 @@ class AppConfig:
         self.llms[name] = value
 
     def get_agent_config(self, name='agent') -> AgentConfig:
-        """Agent is the name for default config (for backward compability prior to 0.8)"""
+        """'agent' is the name for default config (for backward compatibility prior to 0.8)."""
         if name in self.agents:
             return self.agents[name]
         if 'agent' not in self.agents:
