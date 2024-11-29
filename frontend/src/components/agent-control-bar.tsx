@@ -108,6 +108,7 @@ function AgentControlBar() {
         </ActionButton>
 
         <button
+          type="button"
           onClick={() => setIsCostModalOpen(true)}
           className="px-3 py-1 text-sm rounded-md bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
         >
