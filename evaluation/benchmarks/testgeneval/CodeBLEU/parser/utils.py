@@ -1,3 +1,4 @@
+# Adapted from https://github.com/EngineeringSoftware/teco/blob/main/src/CodeBLEU/parser/utils.py
 # Copyright (c) Microsoft Corporation. 
 # Licensed under the MIT license.
 

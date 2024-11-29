@@ -1,3 +1,4 @@
+# Adapted from https://github.com/EngineeringSoftware/teco/blob/main/src/CodeBLEU/bleu.py
 # -*- coding: utf-8 -*-
 # Natural Language Toolkit: BLEU Score
 #

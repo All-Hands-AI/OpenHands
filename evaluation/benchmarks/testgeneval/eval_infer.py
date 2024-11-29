@@ -24,7 +24,6 @@ from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation
 from report_utils import (
     check_coverage,
-    check_passed,
     check_mutation,
     count_methods,
     get_lines_of_code,

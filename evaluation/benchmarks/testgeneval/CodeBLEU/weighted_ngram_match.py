@@ -1,3 +1,4 @@
+# Adapted from https://github.com/EngineeringSoftware/teco/blob/main/src/CodeBLEU/weighted_ngram_match.py
 # -*- coding: utf-8 -*-
 # Copyright (c) Microsoft Corporation. 
 # Licensed under the MIT license.

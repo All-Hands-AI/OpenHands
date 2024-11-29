@@ -1,3 +1,4 @@
+# Adapted from https://github.com/EngineeringSoftware/teco/blob/main/src/CodeBLEU/Evaluator.py
 import os
 import warnings
 from pathlib import Path

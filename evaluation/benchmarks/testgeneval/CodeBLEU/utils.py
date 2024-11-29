@@ -1,3 +1,4 @@
+# Adapted from https://github.com/EngineeringSoftware/teco/blob/main/src/CodeBLEU/utils.py
 # Natural Language Toolkit: Utility functions
 #
 # Copyright (C) 2001-2020 NLTK Project
