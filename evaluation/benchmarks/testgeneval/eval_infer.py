@@ -9,7 +9,7 @@ from testgeneval.utils import load_testgeneval_dataset
 from testgeneval.pygments_utils import tokenize_code
 from testgeneval.metrics import code_bleu, bleu, exact_match, edit_sim, rouge_l
 
-from evaluation.swe_bench.run_infer import get_instance_docker_image
+from evaluation.benchmarks.testgeneval.run_infer import get_instance_docker_image
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,

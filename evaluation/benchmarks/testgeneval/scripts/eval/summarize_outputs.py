@@ -24,8 +24,9 @@ if __name__ == '__main__':
     num_error_lines = 0
     num_agent_stuck_in_loop = 0
 
-    num_resolved = 0
-    num_empty_patch = 0
+    coverage = 0
+    mutation_score = 0
+    num_empty_suite = 0
 
     error_counter = Counter()
 
@@ -59,16 +60,15 @@ if __name__ == '__main__':
         pairs = get_pairs_from_events(events)
         num_turns.append(len(pairs))
 
-        # Patch & resolve status
-        patch = _d.get('test_result', {}).get('git_patch', '')
-        if patch == '':
-            num_empty_patch += 1
+        # Suite & resolve status
+        suite = _d.get('test_result', {}).get('test_suite', '')
+        if suite == '':
+            num_empty_suite += 1
             continue
 
         report = _d.get('report', {}) or {}
-        resolved = report.get('resolved', False)
-        if resolved:
-            num_resolved += 1
+        coverage += report.get('coverage', 0)
+        mutation_score += report.get('mutation_score', 0)
 
         # Error
         error = _d.get('error', None)
@@ -91,10 +91,14 @@ if __name__ == '__main__':
 
     # print the error counter (with percentage)
     print(
-        f'Number of resolved: {num_resolved} / {num_lines} ({num_resolved / num_lines * 100:.2f}%)'
+        f'Average coverage for {num_lines} ({coverage / num_lines * 100:.2f}%)'
     )
     print(
-        f'Number of empty patch: {num_empty_patch} / {num_lines} ({num_empty_patch / num_lines * 100:.2f}%)'
+        f'Average mutation score for {num_lines} ({mutation_score / num_lines * 100:.2f}%)'
+    )
+
+    print(
+        f'Number of empty suite: {num_empty_suite} / {num_lines} ({num_empty_suite / num_lines * 100:.2f}%)'
     )
     print(
         f'Number of error lines: {num_error_lines} / {num_lines} ({num_error_lines / num_lines * 100:.2f}%)'

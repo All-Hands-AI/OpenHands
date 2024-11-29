@@ -9,7 +9,7 @@ import toml
 from datasets import load_dataset
 
 import openhands.agenthub
-from evaluation.testgeneval.prompt import CODEACT_TESTGEN_PROMPT
+from evaluation.benchmarks.testgeneval.prompt import CODEACT_TESTGEN_PROMPT
 from testgeneval.utils import (
     get_test_directives,
 )
@@ -39,7 +39,6 @@ from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
 from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
-from openhands.runtime.utils.shutdown_listener import sleep_if_should_continue
 
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 USE_INSTANCE_IMAGE = os.environ.get('USE_INSTANCE_IMAGE', 'false').lower() == 'true'
