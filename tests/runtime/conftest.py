@@ -176,7 +176,7 @@ def runtime_cls(request):
 
 
 # TODO: We will change this to `run_as_user` when `ServerRuntime` is deprecated.
-# since `EventStreamRuntime` supports running as an arbitrary user.
+# since `DockerRuntime` supports running as an arbitrary user.
 @pytest.fixture(scope='module', params=get_run_as_openhands())
 def run_as_openhands(request):
     time.sleep(1)

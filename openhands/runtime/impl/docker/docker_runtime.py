@@ -71,7 +71,7 @@ class DockerRuntime(Runtime):
     """
 
     # Need to provide this method to allow inheritors to init the Runtime
-    # without initting the LocalDockerRuntime.
+    # without initting the DockerRuntime.
     def init_base_runtime(
         self,
         config: AppConfig,
@@ -395,7 +395,7 @@ class DockerRuntime(Runtime):
             pass
 
     def close(self, rm_all_containers: bool | None = None):
-        """Closes the EventStreamRuntime and associated objects
+        """Closes the DockerRuntime and associated objects
 
         Parameters:
         - rm_all_containers (bool): Whether to remove all containers with the 'openhands-sandbox-' prefix

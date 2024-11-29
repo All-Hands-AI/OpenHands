@@ -1,4 +1,4 @@
-"""Bash-related tests for the EventStreamRuntime, which connects to the ActionExecutor running in the sandbox."""
+"""Bash-related tests for the DockerRuntime, which connects to the ActionExecutor running in the sandbox."""
 
 import os
 from pathlib import Path

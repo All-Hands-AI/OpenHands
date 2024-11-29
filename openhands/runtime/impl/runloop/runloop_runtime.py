@@ -93,8 +93,8 @@ class RunloopLogBuffer(LogBuffer):
         self.log_stream_thread.join(timeout)
 
 
-class RunloopRuntime(EventStreamRuntime):
-    """The RunloopRuntime class is an EventStreamRuntime that utilizes Runloop Devbox as a runtime environment."""
+class RunloopRuntime(DockerRuntime):
+    """The RunloopRuntime class is a DockerRuntime that utilizes Runloop Devbox as a runtime environment."""
 
     _sandbox_port: int = 4444
     _vscode_port: int = 4445
@@ -227,7 +227,7 @@ class RunloopRuntime(EventStreamRuntime):
         logger.info(f'Container started. Server url: {self.api_url}')
 
         # End Runloop connect
-        # NOTE: Copied from EventStreamRuntime
+        # NOTE: Copied from DockerRuntime
         logger.info('Waiting for client to become ready...')
         self.send_status_message('STATUS$WAITING_FOR_CLIENT')
         self._wait_until_alive()

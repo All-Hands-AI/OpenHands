@@ -50,7 +50,7 @@ class ModalLogBuffer(LogBuffer):
         self.log_stream_thread.start()
 
 
-class ModalRuntime(EventStreamRuntime):
+class ModalRuntime(DockerRuntime):
     """This runtime will subscribe the event stream.
 
     When receive an event, it will send the event to runtime-client which run inside the Modal sandbox environment.

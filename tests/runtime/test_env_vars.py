@@ -1,4 +1,4 @@
-"""Env vars related tests for the EventStreamRuntime, which connects to the ActionExecutor running in the sandbox."""
+"""Env vars related tests for the DockerRuntime, which connects to the ActionExecutor running in the sandbox."""
 
 import os
 from unittest.mock import patch
