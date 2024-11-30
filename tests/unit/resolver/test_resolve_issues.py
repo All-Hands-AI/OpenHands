@@ -551,6 +551,7 @@ This is a Python repo for openhands-resolver, a library that attempts to resolve
 - Setup: `poetry install --with test --with dev`
 - Testing: `poetry run pytest tests/test_*.py`
 
+
 When you think you have fixed the issue through code changes, please finish the interaction."""
     assert instruction == expected_instruction
     assert issue_handler.issue_type == 'issue'
