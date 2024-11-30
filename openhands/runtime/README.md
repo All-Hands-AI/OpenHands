@@ -78,7 +78,7 @@ Key features of the `ActionExecutor` class:
 
 ### Docker Runtime
 
-The Local Docker Runtime (formerly EventStream Runtime) is designed for local execution using Docker containers:
+The Docker Runtime (formerly EventStream Runtime) is designed for local execution using Docker containers:
 
 - Creates and manages a Docker container for each session
 - Executes actions within the container
