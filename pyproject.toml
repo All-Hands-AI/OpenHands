@@ -66,6 +66,7 @@ pygithub = "^2.5.0"
 openhands-aci = "^0.1.1"
 python-socketio = "^5.11.4"
 redis = "^5.2.0"
+pytest = "^8.3.3"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"

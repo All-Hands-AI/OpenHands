@@ -43,13 +43,16 @@ __all__ = ['LLM']
 # tuple of exceptions to retry on
 LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
     APIConnectionError,
-    # FIXME: APIError is useful on 502 from a proxy for example,
-    # but it also retries on other errors that are permanent
+    # APIError is useful on 502 from a proxy for example,
+    # but some specific APIError instances should not be retried
     APIError,
     InternalServerError,
     RateLimitError,
     ServiceUnavailableError,
 )
+
+# tuple of exceptions that should not be retried even if they inherit from retry_exceptions
+LLM_EXCLUDE_EXCEPTIONS: tuple[type[Exception], ...] = (CloudFlareBlockageError,)
 
 # cache prompt supporting models
 # remove this when we gemini and deepseek are supported
@@ -141,6 +144,7 @@ class LLM(RetryMixin, DebugMixin):
         @self.retry_decorator(
             num_retries=self.config.num_retries,
             retry_exceptions=LLM_RETRY_EXCEPTIONS,
+            exclude_exceptions=LLM_EXCLUDE_EXCEPTIONS,
             retry_min_wait=self.config.retry_min_wait,
             retry_max_wait=self.config.retry_max_wait,
             retry_multiplier=self.config.retry_multiplier,
