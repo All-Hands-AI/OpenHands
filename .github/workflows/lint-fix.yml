@@ -30,9 +30,9 @@ jobs:
           cd frontend
           npm install --frozen-lockfile
       - name: Fix frontend lint issues
-        run: |
-          cd frontend
-          npm run lint:fix || true
+        #run: |
+        #  cd frontend
+        #  npm run lint:fix || true
 
       # Python lint fixes
       - name: Set up python
