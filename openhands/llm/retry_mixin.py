@@ -2,7 +2,8 @@ from typing import Any
 
 from tenacity import (
     retry,
-    retry_if_exception,
+    retry_if_exception_type,
+    retry_if_not_exception_type,
     stop_after_attempt,
     wait_exponential,
 )
@@ -32,23 +33,15 @@ class RetryMixin:
         retry_max_wait = kwargs.get('retry_max_wait')
         retry_multiplier = kwargs.get('retry_multiplier')
 
-        def _should_retry(exception: Exception) -> bool:
-            """Check if an exception should be retried based on its type and exclusion list."""
-            # First check if it's an excluded exception
-            for exc_type in exclude_exceptions:
-                if isinstance(exception, exc_type):
-                    return False
-            # Then check if it's a retryable exception
-            for exc_type in retry_exceptions:
-                if isinstance(exception, exc_type):
-                    return True
-            return False
+        retry_condition = retry_if_exception_type(retry_exceptions)
+        if exclude_exceptions:
+            retry_condition = retry_condition & retry_if_not_exception_type(exclude_exceptions)
 
         return retry(
             before_sleep=self.log_retry_attempt,
             stop=stop_after_attempt(num_retries) | stop_if_should_exit(),
             reraise=True,
-            retry=retry_if_exception(_should_retry),
+            retry=retry_condition,
             wait=wait_exponential(
                 multiplier=retry_multiplier,
                 min=retry_min_wait,
