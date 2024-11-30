@@ -3,13 +3,14 @@ from copy import deepcopy
 from difflib import SequenceMatcher
 from io import BytesIO
 
+from bs4 import BeautifulSoup, Comment, NavigableString, Tag
 import cv2
 import numpy as np
 import torch
 from colormath.color_conversions import convert_color
 from colormath.color_diff import delta_e_cie2000
 from colormath.color_objects import LabColor, sRGBColor
-from PIL import Image, ImageChops
+from PIL import Image, ImageChops, ImageColor
 from scipy.optimize import linear_sum_assignment
 from transformers import CLIPModel, CLIPProcessor
 
@@ -309,15 +310,222 @@ def calculate_clip_similarity(image1, image2, blocks1, blocks2):
     return similarity
 
 
+def rgb_to_hex(rgb):
+    """Convert an RGB tuple to hexadecimal format."""
+    return '{:02X}{:02X}{:02X}'.format(*rgb)
+
+
+class ColorPool:
+    def __init__(self, offset=0):
+        color_values = list(range(10, 251, 16))
+        color_list = [((r + offset) % 256, (g + offset) % 256, (b + offset) % 256) 
+                     for r in color_values for g in color_values for b in color_values]
+        self.color_pool = [rgb_to_hex(color) for color in color_list]
+
+    def pop_color(self):
+        if self.color_pool:
+            return self.color_pool.pop()
+        else:
+            raise NotImplementedError
+
+
+def process_html_str(html_str, offset=0):
+    """Process HTML string to assign unique colors to text elements."""
+    soup = BeautifulSoup(html_str, 'html.parser')
+
+    def update_style(element, property_name, value):
+        important_value = f"{value} !important"
+        styles = element.attrs.get('style', '').split(';')
+        updated_styles = [s for s in styles if not s.strip().startswith(property_name) and len(s.strip()) > 0]
+        updated_styles.append(f"{property_name}: {important_value}")
+        element['style'] = '; '.join(updated_styles).strip()
+
+    # Set background color of all elements to transparent white
+    for element in soup.find_all(True):
+        update_style(element, 'background-color', 'rgba(255, 255, 255, 0.0)')
+
+    color_pool = ColorPool(offset)
+    text_tags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'div', 'span', 'a', 'b', 'li', 
+                 'table', 'td', 'th', 'button', 'footer', 'header', 'figcaption']
+
+    for tag in soup.find_all(text_tags):
+        color = f"#{color_pool.pop_color()}"
+        update_style(tag, 'color', color)
+        update_style(tag, 'opacity', '1.0')
+
+    return str(soup)
+
+
+def similar(n1, n2):
+    """Check if two numbers are similar within a threshold."""
+    return abs(n1 - n2) <= 8
+
+
+def find_different_pixels(image1, image2):
+    """Find pixels that differ between two images."""
+    if image1.size != image2.size:
+        logger.warning("Images are not the same size")
+        return None
+
+    image1 = image1.convert('RGB')
+    image2 = image2.convert('RGB')
+    pixels1 = image1.load()
+    pixels2 = image2.load()
+    different_pixels = []
+
+    for x in range(image1.size[0]):
+        for y in range(image1.size[1]):
+            r1, g1, b1 = pixels1[x, y]
+            r2, g2, b2 = pixels2[x, y]
+            if similar((r1 + 50) % 256, r2) and similar((g1 + 50) % 256, g2) and similar((b1 + 50) % 256, b2):
+                different_pixels.append((y, x))
+
+    return np.stack(different_pixels) if different_pixels else None
+
+
+def extract_text_with_color(html_str):
+    """Extract text and color information from HTML string."""
+    def get_color(tag):
+        if 'style' in tag.attrs:
+            styles = tag['style'].split(';')
+            color_style = [s for s in styles if 'color' in s and 'background-color' not in s]
+            if color_style:
+                color = color_style[-1].split(':')[1].strip().replace(" !important", "")
+                if color[0] == "#":
+                    return color
+                else:
+                    try:
+                        if color.startswith('rgb'):
+                            color = tuple(map(int, color[4:-1].split(',')))
+                        else:
+                            color = ImageColor.getrgb(color)
+                        return '#{:02x}{:02x}{:02x}'.format(*color)
+                    except ValueError:
+                        logger.warning(f"Unable to identify or convert color: {color}")
+                        return None
+        return None
+
+    def extract_text_recursive(element, parent_color='#000000'):
+        if isinstance(element, Comment):
+            return None
+        elif isinstance(element, NavigableString):
+            text = element.strip()
+            return (text, parent_color) if text else None
+        elif isinstance(element, Tag):
+            current_color = get_color(element) or parent_color
+            children_texts = filter(None, [extract_text_recursive(child, current_color) 
+                                        for child in element.children])
+            return list(children_texts)
+
+    soup = BeautifulSoup(html_str, 'html.parser')
+    body = soup.body
+    return extract_text_recursive(body) if body else []
+
+
+def flatten_tree(tree):
+    """Flatten a nested tree structure into a list."""
+    flat_list = []
+    def flatten(node):
+        if isinstance(node, list):
+            for item in node:
+                flatten(item)
+        else:
+            flat_list.append(node)
+    flatten(tree)
+    return flat_list
+
+
+def get_blocks_from_image_diff_pixels(image, html_text_color_tree, different_pixels):
+    """Extract text blocks from image using color differences."""
+    image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+    x_w = image_cv.shape[0]
+    y_w = image_cv.shape[1]
+
+    def hex_to_bgr(hex_color):
+        hex_color = hex_color.lstrip('#')
+        rgb = tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
+        return rgb[::-1]
+
+    def get_intersect(arr1, arr2):
+        arr1_reshaped = arr1.view([('', arr1.dtype)] * arr1.shape[1])
+        arr2_reshaped = arr2.view([('', arr2.dtype)] * arr2.shape[1])
+        common_rows = np.intersect1d(arr1_reshaped, arr2_reshaped)
+        return common_rows.view(arr1.dtype).reshape(-1, arr1.shape[1])
+
+    blocks = []
+    for item in html_text_color_tree:
+        try:
+            color = np.array(hex_to_bgr(item[1]), dtype="uint8")
+        except:
+            continue
+
+        lower = color - 4
+        upper = color + 4
+        mask = cv2.inRange(image_cv, lower, upper)
+        coords = np.column_stack(np.where(mask > 0))
+        coords = get_intersect(coords, different_pixels)
+
+        if coords.size == 0:
+            continue
+
+        x_min, y_min = np.min(coords, axis=0)
+        x_max, y_max = np.max(coords, axis=0)
+        
+        # Get average color from original image
+        color_coords = coords.copy()
+        color_coords = color_coords[color_coords[:, 0] <= x_max]
+        color_coords = color_coords[color_coords[:, 1] <= y_max]
+        colors = [image_cv[x, y] for x, y in color_coords]
+        avg_color = tuple(map(int, np.mean(colors, axis=0)))[::-1]  # Convert BGR to RGB
+
+        blocks.append({
+            'text': item[0].lower(),
+            'bbox': (y_min / y_w, x_min / x_w, (y_max - y_min + 1) / y_w, (x_max - x_min + 1) / x_w),
+            'color': avg_color
+        })
+
+    return blocks
+
+
+def get_blocks_from_html(html_str, image1):
+    """Extract text blocks from HTML and image."""
+    # Process HTML with two different color offsets
+    html_str_1 = process_html_str(html_str, offset=0)
+    html_str_2 = process_html_str(html_str, offset=50)
+
+    # Render both HTML versions to images
+    # TODO: Screenshot html_str_2
+    filter_color = (255, 0, 0)  
+    image2 = Image.new("RGB", image1.size, filter_color)
+
+
+    # Find pixels that differ between the two rendered images
+    different_pixels = find_different_pixels(image1, image2)
+    if different_pixels is None:
+        logger.warning("Unable to get pixels with different colors")
+        return []
+
+    # Extract text and color information from HTML
+    html_text_color_tree = flatten_tree(extract_text_with_color(html_str_1))
+    try:
+        blocks = get_blocks_from_image_diff_pixels(image1, html_text_color_tree, different_pixels)
+    except Exception as e:
+        logger.warning(f"Unable to get blocks: {e}")
+        return []
+
+    return blocks
+
+
 def evaluate(task, generated_img):
     """Evaluate generated image against reference image using multiple metrics."""
     # Load reference image
     post_image = task['post_image']
 
-    # Get blocks from both images
-    post_blocks = task.get('post_blocks', [])  # Assuming blocks are provided in task
-    gen_blocks = task.get('gen_blocks', [])  # Assuming blocks are provided in task
+    # Extract blocks from HTML and images
+    post_blocks = get_blocks_from_html(task['post_html'], post_image)
+    gen_blocks = get_blocks_from_html(task['gen_html'], generated_img)
 
+    print("block details", post_blocks, gen_blocks)
     if not post_blocks or not gen_blocks:
         # Fallback to basic CLIP and pixel comparison if no blocks available
         clip_score = calculate_clip_similarity(post_image, generated_img, [], [])
@@ -446,6 +654,21 @@ def bytes_to_image(image_bytes):
 if __name__ == '__main__':
     first_image = Image.open('./evaluation/visualcodebench/data/1/post.png')
     image = Image.open('./evaluation/visualcodebench/data/1/prev.png')
-    sample = {'post_image': first_image}
+    
+    
+    html_file = open('./evaluation/visualcodebench/data/1/post/index.html', 'r')
+    first_html = html_file.read()
+    html_file.close()
+
+    html_file = open('./evaluation/visualcodebench/data/1/prev/index.html', 'r')
+    gen_html = html_file.read()
+    html_file.close()
+
+
+
+    sample = {'post_image': first_image, "post_html": first_html, "gen_html": gen_html}
+
+
 
     evaluate(sample, image)
+
