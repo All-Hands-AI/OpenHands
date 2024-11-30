@@ -35,7 +35,9 @@ class RetryMixin:
 
         retry_condition = retry_if_exception_type(retry_exceptions)
         if exclude_exceptions:
-            retry_condition = retry_condition & retry_if_not_exception_type(exclude_exceptions)
+            retry_condition = retry_condition & retry_if_not_exception_type(
+                exclude_exceptions
+            )
 
         return retry(
             before_sleep=self.log_retry_attempt,
