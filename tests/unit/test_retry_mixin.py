@@ -1,5 +1,4 @@
 import pytest
-from tenacity import RetryError
 
 from openhands.llm.retry_mixin import RetryMixin
 
