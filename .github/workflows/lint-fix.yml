@@ -21,15 +21,15 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       # Frontend lint fixes
-      - name: Install Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - name: Install frontend dependencies
-        run: |
-          cd frontend
-          npm install --frozen-lockfile
-      - name: Fix frontend lint issues
+      #- name: Install Node.js 20
+      #  uses: actions/setup-node@v4
+      #  with:
+      #    node-version: 20
+      #- name: Install frontend dependencies
+      #  run: |
+      #    cd frontend
+      #    npm install --frozen-lockfile
+      #- name: Fix frontend lint issues
         #run: |
         #  cd frontend
         #  npm run lint:fix || true
