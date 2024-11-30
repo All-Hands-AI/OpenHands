@@ -34,6 +34,7 @@ jobs:
         run: |
           cd frontend
           npm run lint
+
   # Run lint on the python code
   lint-python:
     name: Lint python
