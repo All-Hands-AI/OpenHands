@@ -9,7 +9,7 @@ from functools import partial
 import pandas as pd
 from datasets import load_dataset
 
-from evaluation.benchmarks.visualcodebench.eval import capture_screenshot
+# from evaluation.benchmarks.visualcodebench.eval import capture_screenshot
 from evaluation.benchmarks.visualcodebench.prepare import (
     REPO_DOWNLOAD_DIR,
     download_repository,
@@ -130,9 +130,9 @@ def complete_runtime(
         src_folder = REPO_DOWNLOAD_DIR + f'data/{instance.instance_id}/post/'
         shutil.copytree(src_folder, tmpdir, dirs_exist_ok=True)
 
-        image = capture_screenshot(tmpdir)
-        if image is not None:
-            shutil.copy(os.path.join(tmpdir, 'final_screenshot.png'), REPO_DOWNLOAD_DIR)
+        # image = capture_screenshot(tmpdir)
+        # if image is not None:
+        #     shutil.copy(os.path.join(tmpdir, 'final_screenshot.png'), REPO_DOWNLOAD_DIR)
 
 
 def process_instance(

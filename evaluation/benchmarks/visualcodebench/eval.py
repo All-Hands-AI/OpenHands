@@ -1,16 +1,17 @@
+from collections import Counter
+from copy import deepcopy
+from difflib import SequenceMatcher
+from io import BytesIO
+
 import cv2
 import numpy as np
 import torch
-from PIL import Image, ImageChops
-from colormath.color_objects import sRGBColor, LabColor
 from colormath.color_conversions import convert_color
 from colormath.color_diff import delta_e_cie2000
-from difflib import SequenceMatcher
+from colormath.color_objects import LabColor, sRGBColor
+from PIL import Image, ImageChops
 from scipy.optimize import linear_sum_assignment
 from transformers import CLIPModel, CLIPProcessor
-from copy import deepcopy
-from collections import Counter
-from io import BytesIO
 
 from openhands.core.logger import openhands_logger as logger
 
@@ -33,12 +34,16 @@ def adjust_cost_for_context(cost_matrix, consecutive_bonus=1.0, window_size=20):
         for j in range(m):
             if adjusted_cost_matrix[i][j] >= -0.5:
                 continue
-            nearby_matrix = cost_matrix[max(0, i - window_size):min(n, i + window_size + 1),
-                                      max(0, j - window_size):min(m, j + window_size + 1)]
+            nearby_matrix = cost_matrix[
+                max(0, i - window_size) : min(n, i + window_size + 1),
+                max(0, j - window_size) : min(m, j + window_size + 1),
+            ]
             flattened_array = nearby_matrix.flatten()
             sorted_array = np.sort(flattened_array)[::-1]
-            sorted_array = np.delete(sorted_array, np.where(sorted_array == cost_matrix[i, j])[0][0])
-            top_k_elements = sorted_array[- window_size * 2:]
+            sorted_array = np.delete(
+                sorted_array, np.where(sorted_array == cost_matrix[i, j])[0][0]
+            )
+            top_k_elements = sorted_array[-window_size * 2 :]
             bonus = consecutive_bonus * np.sum(top_k_elements)
             adjusted_cost_matrix[i][j] += bonus
     return adjusted_cost_matrix
@@ -83,13 +88,20 @@ def color_similarity_ciede2000(rgb1, rgb2):
 
 def merge_blocks_wo_check(block1, block2):
     """Merge two blocks without additional checks."""
-    merged_text = block1['text'] + " " + block2['text']
+    merged_text = block1['text'] + ' ' + block2['text']
     x_min = min(block1['bbox'][0], block2['bbox'][0])
     y_min = min(block1['bbox'][1], block2['bbox'][1])
-    x_max = max(block1['bbox'][0] + block1['bbox'][2], block2['bbox'][0] + block2['bbox'][2])
-    y_max = max(block1['bbox'][1] + block1['bbox'][3], block2['bbox'][1] + block2['bbox'][3])
+    x_max = max(
+        block1['bbox'][0] + block1['bbox'][2], block2['bbox'][0] + block2['bbox'][2]
+    )
+    y_max = max(
+        block1['bbox'][1] + block1['bbox'][3], block2['bbox'][1] + block2['bbox'][3]
+    )
     merged_bbox = (x_min, y_min, x_max - x_min, y_max - y_min)
-    merged_color = tuple((color1 + color2) // 2 for color1, color2 in zip(block1['color'], block2['color']))
+    merged_color = tuple(
+        (color1 + color2) // 2
+        for color1, color2 in zip(block1['color'], block2['color'])
+    )
     return {'text': merged_text, 'bbox': merged_bbox, 'color': merged_color}
 
 
@@ -122,7 +134,12 @@ def merge_blocks_by_list(blocks, merge_list):
         if merge_list:
             new_merge_list = []
             for k in range(len(merge_list)):
-                if merge_list[k][0] != i and merge_list[k][1] != i and merge_list[k][0] != j and merge_list[k][1] != j:
+                if (
+                    merge_list[k][0] != i
+                    and merge_list[k][1] != i
+                    and merge_list[k][0] != j
+                    and merge_list[k][1] != j
+                ):
                     new_merge_list.append(merge_list[k])
             merge_list = new_merge_list
     remove_indices(blocks, pop_list)
@@ -164,7 +181,9 @@ def find_possible_merge(A, B, consecutive_bonus, window_size, debug=False):
         A_changed = False
         B_changed = False
 
-        matching, current_cost, cost_matrix = find_maximum_matching(A, B, merge_bonus, merge_windows)
+        matching, current_cost, cost_matrix = find_maximum_matching(
+            A, B, merge_bonus, merge_windows
+        )
 
         if len(A) >= 2:
             merge_list = []
@@ -172,7 +191,9 @@ def find_possible_merge(A, B, consecutive_bonus, window_size, debug=False):
                 new_A = deepcopy(A)
                 new_A[i] = merge_blocks_wo_check(new_A[i], new_A[i + 1])
                 new_A.pop(i + 1)
-                updated_matching, updated_cost, _ = find_maximum_matching(new_A, B, merge_bonus, merge_windows)
+                updated_matching, updated_cost, _ = find_maximum_matching(
+                    new_A, B, merge_bonus, merge_windows
+                )
                 diff = difference_of_means(current_cost, updated_cost)
                 if diff > 0.05:
                     merge_list.append([i, i + 1, diff])
@@ -181,7 +202,9 @@ def find_possible_merge(A, B, consecutive_bonus, window_size, debug=False):
             if merge_list:
                 A_changed = True
                 A = merge_blocks_by_list(A, merge_list)
-                matching, current_cost, cost_matrix = find_maximum_matching(A, B, merge_bonus, merge_windows)
+                matching, current_cost, cost_matrix = find_maximum_matching(
+                    A, B, merge_bonus, merge_windows
+                )
 
         if len(B) >= 2:
             merge_list = []
@@ -189,7 +212,9 @@ def find_possible_merge(A, B, consecutive_bonus, window_size, debug=False):
                 new_B = deepcopy(B)
                 new_B[i] = merge_blocks_wo_check(new_B[i], new_B[i + 1])
                 new_B.pop(i + 1)
-                updated_matching, updated_cost, _ = find_maximum_matching(A, new_B, merge_bonus, merge_windows)
+                updated_matching, updated_cost, _ = find_maximum_matching(
+                    A, new_B, merge_bonus, merge_windows
+                )
                 diff = difference_of_means(current_cost, updated_cost)
                 if diff > 0.05:
                     merge_list.append([i, i + 1, diff])
@@ -198,7 +223,9 @@ def find_possible_merge(A, B, consecutive_bonus, window_size, debug=False):
             if merge_list:
                 B_changed = True
                 B = merge_blocks_by_list(B, merge_list)
-                matching, current_cost, cost_matrix = find_maximum_matching(A, B, merge_bonus, merge_windows)
+                matching, current_cost, cost_matrix = find_maximum_matching(
+                    A, B, merge_bonus, merge_windows
+                )
 
         if not A_changed and not B_changed:
             break
@@ -215,7 +242,9 @@ def merge_blocks_by_bbox(blocks):
         if bbox in merged_blocks:
             existing_block = merged_blocks[bbox]
             existing_block['text'] += ' ' + block['text']
-            existing_block['color'] = [(ec + c) / 2 for ec, c in zip(existing_block['color'], block['color'])]
+            existing_block['color'] = [
+                (ec + c) / 2 for ec, c in zip(existing_block['color'], block['color'])
+            ]
         else:
             merged_blocks[bbox] = block
     return list(merged_blocks.values())
@@ -233,7 +262,7 @@ def mask_bounding_boxes_with_inpainting(image, bounding_boxes):
         y = int(y_ratio * height)
         w = int(w_ratio * width)
         h = int(h_ratio * height)
-        mask[y:y+h, x:x+w] = 255
+        mask[y : y + h, x : x + w] = 255
 
     inpainted_image = cv2.inpaint(image_cv, mask, 3, cv2.INPAINT_TELEA)
     return Image.fromarray(cv2.cvtColor(inpainted_image, cv2.COLOR_BGR2RGB))
@@ -257,13 +286,15 @@ def calculate_clip_similarity(image1, image2, blocks1, blocks2):
     """Calculate CLIP similarity between two images."""
     model = CLIPModel.from_pretrained('openai/clip-vit-base-patch32')
     processor = CLIPProcessor.from_pretrained('openai/clip-vit-base-patch32')
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = model.to(device)
 
     # Mask and preprocess images
     image1_masked = rescale_and_mask(image1, [block['bbox'] for block in blocks1])
     image2_masked = rescale_and_mask(image2, [block['bbox'] for block in blocks2])
-    inputs = processor(images=[image1_masked, image2_masked], return_tensors='pt', padding=True)
+    inputs = processor(
+        images=[image1_masked, image2_masked], return_tensors='pt', padding=True
+    )
     inputs = {k: v.to(device) for k, v in inputs.items()}
 
     # Calculate features and similarity
@@ -280,117 +311,141 @@ def calculate_clip_similarity(image1, image2, blocks1, blocks2):
 
 def evaluate(task, generated_img):
     """Evaluate generated image against reference image using multiple metrics."""
-    try:
-        # Load reference image
-        post_image = Image.open(BytesIO(task['post_image']))
+    # Load reference image
+    post_image = task['post_image']
 
-        # Get blocks from both images
-        post_blocks = task.get('post_blocks', [])  # Assuming blocks are provided in task
-        gen_blocks = task.get('gen_blocks', [])  # Assuming blocks are provided in task
+    # Get blocks from both images
+    post_blocks = task.get('post_blocks', [])  # Assuming blocks are provided in task
+    gen_blocks = task.get('gen_blocks', [])  # Assuming blocks are provided in task
 
-        if not post_blocks or not gen_blocks:
-            # Fallback to basic CLIP and pixel comparison if no blocks available
-            clip_score = calculate_clip_similarity(post_image, generated_img, [], [])
-            logger.info(f'CLIP similarity score: {clip_score}')
+    if not post_blocks or not gen_blocks:
+        # Fallback to basic CLIP and pixel comparison if no blocks available
+        clip_score = calculate_clip_similarity(post_image, generated_img, [], [])
+        logger.info(f'CLIP similarity score: {clip_score}')
 
-            # Pixel comparison
-            diff = ImageChops.difference(generated_img, post_image)
-            pixel_match = not diff.getbbox()
-            logger.info(f"Pixel difference analysis: {'No difference' if pixel_match else 'Differences found'}")
-
-            return clip_score > 0.95 or pixel_match
-
-        # Merge blocks with same bounding boxes
-        post_blocks = merge_blocks_by_bbox(post_blocks)
-        gen_blocks = merge_blocks_by_bbox(gen_blocks)
-
-        # Find optimal block matching
-        consecutive_bonus, window_size = 0.1, 1
-        gen_blocks_m, post_blocks_m, matching = find_possible_merge(
-            gen_blocks, deepcopy(post_blocks), consecutive_bonus, window_size
+        # Pixel comparison
+        diff = ImageChops.difference(generated_img, post_image)
+        pixel_match = not diff.getbbox()
+        logger.info(
+            f"Pixel difference analysis: {'No difference' if pixel_match else 'Differences found'}"
         )
 
-        # Filter matches with low similarity
-        filtered_matching = []
-        for i, j in matching:
-            text_similarity = calculate_similarity(gen_blocks_m[i], post_blocks_m[j])
-            if text_similarity >= 0.5:
-                filtered_matching.append([i, j, text_similarity])
-        matching = filtered_matching
+        return clip_score > 0.95 or pixel_match
 
-        if not matching:
-            logger.warning("No matching blocks found")
-            clip_score = calculate_clip_similarity(post_image, generated_img, gen_blocks, post_blocks)
-            return clip_score > 0.95
+    # Merge blocks with same bounding boxes
+    post_blocks = merge_blocks_by_bbox(post_blocks)
+    gen_blocks = merge_blocks_by_bbox(gen_blocks)
 
-        # Calculate metrics for matched blocks
-        indices1 = [item[0] for item in matching]
-        indices2 = [item[1] for item in matching]
+    # Find optimal block matching
+    consecutive_bonus, window_size = 0.1, 1
+    gen_blocks_m, post_blocks_m, matching = find_possible_merge(
+        gen_blocks, deepcopy(post_blocks), consecutive_bonus, window_size
+    )
 
-        # Calculate unmatched areas
-        unmatched_area_1 = sum(
-            block['bbox'][2] * block['bbox'][3]
-            for i, block in enumerate(gen_blocks_m)
-            if i not in indices1
+    # Filter matches with low similarity
+    filtered_matching = []
+    for i, j in matching:
+        text_similarity = calculate_similarity(gen_blocks_m[i], post_blocks_m[j])
+        if text_similarity >= 0.5:
+            filtered_matching.append([i, j, text_similarity])
+    matching = filtered_matching
+
+    if not matching:
+        logger.warning('No matching blocks found')
+        clip_score = calculate_clip_similarity(
+            post_image, generated_img, gen_blocks, post_blocks
         )
-        unmatched_area_2 = sum(
-            block['bbox'][2] * block['bbox'][3]
-            for j, block in enumerate(post_blocks_m)
-            if j not in indices2
+        return clip_score > 0.95
+
+    # Calculate metrics for matched blocks
+    indices1 = [item[0] for item in matching]
+    indices2 = [item[1] for item in matching]
+
+    # Calculate unmatched areas
+    unmatched_area_1 = sum(
+        block['bbox'][2] * block['bbox'][3]
+        for i, block in enumerate(gen_blocks_m)
+        if i not in indices1
+    )
+    unmatched_area_2 = sum(
+        block['bbox'][2] * block['bbox'][3]
+        for j, block in enumerate(post_blocks_m)
+        if j not in indices2
+    )
+    total_unmatched_area = unmatched_area_1 + unmatched_area_2
+
+    # Calculate metrics for matched blocks
+    matched_areas = []
+    text_scores = []
+    position_scores = []
+    color_scores = []
+
+    for i, j, text_similarity in matching:
+        # Area
+        block_area = (
+            gen_blocks_m[i]['bbox'][2] * gen_blocks_m[i]['bbox'][3]
+            + post_blocks_m[j]['bbox'][2] * post_blocks_m[j]['bbox'][3]
         )
-        total_unmatched_area = unmatched_area_1 + unmatched_area_2
+        matched_areas.append(block_area)
 
-        # Calculate metrics for matched blocks
-        matched_areas = []
-        text_scores = []
-        position_scores = []
-        color_scores = []
+        # Position similarity
+        position_similarity = 1 - calculate_distance_max_1d(
+            gen_blocks_m[i]['bbox'][0] + gen_blocks_m[i]['bbox'][2] / 2,
+            gen_blocks_m[i]['bbox'][1] + gen_blocks_m[i]['bbox'][3] / 2,
+            post_blocks_m[j]['bbox'][0] + post_blocks_m[j]['bbox'][2] / 2,
+            post_blocks_m[j]['bbox'][1] + post_blocks_m[j]['bbox'][3] / 2,
+        )
 
-        for i, j, text_similarity in matching:
-            # Area
-            block_area = (gen_blocks_m[i]['bbox'][2] * gen_blocks_m[i]['bbox'][3] +
-                         post_blocks_m[j]['bbox'][2] * post_blocks_m[j]['bbox'][3])
-            matched_areas.append(block_area)
+        # Color similarity
+        color_similarity = color_similarity_ciede2000(
+            gen_blocks_m[i]['color'], post_blocks_m[j]['color']
+        )
 
-            # Position similarity
-            position_similarity = 1 - calculate_distance_max_1d(
-                gen_blocks_m[i]['bbox'][0] + gen_blocks_m[i]['bbox'][2] / 2,
-                gen_blocks_m[i]['bbox'][1] + gen_blocks_m[i]['bbox'][3] / 2,
-                post_blocks_m[j]['bbox'][0] + post_blocks_m[j]['bbox'][2] / 2,
-                post_blocks_m[j]['bbox'][1] + post_blocks_m[j]['bbox'][3] / 2
-            )
+        text_scores.append(text_similarity)
+        position_scores.append(position_similarity)
+        color_scores.append(color_similarity)
 
-            # Color similarity
-            color_similarity = color_similarity_ciede2000(
-                gen_blocks_m[i]['color'],
-                post_blocks_m[j]['color']
-            )
+    # Calculate final scores
+    total_area = sum(matched_areas) + total_unmatched_area
+    size_score = sum(matched_areas) / total_area if total_area > 0 else 0
+    text_score = np.mean(text_scores) if text_scores else 0
+    position_score = np.mean(position_scores) if position_scores else 0
+    color_score = np.mean(color_scores) if color_scores else 0
+    clip_score = calculate_clip_similarity(
+        post_image, generated_img, gen_blocks, post_blocks
+    )
 
-            text_scores.append(text_similarity)
-            position_scores.append(position_similarity)
-            color_scores.append(color_similarity)
+    # Combine scores with equal weights
+    final_score = 0.2 * (
+        size_score + text_score + position_score + color_score + clip_score
+    )
 
-        # Calculate final scores
-        total_area = sum(matched_areas) + total_unmatched_area
-        size_score = sum(matched_areas) / total_area if total_area > 0 else 0
-        text_score = np.mean(text_scores) if text_scores else 0
-        position_score = np.mean(position_scores) if position_scores else 0
-        color_score = np.mean(color_scores) if color_scores else 0
-        clip_score = calculate_clip_similarity(post_image, generated_img, gen_blocks, post_blocks)
+    logger.info('Evaluation scores:')
+    logger.info(f'- Size score: {size_score:.3f}')
+    logger.info(f'- Text score: {text_score:.3f}')
+    logger.info(f'- Position score: {position_score:.3f}')
+    logger.info(f'- Color score: {color_score:.3f}')
+    logger.info(f'- CLIP score: {clip_score:.3f}')
+    logger.info(f'- Final score: {final_score:.3f}')
 
-        # Combine scores with equal weights
-        final_score = 0.2 * (size_score + text_score + position_score + color_score + clip_score)
+    return final_score > 0.8  # Consider it a match if final score > 80%
 
-        logger.info(f'Evaluation scores:')
-        logger.info(f'- Size score: {size_score:.3f}')
-        logger.info(f'- Text score: {text_score:.3f}')
-        logger.info(f'- Position score: {position_score:.3f}')
-        logger.info(f'- Color score: {color_score:.3f}')
-        logger.info(f'- CLIP score: {clip_score:.3f}')
-        logger.info(f'- Final score: {final_score:.3f}')
 
-        return final_score > 0.8  # Consider it a match if final score > 80%
+def png_to_bytes(png):
+    buffer = BytesIO()
+    png.save(buffer, format='PNG')
+    image_bytes = buffer.getvalue()
+    return image_bytes
 
-    except Exception as e:
-        logger.error(f'Error in evaluation: {e}')
-        return False
+
+def bytes_to_image(image_bytes):
+    """Convert bytes to a Pillow Image object."""
+    return Image.open(BytesIO(image_bytes))
+
+
+if __name__ == '__main__':
+    first_image = Image.open('./evaluation/visualcodebench/data/1/post.png')
+    image = Image.open('./evaluation/visualcodebench/data/1/prev.png')
+    sample = {'post_image': first_image}
+
+    evaluate(sample, image)
