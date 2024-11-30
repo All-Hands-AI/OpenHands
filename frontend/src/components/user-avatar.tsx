@@ -1,4 +1,4 @@
-import { LoadingSpinner } from "./modals/LoadingProject";
+import { LoadingSpinner } from "./modals/loading-project";
 import DefaultUserAvatar from "#/icons/default-user.svg?react";
 import { cn } from "#/utils/utils";
 

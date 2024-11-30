@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, test, vi } from "vitest";
-import { useClickOutsideElement } from "#/hooks/useClickOutsideElement";
+import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 
 interface ClickOutsideTestComponentProps {
   callback: () => void;
