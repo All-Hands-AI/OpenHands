@@ -1,6 +1,5 @@
 SHELL=/bin/bash
 # Makefile for OpenHands project
-
 # Variables
 BACKEND_HOST ?= "127.0.0.1"
 BACKEND_PORT = 3000
@@ -11,14 +10,12 @@ DEFAULT_MODEL = "gpt-4o"
 CONFIG_FILE = config.toml
 PRE_COMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
 PYTHON_VERSION = 3.12
-
 # ANSI color codes
 GREEN=$(shell tput -Txterm setaf 2)
 YELLOW=$(shell tput -Txterm setaf 3)
 RED=$(shell tput -Txterm setaf 1)
 BLUE=$(shell tput -Txterm setaf 6)
 RESET=$(shell tput -Txterm sgr0)
-
 # Build
 build:
 	@echo "$(GREEN)Building project...$(RESET)"
@@ -28,7 +25,6 @@ build:
 	@$(MAKE) -s install-pre-commit-hooks
 	@$(MAKE) -s build-frontend
 	@echo "$(GREEN)Build completed successfully.$(RESET)"
-
 check-dependencies:
 	@echo "$(YELLOW)Checking dependencies...$(RESET)"
 	@$(MAKE) -s check-system
@@ -40,7 +36,6 @@ ifeq ($(INSTALL_DOCKER),)
 endif
 	@$(MAKE) -s check-poetry
 	@echo "$(GREEN)Dependencies checked successfully.$(RESET)"
-
 check-system:
 	@echo "$(YELLOW)Checking system...$(RESET)"
 	@if [ "$(shell uname)" = "Darwin" ]; then \
@@ -57,7 +52,6 @@ check-system:
 		echo "$(RED)Unsupported system detected. Please use macOS, Linux, or Windows Subsystem for Linux (WSL).$(RESET)"; \
 		exit 1; \
 	fi
-
 check-python:
 	@echo "$(YELLOW)Checking Python installation...$(RESET)"
 	@if command -v python$(PYTHON_VERSION) > /dev/null; then \
@@ -66,7 +60,6 @@ check-python:
 		echo "$(RED)Python $(PYTHON_VERSION) is not installed. Please install Python $(PYTHON_VERSION) to continue.$(RESET)"; \
 		exit 1; \
 	fi
-
 check-npm:
 	@echo "$(YELLOW)Checking npm installation...$(RESET)"
 	@if command -v npm > /dev/null; then \
@@ -75,7 +68,6 @@ check-npm:
 		echo "$(RED)npm is not installed. Please install Node.js to continue.$(RESET)"; \
 		exit 1; \
 	fi
-
 check-nodejs:
 	@echo "$(YELLOW)Checking Node.js installation...$(RESET)"
 	@if command -v node > /dev/null; then \
@@ -91,7 +83,6 @@ check-nodejs:
 		echo "$(RED)Node.js is not installed. Please install Node.js to continue.$(RESET)"; \
 		exit 1; \
 	fi
-
 check-docker:
 	@echo "$(YELLOW)Checking Docker installation...$(RESET)"
 	@if command -v docker > /dev/null; then \
@@ -100,7 +91,6 @@ check-docker:
 		echo "$(RED)Docker is not installed. Please install Docker to continue.$(RESET)"; \
 		exit 1; \
 	fi
-
 check-poetry:
 	@echo "$(YELLOW)Checking Poetry installation...$(RESET)"
 	@if command -v poetry > /dev/null; then \
@@ -120,7 +110,6 @@ check-poetry:
 		echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
 		exit 1; \
 	fi
-
 install-python-dependencies:
 	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
 	@if [ -z "${TZ}" ]; then \
@@ -149,7 +138,6 @@ install-python-dependencies:
 		fi \
 	fi
 	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
-
 install-frontend-dependencies:
 	@echo "$(YELLOW)Setting up frontend environment...$(RESET)"
 	@echo "$(YELLOW)Detect Node.js version...$(RESET)"
@@ -157,46 +145,36 @@ install-frontend-dependencies:
 	echo "$(BLUE)Installing frontend dependencies with npm...$(RESET)"
 	@cd frontend && npm install
 	@echo "$(GREEN)Frontend dependencies installed successfully.$(RESET)"
-
 install-pre-commit-hooks:
 	@echo "$(YELLOW)Installing pre-commit hooks...$(RESET)"
 	@git config --unset-all core.hooksPath || true
 	@poetry run pre-commit install --config $(PRE_COMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
-
 lint-backend:
 	@echo "$(YELLOW)Running linters...$(RESET)"
 	@poetry run pre-commit run --files openhands/**/* agenthub/**/* evaluation/**/* --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_PATH)
-
 lint-frontend:
 	@echo "$(YELLOW)Running linters for frontend...$(RESET)"
 	@cd frontend && npm run lint
-
 lint:
 	@$(MAKE) -s lint-frontend
 	@$(MAKE) -s lint-backend
-
 test-frontend:
 	@echo "$(YELLOW)Running tests for frontend...$(RESET)"
 	@cd frontend && npm run test
-
 test:
 	@$(MAKE) -s test-frontend
-
 build-frontend:
 	@echo "$(YELLOW)Building frontend...$(RESET)"
 	@cd frontend && npm run build
-
 # Start backend
 start-backend:
 	@echo "$(YELLOW)Starting backend...$(RESET)"
-	@poetry run uvicorn openhands.server.listen:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) --reload --reload-exclude "$(shell pwd)/workspace"
-
+	@poetry run uvicorn openhands.server.listen:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) --reload --reload-exclude "./workspace"
 # Start frontend
 start-frontend:
 	@echo "$(YELLOW)Starting frontend...$(RESET)"
 	@cd frontend && VITE_BACKEND_HOST=$(BACKEND_HOST_PORT) VITE_FRONTEND_PORT=$(FRONTEND_PORT) npm run dev -- --port $(FRONTEND_PORT) --host $(BACKEND_HOST)
-
 # Common setup for running the app (non-callable)
 _run_setup:
 	@if [ "$(OS)" = "Windows_NT" ]; then \
@@ -209,14 +187,12 @@ _run_setup:
 	@echo "$(YELLOW)Waiting for the backend to start...$(RESET)"
 	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
 	@echo "$(GREEN)Backend started successfully.$(RESET)"
-
 # Run the app (standard mode)
 run:
 	@echo "$(YELLOW)Running the app...$(RESET)"
 	@$(MAKE) -s _run_setup
 	@$(MAKE) -s start-frontend
 	@echo "$(GREEN)Application started successfully.$(RESET)"
-
 # Run the app (in docker)
 docker-run: WORKSPACE_BASE ?= $(PWD)/workspace
 docker-run:
@@ -230,41 +206,32 @@ docker-run:
 		export DATE=$(shell date +%Y%m%d%H%M%S); \
 		docker compose up $(OPTIONS); \
 	fi
-
 # Run the app (WSL mode)
 run-wsl:
 	@echo "$(YELLOW)Running the app in WSL mode...$(RESET)"
 	@$(MAKE) -s _run_setup
 	@cd frontend && echo "$(BLUE)Starting frontend with npm (WSL mode)...$(RESET)" && npm run dev_wsl -- --port $(FRONTEND_PORT)
 	@echo "$(GREEN)Application started successfully in WSL mode.$(RESET)"
-
 # Setup config.toml
 setup-config:
 	@echo "$(YELLOW)Setting up config.toml...$(RESET)"
 	@$(MAKE) setup-config-prompts
 	@mv $(CONFIG_FILE).tmp $(CONFIG_FILE)
 	@echo "$(GREEN)Config.toml setup completed.$(RESET)"
-
 setup-config-prompts:
 	@echo "[core]" > $(CONFIG_FILE).tmp
-
 	@read -p "Enter your workspace directory (as absolute path) [default: $(DEFAULT_WORKSPACE_DIR)]: " workspace_dir; \
 	 workspace_dir=$${workspace_dir:-$(DEFAULT_WORKSPACE_DIR)}; \
 	 echo "workspace_base=\"$$workspace_dir\"" >> $(CONFIG_FILE).tmp
-
 	@echo "" >> $(CONFIG_FILE).tmp
-
 	@echo "[llm]" >> $(CONFIG_FILE).tmp
 	@read -p "Enter your LLM model name, used for running without UI. Set the model in the UI after you start the app. (see https://docs.litellm.ai/docs/providers for full list) [default: $(DEFAULT_MODEL)]: " llm_model; \
 	 llm_model=$${llm_model:-$(DEFAULT_MODEL)}; \
 	 echo "model=\"$$llm_model\"" >> $(CONFIG_FILE).tmp
-
 	@read -p "Enter your LLM api key: " llm_api_key; \
 	 echo "api_key=\"$$llm_api_key\"" >> $(CONFIG_FILE).tmp
-
 	@read -p "Enter your LLM base URL [mostly used for local LLMs, leave blank if not needed - example: http://localhost:5001/v1/]: " llm_base_url; \
 	 if [[ ! -z "$$llm_base_url" ]]; then echo "base_url=\"$$llm_base_url\"" >> $(CONFIG_FILE).tmp; fi
-
 	@echo "Enter your LLM Embedding Model"; \
 		echo "Choices are:"; \
 		echo "  - openai"; \
@@ -293,8 +260,6 @@ setup-config-prompts:
 			read -p "Enter the Azure API Version: " llm_api_version; \
 				echo "api_version=\"$$llm_api_version\"" >> $(CONFIG_FILE).tmp; \
 		fi
-
-
 # Develop in container
 docker-dev:
 	@if [ -f /.dockerenv ]; then \
@@ -304,13 +269,11 @@ docker-dev:
 		echo "$(YELLOW)Build and run in Docker $(OPTIONS)...$(RESET)"; \
 		./containers/dev/dev.sh $(OPTIONS); \
 	fi
-
 # Clean up all caches
 clean:
 	@echo "$(YELLOW)Cleaning up caches...$(RESET)"
 	@rm -rf openhands/.cache
 	@echo "$(GREEN)Caches cleaned up successfully.$(RESET)"
-
 # Help
 help:
 	@echo "$(BLUE)Usage: make [target]$(RESET)"
@@ -326,7 +289,6 @@ help:
 	@echo "  $(GREEN)docker-dev$(RESET)          - Build and run the OpenHands application in Docker."
 	@echo "  $(GREEN)docker-run$(RESET)          - Run the OpenHands application, starting both backend and frontend servers in Docker."
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
-
 # Phony targets
 .PHONY: build check-dependencies check-python check-npm check-docker check-poetry install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint start-backend start-frontend run run-wsl setup-config setup-config-prompts help
 .PHONY: docker-dev docker-run
