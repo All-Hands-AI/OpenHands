@@ -32,7 +32,7 @@ jobs:
       - name: Fix frontend lint issues
         run: |
           cd frontend
-          npm run lint:fix || true
+          npm run lint:fix
 
       # Python lint fixes
       - name: Set up python
