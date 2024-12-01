@@ -15,6 +15,7 @@ from openhands.events.action import (
     AgentDelegateAction,
     AgentFinishAction,
     BrowseInteractiveAction,
+    BrowseURLAction,
     CmdRunAction,
     FileEditAction,
     IPythonRunCellAction,
@@ -151,6 +152,7 @@ class CodeActAgent(Agent):
                 IPythonRunCellAction,
                 FileEditAction,
                 BrowseInteractiveAction,
+                BrowseURLAction,
             ),
         ) or (
             isinstance(action, (AgentFinishAction, CmdRunAction))
@@ -187,7 +189,9 @@ class CodeActAgent(Agent):
                 )
             ]
         elif isinstance(action, CmdRunAction) and action.source == 'user':
-            content = [TextContent(text=f'User executed the command:\n{action.command}')]
+            content = [
+                TextContent(text=f'User executed the command:\n{action.command}')
+            ]
             return [
                 Message(
                     role='user',

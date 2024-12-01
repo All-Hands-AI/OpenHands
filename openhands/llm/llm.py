@@ -12,6 +12,7 @@ from openhands.core.config import LLMConfig
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
+
 from litellm import Message as LiteLLMMessage
 from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
@@ -65,6 +66,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3-5-sonnet',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-sonnet-20241022',
+    'claude-3.5-haiku',
     'claude-3-5-haiku-20241022',
     'gpt-4o-mini',
     'gpt-4o',
@@ -108,20 +110,8 @@ class LLM(RetryMixin, DebugMixin):
                 )
             os.makedirs(self.config.log_completions_folder, exist_ok=True)
 
-        self._completion = partial(
-            litellm_completion,
-            model=self.config.model,
-            api_key=self.config.api_key,
-            base_url=self.config.base_url,
-            api_version=self.config.api_version,
-            custom_llm_provider=self.config.custom_llm_provider,
-            max_tokens=self.config.max_output_tokens,
-            timeout=self.config.timeout,
-            temperature=self.config.temperature,
-            top_p=self.config.top_p,
-            drop_params=self.config.drop_params,
-        )
-
+        # call init_model_info to initialize config.max_output_tokens
+        # which is used in partial function
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             self.init_model_info()
@@ -255,7 +245,13 @@ class LLM(RetryMixin, DebugMixin):
                     with open(log_file, 'w') as f:
                         f.write(json.dumps(_d))
 
-                message_back: str = resp['choices'][0]['message']['content']
+                message_back: str = resp['choices'][0]['message']['content'] or ''
+                tool_calls = resp['choices'][0]['message'].get('tool_calls', [])
+                if tool_calls:
+                    for tool_call in tool_calls:
+                        fn_name = tool_call.function.name
+                        fn_args = tool_call.function.arguments
+                        message_back += f'\nFunction call: {fn_name}({fn_args})'
 
                 # log the LLM response
                 self.log_response(message_back)

@@ -19,25 +19,11 @@ permissions:
 
 jobs:
   call-openhands-resolver:
-    if: |
-      github.event.label.name == 'fix-me' ||
-
-      (
-        ((github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
-         (startsWith(github.event.comment.body, inputs.macro || '@openhands-agent') || startsWith(github.event.comment.body, inputs.macro || vars.OPENHANDS_MACRO)) &&
-        (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'COLLABORATOR' || github.event.comment.author_association == 'MEMBER')
-        ) ||
-
-        (github.event_name == 'pull_request_review' &&
-        (startsWith(github.event.review.body, inputs.macro || '@openhands-agent') || startsWith(github.event.review.body, inputs.macro || vars.OPENHANDS_MACRO)) &&
-        (github.event.review.author_association == 'OWNER' || github.event.review.author_association == 'COLLABORATOR' || github.event.review.author_association == 'MEMBER')
-        )
-      )
-
     uses: All-Hands-AI/OpenHands/.github/workflows/openhands-resolver.yml@main
     with:
       macro: ${{ vars.OPENHANDS_MACRO || '@openhands-agent' }}
-      max_iterations: ${{ vars.OPENHANDS_MAX_ITER || 50 }}
+      max_iterations: ${{ fromJson(vars.OPENHANDS_MAX_ITER || 50) }}
+      base_container_image: ${{ vars.OPENHANDS_BASE_CONTAINER_IMAGE || "" }}
     secrets:
       PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
       PAT_USERNAME: ${{ secrets.PAT_USERNAME }}

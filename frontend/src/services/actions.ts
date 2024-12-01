@@ -3,24 +3,38 @@ import {
   addAssistantAction,
   addUserMessage,
   addErrorMessage,
-} from "#/state/chatSlice";
-import { setCode, setActiveFilepath } from "#/state/codeSlice";
-import { appendJupyterInput } from "#/state/jupyterSlice";
+} from "#/state/chat-slice";
+import { setCode, setActiveFilepath } from "#/state/code-slice";
+import { appendJupyterInput } from "#/state/jupyter-slice";
 import {
   ActionSecurityRisk,
   appendSecurityAnalyzerInput,
-} from "#/state/securityAnalyzerSlice";
-import { setCurStatusMessage } from "#/state/statusSlice";
+} from "#/state/security-analyzer-slice";
+import { setCurStatusMessage } from "#/state/status-slice";
 import store from "#/store";
-import ActionType from "#/types/ActionType";
+import ActionType from "#/types/action-type";
 import {
   ActionMessage,
   ObservationMessage,
   StatusMessage,
-} from "#/types/Message";
+} from "#/types/message";
 import { handleObservationMessage } from "./observations";
 
 const messageActions = {
+  [ActionType.BROWSE]: (message: ActionMessage) => {
+    if (message.args.thought) {
+      store.dispatch(addAssistantMessage(message.args.thought));
+    } else {
+      store.dispatch(addAssistantMessage(message.message));
+    }
+  },
+  [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
+    if (message.args.thought) {
+      store.dispatch(addAssistantMessage(message.args.thought));
+    } else {
+      store.dispatch(addAssistantMessage(message.message));
+    }
+  },
   [ActionType.WRITE]: (message: ActionMessage) => {
     const { path, content } = message.args;
     store.dispatch(setActiveFilepath(path));

@@ -1,7 +1,7 @@
 import { ContextMenu } from "./context-menu";
 import { ContextMenuListItem } from "./context-menu-list-item";
 import { ContextMenuSeparator } from "./context-menu-separator";
-import { useClickOutsideElement } from "#/hooks/useClickOutsideElement";
+import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 
 interface AccountSettingsContextMenuProps {
   onClickAccountSettings: () => void;

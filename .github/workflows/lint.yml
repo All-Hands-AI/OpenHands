@@ -30,10 +30,11 @@ jobs:
         run: |
           cd frontend
           npm install --frozen-lockfile
-      - name: Lint
+      - name: Lint and TypeScript compilation
         run: |
           cd frontend
           npm run lint
+          npm run make-i18n && tsc
 
   # Run lint on the python code
   lint-python:
