@@ -6,7 +6,6 @@ import {
   WsClientProviderStatus,
 } from "#/context/ws-client-provider";
 import { createChatMessage } from "#/services/chat-service";
-import { getCloneRepoCommand } from "#/services/terminal-service";
 import { setCurrentAgentState } from "#/state/agent-slice";
 import { addUserMessage } from "#/state/chat-slice";
 import {

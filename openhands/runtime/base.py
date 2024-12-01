@@ -213,6 +213,37 @@ class Runtime(FileEditRuntimeMixin):
             source = event.source if event.source else EventSource.AGENT
             self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
+    def clone_repo(self, github_token: str | None, selected_repository: str | None):
+        if not github_token or not selected_repository:
+            return
+        url = f'https://{github_token}@github.com/{selected_repository}.git'
+        dir_name = selected_repository.split('/')[1]
+        action = CmdRunAction(
+            command=f'git clone {url} {dir_name} ; cd {dir_name} ; git checkout -b openhands-workspace'
+        )
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        self.run_action(action)
+
+    def get_custom_microagents(self, selected_repository: str | None) -> list[str]:
+        if not selected_repository:
+            return []
+        dir_name = Path(selected_repository.split('/')[1])
+        files = self.list_files(str(dir_name))
+        logger.info(files)
+        custom_microagents_dir = Path('.openhands') / 'microagents'
+        files = self.list_files(str(dir_name / custom_microagents_dir))
+        logger.info(files)
+
+        custom_microagents_content = []
+        for fname in files:
+            content = self.read(
+                FileReadAction(path=str(custom_microagents_dir / fname))
+            ).content
+            custom_microagents_content.append(content)
+            logger.info(content)
+
+        return custom_microagents_content
+
     def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.
         If the action is not runnable in any runtime, a NullObservation is returned.
