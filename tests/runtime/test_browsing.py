@@ -26,6 +26,7 @@ PY3_FOR_TESTING = '/openhands/micromamba/bin/micromamba run -n openhands python3
 def has_docker():
     try:
         import docker
+
         client = docker.from_env()
         client.ping()  # Will raise an exception if Docker daemon is not running
         return True
@@ -33,10 +34,7 @@ def has_docker():
         return False
 
 
-@pytest.mark.skipif(
-    not has_docker(),
-    reason='Requires Docker daemon to be running'
-)
+@pytest.mark.skipif(not has_docker(), reason='Requires Docker daemon to be running')
 def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
     runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
