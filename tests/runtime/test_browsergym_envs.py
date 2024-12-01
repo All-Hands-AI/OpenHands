@@ -24,20 +24,9 @@ def has_miniwob():
         return False
 
 
-def has_docker():
-    try:
-        import docker
-
-        client = docker.from_env()
-        client.ping()  # Will raise an exception if Docker daemon is not running
-        return True
-    except Exception:
-        return False
-
-
 @pytest.mark.skipif(
-    not has_miniwob() or not has_docker(),
-    reason='Requires browsergym-miniwob package and Docker daemon to be running',
+    not has_miniwob(),
+    reason='Requires browsergym-miniwob package to be installed',
 )
 def test_browsergym_eval_env(runtime_cls, temp_dir):
     runtime = _load_runtime(
