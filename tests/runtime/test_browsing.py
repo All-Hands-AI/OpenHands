@@ -1,7 +1,5 @@
 """Browsing-related tests for the EventStreamRuntime, which connects to the ActionExecutor running in the sandbox."""
 
-import json
-
 import pytest
 from conftest import _close_test_runtime, _load_runtime
 
@@ -10,14 +8,14 @@ from openhands.events.action import (
     BrowseURLAction,
     CmdRunAction,
 )
-from openhands.events.action.browse import BrowseInteractiveAction
 from openhands.events.observation import (
     BrowserOutputObservation,
     CmdOutputObservation,
 )
 
 # ============================================================================================================================
-# Browsing tests
+# Browsing tests, without evaluation (poetry install --without evaluation)
+# For eval environments, tests need to run with poetry install
 # ============================================================================================================================
 
 PY3_FOR_TESTING = '/openhands/micromamba/bin/micromamba run -n openhands python3'
@@ -77,70 +75,5 @@ def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
-
-    _close_test_runtime(runtime)
-
-
-def has_miniwob():
-    try:
-        import importlib.util
-
-        # try to find this browser environment, if it was installed
-        spec = importlib.util.find_spec('browsergym.miniwob')
-        if spec is None:
-            return False
-
-        # try to import this environment
-        importlib.util.module_from_spec(spec)
-        return True
-    except ImportError:
-        return False
-
-
-@pytest.mark.skipif(
-    not has_miniwob() or not has_docker(),
-    reason='Requires browsergym-miniwob package and Docker daemon to be running',
-)
-def test_browsergym_eval_env(runtime_cls, temp_dir):
-    runtime = _load_runtime(
-        temp_dir,
-        runtime_cls=runtime_cls,
-        run_as_openhands=False,  # need root permission to access file
-        base_container_image='xingyaoww/od-eval-miniwob:v1.0',
-        browsergym_eval_env='browsergym/miniwob.choose-list',
-        force_rebuild_runtime=True,
-    )
-    from openhands.runtime.browser.browser_env import (
-        BROWSER_EVAL_GET_GOAL_ACTION,
-        BROWSER_EVAL_GET_REWARDS_ACTION,
-    )
-
-    # Test browse
-    action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_GOAL_ACTION)
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-
-    assert isinstance(obs, BrowserOutputObservation)
-    assert not obs.error
-    assert 'Select' in obs.content
-    assert 'from the list and click Submit' in obs.content
-
-    # Make sure the browser can produce observation in eval env
-    action = BrowseInteractiveAction(browser_actions='noop()')
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert (
-        obs.url.strip()
-        == 'file:///miniwob-plusplus/miniwob/html/miniwob/choose-list.html'
-    )
-
-    # Make sure the rewards are working
-    action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_REWARDS_ACTION)
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert json.loads(obs.content) == [0.0]
 
     _close_test_runtime(runtime)
