@@ -10,7 +10,6 @@ import requests
 import tenacity
 
 from openhands.core.config import AppConfig
-from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
     BrowseInteractiveAction,

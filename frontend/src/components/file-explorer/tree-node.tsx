@@ -10,15 +10,11 @@ interface TitleProps {
   name: string;
   type: "folder" | "file";
   isOpen: boolean;
-  onClick: () => void;
 }
 
-function Title({ name, type, isOpen, onClick }: TitleProps) {
+function Title({ name, type, isOpen }: TitleProps) {
   return (
-    <div
-      onClick={onClick}
-      className="cursor-pointer text-nowrap rounded-[5px] p-1 nowrap flex items-center gap-2 aria-selected:bg-neutral-600 aria-selected:text-white hover:text-white"
-    >
+    <div className="cursor-pointer text-nowrap rounded-[5px] p-1 nowrap flex items-center gap-2 aria-selected:bg-neutral-600 aria-selected:text-white hover:text-white">
       <div className="flex-shrink-0">
         {type === "folder" && <FolderIcon isOpen={isOpen} />}
         {type === "file" && <FileIcon filename={name} />}
@@ -84,13 +80,13 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
         type={isDirectory ? "button" : "submit"}
         name="file"
         value={path}
+        onClick={handleClick}
         className="flex items-center justify-between w-full px-1"
       >
         <Title
           name={filename}
           type={isDirectory ? "folder" : "file"}
           isOpen={isOpen}
-          onClick={handleClick}
         />
 
         {modifiedFiles[path] && (

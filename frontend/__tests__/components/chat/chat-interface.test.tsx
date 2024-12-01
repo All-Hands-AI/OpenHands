@@ -2,11 +2,11 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "test-utils";
-import { ChatInterface } from "#/components/chat-interface";
 import { addUserMessage } from "#/state/chat-slice";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import * as ChatSlice from "#/state/chat-slice";
 import { WsClientProviderStatus } from "#/context/ws-client-provider";
+import { ChatInterface } from "#/routes/_oh.app/chat-interface";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const renderChatInterface = (messages: (Message | ErrorMessage)[]) =>
@@ -18,7 +18,11 @@ describe("Empty state", () => {
   }));
 
   const { useWsClient: useWsClientMock } = vi.hoisted(() => ({
-    useWsClient: vi.fn(() => ({ send: sendMock, status: WsClientProviderStatus.ACTIVE, isLoadingMessages: false })),
+    useWsClient: vi.fn(() => ({
+      send: sendMock,
+      status: WsClientProviderStatus.ACTIVE,
+      isLoadingMessages: false,
+    })),
   }));
 
   beforeAll(() => {
@@ -84,7 +88,9 @@ describe("Empty state", () => {
     async () => {
       // this is to test that the message is in the UI before the socket is called
       useWsClientMock.mockImplementation(() => ({
-        send: sendMock, status: WsClientProviderStatus.ACTIVE, isLoadingMessages: false
+        send: sendMock,
+        status: WsClientProviderStatus.ACTIVE,
+        isLoadingMessages: false,
       }));
       const addUserMessageSpy = vi.spyOn(ChatSlice, "addUserMessage");
       const user = userEvent.setup();
@@ -112,7 +118,9 @@ describe("Empty state", () => {
     "should send the message to the socket only if the runtime is active",
     async () => {
       useWsClientMock.mockImplementation(() => ({
-        send: sendMock, status: WsClientProviderStatus.ACTIVE, isLoadingMessages: false
+        send: sendMock,
+        status: WsClientProviderStatus.ACTIVE,
+        isLoadingMessages: false,
       }));
       const user = userEvent.setup();
       const { rerender } = renderWithProviders(<ChatInterface />, {
@@ -121,7 +129,6 @@ describe("Empty state", () => {
         },
       });
 
-
       const suggestions = screen.getByTestId("suggestions");
       const displayedSuggestions = within(suggestions).getAllByRole("button");
 
@@ -129,7 +136,9 @@ describe("Empty state", () => {
       expect(sendMock).not.toHaveBeenCalled();
 
       useWsClientMock.mockImplementation(() => ({
-        send: sendMock, status: WsClientProviderStatus.ACTIVE, isLoadingMessages: false
+        send: sendMock,
+        status: WsClientProviderStatus.ACTIVE,
+        isLoadingMessages: false,
       }));
       rerender(<ChatInterface />);
 
@@ -330,10 +339,16 @@ describe.skip("ChatInterface", () => {
     rerender(<ChatInterface />);
 
     // Verify only one button is shown
-    const pushToPrButton = screen.getByRole("button", { name: "Push changes to PR" });
+    const pushToPrButton = screen.getByRole("button", {
+      name: "Push changes to PR",
+    });
     expect(pushToPrButton).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Push to Branch" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Push & Create PR" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Push to Branch" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Push & Create PR" }),
+    ).not.toBeInTheDocument();
   });
 
   it("should render feedback actions if there are more than 3 messages", () => {

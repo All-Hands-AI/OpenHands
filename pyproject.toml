@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openhands-ai"
-version = "0.14.2"
+version = "0.14.3"
 description = "OpenHands: Code Less, Make More"
 authors = ["OpenHands"]
 license = "MIT"
@@ -30,7 +30,7 @@ numpy = "*"
 json-repair = "*"
 browsergym = "0.10.2" # integrate browsergym as the browsing interface
 html2text = "*"
-e2b = "^0.17.1"
+e2b = ">=0.17.1,<1.1.0"
 pexpect = "*"
 jinja2 = "^3.1.3"
 python-multipart = "*"
@@ -98,10 +98,6 @@ reportlab = "*"
 concurrency = ["gevent"]
 
 
-
-
-
-
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -131,10 +127,6 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
-
-
-
-
 
 
 [tool.poetry.group.evaluation.dependencies]

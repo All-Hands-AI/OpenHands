@@ -62,3 +62,107 @@ def test_rehydration(temp_dir: str):
     assert len(events) == 2
     assert events[0].content == 'obs1'
     assert events[1].content == 'obs2'
+
+
+def test_get_matching_events_type_filter(temp_dir: str):
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
+
+    # Add mixed event types
+    event_stream.add_event(NullAction(), EventSource.AGENT)
+    event_stream.add_event(NullObservation('test'), EventSource.AGENT)
+    event_stream.add_event(NullAction(), EventSource.AGENT)
+
+    # Filter by NullAction
+    events = event_stream.get_matching_events(event_type='NullAction')
+    assert len(events) == 2
+    assert all(e['action'] == 'null' for e in events)
+
+    # Filter by NullObservation
+    events = event_stream.get_matching_events(event_type='NullObservation')
+    assert len(events) == 1
+    assert events[0]['observation'] == 'null'
+
+
+def test_get_matching_events_query_search(temp_dir: str):
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
+
+    event_stream.add_event(NullObservation('hello world'), EventSource.AGENT)
+    event_stream.add_event(NullObservation('test message'), EventSource.AGENT)
+    event_stream.add_event(NullObservation('another hello'), EventSource.AGENT)
+
+    # Search for 'hello'
+    events = event_stream.get_matching_events(query='hello')
+    assert len(events) == 2
+
+    # Search should be case-insensitive
+    events = event_stream.get_matching_events(query='HELLO')
+    assert len(events) == 2
+
+    # Search for non-existent text
+    events = event_stream.get_matching_events(query='nonexistent')
+    assert len(events) == 0
+
+
+def test_get_matching_events_source_filter(temp_dir: str):
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
+
+    event_stream.add_event(NullObservation('test1'), EventSource.AGENT)
+    event_stream.add_event(NullObservation('test2'), EventSource.ENVIRONMENT)
+    event_stream.add_event(NullObservation('test3'), EventSource.AGENT)
+
+    # Filter by AGENT source
+    events = event_stream.get_matching_events(source='agent')
+    assert len(events) == 2
+    assert all(e['source'] == 'agent' for e in events)
+
+    # Filter by ENVIRONMENT source
+    events = event_stream.get_matching_events(source='environment')
+    assert len(events) == 1
+    assert events[0]['source'] == 'environment'
+
+
+def test_get_matching_events_pagination(temp_dir: str):
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
+
+    # Add 5 events
+    for i in range(5):
+        event_stream.add_event(NullObservation(f'test{i}'), EventSource.AGENT)
+
+    # Test limit
+    events = event_stream.get_matching_events(limit=3)
+    assert len(events) == 3
+
+    # Test start_id
+    events = event_stream.get_matching_events(start_id=2)
+    assert len(events) == 3
+    assert events[0]['content'] == 'test2'
+
+    # Test combination of start_id and limit
+    events = event_stream.get_matching_events(start_id=1, limit=2)
+    assert len(events) == 2
+    assert events[0]['content'] == 'test1'
+    assert events[1]['content'] == 'test2'
+
+
+def test_get_matching_events_limit_validation(temp_dir: str):
+    file_store = get_file_store('local', temp_dir)
+    event_stream = EventStream('abc', file_store)
+
+    # Test limit less than 1
+    with pytest.raises(ValueError, match='Limit must be between 1 and 100'):
+        event_stream.get_matching_events(limit=0)
+
+    # Test limit greater than 100
+    with pytest.raises(ValueError, match='Limit must be between 1 and 100'):
+        event_stream.get_matching_events(limit=101)
+
+    # Test valid limits work
+    event_stream.add_event(NullObservation('test'), EventSource.AGENT)
+    events = event_stream.get_matching_events(limit=1)
+    assert len(events) == 1
+    events = event_stream.get_matching_events(limit=100)
+    assert len(events) == 1

@@ -15,7 +15,7 @@ class BrowseURLAction(Action):
 
     @property
     def message(self) -> str:
-        return f'Browsing URL: {self.url}'
+        return f'I am browsing the URL: {self.url}'
 
     def __str__(self) -> str:
         ret = '**BrowseURLAction**\n'
