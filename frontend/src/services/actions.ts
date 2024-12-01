@@ -155,7 +155,6 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
   } else {
     store.dispatch(
       addErrorMessage({
-        type: "error",
         message: "Unknown message type received",
       }),
     );
