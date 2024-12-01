@@ -2036,5 +2036,11 @@
   },
   "OBSERVATION_MESSAGE$WRITE": {
     "en": "Wrote to a file"
+  },
+  "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
+    "en": "Show details"
+  },
+  "EXPANDABLE_MESSAGE$HIDE_DETAILS": {
+    "en": "Hide details"
   }
 }
