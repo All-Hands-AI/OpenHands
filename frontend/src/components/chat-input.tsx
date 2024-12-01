@@ -82,9 +82,10 @@ export function ChatInput({
   };
 
   const handleSubmitMessage = () => {
-    if (textareaRef.current?.value) {
-      onSubmit(textareaRef.current.value);
-      textareaRef.current.value = "";
+    const textarea = textareaRef.current;
+    if (textarea?.value) {
+      onSubmit(textarea.value);
+      textarea.value = "";
     }
   };
 
