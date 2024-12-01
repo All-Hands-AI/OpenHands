@@ -1,8 +1,8 @@
-import ModalButton from "./buttons/ModalButton";
+import ModalButton from "./buttons/modal-button";
 import { ModalBackdrop } from "./modals/modal-backdrop";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
-import ModalBody from "./modals/ModalBody";
+import ModalBody from "./modals/modal-body";
 
 interface WaitlistModalProps {
   ghToken: string | null;

@@ -80,7 +80,7 @@ async def resolve_issues(
         repo_instruction: Repository instruction to use.
         issue_numbers: List of issue numbers to resolve.
     """
-    issue_handler = issue_handler_factory(issue_type, owner, repo, token)
+    issue_handler = issue_handler_factory(issue_type, owner, repo, token, llm_config)
 
     # Load dataset
     issues: list[GithubIssue] = issue_handler.get_converted_issues(
