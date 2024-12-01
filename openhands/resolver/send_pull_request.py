@@ -426,10 +426,13 @@ def update_existing_pull_request(
 
     # Reply to each unresolved comment thread
     if additional_message and github_issue.thread_ids:
-        explanations = json.loads(additional_message)
-        for count, reply_comment in enumerate(explanations):
-            comment_id = github_issue.thread_ids[count]
-            reply_to_comment(github_token, comment_id, reply_comment)
+        try:
+            explanations = json.loads(additional_message)
+            for count, reply_comment in enumerate(explanations):
+                comment_id = github_issue.thread_ids[count]
+                reply_to_comment(github_token, comment_id, reply_comment)
+        except (json.JSONDecodeError, TypeError):
+            pass
 
     return pr_url
 
