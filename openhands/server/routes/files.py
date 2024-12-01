@@ -77,10 +77,16 @@ async def list_files(request: Request, path: str | None = None):
 
     file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
 
-    async def filter_for_gitignore(file_list, base_path):
-        gitignore_path = os.path.join(base_path, '.gitignore')
+    async def has_gitignore() -> bool:
+        file_list = await call_sync_from_async(runtime.list_files, '')
+        result = next((True for f in file_list if f == '.gitignore'), False)
+        return result
+
+    async def filter_for_gitignore(file_list):
+        if not await has_gitignore():
+            return file_list
         try:
-            read_action = FileReadAction(gitignore_path)
+            read_action = FileReadAction('.gitignore')
             observation = await call_sync_from_async(runtime.run_action, read_action)
             spec = PathSpec.from_lines(
                 GitWildMatchPattern, observation.content.splitlines()
@@ -92,7 +98,7 @@ async def list_files(request: Request, path: str | None = None):
         return file_list
 
     try:
-        file_list = await filter_for_gitignore(file_list, '')
+        file_list = await filter_for_gitignore(file_list)
     except RuntimeUnavailableError as e:
         logger.error(f'Error filtering files: {e}', exc_info=True)
         return JSONResponse(
