@@ -431,11 +431,6 @@ if __name__ == '__main__':
         return response
 
     @app.post('/execute_action')
-    async def execute_action(action_request: ActionRequest):
-        assert client is not None
-        try:
-            action = event_from_dict(action_request.action)
-            if not isinstance(action, Action):
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
             observation = await client.run_action(action)
@@ -537,6 +532,74 @@ if __name__ == '__main__':
     @app.get('/alive')
     async def alive():
         return {'status': 'ok'}
+
+    @app.post('/execute_action')
+    async def execute_action(action_request: ActionRequest):
+        if client is None:
+            raise HTTPException(status_code=500, detail='Runtime client not initialized')
+        action = event_from_dict(action_request.action)
+        observation = await client.run_action(action)
+        return event_to_dict(observation)
+
+    @app.post('/action')
+    async def execute_action(request: ActionRequest):
+        if client is None:
+            raise HTTPException(status_code=500, detail='Runtime client not initialized')
+        action = event_from_dict(request.action)
+        observation = await client.run_action(action)
+        data = await request.json()
+        host_src = data['host_src']
+        sandbox_dest = data['sandbox_dest']
+        recursive = data.get('recursive', False)
+        try:
+            shutil.copy2(host_src, sandbox_dest)
+            return {'status': 'ok'}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get('/list_files')
+    async def list_files(path: str | None = None):
+        if client is None:
+            raise HTTPException(status_code=500, detail='Runtime client not initialized')
+        try:
+            if path is None:
+                path = client.initial_pwd
+            files = os.listdir(path)
+            return files
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.post('/copy_from')
+    async def copy_from(request: Request):
+        if client is None:
+            raise HTTPException(status_code=500, detail='Runtime client not initialized')
+        data = await request.json()
+        path = data['path']
+        try:
+            # Create a temporary directory to store the files
+            with tempfile.TemporaryDirectory() as temp_dir:
+                # Create a zip file
+                zip_path = os.path.join(temp_dir, 'files.zip')
+                with ZipFile(zip_path, 'w') as zip_file:
+                    if os.path.isfile(path):
+                        zip_file.write(path, os.path.basename(path))
+                    else:
+                        for root, _, files in os.walk(path):
+                            for file in files:
+                                file_path = os.path.join(root, file)
+                                zip_file.write(file_path, os.path.relpath(file_path, path))
+                return {'path': zip_path}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get('/vscode_url')
+    async def vscode_url():
+        if client is None:
+            raise HTTPException(status_code=500, detail='Runtime client not initialized')
+        if 'vscode' not in client.plugins:
+            raise HTTPException(status_code=404, detail='VSCode plugin not found')
+        vscode_plugin: VSCodePlugin = client.plugins['vscode']  # type: ignore
+        return {'url': vscode_plugin.url}
 
     # ================================
     # VSCode-specific operations

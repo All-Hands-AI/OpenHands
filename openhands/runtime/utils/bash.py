@@ -73,7 +73,7 @@ class BashSession:
         self._pwd = work_dir
 
         self.shell = pexpect.spawn(
-            f'su {username}',
+            f'sudo -u {username} bash',
             encoding='utf-8',
             codec_errors='replace',
             echo=False,
