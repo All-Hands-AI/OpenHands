@@ -162,14 +162,7 @@ export function handleObservationMessage(message: ObservationMessage) {
         );
         break;
       default:
-        // For any unhandled observation types, dispatch a generic observation
-        store.dispatch(
-          addAssistantObservation({
-            ...baseObservation,
-            observation: observation as const,
-            extras: message.extras,
-          }),
-        );
+        // For any unhandled observation types, just ignore them
         break;
     }
   }

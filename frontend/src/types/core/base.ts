@@ -1,4 +1,4 @@
-type OpenHandsEventType =
+export type OpenHandsEventType =
   | "message"
   | "agent_state_changed"
   | "run"

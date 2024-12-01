@@ -24,10 +24,10 @@ export function Messages({
 }: MessagesProps) {
   return messages.map((message, index) =>
     isErrorMessage(message) ? (
-      <ErrorMessage key={index} id={message.id} message={message.message} />
+      <ErrorMessage key={index} message={message.message} />
     ) : (
       <ChatMessage key={index} type={message.sender} message={message.content}>
-        {message.imageUrls.length > 0 && (
+        {message.imageUrls && message.imageUrls.length > 0 && (
           <ImageCarousel size="small" images={message.imageUrls} />
         )}
         {messages.length - 1 === index &&
