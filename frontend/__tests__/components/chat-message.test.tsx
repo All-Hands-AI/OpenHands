@@ -77,5 +77,6 @@ describe("ChatMessage", () => {
     
     expect(codeElement.tagName.toLowerCase()).toBe("code");
     expect(codeElement.closest(".markdown-body")).not.toBeNull();
+    expect(codeElement.closest(".text-sm")).not.toBeNull();
   });
 });
