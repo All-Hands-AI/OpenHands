@@ -35,9 +35,21 @@ export function InteractiveChatBox({
     });
   };
 
+  const [inputValue, setInputValue] = React.useState(value || "");
+
+  React.useEffect(() => {
+    setInputValue(value || "");
+  }, [value]);
+
   const handleSubmit = (message: string) => {
     onSubmit(message, images);
     setImages([]);
+    setInputValue("");
+  };
+
+  const handleChange = (message: string) => {
+    setInputValue(message);
+    onChange?.(message);
   };
 
   return (
@@ -66,10 +78,10 @@ export function InteractiveChatBox({
           disabled={isDisabled}
           button={mode}
           placeholder="What do you want to build?"
-          onChange={onChange}
+          onChange={handleChange}
           onSubmit={handleSubmit}
           onStop={onStop}
-          value={value}
+          value={inputValue}
           onImagePaste={handleUpload}
           className="py-[10px]"
           buttonClassName="py-[10px]"

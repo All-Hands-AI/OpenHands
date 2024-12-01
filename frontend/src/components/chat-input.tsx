@@ -51,6 +51,8 @@ export function ChatInput({
       if (files.length > 0) {
         event.preventDefault();
         onImagePaste(files);
+        // Clear the text input when an image is pasted
+        onChange?.("");
       }
     }
     // For text paste, let the default behavior handle it
@@ -77,14 +79,19 @@ export function ChatInput({
       );
       if (files.length > 0) {
         onImagePaste(files);
+        // Clear the text input when an image is dropped
+        onChange?.("");
       }
     }
   };
 
   const handleSubmitMessage = () => {
-    if (textareaRef.current?.value) {
-      onSubmit(textareaRef.current.value);
-      textareaRef.current.value = "";
+    if (value || (textareaRef.current?.value && !value)) {
+      onSubmit(value || textareaRef.current.value);
+      if (!value && textareaRef.current) {
+        textareaRef.current.value = "";
+      }
+      onChange?.("");
     }
   };
 

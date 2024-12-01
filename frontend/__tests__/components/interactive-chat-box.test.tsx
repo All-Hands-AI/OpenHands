@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, within, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { InteractiveChatBox } from "#/components/interactive-chat-box";
@@ -130,5 +130,72 @@ describe("InteractiveChatBox", () => {
 
     await user.click(stopButton);
     expect(onStopMock).toHaveBeenCalledOnce();
+  });
+
+  it("should clear text input after image paste", async () => {
+    const onSubmit = vi.fn();
+    const onStop = vi.fn();
+    const onChange = vi.fn();
+
+    render(
+      <InteractiveChatBox
+        onSubmit={onSubmit}
+        onStop={onStop}
+        onChange={onChange}
+        value="test message"
+      />
+    );
+
+    const textarea = screen.getByRole("textbox");
+    expect(textarea).toHaveValue("test message");
+
+    // Create a mock image file
+    const imageFile = new File(["dummy content"], "test.png", { type: "image/png" });
+    const clipboardEvent = new Event("paste", { bubbles: true }) as any;
+    clipboardEvent.clipboardData = {
+      files: [imageFile],
+      getData: () => "",
+    };
+
+    // Trigger paste event
+    fireEvent(textarea, clipboardEvent);
+
+    // The text input should be cleared
+    expect(textarea).toHaveValue("");
+    expect(onChange).toHaveBeenCalledWith("");
+  });
+
+  it("should clear text input after image drop", async () => {
+    const onSubmit = vi.fn();
+    const onStop = vi.fn();
+    const onChange = vi.fn();
+
+    render(
+      <InteractiveChatBox
+        onSubmit={onSubmit}
+        onStop={onStop}
+        onChange={onChange}
+        value="test message"
+      />
+    );
+
+    const textarea = screen.getByRole("textbox");
+    expect(textarea).toHaveValue("test message");
+
+    // Create a mock image file
+    const imageFile = new File(["dummy content"], "test.png", { type: "image/png" });
+    const dropEvent = new Event("drop", { bubbles: true }) as any;
+    dropEvent.dataTransfer = {
+      files: [imageFile],
+      types: ["Files"],
+    };
+    dropEvent.preventDefault = vi.fn();
+
+    // Trigger drop event
+    fireEvent(textarea, dropEvent);
+
+    // The text input should be cleared
+    expect(textarea).toHaveValue("");
+    expect(onChange).toHaveBeenCalledWith("");
   });
 });
