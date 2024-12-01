@@ -153,6 +153,11 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
   } else if (message.status_update) {
     handleStatusMessage(message as unknown as StatusMessage);
   } else {
-    console.error("Unknown message type", message);
+    store.dispatch(
+      addErrorMessage({
+        type: "error",
+        message: "Unknown message type received",
+      }),
+    );
   }
 }
