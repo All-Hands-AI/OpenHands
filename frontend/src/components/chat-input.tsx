@@ -82,10 +82,9 @@ export function ChatInput({
   };
 
   const handleSubmitMessage = () => {
-    if (textareaRef.current?.value) {
-      onSubmit(textareaRef.current.value);
-      textareaRef.current.value = "";
-    }
+    // Introducing the same TypeScript error by not checking if current is null
+    onSubmit(textareaRef.current.value);
+    textareaRef.current.value = "";
   };
 
   const handleKeyPress = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
