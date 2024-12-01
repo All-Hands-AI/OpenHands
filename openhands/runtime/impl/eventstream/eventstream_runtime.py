@@ -20,11 +20,11 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
-    ReplayCmdRunAction,
     FileEditAction,
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
+    ReplayCmdRunAction,
 )
 from openhands.events.action.action import Action
 from openhands.events.observation import (
@@ -344,7 +344,10 @@ class EventStreamRuntime(Runtime):
             if volumes is None:
                 volumes = {}
             volumes[self.config.replay.dir] = {
-                'bind': "/replay",
+                'bind': '/replay',
+                # TODO: Don't provide this much write access to the LLM, since its dangerous (at least on a dev machine).
+                #   * We should not need write access.
+                #   * But any bugs coming from not having write access might be difficult to debug.
                 'mode': 'rw',
             }
         self.log(

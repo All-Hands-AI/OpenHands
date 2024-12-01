@@ -44,6 +44,8 @@ from openhands.events.observation import (
     NullObservation,
     Observation,
 )
+from openhands.events.observation.replay import ReplayCmdOutputObservation
+from openhands.events.replay import handle_replay_enhance_observation
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
 from openhands.utils.shutdown_listener import should_continue
@@ -224,6 +226,9 @@ class AgentController:
         Args:
             event (Event): The incoming event to process.
         """
+        if isinstance(event, ReplayCmdOutputObservation):
+            handle_replay_enhance_observation(self.state, event)
+
         if hasattr(event, 'hidden') and event.hidden:
             return
 

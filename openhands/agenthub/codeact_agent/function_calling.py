@@ -52,7 +52,7 @@ ReplayRunCmdTool = ChatCompletionToolParam(
                 'recording_id': {
                     'type': 'string',
                     'description': 'The recording ID to replay against.',
-                }
+                },
             },
             'required': ['command'],
         },
@@ -548,7 +548,7 @@ def get_tools(
     codeact_enable_browsing: bool = False,
     codeact_enable_llm_editor: bool = False,
     codeact_enable_jupyter: bool = False,
-    codeact_enable_replay: bool = False,
+    # codeact_enable_replay: bool = False,
 ) -> list[ChatCompletionToolParam]:
     tools = [CmdRunTool, FinishTool]
     if codeact_enable_browsing:
@@ -559,6 +559,8 @@ def get_tools(
         tools.append(LLMBasedFileEditTool)
     else:
         tools.append(StrReplaceEditorTool)
-    if codeact_enable_replay:
-        tools.append(ReplayRunCmdTool)
+
+    # NOTE: Replace generic replay tool with individual purpuseful tools.
+    # if codeact_enable_replay:
+    #     tools.append(ReplayRunCmdTool)
     return tools

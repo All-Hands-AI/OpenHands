@@ -32,6 +32,7 @@ from openhands.events.observation import (
 )
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
+from openhands.events.replay import replay_enhance_action
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
 from openhands.runtime.plugins import (
@@ -97,7 +98,7 @@ class CodeActAgent(Agent):
             codeact_enable_browsing=self.config.codeact_enable_browsing,
             codeact_enable_jupyter=self.config.codeact_enable_jupyter,
             codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
-            codeact_enable_replay=self.config.codeact_enable_replay,
+            # codeact_enable_replay=self.config.codeact_enable_replay,
         )
         logger.debug(
             f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
@@ -344,13 +345,6 @@ class CodeActAgent(Agent):
         - AgentFinishAction() - end the interaction
         """
 
-        # TODO:
-        # 1. [EnhanceAction] Return a new `ReplayCmdRunAction` from `step` to enhance the prompt if it contains a recording.
-        # 2. Make sure the `EnhanceAction` and its returned `EnhanceObservation` enhance the original user message, instead of adding new messages.
-        #    * NOTE: By default the `EnhanceAction` will automatically *add* 2 new messages:
-        #      * `Action` (via `get_action_message`) and
-        #      * `Observation` (via `get_observation_message`).
-
         # Continue with pending actions if any
         if self.pending_actions:
             return self.pending_actions.popleft()
@@ -359,6 +353,12 @@ class CodeActAgent(Agent):
         latest_user_message = state.get_last_user_message()
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
+
+        # Replay enhancement.
+        enhance_action = replay_enhance_action(state)
+        if enhance_action:
+            logger.info('[REPLAY] Enhancing prompt for recording...')
+            return enhance_action
 
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)
