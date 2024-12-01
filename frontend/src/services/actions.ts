@@ -126,7 +126,8 @@ export function handleActionMessage(message: ActionMessage) {
             action: "run" as const,
             args: {
               command: String(message.args?.command || ""),
-              confirmation_state: (message.args?.confirmation_state || "confirmed") as
+              confirmation_state: (message.args?.confirmation_state ||
+                "confirmed") as
                 | "confirmed"
                 | "rejected"
                 | "awaiting_confirmation",
@@ -158,7 +159,8 @@ export function handleActionMessage(message: ActionMessage) {
             action: "run_ipython" as const,
             args: {
               code: String(message.args?.code || ""),
-              confirmation_state: (message.args?.confirmation_state || "confirmed") as
+              confirmation_state: (message.args?.confirmation_state ||
+                "confirmed") as
                 | "confirmed"
                 | "rejected"
                 | "awaiting_confirmation",
