@@ -1,11 +1,10 @@
 import { Card } from "@nextui-org/react";
 
 interface ErrorMessageProps {
-  id: string;
   message: string;
 }
 
-export function ErrorMessage({ id, message }: ErrorMessageProps) {
+export function ErrorMessage({ message }: ErrorMessageProps) {
   return (
     <Card
       data-testid="error-message"

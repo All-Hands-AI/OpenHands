@@ -113,56 +113,72 @@ export function handleActionMessage(message: ActionMessage) {
       source: "agent" as const,
       args: {
         ...message.args,
-        thought: message.args?.thought || message.message || ""
-      }
+        thought: message.args?.thought || message.message || "",
+      },
     };
 
     // Cast to the appropriate action type based on the action field
     switch (message.action) {
       case "run":
-        store.dispatch(addAssistantAction({
-          ...baseAction,
-          action: "run" as const,
-          args: {
-            command: String(message.args?.command || ""),
-            confirmation_state: (message.args?.confirmation_state || "confirmed") as "confirmed" | "rejected" | "awaiting_confirmation",
-            thought: String(message.args?.thought || message.message || ""),
-            hidden: Boolean(message.args?.hidden)
-          }
-        }));
+        store.dispatch(
+          addAssistantAction({
+            ...baseAction,
+            action: "run" as const,
+            args: {
+              command: String(message.args?.command || ""),
+              confirmation_state: (message.args?.confirmation_state || "confirmed") as
+                | "confirmed"
+                | "rejected"
+                | "awaiting_confirmation",
+              thought: String(message.args?.thought || message.message || ""),
+              hidden: Boolean(message.args?.hidden),
+            },
+          }),
+        );
         break;
       case "message":
-        store.dispatch(addAssistantAction({
-          ...baseAction,
-          action: "message" as const,
-          args: {
-            content: String(message.args?.content || message.message || ""),
-            image_urls: Array.isArray(message.args?.image_urls) ? message.args.image_urls : null,
-            wait_for_response: Boolean(message.args?.wait_for_response)
-          }
-        }));
+        store.dispatch(
+          addAssistantAction({
+            ...baseAction,
+            action: "message" as const,
+            args: {
+              content: String(message.args?.content || message.message || ""),
+              image_urls: Array.isArray(message.args?.image_urls)
+                ? message.args.image_urls
+                : null,
+              wait_for_response: Boolean(message.args?.wait_for_response),
+            },
+          }),
+        );
         break;
       case "run_ipython":
-        store.dispatch(addAssistantAction({
-          ...baseAction,
-          action: "run_ipython" as const,
-          args: {
-            code: String(message.args?.code || ""),
-            confirmation_state: (message.args?.confirmation_state || "confirmed") as "confirmed" | "rejected" | "awaiting_confirmation",
-            kernel_init_code: String(message.args?.kernel_init_code || ""),
-            thought: String(message.args?.thought || message.message || "")
-          }
-        }));
+        store.dispatch(
+          addAssistantAction({
+            ...baseAction,
+            action: "run_ipython" as const,
+            args: {
+              code: String(message.args?.code || ""),
+              confirmation_state: (message.args?.confirmation_state || "confirmed") as
+                | "confirmed"
+                | "rejected"
+                | "awaiting_confirmation",
+              kernel_init_code: String(message.args?.kernel_init_code || ""),
+              thought: String(message.args?.thought || message.message || ""),
+            },
+          }),
+        );
         break;
       default:
         // For other action types, ensure we have the required thought property
-        store.dispatch(addAssistantAction({
-          ...baseAction,
-          action: "reject" as const,
-          args: {
-            thought: String(message.args?.thought || message.message || "")
-          }
-        }));
+        store.dispatch(
+          addAssistantAction({
+            ...baseAction,
+            action: "reject" as const,
+            args: {
+              thought: String(message.args?.thought || message.message || ""),
+            },
+          }),
+        );
     }
   }
 
@@ -197,6 +213,6 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
   } else if (message.status_update) {
     handleStatusMessage(message as unknown as StatusMessage);
   } else {
-    console.error("Unknown message type", message);
+    // Skip unknown message types
   }
 }

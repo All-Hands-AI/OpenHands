@@ -3,12 +3,18 @@ import ConfirmationButtons from "#/components/chat/confirmation-buttons";
 import { ErrorMessage } from "#/components/error-message";
 import { ImageCarousel } from "#/components/image-carousel";
 
+interface ErrorMessageType {
+  type: "error";
+  id: string;
+  message: string;
+}
+
 const isErrorMessage = (
-  message: Message | ErrorMessage,
-): message is ErrorMessage => "error" in message;
+  message: Message | ErrorMessageType,
+): message is ErrorMessageType => "error" in message;
 
 interface MessagesProps {
-  messages: (Message | ErrorMessage)[];
+  messages: (Message | ErrorMessageType)[];
   isAwaitingUserConfirmation: boolean;
 }
 
