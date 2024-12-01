@@ -29,6 +29,7 @@ types-toml = "*"
 numpy = "*"
 json-repair = "*"
 browsergym-core = "0.10.2" # integrate browsergym as the browsing interface
+joblib = "^1.3.2"
 html2text = "*"
 e2b = ">=0.17.1,<1.1.0"
 pexpect = "*"
