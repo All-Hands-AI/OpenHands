@@ -1,5 +1,7 @@
+import os
 import uuid
 from dataclasses import dataclass, field, fields, is_dataclass
+from pathlib import Path
 from typing import ClassVar
 
 from openhands.core import logger
@@ -12,6 +14,21 @@ from openhands.core.config.config_utils import (
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
+
+
+def _get_or_create_jwt_secret() -> str:
+    config_dir = os.path.dirname(os.path.abspath(__file__))
+    secret_file = os.path.join(config_dir, '.jwt_secret')
+    
+    if os.path.exists(secret_file):
+        with open(secret_file, 'r') as f:
+            return f.read().strip()
+    
+    new_secret = uuid.uuid4().hex
+    os.makedirs(os.path.dirname(secret_file), exist_ok=True)
+    with open(secret_file, 'w') as f:
+        f.write(new_secret)
+    return new_secret
 
 
 @dataclass
@@ -64,7 +81,7 @@ class AppConfig:
     modal_api_token_id: str = ''
     modal_api_token_secret: str = ''
     disable_color: bool = False
-    jwt_secret: str = uuid.uuid4().hex
+    jwt_secret: str = field(default_factory=_get_or_create_jwt_secret)
     debug: bool = False
     file_uploads_max_file_size_mb: int = 0
     file_uploads_restrict_file_types: bool = False
