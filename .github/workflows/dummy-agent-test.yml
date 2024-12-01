@@ -43,10 +43,14 @@ jobs:
         with:
           python-version: '3.12'
           cache: 'poetry'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
       - name: Install Python dependencies using Poetry
         run: poetry install --without evaluation,llama-index
       - name: Build Environment
-        run: make build
+        run: INSTALL_DOCKER=0 make build
       - name: Run tests
         run: |
           set -e
