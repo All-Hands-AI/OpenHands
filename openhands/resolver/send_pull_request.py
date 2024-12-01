@@ -334,6 +334,23 @@ def reply_to_comment(github_token: str, comment_id: str, reply: str):
     response.raise_for_status()
 
 
+def send_comment_msg(base_url: str, issue_number: int, github_token: str, msg: str):
+    headers = {
+        'Authorization': f'token {github_token}',
+        'Accept': 'application/vnd.github.v3+json',
+    }
+
+    comment_url = f'{base_url}/issues/{issue_number}/comments'
+    comment_data = {'body': msg}
+    comment_response = requests.post(comment_url, headers=headers, json=comment_data)
+    if comment_response.status_code != 201:
+        print(
+            f'Failed to post comment: {comment_response.status_code} {comment_response.text}'
+        )
+    else:
+        print(f'Comment added to the PR: {msg}')
+
+
 def update_existing_pull_request(
     github_issue: GithubIssue,
     github_token: str,
@@ -354,11 +371,7 @@ def update_existing_pull_request(
         comment_message: The main message to post as a comment on the PR.
         additional_message: The additional messages to post as a comment on the PR in json list format.
     """
-    # Set up headers and base URL for GitHub API
-    headers = {
-        'Authorization': f'token {github_token}',
-        'Accept': 'application/vnd.github.v3+json',
-    }
+    # Set up base URL for GitHub API
     base_url = f'https://api.github.com/repos/{github_issue.owner}/{github_issue.repo}'
     branch_name = github_issue.head_branch
 
@@ -412,17 +425,7 @@ def update_existing_pull_request(
 
     # Post a comment on the PR
     if comment_message:
-        comment_url = f'{base_url}/issues/{github_issue.number}/comments'
-        comment_data = {'body': comment_message}
-        comment_response = requests.post(
-            comment_url, headers=headers, json=comment_data
-        )
-        if comment_response.status_code != 201:
-            print(
-                f'Failed to post comment: {comment_response.status_code} {comment_response.text}'
-            )
-        else:
-            print(f'Comment added to the PR: {comment_message}')
+        send_comment_msg(base_url, github_issue.number, github_token, comment_message)
 
     # Reply to each unresolved comment thread
     if additional_message and github_issue.thread_ids:
@@ -432,7 +435,8 @@ def update_existing_pull_request(
                 comment_id = github_issue.thread_ids[count]
                 reply_to_comment(github_token, comment_id, reply_comment)
         except (json.JSONDecodeError, TypeError):
-            pass
+            msg = f'Error occured when replying to threads; success explanations {additional_message}'
+            send_comment_msg(base_url, github_issue.number, github_token, msg)
 
     return pr_url
 
