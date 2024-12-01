@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, within, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { InteractiveChatBox } from "#/components/interactive-chat-box";
@@ -96,6 +96,33 @@ describe("InteractiveChatBox", () => {
 
     // clear images after submission
     expect(screen.queryAllByTestId("image-preview")).toHaveLength(0);
+  });
+
+  it("should clear text input after submitting with images via paste", async () => {
+    const user = userEvent.setup();
+    render(<InteractiveChatBox onSubmit={onSubmitMock} onStop={onStopMock} />);
+
+    const textarea = within(screen.getByTestId("chat-input")).getByRole(
+      "textbox",
+    );
+    await user.type(textarea, "Hello, world!");
+
+    const file = new File(["(⌐□_□)"], "chucknorris.png", { type: "image/png" });
+    
+    // Get the UploadImageInput component and simulate file upload
+    const input = screen.getByTestId("upload-image-input");
+    const changeEvent = {
+      target: {
+        files: [file],
+      },
+    };
+    fireEvent.change(input, changeEvent);
+
+    // Submit the message
+    await user.keyboard("{Enter}");
+
+    expect(onSubmitMock).toHaveBeenCalledWith("Hello, world!", [file]);
+    expect(textarea).toHaveValue("");
   });
 
   it("should disable the submit button", async () => {

@@ -51,6 +51,10 @@ export function ChatInput({
       if (files.length > 0) {
         event.preventDefault();
         onImagePaste(files);
+        // Submit the current message along with the image
+        if (textareaRef.current?.value) {
+          handleSubmitMessage();
+        }
       }
     }
     // For text paste, let the default behavior handle it
@@ -77,6 +81,10 @@ export function ChatInput({
       );
       if (files.length > 0) {
         onImagePaste(files);
+        // Submit the current message along with the image
+        if (textareaRef.current?.value) {
+          handleSubmitMessage();
+        }
       }
     }
   };
