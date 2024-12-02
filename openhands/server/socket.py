@@ -1,5 +1,3 @@
-from fastapi import status
-
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.action import ActionType
 from openhands.events.action import (
@@ -11,7 +9,6 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.auth import get_sid_from_token, sign_token
-from openhands.server.github_utils import authenticate_github_user
 from openhands.server.shared import config, session_manager, sio
 
 
@@ -33,10 +30,6 @@ async def oh_action(connection_id: str, data: dict):
 
 
 async def init_connection(connection_id: str, data: dict):
-    gh_token = data.pop('github_token', None)
-    if not await authenticate_github_user(gh_token):
-        raise RuntimeError(status.WS_1008_POLICY_VIOLATION)
-
     token = data.pop('token', None)
     if token:
         print('checking token', token)
