@@ -17,7 +17,7 @@ def test_get_converted_issues_initializes_review_comments():
         mock_comments_response = MagicMock()
         mock_comments_response.json.return_value = []
 
-        # Set up the mock to return different responses
+        # Set up the mock to return different responses for different calls
         # First call is for issues, second call is for comments
         mock_get.side_effect = [
             mock_issues_response,
