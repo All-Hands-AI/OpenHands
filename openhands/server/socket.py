@@ -39,7 +39,9 @@ async def init_connection(connection_id: str, data: dict):
 
     token = data.pop('token', None)
     if token:
+        print('checking token', token)
         sid = get_sid_from_token(token, config.jwt_secret)
+        print('retrieved sid', sid)
         if sid == '':
             await sio.send({'error': 'Invalid token', 'error_code': 401})
             return
