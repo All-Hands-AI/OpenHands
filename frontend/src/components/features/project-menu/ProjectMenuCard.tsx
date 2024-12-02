@@ -47,13 +47,12 @@ Please push the changes to GitHub and open a pull request.
 `,
       imageUrls: [],
       timestamp: new Date().toISOString(),
-      secondaryId: crypto.randomUUID(),
+      pending: false,
     };
     const event = createChatMessage(
       rawEvent.content,
       rawEvent.imageUrls,
       rawEvent.timestamp,
-      rawEvent.secondaryId,
     );
 
     send(event); // send to socket

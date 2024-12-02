@@ -16,7 +16,7 @@ export const chatSlice = createSlice({
         content: string;
         imageUrls: string[];
         timestamp: string;
-        secondaryId: string;
+        pending: boolean;
       }>,
     ) {
       const message: Message = {
@@ -24,12 +24,15 @@ export const chatSlice = createSlice({
         content: action.payload.content,
         imageUrls: action.payload.imageUrls,
         timestamp: action.payload.timestamp || new Date().toISOString(),
-        secondaryId: action.payload.secondaryId,
+        pending: action.payload.pending,
       };
-      for (const existing of state.messages) {
-        const m = existing as Message;
-        if (m.secondaryId === message.secondaryId) {
-          return;
+      // Remove any pending messages
+      let i = state.messages.length;
+      while (i) {
+        i -= 1;
+        const m = state.messages[i] as Message;
+        if (m.pending) {
+          state.messages.splice(i, 1);
         }
       }
       state.messages.push(message);
@@ -41,7 +44,7 @@ export const chatSlice = createSlice({
         content: action.payload,
         imageUrls: [],
         timestamp: new Date().toISOString(),
-        secondaryId: crypto.randomUUID(),
+        pending: false,
       };
       state.messages.push(message);
     },

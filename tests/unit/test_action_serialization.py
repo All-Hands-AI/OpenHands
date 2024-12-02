@@ -66,7 +66,6 @@ def test_event_props_serialization_deserialization():
         'args': {
             'content': 'This is a test.',
             'image_urls': None,
-            'secondary_id': None,
             'wait_for_response': False,
         },
     }
@@ -79,7 +78,6 @@ def test_message_action_serialization_deserialization():
         'args': {
             'content': 'This is a test.',
             'image_urls': None,
-            'secondary_id': 'unique_id',
             'wait_for_response': False,
         },
     }

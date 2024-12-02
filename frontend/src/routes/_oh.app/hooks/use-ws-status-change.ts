@@ -31,14 +31,10 @@ export const useWSStatusChange = () => {
   const { files, importedProjectZip, initialQuery } = useSelector(
     (state: RootState) => state.initalQuery,
   );
-  const initialQueryId = React.useMemo(
-    () => crypto.randomUUID(),
-    [initialQuery],
-  );
 
   const sendInitialQuery = (query: string, base64Files: string[]) => {
     const timestamp = new Date().toISOString();
-    send(createChatMessage(query, base64Files, timestamp, initialQueryId));
+    send(createChatMessage(query, base64Files, timestamp));
   };
 
   const dispatchCloneRepoCommand = (ghToken: string, repository: string) => {
@@ -90,7 +86,7 @@ export const useWSStatusChange = () => {
           content: initialQuery,
           imageUrls: files,
           timestamp: new Date().toISOString(),
-          secondaryId: initialQueryId,
+          pending: true,
         }),
       );
     }

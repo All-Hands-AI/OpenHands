@@ -56,7 +56,7 @@ describe("Empty state", () => {
           content: "Hello",
           imageUrls: [],
           timestamp: new Date().toISOString(),
-          secondaryId: crypto.randomUUID(),
+          pending: true,
         }),
       );
     });
@@ -173,14 +173,14 @@ describe.skip("ChatInterface", () => {
         content: "Hello",
         imageUrls: [],
         timestamp: new Date().toISOString(),
-        secondaryId: crypto.randomUUID(),
+        pending: true,
       },
       {
         sender: "assistant",
         content: "Hi",
         imageUrls: [],
         timestamp: new Date().toISOString(),
-        secondaryId: crypto.randomUUID(),
+        pending: true,
       },
     ];
     renderChatInterface(messages);
@@ -214,7 +214,7 @@ describe.skip("ChatInterface", () => {
         content: "Here are some images",
         imageUrls: [],
         timestamp: new Date().toISOString(),
-        secondaryId: crypto.randomUUID(),
+        pending: true,
       },
     ];
     const { rerender } = renderChatInterface(messages);
@@ -227,7 +227,7 @@ describe.skip("ChatInterface", () => {
         content: "Here are some images",
         imageUrls: ["image1", "image2"],
         timestamp: new Date().toISOString(),
-        secondaryId: crypto.randomUUID(),
+        pending: true,
       },
     ];
 
@@ -249,14 +249,14 @@ describe.skip("ChatInterface", () => {
         content: "Hello",
         imageUrls: [],
         timestamp: new Date().toISOString(),
-        secondaryId: crypto.randomUUID(),
+        pending: true,
       },
       {
         sender: "user",
         content: "Hi",
         imageUrls: [],
         timestamp: new Date().toISOString(),
-        secondaryId: crypto.randomUUID(),
+        pending: true,
       },
     ];
     const { rerender } = renderChatInterface(messages);
@@ -269,7 +269,7 @@ describe.skip("ChatInterface", () => {
       content: "How can I help you?",
       imageUrls: [],
       timestamp: new Date().toISOString(),
-      secondaryId: crypto.randomUUID(),
+      pending: true,
     });
 
     rerender(<ChatInterface />);
@@ -284,7 +284,7 @@ describe.skip("ChatInterface", () => {
         content: "Hello",
         imageUrls: [],
         timestamp: new Date().toISOString(),
-        secondaryId: crypto.randomUUID(),
+        pending: true,
       },
       {
         error: true,
@@ -310,7 +310,7 @@ describe.skip("ChatInterface", () => {
         content: "Hello",
         imageUrls: [],
         timestamp: new Date().toISOString(),
-        secondaryId: crypto.randomUUID(),
+        pending: true,
       },
     ];
     renderChatInterface(messages);
@@ -336,7 +336,7 @@ describe.skip("ChatInterface", () => {
         content: "Hello",
         imageUrls: [],
         timestamp: new Date().toISOString(),
-        secondaryId: crypto.randomUUID(),
+        pending: true,
       },
     ];
     const { rerender } = renderChatInterface(messages);
@@ -369,21 +369,21 @@ describe.skip("ChatInterface", () => {
         content: "Hello",
         imageUrls: [],
         timestamp: new Date().toISOString(),
-        secondaryId: crypto.randomUUID(),
+        pending: true,
       },
       {
         sender: "user",
         content: "Hi",
         imageUrls: [],
         timestamp: new Date().toISOString(),
-        secondaryId: crypto.randomUUID(),
+        pending: true,
       },
       {
         sender: "assistant",
         content: "How can I help you?",
         imageUrls: [],
         timestamp: new Date().toISOString(),
-        secondaryId: crypto.randomUUID(),
+        pending: true,
       },
     ];
     const { rerender } = renderChatInterface(messages);
@@ -394,7 +394,7 @@ describe.skip("ChatInterface", () => {
       content: "I need help",
       imageUrls: [],
       timestamp: new Date().toISOString(),
-      secondaryId: crypto.randomUUID(),
+      pending: true,
     });
 
     rerender(<ChatInterface />);

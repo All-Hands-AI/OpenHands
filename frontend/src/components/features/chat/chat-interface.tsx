@@ -68,10 +68,9 @@ export function ChatInterface() {
     const imageUrls = await Promise.all(promises);
 
     const timestamp = new Date().toISOString();
-    const secondaryId = crypto.randomUUID();
-
-    dispatch(addUserMessage({ content, imageUrls, timestamp, secondaryId }));
-    send(createChatMessage(content, imageUrls, timestamp, secondaryId));
+    const pending = true;
+    dispatch(addUserMessage({ content, imageUrls, timestamp, pending }));
+    send(createChatMessage(content, imageUrls, timestamp));
     setMessageToSend(null);
   };
 
