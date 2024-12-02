@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink } from "react-router";
 import { cn } from "#/utils/utils";
 import { BetaBadge } from "./beta-badge";
 
