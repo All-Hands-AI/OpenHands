@@ -66,9 +66,9 @@ def test_loads_partial_json():
 
 
 def test_loads_invalid_partial_json():
-    json_str = 'some text {"key": "value"} {"another": "object"} more text'
-    result = loads(json_str)
-    assert result == {"key": "value"}  # Should extract first valid JSON object
+    json_str = 'some text {"key": "value", "invalid": } more text'
+    with pytest.raises(LLMResponseError):
+        loads(json_str)
 
 
 def test_loads_no_json():

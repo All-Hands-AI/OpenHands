@@ -34,7 +34,7 @@ triggers:
 This is the content
 """)
         f.flush()
-        
+
         try:
             agent = MicroAgent(f.name)
             assert agent.name == "test_agent"
@@ -58,7 +58,7 @@ triggers:
 Content
 """)
         f.flush()
-        
+
         try:
             agent = MicroAgent(f.name)
             assert agent.get_trigger("hello world test") == "Hello World"
