@@ -1,10 +1,14 @@
 import os
 
+from openhands_aci.editor.exceptions import ToolError
+
 from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.schema import ActionType
 from openhands.events.action import BrowseInteractiveAction, BrowseURLAction
 from openhands.events.observation import BrowserOutputObservation
 from openhands.runtime.browser.browser_env import BrowserEnv
+from openhands.runtime.browser.gui_use.gui_use import GUIUseTool
+from openhands.runtime.browser.gui_use.types import ScalingSource
 from openhands.runtime.browser.transformer import (
     translate_computer_use_action_to_browsergym_action,
 )
@@ -13,6 +17,7 @@ from openhands.runtime.browser.transformer import (
 async def browse(
     action: BrowseURLAction | BrowseInteractiveAction,
     browser: BrowserEnv | None,
+    gui_use: GUIUseTool,
     last_obs: BrowserOutputObservation | None,
 ) -> BrowserOutputObservation:
     if browser is None:
@@ -32,11 +37,22 @@ async def browse(
             # received action_str defined by Anthropic's Computer Use feature: see https://docs.anthropic.com/en/docs/build-with-claude/computer-use#computer-tool
             extra_args = action.extra_args
 
-            # TODO: perform argument validation on extra_args
-            assert extra_args is not None
+            try:
+                validated_args = gui_use.validate_and_transform_args(
+                    **(extra_args or {})
+                )
+            except ToolError as e:
+                return BrowserOutputObservation(
+                    content=f'ERROR:\n{e.message}',
+                    screenshot='',
+                    error=True,
+                    last_browser_action_error=f'ERROR:\n{e.message}',
+                    url=asked_url if action.action == ActionType.BROWSE else '',
+                    trigger_by_action=action.action,
+                )
 
             # construct a computer use action
-            _action_str = f'{extra_args["action"]}({", ".join([f"{k}={v}" for k, v in extra_args.items() if k != "action"])})'
+            _action_str = f'{validated_args["action"]}({", ".join([f"{k}={v}" for k, v in validated_args.items() if k != "action"])})'
 
             # translate to BrowserGym actions
             # action in BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/functions.py
@@ -52,10 +68,16 @@ async def browse(
     try:
         # obs provided by BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/env.py#L396
         obs = browser.step(action_str)
+        mouse_position = obs.get('mouse_position', [0, 0])
+        scaled_mouse_position = gui_use.scale_coordinates(
+            ScalingSource.COMPUTER, int(mouse_position[0]), int(mouse_position[1])
+        )
         return BrowserOutputObservation(
             content=obs['text_content'],  # text content of the page
             url=obs.get('url', ''),  # URL of the page
-            screenshot=obs.get('screenshot', None),  # base64-encoded screenshot, png
+            screenshot=gui_use.resize_image(
+                obs.get('screenshot', None)
+            ),  # base64-encoded screenshot, png
             open_pages_urls=obs.get('open_pages_urls', []),  # list of open pages
             active_page_index=obs.get(
                 'active_page_index', -1
@@ -72,14 +94,14 @@ async def browse(
             last_browser_action_error=obs.get('last_action_error', ''),
             error=True if obs.get('last_action_error', '') else False,  # error flag
             trigger_by_action=action.action,
-            mouse_position=obs.get('mouse_position', []),  # mouse position
+            mouse_position=[scaled_mouse_position[0], scaled_mouse_position[1]],
         )
     except Exception as e:
         return BrowserOutputObservation(
-            content=str(e),
+            content=f'ERROR:\n{str(e)}',
             screenshot='',
             error=True,
-            last_browser_action_error=str(e),
+            last_browser_action_error=f'ERROR:\n{str(e)}',
             url=asked_url if action.action == ActionType.BROWSE else '',
             trigger_by_action=action.action,
         )

@@ -48,6 +48,7 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
+from openhands.runtime.browser.gui_use.gui_use import GUIUseTool
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
@@ -110,6 +111,7 @@ class ActionExecutor:
         self.start_time = time.time()
         self.last_execution_time = self.start_time
         self.last_browser_output_observation: BrowserOutputObservation | None = None
+        self.gui_use = GUIUseTool()
 
     @property
     def initial_pwd(self):
@@ -323,14 +325,14 @@ class ActionExecutor:
 
     async def browse(self, action: BrowseURLAction) -> Observation:
         browser_obs = await browse(
-            action, self.browser, self.last_browser_output_observation
+            action, self.browser, self.gui_use, self.last_browser_output_observation
         )
         self.last_browser_output_observation = browser_obs
         return browser_obs
 
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         browser_obs = await browse(
-            action, self.browser, self.last_browser_output_observation
+            action, self.browser, self.gui_use, self.last_browser_output_observation
         )
         self.last_browser_output_observation = browser_obs
         return browser_obs

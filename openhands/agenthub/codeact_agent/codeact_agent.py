@@ -265,8 +265,9 @@ class CodeActAgent(Agent):
             message = Message(
                 role='user',
                 content=[
-                    # TextContent(text=text),
-                    ImageContent(image_urls=[obs.screenshot]),
+                    TextContent(text=obs.last_browser_action_error)
+                    if obs.error
+                    else ImageContent(image_urls=[obs.screenshot]),
                 ],
             )
         elif isinstance(obs, AgentDelegateObservation):
