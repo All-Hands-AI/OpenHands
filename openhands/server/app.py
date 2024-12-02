@@ -55,4 +55,3 @@ app.middleware('http')(
 )
 app.middleware('http')(AttachSessionMiddleware(app, target_router=security_api_router))
 app.middleware('http')(AttachSessionMiddleware(app, target_router=feedback_api_router))
-app.middleware('http')(AttachSessionMiddleware(app, target_router=github_api_router))
