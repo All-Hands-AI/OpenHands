@@ -11,7 +11,12 @@ import { hydrateRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import posthog from "posthog-js";
 import "./i18n";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import store from "./store";
 import { useConfig } from "./hooks/query/use-config";
 import { AuthProvider } from "./context/auth-context";
@@ -45,7 +50,20 @@ async function prepareApp() {
   }
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  }),
+  defaultOptions: {
+    mutations: {
+      onError: (error) => {
+        toast.error(error.message);
+      },
+    },
+  },
+});
 
 prepareApp().then(() =>
   startTransition(() => {
