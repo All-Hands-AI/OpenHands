@@ -230,7 +230,7 @@ class BashSession:
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
         assert len(ps1_matches) >= 2, (
             f'Expected at least two PS1 metadata blocks, but got {len(ps1_matches)}.\n'
-            f'---FULL OUTPUT---\n{full_output}\n---END OF OUTPUT---'
+            f'---FULL OUTPUT---\n{full_output!r}\n---END OF OUTPUT---'
         )
         metadata = CmdOutputMetadata.from_ps1_match(ps1_matches[-1])
         # Update the current working directory if it has changed
@@ -266,7 +266,10 @@ class BashSession:
         full_output = self._get_pane_content()
 
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
-        assert len(ps1_matches) == 1, 'Expected exactly one PS1 metadata block'
+        assert len(ps1_matches) == 1, (
+            'Expected exactly one PS1 metadata block BEFORE the execution of a command, '
+            f'but got {len(ps1_matches)} PS1 metadata blocks:\n---\n{full_output!r}\n---'
+        )
 
         raw_command_output = full_output[ps1_matches[0].end() + 1 :]
         metadata = CmdOutputMetadata()  # No metadata available
@@ -294,7 +297,10 @@ class BashSession:
         self.prev_status = BashCommandStatus.HARD_TIMEOUT
         full_output = self._get_pane_content()
         ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
-        assert len(ps1_matches) == 1, 'Expected exactly one PS1 metadata block'
+        assert len(ps1_matches) == 1, (
+            'Expected exactly one PS1 metadata block BEFORE the execution of a command, '
+            f'but got {len(ps1_matches)} PS1 metadata blocks:\n---\n{full_output!r}\n---'
+        )
 
         raw_command_output = full_output[ps1_matches[0].end() + 1 :]
         metadata = CmdOutputMetadata()  # No metadata available
@@ -351,7 +357,7 @@ class BashSession:
         _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
         assert len(_ps1_matches) == 1, (
             'Expected exactly one PS1 metadata block BEFORE the execution of a command, '
-            f'but got {len(_ps1_matches)} PS1 metadata blocks:\n---\n{last_pane_output}\n---'
+            f'but got {len(_ps1_matches)} PS1 metadata blocks:\n---\n{last_pane_output!r}\n---'
         )
 
         if action.command.strip() != '':
