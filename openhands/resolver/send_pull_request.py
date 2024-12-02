@@ -342,6 +342,14 @@ def reply_to_comment(github_token: str, comment_id: str, reply: str):
 
 
 def send_comment_msg(base_url: str, issue_number: int, github_token: str, msg: str):
+    """Send a comment message to a GitHub issue or pull request.
+
+    Args:
+        base_url: The base URL of the GitHub repository API
+        issue_number: The issue or pull request number
+        github_token: The GitHub token to use for authentication
+        msg: The message content to post as a comment
+    """
     headers = {
         'Authorization': f'token {github_token}',
         'Accept': 'application/vnd.github.v3+json',
