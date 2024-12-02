@@ -2,7 +2,7 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "test-utils";
-import { FeedbackForm } from "#/components/feedback-form";
+import { FeedbackForm } from "#/components/features/feedback/feedback-form";
 
 describe("FeedbackForm", () => {
   const user = userEvent.setup();
