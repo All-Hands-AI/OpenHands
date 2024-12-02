@@ -36,6 +36,7 @@ from openhands.events.action import (
     ModifyTaskAction,
     NullAction,
 )
+from openhands.events.action.replay import ReplayCmdRunAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentDelegateObservation,
@@ -75,6 +76,8 @@ class AgentController:
         NullObservation,
         ChangeAgentStateAction,
         AgentStateChangedObservation,
+        ReplayCmdRunAction,
+        ReplayCmdOutputObservation,
     )
 
     def __init__(
@@ -226,9 +229,6 @@ class AgentController:
         Args:
             event (Event): The incoming event to process.
         """
-        if isinstance(event, ReplayCmdOutputObservation):
-            handle_replay_enhance_observation(self.state, event)
-
         if hasattr(event, 'hidden') and event.hidden:
             return
 
@@ -290,6 +290,11 @@ class AgentController:
 
         if self._pending_action and self._pending_action.id == observation.cause:
             self._pending_action = None
+            if isinstance(observation, ReplayCmdOutputObservation):
+                handle_replay_enhance_observation(
+                    self.state,  # observation
+                )
+
             if self.state.agent_state == AgentState.USER_CONFIRMED:
                 await self.set_agent_state_to(AgentState.RUNNING)
             if self.state.agent_state == AgentState.USER_REJECTED:

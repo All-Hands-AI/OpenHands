@@ -32,6 +32,9 @@ class AgentConfig:
     use_microagents: bool = True
     disabled_microagents: list[str] | None = None
 
+    # Whether the working directory itself is the repo the agent is supposed to work on.
+    is_workdir_repo: bool = False
+
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
         result = {}

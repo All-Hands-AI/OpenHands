@@ -25,7 +25,7 @@ class ReplayCmdRunAction(Action):
     confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
     security_risk: ActionSecurityRisk | None = None
 
-    # Whether to execute the command from the workspace directory.
+    # Whether to execute the command from the workspace directory, independent of CWD.
     in_workspace_dir: bool = True
 
     # List of strings that need to be written to text files, and then provided as argument to command.

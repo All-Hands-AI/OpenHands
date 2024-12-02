@@ -98,7 +98,6 @@ class CodeActAgent(Agent):
             codeact_enable_browsing=self.config.codeact_enable_browsing,
             codeact_enable_jupyter=self.config.codeact_enable_jupyter,
             codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
-            # codeact_enable_replay=self.config.codeact_enable_replay,
         )
         logger.debug(
             f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
@@ -354,11 +353,12 @@ class CodeActAgent(Agent):
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
-        # Replay enhancement.
-        enhance_action = replay_enhance_action(state)
-        if enhance_action:
-            logger.info('[REPLAY] Enhancing prompt for recording...')
-            return enhance_action
+        if self.config.codeact_enable_replay:
+            # Replay enhancement.
+            enhance_action = replay_enhance_action(state, self.config.is_workdir_repo)
+            if enhance_action:
+                logger.info('[REPLAY] Enhancing prompt for Replay recording...')
+                return enhance_action
 
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)

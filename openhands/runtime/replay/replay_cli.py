@@ -1,6 +1,5 @@
 import tempfile
-from os import unlink
-from typing import Any
+from os import chmod, unlink
 
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.action.replay import ReplayCmdRunAction
@@ -21,14 +20,15 @@ class ReplayCli:
             command = command + f' -r {action.recording_id}'
         if action.session_id != '':
             command = command + f' -s {action.session_id}'
-        tmp_files: list[Any] = []
+        tmp_files: list[str] = []
         if action.file_arguments:
             # Write file arguments to temporary files and append to command.
             for arg in action.file_arguments:
                 with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp:
-                    tmp_files.append(tmp)
+                    tmp_files.append(tmp.name)
                     tmp.write(arg)
                     file_path = tmp.name
+                    chmod(file_path, 0o644)  # Make sure bash_session can read the file.
                     command = command + f' {file_path}'
         if action.in_workspace_dir:
             # Execute command from workspace directory.
@@ -46,10 +46,9 @@ class ReplayCli:
         cmd_action.timeout = 600
         obs = self.bash_session.run(cmd_action)
 
-        for f in tmp_files:
-            # Close and delete tmp file.
-            f.close()
-            unlink(f.name)
+        for fpath in tmp_files:
+            # Delete tmp file.
+            unlink(fpath)
 
         if isinstance(obs, ErrorObservation):
             return obs
