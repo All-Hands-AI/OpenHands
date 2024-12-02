@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import time
 import uuid
@@ -187,7 +188,11 @@ class BashSession:
     def _get_pane_content(self) -> str:
         """Get the current content of the tmux pane from the output file."""
         with open(self.output_filename, 'r') as f:
-            return f.read()
+            content = f.read()
+        # clean up the bracketed paste mode
+        cleaned = re.sub(r'\x1b\[\?2004[hl]', '', content)
+        logger.debug(f'BASH PANE CONTENT:\n---\n{cleaned!r}\n---')
+        return cleaned
 
     def _get_command_output(
         self,
