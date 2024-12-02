@@ -1,4 +1,4 @@
-import BrowserPanel from "#/components/browser";
+import { BrowserPanel } from "#/components/features/browser/browser";
 
 function Browser() {
   return <BrowserPanel />;

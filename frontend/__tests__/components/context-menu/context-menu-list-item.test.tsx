@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ContextMenuListItem } from "#/components/context-menu/context-menu-list-item";
+import { ContextMenuListItem } from "#/components/features/context-menu/context-menu-list-item";
 
 describe("ContextMenuListItem", () => {
   it("should render the component with the children", () => {
