@@ -32,7 +32,7 @@ class AgentConfig:
     use_microagents: bool = True
     disabled_microagents: list[str] | None = None
 
-    # Whether the working directory itself is the repo the agent is supposed to work on.
+    # Whether the workspace directory itself is the repo the agent is supposed to work on.
     is_workspace_repo: bool = False
 
     def defaults_to_dict(self) -> dict:
