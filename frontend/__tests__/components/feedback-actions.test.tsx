@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { FeedbackActions } from "#/components/feedback-actions";
+import { FeedbackActions } from "#/components/features/feedback/feedback-actions";
 
 describe("FeedbackActions", () => {
   const user = userEvent.setup();

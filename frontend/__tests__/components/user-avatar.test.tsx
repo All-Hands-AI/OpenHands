@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { UserAvatar } from "#/components/user-avatar";
+import { UserAvatar } from "#/components/features/sidebar/user-avatar";
 
 describe("UserAvatar", () => {
   const onClickMock = vi.fn();

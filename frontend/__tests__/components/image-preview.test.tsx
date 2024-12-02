@@ -1,7 +1,7 @@
+import { ImagePreview } from "#/components/features/images/image-preview";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { ImagePreview } from "#/components/image-preview";
 
 describe("ImagePreview", () => {
   it("should render an image", () => {
