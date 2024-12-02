@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { SuggestionItem } from "#/components/suggestion-item";
+import { SuggestionItem } from "#/components/features/suggestions/suggestion-item";
 
 describe("SuggestionItem", () => {
   const suggestionItem = { label: "suggestion1", value: "a long text value" };
