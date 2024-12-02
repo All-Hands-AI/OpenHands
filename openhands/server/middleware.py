@@ -114,6 +114,14 @@ class AttachSessionMiddleware:
         self.target_paths = {route.path for route in target_router.routes}
         self.is_local = True
 
+    def _is_local(self, request) -> bool:
+        # If not localhost, skip this middleware
+        client_host = request.client.host
+        if client_host not in ['127.0.0.1', 'localhost']:
+            return True
+
+        return False
+
     def _should_attach(self, request) -> bool:
         """
         Determine if the middleware should attach a session for the given request.
@@ -157,7 +165,7 @@ class AttachSessionMiddleware:
         await session_manager.detach_from_conversation(request.state.conversation)
 
     async def __call__(self, request: Request, call_next: Callable):
-        if not self._should_attach(request):
+        if not self._should_attach(request) or not self._is_local(request):
             return await call_next(request)
 
         response = await self._attach_session(request)
