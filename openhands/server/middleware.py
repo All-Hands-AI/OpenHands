@@ -112,7 +112,6 @@ class AttachSessionMiddleware:
         self.app = app
         self.target_router = target_router
         self.target_paths = {route.path for route in target_router.routes}
-        self.is_local = True
 
     def _is_local(self, request) -> bool:
         # If not localhost, skip this middleware
