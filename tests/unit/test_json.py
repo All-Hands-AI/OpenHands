@@ -18,6 +18,7 @@ def test_event_serialization_deserialization():
         'args': {
             'content': 'This is a test.',
             'image_urls': None,
+            'secondary_id': None,
             'wait_for_response': False,
         },
     }
@@ -25,7 +26,7 @@ def test_event_serialization_deserialization():
 
 
 def test_array_serialization_deserialization():
-    message = MessageAction(content='This is a test.', wait_for_response=False)
+    message = MessageAction(content='This is a test.', wait_for_response=False, secondary_id='unique_id')
     message._id = 42
     message._timestamp = datetime(2020, 1, 1, 0, 0, 0)
     serialized = json.dumps([message])
@@ -39,6 +40,7 @@ def test_array_serialization_deserialization():
             'args': {
                 'content': 'This is a test.',
                 'image_urls': None,
+                'secondary_id': 'unique_id',
                 'wait_for_response': False,
             },
         }
