@@ -118,6 +118,7 @@ class BashSession:
         # Store the last command for interactive input handling
         self.prev_status: BashCommandStatus | None = None
         self.prev_output: str = ''
+        self._closed: bool = False
         logger.debug(f'Bash session initialized with work dir: {work_dir}')
 
         # Maintain the current working directory
@@ -160,6 +161,8 @@ class BashSession:
 
     def close(self):
         """Clean up the session and all output files."""
+        if self._closed:
+            return
         # Stop piping output
         self.pane.cmd('pipe-pane')
 
@@ -168,6 +171,7 @@ class BashSession:
             shutil.rmtree(self.output_dir)
 
         self.session.kill_session()
+        self._closed = True
 
     @property
     def pwd(self):
