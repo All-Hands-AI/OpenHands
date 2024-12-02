@@ -19,30 +19,30 @@ class AppConfig:
     """Configuration for the app.
 
     Attributes:
-        llms (dict[str, LLMConfig]): Dictionary mapping LLM names to their configurations.
+        llms: Dictionary mapping LLM names to their configurations.
             The default configuration is stored under the 'llm' key.
-        agents (dict): Dictionary mapping agent names to their configurations.
+        agents: Dictionary mapping agent names to their configurations.
             The default configuration is stored under the 'agent' key.
-        default_agent (str): Name of the default agent to use.
-        sandbox (SandboxConfig): Sandbox configuration settings.
-        runtime (str): Runtime environment identifier.
-        file_store (str): Type of file store to use.
-        file_store_path (str): Path to the file store.
-        trajectories_path (str | None): Folder path to store trajectories.
-        workspace_base (str | None): Base path for the workspace. Defaults to `./workspace` as absolute path.
-        workspace_mount_path (str | None): Path to mount the workspace. Defaults to `workspace_base`.
-        workspace_mount_path_in_sandbox (str): Path to mount the workspace in sandbox. Defaults to `/workspace`.
-        workspace_mount_rewrite (str | None): Path to rewrite the workspace mount path.
-        cache_dir (str): Path to cache directory. Defaults to `/tmp/cache`.
-        run_as_openhands (bool): Whether to run as openhands.
-        max_iterations (int): Maximum number of iterations allowed.
-        max_budget_per_task (float | None): Maximum budget per task, agent stops if exceeded.
-        e2b_api_key (str): E2B API key.
-        disable_color (bool): Whether to disable terminal colors.
-        debug (bool): Whether to enable debugging mode.
-        file_uploads_max_file_size_mb (int): Maximum file upload size in MB. `0` means unlimited.
-        file_uploads_restrict_file_types (bool): Whether to restrict upload file types.
-        file_uploads_allowed_extensions (list[str]): Allowed file extensions. `['.*']` allows all.
+        default_agent: Name of the default agent to use.
+        sandbox: Sandbox configuration settings.
+        runtime: Runtime environment identifier.
+        file_store: Type of file store to use.
+        file_store_path: Path to the file store.
+        trajectories_path: Folder path to store trajectories.
+        workspace_base: Base path for the workspace. Defaults to `./workspace` as absolute path.
+        workspace_mount_path: Path to mount the workspace. Defaults to `workspace_base`.
+        workspace_mount_path_in_sandbox: Path to mount the workspace in sandbox. Defaults to `/workspace`.
+        workspace_mount_rewrite: Path to rewrite the workspace mount path.
+        cache_dir: Path to cache directory. Defaults to `/tmp/cache`.
+        run_as_openhands: Whether to run as openhands.
+        max_iterations: Maximum number of iterations allowed.
+        max_budget_per_task: Maximum budget per task, agent stops if exceeded.
+        e2b_api_key: E2B API key.
+        disable_color: Whether to disable terminal colors.
+        debug: Whether to enable debugging mode.
+        file_uploads_max_file_size_mb: Maximum file upload size in MB. `0` means unlimited.
+        file_uploads_restrict_file_types: Whether to restrict upload file types.
+        file_uploads_allowed_extensions: Allowed file extensions. `['.*']` allows all.
     """
 
     llms: dict[str, LLMConfig] = field(default_factory=dict)
@@ -87,7 +87,7 @@ class AppConfig:
             self.llms['llm'] = LLMConfig()
         return self.llms['llm']
 
-    def set_llm_config(self, value: LLMConfig, name='llm'):
+    def set_llm_config(self, value: LLMConfig, name='llm') -> None:
         self.llms[name] = value
 
     def get_agent_config(self, name='agent') -> AgentConfig:
@@ -98,7 +98,7 @@ class AppConfig:
             self.agents['agent'] = AgentConfig()
         return self.agents['agent']
 
-    def set_agent_config(self, value: AgentConfig, name='agent'):
+    def set_agent_config(self, value: AgentConfig, name='agent') -> None:
         self.agents[name] = value
 
     def get_agent_to_llm_config_map(self) -> dict[str, LLMConfig]:
