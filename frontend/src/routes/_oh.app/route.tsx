@@ -1,6 +1,6 @@
 import { useDisclosure } from "@nextui-org/react";
 import React from "react";
-import { Outlet } from "@remix-run/react";
+import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { Controls } from "#/components/features/controls/controls";
 import { RootState } from "#/store";

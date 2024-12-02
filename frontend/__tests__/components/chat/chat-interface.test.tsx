@@ -26,8 +26,8 @@ describe("Empty state", () => {
   }));
 
   beforeAll(() => {
-    vi.mock("@remix-run/react", async (importActual) => ({
-      ...(await importActual<typeof import("@remix-run/react")>()),
+    vi.mock("react-router", async (importActual) => ({
+      ...(await importActual<typeof import("react-router")>()),
       useRouteLoaderData: vi.fn(() => ({})),
     }));
 
@@ -290,8 +290,8 @@ describe.skip("ChatInterface", () => {
   });
 
   it("should render both GitHub buttons initially when ghToken is available", () => {
-    vi.mock("@remix-run/react", async (importActual) => ({
-      ...(await importActual<typeof import("@remix-run/react")>()),
+    vi.mock("react-router", async (importActual) => ({
+      ...(await importActual<typeof import("react-router")>()),
       useRouteLoaderData: vi.fn(() => ({ ghToken: "test-token" })),
     }));
 
@@ -315,8 +315,8 @@ describe.skip("ChatInterface", () => {
   });
 
   it("should render only 'Push changes to PR' button after PR is created", async () => {
-    vi.mock("@remix-run/react", async (importActual) => ({
-      ...(await importActual<typeof import("@remix-run/react")>()),
+    vi.mock("react-router", async (importActual) => ({
+      ...(await importActual<typeof import("react-router")>()),
       useRouteLoaderData: vi.fn(() => ({ ghToken: "test-token" })),
     }));
 

@@ -51,3 +51,8 @@ export interface GetVSCodeUrlResponse {
   vscode_url: string | null;
   error?: string;
 }
+
+export interface AuthenticateResponse {
+  message?: string;
+  error?: string;
+}

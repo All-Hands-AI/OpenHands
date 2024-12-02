@@ -1,5 +1,5 @@
 import React from "react";
-import { useRouteError, isRouteErrorResponse, Outlet } from "@remix-run/react";
+import { useRouteError, isRouteErrorResponse, Outlet } from "react-router";
 import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
