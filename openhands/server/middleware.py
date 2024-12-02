@@ -117,7 +117,6 @@ class AttachSessionMiddleware:
     def _is_local(self, request) -> bool:
         # If not localhost, skip this middleware
         client_host = request.client.host
-        print('client_host', client_host)
         if client_host not in ['127.0.0.1', 'localhost']:
             return True
 

@@ -49,44 +49,21 @@ export const retrieveGitHubAppInstallations = async (
  * @returns A list of repositories or an error response
  */
 export const retrieveGitHubUserRepositories = async (
-  token: string,
-  installationId: string,
+  gitHubToken: string,
   page = 1,
   per_page = 30,
 ): Promise<Response> => {
-  const reposUrl = new URL(
-    `https://api.github.com/user/installations/${installationId}/repositories`,
-  );
+  const baseUrl = window.location.origin;
+  const url = new URL("/api/github/repositories", baseUrl);
+  url.searchParams.append("sort", "pushed");
+  url.searchParams.append("page", page.toString());
+  url.searchParams.append("per_page", per_page.toString());
 
-  reposUrl.searchParams.append("page", page.toString());
-  reposUrl.searchParams.append("per_page", per_page.toString());
-
-  return fetch(reposUrl, {
-    headers: generateGitHubAPIHeaders(token),
+  return fetch(url.toString(), {
+    headers: {
+      "X-GitHub-Token": gitHubToken,
+    },
   });
-
-  //   if (!reposResponse.ok) {
-  //     throw new Error(
-  //       `Failed to fetch repositories for installation ${installationId}: ${reposResponse.statusText}`,
-  //     );
-  //   }
-
-  // return reposResponse;
-  // const reposData = await reposResponse.json();
-
-  // writableRepositories.push(...writable);
-  // }
-
-  // return writableRepositories;
-
-  // const url = new URL("https://api.github.com/user/repos");
-  // url.searchParams.append("sort", "pushed"); // sort by most recently pushed
-  // url.searchParams.append("page", page.toString());
-  // url.searchParams.append("per_page", per_page.toString());
-
-  // return fetch(url.toString(), {
-  //   headers: generateGitHubAPIHeaders(token),
-  // });
 };
 
 /**
