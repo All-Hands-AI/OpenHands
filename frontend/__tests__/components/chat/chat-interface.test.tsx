@@ -6,7 +6,7 @@ import { addUserMessage } from "#/state/chat-slice";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import * as ChatSlice from "#/state/chat-slice";
 import { WsClientProviderStatus } from "#/context/ws-client-provider";
-import { ChatInterface } from "#/routes/_oh.app/chat-interface";
+import { ChatInterface } from "#/components/features/chat/chat-interface";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const renderChatInterface = (messages: (Message | ErrorMessage)[]) =>
@@ -26,8 +26,8 @@ describe("Empty state", () => {
   }));
 
   beforeAll(() => {
-    vi.mock("@remix-run/react", async (importActual) => ({
-      ...(await importActual<typeof import("@remix-run/react")>()),
+    vi.mock("react-router", async (importActual) => ({
+      ...(await importActual<typeof import("react-router")>()),
       useRouteLoaderData: vi.fn(() => ({})),
     }));
 
@@ -290,8 +290,8 @@ describe.skip("ChatInterface", () => {
   });
 
   it("should render both GitHub buttons initially when ghToken is available", () => {
-    vi.mock("@remix-run/react", async (importActual) => ({
-      ...(await importActual<typeof import("@remix-run/react")>()),
+    vi.mock("react-router", async (importActual) => ({
+      ...(await importActual<typeof import("react-router")>()),
       useRouteLoaderData: vi.fn(() => ({ ghToken: "test-token" })),
     }));
 
@@ -315,8 +315,8 @@ describe.skip("ChatInterface", () => {
   });
 
   it("should render only 'Push changes to PR' button after PR is created", async () => {
-    vi.mock("@remix-run/react", async (importActual) => ({
-      ...(await importActual<typeof import("@remix-run/react")>()),
+    vi.mock("react-router", async (importActual) => ({
+      ...(await importActual<typeof import("react-router")>()),
       useRouteLoaderData: vi.fn(() => ({ ghToken: "test-token" })),
     }));
 
