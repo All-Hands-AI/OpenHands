@@ -15,7 +15,6 @@ from openhands.server.middleware import (
     NoCacheMiddleware,
     RateLimitMiddleware,
 )
-from openhands.server.routes.auth import app as auth_api_router
 from openhands.server.routes.conversation import app as conversation_api_router
 from openhands.server.routes.feedback import app as feedback_api_router
 from openhands.server.routes.files import app as files_api_router
@@ -41,7 +40,6 @@ async def health():
     return 'OK'
 
 
-app.include_router(auth_api_router)
 app.include_router(public_api_router)
 app.include_router(files_api_router)
 app.include_router(conversation_api_router)
