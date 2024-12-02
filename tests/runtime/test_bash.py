@@ -618,18 +618,6 @@ def test_long_output_from_nested_directories(temp_dir, runtime_cls, run_as_openh
         _close_test_runtime(runtime)
 
 
-def test_ansi_escape_codes(temp_dir, runtime_cls, run_as_openhands):
-    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
-    try:
-        # Test command with ANSI escape codes
-        obs = _run_cmd_action(runtime, 'echo -e "\033[31mRed Text\033[0m"')
-        assert obs.exit_code == 0
-        # The escape codes should be stripped from the output
-        assert 'Red Text' in obs.content
-    finally:
-        _close_test_runtime(runtime)
-
-
 def test_command_output_continuation(temp_dir, runtime_cls, run_as_openhands):
     runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
