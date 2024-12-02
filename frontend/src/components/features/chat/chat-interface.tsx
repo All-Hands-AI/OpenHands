@@ -21,11 +21,11 @@ import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bott
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 
 function getEntryPoint(
-  hasRepository: boolean | string | null,
-  numFiles: number,
+  hasRepository: boolean | null,
+  hasImportedProjectZip: boolean | null,
 ): string {
   if (hasRepository) return "github";
-  if (numFiles > 0) return "zip";
+  if (hasImportedProjectZip) return "zip";
   return "direct";
 }
 
@@ -44,17 +44,19 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
-  const { selectedRepository, files: uploadedFiles } = useSelector(
+  const { selectedRepository, importedProjectZip } = useSelector(
     (state: RootState) => state.initalQuery,
   );
 
   const handleSendMessage = async (content: string, files: File[]) => {
     if (messages.length === 0) {
       posthog.capture("initial_query_submitted", {
-        entry_point: getEntryPoint(selectedRepository, uploadedFiles.length),
+        entry_point: getEntryPoint(
+          selectedRepository !== null,
+          importedProjectZip !== null,
+        ),
         query_character_length: content.length,
-        has_repository: !!selectedRepository,
-        has_files: uploadedFiles.length > 0,
+        uploaded_zip_size: importedProjectZip?.length,
       });
     } else {
       posthog.capture("user_message_sent", {

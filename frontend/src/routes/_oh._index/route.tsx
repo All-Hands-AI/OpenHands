@@ -12,6 +12,7 @@ import { ImportProjectSuggestionBox } from "../../components/features/suggestion
 import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
 import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
+import posthog from "posthog-js";
 
 function Home() {
   const { token, gitHubToken } = useAuth();
