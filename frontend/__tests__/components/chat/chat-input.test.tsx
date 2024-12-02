@@ -1,7 +1,7 @@
 import userEvent from "@testing-library/user-event";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, afterEach, vi, it, expect } from "vitest";
-import { ChatInput } from "#/components/chat-input";
+import { ChatInput } from "#/components/features/chat/chat-input";
 
 describe("ChatInput", () => {
   const onSubmitMock = vi.fn();
