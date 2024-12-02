@@ -187,6 +187,13 @@ def make_commit(repo_dir: str, issue: GithubIssue, issue_type: str) -> None:
 
 
 def branch_exists(base_url: str, branch_name: str, headers: dict) -> bool:
+    """Check if a branch exists in the GitHub repository.
+
+    Args:
+        base_url: The base URL of the GitHub repository API
+        branch_name: The name of the branch to check
+        headers: The HTTP headers to use for authentication
+    """
     print(f'Checking if branch {branch_name} exists...')
     response = requests.get(f'{base_url}/branches/{branch_name}', headers=headers)
     exists = response.status_code == 200
