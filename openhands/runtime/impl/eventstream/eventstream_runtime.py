@@ -345,7 +345,7 @@ class EventStreamRuntime(Runtime):
                 volumes = {}
             volumes[self.config.replay.dir] = {
                 'bind': '/replay',
-                # TODO: Don't provide this much write access to the LLM, since its dangerous (at least on a dev machine).
+                # TODO: Don't provide this much access to the LLM, since its dangerous (at least on a dev machine where the replay folder can contain all kinds of dicey things, including  API keys, uncommitted changes that can be overwritten etc).
                 #   * We should not need write access.
                 #   * But any bugs coming from not having write access might be difficult to debug.
                 'mode': 'rw',
