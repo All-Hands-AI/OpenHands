@@ -73,7 +73,7 @@ class LocalRuntime(Runtime):
         self._temp_workspace: str | None = None
         if self.config.workspace_base is not None:
             logger.warning(
-                'Workspace base path is set. It will be set to the default path for the agent to run in.'
+                f'Workspace base path is set to {self.config.workspace_base}. It will be used as the path for the agent to run in.'
             )
             self.config.workspace_mount_path_in_sandbox = self.config.workspace_base
         else:
