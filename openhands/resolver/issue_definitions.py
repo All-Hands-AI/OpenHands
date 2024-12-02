@@ -167,11 +167,16 @@ class IssueHandler(IssueHandlerInterface):
 
         converted_issues = []
         for issue in all_issues:
-            if any([issue.get(key) is None for key in ['number', 'title', 'body']]):
+            # Check for required fields (number and title)
+            if any([issue.get(key) is None for key in ['number', 'title']]):
                 logger.warning(
-                    f'Skipping issue {issue} as it is missing number, title, or body.'
+                    f'Skipping issue {issue} as it is missing number or title.'
                 )
                 continue
+
+            # Handle empty body by using empty string
+            if issue.get('body') is None:
+                issue['body'] = ''
 
             # Get issue thread comments
             thread_comments = self._get_issue_comments(
