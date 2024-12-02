@@ -1,11 +1,13 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+from pydantic.dataclasses import dataclass
 
 from openhands.core.config.llm_config import LLMConfig
 
 
-class CondenserConfig(BaseModel):
+@dataclass
+class CondenserConfig:
     """Base configuration for memory condensers.
 
     By default, creates a NoOpCondenser that doesn't modify the events list.
@@ -14,12 +16,14 @@ class CondenserConfig(BaseModel):
     type: str = Field(default='noop', description='Type of condenser to use.')
 
 
+@dataclass
 class NoOpCondenserConfig(CondenserConfig):
     """Configuration for NoOpCondenser."""
 
     type: Literal['noop'] = Field('noop')
 
 
+@dataclass
 class RecentEventsCondenserConfig(CondenserConfig):
     """Configuration for RecentEventsCondenser."""
 
@@ -29,6 +33,7 @@ class RecentEventsCondenserConfig(CondenserConfig):
     )
 
 
+@dataclass
 class LLMCondenserConfig(CondenserConfig):
     """Configuration for LLMCondenser."""
 

@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from openhands.core.config.condenser_config import CondenserConfig
+from openhands.core.config.condenser_config import (
+    CondenserConfig,
+    LLMCondenserConfig,
+    NoOpCondenserConfig,
+    RecentEventsCondenserConfig,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
@@ -40,13 +45,13 @@ class Condenser(ABC):
         Raises:
             ValueError: If the condenser type is not recognized.
         """
-        match config.type:
-            case 'noop':
+        match config:
+            case NoOpCondenserConfig():
                 return NoOpCondenser()
-            case 'recent':
-                return RecentEventsCondenser(max_events=config.max_events)
-            case 'llm':
-                return LLMCondenser(llm=LLM(config=config.llm_config))
+            case RecentEventsCondenserConfig(max_events=max_events):
+                return RecentEventsCondenser(max_events=max_events)
+            case LLMCondenserConfig(llm_config=llm_config):
+                return LLMCondenser(llm=LLM(config=llm_config))
             case _:
                 raise ValueError(f'Unknown condenser type: {config.type}')
 
