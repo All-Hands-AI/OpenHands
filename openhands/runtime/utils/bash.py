@@ -135,6 +135,10 @@ class BashSession:
         # Initialize the first output file
         self._setup_new_output_file()
 
+    def __del__(self):
+        """Ensure the session is closed when the object is destroyed."""
+        self.close()
+
     def _setup_new_output_file(self):
         """Create a new output file and set up pipe-pane to write to it."""
         # Stop any existing pipe
