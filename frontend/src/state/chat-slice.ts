@@ -16,6 +16,7 @@ export const chatSlice = createSlice({
         content: string;
         imageUrls: string[];
         timestamp: string;
+        secondaryId: string;
       }>,
     ) {
       const message: Message = {
@@ -23,7 +24,14 @@ export const chatSlice = createSlice({
         content: action.payload.content,
         imageUrls: action.payload.imageUrls,
         timestamp: action.payload.timestamp || new Date().toISOString(),
+        secondaryId: action.payload.secondaryId,
       };
+      for (const existing of state.messages) {
+        const m = existing as Message;
+        if (m.secondaryId === message.secondaryId) {
+          return;
+        }
+      }
       state.messages.push(message);
     },
 
@@ -33,6 +41,7 @@ export const chatSlice = createSlice({
         content: action.payload,
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        secondaryId: crypto.randomUUID(),
       };
       state.messages.push(message);
     },

@@ -47,6 +47,7 @@ const messageActions = {
           content: message.args.content,
           imageUrls: [],
           timestamp: message.timestamp,
+          secondaryId: message.args.secondary_id,
         }),
       );
     } else {

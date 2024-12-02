@@ -45,8 +45,10 @@ export function ChatInterface() {
     const imageUrls = await Promise.all(promises);
 
     const timestamp = new Date().toISOString();
-    dispatch(addUserMessage({ content, imageUrls, timestamp }));
-    send(createChatMessage(content, imageUrls, timestamp));
+    const secondaryId = crypto.randomUUID();
+
+    dispatch(addUserMessage({ content, imageUrls, timestamp, secondaryId }));
+    send(createChatMessage(content, imageUrls, timestamp, secondaryId));
     setMessageToSend(null);
   };
 
