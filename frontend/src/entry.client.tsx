@@ -5,7 +5,7 @@
  * For more information, see https://remix.run/file-conventions/entry.client
  */
 
-import { RemixBrowser } from "@remix-run/react";
+import { HydratedRouter } from "react-router/dom";
 import React, { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { Provider } from "react-redux";
@@ -74,7 +74,7 @@ prepareApp().then(() =>
           <UserPrefsProvider>
             <AuthProvider>
               <QueryClientProvider client={queryClient}>
-                <RemixBrowser />
+                <HydratedRouter />
                 <PosthogInit />
               </QueryClientProvider>
             </AuthProvider>
