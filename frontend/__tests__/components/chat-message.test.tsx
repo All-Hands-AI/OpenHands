@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, test } from "vitest";
-import { ChatMessage } from "#/components/chat-message";
+import { ChatMessage } from "#/components/features/chat/chat-message";
 
 describe("ChatMessage", () => {
   it("should render a user message", () => {
