@@ -72,5 +72,4 @@ def handle_replay_enhance_observation(
         assert user_message
 
         # Enhance user action with observation result:
-        # https://app.replay.io/recording/localhost8080--62d107d5-72fc-476e-9ed4-425e27fe473d?commentId=Yzo4MDk0ZDY3Ny0wYzYwLTQ5ZWQtYWM5Yi02ZTBkMTg1ZTQ4YjU%3D&focusWindow=eyJiZWdpbiI6eyJwb2ludCI6IjAiLCJ0aW1lIjowfSwiZW5kIjp7InBvaW50IjoiMzgyOTMxODkzMzUxNTgzNTQ4NDM3MDY4NzU2NTQ5NjMyMDAiLCJ0aW1lIjoxOTUzM319&point=30180225493450815051110582436495362&primaryPanel=comments&secondaryPanel=console&time=15672.570017953321&viewMode=dev
         user_message.content = f'{user_message.content}\n\nNOTEs to agent:\n* The repository has already been cloned and preprocessed.\n* The provided replay recording has been used to annotate the code.'
