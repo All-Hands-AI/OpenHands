@@ -1,14 +1,5 @@
-/**
- * Generates the headers for the GitHub API
- * @param token The GitHub token
- * @returns The headers for the GitHub API
- */
-const generateGitHubAPIHeaders = (token: string) =>
-  ({
-    Accept: "application/vnd.github+json",
-    Authorization: `Bearer ${token}`,
-    "X-GitHub-Api-Version": "2022-11-28",
-  }) as const;
+import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
+import { github } from "./github-axios-instance";
 
 /**
  * Checks if the data is a GitHub error response
@@ -26,18 +17,31 @@ export const isGitHubErrorReponse = <T extends object | Array<unknown>>(
  * @returns A list of repositories or an error response
  */
 export const retrieveGitHubUserRepositories = async (
-  token: string,
   page = 1,
   per_page = 30,
-): Promise<Response> => {
-  const url = new URL("https://api.github.com/user/repos");
-  url.searchParams.append("sort", "pushed"); // sort by most recently pushed
-  url.searchParams.append("page", page.toString());
-  url.searchParams.append("per_page", per_page.toString());
+) => {
+  const response = await github.get<GitHubRepository[]>("/user/repos", {
+    params: {
+      sort: "pushed",
+      page,
+      per_page,
+    },
+    transformResponse: (data) => {
+      const parsedData: GitHubRepository[] | GitHubErrorReponse =
+        JSON.parse(data);
 
-  return fetch(url.toString(), {
-    headers: generateGitHubAPIHeaders(token),
+      if (isGitHubErrorReponse(parsedData)) {
+        throw new Error(parsedData.message);
+      }
+
+      return parsedData;
+    },
   });
+
+  const link = response.headers.link ?? "";
+  const nextPage = extractNextPageFromLink(link);
+
+  return { data: response.data, nextPage };
 };
 
 /**
@@ -45,55 +49,54 @@ export const retrieveGitHubUserRepositories = async (
  * @param token The GitHub token
  * @returns The authenticated user or an error response
  */
-export const retrieveGitHubUser = async (
-  token: string,
-): Promise<GitHubUser | GitHubErrorReponse> => {
-  const response = await fetch("https://api.github.com/user", {
-    headers: generateGitHubAPIHeaders(token),
+export const retrieveGitHubUser = async () => {
+  const response = await github.get<GitHubUser>("/user", {
+    transformResponse: (data) => {
+      const parsedData: GitHubUser | GitHubErrorReponse = JSON.parse(data);
+
+      if (isGitHubErrorReponse(parsedData)) {
+        throw new Error(parsedData.message);
+      }
+
+      return parsedData;
+    },
   });
 
-  if (!response.ok) {
-    throw new Error("Failed to retrieve user data");
-  }
+  const { data } = response;
 
-  const data = await response.json();
-
-  if (!isGitHubErrorReponse(data)) {
-    // Only return the necessary user data
-    const user: GitHubUser = {
-      id: data.id,
-      login: data.login,
-      avatar_url: data.avatar_url,
-      company: data.company,
-      name: data.name,
-      email: data.email,
-    };
-
-    return user;
-  }
-
-  const error: GitHubErrorReponse = {
-    message: data.message,
-    documentation_url: data.documentation_url,
-    status: response.status,
+  const user: GitHubUser = {
+    id: data.id,
+    login: data.login,
+    avatar_url: data.avatar_url,
+    company: data.company,
+    name: data.name,
+    email: data.email,
   };
 
-  return error;
+  return user;
 };
 
 export const retrieveLatestGitHubCommit = async (
-  token: string,
   repository: string,
-): Promise<GitHubCommit[] | GitHubErrorReponse> => {
-  const url = new URL(`https://api.github.com/repos/${repository}/commits`);
-  url.searchParams.append("per_page", "1");
-  const response = await fetch(url.toString(), {
-    headers: generateGitHubAPIHeaders(token),
-  });
+): Promise<GitHubCommit> => {
+  const response = await github.get<GitHubCommit>(
+    `/repos/${repository}/commits`,
+    {
+      params: {
+        per_page: 1,
+      },
+      transformResponse: (data) => {
+        const parsedData: GitHubCommit[] | GitHubErrorReponse =
+          JSON.parse(data);
 
-  if (!response.ok) {
-    throw new Error("Failed to retrieve latest commit");
-  }
+        if (isGitHubErrorReponse(parsedData)) {
+          throw new Error(parsedData.message);
+        }
 
-  return response.json();
+        return parsedData[0];
+      },
+    },
+  );
+
+  return response.data;
 };
