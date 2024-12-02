@@ -13,6 +13,7 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { AccountSettingsModal } from "#/components/shared/modals/account-settings/account-settings-modal";
 import { ExitProjectConfirmationModal } from "#/components/shared/modals/exit-project-confirmation-modal";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
+import { ProjectPanel } from "../project-panel/project-panel";
 
 export function Sidebar() {
   const location = useLocation();
@@ -54,7 +55,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="px-1 flex flex-col gap-1">
+      <aside className="px-1 flex flex-col gap-1 relative">
         <div className="w-[34px] h-[34px] flex items-center justify-center">
           {user.isLoading && <LoadingSpinner size="small" />}
           {!user.isLoading && <AllHandsLogoButton onClick={handleClickLogo} />}
@@ -74,6 +75,8 @@ export function Sidebar() {
             />
           )}
         </nav>
+
+        <ProjectPanel />
       </aside>
       {accountSettingsModalOpen && (
         <AccountSettingsModal onClose={handleAccountSettingsModalClose} />
