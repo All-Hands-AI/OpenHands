@@ -8,14 +8,14 @@ const github = axios.create({
   },
 });
 
-const setAxiosAuthToken = (token: string) => {
+const setAuthTokenHeader = (token: string) => {
   github.defaults.headers.common.Authorization = `Bearer ${token}`;
 };
 
-const removeAxiosAuthToken = () => {
+const removeAuthTokenHeader = () => {
   if (github.defaults.headers.common.Authorization) {
     delete github.defaults.headers.common.Authorization;
   }
 };
 
-export { github, setAxiosAuthToken, removeAxiosAuthToken };
+export { github, setAuthTokenHeader, removeAuthTokenHeader };

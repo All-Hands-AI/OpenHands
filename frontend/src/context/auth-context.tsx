@@ -1,14 +1,14 @@
 import posthog from "posthog-js";
 import React from "react";
 import {
-  removeAxiosAuthToken as removeOpenHandsAxiosAuthToken,
-  removeAxiosGitHubToken as removeOpenHandsAxiosGitHubToken,
-  setAxiosGitHubToken as setOpenHandsAxiosGitHubToken,
-  setAxiosAuthToken as setOpenHandsAxiosAuthToken,
+  removeAuthTokenHeader as removeOpenHandsAuthTokenHeader,
+  removeGitHubTokenHeader as removeOpenHandsGitHubTokenHeader,
+  setGitHubTokenHeader as setOpenHandsGitHubTokenHeader,
+  setAuthTokenHeader as setOpenHandsAuthTokenHeader,
 } from "#/api/open-hands-axios";
 import {
-  setAxiosAuthToken as setGitHubAxiosAuthToken,
-  removeAxiosAuthToken as removeGitHubAxiosAuthToken,
+  setAuthTokenHeader as setGitHubAuthTokenHeader,
+  removeAuthTokenHeader as removeGitHubAuthTokenHeader,
 } from "#/api/github-axios-instance";
 
 interface AuthContextType {
@@ -35,15 +35,15 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     setTokenState(null);
     localStorage.removeItem("token");
 
-    removeOpenHandsAxiosAuthToken();
+    removeOpenHandsAuthTokenHeader();
   };
 
   const clearGitHubToken = () => {
     setGitHubTokenState(null);
     localStorage.removeItem("ghToken");
 
-    removeOpenHandsAxiosGitHubToken();
-    removeGitHubAxiosAuthToken();
+    removeOpenHandsGitHubTokenHeader();
+    removeGitHubAuthTokenHeader();
   };
 
   const setToken = (token: string | null) => {
@@ -51,7 +51,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
 
     if (token) {
       localStorage.setItem("token", token);
-      setOpenHandsAxiosAuthToken(token);
+      setOpenHandsAuthTokenHeader(token);
     } else {
       clearToken();
     }
@@ -62,8 +62,8 @@ function AuthProvider({ children }: React.PropsWithChildren) {
 
     if (token) {
       localStorage.setItem("ghToken", token);
-      setOpenHandsAxiosGitHubToken(token);
-      setGitHubAxiosAuthToken(token);
+      setOpenHandsGitHubTokenHeader(token);
+      setGitHubAuthTokenHeader(token);
     } else {
       clearGitHubToken();
     }
