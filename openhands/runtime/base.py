@@ -221,26 +221,34 @@ class Runtime(FileEditRuntimeMixin):
         action = CmdRunAction(
             command=f'git clone {url} {dir_name} ; cd {dir_name} ; git checkout -b openhands-workspace'
         )
-        logger.info(action, extra={'msg_type': 'ACTION'})
+        self.log('info', 'Cloning repo: {selected_repository}')
         self.run_action(action)
 
     def get_custom_microagents(self, selected_repository: str | None) -> list[str]:
-        if not selected_repository:
-            return []
-        dir_name = Path(selected_repository.split('/')[1])
-        files = self.list_files(str(dir_name))
-        logger.info(files)
-        custom_microagents_dir = Path('.openhands') / 'microagents'
-        files = self.list_files(str(dir_name / custom_microagents_dir))
-        logger.info(files)
-
         custom_microagents_content = []
+        custom_microagents_dir = Path('.openhands') / 'microagents'
+
+        files = []
+        if selected_repository:
+            oh_instructions_header = '---\nname: openhands_instructions\nagent: CodeActAgent\ntriggers:\n- ""\n---\n'
+            openhands_instructions = (
+                oh_instructions_header
+                + self.read(FileReadAction(path='.openhands_instructions')).content
+            )
+            custom_microagents_content.append(openhands_instructions)
+
+            dir_name = Path(selected_repository.split('/')[1])
+            files = self.list_files(str(dir_name / custom_microagents_dir))
+        else:
+            files = self.list_files(str(custom_microagents_dir))
+
+        self.log('info', f'Found {len(files)} custom microagents.')
+
         for fname in files:
             content = self.read(
                 FileReadAction(path=str(custom_microagents_dir / fname))
             ).content
             custom_microagents_content.append(content)
-            logger.info(content)
 
         return custom_microagents_content
 
