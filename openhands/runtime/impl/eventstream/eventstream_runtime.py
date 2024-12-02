@@ -188,12 +188,6 @@ class EventStreamRuntime(Runtime):
         # Buffer for container logs
         self.log_buffer: LogBuffer | None = None
 
-        if self.config.sandbox.runtime_extra_deps:
-            self.log(
-                'debug',
-                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
-            )
-
         self.init_base_runtime(
             config,
             event_stream,
@@ -204,6 +198,13 @@ class EventStreamRuntime(Runtime):
             attach_to_existing,
             headless_mode,
         )
+
+        # Log runtime_extra_deps after base class initialization so self.sid is available
+        if self.config.sandbox.runtime_extra_deps:
+            self.log(
+                'debug',
+                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
+            )
 
     async def connect(self):
         self.send_status_message('STATUS$STARTING_RUNTIME')
@@ -456,7 +457,7 @@ class EventStreamRuntime(Runtime):
         ):
             pass
 
-    def close(self, rm_all_containers: bool = True):
+    def close(self, rm_all_containers: bool | None = None):
         """Closes the EventStreamRuntime and associated objects
 
         Parameters:
@@ -467,6 +468,9 @@ class EventStreamRuntime(Runtime):
 
         if self.session:
             self.session.close()
+
+        if rm_all_containers is None:
+            rm_all_containers = self.config.sandbox.rm_all_containers
 
         if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
             return
