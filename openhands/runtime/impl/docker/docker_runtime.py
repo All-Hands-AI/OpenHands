@@ -58,6 +58,7 @@ def remove_all_runtime_containers():
 
 atexit.register(remove_all_runtime_containers)
 
+
 class DockerRuntime(Runtime):
     """This runtime runs the action_execution_server inside a Docker container.
     When receiving an event, it will send the event to the server via HTTP.
@@ -126,12 +127,6 @@ class DockerRuntime(Runtime):
         # Buffer for container logs
         self.log_buffer: LogBuffer | None = None
 
-        if self.config.sandbox.runtime_extra_deps:
-            self.log(
-                'debug',
-                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
-            )
-
         self.init_base_runtime(
             config,
             event_stream,
@@ -142,6 +137,13 @@ class DockerRuntime(Runtime):
             attach_to_existing,
             headless_mode,
         )
+
+        # Log runtime_extra_deps after base class initialization so self.sid is available
+        if self.config.sandbox.runtime_extra_deps:
+            self.log(
+                'debug',
+                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
+            )
 
     async def connect(self):
         self.send_status_message('STATUS$STARTING_RUNTIME')
