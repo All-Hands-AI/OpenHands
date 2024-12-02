@@ -62,13 +62,13 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
         type={isDirectory ? "button" : "submit"}
         name="file"
         value={path}
+        onClick={handleClick}
         className="flex items-center justify-between w-full px-1"
       >
         <Filename
           name={filename}
           type={isDirectory ? "folder" : "file"}
           isOpen={isOpen}
-          onClick={handleClick}
         />
 
         {modifiedFiles[path] && (

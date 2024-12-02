@@ -41,7 +41,7 @@ async def init_connection(connection_id: str, data: dict):
     if token:
         sid = get_sid_from_token(token, config.jwt_secret)
         if sid == '':
-            await sio.send({'error': 'Invalid token', 'error_code': 401})
+            await sio.emit('oh_event', {'error': 'Invalid token', 'error_code': 401})
             return
         logger.info(f'Existing session: {sid}')
     else:
