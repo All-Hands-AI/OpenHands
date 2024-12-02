@@ -173,7 +173,7 @@ class IssueHandler(IssueHandlerInterface):
                     f'Skipping issue {issue} as it is missing number or title.'
                 )
                 continue
-            
+
             # Handle empty body by using empty string
             if issue.get('body') is None:
                 issue['body'] = ''
