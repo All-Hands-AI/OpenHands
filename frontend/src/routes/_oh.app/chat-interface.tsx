@@ -20,10 +20,18 @@ import { LoadingSpinner } from "./loading-spinner";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
 
+function getEntryPoint(
+  hasRepository: boolean | string | null,
+  numFiles: number,
+): string {
+  if (hasRepository) return "github";
+  if (numFiles > 0) return "zip";
+  return "direct";
+}
+
 export function ChatInterface() {
   const { send, isLoadingMessages } = useWsClient();
   const dispatch = useDispatch();
-
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
@@ -36,11 +44,24 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
+  const { selectedRepository, files: uploadedFiles } = useSelector(
+    (state: RootState) => state.initalQuery,
+  );
 
   const handleSendMessage = async (content: string, files: File[]) => {
-    posthog.capture("user_message_sent", {
-      current_message_count: messages.length,
-    });
+    if (messages.length === 0) {
+      posthog.capture("initial_query_submitted", {
+        entry_point: getEntryPoint(selectedRepository, uploadedFiles.length),
+        query_character_length: content.length,
+        has_repository: !!selectedRepository,
+        has_files: uploadedFiles.length > 0,
+      });
+    } else {
+      posthog.capture("user_message_sent", {
+        session_message_count: messages.length,
+        current_message_length: content.length,
+      });
+    }
     const promises = files.map((file) => convertImageToBase64(file));
     const imageUrls = await Promise.all(promises);
 

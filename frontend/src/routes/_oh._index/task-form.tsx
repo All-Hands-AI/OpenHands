@@ -65,7 +65,10 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
     if (q) dispatch(setInitialQuery(q));
 
     posthog.capture("initial_query_submitted", {
+      entry_point: "task_form",
       query_character_length: q?.length,
+      has_repository: !!selectedRepository,
+      has_files: files.length > 0,
     });
 
     navigate("/app");
