@@ -48,13 +48,19 @@ def get_config(
             # use default base_container_image
             enable_auto_lint=True,
             use_host_network=False,
-            timeout=100,
+            timeout=300,
+            # Add platform to the sandbox config to solve issue 4401
+            platform='linux/amd64',
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
+            keep_runtime_alive=False,
+            remote_runtime_init_timeout=3600,
         ),
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
+        # debug
+        debug=True,
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(
@@ -107,31 +113,37 @@ def process_instance(
     # =============================================
     # create sandbox and run the agent
     # =============================================
-
     runtime: Runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
+    try:
+        test_class.initialize_runtime(runtime)
 
-    test_class.initialize_runtime(runtime)
-
-    # Here's how you can run the agent (similar to the `main` function) and get the final task state
-    state: State | None = asyncio.run(
-        run_controller(
-            config=config,
-            initial_user_action=MessageAction(content=instruction),
-            runtime=runtime,
-            fake_user_response_fn=FAKE_RESPONSES[metadata.agent_class],
+        # Here's how you can run the agent (similar to the `main` function) and get the final task state
+        state: State | None = asyncio.run(
+            run_controller(
+                config=config,
+                initial_user_action=MessageAction(content=instruction),
+                runtime=runtime,
+                fake_user_response_fn=FAKE_RESPONSES[metadata.agent_class],
+            )
         )
-    )
-    if state is None:
-        raise ValueError('State should not be None.')
+        if state is None:
+            raise ValueError('State should not be None.')
 
-    # # =============================================
-    # # result evaluation
-    # # =============================================
+        # # =============================================
+        # # result evaluation
+        # # =============================================
 
-    histories = [event_to_dict(event) for event in state.history]
-    test_result: TestResult = test_class.verify_result(runtime, histories)
-    metrics = state.metrics.get() if state.metrics else None
+        histories = state.history
+
+        # some basic check
+        logger.info(f'Total events in history: {len(histories)}')
+        assert len(histories) > 0, 'History should not be empty'
+
+        test_result: TestResult = test_class.verify_result(runtime, histories)
+        metrics = state.metrics.get() if state.metrics else None
+    finally:
+        runtime.close()
 
     # Save the output
     output = EvalOutput(
@@ -139,7 +151,7 @@ def process_instance(
         instance=instance.to_dict(),
         instruction=instruction,
         metadata=metadata,
-        history=histories,
+        history=[event_to_dict(event) for event in histories],
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
         test_result=test_result.model_dump(),
@@ -206,6 +218,8 @@ if __name__ == '__main__':
     )
 
     df = pd.read_json(output_file, lines=True, orient='records')
+
+    # record success and reason for failure for the final report
     df['success'] = df['test_result'].apply(lambda x: x['success'])
     df['reason'] = df['test_result'].apply(lambda x: x['reason'])
     logger.info('-' * 100)
@@ -219,9 +233,16 @@ if __name__ == '__main__':
     )
     logger.info('-' * 100)
 
+    # record cost for each instance, with 3 decimal places
+    df['cost'] = df['metrics'].apply(lambda x: round(x['accumulated_cost'], 3))
+    logger.info(f'Total cost: USD {df["cost"].sum():.2f}')
+
     report_file = os.path.join(metadata.eval_output_dir, 'report.md')
     with open(report_file, 'w') as f:
         f.write(
             f'Success rate: {df["success"].mean():.2%} ({df["success"].sum()}/{len(df)})\n'
         )
-        f.write(df[['instance_id', 'success', 'reason']].to_markdown(index=False))
+        f.write(f'\nTotal cost: USD {df["cost"].sum():.2f}\n')
+        f.write(
+            df[['instance_id', 'success', 'reason', 'cost']].to_markdown(index=False)
+        )

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Suggestions } from "#/components/suggestions";
+import { Suggestions } from "#/components/features/suggestions/suggestions";
 
 describe("Suggestions", () => {
   const firstSuggestion = {
