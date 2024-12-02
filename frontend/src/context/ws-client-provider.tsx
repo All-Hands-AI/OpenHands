@@ -92,7 +92,11 @@ export function WsClientProvider({
     if (isOpenHandsMessage(event)) {
       messageRateHandler.record(new Date().getTime());
     }
-    setEvents((prevEvents) => [...prevEvents, event]);
+    setEvents((prevEvents) => {
+      const result = [...prevEvents, event];
+      console.log("TRACE:events", result);
+      return result;
+    });
     lastEventRef.current = event;
     const extras = event.extras as Record<string, unknown>;
     if (extras?.agent_state === AgentState.INIT) {
