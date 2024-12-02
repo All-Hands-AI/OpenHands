@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { code } from "./markdown/code";
-import { ul, ol } from "./markdown/list";
+import { code } from "../markdown/code";
+import { ol, ul } from "../markdown/list";
 
 interface ExpandableMessageProps {
   id?: string;

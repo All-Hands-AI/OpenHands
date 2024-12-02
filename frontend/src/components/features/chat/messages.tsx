@@ -1,8 +1,8 @@
-import { ExpandableMessage } from "#/components/expandable-message";
 import { ChatMessage } from "#/components/features/chat/chat-message";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
 import { ImageCarousel } from "../images/image-carousel";
 import { ErrorMessage } from "./error-message";
+import { ExpandableMessage } from "./expandable-message";
 
 interface ErrorMessageType {
   type: "error";
