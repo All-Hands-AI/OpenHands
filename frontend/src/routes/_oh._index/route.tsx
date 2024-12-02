@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router";
 import React from "react";
 import { useDispatch } from "react-redux";
+import posthog from "posthog-js";
 import { setImportedProjectZip } from "#/state/initial-query-slice";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
@@ -12,7 +13,6 @@ import { ImportProjectSuggestionBox } from "../../components/features/suggestion
 import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
 import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
-import posthog from "posthog-js";
 
 function Home() {
   const { token, gitHubToken } = useAuth();
