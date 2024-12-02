@@ -196,7 +196,7 @@ async def process_issue(
         workspace_mount_path=workspace_base,
         agents={
             'CodeActAgent': AgentConfig(
-                is_workdir_repo=True, disabled_microagents=['github']
+                is_workspace_repo=True, disabled_microagents=['github']
             )
         },
     )

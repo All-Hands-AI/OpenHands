@@ -355,7 +355,7 @@ class CodeActAgent(Agent):
 
         if self.config.codeact_enable_replay:
             # Replay enhancement.
-            enhance_action = replay_enhance_action(state, self.config.is_workdir_repo)
+            enhance_action = replay_enhance_action(state, self.config.is_workspace_repo)
             if enhance_action:
                 logger.info('[REPLAY] Enhancing prompt for Replay recording...')
                 return enhance_action

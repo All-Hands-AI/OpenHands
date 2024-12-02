@@ -20,11 +20,11 @@ def scan_recording_id(issue: str) -> str | None:
 
 
 def command_annotate_execution_points(
-    thought: str, is_workdir_repo: bool
+    thought: str, is_workspace_repo: bool
 ) -> ReplayCmdRunAction:
     # NOTE: For the resolver, the workdir path is the repo path.
     #       In that case, we should not append the repo name to the path.
-    appendRepoNameToPath = ' -i' if is_workdir_repo else ''
+    appendRepoNameToPath = ' -i' if is_workspace_repo else ''
     command = f'"annotate-execution-points" -w "$(pwd)"{appendRepoNameToPath}'
     action = ReplayCmdRunAction(
         thought=thought,
@@ -38,7 +38,7 @@ def command_annotate_execution_points(
     return action
 
 
-def replay_enhance_action(state: State, is_workdir_repo: bool) -> Action | None:
+def replay_enhance_action(state: State, is_workspace_repo: bool) -> Action | None:
     if 'replay_enhance_prompt_id' not in state.extra_data:
         # 1. Get current user prompt.
         latest_user_message = state.get_last_user_message()
@@ -49,7 +49,7 @@ def replay_enhance_action(state: State, is_workdir_repo: bool) -> Action | None:
                 # 3. Analyze recording and, ultimately, enhance prompt.
                 state.extra_data['replay_enhance_prompt_id'] = latest_user_message.id
                 return command_annotate_execution_points(
-                    latest_user_message.content, is_workdir_repo
+                    latest_user_message.content, is_workspace_repo
                 )
     return None
 
