@@ -1782,14 +1782,6 @@
     "fr": "Privé",
     "tr": "Özel"
   },
-  "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
-    "en": "Show details",
-    "es": "Mostrar detalles"
-  },
-  "EXPANDABLE_MESSAGE$HIDE_DETAILS": {
-    "en": "Hide details",
-    "es": "Ocultar detalles"
-  },
   "STATUS$STARTING_RUNTIME": {
     "en": "Starting Runtime...",
     "zh-CN": "启动运行时...",
