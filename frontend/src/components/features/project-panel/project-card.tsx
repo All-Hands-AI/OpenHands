@@ -9,7 +9,7 @@ interface ProjectCardProps {
   onDelete: () => void;
   onChangeTitle: (title: string) => void;
   name: string;
-  repo?: string;
+  repo: string | null;
   lastUpdated: string; // ISO 8601
   state?: ProjectState;
 }

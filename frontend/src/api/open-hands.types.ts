@@ -1,3 +1,5 @@
+import { ProjectState } from "#/components/features/project-panel/project-state-indicator";
+
 export interface ErrorResponse {
   error: string;
 }
@@ -55,4 +57,12 @@ export interface GetVSCodeUrlResponse {
 export interface AuthenticateResponse {
   message?: string;
   error?: string;
+}
+
+export interface UserProject {
+  id: string;
+  name: string;
+  repo: string | null;
+  lastUpdated: string;
+  state: ProjectState;
 }

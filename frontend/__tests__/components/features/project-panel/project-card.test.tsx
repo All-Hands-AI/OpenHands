@@ -20,6 +20,7 @@ describe("ProjectCard", () => {
         onClick={onClick}
         onChangeTitle={onChangeTitle}
         name="Project 1"
+        repo={null}
         lastUpdated="2021-10-01T12:00:00Z"
       />,
     );
@@ -39,6 +40,7 @@ describe("ProjectCard", () => {
         onClick={onClick}
         onChangeTitle={onChangeTitle}
         name="Project 1"
+        repo={null}
         lastUpdated="2021-10-01T12:00:00Z"
       />,
     );
@@ -67,6 +69,7 @@ describe("ProjectCard", () => {
         onClick={onClick}
         onChangeTitle={onChangeTitle}
         name="Project 1"
+        repo={null}
         lastUpdated="2021-10-01T12:00:00Z"
       />,
     );
@@ -85,6 +88,7 @@ describe("ProjectCard", () => {
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
         name="Project 1"
+        repo={null}
         lastUpdated="2021-10-01T12:00:00Z"
       />,
     );
@@ -121,6 +125,7 @@ describe("ProjectCard", () => {
         onClick={onClick}
         onDelete={onDelete}
         name="Project 1"
+        repo={null}
         lastUpdated="2021-10-01T12:00:00Z"
         onChangeTitle={onChangeTitle}
       />,
@@ -144,6 +149,7 @@ describe("ProjectCard", () => {
           onDelete={onDelete}
           onChangeTitle={onChangeTitle}
           name="Project 1"
+          repo={null}
           lastUpdated="2021-10-01T12:00:00Z"
         />,
       );
@@ -158,6 +164,7 @@ describe("ProjectCard", () => {
           onDelete={onDelete}
           onChangeTitle={onChangeTitle}
           name="Project 1"
+          repo={null}
           lastUpdated="2021-10-01T12:00:00Z"
           state="warm"
         />,

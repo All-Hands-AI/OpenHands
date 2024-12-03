@@ -1,4 +1,35 @@
 import { delay, http, HttpResponse } from "msw";
+import { UserProject } from "#/api/open-hands.types";
+
+const projects: UserProject[] = [
+  {
+    id: "1",
+    name: "My New Project",
+    repo: null,
+    lastUpdated: new Date().toISOString(),
+    state: "running",
+  },
+  {
+    id: "2",
+    name: "Repo Testing",
+    repo: "octocat/hello-world",
+    // 2 days ago
+    lastUpdated: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    state: "cold",
+  },
+  {
+    id: "3",
+    name: "Another Project",
+    repo: "octocat/earth",
+    // 5 days ago
+    lastUpdated: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    state: "finished",
+  },
+];
+
+const PROJECTS = new Map<string, UserProject>(
+  projects.map((project) => [project.id, project]),
+);
 
 const openHandsHandlers = [
   http.get("/api/options/models", async () => {
@@ -104,4 +135,19 @@ export const handlers = [
     HttpResponse.json(null, { status: 200 }),
   ),
   http.get("/config.json", () => HttpResponse.json({ APP_MODE: "oss" })),
+
+  http.get("/api/projects", async () =>
+    HttpResponse.json(Array.from(PROJECTS.values())),
+  ),
+
+  http.delete("/api/projects/:projectId", async ({ params }) => {
+    const { projectId } = params;
+
+    if (typeof projectId === "string") {
+      PROJECTS.delete(projectId);
+      return HttpResponse.json(null, { status: 200 });
+    }
+
+    return HttpResponse.json(null, { status: 404 });
+  }),
 ];

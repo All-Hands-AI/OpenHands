@@ -8,6 +8,7 @@ import {
   GetConfigResponse,
   GetVSCodeUrlResponse,
   AuthenticateResponse,
+  UserProject,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 
@@ -180,6 +181,15 @@ class OpenHands {
       "/api/conversation",
     );
     return data;
+  }
+
+  static async getUserProjects(): Promise<UserProject[]> {
+    const { data } = await openHands.get<UserProject[]>("/api/projects");
+    return data;
+  }
+
+  static async deleteUserProject(projectId: string): Promise<void> {
+    await openHands.delete(`/api/projects/${projectId}`);
   }
 }
 
