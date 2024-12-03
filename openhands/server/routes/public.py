@@ -1,3 +1,4 @@
+import os
 import warnings
 
 import requests
@@ -104,3 +105,24 @@ async def get_security_analyzers():
         list: A sorted list of security analyzer names.
     """
     return sorted(SecurityAnalyzers.keys())
+
+
+@app.get('/config')
+async def get_config():
+    """
+    Get current config
+    """
+
+    APP_MODE = os.environ.get('APP_MODE', 'oss')
+    POSTHOG_CLIENT_KEY = os.environ.get(
+        'POSTHOG_CLIENT_KEY', 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
+    )
+    GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID', '')
+
+    config = {
+        'APP_MODE': APP_MODE,
+        'GITHUB_CLIENT_ID': POSTHOG_CLIENT_KEY,
+        'POSTHOG_CLIENT_KEY': GITHUB_CLIENT_ID,
+    }
+
+    return config

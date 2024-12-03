@@ -54,7 +54,7 @@ class OpenHands {
   }
 
   static async getConfig(): Promise<GetConfigResponse> {
-    const response = await fetch("/config.json");
+    const response = await fetch("/api/options/config");
 
     if (!response.ok) {
       throw new Error("Failed to fetch config");
