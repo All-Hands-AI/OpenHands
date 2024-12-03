@@ -1,6 +1,8 @@
 export interface ActionMessage {
+  id: number;
+
   // Either 'agent' or 'user'
-  source: string;
+  source: "agent" | "user";
 
   // The action to be taken
   action: string;
@@ -18,6 +20,9 @@ export interface ActionMessage {
 export interface ObservationMessage {
   // The type of observation
   observation: string;
+
+  id: number;
+  cause: number;
 
   // The observed data
   content: string;
