@@ -12,6 +12,7 @@ MARKER_START = 'MARKER-gJNVWbR2W1FRxa5zkvVZtXcrep2DFHjUUNjQJErE-START'
 MARKER_END = 'MARKER-gJNVWbR2W1FRxa5zkvVZtXcrep2DFHjUUNjQJErE-END'
 
 
+# NOTE: We use Markers to avoid noise corrupting the JSON output.
 def get_marked_output_json_string(output: str) -> str:
     """This should return a JSON-parseable string."""
     parts = re.split(f'{MARKER_START}|{MARKER_END}', output)
