@@ -191,6 +191,13 @@ class OpenHands {
   static async deleteUserProject(projectId: string): Promise<void> {
     await openHands.delete(`/api/projects/${projectId}`);
   }
+
+  static async updateUserProject(
+    projectId: string,
+    project: Partial<Omit<UserProject, "id">>,
+  ): Promise<void> {
+    await openHands.put(`/api/projects/${projectId}`, project);
+  }
 }
 
 export default OpenHands;

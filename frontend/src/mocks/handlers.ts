@@ -150,4 +150,22 @@ export const handlers = [
 
     return HttpResponse.json(null, { status: 404 });
   }),
+
+  http.put("/api/projects/:projectId", async ({ params, request }) => {
+    const { projectId } = params;
+
+    if (typeof projectId === "string") {
+      const project = PROJECTS.get(projectId);
+
+      if (project) {
+        const body = await request.json();
+        if (typeof body === "object" && body?.name) {
+          PROJECTS.set(projectId, { ...project, name: body.name });
+          return HttpResponse.json(null, { status: 200 });
+        }
+      }
+    }
+
+    return HttpResponse.json(null, { status: 404 });
+  }),
 ];
