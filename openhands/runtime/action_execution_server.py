@@ -14,6 +14,7 @@ import os
 import shutil
 import tempfile
 import time
+import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
@@ -444,7 +445,10 @@ if __name__ == '__main__':
             logger.error(
                 f'Error processing command: {str(e)}', exc_info=True, stack_info=True
             )
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(
+                status_code=500,
+                detail=str(e) + '\n' + traceback.format_exc(),
+            )
 
     @app.post('/upload_file')
     async def upload_file(
