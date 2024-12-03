@@ -121,8 +121,8 @@ async def get_config():
 
     config = {
         'APP_MODE': APP_MODE,
-        'GITHUB_CLIENT_ID': POSTHOG_CLIENT_KEY,
-        'POSTHOG_CLIENT_KEY': GITHUB_CLIENT_ID,
+        'GITHUB_CLIENT_ID': GITHUB_CLIENT_ID,
+        'POSTHOG_CLIENT_KEY': POSTHOG_CLIENT_KEY,
     }
 
     return config
