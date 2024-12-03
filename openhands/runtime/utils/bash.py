@@ -170,7 +170,7 @@ class BashSession:
     def _read_from_pipe(self):
         """Read from the named pipe and append to current content."""
         try:
-            with open(self.output_pipe, 'r') as pipe:
+            with open(self.output_pipe, 'r', buffering=1) as pipe:
                 while not self._stop_reader.is_set():
                     line = pipe.readline()
                     if not line:
