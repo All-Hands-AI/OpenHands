@@ -25,7 +25,7 @@ APP_MODE = os.environ.get('APP_MODE', 'oss')
 POSTHOG_CLIENT_KEY = os.environ.get(
     'POSTHOG_CLIENT_KEY', 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
 )
-GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID', '')
+GITHUB_CLIENT_ID = os.environ.get('GITHUB_APP_CLIENT_ID', '')
 
 
 @app.get('/models')
