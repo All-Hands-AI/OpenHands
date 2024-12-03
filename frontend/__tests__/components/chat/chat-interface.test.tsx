@@ -288,7 +288,6 @@ describe.skip("ChatInterface", () => {
       },
       {
         type: "error",
-        id: "",
         content: "Something went wrong",
         sender: "assistant",
         timestamp: new Date().toISOString(),

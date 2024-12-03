@@ -63,7 +63,7 @@ export const chatSlice = createSlice({
       if (!HANDLED_ACTIONS.includes(actionID)) {
         return;
       }
-      const messageID = `ACTION_MESSAGE$${actionID.toUpperCase()}`;
+      const translationID = `ACTION_MESSAGE$${actionID.toUpperCase()}`;
       let text = "";
       if (actionID === "run") {
         text = `\`${action.payload.args.command}\``;
@@ -81,7 +81,7 @@ export const chatSlice = createSlice({
       const message: Message = {
         type: "action",
         sender: "assistant",
-        id: messageID,
+        translationID,
         eventID: action.payload.id,
         content: text,
         imageUrls: [],
@@ -98,7 +98,7 @@ export const chatSlice = createSlice({
       if (!HANDLED_ACTIONS.includes(observationID)) {
         return;
       }
-      const messageID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
+      const translationID = `OBSERVATION_MESSAGE$${observationID.toUpperCase()}`;
       const causeID = observation.payload.cause;
       const causeMessage = state.messages.find(
         (message) => message.eventID === causeID,
@@ -106,7 +106,7 @@ export const chatSlice = createSlice({
       if (!causeMessage) {
         return;
       }
-      causeMessage.id = messageID;
+      causeMessage.translationID = translationID;
       if (observationID === "run" || observationID === "run_ipython") {
         let { content } = observation.payload;
         if (content.length > MAX_CONTENT_LENGTH) {
@@ -123,7 +123,7 @@ export const chatSlice = createSlice({
     ) {
       const { id, message } = action.payload;
       state.messages.push({
-        id,
+        translationID: id,
         content: message,
         type: "error",
         sender: "assistant",

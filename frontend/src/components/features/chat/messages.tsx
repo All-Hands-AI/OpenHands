@@ -18,7 +18,7 @@ export function Messages({
         <ExpandableMessage
           key={index}
           type={message.type}
-          id={message.id}
+          id={message.translationID}
           message={message.content}
         />
       );

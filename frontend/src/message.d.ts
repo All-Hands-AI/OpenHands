@@ -5,6 +5,6 @@ type Message = {
   imageUrls?: string[];
   type?: "thought" | "error" | "action";
   pending?: boolean;
-  id?: string;
+  translationID?: string;
   eventID?: number;
 };
