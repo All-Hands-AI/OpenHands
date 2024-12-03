@@ -11,7 +11,7 @@ class RequestHTTPError(requests.HTTPError):
         self.detail = detail
 
     def __str__(self) -> str:
-        s = f'HTTP Error occurred: {super().__str__()}'
+        s = super().__str__()
         if self.detail is not None:
             s += f'\nDetails: {self.detail}'
         return s
