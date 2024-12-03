@@ -32,5 +32,9 @@ class SecurityConfig:
 
         return f"SecurityConfig({', '.join(attr_str)})"
 
+    @classmethod
+    def from_dict(cls, security_config_dict: dict) -> 'SecurityConfig':
+        return cls(**security_config_dict)
+
     def __repr__(self):
         return self.__str__()

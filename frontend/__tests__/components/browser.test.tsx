@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import { renderWithProviders } from "../../test-utils";
 import { BrowserPanel } from "#/components/features/browser/browser";
 
+
 describe("Browser", () => {
   it("renders a message if no screenshotSrc is provided", () => {
     renderWithProviders(<BrowserPanel />, {

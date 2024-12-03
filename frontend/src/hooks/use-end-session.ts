@@ -1,5 +1,5 @@
 import { useDispatch } from "react-redux";
-import { useNavigate } from "@remix-run/react";
+import { useNavigate } from "react-router";
 import { useAuth } from "#/context/auth-context";
 import {
   initialState as browserInitialState,
