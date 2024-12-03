@@ -16,7 +16,7 @@ export const chatSlice = createSlice({
         content: string;
         imageUrls: string[];
         timestamp: string;
-        pending: boolean;
+        pending?: boolean;
       }>,
     ) {
       const message: Message = {
@@ -24,7 +24,7 @@ export const chatSlice = createSlice({
         content: action.payload.content,
         imageUrls: action.payload.imageUrls,
         timestamp: action.payload.timestamp || new Date().toISOString(),
-        pending: action.payload.pending,
+        pending: !!action.payload.pending,
       };
       // Remove any pending messages
       let i = state.messages.length;
