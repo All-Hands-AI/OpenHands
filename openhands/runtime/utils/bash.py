@@ -155,8 +155,12 @@ class BashSession:
         self.pane.cmd('pipe-pane', f'cat > {self.output_pipe} 2>&1')
 
         # Start the reader thread if not already running
+        assert self._reader_thread is None, 'Expected reader thread not running'
         self._stop_reader.clear()
-        self._reader_thread = threading.Thread(target=self._read_from_pipe, daemon=True)
+        self._reader_thread = threading.Thread(
+            target=self._read_from_pipe,
+            daemon=True,
+        )
         self._reader_thread.start()
 
         # Hit enter to trigger the FIRST PS1
@@ -352,10 +356,14 @@ class BashSession:
         )
 
     def _ready_for_next_command(self):
-        """Reset the pipe and clear the current content for a new command."""
+        """Reset the content buffer for a new command."""
         # Clear the current content
         with self._pane_content_lock:
             self._current_pane_content = ''
+
+        # Hit enter to ensure we get a fresh PS1 prompt
+        self.pane.enter()
+        time.sleep(0.1)  # Small delay to ensure prompt appears
 
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
         """Execute a command in the bash session."""
