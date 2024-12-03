@@ -48,6 +48,7 @@ const messageActions = {
           content: message.args.content,
           imageUrls: [],
           timestamp: message.timestamp,
+          pending: false,
         }),
       );
     }

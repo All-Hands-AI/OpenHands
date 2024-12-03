@@ -431,7 +431,7 @@ def convert_fncall_messages_to_non_fncall_messages(
                     tool_content = convert_tool_call_to_string(message['tool_calls'][0])
                 except FunctionCallConversionError as e:
                     raise FunctionCallConversionError(
-                        f'Failed to convert tool call to string. Raw messages: {json.dumps(messages, indent=2)}'
+                        f'Failed to convert tool call to string.\nCurrent tool call: {message["tool_calls"][0]}.\nRaw messages: {json.dumps(messages, indent=2)}'
                     ) from e
                 if isinstance(content, str):
                     content += '\n\n' + tool_content

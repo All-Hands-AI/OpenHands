@@ -117,6 +117,8 @@ The changes successfully address the feedback."""
         )
         assert 'Last message from AI agent:\n' + history[0].content in second_prompt
 
+        assert len(json.loads(explanation)) == 2
+
 
 def test_guess_success_thread_comments_litellm_call():
     """Test that the litellm.completion() call for thread comments contains the expected content."""
@@ -187,6 +189,8 @@ The changes successfully address the feedback."""
         )
         assert 'PR Thread Comments:\n' + '\n---\n'.join(issue.thread_comments) in prompt
         assert 'Last message from AI agent:\n' + history[0].content in prompt
+
+        assert len(json.loads(explanation)) == 1
 
 
 def test_check_feedback_with_llm():
@@ -456,3 +460,5 @@ The changes successfully address the feedback."""
         )
         assert 'PR Review Comments:\n' + '\n---\n'.join(issue.review_comments) in prompt
         assert 'Last message from AI agent:\n' + history[0].content in prompt
+
+        assert len(json.loads(explanation)) == 1

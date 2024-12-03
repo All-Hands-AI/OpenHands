@@ -3,7 +3,5 @@ type Message = {
   content: string;
   timestamp: string;
   type?: "thought" | "error" | "action";
-  id?: string;
-  eventID?: int;
-  imageUrls?: string[];
+  pending?: boolean;
 };
