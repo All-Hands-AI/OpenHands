@@ -4,16 +4,6 @@ import { ImageCarousel } from "../images/image-carousel";
 import { ErrorMessage } from "./error-message";
 import { ExpandableMessage } from "./expandable-message";
 
-interface ErrorMessageType {
-  type: "error";
-  id: string;
-  message: string;
-}
-
-const isErrorMessage = (
-  message: Message | ErrorMessageType,
-): message is ErrorMessageType => "error" in message;
-
 interface MessagesProps {
   messages: (Message | ErrorMessageType)[];
   isAwaitingUserConfirmation: boolean;
@@ -24,17 +14,13 @@ export function Messages({
   isAwaitingUserConfirmation,
 }: MessagesProps) {
   return messages.map((message, index) => {
-    if (isErrorMessage(message)) {
-      return <ErrorMessage key={index} message={message.message} />;
-    }
-
-    if (message.type === "action") {
+    if (message.type === "error" || message.type === "action") {
       return (
         <ExpandableMessage
           key={index}
           type={message.type}
           id={message.id}
-          message={message.content}
+          message={message.content || message.message}
         />
       );
     }
