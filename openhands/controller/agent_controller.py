@@ -291,9 +291,7 @@ class AgentController:
         if self._pending_action and self._pending_action.id == observation.cause:
             self._pending_action = None
             if isinstance(observation, ReplayCmdOutputObservation):
-                handle_replay_enhance_observation(
-                    self.state,  # observation
-                )
+                handle_replay_enhance_observation(self.state, observation)
 
             if self.state.agent_state == AgentState.USER_CONFIRMED:
                 await self.set_agent_state_to(AgentState.RUNNING)

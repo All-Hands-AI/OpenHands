@@ -1,9 +1,12 @@
+import json
 import re
+from typing import Any, TypedDict
 
 from openhands.controller.state.state import State
 from openhands.events.action.action import Action
 from openhands.events.action.message import MessageAction
 from openhands.events.action.replay import ReplayCmdRunAction
+from openhands.events.observation.replay import ReplayCmdOutputObservation
 
 
 def scan_recording_id(issue: str) -> str | None:
@@ -55,9 +58,36 @@ def replay_enhance_action(state: State, is_workspace_repo: bool) -> Action | Non
     return None
 
 
+class AnnotatedLocation(TypedDict, total=False):
+    filePath: str
+    line: int
+
+
+class AnnotateResult(TypedDict, total=False):
+    status: str
+    point: str
+    commentText: str | None
+    annotatedRepo: str
+    annotatedLocations: list[AnnotatedLocation]
+    pointLocation: str | None
+
+
+# TODO: Here is an error saying that generics are not yet supported.
+class ReplayCommandResult(TypedDict, total=False):
+    result: Any | None
+    error: str | None
+    errorDetails: str | None
+
+
+def safe_parse_json(text: str):
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return None
+
+
 def handle_replay_enhance_observation(
-    state: State,
-    # observation: ReplayCmdOutputObservation
+    state: State, observation: ReplayCmdOutputObservation
 ):
     enhance_action_id = state.extra_data.get('replay_enhance_prompt_id')
     if enhance_action_id:
@@ -72,5 +102,12 @@ def handle_replay_enhance_observation(
         )
         assert user_message
 
-        # Enhance user action with observation result:
-        user_message.content = f'{user_message.content}\n\nNOTEs to agent:\n* The repository has already been cloned and preprocessed.\n* The provided replay recording has been used to annotate the code.'
+        output: ReplayCommandResult = safe_parse_json(observation.content)
+        if output and output['result']:
+            result: AnnotateResult = output['result']
+            annotated_repo = result['annotatedRepo']
+            comment_text = result['commentText'] or ''
+            point_location = result['pointLocation'] or ''
+
+            # Enhance user prompt with analysis results:
+            user_message.content = f'{user_message.content}\n\nIMPORTANT NOTES to agent:\n* The user provided a recording of the bug which was used to clone and annotated the code in "{annotated_repo}".\n* You MUST `git diff` the repo to find all code most relevant to the bug.\n* The user reported the bug to occur at "{point_location}". At this location, the user commented: <USER_COMMENT>{comment_text}</USER_COMMENT>. Start your investigation here!'
