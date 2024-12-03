@@ -52,8 +52,8 @@ async function prepareApp() {
 
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
-    onError: (error) => {
-      toast.error(error.message);
+    onError: (error, query) => {
+      if (!query.queryKey.includes("authenticated")) toast.error(error.message);
     },
   }),
   defaultOptions: {
