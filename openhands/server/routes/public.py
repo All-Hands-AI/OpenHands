@@ -21,6 +21,12 @@ from openhands.server.shared import config
 
 app = APIRouter(prefix='/api/options')
 
+APP_MODE = os.environ.get('APP_MODE', 'oss')
+POSTHOG_CLIENT_KEY = os.environ.get(
+    'POSTHOG_CLIENT_KEY', 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
+)
+GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID', '')
+
 
 @app.get('/models')
 async def get_litellm_models() -> list[str]:
@@ -112,12 +118,6 @@ async def get_config():
     """
     Get current config
     """
-
-    APP_MODE = os.environ.get('APP_MODE', 'oss')
-    POSTHOG_CLIENT_KEY = os.environ.get(
-        'POSTHOG_CLIENT_KEY', 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
-    )
-    GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID', '')
 
     config = {
         'APP_MODE': APP_MODE,
