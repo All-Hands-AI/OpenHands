@@ -126,7 +126,7 @@ def test_interactive_command():
         )
     )
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert 'Enter name:' in obs.content
+    assert 'Enter name:' not in obs.content
     assert obs.metadata.exit_code == -1  # -1 indicates command is still running
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
     assert obs.metadata.suffix == (

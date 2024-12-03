@@ -227,7 +227,6 @@ class BashSession:
         with self._pane_content_lock:
             # Clean up the bracketed paste mode
             cleaned = re.sub(r'\x1b\[\?2004[hl]', '', self._current_pane_content)
-            logger.debug(f'BASH PANE CONTENT:\n---\n{cleaned!r}\n---')
             return cleaned
 
     def _get_command_output(
