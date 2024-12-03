@@ -1,11 +1,13 @@
 import { cn } from "#/utils/utils";
 import { ProjectCard } from "./project-card";
+import { ProjectState } from "./project-state-indicator";
 
 interface UserProject {
   id: string;
   name: string;
   repo?: string;
   lastUpdated: string;
+  state: ProjectState;
 }
 
 const projects: UserProject[] = [
@@ -14,16 +16,19 @@ const projects: UserProject[] = [
     name: "Project 1",
     repo: "org/repo",
     lastUpdated: "2021-10-01T12:00:00Z",
+    state: "running",
   },
   {
     id: "2",
     name: "Project 2",
     lastUpdated: "2021-10-01T12:00:00Z",
+    state: "waiting",
   },
   {
     id: "3",
     name: "Project 3",
     lastUpdated: "2021-10-01T12:00:00Z",
+    state: "cooling",
   },
 ];
 
@@ -51,6 +56,7 @@ export function ProjectPanel() {
           name={project.name}
           repo={project.repo}
           lastUpdated={project.lastUpdated}
+          state={project.state}
         />
       ))}
     </div>

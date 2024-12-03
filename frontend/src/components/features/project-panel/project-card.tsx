@@ -1,7 +1,7 @@
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { DeleteButton } from "./delete-button";
 import { ProjectRepoLink } from "./project-repo-link";
-import { ProjectStateIndicator } from "./project-state-indicator";
+import { ProjectState, ProjectStateIndicator } from "./project-state-indicator";
 
 interface ProjectCardProps {
   onClick: () => void;
@@ -9,7 +9,7 @@ interface ProjectCardProps {
   name: string;
   repo?: string;
   lastUpdated: string; // ISO 8601
-  state?: "cold" | "warm";
+  state?: ProjectState;
 }
 
 export function ProjectCard({
@@ -24,11 +24,11 @@ export function ProjectCard({
     <div
       data-testid="project-card"
       onClick={onClick}
-      className="h-[100px] w-full px-[18px] py-4 border-b border-neutral-600 cursor-pointer"
+      className="h-[100px] w-full px-[18px] py-4 border-b border-neutral-600"
     >
       <div className="flex items-center justify-between">
         <h3 className="text-sm leading-6 font-semibold">{name}</h3>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <ProjectStateIndicator state={state} />
           <DeleteButton onClick={onDelete} />
         </div>
