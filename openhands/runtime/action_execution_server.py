@@ -384,17 +384,13 @@ if __name__ == '__main__':
         logger.exception('Unhandled exception occurred:')
         return JSONResponse(
             status_code=500,
-            content={
-                'message': 'An unexpected error occurred. Please try again later.'
-            },
+            content={'detail': 'An unexpected error occurred. Please try again later.'},
         )
 
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         logger.error(f'HTTP exception occurred: {exc.detail}')
-        return JSONResponse(
-            status_code=exc.status_code, content={'message': exc.detail}
-        )
+        return JSONResponse(status_code=exc.status_code, content={'detail': exc.detail})
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(
@@ -403,7 +399,7 @@ if __name__ == '__main__':
         logger.error(f'Validation error occurred: {exc}')
         return JSONResponse(
             status_code=422,
-            content={'message': 'Invalid request parameters', 'details': exc.errors()},
+            content={'detail': 'Invalid request parameters', 'errors': exc.errors()},
         )
 
     @app.middleware('http')

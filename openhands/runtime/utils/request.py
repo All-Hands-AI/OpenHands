@@ -6,12 +6,15 @@ import requests
 class RequestError(requests.HTTPError):
     """Exception raised when an error occurs in a request with details."""
 
-    def __init__(self, *args, details=None, **kwargs):
+    def __init__(self, *args, detail=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.details = details
+        self.detail = detail
 
     def __str__(self) -> str:
-        return f'HTTP Error occurred: {super().__str__()}\nDetails: {self.details or "No additional details available."}'
+        s = f'HTTP Error occurred: {super().__str__()}'
+        if self.detail is not None:
+            s += f'\nDetails: {self.detail}'
+        return s
 
 
 def send_request(
@@ -29,5 +32,5 @@ def send_request(
             _json = response.json()
         except requests.JSONDecodeError:
             raise e
-        raise RequestError(e, details=_json.get('detail')) from e
+        raise RequestError(e, detail=_json.get('detail')) from e
     return response
