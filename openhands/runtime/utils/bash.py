@@ -225,8 +225,10 @@ class BashSession:
     def _get_pane_content(self) -> str:
         """Get the current content."""
         with self._pane_content_lock:
-            # Clean up the bracketed paste mode
-            cleaned = re.sub(r'\x1b\[\?2004[hl]', '', self._current_pane_content)
+            # Clean up the bracketed paste mode and terminal clear sequence
+            cleaned = re.sub(
+                r'\x1b\[\?2004[hl]|\x1b\[H|\x1b\[J', '', self._current_pane_content
+            )
             return cleaned
 
     def _get_command_output(
