@@ -3,6 +3,7 @@ type Message = {
   content: string;
   imageUrls: string[];
   timestamp: string;
+  pending?: boolean;
 };
 
 type ErrorMessage = {
