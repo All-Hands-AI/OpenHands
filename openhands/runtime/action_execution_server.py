@@ -443,7 +443,7 @@ if __name__ == '__main__':
             )
             raise HTTPException(
                 status_code=500,
-                detail=str(e) + '\n' + traceback.format_exc(),
+                detail=traceback.format_exc(),
             )
 
     @app.post('/upload_file')
