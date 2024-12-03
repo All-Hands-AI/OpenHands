@@ -13,6 +13,7 @@ def last_obs():
         url='https://example.com',
         screenshot='screenshot',
         mouse_position=[50, 100],
+        trigger_by_action='BROWSE',
     )
 
 
@@ -26,7 +27,7 @@ def test_keyboard_type(last_obs):
 
 def test_mouse_move(last_obs):
     code = """mouse_move(coordinate=(100, 200))"""
-    expected = 'mouse_move(to_x=100, to_y=200, from_x=50, from_y=100)\n'
+    expected = 'mouse_move(x=100, y=200)\n'
     assert (
         translate_computer_use_action_to_browsergym_action(code, last_obs) == expected
     )
@@ -86,9 +87,10 @@ def test_missing_mouse_position():
         url='https://example.com',
         screenshot='screenshot',
         mouse_position=None,
+        trigger_by_action='BROWSE',
     )
     code = """mouse_move(coordinate=(100, 200))"""
-    expected = 'mouse_move(to_x=100, to_y=200, from_x=0, from_y=0)\n'
+    expected = 'mouse_move(x=100, y=200)\n'
     assert (
         translate_computer_use_action_to_browsergym_action(code, last_obs) == expected
     )
@@ -100,9 +102,10 @@ def test_empty_mouse_position():
         url='https://example.com',
         screenshot='screenshot',
         mouse_position=[],
+        trigger_by_action='BROWSE',
     )
     code = """mouse_move(coordinate=(100, 200))"""
-    expected = 'mouse_move(to_x=100, to_y=200, from_x=0, from_y=0)\n'
+    expected = 'mouse_move(x=100, y=200)\n'
     assert (
         translate_computer_use_action_to_browsergym_action(code, last_obs) == expected
     )

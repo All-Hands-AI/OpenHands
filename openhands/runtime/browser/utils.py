@@ -52,7 +52,12 @@ async def browse(
                 )
 
             # construct a computer use action
-            _action_str = f'{validated_args["action"]}({", ".join([f"{k}={v}" for k, v in validated_args.items() if k != "action"])})'
+            _action_str = f'{validated_args["action"]}('
+            if validated_args.get('coordinate'):
+                _action_str += f'coordinate={validated_args["coordinate"]}'
+            if validated_args.get('text'):
+                _action_str += f'text="{validated_args["text"]}"'
+            _action_str += ')'
 
             # translate to BrowserGym actions
             # action in BrowserGym: see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/functions.py

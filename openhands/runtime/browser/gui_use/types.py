@@ -22,6 +22,7 @@ class ScalingSource(StrEnum):
 
 
 ComputerUseAction = Literal[
+    'goto',  # go to a URL                       --> goto
     'type',  # type sequence                     --> keyboard_type
     'key',  # press a key or key comb            --> keyboard_press
     'mouse_move',  # move mouse to a position    --> mouse_move

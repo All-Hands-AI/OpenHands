@@ -1,5 +1,4 @@
 import base64
-import os
 from pathlib import Path
 from uuid import uuid4
 
@@ -29,8 +28,10 @@ class GUIUseTool:
     height: int  # Screen height
 
     def __init__(self):
-        self.width = int(os.getenv('WIDTH') or 0)
-        self.height = int(os.getenv('HEIGHT') or 0)
+        # self.width = int(os.getenv('WIDTH') or 0)
+        # self.height = int(os.getenv('HEIGHT') or 0)
+        self.width = 1280
+        self.height = 720
         assert self.width and self.height, 'WIDTH, HEIGHT must be set'
 
     def validate_and_transform_args(
@@ -38,7 +39,7 @@ class GUIUseTool:
         *,
         action: Action,
         text: str | None = None,
-        coordinate: tuple[int, int] | None = None,
+        coordinate: list[int] | None = None,
         **kwargs,
     ) -> dict[str, str | tuple[int, int] | None]:
         if action in ('mouse_move', 'left_click_drag'):
@@ -46,7 +47,7 @@ class GUIUseTool:
                 raise ToolError(f'coordinate is required for {action}')
             if text is not None:
                 raise ToolError(f'text is not accepted for {action}')
-            if not isinstance(coordinate, tuple) or len(coordinate) != 2:
+            if not isinstance(coordinate, list) or len(coordinate) != 2:
                 raise ToolError(f'{coordinate} must be a tuple of length 2')
             if not all(isinstance(i, int) and i >= 0 for i in coordinate):
                 raise ToolError(f'{coordinate} must be a tuple of non-negative ints')
@@ -61,7 +62,7 @@ class GUIUseTool:
                 'text': text,
             }
 
-        if action in ('key', 'type'):
+        if action in ('key', 'type', 'goto'):
             if text is None:
                 raise ToolError(f'text is required for {action}')
             if coordinate is not None:
@@ -124,6 +125,10 @@ class GUIUseTool:
         return round(x * x_scaling_factor), round(y * y_scaling_factor)
 
     def resize_image(self, base64_image: str) -> str:
+        data_prefix = 'data:image/png;base64,'
+        if base64_image.startswith('data:image/png;base64,'):
+            base64_image = base64_image[len(data_prefix) :]
+
         output_dir = Path(OUTPUT_DIR)
         output_dir.mkdir(parents=True, exist_ok=True)
         path = output_dir / f'screenshot_{uuid4().hex}.png'
@@ -140,6 +145,6 @@ class GUIUseTool:
             run_shell_cmd(f'convert {path} -resize {x}x{y}! {path}')
 
         if path.exists():
-            return base64.b64encode(path.read_bytes()).decode()
+            return data_prefix + base64.b64encode(path.read_bytes()).decode()
 
         raise ToolError(f'Failed to resize image: {path}')

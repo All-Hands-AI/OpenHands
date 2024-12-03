@@ -1,4 +1,5 @@
 import ast
+from functools import partial
 
 import astor
 
@@ -42,10 +43,10 @@ class ActionTransformer(ast.NodeTransformer):
         return self.generic_visit(node)
 
 
-def coordinate_split(arg_node):
+def coordinate_split(arg_node, x_name='to_x', y_name='to_y'):
     if isinstance(arg_node.value, ast.Tuple) and len(arg_node.value.elts) == 2:
-        x_arg = ast.keyword(arg='to_x', value=arg_node.value.elts[0])
-        y_arg = ast.keyword(arg='to_y', value=arg_node.value.elts[1])
+        x_arg = ast.keyword(arg=x_name, value=arg_node.value.elts[0])
+        y_arg = ast.keyword(arg=y_name, value=arg_node.value.elts[1])
         return [x_arg, y_arg]
     return []
 
@@ -66,6 +67,10 @@ def translate_computer_use_action_to_browsergym_action(
         last_mouse_position = [0, 0]
 
     mapping = {
+        'goto': {
+            'target_func': 'goto',
+            'arg_transform': {'text': rename_argument('url')},
+        },
         'type': {
             'target_func': 'keyboard_type',
             'arg_transform': {'text': rename_argument('key')},
@@ -76,17 +81,9 @@ def translate_computer_use_action_to_browsergym_action(
         },
         'mouse_move': {
             'target_func': 'mouse_move',
-            'arg_transform': {'coordinate': coordinate_split},
-            'extra_args': [
-                {
-                    'name': 'from_x',
-                    'value': last_mouse_position[0],
-                },
-                {
-                    'name': 'from_y',
-                    'value': last_mouse_position[1],
-                },
-            ],
+            'arg_transform': {
+                'coordinate': partial(coordinate_split, x_name='x', y_name='y')
+            },
         },
         'left_click_drag': {
             'target_func': 'mouse_drag_and_drop',

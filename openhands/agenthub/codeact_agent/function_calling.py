@@ -444,13 +444,13 @@ BrowserTool = ChatCompletionToolParam(
     ),
 )
 
-_GUI_USE_TOOL_DESCRIPTION = """Use a mouse and keyboard to interact with a computer, and take screenshots.
-* This is an interface to a desktop GUI. You do not have access to a terminal or applications menu. You must click on desktop icons to start applications.
-* Some applications may take time to start or process actions, so you may need to wait and take successive screenshots to see the results of your actions. E.g. if you click on Firefox and a window doesn't open, try taking another screenshot.
-* The screen's resolution is {{ display_width_px }}x{{ display_height_px }}.
-* The display number is {{ display_number }}
-* Whenever you intend to move the cursor to click on an element like an icon, you should consult a screenshot to determine the coordinates of the element before moving the cursor.
-* If you tried clicking on a program or link but it failed to load, even after waiting, try adjusting your cursor position so that the tip of the cursor visually falls on the element that you want to click.
+_GUI_USE_TOOL_DESCRIPTION = """Use a mouse and keyboard to navigate websites, interact with it, and take screenshots.
+* This is an interface to a web browser GUI environment.
+* Always use `goto` to navigate to a URL before interacting with the page.
+* Some web pages may take time to start or process actions, so you may need to wait and take successive screenshots to see the results of your actions. E.g. if you click on a button and nothing happens, try taking another screenshot.
+* The screen's resolution is 1280x720.
+* Whenever you intend to move the cursor to click on an element like a button or a form field, you should consult a screenshot to determine the coordinates of the element before moving the cursor.
+* If you tried clicking on a button or link but it failed to load, even after waiting, try adjusting your cursor position so that the tip of the cursor visually falls on the element that you want to click.
 * Make sure to click any buttons, links, icons, etc with the cursor tip in the center of the element. Don't click boxes on their edges unless asked.
 """
 
@@ -464,9 +464,11 @@ GUIUseTool = ChatCompletionToolParam(
             'properties': {
                 'action': {
                     'description': """The action to perform. The available actions are:
+* `goto`: Navigate to a URL.
 * `key`: Press a key or key-combination on the keyboard.
-  - This supports xdotool's `key` syntax.
-  - Examples: "a", "Return", "alt+Tab", "ctrl+s", "Up", "KP_0" (for the numpad 0 key).
+  - Press a combination of keys. Accepts the logical key names.
+  - Examples: "Backquote", "Minus", "Equal", "Backslash", "Backspace", "Tab", "Delete", "Escape", "ArrowDown", "End", "Enter", "Home", "Insert", "PageDown", "PageUp", "ArrowRight", "ArrowUp", "F1" - F12, "Digit0" - Digit9, "KeyA" - KeyZ, etc.
+  - Can alternatively specify a single character to produce such as "a" or "#". Following modification shortcuts are also supported: "Shift", "Control", "Alt", "Meta", "ShiftLeft", "ControlOrMeta". "ControlOrMeta" resolves to Control on Windows and Linux and to Meta on macOS.
 * `type`: Type a string of text on the keyboard.
 * `cursor_position`: Get the current (x, y) pixel coordinate of the cursor on the screen.
 * `mouse_move`: Move the cursor to a specified (x, y) pixel coordinate on the screen.
@@ -495,7 +497,7 @@ GUIUseTool = ChatCompletionToolParam(
                     'type': 'array',
                 },
                 'text': {
-                    'description': 'Required only by `action=type` and `action=key`.',
+                    'description': 'Required only by `action=type`, `action=key` and `action=url`.',
                     'type': 'string',
                 },
             },
@@ -608,7 +610,7 @@ def get_tools(
 ) -> list[ChatCompletionToolParam]:
     tools = [CmdRunTool, FinishTool]
     if codeact_enable_browsing:
-        tools.append(WebReadTool)
+        # tools.append(WebReadTool)
         # tools.append(BrowserTool)
         tools.append(GUIUseTool)
     if codeact_enable_jupyter:
