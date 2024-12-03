@@ -6,5 +6,5 @@ type Message = {
   type?: "thought" | "error" | "action";
   pending?: boolean;
   id?: string;
-  eventID?: string;
+  eventID?: number;
 };
