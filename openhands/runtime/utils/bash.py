@@ -254,14 +254,13 @@ class BashSession:
         command_output = _remove_command_prefix(command_output, command)
         return command_output
 
-    def _handle_completed_command(self, command: str) -> CmdOutputObservation:
-        full_output = self._get_pane_content()
-
+    def _handle_completed_command(
+        self, command: str, pane_content: str, ps1_matches: list[re.Match]
+    ) -> CmdOutputObservation:
         is_special_key = self._is_special_key(command)
-        ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
         assert len(ps1_matches) >= 2, (
             f'Expected at least two PS1 metadata blocks, but got {len(ps1_matches)}.\n'
-            f'---FULL OUTPUT---\n{full_output!r}\n---END OF OUTPUT---'
+            f'---FULL OUTPUT---\n{pane_content!r}\n---END OF OUTPUT---'
         )
         metadata = CmdOutputMetadata.from_ps1_match(ps1_matches[-1])
         # Update the current working directory if it has changed
@@ -270,7 +269,7 @@ class BashSession:
         # Extract the command output between the two PS1 prompts
         raw_command_output = ''
         for i in range(len(ps1_matches) - 1):
-            raw_command_output += full_output[
+            raw_command_output += pane_content[
                 ps1_matches[i].end() + 1 : ps1_matches[i + 1].start()
             ]
         metadata.suffix = (
@@ -292,17 +291,19 @@ class BashSession:
             metadata=metadata,
         )
 
-    def _handle_nochange_timeout_command(self, command: str) -> CmdOutputObservation:
+    def _handle_nochange_timeout_command(
+        self,
+        command: str,
+        pane_content: str,
+        ps1_matches: list[re.Match],
+    ) -> CmdOutputObservation:
         self.prev_status = BashCommandStatus.NO_CHANGE_TIMEOUT
-        full_output = self._get_pane_content()
-
-        ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
         assert len(ps1_matches) == 1, (
             'Expected exactly one PS1 metadata block BEFORE the execution of a command, '
-            f'but got {len(ps1_matches)} PS1 metadata blocks:\n---\n{full_output!r}\n---'
+            f'but got {len(ps1_matches)} PS1 metadata blocks:\n---\n{pane_content!r}\n---'
         )
 
-        raw_command_output = full_output[ps1_matches[0].end() + 1 :]
+        raw_command_output = pane_content[ps1_matches[0].end() + 1 :]
         metadata = CmdOutputMetadata()  # No metadata available
         metadata.suffix = (
             f'\n\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
@@ -323,17 +324,19 @@ class BashSession:
         )
 
     def _handle_hard_timeout_command(
-        self, command: str, timeout: float
+        self,
+        command: str,
+        pane_content: str,
+        ps1_matches: list[re.Match],
+        timeout: float,
     ) -> CmdOutputObservation:
         self.prev_status = BashCommandStatus.HARD_TIMEOUT
-        full_output = self._get_pane_content()
-        ps1_matches = CmdOutputMetadata.matches_ps1_metadata(full_output)
         assert len(ps1_matches) == 1, (
             'Expected exactly one PS1 metadata block BEFORE the execution of a command, '
-            f'but got {len(ps1_matches)} PS1 metadata blocks:\n---\n{full_output!r}\n---'
+            f'but got {len(ps1_matches)} PS1 metadata blocks:\n---\n{pane_content!r}\n---'
         )
 
-        raw_command_output = full_output[ps1_matches[0].end() + 1 :]
+        raw_command_output = pane_content[ps1_matches[0].end() + 1 :]
         metadata = CmdOutputMetadata()  # No metadata available
         metadata.suffix = (
             f'\n\n[The command timed out after {timeout} seconds. '
@@ -411,14 +414,22 @@ class BashSession:
         # Loop until the command completes or times out
         while True:
             cur_pane_output = self._get_pane_content()
+            ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
             if cur_pane_output != last_pane_output:
                 last_pane_output = cur_pane_output
                 last_change_time = time.time()
 
             # 1) Execution completed
             # if the last command output contains the end marker
-            if cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip()):
-                return self._handle_completed_command(action.command)
+            if (
+                cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip())
+                and len(ps1_matches) == 2
+            ):
+                return self._handle_completed_command(
+                    action.command,
+                    pane_content=cur_pane_output,
+                    ps1_matches=ps1_matches,
+                )
 
             # 2) Execution timed out since there's no change in output
             # for a while (self.NO_CHANGE_TIMEOUT_SECONDS)
@@ -428,10 +439,19 @@ class BashSession:
                 not action.blocking
                 and time_since_last_change >= self.NO_CHANGE_TIMEOUT_SECONDS
             ):
-                return self._handle_nochange_timeout_command(action.command)
+                return self._handle_nochange_timeout_command(
+                    action.command,
+                    pane_content=cur_pane_output,
+                    ps1_matches=ps1_matches,
+                )
 
             # 3) Execution timed out due to hard timeout
             if action.timeout and time.time() - start_time >= action.timeout:
-                return self._handle_hard_timeout_command(action.command, action.timeout)
+                return self._handle_hard_timeout_command(
+                    action.command,
+                    pane_content=cur_pane_output,
+                    ps1_matches=ps1_matches,
+                    timeout=action.timeout,
+                )
 
             time.sleep(self.POLL_INTERVAL)
