@@ -1,20 +1,16 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { json, useLoaderData, useRouteError } from "@remix-run/react";
-import toast from "react-hot-toast";
+import { useRouteError } from "react-router";
+import { editor } from "monaco-editor";
+import { EditorProps } from "@monaco-editor/react";
 import { RootState } from "#/store";
-import AgentState from "#/types/AgentState";
-import FileExplorer from "#/components/file-explorer/FileExplorer";
-import OpenHands from "#/api/open-hands";
-import { useSocket } from "#/context/socket";
-import CodeEditorCompoonent from "./code-editor-component";
+import AgentState from "#/types/agent-state";
+import CodeEditorComponent from "../../components/features/editor/code-editor-component";
 import { useFiles } from "#/context/files";
-import { EditorActions } from "#/components/editor-actions";
-
-export const clientLoader = async () => {
-  const token = localStorage.getItem("token");
-  return json({ token });
-};
+import { useSaveFile } from "#/hooks/mutation/use-save-file";
+import { ASSET_FILE_TYPES } from "./constants";
+import { EditorActions } from "#/components/features/editor/editor-actions";
+import { FileExplorer } from "#/components/features/file-explorer/file-explorer";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -28,34 +24,40 @@ export function ErrorBoundary() {
 }
 
 function CodeEditor() {
-  const { token } = useLoaderData<typeof clientLoader>();
-  const { runtimeActive } = useSocket();
   const {
-    setPaths,
     selectedPath,
     modifiedFiles,
     saveFileContent: saveNewFileContent,
     discardChanges,
   } = useFiles();
 
-  const [errors, setErrors] = React.useState<{ getFiles: string | null }>({
-    getFiles: null,
-  });
+  const [fileExplorerIsOpen, setFileExplorerIsOpen] = React.useState(true);
+  const editorRef = React.useRef<editor.IStandaloneCodeEditor | null>(null);
+
+  const { mutate: saveFile } = useSaveFile();
+
+  const toggleFileExplorer = () => {
+    setFileExplorerIsOpen((prev) => !prev);
+    editorRef.current?.layout({ width: 0, height: 0 });
+  };
+
+  const handleEditorDidMount: EditorProps["onMount"] = (e, monaco) => {
+    editorRef.current = e;
+
+    monaco.editor.defineTheme("oh-dark", {
+      base: "vs-dark",
+      inherit: true,
+      rules: [],
+      colors: {
+        "editor.background": "#171717",
+      },
+    });
+    monaco.editor.setTheme("oh-dark");
+  };
 
   const agentState = useSelector(
     (state: RootState) => state.agent.curAgentState,
   );
-
-  React.useEffect(() => {
-    // only retrieve files if connected to WS to prevent requesting before runtime is ready
-    if (runtimeActive && token) {
-      OpenHands.getFiles(token)
-        .then(setPaths)
-        .catch(() => {
-          setErrors({ getFiles: "Failed to retrieve files" });
-        });
-    }
-  }, [runtimeActive, token]);
 
   // Code editing is only allowed when the agent is paused, finished, or awaiting user input (server rules)
   const isEditingAllowed = React.useMemo(
@@ -69,13 +71,9 @@ function CodeEditor() {
   const handleSave = async () => {
     if (selectedPath) {
       const content = modifiedFiles[selectedPath];
-      if (content && token) {
-        try {
-          await OpenHands.saveFile(token, selectedPath, content);
-          saveNewFileContent(selectedPath);
-        } catch (error) {
-          toast.error("Failed to save file");
-        }
+      if (content) {
+        saveFile({ path: selectedPath, content });
+        saveNewFileContent(selectedPath);
       }
     }
   };
@@ -84,11 +82,15 @@ function CodeEditor() {
     if (selectedPath) discardChanges(selectedPath);
   };
 
+  const isAssetFileType = selectedPath
+    ? ASSET_FILE_TYPES.some((ext) => selectedPath.endsWith(ext))
+    : false;
+
   return (
-    <div className="flex h-full w-full bg-neutral-900 relative">
-      <FileExplorer error={errors.getFiles} />
-      <div className="flex flex-col min-h-0 w-full">
-        {selectedPath && (
+    <div className="flex h-full bg-neutral-900 relative">
+      <FileExplorer isOpen={fileExplorerIsOpen} onToggle={toggleFileExplorer} />
+      <div className="w-full">
+        {selectedPath && !isAssetFileType && (
           <div className="flex w-full items-center justify-between self-end p-2">
             <span className="text-sm text-neutral-500">{selectedPath}</span>
             <EditorActions
@@ -98,9 +100,10 @@ function CodeEditor() {
             />
           </div>
         )}
-        <div className="flex grow items-center justify-center">
-          <CodeEditorCompoonent isReadOnly={!isEditingAllowed} />
-        </div>
+        <CodeEditorComponent
+          onMount={handleEditorDidMount}
+          isReadOnly={!isEditingAllowed}
+        />
       </div>
     </div>
   );

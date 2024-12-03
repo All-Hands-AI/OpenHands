@@ -16,7 +16,7 @@ from PIL import Image
 
 from openhands.core.exceptions import BrowserInitException
 from openhands.core.logger import openhands_logger as logger
-from openhands.runtime.utils.shutdown_listener import should_continue, should_exit
+from openhands.utils.shutdown_listener import should_continue, should_exit
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 BROWSER_EVAL_GET_GOAL_ACTION = 'GET_EVAL_GOAL'
@@ -81,7 +81,10 @@ class BrowserEnv:
                 raise ValueError(
                     f'Unsupported browsergym eval env: {self.browsergym_eval_env}'
                 )
-            env = gym.make(self.browsergym_eval_env)
+            env = gym.make(
+                self.browsergym_eval_env,
+                tags_to_mark='all',
+            )
         else:
             env = gym.make(
                 'browsergym/openended',
@@ -89,6 +92,7 @@ class BrowserEnv:
                 wait_for_user_message=False,
                 headless=True,
                 disable_env_checker=True,
+                tags_to_mark='all',
             )
 
         obs, info = env.reset()

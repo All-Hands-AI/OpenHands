@@ -14,7 +14,8 @@ Voici un exemple de fichier de configuration que vous pouvez utiliser pour défi
 ```toml
 [llm]
 # IMPORTANT : ajoutez votre clé API ici et définissez le modèle que vous souhaitez évaluer
-model = "claude-3-5-sonnet-20240620"
+model = "claude-3-5-sonnet-20241022"
+
 api_key = "sk-XXX"
 
 [llm.eval_gpt4_1106_preview_llm]
@@ -75,7 +76,7 @@ La fonction `run_controller()` est le cœur de l'exécution d'OpenHands. Elle g�
 
 ## Le moyen le plus simple de commencer : Explorer les benchmarks existants
 
-Nous vous encourageons à examiner les différents benchmarks d'évaluation disponibles dans le [répertoire `evaluation/`](https://github.com/All-Hands-AI/OpenHands/blob/main/evaluation) de notre dépôt.
+Nous vous encourageons à examiner les différents benchmarks d'évaluation disponibles dans le [répertoire `evaluation/benchmarks/`](https://github.com/All-Hands-AI/OpenHands/blob/main/evaluation/benchmarks) de notre dépôt.
 
 Pour intégrer votre propre benchmark, nous vous suggérons de commencer par celui qui ressemble le plus à vos besoins. Cette approche peut considérablement rationaliser votre processus d'intégration, vous permettant de vous appuyer sur les structures existantes et de les adapter à vos exigences spécifiques.
 
@@ -160,7 +161,7 @@ Pour créer un workflow d'évaluation pour votre benchmark, suivez ces étapes :
            instruction=instruction,
            test_result=evaluation_result,
            metadata=metadata,
-           history=state.history.compatibility_for_eval_history_pairs(),
+           history=compatibility_for_eval_history_pairs(state.history),
            metrics=state.metrics.get() if state.metrics else None,
            error=state.last_error if state and state.last_error else None,
        )
@@ -259,7 +260,7 @@ def codeact_user_response(state: State | None) -> str:
         # vérifier si l'agent a essayé de parler à l'utilisateur 3 fois, si oui, faire savoir à l'agent qu'il peut abandonner
         user_msgs = [
             event
-            for event in state.history.get_events()
+            for event in state.history
             if isinstance(event, MessageAction) and event.source == 'user'
         ]
         if len(user_msgs) >= 2:

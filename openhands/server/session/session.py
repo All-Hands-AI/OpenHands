@@ -1,16 +1,15 @@
 import asyncio
 import time
 
-from fastapi import WebSocket, WebSocketDisconnect
+import socketio
 
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
 from openhands.core.const.guide_url import TROUBLESHOOTING_URL
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
-from openhands.core.schema.action import ActionType
 from openhands.core.schema.config import ConfigType
-from openhands.events.action import ChangeAgentStateAction, MessageAction, NullAction
+from openhands.events.action import MessageAction, NullAction
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import (
     AgentStateChangedObservation,
@@ -21,62 +20,51 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
-from openhands.runtime.utils.shutdown_listener import should_continue
 from openhands.server.session.agent_session import AgentSession
 from openhands.storage.files import FileStore
 
-DEL_DELT_SEC = 60 * 60 * 5
+ROOM_KEY = 'room:{sid}'
 
 
 class Session:
     sid: str
-    websocket: WebSocket | None
+    sio: socketio.AsyncServer | None
     last_active_ts: int = 0
     is_alive: bool = True
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
+    config: AppConfig
+    settings: dict | None
 
     def __init__(
-        self, sid: str, ws: WebSocket | None, config: AppConfig, file_store: FileStore
+        self,
+        sid: str,
+        config: AppConfig,
+        file_store: FileStore,
+        sio: socketio.AsyncServer | None,
     ):
         self.sid = sid
-        self.websocket = ws
+        self.sio = sio
         self.last_active_ts = int(time.time())
-        self.agent_session = AgentSession(sid, file_store)
+        self.agent_session = AgentSession(
+            sid, file_store, status_callback=self.queue_status_message
+        )
         self.agent_session.event_stream.subscribe(
-            EventStreamSubscriber.SERVER, self.on_event
+            EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
         self.config = config
         self.loop = asyncio.get_event_loop()
+        self.settings = None
 
-    async def close(self):
+    def close(self):
         self.is_alive = False
-        await self.agent_session.close()
+        self.agent_session.close()
 
-    async def loop_recv(self):
-        try:
-            if self.websocket is None:
-                return
-            while should_continue():
-                try:
-                    data = await self.websocket.receive_json()
-                except ValueError:
-                    await self.send_error('Invalid JSON')
-                    continue
-                await self.dispatch(data)
-        except WebSocketDisconnect:
-            await self.close()
-            logger.debug('WebSocket disconnected, sid: %s', self.sid)
-        except RuntimeError as e:
-            await self.close()
-            logger.exception('Error in loop_recv: %s', e)
-
-    async def _initialize_agent(self, data: dict):
+    async def initialize_agent(self, data: dict):
+        self.settings = data
         self.agent_session.event_stream.add_event(
-            ChangeAgentStateAction(AgentState.LOADING), EventSource.USER
-        )
-        self.agent_session.event_stream.add_event(
-            AgentStateChangedObservation('', AgentState.LOADING), EventSource.AGENT
+            AgentStateChangedObservation('', AgentState.LOADING),
+            EventSource.ENVIRONMENT,
         )
         # Extract the agent-relevant arguments from the request
         args = {key: value for key, value in data.get('args', {}).items()}
@@ -106,7 +94,6 @@ class Session:
         agent_config = self.config.get_agent_config(agent_cls)
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
-        # Create the agent session
         try:
             await self.agent_session.start(
                 runtime_name=self.config.runtime,
@@ -116,7 +103,6 @@ class Session:
                 max_budget_per_task=self.config.max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
-                status_message_callback=self.queue_status_message,
             )
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')
@@ -142,17 +128,24 @@ class Session:
             event, CmdOutputObservation
         ):
             await self.send(event_to_dict(event))
+        # NOTE: ipython observations are not sent here currently
+        elif event.source == EventSource.ENVIRONMENT and isinstance(
+            event, (CmdOutputObservation, AgentStateChangedObservation)
+        ):
+            # feedback from the environment to agent actions is understood as agent events by the UI
+            event_dict = event_to_dict(event)
+            event_dict['source'] = EventSource.AGENT
+            await self.send(event_dict)
         elif isinstance(event, ErrorObservation):
-            await self.send(event_to_dict(event))
+            # send error events as agent events to the UI
+            event_dict = event_to_dict(event)
+            event_dict['source'] = EventSource.AGENT
+            await self.send(event_dict)
 
     async def dispatch(self, data: dict):
-        action = data.get('action', '')
-        if action == ActionType.INIT:
-            await self._initialize_agent(data)
-            return
         event = event_from_dict(data.copy())
         # This checks if the model supports images
-        if isinstance(event, MessageAction) and event.images_urls:
+        if isinstance(event, MessageAction) and event.image_urls:
             controller = self.agent_session.controller
             if controller:
                 if controller.agent.llm.config.disable_vision:
@@ -165,54 +158,43 @@ class Session:
                         'Model does not support image upload, change to a different model or try without an image.'
                     )
                     return
-        if self.agent_session.loop:
-            asyncio.run_coroutine_threadsafe(
-                self._add_event(event, EventSource.USER), self.agent_session.loop
-            )  # type: ignore
-
-    async def _add_event(self, event, event_source):
         self.agent_session.event_stream.add_event(event, EventSource.USER)
 
-    async def send(self, data: dict[str, object]) -> bool:
+    async def send(self, data: dict[str, object]):
+        if asyncio.get_running_loop() != self.loop:
+            self.loop.create_task(self._send(data))
+            return
+        await self._send(data)
+
+    async def _send(self, data: dict[str, object]) -> bool:
         try:
-            if self.websocket is None or not self.is_alive:
+            if not self.is_alive:
                 return False
-            await self.websocket.send_json(data)
+            if self.sio:
+                await self.sio.emit('oh_event', data, to=ROOM_KEY.format(sid=self.sid))
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True
         except RuntimeError:
-            self.is_alive = False
-            return False
-        except WebSocketDisconnect:
+            logger.error('Error sending', stack_info=True, exc_info=True)
             self.is_alive = False
             return False
 
-    async def send_error(self, message: str) -> bool:
+    async def send_error(self, message: str):
         """Sends an error message to the client."""
-        return await self.send({'error': True, 'message': message})
+        await self.send({'error': True, 'message': message})
 
-    async def send_message(self, message: str) -> bool:
-        """Sends a message to the client."""
-        return await self.send({'message': message})
-
-    async def send_status_message(self, message: str) -> bool:
+    async def _send_status_message(self, msg_type: str, id: str, message: str):
         """Sends a status message to the client."""
-        return await self.send({'status': message})
+        if msg_type == 'error':
+            await self.agent_session.stop_agent_loop_for_error()
 
-    def update_connection(self, ws: WebSocket):
-        self.websocket = ws
-        self.is_alive = True
-        self.last_active_ts = int(time.time())
+        await self.send(
+            {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
+        )
 
-    def load_from_data(self, data: dict) -> bool:
-        self.last_active_ts = data.get('last_active_ts', 0)
-        if self.last_active_ts < int(time.time()) - DEL_DELT_SEC:
-            return False
-        self.is_alive = data.get('is_alive', False)
-        return True
-
-    def queue_status_message(self, message: str):
+    def queue_status_message(self, msg_type: str, id: str, message: str):
         """Queues a status message to be sent asynchronously."""
-        # Ensure the coroutine runs in the main event loop
-        asyncio.run_coroutine_threadsafe(self.send_status_message(message), self.loop)
+        asyncio.run_coroutine_threadsafe(
+            self._send_status_message(msg_type, id, message), self.loop
+        )

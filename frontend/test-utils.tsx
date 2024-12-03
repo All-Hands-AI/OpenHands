@@ -5,7 +5,10 @@ import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { RenderOptions, render } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppStore, RootState, rootReducer } from "./src/store";
+import { AuthProvider } from "#/context/auth-context";
+import { UserPrefsProvider } from "#/context/user-prefs-context";
 
 const setupStore = (preloadedState?: Partial<RootState>): AppStore =>
   configureStore({
@@ -32,7 +35,17 @@ export function renderWithProviders(
   }: ExtendedRenderOptions = {},
 ) {
   function Wrapper({ children }: PropsWithChildren<object>): JSX.Element {
-    return <Provider store={store}>{children}</Provider>;
+    return (
+      <Provider store={store}>
+        <UserPrefsProvider>
+          <AuthProvider>
+            <QueryClientProvider client={new QueryClient()}>
+              {children}
+            </QueryClientProvider>
+          </AuthProvider>
+        </UserPrefsProvider>
+      </Provider>
+    );
   }
   return { store, ...render(ui, { wrapper: Wrapper, ...renderOptions }) };
 }

@@ -1,18 +1,26 @@
-import { setCurrentAgentState } from "#/state/agentSlice";
-import { setUrl, setScreenshotSrc } from "#/state/browserSlice";
+import { setCurrentAgentState } from "#/state/agent-slice";
+import { setUrl, setScreenshotSrc } from "#/state/browser-slice";
 import store from "#/store";
-import { ObservationMessage } from "#/types/Message";
-import { appendOutput } from "#/state/commandSlice";
-import { appendJupyterOutput } from "#/state/jupyterSlice";
-import ObservationType from "#/types/ObservationType";
-import { addAssistantMessage } from "#/state/chatSlice";
+import { ObservationMessage } from "#/types/message";
+import { appendOutput } from "#/state/command-slice";
+import { appendJupyterOutput } from "#/state/jupyter-slice";
+import ObservationType from "#/types/observation-type";
+import { addAssistantMessage } from "#/state/chat-slice";
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {
-    case ObservationType.RUN:
+    case ObservationType.RUN: {
       if (message.extras.hidden) break;
-      store.dispatch(appendOutput(message.content));
+      let { content } = message;
+
+      if (content.length > 5000) {
+        const head = content.slice(0, 5000);
+        content = `${head}\r\n\n... (truncated ${message.content.length - 5000} characters) ...`;
+      }
+
+      store.dispatch(appendOutput(content));
       break;
+    }
     case ObservationType.RUN_IPYTHON:
       // FIXME: render this as markdown
       store.dispatch(appendJupyterOutput(message.content));

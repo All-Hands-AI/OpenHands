@@ -66,6 +66,10 @@ def action_from_dict(action: dict) -> Action:
     if is_confirmed is not None:
         args['confirmation_state'] = is_confirmed
 
+    # images_urls has been renamed to image_urls
+    if 'images_urls' in args:
+        args['image_urls'] = args.pop('images_urls')
+
     try:
         decoded_action = action_class(**args)
         if 'timeout' in action:

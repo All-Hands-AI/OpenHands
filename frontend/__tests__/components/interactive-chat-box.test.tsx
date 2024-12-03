@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { InteractiveChatBox } from "#/components/interactive-chat-box";
+import { InteractiveChatBox } from "#/components/features/chat/interactive-chat-box";
 
 describe("InteractiveChatBox", () => {
   const onSubmitMock = vi.fn();
@@ -23,6 +23,21 @@ describe("InteractiveChatBox", () => {
     const chatBox = screen.getByTestId("interactive-chat-box");
     within(chatBox).getByTestId("chat-input");
     within(chatBox).getByTestId("upload-image-input");
+  });
+
+  it.fails("should set custom values", () => {
+    render(
+      <InteractiveChatBox
+        onSubmit={onSubmitMock}
+        onStop={onStopMock}
+        value="Hello, world!"
+      />,
+    );
+
+    const chatBox = screen.getByTestId("interactive-chat-box");
+    const chatInput = within(chatBox).getByTestId("chat-input");
+
+    expect(chatInput).toHaveValue("Hello, world!");
   });
 
   it("should display the image previews when images are uploaded", async () => {

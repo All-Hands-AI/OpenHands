@@ -36,7 +36,7 @@ WORKSPACE_BASE=$(pwd)/workspace
 2. 将 `LLM_MODEL` 设置为你要使用的模型:
 
 ```bash
-LLM_MODEL="anthropic/claude-3-5-sonnet-20240620"
+LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"
 ```
 
 3. 将 `LLM_API_KEY` 设置为你的 API 密钥:

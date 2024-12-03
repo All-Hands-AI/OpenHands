@@ -9,7 +9,7 @@ from openhands.events.action import CmdRunAction
 from openhands.events.event import EventSource
 from openhands.events.observation import (
     CmdOutputObservation,
-    FatalErrorObservation,
+    ErrorObservation,
 )
 
 SOFT_TIMEOUT_SECONDS = 5
@@ -275,7 +275,7 @@ class BashSession:
                 output += '\r\n' + bash_prompt
         return output, exit_code
 
-    def run(self, action: CmdRunAction) -> CmdOutputObservation | FatalErrorObservation:
+    def run(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
         try:
             assert (
                 action.timeout is not None
@@ -329,6 +329,6 @@ class BashSession:
                 interpreter_details=python_interpreter,
             )
         except UnicodeDecodeError as e:
-            return FatalErrorObservation(
-                f'Runtime bash execution failed: Command output could not be decoded as utf-8. {str(e)}'
+            return ErrorObservation(
+                f'Runtime bash execution failed: Command output could not be decoded as utf-8. {str(e)}',
             )

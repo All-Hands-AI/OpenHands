@@ -1,14 +1,5 @@
-/**
- * Generates the headers for the GitHub API
- * @param token The GitHub token
- * @returns The headers for the GitHub API
- */
-const generateGitHubAPIHeaders = (token: string) =>
-  ({
-    Accept: "application/vnd.github+json",
-    Authorization: `Bearer ${token}`,
-    "X-GitHub-Api-Version": "2022-11-28",
-  }) as const;
+import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
+import { github } from "./github-axios-instance";
 
 /**
  * Checks if the data is a GitHub error response
@@ -26,81 +17,31 @@ export const isGitHubErrorReponse = <T extends object | Array<unknown>>(
  * @returns A list of repositories or an error response
  */
 export const retrieveGitHubUserRepositories = async (
-  token: string,
-  per_page = 30,
   page = 1,
-): Promise<Response> => {
-  const url = new URL("https://api.github.com/user/repos");
-  url.searchParams.append("sort", "pushed"); // sort by most recently pushed
-  url.searchParams.append("per_page", per_page.toString());
-  url.searchParams.append("page", page.toString());
+  per_page = 30,
+) => {
+  const response = await github.get<GitHubRepository[]>("/user/repos", {
+    params: {
+      sort: "pushed",
+      page,
+      per_page,
+    },
+    transformResponse: (data) => {
+      const parsedData: GitHubRepository[] | GitHubErrorReponse =
+        JSON.parse(data);
 
-  return fetch(url.toString(), {
-    headers: generateGitHubAPIHeaders(token),
+      if (isGitHubErrorReponse(parsedData)) {
+        throw new Error(parsedData.message);
+      }
+
+      return parsedData;
+    },
   });
-};
 
-/**
- * Given a GitHub token, retrieves all repositories of the authenticated user
- * @param token The GitHub token
- * @returns A list of repositories or an error response
- */
-export const retrieveAllGitHubUserRepositories = async (
-  token: string,
-): Promise<GitHubRepository[] | GitHubErrorReponse> => {
-  const repositories: GitHubRepository[] = [];
+  const link = response.headers.link ?? "";
+  const nextPage = extractNextPageFromLink(link);
 
-  // Fetch the first page to extract the last page number and get the first batch of data
-  const firstPageResponse = await retrieveGitHubUserRepositories(token, 100, 1);
-
-  if (!firstPageResponse.ok) {
-    return {
-      message: "Failed to fetch repositories",
-      documentation_url:
-        "https://docs.github.com/rest/reference/repos#list-repositories-for-the-authenticated-user",
-      status: firstPageResponse.status,
-    };
-  }
-
-  const firstPageData = await firstPageResponse.json();
-  repositories.push(...firstPageData);
-
-  // Check for pagination and extract the last page number
-  const link = firstPageResponse.headers.get("link");
-  const lastPageMatch = link?.match(/page=(\d+)>; rel="last"/);
-  const lastPage = lastPageMatch ? parseInt(lastPageMatch[1], 10) : 1;
-
-  // If there is only one page, return the fetched repositories
-  if (lastPage === 1) {
-    return repositories;
-  }
-
-  // Create an array of promises for the remaining pages
-  const promises = [];
-  for (let page = 2; page <= lastPage; page += 1) {
-    promises.push(retrieveGitHubUserRepositories(token, 100, page));
-  }
-
-  // Fetch all pages in parallel
-  const responses = await Promise.all(promises);
-
-  for (const response of responses) {
-    if (response.ok) {
-      // TODO: Is there a way to avoid using await within a loop?
-      // eslint-disable-next-line no-await-in-loop
-      const data = await response.json();
-      repositories.push(...data);
-    } else {
-      return {
-        message: "Failed to fetch repositories",
-        documentation_url:
-          "https://docs.github.com/rest/reference/repos#list-repositories-for-the-authenticated-user",
-        status: response.status,
-      };
-    }
-  }
-
-  return repositories;
+  return { data: response.data, nextPage };
 };
 
 /**
@@ -108,70 +49,54 @@ export const retrieveAllGitHubUserRepositories = async (
  * @param token The GitHub token
  * @returns The authenticated user or an error response
  */
-export const retrieveGitHubUser = async (
-  token: string,
-): Promise<GitHubUser | GitHubErrorReponse> => {
-  const response = await fetch("https://api.github.com/user", {
-    headers: generateGitHubAPIHeaders(token),
+export const retrieveGitHubUser = async () => {
+  const response = await github.get<GitHubUser>("/user", {
+    transformResponse: (data) => {
+      const parsedData: GitHubUser | GitHubErrorReponse = JSON.parse(data);
+
+      if (isGitHubErrorReponse(parsedData)) {
+        throw new Error(parsedData.message);
+      }
+
+      return parsedData;
+    },
   });
-  const data = await response.json();
 
-  if (!isGitHubErrorReponse(data)) {
-    // Only return the necessary user data
-    const user: GitHubUser = {
-      id: data.id,
-      login: data.login,
-      avatar_url: data.avatar_url,
-    };
+  const { data } = response;
 
-    return user;
-  }
-
-  const error: GitHubErrorReponse = {
-    message: data.message,
-    documentation_url: data.documentation_url,
-    status: response.status,
+  const user: GitHubUser = {
+    id: data.id,
+    login: data.login,
+    avatar_url: data.avatar_url,
+    company: data.company,
+    name: data.name,
+    email: data.email,
   };
 
-  return error;
-};
-
-/**
- * Given a GitHub token and a repository name, creates a repository for the authenticated user
- * @param token The GitHub token
- * @param repositoryName Name of the repository to create
- * @param description Description of the repository
- * @param isPrivate Boolean indicating if the repository should be private
- * @returns The created repository or an error response
- */
-export const createGitHubRepository = async (
-  token: string,
-  repositoryName: string,
-  description?: string,
-  isPrivate = true,
-): Promise<GitHubRepository | GitHubErrorReponse> => {
-  const response = await fetch("https://api.github.com/user/repos", {
-    method: "POST",
-    headers: generateGitHubAPIHeaders(token),
-    body: JSON.stringify({
-      name: repositoryName,
-      description,
-      private: isPrivate,
-    }),
-  });
-
-  return response.json();
+  return user;
 };
 
 export const retrieveLatestGitHubCommit = async (
-  token: string,
   repository: string,
-): Promise<GitHubCommit[] | GitHubErrorReponse> => {
-  const url = new URL(`https://api.github.com/repos/${repository}/commits`);
-  url.searchParams.append("per_page", "1");
-  const response = await fetch(url.toString(), {
-    headers: generateGitHubAPIHeaders(token),
-  });
+): Promise<GitHubCommit> => {
+  const response = await github.get<GitHubCommit>(
+    `/repos/${repository}/commits`,
+    {
+      params: {
+        per_page: 1,
+      },
+      transformResponse: (data) => {
+        const parsedData: GitHubCommit[] | GitHubErrorReponse =
+          JSON.parse(data);
 
-  return response.json();
+        if (isGitHubErrorReponse(parsedData)) {
+          throw new Error(parsedData.message);
+        }
+
+        return parsedData[0];
+      },
+    },
+  );
+
+  return response.data;
 };

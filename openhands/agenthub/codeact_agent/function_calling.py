@@ -5,29 +5,27 @@ This is similar to the functionality of `CodeActResponseParser`.
 
 import json
 
+from browsergym.core.action.highlevel import HighLevelActionSet
 from litellm import (
     ChatCompletionToolParam,
     ChatCompletionToolParamFunctionChunk,
     ModelResponse,
 )
 
+from openhands.core.exceptions import FunctionCallNotExistsError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
+    BrowseInteractiveAction,
+    BrowseURLAction,
     CmdRunAction,
     FileEditAction,
     IPythonRunCellAction,
     MessageAction,
 )
 from openhands.events.tool import ToolCallMetadata
-
-SYSTEM_PROMPT = """You are a helpful assistant that can interact with a computer to solve tasks.
-<IMPORTANT>
-* If user provides a path, you should NOT assume it's relative to the current working directory. Instead, you should explore the file system to find the file before working on it.
-</IMPORTANT>
-"""
 
 _BASH_DESCRIPTION = """Execute a bash command in the terminal.
 * Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`.
@@ -57,9 +55,6 @@ _IPYTHON_DESCRIPTION = """Run a cell of Python code in an IPython environment.
 * The assistant should define variables and import packages before using them.
 * The variable defined in the IPython environment will not be available outside the IPython environment (e.g., in terminal).
 """
-# We are not using agentskills's file_ops for viewing files now because StrReplaceEditorTool already supports viewing files
-# """* Apart from the standard Python library, the assistant can also use the following functions (already imported):
-# {AgentSkillsRequirement.documentation}"""
 
 IPythonTool = ChatCompletionToolParam(
     type='function',
@@ -242,7 +237,7 @@ StrReplaceEditorTool = ChatCompletionToolParam(
                     'type': 'string',
                 },
                 'path': {
-                    'description': 'Absolute path to file or directory, e.g. `/repo/file.py` or `/repo`.',
+                    'description': 'Absolute path to file or directory, e.g. `/workspace/file.py` or `/workspace`.',
                     'type': 'string',
                 },
                 'file_text': {
@@ -272,24 +267,179 @@ StrReplaceEditorTool = ChatCompletionToolParam(
     ),
 )
 
-_BROWSER_DELEGATION = """Delegate the task to another browsing agent.
-The assistant should delegate the task if it needs to browse the Internet.
+
+_WEB_DESCRIPTION = """Read (convert to markdown) content from a webpage. You should prefer using the `webpage_read` tool over the `browser` tool, but do use the `browser` tool if you need to interact with a webpage (e.g., click a button, fill out a form, etc.).
+
+You may use the `webpage_read` tool to read content from a webpage, and even search the webpage content using a Google search query (e.g., url=`https://www.google.com/search?q=YOUR_QUERY`).
 """
 
-BrowserDelegationTool = ChatCompletionToolParam(
+WebReadTool = ChatCompletionToolParam(
     type='function',
     function=ChatCompletionToolParamFunctionChunk(
-        name='delegate_to_browsing_agent',
-        description=_BROWSER_DELEGATION,
+        name='web_read',
+        description=_WEB_DESCRIPTION,
         parameters={
             'type': 'object',
             'properties': {
-                'task': {
+                'url': {
                     'type': 'string',
-                    'description': 'The task for the browsing agent to execute. It should include all the necessary context and specify what information the browsing agent should return.',
-                },
+                    'description': 'The URL of the webpage to read. You can also use a Google search query here (e.g., `https://www.google.com/search?q=YOUR_QUERY`).',
+                }
             },
-            'required': ['task'],
+            'required': ['url'],
+        },
+    ),
+)
+
+# from browsergym/core/action/highlevel.py
+_browser_action_space = HighLevelActionSet(
+    subsets=['bid', 'nav'],
+    strict=False,  # less strict on the parsing of the actions
+    multiaction=True,  # enable to agent to take multiple actions at once
+)
+
+
+_BROWSER_DESCRIPTION = """Interact with the browser using Python code. Use it ONLY when you need to interact with a webpage.
+
+See the description of "code" parameter for more details.
+
+Multiple actions can be provided at once, but will be executed sequentially without any feedback from the page.
+More than 2-3 actions usually leads to failure or unexpected behavior. Example:
+fill('a12', 'example with "quotes"')
+click('a51')
+click('48', button='middle', modifiers=['Shift'])
+"""
+
+_BROWSER_TOOL_DESCRIPTION = """
+The following 15 functions are available. Nothing else is supported.
+
+goto(url: str)
+    Description: Navigate to a url.
+    Examples:
+        goto('http://www.example.com')
+
+go_back()
+    Description: Navigate to the previous page in history.
+    Examples:
+        go_back()
+
+go_forward()
+    Description: Navigate to the next page in history.
+    Examples:
+        go_forward()
+
+noop(wait_ms: float = 1000)
+    Description: Do nothing, and optionally wait for the given time (in milliseconds).
+    You can use this to get the current page content and/or wait for the page to load.
+    Examples:
+        noop()
+
+        noop(500)
+
+scroll(delta_x: float, delta_y: float)
+    Description: Scroll horizontally and vertically. Amounts in pixels, positive for right or down scrolling, negative for left or up scrolling. Dispatches a wheel event.
+    Examples:
+        scroll(0, 200)
+
+        scroll(-50.2, -100.5)
+
+fill(bid: str, value: str)
+    Description: Fill out a form field. It focuses the element and triggers an input event with the entered text. It works for <input>, <textarea> and [contenteditable] elements.
+    Examples:
+        fill('237', 'example value')
+
+        fill('45', 'multi-line\nexample')
+
+        fill('a12', 'example with "quotes"')
+
+select_option(bid: str, options: str | list[str])
+    Description: Select one or multiple options in a <select> element. You can specify option value or label to select. Multiple options can be selected.
+    Examples:
+        select_option('a48', 'blue')
+
+        select_option('c48', ['red', 'green', 'blue'])
+
+click(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+    Description: Click an element.
+    Examples:
+        click('a51')
+
+        click('b22', button='right')
+
+        click('48', button='middle', modifiers=['Shift'])
+
+dblclick(bid: str, button: Literal['left', 'middle', 'right'] = 'left', modifiers: list[typing.Literal['Alt', 'Control', 'ControlOrMeta', 'Meta', 'Shift']] = [])
+    Description: Double click an element.
+    Examples:
+        dblclick('12')
+
+        dblclick('ca42', button='right')
+
+        dblclick('178', button='middle', modifiers=['Shift'])
+
+hover(bid: str)
+    Description: Hover over an element.
+    Examples:
+        hover('b8')
+
+press(bid: str, key_comb: str)
+    Description: Focus the matching element and press a combination of keys. It accepts the logical key names that are emitted in the keyboardEvent.key property of the keyboard events: Backquote, Minus, Equal, Backslash, Backspace, Tab, Delete, Escape, ArrowDown, End, Enter, Home, Insert, PageDown, PageUp, ArrowRight, ArrowUp, F1 - F12, Digit0 - Digit9, KeyA - KeyZ, etc. You can alternatively specify a single character you'd like to produce such as "a" or "#". Following modification shortcuts are also supported: Shift, Control, Alt, Meta, ShiftLeft, ControlOrMeta. ControlOrMeta resolves to Control on Windows and Linux and to Meta on macOS.
+    Examples:
+        press('88', 'Backspace')
+
+        press('a26', 'ControlOrMeta+a')
+
+        press('a61', 'Meta+Shift+t')
+
+focus(bid: str)
+    Description: Focus the matching element.
+    Examples:
+        focus('b455')
+
+clear(bid: str)
+    Description: Clear the input field.
+    Examples:
+        clear('996')
+
+drag_and_drop(from_bid: str, to_bid: str)
+    Description: Perform a drag & drop. Hover the element that will be dragged. Press left mouse button. Move mouse to the element that will receive the drop. Release left mouse button.
+    Examples:
+        drag_and_drop('56', '498')
+
+upload_file(bid: str, file: str | list[str])
+    Description: Click an element and wait for a "filechooser" event, then select one or multiple input files for upload. Relative file paths are resolved relative to the current working directory. An empty list clears the selected files.
+    Examples:
+        upload_file('572', '/home/user/my_receipt.pdf')
+
+        upload_file('63', ['/home/bob/Documents/image.jpg', '/home/bob/Documents/file.zip'])
+"""
+
+
+for _, action in _browser_action_space.action_set.items():
+    assert (
+        action.signature in _BROWSER_TOOL_DESCRIPTION
+    ), f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.signature}'
+    assert (
+        action.description in _BROWSER_TOOL_DESCRIPTION
+    ), f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.description}'
+
+BrowserTool = ChatCompletionToolParam(
+    type='function',
+    function=ChatCompletionToolParamFunctionChunk(
+        name='browser',
+        description=_BROWSER_DESCRIPTION,
+        parameters={
+            'type': 'object',
+            'properties': {
+                'code': {
+                    'type': 'string',
+                    'description': (
+                        'The Python code that interacts with the browser.\n'
+                        + _BROWSER_TOOL_DESCRIPTION
+                    ),
+                }
+            },
+            'required': ['code'],
         },
     ),
 )
@@ -357,8 +507,14 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                     f'TOOL CALL: str_replace_editor -> file_editor with code: {code}'
                 )
                 action = IPythonRunCellAction(code=code, include_extra=False)
+            elif tool_call.function.name == 'browser':
+                action = BrowseInteractiveAction(browser_actions=arguments['code'])
+            elif tool_call.function.name == 'web_read':
+                action = BrowseURLAction(url=arguments['url'])
             else:
-                raise RuntimeError(f'Unknown tool call: {tool_call.function.name}')
+                raise FunctionCallNotExistsError(
+                    f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
+                )
 
             # We only add thought to the first action
             if i == 0:
@@ -381,13 +537,14 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
 
 
 def get_tools(
-    codeact_enable_browsing_delegate: bool = False,
+    codeact_enable_browsing: bool = False,
     codeact_enable_llm_editor: bool = False,
     codeact_enable_jupyter: bool = False,
 ) -> list[ChatCompletionToolParam]:
     tools = [CmdRunTool, FinishTool]
-    if codeact_enable_browsing_delegate:
-        tools.append(BrowserDelegationTool)
+    if codeact_enable_browsing:
+        tools.append(WebReadTool)
+        tools.append(BrowserTool)
     if codeact_enable_jupyter:
         tools.append(IPythonTool)
     if codeact_enable_llm_editor:
