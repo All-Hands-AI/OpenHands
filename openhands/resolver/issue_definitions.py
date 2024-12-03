@@ -755,4 +755,4 @@ class PRHandler(IssueHandler):
         # Return overall success (all must be true) and explanations
         if not success_list:
             return False, None, 'No feedback was processed'
-        return all(success_list), success_list, '\n'.join(explanation_list)
+        return all(success_list), success_list, json.dumps(explanation_list)
