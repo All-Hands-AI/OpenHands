@@ -383,13 +383,16 @@ class BashSession:
         Returns:
             Combined string of all outputs between matches
         """
+        if len(ps1_matches) == 1:
+            return pane_content[ps1_matches[0].end() + 1 :]
         combined_output = ''
         for i in range(len(ps1_matches) - 1):
             # Extract content between current and next PS1 prompt
             output_segment = pane_content[
                 ps1_matches[i].end() + 1 : ps1_matches[i + 1].start()
             ]
-            combined_output += output_segment
+            combined_output += output_segment + '\n'
+        logger.debug(f'COMBINED OUTPUT: {combined_output}')
         return combined_output
 
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
