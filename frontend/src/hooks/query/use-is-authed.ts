@@ -9,12 +9,11 @@ export const useIsAuthed = () => {
   const { data: config } = useConfig();
 
   const appMode = React.useMemo(() => config?.APP_MODE, [config]);
-  const isEnabled = appMode === "saas" ? !!gitHubToken : !!appMode;
 
   return useQuery({
     queryKey: ["user", "authenticated", gitHubToken, appMode],
     queryFn: () => OpenHands.authenticate(appMode!),
-    enabled: isEnabled,
+    enabled: !!appMode,
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: false,
   });
