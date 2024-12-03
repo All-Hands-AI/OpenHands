@@ -228,19 +228,22 @@ class Runtime(FileEditRuntimeMixin):
         custom_microagents_content = []
         custom_microagents_dir = Path('.openhands') / 'microagents'
 
-        files = []
+        dir_name = str(custom_microagents_dir)
         if selected_repository:
             oh_instructions_header = '---\nname: openhands_instructions\nagent: CodeActAgent\ntriggers:\n- ""\n---\n'
-            openhands_instructions = (
-                oh_instructions_header
-                + self.read(FileReadAction(path='.openhands_instructions')).content
-            )
-            custom_microagents_content.append(openhands_instructions)
+            obs = self.read(FileReadAction(path='.openhands_instructions'))
+            if isinstance(obs, ErrorObservation):
+                self.log('error', 'Failed to read openhands_instructions')
+            else:
+                openhands_instructions = oh_instructions_header + obs.content
+                self.log('info', f'openhands_instructions: {openhands_instructions}')
+                custom_microagents_content.append(openhands_instructions)
 
-            dir_name = Path(selected_repository.split('/')[1])
-            files = self.list_files(str(dir_name / custom_microagents_dir))
-        else:
-            files = self.list_files(str(custom_microagents_dir))
+            dir_name = str(
+                Path(selected_repository.split('/')[1]) / custom_microagents_dir
+            )
+
+        files = self.list_files(dir_name)
 
         self.log('info', f'Found {len(files)} custom microagents.')
 
