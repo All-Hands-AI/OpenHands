@@ -67,9 +67,12 @@ RUN if [ -z "${RELEASE_TAG}" ]; then \
 
 {% endmacro %}
 
+
 {% macro install_dependencies() %}
 # Install all dependencies
 WORKDIR /openhands/code
+
+# First RUN command
 RUN \
     /openhands/micromamba/bin/micromamba config set changeps1 False && \
     # Configure Poetry and create virtual environment
@@ -80,12 +83,18 @@ RUN \
     # Update and install additional tools
     apt-get update && \
     /openhands/micromamba/bin/micromamba run -n openhands poetry run pip install playwright && \
-    /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium
+
+# Second RUN command (involving replay)
+RUN \
     mkdir -p /replay && \
     git -C /replay clone https://github.com/replayio-public/replayapi.git && \
-    /replay/replayapi/scripts/install-deps.sh && \
+    /replay/replayapi/scripts/install-deps.sh
+
+# Third RUN command
+RUN \
     # Set environment variables
-    echo "OH_INTERPRETER_PATH=$(/openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print(sys.executable)")" >> /etc/environment && \
+    echo "OH_INTERPRETER_PATH=$(/openhands/micromamba/bin/micromamba run -n openhands poetry run python -c 'import sys; print(sys.executable)')" >> /etc/environment && \
     # Clear caches
     /openhands/micromamba/bin/micromamba run -n openhands poetry cache clear --all . && \
     # Set permissions
@@ -96,6 +105,7 @@ RUN \
     /openhands/micromamba/bin/micromamba clean --all
 
 {% endmacro %}
+
 
 {% if build_from_scratch %}
 # ================================================================
