@@ -63,7 +63,7 @@ class SessionManager:
                     await self._process_message(message)
             except asyncio.CancelledError:
                 return
-            except:
+            except Exception:
                 try:
                     asyncio.get_running_loop()
                     logger.warning(
