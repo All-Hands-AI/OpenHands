@@ -45,13 +45,18 @@ export function ExpandableMessage({
     >
       <div className="text-sm leading-4 flex flex-col gap-2 max-w-full">
         {headline && (
-          <p className={`${textColor} font-bold`}>{headline}
+          <p className={`${textColor} font-bold`}>
+            {headline}
             <button
               type="button"
               onClick={() => setShowDetails(!showDetails)}
               className="cursor-pointer text-left"
             >
-              {showDetails ? <ArrowUp className={arrowClasses} /> : <ArrowDown className={arrowClasses} />}
+              {showDetails ? (
+                <ArrowUp className={arrowClasses} />
+              ) : (
+                <ArrowDown className={arrowClasses} />
+              )}
             </button>
           </p>
         )}

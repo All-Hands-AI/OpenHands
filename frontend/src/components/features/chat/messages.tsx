@@ -4,7 +4,7 @@ import { ImageCarousel } from "../images/image-carousel";
 import { ExpandableMessage } from "./expandable-message";
 
 interface MessagesProps {
-  messages: (Message)[];
+  messages: Message[];
   isAwaitingUserConfirmation: boolean;
 }
 
@@ -19,7 +19,7 @@ export function Messages({
           key={index}
           type={message.type}
           id={message.id}
-          message={message.content || message.message}
+          message={message.content}
         />
       );
     }
