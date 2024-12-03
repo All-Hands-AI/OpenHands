@@ -104,10 +104,11 @@ def handle_replay_enhance_observation(
 
         output: ReplayCommandResult = safe_parse_json(observation.content)
         if output and output['result']:
+            original_prompt = user_message.content
             result: AnnotateResult = output['result']
             annotated_repo = result['annotatedRepo']
             comment_text = result['commentText'] or ''
             point_location = result['pointLocation'] or ''
 
             # Enhance user prompt with analysis results:
-            user_message.content = f'{user_message.content}\n\nIMPORTANT NOTES to agent:\n* The user provided a recording of the bug which was used to clone and annotated the code in "{annotated_repo}".\n* You MUST `git diff` the repo to find all code most relevant to the bug.\n* The user reported the bug to occur at "{point_location}". At this location, the user commented: <USER_COMMENT>{comment_text}</USER_COMMENT>. Start your investigation here!'
+            user_message.content = f'{original_prompt}\n\n<ANALYSYS_RESULTS>\n* The user provided a recording of the bug which was used to clone and annotated the code in "{annotated_repo}".\n* The user reported that the bug occurs at "{point_location}". At that location, the user commented: <USER_COMMENT>{comment_text}</USER_COMMENT>. Start your investigation here! You will see comments pointing to other `reproduction step`s in the code. Search for those steps when you see them mentioned.\n</ANALYSYS_RESULTS>'
