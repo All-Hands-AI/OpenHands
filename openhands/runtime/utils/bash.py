@@ -1,6 +1,7 @@
 import os
 import re
-import shutil
+import tempfile
+import threading
 import time
 import uuid
 from enum import Enum
@@ -124,51 +125,79 @@ class BashSession:
         # Maintain the current working directory
         self._pwd = os.path.abspath(work_dir)
 
-        # Set up the output directory
-        if os.path.exists('/openhands'):
-            self.output_dir = '/openhands/commands'
-        else:
-            self.output_dir = '/tmp/openhands-commands'
-        self.output_dir = os.path.join(self.output_dir, str(uuid.uuid4()))
-        os.makedirs(self.output_dir, exist_ok=True)
+        # Create a single named pipe for the session
+        self.output_pipe = os.path.join(tempfile.mkdtemp(), 'output.pipe')
+        try:
+            os.mkfifo(self.output_pipe)
+        except FileExistsError as e:
+            logger.warning(f'Failed to create named pipe: {e}. {self.output_pipe}')
 
-        # Initialize command counter
-        self.command_counter = 0
-        # Initialize the first output file
-        self._setup_new_output_file()
+        # Add lock and current content
+        self._pane_content_lock = threading.Lock()
+        self._current_pane_content = ''
+        self._stop_reader = threading.Event()
+        self._reader_thread: threading.Thread | None = None
+
+        # Start the pipe and reader thread
+        self._setup_pipe()
 
     def __del__(self):
         """Ensure the session is closed when the object is destroyed."""
         self.close()
 
-    def _setup_new_output_file(self):
-        """Create a new output file and set up pipe-pane to write to it."""
-        # Stop any existing pipe
+    def _setup_pipe(self):
+        """Set up pipe-pane to write to the named pipe."""
+        # Stop existing pipe
         self.pane.cmd('pipe-pane')
 
-        # Increment command counter
-        self.command_counter += 1
-
-        # Create new output file
-        self.output_filename = os.path.join(
-            self.output_dir, f'command_{self.command_counter:03d}.log'
-        )
-        logger.debug(f'Setting up new pipe-pane to {self.output_filename}')
+        logger.debug(f'Setting up pipe-pane to {self.output_pipe}')
         # Set up new pipe-pane
-        self.pane.cmd('pipe-pane', f'cat > {self.output_filename} 2>&1')
+        self.pane.cmd('pipe-pane', f'cat > {self.output_pipe} 2>&1')
+
+        # Start the reader thread if not already running
+        self._stop_reader.clear()
+        self._reader_thread = threading.Thread(target=self._read_from_pipe, daemon=True)
+        self._reader_thread.start()
+
+        # Hit enter to trigger the FIRST PS1
         self.pane.enter()
-        time.sleep(0.01)
+        time.sleep(1)
+
+    def _read_from_pipe(self):
+        """Read from the named pipe and append to current content."""
+        try:
+            with open(self.output_pipe, 'r') as pipe:
+                while not self._stop_reader.is_set():
+                    line = pipe.readline()
+                    if not line:
+                        break
+                    with self._pane_content_lock:
+                        self._current_pane_content += line
+                    logger.debug(f'PIPE OUTPUT: {line.strip()}')
+        except Exception as e:
+            logger.error(f'Error reading from pipe: {e}')
 
     def close(self):
         """Clean up the session and all output files."""
         if self._closed:
             return
+
+        # Stop the reader thread
+        if self._reader_thread and self._reader_thread.is_alive():
+            self._stop_reader.set()
+            self._reader_thread.join(
+                timeout=1.0
+            )  # Wait up to 1 second for thread to finish
+
         # Stop piping output
         self.pane.cmd('pipe-pane')
 
         # Clean up all output files and directory
-        if os.path.exists(self.output_dir):
-            shutil.rmtree(self.output_dir)
+        if os.path.exists(self.output_pipe):
+            os.remove(self.output_pipe)
+            # also remove the directory if empty
+            if not os.listdir(os.path.dirname(self.output_pipe)):
+                os.rmdir(os.path.dirname(self.output_pipe))
 
         self.session.kill_session()
         self._closed = True
@@ -190,13 +219,12 @@ class BashSession:
         self.pane.cmd('clear-history')
 
     def _get_pane_content(self) -> str:
-        """Get the current content of the tmux pane from the output file."""
-        with open(self.output_filename, 'r') as f:
-            content = f.read()
-        # clean up the bracketed paste mode
-        cleaned = re.sub(r'\x1b\[\?2004[hl]', '', content)
-        logger.debug(f'BASH PANE CONTENT:\n---\n{cleaned!r}\n---')
-        return cleaned
+        """Get the current content."""
+        with self._pane_content_lock:
+            # Clean up the bracketed paste mode
+            cleaned = re.sub(r'\x1b\[\?2004[hl]', '', self._current_pane_content)
+            logger.debug(f'BASH PANE CONTENT:\n---\n{cleaned!r}\n---')
+            return cleaned
 
     def _get_command_output(
         self,
@@ -323,6 +351,12 @@ class BashSession:
             metadata=metadata,
         )
 
+    def _ready_for_next_command(self):
+        """Reset the pipe and clear the current content for a new command."""
+        # Clear the current content
+        with self._pane_content_lock:
+            self._current_pane_content = ''
+
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
         """Execute a command in the bash session."""
         if action.command.strip() == '' and self.prev_status not in {
@@ -338,7 +372,7 @@ class BashSession:
             )
 
         if self.prev_status == BashCommandStatus.COMPLETED:
-            self._setup_new_output_file()
+            self._ready_for_next_command()
 
         splited_commands = split_bash_commands(action.command)
         if len(splited_commands) > 1:
@@ -355,6 +389,7 @@ class BashSession:
         last_pane_output = self._get_pane_content()
 
         _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
+
         assert len(_ps1_matches) == 1, (
             'Expected exactly one PS1 metadata block BEFORE the execution of a command, '
             f'but got {len(_ps1_matches)} PS1 metadata blocks:\n---\n{last_pane_output!r}\n---'
