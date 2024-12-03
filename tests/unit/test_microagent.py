@@ -8,18 +8,16 @@ from openhands.utils.microagent import MicroAgent, MicroAgentMetadata
 
 def test_microagent_metadata():
     metadata = MicroAgentMetadata(
-        name="test_agent",
-        agent="test_agent_type",
-        triggers=["trigger1", "trigger2"]
+        name='test_agent', agent='test_agent_type', triggers=['trigger1', 'trigger2']
     )
-    assert metadata.name == "test_agent"
-    assert metadata.agent == "test_agent_type"
-    assert metadata.triggers == ["trigger1", "trigger2"]
+    assert metadata.name == 'test_agent'
+    assert metadata.agent == 'test_agent_type'
+    assert metadata.triggers == ['trigger1', 'trigger2']
 
 
 def test_microagent_file_not_found():
     with pytest.raises(FileNotFoundError):
-        MicroAgent("/nonexistent/path")
+        MicroAgent('/nonexistent/path')
 
 
 def test_microagent_load_and_properties():
@@ -37,10 +35,10 @@ This is the content
 
         try:
             agent = MicroAgent(f.name)
-            assert agent.name == "test_agent"
-            assert agent.agent == "test_agent_type"
-            assert agent.triggers == ["trigger1", "trigger2"]
-            assert agent.content.strip() == "This is the content"
+            assert agent.name == 'test_agent'
+            assert agent.agent == 'test_agent_type'
+            assert agent.triggers == ['trigger1', 'trigger2']
+            assert agent.content.strip() == 'This is the content'
             assert isinstance(agent.metadata, MicroAgentMetadata)
         finally:
             os.unlink(f.name)
@@ -61,8 +59,8 @@ Content
 
         try:
             agent = MicroAgent(f.name)
-            assert agent.get_trigger("hello world test") == "Hello World"
-            assert agent.get_trigger("TEST TRIGGER") == "Test Trigger"
-            assert agent.get_trigger("no match") is None
+            assert agent.get_trigger('hello world test') == 'Hello World'
+            assert agent.get_trigger('TEST TRIGGER') == 'Test Trigger'
+            assert agent.get_trigger('no match') is None
         finally:
             os.unlink(f.name)

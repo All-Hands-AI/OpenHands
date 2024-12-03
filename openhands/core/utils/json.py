@@ -46,8 +46,13 @@ def loads(json_str, **kwargs):
             if depth == 0 and start != -1:
                 response = json_str[start : i + 1]
                 try:
-                    json_str = repair_json(response)
-                    return json.loads(json_str, **kwargs)
+                    # First try to parse as is
+                    try:
+                        return json.loads(response, **kwargs)
+                    except json.JSONDecodeError:
+                        # If that fails, try to repair it
+                        json_str = repair_json(response)
+                        return json.loads(json_str, **kwargs)
                 except (json.JSONDecodeError, ValueError, TypeError) as e:
                     raise LLMResponseError(
                         'Invalid JSON in response. Please make sure the response is a valid JSON object.'

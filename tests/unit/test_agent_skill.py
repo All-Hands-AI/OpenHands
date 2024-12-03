@@ -753,16 +753,22 @@ def test_file_editor_view(tmp_path):
     result = file_editor(command='view', path=str(tmp_path))
     print('\n', result)
     assert result is not None
-    assert (
-        result.strip().split('\n')
-        == f"""Here's the files and directories up to 2 levels deep in {tmp_path}, excluding hidden items:
-{tmp_path}
-{tmp_path}/dir_2
-{tmp_path}/dir_2/b.txt
-{tmp_path}/dir_1
-{tmp_path}/dir_1/a.txt
-""".strip().split('\n')
-    )
+    # Split the result into lines and sort them to avoid order dependency
+    result_lines = result.strip().split('\n')
+    header = result_lines[0]
+    paths = sorted(result_lines[1:])
+
+    expected = f"""Here's the files and directories up to 2 levels deep in {tmp_path}, excluding hidden items:""".strip()
+    expected_paths = sorted([
+        str(tmp_path),
+        str(tmp_path / 'dir_1'),
+        str(tmp_path / 'dir_1' / 'a.txt'),
+        str(tmp_path / 'dir_2'),
+        str(tmp_path / 'dir_2' / 'b.txt'),
+    ])
+
+    assert header == expected
+    assert paths == expected_paths
 
 
 def test_file_editor_create(tmp_path):
