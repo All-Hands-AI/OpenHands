@@ -122,6 +122,7 @@ export const chatSlice = createSlice({
       action: PayloadAction<{ id?: string; message: string }>,
     ) {
       const { id, message } = action.payload;
+      console.log('add err message', id, message);
       state.messages.push({
         translationID: id,
         content: message,

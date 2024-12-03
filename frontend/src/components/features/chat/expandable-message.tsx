@@ -19,7 +19,7 @@ export function ExpandableMessage({
   type,
 }: ExpandableMessageProps) {
   const { t, i18n } = useTranslation();
-  const [showDetails, setShowDetails] = useState(false);
+  const [showDetails, setShowDetails] = useState(true);
   const [headline, setHeadline] = useState("");
   const [details, setDetails] = useState(message);
 
@@ -27,6 +27,7 @@ export function ExpandableMessage({
     if (id && i18n.exists(id)) {
       setHeadline(t(id));
       setDetails(message);
+      setShowDetails(false);
     }
   }, [id, message, i18n.language]);
 
