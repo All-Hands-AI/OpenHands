@@ -1,53 +1,17 @@
 from typing import Any
 
 import requests
-from requests.exceptions import (
-    ChunkedEncodingError,
-    ConnectionError,
-)
-from urllib3.exceptions import IncompleteRead
 
 
-def is_server_error(exception):
-    return (
-        isinstance(exception, requests.HTTPError)
-        and exception.response.status_code >= 500
-    )
+class RequestError(requests.HTTPError):
+    """Exception raised when an error occurs in a request with details."""
 
+    def __init__(self, *args, details=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.details = details
 
-def is_404_error(exception):
-    return (
-        isinstance(exception, requests.HTTPError)
-        and exception.response.status_code == 404
-    )
-
-
-def is_429_error(exception):
-    return (
-        isinstance(exception, requests.HTTPError)
-        and exception.response.status_code == 429
-    )
-
-
-def is_503_error(exception):
-    return (
-        isinstance(exception, requests.HTTPError)
-        and exception.response.status_code == 503
-    )
-
-
-def is_502_error(exception):
-    return (
-        isinstance(exception, requests.HTTPError)
-        and exception.response.status_code == 502
-    )
-
-
-DEFAULT_RETRY_EXCEPTIONS = [
-    ConnectionError,
-    IncompleteRead,
-    ChunkedEncodingError,
-]
+    def __str__(self) -> str:
+        return f'HTTP Error occurred: {super().__str__()}\nDetails: {self.details or "No additional details available."}'
 
 
 def send_request(
@@ -61,12 +25,9 @@ def send_request(
     try:
         response.raise_for_status()
     except requests.HTTPError as e:
-        if e.response.status_code >= 500:
-            try:
-                _json = response.json()
-            except requests.JSONDecodeError:
-                raise RuntimeError(f'{e}') from e
-            raise RuntimeError(f'{e}\n{_json.get("message", "")}') from e
-        else:
+        try:
+            _json = response.json()
+        except requests.JSONDecodeError:
             raise e
+        raise RequestError(e, details=_json.get('detail')) from e
     return response
