@@ -1,15 +1,13 @@
 import React from "react";
-import { useMutation } from "@tanstack/react-query";
 import { cn } from "#/utils/utils";
 import { ProjectCard } from "./project-card";
 import { useUserProjects } from "#/hooks/query/use-user-projects";
 import { useDeleteProject } from "#/hooks/mutation/use-delete-project";
 import { ConfirmDeleteModal } from "./confirm-delete-modal";
 import { NewProjectButton } from "./new-project-button";
-import { UserProject } from "#/api/open-hands.types";
-import OpenHands from "#/api/open-hands";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import RefreshIcon from "#/icons/refresh.svg?react";
+import { useUpdateProject } from "#/hooks/mutation/use-update-project";
 
 export function ProjectPanel() {
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =
@@ -24,14 +22,9 @@ export function ProjectPanel() {
     refetch: refetchUserProjects,
     error,
   } = useUserProjects();
-  const { mutate: deleteProject } = useDeleteProject();
 
-  const { mutate: updateProject } = useMutation({
-    mutationFn: (variables: {
-      id: string;
-      project: Partial<Omit<UserProject, "id">>;
-    }) => OpenHands.updateUserProject(variables.id, variables.project),
-  });
+  const { mutate: deleteProject } = useDeleteProject();
+  const { mutate: updateProject } = useUpdateProject();
 
   const handleDeleteProject = (projectId: string) => {
     setConfirmDeleteModalVisible(true);
@@ -43,6 +36,15 @@ export function ProjectPanel() {
       deleteProject({ projectId: selectedProjectId });
       setConfirmDeleteModalVisible(false);
     }
+  };
+
+  const handleChangeTitle = (
+    projectId: string,
+    oldTitle: string,
+    newTitle: string,
+  ) => {
+    if (oldTitle !== newTitle)
+      updateProject({ id: projectId, project: { name: newTitle } });
   };
 
   return (
@@ -81,7 +83,7 @@ export function ProjectPanel() {
           onClick={() => {}}
           onDelete={() => handleDeleteProject(project.id)}
           onChangeTitle={(title) =>
-            updateProject({ id: project.id, project: { name: title } })
+            handleChangeTitle(project.id, project.name, title)
           }
           name={project.name}
           repo={project.repo}

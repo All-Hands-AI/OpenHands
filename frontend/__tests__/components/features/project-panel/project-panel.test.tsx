@@ -160,4 +160,36 @@ describe("ProjectPanel", () => {
       name: "Project 1 Renamed",
     });
   });
+
+  it("should not rename a project when the name is unchanged", async () => {
+    const updateUserProjectSpy = vi.spyOn(OpenHands, "updateUserProject");
+
+    const user = userEvent.setup();
+    render(<ProjectPanel />, {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={new QueryClient()}>
+          {children}
+        </QueryClientProvider>
+      ),
+    });
+    const cards = await screen.findAllByTestId("project-card");
+    const title = within(cards[0]).getByTestId("project-card-title");
+
+    await user.click(title);
+    await user.tab();
+
+    // Ensure the project is not renamed
+    expect(updateUserProjectSpy).not.toHaveBeenCalled();
+
+    await user.type(title, "Project 1");
+    await user.click(title);
+    await user.tab();
+
+    expect(updateUserProjectSpy).toHaveBeenCalledTimes(1);
+
+    await user.click(title);
+    await user.tab();
+
+    expect(updateUserProjectSpy).toHaveBeenCalledTimes(1);
+  });
 });

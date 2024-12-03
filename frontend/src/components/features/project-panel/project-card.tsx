@@ -26,8 +26,13 @@ export function ProjectCard({
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const handleBlur = () => {
-    if (inputRef.current) {
-      onChangeTitle(inputRef.current.value);
+    if (inputRef.current?.value) {
+      const trimmed = inputRef.current.value.trim();
+      onChangeTitle(trimmed);
+      inputRef.current!.value = trimmed;
+    } else {
+      // reset the value if it's empty
+      inputRef.current!.value = name;
     }
   };
 
@@ -42,7 +47,6 @@ export function ProjectCard({
           ref={inputRef}
           data-testid="project-card-title"
           onBlur={handleBlur}
-          name="title"
           type="text"
           defaultValue={name}
           className="text-sm leading-6 font-semibold bg-transparent"

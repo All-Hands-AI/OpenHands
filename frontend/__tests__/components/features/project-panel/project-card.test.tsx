@@ -134,11 +134,33 @@ describe("ProjectCard", () => {
     const title = screen.getByTestId("project-card-title");
 
     await user.clear(title);
-    await user.type(title, "New Project Name");
+    await user.type(title, "New Project Name   ");
     await user.tab();
 
     expect(onChangeTitle).toHaveBeenCalledWith("New Project Name");
     expect(title).toHaveValue("New Project Name");
+  });
+
+  it("should reset title and not call onChangeTitle when the title is empty", async () => {
+    const user = userEvent.setup();
+    render(
+      <ProjectCard
+        onClick={onClick}
+        onDelete={onDelete}
+        onChangeTitle={onChangeTitle}
+        name="Project 1"
+        repo={null}
+        lastUpdated="2021-10-01T12:00:00Z"
+      />,
+    );
+
+    const title = screen.getByTestId("project-card-title");
+
+    await user.clear(title);
+    await user.tab();
+
+    expect(onChangeTitle).not.toHaveBeenCalled();
+    expect(title).toHaveValue("Project 1");
   });
 
   describe("state indicator", () => {
