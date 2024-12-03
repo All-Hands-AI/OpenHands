@@ -6,5 +6,6 @@
  */
 export const generateGitHubAuthUrl = (clientId: string, requestUrl: URL) => {
   const redirectUri = `${requestUrl.origin}/oauth/github/callback`;
-  return `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,user,workflow`;
+  const scope = "repo,user,workflow,offline_access";
+  return `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}`;
 };
