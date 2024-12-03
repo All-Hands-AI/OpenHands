@@ -9,11 +9,13 @@ import { useSaveFile } from "#/hooks/mutation/use-save-file";
 interface CodeEditorComponentProps {
   onMount: EditorProps["onMount"];
   isReadOnly: boolean;
+  cursorPosition: { line: number; column: number };
 }
 
 function CodeEditorComponent({
   onMount,
   isReadOnly,
+  cursorPosition,
 }: CodeEditorComponentProps) {
   const { t } = useTranslation();
   const {
@@ -100,15 +102,22 @@ function CodeEditorComponent({
   }
 
   return (
-    <Editor
-      data-testid="code-editor"
-      path={selectedPath ?? undefined}
-      defaultValue=""
-      value={selectedPath ? fileContent : undefined}
-      onMount={onMount}
-      onChange={handleEditorChange}
-      options={{ readOnly: isReadOnly }}
-    />
+    <div className="flex flex-col h-full w-full">
+      <div className="flex-grow min-h-0 relative">
+        <Editor
+          data-testid="code-editor"
+          path={selectedPath ?? undefined}
+          defaultValue=""
+          value={selectedPath ? fileContent : undefined}
+          onMount={onMount}
+          onChange={handleEditorChange}
+          options={{ readOnly: isReadOnly }}
+        />
+      </div>
+      <div className="p-2 text-neutral-500 flex-shrink-0 absolute bottom-1">
+        Row: {cursorPosition.line}, Column: {cursorPosition.column}
+      </div>
+    </div>
   );
 }
 
