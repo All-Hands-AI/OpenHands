@@ -61,7 +61,7 @@ The core configuration options are defined in the `[core]` section of the `confi
   - Description: API key for E2B
 
 - `modal_api_token_id`
-  - Type: `str` 
+  - Type: `str`
   - Default: `""`
   - Description: API token ID for Modal
 
@@ -455,5 +455,3 @@ The security configuration options are defined in the `[security]` section of th
 
 > **Note**: Adjust configurations carefully, especially for memory, security, and network-related settings to ensure optimal performance and security.
 Please note that the configuration options may be subject to change in future versions of OpenHands. It's recommended to refer to the official documentation for the most up-to-date information.
-
-

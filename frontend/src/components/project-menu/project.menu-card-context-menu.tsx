@@ -33,7 +33,7 @@ export function ProjectMenuCardContextMenu({
           {t(I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$CONNECT_TO_GITHUB_LABEL)}
         </ContextMenuListItem>
       )}
-      {isConnectedToGitHub && hasConnectedRepo && (
+      {hasConnectedRepo && (
         <ContextMenuListItem onClick={onPushToGitHub}>
           {t(I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$PUSH_TO_GITHUB_LABEL)}
         </ContextMenuListItem>
