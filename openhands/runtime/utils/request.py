@@ -3,7 +3,7 @@ from typing import Any
 import requests
 
 
-class RequestError(requests.HTTPError):
+class RequestHTTPError(requests.HTTPError):
     """Exception raised when an error occurs in a request with details."""
 
     def __init__(self, *args, detail=None, **kwargs):
@@ -32,5 +32,5 @@ def send_request(
             _json = response.json()
         except requests.JSONDecodeError:
             raise e
-        raise RequestError(e, detail=_json.get('detail')) from e
+        raise RequestHTTPError(e, detail=_json.get('detail')) from e
     return response
