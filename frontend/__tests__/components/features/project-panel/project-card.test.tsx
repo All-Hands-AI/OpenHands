@@ -7,6 +7,7 @@ import { ProjectCard } from "#/components/features/project-panel/project-card";
 describe("ProjectCard", () => {
   const onClick = vi.fn();
   const onDelete = vi.fn();
+  const onChangeTitle = vi.fn();
 
   afterEach(() => {
     vi.clearAllMocks();
@@ -17,6 +18,7 @@ describe("ProjectCard", () => {
       <ProjectCard
         onDelete={onDelete}
         onClick={onClick}
+        onChangeTitle={onChangeTitle}
         name="Project 1"
         lastUpdated="2021-10-01T12:00:00Z"
       />,
@@ -24,7 +26,9 @@ describe("ProjectCard", () => {
     const expectedDate = `${formatTimeDelta(new Date("2021-10-01T12:00:00Z"))} ago`;
 
     const card = screen.getByTestId("project-card");
-    within(card).getByText("Project 1");
+    const title = within(card).getByTestId("project-card-title");
+
+    expect(title).toHaveValue("Project 1");
     within(card).getByText(expectedDate);
   });
 
@@ -33,6 +37,7 @@ describe("ProjectCard", () => {
       <ProjectCard
         onDelete={onDelete}
         onClick={onClick}
+        onChangeTitle={onChangeTitle}
         name="Project 1"
         lastUpdated="2021-10-01T12:00:00Z"
       />,
@@ -44,6 +49,7 @@ describe("ProjectCard", () => {
       <ProjectCard
         onDelete={onDelete}
         onClick={onClick}
+        onChangeTitle={onChangeTitle}
         name="Project 1"
         repo="org/repo"
         lastUpdated="2021-10-01T12:00:00Z"
@@ -59,6 +65,7 @@ describe("ProjectCard", () => {
       <ProjectCard
         onDelete={onDelete}
         onClick={onClick}
+        onChangeTitle={onChangeTitle}
         name="Project 1"
         lastUpdated="2021-10-01T12:00:00Z"
       />,
@@ -76,6 +83,7 @@ describe("ProjectCard", () => {
       <ProjectCard
         onClick={onClick}
         onDelete={onDelete}
+        onChangeTitle={onChangeTitle}
         name="Project 1"
         lastUpdated="2021-10-01T12:00:00Z"
       />,
@@ -93,6 +101,7 @@ describe("ProjectCard", () => {
       <ProjectCard
         onClick={onClick}
         onDelete={onDelete}
+        onChangeTitle={onChangeTitle}
         name="Project 1"
         repo="org/repo"
         lastUpdated="2021-10-01T12:00:00Z"
@@ -105,12 +114,35 @@ describe("ProjectCard", () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
+  test("project title should call onChangeTitle when changed and blurred", async () => {
+    const user = userEvent.setup();
+    render(
+      <ProjectCard
+        onClick={onClick}
+        onDelete={onDelete}
+        name="Project 1"
+        lastUpdated="2021-10-01T12:00:00Z"
+        onChangeTitle={onChangeTitle}
+      />,
+    );
+
+    const title = screen.getByTestId("project-card-title");
+
+    await user.clear(title);
+    await user.type(title, "New Project Name");
+    await user.tab();
+
+    expect(onChangeTitle).toHaveBeenCalledWith("New Project Name");
+    expect(title).toHaveValue("New Project Name");
+  });
+
   describe("state indicator", () => {
     it("should render the 'cold' indicator by default", () => {
       render(
         <ProjectCard
           onClick={onClick}
           onDelete={onDelete}
+          onChangeTitle={onChangeTitle}
           name="Project 1"
           lastUpdated="2021-10-01T12:00:00Z"
         />,
@@ -124,6 +156,7 @@ describe("ProjectCard", () => {
         <ProjectCard
           onClick={onClick}
           onDelete={onDelete}
+          onChangeTitle={onChangeTitle}
           name="Project 1"
           lastUpdated="2021-10-01T12:00:00Z"
           state="warm"

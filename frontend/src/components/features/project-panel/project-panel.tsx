@@ -53,6 +53,7 @@ export function ProjectPanel() {
           key={project.id}
           onClick={() => {}}
           onDelete={() => {}}
+          onChangeTitle={() => {}}
           name={project.name}
           repo={project.repo}
           lastUpdated={project.lastUpdated}

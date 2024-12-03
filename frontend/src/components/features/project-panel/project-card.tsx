@@ -1,3 +1,4 @@
+import React from "react";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { DeleteButton } from "./delete-button";
 import { ProjectRepoLink } from "./project-repo-link";
@@ -6,6 +7,7 @@ import { ProjectState, ProjectStateIndicator } from "./project-state-indicator";
 interface ProjectCardProps {
   onClick: () => void;
   onDelete: () => void;
+  onChangeTitle: (title: string) => void;
   name: string;
   repo?: string;
   lastUpdated: string; // ISO 8601
@@ -15,11 +17,20 @@ interface ProjectCardProps {
 export function ProjectCard({
   onClick,
   onDelete,
+  onChangeTitle,
   name,
   repo,
   lastUpdated,
   state = "cold",
 }: ProjectCardProps) {
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleBlur = () => {
+    if (inputRef.current) {
+      onChangeTitle(inputRef.current.value);
+    }
+  };
+
   return (
     <div
       data-testid="project-card"
@@ -27,7 +38,16 @@ export function ProjectCard({
       className="h-[100px] w-full px-[18px] py-4 border-b border-neutral-600"
     >
       <div className="flex items-center justify-between">
-        <h3 className="text-sm leading-6 font-semibold">{name}</h3>
+        <input
+          ref={inputRef}
+          data-testid="project-card-title"
+          onBlur={handleBlur}
+          name="title"
+          type="text"
+          defaultValue={name}
+          className="text-sm leading-6 font-semibold bg-transparent"
+        />
+
         <div className="flex items-center gap-2">
           <ProjectStateIndicator state={state} />
           <DeleteButton onClick={onDelete} />
