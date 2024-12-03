@@ -269,11 +269,9 @@ class BashSession:
         if metadata.working_dir != self._pwd and metadata.working_dir:
             self._pwd = metadata.working_dir
         # Extract the command output between the two PS1 prompts
-        raw_command_output = ''
-        for i in range(len(ps1_matches) - 1):
-            raw_command_output += pane_content[
-                ps1_matches[i].end() + 1 : ps1_matches[i + 1].start()
-            ]
+        raw_command_output = self._combine_outputs_between_matches(
+            pane_content, ps1_matches
+        )
         metadata.suffix = (
             f'\n\n[The command completed with exit code {metadata.exit_code}.]'
             if not is_special_key
@@ -300,12 +298,14 @@ class BashSession:
         ps1_matches: list[re.Match],
     ) -> CmdOutputObservation:
         self.prev_status = BashCommandStatus.NO_CHANGE_TIMEOUT
-        assert len(ps1_matches) == 1, (
-            'Expected exactly one PS1 metadata block BEFORE the execution of a command, '
-            f'but got {len(ps1_matches)} PS1 metadata blocks:\n---\n{pane_content!r}\n---'
+        if len(ps1_matches) != 1:
+            logger.warning(
+                'Expected exactly one PS1 metadata block BEFORE the execution of a command, '
+                f'but got {len(ps1_matches)} PS1 metadata blocks:\n---\n{pane_content!r}\n---'
+            )
+        raw_command_output = self._combine_outputs_between_matches(
+            pane_content, ps1_matches
         )
-
-        raw_command_output = pane_content[ps1_matches[0].end() + 1 :]
         metadata = CmdOutputMetadata()  # No metadata available
         metadata.suffix = (
             f'\n\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
@@ -333,12 +333,14 @@ class BashSession:
         timeout: float,
     ) -> CmdOutputObservation:
         self.prev_status = BashCommandStatus.HARD_TIMEOUT
-        assert len(ps1_matches) == 1, (
-            'Expected exactly one PS1 metadata block BEFORE the execution of a command, '
-            f'but got {len(ps1_matches)} PS1 metadata blocks:\n---\n{pane_content!r}\n---'
+        if len(ps1_matches) != 1:
+            logger.warning(
+                'Expected exactly one PS1 metadata block BEFORE the execution of a command, '
+                f'but got {len(ps1_matches)} PS1 metadata blocks:\n---\n{pane_content!r}\n---'
+            )
+        raw_command_output = self._combine_outputs_between_matches(
+            pane_content, ps1_matches
         )
-
-        raw_command_output = pane_content[ps1_matches[0].end() + 1 :]
         metadata = CmdOutputMetadata()  # No metadata available
         metadata.suffix = (
             f'\n\n[The command timed out after {timeout} seconds. '
@@ -368,6 +370,27 @@ class BashSession:
         # Hit enter to ensure we get a fresh PS1 prompt
         self.pane.enter()
         time.sleep(0.1)  # Small delay to ensure prompt appears
+
+    def _combine_outputs_between_matches(
+        self, pane_content: str, ps1_matches: list[re.Match]
+    ) -> str:
+        """Combine all outputs between PS1 matches.
+
+        Args:
+            pane_content: The full pane content containing PS1 prompts and command outputs
+            ps1_matches: List of regex matches for PS1 prompts
+
+        Returns:
+            Combined string of all outputs between matches
+        """
+        combined_output = ''
+        for i in range(len(ps1_matches) - 1):
+            # Extract content between current and next PS1 prompt
+            output_segment = pane_content[
+                ps1_matches[i].end() + 1 : ps1_matches[i + 1].start()
+            ]
+            combined_output += output_segment
+        return combined_output
 
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
         """Execute a command in the bash session."""
