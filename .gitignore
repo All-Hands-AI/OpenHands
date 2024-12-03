@@ -192,6 +192,9 @@ frontend/yarn.lock
 frontend/coverage
 test_results*
 /_test_files_tmp/
+tmp.ts
+tmp.log
+tmp.json
 
 # production
 frontend/build

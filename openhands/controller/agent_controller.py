@@ -36,6 +36,7 @@ from openhands.events.action import (
     ModifyTaskAction,
     NullAction,
 )
+from openhands.events.action.replay import ReplayCmdRunAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentDelegateObservation,
@@ -44,6 +45,8 @@ from openhands.events.observation import (
     NullObservation,
     Observation,
 )
+from openhands.events.observation.replay import ReplayCmdOutputObservation
+from openhands.events.replay import handle_replay_enhance_observation
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
 from openhands.utils.shutdown_listener import should_continue
@@ -73,6 +76,8 @@ class AgentController:
         NullObservation,
         ChangeAgentStateAction,
         AgentStateChangedObservation,
+        ReplayCmdRunAction,
+        ReplayCmdOutputObservation,
     )
 
     def __init__(
@@ -285,6 +290,11 @@ class AgentController:
 
         if self._pending_action and self._pending_action.id == observation.cause:
             self._pending_action = None
+            if isinstance(observation, ReplayCmdOutputObservation):
+                handle_replay_enhance_observation(
+                    self.state,  # observation
+                )
+
             if self.state.agent_state == AgentState.USER_CONFIRMED:
                 await self.set_agent_state_to(AgentState.RUNNING)
             if self.state.agent_state == AgentState.USER_REJECTED:

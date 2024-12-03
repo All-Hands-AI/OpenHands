@@ -97,6 +97,7 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -119,13 +120,27 @@ ignore = [ "E501" ]
 # prevent black (if installed) from changing single quotes to double quotes
 skip-string-normalization = true
 
+[tool.ruff]
+exclude = ["containers"]
+
+
 [tool.ruff.lint]
 select = ["D"]
-# ignore warnings for missing docstrings
-ignore = ["D1"]
+ignore = [
+  # Docstring missing
+  "D1",
+
+  # Docstring line + punctuation rules
+  # (We ignore these since they show up everywhere in the original code.)
+  "D202",
+  "D205",
+  "D212",
+  "D415"
+]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"

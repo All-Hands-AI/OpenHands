@@ -32,6 +32,7 @@ from openhands.events.observation import (
 )
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
+from openhands.events.replay import replay_enhance_action
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
 from openhands.runtime.plugins import (
@@ -97,7 +98,6 @@ class CodeActAgent(Agent):
             codeact_enable_browsing=self.config.codeact_enable_browsing,
             codeact_enable_jupyter=self.config.codeact_enable_jupyter,
             codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
-            codeact_enable_replay=self.config.codeact_enable_replay,
         )
         logger.debug(
             f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
@@ -343,6 +343,7 @@ class CodeActAgent(Agent):
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
         """
+
         # Continue with pending actions if any
         if self.pending_actions:
             return self.pending_actions.popleft()
@@ -351,6 +352,13 @@ class CodeActAgent(Agent):
         latest_user_message = state.get_last_user_message()
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
+
+        if self.config.codeact_enable_replay:
+            # Replay enhancement.
+            enhance_action = replay_enhance_action(state, self.config.is_workspace_repo)
+            if enhance_action:
+                logger.info('[REPLAY] Enhancing prompt for Replay recording...')
+                return enhance_action
 
         # prepare what we want to send to the LLM
         messages = self._get_messages(state)

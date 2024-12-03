@@ -194,7 +194,11 @@ async def process_issue(
         # do not mount workspace
         workspace_base=workspace_base,
         workspace_mount_path=workspace_base,
-        agents={'CodeActAgent': AgentConfig(disabled_microagents=['github'])},
+        agents={
+            'CodeActAgent': AgentConfig(
+                is_workspace_repo=True, disabled_microagents=['github']
+            )
+        },
     )
     config.set_llm_config(llm_config)
 
