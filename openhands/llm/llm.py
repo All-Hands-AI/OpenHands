@@ -537,7 +537,6 @@ class LLM(RetryMixin, DebugMixin):
                     completion_response=response, **extra_kwargs
                 )
             self.metrics.add_cost(cost)
-            
             return cost
         except Exception:
             self.cost_metric_supported = False
