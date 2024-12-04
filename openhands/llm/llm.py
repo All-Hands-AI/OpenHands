@@ -242,8 +242,14 @@ class LLM(RetryMixin, DebugMixin):
                         f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
                     )
 
-                    # Get cost from metrics instead of recalculating
-                    cost = self.metrics.costs[-1]['cost'] if self.metrics.costs else 0.0
+                    # get cost from metrics, _post_completion() computed the cost
+                    cost = (
+                        self.metrics.costs[-1].cost
+                        if len(self.metrics.costs) > 0
+                        else 0.0
+                    )
+
+                    # set up the dict to be logged
                     _d = {
                         'messages': messages,
                         'response': resp,
@@ -252,9 +258,12 @@ class LLM(RetryMixin, DebugMixin):
                         'timestamp': time.time(),
                         'cost': cost,
                     }
+
+                    # if non-native function calling, save messages/response separately
                     if mock_function_calling:
-                        # Overwrite response as non-fncall to be consistent with `messages``
+                        # Overwrite response as non-fncall to be consistent with messages
                         _d['response'] = non_fncall_response
+
                         # Save fncall_messages/response separately
                         _d['fncall_messages'] = original_fncall_messages
                         _d['fncall_response'] = resp
@@ -267,6 +276,10 @@ class LLM(RetryMixin, DebugMixin):
                     raise CloudFlareBlockageError(
                         'Request blocked by CloudFlare'
                     ) from e
+                # print traceback for exception e
+                import traceback
+
+                traceback.print_exc()
                 raise
 
         self._completion = wrapper
