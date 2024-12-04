@@ -45,7 +45,7 @@ async def init_connection(
     token: str | None,
     gh_token: str | None,
     session_config: SessionConfig,
-    latest_event_id: int
+    latest_event_id: int,
 ):
     if not await authenticate_github_user(gh_token):
         raise RuntimeError(status.WS_1008_POLICY_VIOLATION)
