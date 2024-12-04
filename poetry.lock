@@ -5507,8 +5507,8 @@ whatthepatch = "^1.0.6"
 [package.source]
 type = "git"
 url = "https://github.com/All-Hands-AI/openhands-aci.git"
-reference = "ht/jump-commands"
-resolved_reference = "e07a6c329ff3b712c0cb06777e901892f4e0a93d"
+reference = "ht/context-suggestion"
+resolved_reference = "6ce6861816470b49c2e7a57c38e1548e8cdfb4d6"
 
 [[package]]
 name = "opentelemetry-api"
@@ -10192,4 +10192,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "cff0f5a52b55b7d2e05f39c2cc7f1b8ea3e324a15173051726cd57abb069a192"
+content-hash = "5442dbd20d83d3ec951a4d97fd4008f437e0898edc7318fe8fc6e079118c2bb3"
