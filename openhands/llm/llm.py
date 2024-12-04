@@ -536,8 +536,8 @@ class LLM(RetryMixin, DebugMixin):
                 cost = litellm_completion_cost(
                     completion_response=response, **extra_kwargs
                 )
-                # Only add cost to metrics if we're calculating it for the first time
-                self.metrics.add_cost(cost)
+            self.metrics.add_cost(cost)
+            
             return cost
         except Exception:
             self.cost_metric_supported = False
