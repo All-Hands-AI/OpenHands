@@ -286,8 +286,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             logger.debug(current_line['status'])
 
     def _prune_old_cache_files(self, cache_dir: str, max_age_days: int = 7) -> None:
-        """
-        Prune cache files older than the specified number of days.
+        """Prune cache files older than the specified number of days.
 
         Args:
             cache_dir (str): The path to the cache directory.
@@ -311,8 +310,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             logger.warning(f'Error during build cache pruning: {e}')
 
     def _is_cache_usable(self, cache_dir: str) -> bool:
-        """
-        Check if the cache directory is usable (exists and is writable).
+        """Check if the cache directory is usable (exists and is writable).
 
         Args:
             cache_dir (str): The path to the cache directory.
