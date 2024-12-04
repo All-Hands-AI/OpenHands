@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
 
+from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import (
     CondenserConfig,
     LLMCondenserConfig,
@@ -19,6 +20,23 @@ from openhands.llm.llm import LLM
 class CondensationResult:
     condensed_events: list[Event]
     metadata: dict[str, Any] = field(default_factory=dict)
+
+
+CONDENSER_METADATA_KEY = 'condenser_meta'
+
+
+def add_condensation_metadata(condensation: CondensationResult, state: State) -> None:
+    if CONDENSER_METADATA_KEY not in state.extra_data:
+        state.extra_data[CONDENSER_METADATA_KEY] = []
+
+    if condensation.metadata:
+        state.extra_data[CONDENSER_METADATA_KEY].append(condensation.metadata)
+
+
+def get_condensation_metadata(state: State) -> list[dict[str, Any]]:
+    if CONDENSER_METADATA_KEY in state.extra_data:
+        return state.extra_data[CONDENSER_METADATA_KEY]
+    return []
 
 
 class Condenser(ABC):

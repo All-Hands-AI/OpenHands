@@ -33,7 +33,7 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
-from openhands.memory.condenser import Condenser
+from openhands.memory.condenser import Condenser, add_condensation_metadata
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -403,6 +403,8 @@ class CodeActAgent(Agent):
 
         # Condense the events from the state.
         condensation_result = self.condenser.condense(state.history)
+        add_condensation_metadata(condensation_result, state)
+
         events = condensation_result.condensed_events
 
         for event in events:
