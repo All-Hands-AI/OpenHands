@@ -4,11 +4,9 @@ This folder contains evaluation harness for evaluating agents on the Entity-dedu
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
-
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## Start the evaluation
-
 
 ```bash
 export OPENAI_API_KEY="sk-XXX"; # This is required for evaluation (to simulate another party of conversation)
@@ -37,7 +35,8 @@ For example,
 ```
 
 ## Reference
-```
+
+```bibtex
 @inproceedings{zhang2023entity,
   title={Probing the Multi-turn Planning Capabilities of LLMs via 20 Question Games},
   author={Zhang, Yizhe and Lu, Jiarui and Jaitly, Navdeep},
