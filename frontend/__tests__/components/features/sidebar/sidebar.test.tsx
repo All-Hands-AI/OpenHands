@@ -18,7 +18,12 @@ const renderSidebar = () =>
   });
 
 describe("Sidebar", () => {
-  vi.mock("react-router");
+  vi.mock("react-router", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("react-router")>()),
+    useSearchParams: vi.fn(() => [{ get: vi.fn() }]),
+    useLocation: vi.fn(),
+    useNavigate: vi.fn(),
+  }));
 
   it("should toggle the project panel", async () => {
     const user = userEvent.setup();

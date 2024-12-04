@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   QueryClientProvider,
@@ -8,6 +8,7 @@ import {
 import userEvent from "@testing-library/user-event";
 import { ProjectPanel } from "#/components/features/project-panel/project-panel";
 import OpenHands from "#/api/open-hands";
+import { AuthProvider } from "#/context/auth-context";
 
 describe("ProjectPanel", () => {
   const onCloseMock = vi.fn();
@@ -15,9 +16,11 @@ describe("ProjectPanel", () => {
   const renderProjectPanel = (config?: QueryClientConfig) =>
     render(<ProjectPanel onClose={onCloseMock} />, {
       wrapper: ({ children }) => (
-        <QueryClientProvider client={new QueryClient(config)}>
-          {children}
-        </QueryClientProvider>
+        <AuthProvider>
+          <QueryClientProvider client={new QueryClient(config)}>
+            {children}
+          </QueryClientProvider>
+        </AuthProvider>
       ),
     });
 
@@ -25,11 +28,13 @@ describe("ProjectPanel", () => {
     vi.mock("react-router", async (importOriginal) => ({
       ...(await importOriginal<typeof import("react-router")>()),
       Link: ({ children }: React.PropsWithChildren) => children,
-      useNavigate: () => vi.fn(),
+      useNavigate: vi.fn(() => vi.fn()),
+      useSearchParams: vi.fn(() => [{ get: vi.fn() }]),
     }));
   });
 
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.restoreAllMocks();
   });
 
@@ -47,7 +52,8 @@ describe("ProjectPanel", () => {
     const getUserProjectsSpy = vi.spyOn(OpenHands, "getUserProjects");
 
     renderProjectPanel();
-    expect(getUserProjectsSpy).toHaveBeenCalledTimes(1);
+    // We wait because auth needs to fetch first
+    await waitFor(() => expect(getUserProjectsSpy).toHaveBeenCalledTimes(1));
     const refreshButton = await screen.findByTestId("refresh-button");
 
     await user.click(refreshButton);
