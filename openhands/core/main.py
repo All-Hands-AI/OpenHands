@@ -58,11 +58,12 @@ def create_runtime(
 ) -> Runtime:
     """Create a runtime for the agent to run on.
 
-    config: The app config.
-    sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
-        Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
-    headless_mode: Whether the agent is run in headless mode. `create_runtime` is typically called within evaluation scripts,
-        where we don't want to have the VSCode UI open, so it defaults to True.
+    Args:
+        config: The app config.
+        sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
+            Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
+        headless_mode: Whether the agent is run in headless mode. `create_runtime` is typically called within evaluation scripts,
+            where we don't want to have the VSCode UI open, so it defaults to True.
     """
     # if sid is provided on the command line, use it as the name of the event stream
     # otherwise generate it on the basis of the configured jwt_secret
@@ -101,16 +102,17 @@ async def run_controller(
     headless_mode: bool = True,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
+
     It's only used when you launch openhands backend directly via cmdline.
 
     Args:
         config: The app config.
         initial_user_action: An Action object containing initial user input
-        sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
+        sid: (optional) The session id. *IMPORTANT*: please don't set this unless you know what you're doing.
             Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
         runtime: (optional) A runtime for the agent to run on.
         agent: (optional) A agent to run.
-        exit_on_message: quit if agent asks for a message from user (optional)
+        exit_on_message: (optional) Quit if agent asks for a message from user.
         fake_user_response_fn: An optional function that receives the current state
             (could be None) and returns a fake user response.
         headless_mode: Whether the agent is run in headless mode.
