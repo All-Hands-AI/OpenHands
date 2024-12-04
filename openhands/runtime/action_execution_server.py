@@ -9,8 +9,10 @@ import argparse
 import asyncio
 import base64
 import io
+import json
 import mimetypes
 import os
+import re
 import shutil
 import tempfile
 import time
@@ -199,6 +201,26 @@ class ActionExecutor:
 
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
             obs.content = obs.content.rstrip()
+            matches = re.findall(
+                r'<oh_aci_output>(.*?)</oh_aci_output>', obs.content, re.DOTALL
+            )
+            if matches:
+                results = []
+                for match in matches:
+                    try:
+                        result_dict = json.loads(match)
+                        results.append(
+                            result_dict.get('formatted_output_and_error', '')
+                        )
+                    except json.JSONDecodeError:
+                        # Handle JSON decoding errors if necessary
+                        results.append(
+                            f"Invalid JSON in 'openhands-aci' output: {match}"
+                        )
+
+                # Combine the results (e.g., join them) or handle them as required
+                obs.content = '\n'.join(results)
+
             if action.include_extra:
                 obs.content += (
                     f'\n[Jupyter current working directory: {self.bash_session.pwd}]'

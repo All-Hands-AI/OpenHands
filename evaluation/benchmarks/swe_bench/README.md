@@ -6,19 +6,18 @@ This folder contains the evaluation harness that we built on top of the original
 
 The evaluation consists of three steps:
 
-1. Environment setup: [install python environment](../README.md#development-environment), [configure LLM config](../README.md#configure-openhands-and-your-llm), and [pull docker](#openhands-swe-bench-instance-level-docker-support).
+1. Environment setup: [install python environment](../../README.md#development-environment), [configure LLM config](../../README.md#configure-openhands-and-your-llm), and [pull docker](#openhands-swe-bench-instance-level-docker-support).
 2. [Run inference](#run-inference-on-swe-bench-instances): Generate a edit patch for each Github issue
 3. [Evaluate patches using SWE-Bench docker](#evaluate-generated-patches)
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## OpenHands SWE-Bench Instance-level Docker Support
 
 OpenHands now support using the [official evaluation docker](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md) for both **[inference](#run-inference-on-swe-bench-instances) and [evaluation](#evaluate-generated-patches)**.
 This is now the default behavior.
-
 
 ## Run Inference on SWE-Bench Instances
 
@@ -52,7 +51,8 @@ default, it is set to 1.
 - `dataset_split`, split for the huggingface dataset. e.g., `test`, `dev`. Default to `test`.
 
 There are also two optional environment variables you can set.
-```
+
+```bash
 export USE_HINT_TEXT=true # if you want to use hint text in the evaluation. Default to false. Ignore this if you are not sure.
 export USE_INSTANCE_IMAGE=true # if you want to use instance-level docker images. Default to true
 ```
@@ -127,6 +127,7 @@ With `output.jsonl` file, you can run `eval_infer.sh` to evaluate generated patc
 **This evaluation is performed using the official dockerized evaluation announced [here](https://github.com/princeton-nlp/SWE-bench/blob/main/docs/20240627_docker/README.md).**
 
 > If you want to evaluate existing results, you should first run this to clone existing outputs
+>
 >```bash
 >git clone https://huggingface.co/spaces/OpenHands/evaluation evaluation/evaluation_outputs
 >```
@@ -143,6 +144,7 @@ Then you can run the following:
 ```
 
 The script now accepts optional arguments:
+
 - `instance_id`: Specify a single instance to evaluate (optional)
 - `dataset_name`: The name of the dataset to use (default: `"princeton-nlp/SWE-bench_Lite"`)
 - `split`: The split of the dataset to use (default: `"test"`)
@@ -179,7 +181,6 @@ To clean-up all existing runtimes that you've already started, run:
 ALLHANDS_API_KEY="YOUR-API-KEY" ./evaluation/benchmarks/swe_bench/scripts/cleanup_remote_runtime.sh
 ```
 
-
 ## Visualize Results
 
 First you need to clone `https://huggingface.co/spaces/OpenHands/evaluation` and add your own running results from openhands into the `outputs` of the cloned repo.
@@ -189,6 +190,7 @@ git clone https://huggingface.co/spaces/OpenHands/evaluation
 ```
 
 **(optional) setup streamlit environment with conda**:
+
 ```bash
 cd evaluation
 conda create -n streamlit python=3.10
