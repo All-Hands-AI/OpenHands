@@ -1,4 +1,5 @@
 import json
+import logging
 import re
 from typing import Any, TypedDict
 
@@ -7,6 +8,8 @@ from openhands.events.action.action import Action
 from openhands.events.action.message import MessageAction
 from openhands.events.action.replay import ReplayCmdRunAction
 from openhands.events.observation.replay import ReplayCmdOutputObservation
+
+logger = logging.getLogger('replay/events')
 
 
 def scan_recording_id(issue: str) -> str | None:
@@ -51,6 +54,9 @@ def replay_enhance_action(state: State, is_workspace_repo: bool) -> Action | Non
             recording_id = scan_recording_id(latest_user_message.content)
             if recording_id:
                 # 3. Analyze recording and, ultimately, enhance prompt.
+                logger.info(
+                    f'Found recording: {recording_id}. Attempting to enhance prompt...'
+                )
                 state.extra_data['replay_enhance_prompt_id'] = latest_user_message.id
                 return command_annotate_execution_points(
                     latest_user_message.content, is_workspace_repo
@@ -106,9 +112,11 @@ def handle_replay_enhance_observation(
         if output and output['result']:
             original_prompt = user_message.content
             result: AnnotateResult = output['result']
-            annotated_repo = result['annotatedRepo']
+            annotated_repo_path = result['annotatedRepo']
             comment_text = result['commentText'] or ''
             point_location = result['pointLocation'] or ''
 
             # Enhance user prompt with analysis results:
-            user_message.content = f'{original_prompt}\n\n<ANALYSYS_RESULTS>\n* The user provided a recording of the bug which was used to clone and annotated the code in "{annotated_repo}".\n* The user reported that the bug occurs at "{point_location}". At that location, the user commented: <USER_COMMENT>{comment_text}</USER_COMMENT>. Start your investigation here! You will see comments pointing to other `reproduction step`s in the code. Search for those steps when you see them mentioned.\n</ANALYSYS_RESULTS>'
+            enhancement = f'<ANALYSYS_RESULTS>\n* The user provided a recording of the bug which was used to analyze and annotate the code (by leaving ANANLYSIS_COMMENTS in the code).\n* The annotated code is already available at REPO_PATH="{annotated_repo_path}". Work in REPO_PATH.\n*The user left a note at START_LOCATION="{point_location}": <USER_COMMENT>{comment_text}</USER_COMMENT>. Start your investigation at START_LOCATION!\n* You find ANANLYSIS_COMMENTS pointing to other code locations in the form of `reproduction step <REPRODUCTION_STEP>` comments. Search for those steps, but only when you see them mentioned.\n</ANALYSYS_RESULTS>'
+            logger.info(f'Enhanced prompt with: {enhancement}')
+            user_message.content = f'{original_prompt}\n\n{enhancement}'
