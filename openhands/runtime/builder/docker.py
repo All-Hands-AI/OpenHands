@@ -4,6 +4,7 @@ import subprocess
 import time
 
 import docker
+from termcolor import colored
 
 from openhands import __version__ as oh_version
 from openhands.core.logger import RollingLogger
@@ -187,7 +188,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             return True
         except docker.errors.ImageNotFound:
             if not pull_from_repo:
-                logger.debug(f'Image {image_name} not found locally')
+                logger.debug(
+                    f'Image {image_name} {colored("not found", "red")} locally'
+                )
                 return False
             try:
                 logger.debug(
