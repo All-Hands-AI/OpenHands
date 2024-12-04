@@ -9,6 +9,7 @@ interface AuthContextType {
   setGitHubToken: (token: string | null) => void;
   clearToken: () => void;
   clearGitHubToken: () => void;
+  refreshToken: () => Promise<boolean>;
   logout: () => void;
 }
 
@@ -20,10 +21,6 @@ function AuthProvider({ children }: React.PropsWithChildren) {
   );
   const [gitHubTokenState, setGitHubTokenState] = React.useState<string | null>(
     () => localStorage.getItem("ghToken"),
-  );
-
-  const [gitHubTokenTime, setGitHubTokenTime] = React.useState<string | null>(
-    () => localStorage.getItem("ghTokenTime"),
   );
 
   React.useLayoutEffect(() => {
@@ -43,12 +40,8 @@ function AuthProvider({ children }: React.PropsWithChildren) {
 
     if (token) {
       localStorage.setItem("ghToken", token);
-      const timestamp = new Date().toISOString();
-      localStorage.setItem("ghTokenTime", timestamp);
-      setGitHubTokenTime(timestamp);
     } else {
       localStorage.removeItem("ghToken");
-      localStorage.removeItem("ghTokenTime");
     }
   };
 
@@ -60,7 +53,6 @@ function AuthProvider({ children }: React.PropsWithChildren) {
   const clearGitHubToken = () => {
     setGitHubTokenState(null);
     localStorage.removeItem("ghToken");
-    localStorage.removeItem("ghTokenTime");
   };
 
   const logout = () => {
@@ -68,26 +60,11 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     posthog.reset();
   };
 
-  const refreshToken = async () => {
+  const refreshToken = async (): Promise<boolean> => {
     const config = await OpenHands.getConfig();
 
     if (config.APP_MODE !== "saas" || !gitHubTokenState) {
-      return;
-    }
-
-    let needsRefresh = false;
-
-    if (!gitHubTokenTime) {
-      // Refresh if the timestamp is missing
-      needsRefresh = true;
-    } else {
-      // Refresh if more than 7 hours old
-      const timeDiff = Date.now() - new Date(gitHubTokenTime).getTime();
-      needsRefresh = timeDiff > 7 * 60 * 60 * 1000;
-    }
-
-    if (!needsRefresh) {
-      return;
+      return false;
     }
 
     const newToken = await OpenHands.refreshToken(
@@ -96,13 +73,15 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     );
     if (newToken) {
       setGitHubToken(newToken);
-    } else {
-      clearGitHubToken();
+      return true;
     }
+
+    clearGitHubToken();
+    return false;
   };
   React.useEffect(() => {
     refreshToken();
-  }, [gitHubTokenState, gitHubTokenTime]);
+  }, [gitHubTokenState]);
 
   const value = React.useMemo(
     () => ({
@@ -112,6 +91,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
       setGitHubToken,
       clearToken,
       clearGitHubToken,
+      refreshToken,
       logout,
     }),
     [tokenState, gitHubTokenState],

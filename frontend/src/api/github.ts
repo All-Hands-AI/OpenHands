@@ -10,6 +10,69 @@ const generateGitHubAPIHeaders = (token: string) =>
     "X-GitHub-Api-Version": "2022-11-28",
   }) as const;
 
+const handleRequest = async <T>(requestFn: () => Promise<T>): Promise<T> => {
+  try {
+    return await requestFn();
+  } catch (error) {
+    throw error;
+  }
+};
+
+const handleTokenRefresh = async (
+  refreshToken: () => Promise<boolean>,
+  logout: () => void,
+): Promise<boolean> => {
+  try {
+    const refreshed = await refreshToken();
+    if (!refreshed) {
+      logout();
+      throw new Error("Token refresh failed. User logged out.");
+    }
+    return true;
+  } catch (error) {
+    console.error("Token refresh failed:", error);
+    logout();
+    throw new Error("Token refresh failed. User logged out.");
+  }
+};
+
+const handleErrorResponse = (error: any): GitHubErrorReponse => {
+  console.error("GitHub API request failed:", error);
+  return {
+    message: error.message || "An unknown error occurred",
+    documentation_url: "",
+    status: error?.response?.status || 500,
+  };
+};
+
+/**
+ * Retry for expired Github token
+ * @param requestFn The Github API request function
+ * @param refreshToken Function to issue refresh token
+ * @param logout Function to logout user for expired token
+ * @returns The headers for the GitHub API
+ */
+export const githubAPIRequest = async <T>(
+  requestFn: () => Promise<T>,
+  refreshToken: () => Promise<boolean>,
+  logout: () => void,
+): Promise<T | GitHubErrorReponse> => {
+  try {
+    return await handleRequest(requestFn);
+  } catch (error: any) {
+    if (error?.response?.status === 401 || error?.response?.status === 403) {
+      try {
+        await handleTokenRefresh(refreshToken, logout);
+        return await handleRequest(requestFn); // Retry after successful token refresh
+      } catch (refreshError) {
+        return handleErrorResponse(refreshError);
+      }
+    } else {
+      return handleErrorResponse(error);
+    }
+  }
+};
+
 /**
  * Checks if the data is a GitHub error response
  * @param data The data to check
@@ -78,38 +141,37 @@ export const retrieveGitHubUserRepositories = async (
  */
 export const retrieveGitHubUser = async (
   token: string,
+  refreshToken: () => Promise<boolean>,
+  logout: () => void,
 ): Promise<GitHubUser | GitHubErrorReponse> => {
-  const response = await fetch("https://api.github.com/user", {
-    headers: generateGitHubAPIHeaders(token),
-  });
+  return githubAPIRequest(
+    async () => {
+      const response = await fetch("https://api.github.com/user", {
+        headers: generateGitHubAPIHeaders(token),
+      });
 
-  if (!response.ok) {
-    throw new Error("Failed to retrieve user data");
-  }
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw {
+          message: errorData.message || "Failed to retrieve user data",
+          response: { status: response.status },
+        };
+      }
 
-  const data = await response.json();
+      const data = await response.json();
 
-  if (!isGitHubErrorReponse(data)) {
-    // Only return the necessary user data
-    const user: GitHubUser = {
-      id: data.id,
-      login: data.login,
-      avatar_url: data.avatar_url,
-      company: data.company,
-      name: data.name,
-      email: data.email,
-    };
-
-    return user;
-  }
-
-  const error: GitHubErrorReponse = {
-    message: data.message,
-    documentation_url: data.documentation_url,
-    status: response.status,
-  };
-
-  return error;
+      return {
+        id: data.id,
+        login: data.login,
+        avatar_url: data.avatar_url,
+        company: data.company,
+        name: data.name,
+        email: data.email,
+      } as GitHubUser;
+    },
+    refreshToken,
+    logout,
+  );
 };
 
 export const retrieveLatestGitHubCommit = async (
