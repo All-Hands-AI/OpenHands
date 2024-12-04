@@ -139,7 +139,10 @@ class LLMCondenser(Condenser):
             setattr(summary_event, '_timestamp', events[-1].timestamp)
             setattr(summary_event, '_source', events[-1].source)
 
-            return CondensationResult(condensed_events=[summary_event])
+            return CondensationResult(
+                condensed_events=[summary_event],
+                metadata={'response': resp, 'metrics': self.llm.metrics.get()},
+            )
 
         except Exception as e:
             logger.error('Error condensing events: %s', str(e), exc_info=False)

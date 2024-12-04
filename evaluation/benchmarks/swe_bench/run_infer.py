@@ -35,6 +35,7 @@ from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
 from openhands.events.serialization.event import event_to_dict
+from openhands.memory.condenser import get_condensation_metadata
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 from openhands.utils.shutdown_listener import sleep_if_should_continue
@@ -446,7 +447,11 @@ def process_instance(
 
     # NOTE: this is NO LONGER the event stream, but an agent history that includes delegate agent's events
     histories = [event_to_dict(event) for event in state.history]
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = state.metrics.get() if state.metrics else {}
+
+    # Record any condensation metadata, if possible
+    if state:
+        metrics['condenser'] = get_condensation_metadata(state)
 
     # Save the output
     output = EvalOutput(
