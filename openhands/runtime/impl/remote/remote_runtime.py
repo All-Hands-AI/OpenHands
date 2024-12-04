@@ -240,7 +240,9 @@ class RemoteRuntime(Runtime):
             'image': self.container_image,
             'command': command,
             'working_dir': '/openhands/code/',
-            'environment': {'DEBUG': 'true'} if self.config.debug else {},
+            'environment': {'DEBUG': 'true'}
+            if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true'
+            else {},
             'session_id': self.sid,
         }
 
