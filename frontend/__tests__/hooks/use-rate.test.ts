@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useRate } from "#/utils/use-rate";
+import { useRate } from "#/hooks/use-rate";
 
 describe("useRate", () => {
   beforeEach(() => {
@@ -55,8 +55,8 @@ describe("useRate", () => {
     expect(result.current.isUnderThreshold).toBe(true);
 
     act(() => {
-       // not sure if fake timers is buggy with intervals,
-       // but I need to call it twice to register
+      // not sure if fake timers is buggy with intervals,
+      // but I need to call it twice to register
       vi.advanceTimersToNextTimer();
       vi.advanceTimersToNextTimer();
     });

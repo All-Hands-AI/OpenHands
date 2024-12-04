@@ -85,3 +85,15 @@ test.fail(
     expect(await userMessage.textContent()).toBe(testQuery);
   },
 );
+
+test("redirect to /app if token is present", async ({ page }) => {
+  await page.goto("/");
+
+  await page.evaluate(() => {
+    localStorage.setItem("token", "test");
+  });
+
+  await page.waitForURL("/app");
+
+  expect(page.url()).toBe("http://localhost:3001/app");
+});

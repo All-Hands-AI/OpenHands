@@ -14,6 +14,7 @@ import os
 import shutil
 import tempfile
 import time
+import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
@@ -52,6 +53,7 @@ from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
 from openhands.runtime.utils.system import check_port_available
+from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
 
 
@@ -382,17 +384,13 @@ if __name__ == '__main__':
         logger.exception('Unhandled exception occurred:')
         return JSONResponse(
             status_code=500,
-            content={
-                'message': 'An unexpected error occurred. Please try again later.'
-            },
+            content={'detail': 'An unexpected error occurred. Please try again later.'},
         )
 
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         logger.error(f'HTTP exception occurred: {exc.detail}')
-        return JSONResponse(
-            status_code=exc.status_code, content={'message': exc.detail}
-        )
+        return JSONResponse(status_code=exc.status_code, content={'detail': exc.detail})
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(
@@ -401,7 +399,7 @@ if __name__ == '__main__':
         logger.error(f'Validation error occurred: {exc}')
         return JSONResponse(
             status_code=422,
-            content={'message': 'Invalid request parameters', 'details': exc.errors()},
+            content={'detail': 'Invalid request parameters', 'errors': exc.errors()},
         )
 
     @app.middleware('http')
@@ -420,7 +418,14 @@ if __name__ == '__main__':
         current_time = time.time()
         uptime = current_time - client.start_time
         idle_time = current_time - client.last_execution_time
-        return {'uptime': uptime, 'idle_time': idle_time}
+
+        response = {
+            'uptime': uptime,
+            'idle_time': idle_time,
+            'resources': get_system_stats(),
+        }
+        logger.info('Server info endpoint response: %s', response)
+        return response
 
     @app.post('/execute_action')
     async def execute_action(action_request: ActionRequest):
@@ -436,7 +441,10 @@ if __name__ == '__main__':
             logger.error(
                 f'Error processing command: {str(e)}', exc_info=True, stack_info=True
             )
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(
+                status_code=500,
+                detail=traceback.format_exc(),
+            )
 
     @app.post('/upload_file')
     async def upload_file(

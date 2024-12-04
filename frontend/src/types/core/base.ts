@@ -1,7 +1,9 @@
-type OpenHandsEventType =
+export type OpenHandsEventType =
   | "message"
   | "agent_state_changed"
   | "run"
+  | "read"
+  | "write"
   | "run_ipython"
   | "delegate"
   | "browse"
