@@ -1,11 +1,17 @@
 import { render, screen, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { ProjectPanel } from "#/components/features/project-panel/project-panel";
 import OpenHands from "#/api/open-hands";
 
 describe("ProjectPanel", () => {
+  beforeAll(() => {
+    vi.mock("react-router", () => ({
+      Link: ({ children }: React.PropsWithChildren) => children,
+    }));
+  });
+
   beforeEach(() => {
     vi.restoreAllMocks();
   });

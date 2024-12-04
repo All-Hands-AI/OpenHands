@@ -1,26 +1,10 @@
-import { expect, Page, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import path from "path";
 import { fileURLToPath } from "url";
+import { confirmSettings } from "./helpers/confirm-settings";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
-
-const confirmSettings = async (page: Page) => {
-  const confirmPreferenceButton = page.getByRole("button", {
-    name: /confirm preferences/i,
-  });
-  await confirmPreferenceButton.click();
-
-  const configSaveButton = page.getByRole("button", {
-    name: /save/i,
-  });
-  await configSaveButton.click();
-
-  const confirmChanges = page.getByRole("button", {
-    name: /yes, close settings/i,
-  });
-  await confirmChanges.click();
-};
 
 test("should redirect to /app after uploading a project zip", async ({
   page,
@@ -57,7 +41,7 @@ test("should redirect to /app after selecting a repo", async ({ page }) => {
   await repoItem.click();
 
   await page.waitForURL("/app");
-  expect(page.url()).toBe("http://127.0.0.1:3000/app");
+  expect(page.url()).toBe("http://localhost:3001/app");
 });
 
 // FIXME: This fails because the MSW WS mocks change state too quickly,

@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router";
 import { ProjectCard } from "./project-card";
 import { useUserProjects } from "#/hooks/query/use-user-projects";
 import { useDeleteProject } from "#/hooks/mutation/use-delete-project";
@@ -75,18 +76,19 @@ export function ProjectPanel() {
         </div>
       )}
       {projects?.map((project) => (
-        <ProjectCard
-          key={project.id}
-          onClick={() => {}}
-          onDelete={() => handleDeleteProject(project.id)}
-          onChangeTitle={(title) =>
-            handleChangeTitle(project.id, project.name, title)
-          }
-          name={project.name}
-          repo={project.repo}
-          lastUpdated={project.lastUpdated}
-          state={project.state}
-        />
+        <Link key={project.id} to={`/app?sessionId=${project.id}`}>
+          <ProjectCard
+            onClick={() => {}}
+            onDelete={() => handleDeleteProject(project.id)}
+            onChangeTitle={(title) =>
+              handleChangeTitle(project.id, project.name, title)
+            }
+            name={project.name}
+            repo={project.repo}
+            lastUpdated={project.lastUpdated}
+            state={project.state}
+          />
+        </Link>
       ))}
 
       {confirmDeleteModalVisible && (
