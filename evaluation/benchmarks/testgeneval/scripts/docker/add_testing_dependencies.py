@@ -51,33 +51,37 @@ def build_and_push_image(dockerfile_content, image_name):
 
 
 # Function to process images with .eval in the name
-def process_images(dataset, original_namespace, new_namespace):
+def process_images(dataset, original_namespace, new_namespace, start_instance_id):
     dependencies = ['coverage', 'cosmic-ray']
 
+    found_start = len(start_instance_id) == 0
     for datum in dataset:
-        full_image_name = f'{original_namespace}/sweb.eval.x86_64.{datum["instance_id"].replace("__", "_s_")}:latest'
-        print(f'Processing image: {full_image_name}')
-        run_command(f'docker pull {full_image_name}')
+        if not found_start and datum["instance_id"] == start_instance_id:
+            found_start = True
+        elif found_start:
+            full_image_name = f'{original_namespace}/sweb.eval.x86_64.{datum["instance_id"].replace("__", "_s_")}:latest'
+            print(f'Processing image: {full_image_name}')
+            run_command(f'docker pull {full_image_name}')
 
-        # Save patches and preds_context to regular files
-        patch_file_path = 'patch.diff'
-        test_patch_file_path = 'test_patch.diff'
+            # Save patches and preds_context to regular files
+            patch_file_path = 'patch.diff'
+            test_patch_file_path = 'test_patch.diff'
 
 
-        with open(patch_file_path, 'w') as patch_file, \
-             open(test_patch_file_path, 'w') as test_patch_file:
-            patch_file.write(datum['patch'])
-            test_patch_file.write(datum['test_patch'])
+            with open(patch_file_path, 'w') as patch_file, \
+                open(test_patch_file_path, 'w') as test_patch_file:
+                patch_file.write(datum['patch'])
+                test_patch_file.write(datum['test_patch'])
 
-        # Define image types and corresponding tags
-        new_image_name = f'{new_namespace}/sweb.eval.x86_64.{datum["instance_id"].replace("__", "_s_")}:latest'
-        dockerfile_content = generate_dockerfile_content(full_image_name, dependencies, datum, patch_file_path, test_patch_file_path)
-        build_and_push_image(dockerfile_content, new_image_name)
+            # Define image types and corresponding tags
+            new_image_name = f'{new_namespace}/sweb.eval.x86_64.{datum["instance_id"].replace("__", "_s_")}:latest'
+            dockerfile_content = generate_dockerfile_content(full_image_name, dependencies, datum, patch_file_path, test_patch_file_path)
+            build_and_push_image(dockerfile_content, new_image_name)
 
-        # Cleanup regular files and images
-        os.remove(patch_file_path)
-        os.remove(test_patch_file_path)
-        run_command(f'docker rmi {full_image_name}')
+            # Cleanup regular files and images
+            os.remove(patch_file_path)
+            os.remove(test_patch_file_path)
+            run_command(f'docker rmi {full_image_name}')
 
 
 if __name__ == '__main__':
@@ -86,9 +90,9 @@ if __name__ == '__main__':
     parser.add_argument('--split', type=str, default='test')
     parser.add_argument('--new_namespace', type=str, default='kdjain', help='The new Docker Hub namespace to push the images')
     parser.add_argument('--original_namespace', type=str, default='xingyaoww', help='The original Docker Hub namespace')
-
+    parser.add_argument('--start_instance_id', type=str, default="", help='The instance_id to start processing from')
     args = parser.parse_args()
     dataset = load_dataset(args.dataset)[args.split]
 
     docker_login()
-    process_images(dataset, args.original_namespace, args.new_namespace)
+    process_images(dataset, args.original_namespace, args.new_namespace, args.start_instance_id)
