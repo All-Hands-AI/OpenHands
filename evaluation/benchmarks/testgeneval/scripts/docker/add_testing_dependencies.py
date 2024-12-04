@@ -19,7 +19,7 @@ def docker_login():
 
 
 # Function to generate Dockerfile content based on image type
-def generate_dockerfile_content(base_image, dependencies, datum, image_type, patch_path, test_patch_path, preds_path):
+def generate_dockerfile_content(base_image, dependencies, datum, patch_path, test_patch_path):
     dockerfile_content = f"""
 FROM {base_image}
 RUN pip install {' '.join(dependencies)}
@@ -35,10 +35,7 @@ RUN rm {datum['test_file']}
 """
 
     # Add specific content based on image type
-    if image_type == 'full':
-        dockerfile_content += "RUN git add .\nRUN git commit -m \"Testing fixes\""
-    elif image_type in ['first', 'last', 'extra']:
-        dockerfile_content += f"COPY {preds_path[image_type]} {datum['test_file']}\nRUN git add .\nRUN git commit -m \"Testing fixes\""
+    dockerfile_content += "RUN git add .\nRUN git commit -m \"Testing fixes\""
 
     return dockerfile_content
 
@@ -65,37 +62,21 @@ def process_images(dataset, original_namespace, new_namespace):
         # Save patches and preds_context to regular files
         patch_file_path = 'patch.diff'
         test_patch_file_path = 'test_patch.diff'
-        preds_paths = {
-            'first': 'preds_first.txt',
-            'last': 'preds_last_minus_one.txt',
-            'extra': 'preds_last.txt'
-        }
+
 
         with open(patch_file_path, 'w') as patch_file, \
-             open(test_patch_file_path, 'w') as test_patch_file, \
-             open(preds_paths['first'], 'w') as first_file, \
-             open(preds_paths['last'], 'w') as last_minus_one_file, \
-             open(preds_paths['extra'], 'w') as last_file:
-
+             open(test_patch_file_path, 'w') as test_patch_file:
             patch_file.write(datum['patch'])
             test_patch_file.write(datum['test_patch'])
-            first_file.write(datum['preds_context']['first'])
-            last_minus_one_file.write(datum['preds_context']['last_minus_one'])
-            last_file.write(datum['preds_context']['last'])
 
         # Define image types and corresponding tags
-        image_types = ['full', 'first', 'last', 'extra']
-        for image_type in image_types:
-            new_image_name = f'{new_namespace}/sweb.eval.x86_64.{datum["instance_id"].replace("__", "_s_")}_{image_type}:latest'
-            dockerfile_content = generate_dockerfile_content(full_image_name, dependencies, datum, image_type, patch_file_path, test_patch_file_path, preds_paths)
-            build_and_push_image(dockerfile_content, new_image_name)
+        new_image_name = f'{new_namespace}/sweb.eval.x86_64.{datum["instance_id"].replace("__", "_s_")}:latest'
+        dockerfile_content = generate_dockerfile_content(full_image_name, dependencies, datum, patch_file_path, test_patch_file_path)
+        build_and_push_image(dockerfile_content, new_image_name)
 
         # Cleanup regular files and images
         os.remove(patch_file_path)
         os.remove(test_patch_file_path)
-        os.remove(preds_paths['first'])
-        os.remove(preds_paths['last'])
-        os.remove(preds_paths['extra'])
         run_command(f'docker rmi {full_image_name}')
 
 
