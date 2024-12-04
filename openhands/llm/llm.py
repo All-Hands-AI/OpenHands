@@ -231,7 +231,7 @@ class LLM(RetryMixin, DebugMixin):
                 self.log_response(message_back)
 
                 # post-process the response first to calculate cost
-                self._post_completion(resp)
+                cost = self._post_completion(resp)
 
                 # log for evals or other scripts that need the raw completion
                 if self.config.log_completions:
@@ -240,13 +240,6 @@ class LLM(RetryMixin, DebugMixin):
                         self.config.log_completions_folder,
                         # use the metric model name (for draft editor)
                         f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
-                    )
-
-                    # get cost from metrics, _post_completion() computed the cost
-                    cost = (
-                        self.metrics.costs[-1].cost
-                        if len(self.metrics.costs) > 0
-                        else 0.0
                     )
 
                     # set up the dict to be logged
@@ -425,7 +418,7 @@ class LLM(RetryMixin, DebugMixin):
         )
         return model_name_supported
 
-    def _post_completion(self, response: ModelResponse) -> None:
+    def _post_completion(self, response: ModelResponse) -> float:
         """Post-process the completion response.
 
         Logs the cost and usage stats of the completion call.
@@ -482,6 +475,8 @@ class LLM(RetryMixin, DebugMixin):
         # log the stats
         if stats:
             logger.debug(stats)
+
+        return cur_cost
 
     def get_token_count(self, messages) -> int:
         """Get the number of tokens in a list of messages.
