@@ -31,7 +31,7 @@ class AgentConfig:
     llm_config: str | None = None
     use_microagents: bool = True
     disabled_microagents: list[str] | None = None
-    condenser: CondenserConfig = field(default_factory=NoOpCondenserConfig)
+    condenser: CondenserConfig = field(default_factory=NoOpCondenserConfig)  # type: ignore
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""

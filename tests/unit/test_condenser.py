@@ -2,7 +2,6 @@ from datetime import datetime
 from unittest.mock import MagicMock
 
 from openhands.core.config.condenser_config import (
-    CondenserConfig,
     LLMCondenserConfig,
     NoOpCondenserConfig,
     RecentEventsCondenserConfig,
@@ -27,15 +26,6 @@ def create_test_event(
     return event
 
 
-def test_default_condenser_config():
-    """Test that the default condenser is a NoOpCondenser."""
-    config = CondenserConfig()
-    assert config.type == 'noop'
-
-    condenser = Condenser.from_config(config)
-    assert isinstance(condenser, NoOpCondenser)
-
-
 def test_noop_condenser_from_config():
     """Test that the NoOpCondenser objects can be made from config."""
     config = NoOpCondenserConfig()
@@ -55,7 +45,7 @@ def test_noop_condenser():
     condenser = NoOpCondenser()
     result = condenser.condense(events)
 
-    assert result == events
+    assert result.condensed_events == events
 
 
 def test_recent_events_condenser_from_config():
@@ -82,16 +72,16 @@ def test_recent_events_condenser():
     condenser = RecentEventsCondenser(max_events=len(events) + 1)
     result = condenser.condense(events)
 
-    assert result == events
+    assert result.condensed_events == events
 
     # If the max_events are smaller than the number of events, only keep the last few.
     max_events = 2
     condenser = RecentEventsCondenser(max_events=max_events)
     result = condenser.condense(events)
 
-    assert len(result) == max_events
-    assert result[0]._message == 'Event 4'
-    assert result[1]._message == 'Event 5'
+    assert len(result.condensed_events) == max_events
+    assert result.condensed_events[0]._message == 'Event 4'
+    assert result.condensed_events[1]._message == 'Event 5'
 
 
 def test_llm_condenser_from_config():
@@ -124,8 +114,8 @@ def test_llm_condenser():
     condenser = LLMCondenser(llm=mock_llm)
     result = condenser.condense(events)
 
-    assert len(result) == 1
-    assert result[0]._message == 'Summary of events'
+    assert len(result.condensed_events) == 1
+    assert result.condensed_events[0]._message == 'Summary of events'
 
     # Verify LLM was called with correct prompt.
     mock_llm.completion.assert_called_once()

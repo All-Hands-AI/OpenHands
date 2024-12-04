@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from typing import Any
 
 from openhands.core.config.condenser_config import (
     CondenserConfig,
@@ -13,6 +15,12 @@ from openhands.events.event import Event
 from openhands.llm.llm import LLM
 
 
+@dataclass
+class CondensationResult:
+    condensed_events: list[Event]
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
 class Condenser(ABC):
     """Abstract condenser interface.
 
@@ -21,14 +29,14 @@ class Condenser(ABC):
     """
 
     @abstractmethod
-    def condense(self, events: list[Event]) -> list[Event]:
+    def condense(self, events: list[Event]) -> CondensationResult:
         """Condense a list of events into a potentially smaller list.
 
         Args:
             events (List[Event]): List of events to condense.
 
         Returns:
-            List[Event]: Condensed list of events.
+            CondensationResult: The condensed event sequence and any other relevant information.
         """
         pass
 
@@ -53,22 +61,19 @@ class Condenser(ABC):
             case LLMCondenserConfig(llm_config=llm_config):
                 return LLMCondenser(llm=LLM(config=llm_config))
             case _:
-                raise ValueError(f'Unknown condenser type: {config.type}')
+                raise ValueError(f'Unknown condenser config: {config}')
 
 
 class NoOpCondenser(Condenser):
     """A condenser that does nothing to the event sequence."""
 
-    def condense(self, events: list[Event]) -> list[Event]:
+    def condense(self, events: list[Event]) -> CondensationResult:
         """Returns the events list unchanged.
 
         Args:
             events (list[Event]): List of events to condense.
-
-        Returns:
-            list[Event]: The same list of events.
         """
-        return events
+        return CondensationResult(condensed_events=events)
 
 
 class RecentEventsCondenser(Condenser):
@@ -77,16 +82,13 @@ class RecentEventsCondenser(Condenser):
     def __init__(self, max_events: int = 10):
         self.max_events = max_events
 
-    def condense(self, events: list[Event]) -> list[Event]:
+    def condense(self, events: list[Event]) -> CondensationResult:
         """Keep only the most recent events (up to `max_events`).
 
         Args:
             events (list[Event]): List of events to condense.
-
-        Returns:
-            list[Event]: List containing only the most recent events.
         """
-        return events[-self.max_events :]
+        return CondensationResult(condensed_events=events[-self.max_events :])
 
 
 class LLMCondenser(Condenser):
@@ -95,14 +97,11 @@ class LLMCondenser(Condenser):
     def __init__(self, llm: LLM):
         self.llm = llm
 
-    def condense(self, events: list[Event]) -> list[Event]:
+    def condense(self, events: list[Event]) -> CondensationResult:
         """Attempts to condense the events by using a LLM.
 
         Args:
             events (list[Event]): List of events to condense.
-
-        Returns:
-            list[Event]: A list containing a single event summarizing the input sequence.
 
         Raises:
             Exception: If the LLM is unable to summarize the event sequence.
@@ -122,7 +121,8 @@ class LLMCondenser(Condenser):
             setattr(summary_event, '_timestamp', events[-1].timestamp)
             setattr(summary_event, '_source', events[-1].source)
 
-            return [summary_event]
+            return CondensationResult(condensed_events=[summary_event])
+
         except Exception as e:
             logger.error('Error condensing events: %s', str(e), exc_info=False)
             # TODO If the llm fails with ContextWindowExceededError, we can try to condense the memory chunk by chunk
