@@ -276,10 +276,6 @@ class LLM(RetryMixin, DebugMixin):
                     raise CloudFlareBlockageError(
                         'Request blocked by CloudFlare'
                     ) from e
-                # print traceback for exception e
-                import traceback
-
-                traceback.print_exc()
                 raise
 
         self._completion = wrapper
