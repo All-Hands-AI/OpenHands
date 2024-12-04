@@ -67,6 +67,7 @@ class AppConfig:
     modal_api_token_secret: str = ''
     disable_color: bool = False
     jwt_secret: str = uuid.uuid4().hex
+    attach_session_middleware_class: str = 'openhands.server.middleware.AttachSessionMiddleware'
     debug: bool = False
     file_uploads_max_file_size_mb: int = 0
     file_uploads_restrict_file_types: bool = False
