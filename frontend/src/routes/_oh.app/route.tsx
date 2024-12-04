@@ -1,6 +1,6 @@
 import { useDisclosure } from "@nextui-org/react";
 import React from "react";
-import { Outlet } from "react-router";
+import { Outlet, useSearchParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { Controls } from "#/components/features/controls/controls";
 import { RootState } from "#/store";
@@ -23,7 +23,9 @@ import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
 
 function App() {
-  const { token, gitHubToken } = useAuth();
+  const [searchParams] = useSearchParams();
+
+  const { gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
 
   const dispatch = useDispatch();
@@ -38,8 +40,8 @@ function App() {
   });
 
   const secrets = React.useMemo(
-    () => [gitHubToken, token].filter((secret) => secret !== null),
-    [gitHubToken, token],
+    () => [gitHubToken].filter((secret) => secret !== null),
+    [gitHubToken],
   );
 
   const Terminal = React.useMemo(
@@ -62,7 +64,7 @@ function App() {
   return (
     <WsClientProvider
       enabled
-      token={token}
+      token={searchParams.get("sessionId")}
       ghToken={gitHubToken}
       settings={settings}
     >

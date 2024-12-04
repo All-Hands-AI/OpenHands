@@ -145,7 +145,7 @@ export function handleActionMessage(message: ActionMessage) {
             ...baseAction,
             action: "message" as const,
             args: {
-              content: String(message.args?.content || message.message || ""),
+              thought: String(message.args?.content || message.message || ""),
               image_urls: Array.isArray(message.args?.image_urls)
                 ? message.args.image_urls
                 : null,
