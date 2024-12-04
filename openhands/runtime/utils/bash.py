@@ -430,7 +430,16 @@ class BashSession:
         last_pane_output = self._get_pane_content()
 
         _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
-
+        if len(_ps1_matches) < 1:
+            self.pane.enter()
+            time.sleep(0.1)
+            last_pane_output = self._get_pane_content()
+            _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
+            logger.warning(
+                'No PS1 metadata block found before the execution of a command. '
+                'Hitting enter to get a fresh PS1 prompt:\n---\n'
+                f'{last_pane_output!r}\n---'
+            )
         assert len(_ps1_matches) == 1, (
             'Expected exactly one PS1 metadata block BEFORE the execution of a command, '
             f'but got {len(_ps1_matches)} PS1 metadata blocks:\n---\n{last_pane_output!r}\n---'
