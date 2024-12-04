@@ -68,6 +68,7 @@ joblib = "*"
 openhands-aci = "^0.1.1"
 python-socketio = "^5.11.4"
 redis = "^5.2.0"
+sse-starlette = "^2.1.3"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
