@@ -163,6 +163,44 @@ describe("ProjectCard", () => {
     expect(title).toHaveValue("Project 1");
   });
 
+  test("clicking the title should not trigger the onClick handler", async () => {
+    const user = userEvent.setup();
+    render(
+      <ProjectCard
+        onClick={onClick}
+        onDelete={onDelete}
+        onChangeTitle={onChangeTitle}
+        name="Project 1"
+        repo={null}
+        lastUpdated="2021-10-01T12:00:00Z"
+      />,
+    );
+
+    const title = screen.getByTestId("project-card-title");
+    await user.click(title);
+
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  test("clicking the delete button should not trigger the onClick handler", async () => {
+    const user = userEvent.setup();
+    render(
+      <ProjectCard
+        onClick={onClick}
+        onDelete={onDelete}
+        onChangeTitle={onChangeTitle}
+        name="Project 1"
+        repo={null}
+        lastUpdated="2021-10-01T12:00:00Z"
+      />,
+    );
+
+    const deleteButton = screen.getByTestId("delete-button");
+    await user.click(deleteButton);
+
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
   describe("state indicator", () => {
     it("should render the 'cold' indicator by default", () => {
       render(

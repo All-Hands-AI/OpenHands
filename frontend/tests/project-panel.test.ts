@@ -11,9 +11,14 @@ test("redirect to /app with the session id as a query param", async ({
   const projectPanelButton = page.getByTestId("toggle-project-panel");
   await projectPanelButton.click();
 
+  const panel = page.getByTestId("project-panel");
+
   // select a project
-  const projectItem = page.getByTestId("project-card").first();
+  const projectItem = panel.getByTestId("project-card").first();
   await projectItem.click();
+
+  // panel should close
+  expect(panel).not.toBeVisible();
 
   await page.waitForURL("/app?sessionId=1");
   expect(page.url()).toBe("http://localhost:3001/app?sessionId=1");

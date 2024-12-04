@@ -89,7 +89,7 @@ export function Sidebar() {
           <div
             className="absolute h-full left-[calc(100%+12px)] z-20" // 12px padding (sidebar parent)
           >
-            <ProjectPanel />
+            <ProjectPanel onClose={() => setProjectPanelIsOpen(false)} />
           </div>
         )}
       </aside>

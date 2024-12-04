@@ -1,14 +1,31 @@
 import { render, screen, within } from "@testing-library/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+import {
+  QueryClientProvider,
+  QueryClient,
+  QueryClientConfig,
+} from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { ProjectPanel } from "#/components/features/project-panel/project-panel";
 import OpenHands from "#/api/open-hands";
 
 describe("ProjectPanel", () => {
+  const onCloseMock = vi.fn();
+
+  const renderProjectPanel = (config?: QueryClientConfig) =>
+    render(<ProjectPanel onClose={onCloseMock} />, {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={new QueryClient(config)}>
+          {children}
+        </QueryClientProvider>
+      ),
+    });
+
   beforeAll(() => {
-    vi.mock("react-router", () => ({
+    vi.mock("react-router", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("react-router")>()),
       Link: ({ children }: React.PropsWithChildren) => children,
+      useNavigate: () => vi.fn(),
     }));
   });
 
@@ -19,13 +36,7 @@ describe("ProjectPanel", () => {
   it.todo("should render a loading indicator when fetching projects");
 
   it("should render the projects", async () => {
-    render(<ProjectPanel />, {
-      wrapper: ({ children }) => (
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      ),
-    });
+    renderProjectPanel();
     const cards = await screen.findAllByTestId("project-card");
 
     expect(cards).toHaveLength(3);
@@ -35,13 +46,7 @@ describe("ProjectPanel", () => {
     const user = userEvent.setup();
     const getUserProjectsSpy = vi.spyOn(OpenHands, "getUserProjects");
 
-    render(<ProjectPanel />, {
-      wrapper: ({ children }) => (
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      ),
-    });
+    renderProjectPanel();
     expect(getUserProjectsSpy).toHaveBeenCalledTimes(1);
     const refreshButton = await screen.findByTestId("refresh-button");
 
@@ -53,13 +58,7 @@ describe("ProjectPanel", () => {
     const getUserProjectsSpy = vi.spyOn(OpenHands, "getUserProjects");
     getUserProjectsSpy.mockResolvedValue([]);
 
-    render(<ProjectPanel />, {
-      wrapper: ({ children }) => (
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      ),
-    });
+    renderProjectPanel();
 
     const emptyState = await screen.findByText("No projects found");
     expect(emptyState).toBeInTheDocument();
@@ -69,22 +68,12 @@ describe("ProjectPanel", () => {
     const getUserProjectsSpy = vi.spyOn(OpenHands, "getUserProjects");
     getUserProjectsSpy.mockRejectedValue(new Error("Failed to fetch projects"));
 
-    render(<ProjectPanel />, {
-      wrapper: ({ children }) => (
-        <QueryClientProvider
-          client={
-            new QueryClient({
-              defaultOptions: {
-                queries: {
-                  retry: false,
-                },
-              },
-            })
-          }
-        >
-          {children}
-        </QueryClientProvider>
-      ),
+    renderProjectPanel({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
     });
 
     const error = await screen.findByText("Failed to fetch projects");
@@ -93,13 +82,7 @@ describe("ProjectPanel", () => {
 
   it("should cancel deleting a project", async () => {
     const user = userEvent.setup();
-    render(<ProjectPanel />, {
-      wrapper: ({ children }) => (
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      ),
-    });
+    renderProjectPanel();
     let cards = await screen.findAllByTestId("project-card");
     const firstDeleteButton = within(cards[0]).getByTestId("delete-button");
 
@@ -119,13 +102,7 @@ describe("ProjectPanel", () => {
 
   it("should delete a project", async () => {
     const user = userEvent.setup();
-    render(<ProjectPanel />, {
-      wrapper: ({ children }) => (
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      ),
-    });
+    renderProjectPanel();
     let cards = await screen.findAllByTestId("project-card");
     const firstDeleteButton = within(cards[0]).getByTestId("delete-button");
 
@@ -147,13 +124,7 @@ describe("ProjectPanel", () => {
     const updateUserProjectSpy = vi.spyOn(OpenHands, "updateUserProject");
 
     const user = userEvent.setup();
-    render(<ProjectPanel />, {
-      wrapper: ({ children }) => (
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      ),
-    });
+    renderProjectPanel();
     const cards = await screen.findAllByTestId("project-card");
     const title = within(cards[0]).getByTestId("project-card-title");
 
@@ -171,13 +142,7 @@ describe("ProjectPanel", () => {
     const updateUserProjectSpy = vi.spyOn(OpenHands, "updateUserProject");
 
     const user = userEvent.setup();
-    render(<ProjectPanel />, {
-      wrapper: ({ children }) => (
-        <QueryClientProvider client={new QueryClient()}>
-          {children}
-        </QueryClientProvider>
-      ),
-    });
+    renderProjectPanel();
     const cards = await screen.findAllByTestId("project-card");
     const title = within(cards[0]).getByTestId("project-card-title");
 
@@ -197,5 +162,15 @@ describe("ProjectPanel", () => {
     await user.tab();
 
     expect(updateUserProjectSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("should call onClose after clicking a card", async () => {
+    renderProjectPanel();
+    const cards = await screen.findAllByTestId("project-card");
+    const firstCard = cards[0];
+
+    await userEvent.click(firstCard);
+
+    expect(onCloseMock).toHaveBeenCalledOnce();
   });
 });

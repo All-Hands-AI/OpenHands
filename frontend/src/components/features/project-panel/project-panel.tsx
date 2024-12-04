@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router";
+import { useNavigate } from "react-router";
 import { ProjectCard } from "./project-card";
 import { useUserProjects } from "#/hooks/query/use-user-projects";
 import { useDeleteProject } from "#/hooks/mutation/use-delete-project";
@@ -9,7 +9,13 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import RefreshIcon from "#/icons/refresh.svg?react";
 import { useUpdateProject } from "#/hooks/mutation/use-update-project";
 
-export function ProjectPanel() {
+interface ProjectPanelProps {
+  onClose: () => void;
+}
+
+export function ProjectPanel({ onClose }: ProjectPanelProps) {
+  const navigate = useNavigate();
+
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =
     React.useState(false);
   const [selectedProjectId, setSelectedProjectId] = React.useState<
@@ -47,6 +53,11 @@ export function ProjectPanel() {
       updateProject({ id: projectId, project: { name: newTitle } });
   };
 
+  const handleClickCard = (projectId: string) => {
+    navigate(`/app?sessionId=${projectId}`);
+    onClose();
+  };
+
   return (
     <div
       data-testid="project-panel"
@@ -76,19 +87,18 @@ export function ProjectPanel() {
         </div>
       )}
       {projects?.map((project) => (
-        <Link key={project.id} to={`/app?sessionId=${project.id}`}>
-          <ProjectCard
-            onClick={() => {}}
-            onDelete={() => handleDeleteProject(project.id)}
-            onChangeTitle={(title) =>
-              handleChangeTitle(project.id, project.name, title)
-            }
-            name={project.name}
-            repo={project.repo}
-            lastUpdated={project.lastUpdated}
-            state={project.state}
-          />
-        </Link>
+        <ProjectCard
+          key={project.id}
+          onClick={() => handleClickCard(project.id)}
+          onDelete={() => handleDeleteProject(project.id)}
+          onChangeTitle={(title) =>
+            handleChangeTitle(project.id, project.name, title)
+          }
+          name={project.name}
+          repo={project.repo}
+          lastUpdated={project.lastUpdated}
+          state={project.state}
+        />
       ))}
 
       {confirmDeleteModalVisible && (

@@ -36,6 +36,15 @@ export function ProjectCard({
     }
   };
 
+  const handleInputClick = (event: React.MouseEvent<HTMLInputElement>) => {
+    event.stopPropagation();
+  };
+
+  const handleDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    onDelete();
+  };
+
   return (
     <div
       data-testid="project-card"
@@ -46,6 +55,7 @@ export function ProjectCard({
         <input
           ref={inputRef}
           data-testid="project-card-title"
+          onClick={handleInputClick}
           onBlur={handleBlur}
           type="text"
           defaultValue={name}
@@ -54,7 +64,7 @@ export function ProjectCard({
 
         <div className="flex items-center gap-2">
           <ProjectStateIndicator state={state} />
-          <DeleteButton onClick={onDelete} />
+          <DeleteButton onClick={handleDelete} />
         </div>
       </div>
       {repo && (

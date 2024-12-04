@@ -1,7 +1,8 @@
+import React from "react";
 import { FaTrash } from "react-icons/fa";
 
 interface DeleteButtonProps {
-  onClick: () => void;
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 export function DeleteButton({ onClick }: DeleteButtonProps) {
