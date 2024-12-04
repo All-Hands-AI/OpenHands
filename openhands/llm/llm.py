@@ -228,14 +228,20 @@ class LLM(RetryMixin, DebugMixin):
                         f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
                     )
 
+                    # Calculate cost once and store it for later use in _post_completion
+                    cost = self._completion_cost(resp)
                     _d = {
                         'messages': messages,
                         'response': resp,
                         'args': args,
                         'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
                         'timestamp': time.time(),
-                        'cost': self._completion_cost(resp),
+                        'cost': cost,
                     }
+                    # Store cost in response hidden params to avoid recalculating it
+                    if not hasattr(resp, '_hidden_params'):
+                        resp._hidden_params = {}
+                    resp._hidden_params['response_cost'] = cost
                     if mock_function_calling:
                         # Overwrite response as non-fncall to be consistent with `messages``
                         _d['response'] = non_fncall_response
@@ -534,7 +540,8 @@ class LLM(RetryMixin, DebugMixin):
                 cost = litellm_completion_cost(
                     completion_response=response, **extra_kwargs
                 )
-            self.metrics.add_cost(cost)
+                # Only add cost to metrics if we're calculating it for the first time
+                self.metrics.add_cost(cost)
             return cost
         except Exception:
             self.cost_metric_supported = False
