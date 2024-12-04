@@ -23,9 +23,14 @@ from openhands.core.config.security_config import SecurityConfig
 load_dotenv()
 
 
-def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, str]):
-    """Reads the env-style vars and sets config attributes based on env vars or a config.toml dict.
-    Compatibility with vars like LLM_BASE_URL, AGENT_MEMORY_ENABLED, SANDBOX_TIMEOUT and others.
+def load_from_env(
+    cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, str]
+) -> None:
+    """Sets config attributes from environment variables or TOML dictionary.
+
+    Reads environment-style variables and updates the config attributes accordingly.
+    Supports configuration of LLM settings (e.g., `LLM_BASE_URL`), agent settings
+    (e.g., `AGENT_MEMORY_ENABLED`), sandbox settings (e.g., `SANDBOX_TIMEOUT`), and more.
 
     Args:
         cfg: The AppConfig object to set attributes on.
@@ -38,7 +43,7 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
         return next((t for t in types if t is not type(None)), None)
 
     # helper function to set attributes based on env vars
-    def set_attr_from_env(sub_config: Any, prefix=''):
+    def set_attr_from_env(sub_config: Any, prefix='') -> None:
         """Set attributes of a config dataclass based on environment variables."""
         for field_name, field_type in sub_config.__annotations__.items():
             # compute the expected env var name from the prefix and field name
@@ -84,7 +89,7 @@ def load_from_env(cfg: AppConfig, env_or_toml_dict: dict | MutableMapping[str, s
     set_attr_from_env(default_agent_config, 'AGENT_')
 
 
-def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
+def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml') -> None:
     """Load the config from the toml file. Supports both styles of config vars.
 
     Args:
