@@ -72,8 +72,8 @@ class AnnotateResult(TypedDict, total=False):
     pointLocation: str | None
 
 
-# TODO: Here is an error saying that generics are not yet supported.
 class ReplayCommandResult(TypedDict, total=False):
+    # TODO: Use generics instead of `Any`. We currently cannot that because it raised an error saying that generics are not yet supported. Not sure why.
     result: Any | None
     error: str | None
     errorDetails: str | None
