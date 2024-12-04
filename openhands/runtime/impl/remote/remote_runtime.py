@@ -10,7 +10,6 @@ import requests
 import tenacity
 
 from openhands.core.config import AppConfig
-from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
     BrowseInteractiveAction,
@@ -337,13 +336,13 @@ class RemoteRuntime(Runtime):
         assert 'runtime_id' in runtime_data
         assert runtime_data['runtime_id'] == self.runtime_id
         assert 'pod_status' in runtime_data
-        pod_status = runtime_data['pod_status']
+        pod_status = runtime_data['pod_status'].lower()
         self.log('debug', f'Pod status: {pod_status}')
 
         # FIXME: We should fix it at the backend of /start endpoint, make sure
         # the pod is created before returning the response.
         # Retry a period of time to give the cluster time to start the pod
-        if pod_status == 'Ready':
+        if pod_status == 'ready':
             try:
                 with self._send_request(
                     'GET',
@@ -359,14 +358,14 @@ class RemoteRuntime(Runtime):
                 )
             return
         elif (
-            pod_status == 'Not Found'
-            or pod_status == 'Pending'
-            or pod_status == 'Running'
+            pod_status == 'not found'
+            or pod_status == 'pending'
+            or pod_status == 'running'
         ):  # nb: Running is not yet Ready
             raise RuntimeNotReadyError(
                 f'Runtime (ID={self.runtime_id}) is not yet ready. Status: {pod_status}'
             )
-        elif pod_status in ('Failed', 'Unknown'):
+        elif pod_status in ('failed', 'unknown', 'crashloopbackoff'):
             # clean up the runtime
             self.close()
             raise RuntimeError(

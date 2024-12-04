@@ -18,7 +18,7 @@ export const useListFiles = (config?: UseListFilesConfig) => {
 
   return useQuery({
     queryKey: ["files", token, config?.path],
-    queryFn: () => OpenHands.getFiles(token!, config?.path),
-    enabled: isActive && config?.enabled && !!token,
+    queryFn: () => OpenHands.getFiles(config?.path),
+    enabled: !!(isActive && config?.enabled && token),
   });
 };

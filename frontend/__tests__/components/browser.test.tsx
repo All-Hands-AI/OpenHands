@@ -1,7 +1,8 @@
 import { screen } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { renderWithProviders } from "../../test-utils";
-import BrowserPanel from "#/components/browser";
+import { BrowserPanel } from "#/components/features/browser/browser";
+
 
 describe("Browser", () => {
   it("renders a message if no screenshotSrc is provided", () => {
