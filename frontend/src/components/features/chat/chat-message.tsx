@@ -47,7 +47,7 @@ export function ChatMessage({
         "rounded-xl relative",
         "flex flex-col gap-2",
         type === "user" && " max-w-[305px] p-4 bg-neutral-700 self-end",
-        type === "assistant" && "pb-4 max-w-full bg-tranparent",
+        type === "assistant" && "mt-6 max-w-full bg-tranparent",
       )}
     >
       <CopyToClipboardButton
