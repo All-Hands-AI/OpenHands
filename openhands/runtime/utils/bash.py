@@ -397,7 +397,10 @@ class BashSession:
 
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
         """Execute a command in the bash session."""
-        if action.command.strip() == '' and self.prev_status not in {
+        # Strip the command of any leading/trailing whitespace
+        command = action.command.strip()
+
+        if command == '' and self.prev_status not in {
             BashCommandStatus.CONTINUE,
             BashCommandStatus.NO_CHANGE_TIMEOUT,
             BashCommandStatus.HARD_TIMEOUT,
@@ -412,7 +415,7 @@ class BashSession:
         if self.prev_status == BashCommandStatus.COMPLETED:
             self._ready_for_next_command()
 
-        splited_commands = split_bash_commands(action.command)
+        splited_commands = split_bash_commands(command)
         if len(splited_commands) > 1:
             return ErrorObservation(
                 content=(
@@ -433,10 +436,11 @@ class BashSession:
             f'but got {len(_ps1_matches)} PS1 metadata blocks:\n---\n{last_pane_output!r}\n---'
         )
 
-        if action.command.strip() != '':
+        if command != '':
+            logger.debug(f'SENDING COMMAND: {command}')
             self.pane.send_keys(
-                action.command,
-                enter=not self._is_special_key(action.command),
+                command,
+                enter=not self._is_special_key(command),
             )
 
         # Loop until the command completes or times out
@@ -454,7 +458,7 @@ class BashSession:
                 and len(ps1_matches) == 2
             ):
                 return self._handle_completed_command(
-                    action.command,
+                    command,
                     pane_content=cur_pane_output,
                     ps1_matches=ps1_matches,
                 )
@@ -468,7 +472,7 @@ class BashSession:
                 and time_since_last_change >= self.NO_CHANGE_TIMEOUT_SECONDS
             ):
                 return self._handle_nochange_timeout_command(
-                    action.command,
+                    command,
                     pane_content=cur_pane_output,
                     ps1_matches=ps1_matches,
                 )
@@ -476,7 +480,7 @@ class BashSession:
             # 3) Execution timed out due to hard timeout
             if action.timeout and time.time() - start_time >= action.timeout:
                 return self._handle_hard_timeout_command(
-                    action.command,
+                    command,
                     pane_content=cur_pane_output,
                     ps1_matches=ps1_matches,
                     timeout=action.timeout,
