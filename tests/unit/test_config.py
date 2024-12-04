@@ -1,4 +1,6 @@
+import logging
 import os
+from io import StringIO
 
 import pytest
 
@@ -11,6 +13,7 @@ from openhands.core.config import (
     load_from_env,
     load_from_toml,
 )
+from openhands.core.logger import openhands_logger
 
 
 @pytest.fixture
@@ -363,6 +366,70 @@ def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
     assert default_config.get_llm_config().model == 'gpt-5-turbo-1106'
     assert default_config.get_llm_config().custom_llm_provider is None
     assert default_config.workspace_mount_path == '/home/user/project'
+
+
+def test_load_from_toml_file_not_found(default_config):
+    """Test loading configuration when the TOML file doesn't exist.
+
+    This ensures that:
+    1. The program doesn't crash when the config file is missing
+    2. The config object retains its default values
+    3. The application remains usable
+    """
+    # Try to load from a non-existent file
+    load_from_toml(default_config, 'nonexistent.toml')
+
+    # Verify that config object maintains default values
+    assert default_config.get_llm_config() is not None
+    assert default_config.get_agent_config() is not None
+    assert default_config.sandbox is not None
+
+
+def test_load_from_toml_partial_invalid(default_config, temp_toml_file, caplog):
+    """Test loading configuration with partially invalid TOML content.
+
+    This ensures that:
+    1. Valid configuration sections are properly loaded
+    2. Invalid fields are ignored gracefully
+    3. The config object maintains correct values for valid fields
+    4. Appropriate warnings are logged for invalid fields
+    """
+    with open(temp_toml_file, 'w', encoding='utf-8') as f:
+        f.write("""
+[core]
+debug = true
+
+[llm]
+invalid_field = "test"
+model = "gpt-4"
+
+[agent]
+memory_enabled = true
+""")
+
+    # Create a string buffer to capture log output
+    # Referenced from test_logging.py and `mock_logger`
+    log_output = StringIO()
+    handler = logging.StreamHandler(log_output)
+    handler.setLevel(logging.WARNING)
+    formatter = logging.Formatter('%(message)s')
+    handler.setFormatter(formatter)
+    openhands_logger.addHandler(handler)
+
+    try:
+        load_from_toml(default_config, temp_toml_file)
+        log_content = log_output.getvalue()
+
+        # Verify that the appropriate warning was logged
+        assert 'Cannot parse config from toml' in log_content
+        assert 'invalid_field' in log_content
+
+        # Verify valid configurations are loaded
+        assert default_config.debug is True
+        assert default_config.get_llm_config().model == 'claude-3-5-sonnet-20241022'
+        assert default_config.get_agent_config().memory_enabled is True
+    finally:
+        openhands_logger.removeHandler(handler)
 
 
 def test_finalize_config(default_config):
