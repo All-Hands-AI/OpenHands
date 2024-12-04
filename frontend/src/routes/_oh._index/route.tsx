@@ -7,6 +7,8 @@ import { setImportedProjectZip } from "#/state/initial-query-slice";
 import { GitHubRepositoriesSuggestionBox } from "#/components/github-repositories-suggestion-box";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
+import { useAppRepositories } from "#/hooks/query/use-app-repositories";
+
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
@@ -24,7 +26,8 @@ function Home() {
 
   const { data: config } = useConfig();
   const { data: user } = useGitHubUser();
-  const { data: repositories } = useUserRepositories();
+  const { data: repositories } =
+    config?.APP_MODE === "saas" ? useAppRepositories() : useUserRepositories();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
     gitHubToken,

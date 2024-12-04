@@ -52,12 +52,17 @@ export const retrieveGitHubUserRepositories = async (
   gitHubToken: string,
   page = 1,
   per_page = 30,
+  installationId: null | string = null,
 ): Promise<Response> => {
   const baseUrl = window.location.origin;
   const url = new URL("/api/github/repositories", baseUrl);
   url.searchParams.append("sort", "pushed");
   url.searchParams.append("page", page.toString());
   url.searchParams.append("per_page", per_page.toString());
+
+  if (installationId) {
+    url.searchParams.append("installation_id", installationId);
+  }
 
   return fetch(url.toString(), {
     headers: {

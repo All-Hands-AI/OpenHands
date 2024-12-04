@@ -11,6 +11,7 @@ def get_github_repositories(
     page: int = 1,
     per_page: int = 10,
     sort: str = 'pushed',
+    installation_id: int | None = None,
 ):
     # Extract the GitHub token from the headers
     github_token = request.headers.get('X-GitHub-Token')
