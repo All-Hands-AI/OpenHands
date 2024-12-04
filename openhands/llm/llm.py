@@ -219,38 +219,6 @@ class LLM(RetryMixin, DebugMixin):
                         )
                     resp.choices[0].message = fn_call_response_message
 
-                # log for evals or other scripts that need the raw completion
-                if self.config.log_completions:
-                    assert self.config.log_completions_folder is not None
-                    log_file = os.path.join(
-                        self.config.log_completions_folder,
-                        # use the metric model name (for draft editor)
-                        f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
-                    )
-
-                    # Calculate cost once and store it for later use in _post_completion
-                    cost = self._completion_cost(resp)
-                    _d = {
-                        'messages': messages,
-                        'response': resp,
-                        'args': args,
-                        'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
-                        'timestamp': time.time(),
-                        'cost': cost,
-                    }
-                    # Store cost in response hidden params to avoid recalculating it
-                    if not hasattr(resp, '_hidden_params'):
-                        resp._hidden_params = {}
-                    resp._hidden_params['response_cost'] = cost
-                    if mock_function_calling:
-                        # Overwrite response as non-fncall to be consistent with `messages``
-                        _d['response'] = non_fncall_response
-                        # Save fncall_messages/response separately
-                        _d['fncall_messages'] = original_fncall_messages
-                        _d['fncall_response'] = resp
-                    with open(log_file, 'w') as f:
-                        f.write(json.dumps(_d))
-
                 message_back: str = resp['choices'][0]['message']['content'] or ''
                 tool_calls = resp['choices'][0]['message'].get('tool_calls', [])
                 if tool_calls:
@@ -262,8 +230,36 @@ class LLM(RetryMixin, DebugMixin):
                 # log the LLM response
                 self.log_response(message_back)
 
-                # post-process the response
+                # post-process the response first to calculate cost
                 self._post_completion(resp)
+
+                # log for evals or other scripts that need the raw completion
+                if self.config.log_completions:
+                    assert self.config.log_completions_folder is not None
+                    log_file = os.path.join(
+                        self.config.log_completions_folder,
+                        # use the metric model name (for draft editor)
+                        f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
+                    )
+
+                    # Get cost from metrics instead of recalculating
+                    cost = self.metrics.costs[-1]['cost'] if self.metrics.costs else 0.0
+                    _d = {
+                        'messages': messages,
+                        'response': resp,
+                        'args': args,
+                        'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
+                        'timestamp': time.time(),
+                        'cost': cost,
+                    }
+                    if mock_function_calling:
+                        # Overwrite response as non-fncall to be consistent with `messages``
+                        _d['response'] = non_fncall_response
+                        # Save fncall_messages/response separately
+                        _d['fncall_messages'] = original_fncall_messages
+                        _d['fncall_response'] = resp
+                    with open(log_file, 'w') as f:
+                        f.write(json.dumps(_d))
 
                 return resp
             except APIError as e:
