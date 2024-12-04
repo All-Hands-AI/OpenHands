@@ -188,7 +188,9 @@ async def run_controller(
                 if exit_on_message:
                     message = '/exit'
                 elif fake_user_response_fn is None:
-                    message = input('Request user input >> ')
+                    # read until EOF (Ctrl+D on Unix, Ctrl+Z on Windows)
+                    print('Request user input (press Ctrl+D/Z when done) >> ')
+                    message = sys.stdin.read().rstrip()
                 else:
                     message = fake_user_response_fn(controller.get_state())
                 action = MessageAction(content=message)
