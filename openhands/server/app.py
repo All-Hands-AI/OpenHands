@@ -14,13 +14,13 @@ from openhands.server.middleware import (
     NoCacheMiddleware,
     RateLimitMiddleware,
 )
-from openhands.server.shared import config
 from openhands.server.routes.auth import app as auth_api_router
 from openhands.server.routes.conversation import app as conversation_api_router
 from openhands.server.routes.feedback import app as feedback_api_router
 from openhands.server.routes.files import app as files_api_router
 from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.security import app as security_api_router
+from openhands.server.shared import config
 from openhands.utils.import_utils import import_from
 
 app = FastAPI()
