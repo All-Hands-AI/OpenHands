@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { ProjectCard } from "./project-card";
 import { useUserProjects } from "#/hooks/query/use-user-projects";
 import { useDeleteProject } from "#/hooks/mutation/use-delete-project";
@@ -14,6 +14,7 @@ interface ProjectPanelProps {
 }
 
 export function ProjectPanel({ onClose }: ProjectPanelProps) {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =
@@ -41,6 +42,11 @@ export function ProjectPanel({ onClose }: ProjectPanelProps) {
     if (selectedProjectId) {
       deleteProject({ projectId: selectedProjectId });
       setConfirmDeleteModalVisible(false);
+
+      const sessionId = searchParams.get("sessionId");
+      if (sessionId === selectedProjectId) {
+        navigate("/");
+      }
     }
   };
 

@@ -49,6 +49,14 @@ function App() {
     [],
   );
 
+  const sessionId = searchParams.get("sessionId");
+
+  React.useEffect(() => {
+    dispatch(clearMessages());
+    dispatch(clearTerminal());
+    dispatch(clearJupyter());
+  }, [sessionId]);
+
   useEffectOnce(() => {
     dispatch(clearMessages());
     dispatch(clearTerminal());
@@ -64,7 +72,7 @@ function App() {
   return (
     <WsClientProvider
       enabled
-      token={searchParams.get("sessionId")}
+      token={sessionId}
       ghToken={gitHubToken}
       settings={settings}
     >
