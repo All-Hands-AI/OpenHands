@@ -4,12 +4,12 @@ import subprocess
 import time
 
 import docker
-from termcolor import colored
 
 from openhands import __version__ as oh_version
 from openhands.core.logger import RollingLogger
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder.base import RuntimeBuilder
+from openhands.utils.term_color import TermColor, colorize
 
 
 class DockerRuntimeBuilder(RuntimeBuilder):
@@ -189,7 +189,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         except docker.errors.ImageNotFound:
             if not pull_from_repo:
                 logger.debug(
-                    f'Image {image_name} {colored("not found", "red")} locally'
+                    f'Image {image_name} {colorize("not found", TermColor.WARNING)} locally'
                 )
                 return False
             try:
@@ -217,7 +217,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 logger.debug('Could not find image locally or in registry.')
                 return False
             except Exception as e:
-                msg = 'Image could not be pulled: '
+                msg = f'Image {colorize("could not be pulled", TermColor.ERROR)}: '
                 ex_msg = str(e)
                 if 'Not Found' in ex_msg:
                     msg += 'image not found in registry.'
