@@ -31,14 +31,22 @@ async def oh_action(connection_id: str, data: dict):
         latest_event_id = int(data.pop('latest_event_id', -1))
         kwargs = {k.lower(): v for k, v in (data.get('args') or {}).items()}
         session_config = SessionConfig(**kwargs)
-        await init_connection(connection_id, token, github_token, session_config, latest_event_id)
+        await init_connection(
+            connection_id, token, github_token, session_config, latest_event_id
+        )
         return
-    
+
     logger.info(f'sio:oh_action:{connection_id}')
     await session_manager.send_to_event_stream(connection_id, data)
 
 
-async def init_connection(connection_id: str, token: str | None, gh_token: str | None, session_config: SessionConfig, latest_event_id: int):
+async def init_connection(
+    connection_id: str,
+    token: str | None,
+    gh_token: str | None,
+    session_config: SessionConfig,
+    latest_event_id: int
+):
     if not await authenticate_github_user(gh_token):
         raise RuntimeError(status.WS_1008_POLICY_VIOLATION)
 
@@ -56,7 +64,9 @@ async def init_connection(connection_id: str, token: str | None, gh_token: str |
     await sio.emit('oh_event', {'token': token, 'status': 'ok'}, to=connection_id)
 
     # The session in question should exist, but may not actually be running locally...
-    event_stream = await session_manager.init_or_join_session(sid, connection_id, session_config)
+    event_stream = await session_manager.init_or_join_session(
+        sid, connection_id, session_config
+    )
 
     # Send events
     async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
