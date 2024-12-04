@@ -1,3 +1,4 @@
+import os
 import warnings
 
 with warnings.catch_warnings():
@@ -9,7 +10,6 @@ from fastapi import (
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.server.middleware import (
-    AttachSessionMiddleware,
     InMemoryRateLimiter,
     LocalhostCORSMiddleware,
     NoCacheMiddleware,
@@ -21,6 +21,13 @@ from openhands.server.routes.files import app as files_api_router
 from openhands.server.routes.github import app as github_api_router
 from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.security import app as security_api_router
+from openhands.utils.import_utils import import_from
+
+session_middleware_path = os.getenv('ATTACH_SESSION_MIDDLEWARE_CLASS')
+if session_middleware_path:
+    AttachSessionMiddleware = import_from(session_middleware_path)
+else:
+    from openhands.server.middleware import AttachSessionMiddleware
 
 app = FastAPI()
 app.add_middleware(

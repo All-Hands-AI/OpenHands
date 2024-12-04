@@ -1,3 +1,5 @@
+import os
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.action import ActionType
 from openhands.events.action import (
@@ -9,7 +11,20 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.auth import get_sid_from_token, sign_token
+from openhands.server.routes.public import APP_MODE
 from openhands.server.shared import config, session_manager, sio
+from openhands.utils.import_utils import import_from
+
+
+async def default_github_auth():
+    logger.info('Skipping GitHub authentication.')
+
+
+github_auth_path = os.getenv('ATTACH_GITHUB_AUTH')
+if github_auth_path:
+    github_auth = import_from(github_auth_path)
+else:
+    github_auth = default_github_auth
 
 
 @sio.event
@@ -19,9 +34,16 @@ async def connect(connection_id: str, environ):
 
 @sio.event
 async def oh_action(connection_id: str, data: dict):
+    # Ensure Github auth has been initialized properly
+    if APP_MODE == 'saas' and github_auth is default_github_auth:
+        raise ValueError(
+            "In 'saas' mode, ATTACH_GITHUB_AUTH must be set to a valid GitHub authentication function."
+        )
+
     # If it's an init, we do it here.
     action = data.get('action', '')
     if action == ActionType.INIT:
+        await github_auth()
         await init_connection(connection_id, data)
         return
 
