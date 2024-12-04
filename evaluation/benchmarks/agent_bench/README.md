@@ -4,7 +4,7 @@ This folder contains evaluation harness for evaluating agents on the [AgentBench
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## Start the evaluation
 

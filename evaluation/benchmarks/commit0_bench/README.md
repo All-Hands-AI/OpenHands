@@ -4,18 +4,17 @@ This folder contains the evaluation harness that we built on top of the original
 
 The evaluation consists of three steps:
 
-1. Environment setup: [install python environment](../README.md#development-environment), [configure LLM config](../README.md#configure-openhands-and-your-llm).
+1. Environment setup: [install python environment](../../README.md#development-environment), [configure LLM config](../../README.md#configure-openhands-and-your-llm).
 2. [Run Evaluation](#run-inference-on-commit0-instances): Generate a edit patch for each Commit0 Repo, and get the evaluation results
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## OpenHands Commit0 Instance-level Docker Support
 
 OpenHands supports using the Commit0 Docker for **[inference](#run-inference-on-commit0-instances).
 This is now the default behavior.
-
 
 ## Run Inference on Commit0 Instances
 

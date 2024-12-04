@@ -12,7 +12,7 @@ For more details on the ML-Bench task and dataset, please refer to the paper: [M
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## Run Inference on ML-Bench
 
