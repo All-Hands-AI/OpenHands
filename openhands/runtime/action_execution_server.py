@@ -9,8 +9,10 @@ import argparse
 import asyncio
 import base64
 import io
+import json
 import mimetypes
 import os
+import re
 import shutil
 import tempfile
 import time
@@ -199,6 +201,12 @@ class ActionExecutor:
 
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
             obs.content = obs.content.rstrip()
+            match = re.search(
+                r'<oh_aci_output>(.*?)</oh_aci_output>', obs.content, re.DOTALL
+            )
+            if match:
+                result_dict = json.loads(match.group(1))
+                obs.content = result_dict.get('formatted_output_and_error', '')
             if action.include_extra:
                 obs.content += (
                     f'\n[Jupyter current working directory: {self.bash_session.pwd}]'
