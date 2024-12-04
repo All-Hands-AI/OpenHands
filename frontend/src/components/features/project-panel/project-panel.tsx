@@ -1,5 +1,4 @@
 import React from "react";
-import { cn } from "#/utils/utils";
 import { ProjectCard } from "./project-card";
 import { useUserProjects } from "#/hooks/query/use-user-projects";
 import { useDeleteProject } from "#/hooks/mutation/use-delete-project";
@@ -49,10 +48,8 @@ export function ProjectPanel() {
 
   return (
     <div
-      className={cn(
-        "w-[350px] h-full border border-neutral-700 bg-neutral-900 rounded-xl z-20",
-        "absolute left-[calc(100%+12px)]", // 12px padding (sidebar parent)
-      )}
+      data-testid="project-panel"
+      className="w-[350px] h-full border border-neutral-700 bg-neutral-800 rounded-xl"
     >
       <div className="pt-4 px-4 flex items-center justify-between">
         <NewProjectButton />

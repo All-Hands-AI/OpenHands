@@ -1,5 +1,6 @@
 import React from "react";
 import { useLocation } from "react-router";
+import { FaBars } from "react-icons/fa";
 import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
@@ -29,6 +30,7 @@ export function Sidebar() {
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
   const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
     React.useState(false);
+  const [projectPanelIsOpen, setProjectPanelIsOpen] = React.useState(false);
 
   React.useEffect(() => {
     // If the github token is invalid, open the account settings modal again
@@ -68,6 +70,13 @@ export function Sidebar() {
             onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
           />
           <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
+          <button
+            data-testid="toggle-project-panel"
+            type="button"
+            onClick={() => setProjectPanelIsOpen((prev) => !prev)}
+          >
+            <FaBars fill="#A3A3A3" className="hover:opacity-80" />
+          </button>
           <DocsButton />
           {!!token && (
             <ExitProjectButton
@@ -76,8 +85,15 @@ export function Sidebar() {
           )}
         </nav>
 
-        <ProjectPanel />
+        {projectPanelIsOpen && (
+          <div
+            className="absolute h-full left-[calc(100%+12px)] z-20" // 12px padding (sidebar parent)
+          >
+            <ProjectPanel />
+          </div>
+        )}
       </aside>
+
       {accountSettingsModalOpen && (
         <AccountSettingsModal onClose={handleAccountSettingsModalClose} />
       )}
