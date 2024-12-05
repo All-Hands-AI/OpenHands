@@ -1,93 +1,44 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import React from "react";
-import {
-  isGitHubErrorReponse,
-  retrieveGitHubUserRepositories,
-} from "#/api/github";
-import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
+import { retrieveGitHubAppRepositories } from "#/api/github";
 import { useAuth } from "#/context/auth-context";
-import { useAppIntallations } from "./use-app-installations";
-
-interface appRepositoriesQueryFnProps {
-  pageParam: {
-    installationIndex: number; // Tracks the current installation
-    repoPage: number; // Tracks the current repository page for that installation
-  };
-  ghToken: string;
-  appInstallations: string[];
-  refreshToken: () => Promise<boolean>;
-  logout: () => void;
-}
-
-const appRepositoriesQueryFn = async ({
-  pageParam: { installationIndex, repoPage },
-  ghToken,
-  appInstallations,
-  refreshToken,
-  logout,
-}: appRepositoriesQueryFnProps) => {
-  const response = await retrieveGitHubUserRepositories(
-    ghToken,
-    refreshToken,
-    logout,
-    repoPage,
-    100,
-    appInstallations[installationIndex],
-  );
-
-  if (!(response instanceof Response)) {
-    throw new Error("Failed to fetch repositories");
-  }
-
-  const data = (await response.json()).repositories as
-    | GitHubRepository
-    | GitHubErrorReponse;
-
-  if (isGitHubErrorReponse(data)) {
-    throw new Error(data.message);
-  }
-
-  const link = response.headers.get("link") ?? "";
-  const nextPage = extractNextPageFromLink(link);
-  const nextInstallation =
-    !nextPage && installationIndex + 1 < appInstallations.length
-      ? installationIndex + 1
-      : null;
-
-  return {
-    data,
-    nextPage,
-    nextInstallation,
-    installationIndex,
-  };
-};
+import { useAppInstallations } from "./use-app-installations";
 
 export const useAppRepositories = () => {
-  const { gitHubToken, refreshToken, logout } = useAuth();
-  const { data: installations } = useAppIntallations();
+  const { gitHubToken } = useAuth();
+  const { data: installations } = useAppInstallations();
 
   const repos = useInfiniteQuery({
     queryKey: ["repositories", gitHubToken, installations],
-    queryFn: async ({ pageParam }) =>
-      appRepositoriesQueryFn({
-        pageParam: pageParam || { installationIndex: 0, repoPage: 1 },
-        ghToken: gitHubToken!,
-        appInstallations: installations || [],
-        refreshToken,
-        logout,
-      }),
+    queryFn: async ({
+      pageParam,
+    }: {
+      pageParam: { installation_index: number | null; repoPage: number | null };
+    }) => {
+      const { repoPage, installation_index } = pageParam;
 
-    initialPageParam: { installationIndex: 0, repoPage: 1 },
+      if (!installations) {
+        throw new Error("Missing installation list");
+      }
+
+      return retrieveGitHubAppRepositories(
+        repoPage || 1,
+        30,
+        installation_index || 0,
+        installations,
+      );
+    },
+    initialPageParam: { installation_index: 0, repoPage: 1 },
     getNextPageParam: (lastPage) => {
       if (lastPage.nextPage) {
         return {
-          installationIndex: lastPage.installationIndex,
+          installation_index: lastPage.installation_index,
           repoPage: lastPage.nextPage,
         };
       }
 
-      if (lastPage.nextInstallation !== null) {
-        return { installationIndex: lastPage.nextInstallation, repoPage: 1 };
+      if (lastPage.installation_index !== null) {
+        return { installation_index: lastPage.installation_index, repoPage: 1 };
       }
 
       return null;

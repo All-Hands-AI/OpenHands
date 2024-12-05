@@ -1,67 +1,6 @@
 import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
 import { github } from "./github-axios-instance";
-
-const handleRequest = async <T>(requestFn: () => Promise<T>): Promise<T> => {
-  try {
-    return await requestFn();
-  } catch (error) {
-    throw error;
-  }
-};
-
-const handleTokenRefresh = async (
-  refreshToken: () => Promise<boolean>,
-  logout: () => void,
-): Promise<boolean> => {
-  try {
-    const refreshed = await refreshToken();
-    if (!refreshed) {
-      logout();
-      throw new Error("Token refresh failed. User logged out.");
-    }
-    return true;
-  } catch (error) {
-    logout();
-    throw new Error("Token refresh failed. User logged out.");
-  }
-};
-
-const handleErrorResponse = (error: any): GitHubErrorReponse => {
-  console.error("GitHub API request failed:", error);
-  return {
-    message: error.message || "An unknown error occurred",
-    documentation_url: "",
-    status: error?.response?.status || 500,
-  };
-};
-
-/**
- * Retry for expired Github token
- * @param requestFn The Github API request function
- * @param refreshToken Function to issue refresh token
- * @param logout Function to logout user for expired token
- * @returns The headers for the GitHub API
- */
-export const githubAPIRequest = async <T>(
-  requestFn: () => Promise<T>,
-  refreshToken: () => Promise<boolean>,
-  logout: () => void,
-): Promise<T | GitHubErrorReponse> => {
-  try {
-    return await handleRequest(requestFn);
-  } catch (error: any) {
-    if (error?.response?.status === 401 || error?.response?.status === 403) {
-      try {
-        await handleTokenRefresh(refreshToken, logout);
-        return await handleRequest(requestFn); // Retry after successful token refresh
-      } catch (refreshError) {
-        return handleErrorResponse(refreshError);
-      }
-    } else {
-      return handleErrorResponse(error);
-    }
-  }
-};
+import { openHands } from "./open-hands-axios";
 
 /**
  * Checks if the data is a GitHub error response
@@ -77,18 +16,16 @@ export const isGitHubErrorReponse = <T extends object | Array<unknown>>(
  * Retrieves GitHub app installations for the user
  */
 
-export const retrieveGitHubAppInstallations = async (
-  token: string,
-  refreshToken: () => Promise<boolean>,
-  logout: () => void,
-): Promise<number[] | GitHubErrorReponse> => {
+export const retrieveGitHubAppInstallations = async (): Promise<
+  number[] | GitHubErrorReponse
+> => {
   const response = await github.get<{ installations: { id: number }[] }>(
     "/user/installations",
     {
       params: {},
       transformResponse: (data: string) => {
         const parsedData:
-          | { installations: { id: number } }
+          | { installations: { id: number }[] }
           | GitHubErrorReponse = JSON.parse(data);
 
         if (isGitHubErrorReponse(parsedData)) {
@@ -110,27 +47,80 @@ export const retrieveGitHubAppInstallations = async (
  * @param token The GitHub token
  * @returns A list of repositories or an error response
  */
+export const retrieveGitHubAppRepositories = async (
+  page = 1,
+  per_page = 30,
+  installation_index: number,
+  installations: number[],
+) => {
+  const installation_id = installations[installation_index];
+  const response = await openHands.get<{ repositories: GitHubRepository[] }>(
+    "/api/github/repositories",
+    {
+      params: {
+        sort: "pushed",
+        page,
+        per_page,
+        installation_id,
+      },
+      transformResponse: (data: string) => {
+        const parsedData:
+          | { repositories: GitHubRepository[] }
+          | GitHubErrorReponse = JSON.parse(data);
+
+        if (isGitHubErrorReponse(parsedData)) {
+          throw new Error(parsedData.message);
+        }
+
+        return parsedData;
+      },
+    },
+  );
+
+  const link = response.headers.link ?? "";
+  const nextPage = extractNextPageFromLink(link);
+  const nextInstallation = nextPage
+    ? installation_index
+    : !nextPage && installation_index + 1 < installations.length
+      ? installation_index + 1
+      : null;
+
+  return {
+    data: response.data.repositories,
+    nextPage,
+    installation_index: nextInstallation,
+  };
+};
+
+/**
+ * Given a GitHub token, retrieves the repositories of the authenticated user
+ * @param token The GitHub token
+ * @returns A list of repositories or an error response
+ */
 export const retrieveGitHubUserRepositories = async (
   page = 1,
   per_page = 30,
 ) => {
-  const response = await github.get<GitHubRepository[]>("/user/repos", {
-    params: {
-      sort: "pushed",
-      page,
-      per_page,
-    },
-    transformResponse: (data: string) => {
-      const parsedData: GitHubRepository[] | GitHubErrorReponse =
-        JSON.parse(data);
+  const response = await openHands.get<GitHubRepository[]>(
+    "/api/github/repositories",
+    {
+      params: {
+        sort: "pushed",
+        page,
+        per_page,
+      },
+      transformResponse: (data: string) => {
+        const parsedData: GitHubRepository[] | GitHubErrorReponse =
+          JSON.parse(data);
 
-      if (isGitHubErrorReponse(parsedData)) {
-        throw new Error(parsedData.message);
-      }
+        if (isGitHubErrorReponse(parsedData)) {
+          throw new Error(parsedData.message);
+        }
 
-      return parsedData;
+        return parsedData;
+      },
     },
-  });
+  );
 
   const link = response.headers.link ?? "";
   const nextPage = extractNextPageFromLink(link);

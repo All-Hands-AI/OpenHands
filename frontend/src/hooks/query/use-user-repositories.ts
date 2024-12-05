@@ -4,7 +4,7 @@ import { retrieveGitHubUserRepositories } from "#/api/github";
 import { useAuth } from "#/context/auth-context";
 
 export const useUserRepositories = () => {
-  const { gitHubToken, refreshToken, logout } = useAuth();
+  const { gitHubToken } = useAuth();
 
   const repos = useInfiniteQuery({
     queryKey: ["repositories", gitHubToken],

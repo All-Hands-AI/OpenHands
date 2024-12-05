@@ -6,7 +6,7 @@ import { useAuth } from "#/context/auth-context";
 import { useConfig } from "./use-config";
 
 export const useGitHubUser = () => {
-  const { gitHubToken, refreshToken, logout } = useAuth();
+  const { gitHubToken } = useAuth();
   const { data: config } = useConfig();
 
   const user = useQuery({

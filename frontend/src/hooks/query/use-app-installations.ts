@@ -6,18 +6,14 @@ import {
   retrieveGitHubAppInstallations,
 } from "#/api/github";
 
-export const useAppIntallations = () => {
+export const useAppInstallations = () => {
   const { data: config } = useConfig();
-  const { gitHubToken, refreshToken, logout } = useAuth();
+  const { gitHubToken } = useAuth();
 
   return useQuery({
     queryKey: ["installations", gitHubToken, config?.GITHUB_CLIENT_ID],
     queryFn: async () => {
-      const data = await retrieveGitHubAppInstallations(
-        gitHubToken!,
-        refreshToken,
-        logout,
-      );
+      const data = await retrieveGitHubAppInstallations();
       if (isGitHubErrorReponse(data)) {
         throw new Error("Failed to retrieve latest commit");
       }
