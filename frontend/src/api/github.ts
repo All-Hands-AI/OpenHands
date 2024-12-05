@@ -1,6 +1,10 @@
 import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
+import { AxiosResponseHeaders, InternalAxiosRequestConfig } from "axios";
 import { github } from "./github-axios-instance";
 import { openHands } from "./open-hands-axios";
+import { createAxiosError } from "./open-hands.utils";
+import { GitHubAccessTokenResponse } from "./open-hands.types";
+import { parse } from "path";
 
 /**
  * Checks if the data is a GitHub error response
@@ -13,26 +17,49 @@ export const isGitHubErrorReponse = <T extends object | Array<unknown>>(
   !!data && "message" in data && data.message !== undefined;
 
 /**
- * Retrieves GitHub app installations for the user
+ * Converts to Axios error is the response is GithubErrorResponse
  */
 
+const handleGithubResponse = (
+  parsedData:
+    | GitHubCommit[]
+    | GitHubRepository[]
+    | GitHubAppRepository
+    | GitHubUser
+    | GithubAppInstallation
+    | GitHubAccessTokenResponse
+    | GitHubErrorReponse,
+  config: InternalAxiosRequestConfig,
+  headers: AxiosResponseHeaders,
+  status: number | undefined,
+) => {
+  if (isGitHubErrorReponse(parsedData)) {
+    const error = createAxiosError(parsedData.message, config, status, headers);
+    throw error;
+  }
+
+  return parsedData;
+};
+
+/**
+ * Retrieves GitHub app installations for the user
+ */
 export const retrieveGitHubAppInstallations = async (): Promise<
   number[] | GitHubErrorReponse
 > => {
-  const response = await github.get<{ installations: { id: number }[] }>(
+  const response = await github.get<GithubAppInstallation>(
     "/user/installations",
     {
       params: {},
-      transformResponse: (data: string) => {
-        const parsedData:
-          | { installations: { id: number }[] }
-          | GitHubErrorReponse = JSON.parse(data);
-
-        if (isGitHubErrorReponse(parsedData)) {
-          throw new Error(parsedData.message);
-        }
-
-        return parsedData;
+      transformResponse: function (
+        this: InternalAxiosRequestConfig,
+        data: string,
+        headers,
+        status,
+      ) {
+        const parsedData: GithubAppInstallation | GitHubErrorReponse =
+          JSON.parse(data);
+        return handleGithubResponse(parsedData, this, headers, status);
       },
     },
   );
@@ -54,7 +81,7 @@ export const retrieveGitHubAppRepositories = async (
   installations: number[],
 ) => {
   const installation_id = installations[installation_index];
-  const response = await openHands.get<{ repositories: GitHubRepository[] }>(
+  const response = await openHands.get<GitHubAppRepository>(
     "/api/github/repositories",
     {
       params: {
@@ -63,16 +90,15 @@ export const retrieveGitHubAppRepositories = async (
         per_page,
         installation_id,
       },
-      transformResponse: (data: string) => {
-        const parsedData:
-          | { repositories: GitHubRepository[] }
-          | GitHubErrorReponse = JSON.parse(data);
-
-        if (isGitHubErrorReponse(parsedData)) {
-          throw new Error(parsedData.message);
-        }
-
-        return parsedData;
+      transformResponse: function (
+        this: InternalAxiosRequestConfig,
+        data: string,
+        headers,
+        status,
+      ) {
+        const parsedData: GitHubAppRepository | GitHubErrorReponse =
+          JSON.parse(data);
+        return handleGithubResponse(parsedData, this, headers, status);
       },
     },
   );
@@ -109,15 +135,16 @@ export const retrieveGitHubUserRepositories = async (
         page,
         per_page,
       },
-      transformResponse: (data: string) => {
+      transformResponse: function (
+        this: InternalAxiosRequestConfig,
+        data: string,
+        headers,
+        status,
+      ) {
         const parsedData: GitHubRepository[] | GitHubErrorReponse =
           JSON.parse(data);
 
-        if (isGitHubErrorReponse(parsedData)) {
-          throw new Error(parsedData.message);
-        }
-
-        return parsedData;
+        return handleGithubResponse(parsedData, this, headers, status);
       },
     },
   );
@@ -135,14 +162,14 @@ export const retrieveGitHubUserRepositories = async (
  */
 export const retrieveGitHubUser = async () => {
   const response = await github.get<GitHubUser>("/user", {
-    transformResponse: (data: string) => {
+    transformResponse: function (
+      this: InternalAxiosRequestConfig,
+      data: string,
+      headers,
+      status,
+    ) {
       const parsedData: GitHubUser | GitHubErrorReponse = JSON.parse(data);
-
-      if (isGitHubErrorReponse(parsedData)) {
-        throw new Error(parsedData.message);
-      }
-
-      return parsedData;
+      return handleGithubResponse(parsedData, this, headers, status);
     },
   });
 
@@ -163,24 +190,25 @@ export const retrieveGitHubUser = async () => {
 export const retrieveLatestGitHubCommit = async (
   repository: string,
 ): Promise<GitHubCommit> => {
-  const response = await github.get<GitHubCommit>(
+  const response = await github.get<GitHubCommit[]>(
     `/repos/${repository}/commits`,
     {
       params: {
         per_page: 1,
       },
-      transformResponse: (data: string) => {
+      transformResponse: function (
+        this: InternalAxiosRequestConfig,
+        data: string,
+        headers,
+        status,
+      ) {
         const parsedData: GitHubCommit[] | GitHubErrorReponse =
           JSON.parse(data);
 
-        if (isGitHubErrorReponse(parsedData)) {
-          throw new Error(parsedData.message);
-        }
-
-        return parsedData[0];
+        return handleGithubResponse(parsedData, this, headers, status);
       },
     },
   );
 
-  return response.data;
+  return response.data[0];
 };

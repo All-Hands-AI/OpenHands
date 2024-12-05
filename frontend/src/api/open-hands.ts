@@ -148,15 +148,9 @@ class OpenHands {
   ): Promise<string> {
     if (appMode === "oss") return "";
 
-    const response = await fetch("/api/refresh-token", {
-      method: "POST",
-      headers: {
-        "X-GitHub-Token": gitHubToken,
-      },
-    });
-
-    const payload: GitHubAccessTokenResponse = await response.json();
-    return payload.access_token;
+    const response: GitHubAccessTokenResponse =
+      await openHands.post("/api/refresh-token");
+    return response.access_token;
   }
 
   /**

@@ -10,7 +10,7 @@ import {
 import {
   setAuthTokenHeader as setGitHubAuthTokenHeader,
   removeAuthTokenHeader as removeGitHubAuthTokenHeader,
-  // setupAxiosInterceptors as setupGithubAxiosInterceptors,
+  setupAxiosInterceptors as setupGithubAxiosInterceptors,
 } from "#/api/github-axios-instance";
 
 interface AuthContextType {
@@ -78,7 +78,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
 
     setToken(storedToken);
     setGitHubToken(storedGitHubToken);
-    // setupGithubAxiosInterceptors(refreshToken, logout);
+    setupGithubAxiosInterceptors(refreshToken, logout);
   }, []);
 
   const logout = () => {
