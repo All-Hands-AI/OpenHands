@@ -1,8 +1,10 @@
 import React from "react";
 import { formatTimeDelta } from "#/utils/format-time-delta";
-import { DeleteButton } from "./delete-button";
 import { ProjectRepoLink } from "./project-repo-link";
 import { ProjectState, ProjectStateIndicator } from "./project-state-indicator";
+import { ContextMenu } from "../context-menu/context-menu";
+import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
+import { EllipsisButton } from "./ellipsis-button";
 
 interface ProjectCardProps {
   onClick: () => void;
@@ -63,22 +65,23 @@ export function ProjectCard({
           className="text-sm leading-6 font-semibold bg-transparent"
         />
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 relative">
           <ProjectStateIndicator state={state} />
-          <button
-            data-testid="ellipsis-button"
-            type="button"
+          <EllipsisButton
             onClick={(event) => {
               event.stopPropagation();
               setContextMenuVisible((prev) => !prev);
             }}
-          >
-            E
-          </button>
+          />
           {contextMenuVisible && (
-            <div data-testid="context-menu">
-              <DeleteButton onClick={handleDelete} />
-            </div>
+            <ContextMenu testId="context-menu" className="absolute left-full">
+              <ContextMenuListItem
+                testId="delete-button"
+                onClick={handleDelete}
+              >
+                Delete
+              </ContextMenuListItem>
+            </ContextMenu>
           )}
         </div>
       </div>
