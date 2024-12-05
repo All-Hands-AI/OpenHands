@@ -1,6 +1,6 @@
+import difflib
 import os
 import re
-import tempfile
 import threading
 import time
 import uuid
@@ -83,6 +83,7 @@ def _remove_command_prefix(command_output: str, command: str) -> str:
 
 class BashSession:
     POLL_INTERVAL = 0.5
+    CAPTURE_PANE_POLL_INTERVAL = 1
     PS1 = CmdOutputMetadata.to_ps1_prompt()
 
     def __init__(
@@ -114,7 +115,7 @@ class BashSession:
         self.pane.send_keys(
             f'export PROMPT_COMMAND=\'export PS1="{self.PS1}"\'; export PS2=""'
         )
-        time.sleep(0.2)  # Wait for command to take effect
+        time.sleep(0.1)  # Wait for command to take effect
         self._clear_screen()
 
         # Store the last command for interactive input handling
@@ -126,83 +127,92 @@ class BashSession:
         # Maintain the current working directory
         self._pwd = os.path.abspath(work_dir)
 
-        # Create a single named pipe for the session
-        self.output_pipe = os.path.join(tempfile.mkdtemp(), 'output.pipe')
-        try:
-            os.mkfifo(self.output_pipe)
-        except FileExistsError as e:
-            logger.warning(f'Failed to create named pipe: {e}. {self.output_pipe}')
-
-        # Add lock and current content
+        # Add terminal history for comparison
         self._pane_content_lock = threading.Lock()
-        self._current_pane_content = ''
+        self._terminal_history_lines: list[str] = []
         self._stop_reader = threading.Event()
         self._reader_thread: threading.Thread | None = None
+        self._last_capture_time: float = 0.0
 
-        # Start the pipe and reader thread
-        self._setup_pipe()
+        # # Start the reader thread
+        # self._setup_reader()
 
     def __del__(self):
         """Ensure the session is closed when the object is destroyed."""
         self.close()
 
-    def _setup_pipe(self):
-        """Set up pipe-pane to write to the named pipe."""
-        # Stop existing pipe
-        self.pane.cmd('pipe-pane')
+    # def _setup_reader(self):
+    #     """Set up background thread to poll capture_pane."""
+    #     assert self._reader_thread is None, 'Expected reader thread not running'
+    #     self._stop_reader.clear()
+    #     self._reader_thread = threading.Thread(
+    #         target=self._poll_capture_pane,
+    #         daemon=True,
+    #     )
+    #     self._reader_thread.start()
 
-        logger.debug(f'Setting up pipe-pane to {self.output_pipe}')
-        # Set up new pipe-pane
-        self.pane.cmd('pipe-pane', f'cat > {self.output_pipe} 2>&1')
+    #     # Hit enter to trigger the FIRST PS1
+    #     self.pane.enter()
+    #     time.sleep(1)
 
-        # Start the reader thread if not already running
-        assert self._reader_thread is None, 'Expected reader thread not running'
-        self._stop_reader.clear()
-        self._reader_thread = threading.Thread(
-            target=self._read_from_pipe,
-            daemon=True,
-        )
-        self._reader_thread.start()
+    def _get_pane_content(self) -> str:
+        """Capture the current pane content and update the buffer."""
+        current_time = time.time()
+        current_lines = self.pane.cmd('capture-pane', '-J', '-pS', '-').stdout
+        self._last_capture_time = current_time
 
-        # Hit enter to trigger the FIRST PS1
-        self.pane.enter()
-        time.sleep(1)
+        with self._pane_content_lock:
+            if not self._terminal_history_lines:
+                self._terminal_history_lines = current_lines
+                for line in current_lines:
+                    logger.debug(f'NEW LINE ADDED: {line}')
+            else:
+                matcher = difflib.SequenceMatcher(
+                    None, self._terminal_history_lines, current_lines
+                )
+                # Use opcodes to handle all cases including replacements and deletions
+                for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+                    if tag == 'equal':
+                        continue
+                    elif tag in ('insert', 'replace'):
+                        # Add new or replaced lines
+                        new_lines = current_lines[j1:j2]
+                        if i1 >= len(self._terminal_history_lines):
+                            # Append new lines at the end
+                            self._terminal_history_lines.extend(new_lines)
+                            for line in new_lines:
+                                logger.debug(f'NEW LINE APPENDED: {line}')
+                        else:
+                            # Replace existing lines
+                            self._terminal_history_lines[i1:i2] = new_lines
+                            for line in new_lines:
+                                logger.debug(f'REPLACED LINE: {line}')
+                    # we will ignore deletions (e.g., stale history)
+            return '\n'.join(self._terminal_history_lines)
 
-    def _read_from_pipe(self):
-        """Read from the named pipe and append to current content."""
-        try:
-            with open(self.output_pipe, 'r', buffering=1) as pipe:
-                while not self._stop_reader.is_set():
-                    line = pipe.readline()
-                    if not line:
-                        break
-                    with self._pane_content_lock:
-                        self._current_pane_content += line
-                    logger.debug(f'PIPE OUTPUT: {line.strip()}')
-        except Exception as e:
-            logger.error(f'Error reading from pipe: {e}')
+    # def _poll_capture_pane(self):
+    #     """Continuously poll capture_pane and update the content buffer."""
+    #     try:
+    #         while not self._stop_reader.is_set():
+    #             self._capture_pane()
+    #             logger.debug(f'CAPTURE OUTPUT: {self._terminal_history_lines!r}')
+    #             time.sleep(self.POLL_INTERVAL)
+    #     except Exception as e:
+    #         logger.error(f'Error polling capture_pane: {e}')
+
+    # def _get_pane_content(self) -> str:
+    #     """Get the current pane content from the buffer."""
+    #     with self._pane_content_lock:
+    #         return self._capture_pane()
 
     def close(self):
-        """Clean up the session and all output files."""
+        """Clean up the session."""
         if self._closed:
             return
 
-        # Stop the reader thread
         if self._reader_thread and self._reader_thread.is_alive():
             self._stop_reader.set()
-            self._reader_thread.join(
-                timeout=1.0
-            )  # Wait up to 1 second for thread to finish
-
-        # Stop piping output
-        self.pane.cmd('pipe-pane')
-
-        # Clean up all output files and directory
-        if os.path.exists(self.output_pipe):
-            os.remove(self.output_pipe)
-            # also remove the directory if empty
-            if not os.listdir(os.path.dirname(self.output_pipe)):
-                os.rmdir(os.path.dirname(self.output_pipe))
+            self._reader_thread.join(timeout=1.0)
 
         self.session.kill_session()
         self._closed = True
@@ -222,15 +232,6 @@ class BashSession:
         self.pane.send_keys('C-l', enter=False)
         time.sleep(0.1)
         self.pane.cmd('clear-history')
-
-    def _get_pane_content(self) -> str:
-        """Get the current content."""
-        with self._pane_content_lock:
-            # Clean up the bracketed paste mode and terminal clear sequence
-            cleaned = re.sub(
-                r'\x1b\[\?2004[hl]|\x1b\[H|\x1b\[J', '', self._current_pane_content
-            )
-            return cleaned
 
     def _get_command_output(
         self,
@@ -274,9 +275,9 @@ class BashSession:
             pane_content, ps1_matches
         )
         metadata.suffix = (
-            f'\n\n[The command completed with exit code {metadata.exit_code}.]'
+            f'\n[The command completed with exit code {metadata.exit_code}.]'
             if not is_special_key
-            else f'\n\n[The command completed with exit code {metadata.exit_code}. CTRL+{command[-1].upper()} was sent.]'
+            else f'\n[The command completed with exit code {metadata.exit_code}. CTRL+{command[-1].upper()} was sent.]'
         )
         command_output = self._get_command_output(
             command,
@@ -285,7 +286,7 @@ class BashSession:
         )
         self.prev_status = BashCommandStatus.COMPLETED
         self.prev_output = ''  # Reset previous command output
-        self._clear_screen()
+        self._ready_for_next_command()
         return CmdOutputObservation(
             content=command_output,
             command=command,
@@ -309,7 +310,7 @@ class BashSession:
         )
         metadata = CmdOutputMetadata()  # No metadata available
         metadata.suffix = (
-            f'\n\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
+            f'\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
             "You may wait longer to see additional output by sending empty command '', "
             'send other commands to interact with the current process, '
             'or send keys to interrupt/kill the command.]'
@@ -344,7 +345,7 @@ class BashSession:
         )
         metadata = CmdOutputMetadata()  # No metadata available
         metadata.suffix = (
-            f'\n\n[The command timed out after {timeout} seconds. '
+            f'\n[The command timed out after {timeout} seconds. '
             "You may wait longer to see additional output by sending empty command '', "
             'send other commands to interact with the current process, '
             'or send keys to interrupt/kill the command.]'
@@ -366,11 +367,8 @@ class BashSession:
         """Reset the content buffer for a new command."""
         # Clear the current content
         with self._pane_content_lock:
-            self._current_pane_content = ''
-
-        # Hit enter to ensure we get a fresh PS1 prompt
-        self.pane.enter()
-        time.sleep(0.1)  # Small delay to ensure prompt appears
+            self._terminal_history_lines = []
+        self._clear_screen()
 
     def _combine_outputs_between_matches(
         self, pane_content: str, ps1_matches: list[re.Match]
@@ -393,7 +391,6 @@ class BashSession:
                 ps1_matches[i].end() + 1 : ps1_matches[i + 1].start()
             ]
             combined_output += output_segment + '\n'
-        logger.debug(f'COMBINED OUTPUT: {combined_output}')
         return combined_output
 
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
@@ -412,9 +409,6 @@ class BashSession:
                 command='',
                 metadata=CmdOutputMetadata(),
             )
-
-        if self.prev_status == BashCommandStatus.COMPLETED:
-            self._ready_for_next_command()
 
         splited_commands = split_bash_commands(command)
         if len(splited_commands) > 1:
