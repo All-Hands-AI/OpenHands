@@ -8,6 +8,7 @@ import { NewProjectButton } from "./new-project-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useUpdateProject } from "#/hooks/mutation/use-update-project";
 import { useEndSession } from "#/hooks/use-end-session";
+import { ExitProjectModal } from "./exit-project-modal";
 
 interface ProjectPanelProps {
   onClose: () => void;
@@ -21,6 +22,8 @@ export function ProjectPanel({ onClose }: ProjectPanelProps) {
   const endSession = useEndSession();
 
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =
+    React.useState(false);
+  const [confirmExitProjectModalVisible, setConfirmExitProjectModalVisible] =
     React.useState(false);
   const [selectedProjectId, setSelectedProjectId] = React.useState<
     string | null
@@ -68,7 +71,11 @@ export function ProjectPanel({ onClose }: ProjectPanelProps) {
       className="w-[350px] h-full border border-neutral-700 bg-neutral-800 rounded-xl"
     >
       <div className="pt-4 px-4 flex items-center justify-between">
-        {location.pathname.startsWith("/conversation") && <NewProjectButton />}
+        {location.pathname.startsWith("/conversation") && (
+          <NewProjectButton
+            onClick={() => setConfirmExitProjectModalVisible(true)}
+          />
+        )}
         {isFetching && <LoadingSpinner size="small" />}
       </div>
       {error && (
@@ -100,6 +107,16 @@ export function ProjectPanel({ onClose }: ProjectPanelProps) {
         <ConfirmDeleteModal
           onConfirm={handleConfirmDelete}
           onCancel={() => setConfirmDeleteModalVisible(false)}
+        />
+      )}
+
+      {confirmExitProjectModalVisible && (
+        <ExitProjectModal
+          onConfirm={() => {
+            endSession();
+            onClose();
+          }}
+          onClose={() => setConfirmExitProjectModalVisible(false)}
         />
       )}
     </div>

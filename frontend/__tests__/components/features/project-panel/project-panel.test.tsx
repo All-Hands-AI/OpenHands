@@ -34,7 +34,7 @@ describe("ProjectPanel", () => {
       ...(await importOriginal<typeof import("react-router")>()),
       Link: ({ children }: React.PropsWithChildren) => children,
       useNavigate: vi.fn(() => vi.fn()),
-      useLocation: vi.fn(() => ({ pathname: "/" })),
+      useLocation: vi.fn(() => ({ pathname: "/conversation" })),
       useSearchParams: vi.fn(() => [{ get: searchParamsGetMock }]),
     }));
 
@@ -212,5 +212,52 @@ describe("ProjectPanel", () => {
     await userEvent.click(firstCard);
 
     expect(onCloseMock).toHaveBeenCalledOnce();
+  });
+
+  describe("New Project Button", () => {
+    it("should display a confirmation modal when clicking", async () => {
+      const user = userEvent.setup();
+      renderProjectPanel();
+
+      expect(
+        screen.queryByTestId("confirm-new-project-modal"),
+      ).not.toBeInTheDocument();
+
+      const newProjectButton = screen.getByTestId("new-project-button");
+      await user.click(newProjectButton);
+
+      const modal = screen.getByTestId("confirm-new-project-modal");
+      expect(modal).toBeInTheDocument();
+    });
+
+    it("should call endSession and close panel after confirming", async () => {
+      const user = userEvent.setup();
+      renderProjectPanel();
+
+      const newProjectButton = screen.getByTestId("new-project-button");
+      await user.click(newProjectButton);
+
+      const confirmButton = screen.getByText("Confirm");
+      await user.click(confirmButton);
+
+      expect(endSessionMock).toHaveBeenCalledOnce();
+      expect(onCloseMock).toHaveBeenCalledOnce();
+    });
+
+    it("should close the modal when cancelling", async () => {
+      const user = userEvent.setup();
+      renderProjectPanel();
+
+      const newProjectButton = screen.getByTestId("new-project-button");
+      await user.click(newProjectButton);
+
+      const cancelButton = screen.getByText("Cancel");
+      await user.click(cancelButton);
+
+      expect(endSessionMock).not.toHaveBeenCalled();
+      expect(
+        screen.queryByTestId("confirm-new-project-modal"),
+      ).not.toBeInTheDocument();
+    });
   });
 });
