@@ -1,4 +1,3 @@
-import os
 import warnings
 
 import requests
@@ -17,15 +16,9 @@ from openhands.controller.agent import Agent
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm import bedrock
-from openhands.server.shared import config
+from openhands.server.shared import config, openhands_config
 
 app = APIRouter(prefix='/api/options')
-
-APP_MODE = os.environ.get('APP_MODE', 'oss')
-POSTHOG_CLIENT_KEY = os.environ.get(
-    'POSTHOG_CLIENT_KEY', 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
-)
-GITHUB_CLIENT_ID = os.environ.get('GITHUB_APP_CLIENT_ID', '')
 
 
 @app.get('/models')
@@ -120,9 +113,9 @@ async def get_config():
     """
 
     config = {
-        'APP_MODE': APP_MODE,
-        'GITHUB_CLIENT_ID': GITHUB_CLIENT_ID,
-        'POSTHOG_CLIENT_KEY': POSTHOG_CLIENT_KEY,
+        'APP_MODE': openhands_config.APP_MODE,
+        'GITHUB_CLIENT_ID': openhands_config.GITHUB_CLIENT_ID,
+        'POSTHOG_CLIENT_KEY': openhands_config.POSTHOG_CLIENT_KEY,
     }
 
     return config

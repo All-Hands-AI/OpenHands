@@ -12,7 +12,6 @@ from starlette.types import ASGIApp
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.auth import get_sid_from_token
-from openhands.server.routes.public import APP_MODE
 from openhands.server.shared import config, session_manager
 
 
@@ -157,7 +156,7 @@ class AttachSessionMiddleware:
         await session_manager.detach_from_conversation(request.state.conversation)
 
     async def __call__(self, request: Request, call_next: Callable):
-        if not self._should_attach(request) or APP_MODE != 'oss':
+        if not self._should_attach(request):
             return await call_next(request)
 
         response = await self._attach_session(request)
