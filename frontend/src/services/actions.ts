@@ -72,7 +72,8 @@ export function handleActionMessage(message: ActionMessage) {
     if (message.args && message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
-    store.dispatch(addAssistantAction(message)); // eslint-disable-line @ ts-nocheck
+    // @ts-expect-error TODO: fix
+    store.dispatch(addAssistantAction(message));
   }
 
   if (message.action in messageActions) {
