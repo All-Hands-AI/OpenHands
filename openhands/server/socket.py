@@ -13,6 +13,7 @@ from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.auth import get_sid_from_token, sign_token
 from openhands.server.github_utils import authenticate_github_user
+from openhands.server.session.session_init_data import SessionInitData
 from openhands.server.shared import config, session_manager, sio
 
 
@@ -26,19 +27,30 @@ async def oh_action(connection_id: str, data: dict):
     # If it's an init, we do it here.
     action = data.get('action', '')
     if action == ActionType.INIT:
-        await init_connection(connection_id, data)
+        token = data.pop('token', None)
+        github_token = data.pop('github_token', None)
+        latest_event_id = int(data.pop('latest_event_id', -1))
+        kwargs = {k.lower(): v for k, v in (data.get('args') or {}).items()}
+        session_init_data = SessionInitData(**kwargs)
+        await init_connection(
+            connection_id, token, github_token, session_init_data, latest_event_id
+        )
         return
 
     logger.info(f'sio:oh_action:{connection_id}')
     await session_manager.send_to_event_stream(connection_id, data)
 
 
-async def init_connection(connection_id: str, data: dict):
-    gh_token = data.pop('github_token', None)
+async def init_connection(
+    connection_id: str,
+    token: str | None,
+    gh_token: str | None,
+    session_init_data: SessionInitData,
+    latest_event_id: int,
+):
     if not await authenticate_github_user(gh_token):
         raise RuntimeError(status.WS_1008_POLICY_VIOLATION)
 
-    token = data.pop('token', None)
     if token:
         sid = get_sid_from_token(token, config.jwt_secret)
         if sid == '':
@@ -52,10 +64,10 @@ async def init_connection(connection_id: str, data: dict):
     token = sign_token({'sid': sid}, config.jwt_secret)
     await sio.emit('oh_event', {'token': token, 'status': 'ok'}, to=connection_id)
 
-    latest_event_id = int(data.pop('latest_event_id', -1))
-
     # The session in question should exist, but may not actually be running locally...
-    event_stream = await session_manager.init_or_join_session(sid, connection_id, data)
+    event_stream = await session_manager.init_or_join_session(
+        sid, connection_id, session_init_data
+    )
 
     # Send events
     agent_state_changed = None
