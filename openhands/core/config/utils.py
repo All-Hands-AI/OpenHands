@@ -90,6 +90,10 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
     Args:
         cfg: The AppConfig object to update attributes of.
         toml_file: The path to the toml file. Defaults to 'config.toml'.
+
+    See Also:
+    - `config.template.toml` for the full list of config options.
+    - `SandboxConfig` for the sandbox-specific config options.
     """
     # try to read the config.toml file into the config object
     try:
@@ -157,11 +161,11 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     )
             except (TypeError, KeyError) as e:
                 logger.openhands_logger.warning(
-                    f'Cannot parse config from toml, toml values have not been applied.\n Error: {e}',
+                    f'Cannot parse [{key}] config from toml, values have not been applied.\nError: {e}',
                     exc_info=False,
                 )
         else:
-            logger.openhands_logger.warning(f'Unknown key in {toml_file}: "{key}')
+            logger.openhands_logger.warning(f'Unknown section [{key}] in {toml_file}')
 
     try:
         # set sandbox config from the toml file
@@ -175,7 +179,9 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                 # read the key in sandbox and remove it from core
                 setattr(sandbox_config, new_key, core_config.pop(key))
             else:
-                logger.openhands_logger.warning(f'Unknown sandbox config: {key}')
+                logger.openhands_logger.warning(
+                    f'Unknown config key "{key}" in [sandbox] section'
+                )
 
         # the new style values override the old style values
         if 'sandbox' in toml_config:
@@ -187,10 +193,12 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
             if hasattr(cfg, key):
                 setattr(cfg, key, value)
             else:
-                logger.openhands_logger.warning(f'Unknown core config key: {key}')
+                logger.openhands_logger.warning(
+                    f'Unknown config key "{key}" in [core] section'
+                )
     except (TypeError, KeyError) as e:
         logger.openhands_logger.warning(
-            f'Cannot parse config from toml, toml values have not been applied.\nError: {e}',
+            f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}',
             exc_info=False,
         )
 

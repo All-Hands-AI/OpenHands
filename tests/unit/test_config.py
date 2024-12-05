@@ -326,6 +326,42 @@ user_id = 1001
     assert default_config.sandbox.user_id == 1001
 
 
+def test_security_config_from_toml(default_config, temp_toml_file):
+    """Test loading security specific configurations."""
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write(
+            """
+[core]  # make sure core is loaded first
+workspace_base = "/opt/files/workspace"
+
+[llm]
+model = "test-model"
+
+[security]
+confirmation_mode = false
+security_analyzer = "semgrep"
+"""
+        )
+
+    load_from_toml(default_config, temp_toml_file)
+    assert default_config.security.confirmation_mode is False
+    assert default_config.security.security_analyzer == 'semgrep'
+
+
+def test_security_config_from_dict():
+    """Test creating SecurityConfig instance from dictionary."""
+    from openhands.core.config.security_config import SecurityConfig
+
+    # Test with all fields
+    config_dict = {'confirmation_mode': True, 'security_analyzer': 'some_analyzer'}
+
+    security_config = SecurityConfig.from_dict(config_dict)
+
+    # Verify all fields are correctly set
+    assert security_config.confirmation_mode is True
+    assert security_config.security_analyzer == 'some_analyzer'
+
+
 def test_defaults_dict_after_updates(default_config):
     # Test that `defaults_dict` retains initial values after updates.
     initial_defaults = default_config.defaults_dict
@@ -355,10 +391,11 @@ def test_invalid_toml_format(monkeypatch, temp_toml_file, default_config):
     monkeypatch.setenv('LLM_MODEL', 'gpt-5-turbo-1106')
     monkeypatch.setenv('WORKSPACE_MOUNT_PATH', '/home/user/project')
     monkeypatch.delenv('LLM_API_KEY', raising=False)
+
     with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
         toml_file.write('INVALID TOML CONTENT')
 
-    load_from_toml(default_config)
+    load_from_toml(default_config, temp_toml_file)
     load_from_env(default_config, os.environ)
     default_config.jwt_secret = None  # prevent leak
     for llm in default_config.llms.values():
@@ -385,6 +422,39 @@ def test_load_from_toml_file_not_found(default_config):
     assert default_config.sandbox is not None
 
 
+def test_core_not_in_toml(default_config, temp_toml_file):
+    """Test loading configuration when the core section is not in the TOML file.
+
+    default values should be used for the missing sections.
+    """
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write("""
+[llm]
+model = "test-model"
+
+[agent]
+memory_enabled = true
+
+[sandbox]
+timeout = 1
+base_container_image = "custom_image"
+user_id = 1001
+
+[security]
+security_analyzer = "semgrep"
+""")
+
+    load_from_toml(default_config, temp_toml_file)
+    assert default_config.get_llm_config().model == 'claude-3-5-sonnet-20241022'
+    assert default_config.get_agent_config().memory_enabled is False
+    assert (
+        default_config.sandbox.base_container_image
+        == 'nikolaik/python-nodejs:python3.12-nodejs22'
+    )
+    assert default_config.sandbox.user_id == 1007
+    assert default_config.security.security_analyzer is None
+
+
 def test_load_from_toml_partial_invalid(default_config, temp_toml_file, caplog):
     """Test loading configuration with partially invalid TOML content.
 
@@ -393,6 +463,8 @@ def test_load_from_toml_partial_invalid(default_config, temp_toml_file, caplog):
     2. Invalid fields are ignored gracefully
     3. The config object maintains correct values for valid fields
     4. Appropriate warnings are logged for invalid fields
+
+    See `openhands/core/schema/config.py` for the list of valid fields.
     """
     with open(temp_toml_file, 'w', encoding='utf-8') as f:
         f.write("""
@@ -400,11 +472,15 @@ def test_load_from_toml_partial_invalid(default_config, temp_toml_file, caplog):
 debug = true
 
 [llm]
+# No set in `openhands/core/schema/config.py`
 invalid_field = "test"
 model = "gpt-4"
 
 [agent]
 memory_enabled = true
+
+[sandbox]
+invalid_field_in_sandbox = "test"
 """)
 
     # Create a string buffer to capture log output
@@ -420,12 +496,25 @@ memory_enabled = true
         load_from_toml(default_config, temp_toml_file)
         log_content = log_output.getvalue()
 
+        # invalid [llm] config
         # Verify that the appropriate warning was logged
-        assert 'Cannot parse config from toml' in log_content
+        assert 'Cannot parse [llm] config from toml' in log_content
+        assert 'values have not been applied' in log_content
+        # Error: LLMConfig.__init__() got an unexpected keyword argume
+        assert (
+            'Error: LLMConfig.__init__() got an unexpected keyword argume'
+            in log_content
+        )
         assert 'invalid_field' in log_content
 
-        # Verify valid configurations are loaded
-        assert default_config.debug is True
+        # invalid [sandbox] config
+        assert 'Cannot parse [sandbox] config from toml' in log_content
+        assert 'values have not been applied' in log_content
+        assert 'invalid_field_in_sandbox' in log_content
+
+        # Verify valid configurations are loaded. Load from default instead of `config.toml`
+        # assert default_config.debug is True
+        assert default_config.debug is False
         assert default_config.get_llm_config().model == 'claude-3-5-sonnet-20241022'
         assert default_config.get_agent_config().memory_enabled is True
     finally:
