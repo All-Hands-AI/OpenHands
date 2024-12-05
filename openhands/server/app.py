@@ -22,7 +22,7 @@ from openhands.server.routes.files import app as files_api_router
 from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.security import app as security_api_router
 from openhands.server.shared import config
-from openhands.utils.import_utils import get_impl, import_from
+from openhands.utils.import_utils import get_impl
 
 app = FastAPI()
 app.add_middleware(
