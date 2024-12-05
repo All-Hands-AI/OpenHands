@@ -79,9 +79,6 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     clearGitHubToken();
     return false;
   };
-  React.useEffect(() => {
-    refreshToken();
-  }, [gitHubTokenState]);
 
   const value = React.useMemo(
     () => ({
