@@ -1,4 +1,5 @@
 import axios from "axios";
+import { isGitHubErrorReponse } from "./github";
 
 const github = axios.create({
   baseURL: "https://api.github.com",
@@ -28,13 +29,24 @@ const setupAxiosInterceptors = (
   logout: () => void,
 ) => {
   github.interceptors.response.use(
-    (response) => response, // Pass successful responses through
+    (response) => {
+      const parsedData = response.data;
+      if (isGitHubErrorReponse(parsedData)) {
+        throw response;
+      }
+      return parsedData;
+    }, // Pass successful responses through
     async (error) => {
+      console.log(error);
+      console.log(canRefresh(error));
+
       if (!canRefresh(error)) {
         return Promise.reject(error);
       }
 
       const originalRequest = error.config;
+
+      console.log(originalRequest, error.response.status);
 
       // Check if the error is due to an expired token
       if (
