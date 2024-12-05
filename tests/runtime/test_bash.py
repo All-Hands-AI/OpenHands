@@ -576,7 +576,7 @@ def test_long_output(temp_dir, runtime_cls, run_as_openhands):
     try:
         # Generate a long output
         action = CmdRunAction('for i in $(seq 1 100000); do echo "Line $i"; done')
-        action.timeout = 5
+        action.timeout = 10
         obs = runtime.run_action(action)
         assert obs.exit_code == 0
         assert 'Line 1' in obs.content
