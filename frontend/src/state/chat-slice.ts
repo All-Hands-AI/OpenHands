@@ -93,8 +93,12 @@ export const chatSlice = createSlice({
       } else if (actionID === "read") {
         text = action.payload.args.path;
       }
-      if (action.payload.args.confirmation_state === "awaiting_confirmation") {
-        text += `\n\n${getRiskText(action.payload.args.security_risk as unknown as ActionSecurityRisk)}`;
+      if (actionID === "run" || actionID === "run_ipython") {
+        if (
+          action.payload.args.confirmation_state === "awaiting_confirmation"
+        ) {
+          text += `\n\n${getRiskText(action.payload.args.security_risk as unknown as ActionSecurityRisk)}`;
+        }
       }
       const message: Message = {
         type: "action",

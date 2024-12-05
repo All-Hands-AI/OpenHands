@@ -68,7 +68,7 @@ export function handleActionMessage(message: ActionMessage) {
     store.dispatch(appendSecurityAnalyzerInput(message));
   }
 
-  if (message.source === "assistant") {
+  if (message.source === "agent") {
     if (message.args && message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
