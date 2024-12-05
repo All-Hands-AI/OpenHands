@@ -9,7 +9,7 @@ import { WsClientProviderStatus } from "#/context/ws-client-provider";
 import { ChatInterface } from "#/components/features/chat/chat-interface";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const renderChatInterface = (messages: (Message | ErrorMessage)[]) =>
+const renderChatInterface = (messages: (Message)[]) =>
   renderWithProviders(<ChatInterface />);
 
 describe("Empty state", () => {
@@ -278,7 +278,7 @@ describe.skip("ChatInterface", () => {
   });
 
   it("should render inline errors", () => {
-    const messages: (Message | ErrorMessage)[] = [
+    const messages: (Message)[] = [
       {
         sender: "assistant",
         content: "Hello",
@@ -287,9 +287,10 @@ describe.skip("ChatInterface", () => {
         pending: true,
       },
       {
-        error: true,
-        id: "",
-        message: "Something went wrong",
+        type: "error",
+        content: "Something went wrong",
+        sender: "assistant",
+        timestamp: new Date().toISOString(),
       },
     ];
     renderChatInterface(messages);

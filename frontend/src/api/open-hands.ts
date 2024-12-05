@@ -141,11 +141,9 @@ class OpenHands {
    * @returns Blob of the workspace zip
    */
   static async getWorkspaceZip(): Promise<Blob> {
-    const response = await openHands.post(
-      "/api/zip-directory",
-      {},
-      { responseType: "blob" },
-    );
+    const response = await openHands.get("/api/zip-directory", {
+      responseType: "blob",
+    });
     return response.data;
   }
 
