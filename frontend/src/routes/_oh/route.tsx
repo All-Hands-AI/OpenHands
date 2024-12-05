@@ -8,6 +8,7 @@ import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
+import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -44,6 +45,10 @@ export function ErrorBoundary() {
 export default function MainApp() {
   const { gitHubToken, clearToken } = useAuth();
   const { settings } = useUserPrefs();
+
+  const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(
+    !localStorage.getItem("analytics-consent"),
+  );
 
   const config = useConfig();
   const {
@@ -84,6 +89,12 @@ export default function MainApp() {
 
       {isInWaitlist && (
         <WaitlistModal ghToken={gitHubToken} githubAuthUrl={gitHubAuthUrl} />
+      )}
+
+      {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
+        <AnalyticsConsentFormModal
+          onClose={() => setConsentFormIsOpen(false)}
+        />
       )}
     </div>
   );

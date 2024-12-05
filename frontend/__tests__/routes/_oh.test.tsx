@@ -5,6 +5,8 @@ import { renderWithProviders } from "test-utils";
 import userEvent from "@testing-library/user-event";
 import MainApp from "#/routes/_oh/route";
 import i18n from "#/i18n";
+import * as CaptureConsent from "#/utils/handle-capture-consent";
+import OpenHands from "#/api/open-hands";
 
 describe("frontend/routes/_oh", () => {
   const RouteStub = createRoutesStub([{ Component: MainApp, path: "/" }]);
@@ -56,6 +58,57 @@ describe("frontend/routes/_oh", () => {
 
     await waitFor(() => {
       expect(screen.queryByTestId("ai-config-modal")).not.toBeInTheDocument();
+    });
+  });
+
+  it("should render and capture the user's consent if oss mode", async () => {
+    const user = userEvent.setup();
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    const handleCaptureConsentSpy = vi.spyOn(
+      CaptureConsent,
+      "handleCaptureConsent",
+    );
+
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "oss",
+      GITHUB_CLIENT_ID: "test-id",
+      POSTHOG_CLIENT_KEY: "test-key",
+    });
+
+    renderWithProviders(<RouteStub />);
+
+    // The user has not consented to tracking
+    const consentForm = await screen.findByTestId("user-capture-consent-form");
+    expect(handleCaptureConsentSpy).not.toHaveBeenCalled();
+    expect(localStorage.getItem("analytics-consent")).toBeNull();
+
+    const submitButton = within(consentForm).getByRole("button", {
+      name: /confirm preferences/i,
+    });
+    await user.click(submitButton);
+
+    // The user has now consented to tracking
+    expect(handleCaptureConsentSpy).toHaveBeenCalledWith(true);
+    expect(localStorage.getItem("analytics-consent")).toBe("true");
+    expect(
+      screen.queryByTestId("user-capture-consent-form"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("should not render the user consent form if saas mode", async () => {
+    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+    getConfigSpy.mockResolvedValue({
+      APP_MODE: "saas",
+      GITHUB_CLIENT_ID: "test-id",
+      POSTHOG_CLIENT_KEY: "test-key",
+    });
+
+    renderWithProviders(<RouteStub />);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId("user-capture-consent-form"),
+      ).not.toBeInTheDocument();
     });
   });
 
