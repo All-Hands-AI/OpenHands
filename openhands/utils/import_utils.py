@@ -15,6 +15,8 @@ def import_from(qual_name: str):
 
 def get_impl(cls: Type[T], impl_name: str | None) -> Type[T]:
     """Import a named implementation of the specified class"""
+    if impl_name is None:
+        return cls
     impl_class = import_from(impl_name)
     assert cls == impl_class or issubclass(impl_class, cls)
     return impl_class
