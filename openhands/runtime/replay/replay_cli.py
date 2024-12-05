@@ -29,7 +29,7 @@ class ReplayCli:
     async def run_action(
         self, action: ReplayCmdRunAction
     ) -> ReplayCmdOutputObservation | ErrorObservation:
-        command = f'REPLAYAPI_PRINT_MARKERS=1 /replay/replayapi/scripts/run.sh {action.command}'
+        command = f'export REPLAYAPI_PRINT_MARKERS=1; /replay/replayapi/scripts/run.sh {action.command}'
         if action.recording_id != '':
             command = command + f' -r {action.recording_id}'
         if action.session_id != '':

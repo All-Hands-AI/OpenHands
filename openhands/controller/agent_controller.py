@@ -20,7 +20,7 @@ from openhands.core.exceptions import (
 )
 from openhands.core.logger import LOG_ALL_EVENTS
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.schema import AgentState
+from openhands.core.schema import AgentState, ReplayAnalysisPhase
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
     Action,
@@ -291,7 +291,8 @@ class AgentController:
         if self._pending_action and self._pending_action.id == observation.cause:
             self._pending_action = None
             if isinstance(observation, ReplayCmdOutputObservation):
-                handle_replay_enhance_observation(self.state, observation)
+                if handle_replay_enhance_observation(self.state, observation):
+                    self.state.replay_phase = ReplayAnalysisPhase.Analyzing
 
             if self.state.agent_state == AgentState.USER_CONFIRMED:
                 await self.set_agent_state_to(AgentState.RUNNING)
@@ -321,7 +322,11 @@ class AgentController:
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
-            await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+            if self.state.replay_phase == ReplayAnalysisPhase.Analyzing:
+                # TODO: Update replay_phase and prompt agent to move to next stage.
+                pass
+            else:
+                await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
     def reset_task(self) -> None:
         """Resets the agent's task."""

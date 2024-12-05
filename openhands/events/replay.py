@@ -1,15 +1,13 @@
 import json
-import logging
 import re
-from typing import Any, TypedDict
+from typing import Any, TypedDict, cast
 
 from openhands.controller.state.state import State
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.message import MessageAction
 from openhands.events.action.replay import ReplayCmdRunAction
 from openhands.events.observation.replay import ReplayCmdOutputObservation
-
-logger = logging.getLogger('replay/events')
 
 
 def scan_recording_id(issue: str) -> str | None:
@@ -25,13 +23,14 @@ def scan_recording_id(issue: str) -> str | None:
     return id_maybe_with_title
 
 
+# Produce the command string for the `annotate-execution-points` command.
 def command_annotate_execution_points(
     thought: str, is_workspace_repo: bool
 ) -> ReplayCmdRunAction:
     # NOTE: For the resolver, the workdir path is the repo path.
     #       In that case, we should not append the repo name to the path.
     appendRepoNameToPath = ' -i' if is_workspace_repo else ''
-    command = f'"annotate-execution-points" -w "$(pwd)"{appendRepoNameToPath}'
+    command = f'"annotate-execution-points" -f -w "$(pwd)"{appendRepoNameToPath}'
     action = ReplayCmdRunAction(
         thought=thought,
         command=command,
@@ -45,22 +44,23 @@ def command_annotate_execution_points(
 
 
 def replay_enhance_action(state: State, is_workspace_repo: bool) -> Action | None:
-    enhance_action_id = state.extra_data.get('replay_enhance_prompt_id')
-    if not enhance_action_id:
-        # 1. Get current user prompt.
-        latest_user_message = state.get_last_user_message()
-        if latest_user_message:
-            # 2. Check if it has a recordingId.
-            recording_id = scan_recording_id(latest_user_message.content)
-            if recording_id:
-                # 3. Analyze recording and, ultimately, enhance prompt.
-                logger.info(
-                    f'Found recording: {recording_id}. Attempting to enhance prompt...'
-                )
-                state.extra_data['replay_enhance_prompt_id'] = latest_user_message.id
-                return command_annotate_execution_points(
-                    latest_user_message.content, is_workspace_repo
-                )
+    # enhance_action_id = state.extra_data.get('replay_enhance_prompt_id')
+    # if not enhance_action_id:
+    #     # 1. Get current user prompt.
+    #     latest_user_message = state.get_last_user_message()
+    #     if latest_user_message:
+    #         # 2. Check if it has a recordingId.
+    #         recording_id = scan_recording_id(latest_user_message.content)
+    #         logger.debug(
+    #             f'DDBG Scanned for recording id: {latest_user_message.content}...'
+    #         )
+    #         if recording_id:
+    #             # 3. Analyze recording and start the enhancement action.
+    #             logger.info(f'[REPLAY] Enhancing prompt for Replay recording "{recording_id}"...')
+    #             state.extra_data['replay_enhance_prompt_id'] = latest_user_message.id
+    #             return command_annotate_execution_points(
+    #                 latest_user_message.content, is_workspace_repo
+    #             )
     return None
 
 
@@ -94,7 +94,7 @@ def safe_parse_json(text: str):
 
 def handle_replay_enhance_observation(
     state: State, observation: ReplayCmdOutputObservation
-):
+) -> bool:
     enhance_action_id = state.extra_data.get('replay_enhance_prompt_id')
     if enhance_action_id:
         assert enhance_action_id
@@ -109,14 +109,23 @@ def handle_replay_enhance_observation(
         assert user_message
 
         output: ReplayCommandResult = safe_parse_json(observation.content)
-        if output and output['result']:
+        if output and output.get('result'):
             original_prompt = user_message.content
-            result: AnnotateResult = output['result']
-            annotated_repo_path = result['annotatedRepo']
-            comment_text = result['commentText'] or ''
-            point_location = result['pointLocation'] or ''
+            result: AnnotateResult = cast(AnnotateResult, output.get('result', {}))
+            annotated_repo_path = result.get('annotatedRepo', '')
+            comment_text = result.get('commentText', '')
+            # start_location = result.get('startLocation', '')
+            start_name = result.get('startName', '')
 
-            # Enhance user prompt with analysis results:
-            enhancement = f'<ANALYSYS_RESULTS>\n* The user provided a recording of the bug which was used to analyze and annotate the code (by leaving ANANLYSIS_COMMENTS in the code).\n* The annotated code is already available at REPO_PATH="{annotated_repo_path}". Work in REPO_PATH.\n*The user left a note at START_LOCATION="{point_location}": <USER_COMMENT>{comment_text}</USER_COMMENT>. Start your investigation at START_LOCATION!\n* You find ANANLYSIS_COMMENTS pointing to other code locations in the form of `reproduction step <REPRODUCTION_STEP>` comments. Search for those steps, but only when you see them mentioned.\n</ANALYSYS_RESULTS>'
-            logger.info(f'Enhanced prompt with: {enhancement}')
+            enhancement = f'There is a bug in {annotated_repo_path}:\n\n{comment_text}\n\nReproduction information from a recording of the problem is available in source comments.\nThe bug was reported at {start_name}. Start your investigation there. Then keep searching for related `reproduction step` comments and pay special attention to their contents, as they provide important data flow and type information.\n\nOnce done, propose necessary changes without implementing them.'
+
+            # Enhance:
             user_message.content = f'{original_prompt}\n\n{enhancement}'
+            logger.info(f'[REPLAY] Enhanced user prompt:\n{user_message.content}')
+            return True
+        else:
+            logger.warning(
+                f'DDBG Replay command did not return a result. Instead it returned: {str(output)}'
+            )
+
+    return False
