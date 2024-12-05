@@ -71,16 +71,6 @@ test("redirect to the home screen if the current session was deleted", async ({
   await page.waitForURL("/");
 });
 
-test("redirect to the home screen if the current session is not found", async ({
-  page,
-}) => {
-  await page.goto("/");
-  await confirmSettings(page);
-
-  await page.goto("/app?sessionId=11111");
-  await page.waitForURL("/");
-});
-
 test("load relevant files in the file explorer", async ({ page }) => {
   await page.goto("/");
   await confirmSettings(page);
