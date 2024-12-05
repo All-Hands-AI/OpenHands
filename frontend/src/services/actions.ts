@@ -7,7 +7,6 @@ import {
 import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
 import {
-  ActionSecurityRisk,
   appendSecurityAnalyzerInput,
 } from "#/state/security-analyzer-slice";
 import { setCurStatusMessage } from "#/state/status-slice";
