@@ -175,6 +175,33 @@ class CodeActAgent(Agent):
                 function_calling_enabled=self.llm.is_function_calling_active(),
             )
             return []
+        elif isinstance(action, AgentFinishAction):
+            role = 'user' if action.source == 'user' else 'assistant'
+
+            # when agent finishes, it has tool_metadata
+            # which has already been executed, and it doesn't have a response
+            # when the user finishes (/exit), we don't have tool_metadata
+            tool_metadata = action.tool_call_metadata
+            if tool_metadata is not None:
+                # take the response message from the tool call
+                assistant_msg = tool_metadata.model_response.choices[0].message
+                content = assistant_msg.content or ''
+
+                # save content if any, to thought
+                if action.thought:
+                    if action.thought != content:
+                        action.thought += '\n' + content
+                else:
+                    action.thought = content
+
+                # remove the tool call metadata
+                action.tool_call_metadata = None
+            return [
+                Message(
+                    role=role,
+                    content=[TextContent(text=action.thought)],
+                )
+            ]
         elif isinstance(action, MessageAction):
             role = 'user' if action.source == 'user' else 'assistant'
             content = [TextContent(text=action.content or '')]
