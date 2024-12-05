@@ -4,7 +4,6 @@ import { screen, waitFor, within } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
 import userEvent from "@testing-library/user-event";
 import MainApp from "#/routes/_oh/route";
-import * as CaptureConsent from "#/utils/handle-capture-consent";
 import i18n from "#/i18n";
 
 describe("frontend/routes/_oh", () => {
@@ -58,33 +57,6 @@ describe("frontend/routes/_oh", () => {
     await waitFor(() => {
       expect(screen.queryByTestId("ai-config-modal")).not.toBeInTheDocument();
     });
-  });
-
-  it("should capture the user's consent", async () => {
-    const user = userEvent.setup();
-    const handleCaptureConsentSpy = vi.spyOn(
-      CaptureConsent,
-      "handleCaptureConsent",
-    );
-
-    renderWithProviders(<RouteStub />);
-
-    // The user has not consented to tracking
-    const consentForm = await screen.findByTestId("user-capture-consent-form");
-    expect(handleCaptureConsentSpy).not.toHaveBeenCalled();
-    expect(localStorage.getItem("analytics-consent")).toBeNull();
-
-    const submitButton = within(consentForm).getByRole("button", {
-      name: /confirm preferences/i,
-    });
-    await user.click(submitButton);
-
-    // The user has now consented to tracking
-    expect(handleCaptureConsentSpy).toHaveBeenCalledWith(true);
-    expect(localStorage.getItem("analytics-consent")).toBe("true");
-    expect(
-      screen.queryByTestId("user-capture-consent-form"),
-    ).not.toBeInTheDocument();
   });
 
   it("should not render the user consent form if the user has already made a decision", async () => {

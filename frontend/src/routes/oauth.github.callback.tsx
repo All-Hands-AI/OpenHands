@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import React from "react";
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
+import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 
 function OAuthGitHubCallback() {
   const navigate = useNavigate();
@@ -20,6 +21,8 @@ function OAuthGitHubCallback() {
   React.useEffect(() => {
     if (isSuccess) {
       setGitHubToken(data.access_token);
+      // default analytics consent to true after successful login
+      handleCaptureConsent(true);
       navigate("/");
     }
   }, [isSuccess]);
