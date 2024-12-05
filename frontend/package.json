@@ -8,7 +8,6 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
-    "@mswjs/socket.io-binding": "file:mswjs-socket.io-binding-0.1.0.tgz",
     "@nextui-org/react": "^2.4.8",
     "@react-router/node": "^7.0.1",
     "@react-router/serve": "^7.0.1",
@@ -76,6 +75,7 @@
     ]
   },
   "devDependencies": {
+    "@mswjs/socket.io-binding": "^0.1.1",
     "@playwright/test": "^1.48.2",
     "@react-router/dev": "^7.0.1",
     "@tailwindcss/typography": "^0.5.15",
