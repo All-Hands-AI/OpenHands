@@ -13,6 +13,7 @@ from starlette.types import ASGIApp
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.auth import get_sid_from_token
 from openhands.server.shared import config, session_manager
+from openhands.server.types import SessionMiddlewareInterface
 
 
 class LocalhostCORSMiddleware(CORSMiddleware):
@@ -107,7 +108,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-class AttachSessionMiddleware:
+class AttachSessionMiddleware(SessionMiddlewareInterface):
     def __init__(self, app, target_router: APIRouter):
         self.app = app
         self.target_router = target_router

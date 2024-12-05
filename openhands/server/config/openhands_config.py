@@ -1,39 +1,6 @@
 import os
-from abc import ABC, abstractmethod
-from enum import Enum
-from typing import ClassVar, Protocol
-
-from openhands.server.middleware import AttachSessionMiddleware
+from openhands.server.types import AppMode, OpenhandsConfigInterface
 from openhands.utils.import_utils import import_from
-
-
-class AppMode(Enum):
-    OSS = 'oss'
-    SAAS = 'saas'
-
-
-class SessionMiddlewareInterface(Protocol):
-    """Protocol for session middleware classes."""
-
-    pass
-
-
-class OpenhandsConfigInterface(ABC):
-    CONFIG_PATH: ClassVar[str | None]
-    APP_MODE: ClassVar[AppMode]
-    POSTHOG_CLIENT_KEY: ClassVar[str]
-    GITHUB_CLIENT_ID: ClassVar[str]
-    ATTACH_SESSION_MIDDLEWARE: ClassVar[type[SessionMiddlewareInterface]]
-
-    @abstractmethod
-    def verify_config(self) -> None:
-        """Verify configuration settings."""
-        raise NotImplementedError
-
-    @abstractmethod
-    async def github_auth(self) -> None:
-        """Handle GitHub authentication."""
-        raise NotImplementedError
 
 
 class OpenhandsOssConfig(OpenhandsConfigInterface):
@@ -41,7 +8,7 @@ class OpenhandsOssConfig(OpenhandsConfigInterface):
     APP_MODE = AppMode.OSS
     POSTHOG_CLIENT_KEY = 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
     GITHUB_CLIENT_ID = os.environ.get('GITHUB_APP_CLIENT_ID', '')
-    ATTACH_SESSION_MIDDLEWARE = AttachSessionMiddleware
+    ATTACH_SESSION_MIDDLEWARE = 'openhands.server.middleware.AttachSessionMiddleware'
 
     def verify_config(self):
         if self.CONFIG_PATH:
