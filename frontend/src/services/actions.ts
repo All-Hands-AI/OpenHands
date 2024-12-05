@@ -6,9 +6,7 @@ import {
 } from "#/state/chat-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
-import {
-  appendSecurityAnalyzerInput,
-} from "#/state/security-analyzer-slice";
+import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCurStatusMessage } from "#/state/status-slice";
 import store from "#/store";
 import ActionType from "#/types/action-type";
@@ -74,7 +72,7 @@ export function handleActionMessage(message: ActionMessage) {
     if (message.args && message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
-    store.dispatch(addAssistantAction(message));
+    store.dispatch(addAssistantAction(message)); // eslint-disable-line
   }
 
   if (message.action in messageActions) {
