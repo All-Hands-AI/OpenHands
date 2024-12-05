@@ -7,6 +7,7 @@ import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { ModalButton } from "#/components/shared/buttons/modal-button";
 import { ModalBody } from "#/components/shared/modals/modal-body";
 import { TOSCheckbox } from "./tos-checkbox";
+import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 
 interface WaitlistModalProps {
   ghToken: string | null;
@@ -15,6 +16,13 @@ interface WaitlistModalProps {
 
 export function WaitlistModal({ ghToken, githubAuthUrl }: WaitlistModalProps) {
   const [isTosAccepted, setIsTosAccepted] = React.useState(false);
+
+  const handleGitHubAuth = () => {
+    if (githubAuthUrl) {
+      handleCaptureConsent(true);
+      window.location.href = githubAuthUrl;
+    }
+  };
 
   return (
     <ModalBackdrop>
@@ -30,11 +38,7 @@ export function WaitlistModal({ ghToken, githubAuthUrl }: WaitlistModalProps) {
             text="Connect to GitHub"
             icon={<GitHubLogo width={20} height={20} />}
             className="bg-[#791B80] w-full"
-            onClick={() => {
-              if (githubAuthUrl) {
-                window.location.href = githubAuthUrl;
-              }
-            }}
+            onClick={handleGitHubAuth}
           />
         )}
         {ghToken && <JoinWaitlistAnchor />}
