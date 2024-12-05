@@ -52,9 +52,7 @@ const messageActions = {
         }),
       );
     } else {
-      store.dispatch(
-        addAssistantMessage(message.args.content)
-      );
+      store.dispatch(addAssistantMessage(message.args.content));
     }
   },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
@@ -64,23 +62,9 @@ const messageActions = {
   },
 };
 
-function getRiskText(risk: ActionSecurityRisk) {
-  switch (risk) {
-    case ActionSecurityRisk.LOW:
-      return "Low Risk";
-    case ActionSecurityRisk.MEDIUM:
-      return "Medium Risk";
-    case ActionSecurityRisk.HIGH:
-      return "High Risk";
-    case ActionSecurityRisk.UNKNOWN:
-    default:
-      return "Unknown Risk";
-  }
-}
-
 export function handleActionMessage(message: ActionMessage) {
   if (message.args?.hidden) {
-    return
+    return;
   }
 
   if ("args" in message && "security_risk" in message.args) {
