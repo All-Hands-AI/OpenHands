@@ -34,7 +34,7 @@ const setupAxiosInterceptors = (
       if (isGitHubErrorReponse(parsedData)) {
         throw response;
       }
-      return parsedData;
+      return response;
     }, // Pass successful responses through
     async (error) => {
       console.log(error);
