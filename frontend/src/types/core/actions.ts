@@ -1,4 +1,5 @@
 import { OpenHandsActionEvent } from "./base";
+import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
 
 export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
   source: "user";
@@ -11,6 +12,7 @@ export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
 export interface CommandAction extends OpenHandsActionEvent<"run"> {
   source: "agent";
   args: {
+    security_risk: ActionSecurityRisk;
     command: string;
     confirmation_state: "confirmed" | "rejected" | "awaiting_confirmation";
     thought: string;

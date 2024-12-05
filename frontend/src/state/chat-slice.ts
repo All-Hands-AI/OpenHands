@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
+import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { OpenHandsAction } from "#/types/core/actions";
 
