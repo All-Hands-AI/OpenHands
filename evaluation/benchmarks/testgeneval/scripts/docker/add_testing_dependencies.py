@@ -1,6 +1,7 @@
 import argparse
 import os
 import subprocess
+
 from datasets import load_dataset
 
 
@@ -19,7 +20,9 @@ def docker_login():
 
 
 # Function to generate Dockerfile content based on image type
-def generate_dockerfile_content(base_image, dependencies, datum, patch_path, test_patch_path):
+def generate_dockerfile_content(
+    base_image, dependencies, datum, patch_path, test_patch_path
+):
     dockerfile_content = f"""
 FROM {base_image}
 RUN pip install {' '.join(dependencies)}
@@ -35,7 +38,7 @@ RUN rm {datum['test_file']}
 """
 
     # Add specific content based on image type
-    dockerfile_content += "RUN git add .\nRUN git commit -m \"Testing fixes\""
+    dockerfile_content += 'RUN git add .\nRUN git commit -m "Testing fixes"'
 
     return dockerfile_content
 
@@ -56,7 +59,7 @@ def process_images(dataset, original_namespace, new_namespace, start_instance_id
 
     found_start = len(start_instance_id) == 0
     for datum in dataset:
-        if not found_start and datum["instance_id"] == start_instance_id:
+        if not found_start and datum['instance_id'] == start_instance_id:
             found_start = True
         elif found_start:
             full_image_name = f'{original_namespace}/sweb.eval.x86_64.{datum["instance_id"].replace("__", "_s_")}:latest'
@@ -67,32 +70,58 @@ def process_images(dataset, original_namespace, new_namespace, start_instance_id
             patch_file_path = 'patch.diff'
             test_patch_file_path = 'test_patch.diff'
 
-
-            with open(patch_file_path, 'w') as patch_file, \
-                open(test_patch_file_path, 'w') as test_patch_file:
+            with open(patch_file_path, 'w') as patch_file, open(
+                test_patch_file_path, 'w'
+            ) as test_patch_file:
                 patch_file.write(datum['patch'])
                 test_patch_file.write(datum['test_patch'])
 
             # Define image types and corresponding tags
             new_image_name = f'{new_namespace}/sweb.eval.x86_64.{datum["instance_id"].replace("__", "_s_")}:latest'
-            dockerfile_content = generate_dockerfile_content(full_image_name, dependencies, datum, patch_file_path, test_patch_file_path)
+            dockerfile_content = generate_dockerfile_content(
+                full_image_name,
+                dependencies,
+                datum,
+                patch_file_path,
+                test_patch_file_path,
+            )
             build_and_push_image(dockerfile_content, new_image_name)
 
             # Cleanup regular files and images
             os.remove(patch_file_path)
             os.remove(test_patch_file_path)
             run_command(f'docker rmi {full_image_name}')
+            run_command('docker system prune -f')  # Clean up dangling resources
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Process Docker images with .eval in the name.')
+    parser = argparse.ArgumentParser(
+        description='Process Docker images with .eval in the name.'
+    )
     parser.add_argument('--dataset', type=str, default='kjain14/testgeneval')
     parser.add_argument('--split', type=str, default='test')
-    parser.add_argument('--new_namespace', type=str, default='kdjain', help='The new Docker Hub namespace to push the images')
-    parser.add_argument('--original_namespace', type=str, default='xingyaoww', help='The original Docker Hub namespace')
-    parser.add_argument('--start_instance_id', type=str, default="", help='The instance_id to start processing from')
+    parser.add_argument(
+        '--new_namespace',
+        type=str,
+        default='kdjain',
+        help='The new Docker Hub namespace to push the images',
+    )
+    parser.add_argument(
+        '--original_namespace',
+        type=str,
+        default='xingyaoww',
+        help='The original Docker Hub namespace',
+    )
+    parser.add_argument(
+        '--start_instance_id',
+        type=str,
+        default='',
+        help='The instance_id to start processing from',
+    )
     args = parser.parse_args()
     dataset = load_dataset(args.dataset)[args.split]
 
     docker_login()
-    process_images(dataset, args.original_namespace, args.new_namespace, args.start_instance_id)
+    process_images(
+        dataset, args.original_namespace, args.new_namespace, args.start_instance_id
+    )
