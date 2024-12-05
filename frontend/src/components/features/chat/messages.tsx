@@ -14,7 +14,6 @@ export function Messages({
 }: MessagesProps) {
   return messages.map((message, index) => {
     if (message.type === "error" || message.type === "action") {
-      console.log("expando", message);
       return (
         <ExpandableMessage
           key={index}
