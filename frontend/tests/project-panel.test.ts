@@ -110,3 +110,17 @@ test("load relevant files in the file explorer", async ({ page }) => {
   expect(fileExplorer.getByText("target_list.txt")).toBeVisible();
   expect(fileExplorer.getByText("terminator_blueprint.txt")).toBeVisible();
 });
+
+test("should create a new conversation", async ({ page }) => {
+  await page.goto("/");
+  await confirmSettings(page);
+
+  await page.goto("/conversation");
+  await page.waitForURL("/conversation");
+
+  const projectPanel = await openProjectPanel(page);
+  const cards = projectPanel.getByTestId("project-card");
+
+  expect(page.url()).toMatch(/http:\/\/localhost:3001\/conversation\?cid=\d+/);
+  expect(cards).toHaveCount(4);
+});

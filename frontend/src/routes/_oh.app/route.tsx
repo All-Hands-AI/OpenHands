@@ -2,6 +2,7 @@ import { useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { Outlet, useSearchParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Controls } from "#/components/features/controls/controls";
 import { RootState } from "#/store";
 import { clearMessages } from "#/state/chat-slice";
@@ -21,15 +22,24 @@ import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
+import OpenHands from "#/api/open-hands";
 
 function App() {
-  const [searchParams] = useSearchParams();
+  const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const { gitHubToken, setToken } = useAuth();
   const { settings } = useUserPrefs();
 
   const dispatch = useDispatch();
   useConversationConfig();
+  const { mutate: createConversation } = useMutation({
+    mutationFn: OpenHands.createConversation,
+    onSuccess: async (data) => {
+      setSearchParams({ cid: data.id });
+      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
 
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initalQuery,
@@ -60,6 +70,8 @@ function App() {
   }, [cid]);
 
   useEffectOnce(() => {
+    if (!cid) createConversation();
+
     dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
@@ -79,7 +91,7 @@ function App() {
       settings={settings}
     >
       <EventHandler>
-        <div className="flex flex-col h-full gap-3">
+        <div data-testid="app-route" className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto gap-3">
             <Container className="w-[390px] max-h-full relative">
               <ChatInterface />

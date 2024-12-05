@@ -196,6 +196,11 @@ class OpenHands {
   ): Promise<void> {
     await openHands.put(`/api/projects/${projectId}`, project);
   }
+
+  static async createConversation(): Promise<UserProject> {
+    const { data } = await openHands.post<UserProject>("/api/projects");
+    return data;
+  }
 }
 
 export default OpenHands;

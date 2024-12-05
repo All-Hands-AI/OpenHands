@@ -178,4 +178,17 @@ export const handlers = [
 
     return HttpResponse.json(null, { status: 404 });
   }),
+
+  http.post("/api/projects", () => {
+    const conversation: UserProject = {
+      id: (Math.random() * 100).toString(),
+      name: "New Conversation",
+      repo: null,
+      lastUpdated: new Date().toISOString(),
+      state: "warm",
+    };
+
+    PROJECTS.set(conversation.id, conversation);
+    return HttpResponse.json(conversation, { status: 201 });
+  }),
 ];
