@@ -589,14 +589,7 @@ def test_long_output_from_nested_directories(temp_dir, runtime_cls, run_as_openh
     runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Create nested directories with many files
-        setup_cmd = """
-mkdir -p /tmp/test_dir && cd /tmp/test_dir && for i in $(seq 1 100); do
-    mkdir -p "folder_$i"
-    for j in $(seq 1 100); do
-        touch "folder_$i/file_$j.txt"
-    done
-done
-"""
+        setup_cmd = 'mkdir -p /tmp/test_dir && cd /tmp/test_dir && for i in $(seq 1 100); do mkdir -p "folder_$i"; for j in $(seq 1 100); do touch "folder_$i/file_$j.txt"; done; done'
         setup_action = CmdRunAction(setup_cmd.strip())
         setup_action.timeout = 10
         obs = runtime.run_action(setup_action)
