@@ -27,6 +27,6 @@ class OpenhandsConfigInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def github_auth(self) -> None:
+    async def github_auth(self, data: dict) -> None:
         """Handle GitHub authentication."""
         raise NotImplementedError

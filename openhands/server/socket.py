@@ -22,7 +22,7 @@ async def oh_action(connection_id: str, data: dict):
     # If it's an init, we do it here.
     action = data.get('action', '')
     if action == ActionType.INIT:
-        await openhands_config.github_auth()
+        await openhands_config.github_auth(data)
         await init_connection(connection_id, data)
         return
 

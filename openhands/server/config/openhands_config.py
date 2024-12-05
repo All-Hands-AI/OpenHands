@@ -17,7 +17,7 @@ class OpenhandsOssConfig(OpenhandsConfigInterface):
         if self.CONFIG_PATH:
             raise ValueError('Unexpected config path provided')
 
-    async def github_auth(self):
+    async def github_auth(self, data: dict):
         """
         Skip Github Auth for AppMode OSS
         """
