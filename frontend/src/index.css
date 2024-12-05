@@ -32,8 +32,11 @@ code {
   margin: 0;
   font-size: 85%;
   white-space: break-spaces;
-  background-color: var(--bg-neutral-muted);
-  border-radius: 6px;
+  background-color: #2a3038;
+  border-radius: 4px;
+  color: #e6edf3;
+  border: 1px solid #30363d;
+  letter-spacing: -0.2px;
 }
 
 .markdown-body pre code {

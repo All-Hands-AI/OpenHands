@@ -15,7 +15,6 @@ import {
   ObservationMessage,
   StatusMessage,
 } from "#/types/message";
-import EventLogger from "#/utils/event-logger";
 import { handleObservationMessage } from "./observations";
 
 const messageActions = {
@@ -107,6 +106,10 @@ export function handleAssistantMessage(message: Record<string, unknown>) {
   } else if (message.status_update) {
     handleStatusMessage(message as unknown as StatusMessage);
   } else {
-    EventLogger.error(`Unknown message type ${message}`);
+    store.dispatch(
+      addErrorMessage({
+        message: "Unknown message type received",
+      }),
+    );
   }
 }

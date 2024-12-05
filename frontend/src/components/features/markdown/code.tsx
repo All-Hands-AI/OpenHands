@@ -17,7 +17,20 @@ export function code({
   const match = /language-(\w+)/.exec(className || ""); // get the language
 
   if (!match) {
-    return <code className={className}>{children}</code>;
+    return (
+      <code
+        className={className}
+        style={{
+          backgroundColor: "#2a3038",
+          padding: "0.2em 0.4em",
+          borderRadius: "4px",
+          color: "#e6edf3",
+          border: "1px solid #30363d",
+        }}
+      >
+        {children}
+      </code>
+    );
   }
 
   return (
