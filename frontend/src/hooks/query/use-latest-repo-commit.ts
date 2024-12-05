@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { retrieveLatestGitHubCommit, isGitHubErrorReponse } from "#/api/github";
+import { retrieveLatestGitHubCommit } from "#/api/github";
 import { useAuth } from "#/context/auth-context";
 
 interface UseLatestRepoCommitConfig {
@@ -11,20 +11,7 @@ export const useLatestRepoCommit = (config: UseLatestRepoCommitConfig) => {
 
   return useQuery({
     queryKey: ["latest_commit", gitHubToken, config.repository],
-    queryFn: async () => {
-      const data = await retrieveLatestGitHubCommit(
-        gitHubToken!,
-        refreshToken,
-        logout,
-        config.repository!,
-      );
-
-      if (isGitHubErrorReponse(data)) {
-        throw new Error("Failed to retrieve latest commit");
-      }
-
-      return data[0];
-    },
+    queryFn: () => retrieveLatestGitHubCommit(config.repository!),
     enabled: !!gitHubToken && !!config.repository,
   });
 };

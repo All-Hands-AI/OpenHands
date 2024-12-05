@@ -96,6 +96,23 @@ export interface ModifyTaskAction extends OpenHandsActionEvent<"modify_task"> {
   };
 }
 
+export interface FileReadAction extends OpenHandsActionEvent<"read"> {
+  source: "agent";
+  args: {
+    path: string;
+    thought: string;
+  };
+}
+
+export interface FileWriteAction extends OpenHandsActionEvent<"write"> {
+  source: "agent";
+  args: {
+    path: string;
+    content: string;
+    thought: string;
+  };
+}
+
 export interface RejectAction extends OpenHandsActionEvent<"reject"> {
   source: "agent";
   args: {
@@ -112,6 +129,8 @@ export type OpenHandsAction =
   | DelegateAction
   | BrowseAction
   | BrowseInteractiveAction
+  | FileReadAction
+  | FileWriteAction
   | AddTaskAction
   | ModifyTaskAction
   | RejectAction;

@@ -6,7 +6,7 @@ import ActionType from "#/types/action-type";
 import EventLogger from "#/utils/event-logger";
 import AgentState from "#/types/agent-state";
 import { handleAssistantMessage } from "#/services/actions";
-import { useRate } from "#/utils/use-rate";
+import { useRate } from "#/hooks/use-rate";
 
 const isOpenHandsMessage = (event: Record<string, unknown>) =>
   event.action === "message";
@@ -58,7 +58,7 @@ export function WsClientProvider({
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
 
-  const messageRateHandler = useRate({ threshold: 500 });
+  const messageRateHandler = useRate({ threshold: 250 });
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
@@ -136,7 +136,7 @@ export function WsClientProvider({
     // create a new one
     if (
       !sio ||
-      (tokenRef.current && token !== tokenRef.current) ||
+      (tokenRef.current && token && token !== tokenRef.current) ||
       ghToken !== ghTokenRef.current
     ) {
       sio?.disconnect();

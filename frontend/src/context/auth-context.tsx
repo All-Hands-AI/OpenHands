@@ -1,6 +1,16 @@
 import posthog from "posthog-js";
 import React from "react";
 import OpenHands from "#/api/open-hands";
+import {
+  removeAuthTokenHeader as removeOpenHandsAuthTokenHeader,
+  removeGitHubTokenHeader as removeOpenHandsGitHubTokenHeader,
+  setGitHubTokenHeader as setOpenHandsGitHubTokenHeader,
+  setAuthTokenHeader as setOpenHandsAuthTokenHeader,
+} from "#/api/open-hands-axios";
+import {
+  setAuthTokenHeader as setGitHubAuthTokenHeader,
+  removeAuthTokenHeader as removeGitHubAuthTokenHeader,
+} from "#/api/github-axios-instance";
 
 interface AuthContextType {
   token: string | null;
@@ -23,16 +33,30 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     () => localStorage.getItem("ghToken"),
   );
 
-  React.useLayoutEffect(() => {
-    setTokenState(localStorage.getItem("token"));
-    setGitHubTokenState(localStorage.getItem("ghToken"));
-  });
+  const clearToken = () => {
+    setTokenState(null);
+    localStorage.removeItem("token");
+
+    removeOpenHandsAuthTokenHeader();
+  };
+
+  const clearGitHubToken = () => {
+    setGitHubTokenState(null);
+    localStorage.removeItem("ghToken");
+
+    removeOpenHandsGitHubTokenHeader();
+    removeGitHubAuthTokenHeader();
+  };
 
   const setToken = (token: string | null) => {
     setTokenState(token);
 
-    if (token) localStorage.setItem("token", token);
-    else localStorage.removeItem("token");
+    if (token) {
+      localStorage.setItem("token", token);
+      setOpenHandsAuthTokenHeader(token);
+    } else {
+      clearToken();
+    }
   };
 
   const setGitHubToken = (token: string | null) => {
@@ -40,20 +64,20 @@ function AuthProvider({ children }: React.PropsWithChildren) {
 
     if (token) {
       localStorage.setItem("ghToken", token);
+      setOpenHandsGitHubTokenHeader(token);
+      setGitHubAuthTokenHeader(token);
     } else {
-      localStorage.removeItem("ghToken");
+      clearGitHubToken();
     }
   };
 
-  const clearToken = () => {
-    setTokenState(null);
-    localStorage.removeItem("token");
-  };
+  React.useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    const storedGitHubToken = localStorage.getItem("ghToken");
 
-  const clearGitHubToken = () => {
-    setGitHubTokenState(null);
-    localStorage.removeItem("ghToken");
-  };
+    setToken(storedToken);
+    setGitHubToken(storedGitHubToken);
+  }, []);
 
   const logout = () => {
     clearGitHubToken();

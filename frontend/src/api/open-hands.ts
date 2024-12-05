@@ -1,4 +1,3 @@
-import { request } from "#/services/api";
 import {
   SaveFileSuccessResponse,
   FileUploadSuccessResponse,
@@ -8,7 +7,9 @@ import {
   ErrorResponse,
   GetConfigResponse,
   GetVSCodeUrlResponse,
+  AuthenticateResponse,
 } from "./open-hands.types";
+import { openHands } from "./open-hands-axios";
 
 class OpenHands {
   /**
@@ -16,13 +17,8 @@ class OpenHands {
    * @returns List of models available
    */
   static async getModels(): Promise<string[]> {
-    const response = await fetch("/api/options/models");
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch models");
-    }
-
-    return response.json();
+    const { data } = await openHands.get<string[]>("/api/options/models");
+    return data;
   }
 
   /**
@@ -30,13 +26,8 @@ class OpenHands {
    * @returns List of agents available
    */
   static async getAgents(): Promise<string[]> {
-    const response = await fetch("/api/options/agents");
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch agents");
-    }
-
-    return response.json();
+    const { data } = await openHands.get<string[]>("/api/options/agents");
+    return data;
   }
 
   /**
@@ -44,23 +35,17 @@ class OpenHands {
    * @returns List of security analyzers available
    */
   static async getSecurityAnalyzers(): Promise<string[]> {
-    const response = await fetch("/api/options/security-analyzers");
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch security analyzers");
-    }
-
-    return response.json();
+    const { data } = await openHands.get<string[]>(
+      "/api/options/security-analyzers",
+    );
+    return data;
   }
 
   static async getConfig(): Promise<GetConfigResponse> {
-    const response = await fetch("/api/options/config");
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch config");
-    }
-
-    return response.json();
+    const { data } = await openHands.get<GetConfigResponse>(
+      "/api/options/config",
+    );
+    return data;
   }
 
   /**
@@ -68,21 +53,11 @@ class OpenHands {
    * @param path Path to list files from
    * @returns List of files available in the given path. If path is not provided, it lists all the files in the workspace
    */
-  static async getFiles(token: string, path?: string): Promise<string[]> {
-    const url = new URL("/api/list-files", window.location.origin);
-    if (path) url.searchParams.append("path", path);
-
-    const response = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+  static async getFiles(path?: string): Promise<string[]> {
+    const { data } = await openHands.get<string[]>("/api/list-files", {
+      params: { path },
     });
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch files");
-    }
-
-    return response.json();
+    return data;
   }
 
   /**
@@ -90,21 +65,11 @@ class OpenHands {
    * @param path Full path of the file to retrieve
    * @returns Content of the file
    */
-  static async getFile(token: string, path: string): Promise<string> {
-    const url = new URL("/api/select-file", window.location.origin);
-    url.searchParams.append("file", path);
-
-    const response = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+  static async getFile(path: string): Promise<string> {
+    const { data } = await openHands.get<{ code: string }>("/api/select-file", {
+      params: { file: path },
     });
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch file");
-    }
-
-    const data = await response.json();
     return data.code;
   }
 
@@ -115,31 +80,17 @@ class OpenHands {
    * @returns Success message or error message
    */
   static async saveFile(
-    token: string,
     path: string,
     content: string,
   ): Promise<SaveFileSuccessResponse> {
-    const response = await fetch("/api/save-file", {
-      method: "POST",
-      body: JSON.stringify({ filePath: path, content }),
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+    const { data } = await openHands.post<
+      SaveFileSuccessResponse | ErrorResponse
+    >("/api/save-file", {
+      filePath: path,
+      content,
     });
 
-    if (!response.ok) {
-      throw new Error("Failed to save file");
-    }
-
-    const data = (await response.json()) as
-      | SaveFileSuccessResponse
-      | ErrorResponse;
-
-    if ("error" in data) {
-      throw new Error(data.error);
-    }
-
+    if ("error" in data) throw new Error(data.error);
     return data;
   }
 
@@ -148,33 +99,15 @@ class OpenHands {
    * @param file File to upload
    * @returns Success message or error message
    */
-  static async uploadFiles(
-    token: string,
-    files: File[],
-  ): Promise<FileUploadSuccessResponse> {
+  static async uploadFiles(files: File[]): Promise<FileUploadSuccessResponse> {
     const formData = new FormData();
     files.forEach((file) => formData.append("files", file));
 
-    const response = await fetch("/api/upload-files", {
-      method: "POST",
-      body: formData,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const { data } = await openHands.post<
+      FileUploadSuccessResponse | ErrorResponse
+    >("/api/upload-files", formData);
 
-    if (!response.ok) {
-      throw new Error("Failed to upload files");
-    }
-
-    const data = (await response.json()) as
-      | FileUploadSuccessResponse
-      | ErrorResponse;
-
-    if ("error" in data) {
-      throw new Error(data.error);
-    }
-
+    if ("error" in data) throw new Error(data.error);
     return data;
   }
 
@@ -183,24 +116,12 @@ class OpenHands {
    * @param data Feedback data
    * @returns The stored feedback data
    */
-  static async submitFeedback(
-    token: string,
-    feedback: Feedback,
-  ): Promise<FeedbackResponse> {
-    const response = await fetch("/api/submit-feedback", {
-      method: "POST",
-      body: JSON.stringify(feedback),
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to submit feedback");
-    }
-
-    return response.json();
+  static async submitFeedback(feedback: Feedback): Promise<FeedbackResponse> {
+    const { data } = await openHands.post<FeedbackResponse>(
+      "/api/submit-feedback",
+      feedback,
+    );
+    return data;
   }
 
   /**
@@ -208,19 +129,13 @@ class OpenHands {
    * @returns Response with authentication status and user info if successful
    */
   static async authenticate(
-    gitHubToken: string,
     appMode: GetConfigResponse["APP_MODE"],
   ): Promise<boolean> {
     if (appMode === "oss") return true;
 
-    const response = await fetch("/api/authenticate", {
-      method: "POST",
-      headers: {
-        "X-GitHub-Token": gitHubToken,
-      },
-    });
-
-    return response.ok;
+    const response =
+      await openHands.post<AuthenticateResponse>("/api/authenticate");
+    return response.status === 200;
   }
 
   /**
@@ -249,8 +164,10 @@ class OpenHands {
    * @returns Blob of the workspace zip
    */
   static async getWorkspaceZip(): Promise<Blob> {
-    const response = await request(`/api/zip-directory`, {}, false, true);
-    return response.blob();
+    const response = await openHands.get("/api/zip-directory", {
+      responseType: "blob",
+    });
+    return response.data;
   }
 
   /**
@@ -260,19 +177,13 @@ class OpenHands {
   static async getGitHubAccessToken(
     code: string,
   ): Promise<GitHubAccessTokenResponse> {
-    const response = await fetch("/api/github/callback", {
-      method: "POST",
-      body: JSON.stringify({ code }),
-      headers: {
-        "Content-Type": "application/json",
+    const { data } = await openHands.post<GitHubAccessTokenResponse>(
+      "/api/github/callback",
+      {
+        code,
       },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to get GitHub access token");
-    }
-
-    return response.json();
+    );
+    return data;
   }
 
   /**
@@ -280,12 +191,15 @@ class OpenHands {
    * @returns VSCode URL
    */
   static async getVSCodeUrl(): Promise<GetVSCodeUrlResponse> {
-    return request(`/api/vscode-url`, {}, false, false, 1);
+    const { data } =
+      await openHands.get<GetVSCodeUrlResponse>("/api/vscode-url");
+    return data;
   }
 
   static async getRuntimeId(): Promise<{ runtime_id: string }> {
-    const data = await request("/api/conversation");
-
+    const { data } = await openHands.get<{ runtime_id: string }>(
+      "/api/conversation",
+    );
     return data;
   }
 }

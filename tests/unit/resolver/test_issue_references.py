@@ -1,8 +1,10 @@
+from openhands.core.config.llm_config import LLMConfig
 from openhands.resolver.issue_definitions import IssueHandler
 
 
 def test_extract_issue_references():
-    handler = IssueHandler('test-owner', 'test-repo', 'test-token')
+    llm_config = LLMConfig(model='test', api_key='test')
+    handler = IssueHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
     # Test basic issue reference
     assert handler._extract_issue_references('Fixes #123') == [123]
