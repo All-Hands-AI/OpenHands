@@ -84,7 +84,8 @@ export const useAppRepositories = () => {
 
       return null;
     },
-    enabled: !!gitHubToken && !!installations?.length,
+    enabled:
+      !!gitHubToken && Array.isArray(installations) && installations.length > 0,
   });
 
   // TODO: Once we create our custom dropdown component, we should fetch data onEndReached
