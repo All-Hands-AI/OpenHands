@@ -13,7 +13,7 @@ from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.auth import get_sid_from_token, sign_token
 from openhands.server.github_utils import authenticate_github_user
-from openhands.server.session.session_config import SessionConfig
+from openhands.server.session.session_init_data import SessionInitData
 from openhands.server.shared import config, session_manager, sio
 
 
@@ -31,9 +31,9 @@ async def oh_action(connection_id: str, data: dict):
         github_token = data.pop('github_token', None)
         latest_event_id = int(data.pop('latest_event_id', -1))
         kwargs = {k.lower(): v for k, v in (data.get('args') or {}).items()}
-        session_config = SessionConfig(**kwargs)
+        session_init_data = SessionInitData(**kwargs)
         await init_connection(
-            connection_id, token, github_token, session_config, latest_event_id
+            connection_id, token, github_token, session_init_data, latest_event_id
         )
         return
 
@@ -45,7 +45,7 @@ async def init_connection(
     connection_id: str,
     token: str | None,
     gh_token: str | None,
-    session_config: SessionConfig,
+    session_init_data: SessionInitData,
     latest_event_id: int,
 ):
     if not await authenticate_github_user(gh_token):
@@ -66,7 +66,7 @@ async def init_connection(
 
     # The session in question should exist, but may not actually be running locally...
     event_stream = await session_manager.init_or_join_session(
-        sid, connection_id, session_config
+        sid, connection_id, session_init_data
     )
 
     # Send events

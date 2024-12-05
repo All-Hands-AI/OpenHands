@@ -4,9 +4,9 @@ from dataclasses import dataclass
 
 
 @dataclass
-class SessionConfig:
+class SessionInitData:
     """
-    Session configuration for the web environment
+    Session initialization data for the web environment - a deep copy of the global config is made and then overridden with this data.
     """
     language: str | None = None
     agent: str | None = None

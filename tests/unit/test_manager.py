@@ -7,7 +7,7 @@ import pytest
 
 from openhands.core.config.app_config import AppConfig
 from openhands.server.session.manager import SessionManager
-from openhands.server.session.session_config import SessionConfig
+from openhands.server.session.session_init_data import SessionInitData
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -101,7 +101,7 @@ async def test_init_new_local_session():
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
             await session_manager.init_or_join_session(
-                'new-session-id', 'new-session-id', SessionConfig()
+                'new-session-id', 'new-session-id', SessionInitData()
             )
     assert session_instance.initialize_agent.call_count == 1
     assert sio.enter_room.await_count == 1
@@ -133,11 +133,11 @@ async def test_join_local_session():
         ) as session_manager:
             # First call initializes
             await session_manager.init_or_join_session(
-                'new-session-id', 'new-session-id', SessionConfig()
+                'new-session-id', 'new-session-id', SessionInitData()
             )
             # Second call joins
             await session_manager.init_or_join_session(
-                'new-session-id', 'extra-connection-id', SessionConfig()
+                'new-session-id', 'extra-connection-id', SessionInitData()
             )
     assert session_instance.initialize_agent.call_count == 1
     assert sio.enter_room.await_count == 2
@@ -169,7 +169,7 @@ async def test_join_cluster_session():
         ) as session_manager:
             # First call initializes
             await session_manager.init_or_join_session(
-                'new-session-id', 'new-session-id', SessionConfig()
+                'new-session-id', 'new-session-id', SessionInitData()
             )
     assert session_instance.initialize_agent.call_count == 0
     assert sio.enter_room.await_count == 1
@@ -200,7 +200,7 @@ async def test_add_to_local_event_stream():
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
             await session_manager.init_or_join_session(
-                'new-session-id', 'connection-id', SessionConfig()
+                'new-session-id', 'connection-id', SessionInitData()
             )
             await session_manager.send_to_event_stream(
                 'connection-id', {'event_type': 'some_event'}
@@ -233,7 +233,7 @@ async def test_add_to_cluster_event_stream():
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
             await session_manager.init_or_join_session(
-                'new-session-id', 'connection-id', SessionConfig()
+                'new-session-id', 'connection-id', SessionInitData()
             )
             await session_manager.send_to_event_stream(
                 'connection-id', {'event_type': 'some_event'}

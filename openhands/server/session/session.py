@@ -22,7 +22,7 @@ from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
-from openhands.server.session.session_config import SessionConfig
+from openhands.server.session.session_init_data import SessionInitData
 from openhands.storage.files import FileStore
 
 ROOM_KEY = 'room:{sid}'
@@ -61,23 +61,23 @@ class Session:
         self.is_alive = False
         self.agent_session.close()
 
-    async def initialize_agent(self, session_config: SessionConfig):
+    async def initialize_agent(self, session_init_data: SessionInitData):
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
         )
         # Extract the agent-relevant arguments from the request
-        agent_cls = session_config.agent or self.config.default_agent
-        self.config.security.confirmation_mode = self.config.security.confirmation_mode if session_config.confirmation_mode is None else session_config.confirmation_mode
-        self.config.security.security_analyzer = session_config.security_analyzer or self.config.security.security_analyzer
-        max_iterations = session_config.max_iterations or self.config.max_iterations
+        agent_cls = session_init_data.agent or self.config.default_agent
+        self.config.security.confirmation_mode = self.config.security.confirmation_mode if session_init_data.confirmation_mode is None else session_init_data.confirmation_mode
+        self.config.security.security_analyzer = session_init_data.security_analyzer or self.config.security.security_analyzer
+        max_iterations = session_init_data.max_iterations or self.config.max_iterations
         # override default LLM config
         
 
         default_llm_config = self.config.get_llm_config()
-        default_llm_config.model = session_config.llm_model or default_llm_config.model
-        default_llm_config.api_key = session_config.llm_api_key or default_llm_config.api_key
-        default_llm_config.base_url = session_config.llm_base_url or default_llm_config.base_url
+        default_llm_config.model = session_init_data.llm_model or default_llm_config.model
+        default_llm_config.api_key = session_init_data.llm_api_key or default_llm_config.api_key
+        default_llm_config.base_url = session_init_data.llm_base_url or default_llm_config.base_url
 
         # TODO: override other LLM config & agent config groups (#2075)
 
