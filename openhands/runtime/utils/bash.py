@@ -440,10 +440,16 @@ class BashSession:
                 'Hitting enter to get a fresh PS1 prompt:\n---\n'
                 f'{last_pane_output!r}\n---'
             )
-        assert len(_ps1_matches) == 1, (
-            'Expected exactly one PS1 metadata block BEFORE the execution of a command, '
+        assert len(_ps1_matches) >= 1, (
+            'Expected at least one PS1 metadata block BEFORE the execution of a command, '
             f'but got {len(_ps1_matches)} PS1 metadata blocks:\n---\n{last_pane_output!r}\n---'
         )
+        if len(_ps1_matches) > 1:
+            logger.warning(
+                'Found multiple PS1 metadata blocks BEFORE the execution of a command. '
+                'Only the last one will be used.'
+            )
+            _ps1_matches = [_ps1_matches[-1]]
 
         if command != '':
             logger.debug(f'SENDING COMMAND: {command}')
