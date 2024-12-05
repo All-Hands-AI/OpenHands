@@ -6,7 +6,6 @@ import { useDeleteProject } from "#/hooks/mutation/use-delete-project";
 import { ConfirmDeleteModal } from "./confirm-delete-modal";
 import { NewProjectButton } from "./new-project-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import RefreshIcon from "#/icons/refresh.svg?react";
 import { useUpdateProject } from "#/hooks/mutation/use-update-project";
 
 interface ProjectPanelProps {
@@ -23,12 +22,7 @@ export function ProjectPanel({ onClose }: ProjectPanelProps) {
     string | null
   >(null);
 
-  const {
-    data: projects,
-    isFetching,
-    refetch: refetchUserProjects,
-    error,
-  } = useUserProjects();
+  const { data: projects, isFetching, error } = useUserProjects();
 
   const { mutate: deleteProject } = useDeleteProject();
   const { mutate: updateProject } = useUpdateProject();
@@ -71,15 +65,6 @@ export function ProjectPanel({ onClose }: ProjectPanelProps) {
     >
       <div className="pt-4 px-4 flex items-center justify-between">
         <NewProjectButton />
-        {!isFetching && (
-          <button
-            type="button"
-            data-testid="refresh-button"
-            onClick={() => refetchUserProjects()}
-          >
-            <RefreshIcon width={24} height={24} />
-          </button>
-        )}
         {isFetching && <LoadingSpinner size="small" />}
       </div>
       {error && (

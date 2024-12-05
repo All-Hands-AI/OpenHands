@@ -23,6 +23,7 @@ export function ProjectCard({
   lastUpdated,
   state = "cold",
 }: ProjectCardProps) {
+  const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const handleBlur = () => {
@@ -64,7 +65,21 @@ export function ProjectCard({
 
         <div className="flex items-center gap-2">
           <ProjectStateIndicator state={state} />
-          <DeleteButton onClick={handleDelete} />
+          <button
+            data-testid="ellipsis-button"
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setContextMenuVisible((prev) => !prev);
+            }}
+          >
+            E
+          </button>
+          {contextMenuVisible && (
+            <div data-testid="context-menu">
+              <DeleteButton onClick={handleDelete} />
+            </div>
+          )}
         </div>
       </div>
       {repo && (

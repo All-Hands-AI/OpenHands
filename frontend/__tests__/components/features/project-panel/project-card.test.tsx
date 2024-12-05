@@ -80,6 +80,31 @@ describe("ProjectCard", () => {
     expect(onClick).toHaveBeenCalled();
   });
 
+  it("should toggle a context menu when clicking the ellipsis button", async () => {
+    const user = userEvent.setup();
+    render(
+      <ProjectCard
+        onDelete={onDelete}
+        onClick={onClick}
+        onChangeTitle={onChangeTitle}
+        name="Project 1"
+        repo={null}
+        lastUpdated="2021-10-01T12:00:00Z"
+      />,
+    );
+
+    expect(screen.queryByTestId("context-menu")).not.toBeInTheDocument();
+
+    const ellipsisButton = screen.getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    screen.getByTestId("context-menu");
+
+    await user.click(ellipsisButton);
+
+    expect(screen.queryByTestId("context-menu")).not.toBeInTheDocument();
+  });
+
   it("should call onDelete when the delete button is clicked", async () => {
     const user = userEvent.setup();
     render(
@@ -93,7 +118,12 @@ describe("ProjectCard", () => {
       />,
     );
 
-    const deleteButton = screen.getByTestId("delete-button");
+    const ellipsisButton = screen.getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    const menu = screen.getByTestId("context-menu");
+    const deleteButton = within(menu).getByTestId("delete-button");
+
     await user.click(deleteButton);
 
     expect(onDelete).toHaveBeenCalled();
@@ -195,7 +225,12 @@ describe("ProjectCard", () => {
       />,
     );
 
-    const deleteButton = screen.getByTestId("delete-button");
+    const ellipsisButton = screen.getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+
+    const menu = screen.getByTestId("context-menu");
+    const deleteButton = within(menu).getByTestId("delete-button");
+
     await user.click(deleteButton);
 
     expect(onClick).not.toHaveBeenCalled();

@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   QueryClientProvider,
@@ -47,19 +47,6 @@ describe("ProjectPanel", () => {
     expect(cards).toHaveLength(3);
   });
 
-  it("should be able to refresh the projects", async () => {
-    const user = userEvent.setup();
-    const getUserProjectsSpy = vi.spyOn(OpenHands, "getUserProjects");
-
-    renderProjectPanel();
-    // We wait because auth needs to fetch first
-    await waitFor(() => expect(getUserProjectsSpy).toHaveBeenCalledTimes(1));
-    const refreshButton = await screen.findByTestId("refresh-button");
-
-    await user.click(refreshButton);
-    expect(getUserProjectsSpy).toHaveBeenCalledTimes(2);
-  });
-
   it("should display an empty state when there are no projects", async () => {
     const getUserProjectsSpy = vi.spyOn(OpenHands, "getUserProjects");
     getUserProjectsSpy.mockResolvedValue([]);
@@ -89,11 +76,18 @@ describe("ProjectPanel", () => {
   it("should cancel deleting a project", async () => {
     const user = userEvent.setup();
     renderProjectPanel();
+
     let cards = await screen.findAllByTestId("project-card");
-    const firstDeleteButton = within(cards[0]).getByTestId("delete-button");
+    expect(
+      within(cards[0]).queryByTestId("delete-button"),
+    ).not.toBeInTheDocument();
+
+    const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+    const deleteButton = screen.getByTestId("delete-button");
 
     // Click the first delete button
-    await user.click(firstDeleteButton);
+    await user.click(deleteButton);
 
     // Cancel the deletion
     const cancelButton = screen.getByText("Cancel");
@@ -109,11 +103,14 @@ describe("ProjectPanel", () => {
   it("should delete a project", async () => {
     const user = userEvent.setup();
     renderProjectPanel();
+
     let cards = await screen.findAllByTestId("project-card");
-    const firstDeleteButton = within(cards[0]).getByTestId("delete-button");
+    const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+    const deleteButton = screen.getByTestId("delete-button");
 
     // Click the first delete button
-    await user.click(firstDeleteButton);
+    await user.click(deleteButton);
 
     // Confirm the deletion
     const confirmButton = screen.getByText("Confirm");
