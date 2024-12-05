@@ -7,6 +7,7 @@ import { ConfirmDeleteModal } from "./confirm-delete-modal";
 import { NewProjectButton } from "./new-project-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useUpdateProject } from "#/hooks/mutation/use-update-project";
+import { useEndSession } from "#/hooks/use-end-session";
 
 interface ProjectPanelProps {
   onClose: () => void;
@@ -15,6 +16,8 @@ interface ProjectPanelProps {
 export function ProjectPanel({ onClose }: ProjectPanelProps) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  const endSession = useEndSession();
 
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =
     React.useState(false);
@@ -39,7 +42,7 @@ export function ProjectPanel({ onClose }: ProjectPanelProps) {
 
       const sessionId = searchParams.get("sessionId");
       if (sessionId === selectedProjectId) {
-        navigate("/");
+        endSession();
       }
     }
   };

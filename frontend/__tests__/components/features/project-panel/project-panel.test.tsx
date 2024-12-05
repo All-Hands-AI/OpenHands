@@ -24,12 +24,22 @@ describe("ProjectPanel", () => {
       ),
     });
 
+  const { endSessionMock, searchParamsGetMock } = vi.hoisted(() => ({
+    endSessionMock: vi.fn(),
+    searchParamsGetMock: vi.fn(),
+  }));
+
   beforeAll(() => {
     vi.mock("react-router", async (importOriginal) => ({
       ...(await importOriginal<typeof import("react-router")>()),
       Link: ({ children }: React.PropsWithChildren) => children,
       useNavigate: vi.fn(() => vi.fn()),
-      useSearchParams: vi.fn(() => [{ get: vi.fn() }]),
+      useSearchParams: vi.fn(() => [{ get: searchParamsGetMock }]),
+    }));
+
+    vi.mock("#/hooks/use-end-session", async (importOriginal) => ({
+      ...(await importOriginal<typeof import("#/hooks/use-end-session")>()),
+      useEndSession: vi.fn(() => endSessionMock),
     }));
   });
 
@@ -100,6 +110,32 @@ describe("ProjectPanel", () => {
     expect(cards).toHaveLength(3);
   });
 
+  it("should call endSession after deleting a project that is the current session", async () => {
+    searchParamsGetMock.mockReturnValue("2"); // id of the second project
+    const user = userEvent.setup();
+    renderProjectPanel();
+
+    let cards = await screen.findAllByTestId("project-card");
+    const ellipsisButton = within(cards[1]).getByTestId("ellipsis-button");
+    await user.click(ellipsisButton);
+    const deleteButton = screen.getByTestId("delete-button");
+
+    // Click the second delete button
+    await user.click(deleteButton);
+
+    // Confirm the deletion
+    const confirmButton = screen.getByText("Confirm");
+    await user.click(confirmButton);
+
+    expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
+
+    // Ensure the project is deleted
+    cards = await screen.findAllByTestId("project-card");
+    expect(cards).toHaveLength(2);
+
+    expect(endSessionMock).toHaveBeenCalledOnce();
+  });
+
   it("should delete a project", async () => {
     const user = userEvent.setup();
     renderProjectPanel();
@@ -120,7 +156,7 @@ describe("ProjectPanel", () => {
 
     // Ensure the project is deleted
     cards = await screen.findAllByTestId("project-card");
-    expect(cards).toHaveLength(2);
+    expect(cards).toHaveLength(1);
   });
 
   it("should rename a project", async () => {
@@ -136,7 +172,7 @@ describe("ProjectPanel", () => {
     await user.tab();
 
     // Ensure the project is renamed
-    expect(updateUserProjectSpy).toHaveBeenCalledWith("2", {
+    expect(updateUserProjectSpy).toHaveBeenCalledWith("3", {
       name: "Project 1 Renamed",
     });
   });

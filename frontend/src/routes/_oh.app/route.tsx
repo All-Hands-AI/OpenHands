@@ -25,7 +25,7 @@ import Security from "#/components/shared/modals/security/security";
 function App() {
   const [searchParams] = useSearchParams();
 
-  const { gitHubToken } = useAuth();
+  const { gitHubToken, setToken } = useAuth();
   const { settings } = useUserPrefs();
 
   const dispatch = useDispatch();
@@ -52,6 +52,8 @@ function App() {
   const sessionId = searchParams.get("sessionId");
 
   React.useEffect(() => {
+    if (sessionId) setToken(sessionId);
+
     dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());

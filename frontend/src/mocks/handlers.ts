@@ -60,7 +60,17 @@ const openHandsHandlers = [
       .trim();
 
     if (!token) return HttpResponse.json([], { status: 401 });
-    return HttpResponse.json(["file1.ts", "dir1/file2.ts", "file3.ts"]);
+
+    let data = ["file1.txt", "file2.txt", "file3.txt"];
+    if (token === "3") {
+      data = [
+        "reboot_skynet.exe",
+        "target_list.txt",
+        "terminator_blueprint.txt",
+      ];
+    }
+
+    return HttpResponse.json(data);
   }),
 
   http.post("http://localhost:3001/api/save-file", () =>
