@@ -134,26 +134,9 @@ class BashSession:
         self._reader_thread: threading.Thread | None = None
         self._last_capture_time: float = 0.0
 
-        # # Start the reader thread
-        # self._setup_reader()
-
     def __del__(self):
         """Ensure the session is closed when the object is destroyed."""
         self.close()
-
-    # def _setup_reader(self):
-    #     """Set up background thread to poll capture_pane."""
-    #     assert self._reader_thread is None, 'Expected reader thread not running'
-    #     self._stop_reader.clear()
-    #     self._reader_thread = threading.Thread(
-    #         target=self._poll_capture_pane,
-    #         daemon=True,
-    #     )
-    #     self._reader_thread.start()
-
-    #     # Hit enter to trigger the FIRST PS1
-    #     self.pane.enter()
-    #     time.sleep(1)
 
     def _get_pane_content(self) -> str:
         """Capture the current pane content and update the buffer."""
@@ -189,21 +172,6 @@ class BashSession:
                                 logger.debug(f'REPLACED LINE: {line}')
                     # we will ignore deletions (e.g., stale history)
             return '\n'.join(self._terminal_history_lines)
-
-    # def _poll_capture_pane(self):
-    #     """Continuously poll capture_pane and update the content buffer."""
-    #     try:
-    #         while not self._stop_reader.is_set():
-    #             self._capture_pane()
-    #             logger.debug(f'CAPTURE OUTPUT: {self._terminal_history_lines!r}')
-    #             time.sleep(self.POLL_INTERVAL)
-    #     except Exception as e:
-    #         logger.error(f'Error polling capture_pane: {e}')
-
-    # def _get_pane_content(self) -> str:
-    #     """Get the current pane content from the buffer."""
-    #     with self._pane_content_lock:
-    #         return self._capture_pane()
 
     def close(self):
         """Clean up the session."""
