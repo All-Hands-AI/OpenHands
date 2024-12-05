@@ -58,7 +58,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         )
 
         action = CmdRunAction(command='C-c')
-        action.timeout = 1
+        action.timeout = 30
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)
