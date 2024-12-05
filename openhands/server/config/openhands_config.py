@@ -1,4 +1,5 @@
 import os
+
 from openhands.server.types import AppMode, OpenhandsConfigInterface
 from openhands.utils.import_utils import import_from
 
@@ -8,7 +9,9 @@ class OpenhandsOssConfig(OpenhandsConfigInterface):
     APP_MODE = AppMode.OSS
     POSTHOG_CLIENT_KEY = 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
     GITHUB_CLIENT_ID = os.environ.get('GITHUB_APP_CLIENT_ID', '')
-    ATTACH_SESSION_MIDDLEWARE = 'openhands.server.middleware.AttachSessionMiddleware'
+    ATTACH_SESSION_MIDDLEWARE_PATH = (
+        'openhands.server.middleware.AttachSessionMiddleware'
+    )
 
     def verify_config(self):
         if self.CONFIG_PATH:

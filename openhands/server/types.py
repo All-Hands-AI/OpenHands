@@ -10,6 +10,7 @@ class AppMode(Enum):
 
 class SessionMiddlewareInterface(Protocol):
     """Protocol for session middleware classes."""
+
     pass
 
 
@@ -18,7 +19,7 @@ class OpenhandsConfigInterface(ABC):
     APP_MODE: ClassVar[AppMode]
     POSTHOG_CLIENT_KEY: ClassVar[str]
     GITHUB_CLIENT_ID: ClassVar[str]
-    ATTACH_SESSION_MIDDLEWARE: ClassVar[type[SessionMiddlewareInterface]]
+    ATTACH_SESSION_MIDDLEWARE_PATH: ClassVar[str]
 
     @abstractmethod
     def verify_config(self) -> None:
