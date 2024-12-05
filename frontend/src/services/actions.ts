@@ -79,13 +79,12 @@ function getRiskText(risk: ActionSecurityRisk) {
 }
 
 export function handleActionMessage(message: ActionMessage) {
-  if ("args" in message && "security_risk" in message.args) {
-    store.dispatch(appendSecurityAnalyzerInput(message));
-    return;
-  }
-
   if (message.args?.hidden) {
     return
+  }
+
+  if ("args" in message && "security_risk" in message.args) {
+    store.dispatch(appendSecurityAnalyzerInput(message));
   }
 
   if (message.source !== "user") {
