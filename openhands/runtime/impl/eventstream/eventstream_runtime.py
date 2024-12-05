@@ -122,6 +122,7 @@ class LogBuffer:
 
 class EventStreamRuntime(Runtime):
     """This runtime will subscribe the event stream.
+
     When receive an event, it will send the event to runtime-client which run inside the docker environment.
 
     Args:
@@ -458,7 +459,7 @@ class EventStreamRuntime(Runtime):
             pass
 
     def close(self, rm_all_containers: bool | None = None):
-        """Closes the EventStreamRuntime and associated objects
+        """Closes the EventStreamRuntime and associated objects.
 
         Parameters:
         - rm_all_containers (bool): Whether to remove all containers with the 'openhands-sandbox-' prefix

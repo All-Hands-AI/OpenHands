@@ -122,8 +122,8 @@ class Message(BaseModel):
     def _add_tool_call_keys(self, message_dict: dict) -> dict:
         """Add tool call keys if we have a tool call or response.
 
-        NOTE: this is necessary for both native and non-native tool calling"""
-
+        NOTE: this is necessary for both native and non-native tool calling
+        """
         # an assistant message calling a tool
         if self.tool_calls is not None:
             message_dict['tool_calls'] = self.tool_calls
