@@ -3809,19 +3809,19 @@ pydantic = ">=1.10"
 
 [[package]]
 name = "llama-index"
-version = "0.12.1"
+version = "0.12.2"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "llama_index-0.12.1-py3-none-any.whl", hash = "sha256:6909e0617c3773daebde45e5bb5fc0d052f5ff5af914d2fd1d8af49ef1bd4b73"},
-    {file = "llama_index-0.12.1.tar.gz", hash = "sha256:242e7adb3f6a9d13c848442e2ed379a555c811c655174fb713dc51b2a4a11248"},
+    {file = "llama_index-0.12.2-py3-none-any.whl", hash = "sha256:971528db7889f5a0d15fd9039a403bc6f92bfafc2d4e1bab2d166657728ae94c"},
+    {file = "llama_index-0.12.2.tar.gz", hash = "sha256:da9738dd666e219689839c7451c9df8bed72e6510a6f7d6f7d9907bfdd4588eb"},
 ]
 
 [package.dependencies]
 llama-index-agent-openai = ">=0.4.0,<0.5.0"
 llama-index-cli = ">=0.4.0,<0.5.0"
-llama-index-core = ">=0.12.1,<0.13.0"
+llama-index-core = ">=0.12.2,<0.13.0"
 llama-index-embeddings-openai = ">=0.3.0,<0.4.0"
 llama-index-indices-managed-llama-cloud = ">=0.4.0"
 llama-index-legacy = ">=0.9.48,<0.10.0"
@@ -3867,13 +3867,13 @@ llama-index-llms-openai = ">=0.3.0,<0.4.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.1"
+version = "0.12.2"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "llama_index_core-0.12.1-py3-none-any.whl", hash = "sha256:6de135c890f711a0cf1f80d98d6981015fd14a3864c48e087d91f7e845d8a0a3"},
-    {file = "llama_index_core-0.12.1.tar.gz", hash = "sha256:3abcd68b019cfd58e79b07e227925cbbc86283dae1d8ab35403ff2835e5099f8"},
+    {file = "llama_index_core-0.12.2-py3-none-any.whl", hash = "sha256:27a5548523435a5c2b84f75c15894a44522b7f968e9f29a03f9a301ca09fb7fa"},
+    {file = "llama_index_core-0.12.2.tar.gz", hash = "sha256:a48b2de9c3a09608ab5c03c5a313428f119c86946acdefde555992b7c0b8a38e"},
 ]
 
 [package.dependencies]
@@ -5483,13 +5483,13 @@ numpy = {version = ">=1.26.0", markers = "python_version >= \"3.12\""}
 
 [[package]]
 name = "openhands-aci"
-version = "0.1.1"
+version = "0.1.2"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
 python-versions = "<4.0,>=3.12"
 files = [
-    {file = "openhands_aci-0.1.1-py3-none-any.whl", hash = "sha256:8831f97b887571005dca0d70a9f6f0a4f9feb35d3d41f499e70d72b5fb68a599"},
-    {file = "openhands_aci-0.1.1.tar.gz", hash = "sha256:705b74a12a8f428e64295b5de125f553500f62ef5ab3a5a6284d8fcf638025e6"},
+    {file = "openhands_aci-0.1.2-py3-none-any.whl", hash = "sha256:a2fcae7a2f1047d516d6862742c7a2f8ea988c6a58295599bc305c99b8d53067"},
+    {file = "openhands_aci-0.1.2.tar.gz", hash = "sha256:c3c91aa3f13554159168b44a7f86bf333da30067fa6370a46ed785bf4240631b"},
 ]
 
 [package.dependencies]
@@ -10087,4 +10087,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "56a80082afb76e518239060855598921d94a0373123b2d9222cf8c7b6238b7ad"
+content-hash = "1b42dcc42b1dae014b1951246781a850c95ce2d6fdaab45f8b62f5a04ebd5e53"

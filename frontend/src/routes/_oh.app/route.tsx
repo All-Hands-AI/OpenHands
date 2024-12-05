@@ -6,7 +6,7 @@ import { Controls } from "#/components/features/controls/controls";
 import { RootState } from "#/store";
 import { clearMessages } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
-import { useEffectOnce } from "#/utils/use-effect-once";
+import { useEffectOnce } from "#/hooks/use-effect-once";
 import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
 import ListIcon from "#/icons/list-type-number.svg?react";

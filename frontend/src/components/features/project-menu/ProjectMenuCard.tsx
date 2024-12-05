@@ -47,6 +47,7 @@ Please push the changes to GitHub and open a pull request.
 `,
       imageUrls: [],
       timestamp: new Date().toISOString(),
+      pending: false,
     };
     const event = createChatMessage(
       rawEvent.content,

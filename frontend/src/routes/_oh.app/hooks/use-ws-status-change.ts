@@ -86,6 +86,7 @@ export const useWSStatusChange = () => {
           content: initialQuery,
           imageUrls: files,
           timestamp: new Date().toISOString(),
+          pending: true,
         }),
       );
     }
