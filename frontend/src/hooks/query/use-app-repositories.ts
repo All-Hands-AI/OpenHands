@@ -15,21 +15,27 @@ interface appRepositoriesQueryFnProps {
   };
   ghToken: string;
   appInstallations: string[];
+  refreshToken: () => Promise<boolean>;
+  logout: () => void;
 }
 
 const appRepositoriesQueryFn = async ({
   pageParam: { installationIndex, repoPage },
   ghToken,
   appInstallations,
+  refreshToken,
+  logout,
 }: appRepositoriesQueryFnProps) => {
   const response = await retrieveGitHubUserRepositories(
     ghToken,
+    refreshToken,
+    logout,
     repoPage,
     100,
     appInstallations[installationIndex],
   );
 
-  if (!response.ok) {
+  if (!(response instanceof Response)) {
     throw new Error("Failed to fetch repositories");
   }
 
@@ -57,7 +63,7 @@ const appRepositoriesQueryFn = async ({
 };
 
 export const useAppRepositories = () => {
-  const { gitHubToken } = useAuth();
+  const { gitHubToken, refreshToken, logout } = useAuth();
   const { data: installations } = useAppIntallations();
 
   const repos = useInfiniteQuery({
@@ -67,6 +73,8 @@ export const useAppRepositories = () => {
         pageParam: pageParam || { installationIndex: 0, repoPage: 1 },
         ghToken: gitHubToken!,
         appInstallations: installations || [],
+        refreshToken,
+        logout,
       }),
 
     initialPageParam: { installationIndex: 0, repoPage: 1 },

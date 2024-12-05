@@ -7,13 +7,15 @@ interface UseLatestRepoCommitConfig {
 }
 
 export const useLatestRepoCommit = (config: UseLatestRepoCommitConfig) => {
-  const { gitHubToken } = useAuth();
+  const { gitHubToken, refreshToken, logout } = useAuth();
 
   return useQuery({
     queryKey: ["latest_commit", gitHubToken, config.repository],
     queryFn: async () => {
       const data = await retrieveLatestGitHubCommit(
         gitHubToken!,
+        refreshToken,
+        logout,
         config.repository!,
       );
 

@@ -10,19 +10,25 @@ import { useAuth } from "#/context/auth-context";
 interface UserRepositoriesQueryFnProps {
   pageParam: number;
   ghToken: string;
+  refreshToken: () => Promise<boolean>;
+  logout: () => void;
 }
 
 const userRepositoriesQueryFn = async ({
   pageParam,
   ghToken,
+  refreshToken,
+  logout,
 }: UserRepositoriesQueryFnProps) => {
   const response = await retrieveGitHubUserRepositories(
     ghToken,
+    refreshToken,
+    logout,
     pageParam,
     100,
   );
 
-  if (!response.ok) {
+  if (!(response instanceof Response)) {
     throw new Error("Failed to fetch repositories");
   }
 
@@ -39,7 +45,7 @@ const userRepositoriesQueryFn = async ({
 };
 
 export const useUserRepositories = () => {
-  const { gitHubToken } = useAuth();
+  const { gitHubToken, refreshToken, logout } = useAuth();
 
   const repos = useInfiniteQuery({
     queryKey: ["repositories", gitHubToken],
@@ -47,6 +53,8 @@ export const useUserRepositories = () => {
       userRepositoriesQueryFn({
         pageParam,
         ghToken: gitHubToken!,
+        refreshToken,
+        logout,
       }),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.nextPage,

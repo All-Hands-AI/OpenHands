@@ -30,7 +30,6 @@ const handleTokenRefresh = async (
     }
     return true;
   } catch (error) {
-    console.error("Token refresh failed:", error);
     logout();
     throw new Error("Token refresh failed. User logged out.");
   }
@@ -83,27 +82,37 @@ export const isGitHubErrorReponse = <T extends object | Array<unknown>>(
 ): data is GitHubErrorReponse =>
   !!data && "message" in data && data.message !== undefined;
 
+/**
+ * Retrieves GitHub app installations for the user
+ */
+
 export const retrieveGitHubAppInstallations = async (
   token: string,
-): Promise<string[]> => {
-  const installationsUrl = "https://api.github.com/user/installations";
-
-  const installationsResponse = await fetch(installationsUrl, {
-    headers: generateGitHubAPIHeaders(token),
-  });
-
-  if (!installationsResponse.ok) {
-    throw new Error(
-      `Failed to fetch installations: ${installationsResponse.statusText}`,
-    );
-  }
-
-  const installationsData = await installationsResponse.json();
-  const installationIds = installationsData.installations.map(
-    (installation: { id: number }) => installation.id,
+  refreshToken: () => Promise<boolean>,
+  logout: () => void,
+): Promise<string[] | GitHubErrorReponse> => {
+  return githubAPIRequest(
+    async () => {
+      const response = await fetch(
+        "https://api.github.com/user/installations",
+        {
+          headers: generateGitHubAPIHeaders(token),
+        },
+      );
+      if (!response.ok) {
+        throw {
+          response: { status: response.status },
+          message: "Failed to fetch installations",
+        };
+      }
+      const data = await response.json();
+      return data.installations.map(
+        (installation: { id: number }) => installation.id,
+      );
+    },
+    refreshToken,
+    logout,
   );
-
-  return installationIds;
 };
 
 /**
@@ -112,26 +121,39 @@ export const retrieveGitHubAppInstallations = async (
  * @returns A list of repositories or an error response
  */
 export const retrieveGitHubUserRepositories = async (
-  gitHubToken: string,
+  token: string,
+  refreshToken: () => Promise<boolean>,
+  logout: () => void,
   page = 1,
   per_page = 30,
-  installationId: null | string = null,
-): Promise<Response> => {
-  const baseUrl = window.location.origin;
-  const url = new URL("/api/github/repositories", baseUrl);
-  url.searchParams.append("sort", "pushed");
-  url.searchParams.append("page", page.toString());
-  url.searchParams.append("per_page", per_page.toString());
+  installationId: string | null = null,
+): Promise<Response | GitHubErrorReponse> => {
+  return githubAPIRequest(
+    async () => {
+      const baseUrl = window.location.origin;
+      const url = new URL("/api/github/repositories", baseUrl);
+      url.searchParams.append("sort", "pushed");
+      url.searchParams.append("page", page.toString());
+      url.searchParams.append("per_page", per_page.toString());
 
-  if (installationId) {
-    url.searchParams.append("installation_id", installationId);
-  }
+      if (installationId) {
+        url.searchParams.append("installation_id", installationId);
+      }
 
-  return fetch(url.toString(), {
-    headers: {
-      "X-GitHub-Token": gitHubToken,
+      const response = await fetch(url.toString(), {
+        headers: generateGitHubAPIHeaders(token),
+      });
+      if (!response.ok) {
+        throw {
+          response: { status: response.status },
+          message: "Failed to retrieve repositories",
+        };
+      }
+      return response.json();
     },
-  });
+    refreshToken,
+    logout,
+  );
 };
 
 /**
@@ -176,17 +198,26 @@ export const retrieveGitHubUser = async (
 
 export const retrieveLatestGitHubCommit = async (
   token: string,
+  refreshToken: () => Promise<boolean>,
+  logout: () => void,
   repository: string,
 ): Promise<GitHubCommit[] | GitHubErrorReponse> => {
-  const url = new URL(`https://api.github.com/repos/${repository}/commits`);
-  url.searchParams.append("per_page", "1");
-  const response = await fetch(url.toString(), {
-    headers: generateGitHubAPIHeaders(token),
-  });
-
-  if (!response.ok) {
-    throw new Error("Failed to retrieve latest commit");
-  }
-
-  return response.json();
+  return githubAPIRequest(
+    async () => {
+      const url = new URL(`https://api.github.com/repos/${repository}/commits`);
+      url.searchParams.append("per_page", "1");
+      const response = await fetch(url.toString(), {
+        headers: generateGitHubAPIHeaders(token),
+      });
+      if (!response.ok) {
+        throw {
+          response: { status: response.status },
+          message: "Failed to retrieve latest commit",
+        };
+      }
+      return response.json();
+    },
+    refreshToken,
+    logout,
+  );
 };
