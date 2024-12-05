@@ -1,5 +1,6 @@
 import json
 import re
+import traceback
 from dataclasses import dataclass, field
 from typing import Self
 
@@ -58,6 +59,10 @@ class CmdOutputMetadata(BaseModel):
                 json.loads(match.group(1).strip())  # Try to parse as JSON
                 matches.append(match)
             except json.JSONDecodeError:
+                logger.warning(
+                    f'Failed to parse PS1 metadata: {match.group(1)}. Skipping.'
+                    + traceback.format_exc()
+                )
                 continue  # Skip if not valid JSON
         return matches
 
