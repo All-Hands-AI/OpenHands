@@ -369,7 +369,7 @@ class RemoteRuntime(Runtime):
             # clean up the runtime
             self.close()
             raise RuntimeError(
-                f'Runtime (ID={self.runtime_id}) failed to start. Current status: {pod_status}'
+                f'Runtime (ID={self.runtime_id}) failed to start. Current status: {pod_status}. Pod Logs:\n{runtime_data.get("pod_logs", "N/A")}'
             )
         else:
             # Maybe this should be a hard failure, but passing through in case the API changes
