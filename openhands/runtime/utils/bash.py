@@ -97,7 +97,7 @@ class BashSession:
         window_command = '/bin/bash'
         if username:
             # This starts a non-login (new) shell for the given user
-            window_command = f'su {username} -c "/bin/bash"'
+            window_command = f'su {username}'
 
         session_name = f'openhands-{username}-{uuid.uuid4()}'
         self.session = self.server.new_session(
