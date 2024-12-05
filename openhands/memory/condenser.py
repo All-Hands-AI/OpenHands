@@ -12,7 +12,9 @@ from openhands.core.config.condenser_config import (
     RecentEventsCondenserConfig,
 )
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.schema import ObservationType
 from openhands.events.event import Event
+from openhands.events.observation import Observation
 from openhands.llm.llm import LLM
 
 
@@ -109,6 +111,17 @@ class RecentEventsCondenser(Condenser):
         return CondensationResult(condensed_events=events[-self.max_events :])
 
 
+@dataclass
+class CondensationObservation(Observation):
+    """Represents the output of a condensation action."""
+
+    observation: str = ObservationType.RUN
+
+    @property
+    def message(self) -> str:
+        return self.content
+
+
 class LLMCondenser(Condenser):
     """A condenser that relies on a language model to summarize the event sequence as a single event."""
 
@@ -134,10 +147,7 @@ class LLMCondenser(Condenser):
             summary_response = resp['choices'][0]['message']['content']
 
             # Create a new summary event with the condensed content
-            summary_event = Event()
-            setattr(summary_event, '_message', summary_response)
-            setattr(summary_event, '_timestamp', events[-1].timestamp)
-            setattr(summary_event, '_source', events[-1].source)
+            summary_event = CondensationObservation(summary_response)
 
             return CondensationResult(
                 condensed_events=[summary_event],
