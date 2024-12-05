@@ -1,5 +1,4 @@
 import axios from "axios";
-import axiosRetry from "axios-retry";
 
 const github = axios.create({
   baseURL: "https://api.github.com",
@@ -19,7 +18,7 @@ const removeAuthTokenHeader = () => {
   }
 };
 
-const can_refresh = (error: any) => {
+const canRefresh = (error: any) => {
   return error && error.config && error.response && error.response.status;
 };
 
@@ -31,7 +30,7 @@ const setupAxiosInterceptors = (
   github.interceptors.response.use(
     (response) => response, // Pass successful responses through
     async (error) => {
-      if (!can_refresh(error)) {
+      if (!canRefresh(error)) {
         return Promise.reject(error);
       }
 
