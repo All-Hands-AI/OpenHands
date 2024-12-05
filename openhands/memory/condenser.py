@@ -76,8 +76,8 @@ class Condenser(ABC):
         match config:
             case NoOpCondenserConfig():
                 return NoOpCondenser()
-            case RecentEventsCondenserConfig(max_events=max_events):
-                return RecentEventsCondenser(max_events=max_events)
+            case RecentEventsCondenserConfig():
+                return RecentEventsCondenser(**config.model_dump(exclude=['type']))
             case LLMCondenserConfig(llm_config=llm_config):
                 return LLMCondenser(llm=LLM(config=llm_config))
             case _:
@@ -99,7 +99,8 @@ class NoOpCondenser(Condenser):
 class RecentEventsCondenser(Condenser):
     """A condenser that only keeps a certain number of the most recent events."""
 
-    def __init__(self, max_events: int = 10):
+    def __init__(self, keep_first: bool = False, max_events: int = 10):
+        self.keep_first = keep_first
         self.max_events = max_events
 
     def condense(self, events: list[Event]) -> CondensationResult:
@@ -108,7 +109,12 @@ class RecentEventsCondenser(Condenser):
         Args:
             events (list[Event]): List of events to condense.
         """
-        return CondensationResult(condensed_events=events[-self.max_events :])
+        condensed_events = events[-self.max_events :]
+
+        if self.keep_first and len(condensed_events) < len(events):
+            condensed_events = [events[0]] + condensed_events
+
+        return CondensationResult(condensed_events=condensed_events)
 
 
 @dataclass

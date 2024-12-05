@@ -15,6 +15,10 @@ class RecentEventsCondenserConfig(BaseModel):
     """Configuration for RecentEventsCondenser."""
 
     type: Literal['recent'] = Field('recent')
+    keep_first: bool = Field(
+        default=False,
+        description='Whether to keep the first event, regardless of how many events are condensed.',
+    )
     max_events: int = Field(
         default=10, description='Maximum number of events to keep.', ge=1
     )

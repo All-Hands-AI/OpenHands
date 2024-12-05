@@ -51,11 +51,13 @@ def test_noop_condenser():
 def test_recent_events_condenser_from_config():
     """Test that RecentEventsCondenser objects can be made from config."""
     max_events = 5
-    config = RecentEventsCondenserConfig(max_events=max_events)
+    keep_first = True
+    config = RecentEventsCondenserConfig(keep_first=keep_first, max_events=max_events)
     condenser = Condenser.from_config(config)
 
     assert isinstance(condenser, RecentEventsCondenser)
     assert condenser.max_events == max_events
+    assert condenser.keep_first == keep_first
 
 
 def test_recent_events_condenser():
@@ -81,6 +83,16 @@ def test_recent_events_condenser():
 
     assert len(result.condensed_events) == max_events
     assert result.condensed_events[0]._message == 'Event 4'
+    assert result.condensed_events[1]._message == 'Event 5'
+
+    # If the keep_first flag is set, the first event will always be present.
+    keep_first = True
+    max_events = 1
+    condenser = RecentEventsCondenser(keep_first=keep_first, max_events=max_events)
+    result = condenser.condense(events)
+
+    assert len(result.condensed_events) == max_events + 1
+    assert result.condensed_events[0]._message == 'Event 1'
     assert result.condensed_events[1]._message == 'Event 5'
 
 
@@ -115,7 +127,7 @@ def test_llm_condenser():
     result = condenser.condense(events)
 
     assert len(result.condensed_events) == 1
-    assert result.condensed_events[0]._message == 'Summary of events'
+    assert result.condensed_events[0].content == 'Summary of events'
 
     # Verify LLM was called with correct prompt.
     mock_llm.completion.assert_called_once()
