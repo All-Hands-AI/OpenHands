@@ -6,7 +6,7 @@ import ActionType from "#/types/action-type";
 import EventLogger from "#/utils/event-logger";
 import AgentState from "#/types/agent-state";
 import { handleAssistantMessage } from "#/services/actions";
-import { useRate } from "#/utils/use-rate";
+import { useRate } from "#/hooks/use-rate";
 
 const isOpenHandsMessage = (event: Record<string, unknown>) =>
   event.action === "message";
@@ -58,7 +58,7 @@ export function WsClientProvider({
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
 
-  const messageRateHandler = useRate({ threshold: 500 });
+  const messageRateHandler = useRate({ threshold: 250 });
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
@@ -82,7 +82,7 @@ export function WsClientProvider({
       initEvent.github_token = ghToken;
     }
     const lastEvent = lastEventRef.current;
-    if (lastEvent && !Number.isNaN(parseInt(lastEvent.id as string, 10))) {
+    if (lastEvent) {
       initEvent.latest_event_id = lastEvent.id;
     }
     send(initEvent);
@@ -93,7 +93,9 @@ export function WsClientProvider({
       messageRateHandler.record(new Date().getTime());
     }
     setEvents((prevEvents) => [...prevEvents, event]);
-    lastEventRef.current = event;
+    if (!Number.isNaN(parseInt(event.id as string, 10))) {
+      lastEventRef.current = event;
+    }
     const extras = event.extras as Record<string, unknown>;
     if (extras?.agent_state === AgentState.INIT) {
       setStatus(WsClientProviderStatus.ACTIVE);

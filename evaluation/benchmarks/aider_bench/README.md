@@ -10,7 +10,7 @@ Hugging Face dataset based on the
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local
+Please follow instruction [here](../../README.md#setup) to setup your local
 development environment and LLM.
 
 ## Start the evaluation

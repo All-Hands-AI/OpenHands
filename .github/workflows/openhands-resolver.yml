@@ -16,6 +16,11 @@ on:
         type: string
         default: "main"
         description: "Target branch to pull and create PR against"
+      base_container_image:
+        required: false
+        type: string
+        default: ""
+        description: "Custom sandbox env"
     secrets:
       LLM_MODEL:
         required: true
@@ -139,6 +144,7 @@ jobs:
 
           echo "MAX_ITERATIONS=${{ inputs.max_iterations || 50 }}" >> $GITHUB_ENV
           echo "SANDBOX_ENV_GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
+          echo "SANDBOX_ENV_BASE_CONTAINER_IMAGE=${{ inputs.base_container_image }}" >> $GITHUB_ENV
 
           # Set branch variables
           echo "TARGET_BRANCH=${{ inputs.target_branch }}" >> $GITHUB_ENV

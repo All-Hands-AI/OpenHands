@@ -218,32 +218,6 @@ class LLM(RetryMixin, DebugMixin):
                         )
                     resp.choices[0].message = fn_call_response_message
 
-                # log for evals or other scripts that need the raw completion
-                if self.config.log_completions:
-                    assert self.config.log_completions_folder is not None
-                    log_file = os.path.join(
-                        self.config.log_completions_folder,
-                        # use the metric model name (for draft editor)
-                        f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
-                    )
-
-                    _d = {
-                        'messages': messages,
-                        'response': resp,
-                        'args': args,
-                        'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
-                        'timestamp': time.time(),
-                        'cost': self._completion_cost(resp),
-                    }
-                    if mock_function_calling:
-                        # Overwrite response as non-fncall to be consistent with `messages``
-                        _d['response'] = non_fncall_response
-                        # Save fncall_messages/response separately
-                        _d['fncall_messages'] = original_fncall_messages
-                        _d['fncall_response'] = resp
-                    with open(log_file, 'w') as f:
-                        f.write(json.dumps(_d))
-
                 message_back: str = resp['choices'][0]['message']['content'] or ''
                 tool_calls = resp['choices'][0]['message'].get('tool_calls', [])
                 if tool_calls:
@@ -255,8 +229,38 @@ class LLM(RetryMixin, DebugMixin):
                 # log the LLM response
                 self.log_response(message_back)
 
-                # post-process the response
-                self._post_completion(resp)
+                # post-process the response first to calculate cost
+                cost = self._post_completion(resp)
+
+                # log for evals or other scripts that need the raw completion
+                if self.config.log_completions:
+                    assert self.config.log_completions_folder is not None
+                    log_file = os.path.join(
+                        self.config.log_completions_folder,
+                        # use the metric model name (for draft editor)
+                        f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
+                    )
+
+                    # set up the dict to be logged
+                    _d = {
+                        'messages': messages,
+                        'response': resp,
+                        'args': args,
+                        'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
+                        'timestamp': time.time(),
+                        'cost': cost,
+                    }
+
+                    # if non-native function calling, save messages/response separately
+                    if mock_function_calling:
+                        # Overwrite response as non-fncall to be consistent with messages
+                        _d['response'] = non_fncall_response
+
+                        # Save fncall_messages/response separately
+                        _d['fncall_messages'] = original_fncall_messages
+                        _d['fncall_response'] = resp
+                    with open(log_file, 'w') as f:
+                        f.write(json.dumps(_d))
 
                 return resp
             except APIError as e:
@@ -413,7 +417,7 @@ class LLM(RetryMixin, DebugMixin):
         )
         return model_name_supported
 
-    def _post_completion(self, response: ModelResponse) -> None:
+    def _post_completion(self, response: ModelResponse) -> float:
         """Post-process the completion response.
 
         Logs the cost and usage stats of the completion call.
@@ -470,6 +474,8 @@ class LLM(RetryMixin, DebugMixin):
         # log the stats
         if stats:
             logger.debug(stats)
+
+        return cur_cost
 
     def get_token_count(self, messages) -> int:
         """Get the number of tokens in a list of messages.
