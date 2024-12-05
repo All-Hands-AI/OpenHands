@@ -1,5 +1,3 @@
-
-
 from abc import abstractmethod
 from dataclasses import dataclass
 
@@ -10,7 +8,7 @@ class Shape:
 
     @abstractmethod
     def get_area(self):
-        """ Get the area of this shape """
+        """Get the area of this shape"""
 
 
 @dataclass
@@ -18,7 +16,7 @@ class Square(Shape):
     length: float
 
     def get_area(self):
-        return self.length ** 2
+        return self.length**2
 
 
 def test_get_impl():
