@@ -50,10 +50,16 @@ app.include_router(conversation_api_router)
 app.include_router(security_api_router)
 app.include_router(feedback_api_router)
 
-AttachSessionMiddlewareImpl = get_impl(AttachSessionMiddleware, config.attach_session_middleware_class)
+AttachSessionMiddlewareImpl = get_impl(
+    AttachSessionMiddleware, config.attach_session_middleware_class
+)
 app.middleware('http')(AttachSessionMiddlewareImpl(app, target_router=files_api_router))
 app.middleware('http')(
     AttachSessionMiddlewareImpl(app, target_router=conversation_api_router)
 )
-app.middleware('http')(AttachSessionMiddlewareImpl(app, target_router=security_api_router))
-app.middleware('http')(AttachSessionMiddlewareImpl(app, target_router=feedback_api_router))
+app.middleware('http')(
+    AttachSessionMiddlewareImpl(app, target_router=security_api_router)
+)
+app.middleware('http')(
+    AttachSessionMiddlewareImpl(app, target_router=feedback_api_router)
+)
