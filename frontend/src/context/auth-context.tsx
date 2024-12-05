@@ -72,15 +72,6 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     }
   };
 
-  React.useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    const storedGitHubToken = localStorage.getItem("ghToken");
-
-    setToken(storedToken);
-    setGitHubToken(storedGitHubToken);
-    setupGithubAxiosInterceptors(refreshToken, logout);
-  }, []);
-
   const logout = () => {
     clearGitHubToken();
     posthog.reset();
@@ -105,6 +96,15 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     clearGitHubToken();
     return false;
   };
+
+  React.useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    const storedGitHubToken = localStorage.getItem("ghToken");
+
+    setToken(storedToken);
+    setGitHubToken(storedGitHubToken);
+    setupGithubAxiosInterceptors(refreshToken, logout);
+  }, []);
 
   const value = React.useMemo(
     () => ({

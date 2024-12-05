@@ -3,9 +3,11 @@ import React from "react";
 import { retrieveGitHubAppRepositories } from "#/api/github";
 import { useAuth } from "#/context/auth-context";
 import { useAppInstallations } from "./use-app-installations";
+import { useConfig } from "./use-config";
 
 export const useAppRepositories = () => {
   const { gitHubToken } = useAuth();
+  const { data: config } = useConfig();
   const { data: installations } = useAppInstallations();
 
   const repos = useInfiniteQuery({
@@ -13,38 +15,41 @@ export const useAppRepositories = () => {
     queryFn: async ({
       pageParam,
     }: {
-      pageParam: { installation_index: number | null; repoPage: number | null };
+      pageParam: { installationIndex: number | null; repoPage: number | null };
     }) => {
-      const { repoPage, installation_index } = pageParam;
+      const { repoPage, installationIndex } = pageParam;
 
       if (!installations) {
         throw new Error("Missing installation list");
       }
 
       return retrieveGitHubAppRepositories(
+        installationIndex || 0,
+        installations,
         repoPage || 1,
         30,
-        installation_index || 0,
-        installations,
       );
     },
-    initialPageParam: { installation_index: 0, repoPage: 1 },
+    initialPageParam: { installationIndex: 0, repoPage: 1 },
     getNextPageParam: (lastPage) => {
       if (lastPage.nextPage) {
         return {
-          installation_index: lastPage.installation_index,
+          installationIndex: lastPage.installationIndex,
           repoPage: lastPage.nextPage,
         };
       }
 
-      if (lastPage.installation_index !== null) {
-        return { installation_index: lastPage.installation_index, repoPage: 1 };
+      if (lastPage.installationIndex !== null) {
+        return { installationIndex: lastPage.installationIndex, repoPage: 1 };
       }
 
       return null;
     },
     enabled:
-      !!gitHubToken && Array.isArray(installations) && installations.length > 0,
+      !!gitHubToken &&
+      Array.isArray(installations) &&
+      installations.length > 0 &&
+      config?.APP_MODE === "saas",
   });
 
   // TODO: Once we create our custom dropdown component, we should fetch data onEndReached

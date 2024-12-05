@@ -1,5 +1,4 @@
-import axios from "axios";
-import { isGitHubErrorReponse } from "./github";
+import axios, { AxiosError } from "axios";
 
 const github = axios.create({
   baseURL: "https://api.github.com",
@@ -19,9 +18,26 @@ const removeAuthTokenHeader = () => {
   }
 };
 
-const canRefresh = (error: any) => {
-  return error && error.config && error.response && error.response.status;
-};
+/**
+ * Checks if response has attributes to perform refresh
+ */
+const canRefresh = (error: unknown): boolean =>
+  !!(
+    error instanceof AxiosError &&
+    error.config &&
+    error.response &&
+    error.response.status
+  );
+
+/**
+ * Checks if the data is a GitHub error response
+ * @param data The data to check
+ * @returns Boolean indicating if the data is a GitHub error response
+ */
+export const isGitHubErrorReponse = <T extends object | Array<unknown>>(
+  data: T | GitHubErrorReponse | null,
+): data is GitHubErrorReponse =>
+  !!data && "message" in data && data.message !== undefined;
 
 // Axios interceptor to handle token refresh
 const setupAxiosInterceptors = (
@@ -32,21 +48,23 @@ const setupAxiosInterceptors = (
     (response) => {
       const parsedData = response.data;
       if (isGitHubErrorReponse(parsedData)) {
-        throw response;
+        const error = new AxiosError(
+          "Failed",
+          "",
+          response.config,
+          response.request,
+          response,
+        );
+        throw error;
       }
       return response;
     }, // Pass successful responses through
     async (error) => {
-      console.log(error);
-      console.log(canRefresh(error));
-
       if (!canRefresh(error)) {
-        return Promise.reject(error);
+        return Promise.reject(new Error("Failed to refresh token"));
       }
 
       const originalRequest = error.config;
-
-      console.log(originalRequest, error.response.status);
 
       // Check if the error is due to an expired token
       if (
@@ -57,11 +75,11 @@ const setupAxiosInterceptors = (
         try {
           const refreshed = await refreshToken();
           if (refreshed) {
-            return github(originalRequest);
+            return await github(originalRequest);
           }
 
           logout();
-          return Promise.reject("Failed to refresh token");
+          return await Promise.reject(new Error("Failed to refresh token"));
         } catch (refreshError) {
           // If token refresh fails, evict the user
           logout();

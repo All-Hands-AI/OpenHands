@@ -3,16 +3,6 @@ import { github } from "./github-axios-instance";
 import { openHands } from "./open-hands-axios";
 
 /**
- * Checks if the data is a GitHub error response
- * @param data The data to check
- * @returns Boolean indicating if the data is a GitHub error response
- */
-export const isGitHubErrorReponse = <T extends object | Array<unknown>>(
-  data: T | GitHubErrorReponse | null,
-): data is GitHubErrorReponse =>
-  !!data && "message" in data && data.message !== undefined;
-
-/**
  * Retrieves GitHub app installations for the user
  */
 export const retrieveGitHubAppInstallations = async (): Promise<
@@ -33,12 +23,12 @@ export const retrieveGitHubAppInstallations = async (): Promise<
  * @returns A list of repositories or an error response
  */
 export const retrieveGitHubAppRepositories = async (
+  installationIndex: number,
+  installations: number[],
   page = 1,
   per_page = 30,
-  installation_index: number,
-  installations: number[],
 ) => {
-  const installation_id = installations[installation_index];
+  const installationId = installations[installationIndex];
   const response = await openHands.get<GitHubAppRepository>(
     "/api/github/repositories",
     {
@@ -46,23 +36,27 @@ export const retrieveGitHubAppRepositories = async (
         sort: "pushed",
         page,
         per_page,
-        installation_id,
+        installation_id: installationId,
       },
     },
   );
 
   const link = response.headers.link ?? "";
   const nextPage = extractNextPageFromLink(link);
-  const nextInstallation = nextPage
-    ? installation_index
-    : !nextPage && installation_index + 1 < installations.length
-      ? installation_index + 1
-      : null;
+  let nextInstallation: number | null;
+
+  if (nextPage) {
+    nextInstallation = installationIndex;
+  } else if (installationIndex + 1 < installations.length) {
+    nextInstallation = installationIndex + 1;
+  } else {
+    nextInstallation = null;
+  }
 
   return {
     data: response.data.repositories,
     nextPage,
-    installation_index: nextInstallation,
+    installationIndex: nextInstallation,
   };
 };
 

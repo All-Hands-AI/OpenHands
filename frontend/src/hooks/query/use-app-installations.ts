@@ -1,10 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "#/context/auth-context";
 import { useConfig } from "./use-config";
-import {
-  isGitHubErrorReponse,
-  retrieveGitHubAppInstallations,
-} from "#/api/github";
+import { retrieveGitHubAppInstallations } from "#/api/github";
+import { isGitHubErrorReponse } from "#/api/github-axios-instance";
 
 export const useAppInstallations = () => {
   const { data: config } = useConfig();

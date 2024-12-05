@@ -27,8 +27,8 @@ function Home() {
 
   const { data: config } = useConfig();
   const { data: user } = useGitHubUser();
-  const { data: repositories } =
-    config?.APP_MODE === "saas" ? useAppRepositories() : useUserRepositories();
+  const { data: appRepositories } = useAppRepositories();
+  const { data: userRepositories } = useUserRepositories();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
     gitHubToken,
@@ -55,7 +55,9 @@ function Home() {
           <GitHubRepositoriesSuggestionBox
             handleSubmit={() => formRef.current?.requestSubmit()}
             repositories={
-              repositories?.pages.flatMap((page) => page.data) || []
+              userRepositories?.pages.flatMap((page) => page.data) ||
+              appRepositories?.pages.flatMap((page) => page.data) ||
+              []
             }
             gitHubAuthUrl={gitHubAuthUrl}
             user={user || null}
