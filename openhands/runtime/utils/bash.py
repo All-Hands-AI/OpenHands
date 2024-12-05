@@ -96,7 +96,8 @@ class BashSession:
         self.server = libtmux.Server()
         window_command = '/bin/bash'
         if username:
-            window_command = f'su {username}'
+            # This starts a non-login (new) shell for the given user
+            window_command = f'su {username} -c "/bin/bash"'
 
         session_name = f'openhands-{username}-{uuid.uuid4()}'
         self.session = self.server.new_session(
