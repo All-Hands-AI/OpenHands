@@ -78,6 +78,8 @@ export const chatSlice = createSlice({
       } else if (actionID === "read") {
         text = action.payload.args.path;
       }
+      console.log("text", text);
+      console.log('id', translationID);
       const message: Message = {
         type: "action",
         sender: "assistant",
@@ -122,7 +124,6 @@ export const chatSlice = createSlice({
       action: PayloadAction<{ id?: string; message: string }>,
     ) {
       const { id, message } = action.payload;
-      console.log("add err message", id, message);
       state.messages.push({
         translationID: id,
         content: message,

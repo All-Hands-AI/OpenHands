@@ -42,7 +42,6 @@ const messageActions = {
     store.dispatch(setCode(content));
   },
   [ActionType.MESSAGE]: (message: ActionMessage) => {
-    console.log('add message', message);
     if (message.source === "user") {
       store.dispatch(
         addUserMessage({
@@ -93,6 +92,7 @@ export function handleActionMessage(message: ActionMessage) {
     if (message.args && message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
+    store.dispatch(addAssistantAction(message));
   }
 
   if (message.action in messageActions) {
