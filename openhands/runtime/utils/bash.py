@@ -110,7 +110,22 @@ class BashSession:
             x=1000,
             y=1000,
         )
-        self.pane = self.session.attached_pane
+
+        # Set history limit to a large number to avoid losing history
+        # https://unix.stackexchange.com/questions/43414/unlimited-history-in-tmux
+        _history_limit = 100_000
+        self.session.set_option('history-limit', str(_history_limit), _global=True)
+        self.session.history_limit = _history_limit
+        # We need to create a new pane because the initial pane's history limit is (default) 2000
+        _initial_window = self.session.attached_window
+        self.window = self.session.new_window(
+            window_shell=window_command,
+            start_directory=work_dir,
+        )
+        self.pane = self.window.attached_pane
+        logger.debug(f'pane: {self.pane}; history_limit: {self.session.history_limit}')
+        _initial_window.kill_window()
+
         # Configure bash to use simple PS1 and disable PS2
         self.pane.send_keys(
             f'export PROMPT_COMMAND=\'export PS1="{self.PS1}"\'; export PS2=""'
@@ -359,6 +374,7 @@ class BashSession:
                 ps1_matches[i].end() + 1 : ps1_matches[i + 1].start()
             ]
             combined_output += output_segment + '\n'
+        logger.debug(f'COMBINED OUTPUT: {combined_output}')
         return combined_output
 
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
