@@ -8,6 +8,7 @@ from openhands.events.action import (
 from openhands.events.observation import (
     NullObservation,
 )
+from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.auth import get_sid_from_token, sign_token
@@ -57,6 +58,7 @@ async def init_connection(connection_id: str, data: dict):
     event_stream = await session_manager.init_or_join_session(sid, connection_id, data)
 
     # Send events
+    agent_state_changed = None
     async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
     async for event in async_stream:
         if isinstance(
@@ -67,7 +69,12 @@ async def init_connection(connection_id: str, data: dict):
             ),
         ):
             continue
+        elif isinstance(event, AgentStateChangedObservation):
+            agent_state_changed = event
+            continue
         await sio.emit('oh_event', event_to_dict(event), to=connection_id)
+    if agent_state_changed:
+        await sio.emit('oh_event', event_to_dict(agent_state_changed), to=connection_id)
 
 
 @sio.event
