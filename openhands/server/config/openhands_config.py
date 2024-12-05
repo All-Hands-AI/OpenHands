@@ -27,10 +27,17 @@ class OpenhandsOssConfig(OpenhandsConfigInterface):
 def load_openhands_config():
     config_path = os.environ.get('OPENHANDS_CONFIG_PATH', None)
     if config_path:
-        OpenhandsConfig = import_from(config_path)
+        OpenhandsConfigClass = import_from(config_path)
     else:
-        OpenhandsConfig = OpenhandsOssConfig()
+        OpenhandsConfigClass = OpenhandsOssConfig
 
+    if not issubclass(OpenhandsConfigClass, OpenhandsConfigInterface):
+        raise TypeError(
+            f"The provided configuration class '{OpenhandsConfigClass.__name__}' "
+            f'does not extend OpenhandsConfigInterface.'
+        )
+
+    OpenhandsConfig = OpenhandsConfigClass()
     OpenhandsConfig.verify_config()
 
     return OpenhandsConfig
