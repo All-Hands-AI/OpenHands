@@ -34,6 +34,7 @@ describe("ProjectPanel", () => {
       ...(await importOriginal<typeof import("react-router")>()),
       Link: ({ children }: React.PropsWithChildren) => children,
       useNavigate: vi.fn(() => vi.fn()),
+      useLocation: vi.fn(() => ({ pathname: "/" })),
       useSearchParams: vi.fn(() => [{ get: searchParamsGetMock }]),
     }));
 

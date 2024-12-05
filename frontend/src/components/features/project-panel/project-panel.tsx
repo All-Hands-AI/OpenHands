@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useLocation, useNavigate, useSearchParams } from "react-router";
 import { ProjectCard } from "./project-card";
 import { useUserProjects } from "#/hooks/query/use-user-projects";
 import { useDeleteProject } from "#/hooks/mutation/use-delete-project";
@@ -16,6 +16,7 @@ interface ProjectPanelProps {
 export function ProjectPanel({ onClose }: ProjectPanelProps) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const endSession = useEndSession();
 
@@ -40,8 +41,8 @@ export function ProjectPanel({ onClose }: ProjectPanelProps) {
       deleteProject({ projectId: selectedProjectId });
       setConfirmDeleteModalVisible(false);
 
-      const sessionId = searchParams.get("sessionId");
-      if (sessionId === selectedProjectId) {
+      const cid = searchParams.get("cid");
+      if (cid === selectedProjectId) {
         endSession();
       }
     }
@@ -57,7 +58,7 @@ export function ProjectPanel({ onClose }: ProjectPanelProps) {
   };
 
   const handleClickCard = (projectId: string) => {
-    navigate(`/app?sessionId=${projectId}`);
+    navigate(`/conversation?cid=${projectId}`);
     onClose();
   };
 
@@ -67,7 +68,7 @@ export function ProjectPanel({ onClose }: ProjectPanelProps) {
       className="w-[350px] h-full border border-neutral-700 bg-neutral-800 rounded-xl"
     >
       <div className="pt-4 px-4 flex items-center justify-between">
-        <NewProjectButton />
+        {location.pathname.startsWith("/conversation") && <NewProjectButton />}
         {isFetching && <LoadingSpinner size="small" />}
       </div>
       {error && (

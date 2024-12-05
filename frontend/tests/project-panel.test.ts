@@ -1,12 +1,15 @@
 import test, { expect, Page } from "@playwright/test";
 import { confirmSettings } from "./helpers/confirm-settings";
 
-const selectProjectCard = async (page: Page, index: number) => {
-  // open project panel
+const openProjectPanel = async (page: Page) => {
   const projectPanelButton = page.getByTestId("toggle-project-panel");
   await projectPanelButton.click();
 
-  const panel = page.getByTestId("project-panel");
+  return page.getByTestId("project-panel");
+};
+
+const selectProjectCard = async (page: Page, index: number) => {
+  const panel = await openProjectPanel(page);
 
   // select a project
   const projectItem = panel.getByTestId("project-card").nth(index);
@@ -15,11 +18,28 @@ const selectProjectCard = async (page: Page, index: number) => {
   // panel should close
   expect(panel).not.toBeVisible();
 
-  await page.waitForURL(`/app?sessionId=${index + 1}`);
-  expect(page.url()).toBe(`http://localhost:3001/app?sessionId=${index + 1}`);
+  await page.waitForURL(`/conversation?cid=${index + 1}`);
+  expect(page.url()).toBe(
+    `http://localhost:3001/conversation?cid=${index + 1}`,
+  );
 };
 
-test("redirect to /app with the session id as a query param", async ({
+test("should only display the create new project button in /conversation", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await confirmSettings(page);
+  const panel = await openProjectPanel(page);
+
+  const newProjectButton = panel.getByTestId("new-project-button");
+  await expect(newProjectButton).not.toBeVisible();
+
+  await page.goto("/conversation");
+  await openProjectPanel(page);
+  expect(newProjectButton).toBeVisible();
+});
+
+test("redirect to /conversation with the session id as a query param", async ({
   page,
 }) => {
   await page.goto("/");
@@ -38,8 +58,8 @@ test("redirect to /app with the session id as a query param", async ({
   // panel should close
   expect(panel).not.toBeVisible();
 
-  await page.waitForURL("/app?sessionId=1");
-  expect(page.url()).toBe("http://localhost:3001/app?sessionId=1");
+  await page.waitForURL("/conversation?cid=1");
+  expect(page.url()).toBe("http://localhost:3001/conversation?cid=1");
 });
 
 test("redirect to the home screen if the current session was deleted", async ({
@@ -48,8 +68,8 @@ test("redirect to the home screen if the current session was deleted", async ({
   await page.goto("/");
   await confirmSettings(page);
 
-  await page.goto("/app?sessionId=1");
-  await page.waitForURL("/app?sessionId=1");
+  await page.goto("/conversation?cid=1");
+  await page.waitForURL("/conversation?cid=1");
 
   // open project panel
   const projectPanelButton = page.getByTestId("toggle-project-panel");

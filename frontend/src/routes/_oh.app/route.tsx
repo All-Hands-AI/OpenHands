@@ -49,15 +49,15 @@ function App() {
     [],
   );
 
-  const sessionId = searchParams.get("sessionId");
+  const cid = searchParams.get("cid");
 
   React.useEffect(() => {
-    if (sessionId) setToken(sessionId);
+    if (cid) setToken(cid);
 
     dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
-  }, [sessionId]);
+  }, [cid]);
 
   useEffectOnce(() => {
     dispatch(clearMessages());
@@ -74,7 +74,7 @@ function App() {
   return (
     <WsClientProvider
       enabled
-      token={sessionId}
+      token={cid}
       ghToken={gitHubToken}
       settings={settings}
     >

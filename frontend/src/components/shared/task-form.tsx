@@ -71,7 +71,7 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
       has_files: files.length > 0,
     });
 
-    navigate("/app");
+    navigate("/conversation");
   };
 
   return (
