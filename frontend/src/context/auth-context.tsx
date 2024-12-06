@@ -84,10 +84,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
       return false;
     }
 
-    const newToken = await OpenHands.refreshToken(
-      gitHubTokenState,
-      config.APP_MODE,
-    );
+    const newToken = await OpenHands.refreshToken(config.APP_MODE);
     if (newToken) {
       setGitHubToken(newToken);
       return true;

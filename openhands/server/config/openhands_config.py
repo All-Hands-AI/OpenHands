@@ -4,7 +4,7 @@ from openhands.server.types import AppMode, OpenhandsConfigInterface
 from openhands.utils.import_utils import import_from
 
 
-class OpenhandsOssConfig(OpenhandsConfigInterface):
+class OpenhandsConfig(OpenhandsConfigInterface):
     CONFIG_PATH = os.environ.get('OPENHANDS_CONFIG_PATH', None)
     APP_MODE = AppMode.OSS
     POSTHOG_CLIENT_KEY = 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
@@ -29,7 +29,7 @@ def load_openhands_config():
     if config_path:
         OpenhandsConfigClass = import_from(config_path)
     else:
-        OpenhandsConfigClass = OpenhandsOssConfig
+        openhands_config_cls = OpenhandsOssConfig
 
     if not issubclass(OpenhandsConfigClass, OpenhandsConfigInterface):
         raise TypeError(
@@ -37,7 +37,7 @@ def load_openhands_config():
             f'does not extend OpenhandsConfigInterface.'
         )
 
-    OpenhandsConfig = OpenhandsConfigClass()
+    openhands_config = OpenhandsConfigClass()
     OpenhandsConfig.verify_config()
 
     return OpenhandsConfig
