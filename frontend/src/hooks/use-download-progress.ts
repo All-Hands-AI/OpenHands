@@ -14,7 +14,7 @@ export const INITIAL_PROGRESS: DownloadProgress = {
 export function useDownloadProgress(initialPath: string | undefined, onClose: () => void) {
   const [isStarted, setIsStarted] = useState(false);
   const [progress, setProgress] = useState<DownloadProgress>(INITIAL_PROGRESS);
-
+  const progressRef = useRef<DownloadProgress>(INITIAL_PROGRESS);
   const abortController = useRef<AbortController>();
 
   // Create AbortController on mount
@@ -22,6 +22,8 @@ export function useDownloadProgress(initialPath: string | undefined, onClose: ()
     console.log('Creating AbortController');
     const controller = new AbortController();
     abortController.current = controller;
+    // Initialize progress ref with initial state
+    progressRef.current = INITIAL_PROGRESS;
     return () => {
       console.log('Cleaning up AbortController');
       controller.abort();
@@ -46,7 +48,9 @@ export function useDownloadProgress(initialPath: string | undefined, onClose: ()
         await downloadFiles(initialPath, {
           onProgress: (p) => {
             console.log('Progress:', p);
-            setProgress(p);
+            // Update both the ref and state
+            progressRef.current = { ...p };
+            setProgress(prev => ({ ...prev, ...p }));
           },
           signal: abortController.current!.signal,
         });
