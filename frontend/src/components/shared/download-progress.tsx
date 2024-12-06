@@ -1,5 +1,3 @@
-import { useRef } from "react";
-
 export interface DownloadProgress {
   filesTotal: number;
   filesDownloaded: number;

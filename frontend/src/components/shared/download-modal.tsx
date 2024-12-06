@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+
 import { useDownloadProgress } from "#/hooks/use-download-progress";
 import { DownloadProgress } from "./download-progress";
 
