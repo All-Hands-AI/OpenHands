@@ -23,11 +23,13 @@ const INDICATORS: Record<ProjectState, SVGIcon> = {
   warm: WarmIcon,
 };
 
-interface ProjectStateIndicatorProps {
+interface ConversationStateIndicatorProps {
   state: ProjectState;
 }
 
-export function ProjectStateIndicator({ state }: ProjectStateIndicatorProps) {
+export function ConversationStateIndicator({
+  state,
+}: ConversationStateIndicatorProps) {
   const StateIcon = INDICATORS[state];
 
   return (

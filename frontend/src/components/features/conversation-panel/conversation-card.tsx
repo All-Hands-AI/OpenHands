@@ -1,7 +1,10 @@
 import React from "react";
 import { formatTimeDelta } from "#/utils/format-time-delta";
-import { ProjectRepoLink } from "./project-repo-link";
-import { ProjectState, ProjectStateIndicator } from "./project-state-indicator";
+import { ConversationRepoLink } from "./conversation-repo-link";
+import {
+  ProjectState,
+  ConversationStateIndicator,
+} from "./conversation-state-indicator";
 import { ContextMenu } from "../context-menu/context-menu";
 import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
 import { EllipsisButton } from "./ellipsis-button";
@@ -16,7 +19,7 @@ interface ProjectCardProps {
   state?: ProjectState;
 }
 
-export function ProjectCard({
+export function ConversationCard({
   onClick,
   onDelete,
   onChangeTitle,
@@ -50,14 +53,14 @@ export function ProjectCard({
 
   return (
     <div
-      data-testid="project-card"
+      data-testid="conversation-card"
       onClick={onClick}
       className="h-[100px] w-full px-[18px] py-4 border-b border-neutral-600"
     >
       <div className="flex items-center justify-between">
         <input
           ref={inputRef}
-          data-testid="project-card-title"
+          data-testid="conversation-card-title"
           onClick={handleInputClick}
           onBlur={handleBlur}
           type="text"
@@ -66,7 +69,7 @@ export function ProjectCard({
         />
 
         <div className="flex items-center gap-2 relative">
-          <ProjectStateIndicator state={state} />
+          <ConversationStateIndicator state={state} />
           <EllipsisButton
             onClick={(event) => {
               event.stopPropagation();
@@ -86,7 +89,10 @@ export function ProjectCard({
         </div>
       </div>
       {repo && (
-        <ProjectRepoLink repo={repo} onClick={(e) => e.stopPropagation()} />
+        <ConversationRepoLink
+          repo={repo}
+          onClick={(e) => e.stopPropagation()}
+        />
       )}
       <p className="text-xs text-neutral-400">
         <time>{formatTimeDelta(new Date(lastUpdated))} ago</time>

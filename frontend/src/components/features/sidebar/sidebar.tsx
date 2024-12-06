@@ -14,7 +14,7 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { AccountSettingsModal } from "#/components/shared/modals/account-settings/account-settings-modal";
 import { ExitProjectConfirmationModal } from "#/components/shared/modals/exit-project-confirmation-modal";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
-import { ProjectPanel } from "../project-panel/project-panel";
+import { ConversationPanel } from "../conversation-panel/conversation-panel";
 
 export function Sidebar() {
   const location = useLocation();
@@ -30,7 +30,8 @@ export function Sidebar() {
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
   const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
     React.useState(false);
-  const [projectPanelIsOpen, setProjectPanelIsOpen] = React.useState(false);
+  const [conversationPanelIsOpen, setConversationPanelIsOpen] =
+    React.useState(false);
 
   React.useEffect(() => {
     // If the github token is invalid, open the account settings modal again
@@ -71,9 +72,9 @@ export function Sidebar() {
           />
           <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
           <button
-            data-testid="toggle-project-panel"
+            data-testid="toggle-conversation-panel"
             type="button"
-            onClick={() => setProjectPanelIsOpen((prev) => !prev)}
+            onClick={() => setConversationPanelIsOpen((prev) => !prev)}
           >
             <FaBars fill="#A3A3A3" className="hover:opacity-80" />
           </button>
@@ -85,11 +86,13 @@ export function Sidebar() {
           )}
         </nav>
 
-        {projectPanelIsOpen && (
+        {conversationPanelIsOpen && (
           <div
             className="absolute h-full left-[calc(100%+12px)] z-20" // 12px padding (sidebar parent)
           >
-            <ProjectPanel onClose={() => setProjectPanelIsOpen(false)} />
+            <ConversationPanel
+              onClose={() => setConversationPanelIsOpen(false)}
+            />
           </div>
         )}
       </aside>

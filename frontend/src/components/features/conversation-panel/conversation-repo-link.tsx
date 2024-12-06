@@ -1,12 +1,15 @@
-interface ProjectRepoLinkProps {
+interface ConversationRepoLinkProps {
   repo: string;
   onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 
-export function ProjectRepoLink({ repo, onClick }: ProjectRepoLinkProps) {
+export function ConversationRepoLink({
+  repo,
+  onClick,
+}: ConversationRepoLinkProps) {
   return (
     <a
-      data-testid="project-card-repo"
+      data-testid="conversation-card-repo"
       href={`https://github.com/${repo}`}
       target="_blank noopener noreferrer"
       onClick={onClick}

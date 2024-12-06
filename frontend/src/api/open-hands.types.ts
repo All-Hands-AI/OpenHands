@@ -1,4 +1,4 @@
-import { ProjectState } from "#/components/features/project-panel/project-state-indicator";
+import { ProjectState } from "#/components/features/conversation-panel/conversation-state-indicator";
 
 export interface ErrorResponse {
   error: string;

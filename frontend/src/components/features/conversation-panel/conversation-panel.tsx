@@ -1,20 +1,20 @@
 import React from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
-import { ProjectCard } from "./project-card";
+import { ConversationCard } from "./conversation-card";
 import { useUserConversations } from "#/hooks/query/use-user-conversations";
 import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
 import { ConfirmDeleteModal } from "./confirm-delete-modal";
-import { NewProjectButton } from "./new-project-button";
+import { NewConversationButton } from "./new-conversation-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
 import { useEndSession } from "#/hooks/use-end-session";
-import { ExitProjectModal } from "./exit-project-modal";
+import { ExitConversationModal } from "./exit-conversation-modal";
 
-interface ProjectPanelProps {
+interface ConversationPanelProps {
   onClose: () => void;
 }
 
-export function ProjectPanel({ onClose }: ProjectPanelProps) {
+export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -23,8 +23,10 @@ export function ProjectPanel({ onClose }: ProjectPanelProps) {
 
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =
     React.useState(false);
-  const [confirmExitProjectModalVisible, setConfirmExitProjectModalVisible] =
-    React.useState(false);
+  const [
+    confirmExitConversationModalVisible,
+    setConfirmExitConversationModalVisible,
+  ] = React.useState(false);
   const [selectedConversationId, setSelectedConversationId] = React.useState<
     string | null
   >(null);
@@ -57,7 +59,10 @@ export function ProjectPanel({ onClose }: ProjectPanelProps) {
     newTitle: string,
   ) => {
     if (oldTitle !== newTitle)
-      updateConversation({ id: conversationId, project: { name: newTitle } });
+      updateConversation({
+        id: conversationId,
+        conversation: { name: newTitle },
+      });
   };
 
   const handleClickCard = (conversationId: string) => {
@@ -67,13 +72,13 @@ export function ProjectPanel({ onClose }: ProjectPanelProps) {
 
   return (
     <div
-      data-testid="project-panel"
+      data-testid="conversation-panel"
       className="w-[350px] h-full border border-neutral-700 bg-neutral-800 rounded-xl"
     >
       <div className="pt-4 px-4 flex items-center justify-between">
         {location.pathname.startsWith("/conversation") && (
-          <NewProjectButton
-            onClick={() => setConfirmExitProjectModalVisible(true)}
+          <NewConversationButton
+            onClick={() => setConfirmExitConversationModalVisible(true)}
           />
         )}
         {isFetching && <LoadingSpinner size="small" />}
@@ -85,11 +90,11 @@ export function ProjectPanel({ onClose }: ProjectPanelProps) {
       )}
       {conversations?.length === 0 && (
         <div className="flex flex-col items-center justify-center h-full">
-          <p className="text-neutral-400">No projects found</p>
+          <p className="text-neutral-400">No conversations found</p>
         </div>
       )}
       {conversations?.map((project) => (
-        <ProjectCard
+        <ConversationCard
           key={project.id}
           onClick={() => handleClickCard(project.id)}
           onDelete={() => handleDeleteProject(project.id)}
@@ -110,13 +115,13 @@ export function ProjectPanel({ onClose }: ProjectPanelProps) {
         />
       )}
 
-      {confirmExitProjectModalVisible && (
-        <ExitProjectModal
+      {confirmExitConversationModalVisible && (
+        <ExitConversationModal
           onConfirm={() => {
             endSession();
             onClose();
           }}
-          onClose={() => setConfirmExitProjectModalVisible(false)}
+          onClose={() => setConfirmExitConversationModalVisible(false)}
         />
       )}
     </div>

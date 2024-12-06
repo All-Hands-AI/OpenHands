@@ -14,15 +14,15 @@ describe("Sidebar", () => {
     useNavigate: vi.fn(),
   }));
 
-  it("should toggle the project panel", async () => {
+  it("should toggle the conversation panel", async () => {
     const user = userEvent.setup();
     renderSidebar();
 
-    expect(screen.queryByTestId("project-panel")).not.toBeInTheDocument();
-    const projectPanelButton = screen.getByTestId("toggle-project-panel");
+    expect(screen.queryByTestId("conversation-panel")).not.toBeInTheDocument();
+    const projectPanelButton = screen.getByTestId("toggle-conversation-panel");
 
     await user.click(projectPanelButton);
 
-    expect(screen.getByTestId("project-panel")).toBeInTheDocument();
+    expect(screen.getByTestId("conversation-panel")).toBeInTheDocument();
   });
 });

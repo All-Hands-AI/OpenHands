@@ -2,9 +2,9 @@ import { render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, test, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { formatTimeDelta } from "#/utils/format-time-delta";
-import { ProjectCard } from "#/components/features/project-panel/project-card";
+import { ConversationCard } from "#/components/features/conversation-panel/conversation-card";
 
-describe("ProjectCard", () => {
+describe("ConversationCard", () => {
   const onClick = vi.fn();
   const onDelete = vi.fn();
   const onChangeTitle = vi.fn();
@@ -13,68 +13,70 @@ describe("ProjectCard", () => {
     vi.clearAllMocks();
   });
 
-  it("should render the project card", () => {
+  it("should render the conversation card", () => {
     render(
-      <ProjectCard
+      <ConversationCard
         onDelete={onDelete}
         onClick={onClick}
         onChangeTitle={onChangeTitle}
-        name="Project 1"
+        name="Conversation 1"
         repo={null}
         lastUpdated="2021-10-01T12:00:00Z"
       />,
     );
     const expectedDate = `${formatTimeDelta(new Date("2021-10-01T12:00:00Z"))} ago`;
 
-    const card = screen.getByTestId("project-card");
-    const title = within(card).getByTestId("project-card-title");
+    const card = screen.getByTestId("conversation-card");
+    const title = within(card).getByTestId("conversation-card-title");
 
-    expect(title).toHaveValue("Project 1");
+    expect(title).toHaveValue("Conversation 1");
     within(card).getByText(expectedDate);
   });
 
   it("should render the repo if available", () => {
     const { rerender } = render(
-      <ProjectCard
+      <ConversationCard
         onDelete={onDelete}
         onClick={onClick}
         onChangeTitle={onChangeTitle}
-        name="Project 1"
+        name="Conversation 1"
         repo={null}
         lastUpdated="2021-10-01T12:00:00Z"
       />,
     );
 
-    expect(screen.queryByTestId("project-card-repo")).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("conversation-card-repo"),
+    ).not.toBeInTheDocument();
 
     rerender(
-      <ProjectCard
+      <ConversationCard
         onDelete={onDelete}
         onClick={onClick}
         onChangeTitle={onChangeTitle}
-        name="Project 1"
+        name="Conversation 1"
         repo="org/repo"
         lastUpdated="2021-10-01T12:00:00Z"
       />,
     );
 
-    screen.getByTestId("project-card-repo");
+    screen.getByTestId("conversation-card-repo");
   });
 
   it("should call onClick when the card is clicked", async () => {
     const user = userEvent.setup();
     render(
-      <ProjectCard
+      <ConversationCard
         onDelete={onDelete}
         onClick={onClick}
         onChangeTitle={onChangeTitle}
-        name="Project 1"
+        name="Conversation 1"
         repo={null}
         lastUpdated="2021-10-01T12:00:00Z"
       />,
     );
 
-    const card = screen.getByTestId("project-card");
+    const card = screen.getByTestId("conversation-card");
     await user.click(card);
 
     expect(onClick).toHaveBeenCalled();
@@ -83,11 +85,11 @@ describe("ProjectCard", () => {
   it("should toggle a context menu when clicking the ellipsis button", async () => {
     const user = userEvent.setup();
     render(
-      <ProjectCard
+      <ConversationCard
         onDelete={onDelete}
         onClick={onClick}
         onChangeTitle={onChangeTitle}
-        name="Project 1"
+        name="Conversation 1"
         repo={null}
         lastUpdated="2021-10-01T12:00:00Z"
       />,
@@ -108,11 +110,11 @@ describe("ProjectCard", () => {
   it("should call onDelete when the delete button is clicked", async () => {
     const user = userEvent.setup();
     render(
-      <ProjectCard
+      <ConversationCard
         onClick={onClick}
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        name="Project 1"
+        name="Conversation 1"
         repo={null}
         lastUpdated="2021-10-01T12:00:00Z"
       />,
@@ -132,81 +134,81 @@ describe("ProjectCard", () => {
   test("clicking the repo should not trigger the onClick handler", async () => {
     const user = userEvent.setup();
     render(
-      <ProjectCard
+      <ConversationCard
         onClick={onClick}
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        name="Project 1"
+        name="Conversation 1"
         repo="org/repo"
         lastUpdated="2021-10-01T12:00:00Z"
       />,
     );
 
-    const repo = screen.getByTestId("project-card-repo");
+    const repo = screen.getByTestId("conversation-card-repo");
     await user.click(repo);
 
     expect(onClick).not.toHaveBeenCalled();
   });
 
-  test("project title should call onChangeTitle when changed and blurred", async () => {
+  test("conversation title should call onChangeTitle when changed and blurred", async () => {
     const user = userEvent.setup();
     render(
-      <ProjectCard
+      <ConversationCard
         onClick={onClick}
         onDelete={onDelete}
-        name="Project 1"
+        name="Conversation 1"
         repo={null}
         lastUpdated="2021-10-01T12:00:00Z"
         onChangeTitle={onChangeTitle}
       />,
     );
 
-    const title = screen.getByTestId("project-card-title");
+    const title = screen.getByTestId("conversation-card-title");
 
     await user.clear(title);
-    await user.type(title, "New Project Name   ");
+    await user.type(title, "New Conversation Name   ");
     await user.tab();
 
-    expect(onChangeTitle).toHaveBeenCalledWith("New Project Name");
-    expect(title).toHaveValue("New Project Name");
+    expect(onChangeTitle).toHaveBeenCalledWith("New Conversation Name");
+    expect(title).toHaveValue("New Conversation Name");
   });
 
   it("should reset title and not call onChangeTitle when the title is empty", async () => {
     const user = userEvent.setup();
     render(
-      <ProjectCard
+      <ConversationCard
         onClick={onClick}
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        name="Project 1"
+        name="Conversation 1"
         repo={null}
         lastUpdated="2021-10-01T12:00:00Z"
       />,
     );
 
-    const title = screen.getByTestId("project-card-title");
+    const title = screen.getByTestId("conversation-card-title");
 
     await user.clear(title);
     await user.tab();
 
     expect(onChangeTitle).not.toHaveBeenCalled();
-    expect(title).toHaveValue("Project 1");
+    expect(title).toHaveValue("Conversation 1");
   });
 
   test("clicking the title should not trigger the onClick handler", async () => {
     const user = userEvent.setup();
     render(
-      <ProjectCard
+      <ConversationCard
         onClick={onClick}
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        name="Project 1"
+        name="Conversation 1"
         repo={null}
         lastUpdated="2021-10-01T12:00:00Z"
       />,
     );
 
-    const title = screen.getByTestId("project-card-title");
+    const title = screen.getByTestId("conversation-card-title");
     await user.click(title);
 
     expect(onClick).not.toHaveBeenCalled();
@@ -215,11 +217,11 @@ describe("ProjectCard", () => {
   test("clicking the delete button should not trigger the onClick handler", async () => {
     const user = userEvent.setup();
     render(
-      <ProjectCard
+      <ConversationCard
         onClick={onClick}
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        name="Project 1"
+        name="Conversation 1"
         repo={null}
         lastUpdated="2021-10-01T12:00:00Z"
       />,
@@ -239,11 +241,11 @@ describe("ProjectCard", () => {
   describe("state indicator", () => {
     it("should render the 'cold' indicator by default", () => {
       render(
-        <ProjectCard
+        <ConversationCard
           onClick={onClick}
           onDelete={onDelete}
           onChangeTitle={onChangeTitle}
-          name="Project 1"
+          name="Conversation 1"
           repo={null}
           lastUpdated="2021-10-01T12:00:00Z"
         />,
@@ -254,11 +256,11 @@ describe("ProjectCard", () => {
 
     it("should render the other indicators when provided", () => {
       render(
-        <ProjectCard
+        <ConversationCard
           onClick={onClick}
           onDelete={onDelete}
           onChangeTitle={onChangeTitle}
-          name="Project 1"
+          name="Conversation 1"
           repo={null}
           lastUpdated="2021-10-01T12:00:00Z"
           state="warm"

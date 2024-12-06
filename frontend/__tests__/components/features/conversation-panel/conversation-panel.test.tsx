@@ -6,15 +6,15 @@ import {
   QueryClientConfig,
 } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
-import { ProjectPanel } from "#/components/features/project-panel/project-panel";
+import { ConversationPanel } from "#/components/features/conversation-panel/conversation-panel";
 import OpenHands from "#/api/open-hands";
 import { AuthProvider } from "#/context/auth-context";
 
-describe("ProjectPanel", () => {
+describe("ConversationPanel", () => {
   const onCloseMock = vi.fn();
 
-  const renderProjectPanel = (config?: QueryClientConfig) =>
-    render(<ProjectPanel onClose={onCloseMock} />, {
+  const renderConversationPanel = (config?: QueryClientConfig) =>
+    render(<ConversationPanel onClose={onCloseMock} />, {
       wrapper: ({ children }) => (
         <AuthProvider>
           <QueryClientProvider client={new QueryClient(config)}>
@@ -49,30 +49,30 @@ describe("ProjectPanel", () => {
     vi.restoreAllMocks();
   });
 
-  it.todo("should render a loading indicator when fetching projects");
-
-  it("should render the projects", async () => {
-    renderProjectPanel();
-    const cards = await screen.findAllByTestId("project-card");
+  it("should render the conversations", async () => {
+    renderConversationPanel();
+    const cards = await screen.findAllByTestId("conversation-card");
 
     expect(cards).toHaveLength(3);
   });
 
-  it("should display an empty state when there are no projects", async () => {
+  it("should display an empty state when there are no conversations", async () => {
     const getUserProjectsSpy = vi.spyOn(OpenHands, "getUserConversations");
     getUserProjectsSpy.mockResolvedValue([]);
 
-    renderProjectPanel();
+    renderConversationPanel();
 
-    const emptyState = await screen.findByText("No projects found");
+    const emptyState = await screen.findByText("No conversations found");
     expect(emptyState).toBeInTheDocument();
   });
 
-  it("should handle an error when fetching projects", async () => {
+  it("should handle an error when fetching conversations", async () => {
     const getUserProjectsSpy = vi.spyOn(OpenHands, "getUserConversations");
-    getUserProjectsSpy.mockRejectedValue(new Error("Failed to fetch projects"));
+    getUserProjectsSpy.mockRejectedValue(
+      new Error("Failed to fetch conversations"),
+    );
 
-    renderProjectPanel({
+    renderConversationPanel({
       defaultOptions: {
         queries: {
           retry: false,
@@ -80,15 +80,15 @@ describe("ProjectPanel", () => {
       },
     });
 
-    const error = await screen.findByText("Failed to fetch projects");
+    const error = await screen.findByText("Failed to fetch conversations");
     expect(error).toBeInTheDocument();
   });
 
-  it("should cancel deleting a project", async () => {
+  it("should cancel deleting a conversation", async () => {
     const user = userEvent.setup();
-    renderProjectPanel();
+    renderConversationPanel();
 
-    let cards = await screen.findAllByTestId("project-card");
+    let cards = await screen.findAllByTestId("conversation-card");
     expect(
       within(cards[0]).queryByTestId("delete-button"),
     ).not.toBeInTheDocument();
@@ -106,17 +106,17 @@ describe("ProjectPanel", () => {
 
     expect(screen.queryByText("Cancel")).not.toBeInTheDocument();
 
-    // Ensure the project is not deleted
-    cards = await screen.findAllByTestId("project-card");
+    // Ensure the conversation is not deleted
+    cards = await screen.findAllByTestId("conversation-card");
     expect(cards).toHaveLength(3);
   });
 
-  it("should call endSession after deleting a project that is the current session", async () => {
-    searchParamsGetMock.mockReturnValue("2"); // id of the second project
+  it("should call endSession after deleting a conversation that is the current session", async () => {
+    searchParamsGetMock.mockReturnValue("2"); // id of the second conversation
     const user = userEvent.setup();
-    renderProjectPanel();
+    renderConversationPanel();
 
-    let cards = await screen.findAllByTestId("project-card");
+    let cards = await screen.findAllByTestId("conversation-card");
     const ellipsisButton = within(cards[1]).getByTestId("ellipsis-button");
     await user.click(ellipsisButton);
     const deleteButton = screen.getByTestId("delete-button");
@@ -130,18 +130,18 @@ describe("ProjectPanel", () => {
 
     expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
 
-    // Ensure the project is deleted
-    cards = await screen.findAllByTestId("project-card");
+    // Ensure the conversation is deleted
+    cards = await screen.findAllByTestId("conversation-card");
     expect(cards).toHaveLength(2);
 
     expect(endSessionMock).toHaveBeenCalledOnce();
   });
 
-  it("should delete a project", async () => {
+  it("should delete a conversation", async () => {
     const user = userEvent.setup();
-    renderProjectPanel();
+    renderConversationPanel();
 
-    let cards = await screen.findAllByTestId("project-card");
+    let cards = await screen.findAllByTestId("conversation-card");
     const ellipsisButton = within(cards[0]).getByTestId("ellipsis-button");
     await user.click(ellipsisButton);
     const deleteButton = screen.getByTestId("delete-button");
@@ -155,44 +155,44 @@ describe("ProjectPanel", () => {
 
     expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
 
-    // Ensure the project is deleted
-    cards = await screen.findAllByTestId("project-card");
+    // Ensure the conversation is deleted
+    cards = await screen.findAllByTestId("conversation-card");
     expect(cards).toHaveLength(1);
   });
 
-  it("should rename a project", async () => {
+  it("should rename a conversation", async () => {
     const updateUserProjectSpy = vi.spyOn(OpenHands, "updateUserConversation");
 
     const user = userEvent.setup();
-    renderProjectPanel();
-    const cards = await screen.findAllByTestId("project-card");
-    const title = within(cards[0]).getByTestId("project-card-title");
+    renderConversationPanel();
+    const cards = await screen.findAllByTestId("conversation-card");
+    const title = within(cards[0]).getByTestId("conversation-card-title");
 
     await user.clear(title);
-    await user.type(title, "Project 1 Renamed");
+    await user.type(title, "Conversation 1 Renamed");
     await user.tab();
 
-    // Ensure the project is renamed
+    // Ensure the conversation is renamed
     expect(updateUserProjectSpy).toHaveBeenCalledWith("3", {
-      name: "Project 1 Renamed",
+      name: "Conversation 1 Renamed",
     });
   });
 
-  it("should not rename a project when the name is unchanged", async () => {
+  it("should not rename a conversation when the name is unchanged", async () => {
     const updateUserProjectSpy = vi.spyOn(OpenHands, "updateUserConversation");
 
     const user = userEvent.setup();
-    renderProjectPanel();
-    const cards = await screen.findAllByTestId("project-card");
-    const title = within(cards[0]).getByTestId("project-card-title");
+    renderConversationPanel();
+    const cards = await screen.findAllByTestId("conversation-card");
+    const title = within(cards[0]).getByTestId("conversation-card-title");
 
     await user.click(title);
     await user.tab();
 
-    // Ensure the project is not renamed
+    // Ensure the conversation is not renamed
     expect(updateUserProjectSpy).not.toHaveBeenCalled();
 
-    await user.type(title, "Project 1");
+    await user.type(title, "Conversation 1");
     await user.click(title);
     await user.tab();
 
@@ -205,8 +205,8 @@ describe("ProjectPanel", () => {
   });
 
   it("should call onClose after clicking a card", async () => {
-    renderProjectPanel();
-    const cards = await screen.findAllByTestId("project-card");
+    renderConversationPanel();
+    const cards = await screen.findAllByTestId("conversation-card");
     const firstCard = cards[0];
 
     await userEvent.click(firstCard);
@@ -214,27 +214,27 @@ describe("ProjectPanel", () => {
     expect(onCloseMock).toHaveBeenCalledOnce();
   });
 
-  describe("New Project Button", () => {
+  describe("New Conversation Button", () => {
     it("should display a confirmation modal when clicking", async () => {
       const user = userEvent.setup();
-      renderProjectPanel();
+      renderConversationPanel();
 
       expect(
-        screen.queryByTestId("confirm-new-project-modal"),
+        screen.queryByTestId("confirm-new-conversation-modal"),
       ).not.toBeInTheDocument();
 
-      const newProjectButton = screen.getByTestId("new-project-button");
+      const newProjectButton = screen.getByTestId("new-conversation-button");
       await user.click(newProjectButton);
 
-      const modal = screen.getByTestId("confirm-new-project-modal");
+      const modal = screen.getByTestId("confirm-new-conversation-modal");
       expect(modal).toBeInTheDocument();
     });
 
     it("should call endSession and close panel after confirming", async () => {
       const user = userEvent.setup();
-      renderProjectPanel();
+      renderConversationPanel();
 
-      const newProjectButton = screen.getByTestId("new-project-button");
+      const newProjectButton = screen.getByTestId("new-conversation-button");
       await user.click(newProjectButton);
 
       const confirmButton = screen.getByText("Confirm");
@@ -246,9 +246,9 @@ describe("ProjectPanel", () => {
 
     it("should close the modal when cancelling", async () => {
       const user = userEvent.setup();
-      renderProjectPanel();
+      renderConversationPanel();
 
-      const newProjectButton = screen.getByTestId("new-project-button");
+      const newProjectButton = screen.getByTestId("new-conversation-button");
       await user.click(newProjectButton);
 
       const cancelButton = screen.getByText("Cancel");
@@ -256,7 +256,7 @@ describe("ProjectPanel", () => {
 
       expect(endSessionMock).not.toHaveBeenCalled();
       expect(
-        screen.queryByTestId("confirm-new-project-modal"),
+        screen.queryByTestId("confirm-new-conversation-modal"),
       ).not.toBeInTheDocument();
     });
   });
