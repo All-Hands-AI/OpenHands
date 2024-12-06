@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { downloadFiles } from "#/utils/download-files";
 import { DownloadProgress } from "#/components/shared/download-progress";
 
@@ -8,15 +8,22 @@ export const INITIAL_PROGRESS: DownloadProgress = {
   currentFile: "",
   totalBytesDownloaded: 0,
   bytesDownloadedPerSecond: 0,
+  isDiscoveringFiles: true,
 };
 
 export function useDownloadProgress(initialPath: string | undefined, onClose: () => void) {
   const [progress, setProgress] = useState<DownloadProgress>(INITIAL_PROGRESS);
 
-  const abortController = useRef(new AbortController());
+  const abortController = useRef<AbortController>();
+
+  useEffect(() => {
+    abortController.current = new AbortController();
+    return () => abortController.current?.abort();
+  }, []);
 
   const startDownload = useCallback(async () => {
     try {
+      if (!abortController.current) return;
       await downloadFiles(initialPath, {
         onProgress: setProgress,
         signal: abortController.current.signal,
@@ -32,7 +39,7 @@ export function useDownloadProgress(initialPath: string | undefined, onClose: ()
   }, [initialPath, onClose]);
 
   const cancelDownload = useCallback(() => {
-    abortController.current.abort();
+    abortController.current?.abort();
   }, []);
 
   return {
