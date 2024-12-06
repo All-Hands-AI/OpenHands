@@ -46,9 +46,7 @@ async function getAllFiles(
 
   // Process directories first to get total file count
   const processEntry = async (entry: string): Promise<string[]> => {
-    console.log('getting files', entry);
     if (options?.signal?.aborted) {
-      console.log('aborted');
       throw new Error("Download cancelled");
     }
 
@@ -73,11 +71,11 @@ async function getAllFiles(
 
   const filePromises = entries.map((entry) => processEntry(entry));
   const fileArrays = await Promise.all(filePromises);
-  
+
   // Signal that file discovery is complete
   progress.isDiscoveringFiles = false;
   options?.onProgress?.({ ...progress });
-  
+
   return fileArrays.flat();
 }
 
@@ -188,15 +186,12 @@ export async function downloadFiles(
     // Show directory picker first
     let directoryHandle: FileSystemDirectoryHandle;
     try {
-      console.log('Showing directory picker...');
       const pickerOpts = {
         mode: 'readwrite',
         startIn: 'downloads',
       };
       directoryHandle = await window.showDirectoryPicker(pickerOpts);
-      console.log('got directoryHandle', directoryHandle);
     } catch (error) {
-      console.log('Directory picker error:', error);
       if (error instanceof Error && error.name === "AbortError") {
         throw new Error("Download cancelled");
       }
@@ -207,9 +202,7 @@ export async function downloadFiles(
     }
 
     // Then recursively get all files
-    console.log('init path', initialPath);
     const files = await getAllFiles(initialPath || "", progress, options);
-    console.log('files', files);
 
     // Set isDiscoveringFiles to false now that we have the full list
     options?.onProgress?.({
@@ -226,15 +219,12 @@ export async function downloadFiles(
       if (error instanceof Error && error.message.includes('User activation is required')) {
         // Ask for permission again
         try {
-          console.log('Re-showing directory picker...');
           const pickerOpts = {
             mode: 'readwrite',
             startIn: 'downloads',
           };
           directoryHandle = await window.showDirectoryPicker(pickerOpts);
-          console.log('got new directoryHandle after timeout');
         } catch (error) {
-          console.log('Re-prompt error:', error);
           if (error instanceof Error && error.name === "AbortError") {
             throw new Error("Download cancelled");
           }
@@ -289,7 +279,7 @@ export async function downloadFiles(
     )) {
       throw error;
     }
-    
+
     // Otherwise, wrap it with a generic message
     throw new Error(
       `Failed to download files: ${error instanceof Error ? error.message : String(error)}`,

@@ -19,13 +19,11 @@ export function useDownloadProgress(initialPath: string | undefined, onClose: ()
 
   // Create AbortController on mount
   useEffect(() => {
-    console.log('Creating AbortController');
     const controller = new AbortController();
     abortController.current = controller;
     // Initialize progress ref with initial state
     progressRef.current = INITIAL_PROGRESS;
     return () => {
-      console.log('Cleaning up AbortController');
       controller.abort();
       abortController.current = undefined;
     };
@@ -38,26 +36,21 @@ export function useDownloadProgress(initialPath: string | undefined, onClose: ()
       return;
     }
 
-    console.log('Download effect starting, path:', initialPath);
     if (!abortController.current) return;
 
     // Start download
     const download = async () => {
       try {
-        console.log('Starting download...');
         await downloadFiles(initialPath, {
           onProgress: (p) => {
-            console.log('Progress:', p);
             // Update both the ref and state
             progressRef.current = { ...p };
             setProgress(prev => ({ ...prev, ...p }));
           },
           signal: abortController.current!.signal,
         });
-        console.log('Download completed');
         onClose();
       } catch (error) {
-        console.log('Download error:', error);
         if (error instanceof Error && error.message === "Download cancelled") {
           onClose();
         } else {
