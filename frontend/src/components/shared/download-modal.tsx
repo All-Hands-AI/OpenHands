@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useDownloadProgress } from "#/hooks/useDownloadProgress";
+import { useDownloadProgress } from "#/hooks/use-download-progress";
 import { DownloadProgress } from "./download-progress";
 
 interface DownloadModalProps {
