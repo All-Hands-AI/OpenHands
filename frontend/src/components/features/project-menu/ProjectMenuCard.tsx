@@ -95,7 +95,7 @@ Please push the changes to GitHub and open a pull request.
         />
       )}
       {downloading && (
-        <DownloadModal initialPath="/workspace" onClose={handleDownloadClose} />
+        <DownloadModal initialPath="" onClose={handleDownloadClose} />
       )}
       {!downloading && (
         <button
