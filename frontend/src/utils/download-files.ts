@@ -44,7 +44,6 @@ async function getAllFiles(
 ): Promise<string[]> {
   const entries = await OpenHands.getFiles(path);
 
-  // Process directories first to get total file count
   const processEntry = async (entry: string): Promise<string[]> => {
     if (options?.signal?.aborted) {
       throw new Error("Download cancelled");
@@ -52,7 +51,6 @@ async function getAllFiles(
 
     const fullPath = path + entry;
     if (entry.endsWith("/")) {
-      // It's a directory, recursively get its files
       const subEntries = await OpenHands.getFiles(fullPath);
       const subFilesPromises = subEntries.map((subEntry) =>
         processEntry(subEntry),
@@ -60,27 +58,17 @@ async function getAllFiles(
       const subFilesArrays = await Promise.all(subFilesPromises);
       return subFilesArrays.flat();
     }
-    const updatedProgress = {
-      ...progress,
-      filesTotal: progress.filesTotal + 1,
-      currentFile: fullPath,
-      isDiscoveringFiles: true,
-    };
-    options?.onProgress?.(updatedProgress);
+    progress.filesTotal += 1;
+    progress.currentFile = fullPath;
+    options?.onProgress?.(progress);
     return [fullPath];
   };
 
   const filePromises = entries.map((entry) => processEntry(entry));
   const fileArrays = await Promise.all(filePromises);
 
-  // Signal that file discovery is complete
-  const finalTotal = progress.filesTotal;
-  const updatedProgress = {
-    ...progress,
-    filesTotal: finalTotal,  // Explicitly preserve the filesTotal
-    isDiscoveringFiles: false,
-  };
-  options?.onProgress?.(updatedProgress);
+  progress.isDiscoveringFiles = false;
+  options?.onProgress?.(progress);
 
   return fileArrays.flat();
 }
