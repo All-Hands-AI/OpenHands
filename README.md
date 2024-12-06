@@ -79,12 +79,13 @@ troubleshooting resources, and advanced configuration options.
 
 ## 🤝 How to Join the Community
 
-OpenHands is a community-driven project, and we welcome contributions from everyone. We do most of our communication
-through Slack, so this is the best place to start, but we also are happy to have you contact us on Discord or Github:
+OpenHands is a vibrant, community-driven project, and we warmly welcome contributions from everyone! We have multiple channels for communication and collaboration:
 
-- [Join our Slack workspace](https://join.slack.com/t/openhands-ai/shared_invite/zt-2tom0er4l-JeNUGHt_AxpEfIBstbLPiw) - Here we talk about research, architecture, and future development.
-- [Join our Discord server](https://discord.gg/ESHStjSjD4) - This is a community-run server for general discussion, questions, and feedback.
-- [Read or post Github Issues](https://github.com/All-Hands-AI/OpenHands/issues) - Check out the issues we're working on, or add your own ideas.
+- [Join our Slack workspace](https://join.slack.com/t/openhands-ai/shared_invite/zt-2tom0er4l-JeNUGHt_AxpEfIBstbLPiw) - This is our primary hub for discussions about research, architecture, and future development.
+- [Join our Discord server](https://discord.gg/ESHStjSjD4) - A community-run space for general discussion, questions, and friendly chat.
+- [Explore our GitHub Issues](https://github.com/All-Hands-AI/OpenHands/issues) - Dive into ongoing issues, contribute to discussions, or share your own ideas for improvement.
+
+We're excited to have you join us, whether you're a seasoned developer or just starting out. Your perspective is valuable!
 
 See more about the community in [COMMUNITY.md](./COMMUNITY.md) or find details on contributing in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
@@ -108,7 +109,7 @@ For a list of open source projects and licenses used in OpenHands, please see ou
 
 ## 📚 Cite
 
-```
+```bibtex
 @misc{openhands,
       title={{OpenHands: An Open Platform for AI Software Developers as Generalist Agents}},
       author={Xingyao Wang and Boxuan Li and Yufan Song and Frank F. Xu and Xiangru Tang and Mingchen Zhuge and Jiayi Pan and Yueqi Song and Bowen Li and Jaskirat Singh and Hoang H. Tran and Fuqiang Li and Ren Ma and Mingzhang Zheng and Bill Qian and Yanjun Shao and Niklas Muennighoff and Yizhe Zhang and Binyuan Hui and Junyang Lin and Robert Brennan and Hao Peng and Heng Ji and Graham Neubig},
