@@ -181,6 +181,7 @@ async def process_issue(
     shutil.copytree(os.path.join(output_dir, 'repo'), workspace_base)
 
     config = AppConfig(
+        debug=True,
         default_agent='CodeActAgent',
         runtime='eventstream',
         max_budget_per_task=4,
