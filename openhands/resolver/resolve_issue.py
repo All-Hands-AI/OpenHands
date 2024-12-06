@@ -627,7 +627,7 @@ def main():
     if prompt_file is None:
         if issue_type == 'issue':
             prompt_file = os.path.join(
-                os.path.dirname(__file__), 'prompts/resolve/basic-with-tests.jinja'
+                os.path.dirname(__file__), 'prompts/resolve/basic.jinja'
             )
         else:
             prompt_file = os.path.join(
