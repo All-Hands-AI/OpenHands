@@ -4,8 +4,8 @@ import pytest
 
 from openhands.utils.async_utils import (
     AsyncException,
-    async_from_sync,
-    sync_from_async,
+    call_async_from_sync,
+    call_sync_from_async,
     wait_all,
 )
 
@@ -80,44 +80,44 @@ async def test_await_all_timeout():
 
 
 @pytest.mark.asyncio
-async def test_sync_from_async():
+async def test_call_sync_from_async():
     def dummy(value: int = 2):
         return value * 2
 
-    result = await sync_from_async(dummy)
+    result = await call_sync_from_async(dummy)
     assert result == 4
-    result = await sync_from_async(dummy, 3)
+    result = await call_sync_from_async(dummy, 3)
     assert result == 6
-    result = await sync_from_async(dummy, value=5)
+    result = await call_sync_from_async(dummy, value=5)
     assert result == 10
 
 
 @pytest.mark.asyncio
-async def test_sync_from_async_error():
+async def test_call_sync_from_async_error():
     def dummy():
         raise ValueError()
 
     with pytest.raises(ValueError):
-        await sync_from_async(dummy)
+        await call_sync_from_async(dummy)
 
 
-def test_async_from_sync():
+def test_call_async_from_sync():
     async def dummy(value: int):
         return value * 2
 
-    result = async_from_sync(dummy, 0, 3)
+    result = call_async_from_sync(dummy, 0, 3)
     assert result == 6
 
 
-def test_async_from_sync_error():
+def test_call_async_from_sync_error():
     async def dummy(value: int):
         raise ValueError()
 
     with pytest.raises(ValueError):
-        async_from_sync(dummy, 0, 3)
+        call_async_from_sync(dummy, 0, 3)
 
 
-def test_async_from_sync_background_tasks():
+def test_call_async_from_sync_background_tasks():
     events = []
 
     async def bg_task():
@@ -132,7 +132,7 @@ def test_async_from_sync_background_tasks():
         asyncio.create_task(bg_task())
         events.append('dummy_started')
 
-    async_from_sync(dummy, 0, 3)
+    call_async_from_sync(dummy, 0, 3)
 
     # We check that the function did not return until all coroutines completed
     # (Even though some of these were started as background tasks)

@@ -65,9 +65,23 @@ Features:
     * potential secret leaks by the agent
     * security issues in Python code
     * malicious bash commands
+    * dangerous user tasks (browsing agent setting)
+    * harmful content generation (browsing agent setting)
 * Logs:
     * actions and their associated risk
     * OpenHands traces in JSON format
 * Run-time settings:
     * the [invariant policy](https://github.com/invariantlabs-ai/invariant?tab=readme-ov-file#policy-language)
     * acceptable risk threshold
+    * (Optional) check_browsing_alignment flag
+    * (Optional) guardrail_llm that assesses if the agent behaviour is safe
+
+Browsing Agent Safety:
+
+* Guardrail feature that uses the underlying LLM of the agent to:
+    * Examine the user's request and check if it is harmful.
+    * Examine the content entered by the agent in a textbox (argument of the “fill” browser action) and check if it is harmful.
+
+* If the guardrail evaluates either of the 2 conditions to be true, it emits a change_agent_state action and transforms the AgentState to ERROR. This stops the agent from proceeding further.
+
+* To enable this feature: In the InvariantAnalyzer object, set the check_browsing_alignment attribute to True and initialize the guardrail_llm attribute with an LLM object.

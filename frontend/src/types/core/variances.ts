@@ -1,7 +1,7 @@
 /** Variances are types which do not conform to the current event pattern */
 
 export interface TokenConfigSuccess {
-  status: "ok";
+  status: "ok" | number;
   token: string;
 }
 
@@ -27,7 +27,7 @@ interface LocalUserMessageAction {
   action: "message";
   args: {
     content: string;
-    images_urls: string[];
+    image_urls: string[];
   };
 }
 

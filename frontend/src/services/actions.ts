@@ -1,23 +1,30 @@
-import { addAssistantMessage, addUserMessage } from "#/state/chatSlice";
-import { setCode, setActiveFilepath } from "#/state/codeSlice";
-import { appendInput } from "#/state/commandSlice";
-import { appendJupyterInput } from "#/state/jupyterSlice";
 import {
-  ActionSecurityRisk,
-  appendSecurityAnalyzerInput,
-} from "#/state/securityAnalyzerSlice";
-import { setCurStatusMessage } from "#/state/statusSlice";
-import { setRootTask } from "#/state/taskSlice";
+  addAssistantMessage,
+  addAssistantAction,
+  addUserMessage,
+  addErrorMessage,
+} from "#/state/chat-slice";
+import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
+import { setCode, setActiveFilepath } from "#/state/code-slice";
+import { appendJupyterInput } from "#/state/jupyter-slice";
+import { setCurStatusMessage } from "#/state/status-slice";
 import store from "#/store";
-import ActionType from "#/types/ActionType";
-import { ActionMessage, StatusMessage } from "#/types/Message";
-import { SocketMessage } from "#/types/ResponseType";
+import ActionType from "#/types/action-type";
+import {
+  ActionMessage,
+  ObservationMessage,
+  StatusMessage,
+} from "#/types/message";
+import EventLogger from "#/utils/event-logger";
 import { handleObservationMessage } from "./observations";
-import { getRootTask } from "./taskService";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.message));
+    if (message.args.thought) {
+      store.dispatch(addAssistantMessage(message.args.thought));
+    } else {
+      store.dispatch(addAssistantMessage(message.message));
+    }
   },
   [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
     if (message.args.thought) {
@@ -38,98 +45,35 @@ const messageActions = {
           content: message.args.content,
           imageUrls: [],
           timestamp: message.timestamp,
+          pending: false,
         }),
       );
     } else {
       store.dispatch(addAssistantMessage(message.args.content));
     }
   },
-  [ActionType.FINISH]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.message));
-  },
-  [ActionType.REJECT]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.message));
-  },
-  [ActionType.DELEGATE]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.message));
-  },
-  [ActionType.RUN]: (message: ActionMessage) => {
-    if (message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
-    }
-    if (
-      !message.args.is_confirmed ||
-      message.args.is_confirmed !== "rejected"
-    ) {
-      store.dispatch(appendInput(message.args.command));
-    }
-  },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
-    if (message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
-    }
-    if (
-      !message.args.is_confirmed ||
-      message.args.is_confirmed !== "rejected"
-    ) {
+    if (message.args.confirmation_state !== "rejected") {
       store.dispatch(appendJupyterInput(message.args.code));
     }
   },
-  [ActionType.ADD_TASK]: () => {
-    getRootTask().then((fetchedRootTask) =>
-      store.dispatch(setRootTask(fetchedRootTask)),
-    );
-  },
-  [ActionType.MODIFY_TASK]: () => {
-    getRootTask().then((fetchedRootTask) =>
-      store.dispatch(setRootTask(fetchedRootTask)),
-    );
-  },
 };
 
-function getRiskText(risk: ActionSecurityRisk) {
-  switch (risk) {
-    case ActionSecurityRisk.LOW:
-      return "Low Risk";
-    case ActionSecurityRisk.MEDIUM:
-      return "Medium Risk";
-    case ActionSecurityRisk.HIGH:
-      return "High Risk";
-    case ActionSecurityRisk.UNKNOWN:
-    default:
-      return "Unknown Risk";
-  }
-}
-
 export function handleActionMessage(message: ActionMessage) {
+  if (message.args?.hidden) {
+    return;
+  }
+
   if ("args" in message && "security_risk" in message.args) {
     store.dispatch(appendSecurityAnalyzerInput(message));
   }
 
-  if (
-    (message.action === ActionType.RUN ||
-      message.action === ActionType.RUN_IPYTHON) &&
-    message.args.is_confirmed === "awaiting_confirmation"
-  ) {
-    if (message.args.thought) {
+  if (message.source === "agent") {
+    if (message.args && message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
-    if (message.args.command) {
-      store.dispatch(
-        addAssistantMessage(
-          `Running this command now: \n\`\`\`\`bash\n${message.args.command}\n\`\`\`\`\nEstimated security risk: ${getRiskText(message.args.security_risk as unknown as ActionSecurityRisk)}`,
-        ),
-      );
-    } else if (message.args.code) {
-      store.dispatch(
-        addAssistantMessage(
-          `Running this code now: \n\`\`\`\`python\n${message.args.code}\n\`\`\`\`\nEstimated security risk: ${getRiskText(message.args.security_risk as unknown as ActionSecurityRisk)}`,
-        ),
-      );
-    } else {
-      store.dispatch(addAssistantMessage(message.message));
-    }
-    return;
+    // @ts-expect-error TODO: fix
+    store.dispatch(addAssistantAction(message));
   }
 
   if (message.action in messageActions) {
@@ -140,29 +84,29 @@ export function handleActionMessage(message: ActionMessage) {
 }
 
 export function handleStatusMessage(message: StatusMessage) {
-  const msg = message.status == null ? "" : message.status.trim();
-  store.dispatch(
-    setCurStatusMessage({
-      ...message,
-      status: msg,
-    }),
-  );
+  if (message.type === "info") {
+    store.dispatch(
+      setCurStatusMessage({
+        ...message,
+      }),
+    );
+  } else if (message.type === "error") {
+    store.dispatch(
+      addErrorMessage({
+        ...message,
+      }),
+    );
+  }
 }
 
-export function handleAssistantMessage(data: string | SocketMessage) {
-  let socketMessage: SocketMessage;
-
-  if (typeof data === "string") {
-    socketMessage = JSON.parse(data) as SocketMessage;
+export function handleAssistantMessage(message: Record<string, unknown>) {
+  if (message.action) {
+    handleActionMessage(message as unknown as ActionMessage);
+  } else if (message.observation) {
+    handleObservationMessage(message as unknown as ObservationMessage);
+  } else if (message.status_update) {
+    handleStatusMessage(message as unknown as StatusMessage);
   } else {
-    socketMessage = data;
-  }
-
-  if ("action" in socketMessage) {
-    handleActionMessage(socketMessage);
-  } else if ("status" in socketMessage) {
-    handleStatusMessage(socketMessage);
-  } else {
-    handleObservationMessage(socketMessage);
+    EventLogger.error(`Unknown message type ${message}`);
   }
 }

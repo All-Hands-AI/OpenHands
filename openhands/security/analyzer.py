@@ -1,4 +1,5 @@
 from typing import Any
+from uuid import uuid4
 
 from fastapi import Request
 
@@ -19,12 +20,12 @@ class SecurityAnalyzer:
         """
         self.event_stream = event_stream
         self.event_stream.subscribe(
-            EventStreamSubscriber.SECURITY_ANALYZER, self.on_event
+            EventStreamSubscriber.SECURITY_ANALYZER, self.on_event, str(uuid4())
         )
 
     async def on_event(self, event: Event) -> None:
         """Handles the incoming event, and when Action is received, analyzes it for security risks."""
-        logger.info(f'SecurityAnalyzer received event: {event}')
+        logger.debug(f'SecurityAnalyzer received event: {event}')
         await self.log_event(event)
         if not isinstance(event, Action):
             return

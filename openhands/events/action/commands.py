@@ -25,9 +25,10 @@ class CmdRunAction(Action):
     # file2.txt
     # root@sandbox:~# <-- this is the command prompt
 
+    hidden: bool = False
     action: str = ActionType.RUN
     runnable: ClassVar[bool] = True
-    is_confirmed: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
+    confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
     security_risk: ActionSecurityRisk | None = None
 
     @property
@@ -46,9 +47,12 @@ class CmdRunAction(Action):
 class IPythonRunCellAction(Action):
     code: str
     thought: str = ''
+    include_extra: bool = (
+        True  # whether to include CWD & Python interpreter in the output
+    )
     action: str = ActionType.RUN_IPYTHON
     runnable: ClassVar[bool] = True
-    is_confirmed: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
+    confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
     security_risk: ActionSecurityRisk | None = None
     kernel_init_code: str = ''  # code to run in the kernel (if the kernel is restarted)
 

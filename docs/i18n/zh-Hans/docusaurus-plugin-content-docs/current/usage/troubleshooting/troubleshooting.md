@@ -1,97 +1,51 @@
----
-sidebar_position: 5
----
+以下是翻译后的内容:
 
 # 🚧 故障排除
 
-以下是用户经常报告的一些错误信息。
-
-我们将努力使安装过程更加简单，并改善这些错误信息。不过，现在您可以在下面找到您的错误信息，并查看是否有任何解决方法。
-
-对于这些错误信息，**都已经有相关的报告**。请不要打开新的报告——只需在现有的报告中发表评论即可。
-
-如果您发现更多信息或者一个解决方法，请提交一个 *PR* 来添加细节到这个文件中。
+有一些错误信息经常被用户报告。我们会尽量让安装过程更简单,但目前您可以在下面查找您的错误信息,看看是否有任何解决方法。如果您找到了更多关于这些问题的信息或解决方法,请提交一个 *PR* 来添加详细信息到这个文件。
 
 :::tip
-如果您在 Windows 上运行并遇到问题，请查看我们的[Windows (WSL) 用户指南](troubleshooting/windows)。
+OpenHands 仅通过 [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) 支持 Windows。
+请确保在您的 WSL 终端内运行所有命令。
+查看 [Windows 用户的 WSL 注意事项](troubleshooting/windows) 以获取一些故障排除指南。
 :::
 
-## 无法连接到 Docker
+## 常见问题
 
-[GitHub 问题](https://github.com/All-Hands-AI/OpenHands/issues/1226)
+* [无法连接到 Docker](#unable-to-connect-to-docker)
+* [404 资源未找到](#404-resource-not-found)
+* [`make build` 在安装包时卡住](#make-build-getting-stuck-on-package-installations)
+* [会话没有恢复](#sessions-are-not-restored)
 
-### 症状
+### 无法连接到 Docker
+
+[GitHub Issue](https://github.com/All-Hands-AI/OpenHands/issues/1226)
+
+**症状**
 
 ```bash
-创建控制器时出错。请检查 Docker 是否正在运行，并访问 `https://docs.all-hands.dev/modules/usage/troubleshooting` 获取更多调试信息。
+Error creating controller. Please check Docker is running and visit `https://docs.all-hands.dev/modules/usage/troubleshooting` for more debugging information.
 ```
 
 ```bash
-docker.errors.DockerException: 获取服务器 API 版本时出错: ('连接中止。', FileNotFoundError(2, '没有这样的文件或目录'))
+docker.errors.DockerException: Error while fetching server API version: ('Connection aborted.', FileNotFoundError(2, 'No such file or directory'))
 ```
 
-### 详情
+**详情**
 
-OpenHands 使用 Docker 容器来安全地完成工作，而不会破坏您的机器。
+OpenHands 使用 Docker 容器来安全地工作,而不会潜在地破坏您的机器。
 
-### 解决方法
+**解决方法**
 
-* 运行 `docker ps` 以确保 Docker 正在运行
-* 确保您不需要使用 `sudo` 运行 Docker [请参见此处](https://www.baeldung.com/linux/docker-run-without-sudo)
-* 如果您使用的是 Mac，请检查[权限要求](https://docs.docker.com/desktop/mac/permission-requirements/) ，特别是考虑在 Docker Desktop 的 `Settings > Advanced` 下启用 `Allow the default Docker socket to be used`。
-* 另外，升级您的 Docker 到最新版本，选择 `Check for Updates`
+* 运行 `docker ps` 以确保 docker 正在运行
+* 确保您不需要 `sudo` 来运行 docker [参见此处](https://www.baeldung.com/linux/docker-run-without-sudo)
+* 如果您在 Mac 上,请检查 [权限要求](https://docs.docker.com/desktop/mac/permission-requirements/),特别是考虑在 Docker Desktop 的 `Settings > Advanced` 下启用 `Allow the default Docker socket to be used`。
+* 此外,在 `Check for Updates` 下将您的 Docker 升级到最新版本
 
-## 无法连接到 DockerSSHBox
+---
+### `404 资源未找到`
 
-[GitHub 问题](https://github.com/All-Hands-AI/OpenHands/issues/1156)
-
-### 症状
-
-```python
-self.shell = DockerSSHBox(
-...
-pexpect.pxssh.ExceptionPxssh: Could not establish connection to host
-```
-
-### 详情
-
-默认情况下，OpenHands 使用 SSH 连接到一个运行中的容器。在某些机器上，尤其是 Windows，这似乎会失败。
-
-### 解决方法
-
-* 重新启动您的计算机（有时会有用）
-* 确保拥有最新版本的 WSL 和 Docker
-* 检查您的 WSL 分发版也已更新
-* 尝试[此重新安装指南](https://github.com/All-Hands-AI/OpenHands/issues/1156#issuecomment-2064549427)
-
-## 无法连接到 LLM
-
-[GitHub 问题](https://github.com/All-Hands-AI/OpenHands/issues/1208)
-
-### 症状
-
-```python
-  File "/app/.venv/lib/python3.12/site-packages/openai/_exceptions.py", line 81, in __init__
-    super().__init__(message, response.request, body=body)
-                              ^^^^^^^^^^^^^^^^
-AttributeError: 'NoneType' object has no attribute 'request'
-```
-
-### 详情
-
-[GitHub 问题](https://github.com/All-Hands-AI/OpenHands/issues?q=is%3Aissue+is%3Aopen+404)
-
-这通常发生在本地 LLM 设置中，当 OpenHands 无法连接到 LLM 服务器时。请参阅我们的 [本地 LLM 指南](llms/local-llms) 以获取更多信息。
-
-### 解决方法
-
-* 检查您的 `config.toml` 文件中 "llm" 部分的 `base_url` 是否正确（如果存在）
-* 检查 Ollama（或您使用的其他 LLM）是否正常运行
-* 确保在 Docker 中运行时使用 `--add-host host.docker.internal:host-gateway`
-
-## `404 Resource not found 资源未找到`
-
-### 症状
+**症状**
 
 ```python
 Traceback (most recent call last):
@@ -117,29 +71,29 @@ Traceback (most recent call last):
 openai.NotFoundError: Error code: 404 - {'error': {'code': '404', 'message': 'Resource not found'}}
 ```
 
-### 详情
+**详情**
 
-当 LiteLLM（我们用于连接不同 LLM 提供商的库）找不到您要连接的 API 端点时，会发生这种情况。最常见的情况是 Azure 或 Ollama 用户。
+当 LiteLLM(我们用于连接不同 LLM 提供商的库)找不到您尝试连接的 API 端点时,就会发生这种情况。这种情况最常发生在 Azure 或 ollama 用户身上。
 
-### 解决方法
+**解决方法**
 
 * 检查您是否正确设置了 `LLM_BASE_URL`
-* 检查模型是否正确设置，基于 [LiteLLM 文档](https://docs.litellm.ai/docs/providers)
-  * 如果您在 UI 中运行，请确保在设置模式中设置 `model`
-  * 如果您通过 main.py 运行，请确保在环境变量/配置中设置 `LLM_MODEL`
-* 确保遵循了您的 LLM 提供商的任何特殊说明
-  * [Ollama](/zh-Hans/modules/usage/llms/local-llms)
-  * [Azure](/zh-Hans/modules/usage/llms/azure-llms)
-  * [Google](/zh-Hans/modules/usage/llms/google-llms)
-* 确保您的 API 密钥正确无误
-* 尝试使用 `curl` 连接到 LLM
-* 尝试[直接通过 LiteLLM 连接](https://github.com/BerriAI/litellm)来测试您的设置
+* 根据 [LiteLLM 文档](https://docs.litellm.ai/docs/providers) 检查模型是否设置正确
+  * 如果您在 UI 内运行,请确保在设置模态框中设置 `model`
+  * 如果您在无头模式下运行(通过 main.py),请确保在您的 env/config 中设置 `LLM_MODEL`
+* 确保您已遵循 LLM 提供商的任何特殊说明
+  * [Azure](/modules/usage/llms/azure-llms)
+  * [Google](/modules/usage/llms/google-llms)
+* 确保您的 API 密钥正确
+* 看看您是否可以使用 `curl` 连接到 LLM
+* 尝试 [直接通过 LiteLLM 连接](https://github.com/BerriAI/litellm) 以测试您的设置
 
-## `make build` 在安装包时卡住
+---
+### `make build` 在安装包时卡住
 
-### 症状
+**症状**
 
-安装包时卡在 `Pending...`，没有任何错误信息：
+包安装在 `Pending...` 处卡住,没有任何错误信息:
 
 ```bash
 Package operations: 286 installs, 0 updates, 0 removals
@@ -151,42 +105,44 @@ Package operations: 286 installs, 0 updates, 0 removals
   - Installing typing-extensions (4.11.0): Pending...
 ```
 
-### 详情
+**详情**
 
-在极少数情况下，`make build` 在安装包时似乎会卡住，没有任何错误信息。
+在极少数情况下,`make build` 可能会在安装包时看似卡住,没有任何错误信息。
 
-### 解决方法
+**解决方法**
 
-* 包管理器 Poetry 可能会错过用于查找凭据的配置设置（keyring）。
+包安装程序 Poetry 可能缺少一个配置设置,用于查找凭据的位置(keyring)。
 
-### 解决方法
-
-首先使用 `env` 检查是否存在 `PYTHON_KEYRING_BACKEND` 的值。如果不存在，运行以下命令将其设置为已知值，然后重试构建：
+首先用 `env` 检查是否存在 `PYTHON_KEYRING_BACKEND` 的值。
+如果没有,运行下面的命令将其设置为一个已知值,然后重试构建:
 
 ```bash
 export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring
 ```
 
-## 会话未恢复
+---
+### 会话没有恢复
 
-### 症状
+**症状**
 
-通常情况下，当打开 UI 时，OpenHands 会询问是否要恢复或开始新会话。但点击“恢复”仍然会开始一个全新的聊天。
+OpenHands 通常在打开 UI 时询问是恢复还是开始新会话。
+但是点击"恢复"仍然会开始一个全新的聊天。
 
-### 详情
+**详情**
 
-按今天的标准安装，会话数据存储在内存中。目前，如果 OpenHands 的服务重启，以前的会话将失效（生成一个新秘密），因此无法恢复。
+截至目前,使用标准安装,会话数据存储在内存中。
+目前,如果 OpenHands 的服务重新启动,之前的会话会变得无效(生成一个新的密钥),因此无法恢复。
 
-### 解决方法
+**解决方法**
 
-* 通过编辑 OpenHands 根文件夹中的 `config.toml` 文件，更改配置以使会话持久化，指定一个 `file_store` 和一个绝对路径的 `file_store_path`：
+* 通过编辑 `config.toml` 文件(在 OpenHands 的根文件夹中)来更改配置,使会话持久化,指定一个 `file_store` 和一个绝对的 `file_store_path`:
 
 ```toml
 file_store="local"
 file_store_path="/absolute/path/to/openhands/cache/directory"
 ```
 
-* 在您的 .bashrc 中添加一个固定的 JWT 秘密，如下所示，以便以前的会话 ID 可以被接受。
+* 在您的 .bashrc 中添加一个固定的 jwt 密钥,如下所示,这样之前的会话 id 应该可以保持被接受。
 
 ```bash
 EXPORT JWT_SECRET=A_CONST_VALUE

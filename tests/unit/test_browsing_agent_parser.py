@@ -12,10 +12,14 @@ from openhands.agenthub.browsing_agent.response_parser import (
         ("click('81'", "click('81')```"),
         (
             '"We need to search the internet\n```goto("google.com")',
-            '"We need to search the internet\n```goto("google.com"))```',
+            '"We need to search the internet\n```goto("google.com")```',
         ),
         ("```click('81'", "```click('81')```"),
-        ("click('81')", "click('81'))```"),
+        ("click('81')", "click('81')```"),
+        (
+            "send_msg_to_user('The server might not be running or accessible. Please check the server status and try again.')",
+            "send_msg_to_user('The server might not be running or accessible. Please check the server status and try again.')```",
+        ),
     ],
 )
 def test_parse_response(action_str: str, expected: str) -> None:
@@ -36,6 +40,30 @@ def test_parse_response(action_str: str, expected: str) -> None:
             "click('81')",
             'We need to perform a click',
             '',
+        ),
+        (
+            'Tell the user that the city was built in 1751.\n```send_msg_to_user("Based on the results of my search, the city was built in 1751.")',
+            'send_msg_to_user("Based on the results of my search, the city was built in 1751.")',
+            'Tell the user that the city was built in 1751.',
+            'Based on the results of my search, the city was built in 1751.',
+        ),
+        (
+            'Tell the user that the city was built in 1751.\n```send_msg_to_user("Based on the results of my search, the city was built in 1751.")```',
+            'send_msg_to_user("Based on the results of my search, the city was built in 1751.")',
+            'Tell the user that the city was built in 1751.',
+            'Based on the results of my search, the city was built in 1751.',
+        ),
+        (
+            "Tell the user that the city was built in 1751.\n```send_msg_to_user('Based on the results of my search, the city was built in 1751.')```",
+            "send_msg_to_user('Based on the results of my search, the city was built in 1751.')",
+            'Tell the user that the city was built in 1751.',
+            'Based on the results of my search, the city was built in 1751.',
+        ),
+        (
+            "send_msg_to_user('The server might not be running or accessible. Please check the server status and try again.'))```",
+            "send_msg_to_user('The server might not be running or accessible. Please check the server status and try again.'))",
+            '',
+            'The server might not be running or accessible. Please check the server status and try again.',
         ),
     ],
 )

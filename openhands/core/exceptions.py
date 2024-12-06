@@ -52,7 +52,11 @@ class BrowserUnavailableException(Exception):
 # It might be malformed JSON
 class LLMMalformedActionError(Exception):
     def __init__(self, message='Malformed response'):
+        self.message = message
         super().__init__(message)
+
+    def __str__(self):
+        return self.message
 
 
 # This exception gets sent back to the LLM
@@ -83,4 +87,37 @@ class OperationCancelled(Exception):
     """Exception raised when an operation is cancelled (e.g. by a keyboard interrupt)."""
 
     def __init__(self, message='Operation was cancelled'):
+        super().__init__(message)
+
+
+class CloudFlareBlockageError(Exception):
+    """Exception raised when a request is blocked by CloudFlare."""
+
+    pass
+
+
+class FunctionCallConversionError(Exception):
+    """Exception raised when FunctionCallingConverter failed to convert a non-function call message to a function call message.
+
+    This typically happens when there's a malformed message (e.g., missing <function=...> tags). But not due to LLM output.
+    """
+
+    def __init__(self, message):
+        super().__init__(message)
+
+
+class FunctionCallValidationError(Exception):
+    """Exception raised when FunctionCallingConverter failed to validate a function call message.
+
+    This typically happens when the LLM outputs unrecognized function call / parameter names / values.
+    """
+
+    def __init__(self, message):
+        super().__init__(message)
+
+
+class FunctionCallNotExistsError(Exception):
+    """Exception raised when an LLM call a tool that is not registered."""
+
+    def __init__(self, message):
         super().__init__(message)

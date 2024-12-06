@@ -12,5 +12,5 @@ poetry run python ./openhands/core/main.py \
            -i 10 \
            -t "tell me the usa's president using google search" \
            -c BrowsingAgent \
-           -m gpt-4o-2024-05-13
+           -m claude-3-5-sonnet-20241022
 ```

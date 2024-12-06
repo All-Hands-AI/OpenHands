@@ -1,12 +1,12 @@
 import datetime
 import os
 import subprocess
-import sys
 import time
 
 import docker
 
 from openhands import __version__ as oh_version
+from openhands.core.logger import RollingLogger
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder.base import RuntimeBuilder
 
@@ -16,17 +16,17 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         self.docker_client = docker_client
 
         version_info = self.docker_client.version()
-        server_version = version_info.get('Version', '')
-        if tuple(map(int, server_version.split('.'))) < (18, 9):
+        server_version = version_info.get('Version', '').replace('-', '.')
+        if tuple(map(int, server_version.split('.')[:2])) < (18, 9):
             raise RuntimeError('Docker server version must be >= 18.09 to use BuildKit')
 
-        self.max_lines = 10
-        self.log_lines = [''] * self.max_lines
+        self.rolling_logger = RollingLogger(max_lines=10)
 
     def build(
         self,
         path: str,
         tags: list[str],
+        platform: str | None = None,
         use_local_cache: bool = False,
         extra_build_args: list[str] | None = None,
     ) -> str:
@@ -35,6 +35,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         Args:
             path (str): The path to the Docker build context.
             tags (list[str]): A list of image tags to apply to the built image.
+            platform (str, optional): The target platform for the build. Defaults to None.
             use_local_cache (bool, optional): Whether to use and update the local build cache. Defaults to True.
             extra_build_args (list[str], optional): Additional arguments to pass to the Docker build command. Defaults to None.
 
@@ -51,16 +52,13 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         """
         self.docker_client = docker.from_env()
         version_info = self.docker_client.version()
-        server_version = version_info.get('Version', '')
+        server_version = version_info.get('Version', '').replace('-', '.')
         if tuple(map(int, server_version.split('.'))) < (18, 9):
             raise RuntimeError('Docker server version must be >= 18.09 to use BuildKit')
 
         target_image_hash_name = tags[0]
-        target_image_repo, target_image_hash_tag = target_image_hash_name.split(':')
+        target_image_repo, target_image_source_tag = target_image_hash_name.split(':')
         target_image_tag = tags[1].split(':')[1] if len(tags) > 1 else None
-
-        # Check if the image exists and pull if necessary
-        self.image_exists(target_image_hash_name)
 
         buildx_cmd = [
             'docker',
@@ -72,6 +70,10 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             f'--tag={target_image_hash_name}',
             '--load',
         ]
+
+        # Include the platform argument only if platform is specified
+        if platform:
+            buildx_cmd.append(f'--platform={platform}')
 
         cache_dir = '/tmp/.buildx-cache'
         if use_local_cache and self._is_cache_usable(cache_dir):
@@ -87,10 +89,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         buildx_cmd.append(path)  # must be last!
 
-        print('================ DOCKER BUILD STARTED ================')
-        if sys.stdout.isatty():
-            sys.stdout.write('\n' * self.max_lines)
-            sys.stdout.flush()
+        self.rolling_logger.start(
+            '================ DOCKER BUILD STARTED ================'
+        )
 
         try:
             process = subprocess.Popen(
@@ -157,9 +158,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             )
 
         tags_str = (
-            f'{target_image_hash_tag}, {target_image_tag}'
+            f'{target_image_source_tag}, {target_image_tag}'
             if target_image_tag
-            else target_image_hash_tag
+            else target_image_source_tag
         )
         logger.info(
             f'Image {target_image_repo} with tags [{tags_str}] built successfully'
@@ -223,25 +224,10 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 return False
 
     def _output_logs(self, new_line: str) -> None:
-        """Display the last 10 log_lines in the console (not for file logging).
-        This will create the effect of a rolling display in the console.
-
-        '\033[F'    moves the cursor up one line.
-        '\033[2K\r' clears the line and moves the cursor to the beginning of the line.
-        """
-        if not sys.stdout.isatty():
+        if not self.rolling_logger.is_enabled():
             logger.debug(new_line)
-            return
-
-        self.log_lines.pop(0)
-        self.log_lines.append(new_line[:80])
-
-        sys.stdout.write('\033[F' * (self.max_lines))
-        sys.stdout.flush()
-
-        for line in self.log_lines:
-            sys.stdout.write('\033[2K' + line + '\n')
-            sys.stdout.flush()
+        else:
+            self.rolling_logger.add_line(new_line)
 
     def _output_build_progress(
         self, current_line: dict, layers: dict, previous_layer_count: int
@@ -270,19 +256,24 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                         100 if layers[layer_id]['status'] == 'Download complete' else 0
                     )
 
-            if sys.stdout.isatty():
-                sys.stdout.write('\033[F' * previous_layer_count)
+            if self.rolling_logger.is_enabled():
+                self.rolling_logger.move_back(previous_layer_count)
                 for lid, layer_data in sorted(layers.items()):
-                    sys.stdout.write('\033[2K\r')
+                    self.rolling_logger.replace_current_line()
                     status = layer_data['status']
                     progress = layer_data['progress']
                     if status == 'Download complete':
-                        print(f'Layer {lid}: Download complete')
+                        self.rolling_logger.write_immediately(
+                            f'Layer {lid}: Download complete'
+                        )
                     elif status == 'Already exists':
-                        print(f'Layer {lid}: Already exists')
+                        self.rolling_logger.write_immediately(
+                            f'Layer {lid}: Already exists'
+                        )
                     else:
-                        print(f'Layer {lid}: {progress} {status}')
-                sys.stdout.flush()
+                        self.rolling_logger.write_immediately(
+                            f'Layer {lid}: {progress} {status}'
+                        )
             elif percentage != 0 and (
                 percentage - layers[layer_id]['last_logged'] >= 10 or percentage == 100
             ):

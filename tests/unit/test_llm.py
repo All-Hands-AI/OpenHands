@@ -1,3 +1,4 @@
+import copy
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -10,8 +11,8 @@ from litellm.exceptions import (
 
 from openhands.core.config import LLMConfig
 from openhands.core.exceptions import OperationCancelled
-from openhands.core.metrics import Metrics
 from openhands.llm.llm import LLM
+from openhands.llm.metrics import Metrics
 
 
 @pytest.fixture(autouse=True)
@@ -39,6 +40,7 @@ def test_llm_init_with_default_config(default_config):
     assert llm.config.model == 'gpt-4o'
     assert llm.config.api_key == 'test_key'
     assert isinstance(llm.metrics, Metrics)
+    assert llm.metrics.model_name == 'gpt-4o'
 
 
 @patch('openhands.llm.llm.litellm.get_model_info')
@@ -48,6 +50,7 @@ def test_llm_init_with_model_info(mock_get_model_info, default_config):
         'max_output_tokens': 2000,
     }
     llm = LLM(default_config)
+    llm.init_model_info()
     assert llm.config.max_input_tokens == 8000
     assert llm.config.max_output_tokens == 2000
 
@@ -56,6 +59,7 @@ def test_llm_init_with_model_info(mock_get_model_info, default_config):
 def test_llm_init_without_model_info(mock_get_model_info, default_config):
     mock_get_model_info.side_effect = Exception('Model info not available')
     llm = LLM(default_config)
+    llm.init_model_info()
     assert llm.config.max_input_tokens == 4096
     assert llm.config.max_output_tokens == 4096
 
@@ -83,13 +87,18 @@ def test_llm_init_with_metrics():
     metrics = Metrics()
     llm = LLM(config, metrics=metrics)
     assert llm.metrics is metrics
+    assert (
+        llm.metrics.model_name == 'default'
+    )  # because we didn't specify model_name in Metrics init
 
 
 def test_llm_reset():
     llm = LLM(LLMConfig(model='gpt-4o-mini', api_key='test_key'))
-    initial_metrics = llm.metrics
+    initial_metrics = copy.deepcopy(llm.metrics)
+    initial_metrics.add_cost(1.0)
     llm.reset()
-    assert llm.metrics is not initial_metrics
+    assert llm.metrics._accumulated_cost != initial_metrics._accumulated_cost
+    assert llm.metrics._costs != initial_metrics._costs
     assert isinstance(llm.metrics, Metrics)
 
 
@@ -101,6 +110,7 @@ def test_llm_init_with_openrouter_model(mock_get_model_info, default_config):
         'max_output_tokens': 1500,
     }
     llm = LLM(default_config)
+    llm.init_model_info()
     assert llm.config.max_input_tokens == 7000
     assert llm.config.max_output_tokens == 1500
     mock_get_model_info.assert_called_once_with('openrouter:gpt-4o-mini')
@@ -332,3 +342,24 @@ def test_completion_with_two_positional_args(mock_litellm_completion, default_co
     assert (
         len(call_args) == 0
     )  # No positional args should be passed to litellm_completion here
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_llm_cloudflare_blockage(mock_litellm_completion, default_config):
+    from litellm.exceptions import APIError
+
+    from openhands.core.exceptions import CloudFlareBlockageError
+
+    llm = LLM(default_config)
+    mock_litellm_completion.side_effect = APIError(
+        message='Attention Required! | Cloudflare',
+        llm_provider='test_provider',
+        model='test_model',
+        status_code=403,
+    )
+
+    with pytest.raises(CloudFlareBlockageError, match='Request blocked by CloudFlare'):
+        llm.completion(messages=[{'role': 'user', 'content': 'Hello'}])
+
+    # Ensure the completion was called
+    mock_litellm_completion.assert_called_once()

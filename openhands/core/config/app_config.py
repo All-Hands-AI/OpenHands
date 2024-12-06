@@ -1,4 +1,3 @@
-import os
 import uuid
 from dataclasses import dataclass, field, fields, is_dataclass
 from typing import ClassVar
@@ -8,7 +7,6 @@ from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
-    UndefinedString,
     get_field_info,
 )
 from openhands.core.config.llm_config import LLMConfig
@@ -21,28 +19,30 @@ class AppConfig:
     """Configuration for the app.
 
     Attributes:
-        llms: A dictionary of name -> LLM configuration. Default config is under 'llm' key.
-        agents: A dictionary of name -> Agent configuration. Default config is under 'agent' key.
-        default_agent: The name of the default agent to use.
-        sandbox: The sandbox configuration.
-        runtime: The runtime environment.
-        file_store: The file store to use.
-        file_store_path: The path to the file store.
-        workspace_base: The base path for the workspace. Defaults to ./workspace as an absolute path.
-        workspace_mount_path: The path to mount the workspace. This is set to the workspace base by default.
-        workspace_mount_path_in_sandbox: The path to mount the workspace in the sandbox. Defaults to /workspace.
-        workspace_mount_rewrite: The path to rewrite the workspace mount path to.
-        cache_dir: The path to the cache directory. Defaults to /tmp/cache.
+        llms: Dictionary mapping LLM names to their configurations.
+            The default configuration is stored under the 'llm' key.
+        agents: Dictionary mapping agent names to their configurations.
+            The default configuration is stored under the 'agent' key.
+        default_agent: Name of the default agent to use.
+        sandbox: Sandbox configuration settings.
+        runtime: Runtime environment identifier.
+        file_store: Type of file store to use.
+        file_store_path: Path to the file store.
+        trajectories_path: Folder path to store trajectories.
+        workspace_base: Base path for the workspace. Defaults to `./workspace` as absolute path.
+        workspace_mount_path: Path to mount the workspace. Defaults to `workspace_base`.
+        workspace_mount_path_in_sandbox: Path to mount the workspace in sandbox. Defaults to `/workspace`.
+        workspace_mount_rewrite: Path to rewrite the workspace mount path.
+        cache_dir: Path to cache directory. Defaults to `/tmp/cache`.
         run_as_openhands: Whether to run as openhands.
-        max_iterations: The maximum number of iterations.
-        max_budget_per_task: The maximum budget allowed per task, beyond which the agent will stop.
-        e2b_api_key: The E2B API key.
-        disable_color: Whether to disable color. For terminals that don't support color.
-        debug: Whether to enable debugging.
-        enable_cli_session: Whether to enable saving and restoring the session when run from CLI.
-        file_uploads_max_file_size_mb: Maximum file size for uploads in megabytes. 0 means no limit.
-        file_uploads_restrict_file_types: Whether to restrict file types for file uploads. Defaults to False.
-        file_uploads_allowed_extensions: List of allowed file extensions for uploads. ['.*'] means all extensions are allowed.
+        max_iterations: Maximum number of iterations allowed.
+        max_budget_per_task: Maximum budget per task, agent stops if exceeded.
+        e2b_api_key: E2B API key.
+        disable_color: Whether to disable terminal colors. For terminals that don't support color.
+        debug: Whether to enable debugging mode.
+        file_uploads_max_file_size_mb: Maximum file upload size in MB. `0` means unlimited.
+        file_uploads_restrict_file_types: Whether to restrict upload file types.
+        file_uploads_allowed_extensions: Allowed file extensions. `['.*']` allows all.
     """
 
     llms: dict[str, LLMConfig] = field(default_factory=dict)
@@ -53,11 +53,9 @@ class AppConfig:
     runtime: str = 'eventstream'
     file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
-    # TODO: clean up workspace path after the removal of ServerRuntime
-    workspace_base: str = os.path.join(os.getcwd(), 'workspace')
-    workspace_mount_path: str | None = (
-        UndefinedString.UNDEFINED  # this path should always be set when config is fully loaded
-    )  # when set to None, do not mount the workspace
+    trajectories_path: str | None = None
+    workspace_base: str | None = None
+    workspace_mount_path: str | None = None
     workspace_mount_path_in_sandbox: str = '/workspace'
     workspace_mount_rewrite: str | None = None
     cache_dir: str = '/tmp/cache'
@@ -65,18 +63,23 @@ class AppConfig:
     max_iterations: int = OH_MAX_ITERATIONS
     max_budget_per_task: float | None = None
     e2b_api_key: str = ''
+    modal_api_token_id: str = ''
+    modal_api_token_secret: str = ''
     disable_color: bool = False
     jwt_secret: str = uuid.uuid4().hex
+    attach_session_middleware_class: str = (
+        'openhands.server.middleware.AttachSessionMiddleware'
+    )
     debug: bool = False
-    enable_cli_session: bool = False
     file_uploads_max_file_size_mb: int = 0
     file_uploads_restrict_file_types: bool = False
     file_uploads_allowed_extensions: list[str] = field(default_factory=lambda: ['.*'])
+    runloop_api_key: str | None = None
 
     defaults_dict: ClassVar[dict] = {}
 
     def get_llm_config(self, name='llm') -> LLMConfig:
-        """Llm is the name for default config (for backward compatibility prior to 0.8)"""
+        """'llm' is the name for default config (for backward compatibility prior to 0.8)."""
         if name in self.llms:
             return self.llms[name]
         if name is not None and name != 'llm':
@@ -87,18 +90,18 @@ class AppConfig:
             self.llms['llm'] = LLMConfig()
         return self.llms['llm']
 
-    def set_llm_config(self, value: LLMConfig, name='llm'):
+    def set_llm_config(self, value: LLMConfig, name='llm') -> None:
         self.llms[name] = value
 
     def get_agent_config(self, name='agent') -> AgentConfig:
-        """Agent is the name for default config (for backward compability prior to 0.8)"""
+        """'agent' is the name for default config (for backward compatibility prior to 0.8)."""
         if name in self.agents:
             return self.agents[name]
         if 'agent' not in self.agents:
             self.agents['agent'] = AgentConfig()
         return self.agents['agent']
 
-    def set_agent_config(self, value: AgentConfig, name='agent'):
+    def set_agent_config(self, value: AgentConfig, name='agent') -> None:
         self.agents[name] = value
 
     def get_agent_to_llm_config_map(self) -> dict[str, LLMConfig]:
@@ -140,6 +143,9 @@ class AppConfig:
                 'e2b_api_key',
                 'github_token',
                 'jwt_secret',
+                'modal_api_token_id',
+                'modal_api_token_secret',
+                'runloop_api_key',
             ]:
                 attr_value = '******' if attr_value else None
 

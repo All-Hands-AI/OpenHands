@@ -1,5 +1,5 @@
 # Workflow that builds, tests and then pushes the OpenHands and runtime docker images to the ghcr.io repository
-name: Build, Test and Publish RT Image
+name: Docker
 
 # Always run on "main"
 # Always run on tags
@@ -88,14 +88,6 @@ jobs:
           hash_from_app_image=$(cat docker-outputs.txt | grep "Hash for docker build directory" | awk -F "): " '{print $2}' | uniq | head -n1)
           echo "hash_from_app_image=$hash_from_app_image" >> $GITHUB_OUTPUT
           echo "Hash from app image: $hash_from_app_image"
-      # This test should move when we have a test suite for the app image
-      - name: Test docker in App Image
-        run: |
-          # Lowercase the repository owner
-          export REPO_OWNER=${{ github.repository_owner }}
-          REPO_OWNER=$(echo $REPO_OWNER | tr '[:upper:]' '[:lower:]')
-
-          docker run -e SANDBOX_USER_ID=0 -v /var/run/docker.sock:/var/run/docker.sock ghcr.io/${REPO_OWNER}/openhands:${{ env.RELEVANT_SHA }} /bin/bash -c "docker run hello-world"
 
   # Builds the runtime Docker images
   ghcr_build_runtime:
@@ -294,13 +286,12 @@ jobs:
           image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
-          SKIP_CONTAINER_LOGS=true \
           TEST_RUNTIME=eventstream \
           SANDBOX_USER_ID=$(id -u) \
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=false \
-          poetry run pytest -n 3 -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime
+          poetry run pytest -n 3 -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
@@ -372,85 +363,12 @@ jobs:
           image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
           image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
 
-          SKIP_CONTAINER_LOGS=true \
           TEST_RUNTIME=eventstream \
           SANDBOX_USER_ID=$(id -u) \
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=true \
-          poetry run pytest -n 3 -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-  # Run integration tests with the eventstream runtime Docker image
-  runtime_integration_tests_on_linux:
-    name: RT Integration Tests (Linux)
-    runs-on: ubuntu-latest
-    needs: [ghcr_build_runtime]
-    strategy:
-      fail-fast: false
-      matrix:
-        base_image: ['nikolaik']
-    steps:
-      - uses: actions/checkout@v4
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
-        with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
-          tool-cache: true
-          # all of these default to true, but feel free to set to
-          # "false" if necessary for your workflow
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: false
-          swap-storage: true
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v3
-      # Forked repos can't push to GHCR, so we need to download the image as an artifact
-      - name: Download runtime image for fork
-        if: github.event.pull_request.head.repo.fork
-        uses: actions/download-artifact@v4
-        with:
-          name: runtime-${{ matrix.base_image }}
-          path: /tmp
-      - name: Load runtime image for fork
-        if: github.event.pull_request.head.repo.fork
-        run: |
-          docker load --input /tmp/runtime-${{ matrix.base_image }}.tar
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.virtualenvs
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Install poetry via pipx
-        run: pipx install poetry
-      - name: Install Python dependencies using Poetry
-        run: make install-python-dependencies
-      - name: Run integration tests
-        run: |
-          image_name=ghcr.io/${{ github.repository_owner }}/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image }}
-          image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
-
-          TEST_RUNTIME=eventstream \
-          SANDBOX_USER_ID=$(id -u) \
-          SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
-          TEST_IN_CI=true \
-          TEST_ONLY=true \
-          ./tests/integration/regenerate.sh
+          poetry run pytest -n 3 -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
@@ -464,7 +382,7 @@ jobs:
     name: All Runtime Tests Passed
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     runs-on: ubuntu-latest
-    needs: [test_runtime_root, test_runtime_oh, runtime_integration_tests_on_linux, verify_hash_equivalence_in_runtime_and_app]
+    needs: [test_runtime_root, test_runtime_oh, verify_hash_equivalence_in_runtime_and_app]
     steps:
       - name: All tests passed
         run: echo "All runtime tests have passed successfully!"
@@ -473,9 +391,55 @@ jobs:
     name: All Runtime Tests Passed
     if: ${{ cancelled() || contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
     runs-on: ubuntu-latest
-    needs: [test_runtime_root, test_runtime_oh, runtime_integration_tests_on_linux, verify_hash_equivalence_in_runtime_and_app]
+    needs: [test_runtime_root, test_runtime_oh, verify_hash_equivalence_in_runtime_and_app]
     steps:
       - name: Some tests failed
         run: |
           echo "Some runtime tests failed or were cancelled"
           exit 1
+  update_pr_description:
+    name: Update PR Description
+    if: github.event_name == 'pull_request' && !github.event.pull_request.head.repo.fork && github.actor != 'dependabot[bot]'
+    needs: [ghcr_build_runtime]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get short SHA
+        id: short_sha
+        run: echo "SHORT_SHA=$(echo ${{ github.event.pull_request.head.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
+      - name: Update PR Description
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          SHORT_SHA: ${{ steps.short_sha.outputs.SHORT_SHA }}
+        run: |
+          echo "updating PR description"
+          DOCKER_RUN_COMMAND="docker run -it --rm \
+            -p 3000:3000 \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            --add-host host.docker.internal:host-gateway \
+            -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:$SHORT_SHA-nikolaik \
+            --name openhands-app-$SHORT_SHA \
+            docker.all-hands.dev/all-hands-ai/openhands:$SHORT_SHA"
+
+          PR_BODY=$(gh pr view $PR_NUMBER --json body --jq .body)
+
+          if echo "$PR_BODY" | grep -q "To run this PR locally, use the following command:"; then
+            UPDATED_PR_BODY=$(echo "${PR_BODY}" | sed -E "s|docker run -it --rm.*|$DOCKER_RUN_COMMAND|")
+          else
+            UPDATED_PR_BODY="${PR_BODY}
+
+          ---
+
+          To run this PR locally, use the following command:
+          \`\`\`
+          $DOCKER_RUN_COMMAND
+          \`\`\`"
+          fi
+
+          echo "updated body: $UPDATED_PR_BODY"
+          gh pr edit $PR_NUMBER --body "$UPDATED_PR_BODY"

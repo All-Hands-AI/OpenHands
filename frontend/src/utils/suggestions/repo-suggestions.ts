@@ -13,14 +13,14 @@ const KEY_2 = "Auto-merge Dependabot PRs";
 const VALUE_2 = `Please add a GitHub action to this repository which automatically merges pull requests from Dependabot so long as the tests are passing.`;
 
 const KEY_3 = "Fix up my README";
-const VALUE_3 = `"Please look at the README and make the following improvements, if they make sense:
+const VALUE_3 = `Please look at the README and make the following improvements, if they make sense:
 * correct any typos that you find
 * add missing language annotations on codeblocks
 * if there are references to other files or other sections of the README, turn them into links
 * make sure the readme has an h1 title towards the top
 * make sure any existing sections in the readme are appropriately separated with headings
 
-If there are no obvious ways to improve the README, make at least one small change to make the wording clearer or friendlier"`;
+If there are no obvious ways to improve the README, make at least one small change to make the wording clearer or friendlier`;
 
 const KEY_4 = "Clean up my dependencies";
 const VALUE_4 = `Examine the dependencies of the current codebase. Make sure you can run the code and any tests.

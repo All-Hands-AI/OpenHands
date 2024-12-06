@@ -1,5 +1,5 @@
 import json
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 import requests
 from pydantic import BaseModel
@@ -10,10 +10,12 @@ from openhands.core.logger import openhands_logger as logger
 class FeedbackDataModel(BaseModel):
     version: str
     email: str
-    token: str
-    feedback: Literal['positive', 'negative']
+    polarity: Literal['positive', 'negative']
+    feedback: Literal[
+        'positive', 'negative'
+    ]  # TODO: remove this, its here for backward compatibility
     permissions: Literal['public', 'private']
-    trajectory: list[dict[str, Any]]
+    trajectory: Optional[list[dict[str, Any]]]
 
 
 FEEDBACK_URL = 'https://share-od-trajectory-3u9bw9tx.uc.gateway.dev/share_od_trajectory'
@@ -21,6 +23,7 @@ FEEDBACK_URL = 'https://share-od-trajectory-3u9bw9tx.uc.gateway.dev/share_od_tra
 
 def store_feedback(feedback: FeedbackDataModel) -> dict[str, str]:
     # Start logging
+    feedback.feedback = feedback.polarity
     display_feedback = feedback.model_dump()
     if 'trajectory' in display_feedback:
         display_feedback['trajectory'] = (
@@ -28,7 +31,7 @@ def store_feedback(feedback: FeedbackDataModel) -> dict[str, str]:
         )
     if 'token' in display_feedback:
         display_feedback['token'] = 'elided'
-    logger.info(f'Got feedback: {display_feedback}')
+    logger.debug(f'Got feedback: {display_feedback}')
     # Start actual request
     response = requests.post(
         FEEDBACK_URL,
@@ -38,5 +41,5 @@ def store_feedback(feedback: FeedbackDataModel) -> dict[str, str]:
     if response.status_code != 200:
         raise ValueError(f'Failed to store feedback: {response.text}')
     response_data = json.loads(response.text)
-    logger.info(f'Stored feedback: {response.text}')
+    logger.debug(f'Stored feedback: {response.text}')
     return response_data

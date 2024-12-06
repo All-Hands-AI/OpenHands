@@ -36,7 +36,7 @@ from openhands.runtime.browser.browser_env import (
 )
 from openhands.runtime.runtime import Runtime
 
-SUPPORTED_AGENT_CLS = {'BrowsingAgent'}
+SUPPORTED_AGENT_CLS = {'VisualBrowsingAgent'}
 
 
 def get_config(

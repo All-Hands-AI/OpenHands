@@ -16,6 +16,7 @@ Check out [Notes for WSL on Windows Users](troubleshooting/windows) for some tro
 * [404 Resource not found](#404-resource-not-found)
 * [`make build` getting stuck on package installations](#make-build-getting-stuck-on-package-installations)
 * [Sessions are not restored](#sessions-are-not-restored)
+* [Connection to host.docker.internal timed out](#connection-to-host-docker-internal-timed-out)
 
 ### Unable to connect to Docker
 
@@ -153,3 +154,27 @@ should stay accepted.
 ```bash
 EXPORT JWT_SECRET=A_CONST_VALUE
 ```
+
+---
+### Connection to host docker internal timed out
+
+**Symptoms**
+
+When you start the server using the docker command from the main [README](https://github.com/All-Hands-AI/OpenHands/README.md), you get a long timeout
+followed by the a stack trace containing messages like:
+
+* `Connection to host.docker.internal timed out. (connect timeout=310)`
+* `Max retries exceeded with url: /alive`
+
+**Details**
+
+If Docker Engine is installed rather than Docker Desktop, the main command will not work as expected.
+Docker Desktop includes easy DNS configuration for connecting processes running in different containers
+which OpenHands makes use of when the main server is running inside a docker container.
+(Further details: https://forums.docker.com/t/difference-between-docker-desktop-and-docker-engine/124612)
+
+**Workarounds**
+
+* [Install Docker Desktop](https://www.docker.com/products/docker-desktop/)
+* Run OpenHands in [Development Mode](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md),
+  So that the main server is not run inside a container, but still creates dockerized runtime sandboxes.

@@ -1,4 +1,0 @@
-Now that the file has been created, I'll append the content 'hello world' to it.
-
-<execute_ipython>
-append_file('/workspace/test.txt', 'hello world')

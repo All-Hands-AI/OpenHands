@@ -8,10 +8,10 @@ from openhands.core.config import AgentConfig
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.core.utils import json
 from openhands.events.action import Action
+from openhands.events.event import Event
 from openhands.events.serialization.action import action_from_dict
 from openhands.events.serialization.event import event_to_memory
 from openhands.llm.llm import LLM
-from openhands.memory.history import ShortTermHistory
 
 
 def parse_response(orig_response: str) -> Action:
@@ -32,16 +32,14 @@ class MicroAgent(Agent):
     prompt = ''
     agent_definition: dict = {}
 
-    def history_to_json(
-        self, history: ShortTermHistory, max_events: int = 20, **kwargs
-    ):
+    def history_to_json(self, history: list[Event], max_events: int = 20, **kwargs):
         """
         Serialize and simplify history to str format
         """
         processed_history = []
         event_count = 0
 
-        for event in history.get_events(reverse=True):
+        for event in reversed(history):
             if event_count >= max_events:
                 break
             processed_history.append(

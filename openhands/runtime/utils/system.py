@@ -3,6 +3,18 @@ import socket
 import time
 
 
+def check_port_available(port: int) -> bool:
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.bind(('localhost', port))
+        return True
+    except OSError:
+        time.sleep(0.1)  # Short delay to further reduce chance of collisions
+        return False
+    finally:
+        sock.close()
+
+
 def find_available_tcp_port(min_port=30000, max_port=39999, max_attempts=10) -> int:
     """Find an available TCP port in a specified range.
 
@@ -19,15 +31,8 @@ def find_available_tcp_port(min_port=30000, max_port=39999, max_attempts=10) -> 
     rng.shuffle(ports)
 
     for port in ports[:max_attempts]:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            sock.bind(('localhost', port))
+        if check_port_available(port):
             return port
-        except OSError:
-            time.sleep(0.1)  # Short delay to further reduce chance of collisions
-            continue
-        finally:
-            sock.close()
     return -1
 
 

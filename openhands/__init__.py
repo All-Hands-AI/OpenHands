@@ -4,26 +4,6 @@ __package_name__ = 'openhands_ai'
 
 
 def get_version():
-    try:
-        from importlib.metadata import PackageNotFoundError, version
-
-        try:
-            return version(__package_name__)
-        except PackageNotFoundError:
-            pass
-    except ImportError:
-        pass
-
-    try:
-        from pkg_resources import DistributionNotFound, get_distribution
-
-        try:
-            return get_distribution(__package_name__).version
-        except DistributionNotFound:
-            pass
-    except ImportError:
-        pass
-
     # Try getting the version from pyproject.toml
     try:
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -32,6 +12,20 @@ def get_version():
                 if line.startswith('version ='):
                     return line.split('=')[1].strip().strip('"')
     except FileNotFoundError:
+        pass
+
+    try:
+        from importlib.metadata import PackageNotFoundError, version
+
+        return version(__package_name__)
+    except (ImportError, PackageNotFoundError):
+        pass
+
+    try:
+        from pkg_resources import DistributionNotFound, get_distribution
+
+        return get_distribution(__package_name__).version
+    except (ImportError, DistributionNotFound):
         pass
 
     return 'unknown'

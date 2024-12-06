@@ -20,8 +20,8 @@ fi
 checkout_eval_branch
 
 if [ -z "$AGENT" ]; then
-  echo "Agent not specified, use default BrowsingAgent"
-  AGENT="BrowsingAgent"
+  echo "Agent not specified, use default VisualBrowsingAgent"
+  AGENT="VisualBrowsingAgent"
 fi
 
 get_agent_version
