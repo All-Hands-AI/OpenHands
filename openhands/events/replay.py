@@ -41,7 +41,7 @@ def command_annotate_execution_points(
 
 def replay_enhance_action(state: State, is_workspace_repo: bool) -> Action | None:
     enhance_action_id = state.extra_data.get('replay_enhance_prompt_id')
-    if not enhance_action_id:
+    if enhance_action_id is None:
         # 1. Get current user prompt.
         latest_user_message = state.get_last_user_message()
         if latest_user_message:
