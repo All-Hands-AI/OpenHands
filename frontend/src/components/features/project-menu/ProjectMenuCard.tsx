@@ -13,7 +13,7 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { ConnectToGitHubModal } from "#/components/shared/modals/connect-to-github-modal";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
-import { DownloadProgress } from "#/components/shared/download-progress";
+import { DownloadModal } from "#/components/shared/download-modal";
 
 interface ProjectMenuCardProps {
   isConnectedToGitHub: boolean;
@@ -63,16 +63,12 @@ Please push the changes to GitHub and open a pull request.
 
   const handleDownloadWorkspace = () => {
     posthog.capture("download_workspace_button_clicked");
-    try {
-      setDownloading(true);
-    } catch (error) {
-      toast.error("Failed to download workspace");
-    }
+    setDownloading(true);
   };
 
   const handleDownloadClose = () => {
     setDownloading(false);
-  }
+  };
 
   return (
     <div className="px-4 py-[10px] w-[337px] rounded-xl border border-[#525252] flex justify-between items-center relative">
@@ -99,7 +95,7 @@ Please push the changes to GitHub and open a pull request.
         />
       )}
       {downloading && (
-        <DownloadProgress initialPath="" onClose={handleDownloadClose} />
+        <DownloadModal initialPath="/workspace" onClose={handleDownloadClose} />
       )}
       {!downloading && (
         <button
