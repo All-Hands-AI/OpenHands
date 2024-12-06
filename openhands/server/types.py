@@ -27,6 +27,16 @@ class OpenhandsConfigInterface(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def verify_github_repo_list(self, installation_id: int) -> None:
+        """Verify that repo list is being called via user's profile or Github App installations."""
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_config(self) -> dict[str, str]:
+        """Configure attributes for frontend"""
+        raise NotImplementedError
+
+    @abstractmethod
     async def github_auth(self, data: dict) -> None:
         """Handle GitHub authentication."""
         raise NotImplementedError

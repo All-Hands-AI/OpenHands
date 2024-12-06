@@ -19,7 +19,7 @@ class OpenhandsConfig(OpenhandsConfigInterface):
         if self.config_path:
             raise ValueError('Unexpected config path provided')
 
-    def verify_github_repo_list(self, installation_id):
+    def verify_github_repo_list(self, installation_id: int):
         if self.app_mode == AppMode.OSS and installation_id:
             raise HTTPException(
                 status_code=400,
