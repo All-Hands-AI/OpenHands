@@ -1,7 +1,6 @@
 import React from "react";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
-import { isGitHubErrorReponse } from "#/api/github";
 import { useAuth } from "#/context/auth-context";
 import {
   useWsClient,
@@ -13,6 +12,7 @@ import { RootState } from "#/store";
 import { base64ToBlob } from "#/utils/base64-to-blob";
 import { useUploadFiles } from "../../../hooks/mutation/use-upload-files";
 import { useGitHubUser } from "../../../hooks/query/use-github-user";
+import { isGitHubErrorReponse } from "#/api/github-axios-instance";
 
 export const useHandleRuntimeActive = () => {
   const { gitHubToken } = useAuth();

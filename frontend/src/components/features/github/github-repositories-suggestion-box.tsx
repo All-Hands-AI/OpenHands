@@ -1,11 +1,11 @@
 import React from "react";
-import { isGitHubErrorReponse } from "#/api/github";
 import { SuggestionBox } from "#/components/features/suggestions/suggestion-box";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
 import { GitHubRepositorySelector } from "./github-repo-selector";
 import { ModalButton } from "#/components/shared/buttons/modal-button";
 import { ConnectToGitHubModal } from "#/components/shared/modals/connect-to-github-modal";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
+import { isGitHubErrorReponse } from "#/api/github-axios-instance";
 
 interface GitHubRepositoriesSuggestionBoxProps {
   handleSubmit: () => void;

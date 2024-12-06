@@ -1,5 +1,6 @@
 import posthog from "posthog-js";
 import React from "react";
+import OpenHands from "#/api/open-hands";
 import {
   removeAuthTokenHeader as removeOpenHandsAuthTokenHeader,
   removeGitHubTokenHeader as removeOpenHandsGitHubTokenHeader,
@@ -9,6 +10,7 @@ import {
 import {
   setAuthTokenHeader as setGitHubAuthTokenHeader,
   removeAuthTokenHeader as removeGitHubAuthTokenHeader,
+  setupAxiosInterceptors as setupGithubAxiosInterceptors,
 } from "#/api/github-axios-instance";
 
 interface AuthContextType {
@@ -18,6 +20,7 @@ interface AuthContextType {
   setGitHubToken: (token: string | null) => void;
   clearToken: () => void;
   clearGitHubToken: () => void;
+  refreshToken: () => Promise<boolean>;
   logout: () => void;
 }
 
@@ -69,18 +72,36 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     }
   };
 
+  const logout = () => {
+    clearGitHubToken();
+    posthog.reset();
+  };
+
+  const refreshToken = async (): Promise<boolean> => {
+    const config = await OpenHands.getConfig();
+
+    if (config.APP_MODE !== "saas" || !gitHubTokenState) {
+      return false;
+    }
+
+    const newToken = await OpenHands.refreshToken(config.APP_MODE);
+    if (newToken) {
+      setGitHubToken(newToken);
+      return true;
+    }
+
+    clearGitHubToken();
+    return false;
+  };
+
   React.useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedGitHubToken = localStorage.getItem("ghToken");
 
     setToken(storedToken);
     setGitHubToken(storedGitHubToken);
+    setupGithubAxiosInterceptors(refreshToken, logout);
   }, []);
-
-  const logout = () => {
-    clearGitHubToken();
-    posthog.reset();
-  };
 
   const value = React.useMemo(
     () => ({
@@ -90,6 +111,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
       setGitHubToken,
       clearToken,
       clearGitHubToken,
+      refreshToken,
       logout,
     }),
     [tokenState, gitHubTokenState],
