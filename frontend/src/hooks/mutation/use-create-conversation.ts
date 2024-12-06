@@ -10,7 +10,9 @@ export const useCreateConversation = () => {
     mutationFn: OpenHands.createConversation,
     onSuccess: async (data) => {
       setSearchParams({ cid: data.id });
-      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["user", "conversations"],
+      });
     },
   });
 };
