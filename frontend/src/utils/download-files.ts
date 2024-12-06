@@ -74,9 +74,10 @@ async function getAllFiles(
   const fileArrays = await Promise.all(filePromises);
 
   // Signal that file discovery is complete
+  const finalTotal = progress.filesTotal;
   const updatedProgress = {
     ...progress,
-    filesTotal: progress.filesTotal,  // Explicitly preserve the filesTotal
+    filesTotal: finalTotal,  // Explicitly preserve the filesTotal
     isDiscoveringFiles: false,
   };
   options?.onProgress?.(updatedProgress);
@@ -211,9 +212,11 @@ export async function downloadFiles(
     // Then recursively get all files
     const files = await getAllFiles(initialPath || "", progress, options);
 
-    // Set isDiscoveringFiles to false now that we have the full list
+    // Set isDiscoveringFiles to false now that we have the full list and preserve filesTotal
+    const finalTotal = progress.filesTotal;
     options?.onProgress?.({
       ...progress,
+      filesTotal: finalTotal,
       isDiscoveringFiles: false,
     });
 
