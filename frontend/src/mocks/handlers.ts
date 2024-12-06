@@ -1,7 +1,7 @@
 import { delay, http, HttpResponse } from "msw";
-import { UserProject } from "#/api/open-hands.types";
+import { Conversation } from "#/api/open-hands.types";
 
-const projects: UserProject[] = [
+const projects: Conversation[] = [
   {
     id: "1",
     name: "My New Project",
@@ -27,7 +27,7 @@ const projects: UserProject[] = [
   },
 ];
 
-const PROJECTS = new Map<string, UserProject>(
+const PROJECTS = new Map<string, Conversation>(
   projects.map((project) => [project.id, project]),
 );
 
@@ -180,7 +180,7 @@ export const handlers = [
   }),
 
   http.post("/api/projects", () => {
-    const conversation: UserProject = {
+    const conversation: Conversation = {
       id: (Math.random() * 100).toString(),
       name: "New Conversation",
       repo: null,

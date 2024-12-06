@@ -8,7 +8,7 @@ import {
   GetConfigResponse,
   GetVSCodeUrlResponse,
   AuthenticateResponse,
-  UserProject,
+  Conversation,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 
@@ -181,24 +181,24 @@ class OpenHands {
     return data;
   }
 
-  static async getUserProjects(): Promise<UserProject[]> {
-    const { data } = await openHands.get<UserProject[]>("/api/projects");
+  static async getUserConversations(): Promise<Conversation[]> {
+    const { data } = await openHands.get<Conversation[]>("/api/projects");
     return data;
   }
 
-  static async deleteUserProject(projectId: string): Promise<void> {
+  static async deleteUserConversation(projectId: string): Promise<void> {
     await openHands.delete(`/api/projects/${projectId}`);
   }
 
-  static async updateUserProject(
+  static async updateUserConversation(
     projectId: string,
-    project: Partial<Omit<UserProject, "id">>,
+    project: Partial<Omit<Conversation, "id">>,
   ): Promise<void> {
     await openHands.put(`/api/projects/${projectId}`, project);
   }
 
-  static async createConversation(): Promise<UserProject> {
-    const { data } = await openHands.post<UserProject>("/api/projects");
+  static async createConversation(): Promise<Conversation> {
+    const { data } = await openHands.post<Conversation>("/api/projects");
     return data;
   }
 

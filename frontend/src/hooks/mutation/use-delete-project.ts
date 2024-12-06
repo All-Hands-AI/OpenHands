@@ -6,7 +6,7 @@ export const useDeleteProject = () => {
 
   return useMutation({
     mutationFn: (variables: { projectId: string }) =>
-      OpenHands.deleteUserProject(variables.projectId),
+      OpenHands.deleteUserConversation(variables.projectId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
     },

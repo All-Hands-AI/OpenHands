@@ -7,7 +7,7 @@ export const useUserProjects = () => {
 
   return useQuery({
     queryKey: ["projects"],
-    queryFn: OpenHands.getUserProjects,
+    queryFn: OpenHands.getUserConversations,
     enabled: !!userIsAuthenticated,
   });
 };

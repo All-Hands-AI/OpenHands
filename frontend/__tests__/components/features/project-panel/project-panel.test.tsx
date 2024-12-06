@@ -59,7 +59,7 @@ describe("ProjectPanel", () => {
   });
 
   it("should display an empty state when there are no projects", async () => {
-    const getUserProjectsSpy = vi.spyOn(OpenHands, "getUserProjects");
+    const getUserProjectsSpy = vi.spyOn(OpenHands, "getUserConversations");
     getUserProjectsSpy.mockResolvedValue([]);
 
     renderProjectPanel();
@@ -69,7 +69,7 @@ describe("ProjectPanel", () => {
   });
 
   it("should handle an error when fetching projects", async () => {
-    const getUserProjectsSpy = vi.spyOn(OpenHands, "getUserProjects");
+    const getUserProjectsSpy = vi.spyOn(OpenHands, "getUserConversations");
     getUserProjectsSpy.mockRejectedValue(new Error("Failed to fetch projects"));
 
     renderProjectPanel({
@@ -161,7 +161,7 @@ describe("ProjectPanel", () => {
   });
 
   it("should rename a project", async () => {
-    const updateUserProjectSpy = vi.spyOn(OpenHands, "updateUserProject");
+    const updateUserProjectSpy = vi.spyOn(OpenHands, "updateUserConversation");
 
     const user = userEvent.setup();
     renderProjectPanel();
@@ -179,7 +179,7 @@ describe("ProjectPanel", () => {
   });
 
   it("should not rename a project when the name is unchanged", async () => {
-    const updateUserProjectSpy = vi.spyOn(OpenHands, "updateUserProject");
+    const updateUserProjectSpy = vi.spyOn(OpenHands, "updateUserConversation");
 
     const user = userEvent.setup();
     renderProjectPanel();

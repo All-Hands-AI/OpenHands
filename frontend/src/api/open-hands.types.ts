@@ -59,7 +59,7 @@ export interface AuthenticateResponse {
   error?: string;
 }
 
-export interface UserProject {
+export interface Conversation {
   id: string;
   name: string;
   repo: string | null;
