@@ -172,11 +172,20 @@ export async function downloadFiles(
     // Show directory picker first
     let directoryHandle: FileSystemDirectoryHandle;
     try {
-      directoryHandle = await window.showDirectoryPicker();
+      console.log('Showing directory picker...');
+      const pickerOpts = {
+        mode: 'readwrite',
+        startIn: 'downloads',
+      };
+      directoryHandle = await window.showDirectoryPicker(pickerOpts);
       console.log('got directoryHandle', directoryHandle);
     } catch (error) {
+      console.log('Directory picker error:', error);
       if (error instanceof Error && error.name === "AbortError") {
         throw new Error("Download cancelled");
+      }
+      if (error instanceof Error && error.name === "SecurityError") {
+        throw new Error("Permission denied. Please allow access to the download location when prompted.");
       }
       throw new Error("Failed to select download location. Please try again.");
     }
@@ -201,11 +210,20 @@ export async function downloadFiles(
       if (error instanceof Error && error.message.includes('User activation is required')) {
         // Ask for permission again
         try {
-          directoryHandle = await window.showDirectoryPicker();
+          console.log('Re-showing directory picker...');
+          const pickerOpts = {
+            mode: 'readwrite',
+            startIn: 'downloads',
+          };
+          directoryHandle = await window.showDirectoryPicker(pickerOpts);
           console.log('got new directoryHandle after timeout');
         } catch (error) {
+          console.log('Re-prompt error:', error);
           if (error instanceof Error && error.name === "AbortError") {
             throw new Error("Download cancelled");
+          }
+          if (error instanceof Error && error.name === "SecurityError") {
+            throw new Error("Permission denied. Please allow access to the download location when prompted.");
           }
           throw new Error("Failed to select download location. Please try again.");
         }
