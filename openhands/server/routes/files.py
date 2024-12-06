@@ -323,9 +323,18 @@ async def zip_current_workspace(request: Request, background_tasks: BackgroundTa
                 status_code=500,
                 content={'error': f'Error zipping workspace: {e}'},
             )
+
+        # Get a descriptive name for the zip file
+        try:
+            summary = request.state.conversation.summarize_actions(request.state.llm)
+            filename = f"{summary}.zip"
+        except Exception as e:
+            logger.warning(f'Error generating descriptive filename: {e}', exc_info=True)
+            filename = 'workspace.zip'
+
         response = FileResponse(
             path=zip_file,
-            filename='workspace.zip',
+            filename=filename,
             media_type='application/x-zip-compressed',
         )
 

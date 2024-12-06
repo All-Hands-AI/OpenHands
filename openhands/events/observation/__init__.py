@@ -12,6 +12,7 @@ from openhands.events.observation.files import (
     FileReadObservation,
     FileWriteObservation,
 )
+from openhands.events.observation.message import MessageObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.observation.reject import UserRejectObservation
 from openhands.events.observation.success import SuccessObservation
@@ -30,4 +31,5 @@ __all__ = [
     'AgentDelegateObservation',
     'SuccessObservation',
     'UserRejectObservation',
+    'MessageObservation',
 ]
