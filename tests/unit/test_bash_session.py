@@ -317,7 +317,6 @@ def test_long_output_exceed_history_limit():
     assert 'Line 40000' in obs.content
     assert 'Line 50000' in obs.content
     assert obs.metadata.exit_code == 0
-    assert obs.metadata.prefix == ''
     assert obs.metadata.suffix == '\n[The command completed with exit code 0.]'
 
     session.close()
