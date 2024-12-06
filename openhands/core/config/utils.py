@@ -376,6 +376,11 @@ def get_parser() -> argparse.ArgumentParser:
         type=str,
         help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
     )
+    parser.add_argument(
+        '--no-auto-continue',
+        action='store_true',
+        help='Disable automatic "continue" responses. Will read from stdin instead.',
+    )
     return parser
 
 

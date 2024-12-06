@@ -1,7 +1,5 @@
 import warnings
 
-from openhands.utils.import_utils import import_from
-
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
 
@@ -11,6 +9,7 @@ from fastapi import (
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.server.middleware import (
+    AttachSessionMiddleware,
     InMemoryRateLimiter,
     LocalhostCORSMiddleware,
     NoCacheMiddleware,
@@ -23,8 +22,7 @@ from openhands.server.routes.github import app as github_api_router
 from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.security import app as security_api_router
 from openhands.server.shared import openhands_config
-
-AttachSessionMiddleware = import_from(openhands_config.attach_session_middleware_path)
+from openhands.utils.import_utils import get_impl
 
 app = FastAPI()
 app.add_middleware(
@@ -53,9 +51,16 @@ app.include_router(feedback_api_router)
 app.include_router(github_api_router)
 
 
-app.middleware('http')(AttachSessionMiddleware(app, target_router=files_api_router))
-app.middleware('http')(
-    AttachSessionMiddleware(app, target_router=conversation_api_router)
+AttachSessionMiddlewareImpl = get_impl(
+    AttachSessionMiddleware, openhands_config.attach_session_middleware_path
 )
-app.middleware('http')(AttachSessionMiddleware(app, target_router=security_api_router))
-app.middleware('http')(AttachSessionMiddleware(app, target_router=feedback_api_router))
+app.middleware('http')(AttachSessionMiddlewareImpl(app, target_router=files_api_router))
+app.middleware('http')(
+    AttachSessionMiddlewareImpl(app, target_router=conversation_api_router)
+)
+app.middleware('http')(
+    AttachSessionMiddlewareImpl(app, target_router=security_api_router)
+)
+app.middleware('http')(
+    AttachSessionMiddlewareImpl(app, target_router=feedback_api_router)
+)
