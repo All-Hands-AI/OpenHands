@@ -1,7 +1,5 @@
-import difflib
 import os
 import re
-import threading
 import time
 import uuid
 from enum import Enum
@@ -83,7 +81,7 @@ def _remove_command_prefix(command_output: str, command: str) -> str:
 
 class BashSession:
     POLL_INTERVAL = 0.5
-    CAPTURE_PANE_POLL_INTERVAL = 1
+    HISTORY_LIMIT = 10_000
     PS1 = CmdOutputMetadata.to_ps1_prompt()
 
     def __init__(
@@ -113,9 +111,8 @@ class BashSession:
 
         # Set history limit to a large number to avoid losing history
         # https://unix.stackexchange.com/questions/43414/unlimited-history-in-tmux
-        _history_limit = 100_000
-        self.session.set_option('history-limit', str(_history_limit), _global=True)
-        self.session.history_limit = _history_limit
+        self.session.set_option('history-limit', str(self.HISTORY_LIMIT), _global=True)
+        self.session.history_limit = self.HISTORY_LIMIT
         # We need to create a new pane because the initial pane's history limit is (default) 2000
         _initial_window = self.session.attached_window
         self.window = self.session.new_window(
@@ -142,61 +139,19 @@ class BashSession:
         # Maintain the current working directory
         self._pwd = os.path.abspath(work_dir)
 
-        # Add terminal history for comparison
-        self._pane_content_lock = threading.Lock()
-        self._terminal_history_lines: list[str] = []
-        self._stop_reader = threading.Event()
-        self._reader_thread: threading.Thread | None = None
-        self._last_capture_time: float = 0.0
-
     def __del__(self):
         """Ensure the session is closed when the object is destroyed."""
         self.close()
 
     def _get_pane_content(self) -> str:
         """Capture the current pane content and update the buffer."""
-        current_time = time.time()
-        current_lines = self.pane.cmd('capture-pane', '-J', '-pS', '-').stdout
-        self._last_capture_time = current_time
-
-        with self._pane_content_lock:
-            if not self._terminal_history_lines:
-                self._terminal_history_lines = current_lines
-                for line in current_lines:
-                    logger.debug(f'NEW LINE ADDED: {line}')
-            else:
-                matcher = difflib.SequenceMatcher(
-                    None, self._terminal_history_lines, current_lines
-                )
-                # Use opcodes to handle all cases including replacements and deletions
-                for tag, i1, i2, j1, j2 in matcher.get_opcodes():
-                    if tag == 'equal':
-                        continue
-                    elif tag in ('insert', 'replace'):
-                        # Add new or replaced lines
-                        new_lines = current_lines[j1:j2]
-                        if i1 >= len(self._terminal_history_lines):
-                            # Append new lines at the end
-                            self._terminal_history_lines.extend(new_lines)
-                            for line in new_lines:
-                                logger.debug(f'NEW LINE APPENDED: {line}')
-                        else:
-                            # Replace existing lines
-                            self._terminal_history_lines[i1:i2] = new_lines
-                            for line in new_lines:
-                                logger.debug(f'REPLACED LINE: {line}')
-                    # we will ignore deletions (e.g., stale history)
-            return '\n'.join(self._terminal_history_lines)
+        content = '\n'.join(self.pane.cmd('capture-pane', '-J', '-pS', '-').stdout)
+        return content
 
     def close(self):
         """Clean up the session."""
         if self._closed:
             return
-
-        if self._reader_thread and self._reader_thread.is_alive():
-            self._stop_reader.set()
-            self._reader_thread.join(timeout=1.0)
-
         self.session.kill_session()
         self._closed = True
 
@@ -245,18 +200,32 @@ class BashSession:
         self, command: str, pane_content: str, ps1_matches: list[re.Match]
     ) -> CmdOutputObservation:
         is_special_key = self._is_special_key(command)
-        assert len(ps1_matches) >= 2, (
-            f'Expected at least two PS1 metadata blocks, but got {len(ps1_matches)}.\n'
+        assert len(ps1_matches) >= 1, (
+            f'Expected at least one PS1 metadata block, but got {len(ps1_matches)}.\n'
             f'---FULL OUTPUT---\n{pane_content!r}\n---END OF OUTPUT---'
         )
         metadata = CmdOutputMetadata.from_ps1_match(ps1_matches[-1])
+
+        # Special case where the previous command output is truncated due to history limit
+        # We should content BEFORE the last PS1 prompt
+        get_content_before_last_match = bool(len(ps1_matches) == 1)
+
         # Update the current working directory if it has changed
         if metadata.working_dir != self._pwd and metadata.working_dir:
             self._pwd = metadata.working_dir
+
         # Extract the command output between the two PS1 prompts
         raw_command_output = self._combine_outputs_between_matches(
-            pane_content, ps1_matches
+            pane_content,
+            ps1_matches,
+            get_content_before_last_match=get_content_before_last_match,
         )
+
+        if get_content_before_last_match:
+            # Count the number of lines in the truncated output
+            num_lines = len(raw_command_output.splitlines())
+            metadata.prefix = f'[Previous command outputs are truncated. Showing the last {num_lines} lines of the output below.]\n'
+
         metadata.suffix = (
             f'\n[The command completed with exit code {metadata.exit_code}.]'
             if not is_special_key
@@ -349,24 +318,31 @@ class BashSession:
     def _ready_for_next_command(self):
         """Reset the content buffer for a new command."""
         # Clear the current content
-        with self._pane_content_lock:
-            self._terminal_history_lines = []
         self._clear_screen()
 
     def _combine_outputs_between_matches(
-        self, pane_content: str, ps1_matches: list[re.Match]
+        self,
+        pane_content: str,
+        ps1_matches: list[re.Match],
+        get_content_before_last_match: bool = False,
     ) -> str:
         """Combine all outputs between PS1 matches.
 
         Args:
             pane_content: The full pane content containing PS1 prompts and command outputs
             ps1_matches: List of regex matches for PS1 prompts
-
+            get_content_before_last_match: when there's only one PS1 match, whether to get
+                the content before the last PS1 prompt (True) or after the last PS1 prompt (False)
         Returns:
             Combined string of all outputs between matches
         """
         if len(ps1_matches) == 1:
-            return pane_content[ps1_matches[0].end() + 1 :]
+            if get_content_before_last_match:
+                # The command output is the content before the last PS1 prompt
+                return pane_content[: ps1_matches[0].start()]
+            else:
+                # The command output is the content after the last PS1 prompt
+                return pane_content[ps1_matches[0].end() + 1 :]
         combined_output = ''
         for i in range(len(ps1_matches) - 1):
             # Extract content between current and next PS1 prompt
@@ -409,16 +385,6 @@ class BashSession:
         last_pane_output = self._get_pane_content()
 
         _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
-        if len(_ps1_matches) < 1:
-            self.pane.enter()
-            time.sleep(0.1)
-            last_pane_output = self._get_pane_content()
-            _ps1_matches = CmdOutputMetadata.matches_ps1_metadata(last_pane_output)
-            logger.warning(
-                'No PS1 metadata block found before the execution of a command. '
-                'Hitting enter to get a fresh PS1 prompt:\n---\n'
-                f'{last_pane_output!r}\n---'
-            )
         assert len(_ps1_matches) >= 1, (
             'Expected at least one PS1 metadata block BEFORE the execution of a command, '
             f'but got {len(_ps1_matches)} PS1 metadata blocks:\n---\n{last_pane_output!r}\n---'
@@ -439,18 +405,23 @@ class BashSession:
 
         # Loop until the command completes or times out
         while True:
+            _start_time = time.time()
+            logger.debug(f'GETTING PANE CONTENT at {_start_time}')
             cur_pane_output = self._get_pane_content()
+            logger.debug(
+                f'PANE CONTENT GOT after {time.time() - _start_time:.2f} seconds'
+            )
+            logger.debug(f'BEGIN OF PANE CONTENT: {cur_pane_output.split("\n")[:10]}')
+            logger.debug(f'END OF PANE CONTENT: {cur_pane_output.split("\n")[-10:]}')
             ps1_matches = CmdOutputMetadata.matches_ps1_metadata(cur_pane_output)
             if cur_pane_output != last_pane_output:
                 last_pane_output = cur_pane_output
                 last_change_time = time.time()
+                logger.debug(f'CONTENT UPDATED DETECTED at {last_change_time}')
 
             # 1) Execution completed
             # if the last command output contains the end marker
-            if (
-                cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip())
-                and len(ps1_matches) == 2
-            ):
+            if cur_pane_output.rstrip().endswith(CMD_OUTPUT_PS1_END.rstrip()):
                 return self._handle_completed_command(
                     command,
                     pane_content=cur_pane_output,

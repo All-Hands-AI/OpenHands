@@ -575,12 +575,28 @@ def test_long_output(temp_dir, runtime_cls, run_as_openhands):
     runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
         # Generate a long output
-        action = CmdRunAction('for i in $(seq 1 10000); do echo "Line $i"; done')
+        action = CmdRunAction('for i in $(seq 1 5000); do echo "Line $i"; done')
         action.timeout = 10
         obs = runtime.run_action(action)
         assert obs.exit_code == 0
         assert 'Line 1' in obs.content
-        assert 'Line 10000' in obs.content
+        assert 'Line 5000' in obs.content
+    finally:
+        _close_test_runtime(runtime)
+
+
+def test_long_output_exceed_history_limit(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        # Generate a long output
+        action = CmdRunAction('for i in $(seq 1 50000); do echo "Line $i"; done')
+        action.timeout = 30
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert obs.exit_code == 0
+        assert 'Previous command outputs are truncated' in obs.metadata.prefix
+        assert 'Line 40000' in obs.content
+        assert 'Line 50000' in obs.content
     finally:
         _close_test_runtime(runtime)
 
