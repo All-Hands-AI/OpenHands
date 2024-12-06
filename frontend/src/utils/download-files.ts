@@ -89,19 +89,24 @@ async function processBatch(
   directoryHandle: FileSystemDirectoryHandle,
   progress: DownloadProgress,
   startTime: number,
+  completedFiles: number,
+  totalBytes: number,
   options?: DownloadOptions,
-): Promise<void> {
+): Promise<{ newCompleted: number; newBytes: number }> {
   if (options?.signal?.aborted) {
     throw new Error("Download cancelled");
   }
 
   // Process files in the batch in parallel
-  const batchPromises = batch.map(async (path) => {
+  const results = await Promise.all(batch.map(async (path) => {
     try {
       const newProgress = {
         ...progress,
         currentFile: path,
-        isDiscoveringFiles: false
+        isDiscoveringFiles: false,
+        filesDownloaded: completedFiles,
+        totalBytesDownloaded: totalBytes,
+        bytesDownloadedPerSecond: totalBytes / ((Date.now() - startTime) / 1000)
       };
       options?.onProgress?.(newProgress);
 
@@ -123,31 +128,34 @@ async function processBatch(
       await writable.write(content);
       await writable.close();
 
-      // Update progress
-      const contentSize = new Blob([content]).size;
-      const updatedProgress = {
-        ...newProgress,
-        filesDownloaded: newProgress.filesDownloaded + 1,
-        totalBytesDownloaded: newProgress.totalBytesDownloaded + contentSize,
-        bytesDownloadedPerSecond:
-          (newProgress.totalBytesDownloaded + contentSize) /
-          ((Date.now() - startTime) / 1000),
-        isDiscoveringFiles: false
-      };
-      Object.assign(progress, updatedProgress);
-      options?.onProgress?.(updatedProgress);
+      // Return the size of this file
+      return new Blob([content]).size;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('User activation is required')) {
-        throw new Error('Permission to write files has expired. Please try again and select the download location.');
-      }
-      throw new Error(
-        `Failed to download file ${path}: ${errorMessage}`,
-      );
+      console.error(`Error processing file ${path}:`, error);
+      return 0;
     }
-  });
+  }));
 
-  await Promise.all(batchPromises);
+  // Calculate batch totals
+  const batchBytes = results.reduce((sum, size) => sum + size, 0);
+  const newTotalBytes = totalBytes + batchBytes;
+  const newCompleted = completedFiles + results.filter(size => size > 0).length;
+
+  // Update progress with batch results
+  const updatedProgress = {
+    ...progress,
+    filesDownloaded: newCompleted,
+    totalBytesDownloaded: newTotalBytes,
+    bytesDownloadedPerSecond: newTotalBytes / ((Date.now() - startTime) / 1000),
+    isDiscoveringFiles: false
+  };
+  Object.assign(progress, updatedProgress);
+  options?.onProgress?.(updatedProgress);
+
+  return {
+    newCompleted,
+    newBytes: newTotalBytes
+  };
 }
 
 /**
@@ -247,12 +255,26 @@ export async function downloadFiles(
       (_, i) => files.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE),
     );
 
+    // Keep track of completed files across all batches
+    let completedFiles = 0;
+    let totalBytesDownloaded = 0;
+
     // Process batches sequentially to maintain order and avoid overwhelming the browser
     await batches.reduce(
       (promise, batch) =>
-        promise.then(() =>
-          processBatch(batch, directoryHandle, progress, startTime, options),
-        ),
+        promise.then(async () => {
+          const { newCompleted, newBytes } = await processBatch(
+            batch,
+            directoryHandle,
+            progress,
+            startTime,
+            completedFiles,
+            totalBytesDownloaded,
+            options
+          );
+          completedFiles = newCompleted;
+          totalBytesDownloaded = newBytes;
+        }),
       Promise.resolve(),
     );
   } catch (error) {
