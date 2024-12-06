@@ -53,7 +53,9 @@ async function getAllFiles(
 
   // Process directories first to get total file count
   const processEntry = async (entry: string): Promise<string[]> => {
+    console.log('getting files', entry);
     if (options?.signal?.aborted) {
+      console.log('aborted');
       throw new Error("Download cancelled");
     }
 
@@ -167,19 +169,24 @@ export async function downloadFiles(
 
   try {
     // First, recursively get all files
+    console.log('init path', initialPath);
     const files = await getAllFiles(initialPath || "", progress, options);
+    console.log('files', files);
 
     // Create a directory picker if the browser supports it
     let directoryHandle: FileSystemDirectoryHandle | null = null;
     if ("showDirectoryPicker" in window) {
       try {
         directoryHandle = await window.showDirectoryPicker();
+        console.log('got directoryHandle', directoryHandle);
       } catch (error) {
         if (error instanceof Error && error.name === "AbortError") {
           throw new Error("Download cancelled");
         }
         // Directory picker not supported or cancelled, will fall back to individual downloads
       }
+    } else {
+      console.log('no dir picker');
     }
 
     // Process files in parallel batches to avoid overwhelming the browser

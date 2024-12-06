@@ -10,6 +10,7 @@ export function DownloadProgress({
   initialPath,
   onClose,
 }: DownloadProgressProps) {
+  console.log('progress');
   const [progress, setProgress] = useState({
     filesTotal: 0,
     filesDownloaded: 0,
@@ -21,6 +22,7 @@ export function DownloadProgress({
   const abortController = useRef(new AbortController());
 
   const handleDownload = useCallback(async () => {
+    console.log('downloading');
     try {
       await downloadFiles(initialPath, {
         onProgress: setProgress,
@@ -28,6 +30,7 @@ export function DownloadProgress({
       });
       onClose();
     } catch (error) {
+      console.log('error', error);
       if (error instanceof Error && error.message === "Download cancelled") {
         onClose();
       } else {
