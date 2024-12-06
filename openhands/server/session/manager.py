@@ -29,7 +29,9 @@ class SessionManager:
     _last_alive_timestamps: dict[str, float] = field(default_factory=dict)
     _redis_listen_task: asyncio.Task | None = None
     _session_is_running_flags: dict[str, asyncio.Event] = field(default_factory=dict)
-    _detached_conversations: dict[str, tuple[Conversation, float]] = field(default_factory=dict)
+    _detached_conversations: dict[str, tuple[Conversation, float]] = field(
+        default_factory=dict
+    )
     _cleanup_task: asyncio.Task | None = None
     _has_remote_connections_flags: dict[str, asyncio.Event] = field(
         default_factory=dict
@@ -154,39 +156,20 @@ class SessionManager:
         return c
 
     async def detach_from_conversation(self, conversation: Conversation):
-        # Store the conversation with current timestamp instead of disconnecting
         self._detached_conversations[conversation.sid] = (conversation, time.time())
 
     async def _cleanup_detached_conversations(self):
         while should_continue():
             try:
-                current_time = time.time()
-                sids_to_remove = []
-                
-                for sid, (conversation, detach_time) in self._detached_conversations.items():
-                    # Check if any clients are still connected to this session
-                    has_local = next(
-                        (True for v in self.local_connection_id_to_session_id.values() if v == sid),
-                        False,
-                    )
-                    has_remote = False
-                    redis_client = self._get_redis_client()
-                    if redis_client:
-                        has_remote = await self._has_remote_connections(sid)
-
-                    # If no clients are connected and it's been more than a minute
-                    if not (has_local or has_remote) and (current_time - detach_time) > 60:
-                        await conversation.disconnect()
-                        sids_to_remove.append(sid)
-
-                # Remove cleaned up conversations
-                for sid in sids_to_remove:
+                for sid, (
+                    conversation,
+                    detach_time,
+                ) in self._detached_conversations.items():
+                    await conversation.disconnect()
                     self._detached_conversations.pop(sid, None)
 
-                # Check every 15 seconds
-                await asyncio.sleep(15)
+                await asyncio.sleep(60)
             except asyncio.CancelledError:
-                # Disconnect any remaining conversations
                 for conversation, _ in self._detached_conversations.values():
                     await conversation.disconnect()
                 self._detached_conversations.clear()
@@ -195,7 +178,9 @@ class SessionManager:
                 logger.warning('error_cleaning_detached_conversations', exc_info=True)
                 await asyncio.sleep(15)
 
-    async def init_or_join_session(self, sid: str, connection_id: str, session_init_data: SessionInitData):
+    async def init_or_join_session(
+        self, sid: str, connection_id: str, session_init_data: SessionInitData
+    ):
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self.local_connection_id_to_session_id[connection_id] = sid
 
