@@ -112,10 +112,4 @@ async def get_config():
     Get current config
     """
 
-    config = {
-        'APP_MODE': openhands_config.APP_MODE,
-        'GITHUB_CLIENT_ID': openhands_config.GITHUB_CLIENT_ID,
-        'POSTHOG_CLIENT_KEY': openhands_config.POSTHOG_CLIENT_KEY,
-    }
-
-    return config
+    return openhands_config.get_config()

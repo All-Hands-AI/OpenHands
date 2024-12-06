@@ -3,7 +3,6 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from openhands.server.shared import openhands_config
-from openhands.server.types import AppMode
 
 app = APIRouter(prefix='/api')
 
@@ -21,11 +20,7 @@ def get_github_repositories(
     if not github_token:
         raise HTTPException(status_code=400, detail='Missing X-GitHub-Token header')
 
-    if installation_id is None and openhands_config.APP_MODE == AppMode.SAAS:
-        raise HTTPException(
-            status_code=400,
-            detail='Missing installation_id. This field is required.',
-        )
+    openhands_config.verify_github_repo_list(installation_id)
 
     # Add query parameters
     params: dict[str, str] = {

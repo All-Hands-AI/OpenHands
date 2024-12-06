@@ -24,7 +24,7 @@ from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.security import app as security_api_router
 from openhands.server.shared import openhands_config
 
-AttachSessionMiddleware = import_from(openhands_config.ATTACH_SESSION_MIDDLEWARE_PATH)
+AttachSessionMiddleware = import_from(openhands_config.attach_session_middleware_path)
 
 app = FastAPI()
 app.add_middleware(
