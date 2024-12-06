@@ -3,24 +3,22 @@ import { github } from "./github-axios-instance";
 import { openHands } from "./open-hands-axios";
 
 /**
- * Retrieves GitHub app installations for the user
+ * Given the user, retrieves app installations IDs for OpenHands Github App
+ * Uses user access token for Github App
  */
-export const retrieveGitHubAppInstallations = async (): Promise<
-  number[] | GitHubErrorReponse
-> => {
+export const retrieveGitHubAppInstallations = async (): Promise<number[]> => {
   const response = await github.get<GithubAppInstallation>(
     "/user/installations",
   );
 
-  return response.data.installations.map(
-    (installation: { id: number }) => installation.id,
-  );
+  return response.data.installations.map((installation) => installation.id);
 };
 
 /**
- * Given a GitHub token, retrieves the repositories of the authenticated user
- * @param token The GitHub token
- * @returns A list of repositories or an error response
+ * Retrieves repositories where OpenHands Github App has been installed
+ * @param installationIndex Pagination cursor position for app installation IDs
+ * @param installations Collection of all App installation IDs for OpenHands Github App
+ * @returns A list of repositories
  */
 export const retrieveGitHubAppRepositories = async (
   installationIndex: number,
@@ -61,9 +59,8 @@ export const retrieveGitHubAppRepositories = async (
 };
 
 /**
- * Given a GitHub token, retrieves the repositories of the authenticated user
- * @param token The GitHub token
- * @returns A list of repositories or an error response
+ * Given a PAT, retrieves the repositories of the user
+ * @returns A list of repositories
  */
 export const retrieveGitHubUserRepositories = async (
   page = 1,
@@ -88,7 +85,6 @@ export const retrieveGitHubUserRepositories = async (
 
 /**
  * Given a GitHub token, retrieves the authenticated user
- * @param token The GitHub token
  * @returns The authenticated user or an error response
  */
 export const retrieveGitHubUser = async () => {

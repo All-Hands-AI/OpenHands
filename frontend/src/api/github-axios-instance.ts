@@ -45,6 +45,7 @@ const setupAxiosInterceptors = (
   logout: () => void,
 ) => {
   github.interceptors.response.use(
+    // Pass successful responses through
     (response) => {
       const parsedData = response.data;
       if (isGitHubErrorReponse(parsedData)) {
@@ -58,7 +59,8 @@ const setupAxiosInterceptors = (
         throw error;
       }
       return response;
-    }, // Pass successful responses through
+    },
+    // Retry request exactly once if token is expired
     async (error) => {
       if (!canRefresh(error)) {
         return Promise.reject(new Error("Failed to refresh token"));
