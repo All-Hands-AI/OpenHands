@@ -19,6 +19,7 @@ from openhands.core.config import (
     LLMConfig,
     SandboxConfig,
 )
+from openhands.core.config.replay_config import ReplayConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
@@ -190,6 +191,10 @@ async def process_issue(
             use_host_network=False,
             # large enough timeout, since some testcases take very long to run
             timeout=300,
+        ),
+        replay=ReplayConfig(
+            dir=os.environ.get('REPLAY_DIR', None),
+            api_key=os.environ.get('REPLAY_API_KEY', None),
         ),
         # do not mount workspace
         workspace_base=workspace_base,
