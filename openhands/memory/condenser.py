@@ -99,7 +99,7 @@ class NoOpCondenser(Condenser):
 class RecentEventsCondenser(Condenser):
     """A condenser that only keeps a certain number of the most recent events."""
 
-    def __init__(self, keep_first: bool = False, max_events: int = 10):
+    def __init__(self, keep_first: int = 0, max_events: int = 10):
         self.keep_first = keep_first
         self.max_events = max_events
 
@@ -109,11 +109,10 @@ class RecentEventsCondenser(Condenser):
         Args:
             events (list[Event]): List of events to condense.
         """
-        condensed_events = events[-self.max_events :]
-
-        if self.keep_first and len(condensed_events) < len(events):
-            condensed_events = [events[0]] + condensed_events
-
+        head = events[: self.keep_first]
+        tail_length = max(0, self.max_events - len(head))
+        tail = events[-tail_length:]
+        condensed_events = head + tail
         return CondensationResult(condensed_events=condensed_events)
 
 
@@ -157,7 +156,10 @@ class LLMCondenser(Condenser):
 
             return CondensationResult(
                 condensed_events=[summary_event],
-                metadata={'response': resp, 'metrics': self.llm.metrics.get()},
+                metadata={
+                    'response': resp.model_dump(),
+                    'metrics': self.llm.metrics.get(),
+                },
             )
 
         except Exception as e:

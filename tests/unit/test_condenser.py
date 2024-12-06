@@ -71,7 +71,7 @@ def test_recent_events_condenser():
     ]
 
     # If the max_events are larger than the number of events, equivalent to a NoOpCondenser.
-    condenser = RecentEventsCondenser(max_events=len(events) + 1)
+    condenser = RecentEventsCondenser(max_events=len(events))
     result = condenser.condense(events)
 
     assert result.condensed_events == events
@@ -86,14 +86,25 @@ def test_recent_events_condenser():
     assert result.condensed_events[1]._message == 'Event 5'
 
     # If the keep_first flag is set, the first event will always be present.
-    keep_first = True
-    max_events = 1
+    keep_first = 1
+    max_events = 2
     condenser = RecentEventsCondenser(keep_first=keep_first, max_events=max_events)
     result = condenser.condense(events)
 
-    assert len(result.condensed_events) == max_events + 1
+    assert len(result.condensed_events) == max_events
     assert result.condensed_events[0]._message == 'Event 1'
     assert result.condensed_events[1]._message == 'Event 5'
+
+    # We should be able to keep more of the initial events.
+    keep_first = 2
+    max_events = 3
+    condenser = RecentEventsCondenser(keep_first=keep_first, max_events=max_events)
+    result = condenser.condense(events)
+
+    assert len(result.condensed_events) == max_events
+    assert result.condensed_events[0]._message == 'Event 1'
+    assert result.condensed_events[1]._message == 'Event 2'
+    assert result.condensed_events[2]._message == 'Event 5'
 
 
 def test_llm_condenser_from_config():
@@ -119,9 +130,16 @@ def test_llm_condenser():
     ]
 
     mock_llm = MagicMock()
-    mock_llm.completion.return_value = {
+
+    # The LLM returns an object that we index into and treat as a pydantic model, so we have a couple of access patterns to mock.
+    mock_response = MagicMock()
+    mock_response.model_dump.return_value = {
         'choices': [{'message': {'content': 'Summary of events'}}]
     }
+    mock_response.__getitem__.return_value = [
+        {'message': {'content': 'Summary of events'}}
+    ]
+    mock_llm.completion.return_value = mock_response
 
     condenser = LLMCondenser(llm=mock_llm)
     result = condenser.condense(events)
