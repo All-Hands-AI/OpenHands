@@ -63,7 +63,7 @@ def handle_replay_enhance_observation(
     # observation: ReplayCmdOutputObservation
 ):
     enhance_action_id = state.extra_data.get('replay_enhance_prompt_id')
-    if enhance_action_id:
+    if enhance_action_id is not None:
         assert enhance_action_id
         user_message: MessageAction | None = next(
             (
