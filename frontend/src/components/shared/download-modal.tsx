@@ -8,18 +8,26 @@ interface DownloadModalProps {
   isOpen: boolean;
 }
 
-export function DownloadModal({ initialPath, onClose, isOpen }: DownloadModalProps) {
+export function DownloadModal({
+  initialPath,
+  onClose,
+  isOpen,
+}: DownloadModalProps) {
   if (!isOpen) return null;
 
-  return (
-    <ActiveDownload initialPath={initialPath} onClose={onClose} />
-  );
+  return <ActiveDownload initialPath={initialPath} onClose={onClose} />;
 }
 
-function ActiveDownload({ initialPath, onClose }: { initialPath: string; onClose: () => void }) {
+function ActiveDownload({
+  initialPath,
+  onClose,
+}: {
+  initialPath: string;
+  onClose: () => void;
+}) {
   const { progress, cancelDownload } = useDownloadProgress(
     initialPath,
-    onClose
+    onClose,
   );
 
   return (

@@ -96,48 +96,52 @@ async function processBatch(
   }
 
   // Process files in the batch in parallel
-  const results = await Promise.all(batch.map(async (path) => {
-    try {
-      const newProgress = {
-        ...progress,
-        currentFile: path,
-        isDiscoveringFiles: false,
-        filesDownloaded: completedFiles,
-        totalBytesDownloaded: totalBytes,
-        bytesDownloadedPerSecond: totalBytes / ((Date.now() - startTime) / 1000)
-      };
-      options?.onProgress?.(newProgress);
+  const results = await Promise.all(
+    batch.map(async (path) => {
+      try {
+        const newProgress = {
+          ...progress,
+          currentFile: path,
+          isDiscoveringFiles: false,
+          filesDownloaded: completedFiles,
+          totalBytesDownloaded: totalBytes,
+          bytesDownloadedPerSecond:
+            totalBytes / ((Date.now() - startTime) / 1000),
+        };
+        options?.onProgress?.(newProgress);
 
-      const content = await OpenHands.getFile(path);
+        const content = await OpenHands.getFile(path);
 
-      // Save to the selected directory preserving structure
-      const pathParts = path.split("/").filter(Boolean);
-      const fileName = pathParts.pop() || "file";
-      const dirHandle =
-        pathParts.length > 0
-          ? await createSubdirectories(directoryHandle, pathParts)
-          : directoryHandle;
+        // Save to the selected directory preserving structure
+        const pathParts = path.split("/").filter(Boolean);
+        const fileName = pathParts.pop() || "file";
+        const dirHandle =
+          pathParts.length > 0
+            ? await createSubdirectories(directoryHandle, pathParts)
+            : directoryHandle;
 
-      // Create and write the file
-      const fileHandle = await dirHandle.getFileHandle(fileName, {
-        create: true,
-      });
-      const writable = await fileHandle.createWritable();
-      await writable.write(content);
-      await writable.close();
+        // Create and write the file
+        const fileHandle = await dirHandle.getFileHandle(fileName, {
+          create: true,
+        });
+        const writable = await fileHandle.createWritable();
+        await writable.write(content);
+        await writable.close();
 
-      // Return the size of this file
-      return new Blob([content]).size;
-    } catch (error) {
-      console.error(`Error processing file ${path}:`, error);
-      return 0;
-    }
-  }));
+        // Return the size of this file
+        return new Blob([content]).size;
+      } catch (error) {
+        console.error(`Error processing file ${path}:`, error);
+        return 0;
+      }
+    }),
+  );
 
   // Calculate batch totals
   const batchBytes = results.reduce((sum, size) => sum + size, 0);
   const newTotalBytes = totalBytes + batchBytes;
-  const newCompleted = completedFiles + results.filter(size => size > 0).length;
+  const newCompleted =
+    completedFiles + results.filter((size) => size > 0).length;
 
   // Update progress with batch results
   const updatedProgress = {
@@ -145,14 +149,14 @@ async function processBatch(
     filesDownloaded: newCompleted,
     totalBytesDownloaded: newTotalBytes,
     bytesDownloadedPerSecond: newTotalBytes / ((Date.now() - startTime) / 1000),
-    isDiscoveringFiles: false
+    isDiscoveringFiles: false,
   };
   Object.assign(progress, updatedProgress);
   options?.onProgress?.(updatedProgress);
 
   return {
     newCompleted,
-    newBytes: newTotalBytes
+    newBytes: newTotalBytes,
   };
 }
 
@@ -179,7 +183,7 @@ export async function downloadFiles(
     // Check if File System Access API is supported
     if (!isFileSystemAccessSupported()) {
       throw new Error(
-        "Your browser doesn't support downloading folders. Please use Chrome, Edge, or another browser that supports the File System Access API."
+        "Your browser doesn't support downloading folders. Please use Chrome, Edge, or another browser that supports the File System Access API.",
       );
     }
 
@@ -187,8 +191,8 @@ export async function downloadFiles(
     let directoryHandle: FileSystemDirectoryHandle;
     try {
       const pickerOpts = {
-        mode: 'readwrite',
-        startIn: 'downloads',
+        mode: "readwrite",
+        startIn: "downloads",
       };
       directoryHandle = await window.showDirectoryPicker(pickerOpts);
     } catch (error) {
@@ -196,7 +200,9 @@ export async function downloadFiles(
         throw new Error("Download cancelled");
       }
       if (error instanceof Error && error.name === "SecurityError") {
-        throw new Error("Permission denied. Please allow access to the download location when prompted.");
+        throw new Error(
+          "Permission denied. Please allow access to the download location when prompted.",
+        );
       }
       throw new Error("Failed to select download location. Please try again.");
     }
@@ -213,15 +219,21 @@ export async function downloadFiles(
     // Verify we still have permission after the potentially long file scan
     try {
       // Try to create a test file to verify permissions
-      const testHandle = await directoryHandle.getFileHandle('.openhands-test', { create: true });
+      const testHandle = await directoryHandle.getFileHandle(
+        ".openhands-test",
+        { create: true },
+      );
       await testHandle.remove();
     } catch (error) {
-      if (error instanceof Error && error.message.includes('User activation is required')) {
+      if (
+        error instanceof Error &&
+        error.message.includes("User activation is required")
+      ) {
         // Ask for permission again
         try {
           const pickerOpts = {
-            mode: 'readwrite',
-            startIn: 'downloads',
+            mode: "readwrite",
+            startIn: "downloads",
           };
           directoryHandle = await window.showDirectoryPicker(pickerOpts);
         } catch (error) {
@@ -229,9 +241,13 @@ export async function downloadFiles(
             throw new Error("Download cancelled");
           }
           if (error instanceof Error && error.name === "SecurityError") {
-            throw new Error("Permission denied. Please allow access to the download location when prompted.");
+            throw new Error(
+              "Permission denied. Please allow access to the download location when prompted.",
+            );
           }
-          throw new Error("Failed to select download location. Please try again.");
+          throw new Error(
+            "Failed to select download location. Please try again.",
+          );
         }
       } else {
         throw error;
@@ -260,7 +276,7 @@ export async function downloadFiles(
             startTime,
             completedFiles,
             totalBytesDownloaded,
-            options
+            options,
           );
           completedFiles = newCompleted;
           totalBytesDownloaded = newBytes;
@@ -272,11 +288,12 @@ export async function downloadFiles(
       throw error;
     }
     // Re-throw the error as is if it's already a user-friendly message
-    if (error instanceof Error && (
-      error.message.includes("browser doesn't support") ||
-      error.message.includes("Failed to select") ||
-      error.message === "Download cancelled"
-    )) {
+    if (
+      error instanceof Error &&
+      (error.message.includes("browser doesn't support") ||
+        error.message.includes("Failed to select") ||
+        error.message === "Download cancelled")
+    ) {
       throw error;
     }
 

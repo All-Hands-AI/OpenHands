@@ -11,7 +11,10 @@ export const INITIAL_PROGRESS: DownloadProgress = {
   isDiscoveringFiles: true,
 };
 
-export function useDownloadProgress(initialPath: string | undefined, onClose: () => void) {
+export function useDownloadProgress(
+  initialPath: string | undefined,
+  onClose: () => void,
+) {
   const [isStarted, setIsStarted] = useState(false);
   const [progress, setProgress] = useState<DownloadProgress>(INITIAL_PROGRESS);
   const progressRef = useRef<DownloadProgress>(INITIAL_PROGRESS);
@@ -45,7 +48,7 @@ export function useDownloadProgress(initialPath: string | undefined, onClose: ()
           onProgress: (p) => {
             // Update both the ref and state
             progressRef.current = { ...p };
-            setProgress(prev => ({ ...prev, ...p }));
+            setProgress((prev) => ({ ...prev, ...p }));
           },
           signal: abortController.current!.signal,
         });

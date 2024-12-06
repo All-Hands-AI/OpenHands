@@ -36,7 +36,9 @@ export function DownloadProgress({
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
         <div className="mb-4">
           <h3 className="text-lg font-semibold mb-2">
-            {progress.isDiscoveringFiles ? "Preparing Download..." : "Downloading Files"}
+            {progress.isDiscoveringFiles
+              ? "Preparing Download..."
+              : "Downloading Files"}
           </h3>
           <p className="text-sm text-gray-600 truncate">
             {progress.isDiscoveringFiles
@@ -48,7 +50,10 @@ export function DownloadProgress({
         <div className="mb-4">
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
             {progress.isDiscoveringFiles ? (
-              <div className="h-full bg-blue-500 animate-pulse" style={{ width: "100%" }} />
+              <div
+                className="h-full bg-blue-500 animate-pulse"
+                style={{ width: "100%" }}
+              />
             ) : (
               <div
                 className="h-full bg-blue-500 transition-all duration-300"
