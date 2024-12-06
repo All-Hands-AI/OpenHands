@@ -14,18 +14,10 @@ interface DownloadOptions {
 }
 
 /**
- * Creates a download link and triggers the download
+ * Checks if the File System Access API is supported
  */
-function triggerDownload(content: string, filename: string): void {
-  const blob = new Blob([content], { type: "application/octet-stream" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  link.parentNode?.removeChild(link);
-  URL.revokeObjectURL(url);
+function isFileSystemAccessSupported(): boolean {
+  return "showDirectoryPicker" in window;
 }
 
 /**
@@ -87,7 +79,7 @@ async function getAllFiles(
  */
 async function processBatch(
   batch: string[],
-  directoryHandle: FileSystemDirectoryHandle | null,
+  directoryHandle: FileSystemDirectoryHandle,
   progress: DownloadProgress,
   startTime: number,
   options?: DownloadOptions,
@@ -107,26 +99,21 @@ async function processBatch(
 
       const content = await OpenHands.getFile(path);
 
-      if (directoryHandle) {
-        // Save to the selected directory preserving structure
-        const pathParts = path.split("/").filter(Boolean);
-        const fileName = pathParts.pop() || "file";
-        const dirHandle =
-          pathParts.length > 0
-            ? await createSubdirectories(directoryHandle, pathParts)
-            : directoryHandle;
+      // Save to the selected directory preserving structure
+      const pathParts = path.split("/").filter(Boolean);
+      const fileName = pathParts.pop() || "file";
+      const dirHandle =
+        pathParts.length > 0
+          ? await createSubdirectories(directoryHandle, pathParts)
+          : directoryHandle;
 
-        // Create and write the file
-        const fileHandle = await dirHandle.getFileHandle(fileName, {
-          create: true,
-        });
-        const writable = await fileHandle.createWritable();
-        await writable.write(content);
-        await writable.close();
-      } else {
-        // Fallback: Download directly using <a> tag
-        triggerDownload(content, path.split("/").pop() || "file");
-      }
+      // Create and write the file
+      const fileHandle = await dirHandle.getFileHandle(fileName, {
+        create: true,
+      });
+      const writable = await fileHandle.createWritable();
+      await writable.write(content);
+      await writable.close();
 
       // Update progress
       const contentSize = new Blob([content]).size;
@@ -173,20 +160,23 @@ export async function downloadFiles(
     const files = await getAllFiles(initialPath || "", progress, options);
     console.log('files', files);
 
-    // Create a directory picker if the browser supports it
-    let directoryHandle: FileSystemDirectoryHandle | null = null;
-    if ("showDirectoryPicker" in window) {
-      try {
-        directoryHandle = await window.showDirectoryPicker();
-        console.log('got directoryHandle', directoryHandle);
-      } catch (error) {
-        if (error instanceof Error && error.name === "AbortError") {
-          throw new Error("Download cancelled");
-        }
-        // Directory picker not supported or cancelled, will fall back to individual downloads
+    // Check if File System Access API is supported
+    if (!isFileSystemAccessSupported()) {
+      throw new Error(
+        "Your browser doesn't support downloading folders. Please use Chrome, Edge, or another browser that supports the File System Access API."
+      );
+    }
+
+    // Show directory picker
+    let directoryHandle: FileSystemDirectoryHandle;
+    try {
+      directoryHandle = await window.showDirectoryPicker();
+      console.log('got directoryHandle', directoryHandle);
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new Error("Download cancelled");
       }
-    } else {
-      console.log('no dir picker');
+      throw new Error("Failed to select download location. Please try again.");
     }
 
     // Process files in parallel batches to avoid overwhelming the browser
