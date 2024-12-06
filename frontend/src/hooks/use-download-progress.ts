@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { downloadFiles } from "#/utils/download-files";
-import { DownloadProgress } from "#/components/shared/download-progress";
+import { DownloadProgressState } from "#/components/shared/download-progress";
 
-export const INITIAL_PROGRESS: DownloadProgress = {
+export const INITIAL_PROGRESS: DownloadProgressState = {
   filesTotal: 0,
   filesDownloaded: 0,
   currentFile: "",
@@ -16,8 +16,9 @@ export function useDownloadProgress(
   onClose: () => void,
 ) {
   const [isStarted, setIsStarted] = useState(false);
-  const [progress, setProgress] = useState<DownloadProgress>(INITIAL_PROGRESS);
-  const progressRef = useRef<DownloadProgress>(INITIAL_PROGRESS);
+  const [progress, setProgress] =
+    useState<DownloadProgressState>(INITIAL_PROGRESS);
+  const progressRef = useRef<DownloadProgressState>(INITIAL_PROGRESS);
   const abortController = useRef<AbortController>();
 
   // Create AbortController on mount
@@ -48,7 +49,7 @@ export function useDownloadProgress(
           onProgress: (p) => {
             // Update both the ref and state
             progressRef.current = { ...p };
-            setProgress((prev) => ({ ...prev, ...p }));
+            setProgress((prev: DownloadProgressState) => ({ ...prev, ...p }));
           },
           signal: abortController.current!.signal,
         });

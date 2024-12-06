@@ -1,4 +1,4 @@
-export interface DownloadProgress {
+export interface DownloadProgressState {
   filesTotal: number;
   filesDownloaded: number;
   currentFile: string;
@@ -8,15 +8,13 @@ export interface DownloadProgress {
 }
 
 interface DownloadProgressProps {
-  progress: DownloadProgress;
+  progress: DownloadProgressState;
   onCancel: () => void;
-  onClose: () => void;
 }
 
 export function DownloadProgress({
   progress,
   onCancel,
-  onClose,
 }: DownloadProgressProps) {
   const formatBytes = (bytes: number) => {
     const units = ["B", "KB", "MB", "GB"];

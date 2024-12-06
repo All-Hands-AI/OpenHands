@@ -60,12 +60,13 @@ async function getAllFiles(
       const subFilesArrays = await Promise.all(subFilesPromises);
       return subFilesArrays.flat();
     }
-    progress.filesTotal += 1;
-    options?.onProgress?.({
+    const updatedProgress = {
       ...progress,
+      filesTotal: progress.filesTotal + 1,
       currentFile: fullPath,
       isDiscoveringFiles: true,
-    });
+    };
+    options?.onProgress?.(updatedProgress);
     return [fullPath];
   };
 
@@ -73,8 +74,11 @@ async function getAllFiles(
   const fileArrays = await Promise.all(filePromises);
 
   // Signal that file discovery is complete
-  progress.isDiscoveringFiles = false;
-  options?.onProgress?.({ ...progress });
+  const updatedProgress = {
+    ...progress,
+    isDiscoveringFiles: false,
+  };
+  options?.onProgress?.(updatedProgress);
 
   return fileArrays.flat();
 }
@@ -131,7 +135,7 @@ async function processBatch(
         // Return the size of this file
         return new Blob([content]).size;
       } catch (error) {
-        console.error(`Error processing file ${path}:`, error);
+        // Silently handle file processing errors and return 0 bytes
         return 0;
       }
     }),
@@ -190,11 +194,7 @@ export async function downloadFiles(
     // Show directory picker first
     let directoryHandle: FileSystemDirectoryHandle;
     try {
-      const pickerOpts = {
-        mode: "readwrite",
-        startIn: "downloads",
-      };
-      directoryHandle = await window.showDirectoryPicker(pickerOpts);
+      directoryHandle = await window.showDirectoryPicker();
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
         throw new Error("Download cancelled");
@@ -218,12 +218,13 @@ export async function downloadFiles(
 
     // Verify we still have permission after the potentially long file scan
     try {
-      // Try to create a test file to verify permissions
+      // Try to create and write to a test file to verify permissions
       const testHandle = await directoryHandle.getFileHandle(
         ".openhands-test",
         { create: true },
       );
-      await testHandle.remove();
+      const writable = await testHandle.createWritable();
+      await writable.close();
     } catch (error) {
       if (
         error instanceof Error &&
@@ -231,16 +232,18 @@ export async function downloadFiles(
       ) {
         // Ask for permission again
         try {
-          const pickerOpts = {
-            mode: "readwrite",
-            startIn: "downloads",
-          };
-          directoryHandle = await window.showDirectoryPicker(pickerOpts);
-        } catch (error) {
-          if (error instanceof Error && error.name === "AbortError") {
+          directoryHandle = await window.showDirectoryPicker();
+        } catch (permissionError) {
+          if (
+            permissionError instanceof Error &&
+            permissionError.name === "AbortError"
+          ) {
             throw new Error("Download cancelled");
           }
-          if (error instanceof Error && error.name === "SecurityError") {
+          if (
+            permissionError instanceof Error &&
+            permissionError.name === "SecurityError"
+          ) {
             throw new Error(
               "Permission denied. Please allow access to the download location when prompted.",
             );

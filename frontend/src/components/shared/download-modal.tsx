@@ -7,16 +7,6 @@ interface DownloadModalProps {
   isOpen: boolean;
 }
 
-export function DownloadModal({
-  initialPath,
-  onClose,
-  isOpen,
-}: DownloadModalProps) {
-  if (!isOpen) return null;
-
-  return <ActiveDownload initialPath={initialPath} onClose={onClose} />;
-}
-
 function ActiveDownload({
   initialPath,
   onClose,
@@ -29,11 +19,15 @@ function ActiveDownload({
     onClose,
   );
 
-  return (
-    <DownloadProgress
-      progress={progress}
-      onCancel={cancelDownload}
-      onClose={onClose}
-    />
-  );
+  return <DownloadProgress progress={progress} onCancel={cancelDownload} />;
+}
+
+export function DownloadModal({
+  initialPath,
+  onClose,
+  isOpen,
+}: DownloadModalProps) {
+  if (!isOpen) return null;
+
+  return <ActiveDownload initialPath={initialPath} onClose={onClose} />;
 }
