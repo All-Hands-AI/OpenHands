@@ -29,6 +29,9 @@ class SessionManager:
     _last_alive_timestamps: dict[str, float] = field(default_factory=dict)
     _redis_listen_task: asyncio.Task | None = None
     _session_is_running_flags: dict[str, asyncio.Event] = field(default_factory=dict)
+    _active_conversations: dict[str, tuple[Conversation, int]] = field(
+        default_factory=dict
+    )
     _detached_conversations: dict[str, tuple[Conversation, float]] = field(
         default_factory=dict
     )
@@ -136,9 +139,17 @@ class SessionManager:
         if not await session_exists(sid, self.file_store):
             return None
 
+        # Check if we have an active conversation we can reuse
+        if sid in self._active_conversations:
+            conversation, count = self._active_conversations[sid]
+            self._active_conversations[sid] = (conversation, count + 1)
+            logger.info(f'Reusing active conversation {sid}')
+            return conversation
+
         # Check if we have a detached conversation we can reuse
         if sid in self._detached_conversations:
             conversation, _ = self._detached_conversations.pop(sid)
+            self._active_conversations[sid] = (conversation, 1)
             logger.info(f'Reusing detached conversation {sid}')
             return conversation
 
@@ -153,10 +164,19 @@ class SessionManager:
         logger.info(
             f'Conversation {c.sid} connected in {end_time - start_time} seconds'
         )
+        self._active_conversations[sid] = (c, 1)
         return c
 
     async def detach_from_conversation(self, conversation: Conversation):
-        self._detached_conversations[conversation.sid] = (conversation, time.time())
+        sid = conversation.sid
+        if sid in self._active_conversations:
+            conv, count = self._active_conversations[sid]
+            if count > 1:
+                self._active_conversations[sid] = (conv, count - 1)
+                return
+            else:
+                self._active_conversations.pop(sid)
+                self._detached_conversations[sid] = (conversation, time.time())
 
     async def _cleanup_detached_conversations(self):
         while should_continue():
