@@ -1,6 +1,7 @@
 import re
 
 from openhands.controller.state.state import State
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
 from openhands.events.action.message import MessageAction
 from openhands.events.action.replay import ReplayCmdRunAction
@@ -44,11 +45,13 @@ def replay_enhance_action(state: State, is_workspace_repo: bool) -> Action | Non
         # 1. Get current user prompt.
         latest_user_message = state.get_last_user_message()
         if latest_user_message:
+            logger.info(f'[REPLAY] latest_user_message id is {latest_user_message.id}')
             # 2. Check if it has a recordingId.
             recording_id = scan_recording_id(latest_user_message.content)
             if recording_id:
                 # 3. Analyze recording and, ultimately, enhance prompt.
                 state.extra_data['replay_enhance_prompt_id'] = latest_user_message.id
+                logger.info('[REPLAY] stored latest_user_message id in state')
                 return command_annotate_execution_points(
                     latest_user_message.content, is_workspace_repo
                 )
