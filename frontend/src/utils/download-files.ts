@@ -76,6 +76,7 @@ async function getAllFiles(
   // Signal that file discovery is complete
   const updatedProgress = {
     ...progress,
+    filesTotal: progress.filesTotal,  // Explicitly preserve the filesTotal
     isDiscoveringFiles: false,
   };
   options?.onProgress?.(updatedProgress);
@@ -175,7 +176,7 @@ export async function downloadFiles(
 ): Promise<void> {
   const startTime = Date.now();
   const progress: DownloadProgress = {
-    filesTotal: 0,
+    filesTotal: 0,  // Will be updated during file discovery
     filesDownloaded: 0,
     currentFile: "",
     totalBytesDownloaded: 0,
