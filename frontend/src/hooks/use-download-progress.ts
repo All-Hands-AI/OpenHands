@@ -16,11 +16,22 @@ export function useDownloadProgress(initialPath: string | undefined, onClose: ()
 
   const abortController = useRef<AbortController>();
 
-  // Create a new AbortController and start the download when the hook is initialized
+  // Create AbortController on mount
   useEffect(() => {
-    console.log('Download effect starting, path:', initialPath);
+    console.log('Creating AbortController');
     const controller = new AbortController();
     abortController.current = controller;
+    return () => {
+      console.log('Cleaning up AbortController');
+      controller.abort();
+      abortController.current = undefined;
+    };
+  }, []); // Empty deps array - only run on mount/unmount
+
+  // Start download in a separate effect
+  useEffect(() => {
+    console.log('Download effect starting, path:', initialPath);
+    if (!abortController.current) return;
 
     // Start download immediately
     const download = async () => {
@@ -31,7 +42,7 @@ export function useDownloadProgress(initialPath: string | undefined, onClose: ()
             console.log('Progress:', p);
             setProgress(p);
           },
-          signal: controller.signal,
+          signal: abortController.current!.signal,
         });
         console.log('Download completed');
         onClose();
@@ -45,12 +56,6 @@ export function useDownloadProgress(initialPath: string | undefined, onClose: ()
       }
     };
     download();
-
-    return () => {
-      console.log('Download effect cleanup');
-      controller.abort();
-      abortController.current = undefined;
-    };
   }, [initialPath, onClose]);
 
   // No longer need startDownload as it's handled in useEffect
