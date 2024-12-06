@@ -144,6 +144,11 @@ export const handlers = [
   http.post("https://us.i.posthog.com/e", async () =>
     HttpResponse.json(null, { status: 200 }),
   ),
+
+  http.post("/api/authenticate", async () =>
+    HttpResponse.json({ message: "Authenticated" }),
+  ),
+
   http.get("/config.json", () => HttpResponse.json({ APP_MODE: "oss" })),
 
   http.get("/api/conversations", async () =>
