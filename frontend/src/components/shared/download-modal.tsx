@@ -8,14 +8,10 @@ interface DownloadModalProps {
 }
 
 export function DownloadModal({ initialPath, onClose }: DownloadModalProps) {
-  const { progress, startDownload, cancelDownload } = useDownloadProgress(
+  const { progress, cancelDownload } = useDownloadProgress(
     initialPath,
     onClose
   );
-
-  useEffect(() => {
-    startDownload();
-  }, [startDownload]);
 
   return (
     <DownloadProgress

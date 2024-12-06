@@ -16,27 +16,36 @@ export function useDownloadProgress(initialPath: string | undefined, onClose: ()
 
   const abortController = useRef<AbortController>();
 
+  // Create a new AbortController and start the download when the hook is initialized
   useEffect(() => {
-    abortController.current = new AbortController();
-    return () => abortController.current?.abort();
-  }, []);
+    const controller = new AbortController();
+    abortController.current = controller;
 
-  const startDownload = useCallback(async () => {
-    try {
-      if (!abortController.current) return;
-      await downloadFiles(initialPath, {
-        onProgress: setProgress,
-        signal: abortController.current.signal,
-      });
-      onClose();
-    } catch (error) {
-      if (error instanceof Error && error.message === "Download cancelled") {
+    // Start download immediately
+    const download = async () => {
+      try {
+        await downloadFiles(initialPath, {
+          onProgress: setProgress,
+          signal: controller.signal,
+        });
         onClose();
-      } else {
-        throw error;
+      } catch (error) {
+        if (error instanceof Error && error.message === "Download cancelled") {
+          onClose();
+        } else {
+          throw error;
+        }
       }
-    }
+    };
+    download();
+
+    return () => {
+      controller.abort();
+      abortController.current = undefined;
+    };
   }, [initialPath, onClose]);
+
+  // No longer need startDownload as it's handled in useEffect
 
   const cancelDownload = useCallback(() => {
     abortController.current?.abort();
@@ -44,7 +53,6 @@ export function useDownloadProgress(initialPath: string | undefined, onClose: ()
 
   return {
     progress,
-    startDownload,
     cancelDownload,
   };
 }
