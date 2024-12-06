@@ -150,11 +150,14 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
     ) -> ErrorObservation | None:
         linter = DefaultLinter()
         # Copy the original file to a temporary file (with the same ext) and lint it
-        with tempfile.NamedTemporaryFile(
-            suffix=suffix, mode='w+', encoding='utf-8'
-        ) as original_file_copy, tempfile.NamedTemporaryFile(
-            suffix=suffix, mode='w+', encoding='utf-8'
-        ) as updated_file_copy:
+        with (
+            tempfile.NamedTemporaryFile(
+                suffix=suffix, mode='w+', encoding='utf-8'
+            ) as original_file_copy,
+            tempfile.NamedTemporaryFile(
+                suffix=suffix, mode='w+', encoding='utf-8'
+            ) as updated_file_copy,
+        ):
             # Lint the original file
             original_file_copy.write(old_content)
             original_file_copy.flush()

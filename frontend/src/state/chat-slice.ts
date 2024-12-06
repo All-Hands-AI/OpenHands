@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
+import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { OpenHandsAction } from "#/types/core/actions";
 
@@ -8,6 +9,20 @@ type SliceState = { messages: Message[] };
 const MAX_CONTENT_LENGTH = 1000;
 
 const HANDLED_ACTIONS = ["run", "run_ipython", "write", "read"];
+
+function getRiskText(risk: ActionSecurityRisk) {
+  switch (risk) {
+    case ActionSecurityRisk.LOW:
+      return "Low Risk";
+    case ActionSecurityRisk.MEDIUM:
+      return "Medium Risk";
+    case ActionSecurityRisk.HIGH:
+      return "High Risk";
+    case ActionSecurityRisk.UNKNOWN:
+    default:
+      return "Unknown Risk";
+  }
+}
 
 const initialState: SliceState = {
   messages: [],
@@ -78,6 +93,13 @@ export const chatSlice = createSlice({
       } else if (actionID === "read") {
         text = action.payload.args.path;
       }
+      if (actionID === "run" || actionID === "run_ipython") {
+        if (
+          action.payload.args.confirmation_state === "awaiting_confirmation"
+        ) {
+          text += `\n\n${getRiskText(action.payload.args.security_risk as unknown as ActionSecurityRisk)}`;
+        }
+      }
       const message: Message = {
         type: "action",
         sender: "assistant",
@@ -122,7 +144,6 @@ export const chatSlice = createSlice({
       action: PayloadAction<{ id?: string; message: string }>,
     ) {
       const { id, message } = action.payload;
-      console.log("add err message", id, message);
       state.messages.push({
         translationID: id,
         content: message,

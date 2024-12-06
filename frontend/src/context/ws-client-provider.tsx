@@ -82,7 +82,7 @@ export function WsClientProvider({
       initEvent.github_token = ghToken;
     }
     const lastEvent = lastEventRef.current;
-    if (lastEvent && !Number.isNaN(parseInt(lastEvent.id as string, 10))) {
+    if (lastEvent) {
       initEvent.latest_event_id = lastEvent.id;
     }
     send(initEvent);
@@ -93,7 +93,9 @@ export function WsClientProvider({
       messageRateHandler.record(new Date().getTime());
     }
     setEvents((prevEvents) => [...prevEvents, event]);
-    lastEventRef.current = event;
+    if (!Number.isNaN(parseInt(event.id as string, 10))) {
+      lastEventRef.current = event;
+    }
     const extras = event.extras as Record<string, unknown>;
     if (extras?.agent_state === AgentState.INIT) {
       setStatus(WsClientProviderStatus.ACTIVE);

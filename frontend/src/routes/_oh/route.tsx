@@ -6,9 +6,9 @@ import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConfig } from "#/hooks/query/use-config";
-import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
+import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -90,7 +90,8 @@ export default function MainApp() {
       {isInWaitlist && (
         <WaitlistModal ghToken={gitHubToken} githubAuthUrl={gitHubAuthUrl} />
       )}
-      {consentFormIsOpen && (
+
+      {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
         <AnalyticsConsentFormModal
           onClose={() => setConsentFormIsOpen(false)}
         />
