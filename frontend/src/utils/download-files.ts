@@ -129,8 +129,12 @@ async function processBatch(
         ((Date.now() - startTime) / 1000);
       options?.onProgress?.(newProgressWithStats);
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('User activation is required')) {
+        throw new Error('Permission to write files has expired. Please try again and select the download location.');
+      }
       throw new Error(
-        `Failed to download file ${path}: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to download file ${path}: ${errorMessage}`,
       );
     }
   });
@@ -187,6 +191,28 @@ export async function downloadFiles(
       ...progress,
       isDiscoveringFiles: false,
     });
+
+    // Verify we still have permission after the potentially long file scan
+    try {
+      // Try to create a test file to verify permissions
+      const testHandle = await directoryHandle.getFileHandle('.openhands-test', { create: true });
+      await testHandle.remove();
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('User activation is required')) {
+        // Ask for permission again
+        try {
+          directoryHandle = await window.showDirectoryPicker();
+          console.log('got new directoryHandle after timeout');
+        } catch (error) {
+          if (error instanceof Error && error.name === "AbortError") {
+            throw new Error("Download cancelled");
+          }
+          throw new Error("Failed to select download location. Please try again.");
+        }
+      } else {
+        throw error;
+      }
+    }
 
     // Process files in parallel batches to avoid overwhelming the browser
     const BATCH_SIZE = 5;
