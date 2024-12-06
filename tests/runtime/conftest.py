@@ -14,6 +14,7 @@ from openhands.events import EventStream
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.eventstream.eventstream_runtime import EventStreamRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
+from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from openhands.storage import get_file_store
 from openhands.utils.async_utils import call_async_from_sync
@@ -28,16 +29,16 @@ project_dir = os.path.dirname(
 sandbox_test_folder = '/openhands/workspace'
 
 
-def _get_runtime_sid(runtime: Runtime):
+def _get_runtime_sid(runtime: Runtime) -> str:
     logger.debug(f'\nruntime.sid: {runtime.sid}')
     return runtime.sid
 
 
-def _get_host_folder(runtime: Runtime):
+def _get_host_folder(runtime: Runtime) -> str:
     return runtime.config.workspace_mount_path
 
 
-def _get_sandbox_folder(runtime: Runtime):
+def _get_sandbox_folder(runtime: Runtime) -> Path | None:
     sid = _get_runtime_sid(runtime)
     if sid:
         return Path(os.path.join(sandbox_test_folder, sid))
@@ -60,7 +61,7 @@ def _remove_folder(folder: str) -> bool:
     return success
 
 
-def _close_test_runtime(runtime: Runtime):
+def _close_test_runtime(runtime: Runtime) -> None:
     if isinstance(runtime, EventStreamRuntime):
         runtime.close(rm_all_containers=False)
     else:
@@ -68,7 +69,7 @@ def _close_test_runtime(runtime: Runtime):
     time.sleep(1)
 
 
-def _reset_pwd():
+def _reset_pwd() -> None:
     global project_dir
     # Try to change back to project directory
     try:
@@ -96,6 +97,7 @@ def print_method_name(request):
 @pytest.fixture
 def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
     """Creates a unique temporary directory.
+
     Upon finalization, the temporary directory and its content is removed.
     The cleanup function is also called upon KeyboardInterrupt.
 
@@ -125,17 +127,19 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
 
 
 # Depending on TEST_RUNTIME, feed the appropriate box class(es) to the test.
-def get_runtime_classes():
+def get_runtime_classes() -> list[type[Runtime]]:
     runtime = TEST_RUNTIME
     if runtime.lower() == 'eventstream':
         return [EventStreamRuntime]
     elif runtime.lower() == 'remote':
         return [RemoteRuntime]
+    elif runtime.lower() == 'runloop':
+        return [RunloopRuntime]
     else:
         raise ValueError(f'Invalid runtime: {runtime}')
 
 
-def get_run_as_openhands():
+def get_run_as_openhands() -> list[bool]:
     print(
         '\n\n########################################################################'
     )
@@ -221,6 +225,7 @@ def _load_runtime(
     config = load_app_config()
     config.run_as_openhands = run_as_openhands
     config.sandbox.force_rebuild_runtime = force_rebuild_runtime
+    config.sandbox.keep_runtime_alive = False
     # Folder where all tests create their own folder
     global test_mount_path
     if use_workspace:

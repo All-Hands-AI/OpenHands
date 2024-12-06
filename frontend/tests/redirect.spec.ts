@@ -59,3 +59,41 @@ test("should redirect to /app after selecting a repo", async ({ page }) => {
   await page.waitForURL("/app");
   expect(page.url()).toBe("http://127.0.0.1:3000/app");
 });
+
+// FIXME: This fails because the MSW WS mocks change state too quickly,
+// missing the OPENING status where the initial query is rendered.
+test.fail(
+  "should redirect the user to /app with their initial query after selecting a project",
+  async ({ page }) => {
+    await page.goto("/");
+    await confirmSettings(page);
+
+    // enter query
+    const testQuery = "this is my test query";
+    const textbox = page.getByPlaceholder(/what do you want to build/i);
+    expect(textbox).not.toBeNull();
+    await textbox.fill(testQuery);
+
+    const fileInput = page.getByLabel("Upload a .zip");
+    const filePath = path.join(dirname, "fixtures/project.zip");
+    await fileInput.setInputFiles(filePath);
+
+    await page.waitForURL("/app");
+
+    // get user message
+    const userMessage = page.getByTestId("user-message");
+    expect(await userMessage.textContent()).toBe(testQuery);
+  },
+);
+
+test("redirect to /app if token is present", async ({ page }) => {
+  await page.goto("/");
+
+  await page.evaluate(() => {
+    localStorage.setItem("token", "test");
+  });
+
+  await page.waitForURL("/app");
+
+  expect(page.url()).toBe("http://localhost:3001/app");
+});

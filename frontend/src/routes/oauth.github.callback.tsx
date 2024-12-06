@@ -1,34 +1,34 @@
-import {
-  ClientLoaderFunctionArgs,
-  json,
-  redirect,
-  useLoaderData,
-} from "@remix-run/react";
+import { useNavigate, useSearchParams } from "react-router";
+import { useQuery } from "@tanstack/react-query";
+import React from "react";
 import OpenHands from "#/api/open-hands";
-
-export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
-  const url = new URL(request.url);
-  const code = url.searchParams.get("code");
-
-  if (code) {
-    const { access_token: accessToken } =
-      await OpenHands.getGitHubAccessToken(code);
-
-    localStorage.setItem("ghToken", accessToken);
-
-    return redirect("/");
-  }
-
-  return json({ error: "No code provided" }, { status: 400 });
-};
+import { useAuth } from "#/context/auth-context";
 
 function OAuthGitHubCallback() {
-  const { error } = useLoaderData<typeof clientLoader>();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { setGitHubToken } = useAuth();
+
+  const code = searchParams.get("code");
+
+  const { data, isSuccess, error } = useQuery({
+    queryKey: ["access_token", code],
+    queryFn: () => OpenHands.getGitHubAccessToken(code!),
+    enabled: !!code,
+  });
+
+  React.useEffect(() => {
+    if (isSuccess) {
+      setGitHubToken(data.access_token);
+      navigate("/");
+    }
+  }, [isSuccess]);
+
   if (error) {
     return (
       <div>
         <h1>Error</h1>
-        <p>{error}</p>
+        <p>{error.message}</p>
       </div>
     );
   }

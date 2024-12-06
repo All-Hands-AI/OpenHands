@@ -49,6 +49,7 @@ async def browse(
             ),  # last browser env action performed
             last_browser_action_error=obs.get('last_action_error', ''),
             error=True if obs.get('last_action_error', '') else False,  # error flag
+            trigger_by_action=action.action,
         )
     except Exception as e:
         return BrowserOutputObservation(
@@ -57,4 +58,5 @@ async def browse(
             error=True,
             last_browser_action_error=str(e),
             url=asked_url if action.action == ActionType.BROWSE else '',
+            trigger_by_action=action.action,
         )

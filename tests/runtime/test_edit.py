@@ -3,16 +3,12 @@
 import os
 
 import pytest
-from conftest import (
-    TEST_IN_CI,
-    _close_test_runtime,
-    _load_runtime,
-)
+from conftest import TEST_IN_CI, _close_test_runtime, _load_runtime
+from openhands_aci.utils.diff import get_diff
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import FileEditAction, FileReadAction
 from openhands.events.observation import FileEditObservation
-from openhands.utils.diff import get_diff
 
 ORGINAL = """from flask import Flask
 app = Flask(__name__)

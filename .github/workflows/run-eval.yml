@@ -1,0 +1,53 @@
+# Run evaluation on a PR
+name: Run Eval
+
+# Runs when a PR is labeled with one of the "run-eval-" labels
+on:
+  pull_request:
+    types: [labeled]
+
+jobs:
+  trigger-job:
+    name: Trigger remote eval job
+    if: ${{ github.event.label.name == 'run-eval-xs' || github.event.label.name == 'run-eval-s' || github.event.label.name == 'run-eval-m' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Trigger remote job
+        run: |
+          REPO_URL="https://github.com/${{ github.repository }}"
+          PR_BRANCH="${{ github.head_ref }}"
+          echo "Repository URL: $REPO_URL"
+          echo "PR Branch: $PR_BRANCH"
+
+          if [[ "${{ github.event.label.name }}" == "run-eval-xs" ]]; then
+            EVAL_INSTANCES="1"
+          elif [[ "${{ github.event.label.name }}" == "run-eval-s" ]]; then
+            EVAL_INSTANCES="5"
+          elif [[ "${{ github.event.label.name }}" == "run-eval-m" ]]; then
+            EVAL_INSTANCES="30"
+          fi
+
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.PAT_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -d "{\"ref\": \"main\", \"inputs\": {\"github-repo\": \"${REPO_URL}\", \"github-branch\": \"${PR_BRANCH}\", \"pr-number\": \"${{ github.event.pull_request.number }}\", \"eval-instances\": \"${EVAL_INSTANCES}\"}}" \
+            https://api.github.com/repos/All-Hands-AI/evaluation/actions/workflows/create-branch.yml/dispatches
+
+          # Send Slack message
+          PR_URL="https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}"
+          slack_text="PR $PR_URL has triggered evaluation on $EVAL_INSTANCES instances..."
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"'"$slack_text"'"}' \
+            https://hooks.slack.com/services/${{ secrets.SLACK_TOKEN }}
+
+      - name: Comment on PR
+        uses: KeisukeYamashita/create-comment@v1
+        with:
+          unique: false
+          comment: |
+            Running evaluation on the PR. Once eval is done, the results will be posted.

@@ -1,72 +1,41 @@
-import {
-  Await,
-  ClientActionFunctionArgs,
-  ClientLoaderFunctionArgs,
-  defer,
-  redirect,
-  useLoaderData,
-  useNavigate,
-  useRouteLoaderData,
-} from "@remix-run/react";
-import React, { Suspense } from "react";
-import { SuggestionBox } from "./suggestion-box";
-import { TaskForm } from "./task-form";
-import { HeroHeading } from "./hero-heading";
-import { retrieveAllGitHubUserRepositories } from "#/api/github";
-import store from "#/store";
-import { setInitialQuery } from "#/state/initial-query-slice";
-import { clientLoader as rootClientLoader } from "#/routes/_oh";
-import OpenHands from "#/api/open-hands";
-import { generateGitHubAuthUrl } from "#/utils/generate-github-auth-url";
-import { GitHubRepositoriesSuggestionBox } from "#/components/github-repositories-suggestion-box";
-
-export const clientLoader = async ({ request }: ClientLoaderFunctionArgs) => {
-  let isSaas = false;
-  let githubClientId: string | null = null;
-
-  try {
-    const config = await OpenHands.getConfig();
-    isSaas = config.APP_MODE === "saas";
-    githubClientId = config.GITHUB_CLIENT_ID;
-  } catch (error) {
-    isSaas = false;
-    githubClientId = null;
-  }
-
-  const ghToken = localStorage.getItem("ghToken");
-  const token = localStorage.getItem("token");
-  if (token) return redirect("/app");
-
-  let repositories: ReturnType<
-    typeof retrieveAllGitHubUserRepositories
-  > | null = null;
-  if (ghToken) {
-    const data = retrieveAllGitHubUserRepositories(ghToken);
-    repositories = data;
-  }
-
-  let githubAuthUrl: string | null = null;
-  if (isSaas && githubClientId) {
-    const requestUrl = new URL(request.url);
-    githubAuthUrl = generateGitHubAuthUrl(githubClientId, requestUrl);
-  }
-
-  return defer({ repositories, githubAuthUrl });
-};
-
-export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
-  const formData = await request.formData();
-  const q = formData.get("q")?.toString();
-  if (q) store.dispatch(setInitialQuery(q));
-
-  return redirect("/app");
-};
+import { useLocation, useNavigate } from "react-router";
+import React from "react";
+import { useDispatch } from "react-redux";
+import posthog from "posthog-js";
+import { setImportedProjectZip } from "#/state/initial-query-slice";
+import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
+import { useUserRepositories } from "#/hooks/query/use-user-repositories";
+import { useGitHubUser } from "#/hooks/query/use-github-user";
+import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
+import { useConfig } from "#/hooks/query/use-config";
+import { useAuth } from "#/context/auth-context";
+import { ImportProjectSuggestionBox } from "../../components/features/suggestions/import-project-suggestion-box";
+import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
+import { HeroHeading } from "#/components/shared/hero-heading";
+import { TaskForm } from "#/components/shared/task-form";
 
 function Home() {
+  const { token, gitHubToken } = useAuth();
+
+  const dispatch = useDispatch();
+  const location = useLocation();
   const navigate = useNavigate();
-  const rootData = useRouteLoaderData<typeof rootClientLoader>("routes/_oh");
-  const { repositories, githubAuthUrl } = useLoaderData<typeof clientLoader>();
-  const [importedFile, setImportedFile] = React.useState<File | null>(null);
+
+  const formRef = React.useRef<HTMLFormElement>(null);
+
+  const { data: config } = useConfig();
+  const { data: user } = useGitHubUser();
+  const { data: repositories } = useUserRepositories();
+
+  const gitHubAuthUrl = useGitHubAuthUrl({
+    gitHubToken,
+    appMode: config?.APP_MODE || null,
+    gitHubClientId: config?.GITHUB_CLIENT_ID || null,
+  });
+
+  React.useEffect(() => {
+    if (token) navigate("/app");
+  }, [location.pathname]);
 
   return (
     <div
@@ -76,57 +45,29 @@ function Home() {
       <HeroHeading />
       <div className="flex flex-col gap-16 w-[600px] items-center">
         <div className="flex flex-col gap-2 w-full">
-          <TaskForm importedProjectZip={importedFile} />
+          <TaskForm ref={formRef} />
         </div>
+
         <div className="flex gap-4 w-full">
-          <Suspense
-            fallback={
-              <SuggestionBox
-                title="Open a Repo"
-                content="Loading repositories..."
-              />
+          <GitHubRepositoriesSuggestionBox
+            handleSubmit={() => formRef.current?.requestSubmit()}
+            repositories={
+              repositories?.pages.flatMap((page) => page.data) || []
             }
-          >
-            <Await resolve={repositories}>
-              {(resolvedRepositories) => (
-                <GitHubRepositoriesSuggestionBox
-                  repositories={resolvedRepositories}
-                  gitHubAuthUrl={githubAuthUrl}
-                  user={rootData?.user || null}
-                />
-              )}
-            </Await>
-          </Suspense>
-          <SuggestionBox
-            title={importedFile ? "Project Loaded" : "+ Import Project"}
-            content={
-              importedFile?.name ?? (
-                <label
-                  htmlFor="import-project"
-                  className="w-full flex justify-center"
-                >
-                  <span className="border-2 border-dashed border-neutral-600 rounded px-2 py-1 cursor-pointer">
-                    Upload a .zip
-                  </span>
-                  <input
-                    hidden
-                    type="file"
-                    accept="application/zip"
-                    id="import-project"
-                    multiple={false}
-                    onChange={(event) => {
-                      if (event.target.files) {
-                        const zip = event.target.files[0];
-                        setImportedFile(zip);
-                        navigate("/app");
-                      } else {
-                        // TODO: handle error
-                      }
-                    }}
-                  />
-                </label>
-              )
-            }
+            gitHubAuthUrl={gitHubAuthUrl}
+            user={user || null}
+          />
+          <ImportProjectSuggestionBox
+            onChange={async (event) => {
+              if (event.target.files) {
+                const zip = event.target.files[0];
+                dispatch(setImportedProjectZip(await convertZipToBase64(zip)));
+                posthog.capture("zip_file_uploaded");
+                formRef.current?.requestSubmit();
+              } else {
+                // TODO: handle error
+              }
+            }}
           />
         </div>
       </div>

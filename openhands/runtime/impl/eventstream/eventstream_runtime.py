@@ -1,7 +1,9 @@
+import atexit
 import os
 import tempfile
 import threading
 from functools import lru_cache
+from pathlib import Path
 from typing import Callable
 from zipfile import ZipFile
 
@@ -32,14 +34,28 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.runtime.base import Runtime
+from openhands.runtime.base import (
+    Runtime,
+    RuntimeDisconnectedError,
+    RuntimeNotFoundError,
+)
 from openhands.runtime.builder import DockerRuntimeBuilder
+from openhands.runtime.impl.eventstream.containers import remove_all_containers
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
+
+CONTAINER_NAME_PREFIX = 'openhands-runtime-'
+
+
+def remove_all_runtime_containers():
+    remove_all_containers(CONTAINER_NAME_PREFIX)
+
+
+atexit.register(remove_all_runtime_containers)
 
 
 class LogBuffer:
@@ -99,6 +115,9 @@ class LogBuffer:
     def close(self, timeout: float = 5.0):
         self._stop_event.set()
         self.log_stream_thread.join(timeout)
+        # Close the log generator to release the file descriptor
+        if hasattr(self.log_generator, 'close'):
+            self.log_generator.close()
 
 
 class EventStreamRuntime(Runtime):
@@ -113,8 +132,6 @@ class EventStreamRuntime(Runtime):
         env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
     """
 
-    container_name_prefix = 'openhands-runtime-'
-
     # Need to provide this method to allow inheritors to init the Runtime
     # without initting the EventStreamRuntime.
     def init_base_runtime(
@@ -126,6 +143,7 @@ class EventStreamRuntime(Runtime):
         env_vars: dict[str, str] | None = None,
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
+        headless_mode: bool = True,
     ):
         super().__init__(
             config,
@@ -135,6 +153,7 @@ class EventStreamRuntime(Runtime):
             env_vars,
             status_callback,
             attach_to_existing,
+            headless_mode,
         )
 
     def __init__(
@@ -146,10 +165,13 @@ class EventStreamRuntime(Runtime):
         env_vars: dict[str, str] | None = None,
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
+        headless_mode: bool = True,
     ):
         self.config = config
         self._host_port = 30000  # initial dummy value
         self._container_port = 30001  # initial dummy value
+        self._vscode_url: str | None = None  # initial dummy value
+        self._runtime_initialized: bool = False
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.session = requests.Session()
         self.status_callback = status_callback
@@ -157,7 +179,7 @@ class EventStreamRuntime(Runtime):
         self.docker_client: docker.DockerClient = self._init_docker_client()
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
-        self.container_name = self.container_name_prefix + sid
+        self.container_name = CONTAINER_NAME_PREFIX + sid
         self.container = None
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
@@ -165,16 +187,6 @@ class EventStreamRuntime(Runtime):
 
         # Buffer for container logs
         self.log_buffer: LogBuffer | None = None
-
-        if self.config.sandbox.runtime_extra_deps:
-            self.log(
-                'debug',
-                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
-            )
-
-        self.skip_container_logs = (
-            os.environ.get('SKIP_CONTAINER_LOGS', 'false').lower() == 'true'
-        )
 
         self.init_base_runtime(
             config,
@@ -184,11 +196,27 @@ class EventStreamRuntime(Runtime):
             env_vars,
             status_callback,
             attach_to_existing,
+            headless_mode,
         )
+
+        # Log runtime_extra_deps after base class initialization so self.sid is available
+        if self.config.sandbox.runtime_extra_deps:
+            self.log(
+                'debug',
+                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
+            )
 
     async def connect(self):
         self.send_status_message('STATUS$STARTING_RUNTIME')
-        if not self.attach_to_existing:
+        try:
+            await call_sync_from_async(self._attach_to_container)
+        except docker.errors.NotFound as e:
+            if self.attach_to_existing:
+                self.log(
+                    'error',
+                    f'Container {self.container_name} not found.',
+                )
+                raise e
             if self.runtime_container_image is None:
                 if self.base_container_image is None:
                     raise ValueError(
@@ -207,15 +235,19 @@ class EventStreamRuntime(Runtime):
                 'info', f'Starting runtime with image: {self.runtime_container_image}'
             )
             await call_sync_from_async(self._init_container)
-            self.log('info', f'Container started: {self.container_name}')
+            self.log(
+                'info',
+                f'Container started: {self.container_name}. VSCode URL: {self.vscode_url}',
+            )
 
-        else:
-            await call_sync_from_async(self._attach_to_container)
+        self.log_buffer = LogBuffer(self.container, self.log)
 
         if not self.attach_to_existing:
             self.log('info', f'Waiting for client to become ready at {self.api_url}...')
-        self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+            self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+
         await call_sync_from_async(self._wait_until_alive)
+
         if not self.attach_to_existing:
             self.log('info', 'Runtime is ready.')
 
@@ -224,9 +256,11 @@ class EventStreamRuntime(Runtime):
 
         self.log(
             'debug',
-            f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}',
+            f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}. VSCode URL: {self.vscode_url}',
         )
-        self.send_status_message(' ')
+        if not self.attach_to_existing:
+            self.send_status_message(' ')
+        self._runtime_initialized = True
 
     @staticmethod
     @lru_cache(maxsize=1)
@@ -247,7 +281,6 @@ class EventStreamRuntime(Runtime):
             plugin_arg = (
                 f'--plugins {" ".join([plugin.name for plugin in self.plugins])} '
             )
-
         self._host_port = self._find_available_port()
         self._container_port = (
             self._host_port
@@ -256,6 +289,7 @@ class EventStreamRuntime(Runtime):
 
         use_host_network = self.config.sandbox.use_host_network
         network_mode: str | None = 'host' if use_host_network else None
+
         port_mapping: dict[str, list[dict[str, str]]] | None = (
             None
             if use_host_network
@@ -275,6 +309,13 @@ class EventStreamRuntime(Runtime):
         }
         if self.config.debug or DEBUG:
             environment['DEBUG'] = 'true'
+
+        if self.vscode_enabled:
+            # vscode is on port +1 from container port
+            if isinstance(port_mapping, dict):
+                port_mapping[f'{self._container_port + 1}/tcp'] = [
+                    {'HostPort': str(self._host_port + 1)}
+                ]
 
         self.log('debug', f'Workspace Base: {self.config.workspace_base}')
         if (
@@ -327,17 +368,15 @@ class EventStreamRuntime(Runtime):
                 environment=environment,
                 volumes=volumes,
             )
-            self.log_buffer = LogBuffer(self.container, self.log)
             self.log('debug', f'Container started. Server url: {self.api_url}')
             self.send_status_message('STATUS$CONTAINER_STARTED')
         except docker.errors.APIError as e:
-            # check 409 error
             if '409' in str(e):
                 self.log(
                     'warning',
                     f'Container {self.container_name} already exists. Removing...',
                 )
-                self._close_containers(rm_all_containers=True)
+                remove_all_containers(self.container_name)
                 return self._init_container()
 
             else:
@@ -355,11 +394,9 @@ class EventStreamRuntime(Runtime):
             raise e
 
     def _attach_to_container(self):
-        container = self.docker_client.containers.get(self.container_name)
-        self.log_buffer = LogBuffer(container, self.log)
-        self.container = container
         self._container_port = 0
-        for port in container.attrs['NetworkSettings']['Ports']:
+        self.container = self.docker_client.containers.get(self.container_name)
+        for port in self.container.attrs['NetworkSettings']['Ports']:  # type: ignore
             self._container_port = int(port.split('/')[0])
             break
         self._host_port = self._container_port
@@ -392,63 +429,55 @@ class EventStreamRuntime(Runtime):
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
-        reraise=(ConnectionRefusedError,),
+        retry=tenacity.retry_if_exception_type(
+            (ConnectionError, requests.exceptions.ConnectionError)
+        ),
+        reraise=True,
         wait=tenacity.wait_fixed(2),
     )
     def _wait_until_alive(self):
+        try:
+            container = self.docker_client.containers.get(self.container_name)
+            if container.status == 'exited':
+                raise RuntimeDisconnectedError(
+                    f'Container {self.container_name} has exited.'
+                )
+        except docker.errors.NotFound:
+            raise RuntimeNotFoundError(f'Container {self.container_name} not found.')
+
         self._refresh_logs()
         if not self.log_buffer:
             raise RuntimeError('Runtime client is not ready.')
 
-        send_request(
+        with send_request(
             self.session,
             'GET',
             f'{self.api_url}/alive',
             timeout=5,
-        )
+        ):
+            pass
 
-    def close(self, rm_all_containers: bool = True):
+    def close(self, rm_all_containers: bool | None = None):
         """Closes the EventStreamRuntime and associated objects
 
         Parameters:
         - rm_all_containers (bool): Whether to remove all containers with the 'openhands-sandbox-' prefix
         """
-
         if self.log_buffer:
             self.log_buffer.close()
 
         if self.session:
             self.session.close()
 
-        if self.attach_to_existing:
-            return
-        self._close_containers(rm_all_containers)
+        if rm_all_containers is None:
+            rm_all_containers = self.config.sandbox.rm_all_containers
 
-    def _close_containers(self, rm_all_containers: bool = True):
-        try:
-            containers = self.docker_client.containers.list(all=True)
-            for container in containers:
-                try:
-                    # If the app doesn't shut down properly, it can leave runtime containers on the system. This ensures
-                    # that all 'openhands-sandbox-' containers are removed as well.
-                    if rm_all_containers and container.name.startswith(
-                        self.container_name_prefix
-                    ):
-                        container.remove(force=True)
-                    elif container.name == self.container_name:
-                        if not self.skip_container_logs:
-                            logs = container.logs(tail=1000).decode('utf-8')
-                            self.log(
-                                'debug',
-                                f'==== Container logs on close ====\n{logs}\n==== End of container logs ====',
-                            )
-                        container.remove(force=True)
-                except docker.errors.APIError:
-                    pass
-                except docker.errors.NotFound:
-                    pass
-        except docker.errors.NotFound:  # yes, this can happen!
-            pass
+        if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
+            return
+        close_prefix = (
+            CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
+        )
+        remove_all_containers(close_prefix)
 
     def run_action(self, action: Action) -> Observation:
         if isinstance(action, FileEditAction):
@@ -488,17 +517,17 @@ class EventStreamRuntime(Runtime):
             assert action.timeout is not None
 
             try:
-                response = send_request(
+                with send_request(
                     self.session,
                     'POST',
                     f'{self.api_url}/execute_action',
                     json={'action': event_to_dict(action)},
                     # wait a few more seconds to get the timeout error from client side
                     timeout=action.timeout + 5,
-                )
-                output = response.json()
-                obs = observation_from_dict(output)
-                obs._cause = action.id  # type: ignore[attr-defined]
+                ) as response:
+                    output = response.json()
+                    obs = observation_from_dict(output)
+                    obs._cause = action.id  # type: ignore[attr-defined]
             except requests.Timeout:
                 raise RuntimeError(
                     f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
@@ -559,14 +588,15 @@ class EventStreamRuntime(Runtime):
 
             params = {'destination': sandbox_dest, 'recursive': str(recursive).lower()}
 
-            send_request(
+            with send_request(
                 self.session,
                 'POST',
                 f'{self.api_url}/upload_file',
                 files=upload_data,
                 params=params,
                 timeout=300,
-            )
+            ):
+                pass
 
         except requests.Timeout:
             raise TimeoutError('Copy operation timed out')
@@ -591,34 +621,37 @@ class EventStreamRuntime(Runtime):
             if path is not None:
                 data['path'] = path
 
-            response = send_request(
+            with send_request(
                 self.session,
                 'POST',
                 f'{self.api_url}/list_files',
                 json=data,
                 timeout=10,
-            )
-            response_json = response.json()
-            assert isinstance(response_json, list)
-            return response_json
+            ) as response:
+                response_json = response.json()
+                assert isinstance(response_json, list)
+                return response_json
         except requests.Timeout:
             raise TimeoutError('List files operation timed out')
 
-    def copy_from(self, path: str) -> bytes:
+    def copy_from(self, path: str) -> Path:
         """Zip all files in the sandbox and return as a stream of bytes."""
         self._refresh_logs()
         try:
             params = {'path': path}
-            response = send_request(
+            with send_request(
                 self.session,
                 'GET',
                 f'{self.api_url}/download_files',
                 params=params,
                 stream=True,
                 timeout=30,
-            )
-            data = response.content
-            return data
+            ) as response:
+                temp_file = tempfile.NamedTemporaryFile(delete=False)
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:  # filter out keep-alive new chunks
+                        temp_file.write(chunk)
+                return Path(temp_file.name)
         except requests.Timeout:
             raise TimeoutError('Copy operation timed out')
 
@@ -638,3 +671,30 @@ class EventStreamRuntime(Runtime):
                 return port
         # If no port is found after max_attempts, return the last tried port
         return port
+
+    @property
+    def vscode_url(self) -> str | None:
+        if self.vscode_enabled and self._runtime_initialized:
+            if (
+                hasattr(self, '_vscode_url') and self._vscode_url is not None
+            ):  # cached value
+                return self._vscode_url
+
+            with send_request(
+                self.session,
+                'GET',
+                f'{self.api_url}/vscode/connection_token',
+                timeout=10,
+            ) as response:
+                response_json = response.json()
+                assert isinstance(response_json, dict)
+                if response_json['token'] is None:
+                    return None
+                self._vscode_url = f'http://localhost:{self._host_port + 1}/?tkn={response_json["token"]}&folder={self.config.workspace_mount_path_in_sandbox}'
+                self.log(
+                    'debug',
+                    f'VSCode URL: {self._vscode_url}',
+                )
+                return self._vscode_url
+        else:
+            return None

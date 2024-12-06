@@ -3,7 +3,7 @@ from fastapi import FastAPI, WebSocket
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import ActionType
-from openhands.runtime.utils.shutdown_listener import should_continue
+from openhands.utils.shutdown_listener import should_continue
 
 app = FastAPI()
 

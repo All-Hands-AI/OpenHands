@@ -30,6 +30,9 @@ export const selectedFilesSlice = createSlice({
     setInitialQuery(state, action: PayloadAction<string>) {
       state.initialQuery = action.payload;
     },
+    clearInitialQuery(state) {
+      state.initialQuery = null;
+    },
     setSelectedRepository(state, action: PayloadAction<string | null>) {
       state.selectedRepository = action.payload;
     },
@@ -47,6 +50,7 @@ export const {
   removeFile,
   clearFiles,
   setInitialQuery,
+  clearInitialQuery,
   setSelectedRepository,
   clearSelectedRepository,
   setImportedProjectZip,

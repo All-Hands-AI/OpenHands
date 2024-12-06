@@ -11,9 +11,10 @@ from openhands.events.action.agent import ChangeAgentStateAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
-from openhands.runtime.base import Runtime
+from openhands.runtime.base import Runtime, RuntimeUnavailableError
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
+from openhands.utils.async_utils import call_async_from_sync
 
 
 class AgentSession:
@@ -129,13 +130,8 @@ class AgentSession:
         """Closes the Agent session"""
         if self._closed:
             return
-
         self._closed = True
-
-        def inner_close():
-            asyncio.run(self._close())
-
-        asyncio.get_event_loop().run_in_executor(None, inner_close)
+        call_async_from_sync(self._close)
 
     async def _close(self):
         if self.controller is not None:
@@ -189,17 +185,18 @@ class AgentSession:
             sid=self.sid,
             plugins=agent.sandbox_plugins,
             status_callback=self._status_callback,
+            headless_mode=False,
         )
 
         try:
             await self.runtime.connect()
-        except Exception as e:
+        except RuntimeUnavailableError as e:
             logger.error(f'Runtime initialization failed: {e}', exc_info=True)
             if self._status_callback:
                 self._status_callback(
                     'error', 'STATUS$ERROR_RUNTIME_DISCONNECTED', str(e)
                 )
-            raise
+            return
 
         if self.runtime is not None:
             logger.debug(

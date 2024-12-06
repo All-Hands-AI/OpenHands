@@ -1,4 +1,3 @@
-import { request } from "#/services/api";
 import {
   SaveFileSuccessResponse,
   FileUploadSuccessResponse,
@@ -7,7 +6,10 @@ import {
   GitHubAccessTokenResponse,
   ErrorResponse,
   GetConfigResponse,
+  GetVSCodeUrlResponse,
+  AuthenticateResponse,
 } from "./open-hands.types";
+import { openHands } from "./open-hands-axios";
 
 class OpenHands {
   /**
@@ -15,7 +17,8 @@ class OpenHands {
    * @returns List of models available
    */
   static async getModels(): Promise<string[]> {
-    return request("/api/options/models");
+    const { data } = await openHands.get<string[]>("/api/options/models");
+    return data;
   }
 
   /**
@@ -23,7 +26,8 @@ class OpenHands {
    * @returns List of agents available
    */
   static async getAgents(): Promise<string[]> {
-    return request(`/api/options/agents`);
+    const { data } = await openHands.get<string[]>("/api/options/agents");
+    return data;
   }
 
   /**
@@ -31,11 +35,15 @@ class OpenHands {
    * @returns List of security analyzers available
    */
   static async getSecurityAnalyzers(): Promise<string[]> {
-    return request(`/api/options/security-analyzers`);
+    const { data } = await openHands.get<string[]>(
+      "/api/options/security-analyzers",
+    );
+    return data;
   }
 
   static async getConfig(): Promise<GetConfigResponse> {
-    return request("/config.json");
+    const { data } = await openHands.get<GetConfigResponse>("/config.json");
+    return data;
   }
 
   /**
@@ -44,9 +52,10 @@ class OpenHands {
    * @returns List of files available in the given path. If path is not provided, it lists all the files in the workspace
    */
   static async getFiles(path?: string): Promise<string[]> {
-    let url = "/api/list-files";
-    if (path) url += `?path=${encodeURIComponent(path)}`;
-    return request(url);
+    const { data } = await openHands.get<string[]>("/api/list-files", {
+      params: { path },
+    });
+    return data;
   }
 
   /**
@@ -55,8 +64,10 @@ class OpenHands {
    * @returns Content of the file
    */
   static async getFile(path: string): Promise<string> {
-    const url = `/api/select-file?file=${encodeURIComponent(path)}`;
-    const data = await request(url);
+    const { data } = await openHands.get<{ code: string }>("/api/select-file", {
+      params: { file: path },
+    });
+
     return data.code;
   }
 
@@ -69,14 +80,16 @@ class OpenHands {
   static async saveFile(
     path: string,
     content: string,
-  ): Promise<SaveFileSuccessResponse | ErrorResponse> {
-    return request(`/api/save-file`, {
-      method: "POST",
-      body: JSON.stringify({ filePath: path, content }),
-      headers: {
-        "Content-Type": "application/json",
-      },
+  ): Promise<SaveFileSuccessResponse> {
+    const { data } = await openHands.post<
+      SaveFileSuccessResponse | ErrorResponse
+    >("/api/save-file", {
+      filePath: path,
+      content,
     });
+
+    if ("error" in data) throw new Error(data.error);
+    return data;
   }
 
   /**
@@ -84,25 +97,16 @@ class OpenHands {
    * @param file File to upload
    * @returns Success message or error message
    */
-  static async uploadFiles(
-    file: File[],
-  ): Promise<FileUploadSuccessResponse | ErrorResponse> {
+  static async uploadFiles(files: File[]): Promise<FileUploadSuccessResponse> {
     const formData = new FormData();
-    file.forEach((f) => formData.append("files", f));
+    files.forEach((file) => formData.append("files", file));
 
-    return request(`/api/upload-files`, {
-      method: "POST",
-      body: formData,
-    });
-  }
+    const { data } = await openHands.post<
+      FileUploadSuccessResponse | ErrorResponse
+    >("/api/upload-files", formData);
 
-  /**
-   * Get the blob of the workspace zip
-   * @returns Blob of the workspace zip
-   */
-  static async getWorkspaceZip(): Promise<Blob> {
-    const response = await request(`/api/zip-directory`, {}, false, true);
-    return response.blob();
+    if ("error" in data) throw new Error(data.error);
+    return data;
   }
 
   /**
@@ -110,14 +114,37 @@ class OpenHands {
    * @param data Feedback data
    * @returns The stored feedback data
    */
-  static async submitFeedback(data: Feedback): Promise<FeedbackResponse> {
-    return request(`/api/submit-feedback`, {
-      method: "POST",
-      body: JSON.stringify(data),
-      headers: {
-        "Content-Type": "application/json",
-      },
+  static async submitFeedback(feedback: Feedback): Promise<FeedbackResponse> {
+    const { data } = await openHands.post<FeedbackResponse>(
+      "/api/submit-feedback",
+      feedback,
+    );
+    return data;
+  }
+
+  /**
+   * Authenticate with GitHub token
+   * @returns Response with authentication status and user info if successful
+   */
+  static async authenticate(
+    appMode: GetConfigResponse["APP_MODE"],
+  ): Promise<boolean> {
+    if (appMode === "oss") return true;
+
+    const response =
+      await openHands.post<AuthenticateResponse>("/api/authenticate");
+    return response.status === 200;
+  }
+
+  /**
+   * Get the blob of the workspace zip
+   * @returns Blob of the workspace zip
+   */
+  static async getWorkspaceZip(): Promise<Blob> {
+    const response = await openHands.get("/api/zip-directory", {
+      responseType: "blob",
     });
+    return response.data;
   }
 
   /**
@@ -127,27 +154,30 @@ class OpenHands {
   static async getGitHubAccessToken(
     code: string,
   ): Promise<GitHubAccessTokenResponse> {
-    return request(`/api/github/callback`, {
-      method: "POST",
-      body: JSON.stringify({ code }),
-      headers: {
-        "Content-Type": "application/json",
+    const { data } = await openHands.post<GitHubAccessTokenResponse>(
+      "/api/github/callback",
+      {
+        code,
       },
-    });
+    );
+    return data;
   }
 
   /**
-   * Authenticate with GitHub token
-   * @returns Response with authentication status and user info if successful
+   * Get the VSCode URL
+   * @returns VSCode URL
    */
-  static async authenticate(): Promise<Response> {
-    return request(
-      `/api/authenticate`,
-      {
-        method: "POST",
-      },
-      true,
+  static async getVSCodeUrl(): Promise<GetVSCodeUrlResponse> {
+    const { data } =
+      await openHands.get<GetVSCodeUrlResponse>("/api/vscode-url");
+    return data;
+  }
+
+  static async getRuntimeId(): Promise<{ runtime_id: string }> {
+    const { data } = await openHands.get<{ runtime_id: string }>(
+      "/api/conversation",
     );
+    return data;
   }
 }
 

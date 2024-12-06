@@ -18,6 +18,7 @@ from openhands.core.config.config_utils import (
 )
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.sandbox_config import SandboxConfig
+from openhands.core.config.security_config import SecurityConfig
 
 load_dotenv()
 
@@ -144,6 +145,12 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                             )
                             llm_config = LLMConfig.from_dict(nested_value)
                             cfg.set_llm_config(llm_config, nested_key)
+                elif key is not None and key.lower() == 'security':
+                    logger.openhands_logger.debug(
+                        'Attempt to load security config from config toml'
+                    )
+                    security_config = SecurityConfig.from_dict(value)
+                    cfg.security = security_config
                 elif not key.startswith('sandbox') and key.lower() != 'core':
                     logger.openhands_logger.warning(
                         f'Unknown key in {toml_file}: "{key}"'
@@ -241,6 +248,7 @@ def get_llm_config_arg(
 
     Args:
         llm_config_arg: The group of llm settings to get from the config.toml file.
+        toml_file: Path to the configuration file to read from. Defaults to 'config.toml'.
 
     Returns:
         LLMConfig: The LLMConfig object with the settings from the config file.
@@ -368,6 +376,11 @@ def get_parser() -> argparse.ArgumentParser:
         type=str,
         help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
     )
+    parser.add_argument(
+        '--no-auto-continue',
+        action='store_true',
+        help='Disable automatic "continue" responses. Will read from stdin instead.',
+    )
     return parser
 
 
@@ -384,7 +397,7 @@ def load_app_config(
     """Load the configuration from the specified config file and environment variables.
 
     Args:
-        set_logger_levels: Whether to set the global variables for logging levels.
+        set_logging_levels: Whether to set the global variables for logging levels.
         config_file: Path to the config file. Defaults to 'config.toml' in the current directory.
     """
     config = AppConfig()

@@ -7,11 +7,16 @@ NOTE: this will be executed inside the docker sandbox.
 
 import argparse
 import asyncio
+import base64
 import io
+import json
+import mimetypes
 import os
+import re
 import shutil
 import tempfile
 import time
+import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
@@ -45,15 +50,13 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
-from openhands.runtime.plugins import (
-    ALL_PLUGINS,
-    JupyterPlugin,
-    Plugin,
-)
+from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
-from openhands.utils.async_utils import wait_all
+from openhands.runtime.utils.system import check_port_available
+from openhands.runtime.utils.system_stats import get_system_stats
+from openhands.utils.async_utils import call_sync_from_async, wait_all
 
 
 class ActionRequest(BaseModel):
@@ -114,7 +117,10 @@ class ActionExecutor:
         return self._initial_pwd
 
     async def ainit(self):
-        await wait_all(self._init_plugin(plugin) for plugin in self.plugins_to_load)
+        await wait_all(
+            (self._init_plugin(plugin) for plugin in self.plugins_to_load),
+            timeout=30,
+        )
 
         # This is a temporary workaround
         # TODO: refactor AgentSkills to be part of JupyterPlugin
@@ -168,7 +174,8 @@ class ActionExecutor:
     async def run(
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
-        return self.bash_session.run(action)
+        obs = await call_sync_from_async(self.bash_session.run, action)
+        return obs
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         if 'jupyter' in self.plugins:
@@ -194,6 +201,26 @@ class ActionExecutor:
 
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
             obs.content = obs.content.rstrip()
+            matches = re.findall(
+                r'<oh_aci_output>(.*?)</oh_aci_output>', obs.content, re.DOTALL
+            )
+            if matches:
+                results = []
+                for match in matches:
+                    try:
+                        result_dict = json.loads(match)
+                        results.append(
+                            result_dict.get('formatted_output_and_error', '')
+                        )
+                    except json.JSONDecodeError:
+                        # Handle JSON decoding errors if necessary
+                        results.append(
+                            f"Invalid JSON in 'openhands-aci' output: {match}"
+                        )
+
+                # Combine the results (e.g., join them) or handle them as required
+                obs.content = '\n'.join(results)
+
             if action.include_extra:
                 obs.content += (
                     f'\n[Jupyter current working directory: {self.bash_session.pwd}]'
@@ -217,6 +244,33 @@ class ActionExecutor:
         working_dir = self.bash_session.workdir
         filepath = self._resolve_path(action.path, working_dir)
         try:
+            if filepath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+                with open(filepath, 'rb') as file:
+                    image_data = file.read()
+                    encoded_image = base64.b64encode(image_data).decode('utf-8')
+                    mime_type, _ = mimetypes.guess_type(filepath)
+                    if mime_type is None:
+                        mime_type = 'image/png'  # default to PNG if mime type cannot be determined
+                    encoded_image = f'data:{mime_type};base64,{encoded_image}'
+
+                return FileReadObservation(path=filepath, content=encoded_image)
+            elif filepath.lower().endswith('.pdf'):
+                with open(filepath, 'rb') as file:
+                    pdf_data = file.read()
+                    encoded_pdf = base64.b64encode(pdf_data).decode('utf-8')
+                    encoded_pdf = f'data:application/pdf;base64,{encoded_pdf}'
+                return FileReadObservation(path=filepath, content=encoded_pdf)
+            elif filepath.lower().endswith(('.mp4', '.webm', '.ogg')):
+                with open(filepath, 'rb') as file:
+                    video_data = file.read()
+                    encoded_video = base64.b64encode(video_data).decode('utf-8')
+                    mime_type, _ = mimetypes.guess_type(filepath)
+                    if mime_type is None:
+                        mime_type = 'video/mp4'  # default to MP4 if MIME type cannot be determined
+                    encoded_video = f'data:{mime_type};base64,{encoded_video}'
+
+                return FileReadObservation(path=filepath, content=encoded_video)
+
             with open(filepath, 'r', encoding='utf-8') as file:
                 lines = read_lines(file.readlines(), action.start, action.end)
         except FileNotFoundError:
@@ -316,6 +370,8 @@ if __name__ == '__main__':
     )
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
+    os.environ['VSCODE_PORT'] = str(int(args.port) + 1)
+    assert check_port_available(int(os.environ['VSCODE_PORT']))
 
     plugins_to_load: list[Plugin] = []
     if args.plugins:
@@ -350,17 +406,13 @@ if __name__ == '__main__':
         logger.exception('Unhandled exception occurred:')
         return JSONResponse(
             status_code=500,
-            content={
-                'message': 'An unexpected error occurred. Please try again later.'
-            },
+            content={'detail': 'An unexpected error occurred. Please try again later.'},
         )
 
     @app.exception_handler(StarletteHTTPException)
     async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         logger.error(f'HTTP exception occurred: {exc.detail}')
-        return JSONResponse(
-            status_code=exc.status_code, content={'message': exc.detail}
-        )
+        return JSONResponse(status_code=exc.status_code, content={'detail': exc.detail})
 
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(
@@ -369,7 +421,7 @@ if __name__ == '__main__':
         logger.error(f'Validation error occurred: {exc}')
         return JSONResponse(
             status_code=422,
-            content={'message': 'Invalid request parameters', 'details': exc.errors()},
+            content={'detail': 'Invalid request parameters', 'errors': exc.errors()},
         )
 
     @app.middleware('http')
@@ -388,7 +440,14 @@ if __name__ == '__main__':
         current_time = time.time()
         uptime = current_time - client.start_time
         idle_time = current_time - client.last_execution_time
-        return {'uptime': uptime, 'idle_time': idle_time}
+
+        response = {
+            'uptime': uptime,
+            'idle_time': idle_time,
+            'resources': get_system_stats(),
+        }
+        logger.info('Server info endpoint response: %s', response)
+        return response
 
     @app.post('/execute_action')
     async def execute_action(action_request: ActionRequest):
@@ -404,7 +463,10 @@ if __name__ == '__main__':
             logger.error(
                 f'Error processing command: {str(e)}', exc_info=True, stack_info=True
             )
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(
+                status_code=500,
+                detail=traceback.format_exc(),
+            )
 
     @app.post('/upload_file')
     async def upload_file(
@@ -497,6 +559,19 @@ if __name__ == '__main__':
     @app.get('/alive')
     async def alive():
         return {'status': 'ok'}
+
+    # ================================
+    # VSCode-specific operations
+    # ================================
+
+    @app.get('/vscode/connection_token')
+    async def get_vscode_connection_token():
+        assert client is not None
+        if 'vscode' in client.plugins:
+            plugin: VSCodePlugin = client.plugins['vscode']  # type: ignore
+            return {'token': plugin.vscode_connection_token}
+        else:
+            return {'token': None}
 
     # ================================
     # File-specific operations for UI

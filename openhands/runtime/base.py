@@ -3,6 +3,7 @@ import copy
 import json
 import os
 from abc import abstractmethod
+from pathlib import Path
 from typing import Callable
 
 from requests.exceptions import ConnectionError
@@ -29,7 +30,11 @@ from openhands.events.observation import (
     UserRejectObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.runtime.plugins import JupyterRequirement, PluginRequirement
+from openhands.runtime.plugins import (
+    JupyterRequirement,
+    PluginRequirement,
+    VSCodeRequirement,
+)
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
 from openhands.utils.async_utils import call_sync_from_async
 
@@ -42,11 +47,19 @@ STATUS_MESSAGES = {
 }
 
 
-class RuntimeNotReadyError(Exception):
+class RuntimeUnavailableError(Exception):
     pass
 
 
-class RuntimeDisconnectedError(Exception):
+class RuntimeNotReadyError(RuntimeUnavailableError):
+    pass
+
+
+class RuntimeDisconnectedError(RuntimeUnavailableError):
+    pass
+
+
+class RuntimeNotFoundError(RuntimeUnavailableError):
     pass
 
 
@@ -83,13 +96,20 @@ class Runtime(FileEditRuntimeMixin):
         env_vars: dict[str, str] | None = None,
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
+        headless_mode: bool = False,
     ):
         self.sid = sid
         self.event_stream = event_stream
         self.event_stream.subscribe(
             EventStreamSubscriber.RUNTIME, self.on_event, self.sid
         )
-        self.plugins = plugins if plugins is not None and len(plugins) > 0 else []
+        self.plugins = (
+            copy.deepcopy(plugins) if plugins is not None and len(plugins) > 0 else []
+        )
+        # add VSCode plugin if not in headless mode
+        if not headless_mode:
+            self.plugins.append(VSCodeRequirement())
+
         self.status_callback = status_callback
         self.attach_to_existing = attach_to_existing
 
@@ -99,6 +119,10 @@ class Runtime(FileEditRuntimeMixin):
         self.initial_env_vars = _default_env_vars(config.sandbox)
         if env_vars is not None:
             self.initial_env_vars.update(env_vars)
+
+        self._vscode_enabled = any(
+            isinstance(plugin, VSCodeRequirement) for plugin in self.plugins
+        )
 
         # Load mixins
         FileEditRuntimeMixin.__init__(self)
@@ -172,7 +196,11 @@ class Runtime(FileEditRuntimeMixin):
                     e, RuntimeDisconnectedError
                 ):
                     err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
-                self.log('error', f'Unexpected error while running action {e}')
+                logger.error(
+                    'Unexpected error while running action',
+                    exc_info=True,
+                    stack_info=True,
+                )
                 self.log('error', f'Problematic action: {str(event)}')
                 self.send_error_message(err_id, str(e))
                 self.close()
@@ -274,6 +302,18 @@ class Runtime(FileEditRuntimeMixin):
         raise NotImplementedError('This method is not implemented in the base class.')
 
     @abstractmethod
-    def copy_from(self, path: str) -> bytes:
-        """Zip all files in the sandbox and return as a stream of bytes."""
+    def copy_from(self, path: str) -> Path:
+        """Zip all files in the sandbox and return a path in the local filesystem."""
+        raise NotImplementedError('This method is not implemented in the base class.')
+
+    # ====================================================================
+    # VSCode
+    # ====================================================================
+
+    @property
+    def vscode_enabled(self) -> bool:
+        return self._vscode_enabled
+
+    @property
+    def vscode_url(self) -> str | None:
         raise NotImplementedError('This method is not implemented in the base class.')

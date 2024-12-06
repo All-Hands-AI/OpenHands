@@ -16,9 +16,10 @@ class AgentConfig:
         memory_enabled: Whether long-term memory (embeddings) is enabled.
         memory_max_threads: The maximum number of threads indexing at the same time for embeddings.
         llm_config: The name of the llm config to use. If specified, this will override global llm config.
+        use_microagents: Whether to use microagents at all. Default is True.
+        disabled_microagents: A list of microagents to disable. Default is None.
     """
 
-    function_calling: bool = True
     codeact_enable_browsing: bool = True
     codeact_enable_llm_editor: bool = False
     codeact_enable_jupyter: bool = True
@@ -26,6 +27,8 @@ class AgentConfig:
     memory_enabled: bool = False
     memory_max_threads: int = 3
     llm_config: str | None = None
+    use_microagents: bool = True
+    disabled_microagents: list[str] | None = None
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""

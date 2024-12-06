@@ -38,7 +38,9 @@ make build
 ```
 
 ### 3. Configuring the Language Model
-OpenHands supports a diverse array of Language Models (LMs) through the powerful [litellm](https://docs.litellm.ai) library. By default, we've chosen the mighty GPT-4 from OpenAI as our go-to model, but the world is your oyster! You can unleash the potential of Anthropic's suave Claude, the enigmatic Llama, or any other LM that piques your interest.
+OpenHands supports a diverse array of Language Models (LMs) through the powerful [litellm](https://docs.litellm.ai) library.
+By default, we've chosen Claude Sonnet 3.5 as our go-to model, but the world is your oyster! You can unleash the
+potential of any other LM that piques your interest.
 
 To configure the LM of your choice, run:
 
@@ -52,10 +54,7 @@ To configure the LM of your choice, run:
    Environment variables > config.toml variables > default variables
 
 **Note on Alternative Models:**
-Some alternative models may prove more challenging to tame than others. Fear not, brave adventurer! We shall soon unveil LLM-specific documentation to guide you on your quest.
-And if you've already mastered the art of wielding a model other than OpenAI's GPT, we encourage you to share your setup instructions with us by creating instructions and adding it [to our documentation](https://github.com/All-Hands-AI/OpenHands/tree/main/docs/modules/usage/llms).
-
-For a full list of the LM providers and models available, please consult the [litellm documentation](https://docs.litellm.ai/docs/providers).
+See [our documentation](https://docs.all-hands.dev/modules/usage/llms) for recommended models.
 
 ### 4. Running the application
 #### Option A: Run the Full Application
@@ -98,9 +97,10 @@ poetry run pytest ./tests/unit/test_*.py
 2. Update the poetry.lock file via `poetry lock --no-update`
 
 ### 9. Use existing Docker image
-To reduce build time (e.g., if no changes were made to the client-runtime component), you can use an existing Docker container image. Follow these steps:
-1. Set the SANDBOX_RUNTIME_CONTAINER_IMAGE environment variable to the desired Docker image.
-2. Example: export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.9-nikolaik
+To reduce build time (e.g., if no changes were made to the client-runtime component), you can use an existing Docker container image by
+setting the SANDBOX_RUNTIME_CONTAINER_IMAGE environment variable to the desired Docker image.
+
+Example: `export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.15-nikolaik`
 
 ## Develop inside Docker container
 

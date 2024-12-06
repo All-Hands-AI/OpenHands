@@ -1,5 +1,5 @@
 import { delay, WebSocketHandler, ws } from "msw";
-import AgentState from "#/types/AgentState";
+import AgentState from "#/types/agent-state";
 import {
   AgentStateChangeObservation,
   CommandObservation,
@@ -29,7 +29,7 @@ const generateAgentResponse = (message: string): AssistantMessageAction => ({
   action: "message",
   args: {
     content: message,
-    images_urls: [],
+    image_urls: [],
     wait_for_response: false,
   },
 });
@@ -49,13 +49,13 @@ const generateAgentRunObservation = (): CommandObservation => ({
   },
 });
 
-const api = ws.link("ws://localhost:3000/ws");
+const api = ws.link("ws://localhost:3000/socket.io/?EIO=4&transport=websocket");
 
 export const handlers: WebSocketHandler[] = [
   api.addEventListener("connection", ({ client }) => {
     client.send(
       JSON.stringify({
-        status: "ok",
+        status: 200,
         token: Math.random().toString(36).substring(7),
       } satisfies TokenConfigSuccess),
     );

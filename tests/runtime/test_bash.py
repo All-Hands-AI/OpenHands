@@ -1,6 +1,7 @@
 """Bash-related tests for the EventStreamRuntime, which connects to the ActionExecutor running in the sandbox."""
 
 import os
+from pathlib import Path
 
 import pytest
 from conftest import (
@@ -586,8 +587,10 @@ def test_copy_from_directory(temp_dir, runtime_cls):
         path_to_copy_from = f'{sandbox_dir}/test_dir'
         result = runtime.copy_from(path=path_to_copy_from)
 
-        # Result is returned in bytes
-        assert isinstance(result, bytes)
+        # Result is returned as a path
+        assert isinstance(result, Path)
+
+        result.unlink()
     finally:
         _close_test_runtime(runtime)
 

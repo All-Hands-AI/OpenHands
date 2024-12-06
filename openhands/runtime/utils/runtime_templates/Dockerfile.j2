@@ -1,8 +1,71 @@
 FROM {{ base_image }}
 
-# Shared environment variables (regardless of init or not)
-ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry
-ENV MAMBA_ROOT_PREFIX=/openhands/micromamba
+# Shared environment variables
+ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
+    MAMBA_ROOT_PREFIX=/openhands/micromamba \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    EDITOR=code \
+    VISUAL=code \
+    GIT_EDITOR="code --wait" \
+    OPENVSCODE_SERVER_ROOT=/openhands/.openvscode-server
+
+{% macro setup_base_system() %}
+
+# Install base system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        wget curl sudo apt-utils git \
+        {% if 'ubuntu' in base_image and (base_image.endswith(':latest') or base_image.endswith(':24.04')) %}
+        libgl1 \
+        {% else %}
+        libgl1-mesa-glx \
+        {% endif %}
+        libasound2-plugins libatomic1 curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Remove UID 1000 if it's called pn--this fixes the nikolaik image for ubuntu users
+RUN if getent passwd 1000 | grep -q pn; then userdel pn; fi
+
+# Create necessary directories
+RUN mkdir -p /openhands && \
+    mkdir -p /openhands/logs && \
+    mkdir -p /openhands/poetry
+
+{% endmacro %}
+
+{% macro setup_vscode_server() %}
+# Reference:
+# 1. https://github.com/gitpod-io/openvscode-server
+# 2. https://github.com/gitpod-io/openvscode-releases
+
+# Setup VSCode Server
+ARG RELEASE_TAG="openvscode-server-v1.94.2"
+ARG RELEASE_ORG="gitpod-io"
+# ARG USERNAME=openvscode-server
+# ARG USER_UID=1000
+# ARG USER_GID=1000
+
+RUN if [ -z "${RELEASE_TAG}" ]; then \
+        echo "The RELEASE_TAG build arg must be set." >&2 && \
+        exit 1; \
+    fi && \
+    arch=$(uname -m) && \
+    if [ "${arch}" = "x86_64" ]; then \
+        arch="x64"; \
+    elif [ "${arch}" = "aarch64" ]; then \
+        arch="arm64"; \
+    elif [ "${arch}" = "armv7l" ]; then \
+        arch="armhf"; \
+    fi && \
+    wget https://github.com/${RELEASE_ORG}/openvscode-server/releases/download/${RELEASE_TAG}/${RELEASE_TAG}-linux-${arch}.tar.gz && \
+    tar -xzf ${RELEASE_TAG}-linux-${arch}.tar.gz && \
+    mv -f ${RELEASE_TAG}-linux-${arch} ${OPENVSCODE_SERVER_ROOT} && \
+    cp ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/openvscode-server ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/code && \
+    rm -f ${RELEASE_TAG}-linux-${arch}.tar.gz
+
+{% endmacro %}
 
 {% macro install_dependencies() %}
 # Install all dependencies
@@ -28,6 +91,7 @@ RUN \
     # Clean up
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     /openhands/micromamba/bin/micromamba clean --all
+
 {% endmacro %}
 
 {% if build_from_scratch %}
@@ -37,25 +101,8 @@ RUN \
 # This is used in cases where the base image is something more generic like nikolaik/python-nodejs
 # rather than the current OpenHands release
 
-{% if 'ubuntu' in base_image and (base_image.endswith(':latest') or base_image.endswith(':24.04')) %}
-{% set LIBGL_MESA = 'libgl1' %}
-{% else %}
-{% set LIBGL_MESA = 'libgl1-mesa-glx' %}
-{% endif %}
-
-# Install necessary packages and clean up in one layer
-RUN apt-get update && \
-    apt-get install -y wget curl sudo apt-utils {{ LIBGL_MESA }} libasound2-plugins git && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Remove UID 1000 if it's called pn--this fixes the nikolaik image for ubuntu users
-RUN if getent passwd 1000 | grep -q pn; then userdel pn; fi
-
-# Create necessary directories
-RUN mkdir -p /openhands && \
-    mkdir -p /openhands/logs && \
-    mkdir -p /openhands/poetry
+{{ setup_base_system() }}
+{{ setup_vscode_server() }}
 
 # Install micromamba
 RUN mkdir -p /openhands/micromamba/bin && \
@@ -72,6 +119,7 @@ RUN \
     if [ -d /openhands/code ]; then rm -rf /openhands/code; fi && \
     mkdir -p /openhands/code/openhands && \
     touch /openhands/code/openhands/__init__.py
+
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 
 {{ install_dependencies() }}

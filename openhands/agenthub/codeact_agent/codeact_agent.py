@@ -1,12 +1,10 @@
 import json
 import os
 from collections import deque
-from itertools import islice
 
 from litellm import ModelResponse
 
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
-from openhands.agenthub.codeact_agent.action_parser import CodeActResponseParser
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -17,6 +15,7 @@ from openhands.events.action import (
     AgentDelegateAction,
     AgentFinishAction,
     BrowseInteractiveAction,
+    BrowseURLAction,
     CmdRunAction,
     FileEditAction,
     IPythonRunCellAction,
@@ -39,7 +38,6 @@ from openhands.runtime.plugins import (
     JupyterRequirement,
     PluginRequirement,
 )
-from openhands.utils.microagent import MicroAgent
 from openhands.utils.prompt import PromptManager
 
 
@@ -71,7 +69,6 @@ class CodeActAgent(Agent):
         AgentSkillsRequirement(),
         JupyterRequirement(),
     ]
-    obs_prefix = 'OBSERVATION:\n'
 
     def __init__(
         self,
@@ -86,46 +83,30 @@ class CodeActAgent(Agent):
         super().__init__(llm, config)
         self.reset()
 
-        self.micro_agent = (
-            MicroAgent(
-                os.path.join(
-                    os.path.dirname(__file__), 'micro', f'{config.micro_agent_name}.md'
-                )
+        self.mock_function_calling = False
+        if not self.llm.is_function_calling_active():
+            logger.info(
+                f'Function calling not enabled for model {self.llm.config.model}. '
+                'Mocking function calling via prompting.'
             )
-            if config.micro_agent_name
-            else None
+            self.mock_function_calling = True
+
+        # Function calling mode
+        self.tools = codeact_function_calling.get_tools(
+            codeact_enable_browsing=self.config.codeact_enable_browsing,
+            codeact_enable_jupyter=self.config.codeact_enable_jupyter,
+            codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
         )
-
-        self.function_calling_active = self.config.function_calling
-        if self.function_calling_active and not self.llm.is_function_calling_active():
-            logger.warning(
-                f'Function calling not supported for model {self.llm.config.model}. '
-                'Disabling function calling.'
-            )
-            self.function_calling_active = False
-
-        if self.function_calling_active:
-            # Function calling mode
-            self.tools = codeact_function_calling.get_tools(
-                codeact_enable_browsing=self.config.codeact_enable_browsing,
-                codeact_enable_jupyter=self.config.codeact_enable_jupyter,
-                codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
-            )
-            logger.debug(
-                f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
-            )
-            self.system_prompt = codeact_function_calling.SYSTEM_PROMPT
-            self.initial_user_message = None
-        else:
-            # Non-function-calling mode
-            self.action_parser = CodeActResponseParser()
-            self.prompt_manager = PromptManager(
-                prompt_dir=os.path.join(os.path.dirname(__file__)),
-                agent_skills_docs=AgentSkillsRequirement.documentation,
-                micro_agent=self.micro_agent,
-            )
-            self.system_prompt = self.prompt_manager.system_message
-            self.initial_user_message = self.prompt_manager.initial_user_message
+        logger.debug(
+            f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
+        )
+        self.prompt_manager = PromptManager(
+            microagent_dir=os.path.join(os.path.dirname(__file__), 'micro')
+            if self.config.use_microagents
+            else None,
+            prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
+            disabled_microagents=self.config.disabled_microagents,
+        )
 
         self.pending_actions: deque[Action] = deque()
 
@@ -168,52 +149,52 @@ class CodeActAgent(Agent):
             action,
             (
                 AgentDelegateAction,
-                CmdRunAction,
                 IPythonRunCellAction,
                 FileEditAction,
                 BrowseInteractiveAction,
+                BrowseURLAction,
             ),
-        ) or (isinstance(action, AgentFinishAction) and action.source == 'agent'):
-            if self.function_calling_active:
-                tool_metadata = action.tool_call_metadata
-                assert tool_metadata is not None, (
-                    'Tool call metadata should NOT be None when function calling is enabled. Action: '
-                    + str(action)
-                )
+        ) or (
+            isinstance(action, (AgentFinishAction, CmdRunAction))
+            and action.source == 'agent'
+        ):
+            tool_metadata = action.tool_call_metadata
+            assert tool_metadata is not None, (
+                'Tool call metadata should NOT be None when function calling is enabled. Action: '
+                + str(action)
+            )
 
-                llm_response: ModelResponse = tool_metadata.model_response
-                assistant_msg = llm_response.choices[0].message
-                # Add the LLM message (assistant) that initiated the tool calls
-                # (overwrites any previous message with the same response_id)
-                pending_tool_call_action_messages[llm_response.id] = Message(
-                    role=assistant_msg.role,
-                    # tool call content SHOULD BE a string
-                    content=[TextContent(text=assistant_msg.content or '')]
-                    if assistant_msg.content is not None
-                    else [],
-                    tool_calls=assistant_msg.tool_calls,
-                )
-                return []
-            else:
-                assert not isinstance(action, BrowseInteractiveAction), (
-                    'BrowseInteractiveAction is not supported in non-function calling mode. Action: '
-                    + str(action)
-                )
-                content = [TextContent(text=self.action_parser.action_to_str(action))]
-                return [
-                    Message(
-                        role='user' if action.source == 'user' else 'assistant',
-                        content=content,
-                    )
-                ]
+            llm_response: ModelResponse = tool_metadata.model_response
+            assistant_msg = llm_response.choices[0].message
+            # Add the LLM message (assistant) that initiated the tool calls
+            # (overwrites any previous message with the same response_id)
+            pending_tool_call_action_messages[llm_response.id] = Message(
+                role=assistant_msg.role,
+                # tool call content SHOULD BE a string
+                content=[TextContent(text=assistant_msg.content or '')]
+                if assistant_msg.content is not None
+                else [],
+                tool_calls=assistant_msg.tool_calls,
+            )
+            return []
         elif isinstance(action, MessageAction):
             role = 'user' if action.source == 'user' else 'assistant'
             content = [TextContent(text=action.content or '')]
-            if self.llm.vision_is_active() and action.images_urls:
-                content.append(ImageContent(image_urls=action.images_urls))
+            if self.llm.vision_is_active() and action.image_urls:
+                content.append(ImageContent(image_urls=action.image_urls))
             return [
                 Message(
                     role=role,
+                    content=content,
+                )
+            ]
+        elif isinstance(action, CmdRunAction) and action.source == 'user':
+            content = [
+                TextContent(text=f'User executed the command:\n{action.command}')
+            ]
+            return [
+                Message(
+                    role='user',
                     content=content,
                 )
             ]
@@ -251,15 +232,21 @@ class CodeActAgent(Agent):
         """
         message: Message
         max_message_chars = self.llm.config.max_message_chars
-        obs_prefix = 'OBSERVATION:\n'
         if isinstance(obs, CmdOutputObservation):
-            text = obs_prefix + truncate_content(
-                obs.content + obs.interpreter_details, max_message_chars
-            )
+            # if it doesn't have tool call metadata, it was triggered by a user action
+            if obs.tool_call_metadata is None:
+                text = truncate_content(
+                    f'\nObserved result of command executed by user:\n{obs.content}',
+                    max_message_chars,
+                )
+            else:
+                text = truncate_content(
+                    obs.content + obs.interpreter_details, max_message_chars
+                )
             text += f'\n[Command finished with exit code {obs.exit_code}]'
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
-            text = obs_prefix + obs.content
+            text = obs.content
             # replace base64 images with a placeholder
             splitted = text.split('\n')
             for i, line in enumerate(splitted):
@@ -271,22 +258,22 @@ class CodeActAgent(Agent):
             text = truncate_content(text, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, FileEditObservation):
-            text = obs_prefix + truncate_content(str(obs), max_message_chars)
+            text = truncate_content(str(obs), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, BrowserOutputObservation):
             text = obs.get_agent_obs_text()
             message = Message(
                 role='user',
-                content=[TextContent(text=obs_prefix + text)],
+                content=[TextContent(text=text)],
             )
         elif isinstance(obs, AgentDelegateObservation):
-            text = obs_prefix + truncate_content(
+            text = truncate_content(
                 obs.outputs['content'] if 'content' in obs.outputs else '',
                 max_message_chars,
             )
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, ErrorObservation):
-            text = obs_prefix + truncate_content(obs.content, max_message_chars)
+            text = truncate_content(obs.content, max_message_chars)
             text += '\n[Error occurred in processing last action]'
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, UserRejectObservation):
@@ -298,19 +285,18 @@ class CodeActAgent(Agent):
             # when the LLM tries to return the next message
             raise ValueError(f'Unknown observation type: {type(obs)}')
 
-        if self.function_calling_active:
-            # Update the message as tool response properly
-            if (tool_call_metadata := obs.tool_call_metadata) is not None:
-                tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(
-                    role='tool',
-                    content=message.content,
-                    tool_call_id=tool_call_metadata.tool_call_id,
-                    name=tool_call_metadata.function_name,
-                )
-                # No need to return the observation message
-                # because it will be added by get_action_message when all the corresponding
-                # tool calls in the SAME request are processed
-                return []
+        # Update the message as tool response properly
+        if (tool_call_metadata := obs.tool_call_metadata) is not None:
+            tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(
+                role='tool',
+                content=message.content,
+                tool_call_id=tool_call_metadata.tool_call_id,
+                name=tool_call_metadata.function_name,
+            )
+            # No need to return the observation message
+            # because it will be added by get_action_message when all the corresponding
+            # tool calls in the SAME request are processed
+            return []
 
         return [message]
 
@@ -337,8 +323,8 @@ class CodeActAgent(Agent):
             return self.pending_actions.popleft()
 
         # if we're done, go back
-        last_user_message = state.get_last_user_message()
-        if last_user_message and last_user_message.strip() == '/exit':
+        latest_user_message = state.get_last_user_message()
+        if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
         # prepare what we want to send to the LLM
@@ -346,25 +332,14 @@ class CodeActAgent(Agent):
         params: dict = {
             'messages': self.llm.format_messages_for_llm(messages),
         }
-        if self.function_calling_active:
-            params['tools'] = self.tools
-            params['parallel_tool_calls'] = False
-        else:
-            params['stop'] = [
-                '</execute_ipython>',
-                '</execute_bash>',
-                '</execute_browse>',
-                '</file_edit>',
-            ]
+        params['tools'] = self.tools
+        if self.mock_function_calling:
+            params['mock_function_calling'] = True
         response = self.llm.completion(**params)
-
-        if self.function_calling_active:
-            actions = codeact_function_calling.response_to_actions(response)
-            for action in actions:
-                self.pending_actions.append(action)
-            return self.pending_actions.popleft()
-        else:
-            return self.action_parser.parse(response)
+        actions = codeact_function_calling.response_to_actions(response)
+        for action in actions:
+            self.pending_actions.append(action)
+        return self.pending_actions.popleft()
 
     def _get_messages(self, state: State) -> list[Message]:
         """Constructs the message history for the LLM conversation.
@@ -403,17 +378,19 @@ class CodeActAgent(Agent):
                 role='system',
                 content=[
                     TextContent(
-                        text=self.system_prompt,
-                        cache_prompt=self.llm.is_caching_prompt_active(),  # Cache system prompt
+                        text=self.prompt_manager.get_system_message(),
+                        cache_prompt=self.llm.is_caching_prompt_active(),
                     )
                 ],
             )
         ]
-        if self.initial_user_message:
+        example_message = self.prompt_manager.get_example_user_message()
+        if example_message:
             messages.append(
                 Message(
                     role='user',
-                    content=[TextContent(text=self.initial_user_message)],
+                    content=[TextContent(text=example_message)],
+                    cache_prompt=self.llm.is_caching_prompt_active(),
                 )
             )
 
@@ -462,8 +439,9 @@ class CodeActAgent(Agent):
                 pending_tool_call_action_messages.pop(response_id)
 
             for message in messages_to_add:
-                # add regular message
                 if message:
+                    if message.role == 'user':
+                        self.prompt_manager.enhance_message(message)
                     # handle error if the message is the SAME role as the previous message
                     # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
                     # there shouldn't be two consecutive messages from the same role
@@ -491,25 +469,5 @@ class CodeActAgent(Agent):
                         breakpoints_remaining -= 1
                     else:
                         break
-
-        if not self.function_calling_active:
-            # The latest user message is important:
-            # we want to remind the agent of the environment constraints
-            latest_user_message = next(
-                islice(
-                    (
-                        m
-                        for m in reversed(messages)
-                        if m.role == 'user'
-                        and any(isinstance(c, TextContent) for c in m.content)
-                    ),
-                    1,
-                ),
-                None,
-            )
-            # do not add this for function calling
-            if latest_user_message:
-                reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.max_iterations - state.iteration} turns left to complete the task. When finished reply with <finish></finish>.'
-                latest_user_message.content.append(TextContent(text=reminder_text))
 
         return messages

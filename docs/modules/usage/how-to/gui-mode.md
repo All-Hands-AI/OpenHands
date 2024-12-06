@@ -58,4 +58,3 @@ The main interface consists of several key components:
 3. Use one of the recommended models, as described in the [LLMs section](usage/llms/llms.md).
 
 Remember, the GUI mode of OpenHands is designed to make your interaction with the AI assistant as smooth and intuitive as possible. Don't hesitate to explore its features to maximize your productivity.
-

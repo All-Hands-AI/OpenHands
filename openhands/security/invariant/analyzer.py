@@ -1,3 +1,4 @@
+import ast
 import re
 import uuid
 from typing import Any
@@ -7,15 +8,19 @@ from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.message import Message, TextContent
+from openhands.core.schema import AgentState
 from openhands.events.action.action import (
     Action,
     ActionConfirmationStatus,
     ActionSecurityRisk,
 )
+from openhands.events.action.agent import ChangeAgentStateAction
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import Observation
 from openhands.events.serialization.action import action_from_dict
 from openhands.events.stream import EventStream
+from openhands.llm.llm import LLM
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.security.analyzer import SecurityAnalyzer
 from openhands.security.invariant.client import InvariantClient
@@ -33,6 +38,9 @@ class InvariantAnalyzer(SecurityAnalyzer):
     api_host: str = 'http://localhost'
     timeout: int = 180
     settings: dict = {}
+
+    check_browsing_alignment: bool = False
+    guardrail_llm: LLM | None = None
 
     def __init__(
         self,
@@ -132,6 +140,149 @@ class InvariantAnalyzer(SecurityAnalyzer):
     async def act(self, event: Event) -> None:
         if await self.should_confirm(event):
             await self.confirm(event)
+        if (
+            self.check_browsing_alignment
+            and type(event) is not ChangeAgentStateAction
+            and self.guardrail_llm is not None
+        ):
+            await self.check_usertask()
+            await self.check_fillaction()
+
+    async def check_usertask(self):
+        """Looks at the most recent trace element. If it is a user message, it checks whether the task is appropriate for an AI browsing agent.
+
+        Ensure that the new event is parsed and added to the trace before calling this.
+        """
+        recent_trace_element = self.trace[-1]
+        responses = []
+        if getattr(recent_trace_element, 'role', None) == 'user':
+            messages = []
+            messages.append(
+                Message(
+                    role='system',
+                    content=[TextContent(text='You are a helpful assistant')],
+                )
+            )
+            messages.append(
+                Message(
+                    role='user',
+                    content=[
+                        TextContent(
+                            text='A browsing agent is an AI agent that helps the user to browse the web and automate benign tasks. We need to stop only very harmful and unethical requests. Answer Yes or No. Is it appropriate for an AI browsing agent to help with the following task?: '
+                            + repr(recent_trace_element.content)
+                        )
+                    ],
+                )
+            )
+            assert (
+                self.guardrail_llm is not None
+            ), 'InvariantAnalyzer.guardrail_llm should be initialized before calling check_usertask'
+            response = self.guardrail_llm.completion(
+                messages=self.guardrail_llm.format_messages_for_llm(messages),
+                stop=['.'],
+            )
+            responses.append(response)
+        for response in responses:
+            if 'No' in response['choices'][0]['message']['content']:
+                new_event = action_from_dict(
+                    {
+                        'action': 'change_agent_state',
+                        'args': {
+                            'agent_state': AgentState.ERROR,
+                            'thought': 'It is inappropriate for a browsing agent to comply with this request',
+                        },
+                    }
+                )
+                event_source = EventSource.AGENT
+                await call_sync_from_async(
+                    self.event_stream.add_event, new_event, event_source
+                )
+
+    def parse_browser_action(self, browser_action):
+        assert browser_action[-1] == ')'
+        tree = ast.parse(browser_action, mode='exec')
+        function_calls = []
+
+        for node in tree.body:
+            if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+                call_node = node.value  # This contains the actual function call
+                # Extract function name
+                if isinstance(call_node.func, ast.Name):
+                    func_name = call_node.func.id
+                elif isinstance(call_node.func, ast.Attribute):
+                    func_name = (
+                        f'{ast.unparse(call_node.func.value)}.{call_node.func.attr}'
+                    )
+                else:
+                    func_name = None
+
+                # Extract positional arguments
+                args = [ast.unparse(arg) for arg in call_node.args]
+                function_calls.append((func_name, args))
+            else:
+                raise ValueError('The code does not represent a function call.')
+        return function_calls
+
+    async def check_fillaction(self):
+        """Looks at the most recent trace element. If it is a function call to browse_interactive with "fill(<element>, <content>)" as an argument, it checks whether the content inside fill is harmful.
+
+        Ensure that the new event is parsed and added to the trace before calling this.
+        """
+        recent_trace_element = self.trace[-1]
+        responses = []
+        if (
+            getattr(recent_trace_element, 'type', None) == 'function'
+            and recent_trace_element.function.name == 'browse_interactive'
+        ):
+            function_calls = self.parse_browser_action(
+                recent_trace_element.function.arguments['browser_actions']
+            )
+            for function_call in function_calls:
+                action_name, action_args = function_call
+                if action_name == 'fill':
+                    messages = []
+                    messages.append(
+                        Message(
+                            role='system',
+                            content=[TextContent(text='You are a helpful assistant')],
+                        )
+                    )
+                    messages.append(
+                        Message(
+                            role='user',
+                            content=[
+                                TextContent(
+                                    text='Answer Yes or No. Is this harmful content: '
+                                    + repr(action_args[1])
+                                )
+                            ],
+                        )
+                    )
+                    assert (
+                        self.guardrail_llm is not None
+                    ), 'InvariantAnalyzer.guardrail_llm should be initialized before calling check_fillaction'
+                    response = self.guardrail_llm.completion(
+                        messages=self.guardrail_llm.format_messages_for_llm(messages),
+                        stop=['.'],
+                    )
+                    responses.append(response)
+
+            for response in responses:
+                if 'Yes' in response['choices'][0]['message']['content']:
+                    new_event = action_from_dict(
+                        {
+                            'action': 'change_agent_state',
+                            'args': {
+                                'agent_state': AgentState.ERROR,
+                                'thought': 'It is inappropriate for a browsing agent to fill in harmful content',
+                            },
+                        }
+                    )
+                    event_source = EventSource.AGENT
+                    await call_sync_from_async(
+                        self.event_stream.add_event, new_event, event_source
+                    )
+                    break
 
     async def should_confirm(self, event: Event) -> bool:
         risk = event.security_risk  # type: ignore [attr-defined]
@@ -149,7 +300,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
         )
         # we should confirm only on agent actions
         event_source = event.source if event.source else EventSource.AGENT
-        await call_sync_from_async(self.event_stream.add_event, new_event, event_source)
+        self.event_stream.add_event(new_event, event_source)
 
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         logger.debug('Calling security_risk on InvariantAnalyzer')

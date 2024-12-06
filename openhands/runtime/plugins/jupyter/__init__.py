@@ -8,7 +8,7 @@ from openhands.events.observation import IPythonRunCellObservation
 from openhands.runtime.plugins.jupyter.execute_server import JupyterKernel
 from openhands.runtime.plugins.requirement import Plugin, PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
-from openhands.runtime.utils.shutdown_listener import should_continue
+from openhands.utils.shutdown_listener import should_continue
 
 
 @dataclass

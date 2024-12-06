@@ -36,6 +36,7 @@ class Conversation:
             event_stream=self.event_stream,
             sid=self.sid,
             attach_to_existing=True,
+            headless_mode=False,
         )
 
     async def connect(self):

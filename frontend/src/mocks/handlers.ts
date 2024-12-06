@@ -71,8 +71,6 @@ const openHandsHandlers = [
 export const handlers = [
   ...openHandsHandlers,
   http.get("https://api.github.com/user/repos", async ({ request }) => {
-    if (import.meta.env.MODE !== "test") await delay(3500);
-
     const token = request.headers
       .get("Authorization")
       ?.replace("Bearer", "")
@@ -92,6 +90,9 @@ export const handlers = [
       id: 1,
       login: "octocat",
       avatar_url: "https://avatars.githubusercontent.com/u/583231?v=4",
+      company: "GitHub",
+      email: "placeholder@placeholder.placeholder",
+      name: "monalisa octocat",
     };
 
     return HttpResponse.json(user);

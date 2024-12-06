@@ -78,6 +78,11 @@ const sidebars: SidebarsConfig = {
                 },
                 {
                   type: 'doc',
+                  label: 'LiteLLM Proxy',
+                  id: 'usage/llms/litellm-proxy',
+                },
+                {
+                  type: 'doc',
                   label: 'OpenAI',
                   id: 'usage/llms/openai-llms',
                 },
@@ -94,6 +99,11 @@ const sidebars: SidebarsConfig = {
           type: 'doc',
           label: 'Runtime Configuration',
           id: 'usage/runtimes',
+        },
+        {
+          type: 'doc',
+          label: 'Configuration Options',
+          id: 'usage/configuration-options',
         },
         {
           type: 'doc',

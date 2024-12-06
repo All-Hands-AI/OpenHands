@@ -12,25 +12,20 @@ from litellm import (
     ModelResponse,
 )
 
+from openhands.core.exceptions import FunctionCallNotExistsError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
     AgentFinishAction,
     BrowseInteractiveAction,
+    BrowseURLAction,
     CmdRunAction,
     FileEditAction,
     IPythonRunCellAction,
     MessageAction,
 )
 from openhands.events.tool import ToolCallMetadata
-
-SYSTEM_PROMPT = """You are OpenHands agent, a helpful AI assistant that can interact with a computer to solve tasks.
-<IMPORTANT>
-* If user provides a path, you should NOT assume it's relative to the current working directory. Instead, you should explore the file system to find the file before working on it.
-* When configuring git credentials, use "openhands" as the user.name and "openhands@all-hands.dev" as the user.email by default, unless explicitly instructed otherwise.
-</IMPORTANT>
-"""
 
 _BASH_DESCRIPTION = """Execute a bash command in the terminal.
 * Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`.
@@ -60,9 +55,6 @@ _IPYTHON_DESCRIPTION = """Run a cell of Python code in an IPython environment.
 * The assistant should define variables and import packages before using them.
 * The variable defined in the IPython environment will not be available outside the IPython environment (e.g., in terminal).
 """
-# We are not using agentskills's file_ops for viewing files now because StrReplaceEditorTool already supports viewing files
-# """* Apart from the standard Python library, the assistant can also use the following functions (already imported):
-# {AgentSkillsRequirement.documentation}"""
 
 IPythonTool = ChatCompletionToolParam(
     type='function',
@@ -245,7 +237,7 @@ StrReplaceEditorTool = ChatCompletionToolParam(
                     'type': 'string',
                 },
                 'path': {
-                    'description': 'Absolute path to file or directory, e.g. `/repo/file.py` or `/repo`.',
+                    'description': 'Absolute path to file or directory, e.g. `/workspace/file.py` or `/workspace`.',
                     'type': 'string',
                 },
                 'file_text': {
@@ -275,6 +267,30 @@ StrReplaceEditorTool = ChatCompletionToolParam(
     ),
 )
 
+
+_WEB_DESCRIPTION = """Read (convert to markdown) content from a webpage. You should prefer using the `webpage_read` tool over the `browser` tool, but do use the `browser` tool if you need to interact with a webpage (e.g., click a button, fill out a form, etc.).
+
+You may use the `webpage_read` tool to read content from a webpage, and even search the webpage content using a Google search query (e.g., url=`https://www.google.com/search?q=YOUR_QUERY`).
+"""
+
+WebReadTool = ChatCompletionToolParam(
+    type='function',
+    function=ChatCompletionToolParamFunctionChunk(
+        name='web_read',
+        description=_WEB_DESCRIPTION,
+        parameters={
+            'type': 'object',
+            'properties': {
+                'url': {
+                    'type': 'string',
+                    'description': 'The URL of the webpage to read. You can also use a Google search query here (e.g., `https://www.google.com/search?q=YOUR_QUERY`).',
+                }
+            },
+            'required': ['url'],
+        },
+    ),
+)
+
 # from browsergym/core/action/highlevel.py
 _browser_action_space = HighLevelActionSet(
     subsets=['bid', 'nav'],
@@ -283,7 +299,18 @@ _browser_action_space = HighLevelActionSet(
 )
 
 
-_BROWSER_DESCRIPTION = """Interact with the browser using Python code.
+_BROWSER_DESCRIPTION = """Interact with the browser using Python code. Use it ONLY when you need to interact with a webpage.
+
+See the description of "code" parameter for more details.
+
+Multiple actions can be provided at once, but will be executed sequentially without any feedback from the page.
+More than 2-3 actions usually leads to failure or unexpected behavior. Example:
+fill('a12', 'example with "quotes"')
+click('a51')
+click('48', button='middle', modifiers=['Shift'])
+"""
+
+_BROWSER_TOOL_DESCRIPTION = """
 The following 15 functions are available. Nothing else is supported.
 
 goto(url: str)
@@ -385,20 +412,15 @@ upload_file(bid: str, file: str | list[str])
         upload_file('572', '/home/user/my_receipt.pdf')
 
         upload_file('63', ['/home/bob/Documents/image.jpg', '/home/bob/Documents/file.zip'])
-
-Multiple actions can be provided at once, but will be executed sequentially without any feedback from the page.
-More than 2-3 actions usually leads to failure or unexpected behavior. Example:
-fill('a12', 'example with "quotes"')
-click('a51')
-click('48', button='middle', modifiers=['Shift'])
 """
+
 
 for _, action in _browser_action_space.action_set.items():
     assert (
-        action.signature in _BROWSER_DESCRIPTION
+        action.signature in _BROWSER_TOOL_DESCRIPTION
     ), f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.signature}'
     assert (
-        action.description in _BROWSER_DESCRIPTION
+        action.description in _BROWSER_TOOL_DESCRIPTION
     ), f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.description}'
 
 BrowserTool = ChatCompletionToolParam(
@@ -411,7 +433,10 @@ BrowserTool = ChatCompletionToolParam(
             'properties': {
                 'code': {
                     'type': 'string',
-                    'description': 'The Python code that interacts with the browser.',
+                    'description': (
+                        'The Python code that interacts with the browser.\n'
+                        + _BROWSER_TOOL_DESCRIPTION
+                    ),
                 }
             },
             'required': ['code'],
@@ -484,8 +509,12 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 action = IPythonRunCellAction(code=code, include_extra=False)
             elif tool_call.function.name == 'browser':
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
+            elif tool_call.function.name == 'web_read':
+                action = BrowseURLAction(url=arguments['url'])
             else:
-                raise RuntimeError(f'Unknown tool call: {tool_call.function.name}')
+                raise FunctionCallNotExistsError(
+                    f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
+                )
 
             # We only add thought to the first action
             if i == 0:
@@ -514,6 +543,7 @@ def get_tools(
 ) -> list[ChatCompletionToolParam]:
     tools = [CmdRunTool, FinishTool]
     if codeact_enable_browsing:
+        tools.append(WebReadTool)
         tools.append(BrowserTool)
     if codeact_enable_jupyter:
         tools.append(IPythonTool)

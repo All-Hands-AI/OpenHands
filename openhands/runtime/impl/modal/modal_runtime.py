@@ -77,6 +77,7 @@ class ModalRuntime(EventStreamRuntime):
         env_vars: dict[str, str] | None = None,
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
+        headless_mode: bool = True,
     ):
         assert config.modal_api_token_id, 'Modal API token id is required'
         assert config.modal_api_token_secret, 'Modal API token secret is required'
@@ -124,6 +125,7 @@ class ModalRuntime(EventStreamRuntime):
             env_vars,
             status_callback,
             attach_to_existing,
+            headless_mode,
         )
 
     async def connect(self):
@@ -250,6 +252,7 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
                 self.config.sandbox.user_id,
                 plugin_args,
                 browsergym_args,
+                is_root=not self.config.run_as_openhands,  # is_root=True when running as root
             )
             self.log('debug', f'Starting container with command: {sandbox_start_cmd}')
             self.sandbox = modal.Sandbox.create(

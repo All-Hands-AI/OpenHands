@@ -1,19 +1,24 @@
 import asyncio
 import copy
+import os
 import traceback
 from typing import Callable, ClassVar, Type
 
 import litellm
+from litellm.exceptions import ContextWindowExceededError
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.exceptions import (
+    FunctionCallNotExistsError,
+    FunctionCallValidationError,
     LLMMalformedActionError,
     LLMNoActionError,
     LLMResponseError,
 )
+from openhands.core.logger import LOG_ALL_EVENTS
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
@@ -41,7 +46,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
-from openhands.runtime.utils.shutdown_listener import should_continue
+from openhands.utils.shutdown_listener import should_continue
 
 # note: RESUME is only available on web GUI
 TRAFFIC_CONTROL_REMINDER = (
@@ -62,6 +67,7 @@ class AgentController:
     parent: 'AgentController | None' = None
     delegate: 'AgentController | None' = None
     _pending_action: Action | None = None
+    _closed: bool = False
     filter_out: ClassVar[tuple[type[Event], ...]] = (
         NullAction,
         NullObservation,
@@ -96,9 +102,11 @@ class AgentController:
             agent_configs: A dictionary mapping agent names to agent configurations in the case that
                 we delegate to a different agent.
             sid: The session ID of the agent.
+            confirmation_mode: Whether to enable confirmation mode for agent actions.
             initial_state: The initial state of the controller.
             is_delegate: Whether this controller is a delegate.
             headless_mode: Whether the agent is run in headless mode.
+            status_callback: Optional callback function to handle status updates.
         """
         self._step_lock = asyncio.Lock()
         self.id = sid
@@ -127,10 +135,11 @@ class AgentController:
         self._stuck_detector = StuckDetector(self.state)
         self.status_callback = status_callback
 
-    async def close(self):
+    async def close(self) -> None:
         """Closes the agent controller, canceling any ongoing tasks and unsubscribing from the event stream.
 
-        Note that it's fairly important that this closes properly, otherwise the state is incomplete."""
+        Note that it's fairly important that this closes properly, otherwise the state is incomplete.
+        """
         await self.set_agent_state_to(AgentState.STOPPED)
 
         # we made history, now is the time to rewrite it!
@@ -157,12 +166,15 @@ class AgentController:
 
         # unsubscribe from the event stream
         self.event_stream.unsubscribe(EventStreamSubscriber.AGENT_CONTROLLER, self.id)
+        self._closed = True
 
-    def log(self, level: str, message: str, extra: dict | None = None):
+    def log(self, level: str, message: str, extra: dict | None = None) -> None:
         """Logs a message to the agent controller's logger.
 
         Args:
+            level (str): The logging level to use (e.g., 'info', 'debug', 'error').
             message (str): The message to log.
+            extra (dict | None, optional): Additional fields to include in the log. Defaults to None.
         """
         message = f'[Agent Controller {self.id}] {message}'
         getattr(logger, level)(message, extra=extra, stacklevel=2)
@@ -188,9 +200,12 @@ class AgentController:
 
     async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
-
         self.log('info', 'Starting step loop...')
-        while should_continue():
+        while True:
+            if not self._is_awaiting_observation() and not should_continue():
+                break
+            if self._closed:
+                break
             try:
                 await self._step()
             except asyncio.CancelledError:
@@ -203,7 +218,7 @@ class AgentController:
 
             await asyncio.sleep(0.1)
 
-    async def on_event(self, event: Event):
+    async def on_event(self, event: Event) -> None:
         """Callback from the event stream. Notifies the controller of incoming events.
 
         Args:
@@ -221,7 +236,7 @@ class AgentController:
         elif isinstance(event, Observation):
             await self._handle_observation(event)
 
-    async def _handle_action(self, action: Action):
+    async def _handle_action(self, action: Action) -> None:
         """Handles actions from the event stream.
 
         Args:
@@ -248,7 +263,7 @@ class AgentController:
             self.state.metrics.merge(self.state.local_metrics)
             await self.set_agent_state_to(AgentState.REJECTED)
 
-    async def _handle_observation(self, observation: Observation):
+    async def _handle_observation(self, observation: Observation) -> None:
         """Handles observation from the event stream.
 
         Args:
@@ -259,12 +274,18 @@ class AgentController:
             observation_to_print.content = truncate_content(
                 observation_to_print.content, self.agent.llm.config.max_message_chars
             )
-        self.log('debug', str(observation_to_print), extra={'msg_type': 'OBSERVATION'})
+        # Use info level if LOG_ALL_EVENTS is set
+        log_level = 'info' if os.getenv('LOG_ALL_EVENTS') in ('true', '1') else 'debug'
+        self.log(
+            log_level, str(observation_to_print), extra={'msg_type': 'OBSERVATION'}
+        )
 
         if observation.llm_metrics is not None:
             self.agent.llm.metrics.merge(observation.llm_metrics)
 
         if self._pending_action and self._pending_action.id == observation.cause:
+            if self.state.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
+                return
             self._pending_action = None
             if self.state.agent_state == AgentState.USER_CONFIRMED:
                 await self.set_agent_state_to(AgentState.RUNNING)
@@ -275,15 +296,19 @@ class AgentController:
             if self.state.agent_state == AgentState.ERROR:
                 self.state.metrics.merge(self.state.local_metrics)
 
-    async def _handle_message_action(self, action: MessageAction):
+    async def _handle_message_action(self, action: MessageAction) -> None:
         """Handles message actions from the event stream.
 
         Args:
             action (MessageAction): The message action to handle.
         """
         if action.source == EventSource.USER:
+            # Use info level if LOG_ALL_EVENTS is set
+            log_level = (
+                'info' if os.getenv('LOG_ALL_EVENTS') in ('true', '1') else 'debug'
+            )
             self.log(
-                'debug',
+                log_level,
                 str(action),
                 extra={'msg_type': 'ACTION', 'event_source': EventSource.USER},
             )
@@ -292,13 +317,12 @@ class AgentController:
         elif action.source == EventSource.AGENT and action.wait_for_response:
             await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
-    def reset_task(self):
+    def reset_task(self) -> None:
         """Resets the agent's task."""
-
         self.almost_stuck = 0
         self.agent.reset()
 
-    async def set_agent_state_to(self, new_state: AgentState):
+    async def set_agent_state_to(self, new_state: AgentState) -> None:
         """Updates the agent's state and handles side effects. Can emit events to the event stream.
 
         Args:
@@ -347,6 +371,7 @@ class AgentController:
             else:
                 confirmation_state = ActionConfirmationStatus.REJECTED
             self._pending_action.confirmation_state = confirmation_state  # type: ignore[attr-defined]
+            self._pending_action._id = None  # type: ignore[attr-defined]
             self.event_stream.add_event(self._pending_action, EventSource.AGENT)
 
         self.state.agent_state = new_state
@@ -359,7 +384,7 @@ class AgentController:
             await self.set_agent_state_to(self.state.resume_state)
             self.state.resume_state = None
 
-    def get_agent_state(self):
+    def get_agent_state(self) -> AgentState:
         """Returns the current state of the agent.
 
         Returns:
@@ -367,7 +392,7 @@ class AgentController:
         """
         return self.state.agent_state
 
-    async def start_delegate(self, action: AgentDelegateAction):
+    async def start_delegate(self, action: AgentDelegateAction) -> None:
         """Start a delegate agent to handle a subtask.
 
         OpenHands is a multi-agentic system. A `task` is a conversation between
@@ -468,13 +493,28 @@ class AgentController:
             action = self.agent.step(self.state)
             if action is None:
                 raise LLMNoActionError('No action was returned')
-        except (LLMMalformedActionError, LLMNoActionError, LLMResponseError) as e:
+        except (
+            LLMMalformedActionError,
+            LLMNoActionError,
+            LLMResponseError,
+            FunctionCallValidationError,
+            FunctionCallNotExistsError,
+        ) as e:
             self.event_stream.add_event(
                 ErrorObservation(
                     content=str(e),
                 ),
                 EventSource.AGENT,
             )
+            return
+        except ContextWindowExceededError:
+            # When context window is exceeded, keep roughly half of agent interactions
+            self.state.history = self._apply_conversation_window(self.state.history)
+
+            # Save the ID of the first event in our truncated history for future reloading
+            if self.state.history:
+                self.state.start_id = self.state.history[0].id
+            # Don't add error event - let the agent retry with reduced context
             return
 
         if action.runnable:
@@ -497,9 +537,10 @@ class AgentController:
 
         await self.update_state_after_step()
 
-        self.log('debug', str(action), extra={'msg_type': 'ACTION'})
+        log_level = 'info' if LOG_ALL_EVENTS else 'debug'
+        self.log(log_level, str(action), extra={'msg_type': 'ACTION'})
 
-    async def _delegate_step(self):
+    async def _delegate_step(self) -> None:
         """Executes a single step of the delegate agent."""
         await self.delegate._step()  # type: ignore[union-attr]
         assert self.delegate is not None
@@ -563,7 +604,7 @@ class AgentController:
 
     async def _handle_traffic_control(
         self, limit_type: str, current_value: float, max_value: float
-    ):
+    ) -> bool:
         """Handles agent state after hitting the traffic control limit.
 
         Args:
@@ -595,7 +636,7 @@ class AgentController:
             stop_step = True
         return stop_step
 
-    def get_state(self):
+    def get_state(self) -> State:
         """Returns the current running state object.
 
         Returns:
@@ -608,7 +649,7 @@ class AgentController:
         state: State | None,
         max_iterations: int,
         confirmation_mode: bool = False,
-    ):
+    ) -> None:
         """Sets the initial state for the agent, either from the previous session, or from a parent agent, or by creating a new one.
 
         Args:
@@ -639,7 +680,7 @@ class AgentController:
 
             self._init_history()
 
-    def _init_history(self):
+    def _init_history(self) -> None:
         """Initializes the agent's history from the event stream.
 
         The history is a list of events that:
@@ -648,8 +689,13 @@ class AgentController:
         - For delegate events (between AgentDelegateAction and AgentDelegateObservation):
             - Excludes all events between the action and observation
             - Includes the delegate action and observation themselves
-        """
 
+        The history is loaded in two parts if truncation_id is set:
+        1. First user message from start_id onwards
+        2. Rest of history from truncation_id to the end
+
+        Otherwise loads normally from start_id.
+        """
         # define range of events to fetch
         # delegates start with a start_id and initially won't find any events
         # otherwise we're restoring a previous session
@@ -663,14 +709,39 @@ class AgentController:
         # sanity check
         if start_id > end_id + 1:
             self.log(
-                'debug',
+                'warning',
                 f'start_id {start_id} is greater than end_id + 1 ({end_id + 1}). History will be empty.',
             )
             self.state.history = []
             return
 
-        # Get all events, filtering out backend events and hidden events
-        events = list(
+        events: list[Event] = []
+
+        # If we have a truncation point, get first user message and then rest of history
+        if hasattr(self.state, 'truncation_id') and self.state.truncation_id > 0:
+            # Find first user message from stream
+            first_user_msg = next(
+                (
+                    e
+                    for e in self.event_stream.get_events(
+                        start_id=start_id,
+                        end_id=end_id,
+                        reverse=False,
+                        filter_out_type=self.filter_out,
+                        filter_hidden=True,
+                    )
+                    if isinstance(e, MessageAction) and e.source == EventSource.USER
+                ),
+                None,
+            )
+            if first_user_msg:
+                events.append(first_user_msg)
+
+            # the rest of the events are from the truncation point
+            start_id = self.state.truncation_id
+
+        # Get rest of history
+        events_to_add = list(
             self.event_stream.get_events(
                 start_id=start_id,
                 end_id=end_id,
@@ -679,6 +750,7 @@ class AgentController:
                 filter_hidden=True,
             )
         )
+        events.extend(events_to_add)
 
         # Find all delegate action/observation pairs
         delegate_ranges: list[tuple[int, int]] = []
@@ -694,7 +766,7 @@ class AgentController:
                 # Match with most recent unmatched delegate action
                 if not delegate_action_ids:
                     self.log(
-                        'error',
+                        'warning',
                         f'Found AgentDelegateObservation without matching action at id={event.id}',
                     )
                     continue
@@ -733,7 +805,93 @@ class AgentController:
         # make sure history is in sync
         self.state.start_id = start_id
 
-    def _is_stuck(self):
+    def _apply_conversation_window(self, events: list[Event]) -> list[Event]:
+        """Cuts history roughly in half when context window is exceeded, preserving action-observation pairs
+        and ensuring the first user message is always included.
+
+        The algorithm:
+        1. Cut history in half
+        2. Check first event in new history:
+           - If Observation: find and include its Action
+           - If MessageAction: ensure its related Action-Observation pair isn't split
+        3. Always include the first user message
+
+        Args:
+            events: List of events to filter
+
+        Returns:
+            Filtered list of events keeping newest half while preserving pairs
+        """
+        if not events:
+            return events
+
+        # Find first user message - we'll need to ensure it's included
+        first_user_msg = next(
+            (
+                e
+                for e in events
+                if isinstance(e, MessageAction) and e.source == EventSource.USER
+            ),
+            None,
+        )
+
+        # cut in half
+        mid_point = max(1, len(events) // 2)
+        kept_events = events[mid_point:]
+
+        # Handle first event in truncated history
+        if kept_events:
+            i = 0
+            while i < len(kept_events):
+                first_event = kept_events[i]
+                if isinstance(first_event, Observation) and first_event.cause:
+                    # Find its action and include it
+                    matching_action = next(
+                        (
+                            e
+                            for e in reversed(events[:mid_point])
+                            if isinstance(e, Action) and e.id == first_event.cause
+                        ),
+                        None,
+                    )
+                    if matching_action:
+                        kept_events = [matching_action] + kept_events
+                    else:
+                        self.log(
+                            'warning',
+                            f'Found Observation without matching Action at id={first_event.id}',
+                        )
+                        # drop this observation
+                        kept_events = kept_events[1:]
+                    break
+
+                elif isinstance(first_event, MessageAction) or (
+                    isinstance(first_event, Action)
+                    and first_event.source == EventSource.USER
+                ):
+                    # if it's a message action or a user action, keep it and continue to find the next event
+                    i += 1
+                    continue
+
+                else:
+                    # if it's an action with source == EventSource.AGENT, we're good
+                    break
+
+        # Save where to continue from in next reload
+        if kept_events:
+            self.state.truncation_id = kept_events[0].id
+
+        # Ensure first user message is included
+        if first_user_msg and first_user_msg not in kept_events:
+            kept_events = [first_user_msg] + kept_events
+
+        # start_id points to first user message
+        if first_user_msg:
+            self.state.start_id = first_user_msg.id
+
+        return kept_events
+
+    def _is_stuck(self) -> bool:
         """Checks if the agent or its delegate is stuck in a loop.
 
         Returns:
@@ -752,3 +910,11 @@ class AgentController:
             f'state={self.state!r}, agent_task={self.agent_task!r}, '
             f'delegate={self.delegate!r}, _pending_action={self._pending_action!r})'
         )
+
+    def _is_awaiting_observation(self):
+        events = self.event_stream.get_events(reverse=True)
+        for event in events:
+            if isinstance(event, AgentStateChangedObservation):
+                result = event.agent_state == AgentState.RUNNING
+                return result
+        return False

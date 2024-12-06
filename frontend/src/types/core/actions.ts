@@ -1,10 +1,11 @@
 import { OpenHandsActionEvent } from "./base";
+import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
 
 export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
   source: "user";
   args: {
     content: string;
-    images_urls: string[];
+    image_urls: string[];
   };
 }
 
@@ -12,6 +13,7 @@ export interface CommandAction extends OpenHandsActionEvent<"run"> {
   source: "agent";
   args: {
     command: string;
+    security_risk: ActionSecurityRisk;
     confirmation_state: "confirmed" | "rejected" | "awaiting_confirmation";
     thought: string;
     hidden?: boolean;
@@ -23,7 +25,7 @@ export interface AssistantMessageAction
   source: "agent";
   args: {
     content: string;
-    images_urls: string[] | null;
+    image_urls: string[] | null;
     wait_for_response: boolean;
   };
 }
@@ -32,6 +34,7 @@ export interface IPythonAction extends OpenHandsActionEvent<"run_ipython"> {
   source: "agent";
   args: {
     code: string;
+    security_risk: ActionSecurityRisk;
     confirmation_state: "confirmed" | "rejected" | "awaiting_confirmation";
     kernel_init_code: string;
     thought: string;
@@ -96,6 +99,23 @@ export interface ModifyTaskAction extends OpenHandsActionEvent<"modify_task"> {
   };
 }
 
+export interface FileReadAction extends OpenHandsActionEvent<"read"> {
+  source: "agent";
+  args: {
+    path: string;
+    thought: string;
+  };
+}
+
+export interface FileWriteAction extends OpenHandsActionEvent<"write"> {
+  source: "agent";
+  args: {
+    path: string;
+    content: string;
+    thought: string;
+  };
+}
+
 export interface RejectAction extends OpenHandsActionEvent<"reject"> {
   source: "agent";
   args: {
@@ -112,6 +132,8 @@ export type OpenHandsAction =
   | DelegateAction
   | BrowseAction
   | BrowseInteractiveAction
+  | FileReadAction
+  | FileWriteAction
   | AddTaskAction
   | ModifyTaskAction
   | RejectAction;

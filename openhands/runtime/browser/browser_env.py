@@ -16,7 +16,7 @@ from PIL import Image
 
 from openhands.core.exceptions import BrowserInitException
 from openhands.core.logger import openhands_logger as logger
-from openhands.runtime.utils.shutdown_listener import should_continue, should_exit
+from openhands.utils.shutdown_listener import should_continue, should_exit
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 BROWSER_EVAL_GET_GOAL_ACTION = 'GET_EVAL_GOAL'

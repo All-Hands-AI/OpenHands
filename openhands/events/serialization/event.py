@@ -101,7 +101,7 @@ def event_to_memory(event: 'Event', max_message_chars: int) -> dict:
     d.pop('cause', None)
     d.pop('timestamp', None)
     d.pop('message', None)
-    d.pop('images_urls', None)
+    d.pop('image_urls', None)
 
     # runnable actions have some extra fields used in the BE/FE, which should not be sent to the LLM
     if 'args' in d:

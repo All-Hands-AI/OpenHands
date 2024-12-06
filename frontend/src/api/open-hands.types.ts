@@ -43,5 +43,16 @@ export interface Feedback {
 
 export interface GetConfigResponse {
   APP_MODE: "saas" | "oss";
-  GITHUB_CLIENT_ID: string | null;
+  GITHUB_CLIENT_ID: string;
+  POSTHOG_CLIENT_KEY: string;
+}
+
+export interface GetVSCodeUrlResponse {
+  vscode_url: string | null;
+  error?: string;
+}
+
+export interface AuthenticateResponse {
+  message?: string;
+  error?: string;
 }

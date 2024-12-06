@@ -64,7 +64,7 @@ def get_config(
             timeout=300,
             api_key=os.environ.get('ALLHANDS_API_KEY', None),
             remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
-            keep_remote_runtime_alive=False,
+            keep_runtime_alive=False,
         ),
         # do not mount workspace
         workspace_base=None,
@@ -137,7 +137,7 @@ def process_instance(
     else:
         logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
-    runtime = create_runtime(config)
+    runtime = create_runtime(config, headless_mode=False)
     call_async_from_sync(runtime.connect)
 
     try:
