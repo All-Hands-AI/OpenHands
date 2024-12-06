@@ -1,7 +1,7 @@
 import { delay, http, HttpResponse } from "msw";
 import { Conversation } from "#/api/open-hands.types";
 
-const projects: Conversation[] = [
+const conversations: Conversation[] = [
   {
     id: "1",
     name: "My New Project",
@@ -27,8 +27,8 @@ const projects: Conversation[] = [
   },
 ];
 
-const PROJECTS = new Map<string, Conversation>(
-  projects.map((project) => [project.id, project]),
+const CONVERSATIONS = new Map<string, Conversation>(
+  conversations.map((conversation) => [conversation.id, conversation]),
 );
 
 const openHandsHandlers = [
@@ -146,40 +146,46 @@ export const handlers = [
   ),
   http.get("/config.json", () => HttpResponse.json({ APP_MODE: "oss" })),
 
-  http.get("/api/projects", async () =>
-    HttpResponse.json(Array.from(PROJECTS.values())),
+  http.get("/api/conversations", async () =>
+    HttpResponse.json(Array.from(CONVERSATIONS.values())),
   ),
 
-  http.delete("/api/projects/:projectId", async ({ params }) => {
-    const { projectId } = params;
+  http.delete("/api/conversations/:conversationId", async ({ params }) => {
+    const { conversationId } = params;
 
-    if (typeof projectId === "string") {
-      PROJECTS.delete(projectId);
+    if (typeof conversationId === "string") {
+      CONVERSATIONS.delete(conversationId);
       return HttpResponse.json(null, { status: 200 });
     }
 
     return HttpResponse.json(null, { status: 404 });
   }),
 
-  http.put("/api/projects/:projectId", async ({ params, request }) => {
-    const { projectId } = params;
+  http.put(
+    "/api/conversations/:conversationId",
+    async ({ params, request }) => {
+      const { conversationId } = params;
 
-    if (typeof projectId === "string") {
-      const project = PROJECTS.get(projectId);
+      if (typeof conversationId === "string") {
+        const conversation = CONVERSATIONS.get(conversationId);
 
-      if (project) {
-        const body = await request.json();
-        if (typeof body === "object" && body?.name) {
-          PROJECTS.set(projectId, { ...project, name: body.name });
-          return HttpResponse.json(null, { status: 200 });
+        if (conversation) {
+          const body = await request.json();
+          if (typeof body === "object" && body?.name) {
+            CONVERSATIONS.set(conversationId, {
+              ...conversation,
+              name: body.name,
+            });
+            return HttpResponse.json(null, { status: 200 });
+          }
         }
       }
-    }
 
-    return HttpResponse.json(null, { status: 404 });
-  }),
+      return HttpResponse.json(null, { status: 404 });
+    },
+  ),
 
-  http.post("/api/projects", () => {
+  http.post("/api/conversations", () => {
     const conversation: Conversation = {
       id: (Math.random() * 100).toString(),
       name: "New Conversation",
@@ -188,21 +194,24 @@ export const handlers = [
       state: "warm",
     };
 
-    PROJECTS.set(conversation.id, conversation);
+    CONVERSATIONS.set(conversation.id, conversation);
     return HttpResponse.json(conversation, { status: 201 });
   }),
 
-  http.get("/api/projects/:projectId/permissions", async ({ params }) => {
-    const { projectId } = params;
+  http.get(
+    "/api/conversations/:conversationId/permissions",
+    async ({ params }) => {
+      const { conversationId } = params;
 
-    if (typeof projectId === "string") {
-      const project = PROJECTS.get(projectId);
+      if (typeof conversationId === "string") {
+        const project = CONVERSATIONS.get(conversationId);
 
-      if (project) {
-        return HttpResponse.json(["write:chat"], { status: 200 });
+        if (project) {
+          return HttpResponse.json(["write:chat"], { status: 200 });
+        }
       }
-    }
 
-    return HttpResponse.json(null, { status: 401 });
-  }),
+      return HttpResponse.json(null, { status: 401 });
+    },
+  ),
 ];

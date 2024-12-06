@@ -182,23 +182,23 @@ class OpenHands {
   }
 
   static async getUserConversations(): Promise<Conversation[]> {
-    const { data } = await openHands.get<Conversation[]>("/api/projects");
+    const { data } = await openHands.get<Conversation[]>("/api/conversations");
     return data;
   }
 
-  static async deleteUserConversation(projectId: string): Promise<void> {
-    await openHands.delete(`/api/projects/${projectId}`);
+  static async deleteUserConversation(conversationId: string): Promise<void> {
+    await openHands.delete(`/api/conversations/${conversationId}`);
   }
 
   static async updateUserConversation(
-    projectId: string,
-    project: Partial<Omit<Conversation, "id">>,
+    conversationId: string,
+    conversation: Partial<Omit<Conversation, "id">>,
   ): Promise<void> {
-    await openHands.put(`/api/projects/${projectId}`, project);
+    await openHands.put(`/api/conversations/${conversationId}`, conversation);
   }
 
   static async createConversation(): Promise<Conversation> {
-    const { data } = await openHands.post<Conversation>("/api/projects");
+    const { data } = await openHands.post<Conversation>("/api/conversations");
     return data;
   }
 
@@ -206,7 +206,7 @@ class OpenHands {
     conversationId: string,
   ): Promise<string[]> {
     const { data } = await openHands.get<string[]>(
-      `/api/projects/${conversationId}/permissions`,
+      `/api/conversations/${conversationId}/permissions`,
     );
     return data;
   }

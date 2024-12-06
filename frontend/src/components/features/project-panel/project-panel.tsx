@@ -1,12 +1,12 @@
 import React from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router";
 import { ProjectCard } from "./project-card";
-import { useUserProjects } from "#/hooks/query/use-user-projects";
-import { useDeleteProject } from "#/hooks/mutation/use-delete-project";
+import { useUserConversations } from "#/hooks/query/use-user-conversations";
+import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
 import { ConfirmDeleteModal } from "./confirm-delete-modal";
 import { NewProjectButton } from "./new-project-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import { useUpdateProject } from "#/hooks/mutation/use-update-project";
+import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
 import { useEndSession } from "#/hooks/use-end-session";
 import { ExitProjectModal } from "./exit-project-modal";
 
@@ -25,43 +25,43 @@ export function ProjectPanel({ onClose }: ProjectPanelProps) {
     React.useState(false);
   const [confirmExitProjectModalVisible, setConfirmExitProjectModalVisible] =
     React.useState(false);
-  const [selectedProjectId, setSelectedProjectId] = React.useState<
+  const [selectedConversationId, setSelectedConversationId] = React.useState<
     string | null
   >(null);
 
-  const { data: projects, isFetching, error } = useUserProjects();
+  const { data: conversations, isFetching, error } = useUserConversations();
 
-  const { mutate: deleteProject } = useDeleteProject();
-  const { mutate: updateProject } = useUpdateProject();
+  const { mutate: deleteConversation } = useDeleteConversation();
+  const { mutate: updateConversation } = useUpdateConversation();
 
-  const handleDeleteProject = (projectId: string) => {
+  const handleDeleteProject = (conversationId: string) => {
     setConfirmDeleteModalVisible(true);
-    setSelectedProjectId(projectId);
+    setSelectedConversationId(conversationId);
   };
 
   const handleConfirmDelete = () => {
-    if (selectedProjectId) {
-      deleteProject({ projectId: selectedProjectId });
+    if (selectedConversationId) {
+      deleteConversation({ conversationId: selectedConversationId });
       setConfirmDeleteModalVisible(false);
 
       const cid = searchParams.get("cid");
-      if (cid === selectedProjectId) {
+      if (cid === selectedConversationId) {
         endSession();
       }
     }
   };
 
   const handleChangeTitle = (
-    projectId: string,
+    conversationId: string,
     oldTitle: string,
     newTitle: string,
   ) => {
     if (oldTitle !== newTitle)
-      updateProject({ id: projectId, project: { name: newTitle } });
+      updateConversation({ id: conversationId, project: { name: newTitle } });
   };
 
-  const handleClickCard = (projectId: string) => {
-    navigate(`/conversation?cid=${projectId}`);
+  const handleClickCard = (conversationId: string) => {
+    navigate(`/conversation?cid=${conversationId}`);
     onClose();
   };
 
@@ -83,12 +83,12 @@ export function ProjectPanel({ onClose }: ProjectPanelProps) {
           <p className="text-danger">{error.message}</p>
         </div>
       )}
-      {projects?.length === 0 && (
+      {conversations?.length === 0 && (
         <div className="flex flex-col items-center justify-center h-full">
           <p className="text-neutral-400">No projects found</p>
         </div>
       )}
-      {projects?.map((project) => (
+      {conversations?.map((project) => (
         <ProjectCard
           key={project.id}
           onClick={() => handleClickCard(project.id)}
