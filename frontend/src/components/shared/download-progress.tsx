@@ -1,50 +1,24 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { downloadFiles } from "#/utils/download-files";
+import { useRef } from "react";
+
+export interface DownloadProgress {
+  filesTotal: number;
+  filesDownloaded: number;
+  currentFile: string;
+  totalBytesDownloaded: number;
+  bytesDownloadedPerSecond: number;
+}
 
 interface DownloadProgressProps {
-  initialPath?: string;
+  progress: DownloadProgress;
+  onCancel: () => void;
   onClose: () => void;
 }
 
 export function DownloadProgress({
-  initialPath,
+  progress,
+  onCancel,
   onClose,
 }: DownloadProgressProps) {
-  console.log('progress');
-  const [progress, setProgress] = useState({
-    filesTotal: 0,
-    filesDownloaded: 0,
-    currentFile: "",
-    totalBytesDownloaded: 0,
-    bytesDownloadedPerSecond: 0,
-  });
-
-  const abortController = useRef(new AbortController());
-
-  const handleDownload = useCallback(async () => {
-    console.log('downloading');
-    try {
-      await downloadFiles(initialPath, {
-        onProgress: setProgress,
-        signal: abortController.current.signal,
-      });
-      onClose();
-    } catch (error) {
-      console.log('error', error);
-      if (error instanceof Error && error.message === "Download cancelled") {
-        onClose();
-      } else {
-        // Let the error propagate to the parent component
-        throw error;
-      }
-    }
-  }, [initialPath, onClose]);
-
-  useEffect(() => {
-    handleDownload();
-    return () => abortController.current.abort();
-  }, [handleDownload]);
-
   const formatBytes = (bytes: number) => {
     const units = ["B", "KB", "MB", "GB"];
     let size = bytes;
@@ -87,7 +61,7 @@ export function DownloadProgress({
         <div className="mt-4 flex justify-end">
           <button
             type="button"
-            onClick={() => abortController.current.abort()}
+            onClick={onCancel}
             className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
           >
             Cancel
