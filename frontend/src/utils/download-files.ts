@@ -73,6 +73,11 @@ async function getAllFiles(
 
   const filePromises = entries.map((entry) => processEntry(entry));
   const fileArrays = await Promise.all(filePromises);
+  
+  // Signal that file discovery is complete
+  progress.isDiscoveringFiles = false;
+  options?.onProgress?.({ ...progress });
+  
   return fileArrays.flat();
 }
 
@@ -95,7 +100,8 @@ async function processBatch(
     try {
       const newProgress = {
         ...progress,
-        currentFile: path
+        currentFile: path,
+        isDiscoveringFiles: false
       };
       options?.onProgress?.(newProgress);
 
@@ -125,7 +131,8 @@ async function processBatch(
         totalBytesDownloaded: newProgress.totalBytesDownloaded + contentSize,
         bytesDownloadedPerSecond:
           (newProgress.totalBytesDownloaded + contentSize) /
-          ((Date.now() - startTime) / 1000)
+          ((Date.now() - startTime) / 1000),
+        isDiscoveringFiles: false
       };
       Object.assign(progress, updatedProgress);
       options?.onProgress?.(updatedProgress);
