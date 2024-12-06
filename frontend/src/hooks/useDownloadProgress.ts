@@ -16,8 +16,6 @@ export function useDownloadProgress(initialPath: string | undefined, onClose: ()
   const abortController = useRef(new AbortController());
 
   const startDownload = useCallback(async () => {
-    if (!initialPath) return;
-
     try {
       await downloadFiles(initialPath, {
         onProgress: setProgress,
