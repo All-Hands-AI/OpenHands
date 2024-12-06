@@ -14,6 +14,7 @@ from evaluation.utils.shared import (
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
+    update_llm_config_for_completions_logging,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -30,11 +31,11 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.observation import CmdOutputObservation
+from openhands.runtime.base import Runtime
 from openhands.runtime.browser.browser_env import (
     BROWSER_EVAL_GET_GOAL_ACTION,
     BROWSER_EVAL_GET_REWARDS_ACTION,
 )
-from openhands.runtime.runtime import Runtime
 
 SUPPORTED_AGENT_CLS = {'VisualBrowsingAgent'}
 
@@ -54,7 +55,7 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='eventstream',
+        runtime=os.environ.get('RUNTIME', 'eventstream'),
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
             base_container_image='python:3.12-bookworm',
@@ -75,12 +76,20 @@ def get_config(
                 'VWA_WIKIPEDIA': f'{base_url}:8888',
                 'VWA_HOMEPAGE': f'{base_url}:4399',
             },
+            remote_runtime_init_timeout=1800,
+            keep_runtime_alive=False,
+            timeout=120,
         ),
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
+        debug=True,
     )
-    config.set_llm_config(metadata.llm_config)
+    config.set_llm_config(
+        update_llm_config_for_completions_logging(
+            metadata.llm_config, metadata.eval_output_dir, env_id.split('/')[-1]
+        )
+    )
     return config
 
 
