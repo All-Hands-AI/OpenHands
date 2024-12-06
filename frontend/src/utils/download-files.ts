@@ -158,17 +158,6 @@ export async function downloadFiles(
   };
 
   try {
-    // First, recursively get all files
-    console.log('init path', initialPath);
-    const files = await getAllFiles(initialPath || "", progress, options);
-    console.log('files', files);
-
-    // Set isDiscoveringFiles to false now that we have the full list
-    options?.onProgress?.({
-      ...progress,
-      isDiscoveringFiles: false,
-    });
-
     // Check if File System Access API is supported
     if (!isFileSystemAccessSupported()) {
       throw new Error(
@@ -176,7 +165,7 @@ export async function downloadFiles(
       );
     }
 
-    // Show directory picker
+    // Show directory picker first
     let directoryHandle: FileSystemDirectoryHandle;
     try {
       directoryHandle = await window.showDirectoryPicker();
@@ -187,6 +176,17 @@ export async function downloadFiles(
       }
       throw new Error("Failed to select download location. Please try again.");
     }
+
+    // Then recursively get all files
+    console.log('init path', initialPath);
+    const files = await getAllFiles(initialPath || "", progress, options);
+    console.log('files', files);
+
+    // Set isDiscoveringFiles to false now that we have the full list
+    options?.onProgress?.({
+      ...progress,
+      isDiscoveringFiles: false,
+    });
 
     // Process files in parallel batches to avoid overwhelming the browser
     const BATCH_SIZE = 5;
@@ -207,7 +207,16 @@ export async function downloadFiles(
     if (error instanceof Error && error.message === "Download cancelled") {
       throw error;
     }
-    // Re-throw with a more descriptive message
+    // Re-throw the error as is if it's already a user-friendly message
+    if (error instanceof Error && (
+      error.message.includes("browser doesn't support") ||
+      error.message.includes("Failed to select") ||
+      error.message === "Download cancelled"
+    )) {
+      throw error;
+    }
+    
+    // Otherwise, wrap it with a generic message
     throw new Error(
       `Failed to download files: ${error instanceof Error ? error.message : String(error)}`,
     );
