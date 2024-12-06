@@ -93,11 +93,8 @@ async function processBatch(
   // Process files in the batch in parallel
   const batchPromises = batch.map(async (path) => {
     try {
-      const newProgress = {
-        ...progress,
-        currentFile: path,
-      };
-      options?.onProgress?.(newProgress);
+      progress.currentFile = path;
+      options?.onProgress?.({ ...progress });
 
       const content = await OpenHands.getFile(path);
 
@@ -119,15 +116,12 @@ async function processBatch(
 
       // Update progress
       const contentSize = new Blob([content]).size;
-      const newProgressWithStats = {
-        ...progress,
-        filesDownloaded: progress.filesDownloaded + 1,
-        totalBytesDownloaded: progress.totalBytesDownloaded + contentSize,
-      };
-      newProgressWithStats.bytesDownloadedPerSecond =
-        newProgressWithStats.totalBytesDownloaded /
+      progress.filesDownloaded += 1;
+      progress.totalBytesDownloaded += contentSize;
+      progress.bytesDownloadedPerSecond =
+        progress.totalBytesDownloaded /
         ((Date.now() - startTime) / 1000);
-      options?.onProgress?.(newProgressWithStats);
+      options?.onProgress?.({ ...progress });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('User activation is required')) {
