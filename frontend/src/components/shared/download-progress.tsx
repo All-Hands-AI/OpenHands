@@ -6,6 +6,7 @@ export interface DownloadProgress {
   currentFile: string;
   totalBytesDownloaded: number;
   bytesDownloadedPerSecond: number;
+  isDiscoveringFiles: boolean;
 }
 
 interface DownloadProgressProps {
@@ -34,28 +35,40 @@ export function DownloadProgress({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
       <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
         <div className="mb-4">
-          <h3 className="text-lg font-semibold mb-2">Downloading Files</h3>
+          <h3 className="text-lg font-semibold mb-2">
+            {progress.isDiscoveringFiles ? "Preparing Download..." : "Downloading Files"}
+          </h3>
           <p className="text-sm text-gray-600 truncate">
-            {progress.currentFile}
+            {progress.isDiscoveringFiles
+              ? `Found ${progress.filesTotal} files...`
+              : progress.currentFile}
           </p>
         </div>
 
         <div className="mb-4">
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-blue-500 transition-all duration-300"
-              style={{
-                width: `${(progress.filesDownloaded / progress.filesTotal) * 100}%`,
-              }}
-            />
+            {progress.isDiscoveringFiles ? (
+              <div className="h-full bg-blue-500 animate-pulse" style={{ width: "100%" }} />
+            ) : (
+              <div
+                className="h-full bg-blue-500 transition-all duration-300"
+                style={{
+                  width: `${(progress.filesDownloaded / progress.filesTotal) * 100}%`,
+                }}
+              />
+            )}
           </div>
         </div>
 
         <div className="flex justify-between text-sm text-gray-600">
           <span>
-            {progress.filesDownloaded} of {progress.filesTotal} files
+            {progress.isDiscoveringFiles
+              ? `Scanning workspace...`
+              : `${progress.filesDownloaded} of ${progress.filesTotal} files`}
           </span>
-          <span>{formatBytes(progress.bytesDownloadedPerSecond)}/s</span>
+          {!progress.isDiscoveringFiles && (
+            <span>{formatBytes(progress.bytesDownloadedPerSecond)}/s</span>
+          )}
         </div>
 
         <div className="mt-4 flex justify-end">

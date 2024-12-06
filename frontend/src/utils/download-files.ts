@@ -6,6 +6,7 @@ interface DownloadProgress {
   currentFile: string;
   totalBytesDownloaded: number;
   bytesDownloadedPerSecond: number;
+  isDiscoveringFiles: boolean;
 }
 
 interface DownloadOptions {
@@ -61,11 +62,12 @@ async function getAllFiles(
       const subFilesArrays = await Promise.all(subFilesPromises);
       return subFilesArrays.flat();
     }
-    const newProgress = {
+    progress.filesTotal += 1;
+    options?.onProgress?.({
       ...progress,
-      filesTotal: progress.filesTotal + 1,
-    };
-    options?.onProgress?.(newProgress);
+      currentFile: fullPath,
+      isDiscoveringFiles: true,
+    });
     return [fullPath];
   };
 
@@ -152,6 +154,7 @@ export async function downloadFiles(
     currentFile: "",
     totalBytesDownloaded: 0,
     bytesDownloadedPerSecond: 0,
+    isDiscoveringFiles: true,
   };
 
   try {
@@ -159,6 +162,12 @@ export async function downloadFiles(
     console.log('init path', initialPath);
     const files = await getAllFiles(initialPath || "", progress, options);
     console.log('files', files);
+
+    // Set isDiscoveringFiles to false now that we have the full list
+    options?.onProgress?.({
+      ...progress,
+      isDiscoveringFiles: false,
+    });
 
     // Check if File System Access API is supported
     if (!isFileSystemAccessSupported()) {
