@@ -55,10 +55,10 @@ function CodeEditor() {
     });
     monaco.editor.setTheme("oh-dark");
 
-    e.onDidChangeCursorPosition((ee)=>{
+    e.onDidChangeCursorPosition((ee) => {
       setCursorPosition({
-        line:ee.position.lineNumber,
-        column:ee.position.column,
+        line: ee.position.lineNumber,
+        column: ee.position.column,
       });
     });
   };
