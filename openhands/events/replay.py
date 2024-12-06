@@ -44,23 +44,25 @@ def command_annotate_execution_points(
 
 
 def replay_enhance_action(state: State, is_workspace_repo: bool) -> Action | None:
-    # enhance_action_id = state.extra_data.get('replay_enhance_prompt_id')
-    # if not enhance_action_id:
-    #     # 1. Get current user prompt.
-    #     latest_user_message = state.get_last_user_message()
-    #     if latest_user_message:
-    #         # 2. Check if it has a recordingId.
-    #         recording_id = scan_recording_id(latest_user_message.content)
-    #         logger.debug(
-    #             f'DDBG Scanned for recording id: {latest_user_message.content}...'
-    #         )
-    #         if recording_id:
-    #             # 3. Analyze recording and start the enhancement action.
-    #             logger.info(f'[REPLAY] Enhancing prompt for Replay recording "{recording_id}"...')
-    #             state.extra_data['replay_enhance_prompt_id'] = latest_user_message.id
-    #             return command_annotate_execution_points(
-    #                 latest_user_message.content, is_workspace_repo
-    #             )
+    enhance_action_id = state.extra_data.get('replay_enhance_prompt_id')
+    if not enhance_action_id:
+        # 1. Get current user prompt.
+        latest_user_message = state.get_last_user_message()
+        if latest_user_message:
+            # 2. Check if it has a recordingId.
+            recording_id = scan_recording_id(latest_user_message.content)
+            logger.debug(
+                f'DDBG Scanned for recording id: {latest_user_message.content}...'
+            )
+            if recording_id:
+                # 3. Analyze recording and start the enhancement action.
+                logger.info(
+                    f'[REPLAY] Enhancing prompt for Replay recording "{recording_id}"...'
+                )
+                state.extra_data['replay_enhance_prompt_id'] = latest_user_message.id
+                return command_annotate_execution_points(
+                    latest_user_message.content, is_workspace_repo
+                )
     return None
 
 
@@ -117,7 +119,7 @@ def handle_replay_enhance_observation(
             # start_location = result.get('startLocation', '')
             start_name = result.get('startName', '')
 
-            enhancement = f'There is a bug in {annotated_repo_path}:\n\n{comment_text}\n\nReproduction information from a recording of the problem is available in source comments.\nThe bug was reported at {start_name}. Start your investigation there. Then keep searching for related `reproduction step` comments and pay special attention to their contents, as they provide important data flow and type information.\n\nOnce done, propose necessary changes without implementing them.'
+            enhancement = f'There is a bug in {annotated_repo_path}:\n\n<BUG_REPORT>{comment_text}</BUG_REPORT>\n\nReproduction information from a recording of the problem is available in source comments.\nThe bug was reported at {start_name}. Start your investigation there. Then keep searching for related `reproduction step` comments and pay special attention to their contents, as they provide important data flow and type information.\n\nOnce done, propose necessary changes without implementing them.'
 
             # Enhance:
             user_message.content = f'{original_prompt}\n\n{enhancement}'
