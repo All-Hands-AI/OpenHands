@@ -201,6 +201,15 @@ class OpenHands {
     const { data } = await openHands.post<UserProject>("/api/projects");
     return data;
   }
+
+  static async getConversationPermissions(
+    conversationId: string,
+  ): Promise<string[]> {
+    const { data } = await openHands.get<string[]>(
+      `/api/projects/${conversationId}/permissions`,
+    );
+    return data;
+  }
 }
 
 export default OpenHands;

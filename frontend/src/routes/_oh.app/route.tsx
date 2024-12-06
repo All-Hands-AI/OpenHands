@@ -2,7 +2,7 @@ import { useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { Outlet, useSearchParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import { Controls } from "#/components/features/controls/controls";
 import { RootState } from "#/store";
 import { clearMessages } from "#/state/chat-slice";
@@ -22,24 +22,23 @@ import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
-import OpenHands from "#/api/open-hands";
+import { useEndSession } from "#/hooks/use-end-session";
+import { useConversationPermissions } from "#/hooks/query/get-conversation-permissions";
+import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 
 function App() {
-  const queryClient = useQueryClient();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
   const { gitHubToken, setToken } = useAuth();
   const { settings } = useUserPrefs();
+  const endSession = useEndSession();
 
   const dispatch = useDispatch();
+  const cid = searchParams.get("cid");
+
   useConversationConfig();
-  const { mutate: createConversation } = useMutation({
-    mutationFn: OpenHands.createConversation,
-    onSuccess: async (data) => {
-      setSearchParams({ cid: data.id });
-      await queryClient.invalidateQueries({ queryKey: ["projects"] });
-    },
-  });
+  const { mutate: createConversation } = useCreateConversation();
+  const { data: permissions, isFetched } = useConversationPermissions(cid);
 
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initalQuery,
@@ -59,7 +58,12 @@ function App() {
     [],
   );
 
-  const cid = searchParams.get("cid");
+  React.useEffect(() => {
+    if (isFetched && !permissions?.includes("write:chat")) {
+      toast.error("You do not have permission to write to this conversation.");
+      endSession();
+    }
+  }, [permissions, isFetched]);
 
   React.useEffect(() => {
     if (cid) setToken(cid);
@@ -85,7 +89,7 @@ function App() {
 
   return (
     <WsClientProvider
-      enabled
+      enabled={!!permissions && permissions?.includes("write:chat")}
       token={cid}
       ghToken={gitHubToken}
       settings={settings}

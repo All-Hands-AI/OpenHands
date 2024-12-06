@@ -191,4 +191,18 @@ export const handlers = [
     PROJECTS.set(conversation.id, conversation);
     return HttpResponse.json(conversation, { status: 201 });
   }),
+
+  http.get("/api/projects/:projectId/permissions", async ({ params }) => {
+    const { projectId } = params;
+
+    if (typeof projectId === "string") {
+      const project = PROJECTS.get(projectId);
+
+      if (project) {
+        return HttpResponse.json(["write:chat"], { status: 200 });
+      }
+    }
+
+    return HttpResponse.json(null, { status: 401 });
+  }),
 ];

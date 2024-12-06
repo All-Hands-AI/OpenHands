@@ -124,3 +124,13 @@ test("should create a new conversation", async ({ page }) => {
   expect(page.url()).toMatch(/http:\/\/localhost:3001\/conversation\?cid=\d+/);
   expect(cards).toHaveCount(4);
 });
+
+test("should redirect to home screen if conversation deos not exist", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await confirmSettings(page);
+
+  await page.goto("/conversation?cid=9999");
+  await page.waitForURL("/");
+});
