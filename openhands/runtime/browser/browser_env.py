@@ -116,7 +116,9 @@ class BrowserEnv:
                         if isinstance(image_src, dict):
                             image_src = image_src['url']
                         self.goal_image_urls.append(image_src)
+            logger.debug(f'Browsing goal: {self.eval_goal}')
         logger.info('Browser env started.')
+
         while should_continue():
             try:
                 if self.browser_side.poll(timeout=0.01):

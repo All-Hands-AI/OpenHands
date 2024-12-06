@@ -1,0 +1,76 @@
+System prompt: "You are an agent trying to solve a web task based on the content of the page and user instructions. You can interact with the page and explore, and send messages to the user. Each time you submit an action it will be sent to the browser and you will receive a new page."
+
+User Prompt:
+# Instructions
+Review the current state of the page and all other information to find the best possible next action to accomplish your goal. Your answer will be interpreted and executed by a program, make sure to follow the formatting instructions.
+
+## Goal:
+Find me the cheapest blue kayak on this site.
+
+# Observation of current step:
+
+## Currently open tabs:
+Tab 0 (active tab):
+URL: http://ec2-18-119-103-239.us-east-2.compute.amazonaws.com:9980/
+
+
+## AXTree:
+Note: [bid] is the unique alpha-numeric identifier at the beginning of lines for each element in the AXTree. Always use bid to refer to elements in your actions.
+
+Note: You can only interact with visible elements. If the \"visible\" tag is not present, the element is not visible on the page.
+
+RootWebArea 'Classifieds', focused
+    [30] banner '', visible
+        [34] link 'Classifieds', clickable, visible
+            [35] image 'Classifieds', visible
+        [45] link 'My account', clickable, visible
+        [46] link 'Logout', clickable, visible
+        [47] link 'Publish Ad', clickable, visible
+    [48] Section '', visible
+        [50] Section '', visible
+            [52] heading 'What are you looking for today?', visible
+            [55] LabelText '', visible
+                StaticText 'Keyword'
+            [56] textbox 'e.g., a blue used car', clickable, visible
+            [58] LabelText '', visible
+                StaticText 'Category'
+            [59] combobox '' value='Select a category', visible, hasPopup='menu', expanded=False
+		... (truncated)
+## Focused element:
+bid=29
+
+
+Screenshot of current webpage
+<image_url> (not shown here)
+# History of all previous interactions with the task:
+
+## step 1
+
+Ouput thought and action: Let's think step-by-step. To find the cheapest blue kayak, I need to perform a search using the keyword "blue kayak" and then review the results. First, I will fill in the search textbox with the keyword "blue kayak". In summary, the next action I will perform is ```fill('56', 'blue kayak')```
+
+## step 2
+... (subsequent steps not shown)
+
+# Action space:
+Note: This action set allows you to interact with your environment. Most of them are python function executing playwright code. The primary way of referring to elements in the page is through bid which are specified in your observations.
+
+
+20 different types of actions are available.
+
+noop(wait_ms: float = 1000)
+send_msg_to_user(text: str)
+scroll(delta_x: float, delta_y: float)
+fill(bid: str, value: str)
+...(truncated)
+
+# Abstract Example
+
+Here is an abstract version of the answer with description of the content of each tag. Make sure you follow this structure, but replace the content with your answer:
+
+You must mandatorily think step by step. If you need to make calculations such as coordinates, write them here. Describe the effect that your previous action had on the current content of the page. In summary the next action I will perform is ```One single action to be executed. You can only use one action at a time.```
+
+# Concrete Example
+
+Here is a concrete example of how to format your answer. Make sure to generate the action in the correct format ensuring that the action is present inside ``````:
+
+Let's think step-by-step. From previous action I tried to set the value of year to "2022", using select_option, but it doesn't appear to be in the form. It may be a dynamic dropdown, I will try using click with the bid "324" and look at the response from the page. In summary the next action I will perform is ```click('324')```

@@ -232,21 +232,4 @@ runtime_*.tar
 containers/runtime/Dockerfile
 containers/runtime/project.tar.gz
 containers/runtime/code
-<<<<<<< HEAD
-evaluation/gaia/temp.txt
-evaluation/gaia/temp2.txt
-evaluation/gaia/temp.png
-evaluation/gaia/b64_pil_image.py
-.gitignore
-evaluation/visualwebarena/scripts/run_evaluation.sh
-openhands/agenthub/browsing_agent/browsing_agent2.py
-openhands/agenthub/browsing_agent/som_example1_vwa.png
-openhands/agenthub/browsing_agent/som_example2_vwa.png
-openhands/agenthub/browsing_agent/som_example3_vwa.png
-example_input.jsonl
-input_format.txt
-openhands/agenthub/browsing_agent/servicenow_browsing_agent.py
-openhands/agenthub/browsing_agent/temp.py
-=======
 **/node_modules/
->>>>>>> main
