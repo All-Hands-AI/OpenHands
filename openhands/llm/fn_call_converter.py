@@ -50,7 +50,7 @@ STOP_WORDS = ['</function']
 IN_CONTEXT_LEARNING_EXAMPLE_PREFIX = """
 Here's a running example of how to perform a task with the provided tools.
 
---------------------- START OF EXAMPLE ---------------------
+--------------------- START OF EXAMPLE 1 ---------------------
 
 USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.
 
@@ -213,7 +213,178 @@ The server is running on port 5000 with PID 126. You can access the list of numb
 <function=finish>
 </function>
 
---------------------- END OF EXAMPLE ---------------------
+--------------------- END OF EXAMPLE 1 ---------------------
+
+
+--------------------- START OF EXAMPLE 2 ---------------------
+
+USER: I'm seeing timeouts in our data ingestion pipeline (issue #127). The logs show it's happening in our customer data fetch but I'm not sure where to start looking. Can you help me investigate?
+
+ASSISTANT: Let's first look at the structure of our workspace to locate relevant files:
+
+<function=str_replace_editor>
+<parameter=command>view</parameter>
+<parameter=path>/workspace</parameter>
+</function>
+
+USER: EXECUTION RESULT of [str_replace_editor]:
+Here's the files and directories up to 2 levels deep in /workspace, excluding hidden items:
+/workspace
+/workspace/jobs
+/workspace/jobs/__init__.py
+/workspace/jobs/daily_report.py
+/workspace/utils
+/workspace/utils/__init__.py
+/workspace/utils/logging.py
+/workspace/api
+/workspace/api/routes.py
+/workspace/api/customers.py
+/workspace/services
+/workspace/services/__init__.py
+/workspace/services/clients.py
+/workspace/services/config.py
+/workspace/services/data_ingestion.py
+/workspace/services/helpers.py
+/workspace/tests
+/workspace/tests/test_services.py
+
+ASSISTANT: I see a `services/data_ingestion.py` file which is likely relevant to our data ingestion
+pipeline. Let's take a look at it:
+
+<function=str_replace_editor>
+<parameter=command>view</parameter>
+<parameter=path>/workspace/services/data_ingestion.py</parameter>
+</function>
+
+USER: EXECUTION RESULT of [str_replace_editor]:
+Here's the result of running `cat -n` on /workspace/services/data_ingestion.py:
+     1  from typing import Dict, Any, List
+     2  from datetime import datetime
+     3  import logging
+     4
+     5  from .clients import CustomerClient, TransactionClient
+     6  from .config import DEFAULT_TIMEOUT, TRANSACTION_TIMEOUT, BATCH_SIZE
+     7
+     8  logger = logging.getLogger(__name__)
+     9
+    10  async def fetch_customer_data(customer_id: str) -> Dict[str, Any]:
+    11      '''Fetches customer data from multiple endpoints and aggregates results.'''
+    12      async with CustomerClient(timeout=DEFAULT_TIMEOUT) as client:
+    13          profile = await client.get_profile(customer_id)
+    14
+    15          transactions = await fetch_transactions(
+    16              customer_id,
+    17              timeout=TRANSACTION_TIMEOUT
+    18          )
+    19
+    20          return {
+    21              "profile": profile,
+    22              "transactions": transactions,
+    24              "last_updated": datetime.now()
+    25          }
+    26
+# More functions below...
+
+ASSISTANT: I see a fetch_customer_data function that seems to be the entry point. It's calling some  fetch_transactions function with a specific timeout. Let's see its definition:
+
+<function=str_replace_editor>
+<parameter=command>jump_to_definition</parameter>
+<parameter=symbol_name>fetch_transactions</parameter>
+</function>
+
+USER: EXECUTION RESULT of [str_replace_editor]:
+Definition(s) of `fetch_transactions`:
+/workspace/services/helpers.py:
+...⋮...
+252|async def fetch_transactions(customer_id: str, timeout: int) -> List[Dict]:
+253|    '''Fetches detailed transaction history for customer.
+254|    Handles pagination and retries on network errors.
+255|    '''
+256|    results = []
+257|    page = 1
+258|
+259|    while True:
+260|        try:
+261|            async with TransactionClient(timeout=timeout) as client:
+263|                batch = await client.get_transactions(
+264|                    customer_id,
+265|                    page=page,
+266|                    batch_size=BATCH_SIZE
+267|                )
+268|                if not batch:
+269|                    break
+270|
+271|                results.extend(batch)
+272|                page += 1
+273|
+274|        except TimeoutError:
+275|            logger.error(
+276|                f"Timeout fetching transactions for {customer_id} "
+277|                f"on page {page}"
+278|            )
+279|            raise
+280|
+281|    return results
+...⋮...
+
+ASSISTANT: Interesting, this function is paginating through transactions but using the same timeout for each page. Let's see where fetch_customer_data is being used to understand the impact:
+
+<function=str_replace_editor>
+<parameter=command>find_references</parameter>
+<parameter=symbol_name>fetch_customer_data</parameter>
+</function>
+
+USER: EXECUTION RESULT of [str_replace_editor]:
+References to `fetch_customer_data`:
+/workspace/api/customers.py:
+...⋮...
+21|    @router.get("/customers/{customer_id}/full")
+22|    async def get_full_customer_data(customer_id: str):
+23|        try:
+24|            data = await fetch_customer_data(customer_id)
+25|            return data
+26|        except TimeoutError:
+27|            raise HTTPException(status_code=504, detail="Data fetch timed out")
+...⋮...
+/workspace/jobs/daily_report.py:
+...⋮...
+314|    async def generate_customer_report(customer_ids: List[str]):
+315|        results = []
+316|        for id in customer_ids:
+317|            try:
+318|                data = await fetch_customer_data(id)
+319|                results.append(summarize_customer_data(data))
+320|            except TimeoutError:
+321|                logger.warning(f"Skipping customer {id} due to timeout")
+322|                continue
+323|        return results
+...⋮...
+/workspace/tests/test_services.py:
+...⋮...
+60|    @pytest.mark.asyncio
+61|    async def test_fetch_customer_data_large_history():
+62|        # Test with customer having 50+ pages of transactions
+63|        data = await fetch_customer_data("customer_with_large_history")
+64|        assert len(data["transactions"]) > 500
+...⋮...
+
+ASSISTANT:
+Now I understand the full picture. The timeout is happening because:
+1. The API endpoint and daily report job both call fetch_customer_data
+2. This function uses fetch_transactions which paginates through ALL transaction history
+3. While each page request has a timeout, there's no limit on total pages or total time
+4. Our tests show we expect to handle 50+ pages of transactions
+
+To fix this, we should:
+1. Add a max_pages parameter to fetch_transactions to limit total pagination
+2. Add a total_timeout parameter separate from the per-request timeout
+3. Consider implementing parallel page fetching for large transaction histories
+
+Would you like me to help implement any of these solutions?
+
+... (continue the conversation)
+
+--------------------- END OF EXAMPLE 2 ---------------------
 
 Do NOT assume the environment is the same as in the example above.
 

@@ -210,12 +210,12 @@ LLMBasedFileEditTool = ChatCompletionToolParam(
     ),
 )
 
-_STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for viewing, creating and editing files
-* State is persistent across command calls and discussions with the user
-* If `path` is a file, `view` displays the result of applying `cat -n`. If `path` is a directory, `view` lists non-hidden files and directories up to 2 levels deep
+_STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for viewing, creating and editing files, with persistent state across interactions
+* If `path` is a file, `view` displays the result of applying `cat -n`. Otherwise `view` lists non-hidden files and directories up to 2 levels deep
 * The `create` command cannot be used if the specified `path` already exists as a file
-* If a `command` generates a long output, it will be truncated and marked with `<response clipped>`
-* The `undo_edit` command will revert the last edit made to the file at `path`
+* The command output will be truncated and marked with `<response clipped>` if it's too long
+* The `undo_edit` command will revert the last edit made to the file
+* Use `jump_to_definition` and `find_references` to quickly navigate through large codebases
 
 Notes for using the `str_replace` command:
 * The `old_str` parameter should match EXACTLY one or more consecutive lines from the original file. Be mindful of whitespaces!
@@ -232,12 +232,20 @@ StrReplaceEditorTool = ChatCompletionToolParam(
             'type': 'object',
             'properties': {
                 'command': {
-                    'description': 'The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`.',
-                    'enum': ['view', 'create', 'str_replace', 'insert', 'undo_edit'],
+                    'description': 'The commands to run. Allowed options are: `view`, `create`, `str_replace`, `insert`, `undo_edit`, `jump_to_definition`, `find_references`.',
+                    'enum': [
+                        'view',
+                        'create',
+                        'str_replace',
+                        'insert',
+                        'undo_edit',
+                        'jump_to_definition',
+                        'find_references',
+                    ],
                     'type': 'string',
                 },
                 'path': {
-                    'description': 'Absolute path to file or directory, e.g. `/workspace/file.py` or `/workspace`.',
+                    'description': 'Absolute path to file or directory, e.g. `/workspace/file.py` or `/workspace`. Required for all commands, except `jump_to_definition` and `find_references`.',
                     'type': 'string',
                 },
                 'file_text': {
@@ -261,8 +269,11 @@ StrReplaceEditorTool = ChatCompletionToolParam(
                     'items': {'type': 'integer'},
                     'type': 'array',
                 },
+                'symbol_name': {
+                    'description': 'Required parameter of `jump_to_definition` and `find_references` commands. The name of the class or function/method to search for.',
+                },
             },
-            'required': ['command', 'path'],
+            'required': ['command'],
         },
     ),
 )
