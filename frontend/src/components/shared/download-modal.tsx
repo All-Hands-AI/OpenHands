@@ -5,9 +5,10 @@ import { DownloadProgress } from "./download-progress";
 interface DownloadModalProps {
   initialPath: string;
   onClose: () => void;
+  isOpen: boolean;
 }
 
-export function DownloadModal({ initialPath, onClose }: DownloadModalProps) {
+export function DownloadModal({ initialPath, onClose, isOpen }: DownloadModalProps) {
   console.log('DownloadModal rendering, path:', initialPath);
 
   useEffect(() => {
@@ -19,6 +20,8 @@ export function DownloadModal({ initialPath, onClose }: DownloadModalProps) {
     initialPath,
     onClose
   );
+
+  if (!isOpen) return null;
 
   return (
     <DownloadProgress

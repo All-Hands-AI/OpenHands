@@ -12,6 +12,7 @@ export const INITIAL_PROGRESS: DownloadProgress = {
 };
 
 export function useDownloadProgress(initialPath: string | undefined, onClose: () => void) {
+  const [isStarted, setIsStarted] = useState(false);
   const [progress, setProgress] = useState<DownloadProgress>(INITIAL_PROGRESS);
 
   const abortController = useRef<AbortController>();
@@ -28,12 +29,17 @@ export function useDownloadProgress(initialPath: string | undefined, onClose: ()
     };
   }, []); // Empty deps array - only run on mount/unmount
 
-  // Start download in a separate effect
+  // Start download when isStarted becomes true
   useEffect(() => {
+    if (!isStarted) {
+      setIsStarted(true);
+      return;
+    }
+
     console.log('Download effect starting, path:', initialPath);
     if (!abortController.current) return;
 
-    // Start download immediately
+    // Start download
     const download = async () => {
       try {
         console.log('Starting download...');
@@ -56,7 +62,7 @@ export function useDownloadProgress(initialPath: string | undefined, onClose: ()
       }
     };
     download();
-  }, [initialPath, onClose]);
+  }, [initialPath, onClose, isStarted]);
 
   // No longer need startDownload as it's handled in useEffect
 

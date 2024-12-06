@@ -96,9 +96,11 @@ Please push the changes to GitHub and open a pull request.
           onConnectToGitHub={() => setConnectToGitHubModalOpen(true)}
         />
       )}
-      {downloading && (
-        <DownloadModal initialPath="" onClose={handleDownloadClose} />
-      )}
+      <DownloadModal 
+        initialPath="" 
+        onClose={handleDownloadClose}
+        isOpen={downloading}
+      />
       {!downloading && (
         <button
           type="button"
