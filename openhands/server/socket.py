@@ -33,6 +33,7 @@ async def oh_action(connection_id: str, data: dict):
         kwargs = {k.lower(): v for k, v in (data.get('args') or {}).items()}
         session_init_data = SessionInitData(**kwargs)
         session_init_data.github_token = github_token
+        session_init_data.selected_repository = data.get('selected_repository', None)
         await init_connection(
             connection_id, token, github_token, session_init_data, latest_event_id
         )
