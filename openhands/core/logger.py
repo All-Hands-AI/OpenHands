@@ -237,9 +237,9 @@ def log_uncaught_exceptions(
     """Logs uncaught exceptions along with the traceback.
 
     Args:
-        ex_cls (type[BaseException]): The type of the exception.
-        ex (BaseException): The exception instance.
-        tb (TracebackType | None): The traceback object.
+        ex_cls: The type of the exception.
+        ex: The exception instance.
+        tb: The traceback object.
 
     Returns:
         None
