@@ -57,8 +57,8 @@ describe("ConversationPanel", () => {
   });
 
   it("should display an empty state when there are no conversations", async () => {
-    const getUserProjectsSpy = vi.spyOn(OpenHands, "getUserConversations");
-    getUserProjectsSpy.mockResolvedValue([]);
+    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    getUserConversationsSpy.mockResolvedValue([]);
 
     renderConversationPanel();
 
@@ -67,8 +67,8 @@ describe("ConversationPanel", () => {
   });
 
   it("should handle an error when fetching conversations", async () => {
-    const getUserProjectsSpy = vi.spyOn(OpenHands, "getUserConversations");
-    getUserProjectsSpy.mockRejectedValue(
+    const getUserConversationsSpy = vi.spyOn(OpenHands, "getUserConversations");
+    getUserConversationsSpy.mockRejectedValue(
       new Error("Failed to fetch conversations"),
     );
 
@@ -161,7 +161,10 @@ describe("ConversationPanel", () => {
   });
 
   it("should rename a conversation", async () => {
-    const updateUserProjectSpy = vi.spyOn(OpenHands, "updateUserConversation");
+    const updateUserConversationSpy = vi.spyOn(
+      OpenHands,
+      "updateUserConversation",
+    );
 
     const user = userEvent.setup();
     renderConversationPanel();
@@ -173,13 +176,16 @@ describe("ConversationPanel", () => {
     await user.tab();
 
     // Ensure the conversation is renamed
-    expect(updateUserProjectSpy).toHaveBeenCalledWith("3", {
+    expect(updateUserConversationSpy).toHaveBeenCalledWith("3", {
       name: "Conversation 1 Renamed",
     });
   });
 
   it("should not rename a conversation when the name is unchanged", async () => {
-    const updateUserProjectSpy = vi.spyOn(OpenHands, "updateUserConversation");
+    const updateUserConversationSpy = vi.spyOn(
+      OpenHands,
+      "updateUserConversation",
+    );
 
     const user = userEvent.setup();
     renderConversationPanel();
@@ -190,18 +196,18 @@ describe("ConversationPanel", () => {
     await user.tab();
 
     // Ensure the conversation is not renamed
-    expect(updateUserProjectSpy).not.toHaveBeenCalled();
+    expect(updateUserConversationSpy).not.toHaveBeenCalled();
 
     await user.type(title, "Conversation 1");
     await user.click(title);
     await user.tab();
 
-    expect(updateUserProjectSpy).toHaveBeenCalledTimes(1);
+    expect(updateUserConversationSpy).toHaveBeenCalledTimes(1);
 
     await user.click(title);
     await user.tab();
 
-    expect(updateUserProjectSpy).toHaveBeenCalledTimes(1);
+    expect(updateUserConversationSpy).toHaveBeenCalledTimes(1);
   });
 
   it("should call onClose after clicking a card", async () => {
