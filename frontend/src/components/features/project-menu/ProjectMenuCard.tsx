@@ -62,11 +62,13 @@ Please push the changes to GitHub and open a pull request.
   };
 
   const handleDownloadWorkspace = () => {
+    console.log('Download button clicked');
     posthog.capture("download_workspace_button_clicked");
     setDownloading(true);
   };
 
   const handleDownloadClose = () => {
+    console.log('Download close requested');
     setDownloading(false);
   };
 
@@ -95,7 +97,7 @@ Please push the changes to GitHub and open a pull request.
         />
       )}
       {downloading && (
-        <DownloadModal initialPath="/workspace" onClose={handleDownloadClose} />
+        <DownloadModal initialPath="" onClose={handleDownloadClose} />
       )}
       {!downloading && (
         <button

@@ -18,18 +18,25 @@ export function useDownloadProgress(initialPath: string | undefined, onClose: ()
 
   // Create a new AbortController and start the download when the hook is initialized
   useEffect(() => {
+    console.log('Download effect starting, path:', initialPath);
     const controller = new AbortController();
     abortController.current = controller;
 
     // Start download immediately
     const download = async () => {
       try {
+        console.log('Starting download...');
         await downloadFiles(initialPath, {
-          onProgress: setProgress,
+          onProgress: (p) => {
+            console.log('Progress:', p);
+            setProgress(p);
+          },
           signal: controller.signal,
         });
+        console.log('Download completed');
         onClose();
       } catch (error) {
+        console.log('Download error:', error);
         if (error instanceof Error && error.message === "Download cancelled") {
           onClose();
         } else {
@@ -40,6 +47,7 @@ export function useDownloadProgress(initialPath: string | undefined, onClose: ()
     download();
 
     return () => {
+      console.log('Download effect cleanup');
       controller.abort();
       abortController.current = undefined;
     };
