@@ -16,6 +16,9 @@ updates:
       chromadb:
         patterns:
           - "chromadb"
+      browsergym:
+        patterns:
+          - "browsergym"
       security-all:
         applies-to: "security-updates"
         patterns:

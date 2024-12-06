@@ -5,9 +5,10 @@ on:
     types: [labeled]
 
 jobs:
-  lint-fix:
+  # Frontend lint fixes
+  lint-fix-frontend:
     if: github.event.label.name == 'lint-fix'
-    name: Fix linting issues
+    name: Fix frontend linting issues
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -20,7 +21,6 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # Frontend lint fixes
       - name: Install Node.js 20
         uses: actions/setup-node@v4
         with:
@@ -34,7 +34,36 @@ jobs:
           cd frontend
           npm run lint:fix
 
-      # Python lint fixes
+      # Commit and push changes if any
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --quiet || echo "changes=true" >> $GITHUB_OUTPUT
+      - name: Commit and push if there are changes
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          git config --local user.email "openhands@all-hands.dev"
+          git config --local user.name "OpenHands Bot"
+          git add -A
+          git commit -m "🤖 Auto-fix frontend linting issues"
+          git push
+
+  # Python lint fixes
+  lint-fix-python:
+    if: github.event.label.name == 'lint-fix'
+    name: Fix Python linting issues
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Set up python
         uses: actions/setup-python@v5
         with:
@@ -44,11 +73,8 @@ jobs:
         run: pip install pre-commit==3.7.0
       - name: Fix python lint issues
         run: |
-          pre-commit run trailing-whitespace --files openhands/**/* evaluation/**/* tests/**/* --config ./dev_config/python/.pre-commit-config.yaml
-          pre-commit run end-of-file-fixer --files openhands/**/* evaluation/**/* tests/**/* --config ./dev_config/python/.pre-commit-config.yaml
-          pre-commit run pyproject-fmt --files openhands/**/* evaluation/**/* tests/**/* --config ./dev_config/python/.pre-commit-config.yaml
-          pre-commit run ruff --files openhands/**/* evaluation/**/* tests/**/* --config ./dev_config/python/.pre-commit-config.yaml
-          pre-commit run ruff-format --files openhands/**/* evaluation/**/* tests/**/* --config ./dev_config/python/.pre-commit-config.yaml
+          # Run all pre-commit hooks and continue even if they modify files (exit code 1)
+          pre-commit run --config ./dev_config/python/.pre-commit-config.yaml --files openhands/**/* evaluation/**/* tests/**/* || true
 
       # Commit and push changes if any
       - name: Check for changes
@@ -61,5 +87,5 @@ jobs:
           git config --local user.email "openhands@all-hands.dev"
           git config --local user.name "OpenHands Bot"
           git add -A
-          git commit -m "🤖 Auto-fix linting issues"
+          git commit -m "🤖 Auto-fix Python linting issues"
           git push

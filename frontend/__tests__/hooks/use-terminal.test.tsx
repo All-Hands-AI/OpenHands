@@ -1,10 +1,10 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { render } from "@testing-library/react";
 import { afterEach } from "node:test";
-import { useTerminal } from "#/hooks/useTerminal";
-import { Command } from "#/state/commandSlice";
-import { WsClientProvider } from "#/context/ws-client-provider";
 import { ReactNode } from "react";
+import { useTerminal } from "#/hooks/use-terminal";
+import { Command } from "#/state/command-slice";
+
 
 interface TestTerminalComponentProps {
   commands: Command[];
@@ -23,10 +23,9 @@ interface WrapperProps {
   children: ReactNode;
 }
 
-
-function Wrapper({children}: WrapperProps) {
+function Wrapper({ children }: WrapperProps) {
   return (
-    <WsClientProvider enabled={true} token="NO_JWT" ghToken="NO_GITHUB" settings={null}>{children}</WsClientProvider>
+    <div>{children}</div>
   )
 }
 

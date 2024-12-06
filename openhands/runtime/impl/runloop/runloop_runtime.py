@@ -99,6 +99,7 @@ class RunloopRuntime(EventStreamRuntime):
     """The RunloopRuntime class is an EventStreamRuntime that utilizes Runloop Devbox as a runtime environment."""
 
     _sandbox_port: int = 4444
+    _vscode_port: int = 4445
 
     def __init__(
         self,
@@ -109,6 +110,7 @@ class RunloopRuntime(EventStreamRuntime):
         env_vars: dict[str, str] | None = None,
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
+        headless_mode: bool = True,
     ):
         assert config.runloop_api_key is not None, 'Runloop API key is required'
         self.devbox: DevboxView | None = None
@@ -127,9 +129,11 @@ class RunloopRuntime(EventStreamRuntime):
             env_vars,
             status_callback,
             attach_to_existing,
+            headless_mode,
         )
         # Buffer for container logs
         self.log_buffer: LogBuffer | None = None
+        self._vscode_url: str | None = None
 
     @tenacity.retry(
         stop=tenacity.stop_after_attempt(120),
@@ -171,6 +175,7 @@ class RunloopRuntime(EventStreamRuntime):
             self.config.sandbox.user_id,
             plugin_args,
             browsergym_args,
+            is_root=not self.config.run_as_openhands,  # is_root=True when running as root
         )
 
         # Add some additional commands based on our image
@@ -191,7 +196,7 @@ class RunloopRuntime(EventStreamRuntime):
             environment_variables={'DEBUG': 'true'} if self.config.debug else {},
             prebuilt='openhands',
             launch_parameters=LaunchParameters(
-                available_ports=[self._sandbox_port],
+                available_ports=[self._sandbox_port, self._vscode_port],
                 resource_size_request='LARGE',
             ),
             metadata={'container-name': self.container_name},
@@ -220,7 +225,7 @@ class RunloopRuntime(EventStreamRuntime):
 
         # Hook up logs
         self.log_buffer = RunloopLogBuffer(self.runloop_api_client, self.devbox.id)
-        self.api_url = f'https://{tunnel.url}'
+        self.api_url = tunnel.url
         logger.info(f'Container started. Server url: {self.api_url}')
 
         # End Runloop connect
@@ -260,7 +265,7 @@ class RunloopRuntime(EventStreamRuntime):
             logger.error(msg)
             raise RuntimeError(msg)
 
-    def close(self, rm_all_containers: bool = True):
+    def close(self, rm_all_containers: bool | None = True):
         if self.log_buffer:
             self.log_buffer.close()
 
@@ -272,3 +277,45 @@ class RunloopRuntime(EventStreamRuntime):
 
         if self.devbox:
             self.runloop_api_client.devboxes.shutdown(self.devbox.id)
+
+    @property
+    def vscode_url(self) -> str | None:
+        if self.vscode_enabled and self.devbox and self.devbox.status == 'running':
+            if self._vscode_url is not None:
+                return self._vscode_url
+
+            try:
+                with send_request(
+                    self.session,
+                    'GET',
+                    f'{self.api_url}/vscode/connection_token',
+                    timeout=10,
+                ) as response:
+                    response_json = response.json()
+                    assert isinstance(response_json, dict)
+                    if response_json['token'] is None:
+                        return None
+                    token = response_json['token']
+
+                self._vscode_url = (
+                    self.runloop_api_client.devboxes.create_tunnel(
+                        id=self.devbox.id,
+                        port=self._vscode_port,
+                    ).url
+                    + f'/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+                )
+
+                self.log(
+                    'debug',
+                    f'VSCode URL: {self._vscode_url}',
+                )
+
+                return self._vscode_url
+            except Exception as e:
+                self.log(
+                    'error',
+                    f'Failed to create vscode tunnel {e}',
+                )
+                return None
+        else:
+            return None

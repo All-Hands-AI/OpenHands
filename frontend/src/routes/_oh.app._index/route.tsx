@@ -1,33 +1,16 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { json, useRouteError } from "@remix-run/react";
-import toast from "react-hot-toast";
+import { useRouteError } from "react-router";
 import { editor } from "monaco-editor";
 import { EditorProps } from "@monaco-editor/react";
 import { RootState } from "#/store";
-import AgentState from "#/types/AgentState";
-import FileExplorer from "#/components/file-explorer/FileExplorer";
-import OpenHands from "#/api/open-hands";
-import CodeEditorComponent from "./code-editor-component";
+import AgentState from "#/types/agent-state";
+import CodeEditorComponent from "../../components/features/editor/code-editor-component";
 import { useFiles } from "#/context/files";
-import { EditorActions } from "#/components/editor-actions";
-
-const ASSET_FILE_TYPES = [
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".bmp",
-  ".gif",
-  ".pdf",
-  ".mp4",
-  ".webm",
-  ".ogg",
-];
-
-export const clientLoader = async () => {
-  const token = localStorage.getItem("token");
-  return json({ token });
-};
+import { useSaveFile } from "#/hooks/mutation/use-save-file";
+import { ASSET_FILE_TYPES } from "./constants";
+import { EditorActions } from "#/components/features/editor/editor-actions";
+import { FileExplorer } from "#/components/features/file-explorer/file-explorer";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -41,16 +24,17 @@ export function ErrorBoundary() {
 }
 
 function CodeEditor() {
-  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const {
-    setPaths,
     selectedPath,
     modifiedFiles,
     saveFileContent: saveNewFileContent,
     discardChanges,
   } = useFiles();
+
   const [fileExplorerIsOpen, setFileExplorerIsOpen] = React.useState(true);
   const editorRef = React.useRef<editor.IStandaloneCodeEditor | null>(null);
+
+  const { mutate: saveFile } = useSaveFile();
 
   const toggleFileExplorer = () => {
     setFileExplorerIsOpen((prev) => !prev);
@@ -71,23 +55,9 @@ function CodeEditor() {
     monaco.editor.setTheme("oh-dark");
   };
 
-  const [errors, setErrors] = React.useState<{ getFiles: string | null }>({
-    getFiles: null,
-  });
-
   const agentState = useSelector(
     (state: RootState) => state.agent.curAgentState,
   );
-
-  React.useEffect(() => {
-    if (curAgentState === AgentState.INIT) {
-      OpenHands.getFiles()
-        .then(setPaths)
-        .catch(() => {
-          setErrors({ getFiles: "Failed to retrieve files" });
-        });
-    }
-  }, [curAgentState]);
 
   // Code editing is only allowed when the agent is paused, finished, or awaiting user input (server rules)
   const isEditingAllowed = React.useMemo(
@@ -102,12 +72,8 @@ function CodeEditor() {
     if (selectedPath) {
       const content = modifiedFiles[selectedPath];
       if (content) {
-        try {
-          await OpenHands.saveFile(selectedPath, content);
-          saveNewFileContent(selectedPath);
-        } catch (error) {
-          toast.error("Failed to save file");
-        }
+        saveFile({ path: selectedPath, content });
+        saveNewFileContent(selectedPath);
       }
     }
   };
@@ -122,11 +88,7 @@ function CodeEditor() {
 
   return (
     <div className="flex h-full bg-neutral-900 relative">
-      <FileExplorer
-        isOpen={fileExplorerIsOpen}
-        onToggle={toggleFileExplorer}
-        error={errors.getFiles}
-      />
+      <FileExplorer isOpen={fileExplorerIsOpen} onToggle={toggleFileExplorer} />
       <div className="w-full">
         {selectedPath && !isAssetFileType && (
           <div className="flex w-full items-center justify-between self-end p-2">

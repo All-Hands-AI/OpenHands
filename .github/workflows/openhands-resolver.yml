@@ -11,6 +11,16 @@ on:
         required: false
         type: string
         default: "@openhands-agent"
+      target_branch:
+        required: false
+        type: string
+        default: "main"
+        description: "Target branch to pull and create PR against"
+      base_container_image:
+        required: false
+        type: string
+        default: ""
+        description: "Custom sandbox env"
     secrets:
       LLM_MODEL:
         required: true
@@ -48,12 +58,12 @@ jobs:
 
       (
         ((github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
-        startsWith(github.event.comment.body, inputs.macro || '@openhands-agent') &&
+        contains(github.event.comment.body, inputs.macro || '@openhands-agent') &&
         (github.event.comment.author_association == 'OWNER' || github.event.comment.author_association == 'COLLABORATOR' || github.event.comment.author_association == 'MEMBER')
         ) ||
 
         (github.event_name == 'pull_request_review' &&
-        startsWith(github.event.review.body, inputs.macro || '@openhands-agent') &&
+        contains(github.event.review.body, inputs.macro || '@openhands-agent') &&
         (github.event.review.author_association == 'OWNER' || github.event.review.author_association == 'COLLABORATOR' || github.event.review.author_association == 'MEMBER')
         )
       )
@@ -80,11 +90,11 @@ jobs:
             github.event.label.name == 'fix-me-experimental' ||
             (
               (github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
-              startsWith(github.event.comment.body, inputs.macro || '@openhands-agent-exp')
+              contains(github.event.comment.body, '@openhands-agent-exp')
             ) ||
             (
               github.event_name == 'pull_request_review' &&
-              startsWith(github.event.review.body, inputs.macro || '@openhands-agent-exp')
+              contains(github.event.review.body, '@openhands-agent-exp')
             )
           )
         uses: actions/cache@v3
@@ -134,6 +144,10 @@ jobs:
 
           echo "MAX_ITERATIONS=${{ inputs.max_iterations || 50 }}" >> $GITHUB_ENV
           echo "SANDBOX_ENV_GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
+          echo "SANDBOX_ENV_BASE_CONTAINER_IMAGE=${{ inputs.base_container_image }}" >> $GITHUB_ENV
+
+          # Set branch variables
+          echo "TARGET_BRANCH=${{ inputs.target_branch }}" >> $GITHUB_ENV
 
       - name: Comment on issue with start message
         uses: actions/github-script@v7
@@ -175,7 +189,7 @@ jobs:
             --issue-number ${{ env.ISSUE_NUMBER }} \
             --issue-type ${{ env.ISSUE_TYPE }} \
             --max-iterations ${{ env.MAX_ITERATIONS }} \
-            --comment-id ${{ env.COMMENT_ID }}
+            --comment-id ${{ env.COMMENT_ID }} \
 
       - name: Check resolution result
         id: check_result
