@@ -185,7 +185,7 @@ class BrowserEnv:
                     pass
                 return
 
-    def step(self, action_str: str, timeout: float = 30) -> dict:
+    def step(self, action_str: str, timeout: float = 100) -> dict:
         """Execute an action in the browser environment and return the observation."""
         unique_request_id = str(uuid.uuid4())
         self.agent_side.send((unique_request_id, {'action': action_str}))

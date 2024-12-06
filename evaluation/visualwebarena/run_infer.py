@@ -46,10 +46,11 @@ def get_config(
     base_url = os.environ.get('VISUALWEBARENA_BASE_URL', None)
     openai_api_key = os.environ.get('OPENAI_API_KEY', None)
     openai_base_url = os.environ.get('OPENAI_BASE_URL', None)
+    openai_model = os.environ.get('OPENAI_MODEL', None)
     assert base_url is not None, 'VISUALWEBARENA_BASE_URL must be set'
     assert openai_api_key is not None, 'OPENAI_API_KEY must be set'
     assert openai_base_url is not None, 'OPENAI_BASE_URL must be set'
-
+    assert openai_model is not None, 'OPENAI_MODEL must be set'
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
@@ -64,13 +65,14 @@ def get_config(
                 'BASE_URL': base_url,
                 'OPENAI_API_KEY': openai_api_key,
                 'OPENAI_BASE_URL': openai_base_url,
+                'OPENAI_MODEL': openai_model,
                 'VWA_CLASSIFIEDS': f'{base_url}:9980',
                 'VWA_CLASSIFIEDS_RESET_TOKEN': '4b61655535e7ed388f0d40a93600254c',
-                'VWA_SHOPPING': f'{base_url}:7770/',
+                'VWA_SHOPPING': f'{base_url}:7770',
                 'VWA_SHOPPING_ADMIN': f'{base_url}:7780/admin',
                 'VWA_REDDIT': f'{base_url}:9999',
                 'VWA_GITLAB': f'{base_url}:8023',
-                'VWA_WIKIPEDIA': f'{base_url}:8888/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing',
+                'VWA_WIKIPEDIA': f'{base_url}:8888',
                 'VWA_HOMEPAGE': f'{base_url}:4399',
             },
         ),

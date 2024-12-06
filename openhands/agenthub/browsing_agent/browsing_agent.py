@@ -37,6 +37,9 @@ else:
 
 
 def get_error_prefix(obs: BrowserOutputObservation) -> str:
+    # temporary fix for OneStopMarket
+    if 'timeout' in obs.last_browser_action_error:
+        return '## Error from previous action:\n\n'
     return f'## Error from previous action:\n{obs.last_browser_action_error}\n'
 
 
@@ -134,7 +137,7 @@ def get_tabs(obs: BrowserOutputObservation) -> str:
     for page_index, page_url in enumerate(obs.open_pages_urls):
         active_or_not = ' (active tab)' if page_index == obs.active_page_index else ''
         prompt_piece = f"""\
-Tab {page_index+1}{active_or_not}:
+Tab {page_index}{active_or_not}:
 URL: {page_url}
 """
         prompt_pieces.append(prompt_piece)
@@ -296,8 +299,8 @@ Note:
                 # add error recovery prompt prefix
                 error_prefix = get_error_prefix(last_obs)
                 self.error_accumulator += 1
-                if self.error_accumulator > 5:
-                    return MessageAction('Too many errors encountered. Task failed.')
+                # if self.error_accumulator > 5:
+                #     return MessageAction('Too many errors encountered. Task failed.')
             focused_element = '## Focused element:\nNone\n'
             if last_obs.focused_element_bid is not None:
                 focused_element = (
@@ -332,7 +335,7 @@ Note:
         observation_txt, som_screenshot = create_observation_prompt(
             cur_axtree_txt, tabs, focused_element, error_prefix, set_of_marks
         )
-        human_prompt = [TextContent(type='text', text=goal_txt, cache_prompt=True)]
+        human_prompt = [TextContent(type='text', text=goal_txt)]
         if len(goal_images) > 0:
             human_prompt.append(ImageContent(type='image_url', image_urls=goal_images))
         human_prompt.append(TextContent(type='text', text=observation_txt))
@@ -353,11 +356,7 @@ Note:
 You are an agent trying to solve a web task based on the content of the page and user instructions. You can interact with the page and explore, and send messages to the user. Each time you submit an action it will be sent to the browser and you will receive a new page.
 """.strip()
         # TODO: caching of prompt is not working right now
-        messages.append(
-            Message(
-                role='system', content=[TextContent(text=system_msg, cache_prompt=True)]
-            )
-        )
+        messages.append(Message(role='system', content=[TextContent(text=system_msg)]))
         messages.append(Message(role='user', content=human_prompt))
 
         flat_messages = self.llm.format_messages_for_llm(messages)
