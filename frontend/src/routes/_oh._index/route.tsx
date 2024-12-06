@@ -1,17 +1,18 @@
-import { useLocation, useNavigate } from "@remix-run/react";
+import { useLocation, useNavigate } from "react-router";
 import React from "react";
 import { useDispatch } from "react-redux";
-import { TaskForm } from "./task-form";
-import { HeroHeading } from "./hero-heading";
+import posthog from "posthog-js";
 import { setImportedProjectZip } from "#/state/initial-query-slice";
-import { GitHubRepositoriesSuggestionBox } from "#/components/github-repositories-suggestion-box";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
 import { useAuth } from "#/context/auth-context";
-import { ImportProjectSuggestionBox } from "./import-project-suggestion-box";
+import { ImportProjectSuggestionBox } from "../../components/features/suggestions/import-project-suggestion-box";
+import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
+import { HeroHeading } from "#/components/shared/hero-heading";
+import { TaskForm } from "#/components/shared/task-form";
 
 function Home() {
   const { token, gitHubToken } = useAuth();
@@ -61,6 +62,7 @@ function Home() {
               if (event.target.files) {
                 const zip = event.target.files[0];
                 dispatch(setImportedProjectZip(await convertZipToBase64(zip)));
+                posthog.capture("zip_file_uploaded");
                 formRef.current?.requestSubmit();
               } else {
                 // TODO: handle error

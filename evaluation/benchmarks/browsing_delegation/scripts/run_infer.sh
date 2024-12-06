@@ -20,13 +20,13 @@ if [ -z "$AGENT" ]; then
   AGENT="CodeActAgent"
 fi
 
-get_agent_version
+get_openhands_version
 
 echo "AGENT: $AGENT"
-echo "AGENT_VERSION: $AGENT_VERSION"
+echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 
-EVAL_NOTE="$AGENT_VERSION"
+EVAL_NOTE="$OPENHANDS_VERSION"
 
 COMMAND="poetry run python evaluation/benchmarks/browsing_delegation/run_infer.py \
   --agent-cls $AGENT \

@@ -21,13 +21,13 @@ if [ -z "$AGENT" ]; then
   AGENT="CodeActAgent"
 fi
 
-get_agent_version
+get_openhands_version
 
 echo "AGENT: $AGENT"
-echo "AGENT_VERSION: $AGENT_VERSION"
+echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 
-EVAL_NOTE=$AGENT_VERSION
+EVAL_NOTE=$OPENHANDS_VERSION
 
 # Default to NOT use unit tests.
 if [ -z "$USE_UNIT_TESTS" ]; then
