@@ -71,7 +71,6 @@ For each problem, OpenHands is given a set number of iterations to fix the faili
                 "observation": "run",
                 "content": "[File: /workspace/Python__2.py (14 lines total)]\r\n1:def truncate_number(number: float) -> float:\r\n2:    return number % 1.0 + 1.0\r\n3:\r\n4:\r\n5:\r\n6:\r\n7:\r\n8:\r\n9:def check(truncate_number):\r\n10:    assert truncate_number(3.5) == 0.5\r\n11:    assert abs(truncate_number(1.33) - 0.33) < 1e-6\r\n12:    assert abs(truncate_number(123.456) - 0.456) < 1e-6\r\n13:\r\n14:check(truncate_number)",
                 "extras": {
-                    "command_id": -1,
                     "command": "open Python__2.py",
                     "exit_code": 0
                 }
@@ -98,7 +97,6 @@ For each problem, OpenHands is given a set number of iterations to fix the faili
                 "observation": "run",
                 "content": "> > [File: /workspace/Python__2.py (14 lines total)]\r\n1:def truncate_number(number: float) -> float:\r\n2:    return number % 1.0\r\n3:\r\n4:\r\n5:\r\n6:\r\n7:\r\n8:\r\n9:def check(truncate_number):\r\n10:    assert truncate_number(3.5) == 0.5\r\n11:    assert abs(truncate_number(1.33) - 0.33) < 1e-6\r\n12:    assert abs(truncate_number(123.456) - 0.456) < 1e-6\r\n13:\r\n14:check(truncate_number)\r\nFile updated. Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.",
                 "extras": {
-                    "command_id": -1,
                     "command": "edit 2:2 <<EOF\n    return number % 1.0\nEOF",
                     "exit_code": 0
                 }
@@ -125,7 +123,6 @@ For each problem, OpenHands is given a set number of iterations to fix the faili
                 "observation": "run",
                 "content": "",
                 "extras": {
-                    "command_id": -1,
                     "command": "python3 Python__2.py",
                     "exit_code": 0
                 }

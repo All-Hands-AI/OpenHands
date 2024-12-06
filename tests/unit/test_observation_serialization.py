@@ -1,4 +1,5 @@
 from openhands.events.observation import (
+    CmdOutputMetadata,
     CmdOutputObservation,
     Observation,
 )
@@ -48,11 +49,11 @@ def test_observation_event_props_serialization_deserialization():
         'observation': 'run',
         'message': 'Command `ls -l` executed with exit code 0.',
         'extras': {
-            'exit_code': 0,
             'command': 'ls -l',
-            'command_id': 3,
             'hidden': False,
-            'interpreter_details': '',
+            'metadata': CmdOutputMetadata(
+                exit_code=0,
+            ),
         },
         'content': 'foo.txt',
     }
@@ -63,11 +64,11 @@ def test_command_output_observation_serialization_deserialization():
     original_observation_dict = {
         'observation': 'run',
         'extras': {
-            'exit_code': 0,
             'command': 'ls -l',
-            'command_id': 3,
             'hidden': False,
-            'interpreter_details': '',
+            'metadata': CmdOutputMetadata(
+                exit_code=0,
+            ),
         },
         'message': 'Command `ls -l` executed with exit code 0.',
         'content': 'foo.txt',

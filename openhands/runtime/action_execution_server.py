@@ -174,7 +174,7 @@ class ActionExecutor:
     async def run(
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
-        obs = await call_sync_from_async(self.bash_session.run, action)
+        obs = await call_sync_from_async(self.bash_session.execute, action)
         return obs
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
@@ -241,7 +241,7 @@ class ActionExecutor:
     async def read(self, action: FileReadAction) -> Observation:
         # NOTE: the client code is running inside the sandbox,
         # so there's no need to check permission
-        working_dir = self.bash_session.workdir
+        working_dir = self.bash_session.pwd
         filepath = self._resolve_path(action.path, working_dir)
         try:
             if filepath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
@@ -288,7 +288,7 @@ class ActionExecutor:
         return FileReadObservation(path=filepath, content=code_view)
 
     async def write(self, action: FileWriteAction) -> Observation:
-        working_dir = self.bash_session.workdir
+        working_dir = self.bash_session.pwd
         filepath = self._resolve_path(action.path, working_dir)
 
         insert = action.content.split('\n')

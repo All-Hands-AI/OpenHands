@@ -106,7 +106,6 @@ def event_to_memory(event: 'Event', max_message_chars: int) -> dict:
     # runnable actions have some extra fields used in the BE/FE, which should not be sent to the LLM
     if 'args' in d:
         d['args'].pop('blocking', None)
-        d['args'].pop('keep_prompt', None)
         d['args'].pop('confirmation_state', None)
 
     if 'extras' in d:

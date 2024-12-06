@@ -38,9 +38,7 @@ from openhands.runtime.base import (
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
-from openhands.runtime.utils.request import (
-    send_request,
-)
+from openhands.runtime.utils.request import RequestHTTPError, send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
@@ -155,7 +153,7 @@ class RemoteRuntime(Runtime):
                 status = data.get('status')
                 if status == 'running' or status == 'paused':
                     self._parse_runtime_response(response)
-        except requests.HTTPError as e:
+        except RequestHTTPError as e:
             if e.response.status_code == 404:
                 return False
             self.log('debug', f'Error while looking for remote runtime: {e}')
@@ -242,7 +240,9 @@ class RemoteRuntime(Runtime):
             'image': self.container_image,
             'command': command,
             'working_dir': '/openhands/code/',
-            'environment': {'DEBUG': 'true'} if self.config.debug else {},
+            'environment': {'DEBUG': 'true'}
+            if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true'
+            else {},
             'session_id': self.sid,
         }
 
@@ -259,7 +259,7 @@ class RemoteRuntime(Runtime):
                 'debug',
                 f'Runtime started. URL: {self.runtime_url}',
             )
-        except requests.HTTPError as e:
+        except RequestHTTPError as e:
             self.log('error', f'Unable to start runtime: {e}')
             raise RuntimeUnavailableError() from e
 
@@ -349,7 +349,7 @@ class RemoteRuntime(Runtime):
                     f'{self.runtime_url}/alive',
                 ):  # will raise exception if we don't get 200 back.
                     pass
-            except requests.HTTPError as e:
+            except RequestHTTPError as e:
                 self.log(
                     'warning', f"Runtime /alive failed, but pod says it's ready: {e}"
                 )
@@ -369,7 +369,7 @@ class RemoteRuntime(Runtime):
             # clean up the runtime
             self.close()
             raise RuntimeError(
-                f'Runtime (ID={self.runtime_id}) failed to start. Current status: {pod_status}'
+                f'Runtime (ID={self.runtime_id}) failed to start. Current status: {pod_status}. Pod Logs:\n{runtime_data.get("pod_logs", "N/A")}'
             )
         else:
             # Maybe this should be a hard failure, but passing through in case the API changes
@@ -446,7 +446,7 @@ class RemoteRuntime(Runtime):
         except requests.Timeout:
             self.log('error', 'No response received within the timeout period.')
             raise
-        except requests.HTTPError as e:
+        except RequestHTTPError as e:
             if is_runtime_request and e.response.status_code == 404:
                 raise RuntimeDisconnectedError(
                     f'404 error while connecting to {self.runtime_url}'
