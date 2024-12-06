@@ -29,6 +29,13 @@ class SessionManager:
     _last_alive_timestamps: dict[str, float] = field(default_factory=dict)
     _redis_listen_task: asyncio.Task | None = None
     _session_is_running_flags: dict[str, asyncio.Event] = field(default_factory=dict)
+    _active_conversations: dict[str, tuple[Conversation, int]] = field(
+        default_factory=dict
+    )
+    _detached_conversations: dict[str, tuple[Conversation, float]] = field(
+        default_factory=dict
+    )
+    _cleanup_task: asyncio.Task | None = None
     _has_remote_connections_flags: dict[str, asyncio.Event] = field(
         default_factory=dict
     )
@@ -37,12 +44,16 @@ class SessionManager:
         redis_client = self._get_redis_client()
         if redis_client:
             self._redis_listen_task = asyncio.create_task(self._redis_subscribe())
+        self._cleanup_task = asyncio.create_task(self._cleanup_detached_conversations())
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         if self._redis_listen_task:
             self._redis_listen_task.cancel()
             self._redis_listen_task = None
+        if self._cleanup_task:
+            self._cleanup_task.cancel()
+            self._cleanup_task = None
 
     def _get_redis_client(self):
         redis_client = getattr(self.sio.manager, 'redis', None)
@@ -127,6 +138,22 @@ class SessionManager:
         start_time = time.time()
         if not await session_exists(sid, self.file_store):
             return None
+
+        # Check if we have an active conversation we can reuse
+        if sid in self._active_conversations:
+            conversation, count = self._active_conversations[sid]
+            self._active_conversations[sid] = (conversation, count + 1)
+            logger.info(f'Reusing active conversation {sid}')
+            return conversation
+
+        # Check if we have a detached conversation we can reuse
+        if sid in self._detached_conversations:
+            conversation, _ = self._detached_conversations.pop(sid)
+            self._active_conversations[sid] = (conversation, 1)
+            logger.info(f'Reusing detached conversation {sid}')
+            return conversation
+
+        # Create new conversation if none exists
         c = Conversation(sid, file_store=self.file_store, config=self.config)
         try:
             await c.connect()
@@ -137,12 +164,43 @@ class SessionManager:
         logger.info(
             f'Conversation {c.sid} connected in {end_time - start_time} seconds'
         )
+        self._active_conversations[sid] = (c, 1)
         return c
 
     async def detach_from_conversation(self, conversation: Conversation):
-        await conversation.disconnect()
+        sid = conversation.sid
+        if sid in self._active_conversations:
+            conv, count = self._active_conversations[sid]
+            if count > 1:
+                self._active_conversations[sid] = (conv, count - 1)
+                return
+            else:
+                self._active_conversations.pop(sid)
+                self._detached_conversations[sid] = (conversation, time.time())
 
-    async def init_or_join_session(self, sid: str, connection_id: str, session_init_data: SessionInitData):
+    async def _cleanup_detached_conversations(self):
+        while should_continue():
+            try:
+                for sid, (
+                    conversation,
+                    detach_time,
+                ) in self._detached_conversations.items():
+                    await conversation.disconnect()
+                    self._detached_conversations.pop(sid, None)
+
+                await asyncio.sleep(60)
+            except asyncio.CancelledError:
+                for conversation, _ in self._detached_conversations.values():
+                    await conversation.disconnect()
+                self._detached_conversations.clear()
+                return
+            except Exception:
+                logger.warning('error_cleaning_detached_conversations', exc_info=True)
+                await asyncio.sleep(15)
+
+    async def init_or_join_session(
+        self, sid: str, connection_id: str, session_init_data: SessionInitData
+    ):
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self.local_connection_id_to_session_id[connection_id] = sid
 
