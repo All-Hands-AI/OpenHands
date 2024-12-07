@@ -306,6 +306,7 @@ class EventStreamRuntime(Runtime):
         environment = {
             'port': str(self._container_port),
             'PYTHONUNBUFFERED': 1,
+            **(self.config.sandbox.runtime_startup_env_vars),
         }
         if self.config.debug or DEBUG:
             environment['DEBUG'] = 'true'
