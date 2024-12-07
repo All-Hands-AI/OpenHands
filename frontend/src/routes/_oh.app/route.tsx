@@ -64,6 +64,7 @@ function App() {
       enabled
       token={token}
       ghToken={gitHubToken}
+      selectedRepository={selectedRepository}
       settings={settings}
     >
       <EventHandler>
