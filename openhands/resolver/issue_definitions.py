@@ -264,6 +264,91 @@ class PRHandler(IssueHandler):
         super().__init__(owner, repo, token, llm_config)
         self.download_url = 'https://api.github.com/repos/{}/{}/pulls'
 
+    def __get_pr_status(self, pull_number: int) -> tuple[bool, list[dict[str, str]]]:
+        """Get the PR's merge conflict status and CI check status.
+
+        Args:
+            pull_number: The number of the pull request to query.
+
+        Returns:
+            A tuple containing:
+            - bool: Whether the PR has merge conflicts
+            - list[dict[str, str]]: List of failed CI checks with their details
+        """
+        query = """
+            query($owner: String!, $repo: String!, $pr: Int!) {
+                repository(owner: $owner, name: $repo) {
+                    pullRequest(number: $pr) {
+                        mergeable
+                        commits(last: 1) {
+                            nodes {
+                                commit {
+                                    statusCheckRollup {
+                                        contexts(first: 100) {
+                                            nodes {
+                                                ... on StatusContext {
+                                                    context
+                                                    state
+                                                    description
+                                                }
+                                                ... on CheckRun {
+                                                    name
+                                                    conclusion
+                                                    text
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        """
+
+        variables = {'owner': self.owner, 'repo': self.repo, 'pr': pull_number}
+        url = 'https://api.github.com/graphql'
+        headers = {
+            'Authorization': f'Bearer {self.token}',
+            'Content-Type': 'application/json',
+        }
+
+        response = requests.post(
+            url, json={'query': query, 'variables': variables}, headers=headers
+        )
+        response.raise_for_status()
+        response_json = response.json()
+
+        pr_data = response_json.get('data', {}).get('repository', {}).get('pullRequest', {})
+        
+        # Check mergeable status
+        has_conflicts = pr_data.get('mergeable') == 'CONFLICTING'
+
+        # Check CI status
+        failed_checks = []
+        commits = pr_data.get('commits', {}).get('nodes', [])
+        if commits:
+            status_rollup = commits[0].get('commit', {}).get('statusCheckRollup', {})
+            contexts = status_rollup.get('contexts', {}).get('nodes', [])
+            
+            for context in contexts:
+                # Handle both StatusContext and CheckRun types
+                if 'state' in context:  # StatusContext
+                    if context['state'] == 'FAILURE':
+                        failed_checks.append({
+                            'name': context['context'],
+                            'description': context.get('description', 'No description available')
+                        })
+                elif 'conclusion' in context:  # CheckRun
+                    if context['conclusion'] in ['FAILURE', 'TIMED_OUT', 'CANCELLED']:
+                        failed_checks.append({
+                            'name': context['name'],
+                            'description': context.get('text', 'No description available')
+                        })
+
+        return has_conflicts, failed_checks
+
     def __download_pr_metadata(
         self, pull_number: int, comment_id: int | None = None
     ) -> tuple[list[str], list[int], list[str], list[ReviewThread], list[str]]:
@@ -536,6 +621,9 @@ class PRHandler(IssueHandler):
                 issue['number'], comment_id=comment_id
             )
 
+            # Get PR status (merge conflicts and CI checks)
+            has_conflicts, failed_checks = self.__get_pr_status(issue['number'])
+
             closing_issues = self.__get_context_from_external_issues_references(
                 closing_issues,
                 closing_issues_numbers,
@@ -557,6 +645,8 @@ class PRHandler(IssueHandler):
                 thread_ids=thread_ids,
                 head_branch=head_branch,
                 thread_comments=thread_comments,
+                has_merge_conflicts=has_conflicts,
+                failed_checks=failed_checks,
             )
 
             converted_issues.append(issue_details)
@@ -604,6 +694,16 @@ class PRHandler(IssueHandler):
             thread_context = '\n---\n'.join(issue.thread_comments)
             images.extend(self._extract_image_urls(thread_context))
 
+        # Add PR status information
+        pr_status = ''
+        if issue.has_merge_conflicts:
+            pr_status += '\nThis PR has merge conflicts that need to be resolved.'
+        if issue.failed_checks:
+            pr_status += '\nThe following CI checks have failed:\n'
+            for check in issue.failed_checks:
+                pr_status += f"- {check['name']}: {check['description']}\n"
+            pr_status += '\nPlease examine the GitHub workflow files, reproduce the problem locally, and fix and test it locally.'
+
         instruction = template.render(
             issues=issues_str,
             review_comments=review_comments_str,
@@ -611,6 +711,7 @@ class PRHandler(IssueHandler):
             files=review_thread_file_str,
             thread_context=thread_context,
             repo_instruction=repo_instruction,
+            pr_status=pr_status,
         )
         return instruction, images
 
