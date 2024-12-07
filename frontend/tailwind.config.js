@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
-const { nextui } = require("@nextui-org/react");
-export default {
+import { nextui } from "@nextui-org/react";
+
+export default async () => ({
   content: [
     "./src/**/*.{js,ts,jsx,tsx}",
     "./node_modules/@nextui-org/theme/dist/**/*.{js,ts,jsx,tsx}",
@@ -33,6 +34,6 @@ export default {
         }
       }
     }),
-    require('@tailwindcss/typography'),
+    (await import('@tailwindcss/typography')).default,
   ],
-};
+});

@@ -11,7 +11,7 @@ interface ContainerProps {
     isBeta?: boolean;
   }[];
   children: React.ReactNode;
-  className?: React.HTMLAttributes<HTMLDivElement>["className"];
+  className?: string;
 }
 
 export function Container({
