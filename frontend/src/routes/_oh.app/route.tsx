@@ -1,6 +1,5 @@
 import { useDisclosure } from "@nextui-org/react";
 import React from "react";
-import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { Controls } from "#/components/features/controls/controls";
 import { RootState } from "#/store";
@@ -21,10 +20,16 @@ import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
+import { useState } from "react";
+import { AppView } from "#/components/features/app/app-view";
+import { Workspace } from "#/components/features/workspace/workspace";
+import { JupyterView } from "#/components/features/jupyter/jupyter-view";
+import { BrowserView } from "#/components/features/browser/browser-view";
 
 function App() {
   const { token, gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
+  const [activeTab, setActiveTab] = useState("workspace");
 
   const dispatch = useDispatch();
   useConversationConfig();
@@ -59,6 +64,25 @@ function App() {
     onOpenChange: onSecurityModalOpenChange,
   } = useDisclosure();
 
+  const renderActiveTab = () => {
+    switch (activeTab) {
+      case "workspace":
+        return (
+          <FilesProvider>
+            <Workspace />
+          </FilesProvider>
+        );
+      case "jupyter":
+        return <JupyterView />;
+      case "browser":
+        return <BrowserView />;
+      case "app":
+        return <AppView />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <WsClientProvider
       enabled
@@ -78,24 +102,38 @@ function App() {
               <Container
                 className="h-2/3"
                 labels={[
-                  { label: "Workspace", to: "", icon: <CodeIcon /> },
-                  { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
-                  {
-                    label: "Browser",
-                    to: "browser",
-                    icon: <GlobeIcon />,
-                    isBeta: true,
+                  { 
+                    id: "workspace",
+                    label: "Workspace",
+                    icon: <CodeIcon />,
+                    isActive: activeTab === "workspace",
+                    onClick: setActiveTab
+                  },
+                  { 
+                    id: "jupyter",
+                    label: "Jupyter",
+                    icon: <ListIcon />,
+                    isActive: activeTab === "jupyter",
+                    onClick: setActiveTab
                   },
                   {
-                    label: "App",
-                    to: "app",
+                    id: "browser",
+                    label: "Browser",
                     icon: <GlobeIcon />,
+                    isBeta: true,
+                    isActive: activeTab === "browser",
+                    onClick: setActiveTab
+                  },
+                  {
+                    id: "app",
+                    label: "App",
+                    icon: <GlobeIcon />,
+                    isActive: activeTab === "app",
+                    onClick: setActiveTab
                   },
                 ]}
               >
-                <FilesProvider>
-                  <Outlet />
-                </FilesProvider>
+                {renderActiveTab()}
               </Container>
               {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
                * that it loads only in the client-side. */}

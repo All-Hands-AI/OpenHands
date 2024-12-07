@@ -5,10 +5,12 @@ import { NavTab } from "./nav-tab";
 interface ContainerProps {
   label?: string;
   labels?: {
+    id: string;
     label: string;
-    to: string;
     icon?: React.ReactNode;
     isBeta?: boolean;
+    isActive: boolean;
+    onClick: (id: string) => void;
   }[];
   children: React.ReactNode;
   className?: React.HTMLAttributes<HTMLDivElement>["className"];
@@ -29,8 +31,8 @@ export function Container({
     >
       {labels && (
         <div className="flex text-xs h-[36px]">
-          {labels.map(({ label: l, to, icon, isBeta }) => (
-            <NavTab key={to} to={to} label={l} icon={icon} isBeta={isBeta} />
+          {labels.map(({ id, label: l, icon, isBeta, isActive, onClick }) => (
+            <NavTab key={id} id={id} label={l} icon={icon} isBeta={isBeta} isActive={isActive} onClick={onClick} />
           ))}
         </div>
       )}
