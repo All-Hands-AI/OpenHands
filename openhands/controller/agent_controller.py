@@ -463,10 +463,6 @@ class AgentController:
                 await self._delegate_step()
             return
 
-        if self._is_stuck():
-            await self._react_to_exception(RuntimeError('Agent got stuck in a loop'))
-            return
-
         self.log(
             'info',
             f'LEVEL {self.state.delegate_level} LOCAL STEP {self.state.local_iteration} GLOBAL STEP {self.state.iteration}',
@@ -486,6 +482,10 @@ class AgentController:
                     'budget', current_cost, self.max_budget_per_task
                 )
         if stop_step:
+            return
+
+        if self._is_stuck():
+            await self._react_to_exception(RuntimeError('Agent got stuck in a loop'))
             return
 
         self.update_state_before_step()
