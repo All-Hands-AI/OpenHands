@@ -159,7 +159,7 @@ class IssueHandler(IssueHandlerInterface):
         all_issues = [
             issue
             for issue in all_issues
-            if issue['number'] in issue_numbers and 'pull_request' not in issue
+            if issue['number'] in issue_numbers
         ]
 
         if len(issue_numbers) == 1 and not all_issues:
@@ -509,57 +509,67 @@ class PRHandler(IssueHandler):
         if not issue_numbers:
             raise ValueError('Unspecified issue numbers')
 
-        all_issues = self._download_issues_from_github()
-        logger.info(f'Limiting resolving to issues {issue_numbers}.')
-        all_issues = [issue for issue in all_issues if issue['number'] in issue_numbers]
-
+        logger.info(f'Fetching issues {issue_numbers}.')
         converted_issues = []
-        for issue in all_issues:
-            # For PRs, body can be None
-            if any([issue.get(key) is None for key in ['number', 'title']]):
-                logger.warning(f'Skipping #{issue} as it is missing number or title.')
-                continue
+        headers = {
+            'Authorization': f'token {self.token}',
+            'Accept': 'application/vnd.github.v3+json',
+        }
 
-            # Handle None body for PRs
-            body = issue.get('body') if issue.get('body') is not None else ''
-            (
-                closing_issues,
-                closing_issues_numbers,
-                review_comments,
-                review_threads,
-                thread_ids,
-            ) = self.__download_pr_metadata(issue['number'], comment_id=comment_id)
-            head_branch = issue['head']['ref']
+        for issue_number in issue_numbers:
+            try:
+                url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{issue_number}'
+                response = requests.get(url, headers=headers)
+                response.raise_for_status()
+                issue = response.json()
+                
+                # For PRs, body can be None
+                if any([issue.get(key) is None for key in ['number', 'title']]):
+                    logger.warning(f'Skipping #{issue} as it is missing number or title.')
+                    continue
 
-            # Get PR thread comments
-            thread_comments = self._get_pr_comments(
-                issue['number'], comment_id=comment_id
-            )
+                # Handle None body for PRs
+                body = issue.get('body') if issue.get('body') is not None else ''
+                (
+                    closing_issues,
+                    closing_issues_numbers,
+                    review_comments,
+                    review_threads,
+                    thread_ids,
+                ) = self.__download_pr_metadata(issue['number'], comment_id=comment_id)
+                head_branch = issue['head']['ref']
 
-            closing_issues = self.__get_context_from_external_issues_references(
-                closing_issues,
-                closing_issues_numbers,
-                body,
-                review_comments,
-                review_threads,
-                thread_comments,
-            )
+                # Get PR thread comments
+                thread_comments = self._get_pr_comments(
+                    issue['number'], comment_id=comment_id
+                )
 
-            issue_details = GithubIssue(
-                owner=self.owner,
-                repo=self.repo,
-                number=issue['number'],
-                title=issue['title'],
-                body=body,
-                closing_issues=closing_issues,
-                review_comments=review_comments,
-                review_threads=review_threads,
-                thread_ids=thread_ids,
-                head_branch=head_branch,
-                thread_comments=thread_comments,
-            )
+                closing_issues = self.__get_context_from_external_issues_references(
+                    closing_issues,
+                    closing_issues_numbers,
+                    body,
+                    review_comments,
+                    review_threads,
+                    thread_comments,
+                )
 
-            converted_issues.append(issue_details)
+                issue_details = GithubIssue(
+                    owner=self.owner,
+                    repo=self.repo,
+                    number=issue['number'],
+                    title=issue['title'],
+                    body=body,
+                    closing_issues=closing_issues,
+                    review_comments=review_comments,
+                    review_threads=review_threads,
+                    thread_ids=thread_ids,
+                    head_branch=head_branch,
+                    thread_comments=thread_comments,
+                )
+
+                converted_issues.append(issue_details)
+            except requests.exceptions.RequestException as e:
+                logger.warning(f'Failed to fetch issue {issue_number}: {str(e)}')
 
         return converted_issues
 

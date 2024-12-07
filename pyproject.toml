@@ -94,9 +94,11 @@ openai = "*"
 opencv-python = "*"
 pandas = "*"
 reportlab = "*"
+responses = "^0.25.3"
 
 [tool.coverage.run]
 concurrency = ["gevent"]
+
 
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
@@ -127,6 +129,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
