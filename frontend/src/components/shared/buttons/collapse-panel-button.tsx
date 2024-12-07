@@ -7,7 +7,10 @@ interface CollapsePanelButtonProps {
   onClick: () => void;
 }
 
-export function CollapsePanelButton({ isCollapsed, onClick }: CollapsePanelButtonProps) {
+export function CollapsePanelButton({
+  isCollapsed,
+  onClick,
+}: CollapsePanelButtonProps) {
   return (
     <Button
       isIconOnly

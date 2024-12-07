@@ -88,7 +88,9 @@ function App() {
               role="complementary"
               className={clsx(
                 "flex flex-col gap-3 transition-all duration-300",
-                isRightPanelCollapsed ? "w-0 opacity-0 overflow-hidden" : "grow opacity-100"
+                isRightPanelCollapsed
+                  ? "w-0 opacity-0 overflow-hidden"
+                  : "grow opacity-100",
               )}>
               <Container
                 className="h-2/3"
@@ -118,7 +120,7 @@ function App() {
 
             <CollapsePanelButton
               isCollapsed={isRightPanelCollapsed}
-              onClick={() => setIsRightPanelCollapsed(prev => !prev)}
+              onClick={() => setIsRightPanelCollapsed((prev) => !prev)}
             />
           </div>
 

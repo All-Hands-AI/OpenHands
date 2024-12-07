@@ -2,7 +2,7 @@ import clsx from "clsx";
 import React from "react";
 import { NavTab } from "./nav-tab";
 
-interface ContainerProps extends React.HTMLAttributes<HTMLDivElement> {
+interface ContainerProps {
   label?: string;
   labels?: {
     label: string;
@@ -11,6 +11,9 @@ interface ContainerProps extends React.HTMLAttributes<HTMLDivElement> {
     isBeta?: boolean;
   }[];
   children: React.ReactNode;
+  className?: string;
+  role?: string;
+  "data-testid"?: string;
 }
 
 export function Container({
@@ -18,11 +21,13 @@ export function Container({
   labels,
   children,
   className,
-  ...props
+  role,
+  "data-testid": dataTestId,
 }: ContainerProps) {
   return (
     <div
-      {...props}
+      role={role}
+      data-testid={dataTestId}
       className={clsx(
         "bg-neutral-800 border border-neutral-600 rounded-xl flex flex-col",
         className,

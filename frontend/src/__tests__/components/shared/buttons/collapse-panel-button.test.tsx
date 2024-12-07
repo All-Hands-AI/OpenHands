@@ -1,6 +1,6 @@
+import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { CollapsePanelButton } from "#/components/shared/buttons/collapse-panel-button";
-import { describe, it, expect, vi } from "vitest";
 
 describe("CollapsePanelButton", () => {
   it("should render with correct aria-label when expanded", () => {
@@ -9,7 +9,7 @@ describe("CollapsePanelButton", () => {
   });
 
   it("should render with correct aria-label when collapsed", () => {
-    render(<CollapsePanelButton isCollapsed={true} onClick={() => {}} />);
+    render(<CollapsePanelButton isCollapsed onClick={() => {}} />);
     expect(screen.getByLabelText("Expand panel")).toBeInTheDocument();
   });
 
@@ -21,7 +21,7 @@ describe("CollapsePanelButton", () => {
   });
 
   it("should have rotate-180 class when collapsed", () => {
-    render(<CollapsePanelButton isCollapsed={true} onClick={() => {}} />);
+    render(<CollapsePanelButton isCollapsed onClick={() => {}} />);
     const button = screen.getByLabelText("Expand panel");
     expect(button.querySelector("svg")).toHaveClass("rotate-180");
   });
