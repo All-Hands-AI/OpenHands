@@ -1,5 +1,6 @@
 import { useDisclosure } from "@nextui-org/react";
 import React from "react";
+import clsx from "clsx";
 import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { Controls } from "#/components/features/controls/controls";
@@ -21,10 +22,12 @@ import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
+import { CollapsePanelButton } from "#/components/shared/buttons/collapse-panel-button";
 
 function App() {
   const { token, gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
+  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = React.useState(false);
 
   const dispatch = useDispatch();
   useConversationConfig();
@@ -70,11 +73,23 @@ function App() {
       <EventHandler>
         <div className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto gap-3">
-            <Container className="w-[390px] max-h-full relative">
+            <Container
+              role="main"
+              data-testid="chat-panel"
+              className={clsx(
+                "max-h-full relative transition-all duration-300",
+                isRightPanelCollapsed ? "w-full" : "w-[390px]"
+              )}
+            >
               <ChatInterface />
             </Container>
 
-            <div className="flex flex-col grow gap-3">
+            <div
+              role="complementary"
+              className={clsx(
+                "flex flex-col gap-3 transition-all duration-300",
+                isRightPanelCollapsed ? "w-0 opacity-0 overflow-hidden" : "grow opacity-100"
+              )}>
               <Container
                 className="h-2/3"
                 labels={[
@@ -100,6 +115,11 @@ function App() {
                 </React.Suspense>
               </Container>
             </div>
+
+            <CollapsePanelButton
+              isCollapsed={isRightPanelCollapsed}
+              onClick={() => setIsRightPanelCollapsed(prev => !prev)}
+            />
           </div>
 
           <div className="h-[60px]">
