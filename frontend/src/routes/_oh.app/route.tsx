@@ -27,7 +27,8 @@ import { CollapsePanelButton } from "#/components/shared/buttons/collapse-panel-
 function App() {
   const { token, gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
-  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = React.useState(false);
+  const [isRightPanelCollapsed, setIsRightPanelCollapsed] =
+    React.useState(false);
 
   const dispatch = useDispatch();
   useConversationConfig();
@@ -78,7 +79,7 @@ function App() {
               data-testid="chat-panel"
               className={clsx(
                 "max-h-full relative transition-all duration-300",
-                isRightPanelCollapsed ? "w-full" : "w-[390px]"
+                isRightPanelCollapsed ? "w-full" : "w-[390px]",
               )}
             >
               <ChatInterface />
@@ -91,7 +92,8 @@ function App() {
                 isRightPanelCollapsed
                   ? "w-0 opacity-0 overflow-hidden"
                   : "grow opacity-100",
-              )}>
+              )}
+            >
               <Container
                 className="h-2/3"
                 labels={[
