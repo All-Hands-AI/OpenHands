@@ -139,15 +139,19 @@ jobs:
 
       - name: Set environment variables
         run: |
-          if [ -n "${{ github.event.review.body }}" ]; then
+          # Handle pull request events first
+          if [ -n "${{ github.event.pull_request.number }}" ]; then
             echo "ISSUE_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
             echo "ISSUE_TYPE=pr" >> $GITHUB_ENV
+          # Handle pull request review events
+          elif [ -n "${{ github.event.review.body }}" ]; then
+            echo "ISSUE_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+            echo "ISSUE_TYPE=pr" >> $GITHUB_ENV
+          # Handle issue comment events that reference a PR
           elif [ -n "${{ github.event.issue.pull_request }}" ]; then
             echo "ISSUE_NUMBER=${{ github.event.issue.number }}" >> $GITHUB_ENV
             echo "ISSUE_TYPE=pr" >> $GITHUB_ENV
-          elif [ -n "${{ github.event.pull_request.number }}" ]; then
-            echo "ISSUE_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
-            echo "ISSUE_TYPE=pr" >> $GITHUB_ENV
+          # Handle regular issue events
           else
             echo "ISSUE_NUMBER=${{ github.event.issue.number }}" >> $GITHUB_ENV
             echo "ISSUE_TYPE=issue" >> $GITHUB_ENV
