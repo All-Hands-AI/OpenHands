@@ -86,6 +86,11 @@ function App() {
                     icon: <GlobeIcon />,
                     isBeta: true,
                   },
+                  {
+                    label: "App",
+                    to: "app",
+                    icon: <GlobeIcon />,
+                  },
                 ]}
               >
                 <FilesProvider>
