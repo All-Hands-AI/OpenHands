@@ -454,16 +454,17 @@ class AgentController:
             await asyncio.sleep(1)
             return
 
-        if self._is_stuck():
-            await self._react_to_exception(RuntimeError('Agent got stuck in a loop'))
-            return
-
         if self.delegate is not None:
             assert self.delegate != self
             if self.delegate.get_agent_state() == AgentState.PAUSED:
+                # no need to check too often
                 await asyncio.sleep(1)
             else:
                 await self._delegate_step()
+            return
+
+        if self._is_stuck():
+            await self._react_to_exception(RuntimeError('Agent got stuck in a loop'))
             return
 
         self.log(
