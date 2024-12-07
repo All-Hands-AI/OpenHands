@@ -74,16 +74,17 @@ function App() {
       <EventHandler>
         <div className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto gap-3">
-            <Container
+            <div
               role="main"
               data-testid="chat-panel"
               className={clsx(
+                "bg-neutral-800 border border-neutral-600 rounded-xl flex flex-col",
                 "max-h-full relative transition-all duration-300",
                 isRightPanelCollapsed ? "w-full" : "w-[390px]",
               )}
             >
               <ChatInterface />
-            </Container>
+            </div>
 
             <div
               role="complementary"

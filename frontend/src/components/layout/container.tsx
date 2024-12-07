@@ -12,8 +12,6 @@ interface ContainerProps {
   }[];
   children: React.ReactNode;
   className?: string;
-  role?: string;
-  "data-testid"?: string;
 }
 
 export function Container({
@@ -21,13 +19,9 @@ export function Container({
   labels,
   children,
   className,
-  role,
-  "data-testid": dataTestId,
 }: ContainerProps) {
   return (
     <div
-      role={role}
-      data-testid={dataTestId}
       className={clsx(
         "bg-neutral-800 border border-neutral-600 rounded-xl flex flex-col",
         className,
