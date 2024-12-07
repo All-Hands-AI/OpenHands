@@ -316,7 +316,9 @@ def send_pull_request(
                 json=review_data,
             )
             if review_response.status_code != 201:
-                print(f'Warning: Failed to request review from {reviewer}: {review_response.text}')
+                print(
+                    f'Warning: Failed to request review from {reviewer}: {review_response.text}'
+                )
 
         url = pr_data['html_url']
 
