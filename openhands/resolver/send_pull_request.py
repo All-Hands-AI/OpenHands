@@ -211,6 +211,7 @@ def send_pull_request(
     fork_owner: str | None = None,
     additional_message: str | None = None,
     target_branch: str | None = None,
+    reviewer: str | None = None,
 ) -> str:
     if pr_type not in ['branch', 'draft', 'ready']:
         raise ValueError(f'Invalid pr_type: {pr_type}')
@@ -305,6 +306,17 @@ def send_pull_request(
             )
         response.raise_for_status()
         pr_data = response.json()
+
+        # Request review if a reviewer was specified
+        if reviewer and pr_type != 'branch':
+            review_data = {'reviewers': [reviewer]}
+            review_response = requests.post(
+                f'{base_url}/pulls/{pr_data["number"]}/requested_reviewers',
+                headers=headers,
+                json=review_data,
+            )
+            if review_response.status_code != 201:
+                print(f'Warning: Failed to request review from {reviewer}: {review_response.text}')
 
         url = pr_data['html_url']
 
@@ -518,6 +530,7 @@ def process_single_issue(
             fork_owner=fork_owner,
             additional_message=resolver_output.success_explanation,
             target_branch=target_branch,
+            reviewer=my_args.reviewer,
         )
 
 
@@ -613,6 +626,12 @@ def main():
         type=str,
         default=None,
         help='Target branch to create the pull request against (defaults to repository default branch)',
+    )
+    parser.add_argument(
+        '--reviewer',
+        type=str,
+        help='GitHub username of the person to request review from',
+        default=None,
     )
     my_args = parser.parse_args()
 
