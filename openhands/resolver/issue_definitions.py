@@ -320,8 +320,10 @@ class PRHandler(IssueHandler):
         response.raise_for_status()
         response_json = response.json()
 
-        pr_data = response_json.get('data', {}).get('repository', {}).get('pullRequest', {})
-        
+        pr_data = (
+            response_json.get('data', {}).get('repository', {}).get('pullRequest', {})
+        )
+
         # Check mergeable status
         has_conflicts = pr_data.get('mergeable') == 'CONFLICTING'
 
@@ -331,21 +333,29 @@ class PRHandler(IssueHandler):
         if commits:
             status_rollup = commits[0].get('commit', {}).get('statusCheckRollup', {})
             contexts = status_rollup.get('contexts', {}).get('nodes', [])
-            
+
             for context in contexts:
                 # Handle both StatusContext and CheckRun types
                 if 'state' in context:  # StatusContext
                     if context['state'] == 'FAILURE':
-                        failed_checks.append({
-                            'name': context['context'],
-                            'description': context.get('description', 'No description available')
-                        })
+                        failed_checks.append(
+                            {
+                                'name': context['context'],
+                                'description': context.get(
+                                    'description', 'No description available'
+                                ),
+                            }
+                        )
                 elif 'conclusion' in context:  # CheckRun
                     if context['conclusion'] in ['FAILURE', 'TIMED_OUT', 'CANCELLED']:
-                        failed_checks.append({
-                            'name': context['name'],
-                            'description': context.get('text', 'No description available')
-                        })
+                        failed_checks.append(
+                            {
+                                'name': context['name'],
+                                'description': context.get(
+                                    'text', 'No description available'
+                                ),
+                            }
+                        )
 
         return has_conflicts, failed_checks
 
