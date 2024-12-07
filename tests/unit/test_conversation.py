@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from openhands.core.config import AppConfig
 from openhands.events.action import MessageAction
-from openhands.events.observation import MessageObservation
+from openhands.events.observation import NullObservation
 from openhands.server.session.conversation import Conversation
 from openhands.storage.memory import InMemoryFileStore
 
@@ -23,9 +23,9 @@ def test_summarize_actions(conversation):
     # Mock the event stream
     conversation.event_stream.get_events = MagicMock(return_value=[
         MessageAction("Hello"),
-        MessageObservation(content="Hi there"),
+        NullObservation(content="Hi there"),
         MessageAction("Fix the bug"),
-        MessageObservation(content="I'll help fix the bug"),
+        NullObservation(content="I'll help fix the bug"),
     ])
 
     # Mock the LLM

@@ -339,7 +339,7 @@ async def zip_current_workspace(request: Request, background_tasks: BackgroundTa
         )
 
         # This will execute after the response is sent (So the file is not deleted before being sent)
-        background_tasks.add_task(zip_file.unlink)
+        background_tasks.add_task(os.unlink, zip_file)
 
         return response
     except Exception as e:
