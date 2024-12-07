@@ -18,3 +18,5 @@ class GithubIssue(BaseModel):
     review_threads: list[ReviewThread] | None = None
     thread_ids: list[str] | None = None
     head_branch: str | None = None
+    has_merge_conflicts: bool | None = None
+    failed_checks: list[dict[str, str]] | None = None
