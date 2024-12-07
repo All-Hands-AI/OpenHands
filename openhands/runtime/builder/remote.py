@@ -23,7 +23,13 @@ class RemoteRuntimeBuilder(RuntimeBuilder):
         self.session = requests.Session()
         self.session.headers.update({'X-API-Key': self.api_key})
 
-    def build(self, path: str, tags: list[str], platform: str | None = None) -> str:
+    def build(
+        self,
+        path: str,
+        tags: list[str],
+        platform: str | None = None,
+        extra_build_args: list[str] | None = None,
+    ) -> str:
         """Builds a Docker image using the Runtime API's /build endpoint."""
         # Create a tar archive of the build context
         tar_buffer = io.BytesIO()
