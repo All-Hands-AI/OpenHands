@@ -1,14 +1,12 @@
 import {
   addAssistantMessage,
+  addAssistantAction,
   addUserMessage,
   addErrorMessage,
 } from "#/state/chat-slice";
+import { appendSecurityAnalyzerInput } from "#/state/security-analyzer-slice";
 import { setCode, setActiveFilepath } from "#/state/code-slice";
 import { appendJupyterInput } from "#/state/jupyter-slice";
-import {
-  ActionSecurityRisk,
-  appendSecurityAnalyzerInput,
-} from "#/state/security-analyzer-slice";
 import { setCurStatusMessage } from "#/state/status-slice";
 import store from "#/store";
 import ActionType from "#/types/action-type";
@@ -47,80 +45,35 @@ const messageActions = {
           content: message.args.content,
           imageUrls: [],
           timestamp: message.timestamp,
+          pending: false,
         }),
       );
     } else {
       store.dispatch(addAssistantMessage(message.args.content));
     }
   },
-  [ActionType.FINISH]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.message));
-  },
-  [ActionType.REJECT]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.message));
-  },
-  [ActionType.DELEGATE]: (message: ActionMessage) => {
-    store.dispatch(addAssistantMessage(message.message));
-  },
-  [ActionType.RUN]: (message: ActionMessage) => {
-    if (message.args.hidden) return;
-    if (message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
-    }
-  },
   [ActionType.RUN_IPYTHON]: (message: ActionMessage) => {
-    if (message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
-    }
     if (message.args.confirmation_state !== "rejected") {
       store.dispatch(appendJupyterInput(message.args.code));
     }
   },
 };
 
-function getRiskText(risk: ActionSecurityRisk) {
-  switch (risk) {
-    case ActionSecurityRisk.LOW:
-      return "Low Risk";
-    case ActionSecurityRisk.MEDIUM:
-      return "Medium Risk";
-    case ActionSecurityRisk.HIGH:
-      return "High Risk";
-    case ActionSecurityRisk.UNKNOWN:
-    default:
-      return "Unknown Risk";
-  }
-}
-
 export function handleActionMessage(message: ActionMessage) {
+  if (message.args?.hidden) {
+    return;
+  }
+
   if ("args" in message && "security_risk" in message.args) {
     store.dispatch(appendSecurityAnalyzerInput(message));
   }
 
-  if (
-    (message.action === ActionType.RUN ||
-      message.action === ActionType.RUN_IPYTHON) &&
-    message.args.confirmation_state === "awaiting_confirmation"
-  ) {
-    if (message.args.thought) {
+  if (message.source === "agent") {
+    if (message.args && message.args.thought) {
       store.dispatch(addAssistantMessage(message.args.thought));
     }
-    if (message.args.command) {
-      store.dispatch(
-        addAssistantMessage(
-          `Running this command now: \n\`\`\`\`bash\n${message.args.command}\n\`\`\`\`\nEstimated security risk: ${getRiskText(message.args.security_risk as unknown as ActionSecurityRisk)}`,
-        ),
-      );
-    } else if (message.args.code) {
-      store.dispatch(
-        addAssistantMessage(
-          `Running this code now: \n\`\`\`\`python\n${message.args.code}\n\`\`\`\`\nEstimated security risk: ${getRiskText(message.args.security_risk as unknown as ActionSecurityRisk)}`,
-        ),
-      );
-    } else {
-      store.dispatch(addAssistantMessage(message.message));
-    }
-    return;
+    // @ts-expect-error TODO: fix
+    store.dispatch(addAssistantAction(message));
   }
 
   if (message.action in messageActions) {

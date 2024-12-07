@@ -1,7 +1,7 @@
 import socketio
 
 from openhands.server.app import app as base_app
-from openhands.server.socket import sio
+from openhands.server.listen_socket import sio
 from openhands.server.static import SPAStaticFiles
 
 base_app.mount(

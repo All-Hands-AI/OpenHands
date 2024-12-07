@@ -11,6 +11,7 @@ from openhands.events.stream import EventStream, session_exists
 from openhands.runtime.base import RuntimeUnavailableError
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
+from openhands.server.session.session_init_data import SessionInitData
 from openhands.storage.files import FileStore
 from openhands.utils.shutdown_listener import should_continue
 
@@ -63,7 +64,7 @@ class SessionManager:
                     await self._process_message(message)
             except asyncio.CancelledError:
                 return
-            except:
+            except Exception:
                 try:
                     asyncio.get_running_loop()
                     logger.warning(
@@ -141,7 +142,7 @@ class SessionManager:
     async def detach_from_conversation(self, conversation: Conversation):
         await conversation.disconnect()
 
-    async def init_or_join_session(self, sid: str, connection_id: str, data: dict):
+    async def init_or_join_session(self, sid: str, connection_id: str, session_init_data: SessionInitData):
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self.local_connection_id_to_session_id[connection_id] = sid
 
@@ -156,7 +157,7 @@ class SessionManager:
         if redis_client and await self._is_session_running_in_cluster(sid):
             return EventStream(sid, self.file_store)
 
-        return await self.start_local_session(sid, data)
+        return await self.start_local_session(sid, session_init_data)
 
     async def _is_session_running_in_cluster(self, sid: str) -> bool:
         """As the rest of the cluster if a session is running. Wait a for a short timeout for a reply"""
@@ -210,14 +211,14 @@ class SessionManager:
         finally:
             self._has_remote_connections_flags.pop(sid)
 
-    async def start_local_session(self, sid: str, data: dict):
+    async def start_local_session(self, sid: str, session_init_data: SessionInitData):
         # Start a new local session
         logger.info(f'start_new_local_session:{sid}')
         session = Session(
             sid=sid, file_store=self.file_store, config=self.config, sio=self.sio
         )
         self.local_sessions_by_sid[sid] = session
-        await session.initialize_agent(data)
+        await session.initialize_agent(session_init_data)
         return session.agent_session.event_stream
 
     async def send_to_event_stream(self, connection_id: str, data: dict):

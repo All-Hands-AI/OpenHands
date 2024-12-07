@@ -1,5 +1,5 @@
 import toast from "react-hot-toast";
-import { ErrorToast } from "#/components/error-toast";
+import { ErrorToast } from "#/components/shared/error-toast";
 
 export const displayErrorToast = (error: string) =>
   toast((t) => <ErrorToast id={t.id} error={error} />, {

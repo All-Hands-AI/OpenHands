@@ -389,16 +389,23 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
         handler_instance.get_instruction.return_value = ('Test instruction', [])
         handler_instance.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
 
-        with patch(
-            'openhands.resolver.resolve_issue.create_runtime', mock_create_runtime
-        ), patch(
-            'openhands.resolver.resolve_issue.initialize_runtime',
-            mock_initialize_runtime,
-        ), patch(
-            'openhands.resolver.resolve_issue.run_controller', mock_run_controller
-        ), patch(
-            'openhands.resolver.resolve_issue.complete_runtime', mock_complete_runtime
-        ), patch('openhands.resolver.resolve_issue.logger'):
+        with (
+            patch(
+                'openhands.resolver.resolve_issue.create_runtime', mock_create_runtime
+            ),
+            patch(
+                'openhands.resolver.resolve_issue.initialize_runtime',
+                mock_initialize_runtime,
+            ),
+            patch(
+                'openhands.resolver.resolve_issue.run_controller', mock_run_controller
+            ),
+            patch(
+                'openhands.resolver.resolve_issue.complete_runtime',
+                mock_complete_runtime,
+            ),
+            patch('openhands.resolver.resolve_issue.logger'),
+        ):
             # Call the function
             result = await process_issue(
                 issue,
