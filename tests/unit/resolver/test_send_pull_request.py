@@ -244,7 +244,7 @@ def test_initialize_repo(mock_output_dir):
 @patch('openhands.resolver.send_pull_request.reply_to_comment')
 @patch('requests.post')
 @patch('subprocess.run')
-@patch('openhands.llm.llm.LLM')
+@patch('openhands.resolver.send_pull_request.LLM')
 def test_update_existing_pull_request(
     mock_llm_class,
     mock_subprocess_run,
