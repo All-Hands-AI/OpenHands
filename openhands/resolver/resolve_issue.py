@@ -5,6 +5,7 @@ import dataclasses
 import json
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 from typing import Any
@@ -19,6 +20,7 @@ from openhands.core.config import (
     LLMConfig,
     SandboxConfig,
 )
+from openhands.core.config.replay_config import ReplayConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
@@ -73,6 +75,75 @@ def initialize_runtime(
         raise RuntimeError(f'Failed to set git config.\n{obs}')
 
 
+async def get_git_patch(runtime: Runtime, base_commit: str) -> str:
+    """Get the git diff for the current commit.
+
+    Args:
+        base_commit: The base commit to compare against
+    """
+    n_retries = 0
+    git_patch = None
+    while n_retries < 5:
+        action = CmdRunAction(
+            command=f'git diff --no-color --cached {base_commit}',
+            keep_prompt=False,
+        )
+        action.timeout = 600 + 100 * n_retries
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        n_retries += 1
+        if isinstance(obs, CmdOutputObservation):
+            if obs.exit_code == 0:
+                git_patch = obs.content.strip()
+                break
+            else:
+                logger.info('Failed to get git diff, retrying...')
+                await asyncio.sleep(10)
+        elif isinstance(obs, ErrorObservation):
+            logger.error(f'Error occurred: {obs.content}. Retrying...')
+            await asyncio.sleep(10)
+        else:
+            raise ValueError(f'Unexpected observation type: {type(obs)}')
+    if git_patch is None:
+        raise RuntimeError('Failed to get git diff')
+    return git_patch
+
+
+def strip_replay_comment(file_name: str, line: str):
+    """Remove a replay comment with the specified text from a file.
+
+    Args:
+        file_name: Path to the file containing the comment
+        line: The line containing the comment to remove
+    """
+    logger.info(f'Stripping Replay comment from {file_name}: "{line}"')
+    if not os.path.exists(file_name):
+        raise ValueError(f'File {file_name} does not exist')
+    with open(file_name, 'r') as f:
+        lines = f.readlines()
+
+    # Find and remove the line
+    if line + '\n' in lines:
+        lines.remove(line + '\n')
+
+    # Write back the file without the comment
+    with open(file_name, 'w') as f:
+        f.writelines(lines)
+
+
+def strip_replay_comments(git_patch: str) -> None:
+    """Strip all replay comments from the git patch."""
+    logger.info('Stripping Replay comments...')
+    lines = git_patch.splitlines()
+    current_file = ''
+    for line in lines:
+        if re.match(r'^\+\+\+ b/', line):
+            current_file = line[6:]
+        if re.match(r'^\+.*\s+//', line.lstrip()):
+            strip_replay_comment(current_file, line[1:])
+
+
 async def complete_runtime(
     runtime: Runtime,
     base_commit: str,
@@ -111,6 +182,11 @@ async def complete_runtime(
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
+    base_git_patch = await get_git_patch(runtime, base_commit)
+
+    logger.info('Stripping Replay comments...')
+    strip_replay_comments(base_git_patch)
+
     action = CmdRunAction(command='git add -A')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
@@ -118,30 +194,7 @@ async def complete_runtime(
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to git add. Observation: {obs}')
 
-    n_retries = 0
-    git_patch = None
-    while n_retries < 5:
-        action = CmdRunAction(
-            command=f'git diff --no-color --cached {base_commit}',
-            keep_prompt=False,
-        )
-        action.timeout = 600 + 100 * n_retries
-        logger.info(action, extra={'msg_type': 'ACTION'})
-        obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-        n_retries += 1
-        if isinstance(obs, CmdOutputObservation):
-            if obs.exit_code == 0:
-                git_patch = obs.content.strip()
-                break
-            else:
-                logger.info('Failed to get git diff, retrying...')
-                await asyncio.sleep(10)
-        elif isinstance(obs, ErrorObservation):
-            logger.error(f'Error occurred: {obs.content}. Retrying...')
-            await asyncio.sleep(10)
-        else:
-            raise ValueError(f'Unexpected observation type: {type(obs)}')
+    git_patch = await get_git_patch(runtime, base_commit)
 
     logger.info('-' * 30)
     logger.info('END Runtime Completion Fn')
@@ -180,6 +233,7 @@ async def process_issue(
     shutil.copytree(os.path.join(output_dir, 'repo'), workspace_base)
 
     config = AppConfig(
+        debug=True,
         default_agent='CodeActAgent',
         runtime='eventstream',
         max_budget_per_task=4,
@@ -190,6 +244,10 @@ async def process_issue(
             use_host_network=False,
             # large enough timeout, since some testcases take very long to run
             timeout=300,
+        ),
+        replay=ReplayConfig(
+            dir=os.environ.get('REPLAY_DIR', None),
+            api_key=os.environ.get('REPLAY_API_KEY', None),
         ),
         # do not mount workspace
         workspace_base=workspace_base,
@@ -621,7 +679,7 @@ def main():
     if prompt_file is None:
         if issue_type == 'issue':
             prompt_file = os.path.join(
-                os.path.dirname(__file__), 'prompts/resolve/basic-with-tests.jinja'
+                os.path.dirname(__file__), 'prompts/resolve/basic.jinja'
             )
         else:
             prompt_file = os.path.join(

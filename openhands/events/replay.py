@@ -45,10 +45,11 @@ def command_annotate_execution_points(
 
 def replay_enhance_action(state: State, is_workspace_repo: bool) -> Action | None:
     enhance_action_id = state.extra_data.get('replay_enhance_prompt_id')
-    if not enhance_action_id:
+    if enhance_action_id is None:
         # 1. Get current user prompt.
         latest_user_message = state.get_last_user_message()
         if latest_user_message:
+            logger.info(f'[REPLAY] latest_user_message id is {latest_user_message.id}')
             # 2. Check if it has a recordingId.
             recording_id = scan_recording_id(latest_user_message.content)
             logger.debug(
@@ -60,6 +61,7 @@ def replay_enhance_action(state: State, is_workspace_repo: bool) -> Action | Non
                     f'[REPLAY] Enhancing prompt for Replay recording "{recording_id}"...'
                 )
                 state.extra_data['replay_enhance_prompt_id'] = latest_user_message.id
+                logger.info('[REPLAY] stored latest_user_message id in state')
                 return command_annotate_execution_points(
                     latest_user_message.content, is_workspace_repo
                 )
@@ -98,7 +100,7 @@ def handle_replay_enhance_observation(
     state: State, observation: ReplayCmdOutputObservation
 ) -> bool:
     enhance_action_id = state.extra_data.get('replay_enhance_prompt_id')
-    if enhance_action_id:
+    if enhance_action_id is not None:
         assert enhance_action_id
         user_message: MessageAction | None = next(
             (
