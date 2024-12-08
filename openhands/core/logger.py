@@ -1,10 +1,12 @@
 import copy
+import copyreg
 import logging
 import os
 import re
 import sys
 import traceback
 from datetime import datetime
+from types import TracebackType
 from typing import Literal, Mapping
 
 from termcolor import colored
@@ -46,6 +48,24 @@ LOG_COLORS: Mapping[str, ColorType] = {
     'ERROR': 'red',
     'PLAN': 'light_magenta',
 }
+
+
+# Handle pickling of tracebacks and other non-serializables:
+def pickle_traceback(tb):
+    # Extract a summary of the traceback
+    extracted = traceback.extract_tb(tb)
+    # Return the function for reconstruction (unpickle_traceback) and the args
+    return (unpickle_traceback, (extracted,))
+
+
+def unpickle_traceback(extracted):
+    # We cannot reconstruct a real traceback object easily, but we return the summary.
+    # The returned object now is a list of traceback.FrameSummary instances.
+    return extracted
+
+
+# Register our custom handler
+copyreg.pickle(TracebackType, pickle_traceback)
 
 
 class NoColorFormatter(logging.Formatter):

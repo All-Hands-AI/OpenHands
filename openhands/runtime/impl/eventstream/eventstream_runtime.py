@@ -1,4 +1,5 @@
 import atexit
+import json
 import os
 import tempfile
 import threading
@@ -547,6 +548,18 @@ class EventStreamRuntime(Runtime):
             except requests.Timeout:
                 raise RuntimeError(
                     f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
+                )
+            # New:
+            except requests.exceptions.HTTPError as e:
+                try:
+                    # NOTE: `detail` gets sent in the body, inside the `message` field.
+                    detail = json.dumps(e.response.json().get('message'), indent=2)
+                except (ValueError, AttributeError):
+                    # Use `text` as fallback, if JSON parsing fails.
+                    detail = e.response.text if hasattr(e.response, 'text') else str(e)
+
+                raise RuntimeError(
+                    f'Runtime execute_action ERROR: {str(e)}\n' f'  detail=\n{detail}'
                 )
             self._refresh_logs()
             return obs

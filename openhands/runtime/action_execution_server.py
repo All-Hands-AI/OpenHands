@@ -14,6 +14,7 @@ import os
 import shutil
 import tempfile
 import time
+import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
 from zipfile import ZipFile
@@ -447,17 +448,15 @@ if __name__ == '__main__':
             if not isinstance(action, Action):
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
-            # TODO: This log entry never appears.
-            logger.warning('DDBG Executing action A')
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
-            logger.warning('DDBG Executing action ERROR')
-            # TODO: This code never seems to get executed.
+            # TODO: This log entry never appears.
             logger.error(
                 f'Error processing command: {str(e)}', exc_info=True, stack_info=True
             )
-            raise HTTPException(status_code=500, detail=str(e))
+            detail = f'{type(e).__name__}: {str(e)}\n  STACK: {''.join(traceback.format_tb(e.__traceback__))}'
+            raise HTTPException(status_code=500, detail=detail)
 
     @app.post('/upload_file')
     async def upload_file(

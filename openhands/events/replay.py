@@ -29,12 +29,10 @@ def command_annotate_execution_points(
 ) -> ReplayCmdRunAction:
     # NOTE: For the resolver, the workdir path is the repo path.
     #       In that case, we should not append the repo name to the path.
-    isWorkspaceRepoPath = ' -i' if is_workspace_repo else ''
+    is_repo_flag = ' -i' if is_workspace_repo else ''
     # If the workspace is the repo, it should already have been hard reset.
-    forceDelete = ' -f' if not is_workspace_repo else ''
-    command = (
-        f'"annotate-execution-points" -w "$(pwd)"{forceDelete}{isWorkspaceRepoPath}'
-    )
+    force_flag = ' -f' if not is_workspace_repo else ''
+    command = f'"annotate-execution-points" -w "$(pwd)"{is_repo_flag}{force_flag}'
     action = ReplayCmdRunAction(
         thought=thought,
         command=command,
