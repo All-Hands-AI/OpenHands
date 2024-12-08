@@ -98,6 +98,7 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
@@ -128,6 +129,7 @@ ignore = ["D1"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
 whatthepatch = "*"
@@ -141,8 +143,10 @@ gdown = "*"
 matplotlib = "*"
 seaborn = "*"
 tabulate = "*"
+browsergym = "0.10.2"
 browsergym-webarena = "0.10.2"
 browsergym-miniwob = "0.10.2"
+browsergym-visualwebarena = "0.10.2"
 
 [tool.poetry-dynamic-versioning]
 enable = true

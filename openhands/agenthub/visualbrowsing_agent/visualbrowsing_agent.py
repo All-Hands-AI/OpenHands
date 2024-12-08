@@ -205,7 +205,7 @@ Note:
             # for visualwebarena, webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
             # initialize and retrieve the first observation by issuing an noop OP
             # For non-benchmark browsing, the browser env starts with a blank page, and the agent is expected to first navigate to desired websites
-            return BrowseInteractiveAction(browser_actions='noop()')
+            return BrowseInteractiveAction(browser_actions='noop(1000)')
 
         for event in state.history:
             if isinstance(event, BrowseInteractiveAction):
@@ -291,7 +291,7 @@ Note:
         human_prompt.append(TextContent(type='text', text=remaining_content))
 
         system_msg = """\
-You are an agent trying to solve a web task based on the content of the page and user instructions. You can interact with the page and explore, and send messages to the user. Each time you submit an action it will be sent to the browser and you will receive a new page.
+You are an agent trying to solve a web task based on the content of the page and user instructions. You can interact with the page and explore, and send messages to the user when you finish the task. Each time you submit an action it will be sent to the browser and you will receive a new page.
 """.strip()
 
         messages.append(Message(role='system', content=[TextContent(text=system_msg)]))
