@@ -256,6 +256,11 @@ async def process_issue(
         output_dir, 'workspace', f'{issue_handler.issue_type}_{issue.number}'
     )
 
+    replay_dir = os.path.join(output_dir, 'replay')
+    logger.info(
+        f'DEBUGG output_dir={output_dir} replay_dir={replay_dir} workspace_base={workspace_base}'
+    )
+
     # Get the absolute path of the workspace base
     workspace_base = os.path.abspath(workspace_base)
     # write the repo to the workspace
@@ -277,7 +282,7 @@ async def process_issue(
             timeout=300,
         ),
         replay=ReplayConfig(
-            dir=os.environ.get('REPLAY_DIR', os.path.join(output_dir, 'replay')),
+            dir=os.environ.get('REPLAY_DIR', replay_dir),
             api_key=os.environ.get('REPLAY_API_KEY', None),
         ),
         # do not mount workspace
@@ -290,10 +295,6 @@ async def process_issue(
         },
     )
     config.set_llm_config(llm_config)
-
-    logger.info(
-        f'DEBUGG output_dir={output_dir} replay_dir={os.path.join(output_dir, 'replay')}, {config.replay.dir}'
-    )
 
     runtime = create_runtime(config)
     await runtime.connect()
