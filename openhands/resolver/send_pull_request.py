@@ -5,11 +5,11 @@ import shutil
 import subprocess
 
 import jinja2
-import litellm
 import requests
 
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.llm.llm import LLM
 from openhands.resolver.github_issue import GithubIssue
 from openhands.resolver.io_utils import (
     load_all_resolver_outputs,
@@ -206,7 +206,6 @@ def send_pull_request(
     github_token: str,
     github_username: str | None,
     patch_dir: str,
-    llm_config: LLMConfig,
     pr_type: str,
     fork_owner: str | None = None,
     additional_message: str | None = None,
@@ -420,6 +419,7 @@ def update_existing_pull_request(
 
                 # Summarize with LLM if provided
                 if llm_config is not None:
+                    llm = LLM(llm_config)
                     with open(
                         os.path.join(
                             os.path.dirname(__file__),
@@ -429,11 +429,8 @@ def update_existing_pull_request(
                     ) as f:
                         template = jinja2.Template(f.read())
                     prompt = template.render(comment_message=comment_message)
-                    response = litellm.completion(
-                        model=llm_config.model,
+                    response = llm.completion(
                         messages=[{'role': 'user', 'content': prompt}],
-                        api_key=llm_config.api_key,
-                        base_url=llm_config.base_url,
                     )
                     comment_message = response.choices[0].message.content.strip()
 
@@ -514,7 +511,6 @@ def process_single_issue(
             github_username=github_username,
             patch_dir=patched_repo_dir,
             pr_type=pr_type,
-            llm_config=llm_config,
             fork_owner=fork_owner,
             additional_message=resolver_output.success_explanation,
             target_branch=target_branch,

@@ -342,7 +342,6 @@ def test_send_pull_request(
     mock_run,
     mock_github_issue,
     mock_output_dir,
-    mock_llm_config,
     pr_type,
     target_branch,
 ):
@@ -377,7 +376,6 @@ def test_send_pull_request(
         github_username='test-user',
         patch_dir=repo_path,
         pr_type=pr_type,
-        llm_config=mock_llm_config,
         target_branch=target_branch,
     )
 
@@ -427,7 +425,7 @@ def test_send_pull_request(
 
 @patch('requests.get')
 def test_send_pull_request_invalid_target_branch(
-    mock_get, mock_github_issue, mock_output_dir, mock_llm_config
+    mock_get, mock_github_issue, mock_output_dir
 ):
     """Test that an error is raised when specifying a non-existent target branch"""
     repo_path = os.path.join(mock_output_dir, 'repo')
@@ -448,7 +446,6 @@ def test_send_pull_request_invalid_target_branch(
             github_username='test-user',
             patch_dir=repo_path,
             pr_type='ready',
-            llm_config=mock_llm_config,
             target_branch='nonexistent-branch',
         )
 
@@ -460,7 +457,7 @@ def test_send_pull_request_invalid_target_branch(
 @patch('requests.post')
 @patch('requests.get')
 def test_send_pull_request_git_push_failure(
-    mock_get, mock_post, mock_run, mock_github_issue, mock_output_dir, mock_llm_config
+    mock_get, mock_post, mock_run, mock_github_issue, mock_output_dir
 ):
     repo_path = os.path.join(mock_output_dir, 'repo')
 
@@ -483,7 +480,6 @@ def test_send_pull_request_git_push_failure(
             github_username='test-user',
             patch_dir=repo_path,
             pr_type='ready',
-            llm_config=mock_llm_config,
         )
 
     # Assert that subprocess.run was called twice
@@ -519,7 +515,7 @@ def test_send_pull_request_git_push_failure(
 @patch('requests.post')
 @patch('requests.get')
 def test_send_pull_request_permission_error(
-    mock_get, mock_post, mock_run, mock_github_issue, mock_output_dir, mock_llm_config
+    mock_get, mock_post, mock_run, mock_github_issue, mock_output_dir
 ):
     repo_path = os.path.join(mock_output_dir, 'repo')
 
@@ -543,7 +539,6 @@ def test_send_pull_request_permission_error(
             github_username='test-user',
             patch_dir=repo_path,
             pr_type='ready',
-            llm_config=mock_llm_config,
         )
 
     # Assert that the branch was created and pushed
@@ -940,7 +935,7 @@ def test_process_all_successful_issues(
 @patch('requests.get')
 @patch('subprocess.run')
 def test_send_pull_request_branch_naming(
-    mock_run, mock_get, mock_github_issue, mock_output_dir, mock_llm_config
+    mock_run, mock_get, mock_github_issue, mock_output_dir
 ):
     repo_path = os.path.join(mock_output_dir, 'repo')
 
@@ -965,7 +960,6 @@ def test_send_pull_request_branch_naming(
         github_username='test-user',
         patch_dir=repo_path,
         pr_type='branch',
-        llm_config=mock_llm_config,
     )
 
     # Assert API calls
