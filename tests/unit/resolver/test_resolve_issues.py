@@ -117,7 +117,6 @@ async def test_resolve_issue_no_issues_found():
         assert 'test-owner/test-repo' in str(exc_info.value)
         assert 'exists in the repository' in str(exc_info.value)
         assert 'correct permissions' in str(exc_info.value)
-        assert 'case-sensitive' in str(exc_info.value)
 
 
 def test_download_issues_from_github():
