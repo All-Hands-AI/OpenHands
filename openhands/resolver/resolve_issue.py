@@ -228,6 +228,10 @@ def init_replay(replay_dir: str | Path) -> None:
         origin = repo.remote('origin')
         origin.pull()
 
+    # Execute the dependencies installation script
+    install_script = replay_dir / 'replayapi' / 'scripts' / 'install-deps.sh'
+    subprocess.run([str(install_script)], check=True)
+
 
 async def process_issue(
     issue: GithubIssue,
