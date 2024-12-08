@@ -183,16 +183,16 @@ async def complete_runtime(
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
-    base_git_patch = await get_git_patch(runtime, base_commit)
-    logger.info(f'Got base git patch:\n--------\n{base_git_patch}\n--------')
-    strip_replay_comments(base_git_patch)
-
     action = CmdRunAction(command='git add -A')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to git add. Observation: {obs}')
+
+    base_git_patch = await get_git_patch(runtime, base_commit)
+    logger.info(f'Got base git patch:\n--------\n{base_git_patch}\n--------')
+    strip_replay_comments(base_git_patch)
 
     git_patch = await get_git_patch(runtime, base_commit)
 
