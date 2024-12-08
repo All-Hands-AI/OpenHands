@@ -135,6 +135,12 @@ def strip_replay_comment(file_name: str, line: str):
 def strip_replay_comments(git_patch: str) -> None:
     """Strip all replay comments from the git patch."""
     logger.info('Stripping Replay comments...')
+
+    logger.info('Dumping contents of /workspace...')
+    for root, dirs, files in os.walk('/workspace'):
+        logger.info(f'Root: {root}, Dirs: {dirs}, Files: {files}')
+    logger.info('Done dumping contents of /workspace.')
+
     lines = git_patch.splitlines()
     current_file = ''
     for line in lines:
