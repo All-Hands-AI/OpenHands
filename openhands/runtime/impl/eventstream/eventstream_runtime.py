@@ -422,7 +422,7 @@ class EventStreamRuntime(Runtime):
         )
 
     def _refresh_logs(self):
-        self.log('debug', 'Getting container logs...')
+        # self.log('debug', 'Getting container logs...')
 
         assert (
             self.log_buffer is not None
@@ -430,17 +430,18 @@ class EventStreamRuntime(Runtime):
 
         logs = self.log_buffer.get_and_clear()
         if logs:
-            formatted_logs = '\n'.join([f'    |{log}' for log in logs])
-            self.log(
-                'debug',
-                '\n'
-                + '-' * 35
-                + 'Container logs:'
-                + '-' * 35
-                + f'\n{formatted_logs}'
-                + '\n'
-                + '-' * 80,
-            )
+            pass
+            # formatted_logs = '\n'.join([f'    |{log}' for log in logs])
+            # self.log(
+            #     'debug',
+            #     '\n'
+            #     + '-' * 35
+            #     + 'Container logs:'
+            #     + '-' * 35
+            #     + f'\n{formatted_logs}'
+            #     + '\n'
+            #     + '-' * 80,
+            # )
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
