@@ -291,6 +291,10 @@ async def process_issue(
     )
     config.set_llm_config(llm_config)
 
+    logger.info(
+        f'DEBUGG output_dir={output_dir} replay_dir={os.path.join(output_dir, 'replay')}, {config.replay.dir}'
+    )
+
     runtime = create_runtime(config)
     await runtime.connect()
 
