@@ -349,7 +349,7 @@ async def resolve_issue(
             f'No issues found for issue number {issue_number}. Please verify that:\n'
             f'1. The issue/PR #{issue_number} exists in the repository {owner}/{repo}\n'
             f'2. You have the correct permissions to access it\n'
-            f'3. The repository name is spelled correctly (case-sensitive)'
+            f'3. The repository name is spelled correctly'
         )
 
     issue = issues[0]
