@@ -8,9 +8,11 @@ import pathlib
 import re
 import shutil
 import subprocess
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
+from git import Repo
 from termcolor import colored
 
 from openhands.controller.state.state import State
@@ -207,6 +209,26 @@ async def complete_runtime(
     return {'git_patch': git_patch}
 
 
+def init_replay(replay_dir: str | Path) -> None:
+    replay_dir = Path(replay_dir)  # Convert to Path for consistency
+    if not replay_dir.exists():
+        raise ValueError(f'Replay directory {replay_dir} not found')
+
+    for repo_name in ['replayapi', 'devtools']:
+        repo_path = replay_dir / repo_name
+        if not repo_path.exists():
+            raise ValueError(f'Repository {repo_name} not found in {replay_dir}')
+
+        # Now mypy should see Repo as a proper class.
+        repo = Repo(str(repo_path))
+
+        if repo.active_branch.name != 'main':
+            raise ValueError(f'Repository {repo_name} not on main branch')
+
+        origin = repo.remote('origin')
+        origin.pull()
+
+
 async def process_issue(
     issue: GithubIssue,
     base_commit: str,
@@ -267,6 +289,11 @@ async def process_issue(
 
     runtime = create_runtime(config)
     await runtime.connect()
+
+    # Force-update the Replay repos, if necessary:
+    if config.replay.dir is None:
+        raise ValueError('REPLAY_DIR must be provided in the environment')
+    init_replay(config.replay.dir)
 
     async def on_event(evt):
         logger.info(evt)
