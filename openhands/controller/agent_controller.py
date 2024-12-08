@@ -20,7 +20,7 @@ from openhands.core.exceptions import (
 )
 from openhands.core.logger import LOG_ALL_EVENTS
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.schema import AgentState
+from openhands.core.schema import AgentState, ReplayDebuggingPhase
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
     Action,
@@ -291,9 +291,9 @@ class AgentController:
         if self._pending_action and self._pending_action.id == observation.cause:
             self._pending_action = None
             if isinstance(observation, ReplayCmdOutputObservation):
-                handle_replay_enhance_observation(
-                    self.state,  # observation
-                )
+                if handle_replay_enhance_observation(self.state, observation):
+                    # We are prompting the agent to start the analysis.
+                    self.state.replay_phase = ReplayDebuggingPhase.Analysis
 
             if self.state.agent_state == AgentState.USER_CONFIRMED:
                 await self.set_agent_state_to(AgentState.RUNNING)
@@ -323,7 +323,31 @@ class AgentController:
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
-            await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
+            # The agent has finished a task and wants to start waiting for a user response.
+            if self.state.replay_phase == ReplayDebuggingPhase.Analysis:
+                # NOTE: To simplify things for the LLM, we ask it to simply check in
+                #       with the user, after analysis.
+                # NOTE: The action was sent from `code_act_agent/function_calling.py` → `response_to_actions`
+                # TODO: Add dedicated tools for managing the analysis state machine.
+
+                # Tell the agent to stop analyzing and start editing:
+                self.state.replay_phase = ReplayDebuggingPhase.Edit
+                self.event_stream.add_event(
+                    MessageAction(
+                        content='Implement the changes, then wait for user confirmation.'
+                    ),
+                    EventSource.USER,
+                )
+            elif self.state.replay_phase == ReplayDebuggingPhase.Edit:
+                self.state.replay_phase = ReplayDebuggingPhase.Normal
+                self.event_stream.add_event(
+                    MessageAction(
+                        content='Double check your changes and publish a PR without waiting for user confirmation.'
+                    ),
+                    EventSource.USER,
+                )
+            else:
+                await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
     def reset_task(self) -> None:
         """Resets the agent's task."""
