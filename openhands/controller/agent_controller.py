@@ -229,6 +229,21 @@ class AgentController:
 
         # if the event is not filtered out, add it to the history
         if not any(isinstance(event, filter_type) for filter_type in self.filter_out):
+            # Check if adding this event would exceed context window
+            if self.agent.llm.config.max_input_tokens is not None:
+                # Create temporary history with new event
+                temp_history = self.state.history + [event]
+                try:
+                    token_count = self.agent.llm.get_token_count(temp_history)
+                except Exception as e:
+                    logger.error(f'NO TRUNCATION: Error getting token count: {e}.')
+                    token_count = float('inf')
+
+                if token_count > self.agent.llm.config.max_input_tokens:
+                    # Need to truncate history if there are too many tokens
+                    self.state.history = self._apply_conversation_window(self.state.history)
+
+            # Now add the new event
             self.state.history.append(event)
 
         if isinstance(event, Action):
@@ -834,6 +849,10 @@ class AgentController:
             ),
             None,
         )
+
+        # Always set start_id to first user message id if found, regardless of truncation
+        if first_user_msg:
+            self.state.start_id = first_user_msg.id
 
         # cut in half
         mid_point = max(1, len(events) // 2)

@@ -186,3 +186,60 @@ class TestTruncation:
         assert len(new_controller.state.history) == saved_history_len
         assert new_controller.state.history[0] == first_msg
         assert new_controller.state.start_id == saved_start_id
+
+    def test_context_window_parameter_truncation(self, mock_event_stream, mock_agent):
+        # Configure mock agent's LLM to return specific token counts
+        mock_agent.llm.get_token_count.return_value = 100
+        
+        # Set max_input_tokens in LLM config
+        mock_agent.llm.config.max_input_tokens = 80
+
+        # Create controller
+        controller = AgentController(
+            agent=mock_agent,
+            event_stream=mock_event_stream,
+            max_iterations=10,
+            sid='test_truncation',
+            confirmation_mode=False,
+            headless_mode=True,
+        )
+
+        # Create initial events
+        first_msg = MessageAction(content='Start task', wait_for_response=False)
+        first_msg._source = EventSource.USER
+        first_msg._id = 1
+
+        events = [first_msg]
+        for i in range(5):
+            cmd = CmdRunAction(command=f'cmd{i}')
+            cmd._id = i + 2
+            obs = CmdOutputObservation(
+                command=f'cmd{i}', content=f'output{i}', command_id=cmd._id
+            )
+            obs._id = i + 3
+            obs._cause = cmd._id
+            events.extend([cmd, obs])
+
+        # Set initial history
+        controller.state.history = events[:3]  # Start with a few events
+        controller.state.start_id = first_msg._id  # Explicitly set start_id
+        initial_history_len = len(controller.state.history)
+
+        # Add a new event that should trigger truncation due to token count
+        mock_agent.llm.get_token_count.return_value = 90  # Exceed our context window
+        controller.on_event(events[3])
+
+        # Verify truncation occurred
+        assert len(controller.state.history) < initial_history_len + 1
+        assert controller.state.start_id == first_msg._id
+        assert controller.state.truncation_id is not None
+        assert (
+            first_msg in controller.state.history
+        )  # First message should be preserved
+
+        # Verify action-observation pairs weren't split
+        for i, event in enumerate(controller.state.history[1:]):
+            if isinstance(event, CmdOutputObservation):
+                assert any(
+                    e._id == event._cause for e in controller.state.history[: i + 1]
+                )
