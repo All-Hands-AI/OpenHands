@@ -210,7 +210,7 @@ async def complete_runtime(
 
 
 def init_replay(replay_dir: str | Path) -> None:
-    replay_dir = Path(replay_dir)  # Convert to Path for consistency
+    replay_dir = Path(replay_dir)
     if not replay_dir.exists():
         raise ValueError(f'Replay directory {replay_dir} not found')
 
@@ -277,7 +277,7 @@ async def process_issue(
             timeout=300,
         ),
         replay=ReplayConfig(
-            dir=os.environ.get('REPLAY_DIR', None),
+            dir=os.environ.get('REPLAY_DIR', (Path(output_dir) / 'replay').as_posix()),
             api_key=os.environ.get('REPLAY_API_KEY', None),
         ),
         # do not mount workspace
@@ -296,7 +296,7 @@ async def process_issue(
 
     # Force-update the Replay repos, if necessary:
     if config.replay.dir is None:
-        raise ValueError('REPLAY_DIR must be provided in the environment')
+        raise ValueError('config.replay.dir is missing')
     init_replay(config.replay.dir)
 
     async def on_event(evt):
