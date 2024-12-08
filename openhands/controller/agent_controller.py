@@ -342,7 +342,7 @@ class AgentController:
                 self.state.replay_phase = ReplayDebuggingPhase.Normal
                 self.event_stream.add_event(
                     MessageAction(
-                        content='Double check your changes, remove the analysis comments and publish a PR without waiting for user confirmation.'
+                        content='Double check your changes and publish a PR without waiting for user confirmation.'
                     ),
                     EventSource.USER,
                 )
