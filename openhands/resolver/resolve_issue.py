@@ -138,6 +138,7 @@ def strip_replay_comments(git_patch: str) -> None:
     lines = git_patch.splitlines()
     current_file = ''
     for line in lines:
+        logger.info(f'Processing line: {line}')
         if re.match(r'^\+\+\+ b/', line):
             current_file = line[6:]
         if re.match(r'^\+.*\s+//', line.lstrip()):
@@ -183,8 +184,7 @@ async def complete_runtime(
         raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
     base_git_patch = await get_git_patch(runtime, base_commit)
-
-    logger.info('Stripping Replay comments...')
+    logger.info(f'Got base git patch:\n--------\n{base_git_patch}\n--------')
     strip_replay_comments(base_git_patch)
 
     action = CmdRunAction(command='git add -A')
