@@ -221,10 +221,10 @@ async def complete_runtime(
 #     for repo_url in repo_urls:
 #         repo_name = repo_url.split('/')[-1]
 #         repo_path = replay_dir / repo_name
-#         logger.info(f'[Replay] Preparing {repo_name} in {repo_path}')
+#         logger.info(f'[REPLAY] Preparing {repo_name} in {repo_path}')
 #         if not repo_path.exists():
 #             logger.info(
-#                 f'[Replay] Repository {repo_name} not found in {replay_dir}, cloning...'
+#                 f'[REPLAY] Repository {repo_name} not found in {replay_dir}, cloning...'
 #             )
 #             Repo.clone_from(repo_url, str(repo_path))
 

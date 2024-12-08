@@ -65,7 +65,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         rev_parse_cmd = ['git', 'ls-remote', repo_url, 'main']
         replayapi_sha = subprocess.check_output(rev_parse_cmd).decode().split()[0]
 
-        logger.info('[Replay] REPLAYAPI_SHA=' + replayapi_sha)
+        logger.info('[REPLAY] REPLAYAPI_SHA=' + replayapi_sha)
 
         buildx_cmd = [
             'docker',
