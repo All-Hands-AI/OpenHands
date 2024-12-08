@@ -212,12 +212,20 @@ async def complete_runtime(
 def init_replay(replay_dir: str | Path) -> None:
     replay_dir = Path(replay_dir)
     if not replay_dir.exists():
-        raise ValueError(f'Replay directory {replay_dir} not found')
+        replay_dir.mkdir(parents=True)
 
-    for repo_name in ['replayapi', 'devtools']:
+    repo_urls = [
+        'https://github.com/replayio-public/replayapi',
+        'https://github.com/replayio/devtools',
+    ]
+    for repo_url in repo_urls:
+        repo_name = repo_url.split('/')[-1]
         repo_path = replay_dir / repo_name
         if not repo_path.exists():
-            raise ValueError(f'Repository {repo_name} not found in {replay_dir}')
+            logger.info(
+                f'[Replay] Repository {repo_name} not found in {replay_dir}, cloning...'
+            )
+            Repo.clone_from(repo_url, str(repo_path))
 
         # Now mypy should see Repo as a proper class.
         repo = Repo(str(repo_path))
@@ -255,12 +263,6 @@ async def process_issue(
     workspace_base = os.path.join(
         output_dir, 'workspace', f'{issue_handler.issue_type}_{issue.number}'
     )
-
-    replay_dir = os.path.join(output_dir, 'replay')
-    logger.info(
-        f'DEBUGG output_dir={output_dir} replay_dir={replay_dir} workspace_base={workspace_base}'
-    )
-
     # Get the absolute path of the workspace base
     workspace_base = os.path.abspath(workspace_base)
     # write the repo to the workspace
@@ -282,7 +284,8 @@ async def process_issue(
             timeout=300,
         ),
         replay=ReplayConfig(
-            dir=os.environ.get('REPLAY_DIR', replay_dir),
+            # Don't set config.replay.dir here in the resolver workflow.
+            dir=os.environ.get('REPLAY_DIR', None),
             api_key=os.environ.get('REPLAY_API_KEY', None),
         ),
         # do not mount workspace
@@ -300,9 +303,8 @@ async def process_issue(
     await runtime.connect()
 
     # Force-update the Replay repos, if necessary:
-    if config.replay.dir is None:
-        raise ValueError('config.replay.dir is missing')
-    init_replay(config.replay.dir)
+    replay_dir = os.path.abspath(os.path.join(output_dir, 'replay'))
+    init_replay(replay_dir)
 
     async def on_event(evt):
         logger.info(evt)
