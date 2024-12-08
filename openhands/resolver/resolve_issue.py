@@ -140,7 +140,7 @@ def strip_replay_comments(git_patch: str) -> None:
     for line in lines:
         logger.info(f'Processing line: {line}')
         if re.match(r'^\+\+\+ b/', line):
-            current_file = line[6:]
+            current_file = f'/workspace/{line[6:]}'
         if re.match(r'^\+.*\s+//', line.lstrip()):
             strip_replay_comment(current_file, line[1:])
 
@@ -191,7 +191,6 @@ async def complete_runtime(
         raise RuntimeError(f'Failed to git add. Observation: {obs}')
 
     base_git_patch = await get_git_patch(runtime, base_commit)
-    logger.info(f'Got base git patch:\n--------\n{base_git_patch}\n--------')
     strip_replay_comments(base_git_patch)
 
     git_patch = await get_git_patch(runtime, base_commit)
