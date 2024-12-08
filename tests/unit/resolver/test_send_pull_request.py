@@ -244,8 +244,12 @@ def test_initialize_repo(mock_output_dir):
 @patch('openhands.resolver.send_pull_request.reply_to_comment')
 @patch('requests.post')
 @patch('subprocess.run')
+@patch('openhands.llm.llm.LLM')
 def test_update_existing_pull_request(
-    mock_subprocess_run, mock_requests_post, mock_reply_to_comment
+    mock_llm_class,
+    mock_subprocess_run,
+    mock_requests_post,
+    mock_reply_to_comment,
 ):
     # Arrange: Set up test data
     github_issue = GithubIssue(
@@ -267,23 +271,28 @@ def test_update_existing_pull_request(
 
     # Mock the requests.post call for adding a PR comment
     mock_requests_post.return_value.status_code = 201
+
+    # Mock LLM instance and completion call
+    mock_llm_instance = MagicMock()
     mock_completion_response = MagicMock()
     mock_completion_response.choices = [
         MagicMock(message=MagicMock(content='This is an issue resolution.'))
     ]
+    mock_llm_instance.completion.return_value = mock_completion_response
+    mock_llm_class.return_value = mock_llm_instance
+
     llm_config = LLMConfig()
 
     # Act: Call the function without comment_message to test auto-generation
-    with patch('litellm.completion', MagicMock(return_value=mock_completion_response)):
-        result = update_existing_pull_request(
-            github_issue,
-            github_token,
-            github_username,
-            patch_dir,
-            llm_config,
-            comment_message=None,
-            additional_message=additional_message,
-        )
+    result = update_existing_pull_request(
+        github_issue,
+        github_token,
+        github_username,
+        patch_dir,
+        llm_config,
+        comment_message=None,
+        additional_message=additional_message,
+    )
 
     # Assert: Check if the git push command was executed
     push_command = (
@@ -752,7 +761,6 @@ def test_process_single_issue(
         github_username=github_username,
         patch_dir=f'{mock_output_dir}/patches/issue_1',
         pr_type=pr_type,
-        llm_config=mock_llm_config,
         fork_owner=None,
         additional_message=resolver_output.success_explanation,
         target_branch=None,
