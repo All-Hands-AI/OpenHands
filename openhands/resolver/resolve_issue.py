@@ -211,6 +211,7 @@ async def complete_runtime(
 
 def init_replay(replay_dir: str | Path) -> None:
     replay_dir = Path(replay_dir)
+
     if not replay_dir.exists():
         replay_dir.mkdir(parents=True)
 
@@ -221,6 +222,7 @@ def init_replay(replay_dir: str | Path) -> None:
     for repo_url in repo_urls:
         repo_name = repo_url.split('/')[-1]
         repo_path = replay_dir / repo_name
+        logger.info(f'[Replay] Preparing {repo_name} in {repo_path}')
         if not repo_path.exists():
             logger.info(
                 f'[Replay] Repository {repo_name} not found in {replay_dir}, cloning...'
@@ -284,8 +286,9 @@ async def process_issue(
             timeout=300,
         ),
         replay=ReplayConfig(
-            # Don't set config.replay.dir here in the resolver workflow.
-            dir=os.environ.get('REPLAY_DIR', None),
+            dir=os.environ.get(
+                'REPLAY_DIR', os.path.abspath(os.path.join(output_dir, 'replay'))
+            ),
             api_key=os.environ.get('REPLAY_API_KEY', None),
         ),
         # do not mount workspace
@@ -303,8 +306,9 @@ async def process_issue(
     await runtime.connect()
 
     # Force-update the Replay repos, if necessary:
-    replay_dir = os.path.abspath(os.path.join(output_dir, 'replay'))
-    init_replay(replay_dir)
+    if config.replay.dir is None:
+        raise ValueError('config.replay.dir is not set.')
+    init_replay(config.replay.dir)
 
     async def on_event(evt):
         logger.info(evt)
