@@ -447,9 +447,12 @@ if __name__ == '__main__':
             if not isinstance(action, Action):
                 raise HTTPException(status_code=400, detail='Invalid action type')
             client.last_execution_time = time.time()
+            # TODO: This log entry never appears.
+            logger.warning(f'DDBG Executing action: {action}')
             observation = await client.run_action(action)
             return event_to_dict(observation)
         except Exception as e:
+            # TODO: This code never seems to get executed.
             logger.error(
                 f'Error processing command: {str(e)}', exc_info=True, stack_info=True
             )
