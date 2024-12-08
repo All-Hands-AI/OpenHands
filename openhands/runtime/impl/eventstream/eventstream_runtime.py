@@ -352,10 +352,10 @@ class EventStreamRuntime(Runtime):
                 #   * But any bugs coming from not having write access might be difficult to debug.
                 'mode': 'rw',
             }
-        self.log(
-            'debug',
-            f'Replay volume: {self.config.replay.dir} -> /replay',
-        )
+            self.log(
+                'debug',
+                f'Replay volume: {self.config.replay.dir} -> /replay',
+            )
 
         if self.config.sandbox.browsergym_eval_env is not None:
             browsergym_arg = (

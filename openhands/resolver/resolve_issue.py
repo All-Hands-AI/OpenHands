@@ -8,11 +8,10 @@ import pathlib
 import re
 import shutil
 import subprocess
-from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from git import Repo
+# from git import Repo
 from termcolor import colored
 
 from openhands.controller.state.state import State
@@ -209,38 +208,38 @@ async def complete_runtime(
     return {'git_patch': git_patch}
 
 
-def init_replay(replay_dir: str | Path) -> None:
-    replay_dir = Path(replay_dir)
+# def init_replay(replay_dir: str | Path) -> None:
+#     replay_dir = Path(replay_dir)
 
-    if not replay_dir.exists():
-        replay_dir.mkdir(parents=True)
+#     if not replay_dir.exists():
+#         replay_dir.mkdir(parents=True)
 
-    repo_urls = [
-        'https://github.com/replayio-public/replayapi',
-        'https://github.com/replayio/devtools',
-    ]
-    for repo_url in repo_urls:
-        repo_name = repo_url.split('/')[-1]
-        repo_path = replay_dir / repo_name
-        logger.info(f'[Replay] Preparing {repo_name} in {repo_path}')
-        if not repo_path.exists():
-            logger.info(
-                f'[Replay] Repository {repo_name} not found in {replay_dir}, cloning...'
-            )
-            Repo.clone_from(repo_url, str(repo_path))
+#     repo_urls = [
+#         'https://github.com/replayio-public/replayapi',
+#         'https://github.com/replayio/devtools',
+#     ]
+#     for repo_url in repo_urls:
+#         repo_name = repo_url.split('/')[-1]
+#         repo_path = replay_dir / repo_name
+#         logger.info(f'[Replay] Preparing {repo_name} in {repo_path}')
+#         if not repo_path.exists():
+#             logger.info(
+#                 f'[Replay] Repository {repo_name} not found in {replay_dir}, cloning...'
+#             )
+#             Repo.clone_from(repo_url, str(repo_path))
 
-        # Now mypy should see Repo as a proper class.
-        repo = Repo(str(repo_path))
+#         # Now mypy should see Repo as a proper class.
+#         repo = Repo(str(repo_path))
 
-        if repo.active_branch.name != 'main':
-            raise ValueError(f'Repository {repo_name} not on main branch')
+#         if repo.active_branch.name != 'main':
+#             raise ValueError(f'Repository {repo_name} not on main branch')
 
-        origin = repo.remote('origin')
-        origin.pull()
+#         origin = repo.remote('origin')
+#         origin.pull()
 
-    # Execute the dependencies installation script
-    install_script = replay_dir / 'replayapi' / 'scripts' / 'install-deps.sh'
-    subprocess.run([str(install_script)], check=True)
+#     # Execute the dependencies installation script
+#     install_script = replay_dir / 'replayapi' / 'scripts' / 'install-deps.sh'
+#     subprocess.run([str(install_script)], check=True)
 
 
 async def process_issue(
@@ -286,9 +285,10 @@ async def process_issue(
             timeout=300,
         ),
         replay=ReplayConfig(
-            dir=os.environ.get(
-                'REPLAY_DIR', os.path.abspath(os.path.join(output_dir, 'replay'))
-            ),
+            # dir=os.environ.get(
+            #     'REPLAY_DIR', os.path.abspath(os.path.join(output_dir, 'replay'))
+            # ),
+            dir=os.environ.get('REPLAY_DIR', None),
             api_key=os.environ.get('REPLAY_API_KEY', None),
         ),
         # do not mount workspace
@@ -305,10 +305,10 @@ async def process_issue(
     runtime = create_runtime(config)
     await runtime.connect()
 
-    # Force-update the Replay repos, if necessary:
-    if config.replay.dir is None:
-        raise ValueError('config.replay.dir is not set.')
-    init_replay(config.replay.dir)
+    # # Force-update the Replay repos, if necessary:
+    # if config.replay.dir is None:
+    #     raise ValueError('config.replay.dir is not set.')
+    # init_replay(config.replay.dir)
 
     async def on_event(evt):
         logger.info(evt)

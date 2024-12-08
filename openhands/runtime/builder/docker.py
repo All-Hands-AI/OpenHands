@@ -60,6 +60,13 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         target_image_repo, target_image_source_tag = target_image_hash_name.split(':')
         target_image_tag = tags[1].split(':')[1] if len(tags) > 1 else None
 
+        # Fetch the latest commit hash for replayapi to bust the cache on the `git clone` layer.
+        repo_url = 'https://github.com/replayio-public/replayapi.git'
+        rev_parse_cmd = ['git', 'ls-remote', repo_url, 'main']
+        replayapi_sha = subprocess.check_output(rev_parse_cmd).decode().split()[0]
+
+        logger.info('[Replay] REPLAYAPI_SHA=' + replayapi_sha)
+
         buildx_cmd = [
             'docker',
             'buildx',
@@ -67,6 +74,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             '--progress=plain',
             f'--build-arg=OPENHANDS_RUNTIME_VERSION={oh_version}',
             f'--build-arg=OPENHANDS_RUNTIME_BUILD_TIME={datetime.datetime.now().isoformat()}',
+            f'--build-arg=REPLAYAPI_SHA={replayapi_sha}',
             f'--tag={target_image_hash_name}',
             '--load',
         ]

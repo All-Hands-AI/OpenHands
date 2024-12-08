@@ -72,7 +72,7 @@ RUN if [ -z "${RELEASE_TAG}" ]; then \
 # Install all dependencies
 WORKDIR /openhands/code
 
-# First RUN command
+# Basics
 RUN \
     /openhands/micromamba/bin/micromamba config set changeps1 False && \
     # Configure Poetry and create virtual environment
@@ -85,13 +85,16 @@ RUN \
     /openhands/micromamba/bin/micromamba run -n openhands poetry run pip install playwright && \
     /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium
 
-# Second RUN command (involving replay)
+#  Clone replay and make sure the layer is not stale when HEAD changes.
+ARG REPLAYAPI_SHA
 RUN \
     mkdir -p /replay && \
     git -C /replay clone https://github.com/replayio-public/replayapi.git && \
-    /replay/replayapi/scripts/install-deps.sh
+    cd /replay/replayapi && \
+    git checkout ${REPLAYAPI_SHA} && \
+    ./scripts/install-deps.sh
 
-# Third RUN command
+# More stuff.
 RUN \
     # Set environment variables
     echo "OH_INTERPRETER_PATH=$(/openhands/micromamba/bin/micromamba run -n openhands poetry run python -c 'import sys; print(sys.executable)')" >> /etc/environment && \
