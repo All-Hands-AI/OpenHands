@@ -277,7 +277,7 @@ async def process_issue(
             timeout=300,
         ),
         replay=ReplayConfig(
-            dir=os.environ.get('REPLAY_DIR', (Path(output_dir) / 'replay').as_posix()),
+            dir=os.environ.get('REPLAY_DIR', os.path.join(output_dir, 'replay')),
             api_key=os.environ.get('REPLAY_API_KEY', None),
         ),
         # do not mount workspace

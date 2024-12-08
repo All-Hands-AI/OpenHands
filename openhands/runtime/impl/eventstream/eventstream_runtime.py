@@ -3,6 +3,7 @@ import json
 import os
 import tempfile
 import threading
+import traceback
 from functools import lru_cache
 from pathlib import Path
 from typing import Callable
@@ -398,12 +399,14 @@ class EventStreamRuntime(Runtime):
             else:
                 self.log(
                     'error',
-                    f'Error: Instance {self.container_name} FAILED to start container!\n',
+                    f'APIError: Instance {self.container_name} FAILED to start container!\n',
                 )
+                self.log('error', f'{str(e)}\n{traceback.format_exc()}')
+                # TODO: This should also raise, shouldn't it?
         except Exception as e:
             self.log(
                 'error',
-                f'Error: Instance {self.container_name} FAILED to start container!\n',
+                f'{type(e).__name__}: Instance {self.container_name} FAILED to start container!\n',
             )
             self.log('error', str(e))
             self.close()
