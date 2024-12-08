@@ -93,7 +93,6 @@ def display_event(event: Event, config: AppConfig):
 
 async def main():
     """Runs the agent in CLI mode"""
-
     parser = get_parser()
     # Add the version argument
     parser.add_argument(

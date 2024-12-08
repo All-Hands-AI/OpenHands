@@ -23,8 +23,7 @@ app = APIRouter(prefix='/api/options')
 
 @app.get('/models')
 async def get_litellm_models() -> list[str]:
-    """
-    Get all models supported by LiteLLM.
+    """Get all models supported by LiteLLM.
 
     This function combines models from litellm and Bedrock, removing any
     error-prone Bedrock models.

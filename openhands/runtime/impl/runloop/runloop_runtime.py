@@ -52,7 +52,6 @@ class RunloopLogBuffer(LogBuffer):
         This method runs in its own thread to handle the blocking
         operation of reading log lines from the Docker SDK's synchronous generator.
         """
-
         try:
             # TODO(Runloop) Replace with stream
             while True:

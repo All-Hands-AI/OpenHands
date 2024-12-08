@@ -18,8 +18,7 @@ from openhands.server.shared import config, session_manager
 
 
 class LocalhostCORSMiddleware(CORSMiddleware):
-    """
-    Custom CORS middleware that allows any request from localhost/127.0.0.1 domains,
+    """Custom CORS middleware that allows any request from localhost/127.0.0.1 domains,
     while using standard CORS rules for other origins.
     """
 
@@ -40,9 +39,7 @@ class LocalhostCORSMiddleware(CORSMiddleware):
 
 
 class NoCacheMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware to disable caching for all routes by adding appropriate headers
-    """
+    """Middleware to disable caching for all routes by adding appropriate headers"""
 
     async def dispatch(self, request, call_next):
         response = await call_next(request)

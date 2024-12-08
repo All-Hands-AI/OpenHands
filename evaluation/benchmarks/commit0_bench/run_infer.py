@@ -520,7 +520,6 @@ def commit0_setup(dataset: pd.DataFrame, repo_split: str) -> pd.DataFrame:
     Returns:
         Filtered dataset based on split type
     """
-
     filtered_dataset = pd.concat(
         [
             dataset[dataset['repo'].str.split('/').str[1] == repo]

@@ -31,7 +31,6 @@ def init_user_and_working_directory(
     Returns:
         int | None: The user ID if it was updated, None otherwise.
     """
-
     # First create the working directory, independent of the user
     logger.debug(f'Client working directory: {initial_pwd}')
     command = f'umask 002; mkdir -p {initial_pwd}'

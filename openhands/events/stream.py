@@ -90,8 +90,7 @@ class EventStream:
         filter_out_type: tuple[type[Event], ...] | None = None,
         filter_hidden=False,
     ) -> Iterable[Event]:
-        """
-        Retrieve events from the event stream, optionally filtering out events of a given type
+        """Retrieve events from the event stream, optionally filtering out events of a given type
         and events marked as hidden.
 
         Args:

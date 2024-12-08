@@ -64,6 +64,7 @@ async def search_events(
     end_date: str | None = None,
 ):
     """Search through the event stream with filtering and pagination.
+
     Args:
         request (Request): The incoming request object
         query (str, optional): Text to search for in event content
@@ -73,6 +74,7 @@ async def search_events(
         source (str, optional): Filter by event source
         start_date (str, optional): Filter events after this date (ISO format)
         end_date (str, optional): Filter events before this date (ISO format)
+
     Returns:
         dict: Dictionary containing:
             - events: List of matching events

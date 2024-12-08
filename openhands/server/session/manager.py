@@ -49,9 +49,7 @@ class SessionManager:
         return redis_client
 
     async def _redis_subscribe(self):
-        """
-        We use a redis backchannel to send actions between server nodes
-        """
+        """We use a redis backchannel to send actions between server nodes"""
         redis_client = self._get_redis_client()
         pubsub = redis_client.pubsub()
         await pubsub.subscribe('oh_event')
@@ -142,7 +140,9 @@ class SessionManager:
     async def detach_from_conversation(self, conversation: Conversation):
         await conversation.disconnect()
 
-    async def init_or_join_session(self, sid: str, connection_id: str, session_init_data: SessionInitData):
+    async def init_or_join_session(
+        self, sid: str, connection_id: str, session_init_data: SessionInitData
+    ):
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self.local_connection_id_to_session_id[connection_id] = sid
 

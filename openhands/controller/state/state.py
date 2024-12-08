@@ -37,8 +37,7 @@ RESUMABLE_STATES = [
 
 @dataclass
 class State:
-    """
-    Represents the running state of an agent in the OpenHands system, saving data of its operation and memory.
+    """Represents the running state of an agent in the OpenHands system, saving data of its operation and memory.
 
     - Multi-agent/delegate state:
       - store the task (conversation between the agent and the user)

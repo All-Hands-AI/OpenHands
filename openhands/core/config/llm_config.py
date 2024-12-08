@@ -86,11 +86,9 @@ class LLMConfig:
         return result
 
     def __post_init__(self):
-        """
-        Post-initialization hook to assign OpenRouter-related variables to environment variables.
+        """Post-initialization hook to assign OpenRouter-related variables to environment variables.
         This ensures that these values are accessible to litellm at runtime.
         """
-
         # Assign OpenRouter-specific variables to environment variables
         if self.openrouter_site_url:
             os.environ['OR_SITE_URL'] = self.openrouter_site_url

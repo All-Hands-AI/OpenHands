@@ -150,17 +150,12 @@ class IssueHandler(IssueHandlerInterface):
         Returns:
             List of Github issues.
         """
-
         if not issue_numbers:
             raise ValueError('Unspecified issue number')
 
         all_issues = self._download_issues_from_github()
         logger.info(f'Limiting resolving to issues {issue_numbers}.')
-        all_issues = [
-            issue
-            for issue in all_issues
-            if issue['number'] in issue_numbers
-        ]
+        all_issues = [issue for issue in all_issues if issue['number'] in issue_numbers]
 
         if len(issue_numbers) == 1 and not all_issues:
             raise ValueError(f'Issue {issue_numbers[0]} not found')
@@ -522,10 +517,12 @@ class PRHandler(IssueHandler):
                 response = requests.get(url, headers=headers)
                 response.raise_for_status()
                 issue = response.json()
-                
+
                 # For PRs, body can be None
                 if any([issue.get(key) is None for key in ['number', 'title']]):
-                    logger.warning(f'Skipping #{issue} as it is missing number or title.')
+                    logger.warning(
+                        f'Skipping #{issue} as it is missing number or title.'
+                    )
                     continue
 
                 # Handle None body for PRs

@@ -1,6 +1,4 @@
-"""
-This module monitors the app for shutdown signals
-"""
+"""This module monitors the app for shutdown signals"""
 
 import asyncio
 import signal
