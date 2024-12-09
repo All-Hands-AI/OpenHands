@@ -9,7 +9,7 @@ from fastapi import (
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.server.middleware import (
-    AttachSessionMiddleware,
+    AttachConversationMiddleware,
     InMemoryRateLimiter,
     LocalhostCORSMiddleware,
     NoCacheMiddleware,
@@ -50,16 +50,18 @@ app.include_router(conversation_api_router)
 app.include_router(security_api_router)
 app.include_router(feedback_api_router)
 
-AttachSessionMiddlewareImpl = get_impl(
-    AttachSessionMiddleware, config.attach_session_middleware_class
-)
-app.middleware('http')(AttachSessionMiddlewareImpl(app, target_router=files_api_router))
-app.middleware('http')(
-    AttachSessionMiddlewareImpl(app, target_router=conversation_api_router)
+AttachConversationMiddlewareImpl = get_impl(
+    AttachConversationMiddleware, config.attach_session_middleware_class
 )
 app.middleware('http')(
-    AttachSessionMiddlewareImpl(app, target_router=security_api_router)
+    AttachConversationMiddlewareImpl(app, target_router=files_api_router)
 )
 app.middleware('http')(
-    AttachSessionMiddlewareImpl(app, target_router=feedback_api_router)
+    AttachConversationMiddlewareImpl(app, target_router=conversation_api_router)
+)
+app.middleware('http')(
+    AttachConversationMiddlewareImpl(app, target_router=security_api_router)
+)
+app.middleware('http')(
+    AttachConversationMiddlewareImpl(app, target_router=feedback_api_router)
 )

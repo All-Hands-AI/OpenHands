@@ -68,7 +68,7 @@ class AppConfig:
     disable_color: bool = False
     jwt_secret: str = uuid.uuid4().hex
     attach_session_middleware_class: str = (
-        'openhands.server.middleware.AttachSessionMiddleware'
+        'openhands.server.middleware.AttachConversationMiddleware'
     )
     debug: bool = False
     file_uploads_max_file_size_mb: int = 0
