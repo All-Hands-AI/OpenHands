@@ -130,9 +130,7 @@ def handle_replay_enhance_observation(
             enhancement += f'The bug was reported at {start_name}. Start your investigation there. Then keep searching for related `reproduction step` comments.\n'
 
             enhancement += '<IMPORTANT>\n'
-            enhancement += (
-                'USE THESE COMMENTS TO GET A BETTER UNDERSTANDING OF THE PROBLEM.\n'
-            )
+            enhancement += 'YOU MUST SEARCH FOR THESE COMMENTS AND USE THEM TO GET A BETTER UNDERSTANDING OF THE PROBLEM.\n'
             enhancement += '</IMPORTANT>\n'
 
             # Enhance:
