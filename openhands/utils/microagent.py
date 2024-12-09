@@ -11,14 +11,20 @@ class MicroAgentMetadata(pydantic.BaseModel):
 
 
 class MicroAgent:
-    def __init__(self, path: str):
-        self.path = path
-        if not os.path.exists(path):
-            raise FileNotFoundError(f'Micro agent file {path} is not found')
-        with open(path, 'r') as file:
-            self._loaded = frontmatter.load(file)
-            self._content = self._loaded.content
-            self._metadata = MicroAgentMetadata(**self._loaded.metadata)
+    def __init__(self, path: str | None = None, content: str | None = None):
+        if path and not content:
+            self.path = path
+            if not os.path.exists(path):
+                raise FileNotFoundError(f'Micro agent file {path} is not found')
+            with open(path, 'r') as file:
+                self._loaded = frontmatter.load(file)
+                self._content = self._loaded.content
+                self._metadata = MicroAgentMetadata(**self._loaded.metadata)
+        elif content and not path:
+            self._metadata, self._content = frontmatter.parse(content)
+            self._metadata = MicroAgentMetadata(**self._metadata)
+        else:
+            raise Exception('You must pass either path or file content, but not both.')
 
     def get_trigger(self, message: str) -> str | None:
         message = message.lower()

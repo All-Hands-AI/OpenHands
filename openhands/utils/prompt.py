@@ -42,12 +42,17 @@ class PromptManager:
                 if f.endswith('.md')
             ]
         for microagent_file in microagent_files:
-            microagent = MicroAgent(microagent_file)
+            microagent = MicroAgent(path=microagent_file)
             if (
                 disabled_microagents is None
                 or microagent.name not in disabled_microagents
             ):
                 self.microagents[microagent.name] = microagent
+
+    def load_microagent_files(self, microagent_files: list[str]):
+        for microagent_file in microagent_files:
+            microagent = MicroAgent(content=microagent_file)
+            self.microagents[microagent.name] = microagent
 
     def _load_template(self, template_name: str) -> Template:
         if self.prompt_dir is None:

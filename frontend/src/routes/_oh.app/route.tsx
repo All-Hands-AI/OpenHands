@@ -92,6 +92,7 @@ function App() {
       enabled={!!permissions && permissions?.includes("write:chat")}
       token={cid}
       ghToken={gitHubToken}
+      selectedRepository={selectedRepository}
       settings={settings}
     >
       <EventHandler>
