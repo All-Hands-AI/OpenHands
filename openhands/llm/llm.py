@@ -32,7 +32,6 @@ from openhands.core.message import Message
 from openhands.llm.debug_mixin import DebugMixin
 from openhands.llm.fn_call_converter import (
     STOP_WORDS,
-    convert_fncall_messages_to_non_fncall_messages,
     convert_non_fncall_messages_to_fncall_messages,
 )
 from openhands.llm.metrics import Metrics
@@ -175,7 +174,7 @@ class LLM(RetryMixin, DebugMixin):
                 assert (
                     'tools' in kwargs
                 ), "'tools' must be in kwargs when mock_function_calling is True"
-                messages = convert_fncall_messages_to_non_fncall_messages(
+                messages = Message.convert_messages_to_non_native(
                     messages, kwargs['tools']
                 )
                 kwargs['messages'] = messages

@@ -9,7 +9,11 @@ from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import ImageContent, Message, TextContent
+from openhands.core.message import (
+    ImageContent,
+    Message,
+    TextContent,
+)
 from openhands.events.action import (
     Action,
     AgentDelegateAction,
@@ -144,7 +148,6 @@ class CodeActAgent(Agent):
             rather than being returned immediately. They will be processed later when all corresponding
             tool call results are available.
         """
-        # create a regular message from an event
         if isinstance(
             action,
             (
@@ -156,11 +159,7 @@ class CodeActAgent(Agent):
             ),
         ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
             tool_metadata = action.tool_call_metadata
-            assert tool_metadata is not None, (
-                'Tool call metadata should NOT be None when function calling is enabled. Action: '
-                + str(action)
-            )
-
+            assert tool_metadata is not None
             llm_response: ModelResponse = tool_metadata.model_response
             assistant_msg = llm_response.choices[0].message
 
@@ -173,6 +172,7 @@ class CodeActAgent(Agent):
                 if assistant_msg.content is not None
                 else [],
                 tool_calls=assistant_msg.tool_calls,
+                function_calling_enabled=self.llm.is_function_calling_active(),
             )
             return []
         elif isinstance(action, AgentFinishAction):
@@ -223,6 +223,29 @@ class CodeActAgent(Agent):
                     content=content,
                 )
             ]
+        elif isinstance(action, AgentFinishAction) and action.source == 'agent':
+            # For agent-sourced FinishAction, treat it as a message action
+            # This way it won't expect a tool response
+            tool_metadata = action.tool_call_metadata
+            assert tool_metadata is not None, (
+                'Tool call metadata should NOT be None when function calling is enabled. Action: '
+                + str(action)
+            )
+            llm_response = tool_metadata.model_response
+            assistant_msg = llm_response.choices[0].message
+            return [
+                Message(
+                    role=assistant_msg.role,
+                    content=[TextContent(text=assistant_msg.content or '')],
+                )
+            ]
+        elif isinstance(action, AgentFinishAction) and action.source == 'user':
+            return [
+                Message(
+                    role='user',
+                    content=[TextContent(text=action.thought or '')],
+                )
+            ]
         return []
 
     def get_observation_message(
@@ -257,6 +280,7 @@ class CodeActAgent(Agent):
         """
         message: Message
         max_message_chars = self.llm.config.max_message_chars
+
         if isinstance(obs, CmdOutputObservation):
             # if it doesn't have tool call metadata, it was triggered by a user action
             if obs.tool_call_metadata is None:
@@ -287,10 +311,7 @@ class CodeActAgent(Agent):
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, BrowserOutputObservation):
             text = obs.get_agent_obs_text()
-            message = Message(
-                role='user',
-                content=[TextContent(text=text)],
-            )
+            message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentDelegateObservation):
             text = truncate_content(
                 obs.outputs['content'] if 'content' in obs.outputs else '',
@@ -306,21 +327,18 @@ class CodeActAgent(Agent):
             text += '\n[Last action has been rejected by the user]'
             message = Message(role='user', content=[TextContent(text=text)])
         else:
-            # If an observation message is not returned, it will cause an error
-            # when the LLM tries to return the next message
             raise ValueError(f'Unknown observation type: {type(obs)}')
 
         # Update the message as tool response properly
         if (tool_call_metadata := obs.tool_call_metadata) is not None:
+            content_text = message.content[0].text if message.content else ''
             tool_call_id_to_message[tool_call_metadata.tool_call_id] = Message(
                 role='tool',
-                content=message.content,
+                content=[TextContent(text=content_text)],
                 tool_call_id=tool_call_metadata.tool_call_id,
                 name=tool_call_metadata.function_name,
+                function_calling_enabled=self.llm.is_function_calling_active(),
             )
-            # No need to return the observation message
-            # because it will be added by get_action_message when all the corresponding
-            # tool calls in the SAME request are processed
             return []
 
         return [message]
