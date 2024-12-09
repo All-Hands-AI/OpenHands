@@ -19,6 +19,18 @@ from openhands.server.shared import config, session_manager, sio
 @sio.event
 async def connect(connection_id: str, environ):
     logger.info(f'sio:connect: {connection_id}')
+    # Extract conversation ID from the URL path
+    path = environ.get('HTTP_URI', '').split('?')[0]
+    if not path.startswith('/conversation/'):
+        await sio.emit('oh_event', {'error': 'Invalid path', 'error_code': 400}, to=connection_id)
+        return False
+    conversation_id = path.split('/conversation/')[1]
+    if not conversation_id:
+        await sio.emit('oh_event', {'error': 'Missing conversation ID', 'error_code': 400}, to=connection_id)
+        return False
+    
+    # Store the conversation ID in the socket data
+    await sio.save_session(connection_id, {'conversation_id': conversation_id})
 
 
 @sio.event

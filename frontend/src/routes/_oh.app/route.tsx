@@ -26,6 +26,7 @@ import { ConversationProvider } from "#/context/conversation-context";
 function App() {
   const { token, gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
+  const { conversationId } = useConversation();
 
   const dispatch = useDispatch();
   useConversationConfig();
@@ -67,6 +68,7 @@ function App() {
       ghToken={gitHubToken}
       selectedRepository={selectedRepository}
       settings={settings}
+      conversationId={conversationId}
     >
       <ConversationProvider>
         <EventHandler>

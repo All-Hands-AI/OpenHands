@@ -42,6 +42,7 @@ interface WsClientProviderProps {
   ghToken: string | null;
   selectedRepository: string | null;
   settings: Settings | null;
+  conversationId: string | null;
 }
 
 export function WsClientProvider({
@@ -50,6 +51,7 @@ export function WsClientProvider({
   ghToken,
   selectedRepository,
   settings,
+  conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
   const sioRef = React.useRef<Socket | null>(null);
@@ -74,28 +76,8 @@ export function WsClientProvider({
     sioRef.current.emit("oh_action", event);
   }
 
-  async function handleConnect() {
+  function handleConnect() {
     setStatus(WsClientProviderStatus.OPENING);
-
-    try {
-      const lastEvent = lastEventRef.current;
-      const { token: newToken } = await OpenHands.initSession({
-        token,
-        githubToken: ghToken,
-        selectedRepository,
-        args: settings || undefined,
-        latestEventId: lastEvent?.id as number | undefined,
-      });
-
-      // Store the new token for future use
-      tokenRef.current = newToken;
-      // Extract conversation ID from the token (it's a JWT)
-      const payload = JSON.parse(atob(newToken.split('.')[1]));
-      setConversationId(payload.sid);
-    } catch (error) {
-      EventLogger.error("Failed to initialize session", error);
-      setStatus(WsClientProviderStatus.ERROR);
-    }
   }
 
   function handleMessage(event: Record<string, unknown>) {
@@ -157,7 +139,7 @@ export function WsClientProvider({
 
       const baseUrl =
         import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
-      sio = io(baseUrl, {
+      sio = io(`${baseUrl}/conversation/${conversationId}`, {
         transports: ["websocket"],
       });
     }
