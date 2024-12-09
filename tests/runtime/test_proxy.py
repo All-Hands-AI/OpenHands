@@ -1,8 +1,10 @@
 """Tests for the HTTPS proxy functionality in ActionExecutor."""
 
+import os
 import time
 from pathlib import Path
 
+import pytest
 import requests
 from conftest import _close_test_runtime, _load_runtime
 
@@ -10,7 +12,11 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation
 
+# Skip tests if Docker is not available
+docker_available = os.environ.get('INSTALL_DOCKER', '1') == '1'
 
+
+@pytest.mark.skipif(not docker_available, reason='Docker is not available')
 def test_https_proxy(temp_dir, runtime_cls, run_as_openhands):
     """Test that the HTTPS proxy works correctly."""
     # Initialize runtime with HTTPS proxy
