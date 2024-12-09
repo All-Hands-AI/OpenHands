@@ -14,6 +14,7 @@ import mimetypes
 import os
 import re
 import shutil
+import subprocess
 import tempfile
 import time
 import traceback
@@ -90,11 +91,13 @@ class ActionExecutor:
         username: str,
         user_id: int,
         browsergym_eval_env: str | None,
+        https_proxy_port: int | None = None,
     ) -> None:
         self.plugins_to_load = plugins_to_load
         self._initial_pwd = work_dir
         self.username = username
         self.user_id = user_id
+        self.https_proxy_port = https_proxy_port
         _updated_user_id = init_user_and_working_directory(
             username=username, user_id=self.user_id, initial_pwd=work_dir
         )
@@ -117,6 +120,23 @@ class ActionExecutor:
         return self._initial_pwd
 
     async def ainit(self):
+        if self.https_proxy_port is not None:
+            assert check_port_available(self.https_proxy_port)
+            cmd = (
+                f"su - {self.username} -s /bin/bash << 'EOF'\n"
+                'cd /workspace\n'
+                f'exec mitmproxy --mode regular --listen-host 0.0.0.0 --listen-port {self.https_proxy_port} > proxy.log 2>&1 &\n'
+                'EOF'
+            )
+            logger.debug(f'Starting HTTPS proxy on port {self.https_proxy_port}')
+            proxy_process = subprocess.Popen(
+                cmd,
+                stderr=subprocess.STDOUT,
+                shell=True,
+            )
+            time.sleep(2)  # Give proxy time to start
+            logger.debug('HTTPS proxy started')
+
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
             timeout=30,
@@ -363,6 +383,12 @@ if __name__ == '__main__':
     )
     parser.add_argument('--user-id', type=int, help='User ID to run as', default=1000)
     parser.add_argument(
+        '--https-proxy-port',
+        type=int,
+        help='Port to run HTTPS proxy on',
+        default=None,
+    )
+    parser.add_argument(
         '--browsergym-eval-env',
         type=str,
         help='BrowserGym environment used for browser evaluation',
@@ -391,6 +417,7 @@ if __name__ == '__main__':
             username=args.username,
             user_id=args.user_id,
             browsergym_eval_env=args.browsergym_eval_env,
+            https_proxy_port=args.https_proxy_port,
         )
         await client.ainit()
         yield
