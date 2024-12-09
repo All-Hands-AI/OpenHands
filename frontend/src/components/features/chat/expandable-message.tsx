@@ -11,12 +11,14 @@ interface ExpandableMessageProps {
   id?: string;
   message: string;
   type: string;
+  success?: boolean;
 }
 
 export function ExpandableMessage({
   id,
   message,
   type,
+  success,
 }: ExpandableMessageProps) {
   const { t, i18n } = useTranslation();
   const [showDetails, setShowDetails] = useState(true);
@@ -31,11 +33,18 @@ export function ExpandableMessage({
     }
   }, [id, message, i18n.language]);
 
-  const border = type === "error" ? "border-danger" : "border-neutral-300";
-  const textColor = type === "error" ? "text-danger" : "text-neutral-300";
+  let border = "border-neutral-300";
+  let textColor = "text-neutral-300";
   let arrowClasses = "h-4 w-4 ml-2 inline";
+
   if (type === "error") {
+    border = "border-danger";
+    textColor = "text-danger";
     arrowClasses += " fill-danger";
+  } else if (type === "action" && success !== undefined) {
+    border = success ? "border-success" : "border-danger";
+    textColor = success ? "text-success" : "text-danger";
+    arrowClasses += success ? " fill-success" : " fill-danger";
   } else {
     arrowClasses += " fill-neutral-300";
   }

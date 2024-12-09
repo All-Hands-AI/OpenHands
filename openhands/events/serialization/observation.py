@@ -50,4 +50,7 @@ def observation_from_dict(observation: dict) -> Observation:
     observation.pop('message', None)
     content = observation.pop('content', '')
     extras = observation.pop('extras', {})
-    return observation_class(content=content, **extras)
+    obs = observation_class(content=content, **extras)
+    if hasattr(obs, 'success'):
+        extras['success'] = obs.success
+    return obs
