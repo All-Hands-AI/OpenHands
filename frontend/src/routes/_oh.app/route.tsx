@@ -83,8 +83,7 @@ function App() {
                   {
                     label: "Browser",
                     to: "browser",
-                    icon: <GlobeIcon />,
-                    isBeta: true,
+                    icon: <GlobeIcon />
                   },
                 ]}
               >
