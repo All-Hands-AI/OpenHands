@@ -45,7 +45,7 @@ export function Sidebar() {
   };
 
   const handleClickLogo = () => {
-    if (location.pathname.startsWith("/app"))
+    if (location.pathname.startsWith("/conversation/"))
       setStartNewProjectModalIsOpen(true);
   };
 

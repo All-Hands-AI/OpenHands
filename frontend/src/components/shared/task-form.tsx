@@ -11,6 +11,7 @@ import {
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
+import { useConversation } from "#/context/conversation-context";
 import { SuggestionBubble } from "#/components/features/suggestions/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
@@ -27,6 +28,7 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
   const navigate = useNavigate();
   const { token, gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
+  const { setConversationId } = useConversation();
 
   const { selectedRepository, files } = useSelector(
     (state: RootState) => state.initalQuery,
@@ -75,12 +77,17 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
     try {
       setIsInitializing(true);
       // Initialize the session before navigating
-      await OpenHands.initSession({
-        token,
-        githubToken: gitHubToken,
-        selectedRepository,
+      const { token: newToken } = await OpenHands.initSession({
+        token: token || undefined,
+        githubToken: gitHubToken || undefined,
+        selectedRepository: selectedRepository || undefined,
         args: settings || undefined,
       });
+
+      // Extract conversation ID from the token (it's a JWT)
+      const payload = JSON.parse(atob(newToken.split('.')[1]));
+      const conversationId = payload.sid;
+      setConversationId(conversationId);
 
       posthog.capture("initial_query_submitted", {
         entry_point: "task_form",
@@ -89,7 +96,7 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
         has_files: files.length > 0,
       });
 
-      navigate("/app");
+      navigate(`/conversation/${conversationId}`);
     } catch (error) {
       console.error("Failed to initialize session:", error);
       // TODO: Show error toast
