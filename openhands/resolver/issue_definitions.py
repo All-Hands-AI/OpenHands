@@ -70,10 +70,13 @@ class IssueHandler(IssueHandlerInterface):
             if not issues:
                 break
 
-            if not isinstance(issues, list) or any(
+            # Handle both list and single-object responses
+            if isinstance(issues, dict):
+                issues = [issues]
+            elif not isinstance(issues, list) or any(
                 [not isinstance(issue, dict) for issue in issues]
             ):
-                raise ValueError('Expected list of dictionaries from Github API.')
+                raise ValueError('Expected list or dictionary from Github API.')
 
             all_issues.extend(issues)
             assert isinstance(params['page'], int)
@@ -116,13 +119,13 @@ class IssueHandler(IssueHandlerInterface):
         params = {'per_page': 100, 'page': 1}
         all_comments = []
 
-        while True:
+        try:
             response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()
             comments = response.json()
 
             if not comments:
-                break
+                return None
 
             if comment_id:
                 matching_comment = next(
@@ -138,9 +141,27 @@ class IssueHandler(IssueHandlerInterface):
             else:
                 all_comments.extend([comment['body'] for comment in comments])
 
-            params['page'] += 1
+            # Try to get more pages if available
+            try:
+                params['page'] += 1
+                while True:
+                    response = requests.get(url, headers=headers, params=params)
+                    response.raise_for_status()
+                    comments = response.json()
 
-        return all_comments if all_comments else None
+                    if not comments:
+                        break
+
+                    all_comments.extend([comment['body'] for comment in comments])
+                    params['page'] += 1
+            except (requests.exceptions.RequestException, StopIteration):
+                # Ignore errors when getting additional pages
+                pass
+
+            return all_comments if all_comments else None
+        except (requests.exceptions.RequestException, StopIteration):
+            # Return None if we can't get any comments
+            return None
 
     def get_converted_issues(
         self, issue_numbers: list[int] | None = None, comment_id: int | None = None
