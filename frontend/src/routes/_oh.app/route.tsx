@@ -33,6 +33,8 @@ function App() {
     (state: RootState) => state.initalQuery,
   );
 
+  const { updateCount } = useSelector((state: RootState) => state.browser);
+
   const { data: latestGitHubCommit } = useLatestRepoCommit({
     repository: selectedRepository,
   });
@@ -81,9 +83,10 @@ function App() {
                   { label: "Workspace", to: "", icon: <CodeIcon /> },
                   { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
                   {
-                    label: "Browser",
+                    label:
+                      updateCount > 0 ? `Browser (${updateCount})` : "Browser",
                     to: "browser",
-                    icon: <GlobeIcon />
+                    icon: <GlobeIcon />,
                   },
                 ]}
               >
