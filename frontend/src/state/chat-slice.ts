@@ -5,6 +5,8 @@ import {
   OpenHandsObservation,
   CommandObservation,
   IPythonObservation,
+  WriteObservation,
+  ReadObservation,
 } from "#/types/core/observations";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsEventType } from "#/types/core/base";
@@ -142,9 +144,14 @@ export const chatSlice = createSlice({
         // For IPython, we consider it successful if there's no error message
         const ipythonObs = observation.payload as IPythonObservation;
         causeMessage.success = !ipythonObs.message.toLowerCase().includes("error");
-      } else if (observationID === "write" || observationID === "read") {
-        // For file operations, we consider them successful if there's no error message
-        causeMessage.success = !observation.payload.message.toLowerCase().includes("error");
+      } else if (observationID === "write") {
+        // For write operations, we consider them successful if there's no error message
+        const writeObs = observation.payload as WriteObservation;
+        causeMessage.success = !writeObs.message.toLowerCase().includes("error");
+      } else if (observationID === "read") {
+        // For read operations, we consider them successful if there's no error message
+        const readObs = observation.payload as ReadObservation;
+        causeMessage.success = !readObs.message.toLowerCase().includes("error");
       }
 
       if (observationID === "run" || observationID === "run_ipython") {
