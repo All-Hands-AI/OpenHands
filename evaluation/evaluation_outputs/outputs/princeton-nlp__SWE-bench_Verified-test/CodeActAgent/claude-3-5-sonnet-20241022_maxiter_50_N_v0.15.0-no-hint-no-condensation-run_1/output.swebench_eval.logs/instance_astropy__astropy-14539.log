@@ -1,0 +1,53 @@
+2024-12-04 15:10:58,786 - INFO - Using instance container image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.astropy_s_astropy-14539. Please make sure this image exists. Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.
+2024-12-04 15:10:58,786 - INFO - Starting evaluation for instance astropy__astropy-14539.
+2024-12-04 15:10:59,475 - INFO - [runtime 0f8cf612-f080-44cc-9a26-62d5c1efd2c4-4bb13af89f14772a] Building remote runtime with base image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.astropy_s_astropy-14539
+2024-12-04 15:10:59,519 - INFO - Building image: us-central1-docker.pkg.dev/evaluation-092424/runtime-api-docker-repo/runtime:oh_v0.15.0_5trf479ca8xrhw3o_tun0f9coqw2bqg0f
+2024-12-04 15:11:00,405 - INFO - [runtime 0f8cf612-f080-44cc-9a26-62d5c1efd2c4-4bb13af89f14772a] Waiting for runtime to be alive...
+2024-12-04 15:11:01,921 - INFO - _register_signal_handlers
+2024-12-04 15:11:01,922 - INFO - _register_signal_handlers:not_main_thread
+2024-12-04 15:12:26,928 - INFO - [runtime 0f8cf612-f080-44cc-9a26-62d5c1efd2c4-4bb13af89f14772a] Runtime is ready.
+2024-12-04 15:12:27,012 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+chmod +x /tmp/eval.sh
+2024-12-04 15:12:27,146 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 15:12:27,309 - INFO - [astropy__astropy-14539] >>>>> Applied Patch:
+Checking patch astropy/io/fits/diff.py...
+Checking patch diffbug.fits...
+error: cannot apply binary patch to 'diffbug.fits' without full index line
+error: diffbug.fits: patch does not apply
+Checking patch edge_cases.py...
+Checking patch empty_arrays.fits...
+error: cannot apply binary patch to 'empty_arrays.fits' without full index line
+error: empty_arrays.fits: patch does not apply
+Checking patch int_arrays.fits...
+error: cannot apply binary patch to 'int_arrays.fits' without full index line
+error: int_arrays.fits: patch does not apply
+Checking patch large_vla.fits...
+error: cannot apply binary patch to 'large_vla.fits' without full index line
+error: large_vla.fits: patch does not apply
+Checking patch multi_vla.fits...
+error: cannot apply binary patch to 'multi_vla.fits' without full index line
+error: multi_vla.fits: patch does not apply
+Checking patch nan_arrays.fits...
+error: cannot apply binary patch to 'nan_arrays.fits' without full index line
+error: nan_arrays.fits: patch does not apply
+Checking patch reproduce_bug.py...
+Failed to apply patch with git apply, trying with patch command...
+patching file astropy/io/fits/diff.py
+patching file diffbug.fits
+patching file edge_cases.py
+patching file empty_arrays.fits
+patching file int_arrays.fits
+patching file large_vla.fits
+patching file multi_vla.fits
+patching file nan_arrays.fits
+patching file reproduce_bug.py
+APPLY_PATCH_PASS
+2024-12-04 15:12:27,483 - INFO - [astropy__astropy-14539] Evaluation process started with PID: 389
+2024-12-04 15:12:27,659 - INFO - [astropy__astropy-14539] [0s] Evaluation still running, waiting...
+2024-12-04 15:12:57,813 - INFO - [astropy__astropy-14539] [30s] Evaluation still running, waiting...
+2024-12-04 15:13:27,975 - INFO - [astropy__astropy-14539] Evaluation process completed after 60.33490490913391 seconds
+2024-12-04 15:13:28,271 - INFO - [astropy__astropy-14539] Grading answer...
+2024-12-04 15:13:28,299 - INFO - [astropy__astropy-14539] report: {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': True, 'tests_status': {'FAIL_TO_PASS': {'success': ['astropy/io/fits/tests/test_diff.py::TestDiff::test_identical_tables', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_different_table_data'], 'failure': []}, 'PASS_TO_PASS': {'success': ['astropy/io/fits/tests/test_diff.py::TestDiff::test_identical_headers', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_slightly_different_headers', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_common_keywords', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_different_keyword_count', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_different_keywords', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_different_keyword_values', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_different_keyword_comments', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_different_keyword_values_with_duplicate', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_asymmetric_duplicate_keywords', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_floating_point_rtol', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_floating_point_atol', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_ignore_blanks', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_ignore_blank_cards[HeaderDiff]', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_ignore_blank_cards[HDUDiff]', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_ignore_blank_cards[FITSDiff]', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_ignore_hdus', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_ignore_keyword_values', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_ignore_keyword_comments', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_trivial_identical_images', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_identical_within_relative_tolerance', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_identical_within_absolute_tolerance', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_identical_within_rtol_and_atol', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_not_identical_within_rtol_and_atol', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_identical_comp_image_hdus', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_different_dimensions', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_different_pixels', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_diff_empty_tables', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_ignore_table_fields', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_different_table_field_names', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_different_table_field_counts', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_different_table_rows', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_identical_files_basic', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_partially_identical_files1', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_partially_identical_files2', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_partially_identical_files3', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_diff_nans', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_file_output_from_path_string', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_file_output_overwrite_safety', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_file_output_overwrite_success', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_rawdatadiff_nodiff', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_rawdatadiff_dimsdiff', 'astropy/io/fits/tests/test_diff.py::TestDiff::test_rawdatadiff_bytesdiff', 'astropy/io/fits/tests/test_diff.py::test_fitsdiff_hdu_name', 'astropy/io/fits/tests/test_diff.py::test_fitsdiff_no_hdu_name', 'astropy/io/fits/tests/test_diff.py::test_fitsdiff_with_names', 'astropy/io/fits/tests/test_diff.py::test_rawdatadiff_diff_with_rtol'], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}
+Result for astropy__astropy-14539: resolved: True

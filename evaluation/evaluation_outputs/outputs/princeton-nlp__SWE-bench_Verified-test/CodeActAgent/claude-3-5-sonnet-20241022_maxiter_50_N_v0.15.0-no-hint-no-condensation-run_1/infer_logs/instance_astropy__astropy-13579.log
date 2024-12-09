@@ -1,0 +1,159 @@
+2024-12-04 11:57:01,111 - INFO - [runtime 9ee822a3-a5ae-44b7-8e8a-dc92ab86efc9-8ded4da1f6003b8e] Building remote runtime with base image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.astropy_s_astropy-13579
+2024-12-04 11:57:01,162 - INFO - Building image: us-central1-docker.pkg.dev/evaluation-092424/runtime-api-docker-repo/runtime:oh_v0.15.0_uchkhhry4u355emc_8yyi8tnqgmet7oyx
+2024-12-04 11:57:01,463 - INFO - Build [us-central1-docker.pkg.dev/evaluation-092424/runtime-api-docker-repo/runtime:oh_v0.15.0_uchkhhry4u355emc_8yyi8tnqgmet7oyx] from versioned image [us-central1-docker.pkg.dev/evaluation-092424/runtime-api-docker-repo/runtime:oh_v0.15.0_docker.pkg.dev_s_evaluation-092424_s_swe-bench-images_s_sweb.eval.x86_64.astropy_s_astropy-13579]
+2024-12-04 11:57:07,766 - INFO - Build initiated with ID: d669120d-cb6e-4d1f-9245-9d46b31ae0a1
+2024-12-04 11:57:07,766 - INFO - _register_signal_handlers
+2024-12-04 11:57:07,767 - INFO - _register_signal_handlers:not_main_thread
+2024-12-04 11:57:10,684 - INFO - Build status: WORKING
+2024-12-04 11:57:42,288 - INFO - Build status: WORKING
+2024-12-04 11:58:13,043 - INFO - Build status: WORKING
+2024-12-04 11:58:44,418 - INFO - Build status: WORKING
+2024-12-04 11:59:18,122 - INFO - Build status: WORKING
+2024-12-04 11:59:50,416 - INFO - Build status: WORKING
+2024-12-04 12:00:23,045 - INFO - Build status: WORKING
+2024-12-04 12:00:56,949 - INFO - Build status: WORKING
+2024-12-04 12:01:39,545 - INFO - Build status: WORKING
+2024-12-04 12:02:11,592 - INFO - Build status: SUCCESS
+2024-12-04 12:02:25,138 - INFO - [runtime 9ee822a3-a5ae-44b7-8e8a-dc92ab86efc9-8ded4da1f6003b8e] Waiting for runtime to be alive...
+2024-12-04 12:06:53,630 - INFO - [runtime 9ee822a3-a5ae-44b7-8e8a-dc92ab86efc9-8ded4da1f6003b8e] Runtime is ready.
+2024-12-04 12:06:53,787 - INFO - ------------------------------
+2024-12-04 12:06:53,787 - INFO - BEGIN Runtime Initialization Fn
+2024-12-04 12:06:53,787 - INFO - ------------------------------
+2024-12-04 12:06:53,788 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+echo 'export SWE_INSTANCE_ID=astropy__astropy-13579' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo "alias git='git --no-pager'" >> ~/.bashrc
+2024-12-04 12:06:53,915 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 12:06:53,915 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+export USER=$(whoami); echo USER=${USER}
+2024-12-04 12:06:54,124 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+USER=root
+2024-12-04 12:06:54,124 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+mkdir -p /swe_util/eval_data/instances
+2024-12-04 12:06:54,294 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 12:06:54,374 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+cat ~/.bashrc
+2024-12-04 12:06:54,510 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+source /opt/miniconda3/etc/profile.d/conda.sh && conda activate testbed
+export SWE_INSTANCE_ID=astropy__astropy-13579
+export PIP_CACHE_DIR=~/.cache/pip
+alias git='git --no-pager'
+2024-12-04 12:06:54,510 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+source ~/.bashrc
+2024-12-04 12:06:54,918 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 12:06:54,918 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+source /swe_util/instance_swe_entry.sh
+2024-12-04 12:06:55,795 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+WORKSPACE_NAME: astropy__astropy__5.0
+2024-12-04 12:06:55,795 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+cd /workspace/astropy__astropy__5.0
+2024-12-04 12:06:55,925 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 12:06:55,926 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+git reset --hard
+2024-12-04 12:06:57,099 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+HEAD is now at 0df94ff709 Merge pull request #13574 from pllim/rm-corpus-404
+2024-12-04 12:06:57,099 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+for remote_name in $(git remote); do git remote remove "${remote_name}"; done
+2024-12-04 12:06:57,272 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 12:06:57,273 - INFO - ------------------------------
+2024-12-04 12:06:57,273 - INFO - END Runtime Initialization Fn
+2024-12-04 12:06:57,273 - INFO - ------------------------------
+2024-12-04 12:06:57,364 - WARNING - Could not restore state from session: sessions/9ee822a3-a5ae-44b7-8e8a-dc92ab86efc9-8ded4da1f6003b8e/agent_state.pkl
+2024-12-04 12:06:57,366 - INFO - [Agent Controller default] Starting step loop...
+2024-12-04 12:06:57,366 - INFO - [Agent Controller default] Setting agent(CodeActAgent) state from AgentState.LOADING to AgentState.RUNNING
+2024-12-04 12:06:58,470 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 0 GLOBAL STEP 0
+2024-12-04 12:07:04,156 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 1 GLOBAL STEP 1
+2024-12-04 12:07:25,079 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 2 GLOBAL STEP 2
+2024-12-04 12:07:32,289 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 3 GLOBAL STEP 3
+2024-12-04 12:07:39,404 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 4 GLOBAL STEP 4
+2024-12-04 12:07:43,859 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 5 GLOBAL STEP 5
+2024-12-04 12:07:48,690 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 6 GLOBAL STEP 6
+2024-12-04 12:07:53,667 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 7 GLOBAL STEP 7
+2024-12-04 12:07:59,650 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 8 GLOBAL STEP 8
+2024-12-04 12:08:04,131 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 9 GLOBAL STEP 9
+2024-12-04 12:08:22,400 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 10 GLOBAL STEP 10
+2024-12-04 12:08:31,189 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 11 GLOBAL STEP 11
+2024-12-04 12:08:48,078 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 12 GLOBAL STEP 12
+2024-12-04 12:08:53,084 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 13 GLOBAL STEP 13
+2024-12-04 12:09:01,197 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 14 GLOBAL STEP 14
+2024-12-04 12:09:09,036 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 15 GLOBAL STEP 15
+2024-12-04 12:09:16,231 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 16 GLOBAL STEP 16
+2024-12-04 12:09:20,901 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 17 GLOBAL STEP 17
+2024-12-04 12:09:33,331 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 18 GLOBAL STEP 18
+2024-12-04 12:09:41,650 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 19 GLOBAL STEP 19
+2024-12-04 12:10:04,060 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 20 GLOBAL STEP 20
+2024-12-04 12:10:12,016 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 21 GLOBAL STEP 21
+2024-12-04 12:10:23,447 - INFO - [Agent Controller default] Setting agent(CodeActAgent) state from AgentState.RUNNING to AgentState.AWAITING_USER_INPUT
+2024-12-04 12:10:23,447 - INFO - [Agent Controller default] Setting agent(CodeActAgent) state from AgentState.AWAITING_USER_INPUT to AgentState.RUNNING
+2024-12-04 12:10:23,549 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 22 GLOBAL STEP 22
+2024-12-04 12:10:34,969 - INFO - [Agent Controller default] Setting agent(CodeActAgent) state from AgentState.RUNNING to AgentState.FINISHED
+2024-12-04 12:10:34,972 - INFO - ------------------------------
+2024-12-04 12:10:34,972 - INFO - BEGIN Runtime Completion Fn
+2024-12-04 12:10:34,972 - INFO - ------------------------------
+2024-12-04 12:10:34,972 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+cd /workspace/astropy__astropy__5.0
+2024-12-04 12:10:35,103 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 12:10:35,103 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+git config --global core.pager ""
+2024-12-04 12:10:35,245 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 12:10:35,245 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+git add -A
+2024-12-04 12:10:36,996 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 12:10:36,996 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+git diff --no-color --cached 0df94ff7097961e92fd7812036a24b145bc13ca8
+2024-12-04 12:10:37,150 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+diff --git a/astropy/wcs/wcsapi/wrappers/sliced_wcs.py b/astropy/wcs/wcsapi/wrappers/sliced_wcs.py
+index d7605b078c..47bd75de7f 100644
+--- a/astropy/wcs/wcsapi/wrappers/sliced_wcs.py
++++ b/astropy/wcs/wcsapi/wrappers/sliced_wcs.py
+@@ -251,7 +251,8 @@ class SlicedLowLevelWCS(BaseWCSWrapper):
+                 iworld_curr += 1
+                 world_arrays_new.append(world_arrays[iworld_curr])
+             else:
+-                world_arrays_new.append(1.)
++                # Use the value from dropped_world_dimensions for this dimension
++                world_arrays_new.append(self.dropped_world_dimensions['value'][len(world_arrays_new) - len(self._world_keep) - 1])
+
+         world_arrays_new = np.broadcast_arrays(*world_arrays_new)
+         pixel_arrays = list(self._wcs.world_to_pixel_values(*world_arrays_new))
+2024-12-04 12:10:37,150 - INFO - ------------------------------
+2024-12-04 12:10:37,150 - INFO - END Runtime Completion Fn
+2024-12-04 12:10:37,150 - INFO - ------------------------------
+2024-12-04 12:10:37,151 - INFO - Got git diff for instance astropy__astropy-13579:
+--------
+diff --git a/astropy/wcs/wcsapi/wrappers/sliced_wcs.py b/astropy/wcs/wcsapi/wrappers/sliced_wcs.py
+index d7605b078c..47bd75de7f 100644
+--- a/astropy/wcs/wcsapi/wrappers/sliced_wcs.py
++++ b/astropy/wcs/wcsapi/wrappers/sliced_wcs.py
+@@ -251,7 +251,8 @@ class SlicedLowLevelWCS(BaseWCSWrapper):
+                 iworld_curr += 1
+                 world_arrays_new.append(world_arrays[iworld_curr])
+             else:
+-                world_arrays_new.append(1.)
++                # Use the value from dropped_world_dimensions for this dimension
++                world_arrays_new.append(self.dropped_world_dimensions['value'][len(world_arrays_new) - len(self._world_keep) - 1])
+
+         world_arrays_new = np.broadcast_arrays(*world_arrays_new)
+         pixel_arrays = list(self._wcs.world_to_pixel_values(*world_arrays_new))
+--------
+2024-12-04 12:10:37,439 - INFO - Using instance container image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.astropy_s_astropy-8872. Please make sure this image exists. Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.
+2024-12-04 12:10:37,439 - INFO - Logging LLM completions for instance astropy__astropy-8872 to evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Verified-test/CodeActAgent/claude-3-5-sonnet-20241022_maxiter_50_N_v0.15.0-no-hint-run_1/llm_completions/astropy__astropy-8872

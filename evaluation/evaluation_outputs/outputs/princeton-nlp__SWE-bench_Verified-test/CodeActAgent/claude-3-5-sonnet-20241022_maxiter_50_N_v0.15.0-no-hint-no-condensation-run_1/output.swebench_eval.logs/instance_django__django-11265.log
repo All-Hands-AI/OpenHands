@@ -1,0 +1,2 @@
+2024-12-04 15:16:15,186 - INFO - Using instance container image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.django_s_django-11265. Please make sure this image exists. Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.
+2024-12-04 15:16:15,187 - INFO - Starting evaluation for instance django__django-11265.

@@ -1,0 +1,858 @@
+2024-12-04 13:24:24,862 - INFO - [runtime c840d36f-433e-4c2f-872d-58cb0ba97387-ac497288a46eaf3e] Building remote runtime with base image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.django_s_django-11087
+2024-12-04 13:24:24,950 - INFO - Building image: us-central1-docker.pkg.dev/evaluation-092424/runtime-api-docker-repo/runtime:oh_v0.15.0_osm3i0a32ilafj0o_tun0f9coqw2bqg0f
+2024-12-04 13:24:26,554 - INFO - Build initiated with ID: 8268a128-8ee1-414d-a494-a61cb86cccdf
+2024-12-04 13:24:26,633 - INFO - Build status: QUEUED
+2024-12-04 13:24:56,869 - INFO - Build status: WORKING
+2024-12-04 13:25:27,063 - INFO - Build status: WORKING
+2024-12-04 13:25:57,256 - INFO - Build status: WORKING
+2024-12-04 13:26:27,428 - INFO - Build status: WORKING
+2024-12-04 13:26:57,626 - INFO - Build status: WORKING
+2024-12-04 13:27:27,832 - INFO - Build status: WORKING
+2024-12-04 13:27:58,021 - INFO - Build status: WORKING
+2024-12-04 13:28:28,242 - INFO - Build status: WORKING
+2024-12-04 13:28:58,425 - INFO - Build status: WORKING
+2024-12-04 13:29:29,748 - INFO - Build status: WORKING
+2024-12-04 13:29:59,950 - INFO - Build status: WORKING
+2024-12-04 13:30:30,172 - INFO - Build status: WORKING
+2024-12-04 13:31:01,003 - INFO - Build status: WORKING
+2024-12-04 13:31:32,030 - INFO - Build status: SUCCESS
+2024-12-04 13:31:33,859 - INFO - [runtime c840d36f-433e-4c2f-872d-58cb0ba97387-ac497288a46eaf3e] Waiting for runtime to be alive...
+2024-12-04 13:35:00,647 - INFO - [runtime c840d36f-433e-4c2f-872d-58cb0ba97387-ac497288a46eaf3e] Runtime is ready.
+2024-12-04 13:35:00,810 - INFO - ------------------------------
+2024-12-04 13:35:00,811 - INFO - BEGIN Runtime Initialization Fn
+2024-12-04 13:35:00,811 - INFO - ------------------------------
+2024-12-04 13:35:00,811 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+echo 'export SWE_INSTANCE_ID=django__django-11087' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo "alias git='git --no-pager'" >> ~/.bashrc
+2024-12-04 13:35:00,944 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 13:35:00,945 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+export USER=$(whoami); echo USER=${USER}
+2024-12-04 13:35:01,090 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+USER=root
+2024-12-04 13:35:01,090 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+mkdir -p /swe_util/eval_data/instances
+2024-12-04 13:35:01,229 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 13:35:01,298 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+cat ~/.bashrc
+2024-12-04 13:35:01,432 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+source /opt/miniconda3/etc/profile.d/conda.sh && conda activate testbed
+export SWE_INSTANCE_ID=django__django-11087
+export PIP_CACHE_DIR=~/.cache/pip
+alias git='git --no-pager'
+2024-12-04 13:35:01,432 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+source ~/.bashrc
+2024-12-04 13:35:01,755 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 13:35:01,755 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+source /swe_util/instance_swe_entry.sh
+2024-12-04 13:35:02,261 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+WORKSPACE_NAME: django__django__3.0
+2024-12-04 13:35:02,262 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+cd /workspace/django__django__3.0
+2024-12-04 13:35:02,394 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 13:35:02,395 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+git reset --hard
+2024-12-04 13:35:04,399 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+Updating files:  58% (3575/6071)Updating files:  59% (3582/6071)Updating files:  60% (3643/6071)Updating files:  61% (3704/6071)Updating files:  62% (3765/6071)Updating files:  63% (3825/6071)Updating files:  64% (3886/6071)Updating files:  65% (3947/6071)Updating files:  66% (4007/6071)Updating files:  67% (4068/6071)Updating files:  68% (4129/6071)Updating files:  69% (4189/6071)Updating files:  70% (4250/6071)Updating files:  71% (4311/6071)Updating files:  72% (4372/6071)Updating files:  73% (4432/6071)Updating files:  74% (4493/6071)Updating files:  75% (4554/6071)Updating files:  76% (4614/6071)Updating files:  77% (4675/6071)Updating files:  78% (4736/6071)Updating files:  79% (4797/6071)Updating files:  80% (4857/6071)Updating files:  81% (4918/6071)Updating files:  82% (4979/6071)Updating files:  83% (5039/6071)Updating files:  84% (5100/6071)Updating files:  85% (5161/6071)Updating files:  86% (5222/6071)Updating files:  87% (5282/6071)Updating files:  88% (5343/6071)Updating files:  89% (5404/6071)Updating files:  90% (5464/6071)Updating files:  91% (5525/6071)Updating files:  92% (5586/6071)Updating files:  93% (5647/6071)Updating files:  94% (5707/6071)Updating files:  95% (5768/6071)Updating files:  96% (5829/6071)Updating files:  97% (5889/6071)Updating files:  98% (5950/6071)Updating files:  99% (6011/6071)Updating files: 100% (6071/6071)Updating files: 100% (6071/6071), done.
+HEAD is now at 8180ffba21 Updated SpatiaLite install instructions to suggest first package from recent Debian-based distributions.
+2024-12-04 13:35:04,399 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+for remote_name in $(git remote); do git remote remove "${remote_name}"; done
+2024-12-04 13:35:04,542 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 13:35:04,543 - INFO - ------------------------------
+2024-12-04 13:35:04,543 - INFO - END Runtime Initialization Fn
+2024-12-04 13:35:04,543 - INFO - ------------------------------
+2024-12-04 13:35:04,707 - WARNING - Could not restore state from session: sessions/c840d36f-433e-4c2f-872d-58cb0ba97387-ac497288a46eaf3e/agent_state.pkl
+2024-12-04 13:35:04,708 - INFO - [Agent Controller default] Starting step loop...
+2024-12-04 13:35:04,709 - INFO - [Agent Controller default] Setting agent(CodeActAgent) state from AgentState.LOADING to AgentState.RUNNING
+2024-12-04 13:35:05,812 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 0 GLOBAL STEP 0
+2024-12-04 13:35:11,353 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 1 GLOBAL STEP 1
+2024-12-04 13:35:17,700 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 2 GLOBAL STEP 2
+2024-12-04 13:35:22,892 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 3 GLOBAL STEP 3
+2024-12-04 13:35:30,504 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 4 GLOBAL STEP 4
+2024-12-04 13:35:35,237 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 5 GLOBAL STEP 5
+2024-12-04 13:35:39,937 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 6 GLOBAL STEP 6
+2024-12-04 13:35:47,988 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 7 GLOBAL STEP 7
+2024-12-04 13:35:53,508 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 8 GLOBAL STEP 8
+2024-12-04 13:35:59,151 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 9 GLOBAL STEP 9
+2024-12-04 13:36:03,968 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 10 GLOBAL STEP 10
+2024-12-04 13:36:12,277 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 11 GLOBAL STEP 11
+2024-12-04 13:36:19,866 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 12 GLOBAL STEP 12
+2024-12-04 13:36:36,167 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 13 GLOBAL STEP 13
+2024-12-04 13:36:49,961 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 14 GLOBAL STEP 14
+2024-12-04 13:37:01,040 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 15 GLOBAL STEP 15
+2024-12-04 13:37:07,260 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 16 GLOBAL STEP 16
+2024-12-04 13:37:15,532 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 17 GLOBAL STEP 17
+2024-12-04 13:37:27,898 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 18 GLOBAL STEP 18
+2024-12-04 13:37:35,767 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 19 GLOBAL STEP 19
+2024-12-04 13:37:45,224 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 20 GLOBAL STEP 20
+2024-12-04 13:37:54,181 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 21 GLOBAL STEP 21
+2024-12-04 13:38:01,777 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 22 GLOBAL STEP 22
+2024-12-04 13:38:10,368 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 23 GLOBAL STEP 23
+2024-12-04 13:38:32,803 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 24 GLOBAL STEP 24
+2024-12-04 13:38:41,401 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 25 GLOBAL STEP 25
+2024-12-04 13:38:50,724 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 26 GLOBAL STEP 26
+2024-12-04 13:38:59,328 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 27 GLOBAL STEP 27
+2024-12-04 13:39:08,135 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 28 GLOBAL STEP 28
+2024-12-04 13:39:23,809 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 29 GLOBAL STEP 29
+2024-12-04 13:39:32,148 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 30 GLOBAL STEP 30
+2024-12-04 13:39:44,180 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 31 GLOBAL STEP 31
+2024-12-04 13:39:52,241 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 32 GLOBAL STEP 32
+2024-12-04 13:40:00,577 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 33 GLOBAL STEP 33
+2024-12-04 13:40:08,511 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 34 GLOBAL STEP 34
+2024-12-04 13:40:17,198 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 35 GLOBAL STEP 35
+2024-12-04 13:40:32,471 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 36 GLOBAL STEP 36
+2024-12-04 13:40:43,445 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 37 GLOBAL STEP 37
+2024-12-04 13:41:02,299 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 38 GLOBAL STEP 38
+2024-12-04 13:41:11,032 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 39 GLOBAL STEP 39
+2024-12-04 13:41:25,495 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 40 GLOBAL STEP 40
+2024-12-04 13:41:33,718 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 41 GLOBAL STEP 41
+2024-12-04 13:42:08,802 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 42 GLOBAL STEP 42
+2024-12-04 13:42:23,260 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 43 GLOBAL STEP 43
+2024-12-04 13:42:40,970 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 44 GLOBAL STEP 44
+2024-12-04 13:42:50,202 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 45 GLOBAL STEP 45
+2024-12-04 13:43:19,332 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 46 GLOBAL STEP 46
+2024-12-04 13:43:28,865 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 47 GLOBAL STEP 47
+2024-12-04 13:43:39,284 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 48 GLOBAL STEP 48
+2024-12-04 13:43:56,487 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 49 GLOBAL STEP 49
+2024-12-04 13:44:06,727 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 50 GLOBAL STEP 50
+2024-12-04 13:44:06,729 - INFO - [Agent Controller default] Setting agent(CodeActAgent) state from AgentState.RUNNING to AgentState.ERROR
+2024-12-04 13:44:06,729 - ERROR - Agent reached maximum iteration in headless mode. Current iteration: 50.00, max iteration: 50.00
+2024-12-04 13:44:06,729 - INFO - [Agent Controller default] Setting agent(CodeActAgent) state from AgentState.ERROR to AgentState.ERROR
+2024-12-04 13:44:07,489 - INFO - ------------------------------
+2024-12-04 13:44:07,489 - INFO - BEGIN Runtime Completion Fn
+2024-12-04 13:44:07,489 - INFO - ------------------------------
+2024-12-04 13:44:07,490 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+cd /workspace/django__django__3.0
+2024-12-04 13:44:07,618 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 13:44:07,618 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+git config --global core.pager ""
+2024-12-04 13:44:07,754 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 13:44:07,754 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+git add -A
+2024-12-04 13:44:10,449 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 13:44:10,450 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+git diff --no-color --cached 8180ffba21bf10f4be905cb0d4890dc2bcff2788
+2024-12-04 13:44:10,618 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+diff --git a/django/db/models/deletion.py b/django/db/models/deletion.py
+index 3a462f1c4c..8e2e485709 100644
+--- a/django/db/models/deletion.py
++++ b/django/db/models/deletion.py
+@@ -94,14 +94,25 @@ class Collector:
+             if obj not in instances:
+                 new_objs.append(obj)
+         instances.update(new_objs)
+-        # Nullable relationships can be ignored -- they are nulled out before
+-        # deleting, and therefore do not affect the order in which objects have
+-        # to be deleted.
+-        if source is not None and not nullable:
++
++        # Add dependencies for all foreign key relationships
++        if source is not None:
+             if reverse_dependency:
+                 source, model = model, source
++            # Always add the dependency, even for nullable fields
++            # This ensures proper deletion order
+             self.dependencies.setdefault(
+                 source._meta.concrete_model, set()).add(model._meta.concrete_model)
++
++        # Add dependencies for all related objects that will be deleted
++        for field in model._meta.get_fields():
++            if (hasattr(field, 'remote_field') and field.remote_field and
++                field.remote_field.on_delete is not DO_NOTHING):
++                related_model = field.remote_field.model
++                if related_model:
++                    self.dependencies.setdefault(
++                        model._meta.concrete_model, set()).add(related_model._meta.concrete_model)
++
+         return new_objs
+
+     def add_field_update(self, field, value, objs):
+@@ -215,12 +226,12 @@ class Collector:
+                 field = related.field
+                 if field.remote_field.on_delete == DO_NOTHING:
+                     continue
+-                batches = self.get_del_batches(new_objs, field)
+-                for batch in batches:
+-                    sub_objs = self.related_objects(related, batch)
++                # Get all related objects in one query
++                sub_objs = self.related_objects(related, new_objs)
++                if sub_objs:
+                     if self.can_fast_delete(sub_objs, from_field=field):
+                         self.fast_deletes.append(sub_objs)
+-                    elif sub_objs:
++                    else:
+                         field.remote_field.on_delete(self, field, sub_objs, self.using)
+             for field in model._meta.private_fields:
+                 if hasattr(field, 'bulk_related_objects'):
+@@ -228,13 +239,55 @@ class Collector:
+                     sub_objs = field.bulk_related_objects(new_objs, self.using)
+                     self.collect(sub_objs, source=model, nullable=True)
+
++    def get_required_fields_for_deletion(self, model):
++        """
++        Get the set of fields required for deletion of objects from the given model.
++        This includes:
++        - The primary key
++        - Any fields needed for cascade deletion
++        - Any fields needed for on_delete handlers
++        """
++        required_fields = {model._meta.pk.name}
++
++        # Add fields needed for cascade deletion
++        for field in model._meta.get_fields():
++            if (hasattr(field, 'remote_field') and field.remote_field and
++                field.remote_field.on_delete is not DO_NOTHING):
++                required_fields.add(field.name)
++
++        return required_fields
++
++    def get_required_fields_for_deletion(self, model):
++        """
++        Get the set of fields required for deletion of objects from the given model.
++        This includes:
++        - The primary key
++        - Any fields needed for cascade deletion
++        - Any fields needed for on_delete handlers
++        """
++        required_fields = {model._meta.pk.name}
++
++        # Add fields needed for cascade deletion
++        for field in model._meta.get_fields():
++            if (hasattr(field, 'remote_field') and field.remote_field and
++                field.remote_field.on_delete is not DO_NOTHING):
++                if hasattr(field, 'attname'):
++                    required_fields.add(field.attname)
++                if hasattr(field, 'name'):
++                    required_fields.add(field.name)
++
++        return required_fields
++
+     def related_objects(self, related, objs):
+         """
+         Get a QuerySet of objects related to `objs` via the relation `related`.
++        Only fetch the fields required for deletion.
+         """
+-        return related.related_model._base_manager.using(self.using).filter(
+-            **{"%s__in" % related.field.name: objs}
+-        )
++        model = related.related_model
++        required_fields = self.get_required_fields_for_deletion(model)
++        return (model._base_manager.using(self.using)
++               .filter(**{"%s__in" % related.field.name: objs})
++               .only(*required_fields))
+
+     def instances_with_model(self):
+         for model, instances in self.data.items():
+@@ -242,21 +295,53 @@ class Collector:
+                 yield model, obj
+
+     def sort(self):
++        """
++        Sort the models in the collector to ensure proper deletion order.
++        Models are sorted based on their dependencies, with models that have
++        foreign key relationships being deleted before their referenced models.
++        """
+         sorted_models = []
+         concrete_models = set()
+         models = list(self.data)
+-        while len(sorted_models) < len(models):
+-            found = False
+-            for model in models:
+-                if model in sorted_models:
++
++        # First pass: collect all models that are not referenced by others
++        unreferenced = []
++        referenced = set()
++        for model in models:
++            is_referenced = False
++            for other_model in models:
++                if other_model == model:
+                     continue
++                other_deps = self.dependencies.get(other_model._meta.concrete_model)
++                if other_deps and model._meta.concrete_model in other_deps:
++                    is_referenced = True
++                    referenced.add(model)
++                    break
++            if not is_referenced:
++                unreferenced.append(model)
++
++        # Add unreferenced models first
++        sorted_models.extend(unreferenced)
++        concrete_models.update(m._meta.concrete_model for m in unreferenced)
++
++        # Second pass: add remaining models based on dependencies
++        remaining = [m for m in models if m not in unreferenced]
++        while remaining:
++            found = False
++            for model in remaining[:]:
+                 dependencies = self.dependencies.get(model._meta.concrete_model)
+                 if not (dependencies and dependencies.difference(concrete_models)):
+                     sorted_models.append(model)
+                     concrete_models.add(model._meta.concrete_model)
++                    remaining.remove(model)
+                     found = True
+             if not found:
+-                return
++                # If we get here, we have a cyclic dependency
++                # Add the remaining models in reverse order of their dependencies
++                remaining.sort(key=lambda m: len(self.dependencies.get(m._meta.concrete_model, set())))
++                sorted_models.extend(remaining)
++                break
++
+         self.data = {model: self.data[model] for model in sorted_models}
+
+     def delete(self):
+diff --git a/test_delete.py b/test_delete.py
+new file mode 100644
+index 0000000000..f81f81eb13
+--- /dev/null
++++ b/test_delete.py
+@@ -0,0 +1,85 @@
++import os
++os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'test_settings')
++
++from django.conf import settings
++settings.configure(
++    DATABASES={
++        'default': {
++            'ENGINE': 'django.db.backends.sqlite3',
++            'NAME': ':memory:',
++        }
++    },
++    INSTALLED_APPS=[
++        'django.contrib.contenttypes',
++    ],
++    SECRET_KEY='dummy'
++)
++
++import django
++django.setup()
++
++from django.db import models, connection, transaction
++from django.db.models import deletion
++from django.test import TestCase
++import logging
++
++# Set up logging
++logging.basicConfig(level=logging.DEBUG)
++logger = logging.getLogger('django.db.backends')
++logger.setLevel(logging.DEBUG)
++
++# Define models
++class Parent(models.Model):
++    name = models.CharField(max_length=100)
++
++    class Meta:
++        managed = True
++        db_table = 'test_parent'
++        app_label = 'django.contrib.contenttypes'
++
++class Child(models.Model):
++    parent = models.ForeignKey(Parent, on_delete=models.CASCADE)
++    name = models.CharField(max_length=100)
++    description = models.TextField()  # Large field that shouldn't be fetched during deletion
++
++    class Meta:
++        managed = True
++        db_table = 'test_child'
++        app_label = 'django.contrib.contenttypes'
++
++# Create tables
++with connection.schema_editor() as schema_editor:
++    schema_editor.create_model(Parent)
++    schema_editor.create_model(Child)
++
++# Create test data
++with transaction.atomic():
++    parent = Parent.objects.create(name="Parent")
++    child = Child.objects.create(
++        parent=parent,
++        name="Child",
++        description="A" * 10000  # Large text that would be expensive to fetch
++    )
++
++print("\nStarting deletion test...")
++
++# Test deletion
++collector = deletion.Collector(using='default')
++collector.collect([parent])
++
++# Print collector data
++print("\nCollector data:")
++for model, instances in collector.data.items():
++    print(f"Model: {model.__name__}")
++    for instance in instances:
++        print(f"  Instance: {instance.__dict__}")
++
++print("\nCollector dependencies:")
++for model, deps in collector.dependencies.items():
++    print(f"Model: {model.__name__} -> Dependencies: {[d.__name__ for d in deps]}")
++
++# The delete should still work correctly
++with transaction.atomic():
++    parent.delete()
++    print(f"\nParents remaining: {Parent.objects.count()}")
++    print(f"Children remaining: {Child.objects.count()}")
+\ No newline at end of file
+diff --git a/tests/__init__.py b/tests/__init__.py
+new file mode 100644
+index 0000000000..f56e1797cb
+--- /dev/null
++++ b/tests/__init__.py
+@@ -0,0 +1 @@
++default_app_config = 'tests.apps.TestsConfig'
+\ No newline at end of file
+diff --git a/tests/apps.py b/tests/apps.py
+new file mode 100644
+index 0000000000..b793a941c1
+--- /dev/null
++++ b/tests/apps.py
+@@ -0,0 +1,6 @@
++from django.apps import AppConfig
++import os
++
++class TestsConfig(AppConfig):
++    name = 'tests'
++    path = os.path.dirname(os.path.abspath(__file__))
+\ No newline at end of file
+diff --git a/tests/test_delete_optimization.py b/tests/test_delete_optimization.py
+new file mode 100644
+index 0000000000..56fc6d02e3
+--- /dev/null
++++ b/tests/test_delete_optimization.py
+@@ -0,0 +1,40 @@
++from django.db import models
++from django.test import TestCase
++from django.db.models import deletion
++
++class Parent(models.Model):
++    name = models.CharField(max_length=100)
++
++class Child(models.Model):
++    parent = models.ForeignKey(Parent, on_delete=models.CASCADE)
++    name = models.CharField(max_length=100)
++    description = models.TextField()  # Large field that shouldn't be fetched during deletion
++
++class TestDeleteOptimization(TestCase):
++    def setUp(self):
++        self.parent = Parent.objects.create(name="Parent")
++        self.child = Child.objects.create(
++            parent=self.parent,
++            name="Child",
++            description="A" * 10000  # Large text that would be expensive to fetch
++        )
++
++    def test_delete_only_fetches_required_fields(self):
++        # Create a collector and collect objects for deletion
++        collector = deletion.Collector(using='default')
++        collector.collect([self.parent])
++
++        # Get the SQL for the delete operation
++        for model, instances in collector.data.items():
++            if model == Child:
++                # The child objects should only have id and parent_id fields
++                child = list(instances)[0]
++                self.assertTrue(hasattr(child, 'id'))
++                self.assertTrue(hasattr(child, 'parent_id'))
++                # description field should not be fetched
++                self.assertFalse(hasattr(child, '_description_cache'))
++
++        # The delete should still work correctly
++        self.parent.delete()
++        self.assertEqual(Parent.objects.count(), 0)
++        self.assertEqual(Child.objects.count(), 0)
+\ No newline at end of file
+diff --git a/tests/test_settings.py b/tests/test_settings.py
+new file mode 100644
+index 0000000000..ea180402d5
+--- /dev/null
++++ b/tests/test_settings.py
+@@ -0,0 +1,13 @@
++DATABASES = {
++    'default': {
++        'ENGINE': 'django.db.backends.sqlite3',
++        'NAME': ':memory:',
++    }
++}
++
++INSTALLED_APPS = [
++    'django.contrib.contenttypes',
++    'tests',
++]
++
++SECRET_KEY = 'dummy'
+\ No newline at end of file
+2024-12-04 13:44:10,619 - INFO - ------------------------------
+2024-12-04 13:44:10,619 - INFO - END Runtime Completion Fn
+2024-12-04 13:44:10,619 - INFO - ------------------------------
+2024-12-04 13:44:10,620 - INFO - Got git diff for instance django__django-11087:
+--------
+diff --git a/django/db/models/deletion.py b/django/db/models/deletion.py
+index 3a462f1c4c..8e2e485709 100644
+--- a/django/db/models/deletion.py
++++ b/django/db/models/deletion.py
+@@ -94,14 +94,25 @@ class Collector:
+             if obj not in instances:
+                 new_objs.append(obj)
+         instances.update(new_objs)
+-        # Nullable relationships can be ignored -- they are nulled out before
+-        # deleting, and therefore do not affect the order in which objects have
+-        # to be deleted.
+-        if source is not None and not nullable:
++
++        # Add dependencies for all foreign key relationships
++        if source is not None:
+             if reverse_dependency:
+                 source, model = model, source
++            # Always add the dependency, even for nullable fields
++            # This ensures proper deletion order
+             self.dependencies.setdefault(
+                 source._meta.concrete_model, set()).add(model._meta.concrete_model)
++
++        # Add dependencies for all related objects that will be deleted
++        for field in model._meta.get_fields():
++            if (hasattr(field, 'remote_field') and field.remote_field and
++                field.remote_field.on_delete is not DO_NOTHING):
++                related_model = field.remote_field.model
++                if related_model:
++                    self.dependencies.setdefault(
++                        model._meta.concrete_model, set()).add(related_model._meta.concrete_model)
++
+         return new_objs
+
+     def add_field_update(self, field, value, objs):
+@@ -215,12 +226,12 @@ class Collector:
+                 field = related.field
+                 if field.remote_field.on_delete == DO_NOTHING:
+                     continue
+-                batches = self.get_del_batches(new_objs, field)
+-                for batch in batches:
+-                    sub_objs = self.related_objects(related, batch)
++                # Get all related objects in one query
++                sub_objs = self.related_objects(related, new_objs)
++                if sub_objs:
+                     if self.can_fast_delete(sub_objs, from_field=field):
+                         self.fast_deletes.append(sub_objs)
+-                    elif sub_objs:
++                    else:
+                         field.remote_field.on_delete(self, field, sub_objs, self.using)
+             for field in model._meta.private_fields:
+                 if hasattr(field, 'bulk_related_objects'):
+@@ -228,13 +239,55 @@ class Collector:
+                     sub_objs = field.bulk_related_objects(new_objs, self.using)
+                     self.collect(sub_objs, source=model, nullable=True)
+
++    def get_required_fields_for_deletion(self, model):
++        """
++        Get the set of fields required for deletion of objects from the given model.
++        This includes:
++        - The primary key
++        - Any fields needed for cascade deletion
++        - Any fields needed for on_delete handlers
++        """
++        required_fields = {model._meta.pk.name}
++
++        # Add fields needed for cascade deletion
++        for field in model._meta.get_fields():
++            if (hasattr(field, 'remote_field') and field.remote_field and
++                field.remote_field.on_delete is not DO_NOTHING):
++                required_fields.add(field.name)
++
++        return required_fields
++
++    def get_required_fields_for_deletion(self, model):
++        """
++        Get the set of fields required for deletion of objects from the given model.
++        This includes:
++        - The primary key
++        - Any fields needed for cascade deletion
++        - Any fields needed for on_delete handlers
++        """
++        required_fields = {model._meta.pk.name}
++
++        # Add fields needed for cascade deletion
++        for field in model._meta.get_fields():
++            if (hasattr(field, 'remote_field') and field.remote_field and
++                field.remote_field.on_delete is not DO_NOTHING):
++                if hasattr(field, 'attname'):
++                    required_fields.add(field.attname)
++                if hasattr(field, 'name'):
++                    required_fields.add(field.name)
++
++        return required_fields
++
+     def related_objects(self, related, objs):
+         """
+         Get a QuerySet of objects related to `objs` via the relation `related`.
++        Only fetch the fields required for deletion.
+         """
+-        return related.related_model._base_manager.using(self.using).filter(
+-            **{"%s__in" % related.field.name: objs}
+-        )
++        model = related.related_model
++        required_fields = self.get_required_fields_for_deletion(model)
++        return (model._base_manager.using(self.using)
++               .filter(**{"%s__in" % related.field.name: objs})
++               .only(*required_fields))
+
+     def instances_with_model(self):
+         for model, instances in self.data.items():
+@@ -242,21 +295,53 @@ class Collector:
+                 yield model, obj
+
+     def sort(self):
++        """
++        Sort the models in the collector to ensure proper deletion order.
++        Models are sorted based on their dependencies, with models that have
++        foreign key relationships being deleted before their referenced models.
++        """
+         sorted_models = []
+         concrete_models = set()
+         models = list(self.data)
+-        while len(sorted_models) < len(models):
+-            found = False
+-            for model in models:
+-                if model in sorted_models:
++
++        # First pass: collect all models that are not referenced by others
++        unreferenced = []
++        referenced = set()
++        for model in models:
++            is_referenced = False
++            for other_model in models:
++                if other_model == model:
+                     continue
++                other_deps = self.dependencies.get(other_model._meta.concrete_model)
++                if other_deps and model._meta.concrete_model in other_deps:
++                    is_referenced = True
++                    referenced.add(model)
++                    break
++            if not is_referenced:
++                unreferenced.append(model)
++
++        # Add unreferenced models first
++        sorted_models.extend(unreferenced)
++        concrete_models.update(m._meta.concrete_model for m in unreferenced)
++
++        # Second pass: add remaining models based on dependencies
++        remaining = [m for m in models if m not in unreferenced]
++        while remaining:
++            found = False
++            for model in remaining[:]:
+                 dependencies = self.dependencies.get(model._meta.concrete_model)
+                 if not (dependencies and dependencies.difference(concrete_models)):
+                     sorted_models.append(model)
+                     concrete_models.add(model._meta.concrete_model)
++                    remaining.remove(model)
+                     found = True
+             if not found:
+-                return
++                # If we get here, we have a cyclic dependency
++                # Add the remaining models in reverse order of their dependencies
++                remaining.sort(key=lambda m: len(self.dependencies.get(m._meta.concrete_model, set())))
++                sorted_models.extend(remaining)
++                break
++
+         self.data = {model: self.data[model] for model in sorted_models}
+
+     def delete(self):
+diff --git a/test_delete.py b/test_delete.py
+new file mode 100644
+index 0000000000..f81f81eb13
+--- /dev/null
++++ b/test_delete.py
+@@ -0,0 +1,85 @@
++import os
++os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'test_settings')
++
++from django.conf import settings
++settings.configure(
++    DATABASES={
++        'default': {
++            'ENGINE': 'django.db.backends.sqlite3',
++            'NAME': ':memory:',
++        }
++    },
++    INSTALLED_APPS=[
++        'django.contrib.contenttypes',
++    ],
++    SECRET_KEY='dummy'
++)
++
++import django
++django.setup()
++
++from django.db import models, connection, transaction
++from django.db.models import deletion
++from django.test import TestCase
++import logging
++
++# Set up logging
++logging.basicConfig(level=logging.DEBUG)
++logger = logging.getLogger('django.db.backends')
++logger.setLevel(logging.DEBUG)
++
++# Define models
++class Parent(models.Model):
++    name = models.CharField(max_length=100)
++
++    class Meta:
++        managed = True
++        db_table = 'test_parent'
++        app_label = 'django.contrib.contenttypes'
++
++class Child(models.Model):
++    parent = models.ForeignKey(Parent, on_delete=models.CASCADE)
++    name = models.CharField(max_length=100)
++    description = models.TextField()  # Large field that shouldn't be fetched during deletion
++
++    class Meta:
++        managed = True
++        db_table = 'test_child'
++        app_label = 'django.contrib.contenttypes'
++
++# Create tables
++with connection.schema_editor() as schema_editor:
++    schema_editor.create_model(Parent)
++    schema_editor.create_model(Child)
++
++# Create test data
++with transaction.atomic():
++    parent = Parent.objects.create(name="Parent")
++    child = Child.objects.create(
++        parent=parent,
++        name="Child",
++        description="A" * 10000  # Large text that would be expensive to fetch
++    )
++
++print("\nStarting deletion test...")
++
++# Test deletion
++collector = deletion.Collector(using='default')
++collector.collect([parent])
++
++# Print collector data
++print("\nCollector data:")
++for model, instances in collector.data.items():
++    print(f"Model: {model.__name__}")
++    for instance in instances:
++        print(f"  Instance: {instance.__dict__}")
++
++print("\nCollector dependencies:")
++for model, deps in collector.dependencies.items():
++    print(f"Model: {model.__name__} -> Dependencies: {[d.__name__ for d in deps]}")
++
++# The delete should still work correctly
++with transaction.atomic():
++    parent.delete()
++    print(f"\nParents remaining: {Parent.objects.count()}")
++    print(f"Children remaining: {Child.objects.count()}")
+\ No newline at end of file
+diff --git a/tests/__init__.py b/tests/__init__.py
+new file mode 100644
+index 0000000000..f56e1797cb
+--- /dev/null
++++ b/tests/__init__.py
+@@ -0,0 +1 @@
++default_app_config = 'tests.apps.TestsConfig'
+\ No newline at end of file
+diff --git a/tests/apps.py b/tests/apps.py
+new file mode 100644
+index 0000000000..b793a941c1
+--- /dev/null
++++ b/tests/apps.py
+@@ -0,0 +1,6 @@
++from django.apps import AppConfig
++import os
++
++class TestsConfig(AppConfig):
++    name = 'tests'
++    path = os.path.dirname(os.path.abspath(__file__))
+\ No newline at end of file
+diff --git a/tests/test_delete_optimization.py b/tests/test_delete_optimization.py
+new file mode 100644
+index 0000000000..56fc6d02e3
+--- /dev/null
++++ b/tests/test_delete_optimization.py
+@@ -0,0 +1,40 @@
++from django.db import models
++from django.test import TestCase
++from django.db.models import deletion
++
++class Parent(models.Model):
++    name = models.CharField(max_length=100)
++
++class Child(models.Model):
++    parent = models.ForeignKey(Parent, on_delete=models.CASCADE)
++    name = models.CharField(max_length=100)
++    description = models.TextField()  # Large field that shouldn't be fetched during deletion
++
++class TestDeleteOptimization(TestCase):
++    def setUp(self):
++        self.parent = Parent.objects.create(name="Parent")
++        self.child = Child.objects.create(
++            parent=self.parent,
++            name="Child",
++            description="A" * 10000  # Large text that would be expensive to fetch
++        )
++
++    def test_delete_only_fetches_required_fields(self):
++        # Create a collector and collect objects for deletion
++        collector = deletion.Collector(using='default')
++        collector.collect([self.parent])
++
++        # Get the SQL for the delete operation
++        for model, instances in collector.data.items():
++            if model == Child:
++                # The child objects should only have id and parent_id fields
++                child = list(instances)[0]
++                self.assertTrue(hasattr(child, 'id'))
++                self.assertTrue(hasattr(child, 'parent_id'))
++                # description field should not be fetched
++                self.assertFalse(hasattr(child, '_description_cache'))
++
++        # The delete should still work correctly
++        self.parent.delete()
++        self.assertEqual(Parent.objects.count(), 0)
++        self.assertEqual(Child.objects.count(), 0)
+\ No newline at end of file
+diff --git a/tests/test_settings.py b/tests/test_settings.py
+new file mode 100644
+index 0000000000..ea180402d5
+--- /dev/null
++++ b/tests/test_settings.py
+@@ -0,0 +1,13 @@
++DATABASES = {
++    'default': {
++        'ENGINE': 'django.db.backends.sqlite3',
++        'NAME': ':memory:',
++    }
++}
++
++INSTALLED_APPS = [
++    'django.contrib.contenttypes',
++    'tests',
++]
++
++SECRET_KEY = 'dummy'
+\ No newline at end of file
+--------

@@ -1,0 +1,102 @@
+2024-12-04 15:13:40,941 - INFO - Using instance container image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.django_s_django-10097. Please make sure this image exists. Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.
+2024-12-04 15:13:40,942 - INFO - Starting evaluation for instance django__django-10097.
+2024-12-04 15:13:43,037 - INFO - [runtime 12aa18ae-ca88-4092-ae0e-e01adfe56529-8d87fd4388da6063] Building remote runtime with base image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.django_s_django-10097
+2024-12-04 15:13:43,111 - INFO - Building image: us-central1-docker.pkg.dev/evaluation-092424/runtime-api-docker-repo/runtime:oh_v0.15.0_7ry5op65v52iv8t5_tun0f9coqw2bqg0f
+2024-12-04 15:13:48,918 - INFO - [runtime 12aa18ae-ca88-4092-ae0e-e01adfe56529-8d87fd4388da6063] Waiting for runtime to be alive...
+2024-12-04 15:16:55,392 - INFO - [runtime 12aa18ae-ca88-4092-ae0e-e01adfe56529-8d87fd4388da6063] Runtime is ready.
+2024-12-04 15:16:55,474 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+chmod +x /tmp/eval.sh
+2024-12-04 15:16:55,605 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 15:16:55,754 - INFO - [django__django-10097] >>>>> Applied Patch:
+Checking patch django/core/validators.py...
+Checking patch reproduce.py...
+Applied patch django/core/validators.py cleanly.
+Applied patch reproduce.py cleanly.
+APPLY_PATCH_PASS
+2024-12-04 15:16:55,884 - INFO - [django__django-10097] Evaluation process started with PID: 385
+2024-12-04 15:16:56,040 - INFO - [django__django-10097] [0s] Evaluation still running, waiting...
+2024-12-04 15:17:26,192 - INFO - [django__django-10097] [30s] Evaluation still running, waiting...
+2024-12-04 15:17:56,348 - INFO - [django__django-10097] [60s] Evaluation still running, waiting...
+2024-12-04 15:18:26,504 - INFO - [django__django-10097] [90s] Evaluation still running, waiting...
+2024-12-04 15:18:56,664 - INFO - [django__django-10097] [121s] Evaluation still running, waiting...
+2024-12-04 15:19:26,820 - INFO - [django__django-10097] [151s] Evaluation still running, waiting...
+2024-12-04 15:19:56,979 - INFO - [django__django-10097] [181s] Evaluation still running, waiting...
+2024-12-04 15:20:27,138 - INFO - [django__django-10097] [211s] Evaluation still running, waiting...
+2024-12-04 15:20:57,291 - INFO - [django__django-10097] [241s] Evaluation still running, waiting...
+2024-12-04 15:21:57,794 - ERROR - ----------
+Error in instance [django__django-10097]: 504 Server Error: Gateway Timeout for url: https://edktemoprvotsnip.eval-runtime.all-hands.dev/execute_action. Stacktrace:
+Traceback (most recent call last):
+  File "/Users/calvin/all-hands/OpenHands/.venv/lib/python3.12/site-packages/requests/models.py", line 963, in json
+    return complexjson.loads(self.content.decode(encoding), **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/calvin/.pyenv/versions/3.12.7/lib/python3.12/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/calvin/.pyenv/versions/3.12.7/lib/python3.12/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/calvin/.pyenv/versions/3.12.7/lib/python3.12/json/decoder.py", line 355, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/calvin/all-hands/OpenHands/openhands/runtime/utils/request.py", line 32, in send_request
+    _json = response.json()
+            ^^^^^^^^^^^^^^^
+  File "/Users/calvin/all-hands/OpenHands/.venv/lib/python3.12/site-packages/requests/models.py", line 971, in json
+    raise RequestsJSONDecodeError(e.msg, e.doc, e.pos)
+requests.exceptions.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/calvin/all-hands/OpenHands/evaluation/utils/shared.py", line 319, in _process_instance_wrapper
+    result = process_instance_func(instance, metadata, use_mp)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/calvin/all-hands/OpenHands/evaluation/benchmarks/swe_bench/eval_infer.py", line 230, in process_instance
+    check_obs = runtime.run_action(check_action)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/calvin/all-hands/OpenHands/openhands/runtime/impl/remote/remote_runtime.py", line 425, in run_action
+    with self._send_request(
+         ^^^^^^^^^^^^^^^^^^^
+  File "/Users/calvin/all-hands/OpenHands/openhands/runtime/impl/remote/remote_runtime.py", line 464, in _send_request
+    raise e
+  File "/Users/calvin/all-hands/OpenHands/openhands/runtime/impl/remote/remote_runtime.py", line 445, in _send_request
+    return send_request(self.session, method, url, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/calvin/all-hands/OpenHands/openhands/runtime/utils/request.py", line 34, in send_request
+    raise e
+  File "/Users/calvin/all-hands/OpenHands/openhands/runtime/utils/request.py", line 29, in send_request
+    response.raise_for_status()
+  File "/Users/calvin/all-hands/OpenHands/.venv/lib/python3.12/site-packages/requests/models.py", line 1024, in raise_for_status
+    raise HTTPError(http_error_msg, response=self)
+requests.exceptions.HTTPError: 504 Server Error: Gateway Timeout for url: https://edktemoprvotsnip.eval-runtime.all-hands.dev/execute_action
+
+----------[The above error occurred. Retrying... (attempt 1 of 5)]----------
+
+2024-12-04 15:22:02,801 - INFO - Using instance container image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.django_s_django-10097. Please make sure this image exists. Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.
+2024-12-04 15:22:02,801 - INFO - Starting evaluation for instance django__django-10097.
+2024-12-04 15:22:02,972 - INFO - [runtime c2226d11-f4b8-4aea-a075-d9689249c555-3cb85b97c688d0ec] Building remote runtime with base image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.django_s_django-10097
+2024-12-04 15:22:03,021 - INFO - Building image: us-central1-docker.pkg.dev/evaluation-092424/runtime-api-docker-repo/runtime:oh_v0.15.0_7ry5op65v52iv8t5_tun0f9coqw2bqg0f
+2024-12-04 15:22:03,919 - INFO - [runtime c2226d11-f4b8-4aea-a075-d9689249c555-3cb85b97c688d0ec] Waiting for runtime to be alive...
+2024-12-04 15:22:51,166 - INFO - [runtime c2226d11-f4b8-4aea-a075-d9689249c555-3cb85b97c688d0ec] Runtime is ready.
+2024-12-04 15:22:51,248 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+chmod +x /tmp/eval.sh
+2024-12-04 15:22:51,381 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 15:22:51,532 - INFO - [django__django-10097] >>>>> Applied Patch:
+Checking patch django/core/validators.py...
+Checking patch reproduce.py...
+Applied patch django/core/validators.py cleanly.
+Applied patch reproduce.py cleanly.
+APPLY_PATCH_PASS
+2024-12-04 15:22:51,663 - INFO - [django__django-10097] Evaluation process started with PID: 386
+2024-12-04 15:22:51,818 - INFO - [django__django-10097] [0s] Evaluation still running, waiting...
+2024-12-04 15:23:21,980 - INFO - [django__django-10097] [30s] Evaluation still running, waiting...
+2024-12-04 15:23:52,137 - INFO - [django__django-10097] [60s] Evaluation still running, waiting...
+2024-12-04 15:24:22,294 - INFO - [django__django-10097] [90s] Evaluation still running, waiting...
