@@ -120,43 +120,29 @@ class IssueHandler(IssueHandlerInterface):
         all_comments = []
 
         try:
-            response = requests.get(url, headers=headers, params=params)
-            response.raise_for_status()
-            comments = response.json()
+            while True:
+                response = requests.get(url, headers=headers, params=params)
+                response.raise_for_status()
+                comments = response.json()
 
-            if not comments:
-                return None
+                if not comments:
+                    break
 
-            if comment_id:
-                matching_comment = next(
-                    (
-                        comment['body']
-                        for comment in comments
-                        if comment['id'] == comment_id
-                    ),
-                    None,
-                )
-                if matching_comment:
-                    return [matching_comment]
-            else:
-                all_comments.extend([comment['body'] for comment in comments])
-
-            # Try to get more pages if available
-            try:
-                params['page'] += 1
-                while True:
-                    response = requests.get(url, headers=headers, params=params)
-                    response.raise_for_status()
-                    comments = response.json()
-
-                    if not comments:
-                        break
-
+                if comment_id:
+                    matching_comment = next(
+                        (
+                            comment['body']
+                            for comment in comments
+                            if comment['id'] == comment_id
+                        ),
+                        None,
+                    )
+                    if matching_comment:
+                        return [matching_comment]
+                else:
                     all_comments.extend([comment['body'] for comment in comments])
-                    params['page'] += 1
-            except (requests.exceptions.RequestException, StopIteration):
-                # Ignore errors when getting additional pages
-                pass
+
+                params['page'] += 1
 
             return all_comments if all_comments else None
         except (requests.exceptions.RequestException, StopIteration):
