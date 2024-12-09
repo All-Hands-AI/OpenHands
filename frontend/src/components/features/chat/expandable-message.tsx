@@ -39,9 +39,7 @@ export function ExpandableMessage({
   const statusIconClasses = "h-4 w-4 ml-2 inline";
 
   return (
-    <div
-      className="flex gap-2 items-center justify-between border-l-2 border-neutral-300 pl-2 my-2 py-2"
-    >
+    <div className="flex gap-2 items-center justify-between border-l-2 border-neutral-300 pl-2 my-2 py-2">
       <div className="text-sm leading-4 flex flex-col gap-2 max-w-full">
         {headline && (
           <p className="text-neutral-300 font-bold">
@@ -76,9 +74,15 @@ export function ExpandableMessage({
       {type === "action" && success !== undefined && (
         <div className="flex-shrink-0">
           {success ? (
-            <CheckCircle data-testid="status-icon" className={`${statusIconClasses} fill-success`} />
+            <CheckCircle
+              data-testid="status-icon"
+              className={`${statusIconClasses} fill-success`}
+            />
           ) : (
-            <XCircle data-testid="status-icon" className={`${statusIconClasses} fill-danger`} />
+            <XCircle
+              data-testid="status-icon"
+              className={`${statusIconClasses} fill-danger`}
+            />
           )}
         </div>
       )}
