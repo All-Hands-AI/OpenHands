@@ -4,21 +4,23 @@ import { renderWithProviders } from "test-utils";
 import { ExpandableMessage } from "#/components/features/chat/expandable-message";
 
 describe("ExpandableMessage", () => {
-  it("should render with default colors for non-action messages", () => {
+  it("should render with neutral border for non-action messages", () => {
     renderWithProviders(<ExpandableMessage message="Hello" type="thought" />);
     const element = screen.getByText("Hello");
-    const container = element.closest("div.flex.gap-2.items-center.justify-start");
+    const container = element.closest("div.flex.gap-2.items-center.justify-between");
     expect(container).toHaveClass("border-neutral-300");
+    expect(screen.queryByTestId("status-icon")).not.toBeInTheDocument();
   });
 
-  it("should render with error colors for error messages", () => {
+  it("should render with neutral border for error messages", () => {
     renderWithProviders(<ExpandableMessage message="Error occurred" type="error" />);
     const element = screen.getByText("Error occurred");
-    const container = element.closest("div.flex.gap-2.items-center.justify-start");
-    expect(container).toHaveClass("border-danger");
+    const container = element.closest("div.flex.gap-2.items-center.justify-between");
+    expect(container).toHaveClass("border-neutral-300");
+    expect(screen.queryByTestId("status-icon")).not.toBeInTheDocument();
   });
 
-  it("should render with success colors for successful action messages", () => {
+  it("should render with success icon for successful action messages", () => {
     renderWithProviders(
       <ExpandableMessage
         message="Command executed successfully"
@@ -27,11 +29,13 @@ describe("ExpandableMessage", () => {
       />
     );
     const element = screen.getByText("Command executed successfully");
-    const container = element.closest("div.flex.gap-2.items-center.justify-start");
-    expect(container).toHaveClass("border-success");
+    const container = element.closest("div.flex.gap-2.items-center.justify-between");
+    expect(container).toHaveClass("border-neutral-300");
+    const icon = screen.getByTestId("status-icon");
+    expect(icon).toHaveClass("fill-success");
   });
 
-  it("should render with error colors for failed action messages", () => {
+  it("should render with error icon for failed action messages", () => {
     renderWithProviders(
       <ExpandableMessage
         message="Command failed"
@@ -40,14 +44,17 @@ describe("ExpandableMessage", () => {
       />
     );
     const element = screen.getByText("Command failed");
-    const container = element.closest("div.flex.gap-2.items-center.justify-start");
-    expect(container).toHaveClass("border-danger");
+    const container = element.closest("div.flex.gap-2.items-center.justify-between");
+    expect(container).toHaveClass("border-neutral-300");
+    const icon = screen.getByTestId("status-icon");
+    expect(icon).toHaveClass("fill-danger");
   });
 
-  it("should render with neutral colors for action messages without success prop", () => {
+  it("should render with neutral border and no icon for action messages without success prop", () => {
     renderWithProviders(<ExpandableMessage message="Running command" type="action" />);
     const element = screen.getByText("Running command");
-    const container = element.closest("div.flex.gap-2.items-center.justify-start");
+    const container = element.closest("div.flex.gap-2.items-center.justify-between");
     expect(container).toHaveClass("border-neutral-300");
+    expect(screen.queryByTestId("status-icon")).not.toBeInTheDocument();
   });
 });

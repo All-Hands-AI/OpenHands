@@ -76,9 +76,9 @@ export function ExpandableMessage({
       {type === "action" && success !== undefined && (
         <div className="flex-shrink-0">
           {success ? (
-            <CheckCircle className={`${statusIconClasses} fill-success`} />
+            <CheckCircle data-testid="status-icon" className={`${statusIconClasses} fill-success`} />
           ) : (
-            <XCircle className={`${statusIconClasses} fill-danger`} />
+            <XCircle data-testid="status-icon" className={`${statusIconClasses} fill-danger`} />
           )}
         </div>
       )}
