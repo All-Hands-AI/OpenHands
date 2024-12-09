@@ -15,7 +15,12 @@ type SliceState = { messages: Message[] };
 
 const MAX_CONTENT_LENGTH = 1000;
 
-const HANDLED_ACTIONS: OpenHandsEventType[] = ["run", "run_ipython", "write", "read"];
+const HANDLED_ACTIONS: OpenHandsEventType[] = [
+  "run",
+  "run_ipython",
+  "write",
+  "read",
+];
 
 function getRiskText(risk: ActionSecurityRisk) {
   switch (risk) {
@@ -143,15 +148,21 @@ export const chatSlice = createSlice({
       } else if (observationID === "run_ipython") {
         // For IPython, we consider it successful if there's no error message
         const ipythonObs = observation.payload as IPythonObservation;
-        causeMessage.success = !ipythonObs.message.toLowerCase().includes("error");
+        causeMessage.success = !ipythonObs.message
+          .toLowerCase()
+          .includes("error");
       } else if (observationID === "write") {
         // For write operations, we consider them successful if there's no error message
         const writeObs = observation.payload as WriteObservation;
-        causeMessage.success = !writeObs.message.toLowerCase().includes("error");
+        causeMessage.success = !writeObs.message
+          .toLowerCase()
+          .includes("error");
       } else if (observationID === "read") {
         // For read operations, we consider them successful if there's no error message
         const readObs = observation.payload as ReadObservation;
-        causeMessage.success = !readObs.message.toLowerCase().includes("error");
+        causeMessage.success = !readObs.message
+          .toLowerCase()
+          .includes("error");
       }
 
       if (observationID === "run" || observationID === "run_ipython") {
