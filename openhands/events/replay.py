@@ -116,11 +116,24 @@ def handle_replay_enhance_observation(
             result: AnnotateResult = cast(AnnotateResult, output.get('result', {}))
             annotated_repo_path = result.get('annotatedRepo', '')
             comment_text = result.get('commentText', '')
+            react_component_name = result.get('reactComponentName', '')
             # start_location = result.get('startLocation', '')
             start_name = result.get('startName', '')
 
             # TODO: Move this to a prompt template file.
-            enhancement = f'There is a bug in {annotated_repo_path}:\n\n{comment_text}\n\nReproduction information from a recording of the problem is available in source comments.\nThe bug was reported at {start_name}. Start your investigation there. Then keep searching for related `reproduction step` comments and pay special attention to their contents.\nOnce done, propose necessary changes, without implementing them.'
+            if react_component_name:
+                enhancement = f'There is a change needed to the {react_component_name} component.\n'
+            else:
+                enhancement = f'There is a change needed in {annotated_repo_path}:\n'
+            enhancement += f'{comment_text}\n\n'
+            enhancement += 'Reproduction information from a recording of the problem is available in source comments.\n'
+            enhancement += f'The bug was reported at {start_name}. Start your investigation there. Then keep searching for related `reproduction step` comments.\n'
+
+            enhancement += '<IMPORTANT>\n'
+            enhancement += (
+                'USE THESE COMMENTS TO GET A BETTER UNDERSTANDING OF THE PROBLEM.\n'
+            )
+            enhancement += '</IMPORTANT>\n'
 
             # Enhance:
             user_message.content = f'{enhancement}\n\n{original_prompt}'
