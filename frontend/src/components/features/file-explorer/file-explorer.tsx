@@ -121,7 +121,7 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
           !isOpen ? "w-12" : "w-60",
         )}
       >
-        <div className="flex flex-col relative h-full px-3 py-2 overflow-hidden">
+        <div className="flex flex-col relative h-full px-3 py-2">
           <FileExplorerHeader
             isOpen={isOpen}
             onToggle={onToggle}
@@ -129,8 +129,8 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
             onUploadFile={selectFileInput}
           />
           {!error && (
-            <div className="overflow-auto flex-grow min-h-0">
-              <div style={{ display: !isOpen ? "none" : "block" }}>
+            <div className="flex-grow min-h-0">
+              <div className="h-full overflow-y-auto" style={{ display: !isOpen ? "none" : "block" }}>
                 <ExplorerTree files={paths || []} />
               </div>
             </div>
