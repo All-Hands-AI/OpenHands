@@ -215,8 +215,8 @@ class OpenHands {
     latestEventId?: number;
     args?: Record<string, unknown>;
     selectedRepository?: string;
-  }): Promise<{ token: string; status: string }> {
-    const { data } = await openHands.post<{ token: string; status: string }>(
+  }): Promise<{ token: string; status: string; conversation_id: string }> {
+    const { data } = await openHands.post<{ token: string; status: string; conversation_id: string }>(
       "/api/conversation",
       {
         token: params.token,

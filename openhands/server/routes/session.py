@@ -1,3 +1,5 @@
+import uuid
+
 from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -30,19 +32,19 @@ async def init_session(request: Request, data: InitSessionRequest):
     session_init_data.github_token = data.github_token
     session_init_data.selected_repository = data.selected_repository
 
-    # Generate a temporary connection ID for initialization
-    connection_id = f"temp_{data.token or ''}"
+    # Generate a new conversation ID
+    conversation_id = f"conv_{uuid.uuid4().hex[:8]}"
     
     try:
         token = await init_connection(
-            connection_id=connection_id,
+            connection_id=conversation_id,
             token=data.token,
             gh_token=data.github_token,
             session_init_data=session_init_data,
             latest_event_id=data.latest_event_id,
             return_token_only=True
         )
-        return JSONResponse(content={"token": token, "status": "ok"})
+        return JSONResponse(content={"token": token, "status": "ok", "conversation_id": conversation_id})
     except RuntimeError as e:
         if str(e) == str(status.WS_1008_POLICY_VIOLATION):
             return JSONResponse(

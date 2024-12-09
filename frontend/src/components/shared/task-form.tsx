@@ -77,17 +77,14 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
     try {
       setIsInitializing(true);
       // Initialize the session before navigating
-      const { token: newToken } = await OpenHands.initSession({
+      const { conversation_id } = await OpenHands.initSession({
         token: token || undefined,
         githubToken: gitHubToken || undefined,
         selectedRepository: selectedRepository || undefined,
         args: settings || undefined,
       });
 
-      // Extract conversation ID from the token (it's a JWT)
-      const payload = JSON.parse(atob(newToken.split('.')[1]));
-      const conversationId = payload.sid;
-      setConversationId(conversationId);
+      setConversationId(conversation_id);
 
       posthog.capture("initial_query_submitted", {
         entry_point: "task_form",
@@ -96,7 +93,7 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
         has_files: files.length > 0,
       });
 
-      navigate(`/conversation/${conversationId}`);
+      navigate(`/conversation/${conversation_id}`);
     } catch (error) {
       console.error("Failed to initialize session:", error);
       // TODO: Show error toast
