@@ -198,8 +198,8 @@ async def complete_runtime(
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to git add. Observation: {obs}')
 
-    base_git_patch = await get_git_patch(runtime, base_commit)
-    strip_replay_comments(base_git_patch)
+    # base_git_patch = await get_git_patch(runtime, base_commit)
+    # strip_replay_comments(base_git_patch)
 
     git_patch = await get_git_patch(runtime, base_commit)
 

@@ -333,17 +333,7 @@ class AgentController:
                 # Tell the agent to stop analyzing and start editing:
                 self.state.replay_phase = ReplayDebuggingPhase.Edit
                 self.event_stream.add_event(
-                    MessageAction(
-                        content='Implement the changes, then wait for user confirmation.'
-                    ),
-                    EventSource.USER,
-                )
-            elif self.state.replay_phase == ReplayDebuggingPhase.Edit:
-                self.state.replay_phase = ReplayDebuggingPhase.Normal
-                self.event_stream.add_event(
-                    MessageAction(
-                        content='Double check your changes and publish a PR without waiting for user confirmation.'
-                    ),
+                    MessageAction(content='Implement the changes.'),
                     EventSource.USER,
                 )
             else:
