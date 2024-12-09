@@ -284,6 +284,8 @@ class AgentController:
             self.agent.llm.metrics.merge(observation.llm_metrics)
 
         if self._pending_action and self._pending_action.id == observation.cause:
+            if self.state.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
+                return
             self._pending_action = None
             if self.state.agent_state == AgentState.USER_CONFIRMED:
                 await self.set_agent_state_to(AgentState.RUNNING)
@@ -369,6 +371,7 @@ class AgentController:
             else:
                 confirmation_state = ActionConfirmationStatus.REJECTED
             self._pending_action.confirmation_state = confirmation_state  # type: ignore[attr-defined]
+            self._pending_action._id = None  # type: ignore[attr-defined]
             self.event_stream.add_event(self._pending_action, EventSource.AGENT)
 
         self.state.agent_state = new_state
@@ -451,13 +454,10 @@ class AgentController:
             await asyncio.sleep(1)
             return
 
-        if self._is_stuck():
-            await self._react_to_exception(RuntimeError('Agent got stuck in a loop'))
-            return
-
         if self.delegate is not None:
             assert self.delegate != self
             if self.delegate.get_agent_state() == AgentState.PAUSED:
+                # no need to check too often
                 await asyncio.sleep(1)
             else:
                 await self._delegate_step()
@@ -482,6 +482,10 @@ class AgentController:
                     'budget', current_cost, self.max_budget_per_task
                 )
         if stop_step:
+            return
+
+        if self._is_stuck():
+            await self._react_to_exception(RuntimeError('Agent got stuck in a loop'))
             return
 
         self.update_state_before_step()
