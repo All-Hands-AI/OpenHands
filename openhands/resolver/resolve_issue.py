@@ -134,22 +134,20 @@ def strip_replay_comment(file_name: str, line: str):
         f.writelines(lines)
 
 
-def strip_replay_comments(git_patch: str) -> None:
+REPLAY_COMMENT_PATTERN = r'^\+.*(?:\s+//|\{/\*.*?\*/\})'
+
+
+def strip_replay_comments(base_path: str, git_patch: str) -> None:
     """Strip all replay comments from the git patch."""
     logger.info('Stripping Replay comments...')
-
-    logger.info('Dumping contents of /workspace...')
-    for root, dirs, files in os.walk('/workspace'):
-        logger.info(f'Root: {root}, Dirs: {dirs}, Files: {files}')
-    logger.info('Done dumping contents of /workspace.')
 
     lines = git_patch.splitlines()
     current_file = ''
     for line in lines:
         logger.info(f'Processing line: {line}')
         if re.match(r'^\+\+\+ b/', line):
-            current_file = f'/workspace/{line[6:]}'
-        if re.match(r'^\+.*\s+//', line.lstrip()):
+            current_file = os.path.join(base_path, line[6:])
+        if re.match(REPLAY_COMMENT_PATTERN, line.lstrip()):
             strip_replay_comment(current_file, line[1:])
 
 
@@ -191,17 +189,19 @@ async def complete_runtime(
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
+    # Strip comments.
+    base_git_patch = await get_git_patch(runtime, base_commit)
+    assert runtime.config.workspace_base is not None
+    strip_replay_comments(runtime.config.workspace_base, base_git_patch)
+    git_patch = await get_git_patch(runtime, base_commit)
+
+    # git add.
     action = CmdRunAction(command='git add -A')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to git add. Observation: {obs}')
-
-    # base_git_patch = await get_git_patch(runtime, base_commit)
-    # strip_replay_comments(base_git_patch)
-
-    git_patch = await get_git_patch(runtime, base_commit)
 
     logger.info('-' * 30)
     logger.info('END Runtime Completion Fn')
