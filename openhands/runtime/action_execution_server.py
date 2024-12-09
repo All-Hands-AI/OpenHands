@@ -122,12 +122,7 @@ class ActionExecutor:
     async def ainit(self):
         if self.https_proxy_port is not None:
             assert check_port_available(self.https_proxy_port)
-            cmd = (
-                f"su - {self.username} -s /bin/bash << 'EOF'\n"
-                'cd /workspace\n'
-                f'exec mitmproxy --mode regular --listen-host 0.0.0.0 --listen-port {self.https_proxy_port} > proxy.log 2>&1 &\n'
-                'EOF'
-            )
+            cmd = f'cd /workspace && exec mitmproxy --mode regular --listen-host 0.0.0.0 --listen-port {self.https_proxy_port} > proxy.log 2>&1'
             logger.debug(f'Starting HTTPS proxy on port {self.https_proxy_port}')
             subprocess.Popen(
                 cmd,
