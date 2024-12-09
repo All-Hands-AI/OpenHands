@@ -8,6 +8,7 @@ import pathlib
 import re
 import shutil
 import subprocess
+import traceback
 from typing import Any
 from uuid import uuid4
 
@@ -445,6 +446,24 @@ async def resolve_issue(
         target_branch: Optional target branch to create PR against (for PRs).
         reset_logger: Whether to reset the logger for multiprocessing.
     """
+
+    def exception_handler(_loop, context):
+        exception = context.get('exception')
+        if exception is not None:
+            # We have an actual exception
+            print(f'ERROR: {exception}')
+            traceback.print_exception(
+                type(exception), exception, exception.__traceback__
+            )
+        else:
+            # No exception object; print the message and current stack
+            message = context.get('message', 'Unknown error')
+            print(f'ERROR: {message}')
+            traceback.print_stack()
+
+    loop = asyncio.get_running_loop()
+    loop.set_exception_handler(exception_handler)
+
     issue_handler = issue_handler_factory(issue_type, owner, repo, token)
 
     # Load dataset
