@@ -30,7 +30,9 @@ from openhands.core.config import (
     get_llm_config_arg,
     get_parser,
 )
-from openhands.core.config.condenser_config import LLMCondenserConfig
+from openhands.core.config.condenser_config import (
+    RecentEventsCondenserConfig,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
@@ -526,7 +528,7 @@ if __name__ == '__main__':
         args.eval_note,
         args.eval_output_dir,
         details=details,
-        condenser_config=LLMCondenserConfig(llm_config=llm_config),
+        condenser_config=RecentEventsCondenserConfig(keep_first=10, max_events=25),
     )
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
