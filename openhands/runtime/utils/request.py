@@ -30,7 +30,7 @@ def send_request(
     except requests.HTTPError as e:
         try:
             _json = response.json()
-        except requests.JSONDecodeError:
+        except requests.exceptions.JSONDecodeError:
             raise e
         raise RequestHTTPError(
             e, response=e.response, detail=_json.get('detail')
