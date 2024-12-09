@@ -136,6 +136,7 @@ export const chatSlice = createSlice({
         }
         content = `\`\`\`\n${content}\n\`\`\``;
         causeMessage.content = content; // Observation content includes the action
+        causeMessage.success = observation.payload.success;
       }
     },
 
