@@ -92,6 +92,20 @@ def usage(output: dict) -> Iterable[dict[str, int]]:
             continue
 
 
+def save_chart(chart: alt.Chart, output_path: str) -> None:
+    """Save chart in the format specified by the output path suffix."""
+    suffix = output_path.lower().split('.')[-1]
+    if suffix == 'json':
+        with open(output_path, 'w') as f:
+            json.dump(chart.to_dict(), f, indent=2)
+    elif suffix == 'html':
+        chart.save(output_path)
+    elif suffix == 'svg':
+        chart.save(output_path)
+    else:
+        raise ValueError(f"Unsupported output format: {suffix}")
+
+
 def plot_token_usage(filepaths: list[str], output_path: str = None, width: int = 300, height: int = 300):
     data = [Data.from_filepath(filepath) for filepath in filepaths]
     
@@ -126,8 +140,7 @@ def plot_token_usage(filepaths: list[str], output_path: str = None, width: int =
     )
     
     if output_path:
-        with open(output_path, 'w') as f:
-            json.dump(chart.to_dict(), f, indent=2)
+        save_chart(chart, output_path)
     else:
         return chart
 
@@ -184,8 +197,7 @@ def plot_cactus_tokens(filepaths: list[str], output_path: str = None, width: int
     )
     
     if output_path:
-        with open(output_path, 'w') as f:
-            json.dump(chart.to_dict(), f, indent=2)
+        save_chart(chart, output_path)
     else:
         return chart
 
@@ -236,15 +248,25 @@ def plot_cactus_iterations(filepaths: list[str], output_path: str = None, width:
     )
     
     if output_path:
-        with open(output_path, 'w') as f:
-            json.dump(chart.to_dict(), f, indent=2)
+        save_chart(chart, output_path)
     else:
         return chart
 
 
+def validate_input_dir(ctx, param, value):
+    """Validate that input paths are directories and contain required files."""
+    for path in value:
+        if not os.path.isdir(path):
+            raise click.BadParameter(f"Not a directory: {path}")
+        for required in ['metadata.json', 'output.jsonl', 'output.swebench_eval.jsonl']:
+            if not os.path.exists(os.path.join(path, required)):
+                raise click.BadParameter(f"Missing required file {required} in {path}")
+    return value
+
+
 @cli.command()
-@click.argument('filepaths', nargs=-1, required=True)
-@click.option('--output', '-o', help='Output file path for the graph')
+@click.argument('filepaths', nargs=-1, required=True, callback=validate_input_dir)
+@click.option('--output', '-o', type=click.Path(dir_okay=False), help='Output file path (format determined by suffix: .json, .html, or .svg)')
 @click.option('--width', type=int, default=300, help='Width of the graph in pixels')
 @click.option('--height', type=int, default=300, help='Height of the graph in pixels')
 def token_usage(filepaths, output, width, height):
@@ -253,8 +275,8 @@ def token_usage(filepaths, output, width, height):
 
 
 @cli.command()
-@click.argument('filepaths', nargs=-1, required=True)
-@click.option('--output', '-o', help='Output file path for the graph')
+@click.argument('filepaths', nargs=-1, required=True, callback=validate_input_dir)
+@click.option('--output', '-o', type=click.Path(dir_okay=False), help='Output file path (format determined by suffix: .json, .html, or .svg)')
 @click.option('--width', type=int, default=400, help='Width of the graph in pixels')
 @click.option('--height', type=int, default=300, help='Height of the graph in pixels')
 def cactus_tokens(filepaths, output, width, height):
@@ -263,8 +285,8 @@ def cactus_tokens(filepaths, output, width, height):
 
 
 @cli.command()
-@click.argument('filepaths', nargs=-1, required=True)
-@click.option('--output', '-o', help='Output file path for the graph')
+@click.argument('filepaths', nargs=-1, required=True, callback=validate_input_dir)
+@click.option('--output', '-o', type=click.Path(dir_okay=False), help='Output file path (format determined by suffix: .json, .html, or .svg)')
 @click.option('--width', type=int, default=400, help='Width of the graph in pixels')
 @click.option('--height', type=int, default=300, help='Height of the graph in pixels')
 def cactus_iterations(filepaths, output, width, height):
