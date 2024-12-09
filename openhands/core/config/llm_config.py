@@ -77,6 +77,7 @@ class LLMConfig:
     log_completions: bool = False
     log_completions_folder: str = os.path.join(LOG_DIR, 'completions')
     draft_editor: Optional['LLMConfig'] = None
+    fallback_llms: list['LLMConfig'] | None = None  # List of LLM configs to try when rate limits are hit
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
@@ -121,6 +122,8 @@ class LLMConfig:
                 ret[k] = '******' if v else None
             elif isinstance(v, LLMConfig):
                 ret[k] = v.to_safe_dict()
+            elif k == 'fallback_llms' and v is not None:
+                ret[k] = [llm.to_safe_dict() for llm in v]
         return ret
 
     @classmethod
@@ -128,10 +131,20 @@ class LLMConfig:
         """Create an LLMConfig object from a dictionary.
 
         This function is used to create an LLMConfig object from a dictionary,
-        with the exception of the 'draft_editor' key, which is a nested LLMConfig object.
+        with the exception of the 'draft_editor' and 'fallback_llms' keys, which are nested LLMConfig objects.
         """
-        args = {k: v for k, v in llm_config_dict.items() if not isinstance(v, dict)}
+        args = {k: v for k, v in llm_config_dict.items() if not isinstance(v, (dict, list))}
+        
+        # Handle draft_editor
         if 'draft_editor' in llm_config_dict:
             draft_editor_config = LLMConfig(**llm_config_dict['draft_editor'])
             args['draft_editor'] = draft_editor_config
+        
+        # Handle fallback_llms
+        if 'fallback_llms' in llm_config_dict:
+            fallback_configs = [
+                LLMConfig(**llm_dict) for llm_dict in llm_config_dict['fallback_llms']
+            ]
+            args['fallback_llms'] = fallback_configs
+        
         return cls(**args)

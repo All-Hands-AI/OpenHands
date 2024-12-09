@@ -1,5 +1,6 @@
 import copy
 import os
+import threading
 import time
 import warnings
 from functools import partial
@@ -93,6 +94,10 @@ class LLM(RetryMixin, DebugMixin):
             config: The LLM configuration.
             metrics: The metrics to use.
         """
+        self._current_llm_index = 0  # Index of current LLM in fallback list
+        self._fallback_llms: list[LLM] | None = None
+        if config.fallback_llms:
+            self._fallback_llms = [LLM(cfg, metrics) for cfg in config.fallback_llms]
         self._tried_model_info = False
         self.metrics: Metrics = (
             metrics if metrics is not None else Metrics(model_name=config.model)
@@ -200,7 +205,39 @@ class LLM(RetryMixin, DebugMixin):
 
             try:
                 # we don't support streaming here, thus we get a ModelResponse
-                resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+                try:
+                    resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+                except RateLimitError as e:
+                    # If we have fallback LLMs, try them
+                    if self._fallback_llms:
+                        # Extract wait time from error message
+                        wait_time = None
+                        if 'Please try again in' in str(e):
+                            import re
+                            match = re.search(r'try again in (\d+[.]\d+)s', str(e))
+                            if match:
+                                wait_time = float(match.group(1))
+                        
+                        # Try next fallback LLM
+                        self._current_llm_index += 1
+                        if self._current_llm_index < len(self._fallback_llms):
+                            fallback_llm = self._fallback_llms[self._current_llm_index]
+                            
+                            # Log the rate limit and switch
+                            logger.warning(
+                                f'Rate limit hit for {self.config.model}. '
+                                f'Wait time: {wait_time}s. '
+                                f'Switching to fallback LLM {fallback_llm.config.model}'
+                            )
+                            
+                            # Schedule reset when rate limit expires
+                            if wait_time is not None:
+                                self.schedule_reset_fallback(wait_time)
+                            
+                            return fallback_llm.completion(*args, **kwargs)
+                    
+                    # No more fallbacks, re-raise
+                    raise
 
                 non_fncall_response = copy.deepcopy(resp)
                 if mock_function_calling:
@@ -373,6 +410,33 @@ class LLM(RetryMixin, DebugMixin):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
             return not self.config.disable_vision and self._supports_vision()
+
+    def get_current_model(self) -> str:
+        """Get the name of the currently active LLM model.
+        
+        Returns:
+            str: The model name of the currently active LLM.
+        """
+        if self._fallback_llms and self._current_llm_index > 0:
+            return self._fallback_llms[self._current_llm_index].config.model
+        return self.config.model
+
+    def reset_fallback_index(self):
+        """Reset the fallback LLM index to use the primary LLM again."""
+        self._current_llm_index = 0
+        logger.info(f'Rate limit expired. Switching back to primary LLM {self.config.model}')
+
+    def schedule_reset_fallback(self, wait_time: float):
+        """Schedule resetting the fallback LLM index after the rate limit expires.
+        
+        Args:
+            wait_time: Time to wait in seconds before resetting.
+        """
+        def reset_after_wait():
+            time.sleep(wait_time)
+            self.reset_fallback_index()
+        
+        threading.Thread(target=reset_after_wait, daemon=True).start()
 
     def _supports_vision(self) -> bool:
         """Acquire from litellm if model is vision capable.
