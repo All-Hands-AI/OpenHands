@@ -19,7 +19,7 @@ def last_obs():
 
 def test_keyboard_type(last_obs):
     code = """type(text="Hello, World!")"""
-    expected = "keyboard_type(key='Hello, World!')\n"
+    expected = "keyboard_type('Hello, World!')\n"
     assert (
         translate_computer_use_action_to_browsergym_action(code, last_obs) == expected
     )
@@ -27,7 +27,7 @@ def test_keyboard_type(last_obs):
 
 def test_mouse_move(last_obs):
     code = """mouse_move(coordinate=(100, 200))"""
-    expected = 'mouse_move(x=100, y=200)\n'
+    expected = 'mouse_move(100, 200)\n'
     assert (
         translate_computer_use_action_to_browsergym_action(code, last_obs) == expected
     )
@@ -35,7 +35,7 @@ def test_mouse_move(last_obs):
 
 def test_left_click(last_obs):
     code = """left_click()"""
-    expected = "mouse_click(button='left', x=50, y=100)\n"
+    expected = "mouse_click(50, 100, 'left')\n"
     assert (
         translate_computer_use_action_to_browsergym_action(code, last_obs) == expected
     )
@@ -43,7 +43,7 @@ def test_left_click(last_obs):
 
 def test_right_click(last_obs):
     code = """right_click()"""
-    expected = "mouse_click(button='right', x=50, y=100)\n"
+    expected = "mouse_click(50, 100, 'right')\n"
     assert (
         translate_computer_use_action_to_browsergym_action(code, last_obs) == expected
     )
@@ -51,7 +51,7 @@ def test_right_click(last_obs):
 
 def test_middle_click(last_obs):
     code = """middle_click()"""
-    expected = "mouse_click(button='middle', x=50, y=100)\n"
+    expected = "mouse_click(50, 100, 'middle')\n"
     assert (
         translate_computer_use_action_to_browsergym_action(code, last_obs) == expected
     )
@@ -59,7 +59,7 @@ def test_middle_click(last_obs):
 
 def test_double_click(last_obs):
     code = """double_click()"""
-    expected = "mouse_dblclick(button='left', x=50, y=100)\n"
+    expected = "mouse_dblclick(50, 100, 'left')\n"
     assert (
         translate_computer_use_action_to_browsergym_action(code, last_obs) == expected
     )
@@ -90,7 +90,7 @@ def test_missing_mouse_position():
         trigger_by_action='BROWSE',
     )
     code = """mouse_move(coordinate=(100, 200))"""
-    expected = 'mouse_move(x=100, y=200)\n'
+    expected = 'mouse_move(100, 200)\n'
     assert (
         translate_computer_use_action_to_browsergym_action(code, last_obs) == expected
     )
@@ -105,7 +105,7 @@ def test_empty_mouse_position():
         trigger_by_action='BROWSE',
     )
     code = """mouse_move(coordinate=(100, 200))"""
-    expected = 'mouse_move(x=100, y=200)\n'
+    expected = 'mouse_move(100, 200)\n'
     assert (
         translate_computer_use_action_to_browsergym_action(code, last_obs) == expected
     )

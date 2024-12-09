@@ -11,6 +11,7 @@ import gymnasium as gym
 import html2text
 import numpy as np
 import tenacity
+from browsergym.core.action.highlevel import HighLevelActionSet
 from browsergym.utils.obs import flatten_dom_to_str
 from PIL import Image
 
@@ -95,6 +96,9 @@ class BrowserEnv:
                 headless=True,
                 disable_env_checker=True,
                 tags_to_mark='all',
+                action_mapping=HighLevelActionSet(
+                    subsets=['chat', 'infeas', 'bid', 'nav', 'tab', 'coord']
+                ).to_python_code,
             )
 
         obs, info = env.reset()

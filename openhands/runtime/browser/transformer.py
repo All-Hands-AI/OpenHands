@@ -23,38 +23,35 @@ class ActionTransformer(ast.NodeTransformer):
 
             # Apply argument transformations if defined
             if arg_transform:
-                new_keywords = []
+                new_args = []
                 for kw in node.keywords:
                     if kw.arg in arg_transform:
-                        new_keywords.extend(arg_transform[kw.arg](kw))
+                        new_args.extend(arg_transform[kw.arg](kw))
                     else:
-                        new_keywords.append(kw)
-                node.keywords = new_keywords
+                        # Append unnamed arguments from remaining keywords
+                        new_args.append(kw.value)
+                node.args.extend(new_args)
+                node.keywords = []  # Clear keywords, as we're using unnamed args
 
-            # Add extra arguments
+            # Add extra arguments as unnamed arguments
             for extra_arg in extra_args:
-                node.keywords.append(
-                    ast.keyword(
-                        arg=extra_arg['name'],
-                        value=ast.Constant(value=extra_arg['value']),
-                    )
-                )
+                node.args.append(ast.Constant(value=extra_arg['value']))
 
         return self.generic_visit(node)
 
 
 def coordinate_split(arg_node, x_name='to_x', y_name='to_y'):
     if isinstance(arg_node.value, ast.Tuple) and len(arg_node.value.elts) == 2:
-        x_arg = ast.keyword(arg=x_name, value=arg_node.value.elts[0])
-        y_arg = ast.keyword(arg=y_name, value=arg_node.value.elts[1])
+        x_arg = arg_node.value.elts[0]
+        y_arg = arg_node.value.elts[1]
         return [x_arg, y_arg]
     return []
 
 
-def rename_argument(new_name):
+def rename_argument(_):
     def transformer(arg_node):
-        # Change the name of the argument
-        return [ast.keyword(arg=new_name, value=arg_node.value)]
+        # Change the argument into an unnamed argument
+        return [arg_node.value]
 
     return transformer
 
@@ -89,46 +86,40 @@ def translate_computer_use_action_to_browsergym_action(
             'target_func': 'mouse_drag_and_drop',
             'arg_transform': {'coordinate': coordinate_split},
             'extra_args': [
-                {
-                    'name': 'from_x',
-                    'value': last_mouse_position[0],
-                },
-                {
-                    'name': 'from_y',
-                    'value': last_mouse_position[1],
-                },
+                {'name': 'from_x', 'value': last_mouse_position[0]},
+                {'name': 'from_y', 'value': last_mouse_position[1]},
             ],
         },
         'left_click': {
             'target_func': 'mouse_click',
             'extra_args': [
-                {'name': 'button', 'value': 'left'},
                 {'name': 'x', 'value': last_mouse_position[0]},
                 {'name': 'y', 'value': last_mouse_position[1]},
+                {'name': 'button', 'value': 'left'},
             ],
         },
         'right_click': {
             'target_func': 'mouse_click',
             'extra_args': [
-                {'name': 'button', 'value': 'right'},
                 {'name': 'x', 'value': last_mouse_position[0]},
                 {'name': 'y', 'value': last_mouse_position[1]},
+                {'name': 'button', 'value': 'right'},
             ],
         },
         'middle_click': {
             'target_func': 'mouse_click',
             'extra_args': [
-                {'name': 'button', 'value': 'middle'},
                 {'name': 'x', 'value': last_mouse_position[0]},
                 {'name': 'y', 'value': last_mouse_position[1]},
+                {'name': 'button', 'value': 'middle'},
             ],
         },
         'double_click': {
             'target_func': 'mouse_dblclick',
             'extra_args': [
-                {'name': 'button', 'value': 'left'},
                 {'name': 'x', 'value': last_mouse_position[0]},
                 {'name': 'y', 'value': last_mouse_position[1]},
+                {'name': 'button', 'value': 'left'},
             ],
         },
         'screenshot': {
