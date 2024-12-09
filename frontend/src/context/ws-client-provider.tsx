@@ -8,6 +8,7 @@ import AgentState from "#/types/agent-state";
 import { handleAssistantMessage } from "#/services/actions";
 import { useRate } from "#/hooks/use-rate";
 import OpenHands from "#/api/open-hands";
+import { useConversation } from "./conversation-context";
 
 const isOpenHandsMessage = (event: Record<string, unknown>) =>
   event.action === "message";
@@ -63,6 +64,7 @@ export function WsClientProvider({
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
 
   const messageRateHandler = useRate({ threshold: 250 });
+  const { setConversationId } = useConversation();
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
@@ -87,6 +89,9 @@ export function WsClientProvider({
 
       // Store the new token for future use
       tokenRef.current = newToken;
+      // Extract conversation ID from the token (it's a JWT)
+      const payload = JSON.parse(atob(newToken.split('.')[1]));
+      setConversationId(payload.sid);
     } catch (error) {
       EventLogger.error("Failed to initialize session", error);
       setStatus(WsClientProviderStatus.ERROR);
@@ -120,11 +125,13 @@ export function WsClientProvider({
 
   function handleDisconnect() {
     setStatus(WsClientProviderStatus.STOPPED);
+    setConversationId(null);
   }
 
   function handleError() {
     posthog.capture("socket_error");
     setStatus(WsClientProviderStatus.ERROR);
+    setConversationId(null);
   }
 
   // Connect websocket

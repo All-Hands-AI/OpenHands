@@ -5,9 +5,11 @@ from pydantic import BaseModel
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.base import Runtime
 from openhands.server.listen_socket import init_connection
+from openhands.server.middleware import AttachConversationMiddleware
 from openhands.server.session.session_init_data import SessionInitData
 
 app = APIRouter(prefix='/api')
+protected_router = APIRouter(prefix='/api/conversation/{convo_id}')
 
 
 class InitSessionRequest(BaseModel):
@@ -53,7 +55,7 @@ async def init_session(request: Request, data: InitSessionRequest):
         raise
 
 
-@app.get('/conversation')
+@protected_router.get('/config')
 async def get_remote_runtime_config(request: Request):
     """Retrieve the runtime configuration.
 
@@ -70,7 +72,7 @@ async def get_remote_runtime_config(request: Request):
     )
 
 
-@app.get('/vscode-url')
+@protected_router.get('/vscode-url')
 async def get_vscode_url(request: Request):
     """Get the VSCode URL.
 
@@ -98,7 +100,7 @@ async def get_vscode_url(request: Request):
         )
 
 
-@app.get('/events/search')
+@protected_router.get('/events/search')
 async def search_events(
     request: Request,
     query: str | None = None,
@@ -150,3 +152,7 @@ async def search_events(
         'events': matching_events,
         'has_more': has_more,
     }
+
+# Include the protected router and apply the middleware
+app.include_router(protected_router)
+app.middleware('http')(AttachConversationMiddleware(app, protected_router))

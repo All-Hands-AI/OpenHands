@@ -6,14 +6,19 @@ import toast from "#/utils/toast";
 import { addAssistantMessage } from "#/state/chat-slice";
 import { I18nKey } from "#/i18n/declaration";
 import OpenHands from "#/api/open-hands";
+import { useConversation } from "#/context/conversation-context";
 
 export const useVSCodeUrl = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  const { conversationId } = useConversation();
 
   const data = useQuery({
-    queryKey: ["vscode_url"],
-    queryFn: OpenHands.getVSCodeUrl,
+    queryKey: ["vscode_url", conversationId],
+    queryFn: () => {
+      if (!conversationId) throw new Error("No conversation ID");
+      return OpenHands.getVSCodeUrl(conversationId);
+    },
     enabled: false,
   });
 

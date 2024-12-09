@@ -109,7 +109,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-class AttachSessionMiddleware:
+class AttachConversationMiddleware:
     def __init__(self, app, target_router: APIRouter):
         self.app = app
         self.target_router = target_router
