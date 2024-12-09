@@ -129,6 +129,9 @@ export const chatSlice = createSlice({
         return;
       }
       causeMessage.translationID = translationID;
+      // Set success property for all handled actions
+      causeMessage.success = observation.payload.success;
+
       if (observationID === "run" || observationID === "run_ipython") {
         let { content } = observation.payload;
         if (content.length > MAX_CONTENT_LENGTH) {
@@ -136,7 +139,6 @@ export const chatSlice = createSlice({
         }
         content = `\`\`\`\n${content}\n\`\`\``;
         causeMessage.content = content; // Observation content includes the action
-        causeMessage.success = observation.payload.success;
       }
     },
 
