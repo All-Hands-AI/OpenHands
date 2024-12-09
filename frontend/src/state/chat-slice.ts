@@ -1,14 +1,19 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
-import { OpenHandsObservation } from "#/types/core/observations";
+import {
+  OpenHandsObservation,
+  CommandObservation,
+  IPythonObservation,
+} from "#/types/core/observations";
 import { OpenHandsAction } from "#/types/core/actions";
+import { OpenHandsEventType } from "#/types/core/base";
 
 type SliceState = { messages: Message[] };
 
 const MAX_CONTENT_LENGTH = 1000;
 
-const HANDLED_ACTIONS = ["run", "run_ipython", "write", "read"];
+const HANDLED_ACTIONS: OpenHandsEventType[] = ["run", "run_ipython", "write", "read"];
 
 function getRiskText(risk: ActionSecurityRisk) {
   switch (risk) {
