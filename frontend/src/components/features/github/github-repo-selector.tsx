@@ -53,8 +53,14 @@ export function GitHubRepositorySelector({
           data-testid="github-repo-item"
           key={repo.id}
           value={repo.id}
+          className="flex items-center justify-between"
         >
-          {repo.full_name}
+          <span>{repo.full_name}</span>
+          {repo.stargazers_count > 0 && (
+            <span className="text-xs text-neutral-400">
+              ⭐ {repo.stargazers_count.toLocaleString()}
+            </span>
+          )}
         </AutocompleteItem>
       ))}
     </Autocomplete>
