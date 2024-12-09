@@ -269,9 +269,14 @@ def validate_input_dir(ctx, param, value):
 @click.option('--output', '-o', type=click.Path(dir_okay=False), help='Output file path (format determined by suffix: .json, .html, or .svg)')
 @click.option('--width', type=int, default=300, help='Width of the graph in pixels')
 @click.option('--height', type=int, default=300, help='Height of the graph in pixels')
-def token_usage(filepaths, output, width, height):
+@click.option('--browser/--no-browser', default=False, help='Display chart in browser')
+def token_usage(filepaths, output, width, height, browser):
     """Generate token usage graph showing average tokens per iteration."""
-    plot_token_usage(list(filepaths), output, width, height)
+    if browser:
+        alt.renderers.enable('browser')
+    chart = plot_token_usage(list(filepaths), output, width, height)
+    if browser and not output:
+        chart.show()
 
 
 @cli.command()
@@ -279,9 +284,14 @@ def token_usage(filepaths, output, width, height):
 @click.option('--output', '-o', type=click.Path(dir_okay=False), help='Output file path (format determined by suffix: .json, .html, or .svg)')
 @click.option('--width', type=int, default=400, help='Width of the graph in pixels')
 @click.option('--height', type=int, default=300, help='Height of the graph in pixels')
-def cactus_tokens(filepaths, output, width, height):
+@click.option('--browser/--no-browser', default=False, help='Display chart in browser')
+def cactus_tokens(filepaths, output, width, height, browser):
     """Generate cactus plot showing resolved instances by token usage."""
-    plot_cactus_tokens(list(filepaths), output, width, height)
+    if browser:
+        alt.renderers.enable('browser')
+    chart = plot_cactus_tokens(list(filepaths), output, width, height)
+    if browser and not output:
+        chart.show()
 
 
 @cli.command()
@@ -289,9 +299,14 @@ def cactus_tokens(filepaths, output, width, height):
 @click.option('--output', '-o', type=click.Path(dir_okay=False), help='Output file path (format determined by suffix: .json, .html, or .svg)')
 @click.option('--width', type=int, default=400, help='Width of the graph in pixels')
 @click.option('--height', type=int, default=300, help='Height of the graph in pixels')
-def cactus_iterations(filepaths, output, width, height):
+@click.option('--browser/--no-browser', default=False, help='Display chart in browser')
+def cactus_iterations(filepaths, output, width, height, browser):
     """Generate cactus plot showing resolved instances by iteration count."""
-    plot_cactus_iterations(list(filepaths), output, width, height)
+    if browser:
+        alt.renderers.enable('browser')
+    chart = plot_cactus_iterations(list(filepaths), output, width, height)
+    if browser and not output:
+        chart.show()
 
 
 if __name__ == '__main__':
