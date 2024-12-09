@@ -293,7 +293,7 @@ WebReadTool = ChatCompletionToolParam(
 
 # from browsergym/core/action/highlevel.py
 _browser_action_space = HighLevelActionSet(
-    subsets=['bid', 'nav', 'coord'],
+    subsets=['bid', 'nav'],
     strict=False,  # less strict on the parsing of the actions
     multiaction=True,  # enable to agent to take multiple actions at once
 )
@@ -415,13 +415,13 @@ upload_file(bid: str, file: str | list[str])
 """
 
 
-# for _, action in _browser_action_space.action_set.items():
-#     assert (
-#         action.signature in _BROWSER_TOOL_DESCRIPTION
-#     ), f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.signature}'
-#     assert (
-#         action.description in _BROWSER_TOOL_DESCRIPTION
-#     ), f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.description}'
+for _, action in _browser_action_space.action_set.items():
+    assert (
+        action.signature in _BROWSER_TOOL_DESCRIPTION
+    ), f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.signature}'
+    assert (
+        action.description in _BROWSER_TOOL_DESCRIPTION
+    ), f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.description}'
 
 BrowserTool = ChatCompletionToolParam(
     type='function',
@@ -479,6 +479,7 @@ GUIUseTool = ChatCompletionToolParam(
 * `double_click`: Double-click the left mouse button.
 * `screenshot`: Take a screenshot of the screen.""",
                     'enum': [
+                        'goto',
                         'key',
                         'type',
                         'mouse_move',
