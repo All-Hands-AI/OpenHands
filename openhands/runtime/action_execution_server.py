@@ -42,6 +42,7 @@ from openhands.events.action import (
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
+    FileEditObservation,
     FileReadObservation,
     FileWriteObservation,
     IPythonRunCellObservation,
@@ -205,21 +206,37 @@ class ActionExecutor:
                 r'<oh_aci_output>(.*?)</oh_aci_output>', obs.content, re.DOTALL
             )
             if matches:
-                results = []
+                results: list[str | FileEditObservation] = []
                 for match in matches:
                     try:
                         result_dict = json.loads(match)
-                        results.append(
-                            result_dict.get('formatted_output_and_error', '')
-                        )
+                        if result_dict.get('path'):  # An edit command
+                            results.append(
+                                FileEditObservation(
+                                    content='',  # TODO: how to get diff?
+                                    path=result_dict['path'],
+                                    old_content=result_dict.get('old_content', ''),
+                                    new_content=result_dict.get('new_content', ''),
+                                    prev_exist=result_dict.get('prev_exist', True),
+                                )
+                            )
+                        else:
+                            results.append(
+                                result_dict.get('formatted_output_and_error', '')
+                            )
                     except json.JSONDecodeError:
                         # Handle JSON decoding errors if necessary
                         results.append(
                             f"Invalid JSON in 'openhands-aci' output: {match}"
                         )
 
+                # TODO: What if there are more than one FileEditObservation?
+                for result in results:
+                    if isinstance(result, FileEditObservation):
+                        return result
+
                 # Combine the results (e.g., join them) or handle them as required
-                obs.content = '\n'.join(results)
+                obs.content = '\n'.join(str(result) for result in results)
 
             if action.include_extra:
                 obs.content += (
