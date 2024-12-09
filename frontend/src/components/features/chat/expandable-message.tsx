@@ -6,6 +6,8 @@ import { code } from "../markdown/code";
 import { ol, ul } from "../markdown/list";
 import ArrowUp from "#/icons/angle-up-solid.svg?react";
 import ArrowDown from "#/icons/angle-down-solid.svg?react";
+import CheckCircle from "#/icons/check-circle-solid.svg?react";
+import XCircle from "#/icons/x-circle-solid.svg?react";
 
 interface ExpandableMessageProps {
   id?: string;
@@ -33,29 +35,16 @@ export function ExpandableMessage({
     }
   }, [id, message, i18n.language]);
 
-  let border = "border-neutral-300";
-  let textColor = "text-neutral-300";
-  let arrowClasses = "h-4 w-4 ml-2 inline";
-
-  if (type === "error") {
-    border = "border-danger";
-    textColor = "text-danger";
-    arrowClasses += " fill-danger";
-  } else if (type === "action" && success !== undefined) {
-    border = success ? "border-success" : "border-danger";
-    textColor = success ? "text-success" : "text-danger";
-    arrowClasses += success ? " fill-success" : " fill-danger";
-  } else {
-    arrowClasses += " fill-neutral-300";
-  }
+  const arrowClasses = "h-4 w-4 ml-2 inline fill-neutral-300";
+  const statusIconClasses = "h-4 w-4 ml-2 inline";
 
   return (
     <div
-      className={`flex gap-2 items-center justify-start border-l-2 pl-2 my-2 py-2 ${border}`}
+      className="flex gap-2 items-center justify-between border-l-2 border-neutral-300 pl-2 my-2 py-2"
     >
       <div className="text-sm leading-4 flex flex-col gap-2 max-w-full">
         {headline && (
-          <p className={`${textColor} font-bold`}>
+          <p className="text-neutral-300 font-bold">
             {headline}
             <button
               type="button"
@@ -84,6 +73,15 @@ export function ExpandableMessage({
           </Markdown>
         )}
       </div>
+      {type === "action" && success !== undefined && (
+        <div className="flex-shrink-0">
+          {success ? (
+            <CheckCircle className={`${statusIconClasses} fill-success`} />
+          ) : (
+            <XCircle className={`${statusIconClasses} fill-danger`} />
+          )}
+        </div>
+      )}
     </div>
   );
 }
