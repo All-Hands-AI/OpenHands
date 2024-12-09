@@ -2,17 +2,19 @@ import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setSelectedRepository } from "#/state/initial-query-slice";
+import { useRepositorySearch } from "#/hooks/query/use-repository-search";
+import { useState } from "react";
 
 interface GitHubRepositorySelectorProps {
   onSelect: () => void;
-  repositories: GitHubRepository[];
 }
 
 export function GitHubRepositorySelector({
   onSelect,
-  repositories,
 }: GitHubRepositorySelectorProps) {
   const dispatch = useDispatch();
+  const [searchQuery, setSearchQuery] = useState("");
+  const { repositories, isLoading } = useRepositorySearch(searchQuery);
 
   const handleRepoSelection = (id: string | null) => {
     const repo = repositories.find((r) => r.id.toString() === id);
@@ -34,15 +36,17 @@ export function GitHubRepositorySelector({
       data-testid="github-repo-selector"
       name="repo"
       aria-label="GitHub Repository"
-      placeholder="Select a GitHub project"
+      placeholder="Type a repository name or select from your repositories"
       inputProps={{
         classNames: {
           inputWrapper:
             "text-sm w-full rounded-[4px] px-3 py-[10px] bg-[#525252] text-[#A3A3A3]",
         },
       }}
+      onInputChange={(value) => setSearchQuery(value)}
       onSelectionChange={(id) => handleRepoSelection(id?.toString() ?? null)}
       clearButtonProps={{ onClick: handleClearSelection }}
+      isLoading={isLoading}
     >
       {repositories.map((repo) => (
         <AutocompleteItem

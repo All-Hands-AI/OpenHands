@@ -100,3 +100,31 @@ export const retrieveLatestGitHubCommit = async (
 
   return response.data;
 };
+
+export const searchGitHubRepositories = async (query: string) => {
+  if (!query) return { data: [], nextPage: null };
+
+  const response = await github.get<{ items: GitHubRepository[] }>(
+    "/search/repositories",
+    {
+      params: {
+        q: query,
+        per_page: 1,
+        sort: "stars",
+      },
+      transformResponse: (data) => {
+        const parsedData:
+          | { items: GitHubRepository[] }
+          | GitHubErrorReponse = JSON.parse(data);
+
+        if (isGitHubErrorReponse(parsedData)) {
+          throw new Error(parsedData.message);
+        }
+
+        return parsedData;
+      },
+    },
+  );
+
+  return { data: response.data.items, nextPage: null };
+};
