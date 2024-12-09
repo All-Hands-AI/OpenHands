@@ -21,7 +21,7 @@ import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
-import { ConversationProvider } from "#/context/conversation-context";
+import { useConversation } from "#/context/conversation-context";
 
 function App() {
   const { token, gitHubToken } = useAuth();
@@ -70,9 +70,8 @@ function App() {
       settings={settings}
       conversationId={conversationId}
     >
-      <ConversationProvider>
-        <EventHandler>
-          <div className="flex flex-col h-full gap-3">
+      <EventHandler>
+        <div className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto gap-3">
             <Container className="w-[390px] max-h-full relative">
               <ChatInterface />
@@ -120,7 +119,6 @@ function App() {
           />
         </div>
       </EventHandler>
-      </ConversationProvider>
     </WsClientProvider>
   );
 }

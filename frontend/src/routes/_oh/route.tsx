@@ -9,6 +9,7 @@ import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
+import { ConversationProvider } from "#/context/conversation-context";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -77,10 +78,11 @@ export default function MainApp() {
     !isFetchingAuth && !isAuthed && config.data?.APP_MODE === "saas";
 
   return (
-    <div
-      data-testid="root-layout"
-      className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3"
-    >
+    <ConversationProvider>
+      <div
+        data-testid="root-layout"
+        className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3"
+      >
       <Sidebar />
 
       <div className="h-full w-full relative">
@@ -97,5 +99,6 @@ export default function MainApp() {
         />
       )}
     </div>
+    </ConversationProvider>
   );
 }
