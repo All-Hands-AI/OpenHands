@@ -18,7 +18,7 @@ def test_https_proxy(temp_dir, runtime_cls, run_as_openhands):
         temp_dir,
         runtime_cls,
         run_as_openhands,
-        https_proxy_port=8443,
+        runtime_startup_env_vars={'HTTPS_PROXY_PORT': '8443'},
     )
 
     try:
