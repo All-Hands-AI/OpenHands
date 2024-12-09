@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cactus Plots</title>
+  <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+  <style>
+    #vis {
+      width: 900px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="vis"></div>
+  <script>
+    fetch('cactus_plots.vega.json')
+      .then(response => response.json())
+      .then(spec => {
+        vegaEmbed('#vis', spec, {
+          renderer: 'svg',
+          actions: true
+        });
+      });
+  </script>
+</body>
+</html>
