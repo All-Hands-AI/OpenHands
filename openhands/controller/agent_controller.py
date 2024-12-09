@@ -191,11 +191,19 @@ class AgentController:
         self,
         e: Exception,
     ):
+        # Reset state before changing to error state to ensure proper cleanup
+        if isinstance(e, RuntimeError) and str(e) == 'Agent got stuck in a loop':
+            # Reset the agent's history to allow for new messages
+            self.state.history = []
+            self._stuck_detector = StuckDetector(self.state)
+
         await self.set_agent_state_to(AgentState.ERROR)
         if self.status_callback is not None:
             err_id = ''
             if isinstance(e, litellm.AuthenticationError):
                 err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
+            elif isinstance(e, RuntimeError) and str(e) == 'Agent got stuck in a loop':
+                err_id = 'STATUS$ERROR_AGENT_STUCK'
             self.status_callback('error', err_id, str(e))
 
     async def start_step_loop(self):
@@ -313,14 +321,20 @@ class AgentController:
                 extra={'msg_type': 'ACTION', 'event_source': EventSource.USER},
             )
             if self.get_agent_state() != AgentState.RUNNING:
+                # Allow transitioning from ERROR state to RUNNING state when receiving a new message
+                if self.get_agent_state() == AgentState.ERROR:
+                    self.reset_task()
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
             await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
     def reset_task(self) -> None:
-        """Resets the agent's task."""
+        """Resets the agent's task and state."""
         self.almost_stuck = 0
         self.agent.reset()
+        # Reset the stuck detector state
+        if hasattr(self, '_stuck_detector'):
+            self._stuck_detector = StuckDetector(self.state)
 
     async def set_agent_state_to(self, new_state: AgentState) -> None:
         """Updates the agent's state and handles side effects. Can emit events to the event stream.
