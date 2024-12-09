@@ -29,16 +29,6 @@ TARGET_REPO="$OUTPUT_DIR/workspace/${ISSUE_TYPE}_${ISSUE_NUMBER}"
 rm -f $OUTPUT_FILE
 
 echo "Target repo at: $TARGET_REPO"
-
-# only cd if the directory exists
-if [ -d "$TARGET_REPO" ]; then
-    cd "$TARGET_REPO"
-    diff=$(git diff)
-    if [ -n "$diff" ]; then
-        echo "Make sure that the repo is clean. Current diff:"
-        echo "$diff"
-    fi
-fi
 echo "Logging to \"$LOG_FILE\"..."
 
 cd "$OH_DIR"
