@@ -53,7 +53,8 @@ class BrowsingActionParserMessage(ActionParser):
         pass
 
     def check_condition(self, action_str: str) -> bool:
-        return '```' not in action_str
+        # Only treat as message if it doesn't contain code blocks and isn't about searching
+        return '```' not in action_str and 'search' not in action_str.lower()
 
     def parse(self, action_str: str) -> Action:
         msg = f'send_msg_to_user("""{action_str}""")'
