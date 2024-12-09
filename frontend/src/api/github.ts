@@ -113,9 +113,8 @@ export const searchGitHubRepositories = async (query: string) => {
         sort: "stars",
       },
       transformResponse: (data) => {
-        const parsedData:
-          | { items: GitHubRepository[] }
-          | GitHubErrorReponse = JSON.parse(data);
+        const parsedData: { items: GitHubRepository[] } | GitHubErrorReponse =
+          JSON.parse(data);
 
         if (isGitHubErrorReponse(parsedData)) {
           throw new Error(parsedData.message);

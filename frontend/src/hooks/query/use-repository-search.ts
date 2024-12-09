@@ -1,8 +1,11 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { retrieveGitHubUserRepositories, searchGitHubRepositories } from "#/api/github";
-import { useAuth } from "#/context/auth-context";
 import debounce from "lodash/debounce";
+import {
+  retrieveGitHubUserRepositories,
+  searchGitHubRepositories,
+} from "#/api/github";
+import { useAuth } from "#/context/auth-context";
 
 export const useRepositorySearch = (searchQuery: string) => {
   const { gitHubToken } = useAuth();
@@ -41,7 +44,7 @@ export const useRepositorySearch = (searchQuery: string) => {
   // Remove duplicates based on full_name, preferring public repos with stars
   const uniqueRepositories = repositories.filter(
     (repo, index, self) =>
-      index === self.findIndex((r) => r.full_name === repo.full_name)
+      index === self.findIndex((r) => r.full_name === repo.full_name),
   );
 
   // Sort repositories: prefix matches first, then by stars, then alphabetically
