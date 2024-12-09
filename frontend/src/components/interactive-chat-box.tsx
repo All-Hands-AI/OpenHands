@@ -25,6 +25,7 @@ export function InteractiveChatBox({
 
   const handleUpload = (files: File[]) => {
     setImages((prevImages) => [...prevImages, ...files]);
+    onChange?.("");
   };
 
   const handleRemoveImage = (index: number) => {
@@ -35,21 +36,10 @@ export function InteractiveChatBox({
     });
   };
 
-  const [inputValue, setInputValue] = React.useState(value || "");
-
-  React.useEffect(() => {
-    setInputValue(value || "");
-  }, [value]);
-
   const handleSubmit = (message: string) => {
     onSubmit(message, images);
     setImages([]);
-    setInputValue("");
-  };
-
-  const handleChange = (message: string) => {
-    setInputValue(message);
-    onChange?.(message);
+    onChange?.("");
   };
 
   return (
@@ -78,10 +68,10 @@ export function InteractiveChatBox({
           disabled={isDisabled}
           button={mode}
           placeholder="What do you want to build?"
-          onChange={handleChange}
+          onChange={onChange}
           onSubmit={handleSubmit}
           onStop={onStop}
-          value={inputValue}
+          value={value}
           onImagePaste={handleUpload}
           className="py-[10px]"
           buttonClassName="py-[10px]"

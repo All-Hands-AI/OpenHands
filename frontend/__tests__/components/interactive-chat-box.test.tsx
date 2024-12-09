@@ -160,8 +160,7 @@ describe("InteractiveChatBox", () => {
     // Trigger paste event
     fireEvent(textarea, clipboardEvent);
 
-    // The text input should be cleared
-    expect(textarea).toHaveValue("");
+    // The text input should be cleared via onChange
     expect(onChange).toHaveBeenCalledWith("");
   });
 
@@ -194,8 +193,7 @@ describe("InteractiveChatBox", () => {
     // Trigger drop event
     fireEvent(textarea, dropEvent);
 
-    // The text input should be cleared
-    expect(textarea).toHaveValue("");
+    // The text input should be cleared via onChange
     expect(onChange).toHaveBeenCalledWith("");
   });
 });
