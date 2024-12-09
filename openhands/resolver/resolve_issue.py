@@ -689,16 +689,9 @@ def main():
 
     my_args = parser.parse_args()
 
+    # NOTE: The correct image name is passed in as argument to the script by the GH action.
+    #       If we don't pass it in, it will auto-build it on the fly. Useful for local dev loop.
     runtime_container_image = my_args.runtime_container_image
-    if runtime_container_image is None:
-        runtime_container_image = (
-            # BEGIN REPLAY
-            # if we start publishing versions of the runtime image, we can use this line.  until then just use the latest main build
-            # f'ghcr.io/replayio-public/runtime:{openhands.__version__}-nikolaik'
-            'ghcr.io/replayio-public/runtime:main-nikolaik'
-            # END REPLAY
-        )
-
     owner, repo = my_args.repo.split('/')
     token = my_args.token if my_args.token else os.getenv('GITHUB_TOKEN')
     username = my_args.username if my_args.username else os.getenv('GITHUB_USERNAME')
