@@ -531,6 +531,23 @@ class PRHandler(IssueHandler):
                 response = requests.get(url, headers=headers)
                 response.raise_for_status()
                 issue_data = response.json()
+
+                # Handle both list and single-object responses
+                if isinstance(issue_data, list):
+                    # Find the matching issue in the list
+                    matching_issues = [
+                        i for i in issue_data if i.get('number') == issue_number
+                    ]
+                    if not matching_issues:
+                        logger.warning(f'Issue {issue_number} not found in response')
+                        continue
+                    issue_data = matching_issues[0]
+                elif not isinstance(issue_data, dict):
+                    logger.warning(
+                        f'Unexpected response type for issue {issue_number}: {type(issue_data)}'
+                    )
+                    continue
+
                 issue_body = issue_data.get('body', '')
                 if issue_body:
                     closing_issues.append(issue_body)
@@ -559,6 +576,22 @@ class PRHandler(IssueHandler):
                 response.raise_for_status()
                 issue = response.json()
 
+                # Handle both list and single-object responses
+                if isinstance(issue, list):
+                    # Find the matching issue in the list
+                    matching_issues = [
+                        i for i in issue if i.get('number') == issue_number
+                    ]
+                    if not matching_issues:
+                        logger.warning(f'Issue {issue_number} not found in response')
+                        continue
+                    issue = matching_issues[0]
+                elif not isinstance(issue, dict):
+                    logger.warning(
+                        f'Unexpected response type for issue {issue_number}: {type(issue)}'
+                    )
+                    continue
+
                 # For PRs, body can be None
                 if any([issue.get(key) is None for key in ['number', 'title']]):
                     logger.warning(
@@ -582,6 +615,7 @@ class PRHandler(IssueHandler):
                     issue['number'], comment_id=comment_id
                 )
 
+                # Extract issue references from PR body and review comments
                 closing_issues = self.__get_context_from_external_issues_references(
                     closing_issues,
                     closing_issues_numbers,
