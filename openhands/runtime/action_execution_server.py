@@ -129,7 +129,7 @@ class ActionExecutor:
                 'EOF'
             )
             logger.debug(f'Starting HTTPS proxy on port {self.https_proxy_port}')
-            proxy_process = subprocess.Popen(
+            subprocess.Popen(
                 cmd,
                 stderr=subprocess.STDOUT,
                 shell=True,
