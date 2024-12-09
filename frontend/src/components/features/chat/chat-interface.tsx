@@ -12,13 +12,17 @@ import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { FeedbackModal } from "../feedback/feedback-modal";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { TypingIndicator } from "./typing-indicator";
-import { useWsClient } from "#/context/ws-client-provider";
+import { useWsClient, WsClientProviderStatus } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
 import { ActionSuggestions } from "./action-suggestions";
 import { ContinueButton } from "#/components/shared/buttons/continue-button";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import { useConversation } from "#/context/conversation-context";
+import OpenHands from "#/api/open-hands";
+import { useAuth } from "#/context/auth-context";
+import { useUserPrefs } from "#/context/user-prefs-context";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -30,7 +34,10 @@ function getEntryPoint(
 }
 
 export function ChatInterface() {
-  const { send, isLoadingMessages } = useWsClient();
+  const { send, isLoadingMessages, status } = useWsClient();
+  const { token, gitHubToken } = useAuth();
+  const { settings } = useUserPrefs();
+  const { conversationId } = useConversation();
   const dispatch = useDispatch();
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
@@ -44,11 +51,32 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
+  const [isInitializingSession, setIsInitializingSession] = React.useState(false);
   const { selectedRepository, importedProjectZip } = useSelector(
     (state: RootState) => state.initalQuery,
   );
 
   const handleSendMessage = async (content: string, files: File[]) => {
+    // If we don't have a conversation ID and we're not in the process of connecting,
+    // we need to initialize a new session
+    if (!conversationId && status !== WsClientProviderStatus.OPENING) {
+      try {
+        setIsInitializingSession(true);
+        const { token: newToken } = await OpenHands.initSession({
+          token,
+          githubToken: gitHubToken,
+          selectedRepository,
+          args: settings || undefined,
+        });
+        // The WsClientProvider will handle setting the conversation ID
+      } catch (error) {
+        console.error("Failed to initialize session:", error);
+        return;
+      } finally {
+        setIsInitializingSession(false);
+      }
+    }
+
     if (messages.length === 0) {
       posthog.capture("initial_query_submitted", {
         entry_point: getEntryPoint(
@@ -154,7 +182,8 @@ export function ChatInterface() {
           onStop={handleStop}
           isDisabled={
             curAgentState === AgentState.LOADING ||
-            curAgentState === AgentState.AWAITING_USER_CONFIRMATION
+            curAgentState === AgentState.AWAITING_USER_CONFIRMATION ||
+            isInitializingSession
           }
           mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
           value={messageToSend ?? undefined}
