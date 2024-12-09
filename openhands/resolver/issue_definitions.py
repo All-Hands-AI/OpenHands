@@ -62,11 +62,13 @@ class IssueHandler(IssueHandlerInterface):
         params: dict[str, int | str] = {'state': 'open', 'per_page': 100, 'page': 1}
         all_issues = []
 
+        # Get issues, page by page
         while True:
             response = requests.get(url, headers=headers, params=params)
             response.raise_for_status()
             issues = response.json()
 
+            # No more issues, break the loop
             if not issues:
                 break
 
@@ -78,6 +80,7 @@ class IssueHandler(IssueHandlerInterface):
             ):
                 raise ValueError('Expected list or dictionary from Github API.')
 
+            # Add the issues to the final list
             all_issues.extend(issues)
             assert isinstance(params['page'], int)
             params['page'] += 1
@@ -110,7 +113,12 @@ class IssueHandler(IssueHandlerInterface):
     def _get_issue_comments(
         self, issue_number: int, comment_id: int | None = None
     ) -> list[str] | None:
-        """Download comments for a specific issue from Github."""
+        """Retrieve comments for a specific issue from Github.
+
+        Args:
+            issue_number: The ID of the issue to get comments for
+            comment_id: The ID of a single comment, if provided, otherwise all comments
+        """
         url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{issue_number}/comments'
         headers = {
             'Authorization': f'token {self.token}',
@@ -119,6 +127,7 @@ class IssueHandler(IssueHandlerInterface):
         params = {'per_page': 100, 'page': 1}
         all_comments = []
 
+        # Get comments, page by page
         try:
             while True:
                 response = requests.get(url, headers=headers, params=params)
@@ -128,6 +137,7 @@ class IssueHandler(IssueHandlerInterface):
                 if not comments:
                     break
 
+                # If a single comment ID is provided, return only that comment
                 if comment_id:
                     matching_comment = next(
                         (
@@ -140,6 +150,7 @@ class IssueHandler(IssueHandlerInterface):
                     if matching_comment:
                         return [matching_comment]
                 else:
+                    # Otherwise, return all comments
                     all_comments.extend([comment['body'] for comment in comments])
 
                 params['page'] += 1
@@ -153,6 +164,10 @@ class IssueHandler(IssueHandlerInterface):
         self, issue_numbers: list[int] | None = None, comment_id: int | None = None
     ) -> list[GithubIssue]:
         """Download issues from Github.
+
+        Args:
+            issue_numbers: The numbers of the issues to download
+            comment_id: The ID of a single comment, if provided, otherwise all comments
 
         Returns:
             List of Github issues.
@@ -205,7 +220,14 @@ class IssueHandler(IssueHandlerInterface):
         prompt_template: str,
         repo_instruction: str | None = None,
     ) -> tuple[str, list[str]]:
-        """Generate instruction for the agent."""
+        """Generate instruction for the agent.
+
+        Args:
+            issue: The issue to generate instruction for
+            prompt_template: The prompt template to use
+            repo_instruction: The repository instruction if it exists
+        """
+
         # Format thread comments if they exist
         thread_context = ''
         if issue.thread_comments:
@@ -213,6 +235,7 @@ class IssueHandler(IssueHandlerInterface):
                 issue.thread_comments
             )
 
+        # Extract image URLs from the issue body and thread comments
         images = []
         images.extend(self._extract_image_urls(issue.body))
         images.extend(self._extract_image_urls(thread_context))
@@ -229,8 +252,14 @@ class IssueHandler(IssueHandlerInterface):
     def guess_success(
         self, issue: GithubIssue, history: list[Event]
     ) -> tuple[bool, None | list[bool], str]:
-        """Guess if the issue is fixed based on the history and the issue description."""
+        """Guess if the issue is fixed based on the history and the issue description.
+
+        Args:
+            issue: The issue to check
+            history: The agent's history
+        """
         last_message = history[-1].message
+
         # Include thread comments in the prompt if they exist
         issue_context = issue.body
         if issue.thread_comments:
@@ -238,6 +267,7 @@ class IssueHandler(IssueHandlerInterface):
                 issue.thread_comments
             )
 
+        # Prepare the prompt
         with open(
             os.path.join(
                 os.path.dirname(__file__),
@@ -248,6 +278,7 @@ class IssueHandler(IssueHandlerInterface):
             template = jinja2.Template(f.read())
         prompt = template.render(issue_context=issue_context, last_message=last_message)
 
+        # Get the LLM response and check for 'success' and 'explanation' in the answer
         response = self.llm.completion(messages=[{'role': 'user', 'content': prompt}])
 
         answer = response.choices[0].message.content.strip()
@@ -330,6 +361,7 @@ class PRHandler(IssueHandler):
 
         variables = {'owner': self.owner, 'repo': self.repo, 'pr': pull_number}
 
+        # Run the query
         url = 'https://api.github.com/graphql'
         headers = {
             'Authorization': f'Bearer {self.token}',
@@ -396,10 +428,12 @@ class PRHandler(IssueHandler):
                             review_thread['body'] + '\n'
                         )  # Add each thread in a new line
 
+                    # Source files on which the comments were made
                     file = review_thread.get('path')
                     if file and file not in files:
                         files.append(file)
 
+                # If the comment ID is not provided or the thread contains the comment ID, add the thread to the list
                 if comment_id is None or thread_contains_comment_id:
                     unresolved_thread = ReviewThread(comment=message, files=files)
                     review_threads.append(unresolved_thread)
