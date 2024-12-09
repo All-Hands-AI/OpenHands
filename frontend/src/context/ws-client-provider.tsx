@@ -128,12 +128,19 @@ export function WsClientProvider({
       return () => {};
     }
 
-    // If there is no websocket or the tokens have changed or the current websocket is disconnected,
+    // Don't connect if we don't have a conversation ID
+    if (!conversationId) {
+      sio?.disconnect();
+      return () => {};
+    }
+
+    // If there is no websocket or the tokens/conversation have changed or the current websocket is disconnected,
     // create a new one
     if (
       !sio ||
       (tokenRef.current && token && token !== tokenRef.current) ||
-      ghToken !== ghTokenRef.current
+      ghToken !== ghTokenRef.current ||
+      conversationId !== sioRef.current?.io?.opts?.path?.split('/conversation/')[1]
     ) {
       sio?.disconnect();
 
@@ -141,6 +148,10 @@ export function WsClientProvider({
         import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
       sio = io(`${baseUrl}/conversation/${conversationId}`, {
         transports: ["websocket"],
+        auth: {
+          token: token || undefined,
+          githubToken: ghToken || undefined,
+        },
       });
     }
     sio.on("connect", handleConnect);
