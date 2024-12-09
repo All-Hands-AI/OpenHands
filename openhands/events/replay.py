@@ -126,11 +126,11 @@ def handle_replay_enhance_observation(
             else:
                 enhancement = f'There is a change needed in {annotated_repo_path}:\n'
             enhancement += f'{comment_text}\n\n'
-            enhancement += 'Reproduction information from a recording of the problem is available in source comments.\n'
-            enhancement += f'The bug was reported at {start_name}. Start your investigation there. Then keep searching for related `reproduction step` comments.\n'
 
             enhancement += '<IMPORTANT>\n'
-            enhancement += 'YOU MUST SEARCH FOR THESE COMMENTS AND USE THEM TO GET A BETTER UNDERSTANDING OF THE PROBLEM.\n'
+            enhancement += 'Information about a reproduction of the problem is available in source comments.\n'
+            enhancement += 'You must search for these comments and use them to get a better understanding of the problem.\n'
+            enhancement += f'The first reproduction comment to search for is named {start_name}. Start your investigation there.\n'
             enhancement += '</IMPORTANT>\n'
 
             # Enhance:
