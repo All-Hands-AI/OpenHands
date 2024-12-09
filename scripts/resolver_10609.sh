@@ -1,6 +1,6 @@
 set -e
 
-export LLM_MODEL="anthropic/claude-3.5"
+export LLM_MODEL="anthropic/claude-3-5-sonnet-20241022"
 
 if [[ -z "$TMP_DIR" ]]; then
     TMP_DIR="/tmp"
