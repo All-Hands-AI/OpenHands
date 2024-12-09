@@ -55,6 +55,8 @@ def test_observation_event_props_serialization_deserialization():
             'interpreter_details': '',
         },
         'content': 'foo.txt',
+        'command': 'ls -l',
+        'command_id': 3,
     }
     serialization_deserialization(original_observation_dict, CmdOutputObservation)
 
@@ -71,5 +73,7 @@ def test_command_output_observation_serialization_deserialization():
         },
         'message': 'Command `ls -l` executed with exit code 0.',
         'content': 'foo.txt',
+        'command': 'ls -l',
+        'command_id': 3,
     }
     serialization_deserialization(original_observation_dict, CmdOutputObservation)
