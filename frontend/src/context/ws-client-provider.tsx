@@ -7,6 +7,7 @@ import EventLogger from "#/utils/event-logger";
 import AgentState from "#/types/agent-state";
 import { handleAssistantMessage } from "#/services/actions";
 import { useRate } from "#/hooks/use-rate";
+import OpenHands from "#/api/open-hands";
 
 const isOpenHandsMessage = (event: Record<string, unknown>) =>
   event.action === "message";
@@ -71,27 +72,25 @@ export function WsClientProvider({
     sioRef.current.emit("oh_action", event);
   }
 
-  function handleConnect() {
+  async function handleConnect() {
     setStatus(WsClientProviderStatus.OPENING);
 
-    const initEvent: Record<string, unknown> = {
-      action: ActionType.INIT,
-      args: settings,
-    };
-    if (token) {
-      initEvent.token = token;
+    try {
+      const lastEvent = lastEventRef.current;
+      const { token: newToken } = await OpenHands.initSession({
+        token,
+        githubToken: ghToken,
+        selectedRepository,
+        args: settings || undefined,
+        latestEventId: lastEvent?.id as number | undefined,
+      });
+
+      // Store the new token for future use
+      tokenRef.current = newToken;
+    } catch (error) {
+      EventLogger.error("Failed to initialize session", error);
+      setStatus(WsClientProviderStatus.ERROR);
     }
-    if (ghToken) {
-      initEvent.github_token = ghToken;
-    }
-    if (selectedRepository) {
-      initEvent.selected_repository = selectedRepository;
-    }
-    const lastEvent = lastEventRef.current;
-    if (lastEvent) {
-      initEvent.latest_event_id = lastEvent.id;
-    }
-    send(initEvent);
   }
 
   function handleMessage(event: Record<string, unknown>) {

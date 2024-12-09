@@ -1,7 +1,6 @@
 from fastapi import status
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.schema.action import ActionType
 from openhands.events.action import (
     NullAction,
 )
@@ -24,21 +23,6 @@ async def connect(connection_id: str, environ):
 
 @sio.event
 async def oh_action(connection_id: str, data: dict):
-    # If it's an init, we do it here.
-    action = data.get('action', '')
-    if action == ActionType.INIT:
-        token = data.pop('token', None)
-        github_token = data.pop('github_token', None)
-        latest_event_id = int(data.pop('latest_event_id', -1))
-        kwargs = {k.lower(): v for k, v in (data.get('args') or {}).items()}
-        session_init_data = SessionInitData(**kwargs)
-        session_init_data.github_token = github_token
-        session_init_data.selected_repository = data.get('selected_repository', None)
-        await init_connection(
-            connection_id, token, github_token, session_init_data, latest_event_id
-        )
-        return
-
     logger.info(f'sio:oh_action:{connection_id}')
     await session_manager.send_to_event_stream(connection_id, data)
 
@@ -49,6 +33,7 @@ async def init_connection(
     gh_token: str | None,
     session_init_data: SessionInitData,
     latest_event_id: int,
+    return_token_only: bool = False,
 ):
     if not await authenticate_github_user(gh_token):
         raise RuntimeError(status.WS_1008_POLICY_VIOLATION)
@@ -56,6 +41,8 @@ async def init_connection(
     if token:
         sid = get_sid_from_token(token, config.jwt_secret)
         if sid == '':
+            if return_token_only:
+                raise RuntimeError('Invalid token')
             await sio.emit('oh_event', {'error': 'Invalid token', 'error_code': 401})
             return
         logger.info(f'Existing session: {sid}')
@@ -64,6 +51,10 @@ async def init_connection(
         logger.info(f'New session: {sid}')
 
     token = sign_token({'sid': sid}, config.jwt_secret)
+    
+    if return_token_only:
+        return token
+        
     await sio.emit('oh_event', {'token': token, 'status': 'ok'}, to=connection_id)
 
     # The session in question should exist, but may not actually be running locally...
