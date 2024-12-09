@@ -5,6 +5,7 @@ import { code } from "../markdown/code";
 import { cn } from "#/utils/utils";
 import { ul, ol } from "../markdown/list";
 import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
+import { TerminalOutput } from "./terminal-output";
 
 interface ChatMessageProps {
   type: "user" | "assistant";
@@ -56,17 +57,21 @@ export function ChatMessage({
         onClick={handleCopyToClipboard}
         mode={isCopy ? "copied" : "copy"}
       />
-      <Markdown
-        className="text-sm overflow-auto"
-        components={{
-          code,
-          ul,
-          ol,
-        }}
-        remarkPlugins={[remarkGfm]}
-      >
-        {message}
-      </Markdown>
+      {message.includes('\u001b[') ? (
+        <TerminalOutput content={message} />
+      ) : (
+        <Markdown
+          className="text-sm overflow-auto"
+          components={{
+            code,
+            ul,
+            ol,
+          }}
+          remarkPlugins={[remarkGfm]}
+        >
+          {message}
+        </Markdown>
+      )}
       {children}
     </article>
   );
