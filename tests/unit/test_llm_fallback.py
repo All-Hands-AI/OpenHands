@@ -1,7 +1,8 @@
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 
+import pytest
 from litellm.exceptions import RateLimitError
+
 from openhands.core.config import LLMConfig
 from openhands.llm.llm import LLM
 
@@ -27,11 +28,13 @@ def test_llm_fallback_on_rate_limit():
     primary_config.fallback_llms = [fallback1]
 
     llm = LLM(primary_config)
-    
+
     # Mock the completion functions
     primary_error = RateLimitError('Please try again in 60.5s')
     llm._completion_unwrapped = MagicMock(side_effect=primary_error)
-    llm._fallback_llms[0]._completion_unwrapped = MagicMock(return_value={'choices': [{'message': {'content': 'success'}}]})
+    llm._fallback_llms[0]._completion_unwrapped = MagicMock(
+        return_value={'choices': [{'message': {'content': 'success'}}]}
+    )
 
     # Call completion and verify fallback is used
     result = llm.completion(messages=[{'role': 'user', 'content': 'test'}])
@@ -47,7 +50,7 @@ def test_llm_fallback_reset():
 
     llm = LLM(primary_config)
     llm._current_llm_index = 1  # Simulate using fallback
-    
+
     # Reset and verify
     llm.reset_fallback_index()
     assert llm.get_current_model() == 'model1'
@@ -60,7 +63,7 @@ def test_llm_no_more_fallbacks():
     primary_config.fallback_llms = [fallback1]
 
     llm = LLM(primary_config)
-    
+
     # Mock both LLMs to fail
     error = RateLimitError('Rate limit exceeded')
     llm._completion_unwrapped = MagicMock(side_effect=error)

@@ -214,28 +214,29 @@ class LLM(RetryMixin, DebugMixin):
                         wait_time = None
                         if 'Please try again in' in str(e):
                             import re
+
                             match = re.search(r'try again in (\d+[.]\d+)s', str(e))
                             if match:
                                 wait_time = float(match.group(1))
-                        
+
                         # Try next fallback LLM
                         self._current_llm_index += 1
                         if self._current_llm_index < len(self._fallback_llms):
                             fallback_llm = self._fallback_llms[self._current_llm_index]
-                            
+
                             # Log the rate limit and switch
                             logger.warning(
                                 f'Rate limit hit for {self.config.model}. '
                                 f'Wait time: {wait_time}s. '
                                 f'Switching to fallback LLM {fallback_llm.config.model}'
                             )
-                            
+
                             # Schedule reset when rate limit expires
                             if wait_time is not None:
                                 self.schedule_reset_fallback(wait_time)
-                            
+
                             return fallback_llm.completion(*args, **kwargs)
-                    
+
                     # No more fallbacks, re-raise
                     raise
 
@@ -413,7 +414,7 @@ class LLM(RetryMixin, DebugMixin):
 
     def get_current_model(self) -> str:
         """Get the name of the currently active LLM model.
-        
+
         Returns:
             str: The model name of the currently active LLM.
         """
@@ -424,18 +425,21 @@ class LLM(RetryMixin, DebugMixin):
     def reset_fallback_index(self):
         """Reset the fallback LLM index to use the primary LLM again."""
         self._current_llm_index = 0
-        logger.info(f'Rate limit expired. Switching back to primary LLM {self.config.model}')
+        logger.info(
+            f'Rate limit expired. Switching back to primary LLM {self.config.model}'
+        )
 
     def schedule_reset_fallback(self, wait_time: float):
         """Schedule resetting the fallback LLM index after the rate limit expires.
-        
+
         Args:
             wait_time: Time to wait in seconds before resetting.
         """
+
         def reset_after_wait():
             time.sleep(wait_time)
             self.reset_fallback_index()
-        
+
         threading.Thread(target=reset_after_wait, daemon=True).start()
 
     def _supports_vision(self) -> bool:
