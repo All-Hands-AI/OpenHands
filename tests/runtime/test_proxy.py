@@ -1,17 +1,21 @@
+"""Tests for the HTTPS proxy functionality in ActionExecutor."""
+
 import http.server
 import socketserver
 import threading
 import time
 from pathlib import Path
 
-import pytest
 import requests
+from conftest import _close_test_runtime, _load_runtime
 
-from openhands.runtime.action_execution_server import ActionExecutor
+from openhands.core.logger import openhands_logger as logger
+from openhands.events.action import CmdRunAction
+from openhands.events.observation import CmdOutputObservation
 
 
 def start_http_server(port):
-    """Start a simple HTTP server in a separate thread"""
+    """Start a simple HTTP server in a separate thread."""
     handler = http.server.SimpleHTTPRequestHandler
     httpd = socketserver.TCPServer(('', port), handler)
 
@@ -23,33 +27,24 @@ def start_http_server(port):
     return httpd, thread
 
 
-@pytest.mark.asyncio
-async def test_https_proxy():
-    # Create a temporary directory for the test
-    work_dir = Path('/tmp/test_proxy')
-    work_dir.mkdir(exist_ok=True)
+def test_https_proxy(temp_dir, runtime_cls, run_as_openhands):
+    """Test that the HTTPS proxy works correctly."""
+    # Initialize runtime with HTTPS proxy
+    runtime = _load_runtime(
+        temp_dir,
+        runtime_cls,
+        run_as_openhands,
+        https_proxy_port=8443,
+    )
 
     # Create a test file to serve
-    test_file = work_dir / 'test.txt'
+    test_file = Path(temp_dir) / 'test.txt'
     test_file.write_text('Hello from test server!')
 
     # Start a simple HTTP server on port 8000
     http_server, server_thread = start_http_server(8000)
 
     try:
-        # Initialize ActionExecutor with HTTPS proxy
-        executor = ActionExecutor(
-            plugins_to_load=[],  # No plugins needed for this test
-            work_dir=str(work_dir),
-            username='openhands',
-            user_id=1000,
-            browsergym_eval_env=None,
-            https_proxy_port=8443,
-        )
-
-        # Initialize the executor (this will start the proxy)
-        await executor.ainit()
-
         # Give the proxy time to start
         time.sleep(2)
 
@@ -66,9 +61,19 @@ async def test_https_proxy():
         assert response.status_code == 200
         assert response.text == 'Hello from test server!'
 
+        # Clean up test file
+        action = CmdRunAction(command='rm -rf test.txt')
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0
+
     finally:
-        # Clean up
+        # Clean up server
         http_server.shutdown()
         http_server.server_close()
         server_thread.join(timeout=1)
-        work_dir.unlink(missing_ok=True)
+
+        # Clean up runtime
+        _close_test_runtime(runtime)
