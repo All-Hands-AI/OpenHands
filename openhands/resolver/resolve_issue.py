@@ -112,43 +112,49 @@ async def get_git_patch(runtime: Runtime, base_commit: str) -> str:
     return git_patch
 
 
-def strip_replay_comment(file_name: str, line: str):
-    """Remove a replay comment with the specified text from a file.
-
-    Args:
-        file_name: Path to the file containing the comment
-        line: The line containing the comment to remove
-    """
-    logger.info(f'Stripping Replay comment from {file_name}: "{line}"')
-    if not os.path.exists(file_name):
-        raise ValueError(f'File {file_name} does not exist')
-    with open(file_name, 'r') as f:
-        lines = f.readlines()
-
-    # Find and remove the line
-    if line + '\n' in lines:
-        lines.remove(line + '\n')
-
-    # Write back the file without the comment
-    with open(file_name, 'w') as f:
-        f.writelines(lines)
-
-
 REPLAY_COMMENT_PATTERN = r'^\+.*(?:\s+//|\{/\*.*?\*/\})'
 
 
 def strip_replay_comments(base_path: str, git_patch: str) -> None:
-    """Strip all replay comments from the git patch."""
-    logger.info('Stripping Replay comments...')
+    """Strip replay comments from files referenced in a git patch.
 
-    lines = git_patch.splitlines()
+    Args:
+        base_path: Root path for the repository
+        git_patch: Git patch content containing file changes
+    """
     current_file = ''
-    for line in lines:
-        logger.info(f'Processing line: {line}')
-        if re.match(r'^\+\+\+ b/', line):
+    file_changes: dict[str, list[str]] = {}
+
+    # First pass: collect all changes per file
+    for line in git_patch.splitlines():
+        if line.startswith('+++ b/'):
             current_file = os.path.join(base_path, line[6:])
+            continue
+
         if re.match(REPLAY_COMMENT_PATTERN, line.lstrip()):
-            strip_replay_comment(current_file, line[1:])
+            if current_file not in file_changes:
+                file_changes[current_file] = []
+            file_changes[current_file].append(line[1:])
+
+    # Second pass: apply changes to each file once
+    for file_name, comments in file_changes.items():
+        if not os.path.exists(file_name):
+            logger.warning(f'File {file_name} does not exist')
+            continue
+
+        with open(file_name, 'r') as f:
+            lines = f.readlines()
+
+        # Remove all comments from this file
+        for comment in comments:
+            if comment + '\n' in lines:
+                lines.remove(comment + '\n')
+
+        with open(file_name, 'w') as f:
+            f.writelines(lines)
+            logger.info(f'Stripped {len(comments)} comments from {file_name}')
+
+    logger.info(f'[REPLAY] Stripped {len(file_changes)} files: {file_changes.keys()}')
 
 
 async def complete_runtime(
@@ -189,11 +195,18 @@ async def complete_runtime(
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to set git config. Observation: {obs}')
 
+    # git add.
+    action = CmdRunAction(command='git add -A')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
+        raise RuntimeError(f'Failed to git add. Observation: {obs}')
+
     # Strip comments.
     base_git_patch = await get_git_patch(runtime, base_commit)
     assert runtime.config.workspace_base is not None
     strip_replay_comments(runtime.config.workspace_base, base_git_patch)
-    git_patch = await get_git_patch(runtime, base_commit)
 
     # git add.
     action = CmdRunAction(command='git add -A')
@@ -202,6 +215,9 @@ async def complete_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
         raise RuntimeError(f'Failed to git add. Observation: {obs}')
+
+    # Get final patch.
+    git_patch = await get_git_patch(runtime, base_commit)
 
     logger.info('-' * 30)
     logger.info('END Runtime Completion Fn')
