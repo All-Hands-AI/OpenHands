@@ -1,8 +1,5 @@
 """Tests for the HTTPS proxy functionality in ActionExecutor."""
 
-import http.server
-import socketserver
-import threading
 import time
 from pathlib import Path
 
@@ -12,19 +9,6 @@ from conftest import _close_test_runtime, _load_runtime
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation
-
-
-def start_http_server(port):
-    """Start a simple HTTP server in a separate thread."""
-    handler = http.server.SimpleHTTPRequestHandler
-    httpd = socketserver.TCPServer(('', port), handler)
-
-    def serve_forever():
-        httpd.serve_forever()
-
-    thread = threading.Thread(target=serve_forever, daemon=True)
-    thread.start()
-    return httpd, thread
 
 
 def test_https_proxy(temp_dir, runtime_cls, run_as_openhands):
@@ -37,14 +21,27 @@ def test_https_proxy(temp_dir, runtime_cls, run_as_openhands):
         https_proxy_port=8443,
     )
 
-    # Create a test file to serve
-    test_file = Path(temp_dir) / 'test.txt'
-    test_file.write_text('Hello from test server!')
-
-    # Start a simple HTTP server on port 8000
-    http_server, server_thread = start_http_server(8000)
-
     try:
+        # Create a test file to serve
+        test_file = Path(temp_dir) / 'test.txt'
+        test_file.write_text('Hello from test server!')
+
+        # Start a simple HTTP server on port 8000
+        action = CmdRunAction(command='python3 -m http.server 8000 > server.log 2>&1 &')
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0
+
+        # Verify server is running
+        action = CmdRunAction(command='sleep 3 && cat server.log')
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        assert isinstance(obs, CmdOutputObservation)
+        assert obs.exit_code == 0
+
         # Give the proxy time to start
         time.sleep(2)
 
@@ -61,8 +58,8 @@ def test_https_proxy(temp_dir, runtime_cls, run_as_openhands):
         assert response.status_code == 200
         assert response.text == 'Hello from test server!'
 
-        # Clean up test file
-        action = CmdRunAction(command='rm -rf test.txt')
+        # Clean up test file and server log
+        action = CmdRunAction(command='rm -rf test.txt server.log')
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -70,10 +67,5 @@ def test_https_proxy(temp_dir, runtime_cls, run_as_openhands):
         assert obs.exit_code == 0
 
     finally:
-        # Clean up server
-        http_server.shutdown()
-        http_server.server_close()
-        server_thread.join(timeout=1)
-
         # Clean up runtime
         _close_test_runtime(runtime)
