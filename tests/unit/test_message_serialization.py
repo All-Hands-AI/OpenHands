@@ -114,3 +114,25 @@ def test_message_with_mixed_content_and_vision_disabled():
     assert serialized_message == expected_serialized_message
     # Assert that images exist in the original message
     assert message.contains_image
+
+
+def test_empty_content_with_different_providers():
+    # Test empty content with Bedrock
+    message = Message(
+        role='tool',
+        content=[TextContent(text='')],
+        function_calling_enabled=True,
+        tool_call_id='toolu_01RxAcyKvZAHVKPQrih36y3X',
+        name='workspace_change_summary'
+    )
+    serialized_message = message.serialize_model(provider='bedrock')
+    assert 'content' not in serialized_message
+    assert serialized_message['tool_call_id'] == 'toolu_01RxAcyKvZAHVKPQrih36y3X'
+    assert serialized_message['name'] == 'workspace_change_summary'
+
+    # Test empty content with Anthropic
+    serialized_message = message.serialize_model(provider='anthropic')
+    assert 'content' in serialized_message
+    assert serialized_message['content'] == [{'type': 'text', 'text': ''}]
+    assert serialized_message['tool_call_id'] == 'toolu_01RxAcyKvZAHVKPQrih36y3X'
+    assert serialized_message['name'] == 'workspace_change_summary'

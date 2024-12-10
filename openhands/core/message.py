@@ -68,13 +68,13 @@ class Message(BaseModel):
         return any(isinstance(content, ImageContent) for content in self.content)
 
     @model_serializer
-    def serialize_model(self) -> dict:
+    def serialize_model(self, provider: str | None = None) -> dict:
         # We need two kinds of serializations:
         # - into a single string: for providers that don't support list of content items (e.g. no vision, no tool calls)
         # - into a list of content items: the new APIs of providers with vision/prompt caching/tool calls
         # NOTE: remove this when litellm or providers support the new API
         if self.cache_enabled or self.vision_enabled or self.function_calling_enabled:
-            return self._list_serializer()
+            return self._list_serializer(provider=provider)
         # some providers, like HF and Groq/llama, don't support a list here, but a single string
         return self._string_serializer()
 
@@ -88,7 +88,7 @@ class Message(BaseModel):
         # add tool call keys if we have a tool call or response
         return self._add_tool_call_keys(message_dict)
 
-    def _list_serializer(self) -> dict:
+    def _list_serializer(self, provider: str | None = None) -> dict:
         content: list[dict] = []
         role_tool_with_prompt_caching = False
         for item in self.content:
@@ -105,12 +105,12 @@ class Message(BaseModel):
 
         message_dict: dict = {'content': content, 'role': self.role}
 
-        # pop content if it's empty
-        if not content or (
+        # pop content if it's empty only for Bedrock
+        if provider == 'bedrock' and (not content or (
             len(content) == 1
             and content[0]['type'] == 'text'
             and content[0]['text'] == ''
-        ):
+        )):
             message_dict.pop('content')
 
         if role_tool_with_prompt_caching:
