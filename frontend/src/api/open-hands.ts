@@ -210,7 +210,6 @@ class OpenHands {
   }
 
   static async initSession(params: {
-    token?: string;
     githubToken?: string;
     latestEventId?: number;
     args?: Record<string, unknown>;
@@ -219,7 +218,6 @@ class OpenHands {
     const { data } = await openHands.post<{ token: string; status: string; conversation_id: string }>(
       "/api/conversation",
       {
-        token: params.token,
         github_token: params.githubToken,
         latest_event_id: params.latestEventId ?? -1,
         args: params.args,
