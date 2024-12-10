@@ -131,13 +131,6 @@ def test_empty_content_with_different_providers():
     assert serialized_message['name'] == 'workspace_change_summary'
 
     # Test empty content with Anthropic
-    message = Message(
-        role='tool',
-        content=[TextContent(text='')],
-        function_calling_enabled=True,
-        tool_call_id='toolu_01RxAcyKvZAHVKPQrih36y3X',
-        name='workspace_change_summary',
-    )
     serialized_message = message.serialize_model(provider='anthropic')
     assert 'content' in serialized_message
     assert serialized_message['content'] == [{'type': 'text', 'text': ''}]
