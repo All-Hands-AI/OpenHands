@@ -2,6 +2,10 @@ import { useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
+import {
+  ConversationProvider,
+  useConversation,
+} from "#/context/conversation-context";
 import { Controls } from "#/components/features/controls/controls";
 import { RootState } from "#/store";
 import { clearMessages } from "#/state/chat-slice";
@@ -22,9 +26,10 @@ import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
 
-function App() {
-  const { token, gitHubToken } = useAuth();
+function AppContent() {
+  const { gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
+  const { conversationId } = useConversation();
 
   const dispatch = useDispatch();
   useConversationConfig();
@@ -38,8 +43,8 @@ function App() {
   });
 
   const secrets = React.useMemo(
-    () => [gitHubToken, token].filter((secret) => secret !== null),
-    [gitHubToken, token],
+    () => [gitHubToken].filter((secret) => secret !== null),
+    [gitHubToken],
   );
 
   const Terminal = React.useMemo(
@@ -62,10 +67,9 @@ function App() {
   return (
     <WsClientProvider
       enabled
-      token={token}
       ghToken={gitHubToken}
       selectedRepository={selectedRepository}
-      settings={settings}
+      conversationId={conversationId}
     >
       <EventHandler>
         <div className="flex flex-col h-full gap-3">
@@ -117,6 +121,14 @@ function App() {
         </div>
       </EventHandler>
     </WsClientProvider>
+  );
+}
+
+function App() {
+  return (
+    <ConversationProvider>
+      <AppContent />
+    </ConversationProvider>
   );
 }
 

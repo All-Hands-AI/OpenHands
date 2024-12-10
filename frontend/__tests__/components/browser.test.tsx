@@ -1,10 +1,18 @@
 import { screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import * as router from "react-router";
 import { renderWithProviders } from "../../test-utils";
 import { BrowserPanel } from "#/components/features/browser/browser";
 
 
 describe("Browser", () => {
+  beforeEach(() => {
+    vi.spyOn(router, "useParams").mockReturnValue({ conversationId: "test-conversation-id" });
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
   it("renders a message if no screenshotSrc is provided", () => {
     renderWithProviders(<BrowserPanel />, {
       preloadedState: {

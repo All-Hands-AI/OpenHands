@@ -142,7 +142,7 @@ class SessionManager:
     async def detach_from_conversation(self, conversation: Conversation):
         await conversation.disconnect()
 
-    async def init_or_join_session(self, sid: str, connection_id: str, session_init_data: SessionInitData):
+    async def join_conversation(self, sid: str, connection_id: str):
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self.local_connection_id_to_session_id[connection_id] = sid
 
@@ -157,7 +157,7 @@ class SessionManager:
         if redis_client and await self._is_session_running_in_cluster(sid):
             return EventStream(sid, self.file_store)
 
-        return await self.start_local_session(sid, session_init_data)
+        raise RuntimeError(f'no_connected_session:{connection_id}:{sid}')
 
     async def _is_session_running_in_cluster(self, sid: str) -> bool:
         """As the rest of the cluster if a session is running. Wait a for a short timeout for a reply"""
@@ -211,9 +211,8 @@ class SessionManager:
         finally:
             self._has_remote_connections_flags.pop(sid)
 
-    async def start_local_session(self, sid: str, session_init_data: SessionInitData):
-        # Start a new local session
-        logger.info(f'start_new_local_session:{sid}')
+    async def start_agent_loop(self, sid: str, session_init_data: SessionInitData):
+        logger.info(f'start_agent_loop:{sid}')
         session = Session(
             sid=sid, file_store=self.file_store, config=self.config, sio=self.sio
         )

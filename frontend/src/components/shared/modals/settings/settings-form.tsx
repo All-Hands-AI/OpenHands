@@ -85,7 +85,7 @@ export function SettingsForm({
   const [showWarningModal, setShowWarningModal] = React.useState(false);
 
   const resetOngoingSession = () => {
-    if (location.pathname.startsWith("/app")) {
+    if (location.pathname.startsWith("/conversation/")) {
       endSession();
       onClose();
     }
@@ -127,7 +127,7 @@ export function SettingsForm({
 
     if (!apiKey) {
       setShowWarningModal(true);
-    } else if (location.pathname.startsWith("/app")) {
+    } else if (location.pathname.startsWith("/conversation/")) {
       setConfirmEndSessionModalOpen(true);
     } else {
       handleFormSubmission(formData);
