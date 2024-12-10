@@ -25,7 +25,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-icons": "^5.4.0",
-    "react-use": "^17.5.1"
+    "react-use": "^17.6.0"
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "^3.5.1",
