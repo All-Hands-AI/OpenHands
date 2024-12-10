@@ -10,6 +10,7 @@ import { ProjectMenuDetailsPlaceholder } from "./project-menu-details-placeholde
 import { ProjectMenuDetails } from "./project-menu-details";
 import { downloadWorkspace } from "#/utils/download-workspace";
 import { useWsClient } from "#/context/ws-client-provider";
+import { useConversation } from "#/context/conversation-context";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { ConnectToGitHubModal } from "#/components/shared/modals/connect-to-github-modal";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
@@ -28,6 +29,7 @@ export function ProjectMenuCard({
   githubData,
 }: ProjectMenuCardProps) {
   const { send } = useWsClient();
+  const { conversationId } = useConversation();
   const dispatch = useDispatch();
 
   const [contextMenuIsOpen, setContextMenuIsOpen] = React.useState(false);
@@ -64,7 +66,7 @@ Please push the changes to GitHub and open a pull request.
     posthog.capture("download_workspace_button_clicked");
     try {
       setWorking(true);
-      downloadWorkspace().then(
+      downloadWorkspace(conversationId).then(
         () => setWorking(false),
         () => setWorking(false),
       );

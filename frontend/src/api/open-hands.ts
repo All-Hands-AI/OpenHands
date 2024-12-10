@@ -105,7 +105,7 @@ class OpenHands {
    * @returns Success message or error message
    */
   static async uploadFiles(
-    conversationId: str,
+    conversationId: string,
     files: File[],
   ): Promise<FileUploadSuccessResponse> {
     const url = `/api/conversation/${conversationId}/upload-files`;
@@ -126,7 +126,7 @@ class OpenHands {
    * @returns The stored feedback data
    */
   static async submitFeedback(
-    conversationId: str,
+    conversationId: string,
     feedback: Feedback,
   ): Promise<FeedbackResponse> {
     const url = `/api/conversation/${conversationId}/submit-feedback`;
@@ -152,7 +152,7 @@ class OpenHands {
    * Get the blob of the workspace zip
    * @returns Blob of the workspace zip
    */
-  static async getWorkspaceZip(conversationId: str): Promise<Blob> {
+  static async getWorkspaceZip(conversationId: string): Promise<Blob> {
     const url = `/api/conversation/${conversationId}/zip-directory`;
     const response = await openHands.get(url, {
       responseType: "blob",

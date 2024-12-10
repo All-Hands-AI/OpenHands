@@ -2,6 +2,7 @@ import posthog from "posthog-js";
 import React from "react";
 import { SuggestionItem } from "#/components/features/suggestions/suggestion-item";
 import { useAuth } from "#/context/auth-context";
+import { useConversation } from "#/context/conversation-context";
 import { downloadWorkspace } from "#/utils/download-workspace";
 
 interface ActionSuggestionsProps {
@@ -12,6 +13,7 @@ export function ActionSuggestions({
   onSuggestionsClick,
 }: ActionSuggestionsProps) {
   const { gitHubToken } = useAuth();
+  const { conversationId } = useConversation();
 
   const [isDownloading, setIsDownloading] = React.useState(false);
   const [hasPullRequest, setHasPullRequest] = React.useState(false);
@@ -19,7 +21,7 @@ export function ActionSuggestions({
   const handleDownloadWorkspace = async () => {
     setIsDownloading(true);
     try {
-      await downloadWorkspace();
+      await downloadWorkspace(conversationId);
     } catch (error) {
       // TODO: Handle error
     } finally {

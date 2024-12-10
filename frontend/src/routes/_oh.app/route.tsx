@@ -27,7 +27,7 @@ import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
 
 function AppContent() {
-  const { token, gitHubToken } = useAuth();
+  const { gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
   const { conversationId } = useConversation();
 
@@ -43,8 +43,8 @@ function AppContent() {
   });
 
   const secrets = React.useMemo(
-    () => [gitHubToken, token].filter((secret) => secret !== null),
-    [gitHubToken, token],
+    () => [gitHubToken].filter((secret) => secret !== null),
+    [gitHubToken],
   );
 
   const Terminal = React.useMemo(
@@ -67,7 +67,6 @@ function AppContent() {
   return (
     <WsClientProvider
       enabled
-      token={token}
       ghToken={gitHubToken}
       selectedRepository={selectedRepository}
       conversationId={conversationId}
