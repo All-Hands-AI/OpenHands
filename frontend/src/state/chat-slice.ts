@@ -141,9 +141,9 @@ export const chatSlice = createSlice({
       } else if (observationID === "browse") {
         let content = `**URL:** ${observation.payload.extras.url}\n`;
         if (observation.payload.extras.error) {
-          content += `**Error:**\n\`\`\`\n${observation.payload.extras.error}\`\`\`\n\n`;
+          content += `**Error:**\n${observation.payload.extras.error}\n`;
         }
-        content += `**Output:**\n\`\`\`\n${observation.payload.content}\`\`\``;
+        content += `**Output:**\n${observation.payload.content}`;
         if (content.length > MAX_CONTENT_LENGTH) {
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
         }
