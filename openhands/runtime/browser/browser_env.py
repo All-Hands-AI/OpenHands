@@ -57,7 +57,6 @@ class BrowserEnv:
         retry=tenacity.retry_if_exception_type(BrowserInitException),
     )
     def init_browser(self):
-        logger.debug('Starting browser env...')
         try:
             self.process = multiprocessing.Process(target=self.browser_process)
             self.process.start()
