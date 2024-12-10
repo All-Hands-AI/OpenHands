@@ -211,7 +211,6 @@ class OpenHands {
 
   static async initSession(params: {
     githubToken?: string;
-    latestEventId?: number;
     args?: Record<string, unknown>;
     selectedRepository?: string;
   }): Promise<{ token: string; status: string; conversation_id: string }> {
@@ -219,7 +218,6 @@ class OpenHands {
       "/api/conversation",
       {
         github_token: params.githubToken,
-        latest_event_id: params.latestEventId ?? -1,
         args: params.args,
         selected_repository: params.selectedRepository,
       },

@@ -1,3 +1,5 @@
+from urllib.parse import parse_qs
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     NullAction,
@@ -12,23 +14,18 @@ from openhands.server.shared import session_manager, sio
 
 
 @sio.event
-async def connect(connection_id: str, environ):
+async def connect(connection_id: str, environ, auth):
+    print('connect', auth)
     logger.info(f'sio:connect: {connection_id}')
-
-
-@sio.event
-async def oh_action(connection_id: str, data: dict):
-    logger.info(f'sio:oh_action:{connection_id}')
-    action = data.get('action', '')
-    if action == 'connect':
-        conversation_id = data.pop('conversation_id', None)
-        latest_event_id = int(data.pop('latest_event_id', -1))
-        event_stream = await session_manager.join_conversation(
-            conversation_id, connection_id
-        )
+    query_params = parse_qs(environ.get('QUERY_STRING', ''))
+    latest_event_id = int(query_params.get('latest_event_id', [-1])[0])
+    conversation_id = query_params.get('conversation_id', [None])[0]
+    if not conversation_id:
+        logger.error('No conversation_id in query params')
         return
-
-    await session_manager.send_to_event_stream(connection_id, data)
+    event_stream = await session_manager.join_conversation(
+        conversation_id, connection_id
+    )
 
     agent_state_changed = None
     async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
@@ -47,6 +44,11 @@ async def oh_action(connection_id: str, data: dict):
         await sio.emit('oh_event', event_to_dict(event), to=connection_id)
     if agent_state_changed:
         await sio.emit('oh_event', event_to_dict(agent_state_changed), to=connection_id)
+
+
+@sio.event
+async def oh_action(connection_id: str, data: dict):
+    await session_manager.send_to_event_stream(connection_id, data)
 
 
 @sio.event

@@ -36,21 +36,18 @@ const WsClientContext = React.createContext<UseWsClient>({
 interface WsClientProviderProps {
   enabled: boolean;
   conversationId: string;
-  token: string | null;
   ghToken: string | null;
   selectedRepository: string | null;
 }
 
 export function WsClientProvider({
   enabled,
-  token,
   ghToken,
   selectedRepository,
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
   const sioRef = React.useRef<Socket | null>(null);
-  const tokenRef = React.useRef<string | null>(token);
   const ghTokenRef = React.useRef<string | null>(ghToken);
   const selectedRepositoryRef = React.useRef<string | null>(selectedRepository);
   const disconnectRef = React.useRef<ReturnType<typeof setTimeout> | null>(
@@ -94,9 +91,7 @@ export function WsClientProvider({
       return;
     }
 
-    if (!event.token) {
-      handleAssistantMessage(event);
-    }
+    handleAssistantMessage(event);
   }
 
   function handleDisconnect() {
@@ -108,11 +103,13 @@ export function WsClientProvider({
     setStatus(WsClientProviderStatus.ERROR);
   }
 
-  // Connect websocket
   React.useEffect(() => {
+    if (!conversationId) {
+      throw new Error("No conversation ID provided");
+    }
+
     let sio = sioRef.current;
 
-    // If disabled disconnect any existing websockets...
     if (!enabled) {
       if (sio) {
         sio.disconnect();
@@ -120,33 +117,22 @@ export function WsClientProvider({
       return () => {};
     }
 
-    // Don't connect if we don't have a conversation ID
-    if (!conversationId) {
-      sio?.disconnect();
-      return () => {};
-    }
+    const lastEvent = lastEventRef.current;
+    const query = {
+      latest_event_id: lastEvent?.id ?? -1,
+      conversation_id: conversationId,
+    };
 
-    // If there is no websocket or the tokens/conversation have changed or the current websocket is disconnected,
-    // create a new one
-    if (
-      !sio ||
-      (tokenRef.current && token && token !== tokenRef.current) ||
-      ghToken !== ghTokenRef.current ||
-      conversationId !==
-        sioRef.current?.io?.opts?.path?.split("/conversation/")[1]
-    ) {
-      sio?.disconnect();
+    const baseUrl =
+      import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
 
-      const baseUrl =
-        import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
-      sio = io(baseUrl, {
-        transports: ["websocket"],
-        auth: {
-          token: token || undefined,
-          githubToken: ghToken || undefined,
-        },
-      });
-    }
+    sio = io(baseUrl, {
+      transports: ["websocket"],
+      auth: {
+        githubToken: ghToken || undefined,
+      },
+      query,
+    });
     sio.on("connect", handleConnect);
     sio.on("oh_event", handleMessage);
     sio.on("connect_error", handleError);
@@ -154,7 +140,6 @@ export function WsClientProvider({
     sio.on("disconnect", handleDisconnect);
 
     sioRef.current = sio;
-    tokenRef.current = token;
     ghTokenRef.current = ghToken;
     selectedRepositoryRef.current = selectedRepository;
 
@@ -165,7 +150,7 @@ export function WsClientProvider({
       sio.off("connect_failed", handleError);
       sio.off("disconnect", handleDisconnect);
     };
-  }, [enabled, token, ghToken, selectedRepository]);
+  }, [enabled, ghToken, selectedRepository]);
 
   // Strict mode mounts and unmounts each component twice, so we have to wait in the destructor
   // before actually disconnecting the socket and cancel the operation if the component gets remounted.
