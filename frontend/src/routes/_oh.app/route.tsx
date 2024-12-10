@@ -1,6 +1,6 @@
 import { useDisclosure } from "@nextui-org/react";
 import React from "react";
-import { Outlet } from "react-router";
+import { Outlet, useParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { Controls } from "#/components/features/controls/controls";
 import { RootState } from "#/store";
@@ -26,8 +26,14 @@ import { useConversation } from "#/context/conversation-context";
 function App() {
   const { token, gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
-  const { conversationId } = useConversation();
-  console.log('app', conversationId);
+  const { conversationId: urlConversationId } = useParams();
+  const { conversationId, setConversationId } = useConversation();
+
+  React.useEffect(() => {
+    if (urlConversationId && urlConversationId !== conversationId) {
+      setConversationId(urlConversationId);
+    }
+  }, [urlConversationId, conversationId, setConversationId]);
 
   const dispatch = useDispatch();
   useConversationConfig();
