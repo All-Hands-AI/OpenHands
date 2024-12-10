@@ -93,11 +93,7 @@ export const chatSlice = createSlice({
       } else if (actionID === "read") {
         text = action.payload.args.path;
       } else if (actionID === "browse") {
-        text = `Current URL: ${action.payload.args.url}\n`;
-        if (action.payload.args.error) {
-          text += `Error: ${action.payload.args.error}\n\n`;
-        }
-        text += `${action.payload.args.code}`;
+        text = `\`\`\`\n${action.payload.args.code}\n\`\`\``;
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
@@ -135,17 +131,23 @@ export const chatSlice = createSlice({
         return;
       }
       causeMessage.translationID = translationID;
-      if (
-        observationID === "run" ||
-        observationID === "run_ipython" ||
-        observationID === "browse"
-      ) {
+      if (observationID === "run" || observationID === "run_ipython") {
         let { content } = observation.payload;
         if (content.length > MAX_CONTENT_LENGTH) {
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
         }
         content = `\`\`\`\n${content}\n\`\`\``;
         causeMessage.content = content; // Observation content includes the action
+      } else if (observationID === "browse") {
+        let content = `Current URL: ${observation.payload.args.url}\n`;
+        if (observation.payload.args.error) {
+          content += `Error: ${observation.payload.args.error}\n\n`;
+        }
+        content += observation.payload.content;
+        if (content.length > MAX_CONTENT_LENGTH) {
+          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
+        }
+        causeMessage.content = content;
       }
     },
 
