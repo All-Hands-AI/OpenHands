@@ -38,11 +38,11 @@ const WsClientContext = React.createContext<UseWsClient>({
 
 interface WsClientProviderProps {
   enabled: boolean;
+  conversationId: string;
   token: string | null;
   ghToken: string | null;
   selectedRepository: string | null;
   settings: Settings | null;
-  conversationId: string | null;
 }
 
 export function WsClientProvider({
@@ -116,8 +116,10 @@ export function WsClientProvider({
     setConversationId(null);
   }
 
+  console.log('registering websocket provider');
   // Connect websocket
   React.useEffect(() => {
+    console.log('use effect socket', conversationId);
     let sio = sioRef.current;
 
     // If disabled disconnect any existing websockets...
@@ -146,7 +148,7 @@ export function WsClientProvider({
 
       const baseUrl =
         import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
-      sio = io(`${baseUrl}/conversation/${conversationId}`, {
+      sio = io(baseUrl, {
         transports: ["websocket"],
         auth: {
           token: token || undefined,

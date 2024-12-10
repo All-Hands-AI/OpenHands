@@ -27,6 +27,7 @@ function App() {
   const { token, gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
   const { conversationId } = useConversation();
+  console.log('app', conversationId);
 
   const dispatch = useDispatch();
   useConversationConfig();
