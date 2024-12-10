@@ -90,7 +90,7 @@ class Message(BaseModel):
         # add tool call keys if we have a tool call or response
         return self._add_tool_call_keys(message_dict)
 
-    def _list_serializer(self, provider: str | None = None) -> dict:
+    def _list_serializer(self) -> dict:
         content: list[dict] = []
         role_tool_with_prompt_caching = False
         for item in self.content:
