@@ -142,8 +142,7 @@ class AttachConversationMiddleware:
                     content={'error': 'Invalid token'},
                 )
 
-        print('attach convo for path', request.url.path)
-        request.state.sid = request.url.path.split('/')[3]
+        request.state.sid = request.path_params.get('conversation_id')
 
         if not request.state.sid:
             logger.warning('Invalid token')
