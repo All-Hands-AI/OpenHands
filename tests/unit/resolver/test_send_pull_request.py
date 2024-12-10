@@ -432,6 +432,69 @@ def test_send_pull_request(
         assert post_data['draft'] == (pr_type == 'draft')
 
 
+@patch('subprocess.run')
+@patch('requests.post')
+@patch('requests.get')
+def test_send_pull_request_with_reviewer(
+    mock_get, mock_post, mock_run, mock_github_issue, mock_output_dir
+):
+    repo_path = os.path.join(mock_output_dir, 'repo')
+    reviewer = 'test-reviewer'
+
+    # Mock API responses
+    mock_get.side_effect = [
+        MagicMock(status_code=404),  # Branch doesn't exist
+        MagicMock(json=lambda: {'default_branch': 'main'}),  # Get default branch
+    ]
+
+    # Mock PR creation response
+    mock_post.side_effect = [
+        MagicMock(
+            status_code=201,
+            json=lambda: {
+                'html_url': 'https://github.com/test-owner/test-repo/pull/1',
+                'number': 1,
+            },
+        ),  # PR creation
+        MagicMock(status_code=201),  # Reviewer request
+    ]
+
+    # Mock subprocess.run calls
+    mock_run.side_effect = [
+        MagicMock(returncode=0),  # git checkout -b
+        MagicMock(returncode=0),  # git push
+    ]
+
+    # Call the function with reviewer
+    result = send_pull_request(
+        github_issue=mock_github_issue,
+        github_token='test-token',
+        github_username='test-user',
+        patch_dir=repo_path,
+        pr_type='ready',
+        reviewer=reviewer,
+    )
+
+    # Assert API calls
+    assert mock_get.call_count == 2
+    assert mock_post.call_count == 2
+
+    # Check PR creation
+    pr_create_call = mock_post.call_args_list[0]
+    assert pr_create_call[1]['json']['title'] == 'Fix issue #42: Test Issue'
+
+    # Check reviewer request
+    reviewer_request_call = mock_post.call_args_list[1]
+    assert (
+        reviewer_request_call[0][0]
+        == 'https://api.github.com/repos/test-owner/test-repo/pulls/1/requested_reviewers'
+    )
+    assert reviewer_request_call[1]['json'] == {'reviewers': ['test-reviewer']}
+
+    # Check the result URL
+    assert result == 'https://github.com/test-owner/test-repo/pull/1'
+
+
 @patch('requests.get')
 def test_send_pull_request_invalid_target_branch(
     mock_get, mock_github_issue, mock_output_dir
@@ -764,6 +827,7 @@ def test_process_single_issue(
         fork_owner=None,
         additional_message=resolver_output.success_explanation,
         target_branch=None,
+        reviewer=None,
     )
 
 
@@ -1031,6 +1095,7 @@ def test_main(
     mock_args.llm_base_url = 'mock_url'
     mock_args.llm_api_key = 'mock_key'
     mock_args.target_branch = None
+    mock_args.reviewer = None
     mock_parser.return_value.parse_args.return_value = mock_args
 
     # Setup environment variables
@@ -1065,6 +1130,7 @@ def test_main(
         None,
         False,
         mock_args.target_branch,
+        mock_args.reviewer,
     )
 
     # Other assertions
