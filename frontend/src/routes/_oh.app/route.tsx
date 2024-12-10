@@ -70,11 +70,11 @@ function App() {
       <EventHandler>
         <div className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto gap-3">
-            <Container className="w-[390px] max-h-full relative">
+            <Container className="w-full md:w-[390px] max-h-full relative">
               <ChatInterface />
             </Container>
 
-            <div className="flex flex-col grow gap-3">
+            <div className="hidden md:flex flex-col grow gap-3">
               <Container
                 className="h-2/3"
                 labels={[
