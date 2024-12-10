@@ -20,6 +20,7 @@ export function Messages({
           type={message.type}
           id={message.translationID}
           message={message.content}
+          success={message.success}
         />
       );
     }

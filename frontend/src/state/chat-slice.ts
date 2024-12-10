@@ -1,14 +1,26 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
-import { OpenHandsObservation } from "#/types/core/observations";
+import {
+  OpenHandsObservation,
+  CommandObservation,
+  IPythonObservation,
+  WriteObservation,
+  ReadObservation,
+} from "#/types/core/observations";
 import { OpenHandsAction } from "#/types/core/actions";
+import { OpenHandsEventType } from "#/types/core/base";
 
 type SliceState = { messages: Message[] };
 
 const MAX_CONTENT_LENGTH = 1000;
 
-const HANDLED_ACTIONS = ["run", "run_ipython", "write", "read"];
+const HANDLED_ACTIONS: OpenHandsEventType[] = [
+  "run",
+  "run_ipython",
+  "write",
+  "read",
+];
 
 function getRiskText(risk: ActionSecurityRisk) {
   switch (risk) {
@@ -129,6 +141,28 @@ export const chatSlice = createSlice({
         return;
       }
       causeMessage.translationID = translationID;
+      // Set success property based on observation type
+      if (observationID === "run") {
+        const commandObs = observation.payload as CommandObservation;
+        causeMessage.success = commandObs.extras.exit_code === 0;
+      } else if (observationID === "run_ipython") {
+        // For IPython, we consider it successful if there's no error message
+        const ipythonObs = observation.payload as IPythonObservation;
+        causeMessage.success = !ipythonObs.message
+          .toLowerCase()
+          .includes("error");
+      } else if (observationID === "write") {
+        // For write operations, we consider them successful if there's no error message
+        const writeObs = observation.payload as WriteObservation;
+        causeMessage.success = !writeObs.message
+          .toLowerCase()
+          .includes("error");
+      } else if (observationID === "read") {
+        // For read operations, we consider them successful if there's no error message
+        const readObs = observation.payload as ReadObservation;
+        causeMessage.success = !readObs.message.toLowerCase().includes("error");
+      }
+
       if (observationID === "run" || observationID === "run_ipython") {
         let { content } = observation.payload;
         if (content.length > MAX_CONTENT_LENGTH) {
