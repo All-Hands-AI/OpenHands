@@ -93,7 +93,7 @@ export const chatSlice = createSlice({
       } else if (actionID === "read") {
         text = action.payload.args.path;
       } else if (actionID === "browse") {
-        text = `\`\`\`\n${action.payload.args.code}\n\`\`\``;
+        text = `Browsing ${action.payload.args.url}`;
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
