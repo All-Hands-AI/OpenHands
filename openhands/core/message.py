@@ -107,7 +107,8 @@ class Message(BaseModel):
 
         message_dict: dict = {'content': content, 'role': self.role}
 
-        # pop content if it's empty and stripping is enabled
+        # pop content if it's empty and stripping is enabled (only for Bedrock)
+        # bedrock might be in self.config.model or custom_llm_provider
         if self.strip_empty_content and (
             not content
             or (
@@ -116,6 +117,9 @@ class Message(BaseModel):
                 and content[0]['text'] == ''
             )
         ):
+            # We need to get the model and provider info from the LLM config
+            # This is passed through the strip_empty_content flag which is only set for Bedrock
+            # See openhands/llm/llm.py for examples of how bedrock is detected
             message_dict.pop('content')
 
         if role_tool_with_prompt_caching:

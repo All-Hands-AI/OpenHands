@@ -570,7 +570,10 @@ class LLM(RetryMixin, DebugMixin):
             message.vision_enabled = self.vision_is_active()
             message.function_calling_enabled = self.is_function_calling_active()
             # provider-specific flags
-            message.strip_empty_content = self.config.custom_llm_provider == 'bedrock'
+            message.strip_empty_content = (
+                self.config.custom_llm_provider == 'bedrock'
+                or 'bedrock' in self.config.model.lower()
+            )
 
         # let pydantic handle the serialization
         return [message.model_dump() for message in messages]
