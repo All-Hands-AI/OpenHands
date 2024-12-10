@@ -1,0 +1,24 @@
+2024-12-04 15:16:14,088 - INFO - Using instance container image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.django_s_django-11333. Please make sure this image exists. Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.
+2024-12-04 15:16:14,088 - INFO - Starting evaluation for instance django__django-11333.
+2024-12-04 15:16:15,519 - INFO - [runtime e0448655-0a8a-4cbf-8c5e-2cc3e13df546-1994fa07e0eca936] Building remote runtime with base image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.django_s_django-11333
+2024-12-04 15:16:15,587 - INFO - Building image: us-central1-docker.pkg.dev/evaluation-092424/runtime-api-docker-repo/runtime:oh_v0.15.0_yi0h3radta612e54_tun0f9coqw2bqg0f
+2024-12-04 15:16:16,173 - INFO - [runtime e0448655-0a8a-4cbf-8c5e-2cc3e13df546-1994fa07e0eca936] Waiting for runtime to be alive...
+2024-12-04 15:17:31,028 - WARNING - [runtime e0448655-0a8a-4cbf-8c5e-2cc3e13df546-1994fa07e0eca936] Runtime appears to be paused. Resuming...
+2024-12-04 15:17:31,441 - INFO - [runtime e0448655-0a8a-4cbf-8c5e-2cc3e13df546-1994fa07e0eca936] Runtime is ready.
+2024-12-04 15:17:31,522 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+chmod +x /tmp/eval.sh
+2024-12-04 15:17:31,654 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 15:17:31,798 - INFO - [django__django-11333] >>>>> Applied Patch:
+Checking patch django/urls/resolvers.py...
+Checking patch reproduce.py...
+Applied patch django/urls/resolvers.py cleanly.
+Applied patch reproduce.py cleanly.
+APPLY_PATCH_PASS
+2024-12-04 15:17:31,927 - INFO - [django__django-11333] Evaluation process started with PID: 390
+2024-12-04 15:17:32,099 - INFO - [django__django-11333] [0s] Evaluation still running, waiting...
+2024-12-04 15:18:02,255 - INFO - [django__django-11333] Evaluation process completed after 30.17404294013977 seconds
+2024-12-04 15:18:02,416 - INFO - [django__django-11333] Grading answer...
+2024-12-04 15:18:02,424 - INFO - [django__django-11333] report: {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': True, 'tests_status': {'FAIL_TO_PASS': {'success': ['test_resolver_cache_default__root_urlconf (urlpatterns.test_resolvers.ResolverCacheTests)'], 'failure': []}, 'PASS_TO_PASS': {'success': ['test_str (urlpatterns.test_resolvers.RegexPatternTests)', 'test_str (urlpatterns.test_resolvers.RoutePatternTests)'], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}
+Result for django__django-11333: resolved: True
