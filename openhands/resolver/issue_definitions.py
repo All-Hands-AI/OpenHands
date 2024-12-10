@@ -72,11 +72,13 @@ class IssueHandler(IssueHandlerInterface):
             if not issues:
                 break
 
-            # Sanity check - the response is a list of dictionaries
-            if not isinstance(issues, list) or any(
+            # Handle both list and single-object responses
+            if isinstance(issues, dict):
+                issues = [issues]
+            elif not isinstance(issues, list) or any(
                 [not isinstance(issue, dict) for issue in issues]
             ):
-                raise ValueError('Expected list of dictionaries from Github API.')
+                raise ValueError('Expected list or dictionary from Github API.')
 
             # Add the issues to the final list
             all_issues.extend(issues)
@@ -126,33 +128,37 @@ class IssueHandler(IssueHandlerInterface):
         all_comments = []
 
         # Get comments, page by page
-        while True:
-            response = requests.get(url, headers=headers, params=params)
-            response.raise_for_status()
-            comments = response.json()
+        try:
+            while True:
+                response = requests.get(url, headers=headers, params=params)
+                response.raise_for_status()
+                comments = response.json()
 
-            if not comments:
-                break
+                if not comments:
+                    break
 
-            # If a single comment ID is provided, return only that comment
-            if comment_id:
-                matching_comment = next(
-                    (
-                        comment['body']
-                        for comment in comments
-                        if comment['id'] == comment_id
-                    ),
-                    None,
-                )
-                if matching_comment:
-                    return [matching_comment]
-            else:
-                # Otherwise, return all comments
-                all_comments.extend([comment['body'] for comment in comments])
+                # If a single comment ID is provided, return only that comment
+                if comment_id:
+                    matching_comment = next(
+                        (
+                            comment['body']
+                            for comment in comments
+                            if comment['id'] == comment_id
+                        ),
+                        None,
+                    )
+                    if matching_comment:
+                        return [matching_comment]
+                else:
+                    # Otherwise, return all comments
+                    all_comments.extend([comment['body'] for comment in comments])
 
-            params['page'] += 1
+                params['page'] += 1
 
-        return all_comments if all_comments else None
+            return all_comments if all_comments else None
+        except (requests.exceptions.RequestException, StopIteration):
+            # Return None if we can't get any comments
+            return None
 
     def get_converted_issues(
         self, issue_numbers: list[int] | None = None, comment_id: int | None = None
@@ -166,17 +172,12 @@ class IssueHandler(IssueHandlerInterface):
         Returns:
             List of Github issues.
         """
-
         if not issue_numbers:
             raise ValueError('Unspecified issue number')
 
         all_issues = self._download_issues_from_github()
         logger.info(f'Limiting resolving to issues {issue_numbers}.')
-        all_issues = [
-            issue
-            for issue in all_issues
-            if issue['number'] in issue_numbers and 'pull_request' not in issue
-        ]
+        all_issues = [issue for issue in all_issues if issue['number'] in issue_numbers]
 
         if len(issue_numbers) == 1 and not all_issues:
             raise ValueError(f'Issue {issue_numbers[0]} not found')
@@ -530,6 +531,23 @@ class PRHandler(IssueHandler):
                 response = requests.get(url, headers=headers)
                 response.raise_for_status()
                 issue_data = response.json()
+
+                # Handle both list and single-object responses
+                if isinstance(issue_data, list):
+                    # Find the matching issue in the list
+                    matching_issues = [
+                        i for i in issue_data if i.get('number') == issue_number
+                    ]
+                    if not matching_issues:
+                        logger.warning(f'Issue {issue_number} not found in response')
+                        continue
+                    issue_data = matching_issues[0]
+                elif not isinstance(issue_data, dict):
+                    logger.warning(
+                        f'Unexpected response type for issue {issue_number}: {type(issue_data)}'
+                    )
+                    continue
+
                 issue_body = issue_data.get('body', '')
                 if issue_body:
                     closing_issues.append(issue_body)
@@ -544,57 +562,86 @@ class PRHandler(IssueHandler):
         if not issue_numbers:
             raise ValueError('Unspecified issue numbers')
 
-        all_issues = self._download_issues_from_github()
-        logger.info(f'Limiting resolving to issues {issue_numbers}.')
-        all_issues = [issue for issue in all_issues if issue['number'] in issue_numbers]
-
+        logger.info(f'Fetching issues {issue_numbers}.')
         converted_issues = []
-        for issue in all_issues:
-            # For PRs, body can be None
-            if any([issue.get(key) is None for key in ['number', 'title']]):
-                logger.warning(f'Skipping #{issue} as it is missing number or title.')
-                continue
+        headers = {
+            'Authorization': f'token {self.token}',
+            'Accept': 'application/vnd.github.v3+json',
+        }
 
-            # Handle None body for PRs
-            body = issue.get('body') if issue.get('body') is not None else ''
-            (
-                closing_issues,
-                closing_issues_numbers,
-                review_comments,
-                review_threads,
-                thread_ids,
-            ) = self.__download_pr_metadata(issue['number'], comment_id=comment_id)
-            head_branch = issue['head']['ref']
+        for issue_number in issue_numbers:
+            try:
+                url = f'https://api.github.com/repos/{self.owner}/{self.repo}/issues/{issue_number}'
+                response = requests.get(url, headers=headers)
+                response.raise_for_status()
+                issue = response.json()
 
-            # Get PR thread comments
-            thread_comments = self._get_pr_comments(
-                issue['number'], comment_id=comment_id
-            )
+                # Handle both list and single-object responses
+                if isinstance(issue, list):
+                    # Find the matching issue in the list
+                    matching_issues = [
+                        i for i in issue if i.get('number') == issue_number
+                    ]
+                    if not matching_issues:
+                        logger.warning(f'Issue {issue_number} not found in response')
+                        continue
+                    issue = matching_issues[0]
+                elif not isinstance(issue, dict):
+                    logger.warning(
+                        f'Unexpected response type for issue {issue_number}: {type(issue)}'
+                    )
+                    continue
 
-            closing_issues = self.__get_context_from_external_issues_references(
-                closing_issues,
-                closing_issues_numbers,
-                body,
-                review_comments,
-                review_threads,
-                thread_comments,
-            )
+                # For PRs, body can be None
+                if any([issue.get(key) is None for key in ['number', 'title']]):
+                    logger.warning(
+                        f'Skipping #{issue} as it is missing number or title.'
+                    )
+                    continue
 
-            issue_details = GithubIssue(
-                owner=self.owner,
-                repo=self.repo,
-                number=issue['number'],
-                title=issue['title'],
-                body=body,
-                closing_issues=closing_issues,
-                review_comments=review_comments,
-                review_threads=review_threads,
-                thread_ids=thread_ids,
-                head_branch=head_branch,
-                thread_comments=thread_comments,
-            )
+                # Handle None body for PRs
+                body = issue.get('body') if issue.get('body') is not None else ''
+                (
+                    closing_issues,
+                    closing_issues_numbers,
+                    review_comments,
+                    review_threads,
+                    thread_ids,
+                ) = self.__download_pr_metadata(issue['number'], comment_id=comment_id)
+                head_branch = issue['head']['ref']
 
-            converted_issues.append(issue_details)
+                # Get PR thread comments
+                thread_comments = self._get_pr_comments(
+                    issue['number'], comment_id=comment_id
+                )
+
+                # Extract issue references from PR body and review comments
+                closing_issues = self.__get_context_from_external_issues_references(
+                    closing_issues,
+                    closing_issues_numbers,
+                    body,
+                    review_comments,
+                    review_threads,
+                    thread_comments,
+                )
+
+                issue_details = GithubIssue(
+                    owner=self.owner,
+                    repo=self.repo,
+                    number=issue['number'],
+                    title=issue['title'],
+                    body=body,
+                    closing_issues=closing_issues,
+                    review_comments=review_comments,
+                    review_threads=review_threads,
+                    thread_ids=thread_ids,
+                    head_branch=head_branch,
+                    thread_comments=thread_comments,
+                )
+
+                converted_issues.append(issue_details)
+            except requests.exceptions.RequestException as e:
+                logger.warning(f'Failed to fetch issue {issue_number}: {str(e)}')
 
         return converted_issues
 
