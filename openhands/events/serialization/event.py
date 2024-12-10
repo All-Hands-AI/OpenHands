@@ -82,9 +82,17 @@ def event_to_dict(event: 'Event') -> dict:
             d['timeout'] = event.timeout
     elif 'observation' in d:
         d['content'] = props.pop('content', '')
+        # For CmdOutputObservation, command and command_id should be in extras only
+        if hasattr(event, 'command'):
+            props['command'] = event.command
+        if hasattr(event, 'command_id'):
+            props['command_id'] = event.command_id
         d['extras'] = props
-        if hasattr(event, 'success'):
-            d['success'] = event.success
+        # Then copy them to root level if they exist in extras
+        if 'command' in props:
+            d['command'] = props['command']
+        if 'command_id' in props:
+            d['command_id'] = props['command_id']
     else:
         raise ValueError('Event must be either action or observation')
     return d
