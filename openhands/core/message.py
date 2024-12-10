@@ -70,12 +70,14 @@ class Message(BaseModel):
         return any(isinstance(content, ImageContent) for content in self.content)
 
     @model_serializer
-    def serialize_model(self) -> dict:
+    def serialize_model(self, provider: str | None = None) -> dict:
         # We need two kinds of serializations:
         # - into a single string: for providers that don't support list of content items (e.g. no vision, no tool calls)
         # - into a list of content items: the new APIs of providers with vision/prompt caching/tool calls
         # NOTE: remove this when litellm or providers support the new API
         if self.cache_enabled or self.vision_enabled or self.function_calling_enabled:
+            # Only strip empty content for Bedrock
+            self.strip_empty_content = provider == 'bedrock'
             return self._list_serializer()
         # some providers, like HF and Groq/llama, don't support a list here, but a single string
         return self._string_serializer()
