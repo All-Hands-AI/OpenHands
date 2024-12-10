@@ -107,8 +107,8 @@ class Message(BaseModel):
 
         message_dict: dict = {'content': content, 'role': self.role}
 
-        # pop content if it's empty and provider is bedrock
-        if provider == 'bedrock' and (
+        # pop content if it's empty and stripping is enabled
+        if self.strip_empty_content and (
             not content
             or (
                 len(content) == 1
