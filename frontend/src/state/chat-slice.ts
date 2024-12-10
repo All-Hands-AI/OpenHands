@@ -139,9 +139,9 @@ export const chatSlice = createSlice({
         content = `\`\`\`\n${content}\n\`\`\``;
         causeMessage.content = content; // Observation content includes the action
       } else if (observationID === "browse") {
-        let content = `Current URL: ${observation.payload.args.url}\n`;
-        if (observation.payload.args.error) {
-          content += `Error: ${observation.payload.args.error}\n\n`;
+        let content = `Current URL: ${observation.payload.extras.url}\n`;
+        if (observation.payload.extras.error) {
+          content += `Error: ${observation.payload.extras.error}\n\n`;
         }
         content += observation.payload.content;
         if (content.length > MAX_CONTENT_LENGTH) {
