@@ -318,7 +318,7 @@ class AgentController:
             await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
     def _reset(self) -> None:
-        """Resets the agent's task."""
+        """Resets the agent controller"""
         self.almost_stuck = 0
         self._pending_action = None
         self.agent.reset()
