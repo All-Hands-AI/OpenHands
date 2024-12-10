@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Request, status
+import uuid
+
+from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from openhands.server.auth import get_sid_from_token
-from openhands.server.listen_socket import init_connection
 from openhands.server.session.session_init_data import SessionInitData
-from openhands.server.shared import config
+from openhands.server.shared import session_manager
 
 app = APIRouter(prefix='/api')
 
@@ -30,28 +30,6 @@ async def init_session(request: Request, data: InitSessionRequest):
     session_init_data = SessionInitData(**kwargs)
     session_init_data.github_token = data.github_token
     session_init_data.selected_repository = data.selected_repository
-
-    # Generate a temporary connection ID for initialization
-    connection_id = f"temp_{data.token or ''}"
-
-    try:
-        token = await init_connection(
-            connection_id=connection_id,
-            token=data.token,
-            gh_token=data.github_token,
-            session_init_data=session_init_data,
-            latest_event_id=data.latest_event_id,
-            return_token_only=True,
-        )
-        # Get session ID from token
-        sid = get_sid_from_token(token, config.jwt_secret)
-        return JSONResponse(
-            content={'token': token, 'status': 'ok', 'conversation_id': sid}
-        )
-    except RuntimeError as e:
-        if str(e) == str(status.WS_1008_POLICY_VIOLATION):
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'error': 'Authentication failed'},
-            )
-        raise
+    conversation_id = uuid.uuid4().hex
+    await session_manager.start_agent_loop(conversation_id, session_init_data)
+    return JSONResponse(content={'status': 'ok', 'conversation_id': conversation_id})
