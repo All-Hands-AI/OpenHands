@@ -179,18 +179,33 @@ def test_llm_empty_content_stripping():
     bedrock_config = LLMConfig(model='bedrock/anthropic.claude-3')
     bedrock_llm = LLM(config=bedrock_config)
 
-    message = Message(role='assistant', content=[TextContent(text='')])
+    # Test with list serialization (vision enabled)
+    message = Message(
+        role='assistant',
+        content=[TextContent(text='')],
+        vision_enabled=True,  # Enable vision to force list serialization
+    )
 
-    # Format message using the LLM - this should set strip_empty_content=True
+    # Format message for the LLM - this should set strip_empty_content=True
     formatted_messages = bedrock_llm.format_messages_for_llm(message)
     assert len(formatted_messages) == 1
     assert 'content' not in formatted_messages[0]
 
-    # For a non-Bedrock model, we should not strip empty content
+    # Test with string serialization (no flags enabled)
+    message = Message(role='assistant', content=[TextContent(text='')])
+
+    formatted_messages = bedrock_llm.format_messages_for_llm(message)
+    assert len(formatted_messages) == 1
+    assert 'content' in formatted_messages[0]
+    assert formatted_messages[0]['content'] == ''
+
+    # Test non-Bedrock model with list serialization
     regular_config = LLMConfig(model='claude-3-sonnet')
     regular_llm = LLM(config=regular_config)
 
-    message = Message(role='assistant', content=[TextContent(text='')])
+    message = Message(
+        role='assistant', content=[TextContent(text='')], vision_enabled=True
+    )
 
     # Format message using the LLM - this should preserve empty content
     formatted_messages = regular_llm.format_messages_for_llm(message)
@@ -200,11 +215,13 @@ def test_llm_empty_content_stripping():
         {'type': 'text', 'text': '', 'cache_prompt': False}
     ]
 
-    # Test with Bedrock as custom provider attribute
+    # Test Bedrock custom provider with list serialization
     bedrock_provider_config = LLMConfig(model='claude-3', custom_llm_provider='bedrock')
     bedrock_provider_llm = LLM(config=bedrock_provider_config)
 
-    message = Message(role='assistant', content=[TextContent(text='')])
+    message = Message(
+        role='assistant', content=[TextContent(text='')], vision_enabled=True
+    )
 
     # Format message using the LLM - this should set strip_empty_content=True
     formatted_messages = bedrock_provider_llm.format_messages_for_llm(message)
