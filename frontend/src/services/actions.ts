@@ -22,11 +22,13 @@ const messageActions = {
     if (!message.args.thought && message.message) {
       store.dispatch(addAssistantMessage(message.message));
       if (message.args.url && message.args.screenshot) {
-        store.dispatch(addAssistantMessage({
-          type: "browser_output",
-          url: message.args.url,
-          screenshot: message.args.screenshot,
-        }));
+        store.dispatch(
+          addAssistantMessage({
+            type: "browser_output",
+            url: message.args.url,
+            screenshot: message.args.screenshot,
+          }),
+        );
       }
     }
   },
@@ -34,11 +36,13 @@ const messageActions = {
     if (!message.args.thought && message.message) {
       store.dispatch(addAssistantMessage(message.message));
       if (message.args.url && message.args.screenshot) {
-        store.dispatch(addAssistantMessage({
-          type: "browser_output",
-          url: message.args.url,
-          screenshot: message.args.screenshot,
-        }));
+        store.dispatch(
+          addAssistantMessage({
+            type: "browser_output",
+            url: message.args.url,
+            screenshot: message.args.screenshot,
+          }),
+        );
       }
     }
   },

@@ -9,11 +9,13 @@ import { CollapsibleBrowserOutput } from "../browser/collapsible-browser-output"
 
 interface ChatMessageProps {
   type: "user" | "assistant";
-  message: string | {
-    type: "browser_output";
-    url: string;
-    screenshot: string;
-  };
+  message:
+    | string
+    | {
+        type: "browser_output";
+        url: string;
+        screenshot: string;
+      };
 }
 
 export function ChatMessage({
@@ -25,7 +27,9 @@ export function ChatMessage({
   const [isCopy, setIsCopy] = React.useState(false);
 
   const handleCopyToClipboard = async () => {
-    await navigator.clipboard.writeText(typeof message === "string" ? message : message.url);
+    await navigator.clipboard.writeText(
+      typeof message === "string" ? message : message.url,
+    );
     setIsCopy(true);
   };
 
@@ -61,7 +65,7 @@ export function ChatMessage({
         onClick={handleCopyToClipboard}
         mode={isCopy ? "copied" : "copy"}
       />
-      {typeof message === "string" ? (
+      {typeof message === "string" && (
         <Markdown
           className="text-sm overflow-auto"
           components={{
@@ -73,12 +77,13 @@ export function ChatMessage({
         >
           {message}
         </Markdown>
-      ) : message.type === "browser_output" ? (
+      )}
+      {typeof message === "object" && message.type === "browser_output" && (
         <CollapsibleBrowserOutput
           url={message.url}
           screenshotSrc={message.screenshot}
         />
-      ) : null}
+      )}
       {children}
     </article>
   );
