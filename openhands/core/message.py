@@ -70,7 +70,7 @@ class Message(BaseModel):
         return any(isinstance(content, ImageContent) for content in self.content)
 
     @model_serializer
-    def serialize_model(self, provider: str | None = None) -> dict:
+    def serialize_model(self) -> dict:
         # We need two kinds of serializations:
         # - into a single string: for providers that don't support list of content items (e.g. no vision, no tool calls)
         # - into a list of content items: the new APIs of providers with vision/prompt caching/tool calls
