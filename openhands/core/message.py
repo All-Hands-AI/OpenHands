@@ -57,6 +57,8 @@ class Message(BaseModel):
     vision_enabled: bool = False
     # function calling
     function_calling_enabled: bool = False
+    # provider-specific flags
+    strip_empty_content: bool = False
     # - tool calls (from LLM)
     tool_calls: list[ChatCompletionMessageToolCall] | None = None
     # - tool execution result (to LLM)
@@ -105,8 +107,8 @@ class Message(BaseModel):
 
         message_dict: dict = {'content': content, 'role': self.role}
 
-        # pop content if it's empty only for Bedrock
-        if provider == 'bedrock' and (
+        # pop content if it's empty and stripping is enabled
+        if self.strip_empty_content and (
             not content
             or (
                 len(content) == 1
