@@ -12,7 +12,6 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.server.auth import get_sid_from_token
 from openhands.server.github_utils import UserVerifier
 from openhands.server.shared import config, session_manager
 
@@ -143,19 +142,10 @@ class AttachConversationMiddleware:
                     content={'error': 'Invalid token'},
                 )
 
-        if not request.headers.get('Authorization'):
-            logger.warning('Missing Authorization header')
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'error': 'Missing Authorization header'},
-            )
+        print('attach convo for path', request.url.path)
+        request.state.sid = request.url.path.split('/')[3]
 
-        auth_token = request.headers.get('Authorization')
-        if 'Bearer' in auth_token:
-            auth_token = auth_token.split('Bearer')[1].strip()
-
-        request.state.sid = get_sid_from_token(auth_token, config.jwt_secret)
-        if request.state.sid == '':
+        if not request.state.sid:
             logger.warning('Invalid token')
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
