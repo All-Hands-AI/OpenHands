@@ -5,10 +5,15 @@ import { code } from "../markdown/code";
 import { cn } from "#/utils/utils";
 import { ul, ol } from "../markdown/list";
 import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
+import { CollapsibleBrowserOutput } from "../browser/collapsible-browser-output";
 
 interface ChatMessageProps {
   type: "user" | "assistant";
-  message: string;
+  message: string | {
+    type: "browser_output";
+    url: string;
+    screenshot: string;
+  };
 }
 
 export function ChatMessage({
@@ -20,7 +25,7 @@ export function ChatMessage({
   const [isCopy, setIsCopy] = React.useState(false);
 
   const handleCopyToClipboard = async () => {
-    await navigator.clipboard.writeText(message);
+    await navigator.clipboard.writeText(typeof message === "string" ? message : message.url);
     setIsCopy(true);
   };
 
@@ -56,17 +61,24 @@ export function ChatMessage({
         onClick={handleCopyToClipboard}
         mode={isCopy ? "copied" : "copy"}
       />
-      <Markdown
-        className="text-sm overflow-auto"
-        components={{
-          code,
-          ul,
-          ol,
-        }}
-        remarkPlugins={[remarkGfm]}
-      >
-        {message}
-      </Markdown>
+      {typeof message === "string" ? (
+        <Markdown
+          className="text-sm overflow-auto"
+          components={{
+            code,
+            ul,
+            ol,
+          }}
+          remarkPlugins={[remarkGfm]}
+        >
+          {message}
+        </Markdown>
+      ) : message.type === "browser_output" ? (
+        <CollapsibleBrowserOutput
+          url={message.url}
+          screenshotSrc={message.screenshot}
+        />
+      ) : null}
       {children}
     </article>
   );

@@ -19,17 +19,27 @@ import { handleObservationMessage } from "./observations";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
-    if (message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
-    } else {
+    if (!message.args.thought && message.message) {
       store.dispatch(addAssistantMessage(message.message));
+      if (message.args.url && message.args.screenshot) {
+        store.dispatch(addAssistantMessage({
+          type: "browser_output",
+          url: message.args.url,
+          screenshot: message.args.screenshot,
+        }));
+      }
     }
   },
   [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
-    if (message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
-    } else {
+    if (!message.args.thought && message.message) {
       store.dispatch(addAssistantMessage(message.message));
+      if (message.args.url && message.args.screenshot) {
+        store.dispatch(addAssistantMessage({
+          type: "browser_output",
+          url: message.args.url,
+          screenshot: message.args.screenshot,
+        }));
+      }
     }
   },
   [ActionType.WRITE]: (message: ActionMessage) => {
