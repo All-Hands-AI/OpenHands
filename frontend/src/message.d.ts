@@ -3,7 +3,8 @@ type Message = {
   content: string;
   timestamp: string;
   imageUrls?: string[];
-  type?: "thought" | "error" | "action";
+  type?: "thought" | "error" | "action" | "browser_output";
+  screenshot?: string;
   pending?: boolean;
   translationID?: string;
   eventID?: number;

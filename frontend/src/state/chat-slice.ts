@@ -61,15 +61,35 @@ export const chatSlice = createSlice({
       state.messages.push(message);
     },
 
-    addAssistantMessage(state, action: PayloadAction<string>) {
-      const message: Message = {
-        type: "thought",
-        sender: "assistant",
-        content: action.payload,
-        imageUrls: [],
-        timestamp: new Date().toISOString(),
-        pending: false,
-      };
+    addAssistantMessage(
+      state,
+      action: PayloadAction<
+        | string
+        | {
+            type: "browser_output";
+            url: string;
+            screenshot: string;
+          }
+      >,
+    ) {
+      const message: Message = typeof action.payload === "string"
+        ? {
+            type: "thought",
+            sender: "assistant",
+            content: action.payload,
+            imageUrls: [],
+            timestamp: new Date().toISOString(),
+            pending: false,
+          }
+        : {
+            type: "browser_output",
+            sender: "assistant",
+            content: action.payload.url,
+            screenshot: action.payload.screenshot,
+            imageUrls: [],
+            timestamp: new Date().toISOString(),
+            pending: false,
+          };
       state.messages.push(message);
     },
 
