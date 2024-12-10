@@ -16,9 +16,6 @@ from openhands.server.middleware import (
     RateLimitMiddleware,
 )
 from openhands.server.routes.auth import app as auth_api_router
-from openhands.server.routes.conversation import (
-    app as conversation_api_router,
-)
 from openhands.server.routes.feedback import app as feedback_api_router
 from openhands.server.routes.files import app as files_api_router
 from openhands.server.routes.new_conversation import app as new_conversation_api_router
@@ -56,15 +53,4 @@ app.include_router(new_conversation_api_router)
 AttachConversationMiddlewareImpl = get_impl(
     AttachConversationMiddleware, config.attach_session_middleware_class
 )
-app.middleware('http')(
-    AttachConversationMiddlewareImpl(app, target_router=files_api_router)
-)
-app.middleware('http')(
-    AttachConversationMiddlewareImpl(app, target_router=conversation_api_router)
-)
-app.middleware('http')(
-    AttachConversationMiddlewareImpl(app, target_router=security_api_router)
-)
-app.middleware('http')(
-    AttachConversationMiddlewareImpl(app, target_router=feedback_api_router)
-)
+app.middleware('http')(AttachConversationMiddlewareImpl(app))

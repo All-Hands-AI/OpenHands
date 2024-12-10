@@ -5,7 +5,7 @@ from typing import Callable
 from urllib.parse import urlparse
 
 import jwt
-from fastapi import APIRouter, Request, status
+from fastapi import Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -109,21 +109,20 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 
 class AttachConversationMiddleware:
-    def __init__(self, app, target_router: APIRouter):
+    def __init__(self, app):
         self.app = app
-        self.target_router = target_router
-        self.target_paths = {route.path for route in target_router.routes}
 
     async def __call__(self, request: Request, call_next: Callable):
-        do_attach = False
-        if request.url.path in self.target_paths:
-            do_attach = True
-
-        if request.method == 'OPTIONS':
-            do_attach = False
-
-        if not do_attach:
+        conversation_id = None
+        if request.url.path.startswith('/api/conversation'):
+            # FIXME: we should be able to use path_params
+            path_parts = request.url.path.split('/')
+            if len(path_parts) > 3:
+                conversation_id = request.url.path.split('/')[3]
+        if not conversation_id:
             return await call_next(request)
+
+        request.state.sid = conversation_id
 
         user_verifier = UserVerifier()
         if user_verifier.is_active():
@@ -141,15 +140,6 @@ class AttachConversationMiddleware:
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     content={'error': 'Invalid token'},
                 )
-
-        request.state.sid = request.path_params.get('conversation_id')
-
-        if not request.state.sid:
-            logger.warning('Invalid token')
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={'error': 'Invalid token'},
-            )
 
         request.state.conversation = await session_manager.attach_to_conversation(
             request.state.sid
