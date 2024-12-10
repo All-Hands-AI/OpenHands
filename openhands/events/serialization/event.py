@@ -93,6 +93,9 @@ def event_to_dict(event: 'Event') -> dict:
             d['command'] = props['command']
         if 'command_id' in props:
             d['command_id'] = props['command_id']
+        # Include success field for CmdOutputObservation
+        if hasattr(event, 'success'):
+            d['success'] = event.success
     else:
         raise ValueError('Event must be either action or observation')
     return d
