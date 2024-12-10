@@ -76,7 +76,7 @@ class Message(BaseModel):
         # - into a list of content items: the new APIs of providers with vision/prompt caching/tool calls
         # NOTE: remove this when litellm or providers support the new API
         if self.cache_enabled or self.vision_enabled or self.function_calling_enabled:
-            return self._list_serializer(provider=provider)
+            return self._list_serializer()
         # some providers, like HF and Groq/llama, don't support a list here, but a single string
         return self._string_serializer()
 
