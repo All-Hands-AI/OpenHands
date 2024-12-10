@@ -83,11 +83,11 @@ export default function MainApp() {
   return (
     <div
       data-testid="root-layout"
-      className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3"
+      className="bg-root-primary p-3 h-screen md:min-w-[1024px] overflow-x-hidden flex flex-col md:flex-row gap-3"
     >
       <Sidebar />
 
-      <div className="h-full w-full relative">
+      <div className="h-[calc(100%-50px)] md:h-full w-full relative">
         <Outlet />
       </div>
 

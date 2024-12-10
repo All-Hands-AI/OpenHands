@@ -16,6 +16,10 @@ on:
         type: string
         default: "main"
         description: "Target branch to pull and create PR against"
+      LLM_MODEL:
+        required: false
+        type: string
+        default: "anthropic/claude-3-5-sonnet-20241022"
       base_container_image:
         required: false
         type: string
@@ -23,15 +27,15 @@ on:
         description: "Custom sandbox env"
     secrets:
       LLM_MODEL:
-        required: true
+        required: false
       LLM_API_KEY:
         required: true
       LLM_BASE_URL:
         required: false
       PAT_TOKEN:
-        required: true
+        required: false
       PAT_USERNAME:
-        required: true
+        required: false
 
   issues:
     types: [labeled]
@@ -106,19 +110,33 @@ jobs:
 
       - name: Check required environment variables
         env:
-          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL || inputs.LLM_MODEL }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
           PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
           PAT_USERNAME: ${{ secrets.PAT_USERNAME }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          required_vars=("LLM_MODEL" "LLM_API_KEY" "PAT_TOKEN" "PAT_USERNAME")
+          required_vars=("LLM_MODEL" "LLM_API_KEY")
           for var in "${required_vars[@]}"; do
             if [ -z "${!var}" ]; then
               echo "Error: Required environment variable $var is not set."
               exit 1
             fi
           done
+
+          # Check optional variables and warn about fallbacks
+          if [ -z "$PAT_TOKEN" ]; then
+            echo "Warning: PAT_TOKEN is not set, falling back to GITHUB_TOKEN"
+          fi
+
+          if [ -z "$LLM_BASE_URL" ]; then
+            echo "Warning: LLM_BASE_URL is not set, will use default API endpoint"
+          fi
+
+          if [ -z "$PAT_USERNAME" ]; then
+            echo "Warning: PAT_USERNAME is not set, will use openhands-agent"
+          fi
 
       - name: Set environment variables
         run: |
@@ -143,7 +161,7 @@ jobs:
           fi
 
           echo "MAX_ITERATIONS=${{ inputs.max_iterations || 50 }}" >> $GITHUB_ENV
-          echo "SANDBOX_ENV_GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
+          echo "SANDBOX_ENV_GITHUB_TOKEN=${{ secrets.PAT_TOKEN || github.token }}" >> $GITHUB_ENV
           echo "SANDBOX_ENV_BASE_CONTAINER_IMAGE=${{ inputs.base_container_image }}" >> $GITHUB_ENV
 
           # Set branch variables
@@ -152,7 +170,7 @@ jobs:
       - name: Comment on issue with start message
         uses: actions/github-script@v7
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
+          github-token: ${{ secrets.PAT_TOKEN || github.token }}
           script: |
             const issueType = process.env.ISSUE_TYPE;
             github.rest.issues.createComment({
@@ -177,9 +195,9 @@ jobs:
 
       - name: Attempt to resolve issue
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_USERNAME: ${{ secrets.PAT_USERNAME }}
-          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || github.token }}
+          GITHUB_USERNAME: ${{ secrets.PAT_USERNAME || 'openhands-agent' }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL || inputs.LLM_MODEL }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
           PYTHONPATH: ""
@@ -189,7 +207,7 @@ jobs:
             --issue-number ${{ env.ISSUE_NUMBER }} \
             --issue-type ${{ env.ISSUE_TYPE }} \
             --max-iterations ${{ env.MAX_ITERATIONS }} \
-            --comment-id ${{ env.COMMENT_ID }} \
+            --comment-id ${{ env.COMMENT_ID }}
 
       - name: Check resolution result
         id: check_result
@@ -211,9 +229,9 @@ jobs:
       - name: Create draft PR or push branch
         if: always() # Create PR or branch even if the previous steps fail
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-          GITHUB_USERNAME: ${{ secrets.PAT_USERNAME }}
-          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || github.token }}
+          GITHUB_USERNAME: ${{ secrets.PAT_USERNAME || 'openhands-agent' }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL || inputs.LLM_MODEL }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
           PYTHONPATH: ""
@@ -221,7 +239,8 @@ jobs:
           if [ "${{ steps.check_result.outputs.RESOLUTION_SUCCESS }}" == "true" ]; then
             cd /tmp && python -m openhands.resolver.send_pull_request \
               --issue-number ${{ env.ISSUE_NUMBER }} \
-              --pr-type draft | tee pr_result.txt && \
+              --pr-type draft \
+              --reviewer ${{ github.actor }} | tee pr_result.txt && \
               grep "draft created" pr_result.txt | sed 's/.*\///g' > pr_number.txt
           else
             cd /tmp && python -m openhands.resolver.send_pull_request \
@@ -235,7 +254,7 @@ jobs:
         uses: actions/github-script@v7
         if: always() # Comment on issue even if the previous steps fail
         with:
-          github-token: ${{secrets.GITHUB_TOKEN}}
+          github-token: ${{ secrets.PAT_TOKEN || github.token }}
           script: |
             const fs = require('fs');
             const issueNumber = ${{ env.ISSUE_NUMBER }};

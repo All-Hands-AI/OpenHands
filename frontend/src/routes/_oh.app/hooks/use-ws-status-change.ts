@@ -6,7 +6,6 @@ import {
   WsClientProviderStatus,
 } from "#/context/ws-client-provider";
 import { createChatMessage } from "#/services/chat-service";
-import { getCloneRepoCommand } from "#/services/terminal-service";
 import { setCurrentAgentState } from "#/state/agent-slice";
 import { addUserMessage } from "#/state/chat-slice";
 import {
@@ -37,11 +36,6 @@ export const useWSStatusChange = () => {
     send(createChatMessage(query, base64Files, timestamp));
   };
 
-  const dispatchCloneRepoCommand = (ghToken: string, repository: string) => {
-    send(getCloneRepoCommand(ghToken, repository));
-    dispatch(clearSelectedRepository());
-  };
-
   const dispatchInitialQuery = (query: string, additionalInfo: string) => {
     if (additionalInfo) {
       sendInitialQuery(`${query}\n\n[${additionalInfo}]`, files);
@@ -57,8 +51,7 @@ export const useWSStatusChange = () => {
     let additionalInfo = "";
 
     if (gitHubToken && selectedRepository) {
-      dispatchCloneRepoCommand(gitHubToken, selectedRepository);
-      additionalInfo = `Repository ${selectedRepository} has been cloned to /workspace. Please check the /workspace for files.`;
+      dispatch(clearSelectedRepository());
     } else if (importedProjectZip) {
       // if there's an uploaded project zip, add it to the chat
       additionalInfo =
