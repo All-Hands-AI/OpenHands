@@ -66,7 +66,9 @@ def test_msg(temp_dir: str):
         [],  # First check
         [],  # Second check
         [],  # Third check
-        ['PolicyViolation(Disallow ABC [risk=medium], ranges=[<2 ranges>])'],  # Fourth check
+        [
+            'PolicyViolation(Disallow ABC [risk=medium], ranges=[<2 ranges>])'
+        ],  # Fourth check
     ]
 
     with (
@@ -111,7 +113,9 @@ def test_cmd(cmd, expected_risk, temp_dir: str):
     mock_requests.post().json.side_effect = [
         {'monitor_id': 'mock-monitor-id'},
         [],  # First check
-        ['PolicyViolation(Disallow rm -rf [risk=medium], ranges=[<2 ranges>])'] if expected_risk == ActionSecurityRisk.MEDIUM else [],  # Second check
+        ['PolicyViolation(Disallow rm -rf [risk=medium], ranges=[<2 ranges>])']
+        if expected_risk == ActionSecurityRisk.MEDIUM
+        else [],  # Second check
     ]
 
     with (
@@ -157,7 +161,9 @@ def test_leak_secrets(code, expected_risk, temp_dir: str):
     mock_requests.post().json.side_effect = [
         {'monitor_id': 'mock-monitor-id'},
         [],  # First check
-        ['PolicyViolation(Disallow writing secrets [risk=medium], ranges=[<2 ranges>])'] if expected_risk == ActionSecurityRisk.MEDIUM else [],  # Second check
+        ['PolicyViolation(Disallow writing secrets [risk=medium], ranges=[<2 ranges>])']
+        if expected_risk == ActionSecurityRisk.MEDIUM
+        else [],  # Second check
         [],  # Third check
     ]
 
