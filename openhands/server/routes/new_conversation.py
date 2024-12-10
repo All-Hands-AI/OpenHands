@@ -2,10 +2,9 @@ from fastapi import APIRouter, Request, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from openhands.core.logger import openhands_logger as logger
+from openhands.server.auth import get_sid_from_token
 from openhands.server.listen_socket import init_connection
 from openhands.server.session.session_init_data import SessionInitData
-from openhands.server.auth import get_sid_from_token
 from openhands.server.shared import config
 
 app = APIRouter(prefix='/api')
@@ -22,7 +21,7 @@ class InitSessionRequest(BaseModel):
 @app.post('/conversation')
 async def init_session(request: Request, data: InitSessionRequest):
     """Initialize a new session or join an existing one.
-    
+
     This endpoint replaces the WebSocket INIT event with a REST API call.
     After successful initialization, the client should connect to the WebSocket
     using the returned token.
@@ -34,7 +33,7 @@ async def init_session(request: Request, data: InitSessionRequest):
 
     # Generate a temporary connection ID for initialization
     connection_id = f"temp_{data.token or ''}"
-    
+
     try:
         token = await init_connection(
             connection_id=connection_id,
@@ -42,15 +41,17 @@ async def init_session(request: Request, data: InitSessionRequest):
             gh_token=data.github_token,
             session_init_data=session_init_data,
             latest_event_id=data.latest_event_id,
-            return_token_only=True
+            return_token_only=True,
         )
         # Get session ID from token
         sid = get_sid_from_token(token, config.jwt_secret)
-        return JSONResponse(content={"token": token, "status": "ok", "conversation_id": sid})
+        return JSONResponse(
+            content={'token': token, 'status': 'ok', 'conversation_id': sid}
+        )
     except RuntimeError as e:
         if str(e) == str(status.WS_1008_POLICY_VIOLATION):
             return JSONResponse(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                content={"error": "Authentication failed"}
+                content={'error': 'Authentication failed'},
             )
         raise

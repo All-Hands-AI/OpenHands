@@ -4,11 +4,10 @@ from fastapi.responses import JSONResponse
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.base import Runtime
 
-app = APIRouter(prefix='/api')
-protected_router = APIRouter(prefix='/api/conversation/{convo_id}')
+app = APIRouter(prefix='/api/conversation/{convo_id}')
 
 
-@protected_router.get('/config')
+@app.get('/config')
 async def get_remote_runtime_config(request: Request):
     """Retrieve the runtime configuration.
 
@@ -25,7 +24,7 @@ async def get_remote_runtime_config(request: Request):
     )
 
 
-@protected_router.get('/vscode-url')
+@app.get('/vscode-url')
 async def get_vscode_url(request: Request):
     """Get the VSCode URL.
 
@@ -53,7 +52,7 @@ async def get_vscode_url(request: Request):
         )
 
 
-@protected_router.get('/events/search')
+@app.get('/events/search')
 async def search_events(
     request: Request,
     query: str | None = None,
@@ -105,6 +104,3 @@ async def search_events(
         'events': matching_events,
         'has_more': has_more,
     }
-
-# Include the protected router
-app.include_router(protected_router)
