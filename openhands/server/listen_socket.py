@@ -17,7 +17,7 @@ from openhands.server.shared import config, session_manager, sio
 
 
 @sio.event
-async def connect(connection_id: str, environ, auth):
+async def connect(connection_id: str, environ):
     logger.info(f'sio:connect: {connection_id}')
 
 
