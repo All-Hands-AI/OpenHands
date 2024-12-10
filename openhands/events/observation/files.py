@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from difflib import SequenceMatcher
-from enum import Enum
 
 from openhands.core.schema import ObservationType
+from openhands.events.common import FileEditSource
 from openhands.events.observation.observation import Observation
 
 
@@ -28,11 +28,6 @@ class FileWriteObservation(Observation):
     @property
     def message(self) -> str:
         return f'I wrote to the file {self.path}.'
-
-
-class FileEditSource(str, Enum):
-    LLM_BASED_EDIT = 'llm_based_edit'
-    OH_ACI = 'oh_aci'
 
 
 @dataclass

@@ -40,6 +40,7 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from openhands.events.common import FileEditSource
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
@@ -49,7 +50,6 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     Observation,
 )
-from openhands.events.observation.files import FileEditSource
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv

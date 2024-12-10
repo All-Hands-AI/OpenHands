@@ -8,7 +8,12 @@ from openhands_aci.utils.diff import get_diff
 
 from openhands.core.config import AppConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action import FileEditAction, FileReadAction, FileWriteAction
+from openhands.events.action import (
+    FileEditAction,
+    FileReadAction,
+    FileWriteAction,
+    IPythonRunCellAction,
+)
 from openhands.events.observation import (
     ErrorObservation,
     FileEditObservation,
@@ -86,6 +91,11 @@ class FileEditRuntimeInterface(ABC):
 
     @abstractmethod
     def write(self, action: FileWriteAction) -> Observation:
+        pass
+
+    @abstractmethod
+    @abstractmethod
+    def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         pass
 
 
@@ -198,6 +208,15 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         return None
 
     def edit(self, action: FileEditAction) -> Observation:
+        if action.impl_source == 'OH_ACI':
+            # Translate to ipython command to file_editor
+            return self.run_ipython(
+                IPythonRunCellAction(
+                    code=action.translated_ipython_code,
+                    include_extra=False,
+                )
+            )
+
         obs = self.read(FileReadAction(path=action.path))
         if (
             isinstance(obs, ErrorObservation)
