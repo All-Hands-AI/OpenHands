@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from difflib import SequenceMatcher
+from enum import Enum
 
 from openhands.core.schema import ObservationType
 from openhands.events.observation.observation import Observation
@@ -29,6 +30,11 @@ class FileWriteObservation(Observation):
         return f'I wrote to the file {self.path}.'
 
 
+class FileEditSource(str, Enum):
+    LLM_BASED_EDIT = 'llm_based_edit'
+    OH_ACI = 'oh_aci'
+
+
 @dataclass
 class FileEditObservation(Observation):
     """This data class represents a file edit operation"""
@@ -39,6 +45,8 @@ class FileEditObservation(Observation):
     old_content: str
     new_content: str
     observation: str = ObservationType.EDIT
+    impl_source: FileEditSource = FileEditSource.LLM_BASED_EDIT
+    formatted_output_and_error: str = ''
 
     @property
     def message(self) -> str:
@@ -122,6 +130,9 @@ class FileEditObservation(Observation):
         return '\n'.join(result)
 
     def __str__(self) -> str:
+        if self.impl_source == FileEditSource.OH_ACI:
+            return self.formatted_output_and_error
+
         ret = ''
         if not self.prev_exist:
             assert (

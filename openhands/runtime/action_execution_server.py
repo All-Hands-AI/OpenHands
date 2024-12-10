@@ -25,6 +25,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import APIKeyHeader
+from openhands_aci.utils.diff import get_diff
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
@@ -48,6 +49,7 @@ from openhands.events.observation import (
     IPythonRunCellObservation,
     Observation,
 )
+from openhands.events.observation.files import FileEditSource
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
@@ -211,13 +213,22 @@ class ActionExecutor:
                     try:
                         result_dict = json.loads(match)
                         if result_dict.get('path'):  # An edit command
+                            diff = get_diff(
+                                old_contents=result_dict.get('old_content', ''),
+                                new_contents=result_dict.get('new_content', ''),
+                                filepath=result_dict['path'],
+                            )
                             results.append(
                                 FileEditObservation(
-                                    content='',  # TODO: how to get diff?
+                                    content=diff,
                                     path=result_dict['path'],
                                     old_content=result_dict.get('old_content', ''),
                                     new_content=result_dict.get('new_content', ''),
                                     prev_exist=result_dict.get('prev_exist', True),
+                                    impl_source=FileEditSource.OH_ACI,
+                                    formatted_output_and_error=result_dict.get(
+                                        'formatted_output_and_error', ''
+                                    ),
                                 )
                             )
                         else:
