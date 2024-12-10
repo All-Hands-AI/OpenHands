@@ -135,7 +135,11 @@ export const chatSlice = createSlice({
         return;
       }
       causeMessage.translationID = translationID;
-      if (observationID === "run" || observationID === "run_ipython" || observationID === "browse") {
+      if (
+        observationID === "run" ||
+        observationID === "run_ipython" ||
+        observationID === "browse"
+      ) {
         let { content } = observation.payload;
         if (content.length > MAX_CONTENT_LENGTH) {
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
