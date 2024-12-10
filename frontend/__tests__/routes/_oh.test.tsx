@@ -19,9 +19,7 @@ describe("frontend/routes/_oh", () => {
     }),
   );
 
-  beforeEach(() => {
-    vi.spyOn(router, "useParams").mockReturnValue({ conversationId: "test-conversation-id" });
-  });
+
 
   beforeAll(() => {
     vi.mock("#/utils/user-is-authenticated", () => ({

@@ -1,15 +1,31 @@
-import { screen } from "@testing-library/react";
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import * as router from "react-router";
+
+// Mock useParams before importing components
+vi.mock("react-router", async () => {
+  const actual = await vi.importActual("react-router");
+  return {
+    ...actual as object,
+    useParams: () => ({ conversationId: "test-conversation-id" }),
+  };
+});
+
+// Mock i18next
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({
+    t: (key: string) => key,
+    i18n: {
+      changeLanguage: () => new Promise(() => {}),
+    },
+  }),
+}));
+
+import { screen } from "@testing-library/react";
 import { renderWithProviders } from "../../test-utils";
 import { BrowserPanel } from "#/components/features/browser/browser";
 
 
 describe("Browser", () => {
-  beforeEach(() => {
-    vi.spyOn(router, "useParams").mockReturnValue({ conversationId: "test-conversation-id" });
-  });
-
   afterEach(() => {
     vi.clearAllMocks();
   });
@@ -24,7 +40,7 @@ describe("Browser", () => {
     });
 
     // i18n empty message key
-    expect(screen.getByText("BROWSER$EMPTY_MESSAGE")).toBeInTheDocument();
+    expect(screen.getByText("BROWSER.EMPTY_MESSAGE")).toBeInTheDocument();
   });
 
   it("renders the url and a screenshot", () => {

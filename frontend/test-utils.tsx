@@ -13,6 +13,15 @@ import { AuthProvider } from "#/context/auth-context";
 import { UserPrefsProvider } from "#/context/user-prefs-context";
 import { ConversationProvider } from "#/context/conversation-context";
 
+// Mock useParams before importing components
+vi.mock("react-router", async () => {
+  const actual = await vi.importActual("react-router");
+  return {
+    ...actual as object,
+    useParams: () => ({ conversationId: "test-conversation-id" }),
+  };
+});
+
 const setupStore = (preloadedState?: Partial<RootState>): AppStore =>
   configureStore({
     reducer: rootReducer,
