@@ -76,7 +76,7 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
     try {
       setIsInitializing(true);
       // Initialize the session before navigating
-      const { conversationId } = await OpenHands.initSession({
+      const { conversation_id: conversationId } = await OpenHands.initSession({
         githubToken: gitHubToken || undefined,
         selectedRepository: selectedRepository || undefined,
         args: settings || undefined,
