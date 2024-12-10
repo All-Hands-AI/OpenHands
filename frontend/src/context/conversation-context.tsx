@@ -1,20 +1,21 @@
 import React from "react";
+import { useParams } from "react-router";
 
 interface ConversationContextType {
-  conversationId: string | null;
-  setConversationId: (id: string | null) => void;
+  conversationId: string;
 }
 
-const ConversationContext = React.createContext<ConversationContextType>({
-  conversationId: null,
-  setConversationId: () => {},
-});
+const ConversationContext = React.createContext<ConversationContextType | null>(null);
 
 export function ConversationProvider({ children }: { children: React.ReactNode }) {
-  const [conversationId, setConversationId] = React.useState<string | null>(null);
+  const { conversationId } = useParams<{ conversationId: string }>();
+
+  if (!conversationId) {
+    throw new Error("ConversationProvider must be used within a route that has a conversationId parameter");
+  }
 
   return (
-    <ConversationContext.Provider value={{ conversationId, setConversationId }}>
+    <ConversationContext.Provider value={{ conversationId }}>
       {children}
     </ConversationContext.Provider>
   );

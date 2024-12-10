@@ -23,17 +23,10 @@ import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
 import { useConversation } from "#/context/conversation-context";
 
-function App() {
+function AppContent() {
   const { token, gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
-  const { conversationId: urlConversationId } = useParams();
-  const { conversationId, setConversationId } = useConversation();
-
-  React.useEffect(() => {
-    if (urlConversationId && urlConversationId !== conversationId) {
-      setConversationId(urlConversationId);
-    }
-  }, [urlConversationId, conversationId, setConversationId]);
+  const { conversationId } = useConversation();
 
   const dispatch = useDispatch();
   useConversationConfig();
@@ -127,6 +120,14 @@ function App() {
         </div>
       </EventHandler>
     </WsClientProvider>
+  );
+}
+
+function App() {
+  return (
+    <ConversationProvider>
+      <AppContent />
+    </ConversationProvider>
   );
 }
 

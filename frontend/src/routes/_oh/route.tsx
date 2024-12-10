@@ -78,11 +78,10 @@ export default function MainApp() {
     !isFetchingAuth && !isAuthed && config.data?.APP_MODE === "saas";
 
   return (
-    <ConversationProvider>
-      <div
-        data-testid="root-layout"
-        className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3"
-      >
+    <div
+      data-testid="root-layout"
+      className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3"
+    >
       <Sidebar />
 
       <div className="h-full w-full relative">
@@ -99,6 +98,5 @@ export default function MainApp() {
         />
       )}
     </div>
-    </ConversationProvider>
   );
 }
