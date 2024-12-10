@@ -9,14 +9,12 @@ import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 
 interface GitHubRepositoriesSuggestionBoxProps {
   handleSubmit: () => void;
-  repositories: GitHubRepository[];
   gitHubAuthUrl: string | null;
   user: GitHubErrorReponse | GitHubUser | null;
 }
 
 export function GitHubRepositoriesSuggestionBox({
   handleSubmit,
-  repositories,
   gitHubAuthUrl,
   user,
 }: GitHubRepositoriesSuggestionBoxProps) {
@@ -31,17 +29,6 @@ export function GitHubRepositoriesSuggestionBox({
     }
   };
 
-  if (isGitHubErrorReponse(repositories)) {
-    return (
-      <SuggestionBox
-        title="Error Fetching Repositories"
-        content={
-          <p className="text-danger text-center">{repositories.message}</p>
-        }
-      />
-    );
-  }
-
   const isLoggedIn = !!user && !isGitHubErrorReponse(user);
 
   return (
@@ -50,10 +37,7 @@ export function GitHubRepositoriesSuggestionBox({
         title="Open a Repo"
         content={
           isLoggedIn ? (
-            <GitHubRepositorySelector
-              onSelect={handleSubmit}
-              repositories={repositories}
-            />
+            <GitHubRepositorySelector onSelect={handleSubmit} />
           ) : (
             <ModalButton
               text="Connect to GitHub"
