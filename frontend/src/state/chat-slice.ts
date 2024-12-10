@@ -72,24 +72,25 @@ export const chatSlice = createSlice({
           }
       >,
     ) {
-      const message: Message = typeof action.payload === "string"
-        ? {
-            type: "thought",
-            sender: "assistant",
-            content: action.payload,
-            imageUrls: [],
-            timestamp: new Date().toISOString(),
-            pending: false,
-          }
-        : {
-            type: "browser_output",
-            sender: "assistant",
-            content: action.payload.url,
-            screenshot: action.payload.screenshot,
-            imageUrls: [],
-            timestamp: new Date().toISOString(),
-            pending: false,
-          };
+      const message: Message =
+        typeof action.payload === "string"
+          ? {
+              type: "thought",
+              sender: "assistant",
+              content: action.payload,
+              imageUrls: [],
+              timestamp: new Date().toISOString(),
+              pending: false,
+            }
+          : {
+              type: "browser_output",
+              sender: "assistant",
+              content: action.payload.url,
+              screenshot: action.payload.screenshot,
+              imageUrls: [],
+              timestamp: new Date().toISOString(),
+              pending: false,
+            };
       state.messages.push(message);
     },
 
