@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from "react-router";
+import { useLocation } from "react-router";
 import React from "react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
@@ -9,19 +9,15 @@ import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useConfig } from "#/hooks/query/use-config";
 import { useAuth } from "#/context/auth-context";
-import { useConversation } from "#/context/conversation-context";
 import { ImportProjectSuggestionBox } from "../../components/features/suggestions/import-project-suggestion-box";
 import { GitHubRepositoriesSuggestionBox } from "#/components/features/github/github-repositories-suggestion-box";
 import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
 
 function Home() {
-  const { token, gitHubToken } = useAuth();
-  const { setConversationId } = useConversation();
-
+  const { gitHubToken } = useAuth();
   const dispatch = useDispatch();
   const location = useLocation();
-  const navigate = useNavigate();
 
   const formRef = React.useRef<HTMLFormElement>(null);
 

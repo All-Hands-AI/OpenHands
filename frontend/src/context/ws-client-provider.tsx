@@ -1,14 +1,11 @@
 import posthog from "posthog-js";
 import React from "react";
 import { io, Socket } from "socket.io-client";
-import { Settings } from "#/services/settings";
-import ActionType from "#/types/action-type";
+
 import EventLogger from "#/utils/event-logger";
 import AgentState from "#/types/agent-state";
 import { handleAssistantMessage } from "#/services/actions";
 import { useRate } from "#/hooks/use-rate";
-import OpenHands from "#/api/open-hands";
-import { useConversation } from "./conversation-context";
 
 const isOpenHandsMessage = (event: Record<string, unknown>) =>
   event.action === "message";
@@ -42,7 +39,6 @@ interface WsClientProviderProps {
   token: string | null;
   ghToken: string | null;
   selectedRepository: string | null;
-  settings: Settings | null;
 }
 
 export function WsClientProvider({
@@ -50,7 +46,6 @@ export function WsClientProvider({
   token,
   ghToken,
   selectedRepository,
-  settings,
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
@@ -66,7 +61,6 @@ export function WsClientProvider({
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
 
   const messageRateHandler = useRate({ threshold: 250 });
-  const { setConversationId } = useConversation();
 
   function send(event: Record<string, unknown>) {
     if (!sioRef.current) {
@@ -107,19 +101,15 @@ export function WsClientProvider({
 
   function handleDisconnect() {
     setStatus(WsClientProviderStatus.STOPPED);
-    setConversationId(null);
   }
 
   function handleError() {
     posthog.capture("socket_error");
     setStatus(WsClientProviderStatus.ERROR);
-    setConversationId(null);
   }
 
-  console.log('registering websocket provider');
   // Connect websocket
   React.useEffect(() => {
-    console.log('use effect socket', conversationId);
     let sio = sioRef.current;
 
     // If disabled disconnect any existing websockets...
@@ -142,7 +132,8 @@ export function WsClientProvider({
       !sio ||
       (tokenRef.current && token && token !== tokenRef.current) ||
       ghToken !== ghTokenRef.current ||
-      conversationId !== sioRef.current?.io?.opts?.path?.split('/conversation/')[1]
+      conversationId !==
+        sioRef.current?.io?.opts?.path?.split("/conversation/")[1]
     ) {
       sio?.disconnect();
 

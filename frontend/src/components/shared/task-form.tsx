@@ -11,7 +11,7 @@ import {
 import OpenHands from "#/api/open-hands";
 import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
-import { useConversation } from "#/context/conversation-context";
+
 import { SuggestionBubble } from "#/components/features/suggestions/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
@@ -28,7 +28,6 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
   const navigate = useNavigate();
   const { gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
-  const { setConversationId } = useConversation();
 
   const { selectedRepository, files } = useSelector(
     (state: RootState) => state.initalQuery,
@@ -77,13 +76,11 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
     try {
       setIsInitializing(true);
       // Initialize the session before navigating
-      const { conversation_id } = await OpenHands.initSession({
+      const { conversationId } = await OpenHands.initSession({
         githubToken: gitHubToken || undefined,
         selectedRepository: selectedRepository || undefined,
         args: settings || undefined,
       });
-
-      setConversationId(conversation_id);
 
       posthog.capture("initial_query_submitted", {
         entry_point: "task_form",
@@ -92,9 +89,8 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
         has_files: files.length > 0,
       });
 
-      navigate(`/conversation/${conversation_id}`);
+      navigate(`/conversation/${conversationId}`);
     } catch (error) {
-      console.error("Failed to initialize session:", error);
       // TODO: Show error toast
     } finally {
       setIsInitializing(false);
