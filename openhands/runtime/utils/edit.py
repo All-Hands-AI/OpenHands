@@ -94,7 +94,6 @@ class FileEditRuntimeInterface(ABC):
         pass
 
     @abstractmethod
-    @abstractmethod
     def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         pass
 
