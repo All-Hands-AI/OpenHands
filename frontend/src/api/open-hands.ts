@@ -51,8 +51,9 @@ class OpenHands {
    * @param path Path to list files from
    * @returns List of files available in the given path. If path is not provided, it lists all the files in the workspace
    */
-  static async getFiles(path?: string): Promise<string[]> {
-    const { data } = await openHands.get<string[]>("/api/list-files", {
+  static async getFiles(conversationId: string, path?: string): Promise<string[]> {
+    const url = "/api/conversation/" + conversationId + "/list-files";
+    const { data } = await openHands.get<string[]>(url, {
       params: { path },
     });
     return data;
@@ -63,8 +64,9 @@ class OpenHands {
    * @param path Full path of the file to retrieve
    * @returns Content of the file
    */
-  static async getFile(path: string): Promise<string> {
-    const { data } = await openHands.get<{ code: string }>("/api/select-file", {
+  static async getFile(conversationId: string, path: string): Promise<string> {
+    const url = "/api/conversation/" + conversationId + "/select-file";
+    const { data } = await openHands.get<{ code: string }>(url, {
       params: { file: path },
     });
 
@@ -78,12 +80,14 @@ class OpenHands {
    * @returns Success message or error message
    */
   static async saveFile(
+    conversationId: string,
     path: string,
     content: string,
   ): Promise<SaveFileSuccessResponse> {
+    const url = "/api/conversation/" + conversationId + "/save-file";
     const { data } = await openHands.post<
       SaveFileSuccessResponse | ErrorResponse
-    >("/api/save-file", {
+    >(url, {
       filePath: path,
       content,
     });
@@ -97,13 +101,14 @@ class OpenHands {
    * @param file File to upload
    * @returns Success message or error message
    */
-  static async uploadFiles(files: File[]): Promise<FileUploadSuccessResponse> {
+  static async uploadFiles(conversationId: str, files: File[]): Promise<FileUploadSuccessResponse> {
+    const url = "/api/conversation/" + conversationId + "/upload-files";
     const formData = new FormData();
     files.forEach((file) => formData.append("files", file));
 
     const { data } = await openHands.post<
       FileUploadSuccessResponse | ErrorResponse
-    >("/api/upload-files", formData);
+    >(url, formData);
 
     if ("error" in data) throw new Error(data.error);
     return data;
@@ -114,9 +119,10 @@ class OpenHands {
    * @param data Feedback data
    * @returns The stored feedback data
    */
-  static async submitFeedback(feedback: Feedback): Promise<FeedbackResponse> {
+  static async submitFeedback(conversationId: str, feedback: Feedback): Promise<FeedbackResponse> {
+    const url = "/api/conversation/" + conversationId + "/submit-feedback";
     const { data } = await openHands.post<FeedbackResponse>(
-      "/api/submit-feedback",
+      url,
       feedback,
     );
     return data;
@@ -140,8 +146,9 @@ class OpenHands {
    * Get the blob of the workspace zip
    * @returns Blob of the workspace zip
    */
-  static async getWorkspaceZip(): Promise<Blob> {
-    const response = await openHands.get("/api/zip-directory", {
+  static async getWorkspaceZip(conversationId: str): Promise<Blob> {
+    const url = "/api/conversation/" + conversationId + "/zip-directory";
+    const response = await openHands.get(url, {
       responseType: "blob",
     });
     return response.data;
