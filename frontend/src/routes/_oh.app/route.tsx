@@ -21,6 +21,7 @@ import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
+import { CountBadge } from "#/components/layout/count-badge";
 
 function App() {
   const { token, gitHubToken } = useAuth();
@@ -32,6 +33,8 @@ function App() {
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initalQuery,
   );
+
+  const { updateCount } = useSelector((state: RootState) => state.browser);
 
   const { data: latestGitHubCommit } = useLatestRepoCommit({
     repository: selectedRepository,
@@ -81,10 +84,14 @@ function App() {
                   { label: "Workspace", to: "", icon: <CodeIcon /> },
                   { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
                   {
-                    label: "Browser",
+                    label: (
+                      <div className="flex items-center gap-1">
+                        Browser
+                        {updateCount > 0 && <CountBadge count={updateCount} />}
+                      </div>
+                    ),
                     to: "browser",
                     icon: <GlobeIcon />,
-                    isBeta: true,
                   },
                 ]}
               >
