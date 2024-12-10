@@ -1,6 +1,6 @@
 import asyncio
-import time
 from copy import deepcopy
+import time
 
 import socketio
 
@@ -9,6 +9,7 @@ from openhands.core.config import AppConfig
 from openhands.core.const.guide_url import TROUBLESHOOTING_URL
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
+from openhands.core.schema.config import ConfigType
 from openhands.events.action import MessageAction, NullAction
 from openhands.events.event import Event, EventSource
 from openhands.events.observation import (
@@ -67,28 +68,15 @@ class Session:
         )
         # Extract the agent-relevant arguments from the request
         agent_cls = session_init_data.agent or self.config.default_agent
-        self.config.security.confirmation_mode = (
-            self.config.security.confirmation_mode
-            if session_init_data.confirmation_mode is None
-            else session_init_data.confirmation_mode
-        )
-        self.config.security.security_analyzer = (
-            session_init_data.security_analyzer
-            or self.config.security.security_analyzer
-        )
+        self.config.security.confirmation_mode = self.config.security.confirmation_mode if session_init_data.confirmation_mode is None else session_init_data.confirmation_mode
+        self.config.security.security_analyzer = session_init_data.security_analyzer or self.config.security.security_analyzer
         max_iterations = session_init_data.max_iterations or self.config.max_iterations
         # override default LLM config
 
         default_llm_config = self.config.get_llm_config()
-        default_llm_config.model = (
-            session_init_data.llm_model or default_llm_config.model
-        )
-        default_llm_config.api_key = (
-            session_init_data.llm_api_key or default_llm_config.api_key
-        )
-        default_llm_config.base_url = (
-            session_init_data.llm_base_url or default_llm_config.base_url
-        )
+        default_llm_config.model = session_init_data.llm_model or default_llm_config.model
+        default_llm_config.api_key = session_init_data.llm_api_key or default_llm_config.api_key
+        default_llm_config.base_url = session_init_data.llm_base_url or default_llm_config.base_url
 
         # TODO: override other LLM config & agent config groups (#2075)
 
