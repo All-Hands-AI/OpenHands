@@ -534,6 +534,7 @@ def process_single_issue(
     fork_owner: str | None,
     send_on_failure: bool,
     target_branch: str | None = None,
+    reviewer: str | None = None,
 ) -> None:
     if not resolver_output.success and not send_on_failure:
         print(
@@ -583,7 +584,7 @@ def process_single_issue(
             fork_owner=fork_owner,
             additional_message=resolver_output.success_explanation,
             target_branch=target_branch,
-            reviewer=my_args.reviewer,
+            reviewer=reviewer,
         )
 
 
@@ -739,6 +740,7 @@ def main():
             my_args.fork_owner,
             my_args.send_on_failure,
             my_args.target_branch,
+            my_args.reviewer,
         )
 
 
