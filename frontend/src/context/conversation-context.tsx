@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useParams } from "react-router";
 
 interface ConversationContextType {
@@ -22,8 +22,10 @@ export function ConversationProvider({
     );
   }
 
+  const value = useMemo(() => ({ conversationId }), [conversationId]);
+
   return (
-    <ConversationContext.Provider value={{ conversationId }}>
+    <ConversationContext.Provider value={value}>
       {children}
     </ConversationContext.Provider>
   );

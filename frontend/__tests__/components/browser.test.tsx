@@ -40,7 +40,7 @@ describe("Browser", () => {
     });
 
     // i18n empty message key
-    expect(screen.getByText("BROWSER.EMPTY_MESSAGE")).toBeInTheDocument();
+    expect(screen.getByText("BROWSER$EMPTY_MESSAGE")).toBeInTheDocument();
   });
 
   it("renders the url and a screenshot", () => {
