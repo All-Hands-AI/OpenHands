@@ -1,4 +1,6 @@
+from openhands.core.config import LLMConfig
 from openhands.core.message import ImageContent, Message, TextContent
+from openhands.llm.llm import LLM
 
 
 def test_message_with_vision_enabled():
@@ -116,23 +118,95 @@ def test_message_with_mixed_content_and_vision_disabled():
     assert message.contains_image
 
 
-def test_empty_content_with_different_providers():
-    # Test empty content with Bedrock
+def test_empty_content_serialization():
+    """Test empty content serialization behavior for different providers/models."""
+    # Create a message with empty content
     message = Message(
         role='tool',
         content=[TextContent(text='')],
         function_calling_enabled=True,
-        tool_call_id='toolu_01RxAcyKvZAHVKPQrih36y3X',
-        name='workspace_change_summary',
+        tool_call_id='tool_123',
+        name='test_tool',
     )
-    serialized_message = message.serialize_model(provider='bedrock')
-    assert 'content' not in serialized_message
-    assert serialized_message['tool_call_id'] == 'toolu_01RxAcyKvZAHVKPQrih36y3X'
-    assert serialized_message['name'] == 'workspace_change_summary'
+    # by default, empty content should be preserved
+    message.strip_empty_content = False
+    serialized = message.model_dump()
 
-    # Test empty content with Anthropic
-    serialized_message = message.serialize_model(provider='anthropic')
-    assert 'content' in serialized_message
-    assert serialized_message['content'] == [{'type': 'text', 'text': ''}]
-    assert serialized_message['tool_call_id'] == 'toolu_01RxAcyKvZAHVKPQrih36y3X'
-    assert serialized_message['name'] == 'workspace_change_summary'
+    assert 'content' in serialized
+    assert serialized['content'] == [
+        {'type': 'text', 'text': '', 'cache_prompt': False}
+    ]
+    assert serialized['tool_call_id'] == 'tool_123'
+    assert serialized['name'] == 'test_tool'
+    assert serialized['role'] == 'tool'
+
+    # if the flag is set, empty content should be stripped
+    message.strip_empty_content = True
+    serialized = message.model_dump()
+
+    assert 'content' not in serialized
+    assert serialized['tool_call_id'] == 'tool_123'
+    assert serialized['name'] == 'test_tool'
+    assert serialized['role'] == 'tool'
+
+
+def test_empty_content_with_multiple_items():
+    """Test empty content serialization with multiple content items."""
+    message = Message(
+        role='user',
+        content=[
+            TextContent(text=''),
+            ImageContent(image_urls=['http://example.com/img.jpg']),
+            TextContent(text=''),
+        ],
+        vision_enabled=True,
+    )
+
+    # Even with strip_empty_content=True, content should not be stripped
+    # if there are non-empty items
+    message.strip_empty_content = True
+    serialized = message.model_dump()
+
+    assert 'content' in serialized
+    assert len(serialized['content']) == 3
+    assert serialized['content'][1]['type'] == 'image_url'
+
+
+def test_llm_empty_content_stripping():
+    """Test that LLM properly configures message stripping for Bedrock models."""
+    # To workaround a bug in Bedrock, we strip the content if it's empty
+    # See https://github.com/All-Hands-AI/OpenHands/issues/5492
+    bedrock_config = LLMConfig(model='bedrock/anthropic.claude-3')
+    bedrock_llm = LLM(config=bedrock_config)
+
+    message = Message(role='assistant', content=[TextContent(text='')])
+
+    # Format message using the LLM - this should set strip_empty_content=True
+    formatted_messages = bedrock_llm.format_messages_for_llm(message)
+    assert len(formatted_messages) == 1
+    assert 'content' not in formatted_messages[0]
+
+    # For a non-Bedrock model, we should not strip empty content
+    regular_config = LLMConfig(model='claude-3-sonnet')
+    regular_llm = LLM(config=regular_config)
+
+    message = Message(role='assistant', content=[TextContent(text='')])
+
+    # Format message using the LLM - this should preserve empty content
+    formatted_messages = regular_llm.format_messages_for_llm(message)
+    assert len(formatted_messages) == 1
+    assert 'content' in formatted_messages[0]
+    assert formatted_messages[0]['content'] == [
+        {'type': 'text', 'text': '', 'cache_prompt': False}
+    ]
+
+    # Test with Bedrock as custom provider attribute
+    bedrock_provider_config = LLMConfig(model='claude-3', custom_llm_provider='bedrock')
+    bedrock_provider_llm = LLM(config=bedrock_provider_config)
+
+    message = Message(role='assistant', content=[TextContent(text='')])
+
+    # Format message using the LLM - this should set strip_empty_content=True
+    formatted_messages = bedrock_provider_llm.format_messages_for_llm(message)
+    assert len(formatted_messages) == 1
+    assert 'content' not in formatted_messages[0]
