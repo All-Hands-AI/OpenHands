@@ -312,6 +312,11 @@ class AgentController:
                 str(action),
                 extra={'msg_type': 'ACTION', 'event_source': EventSource.USER},
             )
+            # Reset task and state when receiving a new user message after being stuck
+            if self.get_agent_state() == AgentState.ERROR:
+                self.reset_task()
+                self.state.almost_stuck = 0
+                self.state.traffic_control_state = TrafficControlState.NORMAL
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
@@ -485,7 +490,9 @@ class AgentController:
             return
 
         if self._is_stuck():
-            await self._react_to_exception(RuntimeError('Agent got stuck in a loop'))
+            self.log('warning', 'Agent got stuck in a loop')
+            await self.set_agent_state_to(AgentState.ERROR)
+            self.state.last_error = 'Agent got stuck in a loop'
             return
 
         self.update_state_before_step()
