@@ -1,0 +1,229 @@
+2024-12-04 11:57:04,002 - INFO - [runtime 7c120bce-f621-44eb-b5ec-520a81776f03-d9fd5c90998d0e60] Building remote runtime with base image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.astropy_s_astropy-14309
+2024-12-04 11:57:04,057 - INFO - Building image: us-central1-docker.pkg.dev/evaluation-092424/runtime-api-docker-repo/runtime:oh_v0.15.0_fsdy79fdszyx4mx8_8yyi8tnqgmet7oyx
+2024-12-04 11:57:10,632 - INFO - Build initiated with ID: 59ea8208-97e5-47b2-8c79-3e4f9188aa64
+2024-12-04 11:57:10,633 - INFO - _register_signal_handlers
+2024-12-04 11:57:10,633 - INFO - _register_signal_handlers:not_main_thread
+2024-12-04 11:57:11,861 - INFO - Build status: QUEUED
+2024-12-04 11:57:44,063 - INFO - Build status: WORKING
+2024-12-04 11:58:15,432 - INFO - Build status: WORKING
+2024-12-04 11:58:47,765 - INFO - Build status: FAILURE
+2024-12-04 11:58:47,766 - ERROR - Build failed with status: FAILURE. Build ID: 59ea8208-97e5-47b2-8c79-3e4f9188aa64
+2024-12-04 11:58:47,822 - ERROR - ----------
+Error in instance [astropy__astropy-14309]: Build failed with status: FAILURE. Build ID: 59ea8208-97e5-47b2-8c79-3e4f9188aa64. Stacktrace:
+Traceback (most recent call last):
+  File "/Users/calvin/all-hands/OpenHands/evaluation/utils/shared.py", line 317, in _process_instance_wrapper
+    result = process_instance_func(instance, metadata, use_mp)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/calvin/all-hands/OpenHands/evaluation/benchmarks/swe_bench/run_infer.py", line 399, in process_instance
+    call_async_from_sync(runtime.connect)
+  File "/Users/calvin/all-hands/OpenHands/openhands/utils/async_utils.py", line 50, in call_async_from_sync
+    result = future.result()
+             ^^^^^^^^^^^^^^^
+  File "/Users/calvin/.pyenv/versions/3.12.7/lib/python3.12/concurrent/futures/_base.py", line 456, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/calvin/.pyenv/versions/3.12.7/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/Users/calvin/.pyenv/versions/3.12.7/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/calvin/all-hands/OpenHands/openhands/utils/async_utils.py", line 44, in run
+    return asyncio.run(arun())
+           ^^^^^^^^^^^^^^^^^^^
+  File "/Users/calvin/.pyenv/versions/3.12.7/lib/python3.12/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/Users/calvin/.pyenv/versions/3.12.7/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/calvin/.pyenv/versions/3.12.7/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/Users/calvin/all-hands/OpenHands/openhands/utils/async_utils.py", line 37, in arun
+    result = await coro
+             ^^^^^^^^^^
+  File "/Users/calvin/all-hands/OpenHands/openhands/runtime/impl/remote/remote_runtime.py", line 102, in connect
+    await call_sync_from_async(self._start_or_attach_to_runtime)
+  File "/Users/calvin/all-hands/OpenHands/openhands/utils/async_utils.py", line 18, in call_sync_from_async
+    result = await coro
+             ^^^^^^^^^^
+  File "/Users/calvin/.pyenv/versions/3.12.7/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/calvin/all-hands/OpenHands/openhands/utils/async_utils.py", line 17, in <lambda>
+    coro = loop.run_in_executor(None, lambda: fn(*args, **kwargs))
+                                              ^^^^^^^^^^^^^^^^^^^
+  File "/Users/calvin/all-hands/OpenHands/openhands/runtime/impl/remote/remote_runtime.py", line 124, in _start_or_attach_to_runtime
+    self._build_runtime()
+  File "/Users/calvin/all-hands/OpenHands/openhands/runtime/impl/remote/remote_runtime.py", line 202, in _build_runtime
+    self.container_image = build_runtime_image(
+                           ^^^^^^^^^^^^^^^^^^^^
+  File "/Users/calvin/all-hands/OpenHands/openhands/runtime/utils/runtime_build.py", line 134, in build_runtime_image
+    result = build_runtime_image_in_folder(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/calvin/all-hands/OpenHands/openhands/runtime/utils/runtime_build.py", line 225, in build_runtime_image_in_folder
+    _build_sandbox_image(
+  File "/Users/calvin/all-hands/OpenHands/openhands/runtime/utils/runtime_build.py", line 352, in _build_sandbox_image
+    image_name = runtime_builder.build(
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/calvin/all-hands/OpenHands/openhands/runtime/builder/remote.py", line 107, in build
+    raise RuntimeError(error_message)
+RuntimeError: Build failed with status: FAILURE. Build ID: 59ea8208-97e5-47b2-8c79-3e4f9188aa64
+
+----------[The above error occurred. Retrying... (attempt 1 of 5)]----------
+
+2024-12-04 11:58:52,827 - INFO - Using instance container image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.astropy_s_astropy-14309. Please make sure this image exists. Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.
+2024-12-04 11:58:52,828 - INFO - Logging LLM completions for instance astropy__astropy-14309 to evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Verified-test/CodeActAgent/claude-3-5-sonnet-20241022_maxiter_50_N_v0.15.0-no-hint-run_1/llm_completions/astropy__astropy-14309
+2024-12-04 11:59:00,223 - INFO - [runtime 34eee761-f8dd-4442-b1c2-c3dbd9ca5828-fd17e1e322627ece] Building remote runtime with base image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.astropy_s_astropy-14309
+2024-12-04 11:59:00,297 - INFO - Building image: us-central1-docker.pkg.dev/evaluation-092424/runtime-api-docker-repo/runtime:oh_v0.15.0_fsdy79fdszyx4mx8_8yyi8tnqgmet7oyx
+2024-12-04 11:59:05,116 - INFO - Build initiated with ID: 7d7a1055-f04a-4ef9-8c10-ac79c829a0f4
+2024-12-04 11:59:06,898 - INFO - Build status: WORKING
+2024-12-04 11:59:38,242 - INFO - Build status: WORKING
+2024-12-04 12:00:09,426 - INFO - Build status: WORKING
+2024-12-04 12:00:44,038 - INFO - Build status: WORKING
+2024-12-04 12:01:18,289 - INFO - Build status: WORKING
+2024-12-04 12:01:52,351 - INFO - Build status: WORKING
+2024-12-04 12:02:23,412 - INFO - Build status: WORKING
+2024-12-04 12:02:54,078 - INFO - Build status: WORKING
+2024-12-04 12:03:24,507 - INFO - Build status: WORKING
+2024-12-04 12:04:03,574 - INFO - Build status: WORKING
+2024-12-04 12:04:40,039 - INFO - Build status: WORKING
+2024-12-04 12:05:11,181 - INFO - Build status: WORKING
+2024-12-04 12:05:41,333 - INFO - Build status: WORKING
+2024-12-04 12:06:11,529 - INFO - Build status: WORKING
+2024-12-04 12:06:42,614 - INFO - Build status: SUCCESS
+2024-12-04 12:06:47,274 - INFO - [runtime 34eee761-f8dd-4442-b1c2-c3dbd9ca5828-fd17e1e322627ece] Waiting for runtime to be alive...
+2024-12-04 12:08:44,653 - INFO - [runtime 34eee761-f8dd-4442-b1c2-c3dbd9ca5828-fd17e1e322627ece] Runtime is ready.
+2024-12-04 12:08:44,816 - INFO - ------------------------------
+2024-12-04 12:08:44,816 - INFO - BEGIN Runtime Initialization Fn
+2024-12-04 12:08:44,816 - INFO - ------------------------------
+2024-12-04 12:08:44,816 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+echo 'export SWE_INSTANCE_ID=astropy__astropy-14309' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo "alias git='git --no-pager'" >> ~/.bashrc
+2024-12-04 12:08:44,947 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 12:08:44,947 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+export USER=$(whoami); echo USER=${USER}
+2024-12-04 12:08:45,156 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+USER=root
+2024-12-04 12:08:45,156 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+mkdir -p /swe_util/eval_data/instances
+2024-12-04 12:08:45,329 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 12:08:45,397 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+cat ~/.bashrc
+2024-12-04 12:08:45,530 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+source /opt/miniconda3/etc/profile.d/conda.sh && conda activate testbed
+export SWE_INSTANCE_ID=astropy__astropy-14309
+export PIP_CACHE_DIR=~/.cache/pip
+alias git='git --no-pager'
+2024-12-04 12:08:45,531 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+source ~/.bashrc
+2024-12-04 12:08:45,920 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 12:08:45,920 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+source /swe_util/instance_swe_entry.sh
+2024-12-04 12:08:46,742 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+WORKSPACE_NAME: astropy__astropy__5.1
+2024-12-04 12:08:46,743 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+cd /workspace/astropy__astropy__5.1
+2024-12-04 12:08:46,874 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 12:08:46,874 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+git reset --hard
+2024-12-04 12:08:47,459 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+HEAD is now at cdb66059a2 Merge pull request #14303 from pllim/bleach-v6
+2024-12-04 12:08:47,459 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+for remote_name in $(git remote); do git remote remove "${remote_name}"; done
+2024-12-04 12:08:47,636 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 12:08:47,636 - INFO - ------------------------------
+2024-12-04 12:08:47,637 - INFO - END Runtime Initialization Fn
+2024-12-04 12:08:47,637 - INFO - ------------------------------
+2024-12-04 12:08:47,737 - WARNING - Could not restore state from session: sessions/34eee761-f8dd-4442-b1c2-c3dbd9ca5828-fd17e1e322627ece/agent_state.pkl
+2024-12-04 12:08:47,739 - INFO - [Agent Controller default] Starting step loop...
+2024-12-04 12:08:47,740 - INFO - [Agent Controller default] Setting agent(CodeActAgent) state from AgentState.LOADING to AgentState.RUNNING
+2024-12-04 12:08:48,843 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 0 GLOBAL STEP 0
+2024-12-04 12:08:53,751 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 1 GLOBAL STEP 1
+2024-12-04 12:09:01,910 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 2 GLOBAL STEP 2
+2024-12-04 12:09:11,335 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 3 GLOBAL STEP 3
+2024-12-04 12:09:15,507 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 4 GLOBAL STEP 4
+2024-12-04 12:09:21,686 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 5 GLOBAL STEP 5
+2024-12-04 12:09:29,930 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 6 GLOBAL STEP 6
+2024-12-04 12:09:38,940 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 7 GLOBAL STEP 7
+2024-12-04 12:09:43,689 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 8 GLOBAL STEP 8
+2024-12-04 12:09:49,961 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 9 GLOBAL STEP 9
+2024-12-04 12:09:59,124 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 10 GLOBAL STEP 10
+2024-12-04 12:10:05,563 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 11 GLOBAL STEP 11
+2024-12-04 12:10:15,843 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 12 GLOBAL STEP 12
+2024-12-04 12:10:24,445 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 13 GLOBAL STEP 13
+2024-12-04 12:10:37,198 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 14 GLOBAL STEP 14
+2024-12-04 12:10:43,034 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 15 GLOBAL STEP 15
+2024-12-04 12:10:54,008 - INFO - [Agent Controller default] Setting agent(CodeActAgent) state from AgentState.RUNNING to AgentState.AWAITING_USER_INPUT
+2024-12-04 12:10:54,010 - INFO - [Agent Controller default] Setting agent(CodeActAgent) state from AgentState.AWAITING_USER_INPUT to AgentState.RUNNING
+2024-12-04 12:10:54,110 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 16 GLOBAL STEP 16
+2024-12-04 12:11:05,425 - INFO - [Agent Controller default] Setting agent(CodeActAgent) state from AgentState.RUNNING to AgentState.FINISHED
+2024-12-04 12:11:05,427 - INFO - ------------------------------
+2024-12-04 12:11:05,427 - INFO - BEGIN Runtime Completion Fn
+2024-12-04 12:11:05,428 - INFO - ------------------------------
+2024-12-04 12:11:05,428 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+cd /workspace/astropy__astropy__5.1
+2024-12-04 12:11:05,557 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 12:11:05,557 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+git config --global core.pager ""
+2024-12-04 12:11:05,695 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 12:11:05,696 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+git add -A
+2024-12-04 12:11:07,133 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 12:11:07,134 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+git diff --no-color --cached cdb66059a2feb44ee49021874605ba90801f9986
+2024-12-04 12:11:07,276 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+diff --git a/astropy/io/fits/connect.py b/astropy/io/fits/connect.py
+index 4b6150f4ac..1f51fe4835 100644
+--- a/astropy/io/fits/connect.py
++++ b/astropy/io/fits/connect.py
+@@ -69,7 +69,7 @@ def is_fits(origin, filepath, fileobj, *args, **kwargs):
+             (".fits", ".fits.gz", ".fit", ".fit.gz", ".fts", ".fts.gz")
+         ):
+             return True
+-    return isinstance(args[0], (HDUList, TableHDU, BinTableHDU, GroupsHDU))
++    return len(args) > 0 and isinstance(args[0], (HDUList, TableHDU, BinTableHDU, GroupsHDU))
+
+
+ def _decode_mixins(tbl):
+2024-12-04 12:11:07,277 - INFO - ------------------------------
+2024-12-04 12:11:07,277 - INFO - END Runtime Completion Fn
+2024-12-04 12:11:07,277 - INFO - ------------------------------
+2024-12-04 12:11:07,278 - INFO - Got git diff for instance astropy__astropy-14309:
+--------
+diff --git a/astropy/io/fits/connect.py b/astropy/io/fits/connect.py
+index 4b6150f4ac..1f51fe4835 100644
+--- a/astropy/io/fits/connect.py
++++ b/astropy/io/fits/connect.py
+@@ -69,7 +69,7 @@ def is_fits(origin, filepath, fileobj, *args, **kwargs):
+             (".fits", ".fits.gz", ".fit", ".fit.gz", ".fts", ".fts.gz")
+         ):
+             return True
+-    return isinstance(args[0], (HDUList, TableHDU, BinTableHDU, GroupsHDU))
++    return len(args) > 0 and isinstance(args[0], (HDUList, TableHDU, BinTableHDU, GroupsHDU))
+
+
+ def _decode_mixins(tbl):
+--------
+2024-12-04 12:11:07,556 - INFO - Using instance container image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.django_s_django-10880. Please make sure this image exists. Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.
+2024-12-04 12:11:07,556 - INFO - Logging LLM completions for instance django__django-10880 to evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Verified-test/CodeActAgent/claude-3-5-sonnet-20241022_maxiter_50_N_v0.15.0-no-hint-run_1/llm_completions/django__django-10880

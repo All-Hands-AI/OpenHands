@@ -1,0 +1,24 @@
+2024-12-04 15:12:47,280 - INFO - Using instance container image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.astropy_s_astropy-13453. Please make sure this image exists. Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.
+2024-12-04 15:12:47,280 - INFO - Starting evaluation for instance astropy__astropy-13453.
+2024-12-04 15:12:47,474 - INFO - [runtime a603cdb7-5127-4fda-8163-d47b60142695-6d71783f31ee6d22] Building remote runtime with base image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.astropy_s_astropy-13453
+2024-12-04 15:12:47,543 - INFO - Building image: us-central1-docker.pkg.dev/evaluation-092424/runtime-api-docker-repo/runtime:oh_v0.15.0_b2hvr9wur7t66f62_tun0f9coqw2bqg0f
+2024-12-04 15:12:48,355 - INFO - [runtime a603cdb7-5127-4fda-8163-d47b60142695-6d71783f31ee6d22] Waiting for runtime to be alive...
+2024-12-04 15:13:38,335 - INFO - [runtime a603cdb7-5127-4fda-8163-d47b60142695-6d71783f31ee6d22] Runtime is ready.
+2024-12-04 15:13:38,415 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+chmod +x /tmp/eval.sh
+2024-12-04 15:13:38,548 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 15:13:38,769 - INFO - [astropy__astropy-13453] >>>>> Applied Patch:
+error: corrupt patch at line 18
+Failed to apply patch with git apply, trying with patch command...
+patching file astropy/io/ascii/html.py
+APPLY_PATCH_PASS
+2024-12-04 15:13:38,897 - INFO - [astropy__astropy-13453] Evaluation process started with PID: 391
+2024-12-04 15:13:39,044 - INFO - [astropy__astropy-13453] [0s] Evaluation still running, waiting...
+2024-12-04 15:14:09,212 - INFO - [astropy__astropy-13453] [30s] Evaluation still running, waiting...
+2024-12-04 15:14:39,371 - INFO - [astropy__astropy-13453] [60s] Evaluation still running, waiting...
+2024-12-04 15:15:09,524 - INFO - [astropy__astropy-13453] Evaluation process completed after 90.47924494743347 seconds
+2024-12-04 15:15:09,911 - INFO - [astropy__astropy-13453] Grading answer...
+2024-12-04 15:15:09,951 - INFO - [astropy__astropy-13453] report: {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': True, 'tests_status': {'FAIL_TO_PASS': {'success': ['astropy/io/ascii/tests/test_html.py::test_write_table_formatted_columns'], 'failure': []}, 'PASS_TO_PASS': {'success': ['astropy/io/ascii/tests/test_html.py::test_listwriter', 'astropy/io/ascii/tests/test_html.py::test_htmlinputter_no_bs4', 'astropy/io/ascii/tests/test_html.py::test_multicolumn_write', 'astropy/io/ascii/tests/test_html.py::test_write_no_multicols', 'astropy/io/ascii/tests/test_html.py::test_write_table_html_fill_values', 'astropy/io/ascii/tests/test_html.py::test_write_table_html_fill_values_optional_columns', 'astropy/io/ascii/tests/test_html.py::test_write_table_html_fill_values_masked', 'astropy/io/ascii/tests/test_html.py::test_multicolumn_table_html_fill_values', 'astropy/io/ascii/tests/test_html.py::test_multi_column_write_table_html_fill_values_masked'], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}
+Result for astropy__astropy-13453: resolved: True
