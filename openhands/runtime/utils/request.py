@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 import requests
@@ -30,7 +31,7 @@ def send_request(
     except requests.HTTPError as e:
         try:
             _json = response.json()
-        except requests.exceptions.JSONDecodeError:
+        except (requests.exceptions.JSONDecodeError, json.decoder.JSONDecodeError):
             raise e
         raise RequestHTTPError(
             e, response=e.response, detail=_json.get('detail')
