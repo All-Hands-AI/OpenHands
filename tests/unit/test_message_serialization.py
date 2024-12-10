@@ -123,7 +123,7 @@ def test_empty_content_with_different_providers():
         content=[TextContent(text='')],
         function_calling_enabled=True,
         tool_call_id='toolu_01RxAcyKvZAHVKPQrih36y3X',
-        name='workspace_change_summary'
+        name='workspace_change_summary',
     )
     serialized_message = message.serialize_model(provider='bedrock')
     assert 'content' not in serialized_message

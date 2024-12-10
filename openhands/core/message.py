@@ -106,11 +106,14 @@ class Message(BaseModel):
         message_dict: dict = {'content': content, 'role': self.role}
 
         # pop content if it's empty only for Bedrock
-        if provider == 'bedrock' and (not content or (
-            len(content) == 1
-            and content[0]['type'] == 'text'
-            and content[0]['text'] == ''
-        )):
+        if provider == 'bedrock' and (
+            not content
+            or (
+                len(content) == 1
+                and content[0]['type'] == 'text'
+                and content[0]['text'] == ''
+            )
+        ):
             message_dict.pop('content')
 
         if role_tool_with_prompt_caching:
