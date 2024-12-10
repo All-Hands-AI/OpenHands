@@ -5,7 +5,7 @@ import { NavTab } from "./nav-tab";
 interface ContainerProps {
   label?: string;
   labels?: {
-    label: string;
+    label: string | React.ReactNode;
     to: string;
     icon?: React.ReactNode;
     isBeta?: boolean;
