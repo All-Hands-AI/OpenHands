@@ -138,7 +138,7 @@ describe("InteractiveChatBox", () => {
     const onStop = vi.fn();
     const onChange = vi.fn();
 
-    render(
+    const { rerender } = render(
       <InteractiveChatBox
         onSubmit={onSubmit}
         onStop={onStop}
@@ -165,5 +165,18 @@ describe("InteractiveChatBox", () => {
 
     // Verify onChange was called to clear the text input
     expect(onChange).toHaveBeenCalledWith("");
+
+    // Simulate parent component updating the value prop
+    rerender(
+      <InteractiveChatBox
+        onSubmit={onSubmit}
+        onStop={onStop}
+        onChange={onChange}
+        value=""
+      />
+    );
+
+    // Verify the text input was cleared
+    expect(screen.getByRole("textbox")).toHaveValue("");
   });
 });
