@@ -11,6 +11,7 @@ describe("Browser", () => {
         browser: {
           url: "https://example.com",
           screenshotSrc: "",
+          updateCount: 0,
         },
       },
     });
@@ -26,6 +27,7 @@ describe("Browser", () => {
           url: "https://example.com",
           screenshotSrc:
             "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN0uGvyHwAFCAJS091fQwAAAABJRU5ErkJggg==",
+          updateCount: 0,
         },
       },
     });
