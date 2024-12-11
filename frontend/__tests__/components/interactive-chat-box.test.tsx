@@ -213,7 +213,7 @@ describe("InteractiveChatBox", () => {
     expect(onSubmit).toHaveBeenCalledWith("test message", [imageFile]);
   });
 
-  it("should handle image upload without clearing text", async () => {
+  it("should handle image upload and message submission correctly", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
     const onStop = vi.fn();
@@ -237,11 +237,14 @@ describe("InteractiveChatBox", () => {
     expect(screen.getByRole("textbox")).toHaveValue("test message");
     expect(onChange).not.toHaveBeenCalledWith("");
 
-    // Submit the message with image - this should clear the text input
+    // Submit the message with image
     const submitButton = screen.getByRole("button", { name: "Send" });
     await user.click(submitButton);
 
     // Verify onSubmit was called with the message and image
     expect(onSubmit).toHaveBeenCalledWith("test message", [file]);
+
+    // Verify onChange was called to clear the text input
+    expect(onChange).toHaveBeenCalledWith("");
   });
 });
