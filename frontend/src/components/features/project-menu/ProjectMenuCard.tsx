@@ -2,6 +2,7 @@ import React from "react";
 import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import posthog from "posthog-js";
+import { useTranslation } from "react-i18next";
 import EllipsisH from "#/icons/ellipsis-h.svg?react";
 import { addUserMessage } from "#/state/chat-slice";
 import { createChatMessage } from "#/services/chat-service";
@@ -10,6 +11,7 @@ import { ProjectMenuDetailsPlaceholder } from "./project-menu-details-placeholde
 import { ProjectMenuDetails } from "./project-menu-details";
 import { downloadWorkspace } from "#/utils/download-workspace";
 import { useWsClient } from "#/context/ws-client-provider";
+import { I18nKey } from "#/i18n/declaration";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { ConnectToGitHubModal } from "#/components/shared/modals/connect-to-github-modal";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
@@ -29,6 +31,7 @@ export function ProjectMenuCard({
 }: ProjectMenuCardProps) {
   const { send } = useWsClient();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
 
   const [contextMenuIsOpen, setContextMenuIsOpen] = React.useState(false);
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
@@ -100,7 +103,7 @@ Please push the changes to GitHub and open a pull request.
       <button
         type="button"
         onClick={toggleMenuVisibility}
-        aria-label="Open project menu"
+        aria-label={t(I18nKey.PROJECT_MENU_CARD$OPEN)}
       >
         {working ? (
           <LoadingSpinner size="small" />
