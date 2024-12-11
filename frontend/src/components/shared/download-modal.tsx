@@ -29,5 +29,5 @@ export function DownloadModal({
 }: DownloadModalProps) {
   if (!isOpen) return null;
 
-  return <ActiveDownload initialPath={initialPath}  />;
+  return <ActiveDownload initialPath={initialPath} onClose={onClose} />;
 }
