@@ -3,14 +3,23 @@ from unittest.mock import MagicMock, patch
 
 from openhands.core.config import LLMConfig
 from openhands.events.action.message import MessageAction
+from openhands.llm.llm import LLM
 from openhands.resolver.github_issue import GithubIssue, ReviewThread
 from openhands.resolver.issue_definitions import PRHandler
 
 
+def mock_llm_response(content):
+    """Helper function to create a mock LLM response."""
+    mock_response = MagicMock()
+    mock_response.choices = [MagicMock(message=MagicMock(content=content))]
+    return mock_response
+
+
 def test_guess_success_review_threads_litellm_call():
-    """Test that the litellm.completion() call for review threads contains the expected content."""
+    """Test that the completion() call for review threads contains the expected content."""
     # Create a PR handler instance
-    handler = PRHandler('test-owner', 'test-repo', 'test-token')
+    llm_config = LLMConfig(model='test', api_key='test')
+    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
     # Create a mock issue with review threads
     issue = GithubIssue(
@@ -64,13 +73,11 @@ The changes successfully address the feedback."""
     ]
 
     # Test the guess_success method
-    with patch('litellm.completion') as mock_completion:
+    with patch.object(LLM, 'completion') as mock_completion:
         mock_completion.return_value = mock_response
-        success, success_list, explanation = handler.guess_success(
-            issue, history, llm_config
-        )
+        success, success_list, explanation = handler.guess_success(issue, history)
 
-        # Verify the litellm.completion() calls
+        # Verify the completion() calls
         assert mock_completion.call_count == 2  # One call per review thread
 
         # Check first call
@@ -110,11 +117,14 @@ The changes successfully address the feedback."""
         )
         assert 'Last message from AI agent:\n' + history[0].content in second_prompt
 
+        assert len(json.loads(explanation)) == 2
+
 
 def test_guess_success_thread_comments_litellm_call():
-    """Test that the litellm.completion() call for thread comments contains the expected content."""
+    """Test that the completion() call for thread comments contains the expected content."""
     # Create a PR handler instance
-    handler = PRHandler('test-owner', 'test-repo', 'test-token')
+    llm_config = LLMConfig(model='test', api_key='test')
+    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
     # Create a mock issue with thread comments
     issue = GithubIssue(
@@ -162,13 +172,11 @@ The changes successfully address the feedback."""
     ]
 
     # Test the guess_success method
-    with patch('litellm.completion') as mock_completion:
+    with patch.object(LLM, 'completion') as mock_completion:
         mock_completion.return_value = mock_response
-        success, success_list, explanation = handler.guess_success(
-            issue, history, llm_config
-        )
+        success, success_list, explanation = handler.guess_success(issue, history)
 
-        # Verify the litellm.completion() call
+        # Verify the completion() call
         mock_completion.assert_called_once()
         call_args = mock_completion.call_args
         prompt = call_args[1]['messages'][0]['content']
@@ -182,14 +190,14 @@ The changes successfully address the feedback."""
         assert 'PR Thread Comments:\n' + '\n---\n'.join(issue.thread_comments) in prompt
         assert 'Last message from AI agent:\n' + history[0].content in prompt
 
+        assert len(json.loads(explanation)) == 1
+
 
 def test_check_feedback_with_llm():
     """Test the _check_feedback_with_llm helper function."""
     # Create a PR handler instance
-    handler = PRHandler('test-owner', 'test-repo', 'test-token')
-
-    # Create mock LLM config
-    llm_config = LLMConfig(model='test-model', api_key='test-key')
+    llm_config = LLMConfig(model='test', api_key='test')
+    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
     # Test cases for different LLM responses
     test_cases = [
@@ -220,17 +228,16 @@ def test_check_feedback_with_llm():
         mock_response.choices = [MagicMock(message=MagicMock(content=case['response']))]
 
         # Test the function
-        with patch('litellm.completion', return_value=mock_response):
-            success, explanation = handler._check_feedback_with_llm(
-                'test prompt', llm_config
-            )
+        with patch.object(LLM, 'completion', return_value=mock_response):
+            success, explanation = handler._check_feedback_with_llm('test prompt')
             assert (success, explanation) == case['expected']
 
 
 def test_check_review_thread():
     """Test the _check_review_thread helper function."""
     # Create a PR handler instance
-    handler = PRHandler('test-owner', 'test-repo', 'test-token')
+    llm_config = LLMConfig(model='test', api_key='test')
+    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
     # Create test data
     review_thread = ReviewThread(
@@ -241,7 +248,6 @@ def test_check_review_thread():
         ['Issue 1 description', 'Issue 2 description'], indent=4
     )
     last_message = 'I have fixed the formatting and added docstrings'
-    llm_config = LLMConfig(model='test-model', api_key='test-key')
 
     # Mock the LLM response
     mock_response = MagicMock()
@@ -258,13 +264,13 @@ Changes look good"""
     ]
 
     # Test the function
-    with patch('litellm.completion') as mock_completion:
+    with patch.object(LLM, 'completion') as mock_completion:
         mock_completion.return_value = mock_response
         success, explanation = handler._check_review_thread(
-            review_thread, issues_context, last_message, llm_config
+            review_thread, issues_context, last_message
         )
 
-        # Verify the litellm.completion() call
+        # Verify the completion() call
         mock_completion.assert_called_once()
         call_args = mock_completion.call_args
         prompt = call_args[1]['messages'][0]['content']
@@ -285,7 +291,8 @@ Changes look good"""
 def test_check_thread_comments():
     """Test the _check_thread_comments helper function."""
     # Create a PR handler instance
-    handler = PRHandler('test-owner', 'test-repo', 'test-token')
+    llm_config = LLMConfig(model='test', api_key='test')
+    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
     # Create test data
     thread_comments = [
@@ -297,7 +304,6 @@ def test_check_thread_comments():
         ['Issue 1 description', 'Issue 2 description'], indent=4
     )
     last_message = 'I have added error handling and input validation'
-    llm_config = LLMConfig(model='test-model', api_key='test-key')
 
     # Mock the LLM response
     mock_response = MagicMock()
@@ -314,13 +320,13 @@ Changes look good"""
     ]
 
     # Test the function
-    with patch('litellm.completion') as mock_completion:
+    with patch.object(LLM, 'completion') as mock_completion:
         mock_completion.return_value = mock_response
         success, explanation = handler._check_thread_comments(
-            thread_comments, issues_context, last_message, llm_config
+            thread_comments, issues_context, last_message
         )
 
-        # Verify the litellm.completion() call
+        # Verify the completion() call
         mock_completion.assert_called_once()
         call_args = mock_completion.call_args
         prompt = call_args[1]['messages'][0]['content']
@@ -338,7 +344,8 @@ Changes look good"""
 def test_check_review_comments():
     """Test the _check_review_comments helper function."""
     # Create a PR handler instance
-    handler = PRHandler('test-owner', 'test-repo', 'test-token')
+    llm_config = LLMConfig(model='test', api_key='test')
+    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
     # Create test data
     review_comments = [
@@ -350,7 +357,6 @@ def test_check_review_comments():
         ['Issue 1 description', 'Issue 2 description'], indent=4
     )
     last_message = 'I have improved code readability and added comments'
-    llm_config = LLMConfig(model='test-model', api_key='test-key')
 
     # Mock the LLM response
     mock_response = MagicMock()
@@ -367,13 +373,13 @@ Changes look good"""
     ]
 
     # Test the function
-    with patch('litellm.completion') as mock_completion:
+    with patch.object(LLM, 'completion') as mock_completion:
         mock_completion.return_value = mock_response
         success, explanation = handler._check_review_comments(
-            review_comments, issues_context, last_message, llm_config
+            review_comments, issues_context, last_message
         )
 
-        # Verify the litellm.completion() call
+        # Verify the completion() call
         mock_completion.assert_called_once()
         call_args = mock_completion.call_args
         prompt = call_args[1]['messages'][0]['content']
@@ -389,9 +395,10 @@ Changes look good"""
 
 
 def test_guess_success_review_comments_litellm_call():
-    """Test that the litellm.completion() call for review comments contains the expected content."""
+    """Test that the completion() call for review comments contains the expected content."""
     # Create a PR handler instance
-    handler = PRHandler('test-owner', 'test-repo', 'test-token')
+    llm_config = LLMConfig(model='test', api_key='test')
+    handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
 
     # Create a mock issue with review comments
     issue = GithubIssue(
@@ -421,9 +428,6 @@ def test_guess_success_review_comments_litellm_call():
         )
     ]
 
-    # Create mock LLM config
-    llm_config = LLMConfig(model='test-model', api_key='test-key')
-
     # Mock the LLM response
     mock_response = MagicMock()
     mock_response.choices = [
@@ -439,13 +443,11 @@ The changes successfully address the feedback."""
     ]
 
     # Test the guess_success method
-    with patch('litellm.completion') as mock_completion:
+    with patch.object(LLM, 'completion') as mock_completion:
         mock_completion.return_value = mock_response
-        success, success_list, explanation = handler.guess_success(
-            issue, history, llm_config
-        )
+        success, success_list, explanation = handler.guess_success(issue, history)
 
-        # Verify the litellm.completion() call
+        # Verify the completion() call
         mock_completion.assert_called_once()
         call_args = mock_completion.call_args
         prompt = call_args[1]['messages'][0]['content']
@@ -458,3 +460,5 @@ The changes successfully address the feedback."""
         )
         assert 'PR Review Comments:\n' + '\n---\n'.join(issue.review_comments) in prompt
         assert 'Last message from AI agent:\n' + history[0].content in prompt
+
+        assert len(json.loads(explanation)) == 1

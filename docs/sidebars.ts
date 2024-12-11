@@ -46,17 +46,6 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: 'category',
-      label: 'Configuration Options',
-      items: [
-        {
-          type: 'doc',
-          label: 'Overview',
-          id: 'usage/configuration-options',
-        },
-      ],
-    },
-    {
-      type: 'category',
       label: 'Advanced Configuration',
       items: [
         {
@@ -110,6 +99,11 @@ const sidebars: SidebarsConfig = {
           type: 'doc',
           label: 'Runtime Configuration',
           id: 'usage/runtimes',
+        },
+        {
+          type: 'doc',
+          label: 'Configuration Options',
+          id: 'usage/configuration-options',
         },
         {
           type: 'doc',

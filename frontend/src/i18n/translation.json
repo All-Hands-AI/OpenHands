@@ -1782,14 +1782,6 @@
     "fr": "Privé",
     "tr": "Özel"
   },
-  "ERROR_MESSAGE$SHOW_DETAILS": {
-    "en": "Show details",
-    "es": "Mostrar detalles"
-  },
-  "ERROR_MESSAGE$HIDE_DETAILS": {
-    "en": "Hide details",
-    "es": "Ocultar detalles"
-  },
   "STATUS$STARTING_RUNTIME": {
     "en": "Starting Runtime...",
     "zh-CN": "启动运行时...",
@@ -2051,5 +2043,41 @@
   },
   "FILE_EXPLORER$CLOSE_WORKSPACE": {
     "en": "Close workspace"
+  },
+  "ACTION_MESSAGE$RUN": {
+    "en": "Running a bash command"
+  },
+  "ACTION_MESSAGE$RUN_IPYTHON": {
+    "en": "Running a Jupyter command"
+  },
+  "ACTION_MESSAGE$READ": {
+    "en": "Reading the contents of a file"
+  },
+  "ACTION_MESSAGE$WRITE": {
+    "en": "Writing to a file"
+  },
+  "ACTION_MESSAGE$BROWSE": {
+    "en": "Browsing the web"
+  },
+  "OBSERVATION_MESSAGE$RUN": {
+    "en": "Ran a bash command"
+  },
+  "OBSERVATION_MESSAGE$RUN_IPYTHON": {
+    "en": "Ran a Jupyter command"
+  },
+  "OBSERVATION_MESSAGE$READ": {
+    "en": "Read the contents of a file"
+  },
+  "OBSERVATION_MESSAGE$WRITE": {
+    "en": "Wrote to a file"
+  },
+  "OBSERVATION_MESSAGE$BROWSE": {
+    "en": "Browsing completed"
+  },
+  "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
+    "en": "Show details"
+  },
+  "EXPANDABLE_MESSAGE$HIDE_DETAILS": {
+    "en": "Hide details"
   }
 }

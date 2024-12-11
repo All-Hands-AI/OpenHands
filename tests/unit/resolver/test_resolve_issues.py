@@ -7,6 +7,7 @@ import pytest
 from openhands.core.config import LLMConfig
 from openhands.events.action import CmdRunAction
 from openhands.events.observation import CmdOutputObservation, NullObservation
+from openhands.llm.llm import LLM
 from openhands.resolver.github_issue import GithubIssue, ReviewThread
 from openhands.resolver.issue_definitions import IssueHandler, PRHandler
 from openhands.resolver.resolve_issue import (
@@ -83,8 +84,44 @@ def test_initialize_runtime():
     )
 
 
+@pytest.mark.asyncio
+async def test_resolve_issue_no_issues_found():
+    from openhands.resolver.resolve_issue import resolve_issue
+
+    # Mock dependencies
+    mock_handler = MagicMock()
+    mock_handler.get_converted_issues.return_value = []  # Return empty list
+
+    with patch(
+        'openhands.resolver.resolve_issue.issue_handler_factory',
+        return_value=mock_handler,
+    ):
+        with pytest.raises(ValueError) as exc_info:
+            await resolve_issue(
+                owner='test-owner',
+                repo='test-repo',
+                token='test-token',
+                username='test-user',
+                max_iterations=5,
+                output_dir='/tmp',
+                llm_config=LLMConfig(model='test', api_key='test'),
+                runtime_container_image='test-image',
+                prompt_template='test-template',
+                issue_type='pr',
+                repo_instruction=None,
+                issue_number=5432,
+                comment_id=None,
+            )
+
+        assert 'No issues found for issue number 5432' in str(exc_info.value)
+        assert 'test-owner/test-repo' in str(exc_info.value)
+        assert 'exists in the repository' in str(exc_info.value)
+        assert 'correct permissions' in str(exc_info.value)
+
+
 def test_download_issues_from_github():
-    handler = IssueHandler('owner', 'repo', 'token')
+    llm_config = LLMConfig(model='test', api_key='test')
+    handler = IssueHandler('owner', 'repo', 'token', llm_config)
 
     mock_issues_response = MagicMock()
     mock_issues_response.json.side_effect = [
@@ -125,7 +162,8 @@ def test_download_issues_from_github():
 
 
 def test_download_pr_from_github():
-    handler = PRHandler('owner', 'repo', 'token')
+    llm_config = LLMConfig(model='test', api_key='test')
+    handler = PRHandler('owner', 'repo', 'token', llm_config)
     mock_pr_response = MagicMock()
     mock_pr_response.json.side_effect = [
         [
@@ -386,16 +424,23 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
         handler_instance.get_instruction.return_value = ('Test instruction', [])
         handler_instance.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
 
-        with patch(
-            'openhands.resolver.resolve_issue.create_runtime', mock_create_runtime
-        ), patch(
-            'openhands.resolver.resolve_issue.initialize_runtime',
-            mock_initialize_runtime,
-        ), patch(
-            'openhands.resolver.resolve_issue.run_controller', mock_run_controller
-        ), patch(
-            'openhands.resolver.resolve_issue.complete_runtime', mock_complete_runtime
-        ), patch('openhands.resolver.resolve_issue.logger'):
+        with (
+            patch(
+                'openhands.resolver.resolve_issue.create_runtime', mock_create_runtime
+            ),
+            patch(
+                'openhands.resolver.resolve_issue.initialize_runtime',
+                mock_initialize_runtime,
+            ),
+            patch(
+                'openhands.resolver.resolve_issue.run_controller', mock_run_controller
+            ),
+            patch(
+                'openhands.resolver.resolve_issue.complete_runtime',
+                mock_complete_runtime,
+            ),
+            patch('openhands.resolver.resolve_issue.logger'),
+        ):
             # Call the function
             result = await process_issue(
                 issue,
@@ -442,7 +487,8 @@ def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
         title='Test Issue',
         body='This is a test issue refer to image ![First Image](https://sampleimage.com/image1.png)',
     )
-    issue_handler = IssueHandler('owner', 'repo', 'token')
+    mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
+    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
     instruction, images_urls = issue_handler.get_instruction(
         issue, mock_prompt_template, None
     )
@@ -470,7 +516,7 @@ def test_get_instruction(mock_prompt_template, mock_followup_prompt_template):
         ],
     )
 
-    pr_handler = PRHandler('owner', 'repo', 'token')
+    pr_handler = PRHandler('owner', 'repo', 'token', mock_llm_config)
     instruction, images_urls = pr_handler.get_instruction(
         issue, mock_followup_prompt_template, None
     )
@@ -493,7 +539,8 @@ def test_file_instruction():
     with open('openhands/resolver/prompts/resolve/basic.jinja', 'r') as f:
         prompt = f.read()
     # Test without thread comments
-    issue_handler = IssueHandler('owner', 'repo', 'token')
+    mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
+    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
     instruction, images_urls = issue_handler.get_instruction(issue, prompt, None)
     expected_instruction = """Please fix the following issue for the repository in /workspace.
 An environment has been set up for you to start working. You may assume all necessary tools are installed.
@@ -530,7 +577,8 @@ def test_file_instruction_with_repo_instruction():
     ) as f:
         repo_instruction = f.read()
 
-    issue_handler = IssueHandler('owner', 'repo', 'token')
+    mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
+    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
     instruction, image_urls = issue_handler.get_instruction(
         issue, prompt, repo_instruction
     )
@@ -581,11 +629,13 @@ def test_guess_success():
             )
         )
     ]
-    issue_handler = IssueHandler('owner', 'repo', 'token')
+    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
 
-    with patch('litellm.completion', MagicMock(return_value=mock_completion_response)):
+    with patch.object(
+        LLM, 'completion', MagicMock(return_value=mock_completion_response)
+    ):
         success, comment_success, explanation = issue_handler.guess_success(
-            mock_issue, mock_history, mock_llm_config
+            mock_issue, mock_history
         )
         assert issue_handler.issue_type == 'issue'
         assert comment_success is None
@@ -617,11 +667,13 @@ def test_guess_success_with_thread_comments():
             )
         )
     ]
-    issue_handler = IssueHandler('owner', 'repo', 'token')
+    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
 
-    with patch('litellm.completion', MagicMock(return_value=mock_completion_response)):
+    with patch.object(
+        LLM, 'completion', MagicMock(return_value=mock_completion_response)
+    ):
         success, comment_success, explanation = issue_handler.guess_success(
-            mock_issue, mock_history, mock_llm_config
+            mock_issue, mock_history
         )
         assert issue_handler.issue_type == 'issue'
         assert comment_success is None
@@ -648,7 +700,8 @@ def test_instruction_with_thread_comments():
     with open('openhands/resolver/prompts/resolve/basic.jinja', 'r') as f:
         prompt = f.read()
 
-    issue_handler = IssueHandler('owner', 'repo', 'token')
+    llm_config = LLMConfig(model='test', api_key='test')
+    issue_handler = IssueHandler('owner', 'repo', 'token', llm_config)
     instruction, images_urls = issue_handler.get_instruction(issue, prompt, None)
 
     # Verify that thread comments are included in the instruction
@@ -683,11 +736,13 @@ def test_guess_success_failure():
             )
         )
     ]
-    issue_handler = IssueHandler('owner', 'repo', 'token')
+    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
 
-    with patch('litellm.completion', MagicMock(return_value=mock_completion_response)):
+    with patch.object(
+        LLM, 'completion', MagicMock(return_value=mock_completion_response)
+    ):
         success, comment_success, explanation = issue_handler.guess_success(
-            mock_issue, mock_history, mock_llm_config
+            mock_issue, mock_history
         )
         assert issue_handler.issue_type == 'issue'
         assert comment_success is None
@@ -718,11 +773,13 @@ def test_guess_success_negative_case():
             )
         )
     ]
-    issue_handler = IssueHandler('owner', 'repo', 'token')
+    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
 
-    with patch('litellm.completion', MagicMock(return_value=mock_completion_response)):
+    with patch.object(
+        LLM, 'completion', MagicMock(return_value=mock_completion_response)
+    ):
         success, comment_success, explanation = issue_handler.guess_success(
-            mock_issue, mock_history, mock_llm_config
+            mock_issue, mock_history
         )
         assert issue_handler.issue_type == 'issue'
         assert comment_success is None
@@ -749,11 +806,13 @@ def test_guess_success_invalid_output():
     mock_completion_response.choices = [
         MagicMock(message=MagicMock(content='This is not a valid output'))
     ]
-    issue_handler = IssueHandler('owner', 'repo', 'token')
+    issue_handler = IssueHandler('owner', 'repo', 'token', mock_llm_config)
 
-    with patch('litellm.completion', MagicMock(return_value=mock_completion_response)):
+    with patch.object(
+        LLM, 'completion', MagicMock(return_value=mock_completion_response)
+    ):
         success, comment_success, explanation = issue_handler.guess_success(
-            mock_issue, mock_history, mock_llm_config
+            mock_issue, mock_history
         )
         assert issue_handler.issue_type == 'issue'
         assert comment_success is None
@@ -765,7 +824,8 @@ def test_guess_success_invalid_output():
 
 
 def test_download_pr_with_review_comments():
-    handler = PRHandler('owner', 'repo', 'token')
+    llm_config = LLMConfig(model='test', api_key='test')
+    handler = PRHandler('owner', 'repo', 'token', llm_config)
     mock_pr_response = MagicMock()
     mock_pr_response.json.side_effect = [
         [
@@ -831,7 +891,8 @@ def test_download_pr_with_review_comments():
 
 
 def test_download_issue_with_specific_comment():
-    handler = IssueHandler('owner', 'repo', 'token')
+    llm_config = LLMConfig(model='test', api_key='test')
+    handler = IssueHandler('owner', 'repo', 'token', llm_config)
 
     # Define the specific comment_id to filter
     specific_comment_id = 101

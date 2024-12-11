@@ -1,12 +1,11 @@
----
-id: configuration-options
-title: Configuration Options
-sidebar_label: Configuration Options
----
-
 # Configuration Options
 
 This guide details all configuration options available for OpenHands, helping you customize its behavior and integrate it with other services.
+
+:::note
+If you are running in [GUI Mode](https://docs.all-hands.dev/modules/usage/how-to/gui-mode), the settings available in the Settings UI will always
+take precedence.
+:::
 
 ---
 
@@ -48,10 +47,10 @@ This guide details all configuration options available for OpenHands, helping yo
    - [Confirmation Mode](#confirmation-mode)
    - [Security Analyzer](#security-analyzer)
 
-
 ---
 
 ## Core Configuration
+
 The core configuration options are defined in the `[core]` section of the `config.toml` file.
 
 **API Keys**
@@ -61,7 +60,7 @@ The core configuration options are defined in the `[core]` section of the `confi
   - Description: API key for E2B
 
 - `modal_api_token_id`
-  - Type: `str` 
+  - Type: `str`
   - Default: `""`
   - Description: API token ID for Modal
 
@@ -178,7 +177,10 @@ The core configuration options are defined in the `[core]` section of the `confi
   - Description: JWT secret for authentication. Please set it to your own value.
 
 ## LLM Configuration
+
 The LLM (Large Language Model) configuration options are defined in the `[llm]` section of the `config.toml` file.
+
+To use these with the docker command, pass in `-e LLM_<option>`. Example: `-e LLM_NUM_RETRIES`.
 
 **AWS Credentials**
 - `aws_access_key_id`
@@ -324,6 +326,7 @@ The LLM (Large Language Model) configuration options are defined in the `[llm]` 
   - Description: If model is vision capable, this option allows to disable image processing (useful for cost reduction)
 
 ## Agent Configuration
+
 The agent configuration options are defined in the `[agent]` and `[agent.<agent_name>]` sections of the `config.toml` file.
 
 **Microagent Configuration**
@@ -382,7 +385,10 @@ The agent configuration options are defined in the `[agent]` and `[agent.<agent_
   - Description: A list of microagents to disable
 
 ## Sandbox Configuration
+
 The sandbox configuration options are defined in the `[sandbox]` section of the `config.toml` file.
+
+To use these with the docker command, pass in `-e SANDBOX_<option>`. Example: `-e SANDBOX_TIMEOUT`.
 
 **Execution**
 - `timeout`
@@ -436,7 +442,10 @@ The sandbox configuration options are defined in the `[sandbox]` section of the 
   - Description: BrowserGym environment to use for evaluation
 
 ## Security Configuration
+
 The security configuration options are defined in the `[security]` section of the `config.toml` file.
+
+To use these with the docker command, pass in `-e SECURITY_<option>`. Example: `-e SECURITY_CONFIRMATION_MODE`.
 
 **Confirmation Mode**
 - `confirmation_mode`
@@ -450,10 +459,7 @@ The security configuration options are defined in the `[security]` section of th
   - Default: `""`
   - Description: The security analyzer to use
 
-
 ---
 
 > **Note**: Adjust configurations carefully, especially for memory, security, and network-related settings to ensure optimal performance and security.
 Please note that the configuration options may be subject to change in future versions of OpenHands. It's recommended to refer to the official documentation for the most up-to-date information.
-
-

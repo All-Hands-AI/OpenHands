@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, test } from "vitest";
-import { ChatMessage } from "#/components/chat-message";
+import { ChatMessage } from "#/components/features/chat/chat-message";
 
 describe("ChatMessage", () => {
   it("should render a user message", () => {
@@ -69,5 +69,13 @@ describe("ChatMessage", () => {
       </ChatMessage>,
     );
     expect(screen.getByTestId("custom-component")).toBeInTheDocument();
+  });
+
+  it("should apply correct styles to inline code", () => {
+    render(<ChatMessage type="assistant" message="Here is some `inline code` text" />);
+    const codeElement = screen.getByText("inline code");
+
+    expect(codeElement.tagName.toLowerCase()).toBe("code");
+    expect(codeElement.closest("article")).not.toBeNull();
   });
 });

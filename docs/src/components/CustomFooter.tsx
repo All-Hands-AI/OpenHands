@@ -8,7 +8,7 @@ function CustomFooter() {
     <footer className="custom-footer">
       <div className="footer-content">
         <div className="footer-icons">
-          <a href="https://join.slack.com/t/opendevin/shared_invite/zt-2oikve2hu-UDxHeo8nsE69y6T7yFX_BA" target="_blank" rel="noopener noreferrer">
+          <a href="https://join.slack.com/t/openhands-ai/shared_invite/zt-2vbfigwev-G03twSpXaErwzYVD4CFiBg" target="_blank" rel="noopener noreferrer">
             <FaSlack />
           </a>
           <a href="https://discord.gg/ESHStjSjD4" target="_blank" rel="noopener noreferrer">
