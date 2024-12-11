@@ -144,10 +144,16 @@ export const chatSlice = createSlice({
         return;
       }
       causeMessage.translationID = translationID;
-      // Set success property for command execution
+      // Set success property based on observation type
       if (observationID === "run") {
         const commandObs = observation.payload as CommandObservation;
         causeMessage.success = commandObs.extras.exit_code === 0;
+      } else if (observationID === "run_ipython") {
+        // For IPython, we consider it successful if there's no error message
+        const ipythonObs = observation.payload as IPythonObservation;
+        causeMessage.success = !ipythonObs.message
+          .toLowerCase()
+          .includes("error");
       }
 
       if (observationID === "run" || observationID === "run_ipython") {
