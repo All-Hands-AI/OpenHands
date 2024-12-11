@@ -153,7 +153,6 @@ def test_pr_title_with_quotes(monkeypatch):
 
         # Try to send a PR - this will fail if the title is incorrectly escaped
         print('Sending PR...')
-        from openhands.core.config import LLMConfig
         from openhands.resolver.send_pull_request import send_pull_request
 
         send_pull_request(
@@ -161,6 +160,5 @@ def test_pr_title_with_quotes(monkeypatch):
             github_token='dummy-token',
             github_username='test-user',
             patch_dir=temp_dir,
-            llm_config=LLMConfig(model='test-model', api_key='test-key'),
             pr_type='ready',
         )
