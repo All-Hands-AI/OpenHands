@@ -132,7 +132,7 @@ describe("InteractiveChatBox", () => {
     expect(onStopMock).toHaveBeenCalledOnce();
   });
 
-  it("should clear text input after image paste", async () => {
+  it("should handle image paste without clearing text", async () => {
     const onSubmit = vi.fn();
     const onStop = vi.fn();
     const onChange = vi.fn();
@@ -160,11 +160,19 @@ describe("InteractiveChatBox", () => {
     // Trigger paste event
     fireEvent(textarea, clipboardEvent);
 
-    // The text input should be cleared via onChange
-    expect(onChange).toHaveBeenCalledWith("");
+    // The text input should not be cleared
+    expect(textarea).toHaveValue("test message");
+    expect(onChange).not.toHaveBeenCalledWith("");
+
+    // Submit the message with image - this should clear the text input
+    const submitButton = screen.getByRole("button", { name: "Send" });
+    await userEvent.setup().click(submitButton);
+
+    // Verify onSubmit was called with the message and image
+    expect(onSubmit).toHaveBeenCalledWith("test message", [imageFile]);
   });
 
-  it("should clear text input after image drop", async () => {
+  it("should handle image drop without clearing text", async () => {
     const onSubmit = vi.fn();
     const onStop = vi.fn();
     const onChange = vi.fn();
@@ -193,11 +201,19 @@ describe("InteractiveChatBox", () => {
     // Trigger drop event
     fireEvent(textarea, dropEvent);
 
-    // The text input should be cleared via onChange
-    expect(onChange).toHaveBeenCalledWith("");
+    // The text input should not be cleared
+    expect(textarea).toHaveValue("test message");
+    expect(onChange).not.toHaveBeenCalledWith("");
+
+    // Submit the message with image - this should clear the text input
+    const submitButton = screen.getByRole("button", { name: "Send" });
+    await userEvent.setup().click(submitButton);
+
+    // Verify onSubmit was called with the message and image
+    expect(onSubmit).toHaveBeenCalledWith("test message", [imageFile]);
   });
 
-  it("should clear text input when uploading an image but not when removing it", async () => {
+  it("should handle image upload without clearing text", async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();
     const onStop = vi.fn();
@@ -212,21 +228,20 @@ describe("InteractiveChatBox", () => {
       />
     );
 
-    // Upload an image - this should clear the text input
+    // Upload an image via the upload button - this should NOT clear the text input
     const file = new File(["dummy content"], "test.png", { type: "image/png" });
     const input = screen.getByTestId("upload-image-input");
     await user.upload(input, file);
 
-    // Verify onChange was called to clear the text
-    expect(onChange).toHaveBeenCalledWith("");
-    onChange.mockClear();
+    // Verify text input was not cleared
+    expect(screen.getByRole("textbox")).toHaveValue("test message");
+    expect(onChange).not.toHaveBeenCalledWith("");
 
-    // Remove the image - this should not clear the text input
-    const imagePreview = screen.getByTestId("image-preview");
-    const closeButton = within(imagePreview).getByRole("button");
-    await user.click(closeButton);
+    // Submit the message with image - this should clear the text input
+    const submitButton = screen.getByRole("button", { name: "Send" });
+    await user.click(submitButton);
 
-    // Verify onChange was not called again
-    expect(onChange).not.toHaveBeenCalled();
+    // Verify onSubmit was called with the message and image
+    expect(onSubmit).toHaveBeenCalledWith("test message", [file]);
   });
 });

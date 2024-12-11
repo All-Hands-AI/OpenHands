@@ -25,7 +25,6 @@ export function InteractiveChatBox({
 
   const handleUpload = (files: File[]) => {
     setImages((prevImages) => [...prevImages, ...files]);
-    onChange?.("");
   };
 
   const handleRemoveImage = (index: number) => {
