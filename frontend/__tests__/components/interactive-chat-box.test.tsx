@@ -196,4 +196,37 @@ describe("InteractiveChatBox", () => {
     // The text input should be cleared via onChange
     expect(onChange).toHaveBeenCalledWith("");
   });
+
+  it("should clear text input when uploading an image but not when removing it", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    const onStop = vi.fn();
+    const onChange = vi.fn();
+
+    render(
+      <InteractiveChatBox
+        onSubmit={onSubmit}
+        onStop={onStop}
+        onChange={onChange}
+        value="test message"
+      />
+    );
+
+    // Upload an image - this should clear the text input
+    const file = new File(["dummy content"], "test.png", { type: "image/png" });
+    const input = screen.getByTestId("upload-image-input");
+    await user.upload(input, file);
+
+    // Verify onChange was called to clear the text
+    expect(onChange).toHaveBeenCalledWith("");
+    onChange.mockClear();
+
+    // Remove the image - this should not clear the text input
+    const imagePreview = screen.getByTestId("image-preview");
+    const closeButton = within(imagePreview).getByRole("button");
+    await user.click(closeButton);
+
+    // Verify onChange was not called again
+    expect(onChange).not.toHaveBeenCalled();
+  });
 });
