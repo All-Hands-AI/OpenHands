@@ -84,3 +84,130 @@ yes | npm install package-name
 ```
 
 For more information about specific agents, refer to their individual documentation files in the micro-agents directory.
+
+## Contributing a Micro-Agent
+
+To contribute a new micro-agent to OpenHands, follow these guidelines:
+
+### 1. Planning Your Micro-Agent
+
+Before creating a micro-agent, consider:
+- What specific problem or use case will it address?
+- What unique capabilities or knowledge should it have?
+- What trigger words make sense for activating it?
+- What constraints or guidelines should it follow?
+
+### 2. File Structure
+
+Create a new markdown file in `openhands/agenthub/codeact_agent/micro/` with a descriptive name (e.g., `docker.md` for a Docker-focused agent).
+
+### 3. Required Components
+
+Your micro-agent file must include:
+
+1. **Front Matter**: YAML metadata at the start of the file:
+```markdown
+---
+name: your_agent_name
+agent: CodeActAgent
+triggers:
+- trigger_word1
+- trigger_word2
+---
+```
+
+2. **Instructions**: Clear, specific guidelines for the agent's behavior:
+```markdown
+You are responsible for [specific task/domain].
+
+Key responsibilities:
+1. [Responsibility 1]
+2. [Responsibility 2]
+
+Guidelines:
+- [Guideline 1]
+- [Guideline 2]
+
+Examples of usage:
+[Example 1]
+[Example 2]
+```
+
+### 4. Best Practices for Micro-Agent Development
+
+1. **Clear Scope**: Keep the agent focused on a specific domain or task
+2. **Explicit Instructions**: Provide clear, unambiguous guidelines
+3. **Useful Examples**: Include practical examples of common use cases
+4. **Safety First**: Include necessary warnings and constraints
+5. **Integration Awareness**: Consider how the agent interacts with other components
+
+### 5. Testing Your Micro-Agent
+
+Before submitting:
+1. Test the agent with various prompts
+2. Verify trigger words activate the agent correctly
+3. Ensure instructions are clear and comprehensive
+4. Check for potential conflicts with existing agents
+
+### 6. Example Implementation
+
+Here's a template for a new micro-agent:
+
+```markdown
+---
+name: docker
+agent: CodeActAgent
+triggers:
+- docker
+- container
+---
+
+You are responsible for Docker container management and Dockerfile creation.
+
+Key responsibilities:
+1. Create and modify Dockerfiles
+2. Manage container lifecycle
+3. Handle Docker Compose configurations
+
+Guidelines:
+- Always use official base images when possible
+- Include necessary security considerations
+- Follow Docker best practices for layer optimization
+
+Examples:
+1. Creating a Dockerfile:
+   ```dockerfile
+   FROM node:18-alpine
+   WORKDIR /app
+   COPY package*.json ./
+   RUN npm install
+   COPY . .
+   CMD ["npm", "start"]
+   ```
+
+2. Docker Compose usage:
+   ```yaml
+   version: '3'
+   services:
+     web:
+       build: .
+       ports:
+         - "3000:3000"
+   ```
+
+Remember to:
+- Validate Dockerfile syntax
+- Check for security vulnerabilities
+- Optimize for build time and image size
+```
+
+### 7. Submission Process
+
+1. Create your micro-agent file in the correct directory
+2. Test thoroughly
+3. Submit a pull request with:
+   - The new micro-agent file
+   - Updated documentation if needed
+   - Description of the agent's purpose and capabilities
+
+Remember that micro-agents are a powerful way to extend OpenHands' capabilities in specific domains. Well-designed agents can significantly improve the system's ability to handle specialized tasks.
