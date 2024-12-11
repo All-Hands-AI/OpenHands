@@ -58,7 +58,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1">
+      <aside className="h-[40px] md:h-full px-1 flex flex-row md:flex-col gap-1 relative">
         <div className="w-[34px] h-[34px] flex items-center justify-center">
           {user.isLoading && <LoadingSpinner size="small" />}
           {!user.isLoading && <AllHandsLogoButton onClick={handleClickLogo} />}
@@ -88,7 +88,7 @@ export function Sidebar() {
 
         {conversationPanelIsOpen && (
           <div
-            className="absolute h-full left-[calc(100%+12px)] z-20" // 12px padding (sidebar parent)
+            className="absolute h-full left-[calc(100%+12px)] top-0 z-20" // 12px padding (sidebar parent)
           >
             <ConversationPanel
               onClose={() => setConversationPanelIsOpen(false)}
