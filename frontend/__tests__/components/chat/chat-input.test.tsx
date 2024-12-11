@@ -91,16 +91,37 @@ describe("ChatInput", () => {
 
   it("should clear the input message after sending a message", async () => {
     const user = userEvent.setup();
-    render(<ChatInput onSubmit={onSubmitMock} />);
+    const onChangeMock = vi.fn();
+    const { rerender } = render(
+      <ChatInput onSubmit={onSubmitMock} onChange={onChangeMock} value="Hello, world!" />
+    );
     const textarea = screen.getByRole("textbox");
     const button = screen.getByRole("button");
 
-    await user.type(textarea, "Hello, world!");
+    // Submit via Enter key
+    await user.click(textarea);
     await user.keyboard("{Enter}");
+    expect(onSubmitMock).toHaveBeenCalledWith("Hello, world!");
+    expect(onChangeMock).toHaveBeenCalledWith("");
+
+    // Simulate parent component updating value prop
+    rerender(
+      <ChatInput onSubmit={onSubmitMock} onChange={onChangeMock} value="" />
+    );
     expect(textarea).toHaveValue("");
 
-    await user.type(textarea, "Hello, world!");
+    // Submit via button click
+    rerender(
+      <ChatInput onSubmit={onSubmitMock} onChange={onChangeMock} value="Hello, world!" />
+    );
     await user.click(button);
+    expect(onSubmitMock).toHaveBeenCalledWith("Hello, world!");
+    expect(onChangeMock).toHaveBeenCalledWith("");
+
+    // Simulate parent component updating value prop
+    rerender(
+      <ChatInput onSubmit={onSubmitMock} onChange={onChangeMock} value="" />
+    );
     expect(textarea).toHaveValue("");
   });
 
