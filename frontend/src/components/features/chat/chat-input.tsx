@@ -52,8 +52,6 @@ export function ChatInput({
       if (files.length > 0) {
         event.preventDefault();
         onImagePaste(files);
-        // Clear the text input when an image is pasted
-        onChange?.("");
       }
     }
     // For text paste, let the default behavior handle it
@@ -80,8 +78,6 @@ export function ChatInput({
       );
       if (files.length > 0) {
         onImagePaste(files);
-        // Clear the text input when an image is dropped
-        onChange?.("");
       }
     }
   };
@@ -92,7 +88,6 @@ export function ChatInput({
       if (!value && textareaRef.current) {
         textareaRef.current.value = "";
       }
-      onChange?.("");
     }
   };
 
