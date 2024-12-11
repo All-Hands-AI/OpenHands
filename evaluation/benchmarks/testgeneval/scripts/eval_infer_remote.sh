@@ -13,7 +13,7 @@ if [ -z "$INPUT_FILE" ]; then
 fi
 
 if [ -z "$DATASET" ]; then
-  echo "DATASET not specified, use default kjain/testgenevallite"
+  echo "DATASET not specified, use default kjain14/testgenevallite"
   DATASET="kjain14/testgenevallite"
 fi
 
