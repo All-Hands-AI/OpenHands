@@ -7,7 +7,7 @@ function CogTooth(): JSX.Element {
       fill="none"
       viewBox="0 0 24 24"
       strokeWidth="1.5"
-      stroke="currentColor"
+      stroke="#a3a3a3"
       className="w-6 h-6"
     >
       <path

@@ -1,6 +1,6 @@
 import React from "react";
 import { useLocation } from "react-router";
-import { FaBars } from "react-icons/fa";
+import FolderIcon from "#/icons/docs.svg?react";
 import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
@@ -15,6 +15,7 @@ import { AccountSettingsModal } from "#/components/shared/modals/account-setting
 import { ExitProjectConfirmationModal } from "#/components/shared/modals/exit-project-confirmation-modal";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 import { ConversationPanel } from "../conversation-panel/conversation-panel";
+import { cn } from "#/utils/utils";
 
 export function Sidebar() {
   const location = useLocation();
@@ -31,7 +32,7 @@ export function Sidebar() {
   const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
     React.useState(false);
   const [conversationPanelIsOpen, setConversationPanelIsOpen] =
-    React.useState(false);
+    React.useState(true);
 
   React.useEffect(() => {
     // If the github token is invalid, open the account settings modal again
@@ -75,8 +76,11 @@ export function Sidebar() {
             data-testid="toggle-conversation-panel"
             type="button"
             onClick={() => setConversationPanelIsOpen((prev) => !prev)}
+            className={cn(
+              conversationPanelIsOpen ? "border-b-2 border-[#FFE165]" : "",
+            )}
           >
-            <FaBars fill="#A3A3A3" className="hover:opacity-80" />
+            <FolderIcon width={28} height={28} />
           </button>
           <DocsButton />
           {!!token && (

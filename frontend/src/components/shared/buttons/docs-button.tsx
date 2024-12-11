@@ -1,4 +1,4 @@
-import DocsIcon from "#/icons/docs.svg?react";
+import { FaGraduationCap } from "react-icons/fa";
 
 export function DocsButton() {
   return (
@@ -7,9 +7,9 @@ export function DocsButton() {
       aria-label="Documentation"
       target="_blank"
       rel="noreferrer noopener"
-      className="w-8 h-8 rounded-full hover:opacity-80 flex items-center justify-center"
+      className="rounded-full hover:opacity-80 flex items-center justify-center"
     >
-      <DocsIcon width={28} height={28} />
+      <FaGraduationCap fill="#a3a3a3" size={24} />
     </a>
   );
 }

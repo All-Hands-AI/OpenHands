@@ -14,15 +14,20 @@ describe("Sidebar", () => {
     useNavigate: vi.fn(),
   }));
 
+  it("should have the conversation panel open by default", () => {
+    renderSidebar();
+
+    expect(screen.getByTestId("conversation-panel")).toBeInTheDocument();
+  });
+
   it("should toggle the conversation panel", async () => {
     const user = userEvent.setup();
     renderSidebar();
 
-    expect(screen.queryByTestId("conversation-panel")).not.toBeInTheDocument();
     const projectPanelButton = screen.getByTestId("toggle-conversation-panel");
 
     await user.click(projectPanelButton);
 
-    expect(screen.getByTestId("conversation-panel")).toBeInTheDocument();
+    expect(screen.queryByTestId("conversation-panel")).not.toBeInTheDocument();
   });
 });
