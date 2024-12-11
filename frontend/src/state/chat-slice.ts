@@ -144,26 +144,10 @@ export const chatSlice = createSlice({
         return;
       }
       causeMessage.translationID = translationID;
-      // Set success property based on observation type
+      // Set success property for command execution
       if (observationID === "run") {
         const commandObs = observation.payload as CommandObservation;
         causeMessage.success = commandObs.extras.exit_code === 0;
-      } else if (observationID === "run_ipython") {
-        // For IPython, we consider it successful if there's no error message
-        const ipythonObs = observation.payload as IPythonObservation;
-        causeMessage.success = !ipythonObs.message
-          .toLowerCase()
-          .includes("error");
-      } else if (observationID === "write") {
-        // For write operations, we consider them successful if there's no error message
-        const writeObs = observation.payload as WriteObservation;
-        causeMessage.success = !writeObs.message
-          .toLowerCase()
-          .includes("error");
-      } else if (observationID === "read") {
-        // For read operations, we consider them successful if there's no error message
-        const readObs = observation.payload as ReadObservation;
-        causeMessage.success = !readObs.message.toLowerCase().includes("error");
       }
 
       if (observationID === "run" || observationID === "run_ipython") {

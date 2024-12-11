@@ -50,12 +50,5 @@ def observation_from_dict(observation: dict) -> Observation:
     observation.pop('message', None)
     content = observation.pop('content', '')
     extras = observation.pop('extras', {})
-    # Handle command and command_id fields for CmdOutputObservation
-    if observation_class == CmdOutputObservation:
-        command = observation.pop('command', extras.get('command'))
-        command_id = observation.pop('command_id', extras.get('command_id'))
-        if command is not None:
-            extras['command'] = command
-        if command_id is not None:
-            extras['command_id'] = command_id
+
     return observation_class(content=content, **extras)
