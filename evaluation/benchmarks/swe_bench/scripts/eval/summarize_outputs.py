@@ -128,6 +128,11 @@ def process_file(file_path):
                 for error, count in error_counter.items()
             },
         },
+        'costs': {
+            'main_agent': sum(main_agent_cost),
+            'editor': sum(editor_cost),
+            'total': sum(main_agent_cost) + sum(editor_cost),
+        },
         'statistics': {
             'avg_turns': sum(num_turns) / num_lines if num_lines > 0 else 0,
             'costs': {
@@ -251,6 +256,7 @@ if __name__ == '__main__':
             print(
                 f"Number of unfinished runs: {result['unfinished_runs']['count']} / {result['total_instances']} ({result['unfinished_runs']['percentage']:.2f}%)"
             )
+            print(f"Total cost: {result['costs']['total']:.2f} USD")
             print('## Statistics')
             print(
                 f"Avg. num of turns per instance: {result['statistics']['avg_turns']:.2f}"

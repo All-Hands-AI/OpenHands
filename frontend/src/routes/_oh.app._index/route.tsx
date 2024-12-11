@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useSelector } from "react-redux";
 import { useRouteError } from "react-router";
 import { editor } from "monaco-editor";
@@ -32,7 +32,6 @@ function CodeEditor() {
   } = useFiles();
 
   const [fileExplorerIsOpen, setFileExplorerIsOpen] = React.useState(true);
-  const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 });
   const editorRef = React.useRef<editor.IStandaloneCodeEditor | null>(null);
 
   const { mutate: saveFile } = useSaveFile();
@@ -54,13 +53,6 @@ function CodeEditor() {
       },
     });
     monaco.editor.setTheme("oh-dark");
-
-    e.onDidChangeCursorPosition((ee) => {
-      setCursorPosition({
-        line: ee.position.lineNumber,
-        column: ee.position.column,
-      });
-    });
   };
 
   const agentState = useSelector(
@@ -111,7 +103,6 @@ function CodeEditor() {
         <CodeEditorComponent
           onMount={handleEditorDidMount}
           isReadOnly={!isEditingAllowed}
-          cursorPosition={cursorPosition}
         />
       </div>
     </div>
