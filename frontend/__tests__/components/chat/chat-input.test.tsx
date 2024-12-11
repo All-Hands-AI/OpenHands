@@ -89,25 +89,19 @@ describe("ChatInput", () => {
     // expect(textarea).toHaveValue("Hello, world!\n");
   });
 
-  it("should not clear the input message after sending a message", async () => {
+  it("should clear the input message after sending a message", async () => {
     const user = userEvent.setup();
-    const onChangeMock = vi.fn();
-    const { rerender } = render(
-      <ChatInput onSubmit={onSubmitMock} onChange={onChangeMock} value="Hello, world!" />
-    );
+    render(<ChatInput onSubmit={onSubmitMock} />);
     const textarea = screen.getByRole("textbox");
     const button = screen.getByRole("button");
 
-    // Submit via Enter key
-    await user.click(textarea);
+    await user.type(textarea, "Hello, world!");
     await user.keyboard("{Enter}");
-    expect(onSubmitMock).toHaveBeenCalledWith("Hello, world!");
-    expect(onChangeMock).not.toHaveBeenCalledWith("");
+    expect(textarea).toHaveValue("");
 
-    // Submit via button click
+    await user.type(textarea, "Hello, world!");
     await user.click(button);
-    expect(onSubmitMock).toHaveBeenCalledWith("Hello, world!");
-    expect(onChangeMock).not.toHaveBeenCalledWith("");
+    expect(textarea).toHaveValue("");
   });
 
   it("should hide the submit button", () => {
