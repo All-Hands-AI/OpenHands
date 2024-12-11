@@ -46,7 +46,6 @@ class SessionManager:
 
     def _get_redis_client(self):
         redis_client = getattr(self.sio.manager, 'redis', None)
-        logger.info(f'_get_redis_client:{bool(redis_client)}')
         return redis_client
 
     async def _redis_subscribe(self):
@@ -157,7 +156,6 @@ class SessionManager:
             return session.agent_session.event_stream
 
         # If there is a remote session running, retrieve existing events for that
-        # We need more debug logging here - is there actually a redis client specified???
         redis_client = self._get_redis_client()
         if redis_client and await self._is_session_running_in_cluster(sid):
             return EventStream(sid, self.file_store)
@@ -167,7 +165,6 @@ class SessionManager:
     async def _is_session_running_in_cluster(self, sid: str) -> bool:
         """As the rest of the cluster if a session is running. Wait a for a short timeout for a reply"""
         # Create a flag for the callback
-        logger.debug('_is_session_running_in_cluster')
         flag = asyncio.Event()
         self._session_is_running_flags[sid] = flag
         try:
