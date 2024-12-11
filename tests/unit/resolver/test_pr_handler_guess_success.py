@@ -16,7 +16,7 @@ def mock_llm_response(content):
 
 
 def test_guess_success_review_threads_litellm_call():
-    """Test that the litellm.completion() call for review threads contains the expected content."""
+    """Test that the completion() call for review threads contains the expected content."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
     handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
@@ -77,7 +77,7 @@ The changes successfully address the feedback."""
         mock_completion.return_value = mock_response
         success, success_list, explanation = handler.guess_success(issue, history)
 
-        # Verify the litellm.completion() calls
+        # Verify the completion() calls
         assert mock_completion.call_count == 2  # One call per review thread
 
         # Check first call
@@ -121,7 +121,7 @@ The changes successfully address the feedback."""
 
 
 def test_guess_success_thread_comments_litellm_call():
-    """Test that the litellm.completion() call for thread comments contains the expected content."""
+    """Test that the completion() call for thread comments contains the expected content."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
     handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
@@ -176,7 +176,7 @@ The changes successfully address the feedback."""
         mock_completion.return_value = mock_response
         success, success_list, explanation = handler.guess_success(issue, history)
 
-        # Verify the litellm.completion() call
+        # Verify the completion() call
         mock_completion.assert_called_once()
         call_args = mock_completion.call_args
         prompt = call_args[1]['messages'][0]['content']
@@ -270,7 +270,7 @@ Changes look good"""
             review_thread, issues_context, last_message
         )
 
-        # Verify the litellm.completion() call
+        # Verify the completion() call
         mock_completion.assert_called_once()
         call_args = mock_completion.call_args
         prompt = call_args[1]['messages'][0]['content']
@@ -326,7 +326,7 @@ Changes look good"""
             thread_comments, issues_context, last_message
         )
 
-        # Verify the litellm.completion() call
+        # Verify the completion() call
         mock_completion.assert_called_once()
         call_args = mock_completion.call_args
         prompt = call_args[1]['messages'][0]['content']
@@ -379,7 +379,7 @@ Changes look good"""
             review_comments, issues_context, last_message
         )
 
-        # Verify the litellm.completion() call
+        # Verify the completion() call
         mock_completion.assert_called_once()
         call_args = mock_completion.call_args
         prompt = call_args[1]['messages'][0]['content']
@@ -395,7 +395,7 @@ Changes look good"""
 
 
 def test_guess_success_review_comments_litellm_call():
-    """Test that the litellm.completion() call for review comments contains the expected content."""
+    """Test that the completion() call for review comments contains the expected content."""
     # Create a PR handler instance
     llm_config = LLMConfig(model='test', api_key='test')
     handler = PRHandler('test-owner', 'test-repo', 'test-token', llm_config)
@@ -447,7 +447,7 @@ The changes successfully address the feedback."""
         mock_completion.return_value = mock_response
         success, success_list, explanation = handler.guess_success(issue, history)
 
-        # Verify the litellm.completion() call
+        # Verify the completion() call
         mock_completion.assert_called_once()
         call_args = mock_completion.call_args
         prompt = call_args[1]['messages'][0]['content']

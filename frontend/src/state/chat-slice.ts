@@ -8,7 +8,7 @@ type SliceState = { messages: Message[] };
 
 const MAX_CONTENT_LENGTH = 1000;
 
-const HANDLED_ACTIONS = ["run", "run_ipython", "write", "read"];
+const HANDLED_ACTIONS = ["run", "run_ipython", "write", "read", "browse"];
 
 function getRiskText(risk: ActionSecurityRisk) {
   switch (risk) {
@@ -92,6 +92,8 @@ export const chatSlice = createSlice({
         text = `${action.payload.args.path}\n${content}`;
       } else if (actionID === "read") {
         text = action.payload.args.path;
+      } else if (actionID === "browse") {
+        text = `Browsing ${action.payload.args.url}`;
       }
       if (actionID === "run" || actionID === "run_ipython") {
         if (
@@ -136,6 +138,16 @@ export const chatSlice = createSlice({
         }
         content = `\`\`\`\n${content}\n\`\`\``;
         causeMessage.content = content; // Observation content includes the action
+      } else if (observationID === "browse") {
+        let content = `**URL:** ${observation.payload.extras.url}\n`;
+        if (observation.payload.extras.error) {
+          content += `**Error:**\n${observation.payload.extras.error}\n`;
+        }
+        content += `**Output:**\n${observation.payload.content}`;
+        if (content.length > MAX_CONTENT_LENGTH) {
+          content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
+        }
+        causeMessage.content = content;
       }
     },
 

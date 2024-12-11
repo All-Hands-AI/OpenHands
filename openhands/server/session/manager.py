@@ -64,6 +64,7 @@ class SessionManager:
         """
         We use a redis backchannel to send actions between server nodes
         """
+        logger.debug('_redis_subscribe')
         redis_client = self._get_redis_client()
         pubsub = redis_client.pubsub()
         await pubsub.subscribe('oh_event')
@@ -87,7 +88,7 @@ class SessionManager:
 
     async def _process_message(self, message: dict):
         data = json.loads(message['data'])
-        logger.info(f'got_published_message:{message}')
+        logger.debug(f'got_published_message:{message}')
         sid = data['sid']
         message_type = data['message_type']
         if message_type == 'event':
@@ -124,7 +125,7 @@ class SessionManager:
         elif message_type == 'session_closing':
             # Session closing event - We only get this in the event of graceful shutdown,
             # which can't be guaranteed - nodes can simply vanish unexpectedly!
-            logger.info(f'session_closing:{sid}')
+            logger.debug(f'session_closing:{sid}')
             for (
                 connection_id,
                 local_sid,
@@ -201,7 +202,6 @@ class SessionManager:
             except Exception:
                 logger.warning('error_cleaning_detached_conversations', exc_info=True)
                 await asyncio.sleep(15)
-
     async def init_or_join_session(
         self, sid: str, connection_id: str, session_init_data: SessionInitData
     ):
@@ -227,6 +227,7 @@ class SessionManager:
         flag = asyncio.Event()
         self._session_is_running_flags[sid] = flag
         try:
+            logger.debug(f'publish:is_session_running:{sid}')
             await self._get_redis_client().publish(
                 'oh_event',
                 json.dumps(
