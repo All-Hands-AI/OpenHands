@@ -58,17 +58,23 @@ async function getAllFiles(
       const subFilesArrays = await Promise.all(subFilesPromises);
       return subFilesArrays.flat();
     }
-    progress.filesTotal += 1;
-    progress.currentFile = fullPath;
-    options?.onProgress?.(progress);
+    const updatedProgress = {
+      ...progress,
+      filesTotal: progress.filesTotal + 1,
+      currentFile: fullPath,
+    };
+    options?.onProgress?.(updatedProgress);
     return [fullPath];
   };
 
   const filePromises = entries.map((entry) => processEntry(entry));
   const fileArrays = await Promise.all(filePromises);
 
-  progress.isDiscoveringFiles = false;
-  options?.onProgress?.(progress);
+  const updatedProgress = {
+    ...progress,
+    isDiscoveringFiles: false,
+  };
+  options?.onProgress?.(updatedProgress);
 
   return fileArrays.flat();
 }
@@ -145,7 +151,6 @@ async function processBatch(
     bytesDownloadedPerSecond: newTotalBytes / ((Date.now() - startTime) / 1000),
     isDiscoveringFiles: false,
   };
-  Object.assign(progress, updatedProgress);
   options?.onProgress?.(updatedProgress);
 
   return {
@@ -165,7 +170,7 @@ export async function downloadFiles(
 ): Promise<void> {
   const startTime = Date.now();
   const progress: DownloadProgress = {
-    filesTotal: 0,  // Will be updated during file discovery
+    filesTotal: 0, // Will be updated during file discovery
     filesDownloaded: 0,
     currentFile: "",
     totalBytesDownloaded: 0,
