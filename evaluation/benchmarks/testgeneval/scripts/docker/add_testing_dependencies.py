@@ -25,7 +25,8 @@ def generate_dockerfile_content(
 ):
     dockerfile_content = f"""
 FROM {base_image}
-RUN pip install {' '.join(dependencies)}
+SHELL ["/bin/bash", "-c"]
+RUN source /opt/miniconda3/bin/activate && conda activate testbed && pip install {' '.join(dependencies)}
 COPY {patch_path} /app/patch.diff
 RUN git apply /app/patch.diff
 RUN rm /app/patch.diff

@@ -1,11 +1,9 @@
 # Adapted from https://github.com/EngineeringSoftware/teco/blob/main/src/CodeBLEU/Evaluator.py
 import os
-import warnings
 from pathlib import Path
 from typing import List
 
 import numpy as np
-
 from CodeBLEU import bleu, dataflow_match, syntax_match, weighted_ngram_match
 from tree_sitter import Language
 
@@ -16,12 +14,12 @@ class Evaluator:
     """
 
     def __init__(
-            self,
-            lang: str,
-            alpha: float = 0.25,
-            beta: float = 0.25,
-            gamma: float = 0.25,
-            theta: float = 0.25,
+        self,
+        lang: str,
+        alpha: float = 0.25,
+        beta: float = 0.25,
+        gamma: float = 0.25,
+        theta: float = 0.25,
     ):
         self.lang = lang
         self.alpha = alpha
@@ -31,14 +29,23 @@ class Evaluator:
 
         # Load keywords and tree-sitter parser
         this_dir: Path = Path(os.path.dirname(os.path.realpath(__file__)))
-        self.keywords = [x.strip() for x in open(this_dir / "keywords" / f"{self.lang}.txt", 'r', encoding='utf-8').readlines()]
-        self.parser_language = Language(this_dir / "parser" / "my-languages.so", lang)
+        self.keywords = [
+            x.strip()
+            for x in open(
+                this_dir / 'keywords' / f'{self.lang}.txt', 'r', encoding='utf-8'
+            ).readlines()
+        ]
+        self.parser_language = Language(this_dir / 'parser' / 'my-languages.so', lang)
 
     @staticmethod
     def make_weights(reference_tokens, key_word_list):
-        return {token: 1 if token in key_word_list else 0.2 for token in reference_tokens}
+        return {
+            token: 1 if token in key_word_list else 0.2 for token in reference_tokens
+        }
 
-    def corpus_code_bleu(self, refs_toks: List[List[List[str]]], hyps_toks: List[List[str]]) -> float:
+    def corpus_code_bleu(
+        self, refs_toks: List[List[List[str]]], hyps_toks: List[List[str]]
+    ) -> float:
         """
         Calculates CodeBLEU for the given references and hypotheses (should be tokenized).
         :param refs_toks: the references, num_item * num_ref * num_tok.
@@ -49,8 +56,10 @@ class Evaluator:
         assert len(refs_toks) == len(hyps_toks)
 
         # Group tokens (for syntax match & dataflow match)
-        refs = [[" ".join(ref_toks) for ref_toks in reference] for reference in refs_toks]
-        hyps = [" ".join(hyp_toks) for hyp_toks in hyps_toks]
+        refs = [
+            [' '.join(ref_toks) for ref_toks in reference] for reference in refs_toks
+        ]
+        hyps = [' '.join(hyp_toks) for hyp_toks in hyps_toks]
 
         # Accumulate working scores and weights
         cum_weighted_score = 0
@@ -63,27 +72,36 @@ class Evaluator:
 
         # Calculate weighted ngram match
         refs_toks_with_weights = [
-            [[reference_tokens, self.make_weights(reference_tokens, self.keywords)] for reference_tokens in reference]
+            [
+                [reference_tokens, self.make_weights(reference_tokens, self.keywords)]
+                for reference_tokens in reference
+            ]
             for reference in refs_toks
         ]
-        weighted_ngram_match_score = weighted_ngram_match.corpus_bleu(refs_toks_with_weights, hyps_toks)
+        weighted_ngram_match_score = weighted_ngram_match.corpus_bleu(
+            refs_toks_with_weights, hyps_toks
+        )
         cum_weighted_score += self.beta * weighted_ngram_match_score
         cum_weight += self.beta
 
         # Calculate syntax match
         try:
-            syntax_match_score = syntax_match.corpus_syntax_match(refs, hyps, self.lang, parser_language=self.parser_language)
+            syntax_match_score = syntax_match.corpus_syntax_match(
+                refs, hyps, self.lang, parser_language=self.parser_language
+            )
         except ZeroDivisionError:
             # Syntax match not working, ignore this part
-            syntax_match_score = np.NaN
+            syntax_match_score = np.nan
             pass
         else:
             cum_weighted_score += self.gamma * syntax_match_score
             cum_weight += self.gamma
 
         # Calculate dataflow match
-        dataflow_match_score = dataflow_match.corpus_dataflow_match(refs, hyps, self.lang, parser_language=self.parser_language)
-        if dataflow_match_score is not np.NaN:
+        dataflow_match_score = dataflow_match.corpus_dataflow_match(
+            refs, hyps, self.lang, parser_language=self.parser_language
+        )
+        if dataflow_match_score is not np.nan:
             cum_weighted_score += self.theta * dataflow_match_score
             cum_weight += self.theta
             # else, ignore this part
@@ -92,7 +110,9 @@ class Evaluator:
 
         return cum_weighted_score / cum_weight
 
-    def sentence_code_bleu(self, refs_toks: List[List[str]], hyp_toks: List[str]) -> float:
+    def sentence_code_bleu(
+        self, refs_toks: List[List[str]], hyp_toks: List[str]
+    ) -> float:
         """
         Calculates CodeBLEU for the given references and hypothesis (should be tokenized).
         :param refs_toks: the references, num_ref * num_tok.

@@ -12,12 +12,11 @@
 
 import math
 import sys
-from fractions import Fraction
 import warnings
 from collections import Counter
+from fractions import Fraction
 
 from CodeBLEU.utils import ngrams
-import pdb
 
 
 def sentence_bleu(
@@ -149,7 +148,7 @@ def corpus_bleu(
     hyp_lengths, ref_lengths = 0, 0
 
     assert len(list_of_references) == len(hypotheses), (
-        "The number of hypotheses and their reference(s) should be the " "same "
+        'The number of hypotheses and their reference(s) should be the ' 'same '
     )
 
     # Iterate through each hypothesis and their corresponding references.
@@ -178,7 +177,7 @@ def corpus_bleu(
 
     # Collects the various precision values for the different ngram orders.
     p_n = [
-        Fraction(p_numerators[i], p_denominators[i], _normalize=False)
+        Fraction(p_numerators[i], p_denominators[i])
         for i, _ in enumerate(weights, start=1)
     ]
 
@@ -298,7 +297,7 @@ def modified_precision(references, hypothesis, n):
     # Usually this happens when the ngram order is > len(reference).
     denominator = max(1, sum(counts.values()))
 
-    return Fraction(numerator, denominator, _normalize=False)
+    return Fraction(numerator, denominator)
 
 
 def closest_ref_length(references, hyp_len):
@@ -459,13 +458,13 @@ class SmoothingFunction:
                 p_n_new.append(p_i)
             else:
                 _msg = str(
-                    "\nThe hypothesis contains 0 counts of {}-gram overlaps.\n"
-                    "Therefore the BLEU score evaluates to 0, independently of\n"
-                    "how many N-gram overlaps of lower order it contains.\n"
-                    "Consider using lower n-gram order or use "
-                    "SmoothingFunction()"
+                    '\nThe hypothesis contains 0 counts of {}-gram overlaps.\n'
+                    'Therefore the BLEU score evaluates to 0, independently of\n'
+                    'how many N-gram overlaps of lower order it contains.\n'
+                    'Consider using lower n-gram order or use '
+                    'SmoothingFunction()'
                 ).format(i + 1)
-                warnings.warn(_msg)
+                warnings.warn(_msg, stacklevel=1)
                 # When numerator==0 where denonminator==0 or !=0, the result
                 # for the precision score should be equal to 0 or undefined.
                 # Due to BLEU geometric mean computation in logarithm space,
@@ -492,10 +491,7 @@ class SmoothingFunction:
         machine translation quality using longest common subsequence and
         skip-bigram statistics. In ACL04.
         """
-        return [
-            Fraction(p_i.numerator + 1, p_i.denominator + 1, _normalize=False)
-            for p_i in p_n
-        ]
+        return [Fraction(p_i.numerator + 1, p_i.denominator + 1) for p_i in p_n]
 
     def method3(self, p_n, *args, **kwargs):
         """
@@ -515,7 +511,7 @@ class SmoothingFunction:
         incvnt = 1  # From the mteval-v13a.pl, it's referred to as k.
         for i, p_i in enumerate(p_n):
             if p_i.numerator == 0:
-                p_n[i] = 1 / (2 ** incvnt * p_i.denominator)
+                p_n[i] = 1 / (2**incvnt * p_i.denominator)
                 incvnt += 1
         return p_n
 
@@ -566,7 +562,7 @@ class SmoothingFunction:
         # This smoothing only works when p_1 and p_2 is non-zero.
         # Raise an error with an appropriate message when the input is too short
         # to use this smoothing technique.
-        assert p_n[2], "This smoothing method requires non-zero precision for bigrams."
+        assert p_n[2], 'This smoothing method requires non-zero precision for bigrams.'
         for i, p_i in enumerate(p_n):
             if i in [0, 1]:  # Skips the first 2 orders of ngrams.
                 continue
@@ -575,9 +571,9 @@ class SmoothingFunction:
                 # No. of ngrams in translation that matches the reference.
                 m = p_i.numerator
                 # No. of ngrams in translation.
-                l = sum(1 for _ in ngrams(hypothesis, i + 1))
+                len_ngrams = sum(1 for _ in ngrams(hypothesis, i + 1))
                 # Calculates the interpolated precision.
-                p_n[i] = (m + self.alpha * pi0) / (l + self.alpha)
+                p_n[i] = (m + self.alpha * pi0) / (len_ngrams + self.alpha)
         return p_n
 
     def method7(self, p_n, references, hypothesis, hyp_len=None, *args, **kwargs):

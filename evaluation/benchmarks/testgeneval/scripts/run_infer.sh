@@ -34,6 +34,11 @@ if [ -z "$USE_INSTANCE_IMAGE" ]; then
   USE_INSTANCE_IMAGE=true
 fi
 
+if [ -z "$RUN_WITH_BROWSING" ]; then
+  echo "RUN_WITH_BROWSING not specified, use default false"
+  RUN_WITH_BROWSING=false
+fi
+
 
 if [ -z "$DATASET" ]; then
   echo "DATASET not specified, use default princeton-nlp/SWE-bench_Lite"
@@ -47,11 +52,13 @@ fi
 
 export USE_INSTANCE_IMAGE=$USE_INSTANCE_IMAGE
 echo "USE_INSTANCE_IMAGE: $USE_INSTANCE_IMAGE"
+export RUN_WITH_BROWSING=$RUN_WITH_BROWSING
+echo "RUN_WITH_BROWSING: $RUN_WITH_BROWSING"
 
-get_agent_version
+get_openhands_version
 
 echo "AGENT: $AGENT"
-echo "AGENT_VERSION: $AGENT_VERSION"
+echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 echo "DATASET: $DATASET"
 echo "SPLIT: $SPLIT"
@@ -61,10 +68,14 @@ if [ -z "$USE_HINT_TEXT" ]; then
   export USE_HINT_TEXT=false
 fi
 echo "USE_HINT_TEXT: $USE_HINT_TEXT"
-EVAL_NOTE="$AGENT_VERSION"
+EVAL_NOTE="$OPENHANDS_VERSION"
 # if not using Hint, add -no-hint to the eval note
 if [ "$USE_HINT_TEXT" = false ]; then
   EVAL_NOTE="$EVAL_NOTE-no-hint"
+fi
+
+if [ "$RUN_WITH_BROWSING" = true ]; then
+  EVAL_NOTE="$EVAL_NOTE-with-browsing"
 fi
 
 if [ -n "$EXP_NAME" ]; then
@@ -73,7 +84,7 @@ fi
 
 function run_eval() {
   local eval_note=$1
-  COMMAND="poetry run python evaluation/testgeneval/run_infer.py \
+  COMMAND="poetry run python evaluation/benchmarks/testgeneval/run_infer.py \
     --agent-cls $AGENT \
     --llm-config $MODEL_CONFIG \
     --max-iterations $MAX_ITER \

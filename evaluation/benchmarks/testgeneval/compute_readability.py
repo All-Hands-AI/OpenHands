@@ -1,6 +1,8 @@
-from tree_sitter import Language, Parser
-import tree_sitter_python as tspython
 import math
+import os
+from pathlib import Path
+
+from tree_sitter import Language, Parser
 
 
 def total_byte_entropy_stats(python_code):
@@ -10,15 +12,12 @@ def total_byte_entropy_stats(python_code):
         byte_counts[byte] = byte_counts.get(byte, 0) + 1
 
     total_bytes = sum(byte_counts.values())
-    entropy = -sum((count / total_bytes) * math.log2(count / total_bytes) for count in byte_counts.values())
+    entropy = -sum(
+        (count / total_bytes) * math.log2(count / total_bytes)
+        for count in byte_counts.values()
+    )
 
-    # Maximum entropy for a byte
-    max_entropy = math.log2(256)
-    
-    # Normalize the calculated entropy
-    normalized_entropy = entropy / max_entropy
-
-    return {"total_byte_entropy": entropy}
+    return {'total_byte_entropy': entropy}
 
 
 def average_nulls_stats(tree, num_lines):
@@ -38,19 +37,20 @@ def average_nulls_stats(tree, num_lines):
             traverse(child)
 
     traverse(tree.root_node)
-    
+
     # Calculate average nulls per line
     avg_nulls = total_nulls / num_lines if num_lines > 0 else 0
-    
+
     # Calculate max nulls on any line
     max_nulls_on_any_line = max(nulls_per_line.values()) if nulls_per_line else 0
 
     return {
-        "avg_nulls": avg_nulls,
-        "total_nulls": total_nulls,
-        "max_nulls": max_nulls_on_any_line,
-        "has_nulls": 1 if total_nulls > 0 else 0
+        'avg_nulls': avg_nulls,
+        'total_nulls': total_nulls,
+        'max_nulls': max_nulls_on_any_line,
+        'has_nulls': 1 if total_nulls > 0 else 0,
     }
+
 
 def arithmetic_operations_stats(tree, num_lines):
     # Dictionary to hold counts of each arithmetic operation
@@ -73,7 +73,10 @@ def arithmetic_operations_stats(tree, num_lines):
 
     traverse(tree.root_node)
 
-    return {"total_arithmetic_operations": total_ops, "avg_arithmetic_operations": total_ops / num_lines}
+    return {
+        'total_arithmetic_operations': total_ops,
+        'avg_arithmetic_operations': total_ops / num_lines,
+    }
 
 
 def numbers_floats_stats(tree, num_lines):
@@ -84,13 +87,17 @@ def numbers_floats_stats(tree, num_lines):
         nonlocal total_numbers, total_floats
         if node.type in ['integer_literal', 'decimal_literal']:
             total_numbers += 1
-            if '.' in node.text.decode('utf8') or 'e' in node.text.decode('utf8').lower():
+            if (
+                '.' in node.text.decode('utf8')
+                or 'e' in node.text.decode('utf8').lower()
+            ):
                 total_floats += 1
         for child in node.children:
             traverse(child)
 
     traverse(tree.root_node)
-    return {"total_numbers": total_numbers, "total_floats": total_floats}
+    return {'total_numbers': total_numbers, 'total_floats': total_floats}
+
 
 def code_stats(python_code):
     lines = python_code.strip().split('\n')
@@ -99,8 +106,9 @@ def code_stats(python_code):
     return {
         'total_line_length': total_line_length,
         'max_line_length': max_line_length,
-        'avg_characters': total_line_length / len(lines)
+        'avg_characters': total_line_length / len(lines),
     }
+
 
 def assertions_stats(tree, num_lines):
     total_assertions = 0
@@ -113,7 +121,10 @@ def assertions_stats(tree, num_lines):
             traverse(child)
 
     traverse(tree.root_node)
-    return {"total_assertions": total_assertions, "total_has_assertions": 1 if total_assertions > 0 else 0}
+    return {
+        'total_assertions': total_assertions,
+        'total_has_assertions': 1 if total_assertions > 0 else 0,
+    }
 
 
 def class_instances_stats(tree, num_lines):
@@ -127,7 +138,8 @@ def class_instances_stats(tree, num_lines):
             traverse(child)
 
     traverse(tree.root_node)
-    return {"total_class_instances": total_class_instances}
+    return {'total_class_instances': total_class_instances}
+
 
 def has_execeptions(tree, num_lines):
     total_has_exceptions = 0
@@ -140,7 +152,8 @@ def has_execeptions(tree, num_lines):
             traverse(child)
 
     traverse(tree.root_node)
-    return {"total_has_exceptions": 1 if total_has_exceptions > 0 else 0}
+    return {'total_has_exceptions': 1 if total_has_exceptions > 0 else 0}
+
 
 def distinct_methods_stats(tree, num_lines):
     method_names = set()
@@ -159,12 +172,17 @@ def distinct_methods_stats(tree, num_lines):
 
     traverse(tree.root_node)
     total_distinct_methods = len(method_names)
-    total_method_ratio = total_distinct_methods / (total_nodes - total_distinct_methods) if total_nodes > total_distinct_methods else 0
+    total_method_ratio = (
+        total_distinct_methods / (total_nodes - total_distinct_methods)
+        if total_nodes > total_distinct_methods
+        else 0
+    )
 
     return {
         'total_distinct_methods': total_distinct_methods,
         'total_method_ratio': total_method_ratio,
     }
+
 
 def loops_stats(tree, num_lines):
     """
@@ -181,7 +199,7 @@ def loops_stats(tree, num_lines):
 
     traverse(tree.root_node)
     avg_loops = total_loops / num_lines
-    return {"avg_loops": avg_loops}
+    return {'avg_loops': avg_loops}
 
 
 def branches_stats(tree, num_lines):
@@ -200,24 +218,7 @@ def branches_stats(tree, num_lines):
     traverse(tree.root_node)
     # Assuming each branch is its own, this might need refinement based on definition
     avg_branches = total_branches / num_lines
-    return {"avg_branches": avg_branches}
-
-def loops_stats(tree, num_lines):
-    """
-    Calculate the average number of loops.
-    """
-    total_loops = 0
-
-    def traverse(node):
-        nonlocal total_loops
-        if node.type in ['for_statement', 'while_statement', 'do_statement']:
-            total_loops += 1
-        for child in node.children:
-            traverse(child)
-
-    traverse(tree.root_node)
-    avg_loops = total_loops / num_lines
-    return {"avg_loops": avg_loops}
+    return {'avg_branches': avg_branches}
 
 
 def string_stats(tree, num_lines):
@@ -237,7 +238,7 @@ def string_stats(tree, num_lines):
     # Calculate the average string length
     total_length = sum(len(s) for s in string_literals)
     avg_length = total_length / num_lines
-    return {"avg_str_length": avg_length}
+    return {'avg_str_length': avg_length}
 
 
 def identifier_stats(tree, num_lines):
@@ -280,43 +281,41 @@ def identifier_stats(tree, num_lines):
         'avg_identifier_length': avg_identifier_length,
         'total_unique_identifiers': total_unique_identifiers,
         'total_identifier_ratio': identifier_ratio,  # Include the new ratio in the returned dictionary
-        'total_nodes': total_nodes  # Include total node count for reference or further calculations
+        'total_nodes': total_nodes,  # Include total node count for reference or further calculations
     }
 
 
 def compute_regression(results):
-    print(results)
     components = {
-    "total_line_length": -0.0001,
-    "max_line_length": -0.0021,
-    "total_identifiers": 0.0076,
-    "total_identifier_length": -0.0004,
-    "max_identifier_length": -0.0067,
-    "avg_identifier_length": -0.005,
-    "avg_arithmetic_operations": 0.0225,
-    "avg_branches": 0.9886,
-    "avg_loops": 0.1572,
-    "total_assertions": 0.0119,
-    "total_has_assertions": -0.0147,
-    "avg_characters": 0.1242,
-    "total_class_instances": -0.043,
-    "total_distinct_methods": -0.0127,
-    "avg_str_length": 0.0026,
-    "total_has_exceptions": 0.1206,
-    "total_unique_identifiers": -0.019,
-    "max_nulls": -0.0712,
-    "total_numbers": -0.0078,
-    "avg_nulls": 0.1444,
-    "total_identifier_ratio": 0.334,
-    "total_method_ratio": 0.0406,
-    "total_floats": -0.0174,
-    "total_byte_entropy": -0.3917,
+        'total_line_length': -0.0001,
+        'max_line_length': -0.0021,
+        'total_identifiers': 0.0076,
+        'total_identifier_length': -0.0004,
+        'max_identifier_length': -0.0067,
+        'avg_identifier_length': -0.005,
+        'avg_arithmetic_operations': 0.0225,
+        'avg_branches': 0.9886,
+        'avg_loops': 0.1572,
+        'total_assertions': 0.0119,
+        'total_has_assertions': -0.0147,
+        'avg_characters': 0.1242,
+        'total_class_instances': -0.043,
+        'total_distinct_methods': -0.0127,
+        'avg_str_length': 0.0026,
+        'total_has_exceptions': 0.1206,
+        'total_unique_identifiers': -0.019,
+        'max_nulls': -0.0712,
+        'total_numbers': -0.0078,
+        'avg_nulls': 0.1444,
+        'total_identifier_ratio': 0.334,
+        'total_method_ratio': 0.0406,
+        'total_floats': -0.0174,
+        'total_byte_entropy': -0.3917,
     }
     test_score = 0
 
     for component in components:
         test_score += components[component] * results[component]
-        print(f"{component}: {components[component]} * {results[component]} = {components[component] * results[component]}")
 
     test_score += 5.7501
     return test_score
@@ -324,14 +323,17 @@ def compute_regression(results):
 
 def compute_readability(python_code):
     parser = Parser()
-    parser.set_language(Language(tspython.langauge()))
-    
+    this_dir = Path(os.path.dirname(os.path.realpath(__file__)))
+    parser.set_language(
+        Language(this_dir / 'CodeBLEU' / 'parser' / 'my-languages.so', 'python')
+    )
+
     results = code_stats(python_code)
 
     num_lines = len(python_code.strip().split('\n'))
     results.update(total_byte_entropy_stats(python_code))
 
-    tree = parser.parse(bytes(python_code, "utf8"))
+    tree = parser.parse(bytes(python_code, 'utf8'))
 
     results.update(identifier_stats(tree, num_lines))
     results.update(loops_stats(tree, num_lines))

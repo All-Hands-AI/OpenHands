@@ -13,7 +13,7 @@ fi
 
 if [ -z "$DATASET" ]; then
   echo "DATASET not specified, use default kjain/testgenevallite"
-  DATASET="kjain/testgenevallite"
+  DATASET="kjain14/testgenevallite"
 fi
 
 if [ -z "$SPLIT" ]; then
@@ -28,10 +28,11 @@ fi
 
 echo "... Evaluating on $INPUT_FILE ..."
 
-COMMAND="poetry run python evaluation/testgeneval/eval_infer.py \
+COMMAND="poetry run python evaluation/benchmarks/testgeneval/eval_infer.py \
   --eval-num-workers $NUM_WORKERS \
   --input-file $INPUT_FILE \
   --dataset $DATASET \
+  --skip_mutation \
   --split $SPLIT"
 
 if [ -n "$EVAL_LIMIT" ]; then
@@ -43,4 +44,4 @@ fi
 eval $COMMAND
 
 # update the output with evaluation results
-poetry run python evaluation/swe_bench/scripts/eval/update_output_with_eval.py $INPUT_FILE
+# poetry run python evaluation/benchmarks/testgeneval/scripts/eval/update_output_with_eval.py $INPUT_FILE

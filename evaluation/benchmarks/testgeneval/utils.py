@@ -1,10 +1,16 @@
-from testgeneval.test_spec import TestSpec
-from testgeneval.constants import TestGenEvalInstance, NON_TEST_EXTS, KEY_INSTANCE_ID
-import re
 import json
+import re
 from pathlib import Path
-from datasets import load_dataset, Dataset
 from typing import cast
+
+from datasets import Dataset, load_dataset
+
+from evaluation.benchmarks.testgeneval.constants import (
+    KEY_INSTANCE_ID,
+    NON_TEST_EXTS,
+    TestGenEvalInstance,
+)
+
 
 def get_test_directives(instance: TestGenEvalInstance) -> list:
     """
@@ -16,31 +22,33 @@ def get_test_directives(instance: TestGenEvalInstance) -> list:
         directives (list): List of test directives
     """
     # For seq2seq code repos, testing command is fixed
-    if instance["repo"] == "swe-bench/humaneval":
-        return ["test.py"]
+    if instance['repo'] == 'swe-bench/humaneval':
+        return ['test.py']
 
     # Get test directives from test patch and remove non-test files
-    diff_pat = r"diff --git a/.* b/(.*)"
-    test_patch = instance["test_patch"]
+    diff_pat = r'diff --git a/.* b/(.*)'
+    test_patch = instance['test_patch']
     directives = re.findall(diff_pat, test_patch)
     directives = [
         d for d in directives if not any(d.endswith(ext) for ext in NON_TEST_EXTS)
     ]
 
     # For Django tests, remove extension + "tests/" prefix and convert slashes to dots (module referencing)
-    if instance["repo"] == "django/django":
+    if instance['repo'] == 'django/django':
         directives_transformed = []
         for d in directives:
-            d = d[: -len(".py")] if d.endswith(".py") else d
-            d = d[len("tests/") :] if d.startswith("tests/") else d
-            d = d.replace("/", ".")
+            d = d[: -len('.py')] if d.endswith('.py') else d
+            d = d[len('tests/') :] if d.startswith('tests/') else d
+            d = d.replace('/', '.')
             directives_transformed.append(d)
         directives = directives_transformed
 
     return directives
 
 
-def load_testgeneval_dataset(name="kjain14/testgeneval", split="test", ids=None) -> list[TestGenEvalInstance]:
+def load_testgeneval_dataset(
+    name='kjain14/testgeneval', split='test', ids=None
+) -> list[TestGenEvalInstance]:
     """
     Load SWE-bench dataset from Hugging Face Datasets or local .json/.jsonl file
     """
@@ -48,17 +56,17 @@ def load_testgeneval_dataset(name="kjain14/testgeneval", split="test", ids=None)
     if ids:
         ids = set(ids)
     # Load from local .json/.jsonl file
-    if name.endswith(".json") or name.endswith(".jsonl"):
+    if name.endswith('.json') or name.endswith('.jsonl'):
         dataset = json.loads(Path(name).read_text())
         dataset_ids = {instance[KEY_INSTANCE_ID] for instance in dataset}
     else:
         # Load from Hugging Face Datasets
-        if name.lower() in {"testgeneval"}:
-            name = "kjain14/testgeneval"
-        elif name.lower() in {"testgeneval-lite", "testgenevallite", "lite"}:
-            name = "kjain14/testgenevallite"
+        if name.lower() in {'testgeneval'}:
+            name = 'kjain14/testgeneval'
+        elif name.lower() in {'testgeneval-lite', 'testgenevallite', 'lite'}:
+            name = 'kjain14/testgenevallite'
         dataset = cast(Dataset, load_dataset(name, split=split))
-        dataset_ids = {instance["id"] for instance in dataset}
+        dataset_ids = {instance['id'] for instance in dataset}
     if ids:
         if ids - dataset_ids:
             raise ValueError(
@@ -67,5 +75,5 @@ def load_testgeneval_dataset(name="kjain14/testgeneval", split="test", ids=None)
                     f"\nMissing IDs:\n{' '.join(ids - dataset_ids)}"
                 )
             )
-        dataset = [instance for instance in dataset if instance["id"] in ids]
+        dataset = [instance for instance in dataset if instance['id'] in ids]
     return [cast(TestGenEvalInstance, instance) for instance in dataset]
