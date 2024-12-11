@@ -28,6 +28,7 @@ class TestSpec:
     id: str
     repo: str
     version: str
+    test_cmd: str
     code_file: str
     test_file: str
     baseline_covs: dict
@@ -83,23 +84,15 @@ def make_test_setup(specs, env_name, repo_directory, includes_tox=False):
     return eval_commands
 
 
-def make_test_script_list(instance, specs, env_name, repo_directory):
+def make_test_script_list(test_cmd, specs, env_name, repo_directory):
     """
     Runs the tests.
     """
-    test_command = ' '.join(
-        [
-            MAP_REPO_VERSION_TO_SPECS[instance['repo']][instance['version']][
-                'test_cmd'
-            ],
-            *get_test_directives(instance),
-        ]
-    )
 
-    includes_tox = 'tox' in test_command
+    includes_tox = 'tox' in test_cmd
     eval_commands = make_test_setup(specs, env_name, repo_directory, includes_tox)
     eval_commands += [
-        f'{test_command} || {{ echo "{TESTS_FAILED}" && exit 1; }}',
+        f'{test_cmd} || {{ echo "{TESTS_FAILED}" && exit 1; }}',
         f'echo "{TESTS_SUFFIX}"\n',
         'coverage json -o coverage.json',
         f'echo "{COVERAGE_PREFIX}"\n',
@@ -118,13 +111,15 @@ def make_mutation_script_list(specs, env_name, repo_directory, mutation_timeout)
     eval_commands += [
         'cosmic-ray init mutation.toml mutation.sqlite',
         f'timeout {mutation_timeout}s cosmic-ray exec mutation.toml mutation.sqlite',
-        'cr-rate mutation.sqlite  --estimate --confidence 95.0',
         'cr-report mutation.sqlite',
+        'cr-rate mutation.sqlite  --estimate --confidence 95.0',
     ]
     return eval_commands
 
 
-def make_test_spec(instance: TestGenEvalInstance, mutation_timeout: int) -> TestSpec:
+def make_test_spec(
+    instance: TestGenEvalInstance, mutation_timeout: int, buffer: int
+) -> TestSpec:
     if isinstance(instance, TestSpec):
         return instance
     instance_id = instance[KEY_INSTANCE_ID]
@@ -139,10 +134,19 @@ def make_test_spec(instance: TestGenEvalInstance, mutation_timeout: int) -> Test
     repo_directory = f'/{env_name}'
     specs = MAP_REPO_VERSION_TO_SPECS[repo][version]
 
-    test_script_list = make_test_script_list(instance, specs, env_name, repo_directory)
+    test_cmd = ' '.join(
+        [
+            MAP_REPO_VERSION_TO_SPECS[instance['repo']][instance['version']][
+                'test_cmd'
+            ],
+            *get_test_directives(instance),
+        ]
+    )
+
+    test_script_list = make_test_script_list(test_cmd, specs, env_name, repo_directory)
 
     mutation_script_list = make_mutation_script_list(
-        specs, env_name, repo_directory, mutation_timeout
+        specs, env_name, repo_directory, mutation_timeout - buffer
     )
 
     return TestSpec(
@@ -150,6 +154,7 @@ def make_test_spec(instance: TestGenEvalInstance, mutation_timeout: int) -> Test
         id=id,
         repo=repo,
         test_script_list=test_script_list,
+        test_cmd=test_cmd,
         mutation_script_list=mutation_script_list,
         code_file=code_file,
         test_file=test_file,

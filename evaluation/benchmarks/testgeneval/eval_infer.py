@@ -14,6 +14,8 @@ from report_utils import (
 from evaluation.benchmarks.testgeneval.compute_readability import compute_readability
 from evaluation.benchmarks.testgeneval.constants import (
     COVERAGE_PREFIX,
+    MUTATION_BUFFER,
+    MUTATION_TEMPLATE,
     MUTATION_TIMEOUT,
     TESTS_FAILED,
     TESTS_SUFFIX,
@@ -32,7 +34,9 @@ from evaluation.benchmarks.testgeneval.test_spec import (
     TestSpec,
     make_test_spec,
 )
-from evaluation.benchmarks.testgeneval.utils import load_testgeneval_dataset
+from evaluation.benchmarks.testgeneval.utils import (
+    load_testgeneval_dataset,
+)
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
@@ -146,7 +150,7 @@ def run_tests(runtime, instance, test_script, log_file='/tmp/test_output.log'):
     test_action.timeout = 300
     test_obs = runtime.run_action(test_action)
     assert isinstance(test_obs, CmdOutputObservation), 'Failed to retrieve test output.'
-    return test_obs.exit_code, test_obs.content
+    return test_obs.exit_code, test_obs.content, elapsed_time
 
 
 def run_mutation_testing(
@@ -304,7 +308,7 @@ def process_instance(
         run_command(runtime, 'chmod +x /tmp/test.sh /tmp/mutation.sh')
         run_command(runtime, f'cp /tmp/test_suite.py /testbed/{test_spec.test_file}')
 
-        _, test_output = run_tests(runtime, instance, '/tmp/test.sh')
+        _, test_output, test_time = run_tests(runtime, instance, '/tmp/test.sh')
         instance['test_result']['report']['test_output'] = test_output
         if TESTS_FAILED not in test_output:
             coverage_success, coverage, unit_test_output, coverage_output = (
@@ -321,6 +325,21 @@ def process_instance(
             )
 
             if not args.skip_mutation and coverage_success:
+                mutation_timeout = max(10, 1.5 * test_time)
+                mutation_toml = MUTATION_TEMPLATE.format(
+                    test_cmd=test_spec.test_cmd,
+                    source_fp=test_spec.code_file,
+                    timeout=mutation_timeout,
+                )
+
+                with tempfile.TemporaryDirectory() as temp_dir:
+                    mutation_toml_path = os.path.join(temp_dir, 'mutation.toml')
+                    with open(mutation_toml_path, 'w') as f:
+                        f.write(mutation_toml)
+                    runtime.copy_to(mutation_toml_path, '/tmp')
+
+                run_command(runtime, 'cp /tmp/mutation.toml /testbed/mutation.toml')
+
                 mutation_code, mutation_output = run_mutation_testing(
                     runtime, instance, '/tmp/mutation.sh'
                 )
@@ -348,7 +367,7 @@ def process_instance(
         logger.error(f'Error processing instance {instance.id}: {e}')
         raise RuntimeError(
             instance.id,
-            f'Unexpected output when running test suite:\n{test_suite[:1000]}...',
+            'Unexpected output...',
             logger,
         )
 
@@ -413,6 +432,12 @@ if __name__ == '__main__':
         default=MUTATION_TIMEOUT,
         help='Mutation timeout',
     )
+    parser.add_argument(
+        '--mutation_buffer',
+        type=int,
+        default=MUTATION_BUFFER,
+        help='Mutation buffer',
+    )
     args, _ = parser.parse_known_args()
 
     dataset: list[TestGenEvalInstance] = load_testgeneval_dataset(
@@ -476,7 +501,7 @@ if __name__ == '__main__':
     ), 'Input file must contain id, instance_id and test_suite columns.'
 
     predictions['test_spec'] = predictions['instance'].apply(
-        lambda x: make_test_spec(x, args.mutation_timeout)
+        lambda x: make_test_spec(x, args.mutation_timeout, args.mutation_buffer)
     )
 
     output_file = args.input_file.replace('.jsonl', '.testgeneval.jsonl')
