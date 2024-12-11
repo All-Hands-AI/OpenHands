@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from openhands.core.config import LLMConfig
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.llm.llm import LLM
@@ -133,9 +135,7 @@ def test_empty_content_serialization():
     serialized = message.model_dump()
 
     assert 'content' in serialized
-    assert serialized['content'] == [
-        {'type': 'text', 'text': '', 'cache_prompt': False}
-    ]
+    assert serialized['content'] == [{'type': 'text', 'text': ''}]
     assert serialized['tool_call_id'] == 'tool_123'
     assert serialized['name'] == 'test_tool'
     assert serialized['role'] == 'tool'
@@ -172,11 +172,13 @@ def test_empty_content_with_multiple_items():
     assert serialized['content'][1]['type'] == 'image_url'
 
 
-def test_llm_empty_content_stripping():
-    """Test that LLM properly configures message stripping for Bedrock models."""
+def test_llm_empty_content_stripping_list_serialization():
+    """Test empty content stripping with list serialization for Bedrock models."""
     # To workaround a bug in Bedrock, we strip the content if it's empty
     # See https://github.com/All-Hands-AI/OpenHands/issues/5492
-    bedrock_config = LLMConfig(model='bedrock/anthropic.claude-3')
+    bedrock_config = LLMConfig(
+        model='bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0'
+    )
     bedrock_llm = LLM(config=bedrock_config)
 
     # Test with list serialization (vision enabled)
@@ -191,32 +193,24 @@ def test_llm_empty_content_stripping():
     assert len(formatted_messages) == 1
     assert 'content' not in formatted_messages[0]
 
-    # Test with string serialization (no flags enabled)
-    message = Message(role='assistant', content=[TextContent(text='')])
-
-    formatted_messages = bedrock_llm.format_messages_for_llm(message)
-    assert len(formatted_messages) == 1
-    assert 'content' in formatted_messages[0]
-    assert formatted_messages[0]['content'] == ''
-
     # Test non-Bedrock model with list serialization
-    regular_config = LLMConfig(model='claude-3-sonnet')
+    regular_config = LLMConfig(model='claude-3-5-sonnet-20241022')
     regular_llm = LLM(config=regular_config)
 
     message = Message(
         role='assistant', content=[TextContent(text='')], vision_enabled=True
     )
 
-    # Format message using the LLM - this should preserve empty content
+    # Format message for the LLM - this should preserve empty content
     formatted_messages = regular_llm.format_messages_for_llm(message)
     assert len(formatted_messages) == 1
     assert 'content' in formatted_messages[0]
-    assert formatted_messages[0]['content'] == [
-        {'type': 'text', 'text': '', 'cache_prompt': False}
-    ]
+    assert formatted_messages[0]['content'] == [{'type': 'text', 'text': ''}]
 
-    # Test Bedrock custom provider with list serialization
-    bedrock_provider_config = LLMConfig(model='claude-3', custom_llm_provider='bedrock')
+    # Test Bedrock as custom provider with list serialization
+    bedrock_provider_config = LLMConfig(
+        model='claude-3-5-sonnet-20241022-v2:0', custom_llm_provider='bedrock'
+    )
     bedrock_provider_llm = LLM(config=bedrock_provider_config)
 
     message = Message(
@@ -227,3 +221,26 @@ def test_llm_empty_content_stripping():
     formatted_messages = bedrock_provider_llm.format_messages_for_llm(message)
     assert len(formatted_messages) == 1
     assert 'content' not in formatted_messages[0]
+
+
+def test_llm_empty_content_string_serialization():
+    """Test empty content with string serialization (no vision/cache/function flags)."""
+    bedrock_config = LLMConfig(
+        model='bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0'
+    )
+
+    # Use patch to mock the LLM methods that determine serialization mode
+    with patch.multiple(
+        'openhands.llm.llm.LLM',
+        is_function_calling_active=lambda self: False,
+        vision_is_active=lambda self: False,
+        is_caching_prompt_active=lambda self: False,
+    ):
+        bedrock_llm = LLM(config=bedrock_config)
+        message = Message(role='assistant', content=[TextContent(text='')])
+
+        # Format message using the LLM - this should use string serialization
+        formatted_messages = bedrock_llm.format_messages_for_llm(message)
+        assert len(formatted_messages) == 1
+        assert 'content' in formatted_messages[0]
+        assert formatted_messages[0]['content'] == ''
