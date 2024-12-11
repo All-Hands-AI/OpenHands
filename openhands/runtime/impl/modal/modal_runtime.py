@@ -12,7 +12,7 @@ from openhands.core.config import AppConfig
 from openhands.events import EventStream
 from openhands.runtime.impl.eventstream.eventstream_runtime import (
     EventStreamRuntime,
-    LogBuffer,
+    LogStreamer,
 )
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
@@ -32,24 +32,38 @@ def bytes_shim(string_generator) -> Generator[bytes, None, None]:
         yield line.encode('utf-8')
 
 
-class ModalLogBuffer(LogBuffer):
-    """Synchronous buffer for Modal sandbox logs.
+class ModalLogStreamer(LogStreamer):
+    """Streams Modal sandbox logs to stdout.
 
-    This class provides a thread-safe way to collect, store, and retrieve logs
-    from a Modal sandbox. It uses a list to store log lines and provides methods
-    for appending, retrieving, and clearing logs.
+    This class provides a way to stream logs from a Modal sandbox directly to stdout
+    through the provided logging function.
     """
 
-    def __init__(self, sandbox: modal.Sandbox):
-        self.init_msg = 'Runtime client initialized.'
-
-        self.buffer: list[str] = []
-        self.lock = threading.Lock()
+    def __init__(
+        self,
+        sandbox: modal.Sandbox,
+        logFn: Callable,
+    ):
+        self.log = logFn
         self._stop_event = threading.Event()
         self.log_generator = bytes_shim(sandbox.stderr)
-        self.log_stream_thread = threading.Thread(target=self.stream_logs)
-        self.log_stream_thread.daemon = True
-        self.log_stream_thread.start()
+
+        # Start the stdout streaming thread
+        self.stdout_thread = threading.Thread(target=self._stream_logs)
+        self.stdout_thread.daemon = True
+        self.stdout_thread.start()
+
+    def _stream_logs(self):
+        """Stream logs from the Modal sandbox."""
+        try:
+            for log_line in self.log_generator:
+                if self._stop_event.is_set():
+                    break
+                if log_line:
+                    decoded_line = log_line.decode('utf-8').rstrip()
+                    self.log('debug', f'[inside sandbox] {decoded_line}')
+        except Exception as e:
+            self.log('error', f'Error streaming modal logs: {e}')
 
 
 class ModalRuntime(EventStreamRuntime):
@@ -109,7 +123,7 @@ class ModalRuntime(EventStreamRuntime):
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
 
         # Buffer for container logs
-        self.log_buffer: LogBuffer | None = None
+        self.log_streamer: LogStreamer | None = None
 
         if self.config.sandbox.runtime_extra_deps:
             self.log(
@@ -156,7 +170,7 @@ class ModalRuntime(EventStreamRuntime):
 
             self.send_status_message('STATUS$CONTAINER_STARTED')
 
-        self.log_buffer = ModalLogBuffer(self.sandbox)
+        self.log_streamer = ModalLogStreamer(self.sandbox, self.log)
         if self.sandbox is None:
             raise Exception('Sandbox not initialized')
         tunnel = self.sandbox.tunnels()[self.container_port]
@@ -278,11 +292,8 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
 
     def close(self):
         """Closes the ModalRuntime and associated objects."""
-        # if self.temp_dir_handler:
-        # self.temp_dir_handler.__exit__(None, None, None)
-
-        if self.log_buffer:
-            self.log_buffer.close()
+        if self.log_streamer:
+            self.log_streamer.close()
 
         if self.session:
             self.session.close()
