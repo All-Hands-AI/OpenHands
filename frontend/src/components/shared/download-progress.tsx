@@ -28,7 +28,7 @@ export function DownloadProgress({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-20">
       <div className="bg-[#1C1C1C] rounded-lg p-6 max-w-md w-full mx-4 border border-[#525252]">
         <div className="mb-4">
           <h3 className="text-lg font-semibold mb-2 text-white">
