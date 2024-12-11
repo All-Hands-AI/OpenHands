@@ -38,7 +38,9 @@ export function InteractiveChatBox({
   const handleSubmit = (message: string) => {
     onSubmit(message, images);
     setImages([]);
-    onChange?.("");
+    if (message) {
+      onChange?.("");
+    }
   };
 
   return (

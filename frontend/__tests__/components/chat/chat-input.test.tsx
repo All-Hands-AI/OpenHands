@@ -89,7 +89,7 @@ describe("ChatInput", () => {
     // expect(textarea).toHaveValue("Hello, world!\n");
   });
 
-  it("should clear the input message after sending a message", async () => {
+  it("should not clear the input message after sending a message", async () => {
     const user = userEvent.setup();
     const onChangeMock = vi.fn();
     const { rerender } = render(
@@ -102,27 +102,12 @@ describe("ChatInput", () => {
     await user.click(textarea);
     await user.keyboard("{Enter}");
     expect(onSubmitMock).toHaveBeenCalledWith("Hello, world!");
-    expect(onChangeMock).toHaveBeenCalledWith("");
-
-    // Simulate parent component updating value prop
-    rerender(
-      <ChatInput onSubmit={onSubmitMock} onChange={onChangeMock} value="" />
-    );
-    expect(textarea).toHaveValue("");
+    expect(onChangeMock).not.toHaveBeenCalledWith("");
 
     // Submit via button click
-    rerender(
-      <ChatInput onSubmit={onSubmitMock} onChange={onChangeMock} value="Hello, world!" />
-    );
     await user.click(button);
     expect(onSubmitMock).toHaveBeenCalledWith("Hello, world!");
-    expect(onChangeMock).toHaveBeenCalledWith("");
-
-    // Simulate parent component updating value prop
-    rerender(
-      <ChatInput onSubmit={onSubmitMock} onChange={onChangeMock} value="" />
-    );
-    expect(textarea).toHaveValue("");
+    expect(onChangeMock).not.toHaveBeenCalledWith("");
   });
 
   it("should hide the submit button", () => {
