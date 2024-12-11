@@ -2,12 +2,13 @@ import os
 
 from fastapi import HTTPException
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.server.types import AppMode, OpenhandsConfigInterface
-from openhands.utils.import_utils import import_from
+from openhands.utils.import_utils import get_impl
 
 
 class OpenhandsConfig(OpenhandsConfigInterface):
-    config_path = os.environ.get('OPENHANDS_CONFIG_PATH', None)
+    config_cls = os.environ.get('OPENHANDS_CONFIG_CLS', None)
     app_mode = AppMode.OSS
     posthog_client_key = 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
     github_client_id = os.environ.get('GITHUB_APP_CLIENT_ID', '')
@@ -16,7 +17,7 @@ class OpenhandsConfig(OpenhandsConfigInterface):
     )
 
     def verify_config(self):
-        if self.config_path:
+        if self.config_cls:
             raise ValueError('Unexpected config path provided')
 
     def verify_github_repo_list(self, installation_id: int | None):
@@ -43,17 +44,13 @@ class OpenhandsConfig(OpenhandsConfigInterface):
 
 
 def load_openhands_config():
-    config_path = os.environ.get('OPENHANDS_CONFIG_PATH', None)
-    if config_path:
-        openhands_config_cls = import_from(config_path)
+    config_cls = os.environ.get('OPENHANDS_CONFIG_CLS', None)
+    logger.info(f'Using config class {config_cls}')
+
+    if config_cls:
+        openhands_config_cls = get_impl(OpenhandsConfig, config_cls)
     else:
         openhands_config_cls = OpenhandsConfig
-
-    if not issubclass(openhands_config_cls, OpenhandsConfigInterface):
-        raise TypeError(
-            f"The provided configuration class '{openhands_config_cls.__name__}' "
-            f'does not extend OpenhandsConfigInterface.'
-        )
 
     openhands_config = openhands_config_cls()
     openhands_config.verify_config()
