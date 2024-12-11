@@ -183,8 +183,8 @@ describe("InteractiveChatBox", () => {
     onChange.mockClear();
     await user.upload(input, file);
 
-    // Verify text input is still empty
+    // Verify text input is still empty and onChange was not called
     expect(screen.getByRole("textbox")).toHaveValue("");
-    expect(onChange).not.toHaveBeenCalledWith("");
+    expect(onChange).not.toHaveBeenCalled();
   });
 });
