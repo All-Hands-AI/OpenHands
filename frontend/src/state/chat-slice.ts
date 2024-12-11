@@ -5,8 +5,6 @@ import {
   OpenHandsObservation,
   CommandObservation,
   IPythonObservation,
-  WriteObservation,
-  ReadObservation,
 } from "#/types/core/observations";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsEventType } from "#/types/core/base";
