@@ -178,5 +178,13 @@ describe("InteractiveChatBox", () => {
 
     // Verify the text input was cleared
     expect(screen.getByRole("textbox")).toHaveValue("");
+
+    // Upload another image - this should NOT clear the text input
+    onChange.mockClear();
+    await user.upload(input, file);
+
+    // Verify text input is still empty
+    expect(screen.getByRole("textbox")).toHaveValue("");
+    expect(onChange).not.toHaveBeenCalledWith("");
   });
 });
