@@ -29,7 +29,15 @@ from openhands.events.tool import ToolCallMetadata
 
 _BASH_DESCRIPTION = """Execute a bash command in the terminal.
 * Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`.
-* Interactive: If a bash command returns exit code `-1`, this means the process is not yet finished. The assistant must then send a second call to terminal with an empty `command` (which will retrieve any additional logs), or it can send additional text (set `command` to the text) to STDIN of the running process, or it can send command=`ctrl+c` to interrupt the process.
+* Interactive commands:
+  - When a command requires input, it will return exit code `-1` and include "[WAITING_FOR_INPUT]" in the output
+  - The assistant MUST then send a second command with:
+    * command="" (empty string)
+    * input_text="the text to send as input"
+  - Example:
+    1. Run: command="./script.sh" -> Returns "[WAITING_FOR_INPUT] Enter your name:"
+    2. Run: command="" input_text="Alice" -> Sends "Alice" to the script
+  - The assistant can also send command="ctrl+c" to interrupt an interactive process
 * Timeout: If a command execution result says "Command timed out. Sending SIGINT to the process", the assistant should retry running the command in the background.
 """
 
@@ -43,7 +51,11 @@ CmdRunTool = ChatCompletionToolParam(
             'properties': {
                 'command': {
                     'type': 'string',
-                    'description': 'The bash command to execute. Can be empty to view additional logs when previous exit code is `-1`. Can be `ctrl+c` to interrupt the currently running process.',
+                    'description': 'The bash command to execute. Can be empty to view additional logs when previous exit code is `-1` or to send input to an interactive process. Can be `ctrl+c` to interrupt the currently running process.',
+                },
+                'input_text': {
+                    'type': 'string',
+                    'description': 'Optional text to send as input to an interactive process. Only used when command is empty and the previous command returned exit code -1.',
                 },
             },
             'required': ['command'],
