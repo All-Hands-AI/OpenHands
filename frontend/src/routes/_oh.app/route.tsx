@@ -25,6 +25,7 @@ import Security from "#/components/shared/modals/security/security";
 import { useEndSession } from "#/hooks/use-end-session";
 import { useConversationPermissions } from "#/hooks/query/get-conversation-permissions";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
+import { CountBadge } from "#/components/layout/count-badge";
 
 function App() {
   const [searchParams] = useSearchParams();
@@ -43,6 +44,8 @@ function App() {
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initalQuery,
   );
+
+  const { updateCount } = useSelector((state: RootState) => state.browser);
 
   const { data: latestGitHubCommit } = useLatestRepoCommit({
     repository: selectedRepository,
@@ -98,21 +101,25 @@ function App() {
       <EventHandler>
         <div data-testid="app-route" className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto gap-3">
-            <Container className="w-[390px] max-h-full relative">
+            <Container className="w-full md:w-[390px] max-h-full relative">
               <ChatInterface />
             </Container>
 
-            <div className="flex flex-col grow gap-3">
+            <div className="hidden md:flex flex-col grow gap-3">
               <Container
                 className="h-2/3"
                 labels={[
                   { label: "Workspace", to: "", icon: <CodeIcon /> },
                   { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
                   {
-                    label: "Browser",
+                    label: (
+                      <div className="flex items-center gap-1">
+                        Browser
+                        {updateCount > 0 && <CountBadge count={updateCount} />}
+                      </div>
+                    ),
                     to: "browser",
                     icon: <GlobeIcon />,
-                    isBeta: true,
                   },
                 ]}
               >

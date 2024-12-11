@@ -17,6 +17,7 @@ Check out [Notes for WSL on Windows Users](troubleshooting/windows) for some tro
 * [`make build` getting stuck on package installations](#make-build-getting-stuck-on-package-installations)
 * [Sessions are not restored](#sessions-are-not-restored)
 * [Connection to host.docker.internal timed out](#connection-to-host-docker-internal-timed-out)
+* [Error building runtime docker image](#error-building-runtime-docker-image)
 
 ### Unable to connect to Docker
 
@@ -178,3 +179,21 @@ which OpenHands makes use of when the main server is running inside a docker con
 * [Install Docker Desktop](https://www.docker.com/products/docker-desktop/)
 * Run OpenHands in [Development Mode](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md),
   So that the main server is not run inside a container, but still creates dockerized runtime sandboxes.
+
+---
+### Error building runtime docker image
+
+**Symptoms**
+Attempts to start a new session fail, and an errors with terms like the following appear in the logs:
+* `debian-security bookworm-security`
+* `InRelease At least one invalid signature was encountered.`
+
+This seems to happen when the hash of an existing external library changes and your local docker instance has
+cached a previous version. To work around this, please try the following:
+
+* Stop any containers where the name has the prefix `openhands-runtime-` :
+  `docker ps --filter name=openhands-runtime- --filter status=running -aq | xargs docker stop`
+* Remove any containers where the name has the prefix `openhands-runtime-` :
+  `docker rmi $(docker images --filter name=openhands-runtime- -q --no-trunc)`
+* Stop and Remove any containers / images where the name has the prefix `openhands-runtime-`
+* Prune containers / images : `docker container prune -f && docker image prune -f`

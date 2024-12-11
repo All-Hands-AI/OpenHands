@@ -58,13 +58,13 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="px-1 flex flex-col gap-1 relative">
+      <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1">
         <div className="w-[34px] h-[34px] flex items-center justify-center">
           {user.isLoading && <LoadingSpinner size="small" />}
           {!user.isLoading && <AllHandsLogoButton onClick={handleClickLogo} />}
         </div>
 
-        <nav className="py-[18px] flex flex-col items-center gap-[18px]">
+        <nav className="md:py-[18px] flex flex-row md:flex-col items-center gap-[18px]">
           <UserActions
             user={user.data ? { avatar_url: user.data.avatar_url } : undefined}
             onLogout={logout}
