@@ -9,7 +9,7 @@ import { WsClientProviderStatus } from "#/context/ws-client-provider";
 import { ChatInterface } from "#/components/features/chat/chat-interface";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const renderChatInterface = (messages: (Message | ErrorMessage)[]) =>
+const renderChatInterface = (messages: (Message)[]) =>
   renderWithProviders(<ChatInterface />);
 
 describe("Empty state", () => {
@@ -26,8 +26,8 @@ describe("Empty state", () => {
   }));
 
   beforeAll(() => {
-    vi.mock("@remix-run/react", async (importActual) => ({
-      ...(await importActual<typeof import("@remix-run/react")>()),
+    vi.mock("react-router", async (importActual) => ({
+      ...(await importActual<typeof import("react-router")>()),
       useRouteLoaderData: vi.fn(() => ({})),
     }));
 
@@ -56,6 +56,7 @@ describe("Empty state", () => {
           content: "Hello",
           imageUrls: [],
           timestamp: new Date().toISOString(),
+          pending: true,
         }),
       );
     });
@@ -172,12 +173,14 @@ describe.skip("ChatInterface", () => {
         content: "Hello",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
       {
         sender: "assistant",
         content: "Hi",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
     ];
     renderChatInterface(messages);
@@ -211,6 +214,7 @@ describe.skip("ChatInterface", () => {
         content: "Here are some images",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
     ];
     const { rerender } = renderChatInterface(messages);
@@ -223,6 +227,7 @@ describe.skip("ChatInterface", () => {
         content: "Here are some images",
         imageUrls: ["image1", "image2"],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
     ];
 
@@ -244,12 +249,14 @@ describe.skip("ChatInterface", () => {
         content: "Hello",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
       {
         sender: "user",
         content: "Hi",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
     ];
     const { rerender } = renderChatInterface(messages);
@@ -262,6 +269,7 @@ describe.skip("ChatInterface", () => {
       content: "How can I help you?",
       imageUrls: [],
       timestamp: new Date().toISOString(),
+      pending: true,
     });
 
     rerender(<ChatInterface />);
@@ -270,17 +278,19 @@ describe.skip("ChatInterface", () => {
   });
 
   it("should render inline errors", () => {
-    const messages: (Message | ErrorMessage)[] = [
+    const messages: (Message)[] = [
       {
         sender: "assistant",
         content: "Hello",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
       {
-        error: true,
-        id: "",
-        message: "Something went wrong",
+        type: "error",
+        content: "Something went wrong",
+        sender: "assistant",
+        timestamp: new Date().toISOString(),
       },
     ];
     renderChatInterface(messages);
@@ -290,8 +300,8 @@ describe.skip("ChatInterface", () => {
   });
 
   it("should render both GitHub buttons initially when ghToken is available", () => {
-    vi.mock("@remix-run/react", async (importActual) => ({
-      ...(await importActual<typeof import("@remix-run/react")>()),
+    vi.mock("react-router", async (importActual) => ({
+      ...(await importActual<typeof import("react-router")>()),
       useRouteLoaderData: vi.fn(() => ({ ghToken: "test-token" })),
     }));
 
@@ -301,6 +311,7 @@ describe.skip("ChatInterface", () => {
         content: "Hello",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
     ];
     renderChatInterface(messages);
@@ -315,8 +326,8 @@ describe.skip("ChatInterface", () => {
   });
 
   it("should render only 'Push changes to PR' button after PR is created", async () => {
-    vi.mock("@remix-run/react", async (importActual) => ({
-      ...(await importActual<typeof import("@remix-run/react")>()),
+    vi.mock("react-router", async (importActual) => ({
+      ...(await importActual<typeof import("react-router")>()),
       useRouteLoaderData: vi.fn(() => ({ ghToken: "test-token" })),
     }));
 
@@ -326,6 +337,7 @@ describe.skip("ChatInterface", () => {
         content: "Hello",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
     ];
     const { rerender } = renderChatInterface(messages);
@@ -358,18 +370,21 @@ describe.skip("ChatInterface", () => {
         content: "Hello",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
       {
         sender: "user",
         content: "Hi",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
       {
         sender: "assistant",
         content: "How can I help you?",
         imageUrls: [],
         timestamp: new Date().toISOString(),
+        pending: true,
       },
     ];
     const { rerender } = renderChatInterface(messages);
@@ -380,6 +395,7 @@ describe.skip("ChatInterface", () => {
       content: "I need help",
       imageUrls: [],
       timestamp: new Date().toISOString(),
+      pending: true,
     });
 
     rerender(<ChatInterface />);

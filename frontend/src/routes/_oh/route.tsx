@@ -1,14 +1,14 @@
 import React from "react";
-import { useRouteError, isRouteErrorResponse, Outlet } from "@remix-run/react";
+import { useRouteError, isRouteErrorResponse, Outlet } from "react-router";
 import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConfig } from "#/hooks/query/use-config";
-import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
+import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -79,18 +79,19 @@ export default function MainApp() {
   return (
     <div
       data-testid="root-layout"
-      className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3"
+      className="bg-root-primary p-3 h-screen md:min-w-[1024px] overflow-x-hidden flex flex-col md:flex-row gap-3"
     >
       <Sidebar />
 
-      <div className="h-full w-full relative">
+      <div className="h-[calc(100%-50px)] md:h-full w-full relative">
         <Outlet />
       </div>
 
       {isInWaitlist && (
         <WaitlistModal ghToken={gitHubToken} githubAuthUrl={gitHubAuthUrl} />
       )}
-      {consentFormIsOpen && (
+
+      {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
         <AnalyticsConsentFormModal
           onClose={() => setConsentFormIsOpen(false)}
         />

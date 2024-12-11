@@ -20,10 +20,18 @@ import { ContinueButton } from "#/components/shared/buttons/continue-button";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 
+function getEntryPoint(
+  hasRepository: boolean | null,
+  hasImportedProjectZip: boolean | null,
+): string {
+  if (hasRepository) return "github";
+  if (hasImportedProjectZip) return "zip";
+  return "direct";
+}
+
 export function ChatInterface() {
   const { send, isLoadingMessages } = useWsClient();
   const dispatch = useDispatch();
-
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const { scrollDomToBottom, onChatBodyScroll, hitBottom } =
     useScrollToBottom(scrollRef);
@@ -36,16 +44,32 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
+  const { selectedRepository, importedProjectZip } = useSelector(
+    (state: RootState) => state.initalQuery,
+  );
 
   const handleSendMessage = async (content: string, files: File[]) => {
-    posthog.capture("user_message_sent", {
-      current_message_count: messages.length,
-    });
+    if (messages.length === 0) {
+      posthog.capture("initial_query_submitted", {
+        entry_point: getEntryPoint(
+          selectedRepository !== null,
+          importedProjectZip !== null,
+        ),
+        query_character_length: content.length,
+        uploaded_zip_size: importedProjectZip?.length,
+      });
+    } else {
+      posthog.capture("user_message_sent", {
+        session_message_count: messages.length,
+        current_message_length: content.length,
+      });
+    }
     const promises = files.map((file) => convertImageToBase64(file));
     const imageUrls = await Promise.all(promises);
 
     const timestamp = new Date().toISOString();
-    dispatch(addUserMessage({ content, imageUrls, timestamp }));
+    const pending = true;
+    dispatch(addUserMessage({ content, imageUrls, timestamp, pending }));
     send(createChatMessage(content, imageUrls, timestamp));
     setMessageToSend(null);
   };

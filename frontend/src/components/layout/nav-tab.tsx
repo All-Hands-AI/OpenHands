@@ -1,10 +1,10 @@
-import { NavLink } from "react-router-dom";
+import { NavLink } from "react-router";
 import { cn } from "#/utils/utils";
 import { BetaBadge } from "./beta-badge";
 
 interface NavTabProps {
   to: string;
-  label: string;
+  label: string | React.ReactNode;
   icon: React.ReactNode;
   isBeta?: boolean;
 }

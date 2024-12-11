@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import { renderWithProviders } from "../../test-utils";
 import { BrowserPanel } from "#/components/features/browser/browser";
 
+
 describe("Browser", () => {
   it("renders a message if no screenshotSrc is provided", () => {
     renderWithProviders(<BrowserPanel />, {
@@ -10,6 +11,7 @@ describe("Browser", () => {
         browser: {
           url: "https://example.com",
           screenshotSrc: "",
+          updateCount: 0,
         },
       },
     });
@@ -25,6 +27,7 @@ describe("Browser", () => {
           url: "https://example.com",
           screenshotSrc:
             "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN0uGvyHwAFCAJS091fQwAAAABJRU5ErkJggg==",
+          updateCount: 0,
         },
       },
     });

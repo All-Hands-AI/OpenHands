@@ -1,6 +1,6 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { useRouteError } from "@remix-run/react";
+import { useRouteError } from "react-router";
 import { editor } from "monaco-editor";
 import { EditorProps } from "@monaco-editor/react";
 import { RootState } from "#/store";

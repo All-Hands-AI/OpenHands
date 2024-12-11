@@ -1,6 +1,7 @@
-import { useLocation, useNavigate } from "@remix-run/react";
+import { useLocation, useNavigate } from "react-router";
 import React from "react";
 import { useDispatch } from "react-redux";
+import posthog from "posthog-js";
 import { setImportedProjectZip } from "#/state/initial-query-slice";
 import { convertZipToBase64 } from "#/utils/convert-zip-to-base64";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
@@ -61,6 +62,7 @@ function Home() {
               if (event.target.files) {
                 const zip = event.target.files[0];
                 dispatch(setImportedProjectZip(await convertZipToBase64(zip)));
+                posthog.capture("zip_file_uploaded");
                 formRef.current?.requestSubmit();
               } else {
                 // TODO: handle error

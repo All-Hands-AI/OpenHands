@@ -18,10 +18,10 @@ checkout_eval_branch
 # Only 'CodeActAgent' is supported for MINT now
 AGENT="CodeActAgent"
 
-get_agent_version
+get_openhands_version
 
 echo "AGENT: $AGENT"
-echo "AGENT_VERSION: $AGENT_VERSION"
+echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 
 export PYTHONPATH=$(pwd)
 
