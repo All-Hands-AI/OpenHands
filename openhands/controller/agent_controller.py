@@ -312,6 +312,13 @@ class AgentController:
                 str(action),
                 extra={'msg_type': 'ACTION', 'event_source': EventSource.USER},
             )
+            # Extend max iterations when user sends a message
+            if self._initial_max_iterations is not None:
+                self.state.max_iterations = self.state.iteration + self._initial_max_iterations
+                self.log(
+                    'info',
+                    f'Extended max iterations to {self.state.max_iterations} after user message',
+                )
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
