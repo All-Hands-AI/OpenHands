@@ -25,7 +25,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST: ghcr.io/all-hands-ai/runtime:0.15.2-nikolaik
+  BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST: nikolaik/python-nodejs:python3.12-nodejs22
   RELEVANT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
@@ -102,7 +102,7 @@ jobs:
     strategy:
       matrix:
         base_image:
-          - image: 'ghcr.io/all-hands-ai/runtime:0.15.2-nikolaik'
+          - image: 'nikolaik/python-nodejs:python3.12-nodejs22'
             tag: nikolaik
     steps:
       - name: Checkout
@@ -153,19 +153,19 @@ jobs:
         run: make install-python-dependencies
       - name: Create source distribution and Dockerfile
         run: poetry run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
-      - name: Build and push runtime image ${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
+      - name: Build and push runtime image ${{ matrix.base_image.image }}
         if: github.event.pull_request.head.repo.fork != true
         run: |
           ./containers/build.sh -i runtime -o ${{ github.repository_owner }} --push -t ${{ matrix.base_image.tag }}
       # Forked repos can't push to GHCR, so we need to upload the image as an artifact
-      - name: Build runtime image ${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }} for fork
+      - name: Build runtime image ${{ matrix.base_image.image }} for fork
         if: github.event.pull_request.head.repo.fork
         uses: docker/build-push-action@v6
         with:
           tags: ghcr.io/all-hands-ai/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           outputs: type=docker,dest=/tmp/runtime-${{ matrix.base_image.tag }}.tar
           context: containers/runtime
-      - name: Upload runtime image ${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }} for fork
+      - name: Upload runtime image for fork
         if: github.event.pull_request.head.repo.fork
         uses: actions/upload-artifact@v4
         with:
