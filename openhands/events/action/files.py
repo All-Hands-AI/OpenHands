@@ -20,6 +20,8 @@ class FileReadAction(Action):
     action: str = ActionType.READ
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
+    agent_view: bool = False
+    translated_ipython_code: str = ''
 
     @property
     def message(self) -> str:

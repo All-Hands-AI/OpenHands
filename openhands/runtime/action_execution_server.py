@@ -208,32 +208,36 @@ class ActionExecutor:
                 r'<oh_aci_output>(.*?)</oh_aci_output>', obs.content, re.DOTALL
             )
             if matches:
-                results: list[str | FileEditObservation] = []
+                results: list[FileReadObservation | FileEditObservation | str] = []
                 for match in matches:
                     try:
                         result_dict = json.loads(match)
-                        if result_dict.get('path'):  # An edit command
+                        if result_dict['new_content'] is not None:  # File edit commands
                             diff = get_diff(
-                                old_contents=result_dict.get('old_content', ''),
-                                new_contents=result_dict.get('new_content', ''),
+                                old_contents=result_dict['old_content'],
+                                new_contents=result_dict['new_content'],
                                 filepath=result_dict['path'],
                             )
                             results.append(
                                 FileEditObservation(
                                     content=diff,
                                     path=result_dict['path'],
-                                    old_content=result_dict.get('old_content', ''),
-                                    new_content=result_dict.get('new_content', ''),
-                                    prev_exist=result_dict.get('prev_exist', True),
+                                    old_content=result_dict['old_content'],
+                                    new_content=result_dict['new_content'],
+                                    prev_exist=result_dict['prev_exist'],
                                     impl_source=FileEditSource.OH_ACI,
-                                    formatted_output_and_error=result_dict.get(
-                                        'formatted_output_and_error', ''
-                                    ),
+                                    formatted_output_and_error=result_dict[
+                                        'formatted_output_and_error'
+                                    ],
                                 )
                             )
-                        else:
+                        else:  # File view commands
                             results.append(
-                                result_dict.get('formatted_output_and_error', '')
+                                FileReadObservation(
+                                    content=result_dict['formatted_output_and_error'],
+                                    path=result_dict['path'],
+                                    agent_view=True,
+                                )
                             )
                     except json.JSONDecodeError:
                         # Handle JSON decoding errors if necessary
@@ -267,6 +271,14 @@ class ActionExecutor:
         return str(filepath)
 
     async def read(self, action: FileReadAction) -> Observation:
+        if action.agent_view:
+            return await self.run_ipython(
+                IPythonRunCellAction(
+                    code=action.translated_ipython_code,
+                    include_extra=False,
+                )
+            )
+
         # NOTE: the client code is running inside the sandbox,
         # so there's no need to check permission
         working_dir = self.bash_session.workdir

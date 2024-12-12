@@ -12,6 +12,7 @@ class FileReadObservation(Observation):
 
     path: str
     observation: str = ObservationType.READ
+    agent_view: bool = False
 
     @property
     def message(self) -> str:
