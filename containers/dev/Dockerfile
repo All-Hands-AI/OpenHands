@@ -5,24 +5,24 @@ FROM ubuntu:22.04 AS dind
 
 # https://docs.docker.com/engine/install/ubuntu/
 RUN apt-get update && apt-get install -y \
-	ca-certificates \
-	curl \
-	&& install -m 0755 -d /etc/apt/keyrings \
-	&& curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc \
-	&& chmod a+r /etc/apt/keyrings/docker.asc \
-	&& echo \
-		"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-		$(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+        ca-certificates \
+        curl \
+        && install -m 0755 -d /etc/apt/keyrings \
+        && curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc \
+        && chmod a+r /etc/apt/keyrings/docker.asc \
+        && echo \
+                "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+                $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 RUN apt-get update && apt-get install -y \
-	docker-ce \
-	docker-ce-cli \
-	containerd.io \
-	docker-buildx-plugin \
-	docker-compose-plugin \
-	&& rm -rf /var/lib/apt/lists/* \
-	&& apt-get clean \
-	&& apt-get autoremove -y
+        docker-ce \
+        docker-ce-cli \
+        containerd.io \
+        docker-buildx-plugin \
+        docker-compose-plugin \
+        && rm -rf /var/lib/apt/lists/* \
+        && apt-get clean \
+        && apt-get autoremove -y
 
 ###
 FROM dind AS openhands
@@ -31,25 +31,25 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 #
 RUN apt-get update && apt-get install -y \
-	bash \
+        bash \
     build-essential \
     curl \
-	git \
-	git-lfs \
-	software-properties-common \
-	make \
+        git \
+        git-lfs \
+        software-properties-common \
+        make \
     netcat \
     sudo \
-	wget \
-	&& rm -rf /var/lib/apt/lists/* \
-	&& apt-get clean \
-	&& apt-get autoremove -y
+        wget \
+        && rm -rf /var/lib/apt/lists/* \
+        && apt-get clean \
+        && apt-get autoremove -y
 
 # https://github.com/cli/cli/blob/trunk/docs/install_linux.md
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-	&& chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
-	&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-	&& apt-get update && apt-get -y install \
+        && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+        && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+        && apt-get update && apt-get -y install \
     gh \
   && rm -rf /var/lib/apt/lists/* \
   && apt-get clean \
@@ -92,17 +92,17 @@ EOF
 FROM openhands AS dev
 
 RUN apt-get update && apt-get install -y \
-	dnsutils \
-	file \
-	iproute2 \
-	jq \
-	lsof \
-	ripgrep \
-	silversearcher-ag \
-	vim \
-	&& rm -rf /var/lib/apt/lists/* \
-	&& apt-get clean \
-	&& apt-get autoremove -y
+        dnsutils \
+        file \
+        iproute2 \
+        jq \
+        lsof \
+        ripgrep \
+        silversearcher-ag \
+        vim \
+        && rm -rf /var/lib/apt/lists/* \
+        && apt-get clean \
+        && apt-get autoremove -y
 
 WORKDIR /app
 
@@ -113,7 +113,7 @@ RUN \
 #!/bin/bash
 make -s clean
 make -s check-dependencies
-make -s install-python-dependencies
+poetry install --without llama-index,evaluation
 
 # NOTE
 # node_modules are .dockerignore-d therefore not mountable
