@@ -217,6 +217,9 @@ llm_config = 'gpt3'
 # Use host network
 #use_host_network = false
 
+# runtime extra build args
+#runtime_extra_build_args = ["--network=host", "--add-host=host.docker.internal:host-gateway"]
+
 # Enable auto linting after editing
 #enable_auto_lint = false
 
