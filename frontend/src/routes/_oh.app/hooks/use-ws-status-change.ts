@@ -52,6 +52,7 @@ export const useWSStatusChange = () => {
 
     if (gitHubToken && selectedRepository) {
       dispatch(clearSelectedRepository());
+      additionalInfo = `Repository ${selectedRepository} has been cloned to /workspace. Please check the /workspace for files.`;
     } else if (importedProjectZip) {
       // if there's an uploaded project zip, add it to the chat
       additionalInfo =
