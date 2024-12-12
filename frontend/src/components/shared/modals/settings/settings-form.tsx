@@ -98,9 +98,9 @@ export function SettingsForm({
     const isUsingAdvancedOptions = keys.includes("use-advanced-options");
     const newSettings = extractSettings(formData);
 
-    saveSettings(newSettings);
     saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
     updateSettingsVersion(logout);
+    saveSettings(newSettings);
     resetOngoingSession();
 
     posthog.capture("settings_saved", {
