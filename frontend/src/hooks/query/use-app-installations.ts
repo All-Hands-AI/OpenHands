@@ -13,6 +13,9 @@ export const useAppInstallations = () => {
       const data = await retrieveGitHubAppInstallations();
       return data;
     },
-    enabled: !!gitHubToken && !!config?.GITHUB_CLIENT_ID,
+    enabled:
+      !!gitHubToken &&
+      !!config?.GITHUB_CLIENT_ID &&
+      config?.APP_MODE === "saas",
   });
 };
