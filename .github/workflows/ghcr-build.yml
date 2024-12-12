@@ -153,7 +153,7 @@ jobs:
         run: make install-python-dependencies
       - name: Create source distribution and Dockerfile
         run: poetry run python3 openhands/runtime/utils/runtime_build.py --base_image ${{ matrix.base_image.image }} --build_folder containers/runtime --force_rebuild
-      - name: Build and push runtime image ${{ matrix.base_image.image }}
+      - name: Build and push runtime image ${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
         if: github.event.pull_request.head.repo.fork != true
         run: |
           ./containers/build.sh -i runtime -o ${{ github.repository_owner }} --push -t ${{ matrix.base_image.tag }}
