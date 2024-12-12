@@ -3,6 +3,8 @@ name: Lint Fix
 on:
   pull_request:
     types: [labeled]
+  workflow_dispatch:
+  workflow_call:
 
 jobs:
   # Frontend lint fixes
@@ -45,8 +47,8 @@ jobs:
           git config --local user.email "openhands@all-hands.dev"
           git config --local user.name "OpenHands Bot"
           git add -A
-          git commit -m "🤖 Auto-fix frontend linting issues"
-          git push
+          git commit -m "🤖 Auto-fix frontend linting issues [trigger-ci]"
+          git push origin HEAD:${{ github.head_ref }} --force
 
   # Python lint fixes
   lint-fix-python:
@@ -87,5 +89,5 @@ jobs:
           git config --local user.email "openhands@all-hands.dev"
           git config --local user.name "OpenHands Bot"
           git add -A
-          git commit -m "🤖 Auto-fix Python linting issues"
-          git push
+          git commit -m "🤖 Auto-fix Python linting issues [trigger-ci]"
+          git push origin HEAD:${{ github.head_ref }} --force
