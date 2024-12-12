@@ -166,7 +166,8 @@ class CodeActAgent(Agent):
             assistant_msg = llm_response.choices[0].message
             # Add the LLM message (assistant) that initiated the tool calls
             # (overwrites any previous message with the same response_id)
-            pending_tool_call_action_messages[llm_response.id] = Message(
+            # Create message with token counts from Usage data
+            message = Message(
                 role=assistant_msg.role,
                 # tool call content SHOULD BE a string
                 content=[TextContent(text=assistant_msg.content or '')]
@@ -174,6 +175,12 @@ class CodeActAgent(Agent):
                 else [],
                 tool_calls=assistant_msg.tool_calls,
             )
+            # Update token counts if Usage data is available
+            if llm_response.usage:
+                message.prompt_tokens = llm_response.usage.prompt_tokens
+                message.completion_tokens = llm_response.usage.completion_tokens
+                message.total_tokens = llm_response.usage.total_tokens
+            pending_tool_call_action_messages[llm_response.id] = message
             return []
         elif isinstance(action, MessageAction):
             role = 'user' if action.source == 'user' else 'assistant'
