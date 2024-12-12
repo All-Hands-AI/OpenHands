@@ -516,6 +516,7 @@ class AgentController:
             if (
                 'contextwindowexceedederror' in error_str
                 or 'prompt is too long' in error_str
+                or isinstance(e, ContextWindowExceededError)
             ):
                 # When context window is exceeded, keep roughly half of agent interactions
                 self.state.history = self._apply_conversation_window(self.state.history)
