@@ -10,6 +10,7 @@ export function ToggleSpeechButton() {
 
   return (
     <button
+      type="button"
       onClick={() => dispatch(toggleSpeech())}
       className={cn(
         "flex items-center justify-center",

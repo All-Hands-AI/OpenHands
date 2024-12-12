@@ -1,11 +1,11 @@
 import React from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useSelector } from "react-redux";
 import { code } from "../markdown/code";
 import { cn } from "#/utils/utils";
 import { ul, ol } from "../markdown/list";
 import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
-import { useSelector } from "react-redux";
 import { RootState } from "#/store";
 
 // Function to speak text using Web Speech API
@@ -15,24 +15,22 @@ function speakText(text: string) {
 
   // Create a new utterance
   const utterance = new SpeechSynthesisUtterance(text);
-  
+
   // Get available voices and set a good English voice if available
   const voices = window.speechSynthesis.getVoices();
-  const englishVoice = voices.find(voice => 
-    voice.lang.startsWith('en') && voice.name.includes('Google')
-  ) || voices.find(voice => 
-    voice.lang.startsWith('en')
-  );
-  
+  const englishVoice =
+    voices.find(
+      (voice) => voice.lang.startsWith("en") && voice.name.includes("Google"),
+    ) || voices.find((voice) => voice.lang.startsWith("en"));
+
   if (englishVoice) {
     utterance.voice = englishVoice;
   }
-  
+
   // Set properties
-  utterance.rate = 1.0;  // Normal speed
+  utterance.rate = 1.0; // Normal speed
   utterance.pitch = 1.0; // Normal pitch
   utterance.volume = 1.0; // Full volume
-  
   // Speak the text
   window.speechSynthesis.speak(utterance);
 }
@@ -76,7 +74,7 @@ export function ChatMessage({
   React.useEffect(() => {
     if (speechEnabled && type === "assistant" && message) {
       // Remove markdown formatting before speaking
-      const plainText = message.replace(/[#*`]/g, '');
+      const plainText = message.replace(/[#*`]/g, "");
       speakText(plainText);
     }
   }, [type, message, speechEnabled]);
