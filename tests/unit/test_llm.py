@@ -11,6 +11,7 @@ from litellm.exceptions import (
 
 from openhands.core.config import LLMConfig
 from openhands.core.exceptions import OperationCancelled
+from openhands.core.message import Message, TextContent
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics
 
@@ -21,6 +22,7 @@ def mock_logger(monkeypatch):
     mock_logger = MagicMock()
     monkeypatch.setattr('openhands.llm.debug_mixin.llm_prompt_logger', mock_logger)
     monkeypatch.setattr('openhands.llm.debug_mixin.llm_response_logger', mock_logger)
+    monkeypatch.setattr('openhands.llm.llm.logger', mock_logger)
     return mock_logger
 
 
@@ -363,3 +365,75 @@ def test_llm_cloudflare_blockage(mock_litellm_completion, default_config):
 
     # Ensure the completion was called
     mock_litellm_completion.assert_called_once()
+
+
+@patch('openhands.llm.llm.litellm.token_counter')
+def test_get_token_count_with_dict_messages(mock_token_counter, default_config):
+    mock_token_counter.return_value = 42
+    llm = LLM(default_config)
+    messages = [{'role': 'user', 'content': 'Hello!'}]
+
+    token_count = llm.get_token_count(messages)
+
+    assert token_count == 42
+    mock_token_counter.assert_called_once_with(
+        model=default_config.model, messages=messages, custom_tokenizer=None
+    )
+
+
+@patch('openhands.llm.llm.litellm.token_counter')
+def test_get_token_count_with_message_objects(
+    mock_token_counter, default_config, mock_logger
+):
+    mock_token_counter.return_value = 42
+    llm = LLM(default_config)
+    messages = [Message(role='user', content=[TextContent(text='Hello!')])]
+
+    token_count = llm.get_token_count(messages)
+
+    assert token_count == 42
+    mock_token_counter.assert_called_once()
+    # Verify warning about undercounting was logged
+    mock_logger.debug.assert_any_call(
+        'Tokens will be undercounted for Message objects, because tool calls are not serialized'
+    )
+
+
+@patch('openhands.llm.llm.litellm.token_counter')
+@patch('openhands.llm.llm.create_pretrained_tokenizer')
+def test_get_token_count_with_custom_tokenizer(
+    mock_create_tokenizer, mock_token_counter, default_config
+):
+    mock_tokenizer = MagicMock()
+    mock_create_tokenizer.return_value = mock_tokenizer
+    mock_token_counter.return_value = 42
+
+    config = copy.deepcopy(default_config)
+    config.custom_tokenizer = 'custom/tokenizer'
+    llm = LLM(config)
+    messages = [{'role': 'user', 'content': 'Hello!'}]
+
+    token_count = llm.get_token_count(messages)
+
+    assert token_count == 42
+    mock_create_tokenizer.assert_called_once_with('custom/tokenizer')
+    mock_token_counter.assert_called_once_with(
+        model=config.model, messages=messages, custom_tokenizer=mock_tokenizer
+    )
+
+
+@patch('openhands.llm.llm.litellm.token_counter')
+def test_get_token_count_error_handling(
+    mock_token_counter, default_config, mock_logger
+):
+    mock_token_counter.side_effect = Exception('Token counting failed')
+    llm = LLM(default_config)
+    messages = [{'role': 'user', 'content': 'Hello!'}]
+
+    token_count = llm.get_token_count(messages)
+
+    assert token_count == 0
+    mock_token_counter.assert_called_once()
+    mock_logger.error.assert_called_once_with(
+        'Error getting token count for\n model gpt-4o\nToken counting failed'
+    )
