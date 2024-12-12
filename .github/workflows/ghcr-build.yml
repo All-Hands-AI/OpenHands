@@ -165,7 +165,7 @@ jobs:
           tags: ghcr.io/all-hands-ai/runtime:${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }}
           outputs: type=docker,dest=/tmp/runtime-${{ matrix.base_image.tag }}.tar
           context: containers/runtime
-      - name: Upload runtime image for fork
+      - name: Upload runtime image ${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }} for fork
         if: github.event.pull_request.head.repo.fork
         uses: actions/upload-artifact@v4
         with:
