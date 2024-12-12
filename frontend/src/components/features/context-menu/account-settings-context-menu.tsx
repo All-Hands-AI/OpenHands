@@ -28,7 +28,7 @@ export function AccountSettingsContextMenu({
       ref={ref}
       className="absolute left-full -top-1 z-10"
     >
-      {config?.APP_MODE == "saas" && (
+      {config?.APP_MODE === "saas" && (
         <ContextMenuListItem onClick={onAddMoreRepositories}>
           Add More Repositories
         </ContextMenuListItem>
