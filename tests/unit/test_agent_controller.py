@@ -120,7 +120,7 @@ async def test_react_to_exception(mock_agent, mock_event_stream, mock_status_cal
 
 @pytest.mark.asyncio
 async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
-    config = AppConfig()
+    config = AppConfig(file_store='memory')
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(sid='test', file_store=file_store)
 
@@ -165,7 +165,7 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
 
 @pytest.mark.asyncio
 async def test_run_controller_stop_with_stuck():
-    config = AppConfig()
+    config = AppConfig(file_store='memory')
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(sid='test', file_store=file_store)
 
