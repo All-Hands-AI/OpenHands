@@ -58,5 +58,10 @@ def refresh_files():
     return ['hello_world.py']
 
 
+@app.get('/api/options/config')
+def get_config():
+    return {'APP_MODE': 'oss'}
+
+
 if __name__ == '__main__':
     uvicorn.run(app, host='127.0.0.1', port=3000)
