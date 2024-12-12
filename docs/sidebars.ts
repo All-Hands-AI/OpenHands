@@ -14,9 +14,20 @@ const sidebars: SidebarsConfig = {
       id: 'usage/getting-started',
     },
     {
-      type: 'doc',
-      label: 'Prompting Best Practices',
-      id: 'usage/prompting-best-practices',
+      type: 'category',
+      label: 'Prompting',
+      items: [
+        {
+          type: 'doc',
+          label: 'Best Practices',
+          id: 'usage/prompting-best-practices',
+        },
+        {
+          type: 'doc',
+          label: 'Micro-Agents',
+          id: 'usage/micro-agents',
+        },
+      ],
     },
     {
       type: 'category',
