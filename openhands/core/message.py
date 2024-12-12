@@ -126,8 +126,8 @@ class Message(BaseModel):
                     'type': 'function',
                     'function': {
                         'name': tool_call.function.name,
-                        'arguments': tool_call.function.arguments
-                    }
+                        'arguments': tool_call.function.arguments,
+                    },
                 }
                 for tool_call in self.tool_calls
             ]
