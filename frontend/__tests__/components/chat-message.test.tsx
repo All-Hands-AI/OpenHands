@@ -70,4 +70,12 @@ describe("ChatMessage", () => {
     );
     expect(screen.getByTestId("custom-component")).toBeInTheDocument();
   });
+
+  it("should apply correct styles to inline code", () => {
+    render(<ChatMessage type="assistant" message="Here is some `inline code` text" />);
+    const codeElement = screen.getByText("inline code");
+
+    expect(codeElement.tagName.toLowerCase()).toBe("code");
+    expect(codeElement.closest("article")).not.toBeNull();
+  });
 });

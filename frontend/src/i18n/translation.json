@@ -2017,6 +2017,9 @@
   "ACTION_MESSAGE$WRITE": {
     "en": "Writing to a file"
   },
+  "ACTION_MESSAGE$BROWSE": {
+    "en": "Browsing the web"
+  },
   "OBSERVATION_MESSAGE$RUN": {
     "en": "Ran a bash command"
   },
@@ -2028,6 +2031,9 @@
   },
   "OBSERVATION_MESSAGE$WRITE": {
     "en": "Wrote to a file"
+  },
+  "OBSERVATION_MESSAGE$BROWSE": {
+    "en": "Browsing completed"
   },
   "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
     "en": "Show details"

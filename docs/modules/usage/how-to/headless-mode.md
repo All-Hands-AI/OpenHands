@@ -55,5 +55,5 @@ docker run -it \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
     docker.all-hands.dev/all-hands-ai/openhands:0.15 \
-    python -m openhands.core.main -t "write a bash script that prints hi"
+    python -m openhands.core.main -t "write a bash script that prints hi" --no-auto-continue
 ```
