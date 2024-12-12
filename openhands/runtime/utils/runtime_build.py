@@ -214,7 +214,7 @@ def build_runtime_image_in_folder(
     # can use it as the base image for the build and just copy source files. This makes the build
     # much faster.
     if runtime_builder.image_exists(lock_image_name):
-        logger.debug(f'Build [{hash_image_name}] from lock image [{lock_image_name}]')
+        logger.info(f'Build [{hash_image_name}] from lock image [{lock_image_name}]')
         build_from = BuildFromImageType.LOCK
         base_image = lock_image_name
     elif runtime_builder.image_exists(versioned_image_name):
@@ -224,7 +224,7 @@ def build_runtime_image_in_folder(
         build_from = BuildFromImageType.VERSIONED
         base_image = versioned_image_name
     else:
-        logger.debug(f'Build [{hash_image_name}] from scratch')
+        logger.info(f'Build [{hash_image_name}] from scratch')
 
     prep_build_folder(build_folder, base_image, build_from, extra_deps)
     if not dry_run:
