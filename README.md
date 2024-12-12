@@ -29,6 +29,11 @@ call APIs, and yes—even copy code snippets from StackOverflow.
 
 Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or jump to the [Quick Start](#-quick-start).
 
+> [!IMPORTANT]
+> Using OpenHands for work? We'd love to chat! Fill out
+> [this short form](https://docs.google.com/forms/d/e/1FAIpQLSet3VbGaz8z32gW9Wm-Grl4jpt5WgMXPgJ4EDPVmCETCBpJtQ/viewform)
+> to join our Design Partner program, where you'll get early access to commercial features and the opportunity to provide input on our roadmap.
+
 ![App screenshot](./docs/static/img/screenshot.png)
 
 ## ⚡ Quick Start
