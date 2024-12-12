@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass, fields
-from typing import Union
+from typing import Optional
 
 from openhands.core.config.config_utils import get_field_info
 from openhands.core.logger import LOG_DIR
@@ -77,7 +77,7 @@ class LLMConfig:
     caching_prompt: bool = True
     log_completions: bool = False
     log_completions_folder: str = os.path.join(LOG_DIR, 'completions')
-    draft_editor: Union['LLMConfig', None] = None
+    draft_editor: Optional['LLMConfig'] = None
     custom_tokenizer: str | None = None
 
     def defaults_to_dict(self) -> dict:
