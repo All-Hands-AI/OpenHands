@@ -67,9 +67,6 @@ joblib = "*"
 openhands-aci = "^0.1.2"
 python-socketio = "^5.11.4"
 redis = "^5.2.0"
-fuzzywuzzy = "^0.18.0"
-rouge = "^1.0.1"
-python-levenshtein = "^0.26.1"
 
 [tool.poetry.group.llama-index.dependencies]
 llama-index = "*"
