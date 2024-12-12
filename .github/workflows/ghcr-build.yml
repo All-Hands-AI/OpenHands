@@ -158,7 +158,7 @@ jobs:
         run: |
           ./containers/build.sh -i runtime -o ${{ github.repository_owner }} --push -t ${{ matrix.base_image.tag }}
       # Forked repos can't push to GHCR, so we need to upload the image as an artifact
-      - name: Build runtime image ${{ matrix.base_image.image }} for fork
+      - name: Build runtime image ${{ env.RELEVANT_SHA }}-${{ matrix.base_image.tag }} for fork
         if: github.event.pull_request.head.repo.fork
         uses: docker/build-push-action@v6
         with:
