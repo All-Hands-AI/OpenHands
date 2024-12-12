@@ -40,7 +40,7 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from openhands.events.common import FileEditSource
+from openhands.events.event import FileEditSource
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,

@@ -3,7 +3,7 @@ from typing import ClassVar
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action, ActionSecurityRisk
-from openhands.events.common import FileEditSource
+from openhands.events.event import FileEditSource
 
 
 @dataclass

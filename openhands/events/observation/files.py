@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from difflib import SequenceMatcher
 
 from openhands.core.schema import ObservationType
-from openhands.events.common import FileEditSource
+from openhands.events.event import FileEditSource
 from openhands.events.observation.observation import Observation
 
 
