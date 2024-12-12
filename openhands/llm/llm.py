@@ -486,21 +486,25 @@ class LLM(RetryMixin, DebugMixin):
 
         return cur_cost
 
-    def get_token_count(self, messages) -> int:
-        """Get the number of tokens in a list of messages.
+    def get_token_count(self, messages: list[dict] | list[Message]) -> int:
+        """Get the number of tokens in a list of messages. Use dicts for better token counting.
 
         Args:
             messages (list): A list of messages, either as a list of dicts or as a list of Message objects.
         Returns:
             int: The number of tokens.
         """
-        # convert Message objects to dicts, litellm expects dicts
+        # attempt to convert Message objects to dicts, litellm expects dicts
         if (
             isinstance(messages, list)
             and len(messages) > 0
             and isinstance(messages[0], Message)
         ):
-            messages = self.format_messages_for_llm(messages)
+            # TODO fix passing Message objects
+            logger.debug(
+                'Tokens will be undercounted for Message objects, because tool calls are not serialized'
+            )
+            messages = self.format_messages_for_llm(messages)  # type: ignore
 
         # try to get the token count with the default litellm tokenizers
         # or the custom tokenizer if set for this LLM configuration
