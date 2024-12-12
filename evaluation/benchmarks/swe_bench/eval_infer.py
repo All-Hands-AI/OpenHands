@@ -1,5 +1,4 @@
 import os
-import re
 import tempfile
 import time
 from functools import partial
@@ -171,9 +170,8 @@ def process_instance(
     assert obs.exit_code == 0
 
     # Apply patch
-    workspace_name = re.sub(r'/', '__', f"{instance['repo']}__{instance['version']}")
     exec_command = (
-        f'cd /workspace/${workspace_name} && '
+        'cd /testbed && '
         "(git apply -v /tmp/patch.diff && echo 'APPLY_PATCH_PASS' || "
         "(echo 'Failed to apply patch with git apply, trying with patch command...' && "
         "(patch --batch --fuzz=5 -p1 -i /tmp/patch.diff && echo 'APPLY_PATCH_PASS' || "
