@@ -312,7 +312,7 @@ class AgentController:
                 str(action),
                 extra={'msg_type': 'ACTION', 'event_source': EventSource.USER},
             )
-            # Extend max iterations when user sends a message
+            # Extend max iterations when the user sends a message
             if self._initial_max_iterations is not None:
                 self.state.max_iterations = (
                     self.state.iteration + self._initial_max_iterations
