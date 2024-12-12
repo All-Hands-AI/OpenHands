@@ -314,7 +314,9 @@ class AgentController:
             )
             # Extend max iterations when user sends a message
             if self._initial_max_iterations is not None:
-                self.state.max_iterations = self.state.iteration + self._initial_max_iterations
+                self.state.max_iterations = (
+                    self.state.iteration + self._initial_max_iterations
+                )
                 self.log(
                     'info',
                     f'Extended max iterations to {self.state.max_iterations} after user message',
