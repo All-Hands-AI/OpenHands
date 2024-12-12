@@ -1,9 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, test, vi, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { AuthProvider } from "#/context/auth-context";
 import { UserActions } from "#/components/features/sidebar/user-actions";
 
 describe("UserActions", () => {
+  const queryClient = new QueryClient();
   const user = userEvent.setup();
   const onClickAccountSettingsMock = vi.fn();
   const onLogoutMock = vi.fn();
@@ -13,8 +16,16 @@ describe("UserActions", () => {
     onLogoutMock.mockClear();
   });
 
-  it("should render", () => {
+  const renderWithQueryClient = (component: React.ReactNode) => {
     render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>{component}</AuthProvider>
+      </QueryClientProvider>,
+    );
+  };
+
+  it("should render", () => {
+    renderWithQueryClient(
       <UserActions
         onClickAccountSettings={onClickAccountSettingsMock}
         onLogout={onLogoutMock}
@@ -26,7 +37,7 @@ describe("UserActions", () => {
   });
 
   it("should toggle the user menu when the user avatar is clicked", async () => {
-    render(
+    renderWithQueryClient(
       <UserActions
         onClickAccountSettings={onClickAccountSettingsMock}
         onLogout={onLogoutMock}
@@ -48,7 +59,7 @@ describe("UserActions", () => {
   });
 
   it("should call onClickAccountSettings and close the menu when the account settings option is clicked", async () => {
-    render(
+    renderWithQueryClient(
       <UserActions
         onClickAccountSettings={onClickAccountSettingsMock}
         onLogout={onLogoutMock}
@@ -68,7 +79,7 @@ describe("UserActions", () => {
   });
 
   it("should call onLogout and close the menu when the logout option is clicked", async () => {
-    render(
+    renderWithQueryClient(
       <UserActions
         onClickAccountSettings={onClickAccountSettingsMock}
         onLogout={onLogoutMock}
@@ -89,7 +100,7 @@ describe("UserActions", () => {
   });
 
   test("onLogout should not be called when the user is not logged in", async () => {
-    render(
+    renderWithQueryClient(
       <UserActions
         onClickAccountSettings={onClickAccountSettingsMock}
         onLogout={onLogoutMock}
@@ -107,7 +118,7 @@ describe("UserActions", () => {
 
   // FIXME: Spinner now provided through useQuery
   it.skip("should display the loading spinner", () => {
-    render(
+    renderWithQueryClient(
       <UserActions
         onClickAccountSettings={onClickAccountSettingsMock}
         onLogout={onLogoutMock}
