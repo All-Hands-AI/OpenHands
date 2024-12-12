@@ -8,7 +8,6 @@ from openhands.core.config.config_utils import (
     OH_MAX_ITERATIONS,
     get_field_info,
 )
-from openhands.core.config.jwt_utils import get_or_create_jwt_secret
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
@@ -51,7 +50,7 @@ class AppConfig:
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
     runtime: str = 'eventstream'
-    file_store: str = 'local'
+    file_store: str = 'memory'
     file_store_path: str = '/tmp/file_store'
     trajectories_path: str | None = None
     workspace_base: str | None = None
@@ -119,10 +118,6 @@ class AppConfig:
     def __post_init__(self):
         """Post-initialization hook, called when the instance is created with only default values."""
         AppConfig.defaults_dict = self.defaults_to_dict()
-        if not self.jwt_secret:
-            self.jwt_secret = get_or_create_jwt_secret(
-                self.file_store, self.file_store_path
-            )
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
