@@ -32,10 +32,10 @@ from openhands.events.action import (
     ChangeAgentStateAction,
     CmdRunAction,
     IPythonRunCellAction,
-    MessageAction,
     ModifyTaskAction,
     NullAction,
 )
+from openhands.events.action.tts_message import TTSMessageAction as MessageAction
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentDelegateObservation,
