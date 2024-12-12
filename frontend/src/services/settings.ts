@@ -35,10 +35,11 @@ export const getCurrentSettingsVersion = () => {
 export const settingsAreUpToDate = () =>
   getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
 
-export const maybeMigrateSettings = () => {
+export const maybeMigrateSettings = (logout: () => void) => {
   // Sometimes we ship major changes, like a new default agent.
   // In this case, we may want to override a previous choice made by the user.
   const currentVersion = getCurrentSettingsVersion();
+
   if (currentVersion < 1) {
     localStorage.setItem("AGENT", DEFAULT_SETTINGS.AGENT);
   }
@@ -55,7 +56,7 @@ export const maybeMigrateSettings = () => {
   }
 
   if (currentVersion < 4) {
-    localStorage.removeItem("ghToken");
+    logout();
   }
 };
 

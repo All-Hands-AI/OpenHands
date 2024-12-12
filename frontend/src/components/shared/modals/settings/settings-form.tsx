@@ -24,6 +24,7 @@ import { CustomModelInput } from "../../inputs/custom-model-input";
 import { SecurityAnalyzerInput } from "../../inputs/security-analyzers-input";
 import { ModalBackdrop } from "../modal-backdrop";
 import { ModelSelector } from "./model-selector";
+import { useAuth } from "#/context/auth-context";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -44,6 +45,7 @@ export function SettingsForm({
 }: SettingsFormProps) {
   const { saveSettings } = useUserPrefs();
   const endSession = useEndSession();
+  const { logout } = useAuth();
 
   const location = useLocation();
   const { t } = useTranslation();
@@ -98,7 +100,7 @@ export function SettingsForm({
 
     saveSettings(newSettings);
     saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
-    updateSettingsVersion();
+    updateSettingsVersion(logout);
     resetOngoingSession();
 
     posthog.capture("settings_saved", {
