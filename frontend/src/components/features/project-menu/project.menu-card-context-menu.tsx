@@ -37,7 +37,7 @@ export function ProjectMenuCardContextMenu({
         </ContextMenuListItem>
       )}
       <ContextMenuListItem onClick={onDownloadWorkspace}>
-        {t(I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$DOWNLOAD_AS_ZIP_LABEL)}
+        {t(I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$DOWNLOAD_FILES_LABEL)}
       </ContextMenuListItem>
     </ContextMenu>
   );
