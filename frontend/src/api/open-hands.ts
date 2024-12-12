@@ -202,11 +202,11 @@ class OpenHands {
     return data;
   }
 
-  static async getConversationPermissions(
+  static async getConversation(
     conversationId: string,
-  ): Promise<string[]> {
-    const { data } = await openHands.get<string[]>(
-      `/api/conversations/${conversationId}/permissions`,
+  ): Promise<Conversation | null> {
+    const { data } = await openHands.get<Conversation | null>(
+      `/api/conversations/${conversationId}`,
     );
     return data;
   }

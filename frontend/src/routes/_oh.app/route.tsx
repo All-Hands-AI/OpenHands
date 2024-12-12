@@ -23,7 +23,7 @@ import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
 import { useEndSession } from "#/hooks/use-end-session";
-import { useConversationPermissions } from "#/hooks/query/get-conversation-permissions";
+import { useConversation } from "#/hooks/query/get-conversation-permissions";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { CountBadge } from "#/components/layout/count-badge";
 
@@ -39,7 +39,7 @@ function App() {
 
   useConversationConfig();
   const { mutate: createConversation } = useCreateConversation();
-  const { data: permissions, isFetched } = useConversationPermissions(cid);
+  const { data: conversation, isFetched } = useConversation(cid);
 
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initalQuery,
@@ -62,11 +62,11 @@ function App() {
   );
 
   React.useEffect(() => {
-    if (isFetched && !permissions?.includes("write:chat")) {
+    if (isFetched && !conversation) {
       toast.error("You do not have permission to write to this conversation.");
       endSession();
     }
-  }, [permissions, isFetched]);
+  }, [conversation, isFetched]);
 
   React.useEffect(() => {
     if (cid) setToken(cid);
@@ -92,7 +92,7 @@ function App() {
 
   return (
     <WsClientProvider
-      enabled={!!permissions && permissions?.includes("write:chat")}
+      enabled={!!conversation}
       token={cid}
       ghToken={gitHubToken}
       selectedRepository={selectedRepository}

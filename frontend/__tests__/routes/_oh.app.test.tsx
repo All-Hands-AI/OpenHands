@@ -34,14 +34,11 @@ describe("App", () => {
     await screen.findByTestId("app-route");
   });
 
-  it("should call endSession if the user does not have write:chat permission", async () => {
+  it("should call endSession if the user does not have permission", async () => {
     const errorToastSpy = vi.spyOn(toast, "error");
-    const getConversationPermissionsSpy = vi.spyOn(
-      OpenHands,
-      "getConversationPermissions",
-    );
+    const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
 
-    getConversationPermissionsSpy.mockResolvedValue([]);
+    getConversationSpy.mockResolvedValue(null);
     renderWithProviders(
       <RouteStub initialEntries={["/conversation?cid=9999"]} />,
     );
@@ -52,14 +49,17 @@ describe("App", () => {
     });
   });
 
-  it("should not call endSession if the user has write:chat permission", async () => {
+  it("should not call endSession if the user has permission", async () => {
     const errorToastSpy = vi.spyOn(toast, "error");
-    const getConversationPermissionsSpy = vi.spyOn(
-      OpenHands,
-      "getConversationPermissions",
-    );
+    const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
 
-    getConversationPermissionsSpy.mockResolvedValue(["write:chat"]);
+    getConversationSpy.mockResolvedValue({
+      id: "9999",
+      lastUpdated: "",
+      name: "",
+      repo: "",
+      state: "cold",
+    });
     const { rerender } = renderWithProviders(
       <RouteStub initialEntries={["/conversation?cid=9999"]} />,
     );

@@ -1,22 +1,29 @@
 import test, { expect, Page } from "@playwright/test";
 import { confirmSettings } from "./helpers/confirm-settings";
 
-const opeConversationPanel = async (page: Page) => {
-  const conversationPanelButton = page.getByTestId("toggle-conversation-panel");
-  await conversationPanelButton.click();
+const toggleConversationPanel = async (page: Page) => {
+  const panel = page.getByTestId("conversation-panel");
+  const panelIsVisible = await panel.isVisible();
+
+  if (!panelIsVisible) {
+    const conversationPanelButton = page.getByTestId(
+      "toggle-conversation-panel",
+    );
+    await conversationPanelButton.click();
+  }
 
   return page.getByTestId("conversation-panel");
 };
 
 const selectConversationCard = async (page: Page, index: number) => {
-  const panel = await opeConversationPanel(page);
+  const panel = await toggleConversationPanel(page);
 
   // select a conversation
   const conversationItem = panel.getByTestId("conversation-card").nth(index);
   await conversationItem.click();
 
   // panel should close
-  expect(panel).not.toBeVisible();
+  await expect(panel).not.toBeVisible();
 
   await page.waitForURL(`/conversation?cid=${index + 1}`);
   expect(page.url()).toBe(
@@ -29,14 +36,13 @@ test("should only display the create new conversation button in /conversation", 
 }) => {
   await page.goto("/");
   await confirmSettings(page);
-  const panel = await opeConversationPanel(page);
+  const panel = await toggleConversationPanel(page);
 
   const newProjectButton = panel.getByTestId("new-conversation-button");
   await expect(newProjectButton).not.toBeVisible();
 
   await page.goto("/conversation");
-  await opeConversationPanel(page);
-  expect(newProjectButton).toBeVisible();
+  await expect(newProjectButton).toBeVisible();
 });
 
 test("redirect to /conversation with the session id as a query param", async ({
@@ -45,11 +51,7 @@ test("redirect to /conversation with the session id as a query param", async ({
   await page.goto("/");
   await confirmSettings(page);
 
-  // open conversation panel
-  const conversationPanelButton = page.getByTestId("toggle-conversation-panel");
-  await conversationPanelButton.click();
-
-  const panel = page.getByTestId("conversation-panel");
+  const panel = await toggleConversationPanel(page);
 
   // select a conversation
   const conversationItem = panel.getByTestId("conversation-card").first();
@@ -70,10 +72,6 @@ test("redirect to the home screen if the current session was deleted", async ({
 
   await page.goto("/conversation?cid=1");
   await page.waitForURL("/conversation?cid=1");
-
-  // open conversation panel
-  const conversationPanelButton = page.getByTestId("toggle-conversation-panel");
-  await conversationPanelButton.click();
 
   const panel = page.getByTestId("conversation-panel");
   const firstCard = panel.getByTestId("conversation-card").first();
@@ -118,10 +116,11 @@ test("should create a new conversation", async ({ page }) => {
   await page.goto("/conversation");
   await page.waitForURL("/conversation");
 
-  const conversationPanel = await opeConversationPanel(page);
+  const conversationPanel = await toggleConversationPanel(page);
   const cards = conversationPanel.getByTestId("conversation-card");
 
   expect(page.url()).toMatch(/http:\/\/localhost:3001\/conversation\?cid=\d+/);
+  await toggleConversationPanel(page);
   expect(cards).toHaveCount(4);
 });
 

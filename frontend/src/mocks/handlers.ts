@@ -203,20 +203,17 @@ export const handlers = [
     return HttpResponse.json(conversation, { status: 201 });
   }),
 
-  http.get(
-    "/api/conversations/:conversationId/permissions",
-    async ({ params }) => {
-      const { conversationId } = params;
+  http.get("/api/conversations/:conversationId", async ({ params }) => {
+    const { conversationId } = params;
 
-      if (typeof conversationId === "string") {
-        const project = CONVERSATIONS.get(conversationId);
+    if (typeof conversationId === "string") {
+      const project = CONVERSATIONS.get(conversationId);
 
-        if (project) {
-          return HttpResponse.json(["write:chat"], { status: 200 });
-        }
+      if (project) {
+        return HttpResponse.json(project, { status: 200 });
       }
+    }
 
-      return HttpResponse.json(null, { status: 401 });
-    },
-  ),
+    return HttpResponse.json(null, { status: 404 });
+  }),
 ];
