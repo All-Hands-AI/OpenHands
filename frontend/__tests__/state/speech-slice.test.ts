@@ -13,12 +13,12 @@ Object.defineProperty(window, 'speechSynthesis', {
 
 describe("speechSlice", () => {
   const initialState = {
-    enabled: true,
+    enabled: false,
   };
 
   it("should handle initial state", () => {
     expect(speechSlice.reducer(undefined, { type: "unknown" })).toEqual({
-      enabled: true,
+      enabled: false,
     });
   });
 

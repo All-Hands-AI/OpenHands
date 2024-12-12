@@ -14,30 +14,13 @@ describe("ToggleSpeechButton", () => {
   beforeEach(() => {
     store = mockStore({
       speech: {
-        enabled: true,
+        enabled: false,
       },
     });
     store.dispatch = vi.fn();
   });
 
-  it("renders correctly when enabled", () => {
-    render(
-      <Provider store={store}>
-        <ToggleSpeechButton />
-      </Provider>
-    );
-
-    const button = screen.getByRole("button");
-    expect(button).toHaveAttribute("title", "Disable speech");
-  });
-
   it("renders correctly when disabled", () => {
-    store = mockStore({
-      speech: {
-        enabled: false,
-      },
-    });
-
     render(
       <Provider store={store}>
         <ToggleSpeechButton />
@@ -46,6 +29,23 @@ describe("ToggleSpeechButton", () => {
 
     const button = screen.getByRole("button");
     expect(button).toHaveAttribute("title", "Enable speech");
+  });
+
+  it("renders correctly when enabled", () => {
+    store = mockStore({
+      speech: {
+        enabled: true,
+      },
+    });
+
+    render(
+      <Provider store={store}>
+        <ToggleSpeechButton />
+      </Provider>
+    );
+
+    const button = screen.getByRole("button");
+    expect(button).toHaveAttribute("title", "Disable speech");
   });
 
   it("dispatches toggle action when clicked", () => {

@@ -5,7 +5,7 @@ interface SpeechState {
 }
 
 const initialState: SpeechState = {
-  enabled: true,
+  enabled: false,
 };
 
 export const speechSlice = createSlice({
