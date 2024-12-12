@@ -205,7 +205,9 @@ class ActionExecutor:
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
             obs.content = obs.content.rstrip()
             matches = re.findall(
-                r'<oh_aci_output>(.*?)</oh_aci_output>', obs.content, re.DOTALL
+                r'<oh_aci_output_[0-9a-f]{32}>(.*?)</oh_aci_output_[0-9a-f]{32}>',
+                obs.content,
+                re.DOTALL,
             )
             if matches:
                 results: list[FileReadObservation | FileEditObservation | str] = []
@@ -245,9 +247,10 @@ class ActionExecutor:
                             f"Invalid JSON in 'openhands-aci' output: {match}"
                         )
 
-                # TODO: What if there are more than one FileEditObservation?
                 for result in results:
-                    if isinstance(result, FileEditObservation):
+                    if isinstance(result, FileEditObservation) or isinstance(
+                        result, FileReadObservation
+                    ):
                         return result
 
                 # Combine the results (e.g., join them) or handle them as required

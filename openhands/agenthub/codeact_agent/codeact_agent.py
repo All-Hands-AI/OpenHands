@@ -18,6 +18,7 @@ from openhands.events.action import (
     BrowseURLAction,
     CmdRunAction,
     FileEditAction,
+    FileReadAction,
     IPythonRunCellAction,
     MessageAction,
 )
@@ -129,6 +130,7 @@ class CodeActAgent(Agent):
                 - CmdRunAction: For executing bash commands
                 - IPythonRunCellAction: For running IPython code
                 - FileEditAction: For editing files
+                - FileReadAction: For reading files using openhands-aci commands
                 - BrowseInteractiveAction: For browsing the web
                 - AgentFinishAction: For ending the interaction
                 - MessageAction: For sending messages
@@ -152,6 +154,7 @@ class CodeActAgent(Agent):
                 AgentDelegateAction,
                 IPythonRunCellAction,
                 FileEditAction,
+                FileReadAction,
                 BrowseInteractiveAction,
                 BrowseURLAction,
             ),
