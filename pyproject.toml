@@ -152,3 +152,8 @@ style = "semver"
 
 [tool.poetry.scripts]
 openhands = "openhands.core.cli:main"
+
+[tool.poetry.group.testgeneval.dependencies]
+fuzzywuzzy = "^0.18.0"
+rouge = "^1.0.1"
+python-levenshtein = "^0.26.1"
