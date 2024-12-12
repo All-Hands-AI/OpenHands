@@ -12,12 +12,7 @@ export function ToggleSpeechButton() {
     <button
       type="button"
       onClick={() => dispatch(toggleSpeech())}
-      className={cn(
-        "flex items-center justify-center",
-        "w-8 h-8 rounded-lg",
-        "hover:bg-neutral-700 transition-colors",
-        "focus:outline-none focus:ring-2 focus:ring-neutral-500",
-      )}
+      className="button-base p-1 hover:bg-neutral-500"
       title={enabled ? "Disable speech" : "Enable speech"}
     >
       {/* Speaker icon - filled when enabled, outline when disabled */}
@@ -26,7 +21,8 @@ export function ToggleSpeechButton() {
         viewBox="0 0 24 24"
         fill={enabled ? "currentColor" : "none"}
         stroke="currentColor"
-        className="w-5 h-5"
+        width={15}
+        height={15}
       >
         <path
           strokeLinecap="round"
