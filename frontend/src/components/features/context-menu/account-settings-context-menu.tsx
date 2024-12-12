@@ -5,7 +5,6 @@ import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { useConfig } from "#/hooks/query/use-config";
 
 interface AccountSettingsContextMenuProps {
-  onAddMoreRepositories: () => void;
   onClickAccountSettings: () => void;
   onLogout: () => void;
   onClose: () => void;
@@ -13,7 +12,6 @@ interface AccountSettingsContextMenuProps {
 }
 
 export function AccountSettingsContextMenu({
-  onAddMoreRepositories,
   onClickAccountSettings,
   onLogout,
   onClose,
@@ -28,10 +26,16 @@ export function AccountSettingsContextMenu({
       ref={ref}
       className="absolute left-full -top-1 z-10"
     >
-      {config?.APP_MODE === "saas" && (
-        <ContextMenuListItem onClick={onAddMoreRepositories}>
-          Add More Repositories
-        </ContextMenuListItem>
+      {config?.APP_MODE === "saas" && config?.APP_SLUG && (
+        <a
+          href={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
+          target="_blank"
+          rel="noreferrer noopener"
+        >
+          <ContextMenuListItem onClick={() => {}}>
+            Add More Repositories
+          </ContextMenuListItem>
+        </a>
       )}
       <ContextMenuListItem onClick={onClickAccountSettings}>
         Account Settings

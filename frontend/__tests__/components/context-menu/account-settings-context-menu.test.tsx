@@ -3,7 +3,6 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AccountSettingsContextMenu } from "#/components/features/context-menu/account-settings-context-menu";
-import { useConfig } from "#/hooks/query/use-config";
 
 describe("AccountSettingsContextMenu", () => {
   const queryClient = new QueryClient();
@@ -31,7 +30,6 @@ describe("AccountSettingsContextMenu", () => {
   it("should always render the right options", () => {
     renderWithQueryClient(
       <AccountSettingsContextMenu
-        onAddMoreRepositories={onClickAddMoreRepositories}
         onClickAccountSettings={onClickAccountSettingsMock}
         onLogout={onLogoutMock}
         onClose={onCloseMock}
@@ -49,7 +47,6 @@ describe("AccountSettingsContextMenu", () => {
   it("should call onClickAccountSettings when the account settings option is clicked", async () => {
     renderWithQueryClient(
       <AccountSettingsContextMenu
-        onAddMoreRepositories={onClickAddMoreRepositories}
         onClickAccountSettings={onClickAccountSettingsMock}
         onLogout={onLogoutMock}
         onClose={onCloseMock}
@@ -66,7 +63,6 @@ describe("AccountSettingsContextMenu", () => {
   it("should call onLogout when the logout option is clicked", async () => {
     renderWithQueryClient(
       <AccountSettingsContextMenu
-        onAddMoreRepositories={onClickAddMoreRepositories}
         onClickAccountSettings={onClickAccountSettingsMock}
         onLogout={onLogoutMock}
         onClose={onCloseMock}
@@ -83,7 +79,6 @@ describe("AccountSettingsContextMenu", () => {
   test("onLogout should be disabled if the user is not logged in", async () => {
     renderWithQueryClient(
       <AccountSettingsContextMenu
-        onAddMoreRepositories={onClickAddMoreRepositories}
         onClickAccountSettings={onClickAccountSettingsMock}
         onLogout={onLogoutMock}
         onClose={onCloseMock}
@@ -100,7 +95,6 @@ describe("AccountSettingsContextMenu", () => {
   it("should call onClose when clicking outside of the element", async () => {
     renderWithQueryClient(
       <AccountSettingsContextMenu
-        onAddMoreRepositories={onClickAddMoreRepositories}
         onClickAccountSettings={onClickAccountSettingsMock}
         onLogout={onLogoutMock}
         onClose={onCloseMock}
@@ -153,7 +147,6 @@ describe("AccountSettingsContextMenu", () => {
   it("should render 'Add More Repositories' when APP_MODE is 'saas'", () => {
     renderWithQueryClient(
       <AccountSettingsContextMenu
-        onAddMoreRepositories={onClickAddMoreRepositories}
         onClickAccountSettings={onClickAccountSettingsMock}
         onLogout={onLogoutMock}
         onClose={onCloseMock}
