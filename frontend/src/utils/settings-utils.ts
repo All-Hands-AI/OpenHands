@@ -82,9 +82,9 @@ const saveSettingsView = (view: "basic" | "advanced") => {
  * Updates the settings version in local storage if the current settings are not up to date.
  * If the settings are outdated, it attempts to migrate them before updating the version.
  */
-const updateSettingsVersion = () => {
+const updateSettingsVersion = (logout: () => void) => {
   if (!settingsAreUpToDate()) {
-    maybeMigrateSettings();
+    maybeMigrateSettings(logout);
     localStorage.setItem(
       "SETTINGS_VERSION",
       LATEST_SETTINGS_VERSION.toString(),
