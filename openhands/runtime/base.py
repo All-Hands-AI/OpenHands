@@ -221,7 +221,7 @@ class Runtime(FileEditRuntimeMixin):
         action = CmdRunAction(
             command=f'git clone {url} {dir_name} ; cd {dir_name} ; git checkout -b openhands-workspace'
         )
-        self.log('info', 'Cloning repo: {selected_repository}')
+        self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
 
     def get_custom_microagents(self, selected_repository: str | None) -> list[str]:
