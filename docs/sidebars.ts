@@ -121,6 +121,11 @@ const sidebars: SidebarsConfig = {
           label: 'Custom Sandbox',
           id: 'usage/how-to/custom-sandbox-guide',
         },
+        {
+          type: 'doc',
+          label: 'Persist Session Data',
+          id: 'usage/how-to/persist-session-data',
+        },
       ],
     },
     {
