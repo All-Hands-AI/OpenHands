@@ -7,6 +7,7 @@ import { cn } from "#/utils/utils";
 export function ToggleSpeechButton() {
   const dispatch = useDispatch();
   const enabled = useSelector((state: RootState) => state.speech.enabled);
+  console.log('Toggle button - Speech enabled state:', enabled);
 
   return (
     <button
