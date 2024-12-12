@@ -1,5 +1,3 @@
-import os
-import uuid
 from dataclasses import dataclass, field, fields, is_dataclass
 from typing import ClassVar
 
@@ -10,24 +8,10 @@ from openhands.core.config.config_utils import (
     OH_MAX_ITERATIONS,
     get_field_info,
 )
+from openhands.core.config.jwt_utils import get_or_create_jwt_secret
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
-
-
-def _get_or_create_jwt_secret() -> str:
-    config_dir = os.path.dirname(os.path.abspath(__file__))
-    secret_file = os.path.join(config_dir, '.jwt_secret')
-
-    if os.path.exists(secret_file):
-        with open(secret_file, 'r') as f:
-            return f.read().strip()
-
-    new_secret = uuid.uuid4().hex
-    os.makedirs(os.path.dirname(secret_file), exist_ok=True)
-    with open(secret_file, 'w') as f:
-        f.write(new_secret)
-    return new_secret
 
 
 @dataclass
@@ -67,7 +51,7 @@ class AppConfig:
     sandbox: SandboxConfig = field(default_factory=SandboxConfig)
     security: SecurityConfig = field(default_factory=SecurityConfig)
     runtime: str = 'eventstream'
-    file_store: str = 'memory'
+    file_store: str = 'local'
     file_store_path: str = '/tmp/file_store'
     trajectories_path: str | None = None
     workspace_base: str | None = None
@@ -82,7 +66,7 @@ class AppConfig:
     modal_api_token_id: str = ''
     modal_api_token_secret: str = ''
     disable_color: bool = False
-    jwt_secret: str = field(default_factory=_get_or_create_jwt_secret)
+    jwt_secret: str = ''
     attach_session_middleware_class: str = (
         'openhands.server.middleware.AttachSessionMiddleware'
     )
@@ -135,6 +119,10 @@ class AppConfig:
     def __post_init__(self):
         """Post-initialization hook, called when the instance is created with only default values."""
         AppConfig.defaults_dict = self.defaults_to_dict()
+        if not self.jwt_secret:
+            self.jwt_secret = get_or_create_jwt_secret(
+                self.file_store, self.file_store_path
+            )
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
