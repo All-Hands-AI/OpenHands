@@ -394,7 +394,7 @@ def test_get_token_count_with_message_objects(
     assert token_count == 42
     mock_token_counter.assert_called_once()
     # Verify warning about undercounting was logged
-    mock_logger.debug.assert_any_call(
+    mock_logger.info.assert_any_call(
         'Tokens will be undercounted for Message objects, because tool calls are not serialized'
     )
 
