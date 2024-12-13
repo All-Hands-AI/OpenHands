@@ -386,18 +386,18 @@ def test_get_token_count_with_message_objects(
     mock_token_counter, default_config, mock_logger
 ):
     llm = LLM(default_config)
-    
+
     # Create a Message object and its equivalent dict
     message_obj = Message(role='user', content=[TextContent(text='Hello!')])
     message_dict = {'role': 'user', 'content': 'Hello!'}
-    
+
     # Mock token counter to return different values for each call
     mock_token_counter.side_effect = [42, 42]  # Same value for both cases
-    
+
     # Get token counts for both formats
     token_count_obj = llm.get_token_count([message_obj])
     token_count_dict = llm.get_token_count([message_dict])
-    
+
     # Verify both formats get the same token count
     assert token_count_obj == token_count_dict
     assert mock_token_counter.call_count == 2
