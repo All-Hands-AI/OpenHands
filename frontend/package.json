@@ -1,6 +1,6 @@
 {
   "name": "openhands-frontend",
-  "version": "0.15.0",
+  "version": "0.15.2",
   "private": true,
   "type": "module",
   "engines": {
@@ -78,7 +78,7 @@
     "@playwright/test": "^1.48.2",
     "@react-router/dev": "^7.0.1",
     "@tailwindcss/typography": "^0.5.15",
-    "@tanstack/eslint-plugin-query": "^5.60.1",
+    "@tanstack/eslint-plugin-query": "^5.62.1",
     "@testing-library/jest-dom": "^6.6.1",
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.5.2",
@@ -105,7 +105,7 @@
     "husky": "^9.1.6",
     "jsdom": "^25.0.1",
     "lint-staged": "^15.2.10",
-    "msw": "^2.3.0-ws.rc-12",
+    "msw": "^2.6.6",
     "postcss": "^8.4.47",
     "prettier": "^3.3.3",
     "tailwindcss": "^3.4.14",

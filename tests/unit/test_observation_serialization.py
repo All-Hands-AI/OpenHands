@@ -74,3 +74,27 @@ def test_command_output_observation_serialization_deserialization():
         'content': 'foo.txt',
     }
     serialization_deserialization(original_observation_dict, CmdOutputObservation)
+
+
+def test_success_field_serialization():
+    # Test success=True
+    obs = CmdOutputObservation(
+        content='Command succeeded',
+        command='ls -l',
+        metadata=CmdOutputMetadata(
+            exit_code=0,
+        ),
+    )
+    serialized = event_to_dict(obs)
+    assert serialized['success'] is True
+
+    # Test success=False
+    obs = CmdOutputObservation(
+        content='No such file or directory',
+        command='ls -l',
+        metadata=CmdOutputMetadata(
+            exit_code=1,
+        ),
+    )
+    serialized = event_to_dict(obs)
+    assert serialized['success'] is False
