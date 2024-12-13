@@ -17,10 +17,14 @@ class DummyAgent:
             (),
             {
                 'metrics': type('DummyMetrics', (), {'merge': lambda x: None})(),
-                'config': type('DummyConfig', (), {
-                    'extend_max_iterations_on_user_message': extend_max_iterations_on_user_message,
-                    'max_message_chars': 1000,
-                })(),
+                'config': type(
+                    'DummyConfig',
+                    (),
+                    {
+                        'extend_max_iterations_on_user_message': extend_max_iterations_on_user_message,
+                        'max_message_chars': 1000,
+                    },
+                )(),
             },
         )()
 

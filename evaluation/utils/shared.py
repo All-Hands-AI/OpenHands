@@ -194,7 +194,8 @@ def get_base_eval_config(
         runtime=runtime,
         max_iterations=metadata.max_iterations,
         extend_max_iterations_on_user_message=False,  # Disable extending max iterations in evaluations
-        sandbox=sandbox_config or SandboxConfig(
+        sandbox=sandbox_config
+        or SandboxConfig(
             base_container_image='python:3.12-bookworm',
             enable_auto_lint=True,
             use_host_network=False,

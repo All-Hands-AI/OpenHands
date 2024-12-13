@@ -267,6 +267,9 @@ class AgentSession:
         )
         logger.debug(msg)
 
+        # Hard-code enable extend_max_iterations_on_user_message in agent session
+        agent.llm.config.extend_max_iterations_on_user_message = True
+
         self.controller = AgentController(
             sid=self.sid,
             event_stream=self.event_stream,
