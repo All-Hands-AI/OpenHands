@@ -16,15 +16,21 @@ If you choose the first option, you can skip the `Create Your Docker Image` sect
 
 ## Create Your Docker Image
 
-To create a custom Docker image, it must be Debian based.
+To create a custom Docker image, you can use any base image that supports your requirements. While Debian-based images are common, they're not strictly required.
 
-For example, if you want OpenHands to have `ruby` installed, create a `Dockerfile` with the following content:
+For example, if you want OpenHands to have `ruby` installed, you could create a `Dockerfile` with the following content:
 
 ```dockerfile
-FROM debian:latest
+FROM nikolaik/python-nodejs:python3.12-nodejs22
 
 # Install required packages
 RUN apt-get update && apt-get install -y ruby
+```
+
+Or you could use a Ruby-specific base image:
+
+```dockerfile
+FROM ruby:latest
 ```
 
 Save this file in a folder. Then, build your Docker image (e.g., named custom-image) by navigating to the folder in
@@ -53,6 +59,28 @@ This can be an image you’ve already pulled or one you’ve built:
 [core]
 ...
 sandbox_base_container_image="custom-image"
+```
+
+### Additional Configuration Options
+
+The `config.toml` file supports several other options for customizing your sandbox:
+
+```toml
+[core]
+# Install additional dependencies at runtime build time
+# Can contain any valid shell commands
+# $OH_INTERPRETER_PATH is available as the path to the OH-specific Python interpreter
+runtime_extra_deps = """
+pip install numpy pandas
+apt-get update && apt-get install -y ffmpeg
+"""
+
+# Set environment variables for the runtime
+# Useful for configuration that needs to be available at runtime
+runtime_startup_env_vars = { DATABASE_URL = "postgresql://user:pass@localhost/db" }
+
+# Specify platform for multi-architecture builds (e.g., "linux/amd64" or "linux/arm64")
+platform = "linux/amd64"
 ```
 
 ### Run
