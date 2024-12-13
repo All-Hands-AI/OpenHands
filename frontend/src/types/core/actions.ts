@@ -1,4 +1,5 @@
 import { OpenHandsActionEvent } from "./base";
+import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
 
 export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
   source: "user";
@@ -12,6 +13,7 @@ export interface CommandAction extends OpenHandsActionEvent<"run"> {
   source: "agent";
   args: {
     command: string;
+    security_risk: ActionSecurityRisk;
     confirmation_state: "confirmed" | "rejected" | "awaiting_confirmation";
     thought: string;
     hidden?: boolean;
@@ -32,6 +34,7 @@ export interface IPythonAction extends OpenHandsActionEvent<"run_ipython"> {
   source: "agent";
   args: {
     code: string;
+    security_risk: ActionSecurityRisk;
     confirmation_state: "confirmed" | "rejected" | "awaiting_confirmation";
     kernel_init_code: string;
     thought: string;
