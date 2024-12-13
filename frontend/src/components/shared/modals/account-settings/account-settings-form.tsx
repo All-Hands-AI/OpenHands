@@ -68,7 +68,7 @@ export function AccountSettingsForm({
 
           {config?.APP_MODE === "saas" && config?.APP_SLUG && (
             <a
-              href="https://github.com/settings/installations"
+              href={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
               target="_blank"
               rel="noreferrer noopener"
               className="underline"
