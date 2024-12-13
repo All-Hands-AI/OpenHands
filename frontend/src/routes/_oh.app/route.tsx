@@ -31,12 +31,12 @@ function App() {
 
   const handleMouseDown = React.useCallback(() => {
     isDragging.current = true;
-    document.body.style.userSelect = 'none';
+    document.body.style.userSelect = "none";
   }, []);
 
   const handleMouseUp = React.useCallback(() => {
     isDragging.current = false;
-    document.body.style.userSelect = '';
+    document.body.style.userSelect = "";
   }, []);
 
   const handleMouseMove = React.useCallback((e: MouseEvent) => {
@@ -47,11 +47,11 @@ function App() {
   }, []);
 
   React.useEffect(() => {
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
     };
   }, [handleMouseMove, handleMouseUp]);
 
@@ -67,16 +67,6 @@ function App() {
   const { data: latestGitHubCommit } = useLatestRepoCommit({
     repository: selectedRepository,
   });
-
-  const secrets = React.useMemo(
-    () => [gitHubToken, token].filter((secret) => secret !== null),
-    [gitHubToken, token],
-  );
-
-  const Terminal = React.useMemo(
-    () => React.lazy(() => import("#/components/features/terminal/terminal")),
-    [],
-  );
 
   useEffectOnce(() => {
     dispatch(clearMessages());
@@ -101,12 +91,17 @@ function App() {
       <EventHandler>
         <div className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto">
-            <Container className="w-full md:w-auto max-h-full relative" style={{ width: `${leftPanelWidth}%` }}>
-              <ChatInterface />
-            </Container>
+            <div
+              className="w-full md:w-auto max-h-full relative"
+              style={{ width: `${leftPanelWidth}%` }}
+            >
+              <Container className="h-full">
+                <ChatInterface />
+              </Container>
+            </div>
 
-            <div 
-              className="hidden md:block w-1 bg-default-100 hover:bg-default-200 cursor-col-resize" 
+            <div
+              className="hidden md:block w-1 bg-default-100 hover:bg-default-200 cursor-col-resize"
               onMouseDown={handleMouseDown}
             />
 
@@ -126,11 +121,11 @@ function App() {
                     to: "browser",
                     icon: <GlobeIcon />,
                   },
-                  { 
+                  {
                     label: "Terminal",
                     to: "terminal",
-                    icon: <CodeIcon />
-                  }
+                    icon: <CodeIcon />,
+                  },
                 ]}
               >
                 <FilesProvider>
