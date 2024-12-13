@@ -115,7 +115,6 @@ class Message(BaseModel):
         """Add tool call keys if we have a tool call or response.
 
         NOTE: this is necessary for both native and non-native tool calling.
-        for API calls since litellm's ChatCompletionMessageToolCall accepts both."""
 
         # an assistant message calling a tool
         if self.tool_calls is not None:
