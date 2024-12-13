@@ -2160,7 +2160,10 @@ google-auth = ">=2.14.1,<3.0.dev0"
 googleapis-common-protos = ">=1.56.2,<2.0.dev0"
 grpcio = {version = ">=1.49.1,<2.0dev", optional = true, markers = "python_version >= \"3.11\" and extra == \"grpc\""}
 grpcio-status = {version = ">=1.49.1,<2.0.dev0", optional = true, markers = "python_version >= \"3.11\" and extra == \"grpc\""}
-proto-plus = ">=1.22.3,<2.0.0dev"
+proto-plus = [
+    {version = ">=1.25.0,<2.0.0dev", markers = "python_version >= \"3.13\""},
+    {version = ">=1.22.3,<2.0.0dev", markers = "python_version < \"3.13\""},
+]
 protobuf = ">=3.19.5,<3.20.0 || >3.20.0,<3.20.1 || >3.20.1,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<6.0.0.dev0"
 requests = ">=2.18.0,<3.0.0.dev0"
 
@@ -2355,7 +2358,10 @@ files = [
 google-api-core = {version = ">=1.34.1,<2.0.dev0 || >=2.11.dev0,<3.0.0dev", extras = ["grpc"]}
 google-auth = ">=2.14.1,<2.24.0 || >2.24.0,<2.25.0 || >2.25.0,<3.0.0dev"
 grpc-google-iam-v1 = ">=0.12.4,<1.0.0dev"
-proto-plus = ">=1.22.3,<2.0.0dev"
+proto-plus = [
+    {version = ">=1.25.0,<2.0.0dev", markers = "python_version >= \"3.13\""},
+    {version = ">=1.22.3,<2.0.0dev", markers = "python_version < \"3.13\""},
+]
 protobuf = ">=3.20.2,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<6.0.0dev"
 
 [[package]]
@@ -3707,13 +3713,13 @@ adal = ["adal (>=1.0.2)"]
 
 [[package]]
 name = "langfuse"
-version = "2.55.0"
+version = "2.56.2"
 description = "A client library for accessing langfuse"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "langfuse-2.55.0-py3-none-any.whl", hash = "sha256:c902894b50befdd8639e5b0d78ca79f8b5d391bae2c3f0889a1f47ea59d795ad"},
-    {file = "langfuse-2.55.0.tar.gz", hash = "sha256:fb671a8cf5252a7d1def3b41b6f70f8de50c53250e5832209649301c14453222"},
+    {file = "langfuse-2.56.2-py3-none-any.whl", hash = "sha256:553e6e113e1a0ad06aec8b789e180da21cec648f0d9f0ceb6e7a0c14d3ed270c"},
+    {file = "langfuse-2.56.2.tar.gz", hash = "sha256:90403241d2d8e3716fb8f773eeeb0c296eda56caa7cb6b3f6401472a47b87e33"},
 ]
 
 [package.dependencies]
@@ -6524,7 +6530,10 @@ files = [
 [package.dependencies]
 annotated-types = ">=0.6.0"
 pydantic-core = "2.23.4"
-typing-extensions = {version = ">=4.6.1", markers = "python_version < \"3.13\""}
+typing-extensions = [
+    {version = ">=4.12.2", markers = "python_version >= \"3.13\""},
+    {version = ">=4.6.1", markers = "python_version < \"3.13\""},
+]
 
 [package.extras]
 email = ["email-validator (>=2.0.0)"]
@@ -9392,24 +9401,21 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 
 [[package]]
 name = "voyageai"
-version = "0.3.2"
+version = "0.2.4"
 description = ""
 optional = false
-python-versions = "<3.13,>=3.9"
+python-versions = "<4.0.0,>=3.7.1"
 files = [
-    {file = "voyageai-0.3.2-py3-none-any.whl", hash = "sha256:1398d6c6bfb1dd3b484f400713e538f00ce8a335250442b0902c21116d9705a8"},
-    {file = "voyageai-0.3.2.tar.gz", hash = "sha256:bd1b52d26179d91853cbd2a0e52dc95cb0d526760c6c830959e01eb5ff9eaa12"},
+    {file = "voyageai-0.2.4-py3-none-any.whl", hash = "sha256:e3070e5c78dec89adae43231334b4637aa88933dad99b1c33d3219fdfc94dfa4"},
+    {file = "voyageai-0.2.4.tar.gz", hash = "sha256:b9911d8629e8a4e363291c133482fead49a3536afdf1e735f3ab3aaccd8d250d"},
 ]
 
 [package.dependencies]
-aiohttp = "*"
-aiolimiter = "*"
-numpy = "*"
-pillow = "*"
-pydantic = ">=1.10.8"
-requests = "*"
-tenacity = "*"
-tokenizers = ">=0.14.0"
+aiohttp = ">=3.5,<4.0"
+aiolimiter = ">=1.1.0,<2.0.0"
+numpy = ">=1.11"
+requests = ">=2.20,<3.0"
+tenacity = ">=8.0.1"
 
 [[package]]
 name = "watchdog"
@@ -10111,5 +10117,5 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.12,<3.13"
-content-hash = "41592cc45e0d4e883a22a10d76afcffb4f42dd34e3204a2e1dc364ab57b18d32"
+python-versions = "^3.12"
+content-hash = "46d5258e1d5aa3639623791b0c41dc7e176a0e48b051533f18ab38881422a964"
