@@ -72,6 +72,7 @@ def test_command_output_observation_serialization_deserialization():
         },
         'message': 'Command `ls -l` executed with exit code 0.',
         'content': 'foo.txt',
+        'success': True,
     }
     serialization_deserialization(original_observation_dict, CmdOutputObservation)
 
