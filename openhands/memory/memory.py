@@ -51,6 +51,7 @@ class LongTermMemory:
         self.embed_model = EmbeddingsLoader.get_embedding_model(
             embedding_strategy, llm_config
         )
+        logger.debug(f'Using embedding model: {self.embed_model}')
 
         # instantiate the index
         self.index = VectorStoreIndex.from_vector_store(vector_store, self.embed_model)
