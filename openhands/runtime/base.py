@@ -214,16 +214,6 @@ class Runtime(FileEditRuntimeMixin):
             self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
 
     def clone_repo(self, github_token: str | None, selected_repository: str | None):
-        if github_token:
-            self.log('info', 'Attemping clone with ghtoken')
-        else:
-            self.log('info', 'token is missing')
-
-        if selected_repository:
-            self.log('info', f'clone attempt has {selected_repository}')
-        else:
-            self.log('info', 'repo is missing')
-
         if not github_token or not selected_repository:
             return
         url = f'https://{github_token}@github.com/{selected_repository}.git'
