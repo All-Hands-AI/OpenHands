@@ -500,9 +500,8 @@ class LLM(RetryMixin, DebugMixin):
             and len(messages) > 0
             and isinstance(messages[0], Message)
         ):
-            # TODO fix passing Message objects
             logger.info(
-                'Tokens will be undercounted for Message objects, because tool calls are not serialized'
+                'Message objects now include serialized tool calls in token counting'
             )
             messages = self.format_messages_for_llm(messages)  # type: ignore
 
