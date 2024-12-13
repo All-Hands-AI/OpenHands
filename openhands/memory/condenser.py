@@ -18,21 +18,7 @@ from openhands.events.observation import Observation
 from openhands.llm.llm import LLM
 
 
-@dataclass
-class CondensationResult:
-    condensed_events: list[Event]
-    metadata: dict[str, Any] = field(default_factory=dict)
-
-
 CONDENSER_METADATA_KEY = 'condenser_meta'
-
-
-def add_condensation_metadata(condensation: CondensationResult, state: State) -> None:
-    if CONDENSER_METADATA_KEY not in state.extra_data:
-        state.extra_data[CONDENSER_METADATA_KEY] = []
-
-    if condensation.metadata:
-        state.extra_data[CONDENSER_METADATA_KEY].append(condensation.metadata)
 
 
 def get_condensation_metadata(state: State) -> list[dict[str, Any]]:
@@ -49,14 +35,14 @@ class Condenser(ABC):
     """
 
     @abstractmethod
-    def condense(self, events: list[Event]) -> CondensationResult:
-        """Condense a list of events into a potentially smaller list.
+    def condense(self, state: State) -> list[Event]:
+        """Condense the state's history into a potentially smaller list.
 
         Args:
-            events (List[Event]): List of events to condense.
+            state (State): The state containing the event history to condense.
 
         Returns:
-            CondensationResult: The condensed event sequence and any other relevant information.
+            list[Event]: The condensed event sequence.
         """
         pass
 
@@ -87,13 +73,13 @@ class Condenser(ABC):
 class NoOpCondenser(Condenser):
     """A condenser that does nothing to the event sequence."""
 
-    def condense(self, events: list[Event]) -> CondensationResult:
-        """Returns the events list unchanged.
+    def condense(self, state: State) -> list[Event]:
+        """Returns the state's history unchanged.
 
         Args:
-            events (list[Event]): List of events to condense.
+            state (State): The state containing the event history to condense.
         """
-        return CondensationResult(condensed_events=events)
+        return state.history
 
 
 class RecentEventsCondenser(Condenser):
@@ -103,17 +89,17 @@ class RecentEventsCondenser(Condenser):
         self.keep_first = keep_first
         self.max_events = max_events
 
-    def condense(self, events: list[Event]) -> CondensationResult:
+    def condense(self, state: State) -> list[Event]:
         """Keep only the most recent events (up to `max_events`).
 
         Args:
-            events (list[Event]): List of events to condense.
+            state (State): The state containing the event history to condense.
         """
+        events = state.history
         head = events[: self.keep_first]
         tail_length = max(0, self.max_events - len(head))
         tail = events[-tail_length:]
-        condensed_events = head + tail
-        return CondensationResult(condensed_events=condensed_events)
+        return head + tail
 
 
 @dataclass
@@ -133,18 +119,18 @@ class LLMCondenser(Condenser):
     def __init__(self, llm: LLM):
         self.llm = llm
 
-    def condense(self, events: list[Event]) -> CondensationResult:
-        """Attempts to condense the events by using a LLM.
+    def condense(self, state: State) -> list[Event]:
+        """Attempts to condense the state's history by using a LLM.
 
         Args:
-            events (list[Event]): List of events to condense.
+            state (State): The state containing the event history to condense.
 
         Raises:
             Exception: If the LLM is unable to summarize the event sequence.
         """
         try:
             # Convert events to a format suitable for summarization
-            events_text = '\n'.join(f'{e.timestamp}: {e.message}' for e in events)
+            events_text = '\n'.join(f'{e.timestamp}: {e.message}' for e in state.history)
             summarize_prompt = f'Please summarize these events:\n{events_text}'
 
             messages = [{'content': summarize_prompt, 'role': 'user'}]
@@ -154,13 +140,15 @@ class LLMCondenser(Condenser):
             # Create a new summary event with the condensed content
             summary_event = CondensationObservation(summary_response)
 
-            return CondensationResult(
-                condensed_events=[summary_event],
-                metadata={
-                    'response': resp.model_dump(),
-                    'metrics': self.llm.metrics.get(),
-                },
-            )
+            # Add metrics to state
+            if CONDENSER_METADATA_KEY not in state.extra_data:
+                state.extra_data[CONDENSER_METADATA_KEY] = []
+            state.extra_data[CONDENSER_METADATA_KEY].append({
+                'response': resp.model_dump(),
+                'metrics': self.llm.metrics.get(),
+            })
+
+            return [summary_event]
 
         except Exception as e:
             logger.error('Error condensing events: %s', str(e), exc_info=False)
