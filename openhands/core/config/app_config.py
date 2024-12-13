@@ -1,4 +1,3 @@
-import uuid
 from dataclasses import dataclass, field, fields, is_dataclass
 from typing import ClassVar
 
@@ -66,7 +65,7 @@ class AppConfig:
     modal_api_token_id: str = ''
     modal_api_token_secret: str = ''
     disable_color: bool = False
-    jwt_secret: str = uuid.uuid4().hex
+    jwt_secret: str = ''
     debug: bool = False
     file_uploads_max_file_size_mb: int = 0
     file_uploads_restrict_file_types: bool = False
