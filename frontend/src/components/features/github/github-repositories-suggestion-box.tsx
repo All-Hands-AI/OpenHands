@@ -10,7 +10,7 @@ import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 interface GitHubRepositoriesSuggestionBoxProps {
   handleSubmit: () => void;
   gitHubAuthUrl: string | null;
-  user: GitHubErrorReponse | GitHubUser | null;
+  user: GitHubUser | null;
 }
 
 export function GitHubRepositoriesSuggestionBox({
