@@ -366,6 +366,8 @@ def test_file_read_and_edit_via_oh_aci(temp_dir, runtime_cls, run_as_openhands):
             kwargs['impl_source'] = FileEditSource.OH_ACI
         if action_info['command'] == 'view':
             kwargs['agent_view'] = True
+        if action_info['action_cls'] == FileEditAction:
+            kwargs['content'] = ''  # dummy value required for FileEditAction
 
         action = action_cls(**kwargs)
 
