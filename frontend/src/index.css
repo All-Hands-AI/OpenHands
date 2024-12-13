@@ -27,7 +27,7 @@ code {
     monospace;
 }
 
-.markdown-body code {
+.markdown-body :not(pre) > code {
   padding: 0.2em 0.4em;
   margin: 0;
   font-size: 85%;
@@ -39,9 +39,25 @@ code {
   letter-spacing: -0.2px;
 }
 
+.markdown-body pre {
+  background-color: #2a3038;
+  border-radius: 6px;
+  padding: 16px;
+  border: 1px solid #30363d;
+  overflow: auto;
+}
+
 .markdown-body pre code {
   padding: 0;
-  background-color: inherit;
+  margin: 0;
+  font-size: 85%;
+  white-space: pre;
+  background-color: transparent;
+  border: 0;
+  display: block;
+  color: #e6edf3;
+  overflow: visible;
+  line-height: inherit;
 }
 
 .markdown-body {
