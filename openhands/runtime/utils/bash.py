@@ -145,7 +145,13 @@ class BashSession:
 
     def _get_pane_content(self) -> str:
         """Capture the current pane content and update the buffer."""
-        content = '\n'.join(self.pane.cmd('capture-pane', '-J', '-pS', '-').stdout)
+        content = '\n'.join(
+            map(
+                # avoid double newlines
+                lambda line: line.rstrip(),
+                self.pane.cmd('capture-pane', '-J', '-pS', '-').stdout,
+            )
+        )
         return content
 
     def close(self):
