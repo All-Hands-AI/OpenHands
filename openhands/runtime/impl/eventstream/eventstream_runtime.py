@@ -291,11 +291,17 @@ class EventStreamRuntime(Runtime):
         use_host_network = self.config.sandbox.use_host_network
         network_mode: str | None = 'host' if use_host_network else None
 
-        port_mapping: dict[str, list[dict[str, str]]] | None = (
-            None
-            if use_host_network
-            else {f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}]}
-        )
+        # Initialize port mappings
+        port_mapping: dict[str, list[dict[str, str]]] | None = None
+        if not use_host_network:
+            port_mapping = {
+                f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}],
+                '4141/tcp': [{'HostPort': '4141'}]  # Hardcoded port mapping
+            }
+            # Add custom port mappings from config if specified
+            if hasattr(self.config.sandbox, 'port_mappings') and self.config.sandbox.port_mappings:
+                for container_port, host_port in self.config.sandbox.port_mappings.items():
+                    port_mapping[f'{container_port}/tcp'] = [{'HostPort': str(host_port)}]
 
         if use_host_network:
             self.log(
