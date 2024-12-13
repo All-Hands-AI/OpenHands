@@ -97,11 +97,11 @@ def test_llm_init_with_metrics():
 def test_response_latency_tracking(mock_time, mock_litellm_completion):
     # Mock time.time() to return controlled values
     mock_time.side_effect = [1000.0, 1002.5]  # Start time, end time (2.5s difference)
-    
+
     # Mock the completion response with a specific ID
     mock_response = {
         'id': 'test-response-123',
-        'choices': [{'message': {'content': 'Test response'}}]
+        'choices': [{'message': {'content': 'Test response'}}],
     }
     mock_litellm_completion.return_value = mock_response
 
@@ -114,7 +114,9 @@ def test_response_latency_tracking(mock_time, mock_litellm_completion):
     assert len(llm.metrics.response_latencies) == 1
     latency_record = llm.metrics.response_latencies[0]
     assert latency_record.model == 'gpt-4o'
-    assert latency_record.latency == 2.5  # Should be the difference between our mocked times
+    assert (
+        latency_record.latency == 2.5
+    )  # Should be the difference between our mocked times
     assert latency_record.response_id == 'test-response-123'
 
     # Verify the completion response was returned correctly
