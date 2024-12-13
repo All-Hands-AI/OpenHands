@@ -417,7 +417,26 @@ class LLM(RetryMixin, DebugMixin):
             or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
             or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
         )
-        return model_name_supported
+
+        logger.debug(f'Model name function calling support: {model_name_supported}')
+
+        # Handle native_tool_calling configuration
+        if self.config.native_tool_calling == 'default':
+            logger.debug(
+                'Using default function calling behavior based on model support'
+            )
+            return model_name_supported
+        elif self.config.native_tool_calling is False:
+            logger.debug('Function calling explicitly disabled via configuration')
+            return False
+        else:  # True case
+            supports_fn_call = litellm.supports_function_calling(
+                model=self.config.model
+            )
+            logger.debug(
+                f'Function calling explicitly enabled, litellm support: {supports_fn_call}'
+            )
+            return supports_fn_call
 
     def _post_completion(self, response: ModelResponse) -> float:
         """Post-process the completion response.
