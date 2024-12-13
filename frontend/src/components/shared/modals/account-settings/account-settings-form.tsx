@@ -66,6 +66,16 @@ export function AccountSettingsForm({
         <div className="w-full flex flex-col gap-2">
           <BaseModalTitle title="Account Settings" />
 
+          {config?.APP_MODE === "saas" && config?.APP_SLUG && (
+            <a
+              href="https://github.com/settings/apps/authorizations"
+              target="_blank"
+              rel="noreferrer noopener"
+              className="underline"
+            >
+              Configure Repositories
+            </a>
+          )}
           <FormFieldset
             id="language"
             label="Language"

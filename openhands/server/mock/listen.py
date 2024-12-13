@@ -63,5 +63,10 @@ def get_config():
     return {'APP_MODE': 'oss'}
 
 
+@app.get('/api/options/security-analyzers')
+def get_analyzers():
+    return []
+
+
 if __name__ == '__main__':
     uvicorn.run(app, host='127.0.0.1', port=3000)

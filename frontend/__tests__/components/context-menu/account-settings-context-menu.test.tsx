@@ -1,34 +1,22 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, test, vi } from "vitest";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { afterEach, describe, expect, it, test, vi } from "vitest";
 import { AccountSettingsContextMenu } from "#/components/features/context-menu/account-settings-context-menu";
 
 describe("AccountSettingsContextMenu", () => {
-  const queryClient = new QueryClient();
   const user = userEvent.setup();
-  const onClickAddMoreRepositories = vi.fn();
   const onClickAccountSettingsMock = vi.fn();
   const onLogoutMock = vi.fn();
   const onCloseMock = vi.fn();
 
   afterEach(() => {
-    onClickAddMoreRepositories.mockClear();
     onClickAccountSettingsMock.mockClear();
     onLogoutMock.mockClear();
     onCloseMock.mockClear();
   });
 
-  const renderWithQueryClient = (component: React.ReactNode) => {
-    render(
-      <QueryClientProvider client={queryClient}>
-        {component}
-      </QueryClientProvider>,
-    );
-  };
-
   it("should always render the right options", () => {
-    renderWithQueryClient(
+    render(
       <AccountSettingsContextMenu
         onClickAccountSettings={onClickAccountSettingsMock}
         onLogout={onLogoutMock}
@@ -45,7 +33,7 @@ describe("AccountSettingsContextMenu", () => {
   });
 
   it("should call onClickAccountSettings when the account settings option is clicked", async () => {
-    renderWithQueryClient(
+    render(
       <AccountSettingsContextMenu
         onClickAccountSettings={onClickAccountSettingsMock}
         onLogout={onLogoutMock}
@@ -61,7 +49,7 @@ describe("AccountSettingsContextMenu", () => {
   });
 
   it("should call onLogout when the logout option is clicked", async () => {
-    renderWithQueryClient(
+    render(
       <AccountSettingsContextMenu
         onClickAccountSettings={onClickAccountSettingsMock}
         onLogout={onLogoutMock}
@@ -77,7 +65,7 @@ describe("AccountSettingsContextMenu", () => {
   });
 
   test("onLogout should be disabled if the user is not logged in", async () => {
-    renderWithQueryClient(
+    render(
       <AccountSettingsContextMenu
         onClickAccountSettings={onClickAccountSettingsMock}
         onLogout={onLogoutMock}
@@ -93,7 +81,7 @@ describe("AccountSettingsContextMenu", () => {
   });
 
   it("should call onClose when clicking outside of the element", async () => {
-    renderWithQueryClient(
+    render(
       <AccountSettingsContextMenu
         onClickAccountSettings={onClickAccountSettingsMock}
         onLogout={onLogoutMock}
@@ -107,57 +95,5 @@ describe("AccountSettingsContextMenu", () => {
     await user.click(document.body);
 
     expect(onCloseMock).toHaveBeenCalledOnce();
-  });
-});
-
-describe("AccountSettingsContextMenu", () => {
-  const queryClient = new QueryClient();
-  const user = userEvent.setup();
-  const onClickAddMoreRepositories = vi.fn();
-  const onClickAccountSettingsMock = vi.fn();
-  const onLogoutMock = vi.fn();
-  const onCloseMock = vi.fn();
-
-  beforeEach(() => {
-    vi.resetAllMocks();
-
-    vi.mock("#/api/open-hands", async (importActual) => ({
-      ...(await importActual<typeof import("#/api/open-hands")>()),
-      getConfig: vi.fn().mockResolvedValue({
-        APP_MODE: "standard",
-      }),
-    }));
-  });
-
-  afterEach(() => {
-    onClickAddMoreRepositories.mockClear();
-    onClickAccountSettingsMock.mockClear();
-    onLogoutMock.mockClear();
-    onCloseMock.mockClear();
-  });
-
-  const renderWithQueryClient = (component: React.ReactNode) => {
-    render(
-      <QueryClientProvider client={queryClient}>
-        {component}
-      </QueryClientProvider>,
-    );
-  };
-
-  it("should render 'Add More Repositories' when APP_MODE is 'saas'", () => {
-    renderWithQueryClient(
-      <AccountSettingsContextMenu
-        onClickAccountSettings={onClickAccountSettingsMock}
-        onLogout={onLogoutMock}
-        onClose={onCloseMock}
-        isLoggedIn
-      />,
-    );
-
-    expect(
-      screen.getByTestId("account-settings-context-menu"),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Account Settings")).toBeInTheDocument();
-    expect(screen.getByText("Logout")).toBeInTheDocument();
   });
 });

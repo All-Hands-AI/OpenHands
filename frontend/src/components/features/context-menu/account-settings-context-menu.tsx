@@ -2,7 +2,6 @@ import { ContextMenu } from "./context-menu";
 import { ContextMenuListItem } from "./context-menu-list-item";
 import { ContextMenuSeparator } from "./context-menu-separator";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
-import { useConfig } from "#/hooks/query/use-config";
 
 interface AccountSettingsContextMenuProps {
   onClickAccountSettings: () => void;
@@ -18,7 +17,6 @@ export function AccountSettingsContextMenu({
   isLoggedIn,
 }: AccountSettingsContextMenuProps) {
   const ref = useClickOutsideElement<HTMLUListElement>(onClose);
-  const { data: config } = useConfig();
 
   return (
     <ContextMenu
@@ -26,17 +24,6 @@ export function AccountSettingsContextMenu({
       ref={ref}
       className="absolute left-full -top-1 z-10"
     >
-      {config?.APP_MODE === "saas" && config?.APP_SLUG && (
-        <a
-          href={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
-          target="_blank"
-          rel="noreferrer noopener"
-        >
-          <ContextMenuListItem onClick={() => {}}>
-            Add More Repositories
-          </ContextMenuListItem>
-        </a>
-      )}
       <ContextMenuListItem onClick={onClickAccountSettings}>
         Account Settings
       </ContextMenuListItem>
