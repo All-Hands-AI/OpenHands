@@ -339,6 +339,9 @@ class AgentController:
 
         if new_state in (AgentState.STOPPED, AgentState.ERROR):
             self._reset()
+        elif new_state in (AgentState.PAUSED, AgentState.AWAITING_USER_INPUT, AgentState.AWAITING_USER_CONFIRMATION):
+            # Reset iteration budget when agent pauses for user interaction
+            self.state.max_iterations = self.state.iteration + self._initial_max_iterations
         elif (
             new_state == AgentState.RUNNING
             and self.state.agent_state == AgentState.PAUSED
