@@ -296,12 +296,20 @@ class EventStreamRuntime(Runtime):
         if not use_host_network:
             port_mapping = {
                 f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}],
-                '4141/tcp': [{'HostPort': '4141'}]  # Hardcoded port mapping
+                '4141/tcp': [{'HostPort': '4141'}],
             }
             # Add custom port mappings from config if specified
-            if hasattr(self.config.sandbox, 'port_mappings') and self.config.sandbox.port_mappings:
-                for container_port, host_port in self.config.sandbox.port_mappings.items():
-                    port_mapping[f'{container_port}/tcp'] = [{'HostPort': str(host_port)}]
+            if (
+                hasattr(self.config.sandbox, 'port_mappings')
+                and self.config.sandbox.port_mappings
+            ):
+                for (
+                    container_port,
+                    host_port,
+                ) in self.config.sandbox.port_mappings.items():
+                    port_mapping[f'{container_port}/tcp'] = [
+                        {'HostPort': str(host_port)}
+                    ]
 
         if use_host_network:
             self.log(
@@ -391,6 +399,7 @@ class EventStreamRuntime(Runtime):
                     'error',
                     f'Error: Instance {self.container_name} FAILED to start container!\n',
                 )
+                self.log('error', str(e))
         except Exception as e:
             self.log(
                 'error',

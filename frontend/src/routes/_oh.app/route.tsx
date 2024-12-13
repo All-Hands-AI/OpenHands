@@ -2,6 +2,7 @@ import { useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
+import { FaServer } from "react-icons/fa";
 import { Controls } from "#/components/features/controls/controls";
 import { RootState } from "#/store";
 import { clearMessages } from "#/state/chat-slice";
@@ -22,6 +23,7 @@ import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
 import { CountBadge } from "#/components/layout/count-badge";
+import { ServedAppLabel } from "#/components/layout/served-app-label";
 
 function App() {
   const { token, gitHubToken } = useAuth();
@@ -83,6 +85,11 @@ function App() {
                 labels={[
                   { label: "Workspace", to: "", icon: <CodeIcon /> },
                   { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
+                  {
+                    label: <ServedAppLabel />,
+                    to: "served",
+                    icon: <FaServer />,
+                  },
                   {
                     label: (
                       <div className="flex items-center gap-1">
