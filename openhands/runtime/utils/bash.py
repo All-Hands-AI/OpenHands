@@ -214,6 +214,7 @@ class BashSession:
         if metadata.working_dir != self._pwd and metadata.working_dir:
             self._pwd = metadata.working_dir
 
+        logger.debug(f'COMMAND OUTPUT: {pane_content}')
         # Extract the command output between the two PS1 prompts
         raw_command_output = self._combine_outputs_between_matches(
             pane_content,
@@ -356,6 +357,7 @@ class BashSession:
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
         """Execute a command in the bash session."""
         # Strip the command of any leading/trailing whitespace
+        logger.debug(f'RECEIVED ACTION: {action}')
         command = action.command.strip()
 
         if command == '' and self.prev_status not in {
@@ -432,6 +434,9 @@ class BashSession:
             # for a while (self.NO_CHANGE_TIMEOUT_SECONDS)
             # We ignore this if the command is *blocking
             time_since_last_change = time.time() - last_change_time
+            logger.debug(
+                f'CHECKING NO CHANGE TIMEOUT ({self.NO_CHANGE_TIMEOUT_SECONDS}s): elapsed {time_since_last_change}'
+            )
             if (
                 not action.blocking
                 and time_since_last_change >= self.NO_CHANGE_TIMEOUT_SECONDS
@@ -443,6 +448,9 @@ class BashSession:
                 )
 
             # 3) Execution timed out due to hard timeout
+            logger.debug(
+                f'CHECKING HARD TIMEOUT ({action.timeout}s): elapsed {time.time() - start_time}'
+            )
             if action.timeout and time.time() - start_time >= action.timeout:
                 return self._handle_hard_timeout_command(
                     command,
@@ -451,4 +459,5 @@ class BashSession:
                     timeout=action.timeout,
                 )
 
+            logger.debug(f'SLEEPING for {self.POLL_INTERVAL} seconds for next poll')
             time.sleep(self.POLL_INTERVAL)
