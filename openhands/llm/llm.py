@@ -509,7 +509,9 @@ class LLM(RetryMixin, DebugMixin):
         return False
 
     def _completion_cost(self, response) -> float:
-        """Calculate the cost of a completion response based on the model.  Local models are treated as free.
+        """Calculate completion cost and update metrics with running total.
+
+        Calculate the cost of a completion response based on the model. Local models are treated as free.
         Add the current cost into total cost in metrics.
 
         Args:

@@ -58,11 +58,12 @@ def create_runtime(
 ) -> Runtime:
     """Create a runtime for the agent to run on.
 
-    config: The app config.
-    sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
-        Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
-    headless_mode: Whether the agent is run in headless mode. `create_runtime` is typically called within evaluation scripts,
-        where we don't want to have the VSCode UI open, so it defaults to True.
+    Args:
+        config: The app config.
+        sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
+            Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
+        headless_mode: Whether the agent is run in headless mode. `create_runtime` is typically called within evaluation scripts,
+            where we don't want to have the VSCode UI open, so it defaults to True.
     """
     # if sid is provided on the command line, use it as the name of the event stream
     # otherwise generate it on the basis of the configured jwt_secret
@@ -101,19 +102,58 @@ async def run_controller(
     headless_mode: bool = True,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
+
     It's only used when you launch openhands backend directly via cmdline.
 
     Args:
         config: The app config.
         initial_user_action: An Action object containing initial user input
-        sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
+        sid: (optional) The session id. *IMPORTANT*: please don't set this unless you know what you're doing.
             Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
         runtime: (optional) A runtime for the agent to run on.
         agent: (optional) A agent to run.
-        exit_on_message: quit if agent asks for a message from user (optional)
+        exit_on_message: (optional) Quit if agent asks for a message from user.
         fake_user_response_fn: An optional function that receives the current state
             (could be None) and returns a fake user response.
         headless_mode: Whether the agent is run in headless mode.
+
+    Returns:
+        State | None: The final state of the agent controller, or None if an error occurred.
+
+    Raises:
+        AssertionError: If initial_user_action is not an Action instance.
+        Exception: Various exceptions may be raised during execution and will be logged.
+
+    Notes:
+        - State persistence: If config.file_store is set, the agent's state will be
+          saved between sessions.
+        - Trajectories: If config.trajectories_path is set, execution history will be
+          saved as JSON for analysis.
+        - Budget control: Execution is limited by config.max_iterations and
+          config.max_budget_per_task.
+
+    Example:
+        >>> config = load_app_config()
+        >>> action = MessageAction(content="Write a hello world program")
+        >>> state = await run_controller(config=config, initial_user_action=action)
+
+    See Also:
+        - create_runtime(): Creates and configures the runtime environment
+        - AgentController: Manages agent execution and state
+        - EventStream: Handles all communication between components
+        - CodeActAgent: Main agent implementation using the CodeAct framework
+
+    Warnings:
+        - Session IDs: Setting incompatible sid values can cause issues with RemoteRuntime
+        - State restoration: May fail if session data is corrupted
+        - Resource usage: Memory usage increases with history size and max_iterations
+        - Security: Ensure proper sandbox configuration for untrusted code execution
+
+    References:
+        - CodeAct Framework: https://arxiv.org/abs/2402.01030
+        - Architecture: docs/modules/usage/architecture/runtime
+        - Evaluation: docs/modules/usage/how-to/evaluation-harness
+        - CLI Usage: docs/modules/usage/how-to/cli-mode
     """
     # Create the agent
     if agent is None:
