@@ -21,14 +21,14 @@ There are many ways that you can contribute:
 
 1. **Download and use** OpenHands, and send [issues](https://github.com/All-Hands-AI/OpenHands/issues) when you encounter something that isn't working or a feature that you'd like to see.
 2. **Send feedback** after each session by [clicking the thumbs-up thumbs-down buttons](https://docs.all-hands.dev/modules/usage/feedback), so we can see where things are working and failing, and also build an open dataset for training code agents.
-3. **Improve the Codebase** by sending PRs (see details below). In particular, we have some [good first issues](https://github.com/All-Hands-AI/OpenHands/labels/good%20first%20issue) that may be ones to start on.
+3. **Improve the Codebase** by sending [PRs](#sending-pull-requests-to-openhands) (see details below). In particular, we have some [good first issues](https://github.com/All-Hands-AI/OpenHands/labels/good%20first%20issue) that may be ones to start on.
 
 ## What can I build?
 Here are a few ways you can help improve the codebase.
 
 #### UI/UX
 We're always looking to improve the look and feel of the application. If you've got a small fix
-for something that's bugging you, feel free to open up a PR that changes the `./frontend` directory.
+for something that's bugging you, feel free to open up a PR that changes the [`./frontend`](./frontend) directory.
 
 If you're looking to make a bigger change, add a new UI element, or significantly alter the style
 of the application, please open an issue first, or better, join the #frontend channel in our Slack
@@ -46,7 +46,7 @@ We use the [SWE-bench](https://www.swebench.com/) benchmark to test our agent. Y
 channel in Slack to learn more.
 
 #### Adding a new agent
-You may want to experiment with building new types of agents. You can add an agent to `openhands/agenthub`
+You may want to experiment with building new types of agents. You can add an agent to [`openhands/agenthub`](./openhands/agenthub)
 to help expand the capabilities of OpenHands.
 
 #### Adding a new runtime
@@ -57,8 +57,8 @@ If you work for a company that provides a cloud-based runtime, you could help us
 by implementing the [interface specified here](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/runtime/base.py).
 
 #### Testing
-When you write code, it is also good to write tests. Please navigate to the `tests` folder to see existing test suites.
-At the moment, we have two kinds of tests: `unit` and `integration`. Please refer to the README for each test suite. These tests also run on GitHub's continuous integration to ensure quality of the project.
+When you write code, it is also good to write tests. Please navigate to the [`./tests`](./tests) folder to see existing test suites.
+At the moment, we have two kinds of tests: [`unit`](./tests/unit) and [`integration`](./evaluation/integration_tests). Please refer to the README for each test suite. These tests also run on GitHub's continuous integration to ensure quality of the project.
 
 ## Sending Pull Requests to OpenHands
 
@@ -103,7 +103,7 @@ Further, if you see an issue you like, please leave a "thumbs-up" or a comment, 
 
 ### Making Pull Requests
 
-We're generally happy to consider all PRs, with the evaluation process varying based on the type of change:
+We're generally happy to consider all [PRs](https://github.com/All-Hands-AI/OpenHands/pulls), with the evaluation process varying based on the type of change:
 
 #### For Small Improvements
 

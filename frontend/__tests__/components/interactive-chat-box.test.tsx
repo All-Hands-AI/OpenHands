@@ -1,7 +1,7 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, within, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
-import { InteractiveChatBox } from "#/components/interactive-chat-box";
+import { InteractiveChatBox } from "#/components/features/chat/interactive-chat-box";
 
 describe("InteractiveChatBox", () => {
   const onSubmitMock = vi.fn();
@@ -130,5 +130,61 @@ describe("InteractiveChatBox", () => {
 
     await user.click(stopButton);
     expect(onStopMock).toHaveBeenCalledOnce();
+  });
+
+  it("should handle image upload and message submission correctly", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    const onStop = vi.fn();
+    const onChange = vi.fn();
+
+    const { rerender } = render(
+      <InteractiveChatBox
+        onSubmit={onSubmit}
+        onStop={onStop}
+        onChange={onChange}
+        value="test message"
+      />
+    );
+
+    // Upload an image via the upload button - this should NOT clear the text input
+    const file = new File(["dummy content"], "test.png", { type: "image/png" });
+    const input = screen.getByTestId("upload-image-input");
+    await user.upload(input, file);
+
+    // Verify text input was not cleared
+    expect(screen.getByRole("textbox")).toHaveValue("test message");
+    expect(onChange).not.toHaveBeenCalledWith("");
+
+    // Submit the message with image
+    const submitButton = screen.getByRole("button", { name: "Send" });
+    await user.click(submitButton);
+
+    // Verify onSubmit was called with the message and image
+    expect(onSubmit).toHaveBeenCalledWith("test message", [file]);
+
+    // Verify onChange was called to clear the text input
+    expect(onChange).toHaveBeenCalledWith("");
+
+    // Simulate parent component updating the value prop
+    rerender(
+      <InteractiveChatBox
+        onSubmit={onSubmit}
+        onStop={onStop}
+        onChange={onChange}
+        value=""
+      />
+    );
+
+    // Verify the text input was cleared
+    expect(screen.getByRole("textbox")).toHaveValue("");
+
+    // Upload another image - this should NOT clear the text input
+    onChange.mockClear();
+    await user.upload(input, file);
+
+    // Verify text input is still empty and onChange was not called
+    expect(screen.getByRole("textbox")).toHaveValue("");
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

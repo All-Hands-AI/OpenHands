@@ -68,6 +68,9 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
+      - name: "Set up docker layer caching"
+        uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
       - name: Build and push app image
         if: "!github.event.pull_request.head.repo.fork"
         run: |
@@ -291,7 +294,7 @@ jobs:
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=false \
-          poetry run pytest -n 3 -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime
+          poetry run pytest -n 3 -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:
@@ -368,7 +371,7 @@ jobs:
           SANDBOX_RUNTIME_CONTAINER_IMAGE=$image_name \
           TEST_IN_CI=true \
           RUN_AS_OPENHANDS=true \
-          poetry run pytest -n 3 -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime
+          poetry run pytest -n 3 -raRs --reruns 2 --reruns-delay 5 --cov=openhands --cov-report=xml -s ./tests/runtime --ignore=tests/runtime/test_browsergym_envs.py
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         env:

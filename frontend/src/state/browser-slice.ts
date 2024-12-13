@@ -5,6 +5,8 @@ export const initialState = {
   url: "https://github.com/All-Hands-AI/OpenHands",
   // Base64-encoded screenshot of browser window (placeholder for now, will be replaced with the actual screenshot later)
   screenshotSrc: "",
+  // Counter for browser updates
+  updateCount: 0,
 };
 
 export const browserSlice = createSlice({
@@ -16,6 +18,7 @@ export const browserSlice = createSlice({
     },
     setScreenshotSrc: (state, action) => {
       state.screenshotSrc = action.payload;
+      state.updateCount += 1;
     },
   },
 });
