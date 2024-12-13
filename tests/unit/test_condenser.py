@@ -42,10 +42,13 @@ def test_noop_condenser():
         create_test_event('Event 3', datetime(2024, 1, 1, 10, 2)),
     ]
 
-    condenser = NoOpCondenser()
-    result = condenser.condense(events)
+    mock_state = MagicMock()
+    mock_state.history = events
 
-    assert result.condensed_events == events
+    condenser = NoOpCondenser()
+    result = condenser.condense(mock_state)
+
+    assert result == events
 
 
 def test_recent_events_condenser_from_config():
@@ -70,41 +73,44 @@ def test_recent_events_condenser():
         create_test_event('Event 5', datetime(2024, 1, 1, 10, 4)),
     ]
 
+    mock_state = MagicMock()
+    mock_state.history = events
+
     # If the max_events are larger than the number of events, equivalent to a NoOpCondenser.
     condenser = RecentEventsCondenser(max_events=len(events))
-    result = condenser.condense(events)
+    result = condenser.condense(mock_state)
 
-    assert result.condensed_events == events
+    assert result == events
 
     # If the max_events are smaller than the number of events, only keep the last few.
     max_events = 2
     condenser = RecentEventsCondenser(max_events=max_events)
-    result = condenser.condense(events)
+    result = condenser.condense(mock_state)
 
-    assert len(result.condensed_events) == max_events
-    assert result.condensed_events[0]._message == 'Event 4'
-    assert result.condensed_events[1]._message == 'Event 5'
+    assert len(result) == max_events
+    assert result[0]._message == 'Event 4'
+    assert result[1]._message == 'Event 5'
 
     # If the keep_first flag is set, the first event will always be present.
     keep_first = 1
     max_events = 2
     condenser = RecentEventsCondenser(keep_first=keep_first, max_events=max_events)
-    result = condenser.condense(events)
+    result = condenser.condense(mock_state)
 
-    assert len(result.condensed_events) == max_events
-    assert result.condensed_events[0]._message == 'Event 1'
-    assert result.condensed_events[1]._message == 'Event 5'
+    assert len(result) == max_events
+    assert result[0]._message == 'Event 1'
+    assert result[1]._message == 'Event 5'
 
     # We should be able to keep more of the initial events.
     keep_first = 2
     max_events = 3
     condenser = RecentEventsCondenser(keep_first=keep_first, max_events=max_events)
-    result = condenser.condense(events)
+    result = condenser.condense(mock_state)
 
-    assert len(result.condensed_events) == max_events
-    assert result.condensed_events[0]._message == 'Event 1'
-    assert result.condensed_events[1]._message == 'Event 2'
-    assert result.condensed_events[2]._message == 'Event 5'
+    assert len(result) == max_events
+    assert result[0]._message == 'Event 1'
+    assert result[1]._message == 'Event 2'
+    assert result[2]._message == 'Event 5'
 
 
 def test_llm_condenser_from_config():
@@ -129,6 +135,10 @@ def test_llm_condenser():
         create_test_event('Event 2', datetime(2024, 1, 1, 10, 1)),
     ]
 
+    mock_state = MagicMock()
+    mock_state.history = events
+    mock_state.extra_data = {}
+
     mock_llm = MagicMock()
 
     # The LLM returns an object that we index into and treat as a pydantic model, so we have a couple of access patterns to mock.
@@ -140,12 +150,14 @@ def test_llm_condenser():
         {'message': {'content': 'Summary of events'}}
     ]
     mock_llm.completion.return_value = mock_response
+    mock_llm.metrics = MagicMock()
+    mock_llm.metrics.get.return_value = {'test_metric': 1.0}
 
     condenser = LLMCondenser(llm=mock_llm)
-    result = condenser.condense(events)
+    result = condenser.condense(mock_state)
 
-    assert len(result.condensed_events) == 1
-    assert result.condensed_events[0].content == 'Summary of events'
+    assert len(result) == 1
+    assert result[0].content == 'Summary of events'
 
     # Verify LLM was called with correct prompt.
     mock_llm.completion.assert_called_once()
@@ -155,10 +167,18 @@ def test_llm_condenser():
     assert 'Event 1' in call_args['messages'][0]['content']
     assert 'Event 2' in call_args['messages'][0]['content']
 
+    # Verify metrics were added to state
+    assert 'condenser_meta' in mock_state.extra_data
+    assert len(mock_state.extra_data['condenser_meta']) == 1
+    assert mock_state.extra_data['condenser_meta'][0]['metrics'] == {'test_metric': 1.0}
+
 
 def test_llm_condenser_error():
     """Test that LLM errors are propagated during condensation."""
     events = [create_test_event('Event 1', datetime(2024, 1, 1, 10, 0))]
+
+    mock_state = MagicMock()
+    mock_state.history = events
 
     mock_llm = MagicMock()
     mock_llm.completion.side_effect = Exception('LLM error')
@@ -166,7 +186,7 @@ def test_llm_condenser_error():
     condenser = LLMCondenser(llm=mock_llm)
 
     try:
-        condenser.condense(events)
+        condenser.condense(mock_state)
         raise AssertionError('Expected exception was not raised.')
     except Exception as e:
         assert str(e) == 'LLM error'
