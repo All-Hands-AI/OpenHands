@@ -61,6 +61,7 @@ class AppConfig:
     cache_dir: str = '/tmp/cache'
     run_as_openhands: bool = True
     max_iterations: int = OH_MAX_ITERATIONS
+    extend_max_iterations_on_user_message: bool = True
     max_budget_per_task: float | None = None
     e2b_api_key: str = ''
     modal_api_token_id: str = ''

@@ -10,12 +10,18 @@ from openhands.events.event import EventSource
 
 
 class DummyAgent:
-    def __init__(self):
+    def __init__(self, extend_max_iterations_on_user_message=True):
         self.name = 'dummy'
         self.llm = type(
             'DummyLLM',
             (),
-            {'metrics': type('DummyMetrics', (), {'merge': lambda x: None})()},
+            {
+                'metrics': type('DummyMetrics', (), {'merge': lambda x: None})(),
+                'config': type('DummyConfig', (), {
+                    'extend_max_iterations_on_user_message': extend_max_iterations_on_user_message,
+                    'max_message_chars': 1000,
+                })(),
+            },
         )()
 
     def reset(self):
@@ -28,14 +34,16 @@ async def test_iteration_limit_extends_on_user_message():
     from openhands.storage.memory import InMemoryFileStore
 
     file_store = InMemoryFileStore()
-    event_stream = EventStream(sid='test', file_store=file_store)
-    agent = DummyAgent()
     initial_max_iterations = 100
+
+    # Test with extension enabled
+    event_stream = EventStream(sid='test_enabled', file_store=file_store)
+    agent = DummyAgent(extend_max_iterations_on_user_message=True)
     controller = AgentController(
         agent=agent,
         event_stream=event_stream,
         max_iterations=initial_max_iterations,
-        sid='test',
+        sid='test_enabled',
     )
 
     # Set initial state
@@ -59,3 +67,26 @@ async def test_iteration_limit_extends_on_user_message():
 
     # Verify max_iterations was extended again
     assert controller.state.max_iterations == 180 + initial_max_iterations
+
+    # Test with extension disabled
+    event_stream = EventStream(sid='test_disabled', file_store=file_store)
+    agent = DummyAgent(extend_max_iterations_on_user_message=False)
+    controller = AgentController(
+        agent=agent,
+        event_stream=event_stream,
+        max_iterations=initial_max_iterations,
+        sid='test_disabled',
+    )
+
+    # Set initial state
+    await controller.set_agent_state_to(AgentState.RUNNING)
+    controller.state.iteration = 90  # Close to the limit
+    assert controller.state.max_iterations == initial_max_iterations
+
+    # Simulate user message
+    user_message = MessageAction('test message', EventSource.USER)
+    event_stream.add_event(user_message, EventSource.USER)
+    await asyncio.sleep(0.1)  # Give time for event to be processed
+
+    # Verify max_iterations was NOT extended
+    assert controller.state.max_iterations == initial_max_iterations

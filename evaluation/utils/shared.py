@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from tqdm import tqdm
 
 from openhands.controller.state.state import State
-from openhands.core.config import LLMConfig
+from openhands.core.config import AppConfig, LLMConfig, SandboxConfig
 from openhands.core.logger import get_console_handler
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import Action
@@ -171,6 +171,40 @@ def cleanup():
         print(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
+
+
+def get_base_eval_config(
+    metadata: EvalMetadata,
+    runtime: str = 'eventstream',
+    sandbox_config: SandboxConfig | None = None,
+) -> AppConfig:
+    """Get base configuration for evaluation.
+
+    Args:
+        metadata: Evaluation metadata.
+        runtime: Runtime to use. Defaults to 'eventstream'.
+        sandbox_config: Optional sandbox configuration. If not provided, a default one will be used.
+
+    Returns:
+        Base configuration for evaluation.
+    """
+    config = AppConfig(
+        default_agent=metadata.agent_class,
+        run_as_openhands=False,
+        runtime=runtime,
+        max_iterations=metadata.max_iterations,
+        extend_max_iterations_on_user_message=False,  # Disable extending max iterations in evaluations
+        sandbox=sandbox_config or SandboxConfig(
+            base_container_image='python:3.12-bookworm',
+            enable_auto_lint=True,
+            use_host_network=False,
+        ),
+        # do not mount workspace
+        workspace_base=None,
+        workspace_mount_path=None,
+    )
+    config.set_llm_config(metadata.llm_config)
+    return config
 
 
 def make_metadata(
