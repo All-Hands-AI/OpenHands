@@ -83,9 +83,13 @@ export function ChatInput({
   };
 
   const handleSubmitMessage = () => {
-    if (textareaRef.current?.value) {
-      onSubmit(textareaRef.current.value);
-      textareaRef.current.value = "";
+    const message = value || textareaRef.current?.value || "";
+    if (message) {
+      onSubmit(message);
+      onChange?.("");
+      if (textareaRef.current) {
+        textareaRef.current.value = "";
+      }
     }
   };
 

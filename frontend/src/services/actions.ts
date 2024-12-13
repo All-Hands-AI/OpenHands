@@ -19,16 +19,12 @@ import { handleObservationMessage } from "./observations";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
-    if (message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
-    } else {
+    if (!message.args.thought && message.message) {
       store.dispatch(addAssistantMessage(message.message));
     }
   },
   [ActionType.BROWSE_INTERACTIVE]: (message: ActionMessage) => {
-    if (message.args.thought) {
-      store.dispatch(addAssistantMessage(message.args.thought));
-    } else {
+    if (!message.args.thought && message.message) {
       store.dispatch(addAssistantMessage(message.message));
     }
   },
