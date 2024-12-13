@@ -77,7 +77,7 @@ class Message(OpenAIObject):
 
 ### Token Counting
 
-When counting tokens, it's crucial that all message components (including tool calls) are properly serialized to dictionaries. This is because:
+To use litellm's token counter, we need to make sure that all message components (including tool calls) are properly serialized to dictionaries. This is because:
 - litellm's token counter expects dictionary structures
 - Tool calls need to be included in the token count
 - Different providers may count tokens differently for structured content
