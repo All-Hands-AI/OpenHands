@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 from conftest import (
-    TEST_IN_CI,
     _close_test_runtime,
     _get_sandbox_folder,
     _load_runtime,
@@ -428,16 +427,13 @@ def test_copy_from_directory(temp_dir, runtime_cls):
         _close_test_runtime(runtime)
 
 
-@pytest.mark.skipif(
-    TEST_IN_CI != 'True',
-    reason='This test is not working in WSL (file ownership)',
-)
 def test_git_operation(runtime_cls):
     # do not mount workspace, since workspace mount by tests will be owned by root
     # while the user_id we get via os.getuid() is different from root
     # which causes permission issues
     runtime = _load_runtime(
         temp_dir=None,
+        use_workspace=False,
         runtime_cls=runtime_cls,
         # Need to use non-root user to expose issues
         run_as_openhands=True,
@@ -445,6 +441,9 @@ def test_git_operation(runtime_cls):
     # this will happen if permission of runtime is not properly configured
     # fatal: detected dubious ownership in repository at '/workspace'
     try:
+        obs = _run_cmd_action(runtime, 'sudo chown -R openhands:root .')
+        assert obs.exit_code == 0
+
         # check the ownership of the current directory
         obs = _run_cmd_action(runtime, 'ls -alh .')
         assert obs.exit_code == 0
@@ -474,8 +473,10 @@ def test_git_operation(runtime_cls):
         assert obs.exit_code == 0
 
         # git diff
-        obs = _run_cmd_action(runtime, 'git diff')
+        obs = _run_cmd_action(runtime, 'git diff --no-color --cached')
         assert obs.exit_code == 0
+        assert 'b/test_file.txt' in obs.content
+        assert '+hello' in obs.content
 
         # git commit
         obs = _run_cmd_action(runtime, 'git commit -m "test commit"')

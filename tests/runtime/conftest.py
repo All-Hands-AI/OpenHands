@@ -230,14 +230,14 @@ def _load_runtime(
     global test_mount_path
     if use_workspace:
         test_mount_path = os.path.join(config.workspace_base, 'rt')
+    elif temp_dir is not None:
+        test_mount_path = os.path.join(temp_dir, sid)
     else:
-        test_mount_path = os.path.join(
-            temp_dir, sid
-        )  # need a subfolder to avoid conflicts
+        test_mount_path = None
     config.workspace_mount_path = test_mount_path
 
     # Mounting folder specific for this test inside the sandbox
-    config.workspace_mount_path_in_sandbox = f'{sandbox_test_folder}/{sid}'
+    config.workspace_mount_path_in_sandbox = f'{sandbox_test_folder}'
     print('\nPaths used:')
     print(f'use_host_network: {config.sandbox.use_host_network}')
     print(f'workspace_base: {config.workspace_base}')
