@@ -79,7 +79,7 @@ class AgentController:
         self,
         agent: Agent,
         event_stream: EventStream,
-        max_iterations: int = 250,
+        max_iterations: int,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
