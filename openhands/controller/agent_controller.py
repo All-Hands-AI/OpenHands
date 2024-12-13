@@ -321,8 +321,6 @@ class AgentController:
         """Resets the agent controller"""
         self.almost_stuck = 0
         self._pending_action = None
-        self.state.iteration = 0
-        self.state.local_iteration = 0
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState) -> None:
@@ -339,7 +337,7 @@ class AgentController:
         if new_state == self.state.agent_state:
             return
 
-        if new_state in (AgentState.STOPPED, AgentState.ERROR, AgentState.PAUSED, AgentState.AWAITING_USER_INPUT, AgentState.AWAITING_USER_CONFIRMATION):
+        if new_state in (AgentState.STOPPED, AgentState.ERROR):
             self._reset()
         elif (
             new_state == AgentState.RUNNING
