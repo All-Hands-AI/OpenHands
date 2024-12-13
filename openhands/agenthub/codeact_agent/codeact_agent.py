@@ -417,8 +417,7 @@ class CodeActAgent(Agent):
             messages.append(
                 Message(
                     role='user',
-                    content=[TextContent(text=example_message)],
-                    cache_prompt=self.llm.is_caching_prompt_active(),
+                    content=[TextContent(text=example_message)]
                 )
             )
 
