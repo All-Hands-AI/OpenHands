@@ -25,7 +25,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST: ghcr.io/all-hands-ai/runtime:0.15.2-nikolaik
+  #BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST: ghcr.io/all-hands-ai/runtime:0.15.2-nikolaik
+  BASE_IMAGE_FOR_HASH_EQUIVALENCE_TEST: nikolaik/python-nodejs:python3.12-nodejs22
   RELEVANT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
 
 jobs:
@@ -102,7 +103,8 @@ jobs:
     strategy:
       matrix:
         base_image:
-          - image: 'ghcr.io/all-hands-ai/runtime:0.15.2-nikolaik'
+          #- image: 'ghcr.io/all-hands-ai/runtime:0.15.2-nikolaik'
+          - image: 'nikolaik/python-nodejs:python3.12-nodejs22'
             tag: nikolaik
     steps:
       - name: Checkout
