@@ -115,7 +115,6 @@ class Message(BaseModel):
         """Add tool call keys if we have a tool call or response.
 
         NOTE: this is necessary for both native and non-native tool calling.
-        Tool calls are converted to dicts for token counting, but can remain as objects
         for API calls since litellm's ChatCompletionMessageToolCall accepts both."""
 
         # an assistant message calling a tool
