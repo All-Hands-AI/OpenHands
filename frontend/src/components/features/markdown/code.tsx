@@ -17,8 +17,8 @@ export function code({
   const match = /language-(\w+)/.exec(className || ""); // get the language
 
   if (!match) {
-    const isMultiline = String(children).includes('\n');
-    
+    const isMultiline = String(children).includes("\n");
+
     if (!isMultiline) {
       return (
         <code
@@ -47,9 +47,7 @@ export function code({
           overflow: "auto",
         }}
       >
-        <code className={className}>
-          {String(children).replace(/\n$/, "")}
-        </code>
+        <code className={className}>{String(children).replace(/\n$/, "")}</code>
       </pre>
     );
   }
