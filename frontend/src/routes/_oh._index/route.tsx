@@ -28,7 +28,6 @@ function Home() {
     gitHubClientId: config?.GITHUB_CLIENT_ID || null,
   });
 
-
   return (
     <div
       data-testid="root-index"
