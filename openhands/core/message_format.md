@@ -70,7 +70,7 @@ class Message(OpenAIObject):
 
 4. **litellm Integration**: When we pass our messages to `litellm.completion()`, litellm doesn't care about the message class type - it works with the dictionary representation. This works because:
    - litellm's transformation code (e.g., `litellm/llms/anthropic/chat/transformation.py`) processes messages based on their structure, not their type
-   - Our serialization produces dictionaries that match litellm's expected format
+   - our serialization produces dictionaries that match litellm's expected format
    - litellm handles rich content by looking at the message structure, supporting both simple string content and lists of content items
 
 5. **Provider-Specific Handling**: litellm then transforms these messages into provider-specific formats (e.g., Anthropic, OpenAI) through its transformation layers, which know how to handle both simple and rich content structures.
