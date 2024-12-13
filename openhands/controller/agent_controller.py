@@ -79,7 +79,7 @@ class AgentController:
         self,
         agent: Agent,
         event_stream: EventStream,
-        max_iterations: int,
+        max_iterations: int = 250,
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
@@ -321,6 +321,8 @@ class AgentController:
         """Resets the agent controller"""
         self.almost_stuck = 0
         self._pending_action = None
+        self.state.iteration = 0
+        self.state.local_iteration = 0
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState) -> None:
@@ -337,7 +339,7 @@ class AgentController:
         if new_state == self.state.agent_state:
             return
 
-        if new_state in (AgentState.STOPPED, AgentState.ERROR):
+        if new_state in (AgentState.STOPPED, AgentState.ERROR, AgentState.PAUSED, AgentState.AWAITING_USER_INPUT, AgentState.AWAITING_USER_CONFIRMATION):
             self._reset()
         elif (
             new_state == AgentState.RUNNING
