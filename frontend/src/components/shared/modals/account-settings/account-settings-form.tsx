@@ -73,7 +73,7 @@ export function AccountSettingsForm({
               rel="noreferrer noopener"
               className="underline"
             >
-              Configure Repositories
+              Configure Github Repositories
             </a>
           )}
           <FormFieldset
