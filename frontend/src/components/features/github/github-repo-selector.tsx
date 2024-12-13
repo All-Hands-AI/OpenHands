@@ -15,6 +15,7 @@ export function GitHubRepositorySelector({
 }: GitHubRepositorySelectorProps) {
   const { data: config } = useConfig();
 
+  // Add option to install app onto more repos
   const finalRepositories =
     config?.APP_MODE === "saas"
       ? [{ id: -1000, full_name: "Add more repositories..." }, ...repositories]
@@ -43,6 +44,19 @@ export function GitHubRepositorySelector({
     dispatch(setSelectedRepository(null));
   };
 
+  const emptyContent = config?.APP_SLUG ? (
+    <a
+      href={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
+      target="_blank"
+      rel="noreferrer noopener"
+      className="underline"
+    >
+      Add more repositories...
+    </a>
+  ) : (
+    "No results found."
+  );
+
   return (
     <Autocomplete
       data-testid="github-repo-selector"
@@ -57,6 +71,9 @@ export function GitHubRepositorySelector({
       }}
       onSelectionChange={(id) => handleRepoSelection(id?.toString() ?? null)}
       clearButtonProps={{ onClick: handleClearSelection }}
+      listboxProps={{
+        emptyContent,
+      }}
     >
       {finalRepositories.map((repo) => (
         <AutocompleteItem
