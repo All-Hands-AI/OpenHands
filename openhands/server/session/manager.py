@@ -222,6 +222,9 @@ class SessionManager:
             sid=sid, file_store=self.file_store, config=self.config, sio=self.sio
         )
         self.local_sessions_by_sid[sid] = session
+
+        if session_init_data.github_token:
+            logger.info('github token exists')
         await session.initialize_agent(session_init_data)
         return session.agent_session.event_stream
 

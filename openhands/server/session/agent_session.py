@@ -78,6 +78,10 @@ class AgentSession:
                 'Session already started. You need to close this session and start a new one.'
             )
 
+        logger.info('start')
+        if github_token:
+            logger.info('ghtoken exists')
+
         asyncio.get_event_loop().run_in_executor(
             None,
             self._start_thread,
@@ -112,6 +116,9 @@ class AgentSession:
         selected_repository: str | None = None,
     ):
         self._create_security_analyzer(config.security.security_analyzer)
+        logger.info('runtime is being created')
+        if github_token:
+            logger.info('ghtoken exists')
         await self._create_runtime(
             runtime_name=runtime_name,
             config=config,
@@ -210,6 +217,10 @@ class AgentSession:
             return
 
         if self.runtime is not None:
+            logger.info('cloning repo here')
+            if github_token:
+                logger.info('ghtoken exists')
+
             self.runtime.clone_repo(github_token, selected_repository)
             if agent.prompt_manager:
                 agent.prompt_manager.load_microagent_files(
