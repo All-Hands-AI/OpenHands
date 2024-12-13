@@ -82,7 +82,7 @@ When counting tokens, it's crucial that all message components (including tool c
 - Tool calls need to be included in the token count
 - Different providers may count tokens differently for structured content
 
-## Key Points
+## Note
 
 - We don't need to inherit from litellm's `Message` class because litellm works with dictionary representations, not class types
 - Our rich content model is more sophisticated than litellm's basic string content, but litellm handles it correctly through its transformation layers
