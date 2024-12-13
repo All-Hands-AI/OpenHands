@@ -417,12 +417,14 @@ class LLM(RetryMixin, DebugMixin):
             or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
         )
 
-        logger.debug(f'Model name function calling support: {model_name_supported}')
+        logger.debug(
+            f'Model `{self.config.model}` native tool calling suggested after evaluation: {model_name_supported}'
+        )
 
         # Handle native_tool_calling configuration
         if self.config.native_tool_calling == 'default':
             logger.debug(
-                'Using default function calling behavior based on model support'
+                'Using suggested tool calling behavior based on model evaluation'
             )
             return model_name_supported
         elif self.config.native_tool_calling is False:
