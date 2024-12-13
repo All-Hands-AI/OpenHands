@@ -73,13 +73,13 @@ function App() {
       <EventHandler>
         <div className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto gap-3">
-            <Container className="w-full md:w-[390px] max-h-full relative">
+            <Container className="w-full md:w-1/2 max-h-full relative">
               <ChatInterface />
             </Container>
 
             <div className="hidden md:flex flex-col grow gap-3">
               <Container
-                className="h-2/3"
+                className="h-full"
                 labels={[
                   { label: "Workspace", to: "", icon: <CodeIcon /> },
                   { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
@@ -93,18 +93,16 @@ function App() {
                     to: "browser",
                     icon: <GlobeIcon />,
                   },
+                  { 
+                    label: "Terminal",
+                    to: "terminal",
+                    icon: <CodeIcon />
+                  }
                 ]}
               >
                 <FilesProvider>
                   <Outlet />
                 </FilesProvider>
-              </Container>
-              {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
-               * that it loads only in the client-side. */}
-              <Container className="h-1/3 overflow-scroll" label="Terminal">
-                <React.Suspense fallback={<div className="h-full" />}>
-                  <Terminal secrets={secrets} />
-                </React.Suspense>
               </Container>
             </div>
           </div>
