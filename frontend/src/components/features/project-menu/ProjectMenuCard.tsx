@@ -1,9 +1,7 @@
 import React from "react";
-import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import posthog from "posthog-js";
 import EllipsisH from "#/icons/ellipsis-h.svg?react";
-import { addUserMessage } from "#/state/chat-slice";
 import { createChatMessage } from "#/services/chat-service";
 import { ProjectMenuCardContextMenu } from "./project.menu-card-context-menu";
 import { ProjectMenuDetailsPlaceholder } from "./project-menu-details-placeholder";
@@ -28,7 +26,6 @@ export function ProjectMenuCard({
   githubData,
 }: ProjectMenuCardProps) {
   const { send } = useWsClient();
-  const dispatch = useDispatch();
 
   const [contextMenuIsOpen, setContextMenuIsOpen] = React.useState(false);
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
@@ -56,7 +53,6 @@ Please push the changes to GitHub and open a pull request.
     );
 
     send(event); // send to socket
-    dispatch(addUserMessage(rawEvent)); // display in chat interface
     setContextMenuIsOpen(false);
   };
 
