@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate, useNavigation } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
+import { useMutation } from "@tanstack/react-query";
 import posthog from "posthog-js";
 import { RootState } from "#/store";
 import {
@@ -38,7 +39,26 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
     getRandomKey(SUGGESTIONS["non-repo"]),
   );
   const [inputIsFocused, setInputIsFocused] = React.useState(false);
-  const [isInitializing, setIsInitializing] = React.useState(false);
+  const initSessionMutation = useMutation({
+    mutationFn: (variables: { q: string }) => {
+      dispatch(setInitialQuery(variables.q));
+      return OpenHands.initSession({
+        githubToken: gitHubToken || undefined,
+        selectedRepository: selectedRepository || undefined,
+        args: settings || undefined,
+      });
+    },
+    onSuccess: ({ conversation_id: conversationId }, { q }) => {
+      posthog.capture("initial_query_submitted", {
+        entry_point: "task_form",
+        query_character_length: q.length,
+        has_repository: !!selectedRepository,
+        has_files: files.length > 0,
+      });
+      navigate(`/conversation/${conversationId}`);
+    },
+    // TODO: Add error handling with toast
+  });
 
   const onRefreshSuggestion = () => {
     const suggestions = SUGGESTIONS["non-repo"];
@@ -64,37 +84,14 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
     return "What do you want to build?";
   }, [selectedRepository]);
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
 
     const q = formData.get("q")?.toString();
     if (!q) return;
 
-    dispatch(setInitialQuery(q));
-
-    try {
-      setIsInitializing(true);
-      // Initialize the session before navigating
-      const { conversation_id: conversationId } = await OpenHands.initSession({
-        githubToken: gitHubToken || undefined,
-        selectedRepository: selectedRepository || undefined,
-        args: settings || undefined,
-      });
-
-      posthog.capture("initial_query_submitted", {
-        entry_point: "task_form",
-        query_character_length: q.length,
-        has_repository: !!selectedRepository,
-        has_files: files.length > 0,
-      });
-
-      navigate(`/conversation/${conversationId}`);
-    } catch (error) {
-      // TODO: Show error toast
-    } finally {
-      setIsInitializing(false);
-    }
+    initSessionMutation.mutate({ q });
   };
 
   return (
@@ -137,7 +134,7 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
             showButton={!!text}
             className="text-[17px] leading-5 py-[17px]"
             buttonClassName="pb-[17px]"
-            disabled={navigation.state === "submitting" || isInitializing}
+            disabled={navigation.state === "submitting" || initSessionMutation.isPending}
           />
         </div>
       </form>
