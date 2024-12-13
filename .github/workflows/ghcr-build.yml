@@ -68,13 +68,6 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
-      - name: "Set up docker layer caching"
-        uses: jpribyl/action-docker-layer-caching@v0.1.1
-        with:
-          key: ghcr-docker-cache-{hash}
-          restore-keys: |
-            ghcr-docker-cache-
-        continue-on-error: true
       - name: Build and push app image
         if: "!github.event.pull_request.head.repo.fork"
         run: |
