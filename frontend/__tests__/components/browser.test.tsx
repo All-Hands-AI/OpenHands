@@ -11,18 +11,18 @@ vi.mock("react-router", async () => {
 });
 
 // Mock i18next
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-    i18n: {
-      changeLanguage: () => new Promise(() => {}),
-    },
-  }),
-  initReactI18next: {
-    type: "3rdParty",
-    init: () => {},
-  },
-}));
+vi.mock("react-i18next", async () => {
+  const actual = await vi.importActual("react-i18next");
+  return {
+    ...actual as object,
+    useTranslation: () => ({
+      t: (key: string) => key,
+      i18n: {
+        changeLanguage: () => new Promise(() => {}),
+      },
+    }),
+  };
+});
 
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "../../test-utils";
