@@ -26,6 +26,34 @@ import { CountBadge } from "#/components/layout/count-badge";
 function App() {
   const { token, gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
+  const [leftPanelWidth, setLeftPanelWidth] = React.useState(50); // 50% default width
+  const isDragging = React.useRef(false);
+
+  const handleMouseDown = React.useCallback(() => {
+    isDragging.current = true;
+    document.body.style.userSelect = 'none';
+  }, []);
+
+  const handleMouseUp = React.useCallback(() => {
+    isDragging.current = false;
+    document.body.style.userSelect = '';
+  }, []);
+
+  const handleMouseMove = React.useCallback((e: MouseEvent) => {
+    if (!isDragging.current) return;
+    const containerWidth = window.innerWidth;
+    const newWidth = (e.clientX / containerWidth) * 100;
+    setLeftPanelWidth(Math.min(Math.max(20, newWidth), 80)); // Limit between 20% and 80%
+  }, []);
+
+  React.useEffect(() => {
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [handleMouseMove, handleMouseUp]);
 
   const dispatch = useDispatch();
   useConversationConfig();
@@ -72,10 +100,15 @@ function App() {
     >
       <EventHandler>
         <div className="flex flex-col h-full gap-3">
-          <div className="flex h-full overflow-auto gap-3">
-            <Container className="w-full md:w-1/2 max-h-full relative">
+          <div className="flex h-full overflow-auto">
+            <Container className="w-full md:w-auto max-h-full relative" style={{ width: `${leftPanelWidth}%` }}>
               <ChatInterface />
             </Container>
+
+            <div 
+              className="hidden md:block w-1 bg-default-100 hover:bg-default-200 cursor-col-resize" 
+              onMouseDown={handleMouseDown}
+            />
 
             <div className="hidden md:flex flex-col grow gap-3">
               <Container
