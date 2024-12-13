@@ -56,6 +56,7 @@ def test_observation_event_props_serialization_deserialization():
             ),
         },
         'content': 'foo.txt',
+        'success': True,
     }
     serialization_deserialization(original_observation_dict, CmdOutputObservation)
 
