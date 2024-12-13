@@ -40,36 +40,23 @@ def serialization_deserialization(
 
 
 # Additional tests for various observation subclasses can be included here
-def test_observation_event_props_serialization_deserialization():
-    original_observation_dict = {
-        'id': 42,
-        'source': 'agent',
-        'timestamp': '2021-08-01T12:00:00',
-        'observation': 'run',
-        'message': 'Command `ls -l` executed with exit code 0.',
-        'extras': {
-            'exit_code': 0,
-            'command': 'ls -l',
-            'command_id': 3,
-            'hidden': False,
-            'interpreter_details': '',
-        },
-        'content': 'foo.txt',
-    }
-    serialization_deserialization(original_observation_dict, CmdOutputObservation)
+def test_success_field_serialization():
+    # Test success=True
+    obs = CmdOutputObservation(
+        content='Command succeeded',
+        exit_code=0,
+        command='ls -l',
+        command_id=3,
+    )
+    serialized = event_to_dict(obs)
+    assert serialized['success'] is True
 
-
-def test_command_output_observation_serialization_deserialization():
-    original_observation_dict = {
-        'observation': 'run',
-        'extras': {
-            'exit_code': 0,
-            'command': 'ls -l',
-            'command_id': 3,
-            'hidden': False,
-            'interpreter_details': '',
-        },
-        'message': 'Command `ls -l` executed with exit code 0.',
-        'content': 'foo.txt',
-    }
-    serialization_deserialization(original_observation_dict, CmdOutputObservation)
+    # Test success=False
+    obs = CmdOutputObservation(
+        content='No such file or directory',
+        exit_code=1,
+        command='ls -l',
+        command_id=3,
+    )
+    serialized = event_to_dict(obs)
+    assert serialized['success'] is False

@@ -13,6 +13,7 @@ export default {
         'root-secondary': '#262626',
         'hyperlink': '#007AFF',
         'danger': '#EF3744',
+        'success': '#4CAF50',
       },
     },
   },

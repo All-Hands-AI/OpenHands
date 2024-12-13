@@ -7,7 +7,6 @@
 :::tip
 OpenHands 仅通过 [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) 支持 Windows。
 请确保在您的 WSL 终端内运行所有命令。
-查看 [Windows 用户的 WSL 注意事项](troubleshooting/windows) 以获取一些故障排除指南。
 :::
 
 ## 常见问题
