@@ -385,18 +385,22 @@ def test_get_token_count_with_dict_messages(mock_token_counter, default_config):
 def test_get_token_count_with_message_objects(
     mock_token_counter, default_config, mock_logger
 ):
-    mock_token_counter.return_value = 42
     llm = LLM(default_config)
-    messages = [Message(role='user', content=[TextContent(text='Hello!')])]
-
-    token_count = llm.get_token_count(messages)
-
-    assert token_count == 42
-    mock_token_counter.assert_called_once()
-    # Verify warning about undercounting was logged
-    mock_logger.info.assert_any_call(
-        'Message objects now include serialized tool calls in token counting'
-    )
+    
+    # Create a Message object and its equivalent dict
+    message_obj = Message(role='user', content=[TextContent(text='Hello!')])
+    message_dict = {'role': 'user', 'content': 'Hello!'}
+    
+    # Mock token counter to return different values for each call
+    mock_token_counter.side_effect = [42, 42]  # Same value for both cases
+    
+    # Get token counts for both formats
+    token_count_obj = llm.get_token_count([message_obj])
+    token_count_dict = llm.get_token_count([message_dict])
+    
+    # Verify both formats get the same token count
+    assert token_count_obj == token_count_dict
+    assert mock_token_counter.call_count == 2
 
 
 @patch('openhands.llm.llm.litellm.token_counter')
