@@ -9,7 +9,6 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     codeact_user_response,
-    get_base_eval_config,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -40,24 +39,29 @@ def get_config(
     metadata: EvalMetadata,
     instance_id: str,
 ) -> AppConfig:
-    sandbox_config = SandboxConfig(
-        # use default base_container_image
-        enable_auto_lint=True,
-        use_host_network=False,
-        timeout=300,
-        # Add platform to the sandbox config to solve issue 4401
-        platform='linux/amd64',
-        api_key=os.environ.get('ALLHANDS_API_KEY', None),
-        remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
-        keep_runtime_alive=False,
-        remote_runtime_init_timeout=3600,
-    )
-    config = get_base_eval_config(
-        metadata,
+    config = AppConfig(
+        default_agent=metadata.agent_class,
+        run_as_openhands=False,
         runtime=os.environ.get('RUNTIME', 'eventstream'),
-        sandbox_config=sandbox_config,
+        max_iterations=metadata.max_iterations,
+        sandbox=SandboxConfig(
+            # use default base_container_image
+            enable_auto_lint=True,
+            use_host_network=False,
+            timeout=300,
+            # Add platform to the sandbox config to solve issue 4401
+            platform='linux/amd64',
+            api_key=os.environ.get('ALLHANDS_API_KEY', None),
+            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
+            keep_runtime_alive=False,
+            remote_runtime_init_timeout=3600,
+        ),
+        # do not mount workspace
+        workspace_base=None,
+        workspace_mount_path=None,
+        # debug
+        debug=True,
     )
-    config.debug = True
     config.set_llm_config(
         update_llm_config_for_completions_logging(
             metadata.llm_config, metadata.eval_output_dir, instance_id

@@ -18,6 +18,7 @@ class AgentConfig:
         llm_config: The name of the llm config to use. If specified, this will override global llm config.
         use_microagents: Whether to use microagents at all. Default is True.
         disabled_microagents: A list of microagents to disable. Default is None.
+        extend_max_iteration_after_user_message: Whether to extend max iterations after each user message. Default is False.
     """
 
     codeact_enable_browsing: bool = True
@@ -29,6 +30,7 @@ class AgentConfig:
     llm_config: str | None = None
     use_microagents: bool = True
     disabled_microagents: list[str] | None = None
+    extend_max_iteration_after_user_message: bool = False
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
