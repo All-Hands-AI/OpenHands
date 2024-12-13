@@ -36,7 +36,6 @@ class AppConfig:
         cache_dir: Path to cache directory. Defaults to `/tmp/cache`.
         run_as_openhands: Whether to run as openhands.
         max_iterations: Maximum number of iterations allowed.
-        extend_max_iteration_after_user_message: Whether to extend max_iterations after each user message.
         max_budget_per_task: Maximum budget per task, agent stops if exceeded.
         e2b_api_key: E2B API key.
         disable_color: Whether to disable terminal colors. For terminals that don't support color.
@@ -62,7 +61,6 @@ class AppConfig:
     cache_dir: str = '/tmp/cache'
     run_as_openhands: bool = True
     max_iterations: int = OH_MAX_ITERATIONS
-    extend_max_iteration_after_user_message: bool = False
     max_budget_per_task: float | None = None
     e2b_api_key: str = ''
     modal_api_token_id: str = ''

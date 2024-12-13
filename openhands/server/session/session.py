@@ -54,6 +54,9 @@ class Session:
         )
         # Copying this means that when we update variables they are not applied to the shared global configuration!
         self.config = deepcopy(config)
+        # Set extend_max_iteration_after_user_message to True for all agent configs
+        for agent_config in self.config.agents.values():
+            agent_config.extend_max_iteration_after_user_message = True
         self.loop = asyncio.get_event_loop()
 
     def close(self):
