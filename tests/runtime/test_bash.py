@@ -256,7 +256,6 @@ def test_multi_cmd_run_in_single_line(temp_dir, runtime_cls):
 
 def test_stateful_cmd(temp_dir, runtime_cls):
     runtime = _load_runtime(temp_dir, runtime_cls)
-    sandbox_dir = _get_sandbox_folder(runtime)
     try:
         obs = _run_cmd_action(runtime, 'mkdir -p test')
         assert obs.exit_code == 0, 'The exit code should be 0.'
@@ -266,7 +265,7 @@ def test_stateful_cmd(temp_dir, runtime_cls):
 
         obs = _run_cmd_action(runtime, 'pwd')
         assert obs.exit_code == 0, 'The exit code should be 0.'
-        assert f'{sandbox_dir}/test' in obs.content
+        assert '/workspace/test' in obs.content
     finally:
         _close_test_runtime(runtime)
 
