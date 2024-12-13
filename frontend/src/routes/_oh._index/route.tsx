@@ -1,4 +1,3 @@
-import { useLocation } from "react-router";
 import React from "react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
@@ -17,8 +16,6 @@ import { TaskForm } from "#/components/shared/task-form";
 function Home() {
   const { gitHubToken } = useAuth();
   const dispatch = useDispatch();
-  const location = useLocation();
-
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const { data: config } = useConfig();
@@ -31,10 +28,6 @@ function Home() {
     gitHubClientId: config?.GITHUB_CLIENT_ID || null,
   });
 
-  React.useEffect(() => {
-    // If we have a token but no conversation ID, we need to initialize a new session
-    // This will be handled by the TaskForm
-  }, [location.pathname]);
 
   return (
     <div
