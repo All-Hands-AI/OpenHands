@@ -210,8 +210,10 @@ class ActionExecutor:
                 re.DOTALL,
             )
             if matches:
-                results: list[FileReadObservation | FileEditObservation | str] = []
-                for match in matches:
+                results: list[str] = []
+                if len(matches) == 1:
+                    # Use specific actions/observations types
+                    match = matches[0]
                     try:
                         result_dict = json.loads(match)
                         if result_dict['new_content'] is not None:  # File edit commands
@@ -220,38 +222,38 @@ class ActionExecutor:
                                 new_contents=result_dict['new_content'],
                                 filepath=result_dict['path'],
                             )
-                            results.append(
-                                FileEditObservation(
-                                    content=diff,
-                                    path=result_dict['path'],
-                                    old_content=result_dict['old_content'],
-                                    new_content=result_dict['new_content'],
-                                    prev_exist=result_dict['prev_exist'],
-                                    impl_source=FileEditSource.OH_ACI,
-                                    formatted_output_and_error=result_dict[
-                                        'formatted_output_and_error'
-                                    ],
-                                )
+                            return FileEditObservation(
+                                content=diff,
+                                path=result_dict['path'],
+                                old_content=result_dict['old_content'],
+                                new_content=result_dict['new_content'],
+                                prev_exist=result_dict['prev_exist'],
+                                impl_source=FileEditSource.OH_ACI,
+                                formatted_output_and_error=result_dict[
+                                    'formatted_output_and_error'
+                                ],
                             )
                         else:  # File view commands
-                            results.append(
-                                FileReadObservation(
-                                    content=result_dict['formatted_output_and_error'],
-                                    path=result_dict['path'],
-                                    agent_view=True,
-                                )
+                            return FileReadObservation(
+                                content=result_dict['formatted_output_and_error'],
+                                path=result_dict['path'],
+                                agent_view=True,
                             )
                     except json.JSONDecodeError:
                         # Handle JSON decoding errors if necessary
                         results.append(
                             f"Invalid JSON in 'openhands-aci' output: {match}"
                         )
-
-                for result in results:
-                    if isinstance(result, FileEditObservation) or isinstance(
-                        result, FileReadObservation
-                    ):
-                        return result
+                else:
+                    for match in matches:
+                        try:
+                            result_dict = json.loads(match)
+                            results.append(result_dict['formatted_output_and_error'])
+                        except json.JSONDecodeError:
+                            # Handle JSON decoding errors if necessary
+                            results.append(
+                                f"Invalid JSON in 'openhands-aci' output: {match}"
+                            )
 
                 # Combine the results (e.g., join them) or handle them as required
                 obs.content = '\n'.join(str(result) for result in results)
