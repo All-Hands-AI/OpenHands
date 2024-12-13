@@ -10,10 +10,11 @@ class Cost(BaseModel):
 
 
 class ResponseLatency(BaseModel):
+    """Metric tracking the round-trip time per completion call."""
+
     model: str
     latency: float
     response_id: str
-    timestamp: float = Field(default_factory=time.time)
 
 
 class Metrics:
@@ -56,7 +57,11 @@ class Metrics:
     def add_response_latency(self, value: float, response_id: str) -> None:
         if value < 0:
             raise ValueError('Response latency cannot be negative.')
-        self._response_latencies.append(ResponseLatency(latency=value, model=self.model_name, response_id=response_id))
+        self._response_latencies.append(
+            ResponseLatency(
+                latency=value, model=self.model_name, response_id=response_id
+            )
+        )
 
     def merge(self, other: 'Metrics') -> None:
         self._accumulated_cost += other.accumulated_cost
@@ -68,7 +73,9 @@ class Metrics:
         return {
             'accumulated_cost': self._accumulated_cost,
             'costs': [cost.model_dump() for cost in self._costs],
-            'response_latencies': [latency.model_dump() for latency in self._response_latencies],
+            'response_latencies': [
+                latency.model_dump() for latency in self._response_latencies
+            ],
         }
 
     def reset(self):
