@@ -30,7 +30,6 @@ class AgentConfig:
     llm_config: str | None = None
     use_microagents: bool = True
     disabled_microagents: list[str] | None = None
-    extend_max_iteration_after_user_message: bool = False
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
