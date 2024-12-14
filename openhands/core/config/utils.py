@@ -140,18 +140,28 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     logger.openhands_logger.debug(
                         'Attempt to load default LLM config from config toml'
                     )
-                    # Extract generic LLM fields
-                    generic_llm_fields = {
-                        k: v for k, v in value.items() if not isinstance(v, dict)
-                    }
+                    # Extract generic LLM fields, keeping draft_editor
+                    generic_llm_fields = {}
+                    for k, v in value.items():
+                        if not isinstance(v, dict) or k == 'draft_editor':
+                            generic_llm_fields[k] = v
+                    logger.openhands_logger.debug(
+                        f'Generic LLM fields: {generic_llm_fields}'
+                    )
                     generic_llm_config = LLMConfig.from_dict(generic_llm_fields)
+                    logger.openhands_logger.debug(
+                        f'Generic LLM config dict: {generic_llm_config.__dict__}'
+                    )
                     cfg.set_llm_config(generic_llm_config, 'llm')
 
                     # Process custom named LLM configs
                     for nested_key, nested_value in value.items():
                         if isinstance(nested_value, dict):
                             logger.openhands_logger.debug(
-                                f'Attempt to load group {nested_key} from config toml as LLM config'
+                                f'Processing custom LLM config "{nested_key}":'
+                            )
+                            logger.openhands_logger.debug(
+                                f'  Nested value: {nested_value}'
                             )
                             # Apply generic LLM config with custom LLM overrides, e.g.
                             # [llm]
@@ -160,8 +170,23 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                             # [llm.claude]
                             # model="claude-3-5-sonnet"
                             # results in num_retries APPLIED to claude-3-5-sonnet
+                            custom_fields = {}
+                            for k, v in nested_value.items():
+                                if not isinstance(v, dict) or k == 'draft_editor':
+                                    custom_fields[k] = v
                             merged_llm_dict = generic_llm_config.__dict__.copy()
-                            merged_llm_dict.update(nested_value)
+                            merged_llm_dict.update(custom_fields)
+                            # Handle draft_editor with fallback values:
+                            # - If draft_editor is "null", use None
+                            # - If draft_editor is in custom fields, use that value
+                            # - If draft_editor is not specified, fall back to generic config value
+                            if 'draft_editor' in custom_fields:
+                                if custom_fields['draft_editor'] == 'null':
+                                    merged_llm_dict['draft_editor'] = None
+                            else:
+                                merged_llm_dict['draft_editor'] = (
+                                    generic_llm_config.draft_editor
+                                )
                             custom_llm_config = LLMConfig.from_dict(merged_llm_dict)
                             cfg.set_llm_config(custom_llm_config, nested_key)
                 elif key is not None and key.lower() == 'security':
