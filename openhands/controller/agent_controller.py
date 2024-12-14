@@ -902,20 +902,17 @@ class AgentController:
 
         return kept_events
 
-    def _is_stuck(self, ui_mode: bool | None = None) -> bool:
+    def _is_stuck(self) -> bool:
         """Checks if the agent or its delegate is stuck in a loop.
-
-        Args:
-            ui_mode: Optional override for UI mode. If not provided, uses not self.headless_mode.
 
         Returns:
             bool: True if the agent is stuck, False otherwise.
         """
         # check if delegate stuck
-        if self.delegate and self.delegate._is_stuck(ui_mode):
+        if self.delegate and self.delegate._is_stuck():
             return True
 
-        return self._stuck_detector.is_stuck(ui_mode if ui_mode is not None else not self.headless_mode)
+        return self._stuck_detector.is_stuck(not self.headless_mode)
 
     def __repr__(self):
         return (

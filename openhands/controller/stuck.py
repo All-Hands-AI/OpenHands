@@ -24,9 +24,18 @@ class StuckDetector:
     def __init__(self, state: State):
         self.state = state
 
-    def is_stuck(self, ui_mode: bool = False):
-        if ui_mode:
-            # In UI mode, only look at history after the last user message
+    def is_stuck(self, interactive_mode: bool = False):
+        """Checks if the agent is stuck in a loop.
+
+        Args:
+            interactive_mode: If True (not headless), only consider history after last user message.
+                           If False (headless), consider all history.
+
+        Returns:
+            bool: True if the agent is stuck in a loop, False otherwise.
+        """
+        if interactive_mode:
+            # In interactive mode, only look at history after the last user message
             last_user_msg_idx = -1
             for i, event in enumerate(self.state.history):
                 if isinstance(event, MessageAction) and event.source == EventSource.USER:
