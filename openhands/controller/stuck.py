@@ -39,11 +39,14 @@ class StuckDetector:
             # In interactive mode, only look at history after the last user message
             last_user_msg_idx = -1
             for i, event in enumerate(reversed(self.state.history)):
-                if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                if (
+                    isinstance(event, MessageAction)
+                    and event.source == EventSource.USER
+                ):
                     last_user_msg_idx = len(self.state.history) - i - 1
                     break
 
-            history_to_check = self.state.history[last_user_msg_idx + 1:]
+            history_to_check = self.state.history[last_user_msg_idx + 1 :]
         else:
             # In headless mode, look at all history
             history_to_check = self.state.history
