@@ -25,6 +25,14 @@ class StuckDetector:
         self.state = state
 
     def is_stuck(self):
+        # Check if there's a user message in the last event
+        if len(self.state.history) > 0:
+            last_event = self.state.history[-1]
+            if isinstance(last_event, MessageAction) and last_event.source == EventSource.USER:
+                # Reset almost_stuck state when user sends a message
+                self.state.almost_stuck = 0
+                return False
+
         # filter out MessageAction with source='user' from history
         filtered_history = [
             event
