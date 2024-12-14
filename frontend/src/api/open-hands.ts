@@ -8,32 +8,24 @@ import {
   GetConfigResponse,
   GetVSCodeUrlResponse,
   AuthenticateResponse,
+  RepoInstructions,
+  MicroAgent,
+  CreateInstructionsPRResponse,
+  AddMicroAgentResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 
 class OpenHands {
-  /**
-   * Retrieve the list of models available
-   * @returns List of models available
-   */
   static async getModels(): Promise<string[]> {
     const { data } = await openHands.get<string[]>("/api/options/models");
     return data;
   }
 
-  /**
-   * Retrieve the list of agents available
-   * @returns List of agents available
-   */
   static async getAgents(): Promise<string[]> {
     const { data } = await openHands.get<string[]>("/api/options/agents");
     return data;
   }
 
-  /**
-   * Retrieve the list of security analyzers available
-   * @returns List of security analyzers available
-   */
   static async getSecurityAnalyzers(): Promise<string[]> {
     const { data } = await openHands.get<string[]>(
       "/api/options/security-analyzers",
@@ -46,11 +38,6 @@ class OpenHands {
     return data;
   }
 
-  /**
-   * Retrieve the list of files available in the workspace
-   * @param path Path to list files from
-   * @returns List of files available in the given path. If path is not provided, it lists all the files in the workspace
-   */
   static async getFiles(path?: string): Promise<string[]> {
     const { data } = await openHands.get<string[]>("/api/list-files", {
       params: { path },
@@ -58,11 +45,6 @@ class OpenHands {
     return data;
   }
 
-  /**
-   * Retrieve the content of a file
-   * @param path Full path of the file to retrieve
-   * @returns Content of the file
-   */
   static async getFile(path: string): Promise<string> {
     const { data } = await openHands.get<{ code: string }>("/api/select-file", {
       params: { file: path },
@@ -71,12 +53,6 @@ class OpenHands {
     return data.code;
   }
 
-  /**
-   * Save the content of a file
-   * @param path Full path of the file to save
-   * @param content Content to save in the file
-   * @returns Success message or error message
-   */
   static async saveFile(
     path: string,
     content: string,
@@ -92,11 +68,6 @@ class OpenHands {
     return data;
   }
 
-  /**
-   * Upload a file to the workspace
-   * @param file File to upload
-   * @returns Success message or error message
-   */
   static async uploadFiles(files: File[]): Promise<FileUploadSuccessResponse> {
     const formData = new FormData();
     files.forEach((file) => formData.append("files", file));
@@ -109,11 +80,6 @@ class OpenHands {
     return data;
   }
 
-  /**
-   * Send feedback to the server
-   * @param data Feedback data
-   * @returns The stored feedback data
-   */
   static async submitFeedback(feedback: Feedback): Promise<FeedbackResponse> {
     const { data } = await openHands.post<FeedbackResponse>(
       "/api/submit-feedback",
@@ -122,10 +88,6 @@ class OpenHands {
     return data;
   }
 
-  /**
-   * Authenticate with GitHub token
-   * @returns Response with authentication status and user info if successful
-   */
   static async authenticate(
     appMode: GetConfigResponse["APP_MODE"],
   ): Promise<boolean> {
@@ -136,10 +98,6 @@ class OpenHands {
     return response.status === 200;
   }
 
-  /**
-   * Get the blob of the workspace zip
-   * @returns Blob of the workspace zip
-   */
   static async getWorkspaceZip(): Promise<Blob> {
     const response = await openHands.get("/api/zip-directory", {
       responseType: "blob",
@@ -147,10 +105,6 @@ class OpenHands {
     return response.data;
   }
 
-  /**
-   * @param code Code provided by GitHub
-   * @returns GitHub access token
-   */
   static async getGitHubAccessToken(
     code: string,
   ): Promise<GitHubAccessTokenResponse> {
@@ -163,10 +117,6 @@ class OpenHands {
     return data;
   }
 
-  /**
-   * Get the VSCode URL
-   * @returns VSCode URL
-   */
   static async getVSCodeUrl(): Promise<GetVSCodeUrlResponse> {
     const { data } =
       await openHands.get<GetVSCodeUrlResponse>("/api/vscode-url");
@@ -176,6 +126,62 @@ class OpenHands {
   static async getRuntimeId(): Promise<{ runtime_id: string }> {
     const { data } = await openHands.get<{ runtime_id: string }>(
       "/api/conversation",
+    );
+    return data;
+  }
+
+  static async getRepoInstructions(repoName: string): Promise<RepoInstructions> {
+    const { data } = await openHands.get<RepoInstructions>("/api/instructions", {
+      params: { repo: repoName },
+    });
+    return data;
+  }
+
+  static async createInstructionsPR(
+    repoName: string,
+    instructions: string,
+  ): Promise<CreateInstructionsPRResponse> {
+    const { data } = await openHands.post<CreateInstructionsPRResponse>(
+      "/api/instructions/create",
+      {
+        repo: repoName,
+        instructions,
+      },
+    );
+    return data;
+  }
+
+  static async getMicroAgents(repoName: string): Promise<MicroAgent[]> {
+    const { data } = await openHands.get<MicroAgent[]>("/api/microagents", {
+      params: { repo: repoName },
+    });
+    return data;
+  }
+
+  static async addTemporaryMicroAgent(
+    repoName: string,
+    instructions: string,
+  ): Promise<AddMicroAgentResponse> {
+    const { data } = await openHands.post<AddMicroAgentResponse>(
+      "/api/microagents/temporary",
+      {
+        repo: repoName,
+        instructions,
+      },
+    );
+    return data;
+  }
+
+  static async addPermanentMicroAgent(
+    repoName: string,
+    instructions: string,
+  ): Promise<AddMicroAgentResponse> {
+    const { data } = await openHands.post<AddMicroAgentResponse>(
+      "/api/microagents/permanent",
+      {
+        repo: repoName,
+        instructions,
+      },
     );
     return data;
   }
