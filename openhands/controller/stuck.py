@@ -52,6 +52,7 @@ class StuckDetector:
             event
             for event in history_to_check
             if not (
+                # this is a problem! in headless mode we ignore these, but will this work with UI?
                 (isinstance(event, MessageAction) and event.source == EventSource.USER)
                 # there might be some NullAction or NullObservation in the history at least for now
                 or isinstance(event, (NullAction, NullObservation))
