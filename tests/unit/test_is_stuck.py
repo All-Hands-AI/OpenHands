@@ -137,7 +137,10 @@ class TestStuckDetector:
         
         # In not-headless mode, this should not be stuck because we ignore history before user message
         assert stuck_detector.is_stuck(headless_mode=False) is False
-        
+
+         # But in headless mode, this should be still stuck because user messages do not count
+        assert stuck_detector.is_stuck(headless_mode=True) is True
+
         # Add two more identical actions - still not stuck because we need at least 3
         for i in range(2):
             cmd_action = CmdRunAction(command='ls')
