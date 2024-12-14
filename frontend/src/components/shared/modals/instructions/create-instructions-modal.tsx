@@ -9,7 +9,7 @@ import { Button } from "../../buttons/button";
 interface CreateInstructionsModalProps {
   repoName: string;
   onClose: () => void;
-  onCreateInstructions: () => void;
+  onCreateInstructions: (instructions: string) => void;
 }
 
 export function CreateInstructionsModal({
@@ -19,9 +19,11 @@ export function CreateInstructionsModal({
 }: CreateInstructionsModalProps) {
   const { t } = useTranslation();
 
+  const [instructions, setInstructions] = React.useState("");
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onCreateInstructions();
+    onCreateInstructions(instructions);
     onClose();
   };
 
@@ -35,6 +37,12 @@ export function CreateInstructionsModal({
         <BaseModalDescription>
           {t(I18nKey.CREATE_INSTRUCTIONS_MODAL$DESCRIPTION, { repoName })}
         </BaseModalDescription>
+        <textarea
+          value={instructions}
+          onChange={(e) => setInstructions(e.target.value)}
+          placeholder="Enter repository instructions"
+          className="w-full h-48 p-2 mt-4 mb-4 bg-[#262626] text-white rounded-lg resize-none"
+        />
         <div className="flex justify-end gap-2">
           <Button
             type="button"
