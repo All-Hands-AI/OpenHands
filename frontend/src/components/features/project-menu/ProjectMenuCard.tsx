@@ -99,6 +99,11 @@ Please push the changes to GitHub and open a pull request.
             onConnectToGitHub={() => setConnectToGitHubModalOpen(true)}
             onPushToGitHub={handlePushToGitHub}
             onDownloadWorkspace={handleDownloadWorkspace}
+            onViewInstructions={() => setHasInstructions(true)}
+            onAddInstructions={handleAddInstructions}
+            onViewMicroagents={() => setHasMicroagents(true)}
+            onAddTemporaryMicroagent={handleAddTemporaryMicroagent}
+            onAddPermanentMicroagent={handleAddPermanentMicroagent}
             onClose={() => setContextMenuIsOpen(false)}
           />
         )}
