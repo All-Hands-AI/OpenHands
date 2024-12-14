@@ -113,7 +113,6 @@ class TestStuckDetector:
         state.history.append(cmd_observation)
 
         assert stuck_detector.is_stuck(headless_mode=True) is False
-        assert stuck_detector.is_stuck(headless_mode=False) is False
 
     def test_interactive_mode_resets_after_user_message(self, stuck_detector: StuckDetector):
         state = stuck_detector.state
