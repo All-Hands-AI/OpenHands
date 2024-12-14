@@ -1,5 +1,5 @@
 import { test, expect } from "vitest";
-import { formatMs } from "../../src/utils/formatMs";
+import { formatMs } from "../../src/utils/format-ms";
 
 test("formatMs", () => {
   expect(formatMs(1000)).toBe("00:01");

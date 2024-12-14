@@ -4,14 +4,14 @@ This folder contains evaluation harness we built on top of the original [Gorilla
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## Run Inference on APIBench Instances
 
 Make sure your Docker daemon is running, then run this bash script:
 
 ```bash
-./evaluation/gorilla/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [hubs]
+./evaluation/benchmarks/gorilla/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [hubs]
 ```
 
 where `model_config` is mandatory, while all other arguments are optional.
@@ -35,5 +35,5 @@ Note: in order to use `eval_limit`, you must also set `agent`; in order to use `
 For example,
 
 ```bash
-./evaluation/gorilla/scripts/run_infer.sh llm 0.6.2 CodeActAgent 10 th
+./evaluation/benchmarks/gorilla/scripts/run_infer.sh llm 0.6.2 CodeActAgent 10 th
 ```

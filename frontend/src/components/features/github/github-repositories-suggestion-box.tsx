@@ -1,11 +1,11 @@
 import React from "react";
 import { isGitHubErrorReponse } from "#/api/github";
-import { SuggestionBox } from "#/routes/_oh._index/suggestion-box";
-import { ConnectToGitHubModal } from "./modals/connect-to-github-modal";
-import { ModalBackdrop } from "./modals/modal-backdrop";
-import { GitHubRepositorySelector } from "#/routes/_oh._index/github-repo-selector";
-import ModalButton from "./buttons/ModalButton";
+import { SuggestionBox } from "#/components/features/suggestions/suggestion-box";
 import GitHubLogo from "#/assets/branding/github-logo.svg?react";
+import { GitHubRepositorySelector } from "./github-repo-selector";
+import { ModalButton } from "#/components/shared/buttons/modal-button";
+import { ConnectToGitHubModal } from "#/components/shared/modals/connect-to-github-modal";
+import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 
 interface GitHubRepositoriesSuggestionBoxProps {
   handleSubmit: () => void;

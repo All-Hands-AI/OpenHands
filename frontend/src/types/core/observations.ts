@@ -1,4 +1,4 @@
-import AgentState from "../AgentState";
+import AgentState from "../agent-state";
 import { OpenHandsObservationEvent } from "./base";
 
 export interface AgentStateChangeObservation
@@ -52,6 +52,21 @@ export interface BrowseObservation extends OpenHandsObservationEvent<"browse"> {
   };
 }
 
+export interface WriteObservation extends OpenHandsObservationEvent<"write"> {
+  source: "agent";
+  extras: {
+    path: string;
+    content: string;
+  };
+}
+
+export interface ReadObservation extends OpenHandsObservationEvent<"read"> {
+  source: "agent";
+  extras: {
+    path: string;
+  };
+}
+
 export interface ErrorObservation extends OpenHandsObservationEvent<"error"> {
   source: "user";
   extras: {
@@ -65,4 +80,6 @@ export type OpenHandsObservation =
   | IPythonObservation
   | DelegateObservation
   | BrowseObservation
+  | WriteObservation
+  | ReadObservation
   | ErrorObservation;

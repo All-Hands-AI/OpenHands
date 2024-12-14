@@ -1,12 +1,9 @@
-import { useTranslation } from "react-i18next";
-import { IoIosGlobe } from "react-icons/io";
 import { useSelector } from "react-redux";
-import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
+import { BrowserSnapshot } from "./browser-snapshot";
+import { EmptyBrowserMessage } from "./empty-browser-message";
 
-function BrowserPanel() {
-  const { t } = useTranslation();
-
+export function BrowserPanel() {
   const { url, screenshotSrc } = useSelector(
     (state: RootState) => state.browser,
   );
@@ -23,21 +20,11 @@ function BrowserPanel() {
       </div>
       <div className="overflow-y-auto grow scrollbar-hide rounded-xl">
         {screenshotSrc ? (
-          <img
-            src={imgSrc}
-            style={{ objectFit: "contain", width: "100%", height: "auto" }}
-            className="rounded-xl"
-            alt="Browser Screenshot"
-          />
+          <BrowserSnapshot src={imgSrc} />
         ) : (
-          <div className="flex flex-col items-center h-full justify-center">
-            <IoIosGlobe size={100} />
-            {t(I18nKey.BROWSER$EMPTY_MESSAGE)}
-          </div>
+          <EmptyBrowserMessage />
         )}
       </div>
     </div>
   );
 }
-
-export default BrowserPanel;

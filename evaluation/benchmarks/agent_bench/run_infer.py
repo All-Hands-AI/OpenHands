@@ -7,7 +7,7 @@ from typing import Any
 import pandas as pd
 from datasets import load_dataset
 
-from evaluation.agent_bench.helper import (
+from evaluation.benchmarks.agent_bench.helper import (
     FAKE_RESPONSES,
     INST_SUFFIXES,
     compare_results,
@@ -43,12 +43,16 @@ def get_config(
     config = AppConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='eventstream',
+        runtime=os.environ.get('RUNTIME', 'eventstream'),
         max_iterations=metadata.max_iterations,
         sandbox=SandboxConfig(
-            base_container_image='python:3.12-bookworm',
+            base_container_image='python:3.12-slim',
             enable_auto_lint=True,
             use_host_network=False,
+            api_key=os.environ.get('ALLHANDS_API_KEY', None),
+            remote_runtime_api_url=os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL'),
+            keep_runtime_alive=False,
+            remote_runtime_init_timeout=3600,
         ),
         # do not mount workspace
         workspace_base=None,

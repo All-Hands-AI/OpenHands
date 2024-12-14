@@ -1,6 +1,6 @@
 import React from "react";
-import { AccountSettingsContextMenu } from "./context-menu/account-settings-context-menu";
 import { UserAvatar } from "./user-avatar";
+import { AccountSettingsContextMenu } from "../context-menu/account-settings-context-menu";
 
 interface UserActionsProps {
   onClickAccountSettings: () => void;

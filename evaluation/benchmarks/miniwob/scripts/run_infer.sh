@@ -25,15 +25,15 @@ if [ -z "$AGENT" ]; then
   AGENT="BrowsingAgent"
 fi
 
-get_agent_version
+get_openhands_version
 
 echo "AGENT: $AGENT"
-echo "AGENT_VERSION: $AGENT_VERSION"
+echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 
-EVAL_NOTE="${AGENT_VERSION}_${NOTE}"
+EVAL_NOTE="${OPENHANDS_VERSION}_${NOTE}"
 
-COMMAND="export PYTHONPATH=evaluation/miniwob:\$PYTHONPATH && poetry run python evaluation/miniwob/run_infer.py \
+COMMAND="export PYTHONPATH=evaluation/benchmarks/miniwob:\$PYTHONPATH && poetry run python evaluation/benchmarks/miniwob/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 10 \

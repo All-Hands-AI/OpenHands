@@ -1,13 +1,13 @@
 import { useTranslation } from "react-i18next";
-import ModalBody from "./ModalBody";
-import { CustomInput } from "../form/custom-input";
-import ModalButton from "../buttons/ModalButton";
+import { ModalBody } from "./modal-body";
 import {
   BaseModalDescription,
   BaseModalTitle,
-} from "./confirmation-modals/BaseModal";
+} from "./confirmation-modals/base-modal";
 import { I18nKey } from "#/i18n/declaration";
 import { useAuth } from "#/context/auth-context";
+import { ModalButton } from "../buttons/modal-button";
+import { CustomInput } from "../custom-input";
 
 interface ConnectToGitHubModalProps {
   onClose: () => void;

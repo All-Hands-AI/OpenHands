@@ -4,7 +4,7 @@ from typing import Any
 
 import pandas as pd
 
-from evaluation.toolqa.utils import encode_question, eval_answer, get_data
+from evaluation.benchmarks.toolqa.utils import encode_question, eval_answer, get_data
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,

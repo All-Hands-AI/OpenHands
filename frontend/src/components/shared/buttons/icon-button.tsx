@@ -8,7 +8,7 @@ export interface IconButtonProps {
   testId?: string;
 }
 
-function IconButton({
+export function IconButton({
   icon,
   onClick,
   ariaLabel,
@@ -27,5 +27,3 @@ function IconButton({
     </Button>
   );
 }
-
-export default IconButton;

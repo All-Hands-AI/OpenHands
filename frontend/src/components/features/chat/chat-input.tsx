@@ -1,7 +1,8 @@
 import React from "react";
 import TextareaAutosize from "react-textarea-autosize";
-import ArrowSendIcon from "#/icons/arrow-send.svg?react";
 import { cn } from "#/utils/utils";
+import { SubmitButton } from "#/components/shared/buttons/submit-button";
+import { StopButton } from "#/components/shared/buttons/stop-button";
 
 interface ChatInputProps {
   name?: string;
@@ -82,9 +83,13 @@ export function ChatInput({
   };
 
   const handleSubmitMessage = () => {
-    if (textareaRef.current?.value) {
-      onSubmit(textareaRef.current.value);
-      textareaRef.current.value = "";
+    const message = value || textareaRef.current?.value || "";
+    if (message) {
+      onSubmit(message);
+      onChange?.("");
+      if (textareaRef.current) {
+        textareaRef.current.value = "";
+      }
     }
   };
 
@@ -132,27 +137,10 @@ export function ChatInput({
       {showButton && (
         <div className={buttonClassName}>
           {button === "submit" && (
-            <button
-              aria-label="Send"
-              disabled={disabled}
-              onClick={handleSubmitMessage}
-              type="submit"
-              className="border border-white rounded-lg w-6 h-6 hover:bg-neutral-500 focus:bg-neutral-500 flex items-center justify-center"
-            >
-              <ArrowSendIcon />
-            </button>
+            <SubmitButton isDisabled={disabled} onClick={handleSubmitMessage} />
           )}
           {button === "stop" && (
-            <button
-              data-testid="stop-button"
-              aria-label="Stop"
-              disabled={disabled}
-              onClick={onStop}
-              type="button"
-              className="border border-white rounded-lg w-6 h-6 hover:bg-neutral-500 focus:bg-neutral-500 flex items-center justify-center"
-            >
-              <div className="w-[10px] h-[10px] bg-white" />
-            </button>
+            <StopButton isDisabled={disabled} onClick={onStop} />
           )}
         </div>
       )}

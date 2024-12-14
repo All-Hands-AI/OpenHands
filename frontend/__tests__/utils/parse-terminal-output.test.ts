@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseTerminalOutput } from "../../src/utils/parseTerminalOutput";
+import { parseTerminalOutput } from "../../src/utils/parse-terminal-output";
 
 describe("parseTerminalOutput", () => {
   it("should parse the command, env, and symbol", () => {

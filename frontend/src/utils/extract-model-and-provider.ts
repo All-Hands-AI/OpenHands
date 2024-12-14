@@ -1,4 +1,4 @@
-import { isNumber } from "./isNumber";
+import { isNumber } from "./is-number";
 import {
   VERIFIED_ANTHROPIC_MODELS,
   VERIFIED_OPENAI_MODELS,

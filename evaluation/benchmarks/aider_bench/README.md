@@ -10,13 +10,13 @@ Hugging Face dataset based on the
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local
+Please follow instruction [here](../../README.md#setup) to setup your local
 development environment and LLM.
 
 ## Start the evaluation
 
 ```bash
-./evaluation/aider_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [eval-num-workers] [eval_ids]
+./evaluation/benchmarks/aider_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [eval-num-workers] [eval_ids]
 ```
 
 - `model_config`, e.g. `eval_gpt4_1106_preview`, is the config group name for
@@ -42,7 +42,7 @@ export SKIP_NUM=12 # skip the first 12 instances from the dataset
 Following is the basic command to start the evaluation.
 
 You can update the arguments in the script
-`evaluation/aider_bench/scripts/run_infer.sh`, such as `--max-iterations`,
+`evaluation/benchmarks/aider_bench/scripts/run_infer.sh`, such as `--max-iterations`,
 `--eval-num-workers` and so on:
 
 - `--agent-cls`, the agent to use. For example, `CodeActAgent`.
@@ -53,7 +53,7 @@ You can update the arguments in the script
 - `--eval-ids`: the IDs of the examples to evaluate (comma separated). For example, `"1,3,10"`.
 
 ```bash
-./evaluation/aider_bench/scripts/run_infer.sh eval_gpt35_turbo HEAD CodeActAgent 100 1 "1,3,10"
+./evaluation/benchmarks/aider_bench/scripts/run_infer.sh eval_gpt35_turbo HEAD CodeActAgent 100 1 "1,3,10"
 ```
 
 ### Run Inference on `RemoteRuntime` (experimental)
@@ -61,25 +61,25 @@ You can update the arguments in the script
 This is in limited beta. Contact Xingyao over slack if you want to try this out!
 
 ```bash
-./evaluation/aider_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [eval-num-workers] [eval_ids]
+./evaluation/benchmarks/aider_bench/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [eval-num-workers] [eval_ids]
 
 # Example - This runs evaluation on CodeActAgent for 133 instances on aider_bench test set, with 2 workers running in parallel
 export ALLHANDS_API_KEY="YOUR-API-KEY"
 export RUNTIME=remote
 export SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev"
-./evaluation/aider_bench/scripts/run_infer.sh llm.eval HEAD CodeActAgent 133 2
+./evaluation/benchmarks/aider_bench/scripts/run_infer.sh llm.eval HEAD CodeActAgent 133 2
 ```
 
 ## Summarize Results
 
 ```bash
-poetry run python ./evaluation/aider_bench/scripts/summarize_results.py [path_to_output_jsonl_file]
+poetry run python ./evaluation/benchmarks/aider_bench/scripts/summarize_results.py [path_to_output_jsonl_file]
 ```
 
 Full example:
 
 ```bash
-poetry run python ./evaluation/aider_bench/scripts/summarize_results.py evaluation/evaluation_outputs/outputs/AiderBench/CodeActAgent/claude-3-5-sonnet@20240620_maxiter_30_N_v1.9/output.jsonl
+poetry run python ./evaluation/benchmarks/aider_bench/scripts/summarize_results.py evaluation/evaluation_outputs/outputs/AiderBench/CodeActAgent/claude-3-5-sonnet@20240620_maxiter_30_N_v1.9/output.jsonl
 ```
 
 This will list the instances that passed and the instances that failed. For each

@@ -1,8 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import SecurityInvariant from "./invariant/Invariant";
-import BaseModal from "../base-modal/BaseModal";
+import SecurityInvariant from "./invariant/invariant";
 import { I18nKey } from "#/i18n/declaration";
+import { BaseModal } from "../base-modal/base-modal";
 
 interface SecurityProps {
   isOpen: boolean;

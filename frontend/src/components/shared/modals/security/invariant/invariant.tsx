@@ -1,53 +1,81 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React from "react";
 import { useSelector } from "react-redux";
 import { IoAlertCircle } from "react-icons/io5";
 import { useTranslation } from "react-i18next";
 import { Editor, Monaco } from "@monaco-editor/react";
 import { editor } from "monaco-editor";
 import { Button, Select, SelectItem } from "@nextui-org/react";
+import { useMutation } from "@tanstack/react-query";
 import { RootState } from "#/store";
 import {
   ActionSecurityRisk,
   SecurityAnalyzerLog,
-} from "#/state/securityAnalyzerSlice";
-import { useScrollToBottom } from "#/hooks/useScrollToBottom";
+} from "#/state/security-analyzer-slice";
+import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { I18nKey } from "#/i18n/declaration";
-import { request } from "#/services/api";
 import toast from "#/utils/toast";
 import InvariantLogoIcon from "./assets/logo";
+import { getFormattedDateTime } from "#/utils/gget-formatted-datetime";
+import { downloadJSON } from "#/utils/download-json";
+import InvariantService from "#/api/invariant-service";
+import { useGetPolicy } from "#/hooks/query/use-get-policy";
+import { useGetRiskSeverity } from "#/hooks/query/use-get-risk-severity";
+import { useGetTraces } from "#/hooks/query/use-get-traces";
 
 type SectionType = "logs" | "policy" | "settings";
 
 function SecurityInvariant(): JSX.Element {
   const { t } = useTranslation();
   const { logs } = useSelector((state: RootState) => state.securityAnalyzer);
-  const [activeSection, setActiveSection] = useState("logs");
 
-  const logsRef = useRef<HTMLDivElement>(null);
-  const [policy, setPolicy] = useState<string>("");
-  const [selectedRisk, setSelectedRisk] = useState(ActionSecurityRisk.MEDIUM);
+  const [activeSection, setActiveSection] = React.useState("logs");
+  const [policy, setPolicy] = React.useState("");
+  const [selectedRisk, setSelectedRisk] = React.useState(
+    ActionSecurityRisk.MEDIUM,
+  );
 
-  useEffect(() => {
-    const fetchPolicy = async () => {
-      const data = await request(`/api/security/policy`);
-      setPolicy(data.policy);
-    };
-    const fetchRiskSeverity = async () => {
-      const data = await request(`/api/security/settings`);
+  const logsRef = React.useRef<HTMLDivElement>(null);
+
+  useGetPolicy({ onSuccess: setPolicy });
+
+  useGetRiskSeverity({
+    onSuccess: (riskSeverity) => {
       setSelectedRisk(
-        data.RISK_SEVERITY === 0
+        riskSeverity === 0
           ? ActionSecurityRisk.LOW
-          : data.RISK_SEVERITY || ActionSecurityRisk.MEDIUM,
+          : riskSeverity || ActionSecurityRisk.MEDIUM,
       );
-    };
+    },
+  });
 
-    fetchPolicy();
-    fetchRiskSeverity();
-  }, []);
+  const { refetch: exportTraces } = useGetTraces({
+    onSuccess: (traces) => {
+      toast.info(t(I18nKey.INVARIANT$TRACE_EXPORTED_MESSAGE));
+
+      const filename = `openhands-trace-${getFormattedDateTime()}.json`;
+      downloadJSON(traces, filename);
+    },
+  });
+
+  const { mutate: updatePolicy } = useMutation({
+    mutationFn: (variables: { policy: string }) =>
+      InvariantService.updatePolicy(variables.policy),
+    onSuccess: () => {
+      toast.info(t(I18nKey.INVARIANT$POLICY_UPDATED_MESSAGE));
+    },
+  });
+
+  const { mutate: updateRiskSeverity } = useMutation({
+    mutationFn: (variables: { riskSeverity: number }) =>
+      InvariantService.updateRiskSeverity(variables.riskSeverity),
+    onSuccess: () => {
+      toast.info(t(I18nKey.INVARIANT$SETTINGS_UPDATED_MESSAGE));
+    },
+  });
 
   useScrollToBottom(logsRef);
 
-  const getRiskColor = useCallback((risk: ActionSecurityRisk) => {
+  const getRiskColor = React.useCallback((risk: ActionSecurityRisk) => {
     switch (risk) {
       case ActionSecurityRisk.LOW:
         return "text-green-500";
@@ -61,7 +89,7 @@ function SecurityInvariant(): JSX.Element {
     }
   }, []);
 
-  const getRiskText = useCallback(
+  const getRiskText = React.useCallback(
     (risk: ActionSecurityRisk) => {
       switch (risk) {
         case ActionSecurityRisk.LOW:
@@ -78,7 +106,7 @@ function SecurityInvariant(): JSX.Element {
     [t],
   );
 
-  const handleEditorDidMount = useCallback(
+  const handleEditorDidMount = React.useCallback(
     (_: editor.IStandaloneCodeEditor, monaco: Monaco): void => {
       monaco.editor.defineTheme("my-theme", {
         base: "vs-dark",
@@ -94,76 +122,12 @@ function SecurityInvariant(): JSX.Element {
     [],
   );
 
-  const getFormattedDateTime = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    const hour = String(now.getHours()).padStart(2, "0");
-    const minute = String(now.getMinutes()).padStart(2, "0");
-    const second = String(now.getSeconds()).padStart(2, "0");
-
-    return `${year}-${month}-${day}-${hour}-${minute}-${second}`;
-  };
-
-  // Function to download JSON data as a file
-  const downloadJSON = (data: object, filename: string) => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  async function exportTraces(): Promise<void> {
-    const data = await request(`/api/security/export-trace`);
-    toast.info(t(I18nKey.INVARIANT$TRACE_EXPORTED_MESSAGE));
-
-    const filename = `openhands-trace-${getFormattedDateTime()}.json`;
-    downloadJSON(data, filename);
-  }
-
-  async function updatePolicy(): Promise<void> {
-    await request(`/api/security/policy`, {
-      method: "POST",
-      body: JSON.stringify({ policy }),
-    });
-    toast.info(t(I18nKey.INVARIANT$POLICY_UPDATED_MESSAGE));
-  }
-
-  async function updateSettings(): Promise<void> {
-    const payload = { RISK_SEVERITY: selectedRisk };
-    await request(`/api/security/settings`, {
-      method: "POST",
-      body: JSON.stringify(payload),
-    });
-    toast.info(t(I18nKey.INVARIANT$SETTINGS_UPDATED_MESSAGE));
-  }
-
-  const handleExportTraces = useCallback(() => {
-    exportTraces();
-  }, [exportTraces]);
-
-  const handleUpdatePolicy = useCallback(() => {
-    updatePolicy();
-  }, [updatePolicy]);
-
-  const handleUpdateSettings = useCallback(() => {
-    updateSettings();
-  }, [updateSettings]);
-
   const sections: { [key in SectionType]: JSX.Element } = {
     logs: (
       <>
         <div className="flex justify-between items-center border-b border-neutral-600 mb-4 p-4">
           <h2 className="text-2xl">{t(I18nKey.INVARIANT$LOG_LABEL)}</h2>
-          <Button onClick={handleExportTraces} className="bg-neutral-700">
+          <Button onClick={() => exportTraces()} className="bg-neutral-700">
             {t(I18nKey.INVARIANT$EXPORT_TRACE_LABEL)}
           </Button>
         </div>
@@ -196,7 +160,10 @@ function SecurityInvariant(): JSX.Element {
       <>
         <div className="flex justify-between items-center border-b border-neutral-600 mb-4 p-4">
           <h2 className="text-2xl">{t(I18nKey.INVARIANT$POLICY_LABEL)}</h2>
-          <Button className="bg-neutral-700" onClick={handleUpdatePolicy}>
+          <Button
+            className="bg-neutral-700"
+            onClick={() => updatePolicy({ policy })}
+          >
             {t(I18nKey.INVARIANT$UPDATE_POLICY_LABEL)}
           </Button>
         </div>
@@ -206,7 +173,7 @@ function SecurityInvariant(): JSX.Element {
             height="100%"
             onMount={handleEditorDidMount}
             value={policy}
-            onChange={(value) => setPolicy(`${value}`)}
+            onChange={(value) => setPolicy(value || "")}
           />
         </div>
       </>
@@ -215,7 +182,10 @@ function SecurityInvariant(): JSX.Element {
       <>
         <div className="flex justify-between items-center border-b border-neutral-600 mb-4 p-4">
           <h2 className="text-2xl">{t(I18nKey.INVARIANT$SETTINGS_LABEL)}</h2>
-          <Button className="bg-neutral-700" onClick={handleUpdateSettings}>
+          <Button
+            className="bg-neutral-700"
+            onClick={() => updateRiskSeverity({ riskSeverity: selectedRisk })}
+          >
             {t(I18nKey.INVARIANT$UPDATE_SETTINGS_LABEL)}
           </Button>
         </div>

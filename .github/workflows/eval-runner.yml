@@ -1,4 +1,4 @@
-name: Run Evaluation
+name: Run SWE-Bench Evaluation
 
 on:
   pull_request:
@@ -58,24 +58,6 @@ jobs:
           echo "api_key = \"$DEEPSEEK_API_KEY\"" >> config.toml
           echo "temperature = 0.0" >> config.toml
 
-      - name: Run integration test evaluation
-        env:
-          ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
-          RUNTIME: remote
-          SANDBOX_REMOTE_RUNTIME_API_URL: https://runtime.eval.all-hands.dev
-          EVAL_DOCKER_IMAGE_PREFIX: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images
-
-        run: |
-          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' $N_PROCESSES
-
-          # get evaluation report
-          REPORT_FILE=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/deepseek-chat_maxiter_10_N* -name "report.md" -type f | head -n 1)
-          echo "REPORT_FILE: $REPORT_FILE"
-          echo "INTEGRATION_TEST_REPORT<<EOF" >> $GITHUB_ENV
-          cat $REPORT_FILE >> $GITHUB_ENV
-          echo >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
       - name: Run SWE-Bench evaluation
         env:
           ALLHANDS_API_KEY: ${{ secrets.ALLHANDS_EVAL_RUNTIME_API_KEY }}
@@ -84,12 +66,12 @@ jobs:
           EVAL_DOCKER_IMAGE_PREFIX: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images
 
         run: |
-          poetry run ./evaluation/swe_bench/scripts/run_infer.sh llm.eval HEAD CodeActAgent 300 30 $N_PROCESSES "princeton-nlp/SWE-bench_Lite" test
+          poetry run ./evaluation/benchmarks/swe_bench/scripts/run_infer.sh llm.eval HEAD CodeActAgent 300 30 $N_PROCESSES "princeton-nlp/SWE-bench_Lite" test
           OUTPUT_FOLDER=$(find evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Lite-test/CodeActAgent -name "deepseek-chat_maxiter_50_N_*-no-hint-run_1" -type d | head -n 1)
           echo "OUTPUT_FOLDER for SWE-bench evaluation: $OUTPUT_FOLDER"
-          poetry run ./evaluation/swe_bench/scripts/eval_infer_remote.sh $OUTPUT_FOLDER/output.jsonl $N_PROCESSES "princeton-nlp/SWE-bench_Lite" test
+          poetry run ./evaluation/benchmarks/swe_bench/scripts/eval_infer_remote.sh $OUTPUT_FOLDER/output.jsonl $N_PROCESSES "princeton-nlp/SWE-bench_Lite" test
 
-          poetry run ./evaluation/swe_bench/scripts/eval/summarize_outputs.py $OUTPUT_FOLDER/output.jsonl > summarize_outputs.log 2>&1
+          poetry run ./evaluation/benchmarks/swe_bench/scripts/eval/summarize_outputs.py $OUTPUT_FOLDER/output.jsonl > summarize_outputs.log 2>&1
           echo "SWEBENCH_REPORT<<EOF" >> $GITHUB_ENV
           cat summarize_outputs.log >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
@@ -142,9 +124,6 @@ jobs:
               Commit: ${{ github.sha }}
               **SWE-Bench Evaluation Report**
               ${{ env.SWEBENCH_REPORT }}
-              ---
-              **Integration Tests Evaluation Report**
-              ${{ env.INTEGRATION_TEST_REPORT }}
               ---
               You can download the full evaluation outputs [here](${{ env.ARTIFACT_URL }}).
 

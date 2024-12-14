@@ -8,7 +8,7 @@ interface FormFieldsetProps {
   isClearable?: boolean;
 }
 
-function FormFieldset({
+export function FormFieldset({
   id,
   label,
   items,
@@ -41,5 +41,3 @@ function FormFieldset({
     </fieldset>
   );
 }
-
-export default FormFieldset;

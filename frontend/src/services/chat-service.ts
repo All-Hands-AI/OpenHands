@@ -1,4 +1,4 @@
-import ActionType from "#/types/ActionType";
+import ActionType from "#/types/action-type";
 
 export function createChatMessage(
   message: string,

@@ -14,9 +14,20 @@ const sidebars: SidebarsConfig = {
       id: 'usage/getting-started',
     },
     {
-      type: 'doc',
-      label: 'Prompting Best Practices',
-      id: 'usage/prompting-best-practices',
+      type: 'category',
+      label: 'Prompting',
+      items: [
+        {
+          type: 'doc',
+          label: 'Best Practices',
+          id: 'usage/prompting-best-practices',
+        },
+        {
+          type: 'doc',
+          label: 'Micro-Agents',
+          id: 'usage/micro-agents',
+        },
+      ],
     },
     {
       type: 'category',
@@ -102,8 +113,18 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: 'doc',
+          label: 'Configuration Options',
+          id: 'usage/configuration-options',
+        },
+        {
+          type: 'doc',
           label: 'Custom Sandbox',
           id: 'usage/how-to/custom-sandbox-guide',
+        },
+        {
+          type: 'doc',
+          label: 'Persist Session Data',
+          id: 'usage/how-to/persist-session-data',
         },
       ],
     },

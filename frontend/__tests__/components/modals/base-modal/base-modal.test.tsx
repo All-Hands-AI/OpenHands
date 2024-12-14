@@ -1,7 +1,7 @@
 import { render, screen, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, vi, expect } from "vitest";
-import BaseModal from "#/components/modals/base-modal/BaseModal";
+import { BaseModal } from "#/components/shared/modals/base-modal/base-modal";
 
 describe("BaseModal", () => {
   it("should render if the modal is open", () => {

@@ -1,6 +1,7 @@
-import { LoadingSpinner } from "./modals/LoadingProject";
+import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import DefaultUserAvatar from "#/icons/default-user.svg?react";
 import { cn } from "#/utils/utils";
+import { Avatar } from "./avatar";
 
 interface UserAvatarProps {
   onClick: () => void;
@@ -19,13 +20,7 @@ export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
         isLoading && "bg-transparent",
       )}
     >
-      {!isLoading && avatarUrl && (
-        <img
-          src={avatarUrl}
-          alt="user avatar"
-          className="w-full h-full rounded-full"
-        />
-      )}
+      {!isLoading && avatarUrl && <Avatar src={avatarUrl} />}
       {!isLoading && !avatarUrl && (
         <DefaultUserAvatar
           aria-label="user avatar placeholder"

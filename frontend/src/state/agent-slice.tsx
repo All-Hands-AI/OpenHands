@@ -1,5 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
-import AgentState from "#/types/AgentState";
+import AgentState from "#/types/agent-state";
 
 export const agentSlice = createSlice({
   name: "agent",

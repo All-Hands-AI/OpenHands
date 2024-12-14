@@ -1,11 +1,10 @@
 import React from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import CheckmarkIcon from "#/icons/checkmark.svg?react";
-import CopyIcon from "#/icons/copy.svg?react";
-import { code } from "./markdown/code";
+import { code } from "../markdown/code";
 import { cn } from "#/utils/utils";
-import { ul, ol } from "./markdown/list";
+import { ul, ol } from "../markdown/list";
+import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
 
 interface ChatMessageProps {
   type: "user" | "assistant";
@@ -48,26 +47,15 @@ export function ChatMessage({
         "rounded-xl relative",
         "flex flex-col gap-2",
         type === "user" && " max-w-[305px] p-4 bg-neutral-700 self-end",
-        type === "assistant" && "pb-4 max-w-full bg-tranparent",
+        type === "assistant" && "mt-6 max-w-full bg-tranparent",
       )}
     >
-      <button
-        hidden={!isHovering}
-        disabled={isCopy}
-        data-testid="copy-to-clipboard"
-        type="button"
+      <CopyToClipboardButton
+        isHidden={!isHovering}
+        isDisabled={isCopy}
         onClick={handleCopyToClipboard}
-        className={cn(
-          "bg-neutral-700 border border-neutral-600 rounded p-1",
-          "absolute top-1 right-1",
-        )}
-      >
-        {!isCopy ? (
-          <CopyIcon width={15} height={15} />
-        ) : (
-          <CheckmarkIcon width={15} height={15} />
-        )}
-      </button>
+        mode={isCopy ? "copied" : "copy"}
+      />
       <Markdown
         className="text-sm overflow-auto"
         components={{

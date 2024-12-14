@@ -12,7 +12,7 @@ from swebench.harness.run_evaluation import (
 from swebench.harness.test_spec import SWEbenchInstance, TestSpec, make_test_spec
 from swebench.harness.utils import load_swebench_dataset
 
-from evaluation.swe_bench.run_infer import get_instance_docker_image
+from evaluation.benchmarks.swe_bench.run_infer import get_instance_docker_image
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,

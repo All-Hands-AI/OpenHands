@@ -16,7 +16,7 @@
 2. Execute the bash script to start DiscoveryBench Evaluation
 
 ```
-./evaluation/discoverybench/scripts/run_infer.sh [YOUR MODEL CONFIG]
+./evaluation/benchmarks/discoverybench/scripts/run_infer.sh [YOUR MODEL CONFIG]
 ```
 Replace `[YOUR MODEL CONFIG]` with any model the model that you have set up in `config.toml`
 
@@ -27,7 +27,7 @@ When the `run_infer.sh` script is started, it will automatically pull the latest
 
 
 ```
-./evaluation/discoverybench/scripts/run_infer.sh [MODEL_CONFIG] [GIT_COMMIT] [AGENT] [EVAL_LIMIT] [NUM_WORKERS]
+./evaluation/benchmarks/discoverybench/scripts/run_infer.sh [MODEL_CONFIG] [GIT_COMMIT] [AGENT] [EVAL_LIMIT] [NUM_WORKERS]
 ```
 
 - `MODEL_CONFIG`: Name of the model you want to evaluate with

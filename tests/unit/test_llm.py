@@ -93,13 +93,47 @@ def test_llm_init_with_metrics():
     )  # because we didn't specify model_name in Metrics init
 
 
+@patch('openhands.llm.llm.litellm_completion')
+@patch('time.time')
+def test_response_latency_tracking(mock_time, mock_litellm_completion):
+    # Mock time.time() to return controlled values
+    mock_time.side_effect = [1000.0, 1002.5]  # Start time, end time (2.5s difference)
+
+    # Mock the completion response with a specific ID
+    mock_response = {
+        'id': 'test-response-123',
+        'choices': [{'message': {'content': 'Test response'}}],
+    }
+    mock_litellm_completion.return_value = mock_response
+
+    # Create LLM instance and make a completion call
+    config = LLMConfig(model='gpt-4o', api_key='test_key')
+    llm = LLM(config)
+    response = llm.completion(messages=[{'role': 'user', 'content': 'Hello!'}])
+
+    # Verify the response latency was tracked correctly
+    assert len(llm.metrics.response_latencies) == 1
+    latency_record = llm.metrics.response_latencies[0]
+    assert latency_record.model == 'gpt-4o'
+    assert (
+        latency_record.latency == 2.5
+    )  # Should be the difference between our mocked times
+    assert latency_record.response_id == 'test-response-123'
+
+    # Verify the completion response was returned correctly
+    assert response['id'] == 'test-response-123'
+    assert response['choices'][0]['message']['content'] == 'Test response'
+
+
 def test_llm_reset():
     llm = LLM(LLMConfig(model='gpt-4o-mini', api_key='test_key'))
     initial_metrics = copy.deepcopy(llm.metrics)
     initial_metrics.add_cost(1.0)
+    initial_metrics.add_response_latency(0.5, 'test-id')
     llm.reset()
     assert llm.metrics._accumulated_cost != initial_metrics._accumulated_cost
     assert llm.metrics._costs != initial_metrics._costs
+    assert llm.metrics._response_latencies != initial_metrics._response_latencies
     assert isinstance(llm.metrics, Metrics)
 
 

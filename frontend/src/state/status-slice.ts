@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { StatusMessage } from "#/types/Message";
+import { StatusMessage } from "#/types/message";
 
 const initialStatusMessage: StatusMessage = {
   status_update: true,

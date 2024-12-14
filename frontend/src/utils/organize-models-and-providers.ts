@@ -1,4 +1,4 @@
-import { extractModelAndProvider } from "./extractModelAndProvider";
+import { extractModelAndProvider } from "./extract-model-and-provider";
 
 /**
  * Given a list of models, organize them by provider

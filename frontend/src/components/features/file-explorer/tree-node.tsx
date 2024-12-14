@@ -1,32 +1,12 @@
 import React from "react";
-import FolderIcon from "../FolderIcon";
-import FileIcon from "../FileIcons";
+import { useSelector } from "react-redux";
+
 import { useFiles } from "#/context/files";
 import { cn } from "#/utils/utils";
 import { useListFiles } from "#/hooks/query/use-list-files";
 import { useListFile } from "#/hooks/query/use-list-file";
-
-interface TitleProps {
-  name: string;
-  type: "folder" | "file";
-  isOpen: boolean;
-  onClick: () => void;
-}
-
-function Title({ name, type, isOpen, onClick }: TitleProps) {
-  return (
-    <div
-      onClick={onClick}
-      className="cursor-pointer text-nowrap rounded-[5px] p-1 nowrap flex items-center gap-2 aria-selected:bg-neutral-600 aria-selected:text-white hover:text-white"
-    >
-      <div className="flex-shrink-0">
-        {type === "folder" && <FolderIcon isOpen={isOpen} />}
-        {type === "file" && <FileIcon filename={name} />}
-      </div>
-      <div className="flex-grow">{name}</div>
-    </div>
-  );
-}
+import { Filename } from "./filename";
+import { RootState } from "#/store";
 
 interface TreeNodeProps {
   path: string;
@@ -42,6 +22,7 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
     selectedPath,
   } = useFiles();
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const isDirectory = path.endsWith("/");
 
@@ -60,6 +41,12 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
       }
     }
   }, [fileContent, path]);
+
+  React.useEffect(() => {
+    if (selectedPath === path && !isDirectory) {
+      refetch();
+    }
+  }, [curAgentState, selectedPath, path, isDirectory]);
 
   const fileParts = path.split("/");
   const filename =
@@ -84,13 +71,13 @@ function TreeNode({ path, defaultOpen = false }: TreeNodeProps) {
         type={isDirectory ? "button" : "submit"}
         name="file"
         value={path}
+        onClick={handleClick}
         className="flex items-center justify-between w-full px-1"
       >
-        <Title
+        <Filename
           name={filename}
           type={isDirectory ? "folder" : "file"}
           isOpen={isOpen}
-          onClick={handleClick}
         />
 
         {modifiedFiles[path] && (

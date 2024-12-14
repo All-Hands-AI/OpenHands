@@ -17,7 +17,7 @@ fi
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 echo "RESULT_FILE: $RESULT_FILE"
 
-COMMAND="poetry run python evaluation/ml_bench/run_analysis.py \
+COMMAND="poetry run python evaluation/benchmarks/ml_bench/run_analysis.py \
   --llm-config $MODEL_CONFIG \
   --json_file_path $RESULT_FILE"
 

@@ -5,7 +5,7 @@ import os
 import pandas as pd
 import requests
 
-from evaluation.gorilla.utils import encode_question, get_data_for_hub
+from evaluation.benchmarks.gorilla.utils import encode_question, get_data_for_hub
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,

@@ -1,4 +1,4 @@
-import BaseModal from "./BaseModal";
+import { BaseModal } from "./base-modal";
 
 interface DangerModalProps {
   title: string;

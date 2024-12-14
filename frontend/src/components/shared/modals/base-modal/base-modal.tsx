@@ -6,8 +6,8 @@ import {
   ModalHeader,
 } from "@nextui-org/react";
 import React from "react";
-import { Action, FooterContent } from "./FooterContent";
-import { HeaderContent } from "./HeaderContent";
+import { Action, FooterContent } from "./footer-content";
+import { HeaderContent } from "./header-content";
 
 interface BaseModalProps {
   isOpen: boolean;
@@ -22,7 +22,7 @@ interface BaseModalProps {
   testID?: string;
 }
 
-function BaseModal({
+export function BaseModal({
   isOpen,
   onOpenChange,
   title,
@@ -67,5 +67,3 @@ function BaseModal({
     </Modal>
   );
 }
-
-export default BaseModal;

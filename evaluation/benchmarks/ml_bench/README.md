@@ -12,15 +12,15 @@ For more details on the ML-Bench task and dataset, please refer to the paper: [M
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## Run Inference on ML-Bench
 
 To run the evaluation on the ML-Bench dataset, use the following command:
 
 ```bash
-./evaluation/ml_bench/scripts/run_infer.sh [model_config] [git-version] [split] [agent] [eval_limit]
-# e.g., ./evaluation/ml_bench/scripts/run_infer.sh eval_gpt4_1106_preview 0.6.2 full CodeActAgent 10
+./evaluation/benchmarks/ml_bench/scripts/run_infer.sh [model_config] [git-version] [split] [agent] [eval_limit]
+# e.g., ./evaluation/benchmarks/ml_bench/scripts/run_infer.sh eval_gpt4_1106_preview 0.6.2 full CodeActAgent 10
 ```
 
 You can replace `eval_gpt4_1106_preview` with any model you set up in `config.toml`.
@@ -30,8 +30,8 @@ You can replace `eval_gpt4_1106_preview` with any model you set up in `config.to
 To score the evaluation output, use the following command:
 
 ```bash
-./evaluation/ml_bench/scripts/summarise_results.py [eval_output_dir]
-# e.g., ./evaluation/ml_bench/scripts/summarise_results.py evaluation/evaluation_outputs/outputs/ml_bench/CodeActAgent/gpt-4-1106-preview_maxiter_10_N_v1.5
+./evaluation/benchmarks/ml_bench/scripts/summarise_results.py [eval_output_dir]
+# e.g., ./evaluation/benchmarks/ml_bench/scripts/summarise_results.py evaluation/evaluation_outputs/outputs/ml_bench/CodeActAgent/gpt-4-1106-preview_maxiter_10_N_v1.5
 ```
 
 ## Run Error Analysis on ML-Bench
@@ -39,8 +39,8 @@ To score the evaluation output, use the following command:
 To run error analysis on the ML-Bench dataset, use the following command:
 
 ```bash
-./evaluation/ml_bench/scripts/run_analysis.sh [eval_output_dir] [model_config]
-# e.g., ./evaluation/ml_bench/scripts/run_analysis.sh evaluation/evaluation_outputs/outputs/ml_bench/CodeActAgent/gpt-4-1106-preview_maxiter_10_N_v1.5/output.jsonl eval_gpt4_1106_preview
+./evaluation/benchmarks/ml_bench/scripts/run_analysis.sh [eval_output_dir] [model_config]
+# e.g., ./evaluation/benchmarks/ml_bench/scripts/run_analysis.sh evaluation/evaluation_outputs/outputs/ml_bench/CodeActAgent/gpt-4-1106-preview_maxiter_10_N_v1.5/output.jsonl eval_gpt4_1106_preview
 ```
 
 This command generates a report on the evaluation output and provides insights into the agent's performance.
@@ -105,7 +105,7 @@ The `metrics` field contains the parsed evaluation metrics from the `eval_output
 
 ## Customization
 
-You can customize the evaluation script by modifying the `evaluation/ml_bench/run_infer.py` file. This script handles loading the ML-Bench dataset, running the agent on each task instance, and saving the evaluation outputs.
+You can customize the evaluation script by modifying the `evaluation/benchmarks/ml_bench/run_infer.py` file. This script handles loading the ML-Bench dataset, running the agent on each task instance, and saving the evaluation outputs.
 
 Feel free to adjust the configuration, logging, and output formatting to suit your needs.
 

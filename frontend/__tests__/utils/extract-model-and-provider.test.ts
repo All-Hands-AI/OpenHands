@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractModelAndProvider } from "../../src/utils/extractModelAndProvider";
+import { extractModelAndProvider } from "../../src/utils/extract-model-and-provider";
 
 describe("extractModelAndProvider", () => {
   it("should work", () => {

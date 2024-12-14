@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -e
-EVAL_WORKSPACE="evaluation/swe_bench/eval_workspace"
+EVAL_WORKSPACE="evaluation/benchmarks/swe_bench/eval_workspace"
 mkdir -p $EVAL_WORKSPACE
 
 # 1. Prepare REPO

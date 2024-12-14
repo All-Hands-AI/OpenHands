@@ -1,4 +1,4 @@
-import { ActionMessage, ObservationMessage, StatusMessage } from "./Message";
+import { ActionMessage, ObservationMessage, StatusMessage } from "./message";
 
 type SocketMessage = ActionMessage | ObservationMessage | StatusMessage;
 

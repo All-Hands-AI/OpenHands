@@ -1,8 +1,8 @@
 import React from "react";
-import { UploadImageInput } from "./upload-image-input";
 import { ChatInput } from "./chat-input";
 import { cn } from "#/utils/utils";
-import { ImageCarousel } from "./image-carousel";
+import { ImageCarousel } from "../images/image-carousel";
+import { UploadImageInput } from "../images/upload-image-input";
 
 interface InteractiveChatBoxProps {
   isDisabled?: boolean;
@@ -38,6 +38,9 @@ export function InteractiveChatBox({
   const handleSubmit = (message: string) => {
     onSubmit(message, images);
     setImages([]);
+    if (message) {
+      onChange?.("");
+    }
   };
 
   return (

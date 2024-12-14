@@ -1,10 +1,10 @@
 # ScienceAgentBench Evaluation with OpenHands
 
-This folder contains the evaluation harness for [ScienceAgentBench](https://osu-nlp-group.github.io/ScienceAgentBench/) (paper: https://arxiv.org/abs/2410.05080).
+This folder contains the evaluation harness for [ScienceAgentBench](https://osu-nlp-group.github.io/ScienceAgentBench/) (paper: <https://arxiv.org/abs/2410.05080>).
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## Setup ScienceAgentBench
 
@@ -13,10 +13,10 @@ To prevent benchmark data contamination, we only provide the annotation sheet on
 ## Run Inference on ScienceAgentBench
 
 ```bash
-./evaluation/scienceagentbench/scripts/run_infer.sh [model_config] [git-version] [use_knowledge] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
+./evaluation/benchmarks/scienceagentbench/scripts/run_infer.sh [model_config] [git-version] [use_knowledge] [agent] [eval_limit] [max_iter] [num_workers] [dataset] [dataset_split]
 
 # Example
-./evaluation/scienceagentbench/scripts/run_infer.sh llm.eval_gpt4o 0.9.3
+./evaluation/benchmarks/scienceagentbench/scripts/run_infer.sh llm.eval_gpt4o 0.9.3
 ```
 
 where `model_config` is mandatory, and the rest are optional.
@@ -45,6 +45,7 @@ After the inference is completed, you may use the following command to extract n
 ```bash
 python post_proc.py [log_fname]
 ```
+
 - `log_fname`, e.g. `evaluation/.../output.jsonl`, is the automatically saved trajectory log of an OpenHands agent.
 
 Output will be write to e.g. `evaluation/.../output.converted.jsonl`

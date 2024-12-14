@@ -196,7 +196,11 @@ class Runtime(FileEditRuntimeMixin):
                     e, RuntimeDisconnectedError
                 ):
                     err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
-                self.log('error', f'Unexpected error while running action {e}')
+                logger.error(
+                    'Unexpected error while running action',
+                    exc_info=True,
+                    stack_info=True,
+                )
                 self.log('error', f'Problematic action: {str(event)}')
                 self.send_error_message(err_id, str(e))
                 self.close()
@@ -208,6 +212,47 @@ class Runtime(FileEditRuntimeMixin):
             # this might be unnecessary, since source should be set by the event stream when we're here
             source = event.source if event.source else EventSource.AGENT
             self.event_stream.add_event(observation, source)  # type: ignore[arg-type]
+
+    def clone_repo(self, github_token: str | None, selected_repository: str | None):
+        if not github_token or not selected_repository:
+            return
+        url = f'https://{github_token}@github.com/{selected_repository}.git'
+        dir_name = selected_repository.split('/')[1]
+        action = CmdRunAction(
+            command=f'git clone {url} {dir_name} ; cd {dir_name} ; git checkout -b openhands-workspace'
+        )
+        self.log('info', 'Cloning repo: {selected_repository}')
+        self.run_action(action)
+
+    def get_custom_microagents(self, selected_repository: str | None) -> list[str]:
+        custom_microagents_content = []
+        custom_microagents_dir = Path('.openhands') / 'microagents'
+
+        dir_name = str(custom_microagents_dir)
+        if selected_repository:
+            dir_name = str(
+                Path(selected_repository.split('/')[1]) / custom_microagents_dir
+            )
+        oh_instructions_header = '---\nname: openhands_instructions\nagent: CodeActAgent\ntriggers:\n- ""\n---\n'
+        obs = self.read(FileReadAction(path='.openhands_instructions'))
+        if isinstance(obs, ErrorObservation):
+            self.log('error', 'Failed to read openhands_instructions')
+        else:
+            openhands_instructions = oh_instructions_header + obs.content
+            self.log('info', f'openhands_instructions: {openhands_instructions}')
+            custom_microagents_content.append(openhands_instructions)
+
+        files = self.list_files(dir_name)
+
+        self.log('info', f'Found {len(files)} custom microagents.')
+
+        for fname in files:
+            content = self.read(
+                FileReadAction(path=str(custom_microagents_dir / fname))
+            ).content
+            custom_microagents_content.append(content)
+
+        return custom_microagents_content
 
     def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.

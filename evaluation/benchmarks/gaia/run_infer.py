@@ -7,7 +7,7 @@ import huggingface_hub
 import pandas as pd
 from datasets import load_dataset
 
-from evaluation.gaia.scorer import question_scorer
+from evaluation.benchmarks.gaia.scorer import question_scorer
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,

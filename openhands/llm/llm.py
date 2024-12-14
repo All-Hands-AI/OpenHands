@@ -13,6 +13,7 @@ from openhands.core.message import Message
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
+
 from litellm import Message as LiteLLMMessage
 from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
@@ -65,6 +66,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-3-5-sonnet',
     'claude-3-5-sonnet-20240620',
     'claude-3-5-sonnet-20241022',
+    'claude-3.5-haiku',
     'claude-3-5-haiku-20241022',
     'gpt-4o-mini',
     'gpt-4o',
@@ -197,8 +199,16 @@ class LLM(RetryMixin, DebugMixin):
                     }
 
             try:
+                # Record start time for latency measurement
+                start_time = time.time()
+
                 # we don't support streaming here, thus we get a ModelResponse
                 resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+
+                # Calculate and record latency
+                latency = time.time() - start_time
+                response_id = resp.get('id', 'unknown')
+                self.metrics.add_response_latency(latency, response_id)
 
                 non_fncall_response = copy.deepcopy(resp)
                 if mock_function_calling:
@@ -217,6 +227,20 @@ class LLM(RetryMixin, DebugMixin):
                         )
                     resp.choices[0].message = fn_call_response_message
 
+                message_back: str = resp['choices'][0]['message']['content'] or ''
+                tool_calls = resp['choices'][0]['message'].get('tool_calls', [])
+                if tool_calls:
+                    for tool_call in tool_calls:
+                        fn_name = tool_call.function.name
+                        fn_args = tool_call.function.arguments
+                        message_back += f'\nFunction call: {fn_name}({fn_args})'
+
+                # log the LLM response
+                self.log_response(message_back)
+
+                # post-process the response first to calculate cost
+                cost = self._post_completion(resp)
+
                 # log for evals or other scripts that need the raw completion
                 if self.config.log_completions:
                     assert self.config.log_completions_folder is not None
@@ -226,30 +250,26 @@ class LLM(RetryMixin, DebugMixin):
                         f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
                     )
 
+                    # set up the dict to be logged
                     _d = {
                         'messages': messages,
                         'response': resp,
                         'args': args,
                         'kwargs': {k: v for k, v in kwargs.items() if k != 'messages'},
                         'timestamp': time.time(),
-                        'cost': self._completion_cost(resp),
+                        'cost': cost,
                     }
+
+                    # if non-native function calling, save messages/response separately
                     if mock_function_calling:
-                        # Overwrite response as non-fncall to be consistent with `messages``
+                        # Overwrite response as non-fncall to be consistent with messages
                         _d['response'] = non_fncall_response
+
                         # Save fncall_messages/response separately
                         _d['fncall_messages'] = original_fncall_messages
                         _d['fncall_response'] = resp
                     with open(log_file, 'w') as f:
                         f.write(json.dumps(_d))
-
-                message_back: str = resp['choices'][0]['message']['content']
-
-                # log the LLM response
-                self.log_response(message_back)
-
-                # post-process the response
-                self._post_completion(resp)
 
                 return resp
             except APIError as e:
@@ -406,7 +426,7 @@ class LLM(RetryMixin, DebugMixin):
         )
         return model_name_supported
 
-    def _post_completion(self, response: ModelResponse) -> None:
+    def _post_completion(self, response: ModelResponse) -> float:
         """Post-process the completion response.
 
         Logs the cost and usage stats of the completion call.
@@ -424,6 +444,11 @@ class LLM(RetryMixin, DebugMixin):
                 cur_cost,
                 self.metrics.accumulated_cost,
             )
+
+        # Add latency to stats if available
+        if self.metrics.response_latencies:
+            latest_latency = self.metrics.response_latencies[-1]
+            stats += 'Response Latency: %.3f seconds\n' % latest_latency.latency
 
         usage: Usage | None = response.get('usage')
 
@@ -467,6 +492,8 @@ class LLM(RetryMixin, DebugMixin):
         # log the stats
         if stats:
             logger.debug(stats)
+
+        return cur_cost
 
     def get_token_count(self, messages: list[Message]) -> int:
         """Get the number of tokens in a list of messages.

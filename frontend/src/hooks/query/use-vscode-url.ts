@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+<<<<<<< HEAD
 
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -39,5 +40,17 @@ export const useVSCodeUrl = () => {
       );
     }
   }, [vscodeUrlObject, isFetching]);
+=======
+import OpenHands from "#/api/open-hands";
+
+export const useVSCodeUrl = (config: { enabled: boolean }) => {
+  const data = useQuery({
+    queryKey: ["vscode_url"],
+    queryFn: OpenHands.getVSCodeUrl,
+    enabled: config.enabled,
+    refetchOnMount: false,
+  });
+
+>>>>>>> 47169559606a4d2fe3b97e0685f42bfb8d0a4756
   return data;
 };

@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useNavigation } from "@remix-run/react";
+import { useNavigate, useNavigation } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import posthog from "posthog-js";
 import { RootState } from "#/store";
@@ -8,15 +8,15 @@ import {
   removeFile,
   setInitialQuery,
 } from "#/state/initial-query-slice";
-import { SuggestionBubble } from "#/components/suggestion-bubble";
+import { SuggestionBubble } from "#/components/features/suggestions/suggestion-bubble";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
-import { ChatInput } from "#/components/chat-input";
-import { UploadImageInput } from "#/components/upload-image-input";
-import { ImageCarousel } from "#/components/image-carousel";
+import { ChatInput } from "#/components/features/chat/chat-input";
 import { getRandomKey } from "#/utils/get-random-key";
-import { AttachImageLabel } from "#/components/attach-image-label";
 import { cn } from "#/utils/utils";
+import { AttachImageLabel } from "../features/images/attach-image-label";
+import { ImageCarousel } from "../features/images/image-carousel";
+import { UploadImageInput } from "../features/images/upload-image-input";
 
 export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
   const dispatch = useDispatch();
@@ -65,7 +65,10 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
     if (q) dispatch(setInitialQuery(q));
 
     posthog.capture("initial_query_submitted", {
+      entry_point: "task_form",
       query_character_length: q?.length,
+      has_repository: !!selectedRepository,
+      has_files: files.length > 0,
     });
 
     navigate("/app");

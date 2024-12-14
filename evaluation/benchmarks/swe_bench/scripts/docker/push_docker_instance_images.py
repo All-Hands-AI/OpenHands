@@ -32,7 +32,7 @@ from tqdm import tqdm
 from openhands.core.logger import openhands_logger as logger
 
 logger.setLevel('ERROR')
-from evaluation.swe_bench.run_infer import get_instance_docker_image  # noqa
+from evaluation.benchmarks.swe_bench.run_infer import get_instance_docker_image  # noqa
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', type=str, default='princeton-nlp/SWE-bench_Lite')

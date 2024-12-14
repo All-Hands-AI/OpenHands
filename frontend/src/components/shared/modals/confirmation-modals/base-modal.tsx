@@ -1,6 +1,6 @@
 import React from "react";
-import ModalButton from "#/components/buttons/ModalButton";
-import ModalBody from "../ModalBody";
+import { ModalBody } from "../modal-body";
+import { ModalButton } from "../../buttons/modal-button";
 
 interface ButtonConfig {
   text: string;
@@ -40,7 +40,7 @@ interface BaseModalProps {
   buttons: ButtonConfig[];
 }
 
-function BaseModal({ title, description, buttons }: BaseModalProps) {
+export function BaseModal({ title, description, buttons }: BaseModalProps) {
   return (
     <ModalBody>
       <div className="flex flex-col gap-2 self-start">
@@ -61,5 +61,3 @@ function BaseModal({ title, description, buttons }: BaseModalProps) {
     </ModalBody>
   );
 }
-
-export default BaseModal;

@@ -1,5 +1,5 @@
+import { RefreshButton } from "#/components/shared/buttons/refresh-button";
 import Lightbulb from "#/icons/lightbulb.svg?react";
-import Refresh from "#/icons/refresh.svg?react";
 
 interface SuggestionBubbleProps {
   suggestion: string;
@@ -12,6 +12,11 @@ export function SuggestionBubble({
   onClick,
   onRefresh,
 }: SuggestionBubbleProps) {
+  const handleRefresh = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    onRefresh();
+  };
+
   return (
     <div
       onClick={onClick}
@@ -21,15 +26,7 @@ export function SuggestionBubble({
         <Lightbulb width={18} height={18} />
         <span className="text-sm">{suggestion}</span>
       </div>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onRefresh();
-        }}
-      >
-        <Refresh width={14} height={14} />
-      </button>
+      <RefreshButton onClick={handleRefresh} />
     </div>
   );
 }

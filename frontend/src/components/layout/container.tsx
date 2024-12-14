@@ -1,19 +1,11 @@
-import { NavLink } from "@remix-run/react";
 import clsx from "clsx";
 import React from "react";
-
-function BetaBadge() {
-  return (
-    <span className="text-[11px] leading-5 text-root-primary bg-neutral-400 px-1 rounded-xl">
-      Beta
-    </span>
-  );
-}
+import { NavTab } from "./nav-tab";
 
 interface ContainerProps {
   label?: string;
   labels?: {
-    label: string;
+    label: string | React.ReactNode;
     to: string;
     icon?: React.ReactNode;
     isBeta?: boolean;
@@ -38,23 +30,7 @@ export function Container({
       {labels && (
         <div className="flex text-xs h-[36px]">
           {labels.map(({ label: l, to, icon, isBeta }) => (
-            <NavLink
-              end
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                clsx(
-                  "px-2 border-b border-r border-neutral-600 bg-root-primary flex-1",
-                  "first-of-type:rounded-tl-xl last-of-type:rounded-tr-xl last-of-type:border-r-0",
-                  "flex items-center gap-2",
-                  isActive && "bg-root-secondary",
-                )
-              }
-            >
-              {icon}
-              {l}
-              {isBeta && <BetaBadge />}
-            </NavLink>
+            <NavTab key={to} to={to} label={l} icon={icon} isBeta={isBeta} />
           ))}
         </div>
       )}
@@ -63,7 +39,7 @@ export function Container({
           {label}
         </div>
       )}
-      <div className="overflow-scroll h-full rounded-b-xl">{children}</div>
+      <div className="overflow-hidden h-full rounded-b-xl">{children}</div>
     </div>
   );
 }

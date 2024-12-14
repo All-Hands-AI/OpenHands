@@ -8,7 +8,7 @@ from typing import Any
 import pandas as pd
 from datasets import load_dataset
 
-from evaluation.biocoder.utils import BiocoderData
+from evaluation.benchmarks.biocoder.utils import BiocoderData
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,

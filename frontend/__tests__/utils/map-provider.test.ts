@@ -1,5 +1,5 @@
 import { test, expect } from "vitest";
-import { mapProvider } from "../../src/utils/mapProvider";
+import { mapProvider } from "../../src/utils/map-provider";
 
 test("mapProvider", () => {
   expect(mapProvider("azure")).toBe("Azure");

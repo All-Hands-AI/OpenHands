@@ -1,21 +1,11 @@
-import {
-  Autocomplete,
-  AutocompleteItem,
-  Input,
-  Switch,
-} from "@nextui-org/react";
-import { useLocation } from "@remix-run/react";
+import { useLocation } from "react-router";
 import { useTranslation } from "react-i18next";
-import clsx from "clsx";
 import React from "react";
 import posthog from "posthog-js";
-import { organizeModelsAndProviders } from "#/utils/organizeModelsAndProviders";
-import { ModelSelector } from "#/components/modals/settings/ModelSelector";
+import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { getDefaultSettings, Settings } from "#/services/settings";
-import { ModalBackdrop } from "#/components/modals/modal-backdrop";
-import { extractModelAndProvider } from "#/utils/extractModelAndProvider";
-import ModalButton from "../buttons/ModalButton";
-import { DangerModal } from "../modals/confirmation-modals/danger-modal";
+import { extractModelAndProvider } from "#/utils/extract-model-and-provider";
+import { DangerModal } from "../confirmation-modals/danger-modal";
 import { I18nKey } from "#/i18n/declaration";
 import {
   extractSettings,
@@ -24,6 +14,16 @@ import {
 } from "#/utils/settings-utils";
 import { useEndSession } from "#/hooks/use-end-session";
 import { useUserPrefs } from "#/context/user-prefs-context";
+import { ModalButton } from "../../buttons/modal-button";
+import { AdvancedOptionSwitch } from "../../inputs/advanced-option-switch";
+import { AgentInput } from "../../inputs/agent-input";
+import { APIKeyInput } from "../../inputs/api-key-input";
+import { BaseUrlInput } from "../../inputs/base-url-input";
+import { ConfirmationModeSwitch } from "../../inputs/confirmation-mode-switch";
+import { CustomModelInput } from "../../inputs/custom-model-input";
+import { SecurityAnalyzerInput } from "../../inputs/security-analyzers-input";
+import { ModalBackdrop } from "../modal-backdrop";
+import { ModelSelector } from "./model-selector";
 
 interface SettingsFormProps {
   disabled?: boolean;
@@ -49,29 +49,6 @@ export function SettingsForm({
   const { t } = useTranslation();
 
   const formRef = React.useRef<HTMLFormElement>(null);
-
-  const resetOngoingSession = () => {
-    if (location.pathname.startsWith("/app")) {
-      endSession();
-      onClose();
-    }
-  };
-
-  const handleFormSubmission = (formData: FormData) => {
-    const keys = Array.from(formData.keys());
-    const isUsingAdvancedOptions = keys.includes("use-advanced-options");
-    const newSettings = extractSettings(formData);
-
-    saveSettings(newSettings);
-    saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
-    updateSettingsVersion();
-    resetOngoingSession();
-
-    posthog.capture("settings_saved", {
-      LLM_MODEL: newSettings.LLM_MODEL,
-      LLM_API_KEY: newSettings.LLM_API_KEY ? "SET" : "UNSET",
-    });
-  };
 
   const advancedAlreadyInUse = React.useMemo(() => {
     if (models.length > 0) {
@@ -106,6 +83,29 @@ export function SettingsForm({
   const [confirmEndSessionModalOpen, setConfirmEndSessionModalOpen] =
     React.useState(false);
   const [showWarningModal, setShowWarningModal] = React.useState(false);
+
+  const resetOngoingSession = () => {
+    if (location.pathname.startsWith("/app")) {
+      endSession();
+      onClose();
+    }
+  };
+
+  const handleFormSubmission = (formData: FormData) => {
+    const keys = Array.from(formData.keys());
+    const isUsingAdvancedOptions = keys.includes("use-advanced-options");
+    const newSettings = extractSettings(formData);
+
+    saveSettings(newSettings);
+    saveSettingsView(isUsingAdvancedOptions ? "advanced" : "basic");
+    updateSettingsVersion();
+    resetOngoingSession();
+
+    posthog.capture("settings_saved", {
+      LLM_MODEL: newSettings.LLM_MODEL,
+      LLM_API_KEY: newSettings.LLM_API_KEY ? "SET" : "UNSET",
+    });
+  };
 
   const handleConfirmResetSettings = () => {
     saveSettings(getDefaultSettings());
@@ -164,66 +164,23 @@ export function SettingsForm({
         onSubmit={handleSubmit}
       >
         <div className="flex flex-col gap-2">
-          <Switch
-            isDisabled={disabled}
-            name="use-advanced-options"
-            isSelected={showAdvancedOptions}
-            onValueChange={setShowAdvancedOptions}
-            classNames={{
-              thumb: clsx(
-                "bg-[#5D5D5D] w-3 h-3 z-0",
-                "group-data-[selected=true]:bg-white",
-              ),
-              wrapper: clsx(
-                "border border-[#D4D4D4] bg-white px-[6px] w-12 h-6",
-                "group-data-[selected=true]:border-transparent group-data-[selected=true]:bg-[#4465DB]",
-              ),
-              label: "text-[#A3A3A3] text-xs",
-            }}
-          >
-            {t(I18nKey.SETTINGS_FORM$ADVANCED_OPTIONS_LABEL)}
-          </Switch>
+          <AdvancedOptionSwitch
+            isDisabled={!!disabled}
+            showAdvancedOptions={showAdvancedOptions}
+            setShowAdvancedOptions={setShowAdvancedOptions}
+          />
 
           {showAdvancedOptions && (
             <>
-              <fieldset className="flex flex-col gap-2">
-                <label
-                  htmlFor="custom-model"
-                  className="font-[500] text-[#A3A3A3] text-xs"
-                >
-                  {t(I18nKey.SETTINGS_FORM$CUSTOM_MODEL_LABEL)}
-                </label>
-                <Input
-                  isDisabled={disabled}
-                  id="custom-model"
-                  name="custom-model"
-                  defaultValue={settings.LLM_MODEL}
-                  aria-label="Custom Model"
-                  classNames={{
-                    inputWrapper:
-                      "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
-                  }}
-                />
-              </fieldset>
-              <fieldset className="flex flex-col gap-2">
-                <label
-                  htmlFor="base-url"
-                  className="font-[500] text-[#A3A3A3] text-xs"
-                >
-                  {t(I18nKey.SETTINGS_FORM$BASE_URL_LABEL)}
-                </label>
-                <Input
-                  isDisabled={disabled}
-                  id="base-url"
-                  name="base-url"
-                  defaultValue={settings.LLM_BASE_URL}
-                  aria-label="Base URL"
-                  classNames={{
-                    inputWrapper:
-                      "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
-                  }}
-                />
-              </fieldset>
+              <CustomModelInput
+                isDisabled={!!disabled}
+                defaultValue={settings.LLM_MODEL}
+              />
+
+              <BaseUrlInput
+                isDisabled={!!disabled}
+                defaultValue={settings.LLM_BASE_URL}
+              />
             </>
           )}
 
@@ -235,122 +192,31 @@ export function SettingsForm({
             />
           )}
 
-          <fieldset data-testid="api-key-input" className="flex flex-col gap-2">
-            <label
-              htmlFor="api-key"
-              className="font-[500] text-[#A3A3A3] text-xs"
-            >
-              {t(I18nKey.SETTINGS_FORM$API_KEY_LABEL)}
-            </label>
-            <Input
-              isDisabled={disabled}
-              id="api-key"
-              name="api-key"
-              aria-label="API Key"
-              type="password"
-              defaultValue={settings.LLM_API_KEY}
-              classNames={{
-                inputWrapper: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
-              }}
-            />
-            <p className="text-sm text-[#A3A3A3]">
-              {t(I18nKey.SETTINGS_FORM$DONT_KNOW_API_KEY_LABEL)}{" "}
-              <a
-                href="https://docs.all-hands.dev/modules/usage/llms"
-                rel="noreferrer noopener"
-                target="_blank"
-                className="underline underline-offset-2"
-              >
-                {t(I18nKey.SETTINGS_FORM$CLICK_HERE_FOR_INSTRUCTIONS_LABEL)}
-              </a>
-            </p>
-          </fieldset>
+          <APIKeyInput
+            isDisabled={!!disabled}
+            defaultValue={settings.LLM_API_KEY}
+          />
 
           {showAdvancedOptions && (
-            <fieldset
-              data-testid="agent-selector"
-              className="flex flex-col gap-2"
-            >
-              <label
-                htmlFor="agent"
-                className="font-[500] text-[#A3A3A3] text-xs"
-              >
-                {t(I18nKey.SETTINGS_FORM$AGENT_LABEL)}
-              </label>
-              <Autocomplete
-                isDisabled={disabled}
-                isRequired
-                id="agent"
-                aria-label="Agent"
-                data-testid="agent-input"
-                name="agent"
-                defaultSelectedKey={settings.AGENT}
-                isClearable={false}
-                inputProps={{
-                  classNames: {
-                    inputWrapper:
-                      "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
-                  },
-                }}
-              >
-                {agents.map((agent) => (
-                  <AutocompleteItem key={agent} value={agent}>
-                    {agent}
-                  </AutocompleteItem>
-                ))}
-              </Autocomplete>
-            </fieldset>
+            <AgentInput
+              isDisabled={!!disabled}
+              defaultValue={settings.AGENT}
+              agents={agents}
+            />
           )}
 
           {showAdvancedOptions && (
             <>
-              <fieldset className="flex flex-col gap-2">
-                <label
-                  htmlFor="security-analyzer"
-                  className="font-[500] text-[#A3A3A3] text-xs"
-                >
-                  {t(I18nKey.SETTINGS_FORM$SECURITY_ANALYZER_LABEL)}
-                </label>
-                <Autocomplete
-                  isDisabled={disabled}
-                  isRequired
-                  id="security-analyzer"
-                  name="security-analyzer"
-                  aria-label="Security Analyzer"
-                  defaultSelectedKey={settings.SECURITY_ANALYZER}
-                  inputProps={{
-                    classNames: {
-                      inputWrapper:
-                        "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
-                    },
-                  }}
-                >
-                  {securityAnalyzers.map((analyzer) => (
-                    <AutocompleteItem key={analyzer} value={analyzer}>
-                      {analyzer}
-                    </AutocompleteItem>
-                  ))}
-                </Autocomplete>
-              </fieldset>
+              <SecurityAnalyzerInput
+                isDisabled={!!disabled}
+                defaultValue={settings.SECURITY_ANALYZER}
+                securityAnalyzers={securityAnalyzers}
+              />
 
-              <Switch
-                isDisabled={disabled}
-                name="confirmation-mode"
+              <ConfirmationModeSwitch
+                isDisabled={!!disabled}
                 defaultSelected={settings.CONFIRMATION_MODE}
-                classNames={{
-                  thumb: clsx(
-                    "bg-[#5D5D5D] w-3 h-3",
-                    "group-data-[selected=true]:bg-white",
-                  ),
-                  wrapper: clsx(
-                    "border border-[#D4D4D4] bg-white px-[6px] w-12 h-6",
-                    "group-data-[selected=true]:border-transparent group-data-[selected=true]:bg-[#4465DB]",
-                  ),
-                  label: "text-[#A3A3A3] text-xs",
-                }}
-              >
-                {t(I18nKey.SETTINGS_FORM$ENABLE_CONFIRMATION_MODE_LABEL)}
-              </Switch>
+              />
             </>
           )}
         </div>

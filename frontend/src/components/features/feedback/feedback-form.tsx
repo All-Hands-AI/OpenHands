@@ -1,8 +1,8 @@
 import React from "react";
 import hotToast from "react-hot-toast";
-import ModalButton from "./buttons/ModalButton";
 import { Feedback } from "#/api/open-hands.types";
 import { useSubmitFeedback } from "#/hooks/mutation/use-submit-feedback";
+import { ModalButton } from "#/components/shared/buttons/modal-button";
 
 const FEEDBACK_VERSION = "1.0";
 const VIEWER_PAGE = "https://www.all-hands.dev/share";

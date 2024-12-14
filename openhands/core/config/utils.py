@@ -5,6 +5,7 @@ import platform
 from dataclasses import is_dataclass
 from types import UnionType
 from typing import Any, MutableMapping, get_args, get_origin
+from uuid import uuid4
 
 import toml
 from dotenv import load_dotenv
@@ -18,7 +19,11 @@ from openhands.core.config.config_utils import (
 )
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.sandbox_config import SandboxConfig
+from openhands.core.config.security_config import SecurityConfig
+from openhands.storage import get_file_store
+from openhands.storage.files import FileStore
 
+JWT_SECRET = '.jwt_secret'
 load_dotenv()
 
 
@@ -144,6 +149,12 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                             )
                             llm_config = LLMConfig.from_dict(nested_value)
                             cfg.set_llm_config(llm_config, nested_key)
+                elif key is not None and key.lower() == 'security':
+                    logger.openhands_logger.debug(
+                        'Attempt to load security config from config toml'
+                    )
+                    security_config = SecurityConfig.from_dict(value)
+                    cfg.security = security_config
                 elif not key.startswith('sandbox') and key.lower() != 'core':
                     logger.openhands_logger.warning(
                         f'Unknown key in {toml_file}: "{key}"'
@@ -188,6 +199,16 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         )
 
 
+def get_or_create_jwt_secret(file_store: FileStore) -> str:
+    try:
+        jwt_secret = file_store.read(JWT_SECRET)
+        return jwt_secret
+    except FileNotFoundError:
+        new_secret = uuid4().hex
+        file_store.write(JWT_SECRET, new_secret)
+        return new_secret
+
+
 def finalize_config(cfg: AppConfig):
     """More tweaks to the config after it's been loaded."""
     if cfg.workspace_base is not None:
@@ -215,6 +236,11 @@ def finalize_config(cfg: AppConfig):
     # make sure cache dir exists
     if cfg.cache_dir:
         pathlib.Path(cfg.cache_dir).mkdir(parents=True, exist_ok=True)
+
+    if not cfg.jwt_secret:
+        cfg.jwt_secret = get_or_create_jwt_secret(
+            get_file_store(cfg.file_store, cfg.file_store_path)
+        )
 
 
 # Utility function for command line --group argument
@@ -368,6 +394,11 @@ def get_parser() -> argparse.ArgumentParser:
         default=None,
         type=str,
         help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
+    )
+    parser.add_argument(
+        '--no-auto-continue',
+        action='store_true',
+        help='Disable automatic "continue" responses. Will read from stdin instead.',
     )
     return parser
 

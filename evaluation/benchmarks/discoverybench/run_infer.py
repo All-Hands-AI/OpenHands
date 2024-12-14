@@ -5,10 +5,10 @@ import os
 import git
 import pandas as pd
 
-from evaluation.discoverybench.eval_utils.eval_w_subhypo_gen import (
+from evaluation.benchmarks.discoverybench.eval_utils.eval_w_subhypo_gen import (
     run_eval_gold_vs_gen_NL_hypo_workflow,
 )
-from evaluation.discoverybench.eval_utils.response_parser import (
+from evaluation.benchmarks.discoverybench.eval_utils.response_parser import (
     extract_gen_hypo_from_logs,
 )
 from evaluation.utils.shared import (

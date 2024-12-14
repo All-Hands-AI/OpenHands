@@ -3,30 +3,30 @@ import { useTranslation } from "react-i18next";
 import {
   BaseModalDescription,
   BaseModalTitle,
-} from "./confirmation-modals/BaseModal";
-import ModalBody from "./ModalBody";
-import ModalButton from "../buttons/ModalButton";
-import FormFieldset from "../form/FormFieldset";
-import { CustomInput } from "../form/custom-input";
+} from "../confirmation-modals/base-modal";
+import { ModalBody } from "../modal-body";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
+import { ModalButton } from "../../buttons/modal-button";
+import { CustomInput } from "../../custom-input";
+import { FormFieldset } from "../../form-fieldset";
 
-interface AccountSettingsModalProps {
+interface AccountSettingsFormProps {
   onClose: () => void;
   selectedLanguage: string;
   gitHubError: boolean;
   analyticsConsent: string | null;
 }
 
-function AccountSettingsModal({
+export function AccountSettingsForm({
   onClose,
   selectedLanguage,
   gitHubError,
   analyticsConsent,
-}: AccountSettingsModalProps) {
+}: AccountSettingsFormProps) {
   const { gitHubToken, setGitHubToken, logout } = useAuth();
   const { saveSettings } = useUserPrefs();
   const { t } = useTranslation();
@@ -136,5 +136,3 @@ function AccountSettingsModal({
     </ModalBody>
   );
 }
-
-export default AccountSettingsModal;

@@ -1,11 +1,11 @@
 import { useDispatch } from "react-redux";
-import { useNavigate } from "@remix-run/react";
+import { useNavigate } from "react-router";
 import { useAuth } from "#/context/auth-context";
 import {
   initialState as browserInitialState,
   setScreenshotSrc,
   setUrl,
-} from "#/state/browserSlice";
+} from "#/state/browser-slice";
 import { clearSelectedRepository } from "#/state/initial-query-slice";
 
 export const useEndSession = () => {

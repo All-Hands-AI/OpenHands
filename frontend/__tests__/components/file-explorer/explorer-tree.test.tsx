@@ -1,7 +1,7 @@
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "test-utils";
 import { describe, afterEach, vi, it, expect } from "vitest";
-import ExplorerTree from "#/components/file-explorer/ExplorerTree";
+import { ExplorerTree } from "#/components/features/file-explorer/explorer-tree";
 
 const FILES = ["file-1-1.ts", "folder-1-2"];
 

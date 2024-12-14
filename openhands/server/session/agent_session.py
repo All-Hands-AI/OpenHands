@@ -7,13 +7,14 @@ from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, AppConfig, LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
-from openhands.events.action.agent import ChangeAgentStateAction
+from openhands.events.action import ChangeAgentStateAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime, RuntimeUnavailableError
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
+from openhands.utils.async_utils import call_async_from_sync
 
 
 class AgentSession:
@@ -59,6 +60,8 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
+        github_token: str | None = None,
+        selected_repository: str | None = None,
     ):
         """Starts the Agent session
         Parameters:
@@ -85,6 +88,8 @@ class AgentSession:
             max_budget_per_task,
             agent_to_llm_config,
             agent_configs,
+            github_token,
+            selected_repository,
         )
 
     def _start_thread(self, *args):
@@ -103,13 +108,18 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
+        github_token: str | None = None,
+        selected_repository: str | None = None,
     ):
         self._create_security_analyzer(config.security.security_analyzer)
         await self._create_runtime(
             runtime_name=runtime_name,
             config=config,
             agent=agent,
+            github_token=github_token,
+            selected_repository=selected_repository,
         )
+
         self._create_controller(
             agent,
             config.security.confirmation_mode,
@@ -129,13 +139,8 @@ class AgentSession:
         """Closes the Agent session"""
         if self._closed:
             return
-
         self._closed = True
-
-        def inner_close():
-            asyncio.run(self._close())
-
-        asyncio.get_event_loop().run_in_executor(None, inner_close)
+        call_async_from_sync(self._close)
 
     async def _close(self):
         if self.controller is not None:
@@ -169,6 +174,8 @@ class AgentSession:
         runtime_name: str,
         config: AppConfig,
         agent: Agent,
+        github_token: str | None = None,
+        selected_repository: str | None = None,
     ):
         """Creates a runtime instance
 
@@ -203,6 +210,12 @@ class AgentSession:
             return
 
         if self.runtime is not None:
+            self.runtime.clone_repo(github_token, selected_repository)
+            if agent.prompt_manager:
+                agent.prompt_manager.load_microagent_files(
+                    self.runtime.get_custom_microagents(selected_repository)
+                )
+
             logger.debug(
                 f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
             )

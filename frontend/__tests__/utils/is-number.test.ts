@@ -1,5 +1,5 @@
 import { test, expect } from "vitest";
-import { isNumber } from "../../src/utils/isNumber";
+import { isNumber } from "../../src/utils/is-number";
 
 test("isNumber", () => {
   expect(isNumber(1)).toBe(true);

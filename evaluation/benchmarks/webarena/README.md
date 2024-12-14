@@ -4,7 +4,7 @@ This folder contains evaluation for [WebArena](https://github.com/web-arena-x/we
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## Setup WebArena Environment
 
@@ -24,7 +24,7 @@ Follow the WebArena environment setup guide carefully, and make sure the URL fie
 ```bash
 export WEBARENA_BASE_URL=<YOUR_SERVER_URL_HERE>
 export OPENAI_API_KEY="yourkey" # this key is required for some WebArena validators that utilize LLMs
-bash evaluation/webarena/scripts/run_infer.sh
+bash evaluation/benchmarks/webarena/scripts/run_infer.sh
 ```
 
 Results will be in `evaluation/evaluation_outputs/outputs/webarena/`
@@ -32,7 +32,7 @@ Results will be in `evaluation/evaluation_outputs/outputs/webarena/`
 To calculate the success rate, run:
 
 ```sh
-poetry run python evaluation/webarena/get_success_rate.py evaluation/evaluation_outputs/outputs/webarena/SOME_AGENT/EXP_NAME/output.jsonl
+poetry run python evaluation/benchmarks/webarena/get_success_rate.py evaluation/evaluation_outputs/outputs/webarena/SOME_AGENT/EXP_NAME/output.jsonl
 ```
 
 ## Submit your evaluation results

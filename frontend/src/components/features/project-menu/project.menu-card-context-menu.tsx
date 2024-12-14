@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useClickOutsideElement } from "#/hooks/useClickOutsideElement";
+import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { ContextMenu } from "../context-menu/context-menu";
 import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
 import { I18nKey } from "#/i18n/declaration";

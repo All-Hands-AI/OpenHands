@@ -27,19 +27,19 @@ if [ -z "$DATA_SPLIT" ]; then
   DATA_SPLIT="gpqa_diamond"
 fi
 
-get_agent_version
+get_openhands_version
 
 echo "AGENT: $AGENT"
-echo "AGENT_VERSION: $AGENT_VERSION"
+echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 
-COMMAND="poetry run python evaluation/gpqa/run_infer.py \
+COMMAND="poetry run python evaluation/benchmarks/gpqa/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 10 \
   --eval-num-workers $NUM_WORKERS \
   --data-split $DATA_SPLIT \
-  --eval-note $AGENT_VERSION"
+  --eval-note $OPENHANDS_VERSION"
 
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"

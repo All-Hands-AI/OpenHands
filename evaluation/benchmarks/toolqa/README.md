@@ -4,14 +4,14 @@ This folder contains an evaluation harness we built on top of the original [Tool
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## Run Inference on ToolQA Instances
 
 Make sure your Docker daemon is running, then run this bash script:
 
 ```bash
-bash evaluation/toolqa/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [dataset] [hardness] [wolfram_alpha_appid]
+bash evaluation/benchmarks/toolqa/scripts/run_infer.sh [model_config] [git-version] [agent] [eval_limit] [dataset] [hardness] [wolfram_alpha_appid]
 ```
 
 where `model_config` is mandatory, while all other arguments are optional.
@@ -40,5 +40,5 @@ Let's say you'd like to run 10 instances using `llm` and CodeActAgent on `coffee
 then your command would be:
 
 ```bash
-bash evaluation/toolqa/scripts/run_infer.sh llm CodeActAgent 10 coffee easy
+bash evaluation/benchmarks/toolqa/scripts/run_infer.sh llm CodeActAgent 10 coffee easy
 ```

@@ -21,13 +21,13 @@ if [ -z "$AGENT" ]; then
   AGENT="CodeActAgent"
 fi
 
-get_agent_version
+get_openhands_version
 
 echo "AGENT: $AGENT"
-echo "AGENT_VERSION: $AGENT_VERSION"
+echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 
-EVAL_NOTE=$AGENT_VERSION
+EVAL_NOTE=$OPENHANDS_VERSION
 
 # Default to NOT use unit tests.
 if [ -z "$USE_UNIT_TESTS" ]; then
@@ -39,7 +39,7 @@ if [ "$USE_UNIT_TESTS" = true ]; then
   EVAL_NOTE=$EVAL_NOTE-w-test
 fi
 
-COMMAND="export PYTHONPATH=evaluation/aider_bench:\$PYTHONPATH && poetry run python evaluation/aider_bench/run_infer.py \
+COMMAND="export PYTHONPATH=evaluation/benchmarks/aider_bench:\$PYTHONPATH && poetry run python evaluation/benchmarks/aider_bench/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 30 \

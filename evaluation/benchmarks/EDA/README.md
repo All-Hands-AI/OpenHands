@@ -4,15 +4,13 @@ This folder contains evaluation harness for evaluating agents on the Entity-dedu
 
 ## Setup Environment and LLM Configuration
 
-Please follow instruction [here](../README.md#setup) to setup your local development environment and LLM.
-
+Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
 ## Start the evaluation
 
-
 ```bash
 export OPENAI_API_KEY="sk-XXX"; # This is required for evaluation (to simulate another party of conversation)
-./evaluation/EDA/scripts/run_infer.sh [model_config] [git-version] [agent] [dataset] [eval_limit]
+./evaluation/benchmarks/EDA/scripts/run_infer.sh [model_config] [git-version] [agent] [dataset] [eval_limit]
 ```
 
 where `model_config` is mandatory, while `git-version`, `agent`, `dataset` and `eval_limit` are optional.
@@ -33,11 +31,12 @@ to `CodeActAgent`.
 For example,
 
 ```bash
-./evaluation/EDA/scripts/run_infer.sh eval_gpt4o_2024_05_13 0.6.2 CodeActAgent things
+./evaluation/benchmarks/EDA/scripts/run_infer.sh eval_gpt4o_2024_05_13 0.6.2 CodeActAgent things
 ```
 
 ## Reference
-```
+
+```bibtex
 @inproceedings{zhang2023entity,
   title={Probing the Multi-turn Planning Capabilities of LLMs via 20 Question Games},
   author={Zhang, Yizhe and Lu, Jiarui and Jaitly, Navdeep},

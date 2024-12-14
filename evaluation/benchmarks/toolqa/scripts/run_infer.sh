@@ -38,16 +38,16 @@ if [ -z "$WOLFRAM_APPID" ]; then
   echo "WOLFRAM_APPID not specified"
 fi
 
-get_agent_version
+get_openhands_version
 
 echo "AGENT: $AGENT"
-echo "AGENT_VERSION: $AGENT_VERSION"
+echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 echo "DATASET: $DATASET"
 echo "HARDNESS: $HARDNESS"
 echo "WOLFRAM_APPID: $WOLFRAM_APPID"
 
-COMMAND="poetry run python evaluation/toolqa/run_infer.py \
+COMMAND="poetry run python evaluation/benchmarks/toolqa/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 30 \
@@ -56,7 +56,7 @@ COMMAND="poetry run python evaluation/toolqa/run_infer.py \
   --wolfram_alpha_appid $WOLFRAM_APPID\
   --data-split validation \
   --eval-num-workers $NUM_WORKERS \
-  --eval-note ${AGENT_VERSION}_${LEVELS}"
+  --eval-note ${OPENHANDS_VERSION}_${LEVELS}"
 
 if [ -n "$EVAL_LIMIT" ]; then
   echo "EVAL_LIMIT: $EVAL_LIMIT"

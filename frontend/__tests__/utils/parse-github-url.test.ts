@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { parseGithubUrl } from "../../src/utils/parseGithubUrl";
+import { parseGithubUrl } from "../../src/utils/parse-github-url";
 
 test("parseGithubUrl", () => {
   expect(
