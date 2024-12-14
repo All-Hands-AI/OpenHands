@@ -55,6 +55,8 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
 def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     # Prepare instruction
+
+    # Instruction based on Anthropic's official trajectory
     # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
         instruction = (
             '<uploaded_files>\n'
