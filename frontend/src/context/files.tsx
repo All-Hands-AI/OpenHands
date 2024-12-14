@@ -27,6 +27,7 @@ interface FilesContextType {
   modifiedFiles: Record<string, string>;
   modifyFileContent: (path: string, content: string) => void;
   saveFileContent: (path: string) => string | undefined;
+  discardChanges: (path: string) => void;
 }
 
 const FilesContext = React.createContext<FilesContextType | undefined>(
@@ -62,19 +63,25 @@ function FilesProvider({ children }: FilesProviderProps) {
     [files, modifiedFiles],
   );
 
+  const discardChanges = React.useCallback((path: string) => {
+    setModifiedFiles((prev) => {
+      const newModifiedFiles = { ...prev };
+      delete newModifiedFiles[path];
+      return newModifiedFiles;
+    });
+  }, []);
+
   const saveFileContent = React.useCallback(
     (path: string): string | undefined => {
       const content = modifiedFiles[path];
       if (content) {
         setFiles((prev) => ({ ...prev, [path]: content }));
-        const newModifiedFiles = { ...modifiedFiles };
-        delete newModifiedFiles[path];
-        setModifiedFiles(newModifiedFiles);
+        discardChanges(path);
       }
 
       return content;
     },
-    [files, modifiedFiles, selectedPath],
+    [files, modifiedFiles, selectedPath, discardChanges],
   );
 
   const value = React.useMemo(
@@ -88,6 +95,7 @@ function FilesProvider({ children }: FilesProviderProps) {
       modifiedFiles,
       modifyFileContent,
       saveFileContent,
+      discardChanges,
     }),
     [
       paths,
@@ -99,6 +107,7 @@ function FilesProvider({ children }: FilesProviderProps) {
       modifiedFiles,
       modifyFileContent,
       saveFileContent,
+      discardChanges,
     ],
   );
 

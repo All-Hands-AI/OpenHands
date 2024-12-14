@@ -6,10 +6,20 @@ from openhands.events.observation.observation import Observation
 from openhands.events.serialization.action import action_from_dict
 from openhands.events.serialization.observation import observation_from_dict
 from openhands.events.serialization.utils import remove_fields
+from openhands.events.tool import ToolCallMetadata
 
 # TODO: move `content` into `extras`
-TOP_KEYS = ['id', 'timestamp', 'source', 'message', 'cause', 'action', 'observation']
-UNDERSCORE_KEYS = ['id', 'timestamp', 'source', 'cause']
+TOP_KEYS = [
+    'id',
+    'timestamp',
+    'source',
+    'message',
+    'cause',
+    'action',
+    'observation',
+    'tool_call_metadata',
+]
+UNDERSCORE_KEYS = ['id', 'timestamp', 'source', 'cause', 'tool_call_metadata']
 
 DELETE_FROM_TRAJECTORY_EXTRAS = {
     'screenshot',
@@ -40,6 +50,8 @@ def event_from_dict(data) -> 'Event':
                 value = value.isoformat()
             if key == 'source':
                 value = EventSource(value)
+            if key == 'tool_call_metadata':
+                value = ToolCallMetadata(**value)
             setattr(evt, '_' + key, value)
     return evt
 
@@ -59,6 +71,8 @@ def event_to_dict(event: 'Event') -> dict:
                 d['timestamp'] = d['timestamp'].isoformat()
         if key == 'source' and 'source' in d:
             d['source'] = d['source'].value
+        if key == 'tool_call_metadata' and 'tool_call_metadata' in d:
+            d['tool_call_metadata'] = d['tool_call_metadata'].model_dump()
         props.pop(key, None)
     if 'security_risk' in props and props['security_risk'] is None:
         props.pop('security_risk')
@@ -69,6 +83,9 @@ def event_to_dict(event: 'Event') -> dict:
     elif 'observation' in d:
         d['content'] = props.pop('content', '')
         d['extras'] = props
+        # Include success field for CmdOutputObservation
+        if hasattr(event, 'success'):
+            d['success'] = event.success
     else:
         raise ValueError('Event must be either action or observation')
     return d
@@ -87,13 +104,13 @@ def event_to_memory(event: 'Event', max_message_chars: int) -> dict:
     d.pop('cause', None)
     d.pop('timestamp', None)
     d.pop('message', None)
-    d.pop('images_urls', None)
+    d.pop('image_urls', None)
 
     # runnable actions have some extra fields used in the BE/FE, which should not be sent to the LLM
     if 'args' in d:
         d['args'].pop('blocking', None)
         d['args'].pop('keep_prompt', None)
-        d['args'].pop('is_confirmed', None)
+        d['args'].pop('confirmation_state', None)
 
     if 'extras' in d:
         remove_fields(d['extras'], DELETE_FROM_MEMORY_EXTRAS)

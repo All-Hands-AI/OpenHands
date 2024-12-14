@@ -8,7 +8,7 @@ from openhands.events.observation import IPythonRunCellObservation
 from openhands.runtime.plugins.jupyter.execute_server import JupyterKernel
 from openhands.runtime.plugins.requirement import Plugin, PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
-from openhands.runtime.utils.shutdown_listener import should_continue
+from openhands.utils.shutdown_listener import should_continue
 
 
 @dataclass
@@ -48,7 +48,7 @@ class JupyterPlugin(Plugin):
             time.sleep(1)
             logger.debug('Waiting for jupyter kernel gateway to start...')
 
-        logger.info(
+        logger.debug(
             f'Jupyter kernel gateway started at port {self.kernel_gateway_port}. Output: {output}'
         )
         _obs = await self.run(

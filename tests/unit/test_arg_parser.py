@@ -19,6 +19,7 @@ def test_parser_default_values():
     assert args.eval_note is None
     assert args.llm_config is None
     assert args.name == 'default'
+    assert not args.no_auto_continue
 
 
 def test_parser_custom_values():
@@ -49,6 +50,7 @@ def test_parser_custom_values():
             'gpt4',
             '-n',
             'test_session',
+            '--no-auto-continue',
         ]
     )
 
@@ -64,6 +66,7 @@ def test_parser_custom_values():
     assert args.eval_note == 'Test run'
     assert args.llm_config == 'gpt4'
     assert args.name == 'test_session'
+    assert args.no_auto_continue
 
 
 def test_parser_file_overrides_task():
@@ -124,10 +127,11 @@ def test_help_message(capsys):
         '-l LLM_CONFIG, --llm-config LLM_CONFIG',
         '-n NAME, --name NAME',
         '--config-file CONFIG_FILE',
+        '--no-auto-continue',
     ]
 
     for element in expected_elements:
         assert element in help_output, f"Expected '{element}' to be in the help message"
 
     option_count = help_output.count('  -')
-    assert option_count == 15, f'Expected 15 options, found {option_count}'
+    assert option_count == 16, f'Expected 16 options, found {option_count}'

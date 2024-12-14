@@ -5,6 +5,7 @@ import platform
 from dataclasses import is_dataclass
 from types import UnionType
 from typing import Any, MutableMapping, get_args, get_origin
+from uuid import uuid4
 
 import toml
 from dotenv import load_dotenv
@@ -15,11 +16,14 @@ from openhands.core.config.app_config import AppConfig
 from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
-    UndefinedString,
 )
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.sandbox_config import SandboxConfig
+from openhands.core.config.security_config import SecurityConfig
+from openhands.storage import get_file_store
+from openhands.storage.files import FileStore
 
+JWT_SECRET = '.jwt_secret'
 load_dotenv()
 
 
@@ -140,7 +144,7 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                     generic_llm_fields = {
                         k: v for k, v in value.items() if not isinstance(v, dict)
                     }
-                    generic_llm_config = LLMConfig(**generic_llm_fields)
+                    generic_llm_config = LLMConfig.from_dict(generic_llm_fields)
                     cfg.set_llm_config(generic_llm_config, 'llm')
 
                     # Process custom named LLM configs
@@ -158,8 +162,14 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
                             # results in num_retries APPLIED to claude-3-5-sonnet
                             merged_llm_dict = generic_llm_config.__dict__.copy()
                             merged_llm_dict.update(nested_value)
-                            custom_llm_config = LLMConfig(**merged_llm_dict)
+                            custom_llm_config = LLMConfig.from_dict(merged_llm_dict)
                             cfg.set_llm_config(custom_llm_config, nested_key)
+                elif key is not None and key.lower() == 'security':
+                    logger.openhands_logger.debug(
+                        'Attempt to load security config from config toml'
+                    )
+                    security_config = SecurityConfig.from_dict(value)
+                    cfg.security = security_config
                 elif not key.startswith('sandbox') and key.lower() != 'core':
                     logger.openhands_logger.warning(
                         f'Unknown key in {toml_file}: "{key}"'
@@ -204,20 +214,31 @@ def load_from_toml(cfg: AppConfig, toml_file: str = 'config.toml'):
         )
 
 
+def get_or_create_jwt_secret(file_store: FileStore) -> str:
+    try:
+        jwt_secret = file_store.read(JWT_SECRET)
+        return jwt_secret
+    except FileNotFoundError:
+        new_secret = uuid4().hex
+        file_store.write(JWT_SECRET, new_secret)
+        return new_secret
+
+
 def finalize_config(cfg: AppConfig):
     """More tweaks to the config after it's been loaded."""
-    cfg.workspace_base = os.path.abspath(cfg.workspace_base)
-    # Set workspace_mount_path if not set by the user
-    if cfg.workspace_mount_path is UndefinedString.UNDEFINED:
-        cfg.workspace_mount_path = cfg.workspace_base
+    if cfg.workspace_base is not None:
+        cfg.workspace_base = os.path.abspath(cfg.workspace_base)
+        if cfg.workspace_mount_path is None:
+            cfg.workspace_mount_path = cfg.workspace_base
 
-    if cfg.workspace_mount_rewrite:  # and not config.workspace_mount_path:
-        # TODO why do we need to check if workspace_mount_path is None?
-        base = cfg.workspace_base or os.getcwd()
-        parts = cfg.workspace_mount_rewrite.split(':')
-        cfg.workspace_mount_path = base.replace(parts[0], parts[1])
+        if cfg.workspace_mount_rewrite:
+            base = cfg.workspace_base or os.getcwd()
+            parts = cfg.workspace_mount_rewrite.split(':')
+            cfg.workspace_mount_path = base.replace(parts[0], parts[1])
 
+    # make sure log_completions_folder is an absolute path
     for llm in cfg.llms.values():
+        llm.log_completions_folder = os.path.abspath(llm.log_completions_folder)
         if llm.embedding_base_url is None:
             llm.embedding_base_url = llm.base_url
 
@@ -230,6 +251,11 @@ def finalize_config(cfg: AppConfig):
     # make sure cache dir exists
     if cfg.cache_dir:
         pathlib.Path(cfg.cache_dir).mkdir(parents=True, exist_ok=True)
+
+    if not cfg.jwt_secret:
+        cfg.jwt_secret = get_or_create_jwt_secret(
+            get_file_store(cfg.file_store, cfg.file_store_path)
+        )
 
 
 # Utility function for command line --group argument
@@ -256,6 +282,7 @@ def get_llm_config_arg(
 
     Args:
         llm_config_arg: The group of llm settings to get from the config.toml file.
+        toml_file: Path to the configuration file to read from. Defaults to 'config.toml'.
 
     Returns:
         LLMConfig: The LLMConfig object with the settings from the config file.
@@ -267,7 +294,7 @@ def get_llm_config_arg(
     if llm_config_arg.startswith('llm.'):
         llm_config_arg = llm_config_arg[4:]
 
-    logger.openhands_logger.info(f'Loading llm config from {llm_config_arg}')
+    logger.openhands_logger.debug(f'Loading llm config from {llm_config_arg}')
 
     # load the toml file
     try:
@@ -284,7 +311,7 @@ def get_llm_config_arg(
 
     # update the llm config with the specified section
     if 'llm' in toml_config and llm_config_arg in toml_config['llm']:
-        return LLMConfig(**toml_config['llm'][llm_config_arg])
+        return LLMConfig.from_dict(toml_config['llm'][llm_config_arg])
     logger.openhands_logger.debug(f'Loading from toml failed for {llm_config_arg}')
     return None
 
@@ -383,6 +410,11 @@ def get_parser() -> argparse.ArgumentParser:
         type=str,
         help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
     )
+    parser.add_argument(
+        '--no-auto-continue',
+        action='store_true',
+        help='Disable automatic "continue" responses. Will read from stdin instead.',
+    )
     return parser
 
 
@@ -399,7 +431,7 @@ def load_app_config(
     """Load the configuration from the specified config file and environment variables.
 
     Args:
-        set_logger_levels: Whether to set the global variables for logging levels.
+        set_logging_levels: Whether to set the global variables for logging levels.
         config_file: Path to the config file. Defaults to 'config.toml' in the current directory.
     """
     config = AppConfig()

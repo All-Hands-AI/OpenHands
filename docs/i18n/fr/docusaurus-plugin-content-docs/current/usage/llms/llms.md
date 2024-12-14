@@ -1,44 +1,83 @@
----
-sidebar_position: 2
----
+
 
 # 🤖 Backends LLM
 
-OpenHands peut fonctionner avec n'importe quel backend LLM.
-Pour une liste complète des fournisseurs et des modèles LM disponibles, veuillez consulter la
-[documentation litellm](https://docs.litellm.ai/docs/providers).
+OpenHands peut se connecter à n'importe quel LLM pris en charge par LiteLLM. Cependant, il nécessite un modèle puissant pour fonctionner.
+
+## Recommandations de modèles
+
+Sur la base d'une évaluation récente des modèles de langage pour les tâches de codage (en utilisant le jeu de données SWE-bench), nous pouvons fournir quelques recommandations pour la sélection des modèles. L'analyse complète se trouve dans [cet article de blog](https://www.all-hands.dev/blog/evaluation-of-llms-as-coding-agents-on-swe-bench-at-30x-speed).
+
+Lors du choix d'un modèle, tenez compte à la fois de la qualité des sorties et des coûts associés. Voici un résumé des résultats :
+
+- Claude 3.5 Sonnet est le meilleur d'une bonne marge, atteignant un taux de résolution de 27% avec l'agent par défaut dans OpenHands.
+- GPT-4o est à la traîne, et o1-mini a en fait obtenu des résultats légèrement inférieurs à ceux de GPT-4o. Nous avons analysé les résultats un peu, et brièvement, il semblait que o1 "réfléchissait trop" parfois, effectuant des tâches de configuration d'environnement supplémentaires alors qu'il aurait pu simplement aller de l'avant et terminer la tâche.
+- Enfin, les modèles ouverts les plus puissants étaient Llama 3.1 405 B et deepseek-v2.5, et ils ont obtenu des résultats raisonnables, surpassant même certains des modèles fermés.
+
+Veuillez vous référer à [l'article complet](https://www.all-hands.dev/blog/evaluation-of-llms-as-coding-agents-on-swe-bench-at-30x-speed) pour plus de détails.
+
+Sur la base de ces résultats et des commentaires de la communauté, il a été vérifié que les modèles suivants fonctionnent raisonnablement bien avec OpenHands :
+
+- claude-3-5-sonnet (recommandé)
+- gpt-4 / gpt-4o
+- llama-3.1-405b
+- deepseek-v2.5
 
 :::warning
-OpenHands émettra de nombreuses invitations au LLM que vous configurez. La plupart de ces LLM coûtent de l'argent -- assurez-vous de définir des limites de dépenses et de surveiller l'utilisation.
+OpenHands enverra de nombreuses invites au LLM que vous configurez. La plupart de ces LLM sont payants, alors assurez-vous de définir des limites de dépenses et de surveiller l'utilisation.
 :::
 
-La variable d'environnement `LLM_MODEL` contrôle le modèle utilisé dans les interactions programmatiques.
-Mais en utilisant l'interface utilisateur OpenHands, vous devrez choisir votre modèle dans la fenêtre des paramètres (la roue dentée en bas à gauche).
+Si vous avez réussi à exécuter OpenHands avec des LLM spécifiques qui ne figurent pas dans la liste, veuillez les ajouter à la liste vérifiée. Nous vous encourageons également à ouvrir une PR pour partager votre processus de configuration afin d'aider les autres utilisant le même fournisseur et LLM !
 
-Les variables d'environnement suivantes peuvent être nécessaires pour certains LLM :
+Pour une liste complète des fournisseurs et des modèles disponibles, veuillez consulter la [documentation litellm](https://docs.litellm.ai/docs/providers).
 
-- `LLM_API_KEY`
-- `LLM_BASE_URL`
+:::note
+La plupart des modèles locaux et open source actuels ne sont pas aussi puissants. Lorsque vous utilisez de tels modèles, vous pouvez constater de longs temps d'attente entre les messages, des réponses médiocres ou des erreurs concernant du JSON malformé. OpenHands ne peut être aussi puissant que les modèles qui le pilotent. Cependant, si vous en trouvez qui fonctionnent, veuillez les ajouter à la liste vérifiée ci-dessus.
+:::
+
+## Configuration LLM
+
+Les éléments suivants peuvent être définis dans l'interface utilisateur d'OpenHands via les paramètres :
+
+- `Fournisseur LLM`
+- `Modèle LLM`
+- `Clé API`
+- `URL de base` (via `Paramètres avancés`)
+
+Certains paramètres peuvent être nécessaires pour certains LLM/fournisseurs qui ne peuvent pas être définis via l'interface utilisateur. Au lieu de cela, ceux-ci peuvent être définis via des variables d'environnement passées à la [commande docker run](/modules/usage/installation#start-the-app) en utilisant `-e` :
+
+- `LLM_API_VERSION`
 - `LLM_EMBEDDING_MODEL`
 - `LLM_EMBEDDING_DEPLOYMENT_NAME`
-- `LLM_API_VERSION`
+- `LLM_DROP_PARAMS`
+- `LLM_DISABLE_VISION`
+- `LLM_CACHING_PROMPT`
 
 Nous avons quelques guides pour exécuter OpenHands avec des fournisseurs de modèles spécifiques :
 
-- [ollama](llms/local-llms)
 - [Azure](llms/azure-llms)
+- [Google](llms/google-llms)
+- [Groq](llms/groq)
+- [OpenAI](llms/openai-llms)
+- [OpenRouter](llms/openrouter)
 
-Si vous utilisez un autre fournisseur, nous vous encourageons à ouvrir une PR pour partager votre configuration !
+### Nouvelles tentatives d'API et limites de débit
 
-## Remarque sur les modèles alternatifs
+Les fournisseurs de LLM ont généralement des limites de débit, parfois très basses, et peuvent nécessiter de nouvelles tentatives. OpenHands réessaiera automatiquement les requêtes s'il reçoit une erreur de limite de débit (code d'erreur 429), une erreur de connexion API ou d'autres erreurs transitoires.
 
-Les meilleurs modèles sont GPT-4 et Claude 3. Les modèles locaux et open source actuels ne sont pas aussi puissants.
-Lors de l'utilisation d'un modèle alternatif, vous pouvez constater des temps d'attente prolongés entre les messages,
-des réponses de mauvaise qualité ou des erreurs sur des JSON mal formés. OpenHands
-ne peut être aussi puissant que les modèles qui le pilotent -- heureusement, les membres de notre équipe travaillent activement à la construction de meilleurs modèles open source !
+Vous pouvez personnaliser ces options selon vos besoins pour le fournisseur que vous utilisez. Consultez leur documentation et définissez les variables d'environnement suivantes pour contrôler le nombre de nouvelles tentatives et le temps entre les tentatives :
 
-## Réessais d'API et limites de taux
+- `LLM_NUM_RETRIES` (Par défaut 8)
+- `LLM_RETRY_MIN_WAIT` (Par défaut 15 secondes)
+- `LLM_RETRY_MAX_WAIT` (Par défaut 120 secondes)
+- `LLM_RETRY_MULTIPLIER` (Par défaut 2)
 
-Certains LLM ont des limites de taux et peuvent nécessiter des réessais. OpenHands réessaiera automatiquement les demandes s'il reçoit une erreur 429 ou une erreur de connexion API.
-Vous pouvez définir les variables d'environnement `LLM_NUM_RETRIES`, `LLM_RETRY_MIN_WAIT`, `LLM_RETRY_MAX_WAIT` pour contrôler le nombre de réessais et le temps entre les réessais.
-Par défaut, `LLM_NUM_RETRIES` est 8 et `LLM_RETRY_MIN_WAIT`, `LLM_RETRY_MAX_WAIT` sont respectivement de 15 secondes et 120 secondes.
+Si vous exécutez OpenHands en mode développement, vous pouvez également définir ces options dans le fichier `config.toml` :
+
+```toml
+[llm]
+num_retries = 8
+retry_min_wait = 15
+retry_max_wait = 120
+retry_multiplier = 2
+```

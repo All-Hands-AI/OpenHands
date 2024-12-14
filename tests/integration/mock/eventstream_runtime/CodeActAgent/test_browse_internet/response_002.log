@@ -1,5 +1,0 @@
-To accomplish my goal of getting the content on "http://localhost:8000", I need to use the goto action to navigate to that URL. Here's the action with my chain of thought:
-
-In order to accomplish my goal of accessing the content on "http://localhost:8000", I need to navigate to that URL using the goto action.
-
-```goto("http://localhost:8000"

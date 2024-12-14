@@ -4,6 +4,7 @@ import os
 from joblib import Parallel, delayed
 
 from openhands.core.config import LLMConfig
+from openhands.core.logger import openhands_logger as logger
 
 try:
     # check if those we need later are available using importlib
@@ -101,6 +102,12 @@ class EmbeddingsLoader:
                 azure_endpoint=llm_config.base_url,
                 api_version=llm_config.api_version,
             )
+        elif strategy == 'voyage':
+            from llama_index.embeddings.voyageai import VoyageEmbedding
+
+            return VoyageEmbedding(
+                model_name='voyage-code-3',
+            )
         elif (strategy is not None) and (strategy.lower() == 'none'):
             # TODO: this works but is not elegant enough. The incentive is when
             # an agent using embeddings is not used, there is no reason we need to
@@ -139,7 +146,7 @@ class EmbeddingsLoader:
                 torch.backends.mps.is_built = False
 
             # the device being used
-            print(f'Using device for embeddings: {device}')
+            logger.debug(f'Using device for embeddings: {device}')
 
             return local_embed_model
 

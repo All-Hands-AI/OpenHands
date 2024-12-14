@@ -3,42 +3,52 @@ import os
 import frontmatter
 import pydantic
 
-from openhands.controller.agent import Agent
-from openhands.core.exceptions import MicroAgentValidationError
-from openhands.core.logger import openhands_logger as logger
-
 
 class MicroAgentMetadata(pydantic.BaseModel):
     name: str
     agent: str
-    require_env_var: dict[str, str]
+    triggers: list[str] = []
 
 
 class MicroAgent:
-    def __init__(self, path: str):
-        self.path = path
-        if not os.path.exists(path):
-            raise FileNotFoundError(f'Micro agent file {path} is not found')
-        with open(path, 'r') as file:
-            self._loaded = frontmatter.load(file)
-            self._content = self._loaded.content
-            self._metadata = MicroAgentMetadata(**self._loaded.metadata)
-        self._validate_micro_agent()
+    def __init__(self, path: str | None = None, content: str | None = None):
+        if path and not content:
+            self.path = path
+            if not os.path.exists(path):
+                raise FileNotFoundError(f'Micro agent file {path} is not found')
+            with open(path, 'r') as file:
+                self._loaded = frontmatter.load(file)
+                self._content = self._loaded.content
+                self._metadata = MicroAgentMetadata(**self._loaded.metadata)
+        elif content and not path:
+            self._metadata, self._content = frontmatter.parse(content)
+            self._metadata = MicroAgentMetadata(**self._metadata)
+        else:
+            raise Exception('You must pass either path or file content, but not both.')
+
+    def get_trigger(self, message: str) -> str | None:
+        message = message.lower()
+        for trigger in self.triggers:
+            if trigger.lower() in message:
+                return trigger
+        return None
 
     @property
     def content(self) -> str:
         return self._content
 
-    def _validate_micro_agent(self):
-        logger.info(
-            f'Loading and validating micro agent [{self._metadata.name}] based on [{self._metadata.agent}]'
-        )
-        # Make sure the agent is registered
-        agent_cls = Agent.get_cls(self._metadata.agent)
-        assert agent_cls is not None
-        # Make sure the environment variables are set
-        for env_var, instruction in self._metadata.require_env_var.items():
-            if env_var not in os.environ:
-                raise MicroAgentValidationError(
-                    f'Environment variable [{env_var}] is required by micro agent [{self._metadata.name}] but not set. {instruction}'
-                )
+    @property
+    def metadata(self) -> MicroAgentMetadata:
+        return self._metadata
+
+    @property
+    def name(self) -> str:
+        return self._metadata.name
+
+    @property
+    def triggers(self) -> list[str]:
+        return self._metadata.triggers
+
+    @property
+    def agent(self) -> str:
+        return self._metadata.agent

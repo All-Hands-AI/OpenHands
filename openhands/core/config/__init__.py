@@ -3,7 +3,6 @@ from openhands.core.config.app_config import AppConfig
 from openhands.core.config.config_utils import (
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
-    UndefinedString,
     get_field_info,
 )
 from openhands.core.config.llm_config import LLMConfig
@@ -22,7 +21,6 @@ from openhands.core.config.utils import (
 __all__ = [
     'OH_DEFAULT_AGENT',
     'OH_MAX_ITERATIONS',
-    'UndefinedString',
     'AgentConfig',
     'AppConfig',
     'LLMConfig',

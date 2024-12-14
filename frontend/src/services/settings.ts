@@ -11,7 +11,7 @@ export type Settings = {
 };
 
 export const DEFAULT_SETTINGS: Settings = {
-  LLM_MODEL: "openai/gpt-4o",
+  LLM_MODEL: "anthropic/claude-3-5-sonnet-20241022",
   LLM_BASE_URL: "",
   AGENT: "CodeActAgent",
   LANGUAGE: "en",
@@ -93,7 +93,7 @@ export const saveSettings = (settings: Partial<Settings>) => {
     if (!isValid) return;
     let value = settings[key as keyof Settings];
     if (value === undefined || value === null) value = "";
-    localStorage.setItem(key, value.toString());
+    localStorage.setItem(key, value.toString().trim());
   });
   localStorage.setItem("SETTINGS_VERSION", LATEST_SETTINGS_VERSION.toString());
 };

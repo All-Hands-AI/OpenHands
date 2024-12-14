@@ -535,7 +535,8 @@
     "pt": "Socket não inicializado",
     "ko-KR": "소켓이 초기화되지 않았습니다",
     "ar": "لم يتم تهيئة Socket",
-    "tr": "Soket başlatılmadı"
+    "tr": "Soket başlatılmadı",
+    "no": "Socket ikke initialisert"
   },
   "EXPLORER$UPLOAD_ERROR_MESSAGE": {
     "en": "Error uploading file",
@@ -548,7 +549,8 @@
     "pt": "Erro ao fazer upload do arquivo",
     "ko-KR": "파일 업로드 중 오류 발생",
     "ar": "خطأ في تحميل الملف",
-    "tr": "Dosya yüklenirken hata oluştu"
+    "tr": "Dosya yüklenirken hata oluştu",
+    "no": "Feil ved opplasting av fil"
   },
   "EXPLORER$LABEL_DROP_FILES": {
     "en": "Drop files here",
@@ -557,6 +559,7 @@
     "zh-TW": "將檔案拖曳至此",
     "es": "Suelta los archivos aquí",
     "fr": "Déposez les fichiers ici",
+    "no": "Slipp filer her",
     "it": "Trascina i file qui",
     "pt": "Solte os arquivos aqui",
     "ko-KR": "파일을 여기에 놓으세요",
@@ -574,7 +577,8 @@
     "pt": "Espaço de trabalho",
     "ko-KR": "작업 공간",
     "ar": "مساحة العمل",
-    "tr": "Çalışma alanı"
+    "tr": "Çalışma alanı",
+    "no": "Arbeidsområde"
   },
   "EXPLORER$EMPTY_WORKSPACE_MESSAGE": {
     "en": "No files in workspace",
@@ -587,7 +591,8 @@
     "pt": "Nenhum arquivo no espaço de trabalho",
     "ko-KR": "작업 공간에 파일이 없습니다",
     "ar": "لا توجد ملفات في مساحة العمل",
-    "tr": "Çalışma alanında dosya yok"
+    "tr": "Çalışma alanında dosya yok",
+    "no": "Ingen filer i arbeidsområdet"
   },
   "EXPLORER$LOADING_WORKSPACE_MESSAGE": {
     "en": "Loading workspace...",
@@ -600,7 +605,8 @@
     "pt": "Carregando espaço de trabalho...",
     "ko-KR": "작업 공간 로딩 중...",
     "ar": "جارٍ تحميل مساحة العمل...",
-    "tr": "Çalışma alanı yükleniyor..."
+    "tr": "Çalışma alanı yükleniyor...",
+    "no": "Laster arbeidsområde..."
   },
   "EXPLORER$REFRESH_ERROR_MESSAGE": {
     "en": "Error refreshing workspace",
@@ -613,7 +619,8 @@
     "pt": "Erro ao atualizar o espaço de trabalho",
     "ko-KR": "작업 공간 새로 고침 오류",
     "ar": "خطأ في تحديث مساحة العمل",
-    "tr": "Çalışma alanı yenilenirken hata oluştu"
+    "tr": "Çalışma alanı yenilenirken hata oluştu",
+    "no": "Feil ved oppdatering av arbeidsområde"
   },
   "EXPLORER$UPLOAD_SUCCESS_MESSAGE": {
     "en": "Successfully uploaded {{count}} file(s)",
@@ -626,7 +633,8 @@
     "pt": "{{count}} arquivo(s) carregado(s) com sucesso",
     "ko-KR": "{{count}}개의 파일을 성공적으로 업로드했습니다",
     "ar": "تم تحميل {{count}} ملف (ملفات) بنجاح",
-    "tr": "{{count}} dosya başarıyla yüklendi"
+    "tr": "{{count}} dosya başarıyla yüklendi",
+    "no": "Lastet opp {{count}} fil(er) vellykket"
   },
   "EXPLORER$NO_FILES_UPLOADED_MESSAGE": {
     "en": "No files were uploaded",
@@ -639,7 +647,8 @@
     "pt": "Nenhum arquivo foi carregado",
     "ko-KR": "업로드된 파일이 없습니다",
     "ar": "لم يتم تحميل أي ملفات",
-    "tr": "Hiçbir dosya yüklenmedi"
+    "tr": "Hiçbir dosya yüklenmedi",
+    "no": "Ingen filer ble lastet opp"
   },
   "EXPLORER$UPLOAD_PARTIAL_SUCCESS_MESSAGE": {
     "en": "{{count}} file(s) were skipped during upload",
@@ -652,7 +661,8 @@
     "pt": "{{count}} arquivo(s) foram ignorados durante o upload",
     "ko-KR": "업로드 중 {{count}}개의 파일이 건너뛰어졌습니다",
     "ar": "تم تخطي {{count}} ملف (ملفات) أثناء التحميل",
-    "tr": "Yükleme sırasında {{count}} dosya atlandı"
+    "tr": "Yükleme sırasında {{count}} dosya atlandı",
+    "no": "{{count}} fil(er) ble hoppet over under opplasting"
   },
   "EXPLORER$UPLOAD_UNEXPECTED_RESPONSE_MESSAGE": {
     "en": "Unexpected response structure from server",
@@ -665,7 +675,18 @@
     "pt": "Estrutura de resposta inesperada do servidor",
     "ko-KR": "서버로부터 예상치 못한 응답 구조",
     "ar": "بنية استجابة غير متوقعة من الخادم",
-    "tr": "Sunucudan beklenmeyen yanıt yapısı"
+    "tr": "Sunucudan beklenmeyen yanıt yapısı",
+    "no": "Uventet responsstruktur fra serveren"
+  },
+  "EXPLORER$VSCODE_SWITCHING_MESSAGE": {
+    "en": "Switching to VS Code in 3 seconds...\nImportant: Please inform the agent of any changes you make in VS Code. To avoid conflicts, wait for the assistant to complete its work before making your own changes.",
+    "zh-CN": "3 秒后切换到 VS Code\n重要提示：请告知 OpenHands 您在 VS Code 中进行的任何更改。为了避免冲突，请在 OpenHands 完成工作后再进行自己的更改。",
+    "zh-TW": "3 秒後切換到 VS Code\n重要提示：請告知 OpenHands 您在 VS Code 中進行的任何更改。為避免衝突，請在 OpenHands 完成工作後再進行自己的更改。"
+  },
+  "EXPLORER$VSCODE_SWITCHING_ERROR_MESSAGE": {
+    "en": "Error switching to VS Code: {{error}}",
+    "zh-CN": "切换到 VS Code 时发生错误: {{error}}",
+    "zh-TW": "切換到 VS Code 時發生錯誤: {{error}}"
   },
   "LOAD_SESSION$MODAL_TITLE": {
     "en": "Return to existing session?",
@@ -798,7 +819,326 @@
     "tr": "İptal"
   },
   "FEEDBACK$EMAIL_PLACEHOLDER": {
-    "en": "Enter your email address."
+    "en": "Enter your email address",
+    "es": "Ingresa tu correo electrónico",
+    "zh-CN": "输入您的电子邮件地址",
+    "zh-TW": "輸入您的電子郵件地址",
+    "ko-KR": "이메일 주소를 입력하세요",
+    "no": "Skriv inn din e-postadresse",
+    "ar": "أدخل عنوان بريدك الإلكتروني",
+    "de": "Geben Sie Ihre E-Mail-Adresse ein",
+    "fr": "Entrez votre adresse e-mail",
+    "it": "Inserisci il tuo indirizzo email",
+    "pt": "Digite seu endereço de e-mail",
+    "tr": "E-posta adresinizi girin"
+  },
+  "FEEDBACK$PASSWORD_COPIED_MESSAGE": {
+    "en": "Password copied to clipboard.",
+    "es": "Contraseña copiada al portapapeles.",
+    "zh-CN": "密码已复制到剪贴板。",
+    "zh-TW": "密碼已複製到剪貼板。",
+    "ko-KR": "비밀번호가 클립보드에 복사되었습니다.",
+    "no": "Passord kopiert til utklippstavlen.",
+    "ar": "تم نسخ كلمة المرور إلى الحافظة.",
+    "de": "Passwort in die Zwischenablage kopiert.",
+    "fr": "Mot de passe copié dans le presse-papiers.",
+    "it": "Password copiata negli appunti.",
+    "pt": "Senha copiada para a área de transferência.",
+    "tr": "Parola panoya kopyalandı."
+  },
+  "FEEDBACK$GO_TO_FEEDBACK": {
+    "en": "Go to shared feedback",
+    "es": "Ir a feedback compartido",
+    "zh-CN": "转到共享反馈",
+    "zh-TW": "前往共享反饋",
+    "ko-KR": "공유된 피드백으로 이동",
+    "no": "Gå til delt tilbakemelding",
+    "ar": "الذهاب إلى التعليقات المشتركة",
+    "de": "Zum geteilten Feedback gehen",
+    "fr": "Aller aux commentaires partagés",
+    "it": "Vai al feedback condiviso",
+    "pt": "Ir para feedback compartilhado",
+    "tr": "Paylaşılan geri bildirimlere git"
+  },
+  "FEEDBACK$PASSWORD": {
+    "en": "Password:",
+    "es": "Contraseña:",
+    "zh-CN": "密码：",
+    "zh-TW": "密碼：",
+    "ko-KR": "비밀번호:",
+    "no": "Passord:",
+    "ar": "كلمة المرور:",
+    "de": "Passwort:",
+    "fr": "Mot de passe :",
+    "it": "Password:",
+    "pt": "Senha:",
+    "tr": "Parola:"
+  },
+  "FEEDBACK$INVALID_EMAIL_FORMAT": {
+    "en": "Invalid email format",
+    "es": "Formato de correo inválido",
+    "zh-CN": "无效的电子邮件格式",
+    "zh-TW": "無效的電子郵件格式",
+    "ko-KR": "잘못된 이메일 형식",
+    "no": "Ugyldig e-postformat",
+    "ar": "تنسيق البريد الإلكتروني غير صالح",
+    "de": "Ungültiges E-Mail-Format",
+    "fr": "Format d'e-mail invalide",
+    "it": "Formato email non valido",
+    "pt": "Formato de e-mail inválido",
+    "tr": "Geçersiz e-posta biçimi"
+  },
+  "FEEDBACK$FAILED_TO_SHARE": {
+    "en": "Failed to share, please contact the developers:",
+    "es": "Error al compartir, por favor contacta con los desarrolladores:",
+    "zh-CN": "分享失败，请联系开发人员：",
+    "zh-TW": "分享失敗，請聯繫開發人員：",
+    "ko-KR": "공유 실패, 개발자에게 문의하세요:",
+    "no": "Deling mislyktes, vennligst kontakt utviklerne:",
+    "ar": "فشل المشاركة، يرجى الاتصال بالمطورين:",
+    "de": "Teilen fehlgeschlagen, bitte kontaktieren Sie die Entwickler:",
+    "fr": "Échec du partage, veuillez contacter les développeurs :",
+    "it": "Condivisione fallita, contattare gli sviluppatori:",
+    "pt": "Falha ao compartilhar, entre em contato com os desenvolvedores:",
+    "tr": "Paylaşım başarısız, lütfen geliştiricilerle iletişime geçin:"
+  },
+  "FEEDBACK$COPY_LABEL": {
+    "en": "Copy",
+    "es": "Copiar",
+    "zh-CN": "复制",
+    "zh-TW": "複製",
+    "ko-KR": "복사",
+    "no": "Kopier",
+    "ar": "نسخ",
+    "de": "Kopieren",
+    "fr": "Copier",
+    "it": "Copia",
+    "pt": "Copiar",
+    "tr": "Kopyala"
+  },
+  "FEEDBACK$SHARING_SETTINGS_LABEL": {
+    "en": "Sharing settings",
+    "es": "Configuración de compartir",
+    "zh-CN": "共享设置",
+    "zh-TW": "共享設定",
+    "ko-KR": "공유 설정",
+    "no": "Delingsinnstillinger",
+    "ar": "إعدادات المشاركة",
+    "de": "Freigabeeinstellungen",
+    "fr": "Paramètres de partage",
+    "it": "Impostazioni di condivisione",
+    "pt": "Configurações de compartilhamento",
+    "tr": "Paylaşım ayarları"
+  },
+  "SECURITY$UNKNOWN_ANALYZER_LABEL":{
+    "en": "Unknown security analyzer chosen",
+    "es": "Analizador de seguridad desconocido",
+    "zh-CN": "选择了未知的安全分析器",
+    "zh-TW": "選擇了未知的安全分析器",
+    "ko-KR": "알 수 없는 보안 분석기가 선택되었습니다",
+    "no": "Ukjent sikkerhetsanalysator valgt",
+    "ar": "تم اختيار محلل أمان غير معروف",
+    "de": "Unbekannter Sicherheitsanalysator ausgewählt",
+    "fr": "Analyseur de sécurité inconnu choisi",
+    "it": "Analizzatore di sicurezza sconosciuto selezionato",
+    "pt": "Analisador de segurança desconhecido escolhido",
+    "tr": "Bilinmeyen güvenlik analizörü seçildi"
+  },
+  "INVARIANT$UPDATE_POLICY_LABEL": {
+    "en": "Update Policy",
+    "es": "Actualizar política",
+    "zh-CN": "更新策略",
+    "zh-TW": "更新策略",
+    "ko-KR": "정책 업데이트",
+    "no": "Oppdater policy",
+    "ar": "تحديث السياسة",
+    "de": "Richtlinie aktualisieren",
+    "fr": "Mettre à jour la politique",
+    "it": "Aggiorna policy",
+    "pt": "Atualizar política",
+    "tr": "İlkeyi güncelle"
+  },
+  "INVARIANT$UPDATE_SETTINGS_LABEL": {
+    "en": "Update Settings",
+    "es": "Actualizar configuración",
+    "zh-CN": "更新设置",
+    "zh-TW": "更新設定",
+    "ko-KR": "설정 업데이트",
+    "no": "Oppdater innstillinger",
+    "ar": "تحديث الإعدادات",
+    "de": "Einstellungen aktualisieren",
+    "fr": "Mettre à jour les paramètres",
+    "it": "Aggiorna impostazioni",
+    "pt": "Atualizar configurações",
+    "tr": "Ayarları güncelle"
+  },
+  "INVARIANT$SETTINGS_LABEL": {
+    "en": "Settings",
+    "es": "Configuración",
+    "zh-CN": "设置",
+    "zh-TW": "設定",
+    "ko-KR": "설정",
+    "no": "Innstillinger",
+    "ar": "الإعدادات",
+    "de": "Einstellungen",
+    "fr": "Paramètres",
+    "it": "Impostazioni",
+    "pt": "Configurações",
+    "tr": "Ayarlar"
+  },
+  "INVARIANT$ASK_CONFIRMATION_RISK_SEVERITY_LABEL": {
+    "en": "Ask for user confirmation on risk severity:",
+    "es": "Preguntar por confirmación del usuario sobre severidad del riesgo:",
+    "zh-CN": "询问用户确认风险等级：",
+    "zh-TW": "詢問用戶確認風險等級：",
+    "ko-KR": "위험 심각도에 대한 사용자 확인 요청:",
+    "no": "Be om brukerbekreftelse på risikoalvorlighet:",
+    "ar": "اطلب تأكيد المستخدم على مستوى الخطورة:",
+    "de": "Nach Benutzerbestätigung für Risikoschweregrad fragen:",
+    "fr": "Demander la confirmation de l'utilisateur sur la gravité du risque :",
+    "it": "Chiedi conferma all'utente sulla gravità del rischio:",
+    "pt": "Solicitar confirmação do usuário sobre a gravidade do risco:",
+    "tr": "Risk şiddeti için kullanıcı onayı iste:"
+  },
+  "INVARIANT$DONT_ASK_FOR_CONFIRMATION_LABEL": {
+    "en": "Don't ask for confirmation",
+    "es": "No solicitar confirmación",
+    "zh-CN": "不要请求确认",
+    "zh-TW": "不要請求確認",
+    "ko-KR": "확인 요청하지 않음",
+    "no": "Ikke spør om bekreftelse",
+    "ar": "لا تطلب التأكيد",
+    "de": "Nicht nach Bestätigung fragen",
+    "fr": "Ne pas demander de confirmation",
+    "it": "Non chiedere conferma",
+    "pt": "Não solicitar confirmação",
+    "tr": "Onay isteme"
+  },
+  "INVARIANT$INVARIANT_ANALYZER_LABEL": {
+    "en": "Invariant Analyzer",
+    "es": "Analizador de invariantes",
+    "zh-CN": "不变量分析器",
+    "zh-TW": "不變量分析器",
+    "ko-KR": "불변성 분석기",
+    "no": "Invariant-analysator",
+    "ar": "محلل الثوابت",
+    "de": "Invarianten-Analysator",
+    "fr": "Analyseur d'invariants",
+    "it": "Analizzatore di invarianti",
+    "pt": "Analisador de invariantes",
+    "tr": "Değişmez Analizörü"
+  },
+  "INVARIANT$INVARIANT_ANALYZER_MESSAGE": {
+    "en": "Invariant Analyzer continuously monitors your OpenHands agent for security issues.",
+    "es": "Analizador de invariantes continuamente monitorea tu agente de OpenHands por problemas de seguridad.",
+    "zh-CN": "不变量分析器持续监控您的 OpenHands 代理的安全问题。",
+    "zh-TW": "不變量分析器持續監控您的 OpenHands 代理的安全問題。",
+    "ko-KR": "불변성 분석기는 OpenHands 에이전트의 보안 문제를 지속적으로 모니터링합니다.",
+    "no": "Invariant-analysatoren overvåker kontinuerlig OpenHands-agenten din for sikkerhetsproblemer.",
+    "ar": "يراقب محلل الثوابت وكيل OpenHands الخاص بك باستمرار للتحقق من المشاكل الأمنية.",
+    "de": "Der Invarianten-Analysator überwacht kontinuierlich Ihren OpenHands-Agenten auf Sicherheitsprobleme.",
+    "fr": "L'analyseur d'invariants surveille en permanence votre agent OpenHands pour détecter les problèmes de sécurité.",
+    "it": "L'analizzatore di invarianti monitora continuamente il tuo agente OpenHands per problemi di sicurezza.",
+    "pt": "O analisador de invariantes monitora continuamente seu agente OpenHands em busca de problemas de segurança.",
+    "tr": "Değişmez Analizörü, OpenHands ajanınızı güvenlik sorunları için sürekli olarak izler."
+  },
+  "INVARIANT$CLICK_TO_LEARN_MORE_LABEL": {
+    "en": "Click to learn more",
+    "es": "Clic para aprender más",
+    "zh-CN": "点击了解更多",
+    "zh-TW": "點擊了解更多",
+    "ko-KR": "자세히 알아보기",
+    "no": "Klikk for å lære mer",
+    "ar": "انقر لمعرفة المزيد",
+    "de": "Klicken Sie, um mehr zu erfahren",
+    "fr": "Cliquez pour en savoir plus",
+    "it": "Clicca per saperne di più",
+    "pt": "Clique para saber mais",
+    "tr": "Daha fazla bilgi için tıklayın"
+  },
+  "INVARIANT$POLICY_LABEL": {
+    "en": "Policy",
+    "es": "Política",
+    "zh-CN": "策略",
+    "zh-TW": "策略",
+    "ko-KR": "정책",
+    "no": "Policy",
+    "ar": "السياسة",
+    "de": "Richtlinie",
+    "fr": "Politique",
+    "it": "Policy",
+    "pt": "Política",
+    "tr": "İlke"
+  },
+  "INVARIANT$LOG_LABEL": {
+    "en": "Logs",
+    "es": "Logs",
+    "zh-CN": "日志",
+    "zh-TW": "日誌",
+    "ko-KR": "로그",
+    "no": "Logger",
+    "ar": "السجلات",
+    "de": "Protokolle",
+    "fr": "Journaux",
+    "it": "Log",
+    "pt": "Logs",
+    "tr": "Günlükler"
+  },
+  "INVARIANT$EXPORT_TRACE_LABEL": {
+    "en": "Export Trace",
+    "es": "Exportar traza",
+    "zh-CN": "导出跟踪",
+    "zh-TW": "匯出追蹤",
+    "ko-KR": "추적 내보내기",
+    "no": "Eksporter sporing",
+    "ar": "تصدير التتبع",
+    "de": "Ablaufverfolgung exportieren",
+    "fr": "Exporter la trace",
+    "it": "Esporta traccia",
+    "pt": "Exportar rastreamento",
+    "tr": "İzlemeyi dışa aktar"
+  },
+  "INVARIANT$TRACE_EXPORTED_MESSAGE": {
+    "en": "Trace exported",
+    "es": "Traza exportada",
+    "zh-CN": "跟踪已导出",
+    "zh-TW": "追蹤已匯出",
+    "ko-KR": "추적 내보내기 완료",
+    "no": "Sporing eksportert",
+    "ar": "تم تصدير التتبع",
+    "de": "Ablaufverfolgung exportiert",
+    "fr": "Trace exportée",
+    "it": "Traccia esportata",
+    "pt": "Rastreamento exportado",
+    "tr": "İzleme dışa aktarıldı"
+  },
+  "INVARIANT$POLICY_UPDATED_MESSAGE": {
+    "en": "Policy updated",
+    "es": "Política actualizada",
+    "zh-CN": "策略已更新",
+    "zh-TW": "策略已更新",
+    "ko-KR": "정책이 업데이트되었습니다",
+    "no": "Policy oppdatert",
+    "ar": "تم تحديث السياسة",
+    "de": "Richtlinie aktualisiert",
+    "fr": "Politique mise à jour",
+    "it": "Policy aggiornata",
+    "pt": "Política atualizada",
+    "tr": "İlke güncellendi"
+  },
+  "INVARIANT$SETTINGS_UPDATED_MESSAGE": {
+    "en": "Settings updated",
+    "es": "Configuración actualizada",
+    "zh-CN": "设置已更新",
+    "zh-TW": "設定已更新",
+    "ko-KR": "설정이 업데이트되었습니다",
+    "no": "Innstillinger oppdatert",
+    "ar": "تم تحديث الإعدادات",
+    "de": "Einstellungen aktualisiert",
+    "fr": "Paramètres mis à jour",
+    "it": "Impostazioni aggiornate",
+    "pt": "Configurações atualizadas",
+    "tr": "Ayarlar güncellendi"
   },
   "CHAT_INTERFACE$INITIALIZING_AGENT_LOADING_MESSAGE": {
     "en": "Starting up!",
@@ -1187,7 +1527,8 @@
     "pt": "Conversa de chat",
     "es": "Conversación de chat",
     "ar": "محادثة تلقيم",
-    "fr": "Conversation de chat"
+    "fr": "Conversation de chat",
+    "tr": "Sohbet Konuşması"
   },
   "CHAT_INTERFACE$UNKNOWN_SENDER": {
     "en": "Unknown",
@@ -1510,5 +1851,194 @@
     "ar": "في انتظار جاهزية العميل...",
     "fr": "En attente que le client soit prêt...",
     "tr": "İstemcinin hazır olması bekleniyor..."
+  },
+  "ACCOUNT_SETTINGS_MODAL$DISCONNECT":{
+    "en": "Disconnect",
+    "es": "Desconectar"
+  },
+  "ACCOUNT_SETTINGS_MODAL$SAVE":{
+    "en": "Save",
+    "es": "Guardar"
+  },
+  "ACCOUNT_SETTINGS_MODAL$CLOSE":{
+    "en": "Close",
+    "es": "Cerrar"
+  },
+  "ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID":{
+    "en": "GitHub token is invalid. Please try again.",
+    "es": ""
+  },
+  "CONNECT_TO_GITHUB_MODAL$GET_YOUR_TOKEN": {
+    "en": "Get your token",
+    "es": "Obten tu token"
+  },
+  "CONNECT_TO_GITHUB_MODAL$HERE": {
+    "en": "here",
+    "es": "aquí"
+  },
+  "CONNECT_TO_GITHUB_MODAL$CONNECT": {
+    "en": "Connect",
+    "es": "Conectar"
+  },
+  "CONNECT_TO_GITHUB_MODAL$CLOSE": {
+    "en": "Close",
+    "es": "Cerrar"
+  },
+  "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$BY_CONNECTING_YOU_AGREE": {
+    "en": "By connecting you agree to our",
+    "es": "Al conectarte tu aceptas nuestros"
+  },
+  "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$TERMS_OF_SERVICE": {
+    "en": "terms of service",
+    "es": "términos de servicio"
+  },
+  "CONNECT_TO_GITHUB_BY_TOKEN_MODAL$CONTINUE": {
+    "en": "Continue",
+    "es": "Continuar"
+  },
+  "LOADING_PROJECT$LOADING": {
+    "en": "Loading...",
+    "es": "Cargando..."
+  },
+  "CUSTOM_INPUT$OPTIONAL_LABEL": {
+    "en": "(Optional)",
+    "es": "(Opcional)"
+  },
+  "SETTINGS_FORM$ADVANCED_OPTIONS_LABEL": {
+    "en": "Advanced Options",
+    "es": "Opciones avanzadas"
+  },
+  "SETTINGS_FORM$CUSTOM_MODEL_LABEL": {
+    "en": "Custom Model",
+    "es": "Modelo personalizado"
+  },
+  "SETTINGS_FORM$BASE_URL_LABEL": {
+    "en": "Base URL",
+    "es": "URL base"
+  },
+  "SETTINGS_FORM$API_KEY_LABEL": {
+    "en": "API Key",
+    "es": "API Key"
+  },
+  "SETTINGS_FORM$DONT_KNOW_API_KEY_LABEL": {
+    "en": "Don't know your API key?",
+    "es": "¿No sabes tu API key?"
+  },
+  "SETTINGS_FORM$CLICK_HERE_FOR_INSTRUCTIONS_LABEL": {
+    "en": "Click here for instructions",
+    "es": "Clic aquí para instrucciones"
+  },
+  "SETTINGS_FORM$AGENT_LABEL": {
+    "en": "Agent",
+    "es": "Agente"
+  },
+  "SETTINGS_FORM$SECURITY_ANALYZER_LABEL": {
+    "en": "Security Analyzer (Optional)",
+    "es": "Analizador de seguridad (opcional)"
+  },
+  "SETTINGS_FORM$ENABLE_CONFIRMATION_MODE_LABEL": {
+    "en": "Enable Confirmation Mode",
+    "es": "Habilitar modo de confirmación"
+  },
+  "SETTINGS_FORM$SAVE_LABEL": {
+    "en": "Save",
+    "es": "Guardar"
+  },
+  "SETTINGS_FORM$CLOSE_LABEL": {
+    "en": "Close",
+    "es": "Cerrar"
+  },
+  "SETTINGS_FORM$RESET_TO_DEFAULTS_LABEL": {
+    "en": "Reset to defaults",
+    "es": "Reiniciar valores por defect"
+  },
+  "SETTINGS_FORM$CANCEL_LABEL": {
+    "en": "Cancel",
+    "es": "Cancelar"
+  },
+  "SETTINGS_FORM$END_SESSION_LABEL": {
+    "en": "End Session",
+    "es": "Terminar sesión"
+  },
+  "SETTINGS_FORM$CHANGING_WORKSPACE_WARNING_MESSAGE": {
+    "en": "Changing your settings will clear your workspace and start a new session. Are you sure you want to continue?",
+    "es": "Cambiar tu configuración limpiará tu espacio de trabajo e iniciará una nueva sesión. ¿Estás seguro de continuar?"
+  },
+  "SETTINGS_FORM$ARE_YOU_SURE_LABEL": {
+    "en": "Are you sure?",
+    "es": "¿Estás seguro?"
+  },
+  "SETTINGS_FORM$ALL_INFORMATION_WILL_BE_DELETED_MESSAGE": {
+    "en": "All saved information in your AI settings will be deleted, including any API keys.",
+    "es": "Toda la información guardada en tu configuración de IA será eliminada, incluyendo tus API Keys"
+  },
+  "PROJECT_MENU_DETAILS_PLACEHOLDER$NEW_PROJECT_LABEL": {
+    "en":"New Project",
+    "es":"Nuevo proyecto"
+  },
+  "PROJECT_MENU_DETAILS$AGO_LABEL": {
+    "en":"ago",
+    "es":"atrás"
+  },
+  "STATUS$ERROR_LLM_AUTHENTICATION": {
+    "en": "Error authenticating with the LLM provider. Please check your API key",
+    "es": "Error autenticando con el proveedor de LLM. Por favor revisa tu API key"
+  },
+  "STATUS$ERROR_RUNTIME_DISCONNECTED": {
+    "en": "There was an error while connecting to the runtime. Please refresh the page."
+  },
+  "AGENT_ERROR$BAD_ACTION": {
+    "en": "Agent tried to execute a malformed action."
+  },
+  "AGENT_ERROR$ACTION_TIMEOUT": {
+    "en": "Action timed out."
+  },
+  "PROJECT_MENU_CARD_CONTEXT_MENU$CONNECT_TO_GITHUB_LABEL": {
+    "en": "Connect to GitHub",
+    "es": "Conectar a GitHub"
+  },
+  "PROJECT_MENU_CARD_CONTEXT_MENU$PUSH_TO_GITHUB_LABEL": {
+    "en": "Push to GitHub",
+    "es": "Subir a GitHub"
+  },
+  "PROJECT_MENU_CARD_CONTEXT_MENU$DOWNLOAD_AS_ZIP_LABEL": {
+    "en": "Download as .zip",
+    "es": "Descargar como .zip"
+  },
+  "ACTION_MESSAGE$RUN": {
+    "en": "Running a bash command"
+  },
+  "ACTION_MESSAGE$RUN_IPYTHON": {
+    "en": "Running a Jupyter command"
+  },
+  "ACTION_MESSAGE$READ": {
+    "en": "Reading the contents of a file"
+  },
+  "ACTION_MESSAGE$WRITE": {
+    "en": "Writing to a file"
+  },
+  "ACTION_MESSAGE$BROWSE": {
+    "en": "Browsing the web"
+  },
+  "OBSERVATION_MESSAGE$RUN": {
+    "en": "Ran a bash command"
+  },
+  "OBSERVATION_MESSAGE$RUN_IPYTHON": {
+    "en": "Ran a Jupyter command"
+  },
+  "OBSERVATION_MESSAGE$READ": {
+    "en": "Read the contents of a file"
+  },
+  "OBSERVATION_MESSAGE$WRITE": {
+    "en": "Wrote to a file"
+  },
+  "OBSERVATION_MESSAGE$BROWSE": {
+    "en": "Browsing completed"
+  },
+  "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
+    "en": "Show details"
+  },
+  "EXPANDABLE_MESSAGE$HIDE_DETAILS": {
+    "en": "Hide details"
   }
 }

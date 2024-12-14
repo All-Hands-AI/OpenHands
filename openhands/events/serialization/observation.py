@@ -7,7 +7,11 @@ from openhands.events.observation.commands import (
 from openhands.events.observation.delegate import AgentDelegateObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.observation.error import ErrorObservation
-from openhands.events.observation.files import FileReadObservation, FileWriteObservation
+from openhands.events.observation.files import (
+    FileEditObservation,
+    FileReadObservation,
+    FileWriteObservation,
+)
 from openhands.events.observation.observation import Observation
 from openhands.events.observation.reject import UserRejectObservation
 from openhands.events.observation.success import SuccessObservation
@@ -19,6 +23,7 @@ observations = (
     BrowserOutputObservation,
     FileReadObservation,
     FileWriteObservation,
+    FileEditObservation,
     AgentDelegateObservation,
     SuccessObservation,
     ErrorObservation,
@@ -45,4 +50,5 @@ def observation_from_dict(observation: dict) -> Observation:
     observation.pop('message', None)
     content = observation.pop('content', '')
     extras = observation.pop('extras', {})
+
     return observation_class(content=content, **extras)

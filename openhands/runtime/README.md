@@ -7,9 +7,9 @@ You can learn more about how the runtime works in the [EventStream Runtime](http
 
 ## Main Components
 
-### 1. runtime.py
+### 1. impl/*runtime.py
 
-The `runtime.py` file defines the `Runtime` class, which serves as the primary interface for agent interactions with the external environment. It handles various operations including:
+The `impl/*runtime.py` file defines the `Runtime` class, which serves as the primary [interface](./base.py) for agent interactions with the external environment. It handles various operations including:
 
 - Bash sandbox execution
 - Browser interactions
@@ -23,11 +23,11 @@ Key features of the `Runtime` class:
 - Action execution methods for different types of actions (run, read, write, browse, etc.)
 - Abstract methods for file operations (to be implemented by subclasses)
 
-### 2. client/client.py
+### 2. action_execution_server.py
 
-The `client.py` file contains the `RuntimeClient` class, which is responsible for executing actions received from the OpenHands backend and producing observations. This client runs inside a Docker sandbox.
+The `action_executor_server.py` file contains the `ActionExecutor` class, which is responsible for executing actions received from the OpenHands backend and producing observations. This client runs inside a Docker sandbox.
 
-Key features of the `RuntimeClient` class:
+Key features of the `ActionExecutor` class:
 - Initialization of user environment and bash shell
 - Plugin management and initialization
 - Execution of various action types (bash commands, IPython cells, file operations, browsing)
@@ -59,7 +59,7 @@ Key features of the `RuntimeClient` class:
    - Plugins like Jupyter and AgentSkills are initialized and integrated into the runtime.
 
 6. **Sandbox Environment**:
-   - The `RuntimeClient` sets up a sandboxed environment inside a Docker container.
+   - The `ActionExecutor` sets up a sandboxed environment inside a Docker container.
    - User environment and bash shell are initialized.
    - Actions received from the OpenHands backend are executed in this sandboxed environment.
 
@@ -96,7 +96,7 @@ This is the default runtime used within OpenHands.
 
 The Remote Runtime is designed for execution in a remote environment:
 
-- Connects to a remote server running the RuntimeClient
+- Connects to a remote server running the ActionExecutor
 - Executes actions by sending requests to the remote client
 - Supports distributed execution and cloud-based deployments
 - Ideal for production environments, scalability, and scenarios where local resource constraints are a concern

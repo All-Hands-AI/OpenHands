@@ -7,7 +7,7 @@ from litellm import acompletion as litellm_acompletion
 from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm import LLM, LLM_RETRY_EXCEPTIONS
-from openhands.runtime.utils.shutdown_listener import should_continue
+from openhands.utils.shutdown_listener import should_continue
 
 
 class AsyncLLM(LLM):
@@ -92,7 +92,7 @@ class AsyncLLM(LLM):
                 return resp
 
             except UserCancelledError:
-                logger.info('LLM request cancelled by user.')
+                logger.debug('LLM request cancelled by user.')
                 raise
             except Exception as e:
                 logger.error(f'Completion Error occurred:\n{e}')
