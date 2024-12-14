@@ -912,7 +912,7 @@ class AgentController:
         if self.delegate and self.delegate._is_stuck():
             return True
 
-        return self._stuck_detector.is_stuck(not self.headless_mode)
+        return self._stuck_detector.is_stuck(self.headless_mode)
 
     def __repr__(self):
         return (
