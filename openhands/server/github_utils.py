@@ -1,7 +1,9 @@
 import os
 
 from github import Github
+from github.AuthenticatedUser import AuthenticatedUser
 from github.GithubException import GithubException
+from github.NamedUser import NamedUser
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from openhands.core.logger import openhands_logger as logger
@@ -104,7 +106,6 @@ async def authenticate_github_user(auth_token) -> bool:
     return True
 
 
-@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
 async def get_github_user(token: str) -> str:
     """Get GitHub user info from token.
 
@@ -114,16 +115,30 @@ async def get_github_user(token: str) -> str:
     Returns:
         github handle of the user
     """
+    user = await get_github_user_obj(token)
+    login = user.login
+    logger.info(f'Successfully retrieved GitHub user: {login}')
+    return login
+
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=5))
+async def get_github_user_obj(token: str) -> NamedUser | AuthenticatedUser:
+    """Get GitHub user info from token.
+
+    Args:
+        token: GitHub access token
+
+    Returns:
+        github user object
+    """
     logger.debug('Fetching GitHub user info from token')
     g = Github(token)
     try:
         user = await call_sync_from_async(g.get_user)
+        return user
     except GithubException as e:
         logger.error(f'Error making request to GitHub API: {str(e)}')
         logger.error(e)
         raise
     finally:
         g.close()
-    login = user.login
-    logger.info(f'Successfully retrieved GitHub user: {login}')
-    return login
