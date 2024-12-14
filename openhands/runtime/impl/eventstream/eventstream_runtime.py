@@ -168,6 +168,7 @@ class EventStreamRuntime(Runtime):
                     platform=self.config.sandbox.platform,
                     extra_deps=self.config.sandbox.runtime_extra_deps,
                     force_rebuild=self.config.sandbox.force_rebuild_runtime,
+                    extra_build_args=self.config.sandbox.runtime_extra_build_args,
                 )
 
             self.log(

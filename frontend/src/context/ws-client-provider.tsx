@@ -38,6 +38,7 @@ interface WsClientProviderProps {
   enabled: boolean;
   token: string | null;
   ghToken: string | null;
+  selectedRepository: string | null;
   settings: Settings | null;
 }
 
@@ -45,12 +46,14 @@ export function WsClientProvider({
   enabled,
   token,
   ghToken,
+  selectedRepository,
   settings,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
   const sioRef = React.useRef<Socket | null>(null);
   const tokenRef = React.useRef<string | null>(token);
   const ghTokenRef = React.useRef<string | null>(ghToken);
+  const selectedRepositoryRef = React.useRef<string | null>(selectedRepository);
   const disconnectRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -81,8 +84,11 @@ export function WsClientProvider({
     if (ghToken) {
       initEvent.github_token = ghToken;
     }
+    if (selectedRepository) {
+      initEvent.selected_repository = selectedRepository;
+    }
     const lastEvent = lastEventRef.current;
-    if (lastEvent && !Number.isNaN(parseInt(lastEvent.id as string, 10))) {
+    if (lastEvent) {
       initEvent.latest_event_id = lastEvent.id;
     }
     send(initEvent);
@@ -93,7 +99,9 @@ export function WsClientProvider({
       messageRateHandler.record(new Date().getTime());
     }
     setEvents((prevEvents) => [...prevEvents, event]);
-    lastEventRef.current = event;
+    if (!Number.isNaN(parseInt(event.id as string, 10))) {
+      lastEventRef.current = event;
+    }
     const extras = event.extras as Record<string, unknown>;
     if (extras?.agent_state === AgentState.INIT) {
       setStatus(WsClientProviderStatus.ACTIVE);
@@ -156,6 +164,7 @@ export function WsClientProvider({
     sioRef.current = sio;
     tokenRef.current = token;
     ghTokenRef.current = ghToken;
+    selectedRepositoryRef.current = selectedRepository;
 
     return () => {
       sio.off("connect", handleConnect);
@@ -164,7 +173,7 @@ export function WsClientProvider({
       sio.off("connect_failed", handleError);
       sio.off("disconnect", handleDisconnect);
     };
-  }, [enabled, token, ghToken]);
+  }, [enabled, token, ghToken, selectedRepository]);
 
   // Strict mode mounts and unmounts each component twice, so we have to wait in the destructor
   // before actually disconnecting the socket and cancel the operation if the component gets remounted.

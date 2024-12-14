@@ -1,4 +1,5 @@
 import asyncio
+from copy import deepcopy
 import time
 
 import socketio
@@ -21,6 +22,7 @@ from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.server.session.agent_session import AgentSession
+from openhands.server.session.session_init_data import SessionInitData
 from openhands.storage.files import FileStore
 
 ROOM_KEY = 'room:{sid}'
@@ -34,7 +36,6 @@ class Session:
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
     config: AppConfig
-    settings: dict | None
 
     def __init__(
         self,
@@ -52,41 +53,30 @@ class Session:
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
-        self.config = config
+        # Copying this means that when we update variables they are not applied to the shared global configuration!
+        self.config = deepcopy(config)
         self.loop = asyncio.get_event_loop()
-        self.settings = None
 
     def close(self):
         self.is_alive = False
         self.agent_session.close()
 
-    async def initialize_agent(self, data: dict):
-        self.settings = data
+    async def initialize_agent(self, session_init_data: SessionInitData):
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
         )
         # Extract the agent-relevant arguments from the request
-        args = {key: value for key, value in data.get('args', {}).items()}
-        agent_cls = args.get(ConfigType.AGENT, self.config.default_agent)
-        self.config.security.confirmation_mode = args.get(
-            ConfigType.CONFIRMATION_MODE, self.config.security.confirmation_mode
-        )
-        self.config.security.security_analyzer = data.get('args', {}).get(
-            ConfigType.SECURITY_ANALYZER, self.config.security.security_analyzer
-        )
-        max_iterations = args.get(ConfigType.MAX_ITERATIONS, self.config.max_iterations)
+        agent_cls = session_init_data.agent or self.config.default_agent
+        self.config.security.confirmation_mode = self.config.security.confirmation_mode if session_init_data.confirmation_mode is None else session_init_data.confirmation_mode
+        self.config.security.security_analyzer = session_init_data.security_analyzer or self.config.security.security_analyzer
+        max_iterations = session_init_data.max_iterations or self.config.max_iterations
         # override default LLM config
+
         default_llm_config = self.config.get_llm_config()
-        default_llm_config.model = args.get(
-            ConfigType.LLM_MODEL, default_llm_config.model
-        )
-        default_llm_config.api_key = args.get(
-            ConfigType.LLM_API_KEY, default_llm_config.api_key
-        )
-        default_llm_config.base_url = args.get(
-            ConfigType.LLM_BASE_URL, default_llm_config.base_url
-        )
+        default_llm_config.model = session_init_data.llm_model or default_llm_config.model
+        default_llm_config.api_key = session_init_data.llm_api_key or default_llm_config.api_key
+        default_llm_config.base_url = session_init_data.llm_base_url or default_llm_config.base_url
 
         # TODO: override other LLM config & agent config groups (#2075)
 
@@ -103,6 +93,8 @@ class Session:
                 max_budget_per_task=self.config.max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
+                github_token=session_init_data.github_token,
+                selected_repository=session_init_data.selected_repository,
             )
         except Exception as e:
             logger.exception(f'Error creating controller: {e}')

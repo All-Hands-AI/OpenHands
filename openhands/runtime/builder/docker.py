@@ -9,6 +9,7 @@ from openhands import __version__ as oh_version
 from openhands.core.logger import RollingLogger
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder.base import RuntimeBuilder
+from openhands.utils.term_color import TermColor, colorize
 
 
 class DockerRuntimeBuilder(RuntimeBuilder):
@@ -27,8 +28,8 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         path: str,
         tags: list[str],
         platform: str | None = None,
-        use_local_cache: bool = False,
         extra_build_args: list[str] | None = None,
+        use_local_cache: bool = False,
     ) -> str:
         """Builds a Docker image using BuildKit and handles the build logs appropriately.
 
@@ -187,7 +188,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             return True
         except docker.errors.ImageNotFound:
             if not pull_from_repo:
-                logger.debug(f'Image {image_name} not found locally')
+                logger.debug(
+                    f'Image {image_name} {colorize("not found", TermColor.WARNING)} locally'
+                )
                 return False
             try:
                 logger.debug(
@@ -214,7 +217,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 logger.debug('Could not find image locally or in registry.')
                 return False
             except Exception as e:
-                msg = 'Image could not be pulled: '
+                msg = f'Image {colorize("could not be pulled", TermColor.ERROR)}: '
                 ex_msg = str(e)
                 if 'Not Found' in ex_msg:
                     msg += 'image not found in registry.'
@@ -286,8 +289,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             logger.debug(current_line['status'])
 
     def _prune_old_cache_files(self, cache_dir: str, max_age_days: int = 7) -> None:
-        """
-        Prune cache files older than the specified number of days.
+        """Prune cache files older than the specified number of days.
 
         Args:
             cache_dir (str): The path to the cache directory.
@@ -311,8 +313,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             logger.warning(f'Error during build cache pruning: {e}')
 
     def _is_cache_usable(self, cache_dir: str) -> bool:
-        """
-        Check if the cache directory is usable (exists and is writable).
+        """Check if the cache directory is usable (exists and is writable).
 
         Args:
             cache_dir (str): The path to the cache directory.
