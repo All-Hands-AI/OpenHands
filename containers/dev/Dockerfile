@@ -113,7 +113,7 @@ RUN \
 #!/bin/bash
 make -s clean
 make -s check-dependencies
-ke -s install-python-dependencies
+make -s install-python-dependencies
 
 # NOTE
 # node_modules are .dockerignore-d therefore not mountable
