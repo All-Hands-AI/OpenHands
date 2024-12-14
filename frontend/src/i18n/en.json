@@ -1,0 +1,16 @@
+{
+  "INSTRUCTIONS_PANEL$TITLE": "Repository Instructions",
+  "INSTRUCTIONS_PANEL$ADD_BUTTON": "Add Instructions",
+  "INSTRUCTIONS_PANEL$INSTRUCTIONS_FOUND": "Instructions found for {{repoName}}",
+  "INSTRUCTIONS_PANEL$NO_INSTRUCTIONS": "No instructions found for {{repoName}}",
+  "INSTRUCTIONS_PANEL$VIEW_TUTORIAL": "View Tutorial",
+  "CREATE_INSTRUCTIONS_MODAL$TITLE": "Add Repository Instructions",
+  "CREATE_INSTRUCTIONS_MODAL$DESCRIPTION": "Create a pull request to add instructions for {{repoName}}. This will create a .openhands_instructions file in your repository.",
+  "CREATE_INSTRUCTIONS_MODAL$CANCEL_BUTTON": "Cancel",
+  "CREATE_INSTRUCTIONS_MODAL$CREATE_BUTTON": "Create PR",
+  "MICROAGENTS_PANEL$TITLE": "MicroAgents",
+  "MICROAGENTS_PANEL$ADD_TEMPORARY_BUTTON": "Add Temporary",
+  "MICROAGENTS_PANEL$ADD_PERMANENT_BUTTON": "Add Permanent",
+  "MICROAGENTS_PANEL$AGENTS_FOUND": "MicroAgents found for {{repoName}}",
+  "MICROAGENTS_PANEL$NO_AGENTS": "No MicroAgents found for {{repoName}}"
+}
