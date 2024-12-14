@@ -53,7 +53,9 @@ class StuckDetector:
             event
             for event in history_to_check
             if not (
-                # this is a problem! in headless mode we ignore these, but will this work with UI?
+                # Filter works elegantly in both modes:
+                # - In headless: actively filters out user messages from full history
+                # - In non-headless: no-op since we already sliced after last user message
                 (isinstance(event, MessageAction) and event.source == EventSource.USER)
                 # there might be some NullAction or NullObservation in the history at least for now
                 or isinstance(event, (NullAction, NullObservation))
