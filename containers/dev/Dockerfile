@@ -113,7 +113,7 @@ RUN \
 #!/bin/bash
 make -s clean
 make -s check-dependencies
-poetry install --without llama-index,evaluation
+ke -s install-python-dependencies
 
 # NOTE
 # node_modules are .dockerignore-d therefore not mountable
