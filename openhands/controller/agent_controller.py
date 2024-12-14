@@ -319,7 +319,7 @@ class AgentController:
 
     def _reset(self) -> None:
         """Resets the agent controller"""
-        self.almost_stuck = 0
+
         self._pending_action = None
         self.agent.reset()
 

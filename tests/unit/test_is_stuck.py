@@ -149,7 +149,6 @@ class TestStuckDetector:
         # 8 events
 
         assert stuck_detector.is_stuck() is False
-        assert stuck_detector.state.almost_stuck == 2
 
         cmd_action_3 = CmdRunAction(command='ls')
         cmd_action_3._id = 3
@@ -160,20 +159,7 @@ class TestStuckDetector:
         # 10 events
 
         assert len(state.history) == 10
-        assert (
-            len(state.history) == 10
-        )  # Adjusted since history is a list and the controller is not running
-
-        # FIXME are we still testing this without this test?
-        # assert (
-        #    len(
-        #        get_pairs_from_events(state.history)
-        #    )
-        #    == 5
-        # )
-
         assert stuck_detector.is_stuck() is False
-        assert stuck_detector.state.almost_stuck == 1
 
         cmd_action_4 = CmdRunAction(command='ls')
         cmd_action_4._id = 4
@@ -184,16 +170,9 @@ class TestStuckDetector:
         # 12 events
 
         assert len(state.history) == 12
-        # assert (
-        #    len(
-        #        get_pairs_from_events(state.history)
-        #    )
-        #    == 6
-        # )
 
         with patch('logging.Logger.warning') as mock_warning:
             assert stuck_detector.is_stuck() is True
-            assert stuck_detector.state.almost_stuck == 0
             mock_warning.assert_called_once_with('Action, Observation loop detected')
 
     def test_is_stuck_repeating_action_error(self, stuck_detector: StuckDetector):
