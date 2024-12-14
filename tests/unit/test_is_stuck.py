@@ -135,6 +135,7 @@ class TestStuckDetector:
 
         # with the UI, it will ALSO be stuck initially
         assert stuck_detector.is_stuck(headless_mode=False) is True
+
         # Add a user message
         message_action = MessageAction(content='Hello', wait_for_response=False)
         message_action._source = EventSource.USER
