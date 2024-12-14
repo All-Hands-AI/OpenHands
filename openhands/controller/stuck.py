@@ -24,16 +24,26 @@ class StuckDetector:
     def __init__(self, state: State):
         self.state = state
 
-    def is_stuck(self):
-        # filter out MessageAction with source='user' from history
+    def is_stuck(self, ui_mode: bool = False):
+        if ui_mode:
+            # In UI mode, only look at history after the last user message
+            last_user_msg_idx = -1
+            for i, event in enumerate(self.state.history):
+                if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                    last_user_msg_idx = i
+
+            history_to_check = self.state.history[last_user_msg_idx + 1:]
+        else:
+            # In headless mode, look at all history
+            history_to_check = self.state.history
+
+        # Filter out user messages and null events
         filtered_history = [
             event
-            for event in self.state.history
+            for event in history_to_check
             if not (
                 (isinstance(event, MessageAction) and event.source == EventSource.USER)
-                or
-                # there might be some NullAction or NullObservation in the history at least for now
-                isinstance(event, (NullAction, NullObservation))
+                or isinstance(event, (NullAction, NullObservation))
             )
         ]
 
