@@ -422,7 +422,7 @@ class LLM(RetryMixin, DebugMixin):
         )
 
         # Handle native_tool_calling configuration
-        if self.config.native_tool_calling == 'default':
+        if self.config.native_tool_calling is None:
             logger.debug(
                 'Using suggested tool calling behavior based on model evaluation'
             )

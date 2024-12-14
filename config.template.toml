@@ -172,10 +172,10 @@ model = "gpt-4o"
 # If model is vision capable, this option allows to disable image processing (useful for cost reduction).
 #disable_vision = true
 
-# Whether to use native tool calling if supported by the model. Can be true, false, or "default".
+# Whether to use native tool calling if supported by the model. Can be true, false, or None by default, which chooses the model's default behavior based on the evaluation.
 # ATTENTION: Based on evaluation in PR #4711, enabling native function calling may lead to worse results
 # in some scenarios. Use with caution and consider testing with your specific use case.
-#native_tool_calling = "default"
+#native_tool_calling = None
 
 [llm.gpt4o-mini]
 api_key = "your-api-key"
