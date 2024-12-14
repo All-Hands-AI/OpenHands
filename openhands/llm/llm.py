@@ -439,38 +439,26 @@ class LLM(RetryMixin, DebugMixin):
         usage: Usage | None = response.get('usage')
 
         if usage:
-            # keep track of the input and output tokens
-            input_tokens = usage.get('prompt_tokens')
+            # Get total input tokens and output tokens
+            total_input_tokens = usage.get('prompt_tokens')
             output_tokens = usage.get('completion_tokens')
 
-            if input_tokens:
-                stats += 'Input tokens: ' + str(input_tokens)
-
-            if output_tokens:
-                stats += (
-                    (' | ' if input_tokens else '')
-                    + 'Output tokens: '
-                    + str(output_tokens)
-                    + '\n'
-                )
-
-            # read the prompt cache hit, if any
-            prompt_tokens_details: PromptTokensDetails = usage.get(
-                'prompt_tokens_details'
-            )
-            cache_hit_tokens = (
-                prompt_tokens_details.cached_tokens if prompt_tokens_details else None
-            )
-            if cache_hit_tokens:
-                stats += 'Input tokens (cache hit): ' + str(cache_hit_tokens) + '\n'
-
-            # For Anthropic, the cache writes have a different cost than regular input tokens
-            # but litellm doesn't separate them in the usage stats
-            # so we can read it from the provider-specific extra field
+            # Get cache hits and writes
+            prompt_tokens_details: PromptTokensDetails = usage.get('prompt_tokens_details')
+            cache_hits = prompt_tokens_details.cached_tokens if prompt_tokens_details else 0
             model_extra = usage.get('model_extra', {})
-            cache_write_tokens = model_extra.get('cache_creation_input_tokens')
-            if cache_write_tokens:
-                stats += 'Input tokens (cache write): ' + str(cache_write_tokens) + '\n'
+            cache_writes = model_extra.get('cache_creation_input_tokens', 0)
+
+            # Calculate actual input tokens (excluding cache hits/writes)
+            input_tokens = total_input_tokens - (cache_hits + cache_writes) if total_input_tokens else 0
+
+            # Format stats
+            if total_input_tokens:
+                stats += f'Input tokens: {total_input_tokens}\n'
+                if cache_hits or cache_writes:
+                    stats += f'Cache hits: {cache_hits} - cache writes: {cache_writes} - input: {input_tokens}\n'
+            if output_tokens:
+                stats += f'Output tokens: {output_tokens}\n'
 
         # log the stats
         if stats:
