@@ -9,7 +9,7 @@ import toml
 from datasets import load_dataset
 
 import openhands.agenthub
-from evaluation.benchmarks.swe_bench.prompt import CODEACT_SWE_PROMPT
+
 from evaluation.utils.shared import (
     EvalException,
     EvalMetadata,
@@ -45,7 +45,6 @@ RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'tru
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
-    'CodeActSWEAgent': codeact_user_response,
 }
 
 
@@ -56,21 +55,7 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
 def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     # Prepare instruction
-    if metadata.agent_class == 'CodeActSWEAgent':
-        instruction = (
-            'We are currently solving the following issue within our repository. Here is the issue text:\n'
-            '--- BEGIN ISSUE ---\n'
-            f'{instance.problem_statement}\n'
-            '--- END ISSUE ---\n\n'
-        )
-        if USE_HINT_TEXT and instance.hints_text:
-            instruction += (
-                f'--- BEGIN HINTS ---\n{instance.hints_text}\n--- END HINTS ---\n'
-            )
-        instruction += CODEACT_SWE_PROMPT.format(workspace_dir_name=workspace_dir_name)
-    else:
-        # Instruction based on Anthropic's official trajectory
-        # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
+    # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
         instruction = (
             '<uploaded_files>\n'
             f'/workspace/{workspace_dir_name}\n'
