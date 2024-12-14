@@ -53,6 +53,7 @@ class StuckDetector:
             for event in history_to_check
             if not (
                 (isinstance(event, MessageAction) and event.source == EventSource.USER)
+                # there might be some NullAction or NullObservation in the history at least for now
                 or isinstance(event, (NullAction, NullObservation))
             )
         ]
