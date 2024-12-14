@@ -24,18 +24,18 @@ class StuckDetector:
     def __init__(self, state: State):
         self.state = state
 
-    def is_stuck(self, not_headless: bool = False):
+    def is_stuck(self, headless_mode: bool = True):
         """Checks if the agent is stuck in a loop.
 
         Args:
-            not_headless: Matches AgentController's not headless_mode.
-                         If True: Consider only history after last user message
-                         If False: Consider all history (headless mode)
+            headless_mode: Matches AgentController's headless_mode.
+                          If True: Consider all history (automated/testing)
+                          If False: Consider only history after last user message (interactive)
 
         Returns:
             bool: True if the agent is stuck in a loop, False otherwise.
         """
-        if not_headless:
+        if not headless_mode:
             # In interactive mode, only look at history after the last user message
             last_user_msg_idx = -1
             for i, event in enumerate(self.state.history):
