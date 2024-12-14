@@ -59,7 +59,6 @@ jobs:
       github.event_name == 'workflow_call' ||
       github.event.label.name == 'fix-me' ||
       github.event.label.name == 'fix-me-experimental' ||
-
       (
         ((github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment') &&
         contains(github.event.comment.body, inputs.macro || '@openhands-agent') &&
@@ -140,15 +139,19 @@ jobs:
 
       - name: Set environment variables
         run: |
-          if [ -n "${{ github.event.review.body }}" ]; then
+          # Handle pull request events first
+          if [ -n "${{ github.event.pull_request.number }}" ]; then
             echo "ISSUE_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
             echo "ISSUE_TYPE=pr" >> $GITHUB_ENV
+          # Handle pull request review events
+          elif [ -n "${{ github.event.review.body }}" ]; then
+            echo "ISSUE_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+            echo "ISSUE_TYPE=pr" >> $GITHUB_ENV
+          # Handle issue comment events that reference a PR
           elif [ -n "${{ github.event.issue.pull_request }}" ]; then
             echo "ISSUE_NUMBER=${{ github.event.issue.number }}" >> $GITHUB_ENV
             echo "ISSUE_TYPE=pr" >> $GITHUB_ENV
-          elif [ -n "${{ github.event.pull_request.number }}" ]; then
-            echo "ISSUE_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
-            echo "ISSUE_TYPE=pr" >> $GITHUB_ENV
+          # Handle regular issue events
           else
             echo "ISSUE_NUMBER=${{ github.event.issue.number }}" >> $GITHUB_ENV
             echo "ISSUE_TYPE=issue" >> $GITHUB_ENV
@@ -239,7 +242,8 @@ jobs:
           if [ "${{ steps.check_result.outputs.RESOLUTION_SUCCESS }}" == "true" ]; then
             cd /tmp && python -m openhands.resolver.send_pull_request \
               --issue-number ${{ env.ISSUE_NUMBER }} \
-              --pr-type draft | tee pr_result.txt && \
+              --pr-type draft \
+              --reviewer ${{ github.actor }} | tee pr_result.txt && \
               grep "draft created" pr_result.txt | sed 's/.*\///g' > pr_number.txt
           else
             cd /tmp && python -m openhands.resolver.send_pull_request \

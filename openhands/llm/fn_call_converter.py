@@ -321,7 +321,7 @@ def convert_fncall_messages_to_non_fncall_messages(
     first_user_message_encountered = False
     for message in messages:
         role = message['role']
-        content = message.get('content', '')
+        content = message['content']
 
         # 1. SYSTEM MESSAGES
         # append system prompt suffix to content
