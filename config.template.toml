@@ -154,6 +154,9 @@ model = "gpt-4o"
 # Drop any unmapped (unsupported) params without causing an exception
 #drop_params = false
 
+# Allow litellm to modify parameters to make them compatible with providers
+#modify_params = true
+
 # Using the prompt caching feature if provided by the LLM and supported
 #caching_prompt = true
 
