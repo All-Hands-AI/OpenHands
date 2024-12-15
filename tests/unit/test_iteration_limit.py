@@ -36,6 +36,7 @@ async def test_iteration_limit_extends_on_user_message():
         event_stream=event_stream,
         max_iterations=initial_max_iterations,
         sid='test',
+        headless_mode=False,
     )
 
     # Set initial state
