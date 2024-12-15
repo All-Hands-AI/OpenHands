@@ -444,13 +444,21 @@ class LLM(RetryMixin, DebugMixin):
             output_tokens = usage.get('completion_tokens')
 
             # Get cache hits and writes
-            prompt_tokens_details: PromptTokensDetails = usage.get('prompt_tokens_details')
-            cache_hits = prompt_tokens_details.cached_tokens if prompt_tokens_details else 0
+            prompt_tokens_details: PromptTokensDetails = usage.get(
+                'prompt_tokens_details'
+            )
+            cache_hits = (
+                prompt_tokens_details.cached_tokens if prompt_tokens_details else 0
+            )
             model_extra = usage.get('model_extra', {})
             cache_writes = model_extra.get('cache_creation_input_tokens', 0)
 
             # Calculate actual input tokens (excluding cache hits/writes)
-            input_tokens = total_input_tokens - (cache_hits + cache_writes) if total_input_tokens else 0
+            input_tokens = (
+                total_input_tokens - (cache_hits + cache_writes)
+                if total_input_tokens
+                else 0
+            )
 
             # Format stats
             if total_input_tokens:
