@@ -546,27 +546,34 @@ class LLM(RetryMixin, DebugMixin):
             if (
                 self.config.input_cost_per_token is not None
                 and self.config.output_cost_per_token is not None
+                and self.config.cache_hit_discount is not None
+                and self.config.cache_write_premium is not None
             ):
-                # Use custom pricing
+                # Use custom pricing with configured cache discounts/premiums
                 input_cost = input_tokens * self.config.input_cost_per_token
                 output_cost = output_tokens * self.config.output_cost_per_token
-                cache_hit_cost = cache_hits * (self.config.input_cost_per_token * 0.2)  # 80% discount for cache hits
-                cache_write_cost = cache_writes * (self.config.input_cost_per_token * 1.2)  # 20% premium for cache writes
+                cache_hit_cost = cache_hits * (self.config.input_cost_per_token * (1 - self.config.cache_hit_discount))
+                cache_write_cost = 0
+                if 'anthropic' in self.config.model.lower():
+                    cache_write_cost = cache_writes * (self.config.input_cost_per_token * (1 + self.config.cache_write_premium))
             else:
-                # Use litellm's pricing but adjust for cache hits/writes
-                base_cost = litellm_completion_cost(completion_response=response)
-                if total_input_tokens == 0:
-                    return base_cost
+                # Use litellm's pricing with CostPerToken if custom costs are provided
+                custom_cost_per_token = None
+                if (
+                    self.config.input_cost_per_token is not None
+                    and self.config.output_cost_per_token is not None
+                ):
+                    custom_cost_per_token = CostPerToken(
+                        input_cost_per_token=self.config.input_cost_per_token,
+                        output_cost_per_token=self.config.output_cost_per_token,
+                    )
 
-                # Calculate per-token costs from base cost
-                input_cost_per_token = (base_cost * 0.7) / total_input_tokens  # Assume 70% of cost is input
-                output_cost_per_token = (base_cost * 0.3) / output_tokens if output_tokens else 0  # Assume 30% of cost is output
-
-                # Apply costs with cache adjustments
-                input_cost = input_tokens * input_cost_per_token
-                output_cost = output_tokens * output_cost_per_token
-                cache_hit_cost = cache_hits * (input_cost_per_token * 0.2)  # 80% discount for cache hits
-                cache_write_cost = cache_writes * (input_cost_per_token * 1.2)  # 20% premium for cache writes
+                total_cost = litellm_completion_cost(
+                    completion_response=response,
+                    custom_cost_per_token=custom_cost_per_token,
+                )
+                self.metrics.add_cost(total_cost)
+                return total_cost
 
             total_cost = input_cost + output_cost + cache_hit_cost + cache_write_cost
             self.metrics.add_cost(total_cost)

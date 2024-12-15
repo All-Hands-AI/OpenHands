@@ -36,6 +36,8 @@ class LLMConfig:
         max_output_tokens: The maximum number of output tokens. This is sent to the LLM.
         input_cost_per_token: The cost per input token. This will available in logs for the user to check.
         output_cost_per_token: The cost per output token. This will available in logs for the user to check.
+        cache_hit_discount: The discount to apply for cache hits (e.g., 0.8 for 80% discount). Required if input_cost_per_token and output_cost_per_token are set.
+        cache_write_premium: The premium to apply for cache writes (e.g., 0.2 for 20% premium). Required if input_cost_per_token and output_cost_per_token are set. Only used for Anthropic models.
         ollama_base_url: The base URL for the OLLAMA API.
         drop_params: Drop any unmapped (unsupported) params without causing an exception.
         disable_vision: If model is vision capable, this option allows to disable image processing (useful for cost reduction).
@@ -70,6 +72,8 @@ class LLMConfig:
     max_output_tokens: int | None = None
     input_cost_per_token: float | None = None
     output_cost_per_token: float | None = None
+    cache_hit_discount: float | None = None  # Discount for cache hits (e.g., 0.8 for 80% discount)
+    cache_write_premium: float | None = None  # Premium for cache writes (e.g., 0.2 for 20% premium)
     ollama_base_url: str | None = None
     drop_params: bool = True
     disable_vision: bool | None = None
