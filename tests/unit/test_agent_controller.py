@@ -295,14 +295,16 @@ async def test_max_iterations_extension(mock_agent, mock_event_stream):
     controller.state.agent_state = AgentState.RUNNING
     controller.state.iteration = 10
     assert controller.state.traffic_control_state == TrafficControlState.NORMAL
-    
+
     # Simulate a new user message
     message_action = MessageAction(content='Test message')
     message_action._source = EventSource.USER
     await controller.on_event(message_action)
-    
+
     # Max iterations should be extended to current iteration + initial max_iterations
-    assert controller.state.max_iterations == 20  # Current iteration (10) + initial max_iterations (10)
+    assert (
+        controller.state.max_iterations == 20
+    )  # Current iteration (10) + initial max_iterations (10)
     assert controller.state.traffic_control_state == TrafficControlState.NORMAL
     assert controller.state.agent_state == AgentState.RUNNING
     await controller.close()
@@ -321,18 +323,18 @@ async def test_max_iterations_extension(mock_agent, mock_event_stream):
     controller.state.agent_state = AgentState.RUNNING
     controller.state.iteration = 10
     assert controller.state.traffic_control_state == TrafficControlState.NORMAL
-    
+
     # Simulate a new user message
     message_action = MessageAction(content='Test message')
     message_action._source = EventSource.USER
     await controller.on_event(message_action)
-    
+
     # Max iterations should NOT be extended in headless mode
     assert controller.state.max_iterations == 10  # Original value unchanged
-    
+
     # Trigger throttling by calling _step() when we hit max_iterations
     await controller._step()
-    
+
     assert controller.state.traffic_control_state == TrafficControlState.THROTTLING
     assert controller.state.agent_state == AgentState.ERROR
     await controller.close()
