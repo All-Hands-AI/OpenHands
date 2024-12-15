@@ -534,13 +534,21 @@ class LLM(RetryMixin, DebugMixin):
             output_tokens = usage.get('completion_tokens', 0)
 
             # Get cache details
-            prompt_tokens_details: PromptTokensDetails = usage.get('prompt_tokens_details')
-            cache_hits = prompt_tokens_details.cached_tokens if prompt_tokens_details else 0
+            prompt_tokens_details: PromptTokensDetails = usage.get(
+                'prompt_tokens_details'
+            )
+            cache_hits = (
+                prompt_tokens_details.cached_tokens if prompt_tokens_details else 0
+            )
             model_extra = usage.get('model_extra', {})
             cache_writes = model_extra.get('cache_creation_input_tokens', 0)
 
             # Calculate actual input tokens (excluding cache hits/writes)
-            input_tokens = total_input_tokens - (cache_hits + cache_writes) if total_input_tokens else 0
+            input_tokens = (
+                total_input_tokens - (cache_hits + cache_writes)
+                if total_input_tokens
+                else 0
+            )
 
             # Get cost per token configuration
             if (
@@ -552,10 +560,16 @@ class LLM(RetryMixin, DebugMixin):
                 # Use custom pricing with configured cache discounts/premiums
                 input_cost = input_tokens * self.config.input_cost_per_token
                 output_cost = output_tokens * self.config.output_cost_per_token
-                cache_hit_cost = cache_hits * (self.config.input_cost_per_token * (1 - self.config.cache_hit_discount))
+                cache_hit_cost = cache_hits * (
+                    self.config.input_cost_per_token
+                    * (1 - self.config.cache_hit_discount)
+                )
                 cache_write_cost = 0
                 if 'anthropic' in self.config.model.lower():
-                    cache_write_cost = cache_writes * (self.config.input_cost_per_token * (1 + self.config.cache_write_premium))
+                    cache_write_cost = cache_writes * (
+                        self.config.input_cost_per_token
+                        * (1 + self.config.cache_write_premium)
+                    )
             else:
                 # Use litellm's pricing with CostPerToken if custom costs are provided
                 custom_cost_per_token = None
