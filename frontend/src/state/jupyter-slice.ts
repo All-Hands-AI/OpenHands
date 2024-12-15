@@ -8,7 +8,7 @@ export type Cell = {
 const initialCells: Cell[] = [];
 
 export const cellSlice = createSlice({
-  name: "cell",
+  name: "jupyter",
   initialState: {
     cells: initialCells,
   },
