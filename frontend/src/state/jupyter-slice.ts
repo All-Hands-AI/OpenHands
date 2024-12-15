@@ -7,7 +7,7 @@ export type Cell = {
 
 const initialCells: Cell[] = [];
 
-export const cellSlice = createSlice({
+export const jupyterSlice = createSlice({
   name: "jupyter",
   initialState: {
     cells: initialCells,
@@ -26,6 +26,7 @@ export const cellSlice = createSlice({
 });
 
 export const { appendJupyterInput, appendJupyterOutput, clearJupyter } =
-  cellSlice.actions;
+  jupyterSlice.actions;
 
-export default cellSlice.reducer;
+export const jupyterReducer = jupyterSlice.reducer;
+export default jupyterReducer;
