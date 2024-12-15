@@ -451,6 +451,7 @@ FinishTool = ChatCompletionToolParam(
     function=ChatCompletionToolParamFunctionChunk(
         name='finish',
         description=_FINISH_DESCRIPTION,
+        parameters={},
     ),
 )
 
