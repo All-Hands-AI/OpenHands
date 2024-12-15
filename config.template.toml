@@ -111,7 +111,7 @@ api_key = "your-api-key"
 #output_cost_per_token = 0.0
 
 # Discount to apply for cache hits (e.g., 0.8 for 80% discount)
-# Required if input_cost_per_token and output_cost_per_token are set
+# It will apply from input_cost_per_token if set. Ignored if input_cost_per_token is not set.
 #cache_hit_discount = 0.8
 
 # Premium to apply for cache writes (e.g., 0.2 for 20% premium)
