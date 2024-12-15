@@ -2005,6 +2005,291 @@
     "en": "Download as .zip",
     "es": "Descargar como .zip"
   },
+
+  "INSTRUCTIONS_PANEL$TITLE": {
+    "en": "Repository Instructions",
+    "zh-CN": "仓库说明",
+    "de": "Repository-Anweisungen",
+    "ko-KR": "저장소 지침",
+    "no": "Repository-instruksjoner",
+    "zh-TW": "儲存庫說明",
+    "it": "Istruzioni del repository",
+    "pt": "Instruções do repositório",
+    "es": "Instrucciones del repositorio",
+    "ar": "تعليمات المستودع",
+    "fr": "Instructions du dépôt",
+    "tr": "Depo Talimatları"
+  },
+
+  "INSTRUCTIONS_PANEL$ADD_BUTTON": {
+    "en": "Add Instructions",
+    "zh-CN": "添加说明",
+    "de": "Anweisungen hinzufügen",
+    "ko-KR": "지침 추가",
+    "no": "Legg til instruksjoner",
+    "zh-TW": "新增說明",
+    "it": "Aggiungi istruzioni",
+    "pt": "Adicionar instruções",
+    "es": "Agregar instrucciones",
+    "ar": "إضافة تعليمات",
+    "fr": "Ajouter des instructions",
+    "tr": "Talimat Ekle"
+  },
+
+  "INSTRUCTIONS_PANEL$INSTRUCTIONS_FOUND": {
+    "en": "Instructions found for {{repoName}}",
+    "zh-CN": "已找到 {{repoName}} 的说明",
+    "de": "Anweisungen für {{repoName}} gefunden",
+    "ko-KR": "{{repoName}}의 지침을 찾았습니다",
+    "no": "Instruksjoner funnet for {{repoName}}",
+    "zh-TW": "已找到 {{repoName}} 的說明",
+    "it": "Istruzioni trovate per {{repoName}}",
+    "pt": "Instruções encontradas para {{repoName}}",
+    "es": "Instrucciones encontradas para {{repoName}}",
+    "ar": "تم العثور على تعليمات لـ {{repoName}}",
+    "fr": "Instructions trouvées pour {{repoName}}",
+    "tr": "{{repoName}} için talimatlar bulundu"
+  },
+
+  "INSTRUCTIONS_PANEL$VIEW_TUTORIAL": {
+    "en": "View Tutorial",
+    "zh-CN": "查看教程",
+    "de": "Tutorial anzeigen",
+    "ko-KR": "튜토리얼 보기",
+    "no": "Vis veiledning",
+    "zh-TW": "查看教學",
+    "it": "Visualizza tutorial",
+    "pt": "Ver tutorial",
+    "es": "Ver tutorial",
+    "ar": "عرض الدليل التعليمي",
+    "fr": "Voir le tutoriel",
+    "tr": "Öğreticiyi Görüntüle"
+  },
+
+  "INSTRUCTIONS_PANEL$NO_INSTRUCTIONS": {
+    "en": "No instructions found for {{repoName}}",
+    "zh-CN": "未找到 {{repoName}} 的说明",
+    "de": "Keine Anweisungen für {{repoName}} gefunden",
+    "ko-KR": "{{repoName}}의 지침을 찾을 수 없습니다",
+    "no": "Ingen instruksjoner funnet for {{repoName}}",
+    "zh-TW": "未找到 {{repoName}} 的說明",
+    "it": "Nessuna istruzione trovata per {{repoName}}",
+    "pt": "Nenhuma instrução encontrada para {{repoName}}",
+    "es": "No se encontraron instrucciones para {{repoName}}",
+    "ar": "لم يتم العثور على تعليمات لـ {{repoName}}",
+    "fr": "Aucune instruction trouvée pour {{repoName}}",
+    "tr": "{{repoName}} için talimat bulunamadı"
+  },
+
+  "MICROAGENTS_PANEL$TITLE": {
+    "en": "MicroAgents",
+    "zh-CN": "微代理",
+    "de": "MicroAgents",
+    "ko-KR": "마이크로에이전트",
+    "no": "MicroAgents",
+    "zh-TW": "微代理",
+    "it": "MicroAgenti",
+    "pt": "MicroAgentes",
+    "es": "MicroAgentes",
+    "ar": "الوكلاء المصغرون",
+    "fr": "MicroAgents",
+    "tr": "MikroAjanlar"
+  },
+
+  "MICROAGENTS_PANEL$ADD_TEMPORARY_BUTTON": {
+    "en": "Add Temporary",
+    "zh-CN": "添加临时代理",
+    "de": "Temporär hinzufügen",
+    "ko-KR": "임시 추가",
+    "no": "Legg til midlertidig",
+    "zh-TW": "新增臨時代理",
+    "it": "Aggiungi temporaneo",
+    "pt": "Adicionar temporário",
+    "es": "Agregar temporal",
+    "ar": "إضافة مؤقت",
+    "fr": "Ajouter temporaire",
+    "tr": "Geçici Ekle"
+  },
+
+  "MICROAGENTS_PANEL$ADD_PERMANENT_BUTTON": {
+    "en": "Add Permanent",
+    "zh-CN": "添加永久代理",
+    "de": "Permanent hinzufügen",
+    "ko-KR": "영구 추가",
+    "no": "Legg til permanent",
+    "zh-TW": "新增永久代理",
+    "it": "Aggiungi permanente",
+    "pt": "Adicionar permanente",
+    "es": "Agregar permanente",
+    "ar": "إضافة دائم",
+    "fr": "Ajouter permanent",
+    "tr": "Kalıcı Ekle"
+  },
+
+  "MICROAGENTS_PANEL$AGENTS_FOUND": {
+    "en": "MicroAgents found for {{repoName}}",
+    "zh-CN": "已找到 {{repoName}} 的微代理",
+    "de": "MicroAgents für {{repoName}} gefunden",
+    "ko-KR": "{{repoName}}의 마이크로에이전트를 찾았습니다",
+    "no": "MicroAgents funnet for {{repoName}}",
+    "zh-TW": "已找到 {{repoName}} 的微代理",
+    "it": "MicroAgenti trovati per {{repoName}}",
+    "pt": "MicroAgentes encontrados para {{repoName}}",
+    "es": "MicroAgentes encontrados para {{repoName}}",
+    "ar": "تم العثور على وكلاء مصغرين لـ {{repoName}}",
+    "fr": "MicroAgents trouvés pour {{repoName}}",
+    "tr": "{{repoName}} için MikroAjanlar bulundu"
+  },
+
+  "MICROAGENTS_PANEL$NO_AGENTS": {
+    "en": "No MicroAgents found for {{repoName}}",
+    "zh-CN": "未找到 {{repoName}} 的微代理",
+    "de": "Keine MicroAgents für {{repoName}} gefunden",
+    "ko-KR": "{{repoName}}의 마이크로에이전트를 찾을 수 없습니다",
+    "no": "Ingen MicroAgents funnet for {{repoName}}",
+    "zh-TW": "未找到 {{repoName}} 的微代理",
+    "it": "Nessun MicroAgente trovato per {{repoName}}",
+    "pt": "Nenhum MicroAgente encontrado para {{repoName}}",
+    "es": "No se encontraron MicroAgentes para {{repoName}}",
+    "ar": "لم يتم العثور على وكلاء مصغرين لـ {{repoName}}",
+    "fr": "Aucun MicroAgent trouvé pour {{repoName}}",
+    "tr": "{{repoName}} için MikroAjan bulunamadı"
+  },
+
+  "PROJECT_MENU_CARD_CONTEXT_MENU$VIEW_INSTRUCTIONS_LABEL": {
+    "en": "View Instructions",
+    "zh-CN": "查看说明",
+    "de": "Anweisungen anzeigen",
+    "ko-KR": "지침 보기",
+    "no": "Vis instruksjoner",
+    "zh-TW": "查看說明",
+    "it": "Visualizza istruzioni",
+    "pt": "Ver instruções",
+    "es": "Ver instrucciones",
+    "ar": "عرض التعليمات",
+    "fr": "Voir les instructions",
+    "tr": "Talimatları Görüntüle"
+  },
+
+  "PROJECT_MENU_CARD_CONTEXT_MENU$ADD_INSTRUCTIONS_LABEL": {
+    "en": "Add Instructions",
+    "zh-CN": "添加说明",
+    "de": "Anweisungen hinzufügen",
+    "ko-KR": "지침 추가",
+    "no": "Legg til instruksjoner",
+    "zh-TW": "新增說明",
+    "it": "Aggiungi istruzioni",
+    "pt": "Adicionar instruções",
+    "es": "Agregar instrucciones",
+    "ar": "إضافة تعليمات",
+    "fr": "Ajouter des instructions",
+    "tr": "Talimat Ekle"
+  },
+
+  "PROJECT_MENU_CARD_CONTEXT_MENU$VIEW_MICROAGENTS_LABEL": {
+    "en": "View MicroAgents",
+    "zh-CN": "查看微代理",
+    "de": "MicroAgents anzeigen",
+    "ko-KR": "마이크로에이전트 보기",
+    "no": "Vis MicroAgents",
+    "zh-TW": "查看微代理",
+    "it": "Visualizza MicroAgenti",
+    "pt": "Ver MicroAgentes",
+    "es": "Ver MicroAgentes",
+    "ar": "عرض الوكلاء المصغرين",
+    "fr": "Voir les MicroAgents",
+    "tr": "MikroAjanları Görüntüle"
+  },
+
+  "PROJECT_MENU_CARD_CONTEXT_MENU$ADD_TEMPORARY_MICROAGENT_LABEL": {
+    "en": "Add Temporary MicroAgent",
+    "zh-CN": "添加临时微代理",
+    "de": "Temporären MicroAgent hinzufügen",
+    "ko-KR": "임시 마이크로에이전트 추가",
+    "no": "Legg til midlertidig MicroAgent",
+    "zh-TW": "新增臨時微代理",
+    "it": "Aggiungi MicroAgente temporaneo",
+    "pt": "Adicionar MicroAgente temporário",
+    "es": "Agregar MicroAgente temporal",
+    "ar": "إضافة وكيل مصغر مؤقت",
+    "fr": "Ajouter un MicroAgent temporaire",
+    "tr": "Geçici MikroAjan Ekle"
+  },
+
+  "PROJECT_MENU_CARD_CONTEXT_MENU$ADD_PERMANENT_MICROAGENT_LABEL": {
+    "en": "Add Permanent MicroAgent",
+    "zh-CN": "添加永久微代理",
+    "de": "Permanenten MicroAgent hinzufügen",
+    "ko-KR": "영구 마이크로에이전트 추가",
+    "no": "Legg til permanent MicroAgent",
+    "zh-TW": "新增永久微代理",
+    "it": "Aggiungi MicroAgente permanente",
+    "pt": "Adicionar MicroAgente permanente",
+    "es": "Agregar MicroAgente permanente",
+    "ar": "إضافة وكيل مصغر دائم",
+    "fr": "Ajouter un MicroAgent permanent",
+    "tr": "Kalıcı MikroAjan Ekle"
+  },
+
+  "CREATE_INSTRUCTIONS_MODAL$TITLE": {
+    "en": "Add Repository Instructions",
+    "zh-CN": "添加仓库说明",
+    "de": "Repository-Anweisungen hinzufügen",
+    "ko-KR": "저장소 지침 추가",
+    "no": "Legg til repository-instruksjoner",
+    "zh-TW": "新增儲存庫說明",
+    "it": "Aggiungi istruzioni al repository",
+    "pt": "Adicionar instruções ao repositório",
+    "es": "Agregar instrucciones al repositorio",
+    "ar": "إضافة تعليمات المستودع",
+    "fr": "Ajouter des instructions au dépôt",
+    "tr": "Depo Talimatları Ekle"
+  },
+
+  "CREATE_INSTRUCTIONS_MODAL$DESCRIPTION": {
+    "en": "Create a pull request to add instructions for {{repoName}}. This will create a .openhands_instructions file in your repository.",
+    "zh-CN": "创建拉取请求以添加 {{repoName}} 的说明。这将在您的仓库中创建一个 .openhands_instructions 文件。",
+    "de": "Erstellen Sie einen Pull Request, um Anweisungen für {{repoName}} hinzuzufügen. Dies erstellt eine .openhands_instructions-Datei in Ihrem Repository.",
+    "ko-KR": "{{repoName}}의 지침을 추가하기 위한 풀 리퀘스트를 생성합니다. 이는 저장소에 .openhands_instructions 파일을 생성합니다.",
+    "no": "Opprett en pull request for å legge til instruksjoner for {{repoName}}. Dette vil opprette en .openhands_instructions-fil i repositoriet ditt.",
+    "zh-TW": "建立拉取請求以新增 {{repoName}} 的說明。這將在您的儲存庫中建立一個 .openhands_instructions 檔案。",
+    "it": "Crea una pull request per aggiungere istruzioni per {{repoName}}. Questo creerà un file .openhands_instructions nel tuo repository.",
+    "pt": "Criar um pull request para adicionar instruções para {{repoName}}. Isso criará um arquivo .openhands_instructions em seu repositório.",
+    "es": "Crear una solicitud de extracción para agregar instrucciones para {{repoName}}. Esto creará un archivo .openhands_instructions en su repositorio.",
+    "ar": "إنشاء طلب سحب لإضافة تعليمات لـ {{repoName}}. سيؤدي هذا إلى إنشاء ملف .openhands_instructions في مستودعك.",
+    "fr": "Créer une pull request pour ajouter des instructions pour {{repoName}}. Cela créera un fichier .openhands_instructions dans votre dépôt.",
+    "tr": "{{repoName}} için talimat eklemek üzere bir çekme isteği oluşturun. Bu, deponuzda bir .openhands_instructions dosyası oluşturacaktır."
+  },
+
+  "CREATE_INSTRUCTIONS_MODAL$CANCEL_BUTTON": {
+    "en": "Cancel",
+    "zh-CN": "取消",
+    "de": "Abbrechen",
+    "ko-KR": "취소",
+    "no": "Avbryt",
+    "zh-TW": "取消",
+    "it": "Annulla",
+    "pt": "Cancelar",
+    "es": "Cancelar",
+    "ar": "إلغاء",
+    "fr": "Annuler",
+    "tr": "İptal"
+  },
+
+  "CREATE_INSTRUCTIONS_MODAL$CREATE_BUTTON": {
+    "en": "Create PR",
+    "zh-CN": "创建 PR",
+    "de": "PR erstellen",
+    "ko-KR": "PR 생성",
+    "no": "Opprett PR",
+    "zh-TW": "建立 PR",
+    "it": "Crea PR",
+    "pt": "Criar PR",
+    "es": "Crear PR",
+    "ar": "إنشاء طلب سحب",
+    "fr": "Créer PR",
+    "tr": "PR Oluştur"
+  },
   "ACTION_MESSAGE$RUN": {
     "en": "Running a bash command"
   },
