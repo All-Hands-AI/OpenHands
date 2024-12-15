@@ -312,11 +312,8 @@ class AgentController:
                 str(action),
                 extra={'msg_type': 'ACTION', 'event_source': EventSource.USER},
             )
-            # Extend max iterations when the user sends a message if configured
-            if (
-                self._initial_max_iterations is not None
-                and self.agent.config.extend_max_iteration_after_user_message
-            ):
+            # Extend max iterations when the user sends a message (only in non-headless mode)
+            if self._initial_max_iterations is not None and not self.headless_mode:
                 self.state.max_iterations = (
                     self.state.iteration + self._initial_max_iterations
                 )
@@ -363,6 +360,7 @@ class AgentController:
                 self.state.iteration is not None
                 and self.state.max_iterations is not None
                 and self._initial_max_iterations is not None
+                and not self.headless_mode
             ):
                 if self.state.iteration >= self.state.max_iterations:
                     self.state.max_iterations += self._initial_max_iterations
