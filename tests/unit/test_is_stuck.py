@@ -112,7 +112,66 @@ class TestStuckDetector:
         # cmd_observation._cause = cmd_action._id
         state.history.append(cmd_observation)
 
-        assert stuck_detector.is_stuck() is False
+        assert stuck_detector.is_stuck(headless_mode=True) is False
+
+    def test_interactive_mode_resets_after_user_message(
+        self, stuck_detector: StuckDetector
+    ):
+        state = stuck_detector.state
+
+        # First add some actions that would be stuck in non-UI mode
+        for i in range(4):
+            cmd_action = CmdRunAction(command='ls')
+            cmd_action._id = i
+            state.history.append(cmd_action)
+            cmd_observation = CmdOutputObservation(
+                content='', command='ls', command_id=i
+            )
+            cmd_observation._cause = cmd_action._id
+            state.history.append(cmd_observation)
+
+        # In headless mode, this should be stuck
+        assert stuck_detector.is_stuck(headless_mode=True) is True
+
+        # with the UI, it will ALSO be stuck initially
+        assert stuck_detector.is_stuck(headless_mode=False) is True
+
+        # Add a user message
+        message_action = MessageAction(content='Hello', wait_for_response=False)
+        message_action._source = EventSource.USER
+        state.history.append(message_action)
+
+        # In not-headless mode, this should not be stuck because we ignore history before user message
+        assert stuck_detector.is_stuck(headless_mode=False) is False
+
+        # But in headless mode, this should be still stuck because user messages do not count
+        assert stuck_detector.is_stuck(headless_mode=True) is True
+
+        # Add two more identical actions - still not stuck because we need at least 3
+        for i in range(2):
+            cmd_action = CmdRunAction(command='ls')
+            cmd_action._id = i + 4
+            state.history.append(cmd_action)
+            cmd_observation = CmdOutputObservation(
+                content='', command='ls', command_id=i + 4
+            )
+            cmd_observation._cause = cmd_action._id
+            state.history.append(cmd_observation)
+
+        assert stuck_detector.is_stuck(headless_mode=False) is False
+
+        # Add two more identical actions - now it should be stuck
+        for i in range(2):
+            cmd_action = CmdRunAction(command='ls')
+            cmd_action._id = i + 6
+            state.history.append(cmd_action)
+            cmd_observation = CmdOutputObservation(
+                content='', command='ls', command_id=i + 6
+            )
+            cmd_observation._cause = cmd_action._id
+            state.history.append(cmd_observation)
+
+        assert stuck_detector.is_stuck(headless_mode=False) is True
 
     def test_is_stuck_repeating_action_observation(self, stuck_detector: StuckDetector):
         state = stuck_detector.state
@@ -148,8 +207,7 @@ class TestStuckDetector:
         state.history.append(message_null_observation)
         # 8 events
 
-        assert stuck_detector.is_stuck() is False
-        assert stuck_detector.state.almost_stuck == 2
+        assert stuck_detector.is_stuck(headless_mode=True) is False
 
         cmd_action_3 = CmdRunAction(command='ls')
         cmd_action_3._id = 3
@@ -160,20 +218,7 @@ class TestStuckDetector:
         # 10 events
 
         assert len(state.history) == 10
-        assert (
-            len(state.history) == 10
-        )  # Adjusted since history is a list and the controller is not running
-
-        # FIXME are we still testing this without this test?
-        # assert (
-        #    len(
-        #        get_pairs_from_events(state.history)
-        #    )
-        #    == 5
-        # )
-
-        assert stuck_detector.is_stuck() is False
-        assert stuck_detector.state.almost_stuck == 1
+        assert stuck_detector.is_stuck(headless_mode=True) is False
 
         cmd_action_4 = CmdRunAction(command='ls')
         cmd_action_4._id = 4
@@ -184,16 +229,9 @@ class TestStuckDetector:
         # 12 events
 
         assert len(state.history) == 12
-        # assert (
-        #    len(
-        #        get_pairs_from_events(state.history)
-        #    )
-        #    == 6
-        # )
 
         with patch('logging.Logger.warning') as mock_warning:
-            assert stuck_detector.is_stuck() is True
-            assert stuck_detector.state.almost_stuck == 0
+            assert stuck_detector.is_stuck(headless_mode=True) is True
             mock_warning.assert_called_once_with('Action, Observation loop detected')
 
     def test_is_stuck_repeating_action_error(self, stuck_detector: StuckDetector):
@@ -245,7 +283,7 @@ class TestStuckDetector:
         # 12 events
 
         with patch('logging.Logger.warning') as mock_warning:
-            assert stuck_detector.is_stuck() is True
+            assert stuck_detector.is_stuck(headless_mode=True) is True
             mock_warning.assert_called_once_with(
                 'Action, ErrorObservation loop detected'
             )
@@ -259,7 +297,7 @@ class TestStuckDetector:
         )
 
         with patch('logging.Logger.warning'):
-            assert stuck_detector.is_stuck() is True
+            assert stuck_detector.is_stuck(headless_mode=True) is True
 
     def test_is_not_stuck_invalid_syntax_error_random_lines(
         self, stuck_detector: StuckDetector
@@ -272,7 +310,7 @@ class TestStuckDetector:
         )
 
         with patch('logging.Logger.warning'):
-            assert stuck_detector.is_stuck() is False
+            assert stuck_detector.is_stuck(headless_mode=True) is False
 
     def test_is_not_stuck_invalid_syntax_error_only_three_incidents(
         self, stuck_detector: StuckDetector
@@ -286,7 +324,7 @@ class TestStuckDetector:
         )
 
         with patch('logging.Logger.warning'):
-            assert stuck_detector.is_stuck() is False
+            assert stuck_detector.is_stuck(headless_mode=True) is False
 
     def test_is_stuck_incomplete_input_error(self, stuck_detector: StuckDetector):
         state = stuck_detector.state
@@ -297,7 +335,7 @@ class TestStuckDetector:
         )
 
         with patch('logging.Logger.warning'):
-            assert stuck_detector.is_stuck() is True
+            assert stuck_detector.is_stuck(headless_mode=True) is True
 
     def test_is_not_stuck_incomplete_input_error(self, stuck_detector: StuckDetector):
         state = stuck_detector.state
@@ -308,7 +346,7 @@ class TestStuckDetector:
         )
 
         with patch('logging.Logger.warning'):
-            assert stuck_detector.is_stuck() is False
+            assert stuck_detector.is_stuck(headless_mode=True) is False
 
     def test_is_not_stuck_ipython_unterminated_string_error_random_lines(
         self, stuck_detector: StuckDetector
@@ -317,7 +355,7 @@ class TestStuckDetector:
         self._impl_unterminated_string_error_events(state, random_line=True)
 
         with patch('logging.Logger.warning'):
-            assert stuck_detector.is_stuck() is False
+            assert stuck_detector.is_stuck(headless_mode=True) is False
 
     def test_is_not_stuck_ipython_unterminated_string_error_only_three_incidents(
         self, stuck_detector: StuckDetector
@@ -328,7 +366,7 @@ class TestStuckDetector:
         )
 
         with patch('logging.Logger.warning'):
-            assert stuck_detector.is_stuck() is False
+            assert stuck_detector.is_stuck(headless_mode=True) is False
 
     def test_is_stuck_ipython_unterminated_string_error(
         self, stuck_detector: StuckDetector
@@ -337,7 +375,7 @@ class TestStuckDetector:
         self._impl_unterminated_string_error_events(state, random_line=False)
 
         with patch('logging.Logger.warning'):
-            assert stuck_detector.is_stuck() is True
+            assert stuck_detector.is_stuck(headless_mode=True) is True
 
     def test_is_not_stuck_ipython_syntax_error_not_at_end(
         self, stuck_detector: StuckDetector
@@ -382,7 +420,7 @@ class TestStuckDetector:
         state.history.append(ipython_observation_4)
 
         with patch('logging.Logger.warning') as mock_warning:
-            assert stuck_detector.is_stuck() is False
+            assert stuck_detector.is_stuck(headless_mode=True) is False
             mock_warning.assert_not_called()
 
     def test_is_stuck_repeating_action_observation_pattern(
@@ -451,7 +489,7 @@ class TestStuckDetector:
         state.history.append(read_observation_3)
 
         with patch('logging.Logger.warning') as mock_warning:
-            assert stuck_detector.is_stuck() is True
+            assert stuck_detector.is_stuck(headless_mode=True) is True
             mock_warning.assert_called_once_with('Action, Observation pattern detected')
 
     def test_is_stuck_not_stuck(self, stuck_detector: StuckDetector):
@@ -517,7 +555,7 @@ class TestStuckDetector:
         # read_observation_3._cause = read_action_3._id
         state.history.append(read_observation_3)
 
-        assert stuck_detector.is_stuck() is False
+        assert stuck_detector.is_stuck(headless_mode=True) is False
 
     def test_is_stuck_monologue(self, stuck_detector):
         state = stuck_detector.state
@@ -547,7 +585,7 @@ class TestStuckDetector:
         message_action_6._source = EventSource.AGENT
         state.history.append(message_action_6)
 
-        assert stuck_detector.is_stuck()
+        assert stuck_detector.is_stuck(headless_mode=True)
 
         # Add an observation event between the repeated message actions
         cmd_output_observation = CmdOutputObservation(
@@ -567,7 +605,7 @@ class TestStuckDetector:
         state.history.append(message_action_8)
 
         with patch('logging.Logger.warning'):
-            assert not stuck_detector.is_stuck()
+            assert not stuck_detector.is_stuck(headless_mode=True)
 
 
 class TestAgentController:

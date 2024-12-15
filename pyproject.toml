@@ -77,6 +77,8 @@ llama-index-embeddings-huggingface = "*"
 torch = "2.5.1"
 llama-index-embeddings-azure-openai = "*"
 llama-index-embeddings-ollama = "*"
+voyageai = "*"
+llama-index-embeddings-voyageai = "*"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "0.8.0"
