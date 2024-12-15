@@ -36,7 +36,7 @@ class SandboxConfig:
 
     remote_runtime_api_url: str = 'http://localhost:8000'
     local_runtime_url: str = 'http://localhost'
-    keep_runtime_alive: bool = True
+    keep_runtime_alive: bool = False
     rm_all_containers: bool = False
     api_key: str | None = None
     base_container_image: str = 'nikolaik/python-nodejs:python3.12-nodejs22'  # default to nikolaik/python-nodejs:python3.12-nodejs22 for eventstream runtime
@@ -48,6 +48,7 @@ class SandboxConfig:
         False  # once enabled, OpenHands would lint files after editing
     )
     use_host_network: bool = False
+    runtime_extra_build_args: list[str] | None = None
     initialize_plugins: bool = True
     force_rebuild_runtime: bool = False
     runtime_extra_deps: str | None = None

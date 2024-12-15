@@ -1,26 +1,27 @@
 import { useDisclosure } from "@nextui-org/react";
 import React from "react";
-import { Outlet } from "@remix-run/react";
+import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import Security from "#/components/modals/security/security";
-import { Controls } from "#/components/controls";
+import { Controls } from "#/components/features/controls/controls";
 import { RootState } from "#/store";
-import { Container } from "#/components/container";
 import { clearMessages } from "#/state/chat-slice";
 import { clearTerminal } from "#/state/command-slice";
-import { useEffectOnce } from "#/utils/use-effect-once";
+import { useEffectOnce } from "#/hooks/use-effect-once";
 import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
 import ListIcon from "#/icons/list-type-number.svg?react";
 import { clearJupyter } from "#/state/jupyter-slice";
 import { FilesProvider } from "#/context/files";
-import { ChatInterface } from "./chat-interface";
+import { ChatInterface } from "../../components/features/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "./event-handler";
 import { useLatestRepoCommit } from "#/hooks/query/use-latest-repo-commit";
 import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
+import { Container } from "#/components/layout/container";
+import Security from "#/components/shared/modals/security/security";
+import { CountBadge } from "#/components/layout/count-badge";
 
 function App() {
   const { token, gitHubToken } = useAuth();
@@ -33,6 +34,8 @@ function App() {
     (state: RootState) => state.initalQuery,
   );
 
+  const { updateCount } = useSelector((state: RootState) => state.browser);
+
   const { data: latestGitHubCommit } = useLatestRepoCommit({
     repository: selectedRepository,
   });
@@ -43,7 +46,7 @@ function App() {
   );
 
   const Terminal = React.useMemo(
-    () => React.lazy(() => import("#/components/terminal/terminal")),
+    () => React.lazy(() => import("#/components/features/terminal/terminal")),
     [],
   );
 
@@ -64,26 +67,31 @@ function App() {
       enabled
       token={token}
       ghToken={gitHubToken}
+      selectedRepository={selectedRepository}
       settings={settings}
     >
       <EventHandler>
         <div className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto gap-3">
-            <Container className="w-[390px] max-h-full relative">
+            <Container className="w-full md:w-[390px] max-h-full relative">
               <ChatInterface />
             </Container>
 
-            <div className="flex flex-col grow gap-3">
+            <div className="hidden md:flex flex-col grow gap-3">
               <Container
                 className="h-2/3"
                 labels={[
                   { label: "Workspace", to: "", icon: <CodeIcon /> },
                   { label: "Jupyter", to: "jupyter", icon: <ListIcon /> },
                   {
-                    label: "Browser",
+                    label: (
+                      <div className="flex items-center gap-1">
+                        Browser
+                        {updateCount > 0 && <CountBadge count={updateCount} />}
+                      </div>
+                    ),
                     to: "browser",
                     icon: <GlobeIcon />,
-                    isBeta: true,
                   },
                 ]}
               >

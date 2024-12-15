@@ -5,7 +5,7 @@ import traceback
 from typing import Callable, ClassVar, Type
 
 import litellm
-from litellm.exceptions import ContextWindowExceededError
+from litellm.exceptions import BadRequestError, ContextWindowExceededError
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State, TrafficControlState
@@ -184,7 +184,7 @@ class AgentController:
         self.state.local_iteration += 1
 
     async def update_state_after_step(self):
-        # update metrics especially for cost. Use deepcopy to avoid it being modified by agent.reset()
+        # update metrics especially for cost. Use deepcopy to avoid it being modified by agent._reset()
         self.state.local_metrics = copy.deepcopy(self.agent.llm.metrics)
 
     async def _react_to_exception(
@@ -284,6 +284,8 @@ class AgentController:
             self.agent.llm.metrics.merge(observation.llm_metrics)
 
         if self._pending_action and self._pending_action.id == observation.cause:
+            if self.state.agent_state == AgentState.AWAITING_USER_CONFIRMATION:
+                return
             self._pending_action = None
             if self.state.agent_state == AgentState.USER_CONFIRMED:
                 await self.set_agent_state_to(AgentState.RUNNING)
@@ -315,9 +317,10 @@ class AgentController:
         elif action.source == EventSource.AGENT and action.wait_for_response:
             await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
-    def reset_task(self) -> None:
-        """Resets the agent's task."""
-        self.almost_stuck = 0
+    def _reset(self) -> None:
+        """Resets the agent controller"""
+
+        self._pending_action = None
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState) -> None:
@@ -335,7 +338,7 @@ class AgentController:
             return
 
         if new_state in (AgentState.STOPPED, AgentState.ERROR):
-            self.reset_task()
+            self._reset()
         elif (
             new_state == AgentState.RUNNING
             and self.state.agent_state == AgentState.PAUSED
@@ -369,6 +372,7 @@ class AgentController:
             else:
                 confirmation_state = ActionConfirmationStatus.REJECTED
             self._pending_action.confirmation_state = confirmation_state  # type: ignore[attr-defined]
+            self._pending_action._id = None  # type: ignore[attr-defined]
             self.event_stream.add_event(self._pending_action, EventSource.AGENT)
 
         self.state.agent_state = new_state
@@ -451,13 +455,10 @@ class AgentController:
             await asyncio.sleep(1)
             return
 
-        if self._is_stuck():
-            await self._react_to_exception(RuntimeError('Agent got stuck in a loop'))
-            return
-
         if self.delegate is not None:
             assert self.delegate != self
             if self.delegate.get_agent_state() == AgentState.PAUSED:
+                # no need to check too often
                 await asyncio.sleep(1)
             else:
                 await self._delegate_step()
@@ -484,6 +485,10 @@ class AgentController:
         if stop_step:
             return
 
+        if self._is_stuck():
+            await self._react_to_exception(RuntimeError('Agent got stuck in a loop'))
+            return
+
         self.update_state_before_step()
         action: Action = NullAction()
         try:
@@ -504,15 +509,24 @@ class AgentController:
                 EventSource.AGENT,
             )
             return
-        except ContextWindowExceededError:
-            # When context window is exceeded, keep roughly half of agent interactions
-            self.state.history = self._apply_conversation_window(self.state.history)
+        except (ContextWindowExceededError, BadRequestError) as e:
+            # FIXME: this is a hack until a litellm fix is confirmed
+            # Check if this is a nested context window error
+            error_str = str(e).lower()
+            if (
+                'contextwindowexceedederror' in error_str
+                or 'prompt is too long' in error_str
+                or isinstance(e, ContextWindowExceededError)
+            ):
+                # When context window is exceeded, keep roughly half of agent interactions
+                self.state.history = self._apply_conversation_window(self.state.history)
 
-            # Save the ID of the first event in our truncated history for future reloading
-            if self.state.history:
-                self.state.start_id = self.state.history[0].id
-            # Don't add error event - let the agent retry with reduced context
-            return
+                # Save the ID of the first event in our truncated history for future reloading
+                if self.state.history:
+                    self.state.start_id = self.state.history[0].id
+                # Don't add error event - let the agent retry with reduced context
+                return
+            raise
 
         if action.runnable:
             if self.state.confirmation_mode and (
@@ -898,7 +912,7 @@ class AgentController:
         if self.delegate and self.delegate._is_stuck():
             return True
 
-        return self._stuck_detector.is_stuck()
+        return self._stuck_detector.is_stuck(self.headless_mode)
 
     def __repr__(self):
         return (

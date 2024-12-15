@@ -24,7 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [20]
+        node-version: [20, 22]
+      fail-fast: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,6 +36,9 @@ jobs:
       - name: Install dependencies
         working-directory: ./frontend
         run: npm ci
+      - name: Run TypeScript compilation
+        working-directory: ./frontend
+        run: npm run make-i18n && tsc
       - name: Run tests and collect coverage
         working-directory: ./frontend
         run: npm run test:coverage
