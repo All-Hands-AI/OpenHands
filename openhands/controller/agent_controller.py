@@ -318,7 +318,7 @@ class AgentController:
                     self.state.iteration + self._initial_max_iterations
                 )
                 self.log(
-                    'info',
+                    'debug',
                     f'Extended max iterations to {self.state.max_iterations} after user message',
                 )
             if self.get_agent_state() != AgentState.RUNNING:
