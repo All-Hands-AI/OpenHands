@@ -1,5 +1,4 @@
 import argparse
-import copy
 import os
 import pathlib
 import platform
@@ -244,23 +243,8 @@ def finalize_config(cfg: AppConfig):
         )
 
 
-# Utility function for command line --group argument
-def get_llm_config_for_eval(llm_config: LLMConfig) -> LLMConfig:
-    """Get a copy of the LLM config with evaluation-specific settings.
-
-    Args:
-        llm_config: The original LLM config.
-
-    Returns:
-        LLMConfig: A copy of the LLM config with evaluation-specific settings.
-    """
-    eval_config = copy.deepcopy(llm_config)
-    eval_config.modify_params = False
-    return eval_config
-
-
 def get_llm_config_arg(
-    llm_config_arg: str, toml_file: str = 'config.toml'
+    llm_config_arg: str, toml_file: str = 'config.toml', evaluation: bool = False
 ) -> LLMConfig | None:
     """Get a group of llm settings from the config file.
 
@@ -283,6 +267,7 @@ def get_llm_config_arg(
     Args:
         llm_config_arg: The group of llm settings to get from the config.toml file.
         toml_file: Path to the configuration file to read from. Defaults to 'config.toml'.
+        evaluation: If True, sets modify_params=False for evaluation purposes. Defaults to False.
 
     Returns:
         LLMConfig: The LLMConfig object with the settings from the config file.
@@ -311,7 +296,10 @@ def get_llm_config_arg(
 
     # update the llm config with the specified section
     if 'llm' in toml_config and llm_config_arg in toml_config['llm']:
-        return LLMConfig.from_dict(toml_config['llm'][llm_config_arg])
+        config = LLMConfig.from_dict(toml_config['llm'][llm_config_arg])
+        if evaluation:
+            config.modify_params = False
+        return config
     logger.openhands_logger.debug(f'Loading from toml failed for {llm_config_arg}')
     return None
 

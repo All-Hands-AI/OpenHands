@@ -11,7 +11,6 @@ from openhands.core.config.security_config import SecurityConfig
 from openhands.core.config.utils import (
     finalize_config,
     get_llm_config_arg,
-    get_llm_config_for_eval,
     get_parser,
     load_app_config,
     load_from_env,
@@ -32,7 +31,6 @@ __all__ = [
     'load_from_toml',
     'finalize_config',
     'get_llm_config_arg',
-    'get_llm_config_for_eval',
     'get_field_info',
     'get_parser',
     'parse_arguments',

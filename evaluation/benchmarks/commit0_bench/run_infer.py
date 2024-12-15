@@ -27,7 +27,6 @@ from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
-    get_llm_config_for_eval,
     get_parser,
 )
 from openhands.core.logger import openhands_logger as logger
@@ -573,7 +572,7 @@ if __name__ == '__main__':
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
     if llm_config is not None:
-        llm_config = get_llm_config_for_eval(llm_config)
+        llm_config = get_llm_config_arg(args.llm_config, evaluation=True)
         llm_config.log_completions = True
 
     if llm_config is None:
