@@ -317,6 +317,11 @@ class AgentController:
                 self.state.max_iterations = (
                     self.state.iteration + self._initial_max_iterations
                 )
+                if (
+                    self.state.traffic_control_state == TrafficControlState.THROTTLING
+                    or self.state.traffic_control_state == TrafficControlState.PAUSED
+                ):
+                    self.state.traffic_control_state = TrafficControlState.NORMAL
                 self.log(
                     'debug',
                     f'Extended max iterations to {self.state.max_iterations} after user message',
@@ -351,6 +356,7 @@ class AgentController:
         elif (
             new_state == AgentState.RUNNING
             and self.state.agent_state == AgentState.PAUSED
+            # TODO: do we really need both THROTTLING and PAUSED states, or can we clean up one of them completely?
             and self.state.traffic_control_state == TrafficControlState.THROTTLING
         ):
             # user intends to interrupt traffic control and let the task resume temporarily
