@@ -26,6 +26,7 @@ from openhands.core.config import (
     AppConfig,
     SandboxConfig,
     get_llm_config_arg,
+    get_llm_config_for_eval,
     load_from_toml,
     parse_arguments,
 )
@@ -279,6 +280,8 @@ if __name__ == '__main__':
     llm_config = None
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
+    if llm_config is not None:
+        llm_config = get_llm_config_for_eval(llm_config)
 
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')

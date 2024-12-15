@@ -1,4 +1,5 @@
 import argparse
+import copy
 import os
 import pathlib
 import platform
@@ -244,6 +245,20 @@ def finalize_config(cfg: AppConfig):
 
 
 # Utility function for command line --group argument
+def get_llm_config_for_eval(llm_config: LLMConfig) -> LLMConfig:
+    """Get a copy of the LLM config with evaluation-specific settings.
+
+    Args:
+        llm_config: The original LLM config.
+
+    Returns:
+        LLMConfig: A copy of the LLM config with evaluation-specific settings.
+    """
+    eval_config = copy.deepcopy(llm_config)
+    eval_config.modify_params = False
+    return eval_config
+
+
 def get_llm_config_arg(
     llm_config_arg: str, toml_file: str = 'config.toml'
 ) -> LLMConfig | None:

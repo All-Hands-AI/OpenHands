@@ -44,6 +44,7 @@ class LLMConfig:
         log_completions_folder: The folder to log LLM completions to. Required if log_completions is True.
         draft_editor: A more efficient LLM to use for file editing. Introduced in [PR 3985](https://github.com/All-Hands-AI/OpenHands/pull/3985).
         custom_tokenizer: A custom tokenizer to use for token counting.
+        modify_params: Allow litellm to modify parameters to make them compatible with the provider. For example, insert default messages when empty or merge consecutive roles content.
     """
 
     model: str = 'claude-3-5-sonnet-20241022'
@@ -79,6 +80,7 @@ class LLMConfig:
     log_completions_folder: str = os.path.join(LOG_DIR, 'completions')
     draft_editor: Optional['LLMConfig'] = None
     custom_tokenizer: str | None = None
+    modify_params: bool = True
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""
