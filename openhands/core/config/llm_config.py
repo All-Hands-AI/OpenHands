@@ -73,7 +73,7 @@ class LLMConfig:
     input_cost_per_token: float | None = None
     output_cost_per_token: float | None = None
     cache_hit_discount: float = 1  # Discount for cache hits (e.g., 0.8 for 80% discount)
-    cache_write_premium: float | None = None  # Premium for cache writes (e.g., 0.2 for 20% premium)
+    cache_write_premium: float = 1  # Premium for cache writes (e.g., 0.2 for 20% premium)
     ollama_base_url: str | None = None
     drop_params: bool = True
     disable_vision: bool | None = None
