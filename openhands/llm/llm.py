@@ -517,27 +517,61 @@ class LLM(RetryMixin, DebugMixin):
         if not self.cost_metric_supported:
             return 0.0
 
-        extra_kwargs = {}
-        if (
-            self.config.input_cost_per_token is not None
-            and self.config.output_cost_per_token is not None
-        ):
-            cost_per_token = CostPerToken(
-                input_cost_per_token=self.config.input_cost_per_token,
-                output_cost_per_token=self.config.output_cost_per_token,
-            )
-            logger.debug(f'Using custom cost per token: {cost_per_token}')
-            extra_kwargs['custom_cost_per_token'] = cost_per_token
-
         try:
             # try directly get response_cost from response
             cost = getattr(response, '_hidden_params', {}).get('response_cost', None)
-            if cost is None:
-                cost = litellm_completion_cost(
-                    completion_response=response, **extra_kwargs
-                )
-            self.metrics.add_cost(cost)
-            return cost
+            if cost is not None:
+                self.metrics.add_cost(cost)
+                return cost
+
+            # Get usage details
+            usage: Usage | None = response.get('usage')
+            if not usage:
+                return 0.0
+
+            # Get token counts
+            total_input_tokens = usage.get('prompt_tokens', 0)
+            output_tokens = usage.get('completion_tokens', 0)
+
+            # Get cache details
+            prompt_tokens_details: PromptTokensDetails = usage.get('prompt_tokens_details')
+            cache_hits = prompt_tokens_details.cached_tokens if prompt_tokens_details else 0
+            model_extra = usage.get('model_extra', {})
+            cache_writes = model_extra.get('cache_creation_input_tokens', 0)
+
+            # Calculate actual input tokens (excluding cache hits/writes)
+            input_tokens = total_input_tokens - (cache_hits + cache_writes) if total_input_tokens else 0
+
+            # Get cost per token configuration
+            if (
+                self.config.input_cost_per_token is not None
+                and self.config.output_cost_per_token is not None
+            ):
+                # Use custom pricing
+                input_cost = input_tokens * self.config.input_cost_per_token
+                output_cost = output_tokens * self.config.output_cost_per_token
+                cache_hit_cost = cache_hits * (self.config.input_cost_per_token * 0.2)  # 80% discount for cache hits
+                cache_write_cost = cache_writes * (self.config.input_cost_per_token * 1.2)  # 20% premium for cache writes
+            else:
+                # Use litellm's pricing but adjust for cache hits/writes
+                base_cost = litellm_completion_cost(completion_response=response)
+                if total_input_tokens == 0:
+                    return base_cost
+
+                # Calculate per-token costs from base cost
+                input_cost_per_token = (base_cost * 0.7) / total_input_tokens  # Assume 70% of cost is input
+                output_cost_per_token = (base_cost * 0.3) / output_tokens if output_tokens else 0  # Assume 30% of cost is output
+
+                # Apply costs with cache adjustments
+                input_cost = input_tokens * input_cost_per_token
+                output_cost = output_tokens * output_cost_per_token
+                cache_hit_cost = cache_hits * (input_cost_per_token * 0.2)  # 80% discount for cache hits
+                cache_write_cost = cache_writes * (input_cost_per_token * 1.2)  # 20% premium for cache writes
+
+            total_cost = input_cost + output_cost + cache_hit_cost + cache_write_cost
+            self.metrics.add_cost(total_cost)
+            return total_cost
+
         except Exception:
             self.cost_metric_supported = False
             logger.debug('Cost calculation not supported for this model.')
