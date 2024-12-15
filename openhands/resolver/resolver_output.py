@@ -18,3 +18,7 @@ class ResolverOutput(BaseModel):
     comment_success: list[bool] | None
     success_explanation: str
     error: str | None
+
+    @property
+    def has_partial_success(self) -> bool:
+        return bool(self.comment_success and any(self.comment_success))

@@ -285,7 +285,7 @@ async def process_issue(
         success=success,
         comment_success=comment_success,
         success_explanation=success_explanation,
-        error=last_error,
+        error=last_error if not (comment_success and any(comment_success)) else None,
     )
     return output
 
