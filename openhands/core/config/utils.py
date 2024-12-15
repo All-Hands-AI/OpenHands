@@ -243,6 +243,7 @@ def finalize_config(cfg: AppConfig):
         )
 
 
+# Utility function for command line -l (--llm-config) argument
 def get_llm_config_arg(
     llm_config_arg: str, toml_file: str = 'config.toml', evaluation: bool = False
 ) -> LLMConfig | None:
