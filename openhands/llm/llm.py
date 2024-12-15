@@ -203,8 +203,16 @@ class LLM(RetryMixin, DebugMixin):
                     }
 
             try:
+                # Record start time for latency measurement
+                start_time = time.time()
+
                 # we don't support streaming here, thus we get a ModelResponse
                 resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+
+                # Calculate and record latency
+                latency = time.time() - start_time
+                response_id = resp.get('id', 'unknown')
+                self.metrics.add_response_latency(latency, response_id)
 
                 non_fncall_response = copy.deepcopy(resp)
                 if mock_function_calling:
@@ -439,6 +447,11 @@ class LLM(RetryMixin, DebugMixin):
                 cur_cost,
                 self.metrics.accumulated_cost,
             )
+
+        # Add latency to stats if available
+        if self.metrics.response_latencies:
+            latest_latency = self.metrics.response_latencies[-1]
+            stats += 'Response Latency: %.3f seconds\n' % latest_latency.latency
 
         usage: Usage | None = response.get('usage')
 
