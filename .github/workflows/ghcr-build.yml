@@ -68,9 +68,6 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
-      - name: "Set up docker layer caching"
-        uses: satackey/action-docker-layer-caching@v0.0.11
-        continue-on-error: true
       - name: Build and push app image
         if: "!github.event.pull_request.head.repo.fork"
         run: |

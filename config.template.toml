@@ -172,6 +172,10 @@ model = "gpt-4o"
 # If model is vision capable, this option allows to disable image processing (useful for cost reduction).
 #disable_vision = true
 
+# Custom tokenizer to use for token counting
+# https://docs.litellm.ai/docs/completion/token_usage
+#custom_tokenizer = ""
+
 [llm.gpt4o-mini]
 api_key = "your-api-key"
 model = "gpt-4o"
