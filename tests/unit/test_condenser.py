@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 
 from openhands.core.config.condenser_config import (
     AmortizedForgettingCondenserConfig,
+    LLMAttentionCondenserConfig,
     LLMCondenserConfig,
     NoOpCondenserConfig,
     RecentEventsCondenserConfig,
@@ -12,6 +13,7 @@ from openhands.events.event import Event, EventSource
 from openhands.memory.condenser import (
     AmortizedForgettingCondenser,
     Condenser,
+    LLMAttentionCondenser,
     LLMCondenser,
     NoOpCondenser,
     RecentEventsCondenser,
@@ -329,3 +331,31 @@ def test_amortized_forgetting_condenser_keep_first():
 
     # No new metadata should be added since no changes occurred
     assert len(mock_state.extra_data['condenser_meta']) == 1
+
+
+def test_llm_attention_condenser_from_config():
+    """Test that LLMAttentionCondenser objects can be made from config."""
+    max_size = 50
+    keep_first = 10
+    config = LLMAttentionCondenserConfig(max_size=max_size, keep_first=keep_first)
+    condenser = Condenser.from_config(config)
+
+    assert isinstance(condenser, LLMAttentionCondenser)
+    assert condenser.max_size == max_size
+    assert condenser.keep_first == keep_first
+
+
+def test_llm_attention_condenser_not_implemented():
+    """Test that LLMAttentionCondenser raises NotImplementedError for condense."""
+    events = [create_test_event('Event 1', datetime(2024, 1, 1, 10, 0))]
+
+    mock_state = MagicMock()
+    mock_state.history = events
+
+    condenser = LLMAttentionCondenser()
+
+    try:
+        condenser.condense(mock_state)
+        raise AssertionError('Expected NotImplementedError was not raised.')
+    except NotImplementedError as e:
+        assert str(e) == 'LLMAttentionCondenser.condense() is not yet implemented'

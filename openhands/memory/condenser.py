@@ -8,6 +8,7 @@ from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import (
     AmortizedForgettingCondenserConfig,
     CondenserConfig,
+    LLMAttentionCondenserConfig,
     LLMCondenserConfig,
     NoOpCondenserConfig,
     RecentEventsCondenserConfig,
@@ -69,6 +70,8 @@ class Condenser(ABC):
                 return LLMCondenser(llm=LLM(config=llm_config))
             case AmortizedForgettingCondenserConfig():
                 return AmortizedForgettingCondenser(**config.model_dump(exclude=['type']))
+            case LLMAttentionCondenserConfig():
+                return LLMAttentionCondenser(**config.model_dump(exclude=['type']))
             case _:
                 raise ValueError(f'Unknown condenser config: {config}')
 
@@ -249,3 +252,36 @@ class AmortizedForgettingCondenser(Condenser):
             state.extra_data[CONDENSER_METADATA_KEY].append(changes)
 
         return self._condensed_history
+
+
+class LLMAttentionCondenser(Condenser):
+    """A condenser that uses LLM attention mechanisms to identify and retain important events."""
+
+    def __init__(self, max_size: int = 100, keep_first: int = 0):
+        """Initialize the condenser.
+
+        Args:
+            max_size (int, optional): Maximum size of history before forgetting. Defaults to 100.
+            keep_first (int, optional): Number of initial events to always keep. Defaults to 0.
+
+        Raises:
+            ValueError: If keep_first is greater than max_size.
+        """
+        if keep_first > max_size:
+            raise ValueError(f"keep_first ({keep_first}) cannot be greater than max_size ({max_size})")
+        self.max_size = max_size
+        self.keep_first = keep_first
+
+    def condense(self, state: State) -> list[Event]:
+        """Condense events using LLM attention mechanisms to identify important events.
+
+        Args:
+            state (State): The state containing the event history to condense.
+
+        Returns:
+            list[Event]: The condensed event sequence.
+
+        Raises:
+            NotImplementedError: This method is not yet implemented.
+        """
+        raise NotImplementedError("LLMAttentionCondenser.condense() is not yet implemented")
