@@ -1,3 +1,4 @@
+import importlib.util
 import os
 from dataclasses import dataclass, fields
 from typing import Optional
@@ -7,9 +8,10 @@ import litellm
 from openhands.core.config.config_utils import get_field_info
 from openhands.core.logger import LOG_DIR
 
-# Integrate langfuse with litellm
-litellm.success_callback = ['langfuse']
-litellm.failure_callback = ['langfuse']
+# Only enable langfuse integration if the package is installed
+if importlib.util.find_spec('langfuse') is not None:
+    litellm.success_callback = ['langfuse']
+    litellm.failure_callback = ['langfuse']
 
 
 LLM_SENSITIVE_FIELDS = ['api_key', 'aws_access_key_id', 'aws_secret_access_key']
