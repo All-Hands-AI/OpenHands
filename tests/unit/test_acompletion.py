@@ -76,20 +76,17 @@ async def test_acompletion_non_streaming():
 
 @pytest.mark.asyncio
 async def test_acompletion_streaming(mock_response):
-    with _patch_http():
-        with patch.object(StreamingLLM, '_call_acompletion') as mock_call_acompletion:
-            mock_call_acompletion.return_value.__aiter__.return_value = iter(
-                mock_response
-            )
-            test_llm = _get_llm(StreamingLLM)
-            async for chunk in test_llm.async_streaming_completion(
-                messages=[{'role': 'user', 'content': 'Hello!'}], stream=True
-            ):
-                print(f"Chunk: {chunk['choices'][0]['delta']['content']}")
-                # Assertions for streaming completion
-                assert chunk['choices'][0]['delta']['content'] in [
-                    r['choices'][0]['delta']['content'] for r in mock_response
-                ]
+    with patch.object(StreamingLLM, '_call_acompletion') as mock_call_acompletion:
+        mock_call_acompletion.return_value.__aiter__.return_value = iter(mock_response)
+        test_llm = _get_llm(StreamingLLM)
+        async for chunk in test_llm.async_streaming_completion(
+            messages=[{'role': 'user', 'content': 'Hello!'}], stream=True
+        ):
+            print(f"Chunk: {chunk['choices'][0]['delta']['content']}")
+            # Assertions for streaming completion
+            assert chunk['choices'][0]['delta']['content'] in [
+                r['choices'][0]['delta']['content'] for r in mock_response
+            ]
 
 
 @pytest.mark.asyncio
