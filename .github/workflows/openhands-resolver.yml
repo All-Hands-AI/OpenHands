@@ -278,6 +278,12 @@ jobs:
               console.error('Error reading results file:', error);
             }
 
+            if (logContent.includes("Updated pull request")) {
+              console.log("Updated pull request found. Skipping comment.");
+              return;
+            }
+
+
             try {
               if (success) {
                 prNumber = fs.readFileSync('/tmp/pr_number.txt', 'utf8').trim();
