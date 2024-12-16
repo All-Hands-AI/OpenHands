@@ -16,7 +16,6 @@ import {
   StatusMessage,
 } from "#/types/message";
 import { handleObservationMessage } from "./observations";
-import { UserMessageAction } from "#/types/core/actions";
 
 const messageActions = {
   [ActionType.BROWSE]: (message: ActionMessage) => {
@@ -34,12 +33,15 @@ const messageActions = {
     store.dispatch(setActiveFilepath(path));
     store.dispatch(setCode(content));
   },
-  [ActionType.MESSAGE]: (message: UserMessageAction) => {
+  [ActionType.MESSAGE]: (message: ActionMessage) => {
     if (message.source === "user") {
       store.dispatch(
         addUserMessage({
           content: message.args.content,
-          imageUrls: message.args.image_urls,
+          imageUrls:
+            typeof message.args.image_urls === "string"
+              ? [message.args.image_urls]
+              : message.args.image_urls,
           timestamp: message.timestamp,
           pending: false,
         }),
