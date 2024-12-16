@@ -15,6 +15,10 @@ import { FileExplorerHeader } from "./file-explorer-header";
 import { useVSCodeUrl } from "#/hooks/query/use-vscode-url";
 import { OpenVSCodeButton } from "#/components/shared/buttons/open-vscode-button";
 import { addAssistantMessage } from "#/state/chat-slice";
+import {
+  useWsClient,
+  WsClientProviderStatus,
+} from "#/context/ws-client-provider";
 
 interface FileExplorerProps {
   isOpen: boolean;
@@ -22,6 +26,7 @@ interface FileExplorerProps {
 }
 
 export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
+  const { status } = useWsClient();
   const { t } = useTranslation();
   const dispatch = useDispatch();
 
@@ -30,12 +35,11 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
-  const agentIsReady =
-    curAgentState !== AgentState.INIT && curAgentState !== AgentState.LOADING;
-
   const { data: paths, refetch, error } = useListFiles();
   const { mutate: uploadFiles } = useUploadFiles();
-  const { data: vscodeUrl } = useVSCodeUrl({ enabled: agentIsReady });
+  const { data: vscodeUrl } = useVSCodeUrl({
+    enabled: status === WsClientProviderStatus.ACTIVE,
+  });
 
   const handleOpenVSCode = () => {
     if (vscodeUrl?.vscode_url) {
@@ -166,7 +170,7 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
           {isOpen && (
             <OpenVSCodeButton
               onClick={handleOpenVSCode}
-              isDisabled={!agentIsReady}
+              isDisabled={status !== WsClientProviderStatus.ACTIVE}
             />
           )}
         </div>
