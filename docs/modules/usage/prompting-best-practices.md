@@ -90,7 +90,7 @@ When working with a customized repository:
 
 Example customized prompt:
 ```
-Add a new task completion feature to src/components/TaskList.tsx following our existing component patterns. 
+Add a new task completion feature to src/components/TaskList.tsx following our existing component patterns.
 Include unit tests in tests/components/ and update the documentation in docs/features/.
 The component should use our shared styling from src/styles/components.
 ```
