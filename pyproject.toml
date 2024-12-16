@@ -108,7 +108,6 @@ jupyter_kernel_gateway = "*"
 flake8 = "*"
 opencv-python = "*"
 
-
 [build-system]
 build-backend = "poetry.core.masonry.api"
 requires = [
