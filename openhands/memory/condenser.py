@@ -187,9 +187,21 @@ class AmortizedForgettingCondenser(Condenser):
         Returns:
             list[Event]: The current condensed event sequence.
         """
+        # Initialize or get the condenser metadata list
+        if CONDENSER_METADATA_KEY not in state.extra_data:
+            state.extra_data[CONDENSER_METADATA_KEY] = []
+
+        # Track changes for this condensation
+        changes = {
+            'added_events': [],
+            'removed_events': []
+        }
+
         # If we have no history yet, initialize with all events
         if not self._condensed_history:
             self._condensed_history = state.history.copy()
+            changes['added_events'] = [e.id for e in self._condensed_history]
+
             # Apply forgetting logic immediately if needed
             while len(self._condensed_history) > self.max_size:
                 # Calculate how many events we can forget
@@ -199,31 +211,41 @@ class AmortizedForgettingCondenser(Condenser):
 
                 # Forget half of the forgettable events
                 forget_count = len(forgettable_events) // 2
+                forgotten_events = self._condensed_history[self.keep_first:self.keep_first + forget_count]
+                changes['removed_events'].extend(e.id for e in forgotten_events)
+
                 self._condensed_history = (
                     self._condensed_history[:self.keep_first] +
                     self._condensed_history[self.keep_first + forget_count:]
                 )
-            return self._condensed_history
+        else:
+            # Find the timestamp of our last event
+            last_timestamp = self._condensed_history[-1].timestamp
 
-        # Find the timestamp of our last event
-        last_timestamp = self._condensed_history[-1].timestamp
+            # Add any new events that occurred after our last event
+            new_events = [e for e in state.history if e.timestamp > last_timestamp]
+            changes['added_events'] = [e.id for e in new_events]
+            self._condensed_history.extend(new_events)
 
-        # Add any new events that occurred after our last event
-        new_events = [e for e in state.history if e.timestamp > last_timestamp]
-        self._condensed_history.extend(new_events)
+            # If we're over max_size, forget events while preserving keep_first
+            while len(self._condensed_history) > self.max_size:
+                # Calculate how many events we can forget
+                forgettable_events = self._condensed_history[self.keep_first:]
+                if not forgettable_events:  # If all events are protected by keep_first
+                    break
 
-        # If we're over max_size, forget events while preserving keep_first
-        while len(self._condensed_history) > self.max_size:
-            # Calculate how many events we can forget
-            forgettable_events = self._condensed_history[self.keep_first:]
-            if not forgettable_events:  # If all events are protected by keep_first
-                break
+                # Forget half of the forgettable events
+                forget_count = len(forgettable_events) // 2
+                forgotten_events = self._condensed_history[self.keep_first:self.keep_first + forget_count]
+                changes['removed_events'].extend(e.id for e in forgotten_events)
 
-            # Forget half of the forgettable events
-            forget_count = len(forgettable_events) // 2
-            self._condensed_history = (
-                self._condensed_history[:self.keep_first] +
-                self._condensed_history[self.keep_first + forget_count:]
-            )
+                self._condensed_history = (
+                    self._condensed_history[:self.keep_first] +
+                    self._condensed_history[self.keep_first + forget_count:]
+                )
+
+        # Record changes in state metadata if any changes occurred
+        if changes['added_events'] or changes['removed_events']:
+            state.extra_data[CONDENSER_METADATA_KEY].append(changes)
 
         return self._condensed_history

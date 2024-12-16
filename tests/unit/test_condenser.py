@@ -226,6 +226,7 @@ def test_amortized_forgetting_condenser():
 
     mock_state = MagicMock()
     mock_state.history = events[:2]  # Initially only first two events
+    mock_state.extra_data = {}
 
     # Create condenser with small max_size to test forgetting
     condenser = AmortizedForgettingCondenser(max_size=4)
@@ -236,6 +237,13 @@ def test_amortized_forgetting_condenser():
     assert result[0]._message == 'Event 1'
     assert result[1]._message == 'Event 2'
 
+    # Verify initial metadata
+    assert 'condenser_meta' in mock_state.extra_data
+    assert len(mock_state.extra_data['condenser_meta']) == 1
+    changes = mock_state.extra_data['condenser_meta'][0]
+    assert len(changes['added_events']) == 2  # First two events added
+    assert not changes['removed_events']  # No events removed yet
+
     # Add third event to state
     mock_state.history = events
     result = condenser.condense(mock_state)
@@ -244,12 +252,21 @@ def test_amortized_forgetting_condenser():
     assert result[1]._message == 'Event 2'
     assert result[2]._message == 'Event 3'
 
+    # Verify metadata for adding third event
+    assert len(mock_state.extra_data['condenser_meta']) == 2
+    changes = mock_state.extra_data['condenser_meta'][1]
+    assert len(changes['added_events']) == 1  # Event 3 added
+    assert not changes['removed_events']  # No events removed
+
     # Add same events again - should not duplicate
     result = condenser.condense(mock_state)
     assert len(result) == 3
     assert result[0]._message == 'Event 1'
     assert result[1]._message == 'Event 2'
     assert result[2]._message == 'Event 3'
+
+    # No new metadata since no changes
+    assert len(mock_state.extra_data['condenser_meta']) == 2
 
     # Add more events to trigger forgetting
     new_events = events + [
@@ -262,6 +279,12 @@ def test_amortized_forgetting_condenser():
     assert result[0]._message == 'Event 3'
     assert result[1]._message == 'Event 4'
     assert result[2]._message == 'Event 5'
+
+    # Verify metadata for adding and forgetting events
+    assert len(mock_state.extra_data['condenser_meta']) == 3
+    changes = mock_state.extra_data['condenser_meta'][2]
+    assert len(changes['added_events']) == 2  # Events 4 and 5 added
+    assert len(changes['removed_events']) == 2  # Events 1 and 2 forgotten
 
 
 def test_amortized_forgetting_condenser_keep_first():
@@ -276,6 +299,7 @@ def test_amortized_forgetting_condenser_keep_first():
 
     mock_state = MagicMock()
     mock_state.history = events
+    mock_state.extra_data = {}
 
     # Create condenser with small max_size and keep_first=2
     condenser = AmortizedForgettingCondenser(max_size=4, keep_first=2)
@@ -288,6 +312,13 @@ def test_amortized_forgetting_condenser_keep_first():
     assert result[2]._message == 'Event 4'  # recent event
     assert result[3]._message == 'Event 5'  # recent event
 
+    # Verify metadata was recorded
+    assert 'condenser_meta' in mock_state.extra_data
+    assert len(mock_state.extra_data['condenser_meta']) == 1
+    changes = mock_state.extra_data['condenser_meta'][0]
+    assert len(changes['added_events']) == 5  # All events initially added
+    assert len(changes['removed_events']) == 1  # Event 3 was forgotten
+
     # Add same events again - should maintain the same state
     result = condenser.condense(mock_state)
     assert len(result) == 4
@@ -295,3 +326,6 @@ def test_amortized_forgetting_condenser_keep_first():
     assert result[1]._message == 'Event 2'
     assert result[2]._message == 'Event 4'
     assert result[3]._message == 'Event 5'
+
+    # No new metadata should be added since no changes occurred
+    assert len(mock_state.extra_data['condenser_meta']) == 1
