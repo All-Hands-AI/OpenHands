@@ -257,10 +257,11 @@ class AmortizedForgettingCondenser(Condenser):
 class LLMAttentionCondenser(Condenser):
     """A condenser that uses LLM attention mechanisms to identify and retain important events."""
 
-    def __init__(self, max_size: int = 100, keep_first: int = 0):
+    def __init__(self, llm: LLM, max_size: int = 100, keep_first: int = 0):
         """Initialize the condenser.
 
         Args:
+            llm (LLM): The LLM instance to use for attention-based event selection.
             max_size (int, optional): Maximum size of history before forgetting. Defaults to 100.
             keep_first (int, optional): Number of initial events to always keep. Defaults to 0.
 
@@ -269,8 +270,10 @@ class LLMAttentionCondenser(Condenser):
         """
         if keep_first > max_size:
             raise ValueError(f"keep_first ({keep_first}) cannot be greater than max_size ({max_size})")
+        self.llm = llm
         self.max_size = max_size
         self.keep_first = keep_first
+        self._condensed_history: list[Event] = []
 
     def condense(self, state: State) -> list[Event]:
         """Condense events using LLM attention mechanisms to identify important events.
@@ -280,8 +283,69 @@ class LLMAttentionCondenser(Condenser):
 
         Returns:
             list[Event]: The condensed event sequence.
-
-        Raises:
-            NotImplementedError: This method is not yet implemented.
         """
-        raise NotImplementedError("LLMAttentionCondenser.condense() is not yet implemented")
+        # Initialize or get the condenser metadata list
+        if CONDENSER_METADATA_KEY not in state.extra_data:
+            state.extra_data[CONDENSER_METADATA_KEY] = []
+
+        # Track changes for this condensation
+        changes = {
+            'added_events': [],
+            'removed_events': []
+        }
+
+        # If we have no history yet, initialize with all events
+        if not self._condensed_history:
+            self._condensed_history = state.history.copy()
+            changes['added_events'] = [e.id for e in self._condensed_history]
+        else:
+            # Find the timestamp of our last event
+            last_timestamp = self._condensed_history[-1].timestamp
+
+            # Add any new events that occurred after our last event
+            new_events = [e for e in state.history if e.timestamp > last_timestamp]
+            changes['added_events'] = [e.id for e in new_events]
+            self._condensed_history.extend(new_events)
+
+        # If we're over max_size, use LLM to decide which events to keep
+        if len(self._condensed_history) > self.max_size:
+            # Keep the first N events as required
+            keep_events = self._condensed_history[:self.keep_first]
+            
+            # For the remaining events, we'll use LLM to decide which ones to keep
+            forgettable_events = self._condensed_history[self.keep_first:]
+            
+            # TODO: Implement LLM-based selection of events to keep
+            # This is where you would:
+            # 1. Format the events for LLM input
+            # 2. Ask LLM which events are most important to keep
+            # 3. Parse the response and select events
+            # For now, we'll just keep the most recent events
+            keep_count = self.max_size - len(keep_events)
+            forgotten_events = forgettable_events[:-keep_count] if keep_count > 0 else forgettable_events
+            changes['removed_events'].extend(e.id for e in forgotten_events)
+            
+            # Update condensed history with kept events
+            self._condensed_history = keep_events + forgettable_events[-keep_count:] if keep_count > 0 else keep_events
+
+        # Record changes in state metadata if any changes occurred
+        if changes['added_events'] or changes['removed_events']:
+            state.extra_data[CONDENSER_METADATA_KEY].append(changes)
+
+        return self._condensed_history
+
+    @classmethod
+    def from_config(cls, config: LLMAttentionCondenserConfig) -> LLMAttentionCondenser:
+        """Create a condenser from a configuration object.
+
+        Args:
+            config (LLMAttentionCondenserConfig): Configuration for the condenser.
+
+        Returns:
+            LLMAttentionCondenser: A condenser instance.
+        """
+        return cls(
+            llm=LLM(config=config.llm_config),
+            max_size=config.max_size,
+            keep_first=config.keep_first
+        )
