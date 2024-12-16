@@ -98,7 +98,7 @@ class CodeActAgent(Agent):
             codeact_enable_llm_editor=self.config.codeact_enable_llm_editor,
         )
         logger.debug(
-            f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2)}'
+            f'TOOLS loaded for CodeActAgent: {json.dumps(self.tools, indent=2, ensure_ascii=False).replace("\\n", "\n")}'
         )
         self.prompt_manager = PromptManager(
             microagent_dir=os.path.join(os.path.dirname(__file__), 'micro')
