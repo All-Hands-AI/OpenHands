@@ -1,9 +1,10 @@
-import pytest
 from unittest.mock import MagicMock
 
+import pytest
+
 from openhands.controller.agent_controller import AgentController
+from openhands.core.config import AgentConfig, LLMConfig
 from openhands.events import EventStream
-from openhands.core.config import LLMConfig, AgentConfig
 from openhands.llm.llm import LLM
 from openhands.storage import InMemoryFileStore
 
@@ -32,9 +33,11 @@ async def test_traffic_control_iteration_message(agent_controller):
     """Test that iteration messages are formatted as integers."""
     # Mock _react_to_exception to capture the error
     error = None
+
     async def mock_react_to_exception(e):
         nonlocal error
         error = e
+
     agent_controller._react_to_exception = mock_react_to_exception
 
     await agent_controller._handle_traffic_control('iteration', 200.0, 100.0)
@@ -47,9 +50,11 @@ async def test_traffic_control_budget_message(agent_controller):
     """Test that budget messages keep decimal points."""
     # Mock _react_to_exception to capture the error
     error = None
+
     async def mock_react_to_exception(e):
         nonlocal error
         error = e
+
     agent_controller._react_to_exception = mock_react_to_exception
 
     await agent_controller._handle_traffic_control('budget', 15.75, 10.0)
@@ -62,9 +67,11 @@ async def test_traffic_control_headless_mode(agent_controller):
     """Test that headless mode messages are formatted correctly."""
     # Mock _react_to_exception to capture the error
     error = None
+
     async def mock_react_to_exception(e):
         nonlocal error
         error = e
+
     agent_controller._react_to_exception = mock_react_to_exception
 
     agent_controller.headless_mode = True
