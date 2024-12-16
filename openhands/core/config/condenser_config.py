@@ -42,6 +42,11 @@ class AmortizedForgettingCondenserConfig(BaseModel):
         description='Maximum size of the condensed history before triggering forgetting.',
         ge=2
     )
+    keep_first: int = Field(
+        default=0,
+        description='Number of initial events to always keep in history.',
+        ge=0
+    )
 
 
 CondenserConfig = (

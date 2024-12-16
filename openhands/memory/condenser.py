@@ -162,8 +162,20 @@ class LLMCondenser(Condenser):
 class AmortizedForgettingCondenser(Condenser):
     """A condenser that maintains a condensed history and forgets old events when it grows too large."""
 
-    def __init__(self, max_size: int = 100):
+    def __init__(self, max_size: int = 100, keep_first: int = 0):
+        """Initialize the condenser.
+
+        Args:
+            max_size (int, optional): Maximum size of history before forgetting. Defaults to 100.
+            keep_first (int, optional): Number of initial events to always keep. Defaults to 0.
+
+        Raises:
+            ValueError: If keep_first is greater than max_size.
+        """
+        if keep_first > max_size:
+            raise ValueError(f"keep_first ({keep_first}) cannot be greater than max_size ({max_size})")
         self.max_size = max_size
+        self.keep_first = keep_first
         self._condensed_history: list[Event] = []
 
     def condense(self, state: State) -> list[Event]:
@@ -178,6 +190,19 @@ class AmortizedForgettingCondenser(Condenser):
         # If we have no history yet, initialize with all events
         if not self._condensed_history:
             self._condensed_history = state.history.copy()
+            # Apply forgetting logic immediately if needed
+            while len(self._condensed_history) > self.max_size:
+                # Calculate how many events we can forget
+                forgettable_events = self._condensed_history[self.keep_first:]
+                if not forgettable_events:  # If all events are protected by keep_first
+                    break
+
+                # Forget half of the forgettable events
+                forget_count = len(forgettable_events) // 2
+                self._condensed_history = (
+                    self._condensed_history[:self.keep_first] +
+                    self._condensed_history[self.keep_first + forget_count:]
+                )
             return self._condensed_history
 
         # Find the timestamp of our last event
@@ -187,9 +212,18 @@ class AmortizedForgettingCondenser(Condenser):
         new_events = [e for e in state.history if e.timestamp > last_timestamp]
         self._condensed_history.extend(new_events)
 
-        # If we're over max_size, forget the first half of events until we're under half max_size
+        # If we're over max_size, forget events while preserving keep_first
         while len(self._condensed_history) > self.max_size:
-            forget_count = len(self._condensed_history) // 2
-            self._condensed_history = self._condensed_history[forget_count:]
+            # Calculate how many events we can forget
+            forgettable_events = self._condensed_history[self.keep_first:]
+            if not forgettable_events:  # If all events are protected by keep_first
+                break
+
+            # Forget half of the forgettable events
+            forget_count = len(forgettable_events) // 2
+            self._condensed_history = (
+                self._condensed_history[:self.keep_first] +
+                self._condensed_history[self.keep_first + forget_count:]
+            )
 
         return self._condensed_history

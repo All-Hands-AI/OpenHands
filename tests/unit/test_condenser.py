@@ -197,11 +197,22 @@ def test_llm_condenser_error():
 def test_amortized_forgetting_condenser_from_config():
     """Test that AmortizedForgettingCondenser objects can be made from config."""
     max_size = 50
-    config = AmortizedForgettingCondenserConfig(max_size=max_size)
+    keep_first = 10
+    config = AmortizedForgettingCondenserConfig(max_size=max_size, keep_first=keep_first)
     condenser = Condenser.from_config(config)
 
     assert isinstance(condenser, AmortizedForgettingCondenser)
     assert condenser.max_size == max_size
+    assert condenser.keep_first == keep_first
+
+
+def test_amortized_forgetting_condenser_invalid_config():
+    """Test that AmortizedForgettingCondenser raises error when keep_first > max_size."""
+    try:
+        AmortizedForgettingCondenser(max_size=5, keep_first=10)
+        raise AssertionError('Expected ValueError was not raised.')
+    except ValueError as e:
+        assert str(e) == 'keep_first (10) cannot be greater than max_size (5)'
 
 
 def test_amortized_forgetting_condenser():
@@ -251,3 +262,36 @@ def test_amortized_forgetting_condenser():
     assert result[0]._message == 'Event 3'
     assert result[1]._message == 'Event 4'
     assert result[2]._message == 'Event 5'
+
+
+def test_amortized_forgetting_condenser_keep_first():
+    """Test that AmortizedForgettingCondenser preserves initial events when keep_first is set."""
+    events = [
+        create_test_event('Event 1', datetime(2024, 1, 1, 10, 0)),
+        create_test_event('Event 2', datetime(2024, 1, 1, 10, 1)),
+        create_test_event('Event 3', datetime(2024, 1, 1, 10, 2)),
+        create_test_event('Event 4', datetime(2024, 1, 1, 10, 3)),
+        create_test_event('Event 5', datetime(2024, 1, 1, 10, 4)),
+    ]
+
+    mock_state = MagicMock()
+    mock_state.history = events
+
+    # Create condenser with small max_size and keep_first=2
+    condenser = AmortizedForgettingCondenser(max_size=4, keep_first=2)
+
+    # First call should store all events but trigger forgetting
+    result = condenser.condense(mock_state)
+    assert len(result) == 4  # max_size=4
+    assert result[0]._message == 'Event 1'  # kept due to keep_first
+    assert result[1]._message == 'Event 2'  # kept due to keep_first
+    assert result[2]._message == 'Event 4'  # recent event
+    assert result[3]._message == 'Event 5'  # recent event
+
+    # Add same events again - should maintain the same state
+    result = condenser.condense(mock_state)
+    assert len(result) == 4
+    assert result[0]._message == 'Event 1'
+    assert result[1]._message == 'Event 2'
+    assert result[2]._message == 'Event 4'
+    assert result[3]._message == 'Event 5'
