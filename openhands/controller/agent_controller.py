@@ -647,16 +647,24 @@ class AgentController:
             self.state.traffic_control_state = TrafficControlState.NORMAL
         else:
             self.state.traffic_control_state = TrafficControlState.THROTTLING
+            # Format values as integers for iterations, keep decimals for budget
+            if limit_type == 'iteration':
+                current_str = str(int(current_value))
+                max_str = str(int(max_value))
+            else:
+                current_str = f'{current_value:.2f}'
+                max_str = f'{max_value:.2f}'
+
             if self.headless_mode:
                 e = RuntimeError(
                     f'Agent reached maximum {limit_type} in headless mode. '
-                    f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}'
+                    f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}'
                 )
                 await self._react_to_exception(e)
             else:
                 e = RuntimeError(
                     f'Agent reached maximum {limit_type}. '
-                    f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}. '
+                    f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}. '
                 )
                 # FIXME: this isn't really an exception--we should have a different path
                 await self._react_to_exception(e)
