@@ -154,6 +154,10 @@ model = "gpt-4o"
 # Drop any unmapped (unsupported) params without causing an exception
 #drop_params = false
 
+# Modify params for litellm to do transformations like adding a default message, when a message is empty.
+# Note: this setting is global, unlike drop_params, it cannot be overridden in each call to litellm.
+#modify_params = true
+
 # Using the prompt caching feature if provided by the LLM and supported
 #caching_prompt = true
 

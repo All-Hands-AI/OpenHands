@@ -9,7 +9,6 @@ import toml
 from datasets import load_dataset
 
 import openhands.agenthub
-
 from evaluation.utils.shared import (
     EvalException,
     EvalMetadata,
@@ -76,7 +75,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         '4. Rerun your reproduce script and confirm that the error is fixed!\n'
         '5. Think about edgecases and make sure your fix handles them as well\n'
         "Your thinking should be thorough and so it's fine if it's very long.\n"
-        )
+    )
 
     if RUN_WITH_BROWSING:
         instruction += (
@@ -491,6 +490,8 @@ if __name__ == '__main__':
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
         llm_config.log_completions = True
+        # modify_params must be False for evaluation purpose, otherwise litellm could modify the messages
+        llm_config.modify_params = False
 
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
