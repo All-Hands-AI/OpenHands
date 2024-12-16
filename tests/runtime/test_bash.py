@@ -363,7 +363,7 @@ def test_copy_to_non_existent_directory(temp_dir, runtime_cls):
 def test_overwrite_existing_file(temp_dir, runtime_cls):
     runtime = _load_runtime(temp_dir, runtime_cls)
     try:
-        sandbox_dir = _get_sandbox_folder(runtime)
+        sandbox_dir = '/openhands/workspace'
 
         obs = _run_cmd_action(runtime, f'ls -alh {sandbox_dir}')
         assert obs.exit_code == 0
