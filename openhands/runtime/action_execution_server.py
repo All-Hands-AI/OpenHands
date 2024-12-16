@@ -216,29 +216,34 @@ class ActionExecutor:
                     match = matches[0]
                     try:
                         result_dict = json.loads(match)
-                        if result_dict['new_content'] is not None:  # File edit commands
-                            diff = get_diff(
-                                old_contents=result_dict['old_content'],
-                                new_contents=result_dict['new_content'],
-                                filepath=result_dict['path'],
-                            )
-                            return FileEditObservation(
-                                content=diff,
-                                path=result_dict['path'],
-                                old_content=result_dict['old_content'],
-                                new_content=result_dict['new_content'],
-                                prev_exist=result_dict['prev_exist'],
-                                impl_source=FileEditSource.OH_ACI,
-                                formatted_output_and_error=result_dict[
-                                    'formatted_output_and_error'
-                                ],
-                            )
-                        else:  # File view commands
-                            return FileReadObservation(
-                                content=result_dict['formatted_output_and_error'],
-                                path=result_dict['path'],
-                                agent_view=True,
-                            )
+                        if result_dict['path']:  # Successful output
+                            if (
+                                result_dict['new_content'] is not None
+                            ):  # File edit commands
+                                diff = get_diff(
+                                    old_contents=result_dict['old_content'],
+                                    new_contents=result_dict['new_content'],
+                                    filepath=result_dict['path'],
+                                )
+                                return FileEditObservation(
+                                    content=diff,
+                                    path=result_dict['path'],
+                                    old_content=result_dict['old_content'],
+                                    new_content=result_dict['new_content'],
+                                    prev_exist=result_dict['prev_exist'],
+                                    impl_source=FileEditSource.OH_ACI,
+                                    formatted_output_and_error=result_dict[
+                                        'formatted_output_and_error'
+                                    ],
+                                )
+                            else:  # File view commands
+                                return FileReadObservation(
+                                    content=result_dict['formatted_output_and_error'],
+                                    path=result_dict['path'],
+                                    agent_view=True,
+                                )
+                        else:  # Error output
+                            results.append(result_dict['formatted_output_and_error'])
                     except json.JSONDecodeError:
                         # Handle JSON decoding errors if necessary
                         results.append(
