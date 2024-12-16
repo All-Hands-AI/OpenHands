@@ -243,9 +243,9 @@ def finalize_config(cfg: AppConfig):
         )
 
 
-# Utility function for command line -l (--llm-config) argument
+# Utility function for command line --group argument
 def get_llm_config_arg(
-    llm_config_arg: str, toml_file: str = 'config.toml', evaluation: bool = False
+    llm_config_arg: str, toml_file: str = 'config.toml'
 ) -> LLMConfig | None:
     """Get a group of llm settings from the config file.
 
@@ -268,7 +268,6 @@ def get_llm_config_arg(
     Args:
         llm_config_arg: The group of llm settings to get from the config.toml file.
         toml_file: Path to the configuration file to read from. Defaults to 'config.toml'.
-        evaluation: If True, sets modify_params=False for evaluation purposes. Defaults to False.
 
     Returns:
         LLMConfig: The LLMConfig object with the settings from the config file.
@@ -297,10 +296,7 @@ def get_llm_config_arg(
 
     # update the llm config with the specified section
     if 'llm' in toml_config and llm_config_arg in toml_config['llm']:
-        config = LLMConfig.from_dict(toml_config['llm'][llm_config_arg])
-        if evaluation:
-            config.modify_params = False
-        return config
+        return LLMConfig.from_dict(toml_config['llm'][llm_config_arg])
     logger.openhands_logger.debug(f'Loading from toml failed for {llm_config_arg}')
     return None
 
