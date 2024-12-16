@@ -6,6 +6,7 @@ from typing import Any
 
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import (
+    AmortizedForgettingCondenserConfig,
     CondenserConfig,
     LLMCondenserConfig,
     NoOpCondenserConfig,
@@ -66,6 +67,8 @@ class Condenser(ABC):
                 return RecentEventsCondenser(**config.model_dump(exclude=['type']))
             case LLMCondenserConfig(llm_config=llm_config):
                 return LLMCondenser(llm=LLM(config=llm_config))
+            case AmortizedForgettingCondenserConfig():
+                return AmortizedForgettingCondenser(**config.model_dump(exclude=['type']))
             case _:
                 raise ValueError(f'Unknown condenser config: {config}')
 
@@ -154,3 +157,25 @@ class LLMCondenser(Condenser):
             logger.error('Error condensing events: %s', str(e), exc_info=False)
             # TODO If the llm fails with ContextWindowExceededError, we can try to condense the memory chunk by chunk
             raise e
+
+
+class AmortizedForgettingCondenser(Condenser):
+    """A condenser that gradually forgets events over time based on a decay rate."""
+
+    def __init__(self, decay_rate: float = 0.5, min_events: int = 5):
+        self.decay_rate = decay_rate
+        self.min_events = min_events
+
+    def condense(self, state: State) -> list[Event]:
+        """Condense events by probabilistically forgetting them based on age.
+
+        Args:
+            state (State): The state containing the event history to condense.
+
+        Returns:
+            list[Event]: The condensed event sequence.
+
+        Raises:
+            NotImplementedError: This method is not yet implemented.
+        """
+        raise NotImplementedError("AmortizedForgettingCondenser.condense is not yet implemented")

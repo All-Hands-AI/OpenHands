@@ -2,6 +2,7 @@ from datetime import datetime
 from unittest.mock import MagicMock
 
 from openhands.core.config.condenser_config import (
+    AmortizedForgettingCondenserConfig,
     LLMCondenserConfig,
     NoOpCondenserConfig,
     RecentEventsCondenserConfig,
@@ -9,6 +10,7 @@ from openhands.core.config.condenser_config import (
 from openhands.core.config.llm_config import LLMConfig
 from openhands.events.event import Event, EventSource
 from openhands.memory.condenser import (
+    AmortizedForgettingCondenser,
     Condenser,
     LLMCondenser,
     NoOpCondenser,
@@ -190,3 +192,31 @@ def test_llm_condenser_error():
         raise AssertionError('Expected exception was not raised.')
     except Exception as e:
         assert str(e) == 'LLM error'
+
+
+def test_amortized_forgetting_condenser_from_config():
+    """Test that AmortizedForgettingCondenser objects can be made from config."""
+    decay_rate = 0.7
+    min_events = 3
+    config = AmortizedForgettingCondenserConfig(decay_rate=decay_rate, min_events=min_events)
+    condenser = Condenser.from_config(config)
+
+    assert isinstance(condenser, AmortizedForgettingCondenser)
+    assert condenser.decay_rate == decay_rate
+    assert condenser.min_events == min_events
+
+
+def test_amortized_forgetting_condenser_not_implemented():
+    """Test that AmortizedForgettingCondenser raises NotImplementedError."""
+    events = [create_test_event('Event 1', datetime(2024, 1, 1, 10, 0))]
+
+    mock_state = MagicMock()
+    mock_state.history = events
+
+    condenser = AmortizedForgettingCondenser()
+
+    try:
+        condenser.condense(mock_state)
+        raise AssertionError('Expected NotImplementedError was not raised.')
+    except NotImplementedError as e:
+        assert str(e) == 'AmortizedForgettingCondenser.condense is not yet implemented'
