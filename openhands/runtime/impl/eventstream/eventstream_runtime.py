@@ -291,26 +291,6 @@ class EventStreamRuntime(Runtime):
         use_host_network = self.config.sandbox.use_host_network
         network_mode: str | None = 'host' if use_host_network else None
 
-        # Initialize port mappings
-        port_mapping: dict[str, list[dict[str, str]]] | None = None
-        if not use_host_network:
-            port_mapping = {
-                f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}],
-                '4141/tcp': [{'HostPort': '4141'}],
-            }
-            # Add custom port mappings from config if specified
-            if (
-                hasattr(self.config.sandbox, 'port_mappings')
-                and self.config.sandbox.port_mappings
-            ):
-                for (
-                    container_port,
-                    host_port,
-                ) in self.config.sandbox.port_mappings.items():
-                    port_mapping[f'{container_port}/tcp'] = [
-                        {'HostPort': str(host_port)}
-                    ]
-
         if use_host_network:
             self.log(
                 'warn',
@@ -324,13 +304,6 @@ class EventStreamRuntime(Runtime):
         }
         if self.config.debug or DEBUG:
             environment['DEBUG'] = 'true'
-
-        if self.vscode_enabled:
-            # vscode is on port +1 from container port
-            if isinstance(port_mapping, dict):
-                port_mapping[f'{self._container_port + 1}/tcp'] = [
-                    {'HostPort': str(self._host_port + 1)}
-                ]
 
         self.log('debug', f'Workspace Base: {self.config.workspace_base}')
         if (
@@ -376,7 +349,7 @@ class EventStreamRuntime(Runtime):
                     f'{browsergym_arg}'
                 ),
                 network_mode=network_mode,
-                ports=port_mapping,
+                ports=self.port_mapping,
                 working_dir='/openhands/code/',  # do not change this!
                 name=self.container_name,
                 detach=True,
@@ -714,3 +687,36 @@ class EventStreamRuntime(Runtime):
                 return self._vscode_url
         else:
             return None
+
+    @property
+    def port_mapping(self):
+        use_host_network = self.config.sandbox.use_host_network
+
+        # Initialize port mappings
+        port_mapping: dict[str, list[dict[str, str]]] | None = None
+        if not use_host_network:
+            port_mapping = {
+                f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}],
+                '4141/tcp': [{'HostPort': '4141'}],
+            }
+            # Add custom port mappings from config if specified
+            if (
+                hasattr(self.config.sandbox, 'port_mappings')
+                and self.config.sandbox.port_mappings
+            ):
+                for (
+                    container_port,
+                    host_port,
+                ) in self.config.sandbox.port_mappings.items():
+                    port_mapping[f'{container_port}/tcp'] = [
+                        {'HostPort': str(host_port)}
+                    ]
+
+        if self.vscode_enabled:
+            # vscode is on port +1 from container port
+            if isinstance(port_mapping, dict):
+                port_mapping[f'{self._container_port + 1}/tcp'] = [
+                    {'HostPort': str(self._host_port + 1)}
+                ]
+
+        return port_mapping

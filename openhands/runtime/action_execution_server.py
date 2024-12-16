@@ -574,6 +574,14 @@ if __name__ == '__main__':
             return {'token': None}
 
     # ================================
+    # Port-specific operations
+    # ================================
+    @app.get('/ports')
+    async def get_ports():
+        # Dynamic port logic goes here
+        return {}
+
+    # ================================
     # File-specific operations for UI
     # ================================
 

@@ -314,6 +314,10 @@ class RemoteRuntime(Runtime):
         else:
             return None
 
+    @property
+    def port_mappings(self) -> dict[str, list[dict[str, str]]] | None:
+        return None
+
     def _wait_until_alive(self):
         retry_decorator = tenacity.retry(
             stop=tenacity.stop_after_delay(

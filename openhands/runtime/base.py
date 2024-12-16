@@ -358,3 +358,7 @@ class Runtime(FileEditRuntimeMixin):
     @property
     def vscode_url(self) -> str | None:
         raise NotImplementedError('This method is not implemented in the base class.')
+
+    @property
+    def ports(self) -> dict[str, list[dict[str, str]]] | None:
+        raise NotImplementedError('This method is not implemented in the base class.')
