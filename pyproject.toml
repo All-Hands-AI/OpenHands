@@ -100,13 +100,13 @@ reportlab = "*"
 [tool.coverage.run]
 concurrency = ["gevent"]
 
+
 [tool.poetry.group.runtime.dependencies]
 jupyterlab = "*"
 notebook = "*"
 jupyter_kernel_gateway = "*"
 flake8 = "*"
 opencv-python = "*"
-
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
@@ -129,6 +129,7 @@ ignore = ["D1"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
 
 [tool.poetry.group.evaluation.dependencies]
 streamlit = "*"
