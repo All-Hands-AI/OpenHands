@@ -170,7 +170,7 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
           {isOpen && (
             <OpenVSCodeButton
               onClick={handleOpenVSCode}
-              isDisabled={status !== WsClientProviderStatus.ACTIVE}
+              isDisabled={status === WsClientProviderStatus.OPENING}
             />
           )}
         </div>
