@@ -160,22 +160,36 @@ class LLMCondenser(Condenser):
 
 
 class AmortizedForgettingCondenser(Condenser):
-    """A condenser that gradually forgets events over time based on a decay rate."""
+    """A condenser that maintains a condensed history and forgets old events when it grows too large."""
 
-    def __init__(self, decay_rate: float = 0.5, min_events: int = 5):
-        self.decay_rate = decay_rate
-        self.min_events = min_events
+    def __init__(self, max_size: int = 100):
+        self.max_size = max_size
+        self._condensed_history: list[Event] = []
 
     def condense(self, state: State) -> list[Event]:
-        """Condense events by probabilistically forgetting them based on age.
+        """Maintain a condensed history by adding new events and forgetting old ones when needed.
 
         Args:
             state (State): The state containing the event history to condense.
 
         Returns:
-            list[Event]: The condensed event sequence.
-
-        Raises:
-            NotImplementedError: This method is not yet implemented.
+            list[Event]: The current condensed event sequence.
         """
-        raise NotImplementedError("AmortizedForgettingCondenser.condense is not yet implemented")
+        # If we have no history yet, initialize with all events
+        if not self._condensed_history:
+            self._condensed_history = state.history.copy()
+            return self._condensed_history
+
+        # Find the timestamp of our last event
+        last_timestamp = self._condensed_history[-1].timestamp
+
+        # Add any new events that occurred after our last event
+        new_events = [e for e in state.history if e.timestamp > last_timestamp]
+        self._condensed_history.extend(new_events)
+
+        # If we're over max_size, forget the first half of events until we're under half max_size
+        while len(self._condensed_history) > self.max_size:
+            forget_count = len(self._condensed_history) // 2
+            self._condensed_history = self._condensed_history[forget_count:]
+
+        return self._condensed_history

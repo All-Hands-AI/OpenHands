@@ -196,27 +196,58 @@ def test_llm_condenser_error():
 
 def test_amortized_forgetting_condenser_from_config():
     """Test that AmortizedForgettingCondenser objects can be made from config."""
-    decay_rate = 0.7
-    min_events = 3
-    config = AmortizedForgettingCondenserConfig(decay_rate=decay_rate, min_events=min_events)
+    max_size = 50
+    config = AmortizedForgettingCondenserConfig(max_size=max_size)
     condenser = Condenser.from_config(config)
 
     assert isinstance(condenser, AmortizedForgettingCondenser)
-    assert condenser.decay_rate == decay_rate
-    assert condenser.min_events == min_events
+    assert condenser.max_size == max_size
 
 
-def test_amortized_forgetting_condenser_not_implemented():
-    """Test that AmortizedForgettingCondenser raises NotImplementedError."""
-    events = [create_test_event('Event 1', datetime(2024, 1, 1, 10, 0))]
+def test_amortized_forgetting_condenser():
+    """Test that AmortizedForgettingCondenser correctly maintains and forgets history."""
+    # Create a sequence of events with timestamps
+    events = [
+        create_test_event('Event 1', datetime(2024, 1, 1, 10, 0)),
+        create_test_event('Event 2', datetime(2024, 1, 1, 10, 1)),
+        create_test_event('Event 3', datetime(2024, 1, 1, 10, 2)),
+    ]
 
     mock_state = MagicMock()
+    mock_state.history = events[:2]  # Initially only first two events
+
+    # Create condenser with small max_size to test forgetting
+    condenser = AmortizedForgettingCondenser(max_size=4)
+
+    # First call should store first two events
+    result = condenser.condense(mock_state)
+    assert len(result) == 2
+    assert result[0]._message == 'Event 1'
+    assert result[1]._message == 'Event 2'
+
+    # Add third event to state
     mock_state.history = events
+    result = condenser.condense(mock_state)
+    assert len(result) == 3
+    assert result[0]._message == 'Event 1'
+    assert result[1]._message == 'Event 2'
+    assert result[2]._message == 'Event 3'
 
-    condenser = AmortizedForgettingCondenser()
+    # Add same events again - should not duplicate
+    result = condenser.condense(mock_state)
+    assert len(result) == 3
+    assert result[0]._message == 'Event 1'
+    assert result[1]._message == 'Event 2'
+    assert result[2]._message == 'Event 3'
 
-    try:
-        condenser.condense(mock_state)
-        raise AssertionError('Expected NotImplementedError was not raised.')
-    except NotImplementedError as e:
-        assert str(e) == 'AmortizedForgettingCondenser.condense is not yet implemented'
+    # Add more events to trigger forgetting
+    new_events = events + [
+        create_test_event('Event 4', datetime(2024, 1, 1, 10, 3)),
+        create_test_event('Event 5', datetime(2024, 1, 1, 10, 4)),
+    ]
+    mock_state.history = new_events
+    result = condenser.condense(mock_state)
+    assert len(result) == 3  # Should have forgotten first two events
+    assert result[0]._message == 'Event 3'
+    assert result[1]._message == 'Event 4'
+    assert result[2]._message == 'Event 5'

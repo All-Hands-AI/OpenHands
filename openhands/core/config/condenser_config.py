@@ -37,16 +37,10 @@ class AmortizedForgettingCondenserConfig(BaseModel):
     """Configuration for AmortizedForgettingCondenser."""
 
     type: Literal['amortized'] = Field('amortized')
-    decay_rate: float = Field(
-        default=0.5,
-        description='Rate at which events are forgotten over time.',
-        ge=0.0,
-        le=1.0
-    )
-    min_events: int = Field(
-        default=5,
-        description='Minimum number of events to keep.',
-        ge=1
+    max_size: int = Field(
+        default=100,
+        description='Maximum size of the condensed history before triggering forgetting.',
+        ge=2
     )
 
 
