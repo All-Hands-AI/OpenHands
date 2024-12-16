@@ -11,10 +11,23 @@ import { useWsClient } from "#/context/ws-client-provider";
   The reason for this is that the hook exposes a ref that requires a DOM element to be rendered.
 */
 
-export const useTerminal = (
-  commands: Command[] = [],
-  secrets: string[] = [],
-) => {
+interface UseTerminalConfig {
+  commands: Command[];
+  secrets: string[];
+  disabled: boolean;
+}
+
+const DEFAULT_TERMINAL_CONFIG: UseTerminalConfig = {
+  commands: [],
+  secrets: [],
+  disabled: false,
+};
+
+export const useTerminal = ({
+  commands,
+  secrets,
+  disabled,
+}: UseTerminalConfig = DEFAULT_TERMINAL_CONFIG) => {
   const { send } = useWsClient();
   const terminal = React.useRef<Terminal | null>(null);
   const fitAddon = React.useRef<FitAddon | null>(null);
@@ -85,36 +98,12 @@ export const useTerminal = (
     terminal.current = createTerminal();
     fitAddon.current = new FitAddon();
 
-    let resizeObserver: ResizeObserver;
-    let commandBuffer = "";
+    let resizeObserver: ResizeObserver | null = null;
 
     if (ref.current) {
       /* Initialize the terminal in the DOM */
       initializeTerminal();
-
       terminal.current.write("$ ");
-      terminal.current.onKey(({ key, domEvent }) => {
-        if (domEvent.key === "Enter") {
-          handleEnter(commandBuffer);
-          commandBuffer = "";
-        } else if (domEvent.key === "Backspace") {
-          if (commandBuffer.length > 0) {
-            commandBuffer = handleBackspace(commandBuffer);
-          }
-        } else {
-          // Ignore paste event
-          if (key.charCodeAt(0) === 22) {
-            return;
-          }
-          commandBuffer += key;
-          terminal.current?.write(key);
-        }
-      });
-      terminal.current.attachCustomKeyEventHandler((event) =>
-        pasteHandler(event, (text) => {
-          commandBuffer += text;
-        }),
-      );
 
       /* Listen for resize events */
       resizeObserver = new ResizeObserver(() => {
@@ -125,7 +114,7 @@ export const useTerminal = (
 
     return () => {
       terminal.current?.dispose();
-      resizeObserver.disconnect();
+      resizeObserver?.disconnect();
     };
   }, []);
 
@@ -151,6 +140,43 @@ export const useTerminal = (
       lastCommandIndex.current = commands.length; // Update the position of the last command
     }
   }, [commands]);
+
+  React.useEffect(() => {
+    if (terminal.current) {
+      let commandBuffer = "";
+
+      if (!disabled) {
+        terminal.current.onKey(({ key, domEvent }) => {
+          if (domEvent.key === "Enter") {
+            handleEnter(commandBuffer);
+            commandBuffer = "";
+          } else if (domEvent.key === "Backspace") {
+            if (commandBuffer.length > 0) {
+              commandBuffer = handleBackspace(commandBuffer);
+            }
+          } else {
+            // Ignore paste event
+            if (key.charCodeAt(0) === 22) {
+              return;
+            }
+            commandBuffer += key;
+            terminal.current?.write(key);
+          }
+        });
+
+        terminal.current.attachCustomKeyEventHandler((event) =>
+          pasteHandler(event, (text) => {
+            commandBuffer += text;
+          }),
+        );
+      } else {
+        terminal.current.onKey((e) => {
+          e.domEvent.preventDefault();
+          e.domEvent.stopPropagation();
+        });
+      }
+    }
+  }, [disabled, terminal]);
 
   return ref;
 };
