@@ -46,7 +46,7 @@ TEST_SEABORN_VERBOSE = 'coverage run -m pytest -rA --tb=long'
 TEST_PYTEST = 'coverage run -m pytest -rA'
 TEST_PYTEST_VERBOSE = 'coverage run -m pytest -rA --tb=long'
 TEST_SPHINX = 'tox --current-env -epy39 -v --'
-TEST_SYMPY = "coverage run PYTHONWARNINGS='ignore::UserWarning,ignore::SyntaxWarning' bin/test -C --verbose"
+TEST_SYMPY = "PYTHONWARNINGS='ignore::UserWarning,ignore::SyntaxWarning' coverage run bin/test -C --verbose"
 TEST_SYMPY_VERBOSE = 'coverage run bin/test -C --verbose'
 
 
@@ -1521,11 +1521,10 @@ test-command = "{test_cmd}"
 name = "local"
 """
 
-MUTATION_TIMEOUT = 600
+MUTATION_TIMEOUT = 3600
 MUTATION_BUFFER = 500
 
-UPDATE_TOX = """
-# Function to add coverage to the commands in the [testenv] section of a tox.ini file
+UPDATE_TOX = r"""
 add_coverage_tox() {
   local config_file="$1"
 
@@ -1535,43 +1534,37 @@ add_coverage_tox() {
     return 1
   fi
 
-  # Read the file content
-  local file_content
-  file_content=$(<"$config_file")
-
-  # Check if the testenv section exists
-  if echo "$file_content" | grep -q "\\[testenv\\]"; then
-    # Extract commands section
-    local commands
-    commands=$(grep -A 100 "\\[testenv\\]" "$config_file" | grep "commands" | cut -d= -f2-)
-
-    echo "OLD COMMANDS: $commands"
-
-    # Modify the command to include coverage
-    local modified_commands=""
-    while IFS= read -r line; do
-      if [[ "$line" == *pytest* && "$line" != *"--cov"* ]]; then
-        line="${line/pytest/pytest --cov sphinx}"
-      fi
-      modified_commands+="$line"$'\n'
-    done <<< "$commands"
-
-    # Add the coverage report generation
-    modified_commands+="coverage json -o coverage.json"$'\n'
-
-    echo "NEW COMMANDS: $modified_commands"
-
-    # Replace the commands section in the config file
-    awk -v new_commands="$modified_commands" '
-      BEGIN {replace = 0}
-      /^\\[testenv\\]/ {replace = 1}
-      replace && $0 ~ /^commands/ {print "commands = " new_commands; replace = 0; next}
-      {print}
-    ' "$config_file" > "${config_file}.tmp" && mv "${config_file}.tmp" "$config_file"
-
-    echo "Coverage added to $config_file"
-  else
+  # Check if the [testenv] section exists
+  if ! grep -q "^\[testenv\]" "$config_file"; then
     echo "Error: [testenv] section not found in $config_file."
+    return 1
   fi
+
+  # Modify the commands in the [testenv] section
+  awk '
+    BEGIN { in_testenv = 0; commands_modified = 0 }
+    /^\[testenv\]/ { in_testenv = 1 }
+    in_testenv && /^commands\s*=/ {
+      # Start modifying commands
+      print $0
+      while (getline > 0) {
+        if ($0 ~ /^[[:space:]]*$/) break # Stop at the next empty line
+        if ($0 ~ /pytest/ && $0 !~ /--cov/) {
+          # Add --cov to pytest commands
+          sub(/pytest/, "pytest --cov sphinx", $0)
+        }
+        print "    " $0
+      }
+      # Add coverage json command after pytest
+      if (commands_modified == 0) {
+        print "    coverage json -o coverage.json"
+        commands_modified = 1
+      }
+      next
+    }
+    { print }
+  ' "$config_file" > "${config_file}.tmp" && mv "${config_file}.tmp" "$config_file"
+
+  echo ">> Coverage commands successfully added to $config_file."
 }
 """

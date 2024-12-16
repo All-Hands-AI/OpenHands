@@ -37,7 +37,7 @@ COMMAND="poetry run python evaluation/benchmarks/testgeneval/eval_infer.py \
 
 if [ "$SKIP_MUTATION" == "true" ]; then
   echo "Skipping mutation evaluation"
-  COMMAND="$COMMAND --skip-mutation"
+  COMMAND="$COMMAND --skip_mutation"
 fi
 
 if [ -n "$EVAL_LIMIT" ]; then
@@ -45,6 +45,7 @@ if [ -n "$EVAL_LIMIT" ]; then
   COMMAND="$COMMAND --eval-n-limit $EVAL_LIMIT"
 fi
 
+echo $COMMAND
 # Run the command
 eval $COMMAND
 

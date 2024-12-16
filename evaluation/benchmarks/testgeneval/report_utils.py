@@ -12,8 +12,6 @@ def check_coverage(coverage_output, code_file):
 
 
 def check_mutation(mutation_output):
-    print(mutation_output)
-    input()
     if 'total jobs: ' in mutation_output:
         num_mutants = int(mutation_output.split('total jobs: ')[1].split('\n')[0])
         final_conf = mutation_output.split('\n')[-1]

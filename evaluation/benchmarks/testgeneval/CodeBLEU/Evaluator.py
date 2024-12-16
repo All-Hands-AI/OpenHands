@@ -106,8 +106,6 @@ class Evaluator:
             cum_weight += self.theta
             # else, ignore this part
 
-        # print(f"{ngram_match_score:.3f} | {cum_weighted_score:.3f} | {syntax_match_score:.3f} | {dataflow_match_score:.3f} > {cum_weighted_score/cum_weight:.3f}")
-
         return cum_weighted_score / cum_weight
 
     def sentence_code_bleu(
