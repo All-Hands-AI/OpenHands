@@ -21,7 +21,7 @@ class FileReadAction(Action):
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
     agent_view: bool = False
-    translated_ipython_code: str = ''
+    translated_ipython_code: str = ''  # translated openhands-aci IPython code
 
     @property
     def message(self) -> str:
