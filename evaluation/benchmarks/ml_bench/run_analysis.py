@@ -124,7 +124,7 @@ if __name__ == '__main__':
     # for details of how to set `llm_config`
     if args.llm_config:
         specified_llm_config = get_llm_config_arg(args.llm_config)
-        # modify_params must be False for evaluation purpose, otherwise litellm could modify the messages
+        # modify_params must be False for evaluation purpose, for reproducibility and accurancy of results
         specified_llm_config.modify_params = False
 
         if specified_llm_config:
