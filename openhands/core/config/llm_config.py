@@ -44,7 +44,7 @@ class LLMConfig:
         log_completions_folder: The folder to log LLM completions to. Required if log_completions is True.
         draft_editor: A more efficient LLM to use for file editing. Introduced in [PR 3985](https://github.com/All-Hands-AI/OpenHands/pull/3985).
         custom_tokenizer: A custom tokenizer to use for token counting.
-        modify_params: Allow litellm to modify parameters to make them compatible with the provider. For example, insert default messages when empty or merge consecutive roles content. Defaults to True.
+        modify_params: Allow litellm to modify parameters to make them compatible with the provider. For example, insert default messages when empty. Defaults to True.
     """
 
     model: str = 'claude-3-5-sonnet-20241022'
