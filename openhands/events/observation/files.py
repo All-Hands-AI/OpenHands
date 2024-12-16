@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from difflib import SequenceMatcher
 
 from openhands.core.schema import ObservationType
-from openhands.events.event import FileEditSource
+from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.observation.observation import Observation
 
 
@@ -12,7 +12,7 @@ class FileReadObservation(Observation):
 
     path: str
     observation: str = ObservationType.READ
-    agent_view: bool = False
+    impl_source: FileReadSource = FileReadSource.DEFAULT
 
     @property
     def message(self) -> str:

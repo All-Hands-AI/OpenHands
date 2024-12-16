@@ -3,7 +3,7 @@ from typing import ClassVar
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action, ActionSecurityRisk
-from openhands.events.event import FileEditSource
+from openhands.events.event import FileEditSource, FileReadSource
 
 
 @dataclass
@@ -20,7 +20,7 @@ class FileReadAction(Action):
     action: str = ActionType.READ
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
-    agent_view: bool = False
+    impl_source: FileReadSource = FileReadSource.DEFAULT
     translated_ipython_code: str = ''  # translated openhands-aci IPython code
 
     @property

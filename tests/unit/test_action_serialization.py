@@ -137,7 +137,7 @@ def test_file_read_action_serialization_deserialization():
             'start': 0,
             'end': -1,
             'thought': 'None',
-            'agent_view': False,
+            'impl_source': 'default',
             'translated_ipython_code': '',
         },
     }

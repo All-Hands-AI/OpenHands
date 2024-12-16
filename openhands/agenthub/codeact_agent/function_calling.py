@@ -26,7 +26,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from openhands.events.event import FileEditSource
+from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 
 _BASH_DESCRIPTION = """Execute a bash command in the terminal.
@@ -512,8 +512,8 @@ def response_to_actions(response: ModelResponse) -> list[Action]:
                 if arguments['command'] == 'view':
                     action = FileReadAction(
                         path=arguments['path'],
-                        agent_view=True,
                         translated_ipython_code=code,
+                        impl_source=FileReadSource.OH_ACI,
                     )
                 else:
                     action = FileEditAction(

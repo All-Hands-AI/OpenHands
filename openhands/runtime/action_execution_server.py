@@ -40,7 +40,7 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
-from openhands.events.event import FileEditSource
+from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
@@ -240,7 +240,7 @@ class ActionExecutor:
                                 return FileReadObservation(
                                     content=result_dict['formatted_output_and_error'],
                                     path=result_dict['path'],
-                                    agent_view=True,
+                                    impl_source=FileReadSource.OH_ACI,
                                 )
                         else:  # Error output
                             results.append(result_dict['formatted_output_and_error'])
@@ -281,7 +281,7 @@ class ActionExecutor:
         return str(filepath)
 
     async def read(self, action: FileReadAction) -> Observation:
-        if action.agent_view:
+        if action.impl_source == FileReadSource.OH_ACI:
             return await self.run_ipython(
                 IPythonRunCellAction(
                     code=action.translated_ipython_code,

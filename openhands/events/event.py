@@ -17,6 +17,11 @@ class FileEditSource(str, Enum):
     OH_ACI = 'oh_aci'  # openhands-aci
 
 
+class FileReadSource(str, Enum):
+    OH_ACI = 'oh_aci'  # openhands-aci
+    DEFAULT = 'default'
+
+
 @dataclass
 class Event:
     @property
