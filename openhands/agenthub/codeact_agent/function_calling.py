@@ -194,7 +194,7 @@ LLMBasedFileEditTool = ChatCompletionToolParam(
                     'type': 'string',
                     'description': 'The absolute path to the file to be edited.',
                 },
-                'new_content_draft': {
+                'content': {
                     'type': 'string',
                     'description': 'A draft of the new content for the file being edited. Note that the assistant may skip unchanged lines.',
                 },
