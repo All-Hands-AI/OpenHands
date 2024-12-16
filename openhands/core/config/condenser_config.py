@@ -33,4 +33,20 @@ class LLMCondenserConfig(BaseModel):
     )
 
 
-CondenserConfig = NoOpCondenserConfig | RecentEventsCondenserConfig | LLMCondenserConfig
+class AmortizedForgettingCondenserConfig(BaseModel):
+    """Configuration for AmortizedForgettingCondenser."""
+
+    type: Literal['amortized'] = Field('amortized')
+    max_size: int = Field(
+        default=100,
+        description='Maximum size of the condensed history before triggering forgetting.',
+        ge=2
+    )
+
+
+CondenserConfig = (
+    NoOpCondenserConfig
+    | RecentEventsCondenserConfig
+    | LLMCondenserConfig
+    | AmortizedForgettingCondenserConfig
+)

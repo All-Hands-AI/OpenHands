@@ -6,6 +6,7 @@ from typing import Any
 
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import (
+    AmortizedForgettingCondenserConfig,
     CondenserConfig,
     LLMCondenserConfig,
     NoOpCondenserConfig,
@@ -66,6 +67,8 @@ class Condenser(ABC):
                 return RecentEventsCondenser(**config.model_dump(exclude=['type']))
             case LLMCondenserConfig(llm_config=llm_config):
                 return LLMCondenser(llm=LLM(config=llm_config))
+            case AmortizedForgettingCondenserConfig():
+                return AmortizedForgettingCondenser(**config.model_dump(exclude=['type']))
             case _:
                 raise ValueError(f'Unknown condenser config: {config}')
 
@@ -154,3 +157,39 @@ class LLMCondenser(Condenser):
             logger.error('Error condensing events: %s', str(e), exc_info=False)
             # TODO If the llm fails with ContextWindowExceededError, we can try to condense the memory chunk by chunk
             raise e
+
+
+class AmortizedForgettingCondenser(Condenser):
+    """A condenser that maintains a condensed history and forgets old events when it grows too large."""
+
+    def __init__(self, max_size: int = 100):
+        self.max_size = max_size
+        self._condensed_history: list[Event] = []
+
+    def condense(self, state: State) -> list[Event]:
+        """Maintain a condensed history by adding new events and forgetting old ones when needed.
+
+        Args:
+            state (State): The state containing the event history to condense.
+
+        Returns:
+            list[Event]: The current condensed event sequence.
+        """
+        # If we have no history yet, initialize with all events
+        if not self._condensed_history:
+            self._condensed_history = state.history.copy()
+            return self._condensed_history
+
+        # Find the timestamp of our last event
+        last_timestamp = self._condensed_history[-1].timestamp
+
+        # Add any new events that occurred after our last event
+        new_events = [e for e in state.history if e.timestamp > last_timestamp]
+        self._condensed_history.extend(new_events)
+
+        # If we're over max_size, forget the first half of events until we're under half max_size
+        while len(self._condensed_history) > self.max_size:
+            forget_count = len(self._condensed_history) // 2
+            self._condensed_history = self._condensed_history[forget_count:]
+
+        return self._condensed_history
