@@ -8,6 +8,7 @@ import ArrowUp from "#/icons/angle-up-solid.svg?react";
 import ArrowDown from "#/icons/angle-down-solid.svg?react";
 import CheckCircle from "#/icons/check-circle-solid.svg?react";
 import XCircle from "#/icons/x-circle-solid.svg?react";
+import { cn } from "#/utils/utils";
 
 interface ExpandableMessageProps {
   id?: string;
@@ -35,24 +36,24 @@ export function ExpandableMessage({
     }
   }, [id, message, i18n.language]);
 
-  const border = type === "error" ? "border-danger" : "border-neutral-300";
-  const textColor = type === "error" ? "text-danger" : "text-neutral-300";
   const statusIconClasses = "h-4 w-4 ml-2 inline";
-  let arrowClasses = "h-4 w-4 ml-2 inline";
-  if (type === "error") {
-    arrowClasses += " fill-danger";
-  } else {
-    arrowClasses += " fill-neutral-300";
-  }
 
   return (
     <div
-      className={`flex gap-2 items-center justify-start border-l-2 pl-2 my-2 py-2 ${border}`}
+      className={cn(
+        "flex gap-2 items-center justify-start border-l-2 pl-2 my-2 py-2",
+        type === "error" ? "border-danger" : "border-neutral-300",
+      )}
     >
       <div className="text-sm w-full">
         {headline && (
           <div className="flex flex-row justify-between items-center w-full">
-            <span className={`${textColor} font-bold`}>
+            <span
+              className={cn(
+                "font-bold",
+                type === "error" ? "text-danger" : "text-neutral-300",
+              )}
+            >
               {headline}
               <button
                 type="button"
@@ -60,9 +61,19 @@ export function ExpandableMessage({
                 className="cursor-pointer text-left"
               >
                 {showDetails ? (
-                  <ArrowUp className={arrowClasses} />
+                  <ArrowUp
+                    className={cn(
+                      "h-4 w-4 ml-2 inline",
+                      type === "error" ? "fill-danger" : "fill-neutral-300",
+                    )}
+                  />
                 ) : (
-                  <ArrowDown className={arrowClasses} />
+                  <ArrowDown
+                    className={cn(
+                      "h-4 w-4 ml-2 inline",
+                      type === "error" ? "fill-danger" : "fill-neutral-300",
+                    )}
+                  />
                 )}
               </button>
             </span>
@@ -71,12 +82,12 @@ export function ExpandableMessage({
                 {success ? (
                   <CheckCircle
                     data-testid="status-icon"
-                    className={`${statusIconClasses} fill-success`}
+                    className={cn(statusIconClasses, "fill-success")}
                   />
                 ) : (
                   <XCircle
                     data-testid="status-icon"
-                    className={`${statusIconClasses} fill-danger`}
+                    className={cn(statusIconClasses, "fill-danger")}
                   />
                 )}
               </span>
