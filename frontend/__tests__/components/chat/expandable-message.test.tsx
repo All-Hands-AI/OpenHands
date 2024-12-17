@@ -45,7 +45,7 @@ describe("ExpandableMessage", () => {
         success={true}
       />
     );
-    const element = screen.getByText("Command executed successfully");
+    const element = screen.getByText("OBSERVATION_MESSAGE$RUN");
     const container = element.closest("div.flex.gap-2.items-center.justify-start");
     expect(container).toHaveClass("border-neutral-300");
     const icon = screen.getByTestId("status-icon");
@@ -61,7 +61,7 @@ describe("ExpandableMessage", () => {
         success={false}
       />
     );
-    const element = screen.getByText("Command failed");
+    const element = screen.getByText("OBSERVATION_MESSAGE$RUN");
     const container = element.closest("div.flex.gap-2.items-center.justify-start");
     expect(container).toHaveClass("border-neutral-300");
     const icon = screen.getByTestId("status-icon");
@@ -76,7 +76,7 @@ describe("ExpandableMessage", () => {
         type="action"
       />
     );
-    const element = screen.getByText("Ran a bash command");
+    const element = screen.getByText("OBSERVATION_MESSAGE$RUN");
     const container = element.closest("div.flex.gap-2.items-center.justify-start");
     expect(container).toHaveClass("border-neutral-300");
     expect(screen.queryByTestId("status-icon")).not.toBeInTheDocument();
