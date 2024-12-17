@@ -308,6 +308,7 @@ class SessionManager:
             )
 
         await self._close_session(session)
+        return True
 
     async def _close_session(self, session: Session):
         logger.info(f'_close_session:{session.sid}')
