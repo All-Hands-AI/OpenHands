@@ -149,6 +149,8 @@ class CmdOutputObservation(Observation):
 
     def to_agent_observation(self) -> str:
         ret = f'{self.metadata.prefix}{self.content}{self.metadata.suffix}'
+        if self.metadata.working_dir:
+            ret += f'\n[Current working directory: {self.metadata.working_dir}]'
         if self.metadata.py_interpreter_path:
             ret += f'\n[Python interpreter: {self.metadata.py_interpreter_path}]'
         return ret
