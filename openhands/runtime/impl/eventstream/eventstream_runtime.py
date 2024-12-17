@@ -43,6 +43,7 @@ from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.impl.eventstream.containers import remove_all_containers
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils import find_available_tcp_port
+from openhands.runtime.utils.log_streamer import LogStreamer
 from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
@@ -56,68 +57,6 @@ def remove_all_runtime_containers():
 
 
 atexit.register(remove_all_runtime_containers)
-
-
-class LogBuffer:
-    """Synchronous buffer for Docker container logs.
-
-    This class provides a thread-safe way to collect, store, and retrieve logs
-    from a Docker container. It uses a list to store log lines and provides methods
-    for appending, retrieving, and clearing logs.
-    """
-
-    def __init__(self, container: docker.models.containers.Container, logFn: Callable):
-        self.init_msg = 'Runtime client initialized.'
-
-        self.buffer: list[str] = []
-        self.lock = threading.Lock()
-        self._stop_event = threading.Event()
-        self.log_generator = container.logs(stream=True, follow=True)
-        self.log_stream_thread = threading.Thread(target=self.stream_logs)
-        self.log_stream_thread.daemon = True
-        self.log_stream_thread.start()
-        self.log = logFn
-
-    def append(self, log_line: str):
-        with self.lock:
-            self.buffer.append(log_line)
-
-    def get_and_clear(self) -> list[str]:
-        with self.lock:
-            logs = list(self.buffer)
-            self.buffer.clear()
-            return logs
-
-    def stream_logs(self):
-        """Stream logs from the Docker container in a separate thread.
-
-        This method runs in its own thread to handle the blocking
-        operation of reading log lines from the Docker SDK's synchronous generator.
-        """
-        try:
-            for log_line in self.log_generator:
-                if self._stop_event.is_set():
-                    break
-                if log_line:
-                    decoded_line = log_line.decode('utf-8').rstrip()
-                    self.append(decoded_line)
-        except Exception as e:
-            self.log('error', f'Error streaming docker logs: {e}')
-
-    def __del__(self):
-        if self.log_stream_thread.is_alive():
-            self.log(
-                'warn',
-                "LogBuffer was not properly closed. Use 'log_buffer.close()' for clean shutdown.",
-            )
-            self.close(timeout=5)
-
-    def close(self, timeout: float = 5.0):
-        self._stop_event.set()
-        self.log_stream_thread.join(timeout)
-        # Close the log generator to release the file descriptor
-        if hasattr(self.log_generator, 'close'):
-            self.log_generator.close()
 
 
 class EventStreamRuntime(Runtime):
@@ -186,7 +125,7 @@ class EventStreamRuntime(Runtime):
         self.runtime_builder = DockerRuntimeBuilder(self.docker_client)
 
         # Buffer for container logs
-        self.log_buffer: LogBuffer | None = None
+        self.log_streamer: LogStreamer | None = None
 
         self.init_base_runtime(
             config,
@@ -241,7 +180,7 @@ class EventStreamRuntime(Runtime):
                 f'Container started: {self.container_name}. VSCode URL: {self.vscode_url}',
             )
 
-        self.log_buffer = LogBuffer(self.container, self.log)
+        self.log_streamer = LogStreamer(self.container, self.log)
 
         if not self.attach_to_existing:
             self.log('info', f'Waiting for client to become ready at {self.api_url}...')
@@ -395,27 +334,6 @@ class EventStreamRuntime(Runtime):
             f'attached to container: {self.container_name} {self._container_port} {self.api_url}',
         )
 
-    def _refresh_logs(self):
-        self.log('debug', 'Getting container logs...')
-
-        assert (
-            self.log_buffer is not None
-        ), 'Log buffer is expected to be initialized when container is started'
-
-        logs = self.log_buffer.get_and_clear()
-        if logs:
-            formatted_logs = '\n'.join([f'    |{log}' for log in logs])
-            self.log(
-                'debug',
-                '\n'
-                + '-' * 35
-                + 'Container logs:'
-                + '-' * 35
-                + f'\n{formatted_logs}'
-                + '\n'
-                + '-' * 80,
-            )
-
     @tenacity.retry(
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
         retry=tenacity.retry_if_exception_type(
@@ -434,8 +352,7 @@ class EventStreamRuntime(Runtime):
         except docker.errors.NotFound:
             raise RuntimeNotFoundError(f'Container {self.container_name} not found.')
 
-        self._refresh_logs()
-        if not self.log_buffer:
+        if not self.log_streamer:
             raise RuntimeError('Runtime client is not ready.')
 
         with send_request(
@@ -452,8 +369,8 @@ class EventStreamRuntime(Runtime):
         Parameters:
         - rm_all_containers (bool): Whether to remove all containers with the 'openhands-sandbox-' prefix
         """
-        if self.log_buffer:
-            self.log_buffer.close()
+        if self.log_streamer:
+            self.log_streamer.close()
 
         if self.session:
             self.session.close()
@@ -501,8 +418,6 @@ class EventStreamRuntime(Runtime):
                     'Action has been rejected by the user! Waiting for further user input.'
                 )
 
-            self._refresh_logs()
-
             assert action.timeout is not None
 
             try:
@@ -521,7 +436,7 @@ class EventStreamRuntime(Runtime):
                 raise RuntimeError(
                     f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
                 )
-            self._refresh_logs()
+
             return obs
 
     def run(self, action: CmdRunAction) -> Observation:
@@ -552,7 +467,6 @@ class EventStreamRuntime(Runtime):
         if not os.path.exists(host_src):
             raise FileNotFoundError(f'Source file {host_src} does not exist')
 
-        self._refresh_logs()
         try:
             if recursive:
                 # For recursive copy, create a zip file
@@ -597,14 +511,13 @@ class EventStreamRuntime(Runtime):
             self.log(
                 'debug', f'Copy completed: host:{host_src} -> runtime:{sandbox_dest}'
             )
-            self._refresh_logs()
 
     def list_files(self, path: str | None = None) -> list[str]:
         """List files in the sandbox.
 
         If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
         """
-        self._refresh_logs()
+
         try:
             data = {}
             if path is not None:
@@ -625,7 +538,7 @@ class EventStreamRuntime(Runtime):
 
     def copy_from(self, path: str) -> Path:
         """Zip all files in the sandbox and return as a stream of bytes."""
-        self._refresh_logs()
+
         try:
             params = {'path': path}
             with send_request(

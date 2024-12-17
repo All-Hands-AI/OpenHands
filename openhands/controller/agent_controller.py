@@ -312,6 +312,20 @@ class AgentController:
                 str(action),
                 extra={'msg_type': 'ACTION', 'event_source': EventSource.USER},
             )
+            # Extend max iterations when the user sends a message (only in non-headless mode)
+            if self._initial_max_iterations is not None and not self.headless_mode:
+                self.state.max_iterations = (
+                    self.state.iteration + self._initial_max_iterations
+                )
+                if (
+                    self.state.traffic_control_state == TrafficControlState.THROTTLING
+                    or self.state.traffic_control_state == TrafficControlState.PAUSED
+                ):
+                    self.state.traffic_control_state = TrafficControlState.NORMAL
+                self.log(
+                    'debug',
+                    f'Extended max iterations to {self.state.max_iterations} after user message',
+                )
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
@@ -342,6 +356,7 @@ class AgentController:
         elif (
             new_state == AgentState.RUNNING
             and self.state.agent_state == AgentState.PAUSED
+            # TODO: do we really need both THROTTLING and PAUSED states, or can we clean up one of them completely?
             and self.state.traffic_control_state == TrafficControlState.THROTTLING
         ):
             # user intends to interrupt traffic control and let the task resume temporarily
@@ -351,6 +366,7 @@ class AgentController:
                 self.state.iteration is not None
                 and self.state.max_iterations is not None
                 and self._initial_max_iterations is not None
+                and not self.headless_mode
             ):
                 if self.state.iteration >= self.state.max_iterations:
                     self.state.max_iterations += self._initial_max_iterations
@@ -631,16 +647,24 @@ class AgentController:
             self.state.traffic_control_state = TrafficControlState.NORMAL
         else:
             self.state.traffic_control_state = TrafficControlState.THROTTLING
+            # Format values as integers for iterations, keep decimals for budget
+            if limit_type == 'iteration':
+                current_str = str(int(current_value))
+                max_str = str(int(max_value))
+            else:
+                current_str = f'{current_value:.2f}'
+                max_str = f'{max_value:.2f}'
+
             if self.headless_mode:
                 e = RuntimeError(
                     f'Agent reached maximum {limit_type} in headless mode. '
-                    f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}'
+                    f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}'
                 )
                 await self._react_to_exception(e)
             else:
                 e = RuntimeError(
                     f'Agent reached maximum {limit_type}. '
-                    f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}. '
+                    f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}. '
                 )
                 # FIXME: this isn't really an exception--we should have a different path
                 await self._react_to_exception(e)
