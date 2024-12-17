@@ -111,6 +111,7 @@ class ActionExecutor:
         self.browser = BrowserEnv(browsergym_eval_env)
         self.start_time = time.time()
         self.last_execution_time = self.start_time
+        self._initialized = False
 
     @property
     def initial_pwd(self):
@@ -135,6 +136,11 @@ class ActionExecutor:
 
         await self._init_bash_commands()
         logger.debug('Runtime client initialized.')
+        self._initialized = True
+
+    @property
+    def initialized(self) -> bool:
+        return self._initialized
 
     async def _init_plugin(self, plugin: Plugin):
         await plugin.initialize(self.username)
@@ -558,6 +564,8 @@ if __name__ == '__main__':
 
     @app.get('/alive')
     async def alive():
+        if client is None or not client.initialized:
+            return {'status': 'not initialized'}
         return {'status': 'ok'}
 
     # ================================
