@@ -45,7 +45,6 @@ class IPythonRunCellObservation(Observation):
             'ERROR:',
             'Error:',
             'Exception:',
-            'is required for command:',
         ]
         return any(indicator in self.content for indicator in error_indicators)
 
