@@ -278,9 +278,8 @@ class RemoteRuntime(Runtime):
     def _parse_runtime_response(self, response: requests.Response):
         start_response = response.json()
         self.runtime_id = start_response['runtime_id']
-        self.runtime_id = start_response['runtime_id']
         self.runtime_url = start_response['url']
-        self.open_ports = start_response.get('open_ports', [])
+        self.open_ports = start_response.get('work_ports', [])
 
         if 'session_api_key' in start_response:
             self.session.headers.update(
