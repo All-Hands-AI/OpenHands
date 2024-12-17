@@ -40,6 +40,33 @@ def serialization_deserialization(
 
 
 # Additional tests for various observation subclasses can be included here
+def test_ipython_error_detection():
+    from openhands.events.observation import IPythonRunCellObservation
+
+    # Test error detection for various error patterns
+    error_cases = [
+        'ERROR: Something went wrong',
+        'Error: Invalid syntax',
+        'Exception: Division by zero',
+        'Parameter `old_str` is required for command: str_replace',
+    ]
+    for error_content in error_cases:
+        obs = IPythonRunCellObservation(content=error_content, code='print("test")')
+        serialized = event_to_dict(obs)
+        assert (
+            serialized['success'] is False
+        ), f'Failed to detect error in: {error_content}'
+        assert obs.error is True, f'Failed to detect error in: {error_content}'
+
+    # Test success case
+    obs = IPythonRunCellObservation(
+        content='Hello World!', code='print("Hello World!")'
+    )
+    serialized = event_to_dict(obs)
+    assert serialized['success'] is True, 'Failed to detect success'
+    assert obs.error is False, 'Failed to detect success'
+
+
 def test_success_field_serialization():
     # Test success=True
     obs = CmdOutputObservation(
