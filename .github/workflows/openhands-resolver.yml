@@ -258,7 +258,7 @@ jobs:
         uses: actions/github-script@v7
         if: always()
         env:
-          CONDITIONAL_EXECUTED: ${{ env.CONDITIONAL_EXECUTED || 'false' }}
+          AGENT_RESPONDED: ${{ env.AGENT_RESPONDED || 'false' }}
         with:
           github-token: ${{ secrets.PAT_TOKEN || github.token }}
           script: |
@@ -277,7 +277,7 @@ jobs:
             // Check logs from send_pull_request.py (pushes code to GitHub)
             if (logContent.includes("Updated pull request")) {
               console.log("Updated pull request found. Skipping comment.");
-              process.env.CONDITIONAL_EXECUTED = 'true';
+              process.env.AGENT_RESPONDED = 'true';
             } else if (logContent.includes(noChangesMessage)) {
               github.rest.issues.createComment({
                 issue_number: issueNumber,
@@ -285,7 +285,7 @@ jobs:
                 repo: context.repo.repo,
                 body: `The workflow to fix this issue encountered an error. Openhands failed to create any code changes.`
               });
-              process.env.CONDITIONAL_EXECUTED = 'true';
+              process.env.AGENT_RESPONDED = 'true';
             }
 
       # Step leaves comment for when agent is invoked on issue
@@ -293,7 +293,7 @@ jobs:
         uses: actions/github-script@v7
         if: always() # Comment on issue even if the previous steps fail
         env:
-          CONDITIONAL_EXECUTED: ${{ env.CONDITIONAL_EXECUTED || 'false' }}
+          AGENT_RESPONDED: ${{ env.AGENT_RESPONDED || 'false' }}
         with:
           github-token: ${{ secrets.PAT_TOKEN || github.token }}
           script: |
@@ -323,7 +323,7 @@ jobs:
                 repo: context.repo.repo,
                 body: `A potential fix has been generated and a draft PR #${prNumber} has been created. Please review the changes.`
               });
-              process.env.CONDITIONAL_EXECUTED = 'true';
+              process.env.AGENT_RESPONDED = 'true';
             } else if (!success && branchName) {
               github.rest.issues.createComment({
                 issue_number: issueNumber,
@@ -331,13 +331,13 @@ jobs:
                 repo: context.repo.repo,
                 body: `An attempt was made to automatically fix this issue, but it was unsuccessful. A branch named '${branchName}' has been created with the attempted changes. You can view the branch [here](https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${branchName}). Manual intervention may be required.`
               });
-              process.env.CONDITIONAL_EXECUTED = 'true';
+              process.env.AGENT_RESPONDED = 'true';
             }
 
       # Leave error comment when both PR/Issue comment handling fail
       - name: Fallback Error Comment
         uses: actions/github-script@v7
-        if: ${{ env.CONDITIONAL_EXECUTED == 'false' }} # Only run if no conditions were met in previous steps
+        if: ${{ env.AGENT_RESPONDED == 'false' }} # Only run if no conditions were met in previous steps
         with:
           github-token: ${{ secrets.PAT_TOKEN || github.token }}
           script: |
