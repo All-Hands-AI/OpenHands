@@ -444,7 +444,10 @@ class RemoteRuntime(Runtime):
         try:
             return send_request(self.session, method, url, **kwargs)
         except requests.Timeout:
-            self.log('error', 'No response received within the timeout period.')
+            self.log(
+                'error',
+                f'No response received within the timeout period for url: {url}',
+            )
             raise
         except RequestHTTPError as e:
             if is_runtime_request and e.response.status_code == 404:
