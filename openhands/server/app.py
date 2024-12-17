@@ -73,6 +73,3 @@ app.middleware('http')(
 app.middleware('http')(
     AttachSessionMiddlewareImpl(app, target_router=feedback_api_router)
 )
-# app.middleware('http')(
-#    AttachSessionMiddlewareImpl(app, target_router=session_init_router)
-# )
