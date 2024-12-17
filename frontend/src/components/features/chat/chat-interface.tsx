@@ -19,6 +19,7 @@ import { ActionSuggestions } from "./action-suggestions";
 import { ContinueButton } from "#/components/shared/buttons/continue-button";
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import { ToggleSpeechButton } from "#/components/shared/buttons/toggle-speech-button";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -129,14 +130,17 @@ export function ChatInterface() {
 
       <div className="flex flex-col gap-[6px] px-4 pb-4">
         <div className="flex justify-between relative">
-          <FeedbackActions
-            onPositiveFeedback={() =>
-              onClickShareFeedbackActionButton("positive")
-            }
-            onNegativeFeedback={() =>
-              onClickShareFeedbackActionButton("negative")
-            }
-          />
+          <div className="flex items-center gap-2">
+            <ToggleSpeechButton />
+            <FeedbackActions
+              onPositiveFeedback={() =>
+                onClickShareFeedbackActionButton("positive")
+              }
+              onNegativeFeedback={() =>
+                onClickShareFeedbackActionButton("negative")
+              }
+            />
+          </div>
 
           <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
             {messages.length > 2 &&
