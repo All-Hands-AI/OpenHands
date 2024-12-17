@@ -2,8 +2,6 @@ import time
 
 from pydantic import BaseModel, Field
 
-from openhands.core.logger import openhands_logger as logger
-
 
 class Cost(BaseModel):
     model: str
@@ -57,12 +55,9 @@ class Metrics:
         self._costs.append(Cost(cost=value, model=self.model_name))
 
     def add_response_latency(self, value: float, response_id: str) -> None:
-        if value < 0:
-            logger.warning(f'Response latency ({value}) cannot be negative.')
-            value = 0.0
         self._response_latencies.append(
             ResponseLatency(
-                latency=value, model=self.model_name, response_id=response_id
+                latency=max(0.0, value), model=self.model_name, response_id=response_id
             )
         )
 
