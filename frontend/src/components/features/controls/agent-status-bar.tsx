@@ -23,6 +23,7 @@ export function AgentStatusBar() {
     }
     if (curStatusMessage?.type === "error") {
       toast.error(message);
+      setStatusMessage(AGENT_STATUS_MAP[AgentState.ERROR].message);
       return;
     }
     if (curAgentState === AgentState.LOADING && message.trim()) {
