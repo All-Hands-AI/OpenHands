@@ -33,6 +33,11 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.llm import LLM
+from openhands.memory.condenser import (
+    CondensationObservation,
+    Condenser,
+    add_condensation_metadata,
+)
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -107,6 +112,9 @@ class CodeActAgent(Agent):
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
             disabled_microagents=self.config.disabled_microagents,
         )
+
+        self.condenser = Condenser.from_config(self.config.condenser)
+        logger.debug(f'Using condenser: {self.condenser}')
 
         self.pending_actions: deque[Action] = deque()
 
@@ -308,6 +316,9 @@ class CodeActAgent(Agent):
             text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
             text += '\n[Last action has been rejected by the user]'
             message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, CondensationObservation):
+            text = truncate_content(obs.content, max_message_chars)
+            message = Message(role='user', content=[TextContent(text=text)])
         else:
             # If an observation message is not returned, it will cause an error
             # when the LLM tries to return the next message
@@ -427,7 +438,10 @@ class CodeActAgent(Agent):
 
         pending_tool_call_action_messages: dict[str, Message] = {}
         tool_call_id_to_message: dict[str, Message] = {}
-        events = list(state.history)
+
+        # Condense the events from the state.
+        events = self.condenser.condense(state)
+
         for event in events:
             # create a regular message from an event
             if isinstance(event, Action):

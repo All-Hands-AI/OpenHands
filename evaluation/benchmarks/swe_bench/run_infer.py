@@ -29,11 +29,15 @@ from openhands.core.config import (
     get_llm_config_arg,
     get_parser,
 )
+from openhands.core.config.condenser_config import (
+    RecentEventsCondenserConfig,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
 from openhands.events.observation import CmdOutputObservation, ErrorObservation
 from openhands.events.serialization.event import event_to_dict
+from openhands.memory.condenser import get_condensation_metadata
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 from openhands.utils.shutdown_listener import sleep_if_should_continue
@@ -147,6 +151,7 @@ def get_config(
         codeact_enable_jupyter=False,
         codeact_enable_browsing=RUN_WITH_BROWSING,
         codeact_enable_llm_editor=False,
+        condenser=metadata.condenser_config,
     )
     config.set_agent_config(agent_config)
     return config
@@ -432,7 +437,8 @@ def process_instance(
 
     # NOTE: this is NO LONGER the event stream, but an agent history that includes delegate agent's events
     histories = [event_to_dict(event) for event in state.history]
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = state.metrics.get() if state.metrics else {}
+    metrics['condenser'] = get_condensation_metadata(state) if state else []
 
     # Save the output
     output = EvalOutput(
@@ -508,6 +514,7 @@ if __name__ == '__main__':
         args.eval_note,
         args.eval_output_dir,
         details=details,
+        condenser_config=RecentEventsCondenserConfig(keep_first=10, max_events=25),
     )
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')

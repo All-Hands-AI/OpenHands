@@ -1,0 +1,22 @@
+2024-12-04 15:13:28,581 - INFO - Using instance container image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.django_s_django-11099. Please make sure this image exists. Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.
+2024-12-04 15:13:28,582 - INFO - Starting evaluation for instance django__django-11099.
+2024-12-04 15:13:32,842 - INFO - [runtime 9863da6b-72cf-4363-b6a3-f778697ab6b2-dadc0a0b1b4fca50] Building remote runtime with base image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.django_s_django-11099
+2024-12-04 15:13:32,914 - INFO - Building image: us-central1-docker.pkg.dev/evaluation-092424/runtime-api-docker-repo/runtime:oh_v0.15.0_wwhu12upl4qd7666_tun0f9coqw2bqg0f
+2024-12-04 15:13:37,244 - INFO - [runtime 9863da6b-72cf-4363-b6a3-f778697ab6b2-dadc0a0b1b4fca50] Waiting for runtime to be alive...
+2024-12-04 15:14:56,604 - WARNING - [runtime 9863da6b-72cf-4363-b6a3-f778697ab6b2-dadc0a0b1b4fca50] Runtime appears to be paused. Resuming...
+2024-12-04 15:14:58,192 - INFO - [runtime 9863da6b-72cf-4363-b6a3-f778697ab6b2-dadc0a0b1b4fca50] Runtime is ready.
+2024-12-04 15:14:58,277 - INFO - **CmdRunAction (source=None)**
+COMMAND:
+chmod +x /tmp/eval.sh
+2024-12-04 15:14:58,408 - INFO - **CmdOutputObservation (source=None, exit code=0)**
+
+2024-12-04 15:14:58,557 - INFO - [django__django-11099] >>>>> Applied Patch:
+Checking patch django/contrib/auth/validators.py...
+Applied patch django/contrib/auth/validators.py cleanly.
+APPLY_PATCH_PASS
+2024-12-04 15:14:58,688 - INFO - [django__django-11099] Evaluation process started with PID: 387
+2024-12-04 15:14:58,851 - INFO - [django__django-11099] [0s] Evaluation still running, waiting...
+2024-12-04 15:15:28,997 - INFO - [django__django-11099] Evaluation process completed after 30.165333032608032 seconds
+2024-12-04 15:15:29,173 - INFO - [django__django-11099] Grading answer...
+2024-12-04 15:15:29,183 - INFO - [django__django-11099] report: {'patch_is_None': False, 'patch_exists': True, 'patch_successfully_applied': True, 'resolved': True, 'tests_status': {'FAIL_TO_PASS': {'success': ['test_ascii_validator (auth_tests.test_validators.UsernameValidatorsTests)', 'test_unicode_validator (auth_tests.test_validators.UsernameValidatorsTests)', 'test_help_text (auth_tests.test_validators.UserAttributeSimilarityValidatorTest)'], 'failure': []}, 'PASS_TO_PASS': {'success': ['test_help_text (auth_tests.test_validators.MinimumLengthValidatorTest)', 'test_validate (auth_tests.test_validators.MinimumLengthValidatorTest)', 'test_help_text (auth_tests.test_validators.NumericPasswordValidatorTest)', 'test_validate (auth_tests.test_validators.NumericPasswordValidatorTest)', 'test_validate (auth_tests.test_validators.UserAttributeSimilarityValidatorTest)', 'test_validate_property (auth_tests.test_validators.UserAttributeSimilarityValidatorTest)', 'test_empty_password_validator_help_text_html (auth_tests.test_validators.PasswordValidationTest)', 'test_get_default_password_validators (auth_tests.test_validators.PasswordValidationTest)', 'test_get_password_validators_custom (auth_tests.test_validators.PasswordValidationTest)', 'test_password_changed (auth_tests.test_validators.PasswordValidationTest)', 'test_password_changed_with_custom_validator (auth_tests.test_validators.PasswordValidationTest)', 'test_password_validators_help_text_html (auth_tests.test_validators.PasswordValidationTest)', 'test_password_validators_help_text_html_escaping (auth_tests.test_validators.PasswordValidationTest)', 'test_password_validators_help_texts (auth_tests.test_validators.PasswordValidationTest)', 'test_validate_password (auth_tests.test_validators.PasswordValidationTest)', 'test_help_text (auth_tests.test_validators.CommonPasswordValidatorTest)', 'test_validate (auth_tests.test_validators.CommonPasswordValidatorTest)', 'test_validate_custom_list (auth_tests.test_validators.CommonPasswordValidatorTest)', 'test_validate_django_supplied_file (auth_tests.test_validators.CommonPasswordValidatorTest)'], 'failure': []}, 'FAIL_TO_FAIL': {'success': [], 'failure': []}, 'PASS_TO_FAIL': {'success': [], 'failure': []}}}
+Result for django__django-11099: resolved: True
