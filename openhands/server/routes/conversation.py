@@ -52,6 +52,34 @@ async def get_vscode_url(request: Request):
         )
 
 
+@app.get('/ports')
+async def get_ports(request: Request):
+    """Get the ports used by the runtime.
+
+    This endpoint allows getting the ports used by the runtime.
+
+    Args:
+        request (Request): The incoming FastAPI request object.
+
+    Returns:
+        JSONResponse: A JSON response indicating the success of the operation.
+    """
+    try:
+        runtime: Runtime = request.state.conversation.runtime
+        logger.debug(f'Runtime type: {type(runtime)}')
+        logger.debug(f'Runtime ports: {runtime.port_mapping}')
+        return JSONResponse(status_code=200, content={'ports': runtime.port_mapping})
+    except Exception as e:
+        logger.error(f'Error getting runtime ports: {e}', exc_info=True)
+        return JSONResponse(
+            status_code=500,
+            content={
+                'ports': None,
+                'error': f'Error getting runtime ports: {e}',
+            },
+        )
+
+
 @app.get('/events/search')
 async def search_events(
     request: Request,

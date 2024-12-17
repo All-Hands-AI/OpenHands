@@ -579,7 +579,7 @@ if __name__ == '__main__':
     @app.get('/ports')
     async def get_ports():
         # Dynamic port logic goes here
-        return {}
+        return {'ports': {4141: 4141, 7331: 7331}}
 
     # ================================
     # File-specific operations for UI

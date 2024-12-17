@@ -277,6 +277,7 @@ class RemoteRuntime(Runtime):
     def _parse_runtime_response(self, response: requests.Response):
         start_response = response.json()
         self.runtime_id = start_response['runtime_id']
+        self.runtime_id = start_response['runtime_id']
         self.runtime_url = start_response['url']
         if 'session_api_key' in start_response:
             self.session.headers.update(
@@ -315,8 +316,16 @@ class RemoteRuntime(Runtime):
             return None
 
     @property
-    def port_mappings(self) -> dict[str, list[dict[str, str]]] | None:
-        return None
+    def port_mappings(self) -> dict[int, int] | None:
+        with self._send_request(
+            'GET', f'{self.runtime_url}/ports', timeout=10
+        ) as response:
+            response_json = response.json()
+        assert isinstance(response_json, dict)
+        if 'ports' not in response_json:
+            return None
+
+        return response_json['ports']
 
     def _wait_until_alive(self):
         retry_decorator = tenacity.retry(

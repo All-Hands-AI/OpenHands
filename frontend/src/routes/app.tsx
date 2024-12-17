@@ -1,9 +1,9 @@
-import { useServedApp } from "#/hooks/query/use-served-app";
+import { useActivePort } from "#/hooks/query/use-active-port";
 
 function ServedApp() {
-  const { isSuccess } = useServedApp();
+  const { activePort } = useActivePort();
 
-  if (!isSuccess) {
+  if (!activePort) {
     return (
       <div className="flex items-center justify-center w-full h-full">
         <span className="text-4xl text-neutral-400 font-bold">
@@ -16,7 +16,7 @@ function ServedApp() {
   return (
     <iframe
       title="Served App"
-      src="http://localhost:4141"
+      src={`http://localhost:${activePort}`}
       className="w-full h-full"
     />
   );

@@ -50,7 +50,7 @@ async function prepareApp() {
   }
 }
 
-const QUERY_KEYS_TO_IGNORE = ["authenticated", "served-app"];
+const QUERY_KEYS_TO_IGNORE = ["authenticated", "ports"];
 const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
