@@ -49,9 +49,9 @@ export function ExpandableMessage({
     <div
       className={`flex gap-2 items-center justify-start border-l-2 pl-2 my-2 py-2 ${border}`}
     >
-      <div className="text-sm max-w-full">
+      <div className="text-sm w-full">
         {headline && (
-          <div className="flex flex-row justify-between items-center">
+          <div className="flex flex-row justify-between items-center w-full">
             <span className={`${textColor} font-bold`}>
               {headline}
               <button
