@@ -1,8 +1,5 @@
 import dataclasses
 
-from fastapi import status
-from github.GithubException import GithubException
-
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.action import ActionType
 from openhands.events.action import (
@@ -15,7 +12,6 @@ from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.auth import get_sid_from_token, sign_token
-from openhands.server.github_utils import get_github_user_obj
 from openhands.server.routes.session_init import session_init_data_store
 from openhands.server.session.session_init_data import SessionInitData
 from openhands.server.shared import config, session_manager, sio
@@ -55,12 +51,7 @@ async def init_connection(
     latest_event_id: int,
     selected_repository: str | None,
 ):
-    try:
-        user = await get_github_user_obj(github_token)
-    except GithubException:
-        raise RuntimeError(status.WS_1008_POLICY_VIOLATION)
-
-    session_init_data = session_init_data_store.load(user.id)
+    session_init_data = session_init_data_store.load(github_token or '')
     if session_init_data:
         session_init_data = dataclasses.replace(session_init_data, **session_init_args)
     else:

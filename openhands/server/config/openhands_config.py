@@ -42,6 +42,12 @@ class OpenhandsConfig(OpenhandsConfigInterface):
         """
         pass
 
+    async def get_user_id(self, data: dict) -> str:
+        """
+        Get the user id.
+        """
+        return 'openhands_user'
+
 
 def load_openhands_config():
     config_cls = os.environ.get('OPENHANDS_CONFIG_CLS', None)
