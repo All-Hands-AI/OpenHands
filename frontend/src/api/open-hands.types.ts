@@ -56,3 +56,29 @@ export interface AuthenticateResponse {
   message?: string;
   error?: string;
 }
+
+export interface RepoInstructions {
+  instructions: string;
+  tutorialUrl: string;
+  hasInstructions: boolean;
+}
+
+export interface MicroAgent {
+  id: string;
+  name: string;
+  instructions: string;
+  isPermanent: boolean;
+  createdAt: string;
+}
+
+export interface CreateInstructionsPRResponse {
+  pullRequestUrl: string;
+  success: boolean;
+  message: string;
+}
+
+export interface AddMicroAgentResponse {
+  agentId: string;
+  success: boolean;
+  message: string;
+}

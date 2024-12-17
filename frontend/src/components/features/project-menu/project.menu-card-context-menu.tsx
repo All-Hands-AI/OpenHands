@@ -9,6 +9,11 @@ interface ProjectMenuCardContextMenuProps {
   onConnectToGitHub: () => void;
   onPushToGitHub: () => void;
   onDownloadWorkspace: () => void;
+  onViewInstructions: () => void;
+  onAddInstructions: () => void;
+  onViewMicroagents: () => void;
+  onAddTemporaryMicroagent: () => void;
+  onAddPermanentMicroagent: () => void;
   onClose: () => void;
 }
 
@@ -17,6 +22,11 @@ export function ProjectMenuCardContextMenu({
   onConnectToGitHub,
   onPushToGitHub,
   onDownloadWorkspace,
+  onViewInstructions,
+  onAddInstructions,
+  onViewMicroagents,
+  onAddTemporaryMicroagent,
+  onAddPermanentMicroagent,
   onClose,
 }: ProjectMenuCardContextMenuProps) {
   const menuRef = useClickOutsideElement<HTMLUListElement>(onClose);
@@ -32,9 +42,26 @@ export function ProjectMenuCardContextMenu({
         </ContextMenuListItem>
       )}
       {isConnectedToGitHub && (
-        <ContextMenuListItem onClick={onPushToGitHub}>
-          {t(I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$PUSH_TO_GITHUB_LABEL)}
-        </ContextMenuListItem>
+        <>
+          <ContextMenuListItem onClick={onPushToGitHub}>
+            {t(I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$PUSH_TO_GITHUB_LABEL)}
+          </ContextMenuListItem>
+          <ContextMenuListItem onClick={onViewInstructions}>
+            {t(I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$VIEW_INSTRUCTIONS_LABEL)}
+          </ContextMenuListItem>
+          <ContextMenuListItem onClick={onAddInstructions}>
+            {t(I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$ADD_INSTRUCTIONS_LABEL)}
+          </ContextMenuListItem>
+          <ContextMenuListItem onClick={onViewMicroagents}>
+            {t(I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$VIEW_MICROAGENTS_LABEL)}
+          </ContextMenuListItem>
+          <ContextMenuListItem onClick={onAddTemporaryMicroagent}>
+            {t(I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$ADD_TEMPORARY_MICROAGENT_LABEL)}
+          </ContextMenuListItem>
+          <ContextMenuListItem onClick={onAddPermanentMicroagent}>
+            {t(I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$ADD_PERMANENT_MICROAGENT_LABEL)}
+          </ContextMenuListItem>
+        </>
       )}
       <ContextMenuListItem onClick={onDownloadWorkspace}>
         {t(I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$DOWNLOAD_AS_ZIP_LABEL)}
