@@ -149,7 +149,7 @@ class RemoteRuntime(Runtime):
                 'GET',
                 f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
                 is_retry=False,
-                timeout=30,
+                timeout=60,
             ) as response:
                 data = response.json()
                 status = data.get('status')
@@ -253,6 +253,7 @@ class RemoteRuntime(Runtime):
                 f'{self.config.sandbox.remote_runtime_api_url}/start',
                 is_retry=False,
                 json=start_request,
+                timeout=60,
             ) as response:
                 self._parse_runtime_response(response)
             self.log(
