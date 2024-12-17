@@ -168,7 +168,7 @@ jobs:
           echo "SANDBOX_ENV_BASE_CONTAINER_IMAGE=${{ inputs.base_container_image }}" >> $GITHUB_ENV
 
           # Set branch variables
-          echo "TARGET_BRANCH=${{ inputs.target_branch }}" >> $GITHUB_ENV
+          echo "TARGET_BRANCH=${{ inputs.target_branch || 'main' }}" >> $GITHUB_ENV
 
       - name: Comment on issue with start message
         uses: actions/github-script@v7
@@ -210,7 +210,8 @@ jobs:
             --issue-number ${{ env.ISSUE_NUMBER }} \
             --issue-type ${{ env.ISSUE_TYPE }} \
             --max-iterations ${{ env.MAX_ITERATIONS }} \
-            --comment-id ${{ env.COMMENT_ID }}
+            --comment-id ${{ env.COMMENT_ID }} \
+            --target-branch ${{ env.TARGET_BRANCH }}
 
       - name: Check resolution result
         id: check_result
@@ -243,12 +244,14 @@ jobs:
             cd /tmp && python -m openhands.resolver.send_pull_request \
               --issue-number ${{ env.ISSUE_NUMBER }} \
               --pr-type draft \
+              --target-branch ${{ env.TARGET_BRANCH }} \
               --reviewer ${{ github.actor }} | tee pr_result.txt && \
               grep "draft created" pr_result.txt | sed 's/.*\///g' > pr_number.txt
           else
             cd /tmp && python -m openhands.resolver.send_pull_request \
               --issue-number ${{ env.ISSUE_NUMBER }} \
               --pr-type branch \
+              --target-branch ${{ env.TARGET_BRANCH }} \
               --send-on-failure | tee branch_result.txt && \
               grep "branch created" branch_result.txt | sed 's/.*\///g; s/.expand=1//g' > branch_name.txt
           fi
