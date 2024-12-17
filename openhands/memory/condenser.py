@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from openhands.controller.state.state import State
@@ -18,7 +18,6 @@ from openhands.core.schema import ObservationType
 from openhands.events.event import Event
 from openhands.events.observation import Observation
 from openhands.llm.llm import LLM
-
 
 CONDENSER_METADATA_KEY = 'condenser_meta'
 
@@ -69,9 +68,14 @@ class Condenser(ABC):
             case LLMCondenserConfig(llm_config=llm_config):
                 return LLMCondenser(llm=LLM(config=llm_config))
             case AmortizedForgettingCondenserConfig():
-                return AmortizedForgettingCondenser(**config.model_dump(exclude=['type']))
-            case LLMAttentionCondenserConfig():
-                return LLMAttentionCondenser(**config.model_dump(exclude=['type']))
+                return AmortizedForgettingCondenser(
+                    **config.model_dump(exclude=['type'])
+                )
+            case LLMAttentionCondenserConfig(llm_config=llm_config):
+                return LLMAttentionCondenser(
+                    llm=LLM(config=llm_config),
+                    **config.model_dump(exclude=['type', 'llm_config']),
+                )
             case _:
                 raise ValueError(f'Unknown condenser config: {config}')
 
@@ -136,7 +140,9 @@ class LLMCondenser(Condenser):
         """
         try:
             # Convert events to a format suitable for summarization
-            events_text = '\n'.join(f'{e.timestamp}: {e.message}' for e in state.history)
+            events_text = '\n'.join(
+                f'{e.timestamp}: {e.message}' for e in state.history
+            )
             summarize_prompt = f'Please summarize these events:\n{events_text}'
 
             messages = [{'content': summarize_prompt, 'role': 'user'}]
@@ -149,10 +155,12 @@ class LLMCondenser(Condenser):
             # Add metrics to state
             if CONDENSER_METADATA_KEY not in state.extra_data:
                 state.extra_data[CONDENSER_METADATA_KEY] = []
-            state.extra_data[CONDENSER_METADATA_KEY].append({
-                'response': resp.model_dump(),
-                'metrics': self.llm.metrics.get(),
-            })
+            state.extra_data[CONDENSER_METADATA_KEY].append(
+                {
+                    'response': resp.model_dump(),
+                    'metrics': self.llm.metrics.get(),
+                }
+            )
 
             return [summary_event]
 
@@ -176,10 +184,24 @@ class AmortizedForgettingCondenser(Condenser):
             ValueError: If keep_first is greater than max_size.
         """
         if keep_first > max_size:
-            raise ValueError(f"keep_first ({keep_first}) cannot be greater than max_size ({max_size})")
+            raise ValueError(
+                f'keep_first ({keep_first}) cannot be greater than max_size ({max_size})'
+            )
         self.max_size = max_size
         self.keep_first = keep_first
         self._condensed_history: list[Event] = []
+
+    def forget(self, events: list[Event]) -> list[Event]:
+        """Apply the amortized forgetting strategy to the given list of events."""
+        if len(events) < self.max_size:
+            return events
+
+        head = events[: self.keep_first]
+        tail = events[self.keep_first :]
+
+        # This is the index where we want to _start_ keeping tail events.
+        keep_tail_start = self.max_size // 2 - self.keep_first
+        return head + tail[keep_tail_start:]
 
     def condense(self, state: State) -> list[Event]:
         """Maintain a condensed history by adding new events and forgetting old ones when needed.
@@ -195,57 +217,22 @@ class AmortizedForgettingCondenser(Condenser):
             state.extra_data[CONDENSER_METADATA_KEY] = []
 
         # Track changes for this condensation
-        changes = {
-            'added_events': [],
-            'removed_events': []
-        }
+        changes: dict[str, list[int]] = {'added_events': [], 'removed_events': []}
 
         # If we have no history yet, initialize with all events
         if not self._condensed_history:
             self._condensed_history = state.history.copy()
             changes['added_events'] = [e.id for e in self._condensed_history]
 
-            # Apply forgetting logic immediately if needed
-            while len(self._condensed_history) > self.max_size:
-                # Calculate how many events we can forget
-                forgettable_events = self._condensed_history[self.keep_first:]
-                if not forgettable_events:  # If all events are protected by keep_first
-                    break
+        # Find the timestamp of our last event
+        last_timestamp = self._condensed_history[-1].timestamp
 
-                # Forget half of the forgettable events
-                forget_count = len(forgettable_events) // 2
-                forgotten_events = self._condensed_history[self.keep_first:self.keep_first + forget_count]
-                changes['removed_events'].extend(e.id for e in forgotten_events)
+        # Add any new events that occurred after our last event
+        new_events = [e for e in state.history if e.timestamp > last_timestamp]
+        changes['added_events'] = [e.id for e in new_events]
+        self._condensed_history.extend(new_events)
 
-                self._condensed_history = (
-                    self._condensed_history[:self.keep_first] +
-                    self._condensed_history[self.keep_first + forget_count:]
-                )
-        else:
-            # Find the timestamp of our last event
-            last_timestamp = self._condensed_history[-1].timestamp
-
-            # Add any new events that occurred after our last event
-            new_events = [e for e in state.history if e.timestamp > last_timestamp]
-            changes['added_events'] = [e.id for e in new_events]
-            self._condensed_history.extend(new_events)
-
-            # If we're over max_size, forget events while preserving keep_first
-            while len(self._condensed_history) > self.max_size:
-                # Calculate how many events we can forget
-                forgettable_events = self._condensed_history[self.keep_first:]
-                if not forgettable_events:  # If all events are protected by keep_first
-                    break
-
-                # Forget half of the forgettable events
-                forget_count = len(forgettable_events) // 2
-                forgotten_events = self._condensed_history[self.keep_first:self.keep_first + forget_count]
-                changes['removed_events'].extend(e.id for e in forgotten_events)
-
-                self._condensed_history = (
-                    self._condensed_history[:self.keep_first] +
-                    self._condensed_history[self.keep_first + forget_count:]
-                )
+        self._condensed_history = self.forget(self._condensed_history)
 
         # Record changes in state metadata if any changes occurred
         if changes['added_events'] or changes['removed_events']:
@@ -269,7 +256,9 @@ class LLMAttentionCondenser(Condenser):
             ValueError: If keep_first is greater than max_size.
         """
         if keep_first > max_size:
-            raise ValueError(f"keep_first ({keep_first}) cannot be greater than max_size ({max_size})")
+            raise ValueError(
+                f'keep_first ({keep_first}) cannot be greater than max_size ({max_size})'
+            )
         self.llm = llm
         self.max_size = max_size
         self.keep_first = keep_first
@@ -289,10 +278,7 @@ class LLMAttentionCondenser(Condenser):
             state.extra_data[CONDENSER_METADATA_KEY] = []
 
         # Track changes for this condensation
-        changes = {
-            'added_events': [],
-            'removed_events': []
-        }
+        changes: dict[str, list[int]] = {'added_events': [], 'removed_events': []}
 
         # If we have no history yet, initialize with all events
         if not self._condensed_history:
@@ -310,11 +296,11 @@ class LLMAttentionCondenser(Condenser):
         # If we're over max_size, use LLM to decide which events to keep
         if len(self._condensed_history) > self.max_size:
             # Keep the first N events as required
-            keep_events = self._condensed_history[:self.keep_first]
-            
+            keep_events = self._condensed_history[: self.keep_first]
+
             # For the remaining events, we'll use LLM to decide which ones to keep
-            forgettable_events = self._condensed_history[self.keep_first:]
-            
+            forgettable_events = self._condensed_history[self.keep_first :]
+
             # TODO: Implement LLM-based selection of events to keep
             # This is where you would:
             # 1. Format the events for LLM input
@@ -322,11 +308,19 @@ class LLMAttentionCondenser(Condenser):
             # 3. Parse the response and select events
             # For now, we'll just keep the most recent events
             keep_count = self.max_size - len(keep_events)
-            forgotten_events = forgettable_events[:-keep_count] if keep_count > 0 else forgettable_events
+            forgotten_events = (
+                forgettable_events[:-keep_count]
+                if keep_count > 0
+                else forgettable_events
+            )
             changes['removed_events'].extend(e.id for e in forgotten_events)
-            
+
             # Update condensed history with kept events
-            self._condensed_history = keep_events + forgettable_events[-keep_count:] if keep_count > 0 else keep_events
+            self._condensed_history = (
+                keep_events + forgettable_events[-keep_count:]
+                if keep_count > 0
+                else keep_events
+            )
 
         # Record changes in state metadata if any changes occurred
         if changes['added_events'] or changes['removed_events']:
@@ -347,5 +341,5 @@ class LLMAttentionCondenser(Condenser):
         return cls(
             llm=LLM(config=config.llm_config),
             max_size=config.max_size,
-            keep_first=config.keep_first
+            keep_first=config.keep_first,
         )

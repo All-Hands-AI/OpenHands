@@ -40,12 +40,12 @@ class AmortizedForgettingCondenserConfig(BaseModel):
     max_size: int = Field(
         default=100,
         description='Maximum size of the condensed history before triggering forgetting.',
-        ge=2
+        ge=2,
     )
     keep_first: int = Field(
         default=0,
         description='Number of initial events to always keep in history.',
-        ge=0
+        ge=0,
     )
 
 
@@ -53,15 +53,18 @@ class LLMAttentionCondenserConfig(BaseModel):
     """Configuration for LLMAttentionCondenser."""
 
     type: Literal['llm_attention'] = Field('llm_attention')
+    llm_config: LLMConfig = Field(
+        ..., description='Configuration for the LLM to use for attention.'
+    )
     max_size: int = Field(
         default=100,
         description='Maximum size of the condensed history before triggering forgetting.',
-        ge=2
+        ge=2,
     )
     keep_first: int = Field(
         default=0,
         description='Number of initial events to always keep in history.',
-        ge=0
+        ge=0,
     )
 
 
@@ -70,4 +73,5 @@ CondenserConfig = (
     | RecentEventsCondenserConfig
     | LLMCondenserConfig
     | AmortizedForgettingCondenserConfig
-    | LLMAttentionCondenserConfig)
+    | LLMAttentionCondenserConfig
+)

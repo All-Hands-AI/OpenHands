@@ -200,7 +200,9 @@ def test_amortized_forgetting_condenser_from_config():
     """Test that AmortizedForgettingCondenser objects can be made from config."""
     max_size = 50
     keep_first = 10
-    config = AmortizedForgettingCondenserConfig(max_size=max_size, keep_first=keep_first)
+    config = AmortizedForgettingCondenserConfig(
+        max_size=max_size, keep_first=keep_first
+    )
     condenser = Condenser.from_config(config)
 
     assert isinstance(condenser, AmortizedForgettingCondenser)
@@ -335,27 +337,18 @@ def test_amortized_forgetting_condenser_keep_first():
 
 def test_llm_attention_condenser_from_config():
     """Test that LLMAttentionCondenser objects can be made from config."""
-    max_size = 50
-    keep_first = 10
-    config = LLMAttentionCondenserConfig(max_size=max_size, keep_first=keep_first)
+    config = LLMAttentionCondenserConfig(
+        max_size=50,
+        keep_first=10,
+        llm_config=LLMConfig(
+            model='gpt-4o',
+            api_key='test_key',
+        ),
+    )
     condenser = Condenser.from_config(config)
 
     assert isinstance(condenser, LLMAttentionCondenser)
-    assert condenser.max_size == max_size
-    assert condenser.keep_first == keep_first
-
-
-def test_llm_attention_condenser_not_implemented():
-    """Test that LLMAttentionCondenser raises NotImplementedError for condense."""
-    events = [create_test_event('Event 1', datetime(2024, 1, 1, 10, 0))]
-
-    mock_state = MagicMock()
-    mock_state.history = events
-
-    condenser = LLMAttentionCondenser()
-
-    try:
-        condenser.condense(mock_state)
-        raise AssertionError('Expected NotImplementedError was not raised.')
-    except NotImplementedError as e:
-        assert str(e) == 'LLMAttentionCondenser.condense() is not yet implemented'
+    assert condenser.llm.config.model == 'gpt-4o'
+    assert condenser.llm.config.api_key == 'test_key'
+    assert condenser.max_size == 50
+    assert condenser.keep_first == 10

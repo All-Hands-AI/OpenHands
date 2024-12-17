@@ -36,7 +36,6 @@ from openhands.llm.llm import LLM
 from openhands.memory.condenser import (
     CondensationObservation,
     Condenser,
-    add_condensation_metadata,
 )
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
