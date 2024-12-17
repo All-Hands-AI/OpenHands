@@ -20,9 +20,10 @@ from openhands.events.observation import Observation
 from openhands.llm.llm import LLM
 
 CONDENSER_METADATA_KEY = 'condenser_meta'
+"""The key identifying where metadata is stored in a state's extra_data."""
 
 
-def get_condensation_metadata(state: State) -> list[dict[str, Any]]:
+def get_condensation_metadata(state: State) -> list[Any]:
     if CONDENSER_METADATA_KEY in state.extra_data:
         return state.extra_data[CONDENSER_METADATA_KEY]
     return []
@@ -46,6 +47,15 @@ class Condenser(ABC):
             list[Event]: The condensed event sequence.
         """
         pass
+
+    def add_metadata(self, state: State, metadata: Any) -> None:
+        """Add metadata to the current state."""
+        # If there is no metadata in the state, initialize it.
+        if CONDENSER_METADATA_KEY not in state.extra_data:
+            state.extra_data[CONDENSER_METADATA_KEY] = []
+
+        # Add the existing metadata.
+        state.extra_data[CONDENSER_METADATA_KEY].append(metadata)
 
     @classmethod
     def from_config(cls, config: CondenserConfig) -> Condenser:
@@ -153,13 +163,12 @@ class LLMCondenser(Condenser):
             summary_event = CondensationObservation(summary_response)
 
             # Add metrics to state
-            if CONDENSER_METADATA_KEY not in state.extra_data:
-                state.extra_data[CONDENSER_METADATA_KEY] = []
-            state.extra_data[CONDENSER_METADATA_KEY].append(
+            self.add_metadata(
+                state,
                 {
                     'response': resp.model_dump(),
                     'metrics': self.llm.metrics.get(),
-                }
+                },
             )
 
             return [summary_event]
@@ -181,27 +190,34 @@ class AmortizedForgettingCondenser(Condenser):
             keep_first (int, optional): Number of initial events to always keep. Defaults to 0.
 
         Raises:
-            ValueError: If keep_first is greater than max_size.
+            ValueError: If keep_first is greater than max_size, keep_first is negative, or max_size is
+            non-positive.
         """
-        if keep_first > max_size:
+        if keep_first >= max_size // 2:
             raise ValueError(
-                f'keep_first ({keep_first}) cannot be greater than max_size ({max_size})'
+                f'keep_first ({keep_first}) must be less than half of max_size ({max_size})'
             )
+        if keep_first < 0:
+            raise ValueError(f'keep_first ({keep_first}) cannot be negative')
+        if max_size < 1:
+            raise ValueError(f'max_size ({keep_first}) cannot be non-positive')
+
         self.max_size = max_size
         self.keep_first = keep_first
         self._condensed_history: list[Event] = []
 
     def forget(self, events: list[Event]) -> list[Event]:
         """Apply the amortized forgetting strategy to the given list of events."""
-        if len(events) < self.max_size:
+        if len(events) <= self.max_size:
             return events
 
+        target_size = self.max_size // 2
         head = events[: self.keep_first]
-        tail = events[self.keep_first :]
 
-        # This is the index where we want to _start_ keeping tail events.
-        keep_tail_start = self.max_size // 2 - self.keep_first
-        return head + tail[keep_tail_start:]
+        events_from_tail = target_size - len(head)
+        tail = events[-events_from_tail:]
+
+        return head + tail
 
     def condense(self, state: State) -> list[Event]:
         """Maintain a condensed history by adding new events and forgetting old ones when needed.
@@ -212,10 +228,6 @@ class AmortizedForgettingCondenser(Condenser):
         Returns:
             list[Event]: The current condensed event sequence.
         """
-        # Initialize or get the condenser metadata list
-        if CONDENSER_METADATA_KEY not in state.extra_data:
-            state.extra_data[CONDENSER_METADATA_KEY] = []
-
         # Track changes for this condensation
         changes: dict[str, list[int]] = {'added_events': [], 'removed_events': []}
 
