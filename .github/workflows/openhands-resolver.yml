@@ -254,7 +254,7 @@ jobs:
           fi
 
       # Step leaves comment for when agent is invoked on PR
-      - name: Analyze Push Logs (Updated PR or No Changes) # Skip comment if PR update was successful OR leave comment is agent made no code changes
+      - name: Analyze Push Logs (Updated PR or No Changes) # Skip comment if PR update was successful OR leave comment if the agent made no code changes
         uses: actions/github-script@v7
         if: always()
         env:
