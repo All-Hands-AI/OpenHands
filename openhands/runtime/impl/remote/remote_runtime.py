@@ -94,6 +94,7 @@ class RemoteRuntime(Runtime):
         )
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
+        self.open_ports: list[str] = []  # list of open port urls
         self._runtime_initialized: bool = False
         self._vscode_url: str | None = None  # initial dummy value
 
@@ -279,6 +280,8 @@ class RemoteRuntime(Runtime):
         self.runtime_id = start_response['runtime_id']
         self.runtime_id = start_response['runtime_id']
         self.runtime_url = start_response['url']
+        self.open_ports = start_response.get('open_ports', [])
+
         if 'session_api_key' in start_response:
             self.session.headers.update(
                 {'X-Session-API-Key': start_response['session_api_key']}
@@ -316,16 +319,8 @@ class RemoteRuntime(Runtime):
             return None
 
     @property
-    def port_mappings(self) -> dict[int, int] | None:
-        with self._send_request(
-            'GET', f'{self.runtime_url}/ports', timeout=10
-        ) as response:
-            response_json = response.json()
-        assert isinstance(response_json, dict)
-        if 'ports' not in response_json:
-            return None
-
-        return response_json['ports']
+    def port_mappings(self) -> list[str]:
+        return self.open_ports
 
     def _wait_until_alive(self):
         retry_decorator = tenacity.retry(

@@ -14,11 +14,7 @@ function ServedApp() {
   }
 
   return (
-    <iframe
-      title="Served App"
-      src={`http://localhost:${activePort}`}
-      className="w-full h-full"
-    />
+    <iframe title="Served App" src={activePort} className="w-full h-full" />
   );
 }
 

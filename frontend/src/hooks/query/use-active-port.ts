@@ -9,23 +9,22 @@ import {
 
 export const useActivePort = () => {
   const { status } = useWsClient();
-  const [activePort, setActivePort] = React.useState<number | null>(null);
+  const [activePort, setActivePort] = React.useState<string | null>(null);
 
   const { data } = useQuery({
     queryKey: ["ports"],
     queryFn: async () => {
-      const response = await openHands.get<{ ports: Record<number, number> }>(
-        "/api/ports",
-      );
+      const response = await openHands.get<{ ports: string[] }>("/api/ports");
       return response.data;
     },
     enabled: status !== WsClientProviderStatus.OPENING,
+    initialData: { ports: [] },
   });
 
   const apps = useQueries({
-    queries: Object.values(data?.ports || {}).map((port) => ({
+    queries: data.ports.map((port) => ({
       queryKey: ["ports", port],
-      queryFn: async () => axios.get(`http://localhost:${port}`),
+      queryFn: async () => axios.get(port),
       refetchInterval: 3000,
     })),
   });
@@ -36,7 +35,7 @@ export const useActivePort = () => {
     const successfulApp = apps.find((app) => app.isSuccess);
     if (successfulApp) {
       const index = apps.indexOf(successfulApp);
-      const port = Object.values(data?.ports || [])[index];
+      const port = data.ports[index];
       setActivePort(port);
     } else {
       setActivePort(null);

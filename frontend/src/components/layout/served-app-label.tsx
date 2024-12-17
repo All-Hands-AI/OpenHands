@@ -18,7 +18,7 @@ export function ServedAppLabel() {
           <span className="text-green-500">Online</span>
           <div className="flex items-center gap-1">
             <FaExternalLinkAlt fill="#a3a3a3" />
-            <code className="text-xs">{activePort}</code>
+            <code className="text-xs">{activePort.split(":").pop()}</code>
           </div>
         </a>
       )}
