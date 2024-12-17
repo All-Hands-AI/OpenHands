@@ -66,10 +66,7 @@ class AppConfig:
     modal_api_token_secret: str = ''
     disable_color: bool = False
     jwt_secret: str = ''
-    attach_session_middleware_class: str = (
-        'openhands.server.middleware.AttachSessionMiddleware'
-    )
-    item_store_class: str = 'openhands.storage.file_item_store.FileItemStore'
+    item_store_class: str = 'openhands.storage.file_item_store.FileItemStore'  # Kill this - replace with specific version...
     debug: bool = False
     file_uploads_max_file_size_mb: int = 0
     file_uploads_restrict_file_types: bool = False

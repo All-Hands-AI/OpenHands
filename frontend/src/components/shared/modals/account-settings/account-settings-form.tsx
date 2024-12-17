@@ -13,6 +13,7 @@ import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { ModalButton } from "../../buttons/modal-button";
 import { CustomInput } from "../../custom-input";
 import { FormFieldset } from "../../form-fieldset";
+import { useConfig } from "#/hooks/query/use-config";
 
 interface AccountSettingsFormProps {
   onClose: () => void;
@@ -28,6 +29,7 @@ export function AccountSettingsForm({
   analyticsConsent,
 }: AccountSettingsFormProps) {
   const { gitHubToken, setGitHubToken, logout } = useAuth();
+  const { data: config } = useConfig();
   const { saveSettings } = useUserPrefs();
   const { t } = useTranslation();
 
@@ -64,6 +66,16 @@ export function AccountSettingsForm({
         <div className="w-full flex flex-col gap-2">
           <BaseModalTitle title="Account Settings" />
 
+          {config?.APP_MODE === "saas" && config?.APP_SLUG && (
+            <a
+              href={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="underline"
+            >
+              Configure Github Repositories
+            </a>
+          )}
           <FormFieldset
             id="language"
             label="Language"
@@ -75,23 +87,27 @@ export function AccountSettingsForm({
             }))}
           />
 
-          <CustomInput
-            name="ghToken"
-            label="GitHub Token"
-            type="password"
-            defaultValue={gitHubToken ?? ""}
-          />
-          <BaseModalDescription>
-            {t(I18nKey.CONNECT_TO_GITHUB_MODAL$GET_YOUR_TOKEN)}{" "}
-            <a
-              href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
-              target="_blank"
-              rel="noreferrer noopener"
-              className="text-[#791B80] underline"
-            >
-              {t(I18nKey.CONNECT_TO_GITHUB_MODAL$HERE)}
-            </a>
-          </BaseModalDescription>
+          {config?.APP_MODE !== "saas" && (
+            <>
+              <CustomInput
+                name="ghToken"
+                label="GitHub Token"
+                type="password"
+                defaultValue={gitHubToken ?? ""}
+              />
+              <BaseModalDescription>
+                {t(I18nKey.CONNECT_TO_GITHUB_MODAL$GET_YOUR_TOKEN)}{" "}
+                <a
+                  href="https://github.com/settings/tokens/new?description=openhands-app&scopes=repo,user,workflow"
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="text-[#791B80] underline"
+                >
+                  {t(I18nKey.CONNECT_TO_GITHUB_MODAL$HERE)}
+                </a>
+              </BaseModalDescription>
+            </>
+          )}
           {gitHubError && (
             <p className="text-danger text-xs">
               {t(I18nKey.ACCOUNT_SETTINGS_MODAL$GITHUB_TOKEN_INVALID)}
