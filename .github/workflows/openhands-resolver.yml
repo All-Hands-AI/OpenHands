@@ -184,17 +184,32 @@ jobs:
             });
 
       - name: Install OpenHands
-        run: |
-          if [[ "${{ github.event.label.name }}" == "fix-me-experimental" ]] ||
-             ([[ "${{ github.event_name }}" == "issue_comment" || "${{ github.event_name }}" == "pull_request_review_comment" ]] &&
-              [[ "${{ github.event.comment.body }}" == "@openhands-agent-exp"* ]]) ||
-             ([[ "${{ github.event_name }}" == "pull_request_review" ]] &&
-              [[ "${{ github.event.review.body }}" == "@openhands-agent-exp"* ]]); then
-            python -m pip install --upgrade pip
-            pip install git+https://github.com/all-hands-ai/openhands.git
-          else
-            python -m pip install --upgrade -r requirements.txt
-          fi
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const commentBody = `${{ github.event.comment.body || '' }}`.trim();
+            const reviewBody = `${{ github.event.review.body || '' }}`.trim();
+            const labelName = `${{ github.event.label.name || '' }}`.trim();
+            const eventName = `${{ github.event_name }}`.trim();
+
+            // Check conditions
+            const isExperimentalLabel = labelName === "fix-me-experimental";
+            const isIssueCommentExperimental =
+              (eventName === "issue_comment" || eventName === "pull_request_review_comment") &&
+              commentBody.includes("@openhands-agent-exp");
+            const isReviewCommentExperimental =
+              eventName === "pull_request_review" && reviewBody.includes("@openhands-agent-exp");
+
+            // Perform package installation
+            if (isExperimentalLabel || isIssueCommentExperimental || isReviewCommentExperimental) {
+              console.log("Installing experimental OpenHands...");
+              await exec.exec("python -m pip install --upgrade pip");
+              await exec.exec("pip install git+https://github.com/all-hands-ai/openhands.git");
+            } else {
+              console.log("Installing from requirements.txt...");
+              await exec.exec("python -m pip install --upgrade pip");
+              await exec.exec("pip install -r requirements.txt");
+            }
 
       - name: Attempt to resolve issue
         env:
