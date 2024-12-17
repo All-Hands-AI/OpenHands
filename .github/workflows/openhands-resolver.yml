@@ -185,15 +185,27 @@ jobs:
 
       - name: Install OpenHands
         run: |
-          if [[ "${{ github.event.label.name }}" == "fix-me-experimental" ]] ||
-             ([[ "${{ github.event_name }}" == "issue_comment" || "${{ github.event_name }}" == "pull_request_review_comment" ]] &&
-              [[ "${{ github.event.comment.body }}" == "@openhands-agent-exp"* ]]) ||
-             ([[ "${{ github.event_name }}" == "pull_request_review" ]] &&
-              [[ "${{ github.event.review.body }}" == "@openhands-agent-exp"* ]]); then
-            python -m pip install --upgrade pip
-            pip install git+https://github.com/all-hands-ai/openhands.git
+          if [[ "${GITHUB_EVENT_NAME:-}" == "issue_comment" || "${GITHUB_EVENT_NAME:-}" == "pull_request_review_comment" ]]; then
+            if [[ "${{ github.event.comment.body }}" == *"@openhands-agent-exp"* ]]; then
+              python -m pip install --upgrade pip
+              pip install git+https://github.com/all-hands-ai/openhands.git
+            else
+              python -m pip install --upgrade -r requirements.txt
+            fi
+          elif [[ "${GITHUB_EVENT_NAME:-}" == "pull_request_review" ]]; then
+            if [[ "${{ github.event.review.body }}" == *"@openhands-agent-exp"* ]]; then
+              python -m pip install --upgrade pip
+              pip install git+https://github.com/all-hands-ai/openhands.git
+            else
+              python -m pip install --upgrade -r requirements.txt
+            fi
           else
-            python -m pip install --upgrade -r requirements.txt
+            if [[ "${{ github.event.label.name }}" == "fix-me-experimental" ]]; then
+              python -m pip install --upgrade pip
+              pip install git+https://github.com/all-hands-ai/openhands.git
+            else
+              python -m pip install --upgrade -r requirements.txt
+            fi
           fi
 
       - name: Attempt to resolve issue
