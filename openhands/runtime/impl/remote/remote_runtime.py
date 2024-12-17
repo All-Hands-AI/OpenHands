@@ -421,7 +421,6 @@ class RemoteRuntime(Runtime):
 
             try:
                 request_body = {'action': event_to_dict(action)}
-                self.log('debug', f'Request body: {request_body}')
                 with self._send_request(
                     'POST',
                     f'{self.runtime_url}/execute_action',
