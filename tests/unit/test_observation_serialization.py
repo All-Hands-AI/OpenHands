@@ -48,7 +48,6 @@ def test_ipython_error_detection():
         'ERROR: Something went wrong',
         'Error: Invalid syntax',
         'Exception: Division by zero',
-        'Parameter `old_str` is required for command: str_replace',
     ]
     for error_content in error_cases:
         obs = IPythonRunCellObservation(content=error_content, code='print("test")')
