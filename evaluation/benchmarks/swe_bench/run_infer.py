@@ -9,7 +9,6 @@ import toml
 from datasets import load_dataset
 
 import openhands.agenthub
-
 from evaluation.utils.shared import (
     EvalException,
     EvalMetadata,
@@ -30,9 +29,7 @@ from openhands.core.config import (
     get_llm_config_arg,
     get_parser,
 )
-from openhands.core.config.condenser_config import (
-    RecentEventsCondenserConfig,
-)
+from openhands.core.config.condenser_config import AmortizedForgettingCondenserConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import CmdRunAction, MessageAction
@@ -80,7 +77,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
         '4. Rerun your reproduce script and confirm that the error is fixed!\n'
         '5. Think about edgecases and make sure your fix handles them as well\n'
         "Your thinking should be thorough and so it's fine if it's very long.\n"
-        )
+    )
 
     if RUN_WITH_BROWSING:
         instruction += (
@@ -515,7 +512,7 @@ if __name__ == '__main__':
         args.eval_note,
         args.eval_output_dir,
         details=details,
-        condenser_config=RecentEventsCondenserConfig(keep_first=10, max_events=25),
+        condenser_config=AmortizedForgettingCondenserConfig(keep_first=1, max_size=10),
     )
 
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')

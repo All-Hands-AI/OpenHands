@@ -179,7 +179,24 @@ class LLMCondenser(Condenser):
             raise e
 
 
-class AmortizedForgettingCondenser(Condenser):
+class RollingCondenser(Condenser):
+    def __init__(self) -> None:
+        self._condensation: list[Event] = []
+        self._last_history_length: int = 0
+
+    @abstractmethod
+    def forget(self, events: list[Event]) -> list[Event]: ...
+
+    def condense(self, state: State) -> list[Event]:
+        # Syncronize the current condensation and state history.
+        new_events = state.history[self._last_history_length :]
+        self._condensation.extend(new_events)
+        self._condensation = self.forget(self._condensation)
+        self._last_history_length = len(state.history)
+        return self._condensation
+
+
+class AmortizedForgettingCondenser(RollingCondenser):
     """A condenser that maintains a condensed history and forgets old events when it grows too large."""
 
     def __init__(self, max_size: int = 100, keep_first: int = 0):
@@ -204,7 +221,7 @@ class AmortizedForgettingCondenser(Condenser):
 
         self.max_size = max_size
         self.keep_first = keep_first
-        self._condensed_history: list[Event] = []
+        super().__init__()
 
     def forget(self, events: list[Event]) -> list[Event]:
         """Apply the amortized forgetting strategy to the given list of events."""
@@ -218,39 +235,6 @@ class AmortizedForgettingCondenser(Condenser):
         tail = events[-events_from_tail:]
 
         return head + tail
-
-    def condense(self, state: State) -> list[Event]:
-        """Maintain a condensed history by adding new events and forgetting old ones when needed.
-
-        Args:
-            state (State): The state containing the event history to condense.
-
-        Returns:
-            list[Event]: The current condensed event sequence.
-        """
-        # Track changes for this condensation
-        changes: dict[str, list[int]] = {'added_events': [], 'removed_events': []}
-
-        # If we have no history yet, initialize with all events
-        if not self._condensed_history:
-            self._condensed_history = state.history.copy()
-            changes['added_events'] = [e.id for e in self._condensed_history]
-
-        # Find the timestamp of our last event
-        last_timestamp = self._condensed_history[-1].timestamp
-
-        # Add any new events that occurred after our last event
-        new_events = [e for e in state.history if e.timestamp > last_timestamp]
-        changes['added_events'] = [e.id for e in new_events]
-        self._condensed_history.extend(new_events)
-
-        self._condensed_history = self.forget(self._condensed_history)
-
-        # Record changes in state metadata if any changes occurred
-        if changes['added_events'] or changes['removed_events']:
-            state.extra_data[CONDENSER_METADATA_KEY].append(changes)
-
-        return self._condensed_history
 
 
 class LLMAttentionCondenser(Condenser):
