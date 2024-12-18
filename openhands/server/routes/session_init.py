@@ -23,6 +23,7 @@ async def load_session_init_data(
         session_init_data = session_init_store.load()
         if not session_init_data:
             return None
+        # Clear any sensitive data here
         session_init_data.llm_api_key = None
         session_init_data.github_token = None
         return session_init_data

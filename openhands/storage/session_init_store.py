@@ -23,8 +23,8 @@ class SessionInitStore(ABC):
     def store(self, session_init_data: SessionInitData):
         """Store session init data"""
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def get_instance(cls, config: AppConfig, token: str | None) -> SessionInitStore:
         """Get a store for the user represented by the token given"""
 
