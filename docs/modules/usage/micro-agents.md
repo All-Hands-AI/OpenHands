@@ -14,7 +14,7 @@ Micro-agents are defined in markdown files under the `openhands/agenthub/codeact
 ## Available Micro-Agents
 
 ### GitHub Agent
-**File**: `github.md`  
+**File**: `github.md`
 **Triggers**: `github`, `git`
 
 The GitHub agent specializes in GitHub API interactions and repository management. It:
@@ -30,7 +30,7 @@ Key features:
 - API-first approach for GitHub operations
 
 ### NPM Agent
-**File**: `npm.md`  
+**File**: `npm.md`
 **Triggers**: `npm`
 
 Specializes in handling npm package management with specific focus on:

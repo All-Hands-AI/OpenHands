@@ -3,7 +3,7 @@ import React from "react";
 import { NavTab } from "./nav-tab";
 
 interface ContainerProps {
-  label?: string;
+  label?: React.ReactNode;
   labels?: {
     label: string | React.ReactNode;
     to: string;

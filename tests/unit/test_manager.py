@@ -60,7 +60,7 @@ async def test_session_is_running_in_cluster():
         )
     )
     with (
-        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.05),
+        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.1),
     ):
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
@@ -87,7 +87,7 @@ async def test_init_new_local_session():
     is_session_running_in_cluster_mock.return_value = False
     with (
         patch('openhands.server.session.manager.Session', mock_session),
-        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.01),
+        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.1),
         patch(
             'openhands.server.session.manager.SessionManager._redis_subscribe',
             AsyncMock(),
