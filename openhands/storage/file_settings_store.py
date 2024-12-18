@@ -4,31 +4,31 @@ import json
 from dataclasses import dataclass
 
 from openhands.core.config.app_config import AppConfig
-from openhands.server.session.session_init_data import SessionInitData
+from openhands.server.settings import Settings
 from openhands.storage import get_file_store
 from openhands.storage.files import FileStore
-from openhands.storage.session_init_store import SessionInitStore
+from openhands.storage.settings_store import SettingsStore
 
 
 @dataclass
-class FileSessionInitStore(SessionInitStore):
+class FileSettingsStore(SettingsStore):
     file_store: FileStore
     path: str = 'config.json'
 
-    async def load(self) -> SessionInitData | None:
+    async def load(self) -> Settings | None:
         try:
             json_str = self.file_store.read(self.path)
             kwargs = json.loads(json_str)
-            item = SessionInitData(**kwargs)
-            return item
+            settings = Settings(**kwargs)
+            return settings
         except FileNotFoundError:
             return None
 
-    async def store(self, item: SessionInitData):
-        json_str = json.dumps(item.__dict__)
+    async def store(self, settings: Settings):
+        json_str = json.dumps(settings.__dict__)
         self.file_store.write(self.path, json_str)
 
     @classmethod
     async def get_instance(cls, config: AppConfig, token: str | None):
         file_store = get_file_store(config.file_store, config.file_store_path)
-        return FileSessionInitStore(file_store)
+        return FileSettingsStore(file_store)

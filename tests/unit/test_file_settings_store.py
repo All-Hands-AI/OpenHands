@@ -4,8 +4,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from openhands.core.config.app_config import AppConfig
-from openhands.server.session.session_init_data import SessionInitData
-from openhands.storage.file_session_init_store import FileSessionInitStore
+from openhands.server.settings import Settings
+from openhands.storage.file_settings_store import FileSettingsStore
 from openhands.storage.files import FileStore
 
 
@@ -16,7 +16,7 @@ def mock_file_store():
 
 @pytest.fixture
 def session_init_store(mock_file_store):
-    return FileSessionInitStore(mock_file_store)
+    return FileSettingsStore(mock_file_store)
 
 
 @pytest.mark.asyncio
@@ -28,7 +28,7 @@ async def test_load_nonexistent_data(session_init_store):
 @pytest.mark.asyncio
 async def test_store_and_load_data(session_init_store):
     # Test data
-    init_data = SessionInitData(
+    init_data = Settings(
         language='python',
         agent='test-agent',
         max_iterations=100,
@@ -37,8 +37,6 @@ async def test_store_and_load_data(session_init_store):
         llm_model='test-model',
         llm_api_key='test-key',
         llm_base_url='https://test.com',
-        github_token='test-token',
-        selected_repository='test/repo',
     )
 
     # Store data
@@ -64,8 +62,6 @@ async def test_store_and_load_data(session_init_store):
     assert loaded_data.llm_model == init_data.llm_model
     assert loaded_data.llm_api_key == init_data.llm_api_key
     assert loaded_data.llm_base_url == init_data.llm_base_url
-    assert loaded_data.github_token == init_data.github_token
-    assert loaded_data.selected_repository == init_data.selected_repository
 
 
 @pytest.mark.asyncio
@@ -73,13 +69,13 @@ async def test_get_instance():
     config = AppConfig(file_store='local', file_store_path='/test/path')
 
     with patch(
-        'openhands.storage.file_session_init_store.get_file_store'
+        'openhands.storage.file_settings_store.get_file_store'
     ) as mock_get_store:
         mock_store = MagicMock(spec=FileStore)
         mock_get_store.return_value = mock_store
 
-        store = await FileSessionInitStore.get_instance(config, None)
+        store = await FileSettingsStore.get_instance(config, None)
 
-        assert isinstance(store, FileSessionInitStore)
+        assert isinstance(store, FileSettingsStore)
         assert store.file_store == mock_store
         mock_get_store.assert_called_once_with('local', '/test/path')
