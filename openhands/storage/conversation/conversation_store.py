@@ -17,7 +17,6 @@ class ConversationMetadata:
 @dataclass
 class ConversationStore:
     file_store: FileStore
-    path: str = 'settings.json'
 
     async def save_metadata(self, metadata: ConversationMetadata):
         json_str = json.dumps(metadata.__dict__)
@@ -25,7 +24,6 @@ class ConversationStore:
         self.file_store.write(path, json_str)
 
     async def get_metadata(self, conversation_id: str) -> ConversationMetadata:
-        json_str = self.file_store.read(self.path)
         path = get_conversation_metadata_file(conversation_id)
         json_str = self.file_store.read(path)
         return ConversationMetadata(**json.loads(json_str))

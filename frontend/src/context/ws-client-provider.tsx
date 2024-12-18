@@ -131,7 +131,7 @@ export function WsClientProvider({
     sio = io(baseUrl, {
       transports: ["websocket"],
       auth: {
-        githubToken: ghToken || undefined,
+        github_token: ghToken || undefined,
       },
       query,
     });
