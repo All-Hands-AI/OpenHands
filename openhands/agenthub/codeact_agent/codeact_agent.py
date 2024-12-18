@@ -490,6 +490,8 @@ class CodeActAgent(Agent):
                                 break
                         if last_text_content:
                             last_text_content.text += '\n' + message.content[0].text
+                        else:
+                            messages[-1].content.extend(message.content)
                     else:
                         messages.append(message)
 
