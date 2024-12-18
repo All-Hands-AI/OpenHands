@@ -1,5 +1,5 @@
 ARG OPENHANDS_BUILD_VERSION=dev
-FROM --platform=${TARGETPLATFORM} node:21.7.2-bookworm-slim AS frontend-builder
+FROM --platform=linux/arm64 node:21.7.2-bookworm-slim AS frontend-builder
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ RUN npm ci
 COPY ./frontend ./
 RUN npm run build
 
-FROM --platform=${TARGETPLATFORM} python:3.12.3-slim AS backend-builder
+FROM --platform=linux/arm64 python:3.12.3-slim AS backend-builder
 
 WORKDIR /app
 ENV PYTHONPATH='/app'
@@ -34,11 +34,11 @@ COPY ./pyproject.toml ./poetry.lock ./
 RUN touch README.md
 RUN poetry install --without evaluation,llama-index --no-root && rm -rf $POETRY_CACHE_DIR
 
-FROM FROM --platform=${TARGETPLATFORM} python:3.12.3-slim AS openhands-app
+FROM --platform=linux/arm64 python:3.12.3-slim AS openhands-app
 
 WORKDIR /app
 
-ARG OPENHANDS_BUILD_VERSION #re-declare for this section
+ARG OPENHANDS_BUILD_VERSION
 
 ENV RUN_AS_OPENHANDS=true
 # A random number--we need this to be different from the user's UID on the host machine
@@ -55,19 +55,11 @@ RUN mkdir -p $WORKSPACE_BASE
 # Install only necessary packages and clean up in the same RUN instruction
 RUN apt-get update -y && apt-get install -y --no-install-recommends \
     curl \
-    # ssh \  # Remove if not needed
-    # sudo \  # Remove if not needed
     && rm -rf /var/lib/apt/lists/*
-
-# Remove these lines if you remove sudo
-# RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs
-# RUN sed -i 's/^UID_MAX.*/UID_MAX 1000000/' /etc/login.defs
 
 RUN groupadd app
 RUN useradd -l -m -u $OPENHANDS_USER_ID -s /bin/bash openhands && usermod -aG app openhands
-# Remove these lines if you remove sudo
-#    usermod -aG sudo openhands && \
-#    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
 USER openhands
 
 # Copy the virtual environment from the backend-builder stage

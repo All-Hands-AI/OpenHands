@@ -1,40 +1,28 @@
 steps:
-- name: 'gcr.io/cloud-builders/docker'
-  env:
-    - 'DOCKER_BUILDKIT=1'
-  args:
-    - 'buildx'
-    - 'build'
-    - '--builder'
-    - 'mybuilder' # Use the buildx builder instance you created
-    - '--platform=linux/arm64' # Set the target platform
-    - '--build-arg'
-    - 'OPENHANDS_BUILD_VERSION=${_OPENHANDS_BUILD_VERSION}'
-    - '--build-arg'
-    - 'ENVIRONMENT=${_ENVIRONMENT}'
-    - '--build-arg'
-    - 'BASE_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.15-nikolaik'
-    - '--progress=plain'
-    - '-t'
-    - 'us-docker.pkg.dev/${PROJECT_ID}/openhands/openhands:${_TAG}'
-    - '-f'
-    - 'containers/app/Dockerfile'
-    - '--cache-from=us-docker.pkg.dev/${PROJECT_ID}/openhands/openhands:latest'
-    - '.'
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--platform=linux/arm64' # Target ARM64 for M2
+      - '--build-arg'
+      - 'OPENHANDS_BUILD_VERSION=${_OPENHANDS_BUILD_VERSION}'
+      - '--build-arg'
+      - 'ENVIRONMENT=${_ENVIRONMENT}'
+      - '--progress=plain'
+      - '-t'
+      - 'us-docker.pkg.dev/${PROJECT_ID}/openhands/openhands:${_TAG}'
+      - '-f'
+      - 'containers/app/Dockerfile' # Path to your Dockerfile
+      - '.'
 
-# Push the image (optional)
-- name: 'gcr.io/cloud-builders/docker'
-  args:
-    - 'push'
-    - 'us-docker.pkg.dev/${PROJECT_ID}/openhands/openhands:${_TAG}'
+  # Push the image (optional)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-docker.pkg.dev/${PROJECT_ID}/openhands/openhands:${_TAG}'
 
 substitutions:
   _OPENHANDS_BUILD_VERSION: 'dev'
   _ENVIRONMENT: 'local-dev'
   _TAG: 'm2optimized'
-
-options:
-  logging: CLOUD_LOGGING_ONLY
   defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
-  pool:
-    name: 'projects/${PROJECT_ID}/locations/us-west2/workerPools/m2optimizer'
+  
