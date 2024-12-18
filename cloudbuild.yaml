@@ -1,28 +1,25 @@
 steps:
   - name: 'gcr.io/cloud-builders/docker'
-    # Docker build optimization
     env:
       - 'DOCKER_BUILDKIT=1'
     args:
       - 'build'
-      - '--platform=linux/arm64' # Target ARM64 for M2
+      - '--platform=linux/arm64'
       - '--build-arg'
       - 'OPENHANDS_BUILD_VERSION=${_OPENHANDS_BUILD_VERSION}'
       - '--build-arg'
       - 'ENVIRONMENT=${_ENVIRONMENT}'
       - '--build-arg'
-      - 'BASE_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.15-nikolaik' # Consider if you need to change this
+      - 'BASE_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.15-nikolaik'
       - '--progress=plain'
       - '-t'
-      - 'us-docker.pkg.dev/${PROJECT_ID}/openhands/openhands:${_TAG}' # Use PROJECT_ID variable
+      - 'us-docker.pkg.dev/${PROJECT_ID}/openhands/openhands:${_TAG}'
       - '-f'
-      - 'containers/app/Dockerfile' # Adjust path if needed
-      - '--cache-from=us-docker.pkg.dev/${PROJECT_ID}/openhands/openhands:latest' # Use build cache
+      - 'containers/app/Dockerfile'
+      - '--cache-from=us-docker.pkg.dev/${PROJECT_ID}/openhands/openhands:latest'
       - '.'
-    # This is the build step for the tag m2optimized. The branch name should be updated to use this step.
-    branchName: m2optimized
 
-  # Push the image (optional, if you want to push to a registry)
+  # Push the image (optional)
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
@@ -31,7 +28,7 @@ steps:
 substitutions:
   _OPENHANDS_BUILD_VERSION: 'dev'
   _ENVIRONMENT: 'local-dev'
-  _TAG: 'm2optimized' # Use a specific tag for the M2 optimized image
+  _TAG: 'm2optimized'
 
 options:
   logging: CLOUD_LOGGING_ONLY
