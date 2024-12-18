@@ -10,8 +10,11 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
+from jinja2 import Template
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime, RuntimeUnavailableError
+from openhands.runtime.event_stream import EventStreamRuntime
+from openhands.runtime.remote import RemoteRuntime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_async_from_sync
@@ -210,6 +213,23 @@ class AgentSession:
             return
 
         if self.runtime is not None:
+            # Add port mapping instructions based on runtime type
+            port_instructions = None
+            if isinstance(self.runtime, EventStreamRuntime):
+                port_instructions = "* When serving some application, use ports 4141 and 4142."
+            elif isinstance(self.runtime, RemoteRuntime):
+                port_instructions = "* When serving some application, use ports 81623 and 81624."
+
+            # Extend the agent's prompt instructions if port instructions are available
+            if port_instructions and agent.prompt_manager:
+                original_template = agent.prompt_manager.system_template.source
+                important_section_end = "</IMPORTANT>\n"
+                modified_template = original_template.replace(
+                    important_section_end,
+                    f"{port_instructions}\n{important_section_end}"
+                )
+                agent.prompt_manager.system_template = Template(modified_template)
+
             self.runtime.clone_repo(github_token, selected_repository)
             if agent.prompt_manager:
                 agent.prompt_manager.load_microagent_files(
@@ -249,10 +269,18 @@ class AgentSession:
                 'Runtime must be initialized before the agent controller'
             )
 
+        # Determine port mapping instructions based on Runtime type
+        port_instructions = ""
+        if isinstance(self.runtime, EventStreamRuntime):
+            port_instructions = "Use ports 4141 and 4142 when serving applications"
+        elif isinstance(self.runtime, RemoteRuntime):
+            port_instructions = "Use ports 81623 and 81624 when serving applications"
+
         msg = (
             '\n--------------------------------- OpenHands Configuration ---------------------------------\n'
             f'LLM: {agent.llm.config.model}\n'
             f'Base URL: {agent.llm.config.base_url}\n'
+            f'Port Instructions: {port_instructions}\n'
         )
         if agent.llm.config.draft_editor:
             msg += (
