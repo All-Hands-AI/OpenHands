@@ -11,7 +11,7 @@ app = APIRouter(prefix='/api')
 def get_github_repositories(
     request: Request,
     page: int = 1,
-    per_page: int = 10,
+    per_page: int = 100,
     sort: str = 'pushed',
     installation_id: int | None = None,
 ):

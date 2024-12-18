@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
+import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 
 interface GitHubRepositorySelectorProps {
   onSelect: () => void;
@@ -16,10 +17,13 @@ export function GitHubRepositorySelector({
   const { data: config } = useConfig();
 
   // Add option to install app onto more repos
+  const { data: paginatedRepos } = useUserRepositories();
+  const allRepositories = paginatedRepos?.pages.flatMap((page) => page.data) ?? repositories;
+  
   const finalRepositories =
     config?.APP_MODE === "saas"
-      ? [{ id: -1000, full_name: "Add more repositories..." }, ...repositories]
-      : repositories;
+      ? [{ id: -1000, full_name: "Add more repositories..." }, ...allRepositories]
+      : allRepositories;
 
   const dispatch = useDispatch();
 
