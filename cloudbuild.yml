@@ -1,5 +1,6 @@
 steps:
   - name: 'gcr.io/cloud-builders/docker'
+    # Docker build optimization
     env:
       - 'DOCKER_BUILDKIT=1'
     args:
