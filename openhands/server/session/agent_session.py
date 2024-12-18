@@ -1,5 +1,4 @@
 import asyncio
-import os
 from typing import Callable, Optional
 
 from openhands.controller import AgentController
@@ -11,7 +10,6 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
-from jinja2 import Template
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime, RuntimeUnavailableError
 from openhands.runtime.event_stream import EventStreamRuntime
@@ -223,17 +221,7 @@ class AgentSession:
 
             # Extend the agent's prompt instructions if port instructions are available
             if port_instructions and agent.prompt_manager:
-                # Get the raw template string from the template file
-                template_path = os.path.join(agent.prompt_manager.prompt_dir, 'system_prompt.j2')
-                with open(template_path, 'r') as f:
-                    original_template = f.read()
-                
-                important_section_end = "</IMPORTANT>\n"
-                modified_template = original_template.replace(
-                    important_section_end,
-                    f"{port_instructions}\n{important_section_end}"
-                )
-                agent.prompt_manager.system_template = Template(modified_template)
+                agent.prompt_manager.extend_system_prompt(port_instructions)
 
             self.runtime.clone_repo(github_token, selected_repository)
             if agent.prompt_manager:

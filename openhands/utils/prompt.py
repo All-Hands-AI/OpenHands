@@ -63,6 +63,23 @@ class PromptManager:
         with open(template_path, 'r') as file:
             return Template(file.read())
 
+    def extend_system_prompt(self, instruction: str) -> None:
+        """Extends the system prompt by adding an instruction before the </IMPORTANT> tag.
+        
+        Parameters:
+            instruction: The instruction to add to the system prompt
+        """
+        template_path = os.path.join(self.prompt_dir, 'system_prompt.j2')
+        with open(template_path, 'r') as f:
+            original_template = f.read()
+        
+        important_section_end = "</IMPORTANT>\n"
+        modified_template = original_template.replace(
+            important_section_end,
+            f"{instruction}\n{important_section_end}"
+        )
+        self.system_template = Template(modified_template)
+
     def get_system_message(self) -> str:
         return self.system_template.render().strip()
 
