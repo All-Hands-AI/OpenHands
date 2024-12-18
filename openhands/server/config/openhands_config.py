@@ -13,7 +13,7 @@ class OpenhandsConfig(OpenhandsConfigInterface):
     posthog_client_key = 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
     github_client_id = os.environ.get('GITHUB_APP_CLIENT_ID', '')
     attach_session_middleware_path = (
-        'openhands.server.middleware.AttachSessionMiddleware'
+        'openhands.server.middleware.AttachConversationMiddleware'
     )
 
     def verify_config(self):

@@ -107,7 +107,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
-class AttachSessionMiddleware(SessionMiddlewareInterface):
+class AttachConversationMiddleware(SessionMiddlewareInterface):
     def __init__(self, app):
         self.app = app
 
@@ -152,7 +152,7 @@ class AttachSessionMiddleware(SessionMiddlewareInterface):
         await session_manager.detach_from_conversation(request.state.conversation)
 
     async def __call__(self, request: Request, call_next: Callable):
-        logger.info('AttachSessionMiddleware')
+        logger.info('AttachConversationMiddleware')
         if not self._should_attach(request):
             return await call_next(request)
 

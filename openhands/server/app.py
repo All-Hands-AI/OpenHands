@@ -10,7 +10,7 @@ from fastapi import (
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands.server.middleware import (
-    AttachSessionMiddleware,
+    AttachConversationMiddleware,
     InMemoryRateLimiter,
     LocalhostCORSMiddleware,
     NoCacheMiddleware,
@@ -58,7 +58,7 @@ app.include_router(feedback_api_router)
 app.include_router(new_conversation_api_router)
 app.include_router(github_api_router)
 
-AttachSessionMiddlewareImpl = get_impl(
-    AttachSessionMiddleware, openhands_config.attach_session_middleware_path
+AttachConversationMiddlewareImpl = get_impl(
+    AttachConversationMiddleware, openhands_config.attach_session_middleware_path
 )
-app.middleware('http')(AttachSessionMiddlewareImpl(app))
+app.middleware('http')(AttachConversationMiddlewareImpl(app))
