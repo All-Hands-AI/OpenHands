@@ -69,7 +69,9 @@ def test_store_and_load_data(session_init_store):
 def test_get_instance():
     config = AppConfig(file_store='local', file_store_path='/test/path')
 
-    with patch('openhands.storage.session_init_store.get_file_store') as mock_get_store:
+    with patch(
+        'openhands.storage.file_session_init_store.get_file_store'
+    ) as mock_get_store:
         mock_store = MagicMock(spec=FileStore)
         mock_get_store.return_value = mock_store
 
