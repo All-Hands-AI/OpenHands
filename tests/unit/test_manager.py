@@ -7,6 +7,7 @@ import pytest
 
 from openhands.core.config.app_config import AppConfig
 from openhands.server.session.manager import SessionManager
+from openhands.server.session.session_init_data import SessionInitData
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -99,6 +100,7 @@ async def test_init_new_local_session():
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
+            await session_manager.start_agent_loop('new-session-id', SessionInitData())
             await session_manager.join_conversation('new-session-id', 'new-session-id')
     assert session_instance.initialize_agent.call_count == 1
     assert sio.enter_room.await_count == 1
@@ -128,6 +130,7 @@ async def test_join_local_session():
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
+            await session_manager.start_agent_loop('new-session-id', SessionInitData())
             await session_manager.join_conversation('new-session-id', 'new-session-id')
             await session_manager.join_conversation('new-session-id', 'new-session-id')
     assert session_instance.initialize_agent.call_count == 1
@@ -187,6 +190,7 @@ async def test_add_to_local_event_stream():
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
+            await session_manager.start_agent_loop('new-session-id', SessionInitData())
             await session_manager.join_conversation('new-session-id', 'connection-id')
             await session_manager.send_to_event_stream(
                 'connection-id', {'event_type': 'some_event'}
