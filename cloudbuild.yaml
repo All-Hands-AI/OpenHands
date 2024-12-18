@@ -24,5 +24,7 @@ substitutions:
   _OPENHANDS_BUILD_VERSION: 'dev'
   _ENVIRONMENT: 'local-dev'
   _TAG: 'm2optimized'
+options:
+  logging: CLOUD_LOGGING_ONLY
   defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
   
