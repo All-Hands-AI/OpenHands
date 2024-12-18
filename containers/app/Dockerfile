@@ -1,5 +1,5 @@
 ARG OPENHANDS_BUILD_VERSION=dev
-FROM --platform=linux/arm64 node:21.7.2-bookworm-slim AS frontend-builder
+FROM --platform=${TARGETPLATFORM} node:21.7.2-bookworm-slim AS frontend-builder
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ RUN npm ci
 COPY ./frontend ./
 RUN npm run build
 
-FROM --platform=linux/arm64 python:3.12.3-slim AS backend-builder
+FROM --platform=${TARGETPLATFORM} python:3.12.3-slim AS backend-builder
 
 WORKDIR /app
 ENV PYTHONPATH='/app'
