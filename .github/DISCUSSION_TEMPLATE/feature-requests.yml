@@ -1,0 +1,24 @@
+title: "Feature - "
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What problem or use case are you trying to solve?
+                   Please provide a clear description of the feature request.
+    validations:
+      required: true
+  - type: textarea
+    id: design
+    attributes:
+      label: UX Design
+      description: Do you have thoughts on the UX of the solution you'd like?
+    validations:
+      required: false
+  - type: textarea
+    id: technical
+    attributes:
+      label: Technical Implementation
+      description: Do you have thoughts on the technical implementation?
+    validations:
+      required: false

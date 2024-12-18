@@ -5,7 +5,8 @@ labels: ['bug']
 body:
   - type: markdown
     attributes:
-      value: Thank you for taking the time to fill out this bug report. Please provide as much information as possible to help us understand and address the issue effectively.
+      value: Thank you for taking the time to fill out this bug report. Please provide as much information as possible
+        to help us understand and address the issue effectively.
 
   - type: checkboxes
     attributes:
@@ -32,7 +33,7 @@ body:
         - Docker command in README
         - Development workflow
         - app.all-hands.dev
-        - Other
+        - OpenHands resolver
       default: 0
 
   - type: input
