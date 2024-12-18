@@ -253,6 +253,7 @@ class RemoteRuntime(Runtime):
                 f'{self.config.sandbox.remote_runtime_api_url}/start',
                 is_retry=False,
                 json=start_request,
+                timeout=60,
             ) as response:
                 self._parse_runtime_response(response)
             self.log(
@@ -331,6 +332,7 @@ class RemoteRuntime(Runtime):
         with self._send_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
+            timeout=60,
         ) as runtime_info_response:
             runtime_data = runtime_info_response.json()
         assert 'runtime_id' in runtime_data
