@@ -353,6 +353,7 @@ class AgentController:
                     content='Something went wrong with the tool call'
                 )
                 obs.tool_call_metadata = self._pending_action.tool_call_metadata
+                obs._cause = self._pending_action.id  # type: ignore[attr-defined]
                 self.event_stream.add_event(obs, EventSource.AGENT)
 
         # reset the pending action, this will be called when the agent is STOPPED or ERROR
