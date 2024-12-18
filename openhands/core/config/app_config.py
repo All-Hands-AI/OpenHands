@@ -1,4 +1,3 @@
-import uuid
 from dataclasses import dataclass, field, fields, is_dataclass
 from typing import ClassVar
 
@@ -66,7 +65,7 @@ class AppConfig:
     modal_api_token_id: str = ''
     modal_api_token_secret: str = ''
     disable_color: bool = False
-    jwt_secret: str = uuid.uuid4().hex
+    jwt_secret: str = ''
     attach_session_middleware_class: str = (
         'openhands.server.middleware.AttachConversationMiddleware'
     )
