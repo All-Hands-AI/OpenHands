@@ -19,12 +19,14 @@ def session_init_store(mock_file_store):
     return FileSessionInitStore(mock_file_store)
 
 
-def test_load_nonexistent_data(session_init_store):
+@pytest.mark.asyncio
+async def test_load_nonexistent_data(session_init_store):
     session_init_store.file_store.read.side_effect = FileNotFoundError()
-    assert session_init_store.load() is None
+    assert await session_init_store.load() is None
 
 
-def test_store_and_load_data(session_init_store):
+@pytest.mark.asyncio
+async def test_store_and_load_data(session_init_store):
     # Test data
     init_data = SessionInitData(
         language='python',
@@ -40,7 +42,7 @@ def test_store_and_load_data(session_init_store):
     )
 
     # Store data
-    session_init_store.store(init_data)
+    await session_init_store.store(init_data)
 
     # Verify store called with correct JSON
     expected_json = json.dumps(init_data.__dict__)
@@ -52,7 +54,7 @@ def test_store_and_load_data(session_init_store):
     session_init_store.file_store.read.return_value = expected_json
 
     # Load and verify data
-    loaded_data = session_init_store.load()
+    loaded_data = await session_init_store.load()
     assert loaded_data is not None
     assert loaded_data.language == init_data.language
     assert loaded_data.agent == init_data.agent
@@ -66,7 +68,8 @@ def test_store_and_load_data(session_init_store):
     assert loaded_data.selected_repository == init_data.selected_repository
 
 
-def test_get_instance():
+@pytest.mark.asyncio
+async def test_get_instance():
     config = AppConfig(file_store='local', file_store_path='/test/path')
 
     with patch(
@@ -75,7 +78,7 @@ def test_get_instance():
         mock_store = MagicMock(spec=FileStore)
         mock_get_store.return_value = mock_store
 
-        store = FileSessionInitStore.get_instance(config, None)
+        store = await FileSessionInitStore.get_instance(config, None)
 
         assert isinstance(store, FileSessionInitStore)
         assert store.file_store == mock_store

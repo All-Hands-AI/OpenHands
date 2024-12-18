@@ -19,8 +19,10 @@ async def load_session_init_data(
     github_auth: Annotated[str | None, Header()] = None,
 ) -> SessionInitData | None:
     try:
-        session_init_store = SessionInitStoreImpl.get_instance(config, github_auth)
-        session_init_data = session_init_store.load()
+        session_init_store = await SessionInitStoreImpl.get_instance(
+            config, github_auth
+        )
+        session_init_data = await session_init_store.load()
         if not session_init_data:
             return None
         # Clear any sensitive data here
@@ -41,8 +43,10 @@ async def store_session_init_data(
     github_auth: Annotated[str | None, Header()] = None,
 ) -> bool:
     try:
-        session_init_store = SessionInitStoreImpl.get_instance(config, github_auth)
-        session_init_data = session_init_store.store(session_init_data)
+        session_init_store = await SessionInitStoreImpl.get_instance(
+            config, github_auth
+        )
+        session_init_data = await session_init_store.store(session_init_data)
         return True
     except Exception as e:
         logger.warning(f'Invalid token: {e}')

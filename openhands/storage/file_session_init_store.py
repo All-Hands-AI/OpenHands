@@ -15,7 +15,7 @@ class FileSessionInitStore(SessionInitStore):
     file_store: FileStore
     path: str = 'config.json'
 
-    def load(self) -> SessionInitData | None:
+    async def load(self) -> SessionInitData | None:
         try:
             json_str = self.file_store.read(self.path)
             kwargs = json.loads(json_str)
@@ -24,11 +24,11 @@ class FileSessionInitStore(SessionInitStore):
         except FileNotFoundError:
             return None
 
-    def store(self, item: SessionInitData):
+    async def store(self, item: SessionInitData):
         json_str = json.dumps(item.__dict__)
         self.file_store.write(self.path, json_str)
 
     @classmethod
-    def get_instance(cls, config: AppConfig, token: str | None):
+    async def get_instance(cls, config: AppConfig, token: str | None):
         file_store = get_file_store(config.file_store, config.file_store_path)
         return FileSessionInitStore(file_store)
