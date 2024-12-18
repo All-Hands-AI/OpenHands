@@ -1,8 +1,8 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
-    env:
+  env:
     - 'DOCKER_BUILDKIT=1'
-    args:
+  args:
     - 'buildx'
     - 'build'
     - '--builder'
@@ -24,15 +24,15 @@ steps:
 
 # Push the image (optional)
 - name: 'gcr.io/cloud-builders/docker'
-    args:
+  args:
     - 'push'
     - 'us-docker.pkg.dev/${PROJECT_ID}/openhands/openhands:${_TAG}'
 
 substitutions:
-_OPENHANDS_BUILD_VERSION: 'dev'
-_ENVIRONMENT: 'local-dev'
-_TAG: 'm2optimized'
+  _OPENHANDS_BUILD_VERSION: 'dev'
+  _ENVIRONMENT: 'local-dev'
+  _TAG: 'm2optimized'
 
 options:
-logging: CLOUD_LOGGING_ONLY
-defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
+  logging: CLOUD_LOGGING_ONLY
+  defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
