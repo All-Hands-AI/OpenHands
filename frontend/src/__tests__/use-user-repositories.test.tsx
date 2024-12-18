@@ -11,9 +11,7 @@ vi.mock("../context/auth-context", () => ({
   useAuth: () => ({
     gitHubToken: "mock-token",
   }),
-  AuthProvider: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
 // Mock the config hook

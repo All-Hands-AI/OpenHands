@@ -19,10 +19,13 @@ export function GitHubRepositorySelector({
   // Add option to install app onto more repos
   const { data: paginatedRepos } = useUserRepositories();
   const allRepositories = paginatedRepos?.pages.flatMap((page) => page.data) ?? repositories;
-  
+
   const finalRepositories =
     config?.APP_MODE === "saas"
-      ? [{ id: -1000, full_name: "Add more repositories..." }, ...allRepositories]
+      ? [
+          { id: -1000, full_name: "Add more repositories..." },
+          ...allRepositories,
+        ]
       : allRepositories;
 
   const dispatch = useDispatch();
