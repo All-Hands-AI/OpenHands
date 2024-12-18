@@ -26,6 +26,7 @@ import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
 import { CountBadge } from "#/components/layout/count-badge";
+import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 
 function AppContent() {
   const { gitHubToken } = useAuth();
@@ -105,7 +106,10 @@ function AppContent() {
               </Container>
               {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
                * that it loads only in the client-side. */}
-              <Container className="h-1/3 overflow-scroll" label="Terminal">
+              <Container
+                className="h-1/3 overflow-scroll"
+                label={<TerminalStatusLabel />}
+              >
                 <React.Suspense fallback={<div className="h-full" />}>
                   <Terminal secrets={secrets} />
                 </React.Suspense>

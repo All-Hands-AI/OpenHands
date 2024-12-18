@@ -3,9 +3,9 @@ import React from "react";
 import { io, Socket } from "socket.io-client";
 
 import EventLogger from "#/utils/event-logger";
-import AgentState from "#/types/agent-state";
 import { handleAssistantMessage } from "#/services/actions";
 import { useRate } from "#/hooks/use-rate";
+import AgentState from "#/types/agent-state";
 
 const isOpenHandsMessage = (event: Record<string, unknown>) =>
   event.action === "message";
@@ -79,10 +79,12 @@ export function WsClientProvider({
     if (!Number.isNaN(parseInt(event.id as string, 10))) {
       lastEventRef.current = event;
     }
+
     const extras = event.extras as Record<string, unknown>;
     if (extras?.agent_state === AgentState.INIT) {
       setStatus(WsClientProviderStatus.ACTIVE);
     }
+
     if (
       status !== WsClientProviderStatus.ACTIVE &&
       event?.observation === "error"

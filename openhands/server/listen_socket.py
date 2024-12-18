@@ -15,7 +15,6 @@ from openhands.server.shared import session_manager, sio
 
 @sio.event
 async def connect(connection_id: str, environ, auth):
-    print('connect', auth)
     logger.info(f'sio:connect: {connection_id}')
     query_params = parse_qs(environ.get('QUERY_STRING', ''))
     latest_event_id = int(query_params.get('latest_event_id', [-1])[0])
@@ -39,8 +38,11 @@ async def connect(connection_id: str, environ, auth):
         ):
             continue
         elif isinstance(event, AgentStateChangedObservation):
-            agent_state_changed = event
-            continue
+            if event.agent_state == 'init':
+                await sio.emit('oh_event', event_to_dict(event), to=connection_id)
+            else:
+                agent_state_changed = event
+                continue
         await sio.emit('oh_event', event_to_dict(event), to=connection_id)
     if agent_state_changed:
         await sio.emit('oh_event', event_to_dict(agent_state_changed), to=connection_id)

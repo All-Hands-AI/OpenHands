@@ -42,7 +42,9 @@ class OpenHands {
   }
 
   static async getConfig(): Promise<GetConfigResponse> {
-    const { data } = await openHands.get<GetConfigResponse>("/config.json");
+    const { data } = await openHands.get<GetConfigResponse>(
+      "/api/options/config",
+    );
     return data;
   }
 
@@ -146,6 +148,20 @@ class OpenHands {
     const response =
       await openHands.post<AuthenticateResponse>("/api/authenticate");
     return response.status === 200;
+  }
+
+  /**
+   * Refresh Github Token
+   * @returns Refreshed Github access token
+   */
+  static async refreshToken(
+    appMode: GetConfigResponse["APP_MODE"],
+  ): Promise<string> {
+    if (appMode === "oss") return "";
+
+    const response =
+      await openHands.post<GitHubAccessTokenResponse>("/api/refresh-token");
+    return response.data.access_token;
   }
 
   /**

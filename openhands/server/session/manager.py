@@ -143,9 +143,7 @@ class SessionManager:
     async def detach_from_conversation(self, conversation: Conversation):
         await conversation.disconnect()
 
-    async def init_or_join_session(
-        self, sid: str, connection_id: str, session_init_data: SessionInitData
-    ):
+    async def join_conversation(self, sid: str, connection_id: str):
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self.local_connection_id_to_session_id[connection_id] = sid
 
@@ -307,6 +305,7 @@ class SessionManager:
             )
 
         await self._close_session(session)
+        return True
 
     async def _close_session(self, session: Session):
         logger.info(f'_close_session:{session.sid}')
