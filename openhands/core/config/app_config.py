@@ -67,7 +67,7 @@ class AppConfig:
     disable_color: bool = False
     jwt_secret: str = ''
     session_init_store_class: str = (
-        'openhands.storage.session_init_store.FileSessionInitStore'
+        'openhands.storage.file_session_init_store.FileSessionInitStore'
     )
     debug: bool = False
     file_uploads_max_file_size_mb: int = 0
