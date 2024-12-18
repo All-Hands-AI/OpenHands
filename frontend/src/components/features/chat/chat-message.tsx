@@ -62,6 +62,11 @@ export function ChatMessage({
           code,
           ul,
           ol,
+          a: ({ href, children }) => (
+            <a href={href} target="_blank" rel="noopener noreferrer">
+              {children}
+            </a>
+          ),
         }}
         remarkPlugins={[remarkGfm]}
       >
