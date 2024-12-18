@@ -45,7 +45,7 @@ async def test_store_and_load_data(session_init_store):
     # Verify store called with correct JSON
     expected_json = json.dumps(init_data.__dict__)
     session_init_store.file_store.write.assert_called_once_with(
-        'config.json', expected_json
+        'settings.json', expected_json
     )
 
     # Setup mock for load
