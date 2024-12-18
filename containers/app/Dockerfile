@@ -1,34 +1,40 @@
 ARG OPENHANDS_BUILD_VERSION=dev
-FROM node:21.7.2-bookworm-slim AS frontend-builder
+FROM --platform=linux/arm64 node:21.7.2-bookworm-slim AS frontend-builder
 
 WORKDIR /app
 
-COPY ./frontend/package.json frontend/package-lock.json ./
-RUN npm install -g npm@10.5.1
+COPY ./frontend/package.json ./frontend/package-lock.json ./
 RUN npm ci
 
 COPY ./frontend ./
 RUN npm run build
 
-FROM python:3.12.3-slim AS backend-builder
+FROM --platform=linux/arm64 python:3.12.3-slim AS backend-builder
 
 WORKDIR /app
 ENV PYTHONPATH='/app'
 
+# Create a virtual environment for Poetry
+ENV VENV_PATH=/opt/venv
+RUN python3 -m venv $VENV_PATH
+ENV PATH="$VENV_PATH/bin:$PATH"
+
 ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_IN_PROJECT=1 \
-    POETRY_VIRTUALENVS_CREATE=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=0 \
+    POETRY_VIRTUALENVS_CREATE=0 \
     POETRY_CACHE_DIR=/tmp/poetry_cache
 
-RUN apt-get update -y \
-    && apt-get install -y curl make git build-essential \
-    && python3 -m pip install poetry==1.8.2  --break-system-packages
+# Install Poetry in the virtual environment
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
+    curl make git build-essential \
+    && curl -sSL https://install.python-poetry.org | python3 - \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY ./pyproject.toml ./poetry.lock ./
 RUN touch README.md
-RUN export POETRY_CACHE_DIR && poetry install --without evaluation,llama-index --no-root && rm -rf $POETRY_CACHE_DIR
+RUN poetry install --without evaluation,llama-index --no-root && rm -rf $POETRY_CACHE_DIR
 
-FROM python:3.12.3-slim AS openhands-app
+FROM --platform=linux/arm64 python:3.12.3-slim AS openhands-app
 
 WORKDIR /app
 
@@ -46,49 +52,49 @@ ENV FILE_STORE=local
 ENV FILE_STORE_PATH=~/.openhands
 RUN mkdir -p $WORKSPACE_BASE
 
-RUN apt-get update -y \
-    && apt-get install -y curl ssh sudo
+# Install only necessary packages and clean up in the same RUN instruction
+RUN apt-get update -y && apt-get install -y --no-install-recommends \
+    curl \
+    # ssh \  # Remove if not needed
+    # sudo \  # Remove if not needed
+    && rm -rf /var/lib/apt/lists/*
 
-# Default is 1000, but OSX is often 501
-RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs
-# Default is 60000, but we've seen up to 200000
-RUN sed -i 's/^UID_MAX.*/UID_MAX 1000000/' /etc/login.defs
+# Remove these lines if you remove sudo
+# RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs
+# RUN sed -i 's/^UID_MAX.*/UID_MAX 1000000/' /etc/login.defs
 
 RUN groupadd app
-RUN useradd -l -m -u $OPENHANDS_USER_ID -s /bin/bash openhands && \
-    usermod -aG app openhands && \
-    usermod -aG sudo openhands && \
-    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-RUN chown -R openhands:app /app && chmod -R 770 /app
-RUN sudo chown -R openhands:app $WORKSPACE_BASE && sudo chmod -R 770 $WORKSPACE_BASE
+RUN useradd -l -m -u $OPENHANDS_USER_ID -s /bin/bash openhands && usermod -aG app openhands
+# Remove these lines if you remove sudo
+#    usermod -aG sudo openhands && \
+#    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER openhands
 
+# Copy the virtual environment from the backend-builder stage
 ENV VIRTUAL_ENV=/app/.venv \
     PATH="/app/.venv/bin:$PATH" \
     PYTHONPATH='/app'
 
-COPY --chown=openhands:app --chmod=770 --from=backend-builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
+COPY --from=backend-builder $VENV_PATH $VIRTUAL_ENV
+COPY --from=backend-builder /app/.venv /app/.venv
+
+# Install only necessary Playwright browser(s)
 RUN playwright install --with-deps chromium
 
-COPY --chown=openhands:app --chmod=770 ./openhands ./openhands
-COPY --chown=openhands:app --chmod=777 ./openhands/runtime/plugins ./openhands/runtime/plugins
-COPY --chown=openhands:app --chmod=770 ./openhands/agenthub ./openhands/agenthub
-COPY --chown=openhands:app ./pyproject.toml ./pyproject.toml
-COPY --chown=openhands:app ./poetry.lock ./poetry.lock
-COPY --chown=openhands:app ./README.md ./README.md
-COPY --chown=openhands:app ./MANIFEST.in ./MANIFEST.in
-COPY --chown=openhands:app ./LICENSE ./LICENSE
+# Copy only necessary files
+COPY ./openhands ./openhands
 
 # This is run as "openhands" user, and will create __pycache__ with openhands:openhands ownership
 RUN python openhands/core/download.py # No-op to download assets
-# Add this line to set group ownership of all files/directories not already in "app" group
-# openhands:openhands -> openhands:app
-RUN find /app \! -group app -exec chgrp app {} +
 
-COPY --chown=openhands:app --chmod=770 --from=frontend-builder /app/build ./frontend/build
-COPY --chown=openhands:app --chmod=770 ./containers/app/entrypoint.sh /app/entrypoint.sh
+COPY --from=frontend-builder /app/build ./frontend/build
+COPY ./containers/app/entrypoint.sh /app/entrypoint.sh
 
 USER root
+RUN chown -R openhands:app /app
+RUN find /app -type d -exec chmod 770 {} \;
+RUN find /app -type f -exec chmod 660 {} \;
+RUN chmod +x /app/entrypoint.sh
 
 WORKDIR /app
 
