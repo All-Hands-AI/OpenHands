@@ -5,8 +5,8 @@ import pytest
 
 from openhands.core.config.app_config import AppConfig
 from openhands.server.session.session_init_data import SessionInitData
+from openhands.storage.file_session_init_store import FileSessionInitStore
 from openhands.storage.files import FileStore
-from openhands.storage.session_init_store import FileSessionInitStore
 
 
 @pytest.fixture
@@ -27,28 +27,30 @@ def test_load_nonexistent_data(session_init_store):
 def test_store_and_load_data(session_init_store):
     # Test data
     init_data = SessionInitData(
-        language="python",
-        agent="test-agent",
+        language='python',
+        agent='test-agent',
         max_iterations=100,
-        security_analyzer="default",
+        security_analyzer='default',
         confirmation_mode=True,
-        llm_model="test-model",
-        llm_api_key="test-key",
-        llm_base_url="https://test.com",
-        github_token="test-token",
-        selected_repository="test/repo"
+        llm_model='test-model',
+        llm_api_key='test-key',
+        llm_base_url='https://test.com',
+        github_token='test-token',
+        selected_repository='test/repo',
     )
-    
+
     # Store data
     session_init_store.store(init_data)
-    
+
     # Verify store called with correct JSON
     expected_json = json.dumps(init_data.__dict__)
-    session_init_store.file_store.write.assert_called_once_with('config.json', expected_json)
-    
+    session_init_store.file_store.write.assert_called_once_with(
+        'config.json', expected_json
+    )
+
     # Setup mock for load
     session_init_store.file_store.read.return_value = expected_json
-    
+
     # Load and verify data
     loaded_data = session_init_store.load()
     assert loaded_data is not None
@@ -65,17 +67,14 @@ def test_store_and_load_data(session_init_store):
 
 
 def test_get_instance():
-    config = AppConfig(
-        file_store="local",
-        file_store_path="/test/path"
-    )
-    
+    config = AppConfig(file_store='local', file_store_path='/test/path')
+
     with patch('openhands.storage.session_init_store.get_file_store') as mock_get_store:
         mock_store = MagicMock(spec=FileStore)
         mock_get_store.return_value = mock_store
-        
+
         store = FileSessionInitStore.get_instance(config, None)
-        
+
         assert isinstance(store, FileSessionInitStore)
         assert store.file_store == mock_store
-        mock_get_store.assert_called_once_with("local", "/test/path")
+        mock_get_store.assert_called_once_with('local', '/test/path')
