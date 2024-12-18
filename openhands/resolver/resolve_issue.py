@@ -122,10 +122,7 @@ async def complete_runtime(
     n_retries = 0
     git_patch = None
     while n_retries < 5:
-        action = CmdRunAction(
-            command=f'git diff --no-color --cached {base_commit}',
-            keep_prompt=False,
-        )
+        action = CmdRunAction(command=f'git diff --no-color --cached {base_commit}')
         action.timeout = 600 + 100 * n_retries
         logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)

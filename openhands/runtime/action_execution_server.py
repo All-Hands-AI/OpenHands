@@ -111,6 +111,7 @@ class ActionExecutor:
         self.browser = BrowserEnv(browsergym_eval_env)
         self.start_time = time.time()
         self.last_execution_time = self.start_time
+        self._initialized = False
 
     @property
     def initial_pwd(self):
@@ -135,6 +136,11 @@ class ActionExecutor:
 
         await self._init_bash_commands()
         logger.debug('Runtime client initialized.')
+        self._initialized = True
+
+    @property
+    def initialized(self) -> bool:
+        return self._initialized
 
     async def _init_plugin(self, plugin: Plugin):
         await plugin.initialize(self.username)
@@ -174,7 +180,7 @@ class ActionExecutor:
     async def run(
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
-        obs = await call_sync_from_async(self.bash_session.run, action)
+        obs = await call_sync_from_async(self.bash_session.execute, action)
         return obs
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
@@ -241,7 +247,7 @@ class ActionExecutor:
     async def read(self, action: FileReadAction) -> Observation:
         # NOTE: the client code is running inside the sandbox,
         # so there's no need to check permission
-        working_dir = self.bash_session.workdir
+        working_dir = self.bash_session.pwd
         filepath = self._resolve_path(action.path, working_dir)
         try:
             if filepath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
@@ -288,7 +294,7 @@ class ActionExecutor:
         return FileReadObservation(path=filepath, content=code_view)
 
     async def write(self, action: FileWriteAction) -> Observation:
-        working_dir = self.bash_session.workdir
+        working_dir = self.bash_session.pwd
         filepath = self._resolve_path(action.path, working_dir)
 
         insert = action.content.split('\n')
@@ -558,6 +564,8 @@ if __name__ == '__main__':
 
     @app.get('/alive')
     async def alive():
+        if client is None or not client.initialized:
+            return {'status': 'not initialized'}
         return {'status': 'ok'}
 
     # ================================
