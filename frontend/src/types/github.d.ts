@@ -19,6 +19,10 @@ interface GitHubRepository {
   stargazers_count: number;
 }
 
+interface GitHubAppRepository {
+  repositories: GitHubRepository[];
+}
+
 interface GitHubCommit {
   html_url: string;
   sha: string;
@@ -27,4 +31,8 @@ interface GitHubCommit {
       date: string; // ISO 8601
     };
   };
+}
+
+interface GithubAppInstallation {
+  installations: { id: number }[];
 }

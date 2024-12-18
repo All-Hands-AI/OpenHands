@@ -9,7 +9,6 @@ import toml
 from datasets import load_dataset
 
 import openhands.agenthub
-from evaluation.benchmarks.swe_bench.prompt import CODEACT_SWE_PROMPT
 from evaluation.utils.shared import (
     EvalException,
     EvalMetadata,
@@ -45,7 +44,6 @@ RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'tru
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
-    'CodeActSWEAgent': codeact_user_response,
 }
 
 
@@ -56,40 +54,28 @@ def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
 def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     # Prepare instruction
-    if metadata.agent_class == 'CodeActSWEAgent':
-        instruction = (
-            'We are currently solving the following issue within our repository. Here is the issue text:\n'
-            '--- BEGIN ISSUE ---\n'
-            f'{instance.problem_statement}\n'
-            '--- END ISSUE ---\n\n'
-        )
-        if USE_HINT_TEXT and instance.hints_text:
-            instruction += (
-                f'--- BEGIN HINTS ---\n{instance.hints_text}\n--- END HINTS ---\n'
-            )
-        instruction += CODEACT_SWE_PROMPT.format(workspace_dir_name=workspace_dir_name)
-    else:
-        # Instruction based on Anthropic's official trajectory
-        # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
-        instruction = (
-            '<uploaded_files>\n'
-            f'/workspace/{workspace_dir_name}\n'
-            '</uploaded_files>\n'
-            f"I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following PR description:\n\n"
-            f'<pr_description>\n'
-            f'{instance.problem_statement}\n'
-            '</pr_description>\n\n'
-            'Can you help me implement the necessary changes to the repository so that the requirements specified in the <pr_description> are met?\n'
-            "I've already taken care of all changes to any of the test files described in the <pr_description>. This means you DON'T have to modify the testing logic or any of the tests in any way!\n"
-            'Your task is to make the minimal changes to non-tests files in the /workspace directory to ensure the <pr_description> is satisfied.\n'
-            'Follow these steps to resolve the issue:\n'
-            '1. As a first step, it might be a good idea to explore the repo to familiarize yourself with its structure.\n'
-            '2. Create a script to reproduce the error and execute it with `python <filename.py>` using the BashTool, to confirm the error\n'
-            '3. Edit the sourcecode of the repo to resolve the issue\n'
-            '4. Rerun your reproduce script and confirm that the error is fixed!\n'
-            '5. Think about edgecases and make sure your fix handles them as well\n'
-            "Your thinking should be thorough and so it's fine if it's very long.\n"
-        )
+
+    # Instruction based on Anthropic's official trajectory
+    # https://github.com/eschluntz/swe-bench-experiments/tree/main/evaluation/verified/20241022_tools_claude-3-5-sonnet-updated/trajs
+    instruction = (
+        '<uploaded_files>\n'
+        f'/workspace/{workspace_dir_name}\n'
+        '</uploaded_files>\n'
+        f"I've uploaded a python code repository in the directory {workspace_dir_name}. Consider the following PR description:\n\n"
+        f'<pr_description>\n'
+        f'{instance.problem_statement}\n'
+        '</pr_description>\n\n'
+        'Can you help me implement the necessary changes to the repository so that the requirements specified in the <pr_description> are met?\n'
+        "I've already taken care of all changes to any of the test files described in the <pr_description>. This means you DON'T have to modify the testing logic or any of the tests in any way!\n"
+        'Your task is to make the minimal changes to non-tests files in the /workspace directory to ensure the <pr_description> is satisfied.\n'
+        'Follow these steps to resolve the issue:\n'
+        '1. As a first step, it might be a good idea to explore the repo to familiarize yourself with its structure.\n'
+        '2. Create a script to reproduce the error and execute it with `python <filename.py>` using the BashTool, to confirm the error\n'
+        '3. Edit the sourcecode of the repo to resolve the issue\n'
+        '4. Rerun your reproduce script and confirm that the error is fixed!\n'
+        '5. Think about edgecases and make sure your fix handles them as well\n'
+        "Your thinking should be thorough and so it's fine if it's very long.\n"
+    )
 
     if RUN_WITH_BROWSING:
         instruction += (
@@ -504,6 +490,8 @@ if __name__ == '__main__':
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
         llm_config.log_completions = True
+        # modify_params must be False for evaluation purpose, for reproducibility and accurancy of results
+        llm_config.modify_params = False
 
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')

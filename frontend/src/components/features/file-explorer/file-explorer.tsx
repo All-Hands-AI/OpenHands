@@ -1,5 +1,5 @@
 import React from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import AgentState from "#/types/agent-state";
 import { ExplorerTree } from "#/components/features/file-explorer/explorer-tree";
@@ -14,6 +14,11 @@ import { Dropzone } from "./dropzone";
 import { FileExplorerHeader } from "./file-explorer-header";
 import { useVSCodeUrl } from "#/hooks/query/use-vscode-url";
 import { OpenVSCodeButton } from "#/components/shared/buttons/open-vscode-button";
+import { addAssistantMessage } from "#/state/chat-slice";
+import {
+  useWsClient,
+  WsClientProviderStatus,
+} from "#/context/ws-client-provider";
 
 interface FileExplorerProps {
   isOpen: boolean;
@@ -21,7 +26,9 @@ interface FileExplorerProps {
 }
 
 export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
+  const { status } = useWsClient();
   const { t } = useTranslation();
+  const dispatch = useDispatch();
 
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = React.useState(false);
@@ -30,7 +37,27 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
 
   const { data: paths, refetch, error } = useListFiles();
   const { mutate: uploadFiles } = useUploadFiles();
-  const { refetch: getVSCodeUrl } = useVSCodeUrl();
+  const { data: vscodeUrl } = useVSCodeUrl({
+    enabled: status === WsClientProviderStatus.ACTIVE,
+  });
+
+  const handleOpenVSCode = () => {
+    if (vscodeUrl?.vscode_url) {
+      dispatch(
+        addAssistantMessage(
+          "You opened VS Code. Please inform the agent of any changes you made to the workspace or environment. To avoid conflicts, it's best to pause the agent before making any changes.",
+        ),
+      );
+      window.open(vscodeUrl.vscode_url, "_blank");
+    } else if (vscodeUrl?.error) {
+      toast.error(
+        `open-vscode-error-${new Date().getTime()}`,
+        t(I18nKey.EXPLORER$VSCODE_SWITCHING_ERROR_MESSAGE, {
+          error: vscodeUrl.error,
+        }),
+      );
+    }
+  };
 
   const selectFileInput = () => {
     fileInputRef.current?.click(); // Trigger the file browser
@@ -142,11 +169,8 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
           )}
           {isOpen && (
             <OpenVSCodeButton
-              onClick={getVSCodeUrl}
-              isDisabled={
-                curAgentState === AgentState.INIT ||
-                curAgentState === AgentState.LOADING
-              }
+              onClick={handleOpenVSCode}
+              isDisabled={status === WsClientProviderStatus.OPENING}
             />
           )}
         </div>

@@ -4,6 +4,7 @@ import posthog from "posthog-js";
 import { useState } from "react";
 import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useRepositorySearch } from "#/hooks/query/use-repository-search";
+import { useConfig } from "#/hooks/query/use-config";
 
 interface GitHubRepositorySelectorProps {
   onSelect: () => void;
@@ -12,13 +13,27 @@ interface GitHubRepositorySelectorProps {
 export function GitHubRepositorySelector({
   onSelect,
 }: GitHubRepositorySelectorProps) {
+  const { data: config } = useConfig();
+
+  // Add option to install app onto more repos
+  const finalRepositories =
+    config?.APP_MODE === "saas"
+      ? [{ id: -1000, full_name: "Add more repositories..." }, ...repositories]
+      : repositories;
+
   const dispatch = useDispatch();
   const [searchQuery, setSearchQuery] = useState("");
   const { repositories, isLoading } = useRepositorySearch(searchQuery);
 
   const handleRepoSelection = (id: string | null) => {
-    const repo = repositories.find((r) => r.id.toString() === id);
-    if (repo) {
+    const repo = finalRepositories.find((r) => r.id.toString() === id);
+    if (id === "-1000") {
+      if (config?.APP_SLUG)
+        window.open(
+          `https://github.com/apps/${config.APP_SLUG}/installations/new`,
+          "_blank",
+        );
+    } else if (repo) {
       // set query param
       dispatch(setSelectedRepository(repo.full_name));
       posthog.capture("repository_selected");
@@ -30,6 +45,19 @@ export function GitHubRepositorySelector({
     // clear query param
     dispatch(setSelectedRepository(null));
   };
+
+  const emptyContent = config?.APP_SLUG ? (
+    <a
+      href={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
+      target="_blank"
+      rel="noreferrer noopener"
+      className="underline"
+    >
+      Add more repositories...
+    </a>
+  ) : (
+    "No results found."
+  );
 
   return (
     <Autocomplete
@@ -47,8 +75,11 @@ export function GitHubRepositorySelector({
       onSelectionChange={(id) => handleRepoSelection(id?.toString() ?? null)}
       clearButtonProps={{ onClick: handleClearSelection }}
       isLoading={isLoading}
+      listboxProps={{
+        emptyContent,
+      }}
     >
-      {repositories.map((repo) => (
+      {finalRepositories.map((repo) => (
         <AutocompleteItem
           data-testid="github-repo-item"
           key={repo.id}

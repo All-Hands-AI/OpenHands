@@ -9,6 +9,7 @@ import { useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { WaitlistModal } from "#/components/features/waitlist/waitlist-modal";
 import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
+import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -76,14 +77,17 @@ export default function MainApp() {
   const isInWaitlist =
     !isFetchingAuth && !isAuthed && config.data?.APP_MODE === "saas";
 
+  const { settingsAreUpToDate } = useUserPrefs();
+  const [showAIConfig, setShowAIConfig] = React.useState(true);
+
   return (
     <div
       data-testid="root-layout"
-      className="bg-root-primary p-3 h-screen min-w-[1024px] overflow-x-hidden flex gap-3"
+      className="bg-root-primary p-3 h-screen md:min-w-[1024px] overflow-x-hidden flex flex-col md:flex-row gap-3"
     >
       <Sidebar />
 
-      <div className="h-full w-full relative">
+      <div className="h-[calc(100%-50px)] md:h-full w-full relative">
         <Outlet />
       </div>
 
@@ -95,6 +99,10 @@ export default function MainApp() {
         <AnalyticsConsentFormModal
           onClose={() => setConsentFormIsOpen(false)}
         />
+      )}
+
+      {(isAuthed || !settingsAreUpToDate) && showAIConfig && (
+        <SettingsModal onClose={() => setShowAIConfig(false)} />
       )}
     </div>
   );
