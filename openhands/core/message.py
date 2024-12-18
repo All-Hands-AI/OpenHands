@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Literal
 
 from litellm import ChatCompletionMessageToolCall
+from litellm.types.utils import Usage
 from pydantic import BaseModel, Field, model_serializer
 
 
@@ -62,10 +63,28 @@ class Message(BaseModel):
     # - tool execution result (to LLM)
     tool_call_id: str | None = None
     name: str | None = None  # name of the tool
+    # token counts and other usage data from litellm
+    usage: Usage | None = None
+    event_id: int | None = None  # link to the underlying Event
 
     @property
     def contains_image(self) -> bool:
         return any(isinstance(content, ImageContent) for content in self.content)
+
+    @property
+    def prompt_tokens(self) -> int | None:
+        """Get prompt tokens from usage data."""
+        return self.usage.prompt_tokens if self.usage else None
+
+    @property
+    def completion_tokens(self) -> int | None:
+        """Get completion tokens from usage data."""
+        return self.usage.completion_tokens if self.usage else None
+
+    @property
+    def total_tokens(self) -> int | None:
+        """Get total tokens from usage data."""
+        return self.usage.total_tokens if self.usage else None
 
     @model_serializer
     def serialize_model(self) -> dict:

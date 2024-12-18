@@ -410,6 +410,101 @@ def test_llm_cloudflare_blockage(mock_litellm_completion, default_config):
     mock_litellm_completion.assert_called_once()
 
 
+@patch('openhands.llm.llm.litellm_completion')
+def test_token_count_with_usage_data(mock_litellm_completion, default_config):
+    # Mock a response with usage data
+    from litellm import Message as LiteLLMMessage
+    from litellm.types.utils import Choices, ModelResponse, Usage
+
+    mock_response = ModelResponse(
+        id='test-id',
+        choices=[
+            Choices(
+                message=LiteLLMMessage(role='assistant', content='Test response'),
+                finish_reason='stop',
+                index=0,
+            )
+        ],
+        created=1234567890,
+        model='test-model',
+        object='chat.completion',
+        usage=Usage(prompt_tokens=10, completion_tokens=20, total_tokens=30),
+    )
+    mock_litellm_completion.return_value = mock_response
+
+    llm = LLM(default_config)
+    response = llm.completion(
+        messages=[Message(role='user', content=[TextContent(text='Hello!')])]
+    )
+
+    # Verify the response has usage data
+    assert response.usage.prompt_tokens == 10
+    assert response.usage.completion_tokens == 20
+    assert response.usage.total_tokens == 30
+
+    # Verify get_token_count uses the token counts from Usage data
+    # The message from the response should have the usage data stored
+    assert response.choices[0].message.usage == response.usage
+    # Properties should still work
+    assert response.choices[0].message.total_tokens == 30
+    assert response.choices[0].message.prompt_tokens == 10
+    assert response.choices[0].message.completion_tokens == 20
+
+    # Now verify get_token_count uses these stored token counts
+    token_count = llm.get_token_count([response.choices[0].message])
+    assert token_count == 30
+
+
+@patch('openhands.llm.llm.litellm_completion')
+@patch('openhands.llm.llm.litellm.utils._select_tokenizer')
+@patch('openhands.llm.llm.litellm.token_counter')
+def test_token_count_fallback(
+    mock_token_counter, mock_select_tokenizer, mock_litellm_completion, default_config
+):
+    # Mock a response without usage data
+    from litellm import Message as LiteLLMMessage
+    from litellm.types.utils import Choices, ModelResponse, Usage
+
+    mock_response = ModelResponse(
+        id='test-id',
+        choices=[
+            Choices(
+                message=LiteLLMMessage(role='assistant', content='Test response'),
+                finish_reason='stop',
+                index=0,
+            )
+        ],
+        created=1234567890,
+        model='test-model',
+        object='chat.completion',
+        usage=Usage(prompt_tokens=0, completion_tokens=0, total_tokens=0),
+    )
+    mock_litellm_completion.return_value = mock_response
+    mock_token_counter.return_value = 42
+    mock_select_tokenizer.return_value = {'type': 'openai_tokenizer'}
+
+    llm = LLM(default_config)
+    response = llm.completion(
+        messages=[Message(role='user', content=[TextContent(text='Hello!')])]
+    )
+
+    # Verify the response has empty usage data
+    assert response.usage.prompt_tokens == 0
+    assert response.usage.completion_tokens == 0
+    assert response.usage.total_tokens == 0
+
+    # Verify get_token_count falls back to litellm.token_counter
+    messages = [Message(role='user', content=[TextContent(text='Hello!')])]
+    token_count = llm.get_token_count(messages)
+    assert token_count == 42
+    # litellm expects a list of dicts with role and content
+    mock_token_counter.assert_called_once_with(
+        model=default_config.model,
+        messages=[{'role': 'user', 'content': [{'type': 'text', 'text': 'Hello!'}]}],
+        custom_tokenizer=None,
+    )
+
+
 @patch('openhands.llm.llm.litellm.token_counter')
 def test_get_token_count_with_dict_messages(mock_token_counter, default_config):
     mock_token_counter.return_value = 42
