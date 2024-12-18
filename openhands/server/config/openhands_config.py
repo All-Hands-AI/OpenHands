@@ -47,11 +47,7 @@ def load_openhands_config():
     config_cls = os.environ.get('OPENHANDS_CONFIG_CLS', None)
     logger.info(f'Using config class {config_cls}')
 
-    if config_cls:
-        openhands_config_cls = get_impl(OpenhandsConfig, config_cls)
-    else:
-        openhands_config_cls = OpenhandsConfig
-
+    openhands_config_cls = get_impl(OpenhandsConfig, config_cls)
     openhands_config = openhands_config_cls()
     openhands_config.verify_config()
 

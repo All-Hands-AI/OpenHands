@@ -58,6 +58,7 @@ app.include_router(feedback_api_router)
 app.include_router(new_conversation_api_router)
 app.include_router(github_api_router)
 
+print('attach session middleware path', openhands_config.attach_session_middleware_path)
 AttachConversationMiddlewareImpl = get_impl(
     AttachConversationMiddleware, openhands_config.attach_session_middleware_path
 )
