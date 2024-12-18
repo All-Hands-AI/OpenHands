@@ -1,5 +1,7 @@
 from urllib.parse import parse_qs
 
+from github import Github
+
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     NullAction,
@@ -10,7 +12,11 @@ from openhands.events.observation import (
 from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
-from openhands.server.shared import session_manager, sio
+from openhands.server.shared import config, session_manager, sio
+from openhands.storage.conversation.conversation_store import (
+    ConversationStore,
+)
+from openhands.utils.async_utils import call_sync_from_async
 
 
 @sio.event
@@ -22,6 +28,21 @@ async def connect(connection_id: str, environ, auth):
     if not conversation_id:
         logger.error('No conversation_id in query params')
         return
+
+    user_id = ''
+    if 'github_token' in auth:
+        g = Github(auth['github_token'])
+        gh_user = await call_sync_from_async(g.get_user)
+        user_id = gh_user.id
+
+    conversation_store = await ConversationStore.get_instance(config)
+    metadata = await conversation_store.get_metadata(conversation_id)
+    if metadata.github_user_id != user_id:
+        logger.error(
+            f'User {user_id} is not allowed to join conversation {conversation_id}'
+        )
+        return
+
     event_stream = await session_manager.join_conversation(
         conversation_id, connection_id
     )

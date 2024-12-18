@@ -1,17 +1,17 @@
-SESSION_BASE_DIR = 'sessions/'
+CONVERSATION_BASE_DIR = 'sessions/'
 
 
-def get_session_dir(sid: str) -> str:
-    return f'{SESSION_BASE_DIR}{sid}/'
+def get_conversation_dir(sid: str) -> str:
+    return f'{CONVERSATION_BASE_DIR}{sid}/'
 
 
-def get_session_events_dir(sid: str) -> str:
-    return f'{get_session_dir(sid)}events/'
+def get_conversation_events_dir(sid: str) -> str:
+    return f'{get_conversation_dir(sid)}events/'
 
 
-def get_session_event_file(sid: str, id: int) -> str:
-    return f'{get_session_events_dir(sid)}{id}.json'
+def get_conversation_event_file(sid: str, id: int) -> str:
+    return f'{get_conversation_events_dir(sid)}{id}.json'
 
 
-def get_session_metadata_file(sid: str) -> str:
-    return f'{get_session_dir(sid)}metadata.json'
+def get_conversation_metadata_file(sid: str) -> str:
+    return f'{get_conversation_dir(sid)}metadata.json'
