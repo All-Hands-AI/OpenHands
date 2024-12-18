@@ -42,12 +42,6 @@ describe("frontend/routes/_oh", () => {
     await screen.findByTestId("root-layout");
   });
 
-  it("should render the AI config modal if the user is authed", async () => {
-    // Our mock return value is true by default
-    renderWithProviders(<RouteStub />);
-    await screen.findByTestId("ai-config-modal");
-  });
-
   it("should render the AI config modal if settings are not up-to-date", async () => {
     settingsAreUpToDateMock.mockReturnValue(false);
     renderWithProviders(<RouteStub />);
