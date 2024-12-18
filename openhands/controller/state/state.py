@@ -118,7 +118,7 @@ class State:
             pickled = base64.b64decode(encoded)
             state = pickle.loads(pickled)
         except Exception as e:
-            logger.warning(f'Could not restore state from session: {e}')
+            logger.debug(f'Could not restore state from session: {e}')
             raise e
 
         # update state
