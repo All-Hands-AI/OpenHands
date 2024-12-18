@@ -11,3 +11,7 @@ def get_session_events_dir(sid: str) -> str:
 
 def get_session_event_file(sid: str, id: int) -> str:
     return f'{get_session_events_dir(sid)}{id}.json'
+
+
+def get_session_metadata_file(sid: str) -> str:
+    return f'{get_session_dir(sid)}metadata.json'
