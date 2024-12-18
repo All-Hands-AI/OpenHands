@@ -1,35 +1,38 @@
 steps:
-  - name: 'gcr.io/cloud-builders/docker'
+- name: 'gcr.io/cloud-builders/docker'
     env:
-      - 'DOCKER_BUILDKIT=1'
+    - 'DOCKER_BUILDKIT=1'
     args:
-      - 'build'
-      - '--platform=linux/arm64'
-      - '--build-arg'
-      - 'OPENHANDS_BUILD_VERSION=${_OPENHANDS_BUILD_VERSION}'
-      - '--build-arg'
-      - 'ENVIRONMENT=${_ENVIRONMENT}'
-      - '--build-arg'
-      - 'BASE_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.15-nikolaik'
-      - '--progress=plain'
-      - '-t'
-      - 'us-docker.pkg.dev/${PROJECT_ID}/openhands/openhands:${_TAG}'
-      - '-f'
-      - 'containers/app/Dockerfile'
-      - '--cache-from=us-docker.pkg.dev/${PROJECT_ID}/openhands/openhands:latest'
-      - '.'
+    - 'buildx'
+    - 'build'
+    - '--builder'
+    - 'mybuilder' # Use the buildx builder instance you created
+    - '--platform=linux/arm64' # Set the target platform
+    - '--build-arg'
+    - 'OPENHANDS_BUILD_VERSION=${_OPENHANDS_BUILD_VERSION}'
+    - '--build-arg'
+    - 'ENVIRONMENT=${_ENVIRONMENT}'
+    - '--build-arg'
+    - 'BASE_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.15-nikolaik'
+    - '--progress=plain'
+    - '-t'
+    - 'us-docker.pkg.dev/${PROJECT_ID}/openhands/openhands:${_TAG}'
+    - '-f'
+    - 'containers/app/Dockerfile'
+    - '--cache-from=us-docker.pkg.dev/${PROJECT_ID}/openhands/openhands:latest'
+    - '.'
 
-  # Push the image (optional)
-  - name: 'gcr.io/cloud-builders/docker'
+# Push the image (optional)
+- name: 'gcr.io/cloud-builders/docker'
     args:
-      - 'push'
-      - 'us-docker.pkg.dev/${PROJECT_ID}/openhands/openhands:${_TAG}'
+    - 'push'
+    - 'us-docker.pkg.dev/${PROJECT_ID}/openhands/openhands:${_TAG}'
 
 substitutions:
-  _OPENHANDS_BUILD_VERSION: 'dev'
-  _ENVIRONMENT: 'local-dev'
-  _TAG: 'm2optimized'
+_OPENHANDS_BUILD_VERSION: 'dev'
+_ENVIRONMENT: 'local-dev'
+_TAG: 'm2optimized'
 
 options:
-  logging: CLOUD_LOGGING_ONLY
-  defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
+logging: CLOUD_LOGGING_ONLY
+defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET

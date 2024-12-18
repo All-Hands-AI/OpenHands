@@ -34,7 +34,7 @@ COPY ./pyproject.toml ./poetry.lock ./
 RUN touch README.md
 RUN poetry install --without evaluation,llama-index --no-root && rm -rf $POETRY_CACHE_DIR
 
-FROM --platform=linux/arm64 python:3.12.3-slim AS openhands-app
+FROM FROM --platform=${TARGETPLATFORM} python:3.12.3-slim AS openhands-app
 
 WORKDIR /app
 
