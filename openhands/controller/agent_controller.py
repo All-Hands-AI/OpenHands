@@ -349,9 +349,7 @@ class AgentController:
 
             # make a new ErrorObservation with the tool call metadata
             if not found_observation:
-                obs = ErrorObservation(
-                    content='Something went wrong with the tool call'
-                )
+                obs = ErrorObservation(content='The action has not been executed.')
                 obs.tool_call_metadata = self._pending_action.tool_call_metadata
                 obs._cause = self._pending_action.id  # type: ignore[attr-defined]
                 self.event_stream.add_event(obs, EventSource.AGENT)
