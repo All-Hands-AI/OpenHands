@@ -2,6 +2,7 @@ import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setSelectedRepository } from "#/state/initial-query-slice";
+import { useConfig } from "#/hooks/query/use-config";
 
 interface GitHubRepositorySelectorProps {
   onSelect: () => void;
@@ -12,11 +13,25 @@ export function GitHubRepositorySelector({
   onSelect,
   repositories,
 }: GitHubRepositorySelectorProps) {
+  const { data: config } = useConfig();
+
+  // Add option to install app onto more repos
+  const finalRepositories =
+    config?.APP_MODE === "saas"
+      ? [{ id: -1000, full_name: "Add more repositories..." }, ...repositories]
+      : repositories;
+
   const dispatch = useDispatch();
 
   const handleRepoSelection = (id: string | null) => {
-    const repo = repositories.find((r) => r.id.toString() === id);
-    if (repo) {
+    const repo = finalRepositories.find((r) => r.id.toString() === id);
+    if (id === "-1000") {
+      if (config?.APP_SLUG)
+        window.open(
+          `https://github.com/apps/${config.APP_SLUG}/installations/new`,
+          "_blank",
+        );
+    } else if (repo) {
       // set query param
       dispatch(setSelectedRepository(repo.full_name));
       posthog.capture("repository_selected");
@@ -28,6 +43,19 @@ export function GitHubRepositorySelector({
     // clear query param
     dispatch(setSelectedRepository(null));
   };
+
+  const emptyContent = config?.APP_SLUG ? (
+    <a
+      href={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
+      target="_blank"
+      rel="noreferrer noopener"
+      className="underline"
+    >
+      Add more repositories...
+    </a>
+  ) : (
+    "No results found."
+  );
 
   return (
     <Autocomplete
@@ -43,8 +71,11 @@ export function GitHubRepositorySelector({
       }}
       onSelectionChange={(id) => handleRepoSelection(id?.toString() ?? null)}
       clearButtonProps={{ onClick: handleClearSelection }}
+      listboxProps={{
+        emptyContent,
+      }}
     >
-      {repositories.map((repo) => (
+      {finalRepositories.map((repo) => (
         <AutocompleteItem
           data-testid="github-repo-item"
           key={repo.id}
