@@ -473,27 +473,7 @@ class CodeActAgent(Agent):
                 if message:
                     if message.role == 'user':
                         self.prompt_manager.enhance_message(message)
-                    # handle error if the message is the SAME role as the previous message
-                    # litellm.exceptions.BadRequestError: litellm.BadRequestError: OpenAIException - Error code: 400 - {'detail': 'Only supports u/a/u/a/u...'}
-                    # there shouldn't be two consecutive messages from the same role
-                    # NOTE: we shouldn't combine tool messages because each of them has a different tool_call_id
-                    if (
-                        messages
-                        and messages[-1].role == message.role
-                        and message.role != 'tool'
-                    ):
-                        # find the last TextContent object in the last message
-                        last_text_content = None
-                        for content in reversed(messages[-1].content):
-                            if isinstance(content, TextContent):
-                                last_text_content = content
-                                break
-                        if last_text_content:
-                            last_text_content.text += '\n' + message.content[0].text
-                        else:
-                            messages[-1].content.extend(message.content)
-                    else:
-                        messages.append(message)
+                    messages.append(message)
 
         if self.llm.is_caching_prompt_active():
             # NOTE: this is only needed for anthropic
