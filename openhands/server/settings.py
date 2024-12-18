@@ -3,6 +3,10 @@ from dataclasses import dataclass
 
 @dataclass
 class Settings:
+    """
+    Persisted settings for OpenHands sessions
+    """
+
     language: str | None = None
     agent: str | None = None
     max_iterations: int | None = None
