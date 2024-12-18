@@ -84,6 +84,7 @@ async function getAllFiles(
  * Process a batch of files
  */
 async function processBatch(
+  conversationID: string,
   batch: string[],
   directoryHandle: FileSystemDirectoryHandle,
   progress: DownloadProgress,
@@ -277,6 +278,7 @@ export async function downloadFiles(
       (promise, batch) =>
         promise.then(async () => {
           const { newCompleted, newBytes } = await processBatch(
+            conversationID,
             batch,
             directoryHandle,
             progress,
