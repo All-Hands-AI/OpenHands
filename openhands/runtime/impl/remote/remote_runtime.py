@@ -180,7 +180,7 @@ class RemoteRuntime(Runtime):
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
             is_retry=False,
-            timeout=10,
+            timeout=60,
         ) as response:
             response_json = response.json()
         registry_prefix = response_json['registry_prefix']
@@ -212,7 +212,7 @@ class RemoteRuntime(Runtime):
             f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
             is_retry=False,
             params={'image': self.container_image},
-            timeout=10,
+            timeout=60,
         ) as response:
             if not response.json()['exists']:
                 raise RuntimeError(
@@ -270,7 +270,7 @@ class RemoteRuntime(Runtime):
             f'{self.config.sandbox.remote_runtime_api_url}/resume',
             is_retry=False,
             json={'runtime_id': self.runtime_id},
-            timeout=30,
+            timeout=60,
         ):
             pass
         self.log('debug', 'Runtime resumed.')
@@ -295,7 +295,7 @@ class RemoteRuntime(Runtime):
             with self._send_request(
                 'GET',
                 f'{self.runtime_url}/vscode/connection_token',
-                timeout=10,
+                timeout=60,
             ) as response:
                 response_json = response.json()
             assert isinstance(response_json, dict)
@@ -332,6 +332,7 @@ class RemoteRuntime(Runtime):
         with self._send_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
+            timeout=60,
         ) as runtime_info_response:
             runtime_data = runtime_info_response.json()
         assert 'runtime_id' in runtime_data
@@ -348,6 +349,7 @@ class RemoteRuntime(Runtime):
                 with self._send_request(
                     'GET',
                     f'{self.runtime_url}/alive',
+                    timeout=60,
                 ):  # will raise exception if we don't get 200 back.
                     pass
             except requests.HTTPError as e:
