@@ -17,7 +17,7 @@ export const useActivePort = () => {
       const response = await openHands.get<{ ports: string[] }>("/api/ports");
       return response.data;
     },
-    enabled: status !== WsClientProviderStatus.OPENING,
+    enabled: status === WsClientProviderStatus.ACTIVE,
     initialData: { ports: [] },
   });
 

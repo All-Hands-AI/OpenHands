@@ -12,8 +12,8 @@ from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime, RuntimeUnavailableError
-from openhands.runtime.event_stream import EventStreamRuntime
-from openhands.runtime.remote import RemoteRuntime
+from openhands.runtime.impl.eventstream.eventstream_runtime import EventStreamRuntime
+from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_async_from_sync
@@ -215,9 +215,13 @@ class AgentSession:
             # Add port mapping instructions based on runtime type
             port_instructions = None
             if isinstance(self.runtime, EventStreamRuntime):
-                port_instructions = "* When serving some application, use ports 4141 and 4142."
+                port_instructions = (
+                    '* When serving some application, use ports 4141 and 4142.'
+                )
             elif isinstance(self.runtime, RemoteRuntime):
-                port_instructions = "* When serving some application, use ports 81623 and 81624."
+                port_instructions = (
+                    '* When serving some application, use ports 81623 and 81624.'
+                )
 
             # Extend the agent's prompt instructions if port instructions are available
             if port_instructions and agent.prompt_manager:
@@ -263,11 +267,11 @@ class AgentSession:
             )
 
         # Determine port mapping instructions based on Runtime type
-        port_instructions = ""
+        port_instructions = ''
         if isinstance(self.runtime, EventStreamRuntime):
-            port_instructions = "Use ports 4141 and 4142 when serving applications"
+            port_instructions = 'Use ports 4141 and 4142 when serving applications'
         elif isinstance(self.runtime, RemoteRuntime):
-            port_instructions = "Use ports 81623 and 81624 when serving applications"
+            port_instructions = 'Use ports 81623 and 81624 when serving applications'
 
         msg = (
             '\n--------------------------------- OpenHands Configuration ---------------------------------\n'
