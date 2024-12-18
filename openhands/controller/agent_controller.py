@@ -334,9 +334,11 @@ class AgentController:
     def _reset(self) -> None:
         """Resets the agent controller"""
 
-        # if the pending action has a tool call, reset the tool call
+        # make an ErrorObservation with the tool call metadata to be recognized by the agent
         if self._pending_action and hasattr(self._pending_action, 'tool_call_metadata'):
-            self._pending_action.tool_call_metadata = None
+            obs = ErrorObservation(content='Something went wrong with the tool call')
+            obs.tool_call_metadata = self._pending_action.tool_call_metadata
+            self.event_stream.add_event(obs, EventSource.AGENT)
 
         self._pending_action = None
         self.agent.reset()
