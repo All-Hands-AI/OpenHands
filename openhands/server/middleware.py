@@ -116,6 +116,8 @@ class AttachSessionMiddleware(SessionMiddlewareInterface):
         """
         if request.method == 'OPTIONS':
             return False
+
+        conversation_id = ''
         if request.url.path.startswith('/api/conversation'):
             # FIXME: we should be able to use path_params
             path_parts = request.url.path.split('/')
