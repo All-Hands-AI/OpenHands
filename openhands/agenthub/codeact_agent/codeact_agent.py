@@ -482,7 +482,14 @@ class CodeActAgent(Agent):
                         and messages[-1].role == message.role
                         and message.role != 'tool'
                     ):
-                        messages[-1].content.extend(message.content)
+                        # find the last TextContent object in the last message
+                        last_text_content = None
+                        for content in reversed(messages[-1].content):
+                            if isinstance(content, TextContent):
+                                last_text_content = content
+                                break
+                        if last_text_content:
+                            last_text_content.text += '\n' + message.content[0].text
                     else:
                         messages.append(message)
 
