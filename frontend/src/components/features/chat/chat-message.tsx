@@ -8,14 +8,12 @@ import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipb
 
 function MarkdownLink({
   href,
-  children: linkChildren,
-}: {
-  href?: string;
-  children: React.ReactNode;
-}) {
+  children,
+  ...props
+}: React.ComponentProps<'a'>) {
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer">
-      {linkChildren}
+    <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+      {children}
     </a>
   );
 }
