@@ -11,7 +11,7 @@ from openhands.utils.import_utils import get_impl
 
 app = APIRouter(prefix='/api')
 
-session_init_data_store = get_impl(SessionInitStore, config.item_store_class)()  # type: ignore
+SessionInitStoreImpl = get_impl(SessionInitStore, config.session_init_store_class)  # type: ignore
 
 
 @app.get('/session-init-data')
@@ -19,7 +19,8 @@ async def load_session_init_data(
     github_auth: Annotated[str | None, Header()] = None,
 ) -> SessionInitData | None:
     try:
-        session_init_data = session_init_data_store.load(github_auth or '')
+        session_init_store = SessionInitStoreImpl.get_instance(config, github_auth)
+        session_init_data = session_init_store.load()
         if not session_init_data:
             return None
         session_init_data.llm_api_key = None
@@ -39,9 +40,8 @@ async def store_session_init_data(
     github_auth: Annotated[str | None, Header()] = None,
 ) -> bool:
     try:
-        session_init_data = session_init_data_store.store(
-            github_auth or '', session_init_data
-        )
+        session_init_store = SessionInitStoreImpl.get_instance(config, github_auth)
+        session_init_data = session_init_store.store(session_init_data)
         return True
     except Exception as e:
         logger.warning(f'Invalid token: {e}')

@@ -12,7 +12,7 @@ from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.auth import get_sid_from_token, sign_token
-from openhands.server.routes.session_init import session_init_data_store
+from openhands.server.routes.session_init import SessionInitStoreImpl
 from openhands.server.session.session_init_data import SessionInitData
 from openhands.server.shared import config, session_manager, sio
 
@@ -51,7 +51,8 @@ async def init_connection(
     latest_event_id: int,
     selected_repository: str | None,
 ):
-    session_init_data = session_init_data_store.load(github_token or '')
+    session_init_data_store = SessionInitStoreImpl.get_instance(config, github_token)
+    session_init_data = session_init_data_store.load()
     if session_init_data:
         session_init_data = dataclasses.replace(session_init_data, **session_init_args)
     else:
