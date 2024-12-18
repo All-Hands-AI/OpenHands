@@ -36,3 +36,5 @@ substitutions:
 options:
   logging: CLOUD_LOGGING_ONLY
   defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
+  pool:
+    name: 'projects/${PROJECT_ID}/locations/us-west2/workerPools/m2optimized'
