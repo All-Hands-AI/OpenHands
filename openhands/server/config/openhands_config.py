@@ -36,12 +36,6 @@ class OpenhandsConfig(OpenhandsConfigInterface):
 
         return config
 
-    async def github_auth(self, data: dict):
-        """
-        Skip Github Auth for AppMode OSS
-        """
-        pass
-
 
 def load_openhands_config():
     config_cls = os.environ.get('OPENHANDS_CONFIG_CLS', None)
