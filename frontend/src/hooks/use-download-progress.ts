@@ -47,7 +47,7 @@ export function useDownloadProgress(
     // Start download
     const download = async () => {
       try {
-        await downloadFiles(conversationID, initialPath, {
+        await downloadFiles(conversationId, initialPath, {
           onProgress: (p) => {
             // Update both the ref and state
             progressRef.current = { ...p };

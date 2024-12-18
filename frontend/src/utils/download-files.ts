@@ -205,7 +205,12 @@ export async function downloadFiles(
     }
 
     // Then recursively get all files
-    const files = await getAllFiles(conversationID, initialPath || "", progress, options);
+    const files = await getAllFiles(
+      conversationID,
+      initialPath || "",
+      progress,
+      options,
+    );
 
     // Set isDiscoveringFiles to false now that we have the full list and preserve filesTotal
     const finalTotal = progress.filesTotal;
