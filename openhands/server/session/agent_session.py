@@ -1,4 +1,5 @@
 import asyncio
+import os
 from typing import Callable, Optional
 
 from openhands.controller import AgentController
@@ -222,7 +223,11 @@ class AgentSession:
 
             # Extend the agent's prompt instructions if port instructions are available
             if port_instructions and agent.prompt_manager:
-                original_template = agent.prompt_manager.system_template.source
+                # Get the raw template string from the template file
+                template_path = os.path.join(agent.prompt_manager.prompt_dir, 'system_prompt.j2')
+                with open(template_path, 'r') as f:
+                    original_template = f.read()
+                
                 important_section_end = "</IMPORTANT>\n"
                 modified_template = original_template.replace(
                     important_section_end,
