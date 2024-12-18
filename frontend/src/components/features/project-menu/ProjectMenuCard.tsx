@@ -1,17 +1,14 @@
 import React from "react";
-import toast from "react-hot-toast";
 import posthog from "posthog-js";
 import EllipsisH from "#/icons/ellipsis-h.svg?react";
 import { createChatMessage } from "#/services/chat-service";
 import { ProjectMenuCardContextMenu } from "./project.menu-card-context-menu";
 import { ProjectMenuDetailsPlaceholder } from "./project-menu-details-placeholder";
 import { ProjectMenuDetails } from "./project-menu-details";
-import { downloadWorkspace } from "#/utils/download-workspace";
 import { useWsClient } from "#/context/ws-client-provider";
-import { useConversation } from "#/context/conversation-context";
-import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { ConnectToGitHubModal } from "#/components/shared/modals/connect-to-github-modal";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
+import { DownloadModal } from "#/components/shared/download-modal";
 
 interface ProjectMenuCardProps {
   isConnectedToGitHub: boolean;
@@ -27,12 +24,11 @@ export function ProjectMenuCard({
   githubData,
 }: ProjectMenuCardProps) {
   const { send } = useWsClient();
-  const { conversationId } = useConversation();
 
   const [contextMenuIsOpen, setContextMenuIsOpen] = React.useState(false);
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
     React.useState(false);
-  const [working, setWorking] = React.useState(false);
+  const [downloading, setDownloading] = React.useState(false);
 
   const toggleMenuVisibility = () => {
     setContextMenuIsOpen((prev) => !prev);
@@ -60,20 +56,16 @@ Please push the changes to GitHub and open a pull request.
 
   const handleDownloadWorkspace = () => {
     posthog.capture("download_workspace_button_clicked");
-    try {
-      setWorking(true);
-      downloadWorkspace(conversationId).then(
-        () => setWorking(false),
-        () => setWorking(false),
-      );
-    } catch (error) {
-      toast.error("Failed to download workspace");
-    }
+    setDownloading(true);
+  };
+
+  const handleDownloadClose = () => {
+    setDownloading(false);
   };
 
   return (
     <div className="px-4 py-[10px] w-[337px] rounded-xl border border-[#525252] flex justify-between items-center relative">
-      {!working && contextMenuIsOpen && (
+      {!downloading && contextMenuIsOpen && (
         <ProjectMenuCardContextMenu
           isConnectedToGitHub={isConnectedToGitHub}
           onConnectToGitHub={() => setConnectToGitHubModalOpen(true)}
@@ -95,17 +87,20 @@ Please push the changes to GitHub and open a pull request.
           onConnectToGitHub={() => setConnectToGitHubModalOpen(true)}
         />
       )}
-      <button
-        type="button"
-        onClick={toggleMenuVisibility}
-        aria-label="Open project menu"
-      >
-        {working ? (
-          <LoadingSpinner size="small" />
-        ) : (
+      <DownloadModal
+        initialPath=""
+        onClose={handleDownloadClose}
+        isOpen={downloading}
+      />
+      {!downloading && (
+        <button
+          type="button"
+          onClick={toggleMenuVisibility}
+          aria-label="Open project menu"
+        >
           <EllipsisH width={36} height={36} />
-        )}
-      </button>
+        </button>
+      )}
       {connectToGitHubModalOpen && (
         <ModalBackdrop onClose={() => setConnectToGitHubModalOpen(false)}>
           <ConnectToGitHubModal
