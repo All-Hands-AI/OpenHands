@@ -1,17 +1,19 @@
-import { describe, it, expect, vi } from "vitest";
-import { renderHook, waitFor } from "@testing-library/react";
-import { useUserRepositories } from "../hooks/query/use-user-repositories";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "../context/auth-context";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { renderHook, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
+import { AuthProvider } from "../context/auth-context";
+import { useUserRepositories } from "../hooks/query/use-user-repositories";
 
 // Mock the auth context
 vi.mock("../context/auth-context", () => ({
   useAuth: () => ({
     gitHubToken: "mock-token",
   }),
-  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  AuthProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
 }));
 
 // Mock the config hook

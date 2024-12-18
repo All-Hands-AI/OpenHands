@@ -1,10 +1,10 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
-import { GitHubRepositorySelector } from "../components/features/github/github-repo-selector";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, vi } from "vitest";
 import { AuthProvider } from "../context/auth-context";
+import { GitHubRepositorySelector } from "../components/features/github/github-repo-selector";
 
 vi.mock("../hooks/query/use-config", () => ({
   useConfig: () => ({
@@ -35,7 +35,7 @@ describe("GitHubRepositorySelector", () => {
       setItem: vi.fn(),
       removeItem: vi.fn(),
     };
-    Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+    Object.defineProperty(window, "localStorage", { value: localStorageMock });
 
     render(
       <QueryClientProvider client={queryClient}>
