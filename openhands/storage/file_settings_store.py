@@ -13,7 +13,7 @@ from openhands.storage.settings_store import SettingsStore
 @dataclass
 class FileSettingsStore(SettingsStore):
     file_store: FileStore
-    path: str = 'config.json'
+    path: str = 'settings.json'
 
     async def load(self) -> Settings | None:
         try:
