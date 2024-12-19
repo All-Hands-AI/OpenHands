@@ -1,5 +1,5 @@
 name: Small Enhancements
-description: Suggest a small enhancement for OpenHands. For feature requests, use Discussions.
+description: Suggest a small enhancement for OpenHands. For feature requests, use Feature Requests in Discussions.
 body:
   - type: textarea
     id: description
