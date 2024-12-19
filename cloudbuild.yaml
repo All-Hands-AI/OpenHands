@@ -10,6 +10,7 @@ steps:
       - '.'
       - '--build-arg'
       - 'OPENHANDS_BUILD_VERSION=${_OPENHANDS_BUILD_VERSION}'
+    machineType: 'T2A_2CPU_8GB' # Specify ARM64 machine type here
 
   # Push the ARM64 image
   - name: 'gcr.io/cloud-builders/docker'
@@ -21,7 +22,3 @@ substitutions:
   _OPENHANDS_BUILD_VERSION: '16.0'
   _ENVIRONMENT: 'prod'
   _TAG: 'arm64-16.0'
-
-options:
-  machineType: 'T2A_2CPU_8GB' # Specify ARM64 machine type here
-  
