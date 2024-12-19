@@ -33,7 +33,6 @@ export function GitHubRepositorySelector({
           `https://github.com/apps/${config.APP_SLUG}/installations/new`,
           "_blank",
         );
-      setSelectedKey(null);
     } else if (repo) {
       // set query param
       dispatch(setSelectedRepository(repo.full_name));
