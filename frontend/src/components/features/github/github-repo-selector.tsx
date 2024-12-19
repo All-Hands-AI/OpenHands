@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
+import React from "react";
 
 interface GitHubRepositorySelectorProps {
   onSelect: () => void;
@@ -14,6 +15,7 @@ export function GitHubRepositorySelector({
   repositories,
 }: GitHubRepositorySelectorProps) {
   const { data: config } = useConfig();
+  const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
 
   // Add option to install app onto more repos
   const finalRepositories =
@@ -31,11 +33,13 @@ export function GitHubRepositorySelector({
           `https://github.com/apps/${config.APP_SLUG}/installations/new`,
           "_blank",
         );
+      setSelectedKey(null);
     } else if (repo) {
       // set query param
       dispatch(setSelectedRepository(repo.full_name));
       posthog.capture("repository_selected");
       onSelect();
+      setSelectedKey(id);
     }
   };
 
@@ -63,6 +67,7 @@ export function GitHubRepositorySelector({
       name="repo"
       aria-label="GitHub Repository"
       placeholder="Select a GitHub project"
+      selectedKey={selectedKey}
       inputProps={{
         classNames: {
           inputWrapper:
