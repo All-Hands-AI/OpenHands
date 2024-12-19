@@ -61,6 +61,6 @@ app.include_router(settings_router)
 app.include_router(github_api_router)
 
 AttachConversationMiddlewareImpl = get_impl(
-    AttachConversationMiddleware, openhands_config.attach_session_middleware_path
+    AttachConversationMiddleware, openhands_config.attach_conversation_middleware_path
 )
 app.middleware('http')(AttachConversationMiddlewareImpl(app))

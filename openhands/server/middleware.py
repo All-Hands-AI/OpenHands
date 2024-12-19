@@ -130,7 +130,7 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
 
         return True
 
-    async def _attach_session(self, request: Request) -> JSONResponse | None:
+    async def _attach_conversation(self, request: Request) -> JSONResponse | None:
         """
         Attach the user's session based on the provided authentication token.
         """
@@ -154,7 +154,7 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         if not self._should_attach(request):
             return await call_next(request)
 
-        response = await self._attach_session(request)
+        response = await self._attach_conversation(request)
         if response:
             return response
 
