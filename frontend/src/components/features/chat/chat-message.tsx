@@ -5,18 +5,7 @@ import { code } from "../markdown/code";
 import { cn } from "#/utils/utils";
 import { ul, ol } from "../markdown/list";
 import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipboard-button";
-
-function MarkdownLink({
-  href,
-  children,
-  ...props
-}: React.ComponentProps<'a'>) {
-  return (
-    <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
-      {children}
-    </a>
-  );
-}
+import { anchor } from "../markdown/anchor";
 
 interface ChatMessageProps {
   type: "user" | "assistant";
@@ -74,7 +63,7 @@ export function ChatMessage({
           code,
           ul,
           ol,
-          a: MarkdownLink,
+          a: anchor,
         }}
         remarkPlugins={[remarkGfm]}
       >
