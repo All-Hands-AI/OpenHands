@@ -247,7 +247,7 @@ class AgentSession:
 
             # Extend the agent's prompt instructions if port instructions are available
             if port_instructions and agent.prompt_manager:
-                agent.prompt_manager.extend_system_prompt(port_instructions)
+                agent.prompt_manager.set_runtime_info(port_instructions)
 
             self.runtime.clone_repo(github_token, selected_repository)
             if agent.prompt_manager:

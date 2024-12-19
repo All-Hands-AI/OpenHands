@@ -33,6 +33,7 @@ class PromptManager:
         self.system_template: Template = self._load_template('system_prompt')
         self.user_template: Template = self._load_template('user_prompt')
         self.microagents: dict = {}
+        self.runtime_info: str = ''
 
         microagent_files = []
         if microagent_dir:
@@ -54,6 +55,9 @@ class PromptManager:
             microagent = MicroAgent(content=microagent_file)
             self.microagents[microagent.name] = microagent
 
+    def set_runtime_info(self, runtime_info: str):
+        self.runtime_info = runtime_info
+
     def _load_template(self, template_name: str) -> Template:
         if self.prompt_dir is None:
             raise ValueError('Prompt directory is not set')
@@ -63,22 +67,8 @@ class PromptManager:
         with open(template_path, 'r') as file:
             return Template(file.read())
 
-    def extend_system_prompt(self, instruction: str) -> None:
-        """
-        Extends the system prompt.
-
-        Parameters:
-            instruction: The instruction to add to the system prompt
-        """
-
-        modified_template = self.system_template.render(
-            additional_instruction=instruction
-        )
-
-        self.system_template = Template(modified_template)
-
     def get_system_message(self) -> str:
-        return self.system_template.render().strip()
+        return self.system_template.render(runtime_info=self.runtime_info).strip()
 
     def get_example_user_message(self) -> str:
         """This is the initial user message provided to the agent
@@ -90,6 +80,7 @@ class PromptManager:
         These additional context will convert the current generic agent
         into a more specialized agent that is tailored to the user's task.
         """
+
         return self.user_template.render().strip()
 
     def enhance_message(self, message: Message) -> None:
