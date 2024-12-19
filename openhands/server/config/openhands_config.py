@@ -15,6 +15,9 @@ class OpenhandsConfig(OpenhandsConfigInterface):
     attach_session_middleware_path = (
         'openhands.server.middleware.AttachConversationMiddleware'
     )
+    settings_store_class: str = (
+        'openhands.storage.file_settings_store.FileSettingsStore'
+    )
 
     def verify_config(self):
         if self.config_cls:
