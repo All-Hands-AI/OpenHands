@@ -18,9 +18,10 @@ import { ConversationProvider } from "#/context/conversation-context";
 
 // Mock useParams before importing components
 vi.mock("react-router", async () => {
-  const actual = await vi.importActual("react-router");
+  const actual =
+    await vi.importActual<typeof import("react-router")>("react-router");
   return {
-    ...actual as object,
+    ...actual,
     useParams: () => ({ conversationId: "test-conversation-id" }),
   };
 });
