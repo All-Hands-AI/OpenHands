@@ -43,7 +43,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         session_init_args = {**settings.__dict__, **session_init_args}
     if data.args:
         for key, value in data.args.items():
-            session_init_args[key] = value
+            session_init_args[key.lower()] = value
 
     session_init_args['github_token'] = github_token
     session_init_args['selected_repository'] = data.selected_repository
