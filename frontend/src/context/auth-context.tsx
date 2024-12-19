@@ -109,9 +109,12 @@ function AuthProvider({ children }: React.PropsWithChildren) {
   React.useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedGitHubToken = localStorage.getItem("ghToken");
+    const userId = localStorage.getItem("userId") || "";
 
     setToken(storedToken);
     setGitHubToken(storedGitHubToken);
+    setUserId(userId);
+    refreshToken();
     setupGithubAxiosInterceptors(refreshToken, logout);
   }, []);
 
