@@ -64,7 +64,8 @@ class PromptManager:
             return Template(file.read())
 
     def extend_system_prompt(self, instruction: str) -> None:
-        """Extends the system prompt by adding an instruction before the </IMPORTANT> tag.
+        """
+        Extends the system prompt.
 
         Parameters:
             instruction: The instruction to add to the system prompt
