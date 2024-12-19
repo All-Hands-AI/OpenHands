@@ -2,7 +2,6 @@
 
 import React, { PropsWithChildren } from "react";
 import { Provider } from "react-redux";
-import * as router from "react-router";
 import { configureStore } from "@reduxjs/toolkit";
 // eslint-disable-next-line import/no-extraneous-dependencies
 import { RenderOptions, render } from "@testing-library/react";
