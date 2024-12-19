@@ -9,8 +9,7 @@ interface FeedbackActionsProps {
 
 export function FeedbackActions({
   onPositiveFeedback,
-  onNegativeFeedback,
-}: FeedbackActionsProps) {
+  onNegativeFeedback, }: FeedbackActionsProps) {
   return (
     <div data-testid="feedback-actions" className="flex gap-1">
       <FeedbackActionButton
