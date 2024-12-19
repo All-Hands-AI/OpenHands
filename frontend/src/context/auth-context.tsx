@@ -114,7 +114,6 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     setToken(storedToken);
     setGitHubToken(storedGitHubToken);
     setUserId(userId);
-    refreshToken();
     setupGithubAxiosInterceptors(refreshToken, logout);
   }, []);
 
