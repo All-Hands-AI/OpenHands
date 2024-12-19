@@ -29,6 +29,10 @@ export function handleObservationMessage(message: ObservationMessage) {
       // FIXME: render this as markdown
       store.dispatch(appendJupyterOutput(message.content));
       break;
+    case ObservationType.READ:
+    case ObservationType.EDIT:
+      store.dispatch(appendOutput(message.content));
+      break;
     case ObservationType.BROWSE:
       if (message.extras?.screenshot) {
         store.dispatch(setScreenshotSrc(message.extras?.screenshot));
@@ -80,6 +84,18 @@ export function handleObservationMessage(message: ObservationMessage) {
               command_id: Number(message.extras.command_id || 0),
               exit_code: Number(message.extras.exit_code || 0),
               hidden: Boolean(message.extras.hidden),
+            },
+          }),
+        );
+        break;
+      case "read":
+      case "edit":
+        store.dispatch(
+          addAssistantObservation({
+            ...baseObservation,
+            observation,
+            extras: {
+              path: String(message.extras.path || ""),
             },
           }),
         );

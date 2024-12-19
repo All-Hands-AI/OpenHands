@@ -2032,6 +2032,9 @@
   "OBSERVATION_MESSAGE$READ": {
     "en": "Read the contents of a file"
   },
+  "OBSERVATION_MESSAGE$EDIT": {
+    "en": "Edited the contents of a file"
+  },
   "OBSERVATION_MESSAGE$WRITE": {
     "en": "Wrote to a file"
   },

@@ -104,7 +104,9 @@ export const chatSlice = createSlice({
         }
         text = `${action.payload.args.path}\n${content}`;
       } else if (actionID === "read" || actionID === "edit") {
-        text = action.payload.args.translated_ipython_code || action.payload.args.path;
+        text =
+          action.payload.args.translated_ipython_code ||
+          action.payload.args.path;
       } else if (actionID === "browse") {
         text = `Browsing ${action.payload.args.url}`;
       }
