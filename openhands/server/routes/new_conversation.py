@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from github import Github
 from pydantic import BaseModel
 
+from openhands.server.routes.settings import SettingsStoreImpl
 from openhands.server.session.session_init_data import SessionInitData
 from openhands.server.shared import config, session_manager
 from openhands.storage.conversation.conversation_store import (
@@ -25,25 +26,37 @@ class InitSessionRequest(BaseModel):
 
 
 @app.post('/conversation')
-async def init_session(request: Request, data: InitSessionRequest):
+async def new_conversation(request: Request, data: InitSessionRequest):
     """Initialize a new session or join an existing one.
-
-    This endpoint replaces the WebSocket INIT event with a REST API call.
     After successful initialization, the client should connect to the WebSocket
-    using the returned token.
+    using the returned conversation ID
     """
-    kwargs = {k.lower(): v for k, v in (data.args or {}).items()}
-    session_init_data = SessionInitData(**kwargs)
-    session_init_data.github_token = data.github_token
-    session_init_data.selected_repository = data.selected_repository
+    github_token = ''
+    if data.github_token:
+        github_token = data.github_token
+
+    session_init_args: dict = {}
+    settings_store = await SettingsStoreImpl.get_instance(config, github_token)
+    settings = await settings_store.load()
+    if settings:
+        session_init_args = {**settings.__dict__, **session_init_args}
+
+    session_init_args['github_token'] = github_token
+    session_init_args['selected_repository'] = data.selected_repository
+    session_init_data = SessionInitData(**session_init_args)
+
+    conversation_store = await ConversationStore.get_instance(config)
+
     conversation_id = uuid.uuid4().hex
+    while conversation_store.exists(conversation_id):
+        conversation_id = uuid.uuid4().hex
+
     user_id = ''
     if data.github_token:
         g = Github(data.github_token)
         gh_user = await call_sync_from_async(g.get_user)
         user_id = gh_user.id
 
-    conversation_store = await ConversationStore.get_instance(config)
     await conversation_store.save_metadata(
         ConversationMetadata(
             conversation_id=conversation_id,

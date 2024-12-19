@@ -28,6 +28,14 @@ class ConversationStore:
         json_str = self.file_store.read(path)
         return ConversationMetadata(**json.loads(json_str))
 
+    async def exists(self, conversation_id: str) -> bool:
+        path = get_conversation_metadata_file(conversation_id)
+        try:
+            self.file_store.read(path)
+            return True
+        except FileNotFoundError:
+            return False
+
     @classmethod
     async def get_instance(cls, config: AppConfig):
         file_store = get_file_store(config.file_store, config.file_store_path)
