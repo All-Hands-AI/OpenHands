@@ -319,7 +319,7 @@ class RemoteRuntime(Runtime):
             return None
 
     @property
-    def port_mappings(self) -> list[str]:
+    def web_hosts(self) -> list[str]:
         return self.open_ports
 
     def _wait_until_alive(self):

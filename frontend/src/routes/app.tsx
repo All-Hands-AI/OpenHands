@@ -1,9 +1,9 @@
-import { useActivePort } from "#/hooks/query/use-active-port";
+import { useActiveHost } from "#/hooks/query/use-active-host";
 
 function ServedApp() {
-  const { activePort } = useActivePort();
+  const { activeHost } = useActiveHost();
 
-  if (!activePort) {
+  if (!activeHost) {
     return (
       <div className="flex items-center justify-center w-full h-full">
         <span className="text-4xl text-neutral-400 font-bold">
@@ -14,7 +14,7 @@ function ServedApp() {
   }
 
   return (
-    <iframe title="Served App" src={activePort} className="w-full h-full" />
+    <iframe title="Served App" src={activeHost} className="w-full h-full" />
   );
 }
 

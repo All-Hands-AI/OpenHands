@@ -636,7 +636,7 @@ class EventStreamRuntime(Runtime):
             return None
 
     @property
-    def port_mapping(self):
+    def web_hosts(self):
         ports = []
 
         for port in self.default_port_mapping.values():

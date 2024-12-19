@@ -7,23 +7,25 @@ import {
   WsClientProviderStatus,
 } from "#/context/ws-client-provider";
 
-export const useActivePort = () => {
+export const useActiveHost = () => {
   const { status } = useWsClient();
-  const [activePort, setActivePort] = React.useState<string | null>(null);
+  const [activeHost, setActiveHost] = React.useState<string | null>(null);
 
   const { data } = useQuery({
-    queryKey: ["ports"],
+    queryKey: ["hosts"],
     queryFn: async () => {
-      const response = await openHands.get<{ ports: string[] }>("/api/ports");
+      const response = await openHands.get<{ hosts: string[] }>(
+        "/api/web-hosts",
+      );
       return response.data;
     },
     enabled: status === WsClientProviderStatus.ACTIVE,
-    initialData: { ports: [] },
+    initialData: { hosts: [] },
   });
 
   const apps = useQueries({
-    queries: data.ports.map((port) => ({
-      queryKey: ["ports", port],
+    queries: data.hosts.map((port) => ({
+      queryKey: ["hosts", port],
       queryFn: async () => axios.get(port),
       refetchInterval: 3000,
     })),
@@ -35,12 +37,12 @@ export const useActivePort = () => {
     const successfulApp = apps.find((app) => app.isSuccess);
     if (successfulApp) {
       const index = apps.indexOf(successfulApp);
-      const port = data.ports[index];
-      setActivePort(port);
+      const port = data.hosts[index];
+      setActiveHost(port);
     } else {
-      setActivePort(null);
+      setActiveHost(null);
     }
   }, [success, data]);
 
-  return { activePort };
+  return { activeHost };
 };

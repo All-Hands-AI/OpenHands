@@ -52,11 +52,11 @@ async def get_vscode_url(request: Request):
         )
 
 
-@app.get('/ports')
-async def get_ports(request: Request):
-    """Get the ports used by the runtime.
+@app.get('/web-hosts')
+async def get_hosts(request: Request):
+    """Get the hosts used by the runtime.
 
-    This endpoint allows getting the ports used by the runtime.
+    This endpoint allows getting the hosts used by the runtime.
 
     Args:
         request (Request): The incoming FastAPI request object.
@@ -67,15 +67,15 @@ async def get_ports(request: Request):
     try:
         runtime: Runtime = request.state.conversation.runtime
         logger.debug(f'Runtime type: {type(runtime)}')
-        logger.debug(f'Runtime ports: {runtime.port_mapping}')
-        return JSONResponse(status_code=200, content={'ports': runtime.port_mapping})
+        logger.debug(f'Runtime hosts: {runtime.web_hosts}')
+        return JSONResponse(status_code=200, content={'hosts': runtime.web_hosts})
     except Exception as e:
-        logger.error(f'Error getting runtime ports: {e}', exc_info=True)
+        logger.error(f'Error getting runtime hosts: {e}', exc_info=True)
         return JSONResponse(
             status_code=500,
             content={
-                'ports': None,
-                'error': f'Error getting runtime ports: {e}',
+                'hosts': None,
+                'error': f'Error getting runtime hosts: {e}',
             },
         )
 

@@ -360,5 +360,5 @@ class Runtime(FileEditRuntimeMixin):
         raise NotImplementedError('This method is not implemented in the base class.')
 
     @property
-    def port_mapping(self) -> list[str]:
+    def web_hosts(self) -> list[str]:
         raise NotImplementedError('This method is not implemented in the base class.')
