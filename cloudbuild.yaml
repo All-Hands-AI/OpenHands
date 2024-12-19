@@ -1,30 +1,27 @@
 steps:
+  # Build the ARM64 image using a T2A machine type
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
-      - '--platform=linux/arm64' # Target ARM64 for M2
-      - '--build-arg'
-      - 'OPENHANDS_BUILD_VERSION=${_OPENHANDS_BUILD_VERSION}'
-      - '--build-arg'
-      - 'ENVIRONMENT=${_ENVIRONMENT}'
-      - '--progress=plain'
       - '-t'
       - 'us-docker.pkg.dev/${PROJECT_ID}/openhands/openhands:${_TAG}'
       - '-f'
-      - 'containers/app/Dockerfile' # Path to your Dockerfile
+      - 'containers/app/Dockerfile'
       - '.'
+      - '--build-arg'
+      - 'OPENHANDS_BUILD_VERSION=${_OPENHANDS_BUILD_VERSION}'
 
-  # Push the image (optional)
+  # Push the ARM64 image
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
       - 'us-docker.pkg.dev/${PROJECT_ID}/openhands/openhands:${_TAG}'
 
 substitutions:
-  _OPENHANDS_BUILD_VERSION: 'dev'
-  _ENVIRONMENT: 'local-dev'
-  _TAG: 'm2optimized'
+  _OPENHANDS_BUILD_VERSION: '16.0'
+  _ENVIRONMENT: 'prod'
+  _TAG: 'arm64-16.0'
+
 options:
-  logging: CLOUD_LOGGING_ONLY
-  defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
+  machineType: 'T2A_2CPU_8GB' # Specify ARM64 machine type here
   
