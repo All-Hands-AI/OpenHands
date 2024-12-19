@@ -24,7 +24,7 @@ export const retrieveGitHubAppRepositories = async (
   installationIndex: number,
   installations: number[],
   page = 1,
-  per_page = 30,
+  per_page = 2,
 ) => {
   const installationId = installations[installationIndex];
   const response = await openHands.get<GitHubAppRepository>(

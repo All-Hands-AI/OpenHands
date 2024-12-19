@@ -43,7 +43,7 @@ def get_github_repositories(
         'Accept': 'application/vnd.github.v3+json',
     }
 
-    logger.info(f'Using api url {github_api_url}')
+    logger.info(f'Using api url {github_api_url} with per page {per_page}')
 
     # Fetch repositories from GitHub
     try:
