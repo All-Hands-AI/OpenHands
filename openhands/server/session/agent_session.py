@@ -5,16 +5,18 @@ from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, AppConfig, LLMConfig
+from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
-from openhands.runtime.base import Runtime, RuntimeUnavailableError
+from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_async_from_sync
+from openhands.utils.shutdown_listener import should_continue
 
 WAIT_TIME_BEFORE_CLOSE = 300
 WAIT_TIME_BEFORE_CLOSE_INTERVAL = 5
@@ -152,7 +154,7 @@ class AgentSession:
 
     async def _close(self):
         seconds_waited = 0
-        while self._initializing:
+        while self._initializing and should_continue():
             logger.debug(
                 f'Waiting for initialization to finish before closing session {self.sid}'
             )
@@ -221,7 +223,7 @@ class AgentSession:
 
         try:
             await self.runtime.connect()
-        except RuntimeUnavailableError as e:
+        except AgentRuntimeUnavailableError as e:
             logger.error(f'Runtime initialization failed: {e}', exc_info=True)
             if self._status_callback:
                 self._status_callback(

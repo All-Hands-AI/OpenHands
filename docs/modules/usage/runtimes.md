@@ -16,7 +16,7 @@ some flags being passed to `docker run` that make this possible:
 
 ```
 docker run # ...
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.15-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.16-nikolaik \
     -v /var/run/docker.sock:/var/run/docker.sock \
     # ...
 ```
@@ -28,12 +28,22 @@ You can also [build your own runtime image](how-to/custom-sandbox-guide).
 ### Connecting to Your filesystem
 One useful feature here is the ability to connect to your local filesystem.
 
-To mount your filesystem into the runtime, add the following options to
-the `docker run` command:
-
+To mount your filesystem into the runtime, first set WORKSPACE_BASE:
 ```bash
 export WORKSPACE_BASE=/path/to/your/code
 
+# Linux and Mac Example
+# export WORKSPACE_BASE=$HOME/OpenHands
+# Will set $WORKSPACE_BASE to /home/<username>/OpenHands
+#
+# WSL on Windows Example
+# export WORKSPACE_BASE=/mnt/c/dev/OpenHands
+# Will set $WORKSPACE_BASE to C:\dev\OpenHands
+```
+
+then add the following options to the `docker run` command:
+
+```bash
 docker run # ...
     -e SANDBOX_USER_ID=$(id -u) \
     -e WORKSPACE_MOUNT_PATH=$WORKSPACE_BASE \

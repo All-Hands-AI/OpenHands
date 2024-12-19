@@ -1,3 +1,4 @@
+import React from "react";
 import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
@@ -14,6 +15,7 @@ export function GitHubRepositorySelector({
   onSelect,
 }: GitHubRepositorySelectorProps) {
   const { data: config } = useConfig();
+  const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
 
   // Add option to install app onto more repos
   const finalRepositories =
@@ -38,6 +40,7 @@ export function GitHubRepositorySelector({
       dispatch(setSelectedRepository(repo.full_name));
       posthog.capture("repository_selected");
       onSelect();
+      setSelectedKey(id);
     }
   };
 
@@ -65,6 +68,7 @@ export function GitHubRepositorySelector({
       name="repo"
       aria-label="GitHub Repository"
       placeholder="Type a repository name or select from your repositories"
+      selectedKey={selectedKey}
       inputProps={{
         classNames: {
           inputWrapper:
