@@ -1,6 +1,7 @@
 from urllib.parse import parse_qs
 
 from github import Github
+from socketio.exceptions import ConnectionRefusedError
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
@@ -12,6 +13,7 @@ from openhands.events.observation import (
 from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
+from openhands.server.session.manager import ConversationDoesNotExistError
 from openhands.server.shared import config, session_manager, sio
 from openhands.storage.conversation.conversation_store import (
     ConversationStore,
@@ -27,7 +29,7 @@ async def connect(connection_id: str, environ, auth):
     conversation_id = query_params.get('conversation_id', [None])[0]
     if not conversation_id:
         logger.error('No conversation_id in query params')
-        return
+        raise ConnectionRefusedError('No conversation_id in query params')
 
     user_id = ''
     if auth and 'github_token' in auth:
@@ -43,11 +45,17 @@ async def connect(connection_id: str, environ, auth):
         logger.error(
             f'User {user_id} is not allowed to join conversation {conversation_id}'
         )
-        return
+        raise ConnectionRefusedError(
+            f'User {user_id} is not allowed to join conversation {conversation_id}'
+        )
 
-    event_stream = await session_manager.join_conversation(
-        conversation_id, connection_id
-    )
+    try:
+        event_stream = await session_manager.join_conversation(
+            conversation_id, connection_id
+        )
+    except ConversationDoesNotExistError:
+        logger.error(f'Conversation {conversation_id} does not exist')
+        raise ConnectionRefusedError(f'Conversation {conversation_id} does not exist')
 
     agent_state_changed = None
     async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)

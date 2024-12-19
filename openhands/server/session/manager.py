@@ -19,6 +19,10 @@ _REDIS_POLL_TIMEOUT = 1.5
 _CHECK_ALIVE_INTERVAL = 15
 
 
+class ConversationDoesNotExistError(Exception):
+    pass
+
+
 @dataclass
 class SessionManager:
     sio: socketio.AsyncServer
@@ -170,7 +174,7 @@ class SessionManager:
             self._active_conversations[sid] = (c, 1)
             return c
 
-    async def join_conversation(self, sid: str, connection_id: str):
+    async def join_conversation(self, sid: str, connection_id: str) -> EventStream:
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self.local_connection_id_to_session_id[connection_id] = sid
 
@@ -185,7 +189,9 @@ class SessionManager:
         if redis_client and await self._is_session_running_in_cluster(sid):
             return EventStream(sid, self.file_store)
 
-        raise RuntimeError(f'no_connected_session:{connection_id}:{sid}')
+        raise ConversationDoesNotExistError(
+            f'no_conversation_for_id:{connection_id}:{sid}'
+        )
 
     async def detach_from_conversation(self, conversation: Conversation):
         sid = conversation.sid
