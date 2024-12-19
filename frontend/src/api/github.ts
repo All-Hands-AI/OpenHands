@@ -2,6 +2,20 @@ import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
 import { github } from "./github-axios-instance";
 import { openHands } from "./open-hands-axios";
 
+interface GitHubErrorReponse {
+  message: string;
+  documentation_url: string;
+}
+
+function isGitHubErrorReponse(data: unknown): data is GitHubErrorReponse {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "message" in data &&
+    "documentation_url" in data
+  );
+}
+
 /**
  * Given the user, retrieves app installations IDs for OpenHands Github App
  * Uses user access token for Github App
@@ -117,4 +131,31 @@ export const retrieveLatestGitHubCommit = async (
   );
 
   return response.data[0];
+};
+
+export const searchGitHubRepositories = async (query: string) => {
+  if (!query) return { data: [], nextPage: null };
+
+  const response = await github.get<{ items: GitHubRepository[] }>(
+    "/search/repositories",
+    {
+      params: {
+        q: query,
+        per_page: 1,
+        sort: "stars",
+      },
+      transformResponse: (data) => {
+        const parsedData: { items: GitHubRepository[] } | GitHubErrorReponse =
+          JSON.parse(data);
+
+        if (isGitHubErrorReponse(parsedData)) {
+          throw new Error(parsedData.message);
+        }
+
+        return parsedData;
+      },
+    },
+  );
+
+  return { data: response.data.items, nextPage: null };
 };

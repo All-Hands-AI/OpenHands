@@ -1,29 +1,29 @@
-import React from "react";
 import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
+import React, { useState } from "react";
 import { setSelectedRepository } from "#/state/initial-query-slice";
+import { useRepositorySearch } from "#/hooks/query/use-repository-search";
 import { useConfig } from "#/hooks/query/use-config";
 
 interface GitHubRepositorySelectorProps {
   onSelect: () => void;
-  repositories: GitHubRepository[];
 }
 
 export function GitHubRepositorySelector({
   onSelect,
-  repositories,
 }: GitHubRepositorySelectorProps) {
   const { data: config } = useConfig();
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
+  const dispatch = useDispatch();
+  const [searchQuery, setSearchQuery] = useState("");
+  const { repositories, isLoading } = useRepositorySearch(searchQuery);
 
   // Add option to install app onto more repos
   const finalRepositories =
     config?.APP_MODE === "saas"
       ? [{ id: -1000, full_name: "Add more repositories..." }, ...repositories]
       : repositories;
-
-  const dispatch = useDispatch();
 
   const handleRepoSelection = (id: string | null) => {
     const repo = finalRepositories.find((r) => r.id.toString() === id);
@@ -65,7 +65,7 @@ export function GitHubRepositorySelector({
       data-testid="github-repo-selector"
       name="repo"
       aria-label="GitHub Repository"
-      placeholder="Select a GitHub project"
+      placeholder="Type a repository name or select from your repositories"
       selectedKey={selectedKey}
       inputProps={{
         classNames: {
@@ -73,8 +73,10 @@ export function GitHubRepositorySelector({
             "text-sm w-full rounded-[4px] px-3 py-[10px] bg-[#525252] text-[#A3A3A3]",
         },
       }}
+      onInputChange={(value) => setSearchQuery(value)}
       onSelectionChange={(id) => handleRepoSelection(id?.toString() ?? null)}
       clearButtonProps={{ onClick: handleClearSelection }}
+      isLoading={isLoading}
       listboxProps={{
         emptyContent,
       }}
@@ -84,8 +86,14 @@ export function GitHubRepositorySelector({
           data-testid="github-repo-item"
           key={repo.id}
           value={repo.id}
+          className="flex items-center justify-between"
         >
-          {repo.full_name}
+          <span>{repo.full_name}</span>
+          {"stargazers_count" in repo && repo.stargazers_count > 0 && (
+            <span className="text-xs text-neutral-400">
+              ⭐ {repo.stargazers_count.toLocaleString()}
+            </span>
+          )}
         </AutocompleteItem>
       ))}
     </Autocomplete>
