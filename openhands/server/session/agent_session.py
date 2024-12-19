@@ -13,6 +13,8 @@ from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
+from openhands.runtime.impl.eventstream.eventstream_runtime import EventStreamRuntime
+from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_async_from_sync
@@ -231,15 +233,31 @@ class AgentSession:
                 )
             return
 
-        self.runtime.clone_repo(github_token, selected_repository)
-        if agent.prompt_manager:
-            agent.prompt_manager.load_microagent_files(
-                self.runtime.get_custom_microagents(selected_repository)
-            )
+        if self.runtime is not None:
+            # Add port mapping instructions based on runtime type
+            port_instructions = None
+            if isinstance(self.runtime, EventStreamRuntime):
+                port_instructions = (
+                    '* When serving some application, use ports 4141 and 4142.'
+                )
+            elif isinstance(self.runtime, RemoteRuntime):
+                port_instructions = (
+                    '* When serving some application, use ports 81623 and 81624.'
+                )
 
-        logger.debug(
-            f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
-        )
+            # Extend the agent's prompt instructions if port instructions are available
+            if port_instructions and agent.prompt_manager:
+                agent.prompt_manager.set_runtime_info(port_instructions)
+
+            self.runtime.clone_repo(github_token, selected_repository)
+            if agent.prompt_manager:
+                agent.prompt_manager.load_microagent_files(
+                    self.runtime.get_custom_microagents(selected_repository)
+                )
+
+            logger.debug(
+                f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
+            )
 
     def _create_controller(
         self,
@@ -268,10 +286,18 @@ class AgentSession:
                 'Runtime must be initialized before the agent controller'
             )
 
+        # Determine port mapping instructions based on Runtime type
+        port_instructions = ''
+        if isinstance(self.runtime, EventStreamRuntime):
+            port_instructions = 'Use ports 4141 and 4142 when serving applications'
+        elif isinstance(self.runtime, RemoteRuntime):
+            port_instructions = 'Use ports 81623 and 81624 when serving applications'
+
         msg = (
             '\n--------------------------------- OpenHands Configuration ---------------------------------\n'
             f'LLM: {agent.llm.config.model}\n'
             f'Base URL: {agent.llm.config.base_url}\n'
+            f'Port Instructions: {port_instructions}\n'
         )
         if agent.llm.config.draft_editor:
             msg += (
