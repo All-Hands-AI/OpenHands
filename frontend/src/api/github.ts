@@ -39,8 +39,11 @@ export const retrieveGitHubAppRepositories = async (
     },
   );
 
+  console.log("repo list response", response);
+
   const link = response.headers.link ?? "";
   const nextPage = extractNextPageFromLink(link);
+  console.log("nextPage", nextPage);
   let nextInstallation: number | null;
 
   if (nextPage) {
