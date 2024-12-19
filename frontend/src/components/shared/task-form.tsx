@@ -57,7 +57,6 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
       });
       navigate(`/conversation/${conversationId}`);
     },
-    // TODO: Add error handling with toast
   });
 
   const onRefreshSuggestion = () => {
