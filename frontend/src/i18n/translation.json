@@ -2014,6 +2014,9 @@
   "ACTION_MESSAGE$READ": {
     "en": "Reading the contents of a file"
   },
+  "ACTION_MESSAGE$EDIT": {
+    "en": "Editing the contents of a file"
+  },
   "ACTION_MESSAGE$WRITE": {
     "en": "Writing to a file"
   },

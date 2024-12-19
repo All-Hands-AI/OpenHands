@@ -11,10 +11,12 @@ from conftest import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     CmdRunAction,
+    FileEditAction,
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
 )
+from openhands.events.event import FileEditSource
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
@@ -312,5 +314,67 @@ print(file_editor(command='undo_edit', path='{sandbox_dir}/test.txt'))
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.exit_code == 0
+
+    _close_test_runtime(runtime)
+
+
+def test_file_read_and_edit_via_oh_aci(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    sandbox_dir = _get_sandbox_folder(runtime)
+
+    actions = [
+        {
+            'command': 'create',
+            'test_code': f"print(file_editor(command='create', path='{sandbox_dir}/test.txt', file_text='Line 1\\nLine 2\\nLine 3'))",
+            'action_cls': FileEditAction,
+            'assertions': ['File created successfully'],
+        },
+        {
+            'command': 'view',
+            'test_code': f"print(file_editor(command='view', path='{sandbox_dir}/test.txt'))",
+            'action_cls': FileReadAction,
+            'assertions': ['Line 1', 'Line 2', 'Line 3'],
+        },
+        {
+            'command': 'str_replace',
+            'test_code': f"print(file_editor(command='str_replace', path='{sandbox_dir}/test.txt', old_str='Line 2', new_str='New Line 2'))",
+            'action_cls': FileEditAction,
+            'assertions': ['New Line 2'],
+        },
+        {
+            'command': 'undo_edit',
+            'test_code': f"print(file_editor(command='undo_edit', path='{sandbox_dir}/test.txt'))",
+            'action_cls': FileEditAction,
+            'assertions': ['Last edit to', 'undone successfully'],
+        },
+        {
+            'command': 'insert',
+            'test_code': f"print(file_editor(command='insert', path='{sandbox_dir}/test.txt', insert_line=2, new_str='Line 4'))",
+            'action_cls': FileEditAction,
+            'assertions': ['Line 4'],
+        },
+    ]
+
+    for action_info in actions:
+        action_cls = action_info['action_cls']
+
+        kwargs = {
+            'path': f'{sandbox_dir}/test.txt',
+            'translated_ipython_code': action_info['test_code'],
+            'impl_source': FileEditSource.OH_ACI,
+        }
+        if action_info['action_cls'] == FileEditAction:
+            kwargs['content'] = ''  # dummy value required for FileEditAction
+
+        action = action_cls(**kwargs)
+
+        logger.info(action, extra={'msg_type': 'ACTION'})
+        obs = runtime.run_action(action)
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        for assertion in action_info['assertions']:
+            if action_cls == FileReadAction:
+                assert assertion in obs.content
+            else:
+                assert assertion in str(obs)
 
     _close_test_runtime(runtime)

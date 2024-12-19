@@ -104,6 +104,7 @@ export interface FileReadAction extends OpenHandsActionEvent<"read"> {
   args: {
     path: string;
     thought: string;
+    translated_ipython_code: string | null;
   };
 }
 
@@ -113,6 +114,14 @@ export interface FileWriteAction extends OpenHandsActionEvent<"write"> {
     path: string;
     content: string;
     thought: string;
+  };
+}
+
+export interface FileEditAction extends OpenHandsActionEvent<"edit"> {
+  source: "agent";
+  args: {
+    path: string;
+    translated_ipython_code: string;
   };
 }
 
@@ -133,6 +142,7 @@ export type OpenHandsAction =
   | BrowseAction
   | BrowseInteractiveAction
   | FileReadAction
+  | FileEditAction
   | FileWriteAction
   | AddTaskAction
   | ModifyTaskAction

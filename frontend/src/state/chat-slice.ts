@@ -8,6 +8,7 @@ import {
 } from "#/types/core/observations";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsEventType } from "#/types/core/base";
+import { ac } from "node_modules/react-router/dist/production/route-data-DuV3tXo2.mjs";
 
 type SliceState = { messages: Message[] };
 
@@ -19,6 +20,7 @@ const HANDLED_ACTIONS: OpenHandsEventType[] = [
   "write",
   "read",
   "browse",
+  "edit",
 ];
 
 function getRiskText(risk: ActionSecurityRisk) {
@@ -101,8 +103,8 @@ export const chatSlice = createSlice({
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
         }
         text = `${action.payload.args.path}\n${content}`;
-      } else if (actionID === "read") {
-        text = action.payload.args.path;
+      } else if (actionID === "read" || actionID === "edit") {
+        text = action.payload.args.translated_ipython_code || action.payload.args.path;
       } else if (actionID === "browse") {
         text = `Browsing ${action.payload.args.url}`;
       }
