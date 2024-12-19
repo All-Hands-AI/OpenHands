@@ -239,14 +239,12 @@ class OpenHands {
     return data;
   }
 
-  static async initSession(params: {
+  static async newConversation(params: {
     githubToken?: string;
     args?: Record<string, unknown>;
     selectedRepository?: string;
   }): Promise<{ token: string; status: string; conversation_id: string }> {
     const { data } = await openHands.post<{
-      token: string;
-      status: string;
       conversation_id: string;
     }>("/api/conversation", {
       github_token: params.githubToken,

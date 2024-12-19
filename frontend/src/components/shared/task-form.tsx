@@ -39,10 +39,10 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
     getRandomKey(SUGGESTIONS["non-repo"]),
   );
   const [inputIsFocused, setInputIsFocused] = React.useState(false);
-  const initSessionMutation = useMutation({
+  const newConversationMutation = useMutation({
     mutationFn: (variables: { q: string }) => {
       dispatch(setInitialQuery(variables.q));
-      return OpenHands.initSession({
+      return OpenHands.newConversation({
         githubToken: gitHubToken || undefined,
         selectedRepository: selectedRepository || undefined,
         args: settings || undefined,
@@ -90,7 +90,7 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
     const q = formData.get("q")?.toString();
     if (!q) return;
 
-    initSessionMutation.mutate({ q });
+    newConversationMutation.mutate({ q });
   };
 
   return (
@@ -134,7 +134,7 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
             className="text-[17px] leading-5 py-[17px]"
             buttonClassName="pb-[17px]"
             disabled={
-              navigation.state === "submitting" || initSessionMutation.isPending
+              navigation.state === "submitting" || newConversationMutation.isPending
             }
           />
         </div>
