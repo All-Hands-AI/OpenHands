@@ -1,8 +1,8 @@
-CONVERSATION_BASE_DIR = 'sessions/'
+CONVERSATION_BASE_DIR = 'sessions'
 
 
 def get_conversation_dir(sid: str) -> str:
-    return f'{CONVERSATION_BASE_DIR}{sid}/'
+    return f'{CONVERSATION_BASE_DIR}/{sid}/'
 
 
 def get_conversation_events_dir(sid: str) -> str:
