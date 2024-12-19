@@ -1,9 +1,9 @@
+import React from "react";
 import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
-import React from "react";
 
 interface GitHubRepositorySelectorProps {
   onSelect: () => void;
