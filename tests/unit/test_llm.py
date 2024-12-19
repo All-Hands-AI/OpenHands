@@ -125,6 +125,15 @@ def test_response_latency_tracking(mock_time, mock_litellm_completion):
     assert response['id'] == 'test-response-123'
     assert response['choices'][0]['message']['content'] == 'Test response'
 
+    # To make sure the metrics fail gracefully, set the start/end time to go backwards.
+    mock_time.side_effect = [1000.0, 999.0]
+    llm.completion(messages=[{'role': 'user', 'content': 'Hello!'}])
+
+    # There should now be 2 latencies, the last of which has the value clipped to 0
+    assert len(llm.metrics.response_latencies) == 2
+    latency_record = llm.metrics.response_latencies[-1]
+    assert latency_record.latency == 0.0  # Should be lifted to 0 instead of being -1!
+
 
 def test_llm_reset():
     llm = LLM(LLMConfig(model='gpt-4o-mini', api_key='test_key'))

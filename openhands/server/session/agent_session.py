@@ -15,6 +15,7 @@ from openhands.runtime.base import Runtime, RuntimeUnavailableError
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_async_from_sync
+from openhands.utils.shutdown_listener import should_continue
 
 WAIT_TIME_BEFORE_CLOSE = 300
 WAIT_TIME_BEFORE_CLOSE_INTERVAL = 5
@@ -152,7 +153,7 @@ class AgentSession:
 
     async def _close(self):
         seconds_waited = 0
-        while self._initializing:
+        while self._initializing and should_continue():
             logger.debug(
                 f'Waiting for initialization to finish before closing session {self.sid}'
             )

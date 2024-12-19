@@ -268,9 +268,47 @@ jobs:
               grep "branch created" branch_result.txt | sed 's/.*\///g; s/.expand=1//g' > branch_name.txt
           fi
 
-      - name: Comment on issue
+      # Step leaves comment for when agent is invoked on PR
+      - name: Analyze Push Logs (Updated PR or No Changes) # Skip comment if PR update was successful OR leave comment if the agent made no code changes
+        uses: actions/github-script@v7
+        if: always()
+        env:
+          AGENT_RESPONDED: ${{ env.AGENT_RESPONDED || 'false' }}
+        with:
+          github-token: ${{ secrets.PAT_TOKEN || github.token }}
+          script: |
+            const fs = require('fs');
+            const issueNumber = ${{ env.ISSUE_NUMBER }};
+            let logContent = '';
+
+            try {
+              logContent = fs.readFileSync('/tmp/pr_result.txt', 'utf8').trim();
+            } catch (error) {
+              console.error('Error reading pr_result.txt file:', error);
+            }
+
+            const noChangesMessage = `No changes to commit for issue #${issueNumber}. Skipping commit.`;
+
+            // Check logs from send_pull_request.py (pushes code to GitHub)
+            if (logContent.includes("Updated pull request")) {
+              console.log("Updated pull request found. Skipping comment.");
+              process.env.AGENT_RESPONDED = 'true';
+            } else if (logContent.includes(noChangesMessage)) {
+              github.rest.issues.createComment({
+                issue_number: issueNumber,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `The workflow to fix this issue encountered an error. Openhands failed to create any code changes.`
+              });
+              process.env.AGENT_RESPONDED = 'true';
+            }
+
+      # Step leaves comment for when agent is invoked on issue
+      - name: Comment on issue # Comment link to either PR or branch created by agent
         uses: actions/github-script@v7
         if: always() # Comment on issue even if the previous steps fail
+        env:
+          AGENT_RESPONDED: ${{ env.AGENT_RESPONDED || 'false' }}
         with:
           github-token: ${{ secrets.PAT_TOKEN || github.token }}
           script: |
@@ -280,18 +318,6 @@ jobs:
 
             let prNumber = '';
             let branchName = '';
-            let logContent = '';
-            const noChangesMessage = `No changes to commit for issue #${issueNumber}. Skipping commit.`;
-
-            try {
-              if (success){
-                logContent = fs.readFileSync('/tmp/pr_result.txt', 'utf8').trim();
-              } else {
-                logContent = fs.readFileSync('/tmp/branch_result.txt', 'utf8').trim();
-              }
-            } catch (error) {
-              console.error('Error reading results file:', error);
-            }
 
             try {
               if (success) {
@@ -303,20 +329,16 @@ jobs:
               console.error('Error reading file:', error);
             }
 
-            if (logContent.includes(noChangesMessage)) {
-              github.rest.issues.createComment({
-                issue_number: issueNumber,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: `The workflow to fix this issue encountered an error. Openhands failed to create any code changes.`
-              });
-            } else if (success && prNumber) {
+
+            // Check "success" log from resolver output
+            if (success && prNumber) {
               github.rest.issues.createComment({
                 issue_number: issueNumber,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 body: `A potential fix has been generated and a draft PR #${prNumber} has been created. Please review the changes.`
               });
+              process.env.AGENT_RESPONDED = 'true';
             } else if (!success && branchName) {
               github.rest.issues.createComment({
                 issue_number: issueNumber,
@@ -324,11 +346,21 @@ jobs:
                 repo: context.repo.repo,
                 body: `An attempt was made to automatically fix this issue, but it was unsuccessful. A branch named '${branchName}' has been created with the attempted changes. You can view the branch [here](https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${branchName}). Manual intervention may be required.`
               });
-            } else {
-              github.rest.issues.createComment({
-                issue_number: issueNumber,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: `The workflow to fix this issue encountered an error. Please check the [workflow logs](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) for more information.`
-              });
+              process.env.AGENT_RESPONDED = 'true';
             }
+
+      # Leave error comment when both PR/Issue comment handling fail
+      - name: Fallback Error Comment
+        uses: actions/github-script@v7
+        if: ${{ env.AGENT_RESPONDED == 'false' }} # Only run if no conditions were met in previous steps
+        with:
+          github-token: ${{ secrets.PAT_TOKEN || github.token }}
+          script: |
+            const issueNumber = ${{ env.ISSUE_NUMBER }};
+
+            github.rest.issues.createComment({
+              issue_number: issueNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `The workflow to fix this issue encountered an error. Please check the [workflow logs](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) for more information.`
+            });
