@@ -51,11 +51,15 @@ export const getSettings = async (): Promise<Settings> => {
  * Save the settings to the server. Only valid settings are saved.
  * @param settings - the settings to save
  */
-export const saveSettings = async (settings: Partial<Settings>): Promise<boolean> => {
+export const saveSettings = async (
+  settings: Partial<Settings>
+): Promise<boolean> => {
   try {
     // Filter out invalid keys
     const validSettings = Object.fromEntries(
-      Object.entries(settings).filter(([key]) => validKeys.includes(key as keyof Settings))
+      Object.entries(settings).filter(([key]) =>
+        validKeys.includes(key as keyof Settings),
+      ),
     );
 
     // Clean up values
