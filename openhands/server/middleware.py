@@ -10,7 +10,6 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
-from openhands.core.logger import openhands_logger as logger
 from openhands.server.shared import session_manager
 from openhands.server.types import SessionMiddlewareInterface
 
