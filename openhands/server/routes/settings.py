@@ -22,7 +22,7 @@ async def load_settings(
         settings_store = await SettingsStoreImpl.get_instance(config, github_auth)
         settings = await settings_store.load()
         if settings:
-            # We don't ever send the api key to the client
+            # For security reasons we don't ever send the api key to the client
             settings.llm_api_key = None
         return settings
     except Exception as e:
@@ -42,7 +42,7 @@ async def store_settings(
         settings_store = await SettingsStoreImpl.get_instance(config, github_auth)
         existing_settings = await settings_store.load()
         if existing_settings:
-            if not settings.llm_api_key:
+            if settings.llm_api_key is None:
                 settings.llm_api_key = existing_settings.llm_api_key
         return await settings_store.store(settings)
     except Exception as e:
