@@ -152,7 +152,6 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         await session_manager.detach_from_conversation(request.state.conversation)
 
     async def __call__(self, request: Request, call_next: Callable):
-        logger.info('AttachConversationMiddleware')
         if not self._should_attach(request):
             return await call_next(request)
 
