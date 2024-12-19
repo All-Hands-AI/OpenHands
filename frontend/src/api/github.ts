@@ -42,6 +42,7 @@ export const retrieveGitHubAppRepositories = async (
   console.log("repo list response", response);
 
   const link = response.headers.link ?? "";
+  console.log("response link", link);
   const nextPage = extractNextPageFromLink(link);
   console.log("nextPage", nextPage);
   let nextInstallation: number | null;
@@ -81,6 +82,7 @@ export const retrieveGitHubUserRepositories = async (
   );
 
   const link = response.headers.link ?? "";
+  console.log("retrieved link", link);
   const nextPage = extractNextPageFromLink(link);
 
   return { data: response.data, nextPage };
