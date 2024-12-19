@@ -10,6 +10,14 @@ import requests
 import tenacity
 
 from openhands.core.config import AppConfig
+from openhands.core.exceptions import (
+    AgentRuntimeDisconnectedError,
+    AgentRuntimeError,
+    AgentRuntimeNotFoundError,
+    AgentRuntimeNotReadyError,
+    AgentRuntimeTimeoutError,
+    AgentRuntimeUnavailableError,
+)
 from openhands.events import EventStream
 from openhands.events.action import (
     BrowseInteractiveAction,
@@ -28,13 +36,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.runtime.base import (
-    Runtime,
-    RuntimeDisconnectedError,
-    RuntimeNotFoundError,
-    RuntimeNotReadyError,
-    RuntimeUnavailableError,
-)
+from openhands.runtime.base import Runtime
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
@@ -101,7 +103,7 @@ class RemoteRuntime(Runtime):
     async def connect(self):
         try:
             await call_sync_from_async(self._start_or_attach_to_runtime)
-        except RuntimeNotReadyError:
+        except AgentRuntimeNotReadyError:
             self.log('error', 'Runtime failed to start, timed out before ready')
             raise
         await call_sync_from_async(self.setup_initial_env)
@@ -112,7 +114,7 @@ class RemoteRuntime(Runtime):
         if existing_runtime:
             self.log('debug', f'Using existing runtime with ID: {self.runtime_id}')
         elif self.attach_to_existing:
-            raise RuntimeNotFoundError(
+            raise AgentRuntimeNotFoundError(
                 f'Could not find existing runtime for SID: {self.sid}'
             )
         else:
@@ -216,7 +218,7 @@ class RemoteRuntime(Runtime):
             timeout=60,
         ) as response:
             if not response.json()['exists']:
-                raise RuntimeError(
+                raise AgentRuntimeError(
                     f'Container image {self.container_image} does not exist'
                 )
 
@@ -263,7 +265,7 @@ class RemoteRuntime(Runtime):
             )
         except requests.HTTPError as e:
             self.log('error', f'Unable to start runtime: {e}')
-            raise RuntimeUnavailableError() from e
+            raise AgentRuntimeUnavailableError() from e
 
     def _resume_runtime(self):
         with self._send_request(
@@ -329,7 +331,7 @@ class RemoteRuntime(Runtime):
             )
             | stop_if_should_exit(),
             reraise=True,
-            retry=tenacity.retry_if_exception_type(RuntimeNotReadyError),
+            retry=tenacity.retry_if_exception_type(AgentRuntimeNotReadyError),
             wait=tenacity.wait_fixed(2),
         )
         return retry_decorator(self._wait_until_alive_impl)()
@@ -363,7 +365,7 @@ class RemoteRuntime(Runtime):
                 self.log(
                     'warning', f"Runtime /alive failed, but pod says it's ready: {e}"
                 )
-                raise RuntimeNotReadyError(
+                raise AgentRuntimeNotReadyError(
                     f'Runtime /alive failed to respond with 200: {e}'
                 )
             return
@@ -372,14 +374,14 @@ class RemoteRuntime(Runtime):
             or pod_status == 'pending'
             or pod_status == 'running'
         ):  # nb: Running is not yet Ready
-            raise RuntimeNotReadyError(
+            raise AgentRuntimeNotReadyError(
                 f'Runtime (ID={self.runtime_id}) is not yet ready. Status: {pod_status}'
             )
         elif pod_status in ('failed', 'unknown', 'crashloopbackoff'):
             # clean up the runtime
             self.close()
-            raise RuntimeError(
-                f'Runtime (ID={self.runtime_id}) failed to start. Current status: {pod_status}'
+            raise AgentRuntimeUnavailableError(
+                f'Runtime (ID={self.runtime_id}) failed to start. Current status: {pod_status}. Pod Logs:\n{runtime_data.get("pod_logs", "N/A")}'
             )
         else:
             # Maybe this should be a hard failure, but passing through in case the API changes
@@ -389,7 +391,7 @@ class RemoteRuntime(Runtime):
             'debug',
             f'Waiting for runtime pod to be active. Current status: {pod_status}',
         )
-        raise RuntimeNotReadyError()
+        raise AgentRuntimeNotReadyError()
 
     def close(self, timeout: int = 10):
         if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
@@ -444,7 +446,7 @@ class RemoteRuntime(Runtime):
                 obs = observation_from_dict(output)
                 obs._cause = action.id  # type: ignore[attr-defined]
             except requests.Timeout:
-                raise RuntimeError(
+                raise AgentRuntimeTimeoutError(
                     f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
                 )
             return obs
@@ -458,7 +460,7 @@ class RemoteRuntime(Runtime):
             raise
         except requests.HTTPError as e:
             if is_runtime_request and e.response.status_code == 404:
-                raise RuntimeDisconnectedError(
+                raise AgentRuntimeDisconnectedError(
                     f'404 error while connecting to {self.runtime_url}'
                 )
             elif is_runtime_request and e.response.status_code == 503:
