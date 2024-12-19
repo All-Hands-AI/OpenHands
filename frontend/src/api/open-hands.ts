@@ -243,7 +243,7 @@ class OpenHands {
     githubToken?: string;
     args?: Record<string, unknown>;
     selectedRepository?: string;
-  }): Promise<{ token: string; status: string; conversation_id: string }> {
+  }): Promise<{ conversation_id: string }> {
     const { data } = await openHands.post<{
       conversation_id: string;
     }>("/api/conversation", {

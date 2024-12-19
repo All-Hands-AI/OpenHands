@@ -134,7 +134,8 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
             className="text-[17px] leading-5 py-[17px]"
             buttonClassName="pb-[17px]"
             disabled={
-              navigation.state === "submitting" || newConversationMutation.isPending
+              navigation.state === "submitting" ||
+              newConversationMutation.isPending
             }
           />
         </div>
