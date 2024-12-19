@@ -20,14 +20,16 @@ ERROR_KEYWORDS = [
 ]
 
 
-def get_bootstrap_accuracy_std(values: float | int | bool, num_samples: int = 1000) -> float:
-    # Borrow from https://github.com/openai/evals/blob/cdb8ce9547e68b8e5e4520b6a162294c06865c0f/evals/metrics.py#L21
-    return np.std(
+def get_bootstrap_accuracy_error_bars(values: float | int | bool, num_samples: int = 1000, p_value=0.05) -> tuple[float, float]:
+    sorted_vals = np.sort(
         [
             np.mean(random.sample(values, len(values) // 2))
             for _ in range(num_samples)
         ]
     )
+    bottom_idx = int(num_samples * p_value / 2)
+    top_idx = int(num_samples * (1.0 - p_value / 2))
+    return (sorted_vals[bottom_idx], sorted_vals[top_idx])
 
 
 def process_file(file_path):
@@ -116,7 +118,7 @@ def process_file(file_path):
         'resolved': {
             'count': num_resolved,
             'percentage': (num_resolved / num_lines * 100) if num_lines > 0 else 0,
-            'std': get_bootstrap_accuracy_std(resolved_arr) * 100,
+            'ci': tuple(x * 100 for x in get_bootstrap_accuracy_error_bars(resolved_arr)),
         },
         'empty_patches': {
             'count': num_empty_patch,
@@ -191,7 +193,7 @@ def aggregate_directory(input_path) -> pd.DataFrame:
     )
 
     df['resolve_rate'] = df['resolved'].apply(lambda x: x['percentage'])
-    df['resolve_rate_std'] = df['resolved'].apply(lambda x: x['std'])
+    df['resolve_rate_ci'] = df['resolved'].apply(lambda x: x['ci'])
     df['empty_patch_rate'] = df['empty_patches'].apply(lambda x: x['percentage'])
     df['unfinished_rate'] = df['unfinished_runs'].apply(lambda x: x['percentage'])
     df['avg_turns'] = df['statistics'].apply(lambda x: x['avg_turns'])
@@ -260,7 +262,7 @@ if __name__ == '__main__':
             # Print detailed results for single file
             print(f'\nResults for {args.input_path}:')
             print(
-                f"Number of resolved: {result['resolved']['count']} / {result['total_instances']} ({result['resolved']['percentage']:.2f}% ± {result['resolved']['std']:.2f}%)"
+                f"Number of resolved: {result['resolved']['count']} / {result['total_instances']} ({result['resolved']['percentage']:.2f}% [{result['resolved']['ci'][0]:.2f}%, {result['resolved']['ci'][1]:.2f}%])"
             )
             print(
                 f"Number of empty patch: {result['empty_patches']['count']} / {result['total_instances']} ({result['empty_patches']['percentage']:.2f}%)"
