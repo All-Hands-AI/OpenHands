@@ -1,8 +1,7 @@
 import posthog from "posthog-js";
 import React from "react";
 import { io, Socket } from "socket.io-client";
-import { Settings } from "#/services/settings";
-import ActionType from "#/types/action-type";
+
 import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
 import { useRate } from "#/hooks/use-rate";
@@ -36,22 +35,19 @@ const WsClientContext = React.createContext<UseWsClient>({
 
 interface WsClientProviderProps {
   enabled: boolean;
-  token: string | null;
+  conversationId: string;
   ghToken: string | null;
   selectedRepository: string | null;
-  settings: Settings | null;
 }
 
 export function WsClientProvider({
   enabled,
-  token,
   ghToken,
   selectedRepository,
-  settings,
+  conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
   const sioRef = React.useRef<Socket | null>(null);
-  const tokenRef = React.useRef<string | null>(token);
   const ghTokenRef = React.useRef<string | null>(ghToken);
   const selectedRepositoryRef = React.useRef<string | null>(selectedRepository);
   const disconnectRef = React.useRef<ReturnType<typeof setTimeout> | null>(
@@ -73,25 +69,6 @@ export function WsClientProvider({
 
   function handleConnect() {
     setStatus(WsClientProviderStatus.OPENING);
-
-    const initEvent: Record<string, unknown> = {
-      action: ActionType.INIT,
-      args: settings,
-    };
-    if (token) {
-      initEvent.token = token;
-    }
-    if (ghToken) {
-      initEvent.github_token = ghToken;
-    }
-    if (selectedRepository) {
-      initEvent.selected_repository = selectedRepository;
-    }
-    const lastEvent = lastEventRef.current;
-    if (lastEvent) {
-      initEvent.latest_event_id = lastEvent.id;
-    }
-    send(initEvent);
   }
 
   function handleMessage(event: Record<string, unknown>) {
@@ -116,9 +93,7 @@ export function WsClientProvider({
       return;
     }
 
-    if (!event.token) {
-      handleAssistantMessage(event);
-    }
+    handleAssistantMessage(event);
   }
 
   function handleDisconnect() {
@@ -130,11 +105,13 @@ export function WsClientProvider({
     setStatus(WsClientProviderStatus.ERROR);
   }
 
-  // Connect websocket
   React.useEffect(() => {
+    if (!conversationId) {
+      throw new Error("No conversation ID provided");
+    }
+
     let sio = sioRef.current;
 
-    // If disabled disconnect any existing websockets...
     if (!enabled) {
       if (sio) {
         sio.disconnect();
@@ -142,21 +119,22 @@ export function WsClientProvider({
       return () => {};
     }
 
-    // If there is no websocket or the tokens have changed or the current websocket is disconnected,
-    // create a new one
-    if (
-      !sio ||
-      (tokenRef.current && token && token !== tokenRef.current) ||
-      ghToken !== ghTokenRef.current
-    ) {
-      sio?.disconnect();
+    const lastEvent = lastEventRef.current;
+    const query = {
+      latest_event_id: lastEvent?.id ?? -1,
+      conversation_id: conversationId,
+    };
 
-      const baseUrl =
-        import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
-      sio = io(baseUrl, {
-        transports: ["websocket"],
-      });
-    }
+    const baseUrl =
+      import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
+
+    sio = io(baseUrl, {
+      transports: ["websocket"],
+      auth: {
+        github_token: ghToken || undefined,
+      },
+      query,
+    });
     sio.on("connect", handleConnect);
     sio.on("oh_event", handleMessage);
     sio.on("connect_error", handleError);
@@ -164,7 +142,6 @@ export function WsClientProvider({
     sio.on("disconnect", handleDisconnect);
 
     sioRef.current = sio;
-    tokenRef.current = token;
     ghTokenRef.current = ghToken;
     selectedRepositoryRef.current = selectedRepository;
 
@@ -175,7 +152,7 @@ export function WsClientProvider({
       sio.off("connect_failed", handleError);
       sio.off("disconnect", handleDisconnect);
     };
-  }, [enabled, token, ghToken, selectedRepository]);
+  }, [enabled, ghToken, selectedRepository, conversationId]);
 
   // Strict mode mounts and unmounts each component twice, so we have to wait in the destructor
   // before actually disconnecting the socket and cancel the operation if the component gets remounted.

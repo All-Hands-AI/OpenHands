@@ -3,12 +3,14 @@ import os
 from openhands.core.logger import openhands_logger as logger
 from openhands.storage.files import FileStore
 
+IN_MEMORY_FILES: dict = {}
+
 
 class InMemoryFileStore(FileStore):
     files: dict[str, str]
 
     def __init__(self):
-        self.files = {}
+        self.files = IN_MEMORY_FILES
 
     def write(self, path: str, contents: str) -> None:
         self.files[path] = contents

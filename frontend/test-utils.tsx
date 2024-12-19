@@ -10,8 +10,20 @@ import { I18nextProvider } from "react-i18next";
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { AppStore, RootState, rootReducer } from "./src/store";
+import { vi } from "vitest";
 import { AuthProvider } from "#/context/auth-context";
 import { UserPrefsProvider } from "#/context/user-prefs-context";
+import { ConversationProvider } from "#/context/conversation-context";
+
+// Mock useParams before importing components
+vi.mock("react-router", async () => {
+  const actual =
+    await vi.importActual<typeof import("react-router")>("react-router");
+  return {
+    ...actual,
+    useParams: () => ({ conversationId: "test-conversation-id" }),
+  };
+});
 
 // Initialize i18n for tests
 i18n
@@ -60,11 +72,13 @@ export function renderWithProviders(
       <Provider store={store}>
         <UserPrefsProvider>
           <AuthProvider>
-            <QueryClientProvider client={new QueryClient()}>
-              <I18nextProvider i18n={i18n}>
-                {children}
-              </I18nextProvider>
-            </QueryClientProvider>
+            <ConversationProvider>
+              <QueryClientProvider client={new QueryClient()}>
+                <I18nextProvider i18n={i18n}>
+                    {children}
+                </I18nextProvider>
+              </QueryClientProvider>
+            </ConversationProvider>
           </AuthProvider>
         </UserPrefsProvider>
       </Provider>

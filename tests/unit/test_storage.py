@@ -19,6 +19,10 @@ class _StorageTest(ABC):
     store: FileStore
 
     def get_store(self) -> FileStore:
+        try:
+            self.store.delete('')
+        except Exception:
+            pass
         return self.store
 
     def test_basic_fileops(self):

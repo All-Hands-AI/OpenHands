@@ -1,5 +1,9 @@
+from urllib.parse import parse_qs
+
+from github import Github
+from socketio.exceptions import ConnectionRefusedError
+
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.schema.action import ActionType
 from openhands.events.action import (
     NullAction,
 )
@@ -9,73 +13,50 @@ from openhands.events.observation import (
 from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
-from openhands.server.auth import get_sid_from_token, sign_token
-from openhands.server.routes.settings import SettingsStoreImpl
-from openhands.server.session.session_init_data import SessionInitData
+from openhands.server.session.manager import ConversationDoesNotExistError
 from openhands.server.shared import config, session_manager, sio
+from openhands.storage.conversation.conversation_store import (
+    ConversationStore,
+)
+from openhands.utils.async_utils import call_sync_from_async
 
 
 @sio.event
-async def connect(connection_id: str, environ):
+async def connect(connection_id: str, environ, auth):
     logger.info(f'sio:connect: {connection_id}')
+    query_params = parse_qs(environ.get('QUERY_STRING', ''))
+    latest_event_id = int(query_params.get('latest_event_id', [-1])[0])
+    conversation_id = query_params.get('conversation_id', [None])[0]
+    if not conversation_id:
+        logger.error('No conversation_id in query params')
+        raise ConnectionRefusedError('No conversation_id in query params')
 
+    user_id = ''
+    if auth and 'github_token' in auth:
+        g = Github(auth['github_token'])
+        gh_user = await call_sync_from_async(g.get_user)
+        user_id = gh_user.id
 
-@sio.event
-async def oh_action(connection_id: str, data: dict):
-    # If it's an init, we do it here.
-    action = data.get('action', '')
-    if action == ActionType.INIT:
-        await init_connection(
-            connection_id=connection_id,
-            token=data.get('token', None),
-            github_token=data.get('github_token', None),
-            session_init_args={
-                k.lower(): v for k, v in (data.get('args') or {}).items()
-            },
-            latest_event_id=int(data.get('latest_event_id', -1)),
-            selected_repository=data.get('selected_repository'),
+    logger.info(f'User {user_id} is connecting to conversation {conversation_id}')
+
+    conversation_store = await ConversationStore.get_instance(config)
+    metadata = await conversation_store.get_metadata(conversation_id)
+    if metadata.github_user_id != user_id:
+        logger.error(
+            f'User {user_id} is not allowed to join conversation {conversation_id}'
         )
-        return
+        raise ConnectionRefusedError(
+            f'User {user_id} is not allowed to join conversation {conversation_id}'
+        )
 
-    logger.info(f'sio:oh_action:{connection_id}')
-    await session_manager.send_to_event_stream(connection_id, data)
+    try:
+        event_stream = await session_manager.join_conversation(
+            conversation_id, connection_id
+        )
+    except ConversationDoesNotExistError:
+        logger.error(f'Conversation {conversation_id} does not exist')
+        raise ConnectionRefusedError(f'Conversation {conversation_id} does not exist')
 
-
-async def init_connection(
-    connection_id: str,
-    token: str | None,
-    github_token: str | None,
-    session_init_args: dict,
-    latest_event_id: int,
-    selected_repository: str | None,
-):
-    settings_store = await SettingsStoreImpl.get_instance(config, github_token)
-    settings = await settings_store.load()
-    if settings:
-        session_init_args = {**settings.__dict__, **session_init_args}
-    session_init_args['github_token'] = github_token
-    session_init_args['selected_repository'] = selected_repository
-    session_init_data = SessionInitData(**session_init_args)
-
-    if token:
-        sid = get_sid_from_token(token, config.jwt_secret)
-        if sid == '':
-            await sio.emit('oh_event', {'error': 'Invalid token', 'error_code': 401})
-            return
-        logger.info(f'Existing session: {sid}')
-    else:
-        sid = connection_id
-        logger.info(f'New session: {sid}')
-
-    token = sign_token({'sid': sid}, config.jwt_secret)
-    await sio.emit('oh_event', {'token': token, 'status': 'ok'}, to=connection_id)
-
-    # The session in question should exist, but may not actually be running locally...
-    event_stream = await session_manager.init_or_join_session(
-        sid, connection_id, session_init_data
-    )
-
-    # Send events
     agent_state_changed = None
     async_stream = AsyncEventStreamWrapper(event_stream, latest_event_id + 1)
     async for event in async_stream:
@@ -96,6 +77,11 @@ async def init_connection(
         await sio.emit('oh_event', event_to_dict(event), to=connection_id)
     if agent_state_changed:
         await sio.emit('oh_event', event_to_dict(agent_state_changed), to=connection_id)
+
+
+@sio.event
+async def oh_action(connection_id: str, data: dict):
+    await session_manager.send_to_event_stream(connection_id, data)
 
 
 @sio.event

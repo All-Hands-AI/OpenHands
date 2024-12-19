@@ -19,6 +19,10 @@ _REDIS_POLL_TIMEOUT = 1.5
 _CHECK_ALIVE_INTERVAL = 15
 
 
+class ConversationDoesNotExistError(Exception):
+    pass
+
+
 @dataclass
 class SessionManager:
     sio: socketio.AsyncServer
@@ -170,6 +174,25 @@ class SessionManager:
             self._active_conversations[sid] = (c, 1)
             return c
 
+    async def join_conversation(self, sid: str, connection_id: str) -> EventStream:
+        await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
+        self.local_connection_id_to_session_id[connection_id] = sid
+
+        # If we have a local session running, use that
+        session = self.local_sessions_by_sid.get(sid)
+        if session:
+            logger.info(f'found_local_session:{sid}')
+            return session.agent_session.event_stream
+
+        # If there is a remote session running, retrieve existing events for that
+        redis_client = self._get_redis_client()
+        if redis_client and await self._is_session_running_in_cluster(sid):
+            return EventStream(sid, self.file_store)
+
+        raise ConversationDoesNotExistError(
+            f'no_conversation_for_id:{connection_id}:{sid}'
+        )
+
     async def detach_from_conversation(self, conversation: Conversation):
         sid = conversation.sid
         async with self._conversations_lock:
@@ -202,25 +225,6 @@ class SessionManager:
             except Exception:
                 logger.warning('error_cleaning_detached_conversations', exc_info=True)
                 await asyncio.sleep(15)
-
-    async def init_or_join_session(
-        self, sid: str, connection_id: str, session_init_data: SessionInitData
-    ):
-        await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
-        self.local_connection_id_to_session_id[connection_id] = sid
-
-        # If we have a local session running, use that
-        session = self.local_sessions_by_sid.get(sid)
-        if session:
-            logger.info(f'found_local_session:{sid}')
-            return session.agent_session.event_stream
-
-        # If there is a remote session running, retrieve existing events for that
-        redis_client = self._get_redis_client()
-        if redis_client and await self._is_session_running_in_cluster(sid):
-            return EventStream(sid, self.file_store)
-
-        return await self.start_local_session(sid, session_init_data)
 
     async def _is_session_running_in_cluster(self, sid: str) -> bool:
         """As the rest of the cluster if a session is running. Wait a for a short timeout for a reply"""
@@ -275,9 +279,8 @@ class SessionManager:
         finally:
             self._has_remote_connections_flags.pop(sid)
 
-    async def start_local_session(self, sid: str, session_init_data: SessionInitData):
-        # Start a new local session
-        logger.info(f'start_new_local_session:{sid}')
+    async def start_agent_loop(self, sid: str, session_init_data: SessionInitData):
+        logger.info(f'start_agent_loop:{sid}')
         session = Session(
             sid=sid, file_store=self.file_store, config=self.config, sio=self.sio
         )
