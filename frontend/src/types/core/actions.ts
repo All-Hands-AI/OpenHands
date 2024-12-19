@@ -104,7 +104,7 @@ export interface FileReadAction extends OpenHandsActionEvent<"read"> {
   args: {
     path: string;
     thought: string;
-    aci_output: string | null;
+    translated_ipython_code: string | null;
   };
 }
 
@@ -121,8 +121,7 @@ export interface FileEditAction extends OpenHandsActionEvent<"edit"> {
   source: "agent";
   args: {
     path: string;
-    aci_output: string; // This action is only used by the ACI
-    file_diff: string;
+    translated_ipython_code: string;
   };
 }
 
@@ -143,6 +142,7 @@ export type OpenHandsAction =
   | BrowseAction
   | BrowseInteractiveAction
   | FileReadAction
+  | FileEditAction
   | FileWriteAction
   | AddTaskAction
   | ModifyTaskAction
