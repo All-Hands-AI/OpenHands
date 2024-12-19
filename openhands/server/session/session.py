@@ -169,10 +169,13 @@ class Session:
         await self._send(data)
 
     async def _send(self, data: dict[str, object]) -> bool:
+        logger.info('Sending data to client: %s', data)
         try:
             if not self.is_alive:
+                logger.warning('Client is not alive')
                 return False
             if self.sio:
+                logger.info('emitting to room: %s', ROOM_KEY.format(sid=self.sid))
                 await self.sio.emit('oh_event', data, to=ROOM_KEY.format(sid=self.sid))
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
@@ -188,6 +191,7 @@ class Session:
 
     async def _send_status_message(self, msg_type: str, id: str, message: str):
         """Sends a status message to the client."""
+        logger.info('Sending status message: %s', message)
         if msg_type == 'error':
             await self.agent_session.stop_agent_loop_for_error()
 
