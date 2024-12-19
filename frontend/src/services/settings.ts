@@ -74,8 +74,15 @@ export const getSettings = async (): Promise<Settings> => {
     if (!response.ok) {
       throw new Error("Failed to load settings");
     }
-    const settings = await response.json();
+    let settings = await response.json();
     if (settings != null) {
+      // For now, we have the objects with the same keys in upper / lower case and need to translate...
+      settings = Object.keys(settings).reduce((result: any, key: string) => {
+        const settingsKey = key.toUpperCase();
+        result[settingsKey] = settings[key] || DEFAULT_SETTINGS[settingsKey as keyof Settings]
+        return result
+      }, {})
+
       return {
         ...DEFAULT_SETTINGS,
         ...settings,
@@ -85,20 +92,20 @@ export const getSettings = async (): Promise<Settings> => {
     console.error("Error loading settings:", error);
     return DEFAULT_SETTINGS;
   }
-  const model = localStorage.getItem("LLM_MODEL");
+  const llmModel = localStorage.getItem("LLM_MODEL");
   const baseUrl = localStorage.getItem("LLM_BASE_URL");
   const agent = localStorage.getItem("AGENT");
   const language = localStorage.getItem("LANGUAGE");
-  const apiKey = localStorage.getItem("LLM_API_KEY");
+  const llmApiKey = localStorage.getItem("LLM_API_KEY");
   const confirmationMode = localStorage.getItem("CONFIRMATION_MODE") === "true";
   const securityAnalyzer = localStorage.getItem("SECURITY_ANALYZER");
 
   return {
-    LLM_MODEL: model || DEFAULT_SETTINGS.LLM_MODEL,
+    LLM_MODEL: llmModel || DEFAULT_SETTINGS.LLM_MODEL,
     LLM_BASE_URL: baseUrl || DEFAULT_SETTINGS.LLM_BASE_URL,
     AGENT: agent || DEFAULT_SETTINGS.AGENT,
     LANGUAGE: language || DEFAULT_SETTINGS.LANGUAGE,
-    LLM_API_KEY: apiKey || DEFAULT_SETTINGS.LLM_API_KEY,
+    LLM_API_KEY: llmApiKey || DEFAULT_SETTINGS.LLM_API_KEY,
     CONFIRMATION_MODE: confirmationMode || DEFAULT_SETTINGS.CONFIRMATION_MODE,
     SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
   };
@@ -112,12 +119,11 @@ export const saveSettings = async (
   settings: Partial<Settings>
 ): Promise<boolean> => {
   try {
-    // Filter out invalid keys
-    const validSettings = Object.fromEntries(
-      Object.entries(settings).filter(([key]) =>
-        validKeys.includes(key as keyof Settings),
-      ),
-    );
+    // For now, we have the objects with the same keys in upper / lower case and need to translate...
+    const validSettings = Object.keys(settings).reduce((result: any, key: string) => {
+      result[key.toLowerCase()] = settings[key as keyof Settings] || DEFAULT_SETTINGS[key as keyof Settings]
+      return result
+    }, {})
 
     // Clean up values
     Object.entries(validSettings).forEach(([key, value]) => {

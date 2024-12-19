@@ -44,7 +44,8 @@ async def store_settings(
         if existing_settings:
             if settings.llm_api_key is None:
                 settings.llm_api_key = existing_settings.llm_api_key
-        return await settings_store.store(settings)
+        await settings_store.store(settings)
+        return True
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
         return JSONResponse(
