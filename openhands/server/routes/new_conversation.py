@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from github import Github
 from pydantic import BaseModel
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.server.routes.settings import SettingsStoreImpl
 from openhands.server.session.session_init_data import SessionInitData
 from openhands.server.shared import config, session_manager
@@ -48,7 +49,8 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     conversation_store = await ConversationStore.get_instance(config)
 
     conversation_id = uuid.uuid4().hex
-    while conversation_store.exists(conversation_id):
+    while await conversation_store.exists(conversation_id):
+        logger.warning(f'Collision on conversation ID: {conversation_id}. Retrying...')
         conversation_id = uuid.uuid4().hex
 
     user_id = ''
