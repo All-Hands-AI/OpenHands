@@ -32,9 +32,9 @@ export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
  */
 export const getSettings = async (): Promise<Settings> => {
   try {
-    const response = await fetch('/api/settings');
+    const response = await fetch("/api/settings");
     if (!response.ok) {
-      throw new Error('Failed to load settings');
+      throw new Error("Failed to load settings");
     }
     const settings = await response.json();
     return {
@@ -42,7 +42,7 @@ export const getSettings = async (): Promise<Settings> => {
       ...settings,
     };
   } catch (error) {
-    console.error('Error loading settings:', error);
+    console.error("Error loading settings:", error);
     return DEFAULT_SETTINGS;
   }
 };
@@ -62,18 +62,18 @@ export const saveSettings = async (settings: Partial<Settings>): Promise<boolean
     Object.entries(validSettings).forEach(([key, value]) => {
       if (value === undefined || value === null) {
         validSettings[key] = "";
-      } else if (typeof value === 'string') {
+      } else if (typeof value === "string") {
         validSettings[key] = value.trim();
       }
     });
 
     // Get current settings to preserve API key if not provided
     const currentSettings = await getSettings();
-    
-    const response = await fetch('/api/settings', {
-      method: 'POST',
+
+    const response = await fetch("/api/settings", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         ...currentSettings,
@@ -82,12 +82,12 @@ export const saveSettings = async (settings: Partial<Settings>): Promise<boolean
     });
 
     if (!response.ok) {
-      throw new Error('Failed to save settings');
+      throw new Error("Failed to save settings");
     }
 
     return await response.json();
   } catch (error) {
-    console.error('Error saving settings:', error);
+    console.error("Error saving settings:", error);
     return false;
   }
 };
