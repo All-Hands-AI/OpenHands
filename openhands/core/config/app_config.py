@@ -66,6 +66,9 @@ class AppConfig:
     modal_api_token_secret: str = ''
     disable_color: bool = False
     jwt_secret: str = ''
+    attach_session_middleware_class: str = (
+        'openhands.server.middleware.AttachConversationMiddleware'
+    )
     settings_store_class: str = (
         'openhands.storage.file_settings_store.FileSettingsStore'
     )

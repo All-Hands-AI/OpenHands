@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { downloadFiles } from "#/utils/download-files";
 import { DownloadProgressState } from "#/components/shared/download-progress";
+import { useConversation } from "#/context/conversation-context";
 
 export const INITIAL_PROGRESS: DownloadProgressState = {
   filesTotal: 0,
@@ -20,6 +21,7 @@ export function useDownloadProgress(
     useState<DownloadProgressState>(INITIAL_PROGRESS);
   const progressRef = useRef<DownloadProgressState>(INITIAL_PROGRESS);
   const abortController = useRef<AbortController>();
+  const { conversationId } = useConversation();
 
   // Create AbortController on mount
   useEffect(() => {
@@ -45,7 +47,7 @@ export function useDownloadProgress(
     // Start download
     const download = async () => {
       try {
-        await downloadFiles(initialPath, {
+        await downloadFiles(conversationId, initialPath, {
           onProgress: (p) => {
             // Update both the ref and state
             progressRef.current = { ...p };

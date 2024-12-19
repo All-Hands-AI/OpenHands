@@ -13,7 +13,7 @@ class OpenhandsConfig(OpenhandsConfigInterface):
     posthog_client_key = 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
     github_client_id = os.environ.get('GITHUB_APP_CLIENT_ID', '')
     attach_session_middleware_path = (
-        'openhands.server.middleware.AttachSessionMiddleware'
+        'openhands.server.middleware.AttachConversationMiddleware'
     )
 
     def verify_config(self):
@@ -36,22 +36,12 @@ class OpenhandsConfig(OpenhandsConfigInterface):
 
         return config
 
-    async def github_auth(self, data: dict):
-        """
-        Skip Github Auth for AppMode OSS
-        """
-        pass
-
 
 def load_openhands_config():
     config_cls = os.environ.get('OPENHANDS_CONFIG_CLS', None)
     logger.info(f'Using config class {config_cls}')
 
-    if config_cls:
-        openhands_config_cls = get_impl(OpenhandsConfig, config_cls)
-    else:
-        openhands_config_cls = OpenhandsConfig
-
+    openhands_config_cls = get_impl(OpenhandsConfig, config_cls)
     openhands_config = openhands_config_cls()
     openhands_config.verify_config()
 

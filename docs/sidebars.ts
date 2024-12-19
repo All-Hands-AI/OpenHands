@@ -168,11 +168,6 @@ const sidebars: SidebarsConfig = {
           label: 'Evaluation',
           id: 'usage/how-to/evaluation-harness',
         },
-        {
-          type: 'doc',
-          label: 'Kubernetes Deployment',
-          id: 'usage/how-to/openshift-example',
-        },
       ],
     },
     {

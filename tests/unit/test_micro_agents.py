@@ -26,9 +26,6 @@ def event_stream(temp_dir):
     event_stream = EventStream('asdf', file_store)
     yield event_stream
 
-    # clear after each test
-    event_stream.clear()
-
 
 @pytest.fixture
 def agent_configs():
