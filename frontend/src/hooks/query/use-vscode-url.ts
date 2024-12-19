@@ -11,7 +11,7 @@ export const useVSCodeUrl = (config: { enabled: boolean }) => {
       if (!conversationId) throw new Error("No conversation ID");
       return OpenHands.getVSCodeUrl(conversationId);
     },
-    enabled: config.enabled,
+    enabled: !!conversationId && config.enabled,
     refetchOnMount: false,
   });
 

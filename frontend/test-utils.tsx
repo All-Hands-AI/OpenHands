@@ -73,13 +73,13 @@ export function renderWithProviders(
       <Provider store={store}>
         <UserPrefsProvider>
           <AuthProvider>
-            <QueryClientProvider client={new QueryClient()}>
-              <I18nextProvider i18n={i18n}>
-                <ConversationProvider>
-                  {children}
-                </ConversationProvider>
-              </I18nextProvider>
-            </QueryClientProvider>
+            <ConversationProvider>
+              <QueryClientProvider client={new QueryClient()}>
+                <I18nextProvider i18n={i18n}>
+                    {children}
+                </I18nextProvider>
+              </QueryClientProvider>
+            </ConversationProvider>
           </AuthProvider>
         </UserPrefsProvider>
       </Provider>
