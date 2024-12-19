@@ -34,6 +34,7 @@ body:
         - Development workflow
         - app.all-hands.dev
         - OpenHands resolver
+        - Other
       default: 0
 
   - type: input
