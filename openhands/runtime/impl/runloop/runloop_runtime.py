@@ -10,6 +10,10 @@ from runloop_api_client.types import DevboxView
 from runloop_api_client.types.shared_params import LaunchParameters
 
 from openhands.core.config import AppConfig
+from openhands.core.exceptions import (
+    AgentRuntimeNotReadyError,
+    AgentRuntimeUnavailableError,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.impl.eventstream.eventstream_runtime import EventStreamRuntime
@@ -227,7 +231,7 @@ class RunloopRuntime(EventStreamRuntime):
     )
     def _wait_until_alive(self):
         if not self.log_streamer:
-            raise RuntimeError('Runtime client is not ready.')
+            raise AgentRuntimeNotReadyError('Runtime client is not ready.')
         response = send_request(
             self.session,
             'GET',
@@ -239,7 +243,7 @@ class RunloopRuntime(EventStreamRuntime):
         else:
             msg = f'Action execution API is not alive. Response: {response}'
             logger.error(msg)
-            raise RuntimeError(msg)
+            raise AgentRuntimeUnavailableError(msg)
 
     def close(self, rm_all_containers: bool | None = True):
         if self.log_streamer:
