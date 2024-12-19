@@ -149,7 +149,7 @@ export const handlers = [
     HttpResponse.json({ message: "Authenticated" }),
   ),
 
-  http.get("/config.json", () => HttpResponse.json({ APP_MODE: "oss" })),
+  http.get("/api/options/config", () => HttpResponse.json({ APP_MODE: "oss" })),
 
   http.get("/api/conversations", async () =>
     HttpResponse.json(Array.from(CONVERSATIONS.values())),
