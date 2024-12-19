@@ -8,6 +8,7 @@ import {
   GetConfigResponse,
   GetVSCodeUrlResponse,
   AuthenticateResponse,
+  Conversation,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 
@@ -192,6 +193,36 @@ class OpenHands {
   static async getRuntimeId(): Promise<{ runtime_id: string }> {
     const { data } = await openHands.get<{ runtime_id: string }>(
       "/api/conversation",
+    );
+    return data;
+  }
+
+  static async getUserConversations(): Promise<Conversation[]> {
+    const { data } = await openHands.get<Conversation[]>("/api/conversations");
+    return data;
+  }
+
+  static async deleteUserConversation(conversationId: string): Promise<void> {
+    await openHands.delete(`/api/conversations/${conversationId}`);
+  }
+
+  static async updateUserConversation(
+    conversationId: string,
+    conversation: Partial<Omit<Conversation, "id">>,
+  ): Promise<void> {
+    await openHands.put(`/api/conversations/${conversationId}`, conversation);
+  }
+
+  static async createConversation(): Promise<Conversation> {
+    const { data } = await openHands.post<Conversation>("/api/conversations");
+    return data;
+  }
+
+  static async getConversation(
+    conversationId: string,
+  ): Promise<Conversation | null> {
+    const { data } = await openHands.get<Conversation | null>(
+      `/api/conversations/${conversationId}`,
     );
     return data;
   }

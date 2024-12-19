@@ -24,7 +24,7 @@ export interface AssistantMessageAction
   extends OpenHandsActionEvent<"message"> {
   source: "agent";
   args: {
-    content: string;
+    thought: string;
     image_urls: string[] | null;
     wait_for_response: boolean;
   };
