@@ -104,6 +104,7 @@ export interface FileReadAction extends OpenHandsActionEvent<"read"> {
   args: {
     path: string;
     thought: string;
+    aci_output: string | null;
   };
 }
 
@@ -113,6 +114,15 @@ export interface FileWriteAction extends OpenHandsActionEvent<"write"> {
     path: string;
     content: string;
     thought: string;
+  };
+}
+
+export interface FileEditAction extends OpenHandsActionEvent<"edit"> {
+  source: "agent";
+  args: {
+    path: string;
+    aci_output: string; // This action is only used by the ACI
+    file_diff: string;
   };
 }
 
