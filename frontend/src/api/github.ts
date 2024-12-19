@@ -24,7 +24,7 @@ export const retrieveGitHubAppRepositories = async (
   installationIndex: number,
   installations: number[],
   page = 1,
-  per_page = 2,
+  per_page = 30,
 ) => {
   const installationId = installations[installationIndex];
   const response = await openHands.get<GitHubAppRepository>(
@@ -39,12 +39,8 @@ export const retrieveGitHubAppRepositories = async (
     },
   );
 
-  console.log("repo list response", response);
-
   const link = response.headers.link ?? "";
-  console.log("response link", link);
   const nextPage = extractNextPageFromLink(link);
-  console.log("nextPage", nextPage);
   let nextInstallation: number | null;
 
   if (nextPage) {
@@ -82,7 +78,6 @@ export const retrieveGitHubUserRepositories = async (
   );
 
   const link = response.headers.link ?? "";
-  console.log("retrieved link", link);
   const nextPage = extractNextPageFromLink(link);
 
   return { data: response.data, nextPage };

@@ -2,7 +2,6 @@ import requests
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 
-from openhands.core.logger import openhands_logger as logger
 from openhands.server.shared import openhands_config
 
 app = APIRouter(prefix='/api')
@@ -42,8 +41,6 @@ def get_github_repositories(
         'Authorization': f'Bearer {github_token}',
         'Accept': 'application/vnd.github.v3+json',
     }
-
-    logger.info(f'Using api url {github_api_url} with per page {per_page}')
 
     # Fetch repositories from GitHub
     try:
