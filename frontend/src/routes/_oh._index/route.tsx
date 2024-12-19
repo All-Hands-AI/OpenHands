@@ -37,7 +37,7 @@ function Home() {
   });
 
   React.useEffect(() => {
-    if (token) navigate("/app");
+    if (token) navigate("/conversation");
   }, [location.pathname]);
 
   return (
