@@ -29,6 +29,11 @@ call APIs, and yes—even copy code snippets from StackOverflow.
 
 Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or jump to the [Quick Start](#-quick-start).
 
+> [!IMPORTANT]
+> Using OpenHands for work? We'd love to chat! Fill out
+> [this short form](https://docs.google.com/forms/d/e/1FAIpQLSet3VbGaz8z32gW9Wm-Grl4jpt5WgMXPgJ4EDPVmCETCBpJtQ/viewform)
+> to join our Design Partner program, where you'll get early access to commercial features and the opportunity to provide input on our product roadmap.
+
 ![App screenshot](./docs/static/img/screenshot.png)
 
 ## ⚡ Quick Start
@@ -38,16 +43,17 @@ See the [Installation](https://docs.all-hands.dev/modules/usage/installation) gu
 system requirements and more information.
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.15-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.16-nikolaik
 
-docker run -it --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.15-nikolaik \
+docker run -it --rm --pull=always \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.16-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
+    -v ~/.openhands:/home/openhands/.openhands \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.15
+    docker.all-hands.dev/all-hands-ai/openhands:0.16
 ```
 
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!

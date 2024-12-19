@@ -5,7 +5,6 @@ import { ReactNode } from "react";
 import { useTerminal } from "#/hooks/use-terminal";
 import { Command } from "#/state/command-slice";
 
-
 interface TestTerminalComponentProps {
   commands: Command[];
   secrets: string[];
@@ -15,7 +14,7 @@ function TestTerminalComponent({
   commands,
   secrets,
 }: TestTerminalComponentProps) {
-  const ref = useTerminal(commands, secrets);
+  const ref = useTerminal({ commands, secrets, disabled: false });
   return <div ref={ref} />;
 }
 
@@ -24,9 +23,7 @@ interface WrapperProps {
 }
 
 function Wrapper({ children }: WrapperProps) {
-  return (
-    <div>{children}</div>
-  )
+  return <div>{children}</div>;
 }
 
 describe("useTerminal", () => {
