@@ -1,8 +1,7 @@
-import React from "react";
 import { Autocomplete, AutocompleteItem } from "@nextui-org/react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
-import { useState } from "react";
+import React, { useState } from "react";
 import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useRepositorySearch } from "#/hooks/query/use-repository-search";
 import { useConfig } from "#/hooks/query/use-config";
@@ -16,16 +15,15 @@ export function GitHubRepositorySelector({
 }: GitHubRepositorySelectorProps) {
   const { data: config } = useConfig();
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
+  const dispatch = useDispatch();
+  const [searchQuery, setSearchQuery] = useState("");
+  const { repositories, isLoading } = useRepositorySearch(searchQuery);
 
   // Add option to install app onto more repos
   const finalRepositories =
     config?.APP_MODE === "saas"
       ? [{ id: -1000, full_name: "Add more repositories..." }, ...repositories]
       : repositories;
-
-  const dispatch = useDispatch();
-  const [searchQuery, setSearchQuery] = useState("");
-  const { repositories, isLoading } = useRepositorySearch(searchQuery);
 
   const handleRepoSelection = (id: string | null) => {
     const repo = finalRepositories.find((r) => r.id.toString() === id);
@@ -91,7 +89,7 @@ export function GitHubRepositorySelector({
           className="flex items-center justify-between"
         >
           <span>{repo.full_name}</span>
-          {repo.stargazers_count > 0 && (
+          {"stargazers_count" in repo && repo.stargazers_count > 0 && (
             <span className="text-xs text-neutral-400">
               ⭐ {repo.stargazers_count.toLocaleString()}
             </span>

@@ -2,6 +2,20 @@ import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
 import { github } from "./github-axios-instance";
 import { openHands } from "./open-hands-axios";
 
+interface GitHubErrorReponse {
+  message: string;
+  documentation_url: string;
+}
+
+function isGitHubErrorReponse(data: unknown): data is GitHubErrorReponse {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    "message" in data &&
+    "documentation_url" in data
+  );
+}
+
 /**
  * Given the user, retrieves app installations IDs for OpenHands Github App
  * Uses user access token for Github App
