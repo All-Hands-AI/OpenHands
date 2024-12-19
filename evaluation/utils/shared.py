@@ -16,6 +16,16 @@ from tqdm import tqdm
 
 from openhands.controller.state.state import State
 from openhands.core.config import LLMConfig
+from openhands.core.exceptions import (
+    AgentRuntimeBuildError,
+    AgentRuntimeDisconnectedError,
+    AgentRuntimeError,
+    AgentRuntimeNotFoundError,
+    AgentRuntimeNotReadyError,
+    AgentRuntimeTimeoutError,
+    AgentRuntimeUnavailableError,
+    AgentStuckInLoopError,
+)
 from openhands.core.logger import get_console_handler
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import Action
@@ -503,3 +513,25 @@ def compatibility_for_eval_history_pairs(
         history_pairs.append((event_to_dict(action), event_to_dict(observation)))
 
     return history_pairs
+
+
+def is_fatal_evaluation_error(error: str | None) -> bool:
+    if not error:
+        return False
+
+    FATAL_EXCEPTIONS = [
+        AgentRuntimeError,
+        AgentRuntimeBuildError,
+        AgentRuntimeTimeoutError,
+        AgentRuntimeUnavailableError,
+        AgentRuntimeNotReadyError,
+        AgentRuntimeDisconnectedError,
+        AgentRuntimeNotFoundError,
+        AgentStuckInLoopError,
+    ]
+
+    if any(exception.__name__ in error for exception in FATAL_EXCEPTIONS):
+        logger.error(f'Fatal evaluation error detected: {error}')
+        return True
+
+    return False
