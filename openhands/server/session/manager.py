@@ -202,6 +202,7 @@ class SessionManager:
             except Exception:
                 logger.warning('error_cleaning_detached_conversations', exc_info=True)
                 await asyncio.sleep(15)
+
     async def init_or_join_session(
         self, sid: str, connection_id: str, session_init_data: SessionInitData
     ):
