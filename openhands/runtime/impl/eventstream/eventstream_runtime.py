@@ -109,6 +109,7 @@ class EventStreamRuntime(Runtime):
         self.config = config
         self._host_port = 30000  # initial dummy value
         self._container_port = 30001  # initial dummy value
+        self.default_port_mapping = {4141: 4141, 4142: 4142}
         self._vscode_url: str | None = None  # initial dummy value
         self._runtime_initialized: bool = False
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
@@ -230,11 +231,38 @@ class EventStreamRuntime(Runtime):
         use_host_network = self.config.sandbox.use_host_network
         network_mode: str | None = 'host' if use_host_network else None
 
-        port_mapping: dict[str, list[dict[str, str]]] | None = (
-            None
-            if use_host_network
-            else {f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}]}
-        )
+        use_host_network = self.config.sandbox.use_host_network
+
+        # Initialize port mappings
+        port_mapping: dict[str, list[dict[str, str]]] | None = None
+        if not use_host_network:
+            port_mapping = {
+                f'{self._container_port}/tcp': [{'HostPort': str(self._host_port)}],
+            }
+
+            # Dynamically add a port from ports dictionary
+            for container_port, host_port in self.default_port_mapping.items():
+                port_mapping[f'{container_port}/tcp'] = [{'HostPort': str(host_port)}]
+
+            # Add custom port mappings from config if specified
+            if (
+                hasattr(self.config.sandbox, 'port_mappings')
+                and self.config.sandbox.port_mappings
+            ):
+                for (
+                    container_port,
+                    host_port,
+                ) in self.config.sandbox.port_mappings.items():
+                    port_mapping[f'{container_port}/tcp'] = [
+                        {'HostPort': str(host_port)}
+                    ]
+
+        if self.vscode_enabled:
+            # vscode is on port +1 from container port
+            if isinstance(port_mapping, dict):
+                port_mapping[f'{self._container_port + 1}/tcp'] = [
+                    {'HostPort': str(self._host_port + 1)}
+                ]
 
         if use_host_network:
             self.log(
@@ -249,13 +277,6 @@ class EventStreamRuntime(Runtime):
         }
         if self.config.debug or DEBUG:
             environment['DEBUG'] = 'true'
-
-        if self.vscode_enabled:
-            # vscode is on port +1 from container port
-            if isinstance(port_mapping, dict):
-                port_mapping[f'{self._container_port + 1}/tcp'] = [
-                    {'HostPort': str(self._host_port + 1)}
-                ]
 
         self.log('debug', f'Workspace Base: {self.config.workspace_base}')
         if (
@@ -324,6 +345,7 @@ class EventStreamRuntime(Runtime):
                     'error',
                     f'Error: Instance {self.container_name} FAILED to start container!\n',
                 )
+                self.log('error', str(e))
         except Exception as e:
             self.log(
                 'error',
@@ -612,3 +634,15 @@ class EventStreamRuntime(Runtime):
                 return self._vscode_url
         else:
             return None
+
+    @property
+    def web_hosts(self):
+        ports = []
+
+        for port in self.default_port_mapping.values():
+            ports.append(f'http://localhost:{port}')
+
+        for port in self.config.sandbox.port_mappings.values():
+            ports.append(f'http://localhost:{port}')
+
+        return ports

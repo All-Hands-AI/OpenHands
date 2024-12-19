@@ -63,6 +63,20 @@ class PromptManager:
         with open(template_path, 'r') as file:
             return Template(file.read())
 
+    def extend_system_prompt(self, instruction: str) -> None:
+        """
+        Extends the system prompt.
+
+        Parameters:
+            instruction: The instruction to add to the system prompt
+        """
+
+        modified_template = self.system_template.render(
+            additional_instruction=instruction
+        )
+
+        self.system_template = Template(modified_template)
+
     def get_system_message(self) -> str:
         return self.system_template.render().strip()
 
