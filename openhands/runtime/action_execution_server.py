@@ -31,32 +31,27 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action import (
-    Action,
-    BrowseInteractiveAction,
-    BrowseURLAction,
-    CmdRunAction,
-    FileReadAction,
-    FileWriteAction,
-    IPythonRunCellAction,
-)
+from openhands.events.action import (Action, BrowseInteractiveAction,
+                                     BrowseURLAction, CmdRunAction,
+                                     FileReadAction, FileWriteAction,
+                                     IPythonRunCellAction)
 from openhands.events.event import FileEditSource, FileReadSource
-from openhands.events.observation import (
-    CmdOutputObservation,
-    ErrorObservation,
-    FileEditObservation,
-    FileReadObservation,
-    FileWriteObservation,
-    IPythonRunCellObservation,
-    Observation,
-)
+from openhands.events.observation import (CmdOutputObservation,
+                                          ErrorObservation,
+                                          FileEditObservation,
+                                          FileReadObservation,
+                                          FileWriteObservation,
+                                          IPythonRunCellObservation,
+                                          Observation)
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
-from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
+from openhands.runtime.plugins import (ALL_PLUGINS, JupyterPlugin, Plugin,
+                                       VSCodePlugin)
 from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
-from openhands.runtime.utils.runtime_init import init_user_and_working_directory
+from openhands.runtime.utils.runtime_init import \
+    init_user_and_working_directory
 from openhands.runtime.utils.system import check_port_available
 from openhands.runtime.utils.system_stats import get_system_stats
 from openhands.utils.async_utils import call_sync_from_async, wait_all
@@ -221,7 +216,7 @@ class ActionExecutor:
                                 result_dict['new_content'] is not None
                             ):  # File edit commands
                                 diff = get_diff(
-                                    old_contents=result_dict['old_content'],
+                                    old_contents=result_dict['old_content'] or '', # old_content is None when file is created
                                     new_contents=result_dict['new_content'],
                                     filepath=result_dict['path'],
                                 )
