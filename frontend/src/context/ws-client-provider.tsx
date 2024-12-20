@@ -11,10 +11,8 @@ const isOpenHandsMessage = (event: Record<string, unknown>) =>
   event.action === "message";
 
 export enum WsClientProviderStatus {
-  STOPPED,
-  OPENING,
-  ACTIVE,
-  ERROR,
+  CONNECTED,
+  DISCONNECTED,
 }
 
 interface UseWsClient {
@@ -25,7 +23,7 @@ interface UseWsClient {
 }
 
 const WsClientContext = React.createContext<UseWsClient>({
-  status: WsClientProviderStatus.STOPPED,
+  status: WsClientProviderStatus.DISCONNECTED,
   isLoadingMessages: true,
   events: [],
   send: () => {
@@ -48,7 +46,7 @@ export function WsClientProvider({
   const disconnectRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const [status, setStatus] = React.useState(WsClientProviderStatus.STOPPED);
+  const [status, setStatus] = React.useState(WsClientProviderStatus.DISCONNECTED);
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
 
@@ -63,7 +61,7 @@ export function WsClientProvider({
   }
 
   function handleConnect() {
-    setStatus(WsClientProviderStatus.OPENING);
+    setStatus(WsClientProviderStatus.CONNECTED);
   }
 
   function handleMessage(event: Record<string, unknown>) {
@@ -75,29 +73,16 @@ export function WsClientProvider({
       lastEventRef.current = event;
     }
 
-    const extras = event.extras as Record<string, unknown>;
-    if (extras?.agent_state === AgentState.INIT) {
-      setStatus(WsClientProviderStatus.ACTIVE);
-    }
-
-    if (
-      status !== WsClientProviderStatus.ACTIVE &&
-      event?.observation === "error"
-    ) {
-      setStatus(WsClientProviderStatus.ERROR);
-      return;
-    }
-
     handleAssistantMessage(event);
   }
 
   function handleDisconnect() {
-    setStatus(WsClientProviderStatus.STOPPED);
+    setStatus(WsClientProviderStatus.DISCONNECTED);
   }
 
   function handleError() {
     posthog.capture("socket_error");
-    setStatus(WsClientProviderStatus.ERROR);
+    setStatus(WsClientProviderStatus.DISCONNECTED);
   }
 
   React.useEffect(() => {

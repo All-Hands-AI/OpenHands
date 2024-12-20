@@ -14,7 +14,7 @@ interface UseListFilesConfig {
 export const useListFiles = (config?: UseListFilesConfig) => {
   const { conversationId } = useConversation();
   const { status } = useWsClient();
-  const isActive = status === WsClientProviderStatus.ACTIVE;
+  const isActive = status === WsClientProviderStatus.CONNECTED;
 
   return useQuery({
     queryKey: ["files", conversationId, config?.path],

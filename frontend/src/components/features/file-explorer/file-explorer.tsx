@@ -38,7 +38,7 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
   const { data: paths, refetch, error } = useListFiles();
   const { mutate: uploadFiles } = useUploadFiles();
   const { data: vscodeUrl } = useVSCodeUrl({
-    enabled: status === WsClientProviderStatus.ACTIVE,
+    enabled: curAgentState !== AgentState.LOADING && curAgentState !== AgentState.STOPPED,
   });
 
   const handleOpenVSCode = () => {
@@ -170,7 +170,7 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
           {isOpen && (
             <OpenVSCodeButton
               onClick={handleOpenVSCode}
-              isDisabled={status === WsClientProviderStatus.OPENING}
+              isDisabled={status === WsClientProviderStatus.DISCONNECTED}
             />
           )}
         </div>

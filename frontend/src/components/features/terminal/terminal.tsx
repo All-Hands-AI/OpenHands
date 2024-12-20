@@ -18,7 +18,7 @@ function Terminal({ secrets }: TerminalProps) {
   const ref = useTerminal({
     commands,
     secrets,
-    disabled: status === WsClientProviderStatus.OPENING,
+    disabled: status === WsClientProviderStatus.DISCONNECTED,
   });
 
   return (
