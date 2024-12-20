@@ -36,12 +36,13 @@ Follow these steps to use this workflow in your own repository:
    - Optional:
      - `PAT_USERNAME`: GitHub username for the personal access token
      - `PAT_TOKEN`: The personal access token
-     - `LLM_MODEL`: LLM model to use (defaults to "anthropic/claude-3-5-sonnet-20241022")
      - `LLM_BASE_URL`: Base URL for LLM API (only if using a proxy)
 
    Note: You can set these secrets at the organization level to use across multiple repositories.
 
-6. Usage:
+6. Set up any [custom configurations required](https://docs.all-hands.dev/modules/usage/how-to/github-action#custom-configurations)
+
+7. Usage:
    There are two ways to trigger the OpenHands agent:
 
    a. Using the 'fix-me' label:
