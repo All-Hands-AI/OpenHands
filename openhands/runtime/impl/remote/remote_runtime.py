@@ -96,7 +96,7 @@ class RemoteRuntime(Runtime):
         )
         self.runtime_id: str | None = None
         self.runtime_url: str | None = None
-        self.open_ports: list[str] = []  # list of open port urls
+        self.available_hosts: list[str] = []
         self._runtime_initialized: bool = False
         self._vscode_url: str | None = None  # initial dummy value
 
@@ -282,7 +282,7 @@ class RemoteRuntime(Runtime):
         start_response = response.json()
         self.runtime_id = start_response['runtime_id']
         self.runtime_url = start_response['url']
-        self.open_ports = start_response.get('work_ports', [])
+        self.available_hosts = start_response.get('work_ports', [])
 
         if 'session_api_key' in start_response:
             self.session.headers.update(
@@ -322,7 +322,7 @@ class RemoteRuntime(Runtime):
 
     @property
     def web_hosts(self) -> list[str]:
-        return self.open_ports
+        return self.available_hosts
 
     def _wait_until_alive(self):
         retry_decorator = tenacity.retry(
