@@ -216,7 +216,7 @@ class ActionExecutor:
                     match = matches[0]
                     try:
                         result_dict = json.loads(match)
-                        if result_dict['path']:  # Successful output
+                        if result_dict.get('path'):  # Successful output
                             if (
                                 result_dict['new_content'] is not None
                             ):  # File edit commands
