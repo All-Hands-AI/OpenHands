@@ -7,7 +7,7 @@ from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
 from openhands.utils.async_utils import call_sync_from_async
 
-app = APIRouter(prefix='/api/conversation/{conversation_id}')
+app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
 @app.post('/submit-feedback')
