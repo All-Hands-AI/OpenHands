@@ -33,7 +33,7 @@ from openhands.server.file_config import (
 )
 from openhands.utils.async_utils import call_sync_from_async
 
-app = APIRouter(prefix='/api/conversation/{conversation_id}')
+app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
 @app.get('/list-files')

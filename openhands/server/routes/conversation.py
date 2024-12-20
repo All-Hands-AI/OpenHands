@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.base import Runtime
 
-app = APIRouter(prefix='/api/conversation/{conversation_id}')
+app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
 @app.get('/config')

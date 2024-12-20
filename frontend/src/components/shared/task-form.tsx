@@ -55,7 +55,7 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
         has_repository: !!selectedRepository,
         has_files: files.length > 0,
       });
-      navigate(`/conversation/${conversationId}`);
+      navigate(`/conversations/${conversationId}`);
     },
   });
 

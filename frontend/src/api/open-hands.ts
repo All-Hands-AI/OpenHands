@@ -59,7 +59,7 @@ class OpenHands {
     conversationId: string,
     path?: string,
   ): Promise<string[]> {
-    const url = `/api/conversation/${conversationId}/list-files`;
+    const url = `/api/conversations/${conversationId}/list-files`;
     const { data } = await openHands.get<string[]>(url, {
       params: { path },
     });
@@ -72,7 +72,7 @@ class OpenHands {
    * @returns Content of the file
    */
   static async getFile(conversationId: string, path: string): Promise<string> {
-    const url = `/api/conversation/${conversationId}/select-file`;
+    const url = `/api/conversations/${conversationId}/select-file`;
     const { data } = await openHands.get<{ code: string }>(url, {
       params: { file: path },
     });
@@ -91,7 +91,7 @@ class OpenHands {
     path: string,
     content: string,
   ): Promise<SaveFileSuccessResponse> {
-    const url = `/api/conversation/${conversationId}/save-file`;
+    const url = `/api/conversations/${conversationId}/save-file`;
     const { data } = await openHands.post<
       SaveFileSuccessResponse | ErrorResponse
     >(url, {
@@ -112,7 +112,7 @@ class OpenHands {
     conversationId: string,
     files: File[],
   ): Promise<FileUploadSuccessResponse> {
-    const url = `/api/conversation/${conversationId}/upload-files`;
+    const url = `/api/conversations/${conversationId}/upload-files`;
     const formData = new FormData();
     files.forEach((file) => formData.append("files", file));
 
@@ -133,7 +133,7 @@ class OpenHands {
     conversationId: string,
     feedback: Feedback,
   ): Promise<FeedbackResponse> {
-    const url = `/api/conversation/${conversationId}/submit-feedback`;
+    const url = `/api/conversations/${conversationId}/submit-feedback`;
     const { data } = await openHands.post<FeedbackResponse>(url, feedback);
     return data;
   }
@@ -171,7 +171,7 @@ class OpenHands {
    * @returns Blob of the workspace zip
    */
   static async getWorkspaceZip(conversationId: string): Promise<Blob> {
-    const url = `/api/conversation/${conversationId}/zip-directory`;
+    const url = `/api/conversations/${conversationId}/zip-directory`;
     const response = await openHands.get(url, {
       responseType: "blob",
     });
@@ -198,16 +198,20 @@ class OpenHands {
    * Get the VSCode URL
    * @returns VSCode URL
    */
-  static async getVSCodeUrl(convoId: string): Promise<GetVSCodeUrlResponse> {
+  static async getVSCodeUrl(
+    conversationId: string,
+  ): Promise<GetVSCodeUrlResponse> {
     const { data } = await openHands.get<GetVSCodeUrlResponse>(
-      `/api/conversation/${convoId}/vscode-url`,
+      `/api/conversations/${conversationId}/vscode-url`,
     );
     return data;
   }
 
-  static async getRuntimeId(convoId: string): Promise<{ runtime_id: string }> {
+  static async getRuntimeId(
+    conversationId: string,
+  ): Promise<{ runtime_id: string }> {
     const { data } = await openHands.get<{ runtime_id: string }>(
-      `/api/conversation/${convoId}/config`,
+      `/api/conversations/${conversationId}/config`,
     );
     return data;
   }
@@ -271,7 +275,7 @@ class OpenHands {
     const { data } = await openHands.get<{
       events: Record<string, unknown>[];
       has_more: boolean;
-    }>(`/api/conversation/${conversationId}/events/search`, {
+    }>(`/api/conversations/${conversationId}/events/search`, {
       params: {
         query: params.query,
         start_id: params.startId,
@@ -292,7 +296,7 @@ class OpenHands {
   }): Promise<{ conversation_id: string }> {
     const { data } = await openHands.post<{
       conversation_id: string;
-    }>("/api/conversation", {
+    }>("/api/conversations", {
       github_token: params.githubToken,
       args: params.settings,
       selected_repository: params.selectedRepository,

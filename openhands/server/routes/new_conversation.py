@@ -25,7 +25,7 @@ class InitSessionRequest(BaseModel):
     args: dict | None = None
 
 
-@app.post('/conversation')
+@app.post('/conversations')
 async def new_conversation(request: Request, data: InitSessionRequest):
     """Initialize a new session or join an existing one.
     After successful initialization, the client should connect to the WebSocket
