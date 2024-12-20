@@ -52,5 +52,11 @@ def get_github_repositories(
             detail=f'Error fetching repositories: {str(e)}',
         )
 
-    # Return the JSON response
-    return JSONResponse(content=response.json())
+    # Create response with the JSON content
+    json_response = JSONResponse(content=response.json())
+
+    # Forward the Link header if it exists
+    if 'Link' in response.headers:
+        json_response.headers['Link'] = response.headers['Link']
+
+    return json_response

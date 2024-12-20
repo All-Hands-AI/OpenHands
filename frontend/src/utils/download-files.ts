@@ -38,11 +38,12 @@ async function createSubdirectories(
  * Recursively gets all files in a directory
  */
 async function getAllFiles(
+  conversationID: string,
   path: string,
   progress: DownloadProgress,
   options?: DownloadOptions,
 ): Promise<string[]> {
-  const entries = await OpenHands.getFiles(path);
+  const entries = await OpenHands.getFiles(conversationID, path);
 
   const processEntry = async (entry: string): Promise<string[]> => {
     if (options?.signal?.aborted) {
@@ -51,7 +52,7 @@ async function getAllFiles(
 
     const fullPath = path + entry;
     if (entry.endsWith("/")) {
-      const subEntries = await OpenHands.getFiles(fullPath);
+      const subEntries = await OpenHands.getFiles(conversationID, fullPath);
       const subFilesPromises = subEntries.map((subEntry) =>
         processEntry(subEntry),
       );
@@ -83,6 +84,7 @@ async function getAllFiles(
  * Process a batch of files
  */
 async function processBatch(
+  conversationID: string,
   batch: string[],
   directoryHandle: FileSystemDirectoryHandle,
   progress: DownloadProgress,
@@ -110,7 +112,7 @@ async function processBatch(
         };
         options?.onProgress?.(newProgress);
 
-        const content = await OpenHands.getFile(path);
+        const content = await OpenHands.getFile(conversationID, path);
 
         // Save to the selected directory preserving structure
         const pathParts = path.split("/").filter(Boolean);
@@ -165,6 +167,7 @@ async function processBatch(
  * @param options Download options including progress callback and abort signal
  */
 export async function downloadFiles(
+  conversationID: string,
   initialPath?: string,
   options?: DownloadOptions,
 ): Promise<void> {
@@ -203,7 +206,12 @@ export async function downloadFiles(
     }
 
     // Then recursively get all files
-    const files = await getAllFiles(initialPath || "", progress, options);
+    const files = await getAllFiles(
+      conversationID,
+      initialPath || "",
+      progress,
+      options,
+    );
 
     // Set isDiscoveringFiles to false now that we have the full list and preserve filesTotal
     const finalTotal = progress.filesTotal;
@@ -270,6 +278,7 @@ export async function downloadFiles(
       (promise, batch) =>
         promise.then(async () => {
           const { newCompleted, newBytes } = await processBatch(
+            conversationID,
             batch,
             directoryHandle,
             progress,
