@@ -223,6 +223,11 @@ class AgentSession:
             headless_mode=False,
         )
 
+        # FIXME: this sleep is a terrible hack.
+        # This is to give the websocket a second to connect, so that
+        # the status messages make it through to the frontend.
+        # We should find a better way to plumb status messages through.
+        await asyncio.sleep(1)
         try:
             await self.runtime.connect()
         except AgentRuntimeUnavailableError as e:

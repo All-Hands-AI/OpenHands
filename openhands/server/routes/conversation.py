@@ -4,10 +4,10 @@ from fastapi.responses import JSONResponse
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.base import Runtime
 
-app = APIRouter(prefix='/api')
+app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
-@app.get('/conversation')
+@app.get('/config')
 async def get_remote_runtime_config(request: Request):
     """Retrieve the runtime configuration.
 
