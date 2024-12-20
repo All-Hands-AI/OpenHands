@@ -13,7 +13,7 @@ with warnings.catch_warnings():
     warnings.simplefilter('ignore')
     import litellm
 
-from litellm import Function, ModelInfo, PromptTokensDetails
+from litellm import ChatCompletionMessageToolCall, ModelInfo, PromptTokensDetails
 from litellm import Message as LiteLLMMessage
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
@@ -24,12 +24,7 @@ from litellm.exceptions import (
     RateLimitError,
     ServiceUnavailableError,
 )
-from litellm.types.utils import (
-    ChatCompletionMessageToolCall,
-    CostPerToken,
-    ModelResponse,
-    Usage,
-)
+from litellm.types.utils import CostPerToken, ModelResponse, Usage
 from litellm.utils import create_pretrained_tokenizer
 
 from openhands.core.exceptions import CloudFlareBlockageError
@@ -250,15 +245,9 @@ class LLM(RetryMixin, DebugMixin):
                 ].get('tool_calls', [])
                 if tool_calls:
                     for tool_call in tool_calls:
-                        fn: Function | None = (
-                            tool_call.model_extra.get('function', None)
-                            if tool_call.model_extra
-                            else None
-                        )
-                        if fn is not None:
-                            fn_name = fn.name
-                            fn_args = fn.arguments if hasattr(fn, 'arguments') else ''
-                            message_back += f'\nFunction call: {fn_name}({fn_args})'
+                        fn_name = tool_call.function.name
+                        fn_args = tool_call.function.arguments
+                        message_back += f'\nFunction call: {fn_name}({fn_args})'
 
                 # log the LLM response
                 self.log_response(message_back)
