@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
 
-export const useConversation = (cid: string | null) =>
+export const useUserConversation = (cid: string | null) =>
   useQuery({
     queryKey: ["user", "conversation", cid],
     queryFn: () => OpenHands.getConversation(cid!),
