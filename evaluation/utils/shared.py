@@ -8,6 +8,7 @@ import subprocess
 import time
 import traceback
 from contextlib import contextmanager
+from inspect import signature
 from typing import Any, Awaitable, Callable, TextIO
 
 import pandas as pd
@@ -316,13 +317,20 @@ def _process_instance_wrapper(
     timeout_seconds: int | None = None,
 ) -> EvalOutput:
     """Wrap the process_instance_func to handle retries and errors."""
+    runtime_failure_count = 0
     for attempt in range(max_retries + 1):
         try:
+            kwargs = {}
+            # check if process_instance_func accepts timeout_seconds parameter
+            sig = signature(process_instance_func)
+            if 'runtime_failure_count' in sig.parameters:
+                kwargs['runtime_failure_count'] = runtime_failure_count
+
             if timeout_seconds is not None:
                 with timeout(timeout_seconds):
-                    result = process_instance_func(instance, metadata, use_mp)
+                    result = process_instance_func(instance, metadata, use_mp, **kwargs)
             else:
-                result = process_instance_func(instance, metadata, use_mp)
+                result = process_instance_func(instance, metadata, use_mp, **kwargs)
             return result
         except EvalTimeoutException as e:
             error = f'Timeout after {timeout_seconds} seconds'
@@ -368,6 +376,9 @@ def _process_instance_wrapper(
                 + '-' * 10
                 + '\n'
             )
+            if isinstance(e, AgentRuntimeDisconnectedError):
+                runtime_failure_count += 1
+                msg += f'Runtime disconnected error detected for instance {instance.instance_id}, runtime failure count: {runtime_failure_count}'
             logger.error(msg)
             if use_mp:
                 print(msg)  # use print to directly print to console
