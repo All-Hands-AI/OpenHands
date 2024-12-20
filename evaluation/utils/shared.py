@@ -25,7 +25,6 @@ from openhands.core.exceptions import (
     AgentRuntimeNotReadyError,
     AgentRuntimeTimeoutError,
     AgentRuntimeUnavailableError,
-    AgentStuckInLoopError,
 )
 from openhands.core.logger import get_console_handler
 from openhands.core.logger import openhands_logger as logger
@@ -376,7 +375,9 @@ def _process_instance_wrapper(
                 + '-' * 10
                 + '\n'
             )
-            if isinstance(e, AgentRuntimeDisconnectedError):
+            if isinstance(
+                e, (AgentRuntimeDisconnectedError, AgentRuntimeUnavailableError)
+            ):
                 runtime_failure_count += 1
                 msg += f'Runtime disconnected error detected for instance {instance.instance_id}, runtime failure count: {runtime_failure_count}'
             logger.error(msg)
@@ -538,7 +539,6 @@ def is_fatal_evaluation_error(error: str | None) -> bool:
         AgentRuntimeNotReadyError,
         AgentRuntimeDisconnectedError,
         AgentRuntimeNotFoundError,
-        AgentStuckInLoopError,
     ]
 
     if any(exception.__name__ in error for exception in FATAL_EXCEPTIONS):
