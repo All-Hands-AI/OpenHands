@@ -8,7 +8,6 @@ import {
 } from "#/types/core/observations";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsEventType } from "#/types/core/base";
-import { ac } from "node_modules/react-router/dist/production/route-data-DuV3tXo2.mjs";
 
 type SliceState = { messages: Message[] };
 
@@ -165,6 +164,9 @@ export const chatSlice = createSlice({
         }
         content = `\`\`\`\n${content}\n\`\`\``;
         causeMessage.content = content; // Observation content includes the action
+      } else if (observationID === "read" || observationID === "edit") {
+        const { content } = observation.payload;
+        causeMessage.content = `\`\`\`${observationID === "edit" ? "diff" : "python"}\n${content}\n\`\`\``; // Content is already truncated by the ACI
       } else if (observationID === "browse") {
         let content = `**URL:** ${observation.payload.extras.url}\n`;
         if (observation.payload.extras.error) {

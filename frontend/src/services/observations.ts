@@ -29,10 +29,6 @@ export function handleObservationMessage(message: ObservationMessage) {
       // FIXME: render this as markdown
       store.dispatch(appendJupyterOutput(message.content));
       break;
-    case ObservationType.READ:
-    case ObservationType.EDIT:
-      store.dispatch(appendOutput(message.content));
-      break;
     case ObservationType.BROWSE:
       if (message.extras?.screenshot) {
         store.dispatch(setScreenshotSrc(message.extras?.screenshot));
@@ -50,6 +46,9 @@ export function handleObservationMessage(message: ObservationMessage) {
         store.dispatch(addAssistantMessage(message.content));
       }
       break;
+    case ObservationType.READ:
+    case ObservationType.EDIT:
+      break; // We don't display the default message for these observations
     default:
       store.dispatch(addAssistantMessage(message.message));
       break;
