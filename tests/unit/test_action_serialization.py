@@ -43,11 +43,10 @@ def serialization_deserialization(
     serialized_action_memory = event_to_memory(action_instance, max_message_chars)
     original_memory_dict = original_action_dict.copy()
 
-    # we don't send backend properties like id or 'keep_prompt'
+    # we don't send backend properties like id
     original_memory_dict.pop('id', None)
     original_memory_dict.pop('timestamp', None)
     if 'args' in original_memory_dict:
-        original_memory_dict['args'].pop('keep_prompt', None)
         original_memory_dict['args'].pop('blocking', None)
         original_memory_dict['args'].pop('confirmation_state', None)
 
@@ -101,7 +100,6 @@ def test_cmd_run_action_serialization_deserialization():
             'blocking': False,
             'command': 'echo "Hello world"',
             'thought': '',
-            'keep_prompt': True,
             'hidden': False,
             'confirmation_state': ActionConfirmationStatus.CONFIRMED,
         },

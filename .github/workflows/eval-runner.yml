@@ -29,6 +29,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install tmux
+        run: sudo apt-get update && sudo apt-get install -y tmux
       - name: Install poetry via pipx
         run: pipx install poetry
 

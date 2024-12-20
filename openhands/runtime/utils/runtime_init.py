@@ -4,7 +4,7 @@ from openhands.core.logger import openhands_logger as logger
 
 
 def init_user_and_working_directory(
-    username: str, user_id: int, initial_pwd: str
+    username: str, user_id: int, initial_cwd: str
 ) -> int | None:
     """Create working directory and user if not exists.
     It performs the following steps effectively:
@@ -26,23 +26,23 @@ def init_user_and_working_directory(
     Args:
         username (str): The username to create.
         user_id (int): The user ID to assign to the user.
-        initial_pwd (str): The initial working directory to create.
+        initial_cwd (str): The initial working directory to create.
 
     Returns:
         int | None: The user ID if it was updated, None otherwise.
     """
 
     # First create the working directory, independent of the user
-    logger.debug(f'Client working directory: {initial_pwd}')
-    command = f'umask 002; mkdir -p {initial_pwd}'
+    logger.debug(f'Client working directory: {initial_cwd}')
+    command = f'umask 002; mkdir -p {initial_cwd}'
     output = subprocess.run(command, shell=True, capture_output=True)
     out_str = output.stdout.decode()
 
-    command = f'chown -R {username}:root {initial_pwd}'
+    command = f'chown -R {username}:root {initial_cwd}'
     output = subprocess.run(command, shell=True, capture_output=True)
     out_str += output.stdout.decode()
 
-    command = f'chmod g+rw {initial_pwd}'
+    command = f'chmod g+rw {initial_cwd}'
     output = subprocess.run(command, shell=True, capture_output=True)
     out_str += output.stdout.decode()
     logger.debug(f'Created working directory. Output: [{out_str}]')

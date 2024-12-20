@@ -40,9 +40,7 @@ from openhands.runtime.base import Runtime
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
-from openhands.runtime.utils.request import (
-    send_request,
-)
+from openhands.runtime.utils.request import RequestHTTPError, send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
@@ -157,7 +155,7 @@ class RemoteRuntime(Runtime):
                 status = data.get('status')
                 if status == 'running' or status == 'paused':
                     self._parse_runtime_response(response)
-        except requests.HTTPError as e:
+        except RequestHTTPError as e:
             if e.response.status_code == 404:
                 return False
             self.log('debug', f'Error while looking for remote runtime: {e}')
@@ -244,8 +242,11 @@ class RemoteRuntime(Runtime):
             'image': self.container_image,
             'command': command,
             'working_dir': '/openhands/code/',
-            'environment': {'DEBUG': 'true'} if self.config.debug else {},
+            'environment': {'DEBUG': 'true'}
+            if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true'
+            else {},
             'session_id': self.sid,
+            'resource_factor': self.config.sandbox.remote_runtime_resource_factor,
         }
 
         # Start the sandbox using the /start endpoint
@@ -262,7 +263,7 @@ class RemoteRuntime(Runtime):
                 'debug',
                 f'Runtime started. URL: {self.runtime_url}',
             )
-        except requests.HTTPError as e:
+        except RequestHTTPError as e:
             self.log('error', f'Unable to start runtime: {e}')
             raise AgentRuntimeUnavailableError() from e
 
@@ -354,7 +355,7 @@ class RemoteRuntime(Runtime):
                     timeout=60,
                 ):  # will raise exception if we don't get 200 back.
                     pass
-            except requests.HTTPError as e:
+            except RequestHTTPError as e:
                 self.log(
                     'warning', f"Runtime /alive failed, but pod says it's ready: {e}"
                 )
@@ -426,7 +427,6 @@ class RemoteRuntime(Runtime):
 
             try:
                 request_body = {'action': event_to_dict(action)}
-                self.log('debug', f'Request body: {request_body}')
                 with self._send_request(
                     'POST',
                     f'{self.runtime_url}/execute_action',
@@ -449,13 +449,16 @@ class RemoteRuntime(Runtime):
         try:
             return send_request(self.session, method, url, **kwargs)
         except requests.Timeout:
-            self.log('error', 'No response received within the timeout period.')
+            self.log(
+                'error',
+                f'No response received within the timeout period for url: {url}',
+            )
             raise
-        except requests.HTTPError as e:
-            if is_runtime_request and e.response.status_code == 404:
+        except RequestHTTPError as e:
+            if is_runtime_request and e.response.status_code in (404, 502):
                 raise AgentRuntimeDisconnectedError(
-                    f'404 error while connecting to {self.runtime_url}'
-                )
+                    f'{e.response.status_code} error while connecting to {self.runtime_url}'
+                ) from e
             elif is_runtime_request and e.response.status_code == 503:
                 if not is_retry:
                     self.log('warning', 'Runtime appears to be paused. Resuming...')
@@ -463,7 +466,9 @@ class RemoteRuntime(Runtime):
                     self._wait_until_alive()
                     return self._send_request(method, url, True, **kwargs)
                 else:
-                    raise e
+                    raise AgentRuntimeUnavailableError(
+                        f'{e.response.status_code} error while connecting to {self.runtime_url}'
+                    ) from e
 
             else:
                 raise e

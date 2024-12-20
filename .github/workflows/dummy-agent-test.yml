@@ -36,6 +36,8 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
+      - name: Install tmux
+        run: sudo apt-get update && sudo apt-get install -y tmux
       - name: Install poetry via pipx
         run: pipx install poetry
       - name: Set up Python
