@@ -1,5 +1,4 @@
 import test, { expect, Page } from "@playwright/test";
-import { confirmSettings } from "./helpers/confirm-settings";
 
 const toggleConversationPanel = async (page: Page) => {
   const panel = page.getByTestId("conversation-panel");
@@ -31,27 +30,30 @@ const selectConversationCard = async (page: Page, index: number) => {
   );
 };
 
+test.beforeEach(async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => {
+    localStorage.setItem("analytics-consent", "true");
+    localStorage.setItem("SETTINGS_VERSION", "4");
+  });
+});
+
 test("should only display the create new conversation button in /conversation", async ({
   page,
 }) => {
-  await page.goto("/");
-  await confirmSettings(page);
   const panel = await toggleConversationPanel(page);
 
   const newProjectButton = panel.getByTestId("new-conversation-button");
   await expect(newProjectButton).not.toBeVisible();
 
-  await page.goto("/conversation");
+  await page.goto("/conversations");
   await expect(newProjectButton).toBeVisible();
 });
 
-test("redirect to /conversation with the session id as a query param", async ({
+test("redirect to /conversation with the session id as a path param", async ({
   page,
 }) => {
-  await page.goto("/");
-  await confirmSettings(page);
-
-  const panel = await toggleConversationPanel(page);
+  const panel = page.getByTestId("conversation-panel");
 
   // select a conversation
   const conversationItem = panel.getByTestId("conversation-card").first();
@@ -60,18 +62,15 @@ test("redirect to /conversation with the session id as a query param", async ({
   // panel should close
   expect(panel).not.toBeVisible();
 
-  await page.waitForURL("/conversation?cid=1");
-  expect(page.url()).toBe("http://localhost:3001/conversation?cid=1");
+  await page.waitForURL("/conversations/1");
+  expect(page.url()).toBe("http://localhost:3001/conversations/1");
 });
 
 test("redirect to the home screen if the current session was deleted", async ({
   page,
 }) => {
-  await page.goto("/");
-  await confirmSettings(page);
-
-  await page.goto("/conversation?cid=1");
-  await page.waitForURL("/conversation?cid=1");
+  await page.goto("/conversations/1");
+  await page.waitForURL("/conversations/1");
 
   const panel = page.getByTestId("conversation-panel");
   const firstCard = panel.getByTestId("conversation-card").first();
@@ -90,8 +89,6 @@ test("redirect to the home screen if the current session was deleted", async ({
 });
 
 test("load relevant files in the file explorer", async ({ page }) => {
-  await page.goto("/");
-  await confirmSettings(page);
   await selectConversationCard(page, 0);
 
   // check if the file explorer has the correct files
@@ -110,9 +107,6 @@ test("load relevant files in the file explorer", async ({ page }) => {
 });
 
 test("should create a new conversation", async ({ page }) => {
-  await page.goto("/");
-  await confirmSettings(page);
-
   await page.goto("/conversation");
   await page.waitForURL("/conversation");
 
@@ -127,9 +121,6 @@ test("should create a new conversation", async ({ page }) => {
 test("should redirect to home screen if conversation deos not exist", async ({
   page,
 }) => {
-  await page.goto("/");
-  await confirmSettings(page);
-
   await page.goto("/conversation?cid=9999");
   await page.waitForURL("/");
 });

@@ -1,6 +1,6 @@
 import { useDisclosure } from "@nextui-org/react";
 import React from "react";
-import { Outlet, useSearchParams } from "react-router";
+import { Outlet, useParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import {
@@ -33,7 +33,7 @@ import { CountBadge } from "#/components/layout/count-badge";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 
 function AppContent() {
-  const [searchParams] = useSearchParams();
+  const { cid } = useParams();
 
   const { gitHubToken, setToken } = useAuth();
   const { settings } = useUserPrefs();
@@ -42,11 +42,10 @@ function AppContent() {
   const { conversationId } = useConversation();
 
   const dispatch = useDispatch();
-  const cid = searchParams.get("cid");
 
   useConversationConfig();
   const { mutate: createConversation } = useCreateConversation();
-  const { data: conversation, isFetched } = useUserConversation(cid);
+  const { data: conversation, isFetched } = useUserConversation(cid || null);
 
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initalQuery,

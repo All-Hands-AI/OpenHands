@@ -66,7 +66,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   };
 
   const handleClickCard = (conversationId: string) => {
-    navigate(`/conversation?cid=${conversationId}`);
+    navigate(`/conversations/${conversationId}`);
     onClose();
   };
 
