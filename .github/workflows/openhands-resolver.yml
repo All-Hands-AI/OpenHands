@@ -318,6 +318,7 @@ jobs:
 
             let prNumber = '';
             let branchName = '';
+            let successExplanation = '';
 
             try {
               if (success) {
@@ -330,6 +331,24 @@ jobs:
             }
 
 
+            try {
+              if (!success){
+                // Read success_explanation from JSON file for failed resolution
+                const outputFilePath = path.resolve('/tmp/output/output.jsonl');
+                if (fs.existsSync(outputFilePath)) {
+                  const outputContent = fs.readFileSync(outputFilePath, 'utf8');
+                  const jsonLines = outputContent.split('\n').filter(line => line.trim() !== '');
+
+                  if (jsonLines.length > 0) {
+                    // First entry in JSON lines has the key 'success_explanation'
+                    const firstEntry = JSON.parse(jsonLines[0]);
+                    successExplanation = firstEntry.success_explanation || '';
+                  }
+              }
+            } catch (error){
+              console.error('Error reading file:', error);
+            }
+
             // Check "success" log from resolver output
             if (success && prNumber) {
               github.rest.issues.createComment({
@@ -340,11 +359,17 @@ jobs:
               });
               process.env.AGENT_RESPONDED = 'true';
             } else if (!success && branchName) {
+              let commentBody = `An attempt was made to automatically fix this issue, but it was unsuccessful. A branch named '${branchName}' has been created with the attempted changes. You can view the branch [here](https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${branchName}). Manual intervention may be required.`;
+
+              if (successExplanation) {
+                commentBody += `\n\nAdditional details about the failure:\n${successExplanation}`;
+              }
+
               github.rest.issues.createComment({
                 issue_number: issueNumber,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: `An attempt was made to automatically fix this issue, but it was unsuccessful. A branch named '${branchName}' has been created with the attempted changes. You can view the branch [here](https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${branchName}). Manual intervention may be required.`
+                body: commentBody
               });
               process.env.AGENT_RESPONDED = 'true';
             }
