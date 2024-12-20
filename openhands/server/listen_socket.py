@@ -1,5 +1,3 @@
-from fastapi import status
-
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.action import ActionType
 from openhands.events.action import (
@@ -12,7 +10,7 @@ from openhands.events.observation.agent import AgentStateChangedObservation
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.auth import get_sid_from_token, sign_token
-from openhands.server.github_utils import authenticate_github_user
+from openhands.server.routes.settings import SettingsStoreImpl
 from openhands.server.session.session_init_data import SessionInitData
 from openhands.server.shared import config, session_manager, sio
 
@@ -27,15 +25,15 @@ async def oh_action(connection_id: str, data: dict):
     # If it's an init, we do it here.
     action = data.get('action', '')
     if action == ActionType.INIT:
-        token = data.pop('token', None)
-        github_token = data.pop('github_token', None)
-        latest_event_id = int(data.pop('latest_event_id', -1))
-        kwargs = {k.lower(): v for k, v in (data.get('args') or {}).items()}
-        session_init_data = SessionInitData(**kwargs)
-        session_init_data.github_token = github_token
-        session_init_data.selected_repository = data.get('selected_repository', None)
         await init_connection(
-            connection_id, token, github_token, session_init_data, latest_event_id
+            connection_id=connection_id,
+            token=data.get('token', None),
+            github_token=data.get('github_token', None),
+            session_init_args={
+                k.lower(): v for k, v in (data.get('args') or {}).items()
+            },
+            latest_event_id=int(data.get('latest_event_id', -1)),
+            selected_repository=data.get('selected_repository'),
         )
         return
 
@@ -46,12 +44,18 @@ async def oh_action(connection_id: str, data: dict):
 async def init_connection(
     connection_id: str,
     token: str | None,
-    gh_token: str | None,
-    session_init_data: SessionInitData,
+    github_token: str | None,
+    session_init_args: dict,
     latest_event_id: int,
+    selected_repository: str | None,
 ):
-    if not await authenticate_github_user(gh_token):
-        raise RuntimeError(status.WS_1008_POLICY_VIOLATION)
+    settings_store = await SettingsStoreImpl.get_instance(config, github_token)
+    settings = await settings_store.load()
+    if settings:
+        session_init_args = {**settings.__dict__, **session_init_args}
+    session_init_args['github_token'] = github_token
+    session_init_args['selected_repository'] = selected_repository
+    session_init_data = SessionInitData(**session_init_args)
 
     if token:
         sid = get_sid_from_token(token, config.jwt_secret)

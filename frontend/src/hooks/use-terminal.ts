@@ -33,6 +33,7 @@ export const useTerminal = ({
   const fitAddon = React.useRef<FitAddon | null>(null);
   const ref = React.useRef<HTMLDivElement>(null);
   const lastCommandIndex = React.useRef(0);
+  const keyEventDisposable = React.useRef<{ dispose: () => void } | null>(null);
 
   const createTerminal = () =>
     new Terminal({
@@ -143,40 +144,58 @@ export const useTerminal = ({
 
   React.useEffect(() => {
     if (terminal.current) {
+      // Dispose of existing listeners if they exist
+      if (keyEventDisposable.current) {
+        keyEventDisposable.current.dispose();
+        keyEventDisposable.current = null;
+      }
+
       let commandBuffer = "";
 
       if (!disabled) {
-        terminal.current.onKey(({ key, domEvent }) => {
-          if (domEvent.key === "Enter") {
-            handleEnter(commandBuffer);
-            commandBuffer = "";
-          } else if (domEvent.key === "Backspace") {
-            if (commandBuffer.length > 0) {
-              commandBuffer = handleBackspace(commandBuffer);
+        // Add new key event listener and store the disposable
+        keyEventDisposable.current = terminal.current.onKey(
+          ({ key, domEvent }) => {
+            if (domEvent.key === "Enter") {
+              handleEnter(commandBuffer);
+              commandBuffer = "";
+            } else if (domEvent.key === "Backspace") {
+              if (commandBuffer.length > 0) {
+                commandBuffer = handleBackspace(commandBuffer);
+              }
+            } else {
+              // Ignore paste event
+              if (key.charCodeAt(0) === 22) {
+                return;
+              }
+              commandBuffer += key;
+              terminal.current?.write(key);
             }
-          } else {
-            // Ignore paste event
-            if (key.charCodeAt(0) === 22) {
-              return;
-            }
-            commandBuffer += key;
-            terminal.current?.write(key);
-          }
-        });
+          },
+        );
 
+        // Add custom key handler and store the disposable
         terminal.current.attachCustomKeyEventHandler((event) =>
           pasteHandler(event, (text) => {
             commandBuffer += text;
           }),
         );
       } else {
-        terminal.current.onKey((e) => {
+        // Add a noop handler when disabled
+        keyEventDisposable.current = terminal.current.onKey((e) => {
           e.domEvent.preventDefault();
           e.domEvent.stopPropagation();
         });
       }
     }
-  }, [disabled, terminal]);
+
+    return () => {
+      if (keyEventDisposable.current) {
+        keyEventDisposable.current.dispose();
+        keyEventDisposable.current = null;
+      }
+    };
+  }, [disabled]);
 
   return ref;
 };

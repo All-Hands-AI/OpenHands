@@ -15,6 +15,7 @@ from evaluation.utils.shared import (
     EvalOutput,
     assert_and_raise,
     codeact_user_response,
+    is_fatal_evaluation_error,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -400,11 +401,7 @@ def process_instance(
         )
 
         # if fatal error, throw EvalError to trigger re-run
-        if (
-            state.last_error
-            and 'fatal error during agent execution' in state.last_error
-            and 'stuck in a loop' not in state.last_error
-        ):
+        if is_fatal_evaluation_error(state.last_error):
             raise EvalException('Fatal error detected: ' + state.last_error)
 
         # ======= THIS IS SWE-Bench specific =======
@@ -490,6 +487,8 @@ if __name__ == '__main__':
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
         llm_config.log_completions = True
+        # modify_params must be False for evaluation purpose, for reproducibility and accurancy of results
+        llm_config.modify_params = False
 
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
