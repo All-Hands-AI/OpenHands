@@ -1,162 +1,0 @@
-2024-12-04 13:29:33,181 - INFO - [runtime c253529d-0282-489f-89c1-7fd1493b55fe-f39c5661f992baf2] Building remote runtime with base image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.django_s_django-11265
-2024-12-04 13:29:33,250 - INFO - Building image: us-central1-docker.pkg.dev/evaluation-092424/runtime-api-docker-repo/runtime:oh_v0.15.0_srepgxig2ebx0kwg_tun0f9coqw2bqg0f
-2024-12-04 13:29:36,087 - INFO - Build initiated with ID: 45def6aa-99e0-48cb-a8a3-06e0888c0c5a
-2024-12-04 13:29:36,229 - INFO - Build status: QUEUED
-2024-12-04 13:30:06,422 - INFO - Build status: WORKING
-2024-12-04 13:30:36,611 - INFO - Build status: WORKING
-2024-12-04 13:31:06,801 - INFO - Build status: WORKING
-2024-12-04 13:31:36,990 - INFO - Build status: WORKING
-2024-12-04 13:32:07,170 - INFO - Build status: WORKING
-2024-12-04 13:32:37,337 - INFO - Build status: WORKING
-2024-12-04 13:33:07,529 - INFO - Build status: WORKING
-2024-12-04 13:33:37,721 - INFO - Build status: WORKING
-2024-12-04 13:34:07,906 - INFO - Build status: WORKING
-2024-12-04 13:34:38,091 - INFO - Build status: WORKING
-2024-12-04 13:35:08,336 - INFO - Build status: WORKING
-2024-12-04 13:35:38,607 - INFO - Build status: WORKING
-2024-12-04 13:36:08,906 - INFO - Build status: WORKING
-2024-12-04 13:36:39,325 - INFO - Build status: SUCCESS
-2024-12-04 13:36:41,683 - INFO - [runtime c253529d-0282-489f-89c1-7fd1493b55fe-f39c5661f992baf2] Waiting for runtime to be alive...
-2024-12-04 13:38:49,167 - INFO - [runtime c253529d-0282-489f-89c1-7fd1493b55fe-f39c5661f992baf2] Runtime is ready.
-2024-12-04 13:38:49,329 - INFO - ------------------------------
-2024-12-04 13:38:49,330 - INFO - BEGIN Runtime Initialization Fn
-2024-12-04 13:38:49,330 - INFO - ------------------------------
-2024-12-04 13:38:49,330 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-echo 'export SWE_INSTANCE_ID=django__django-11265' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo "alias git='git --no-pager'" >> ~/.bashrc
-2024-12-04 13:38:49,482 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-
-2024-12-04 13:38:49,482 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-export USER=$(whoami); echo USER=${USER}
-2024-12-04 13:38:49,623 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-USER=root
-2024-12-04 13:38:49,624 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-mkdir -p /swe_util/eval_data/instances
-2024-12-04 13:38:49,760 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-
-2024-12-04 13:38:49,812 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-cat ~/.bashrc
-2024-12-04 13:38:49,945 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-source /opt/miniconda3/etc/profile.d/conda.sh && conda activate testbed
-export SWE_INSTANCE_ID=django__django-11265
-export PIP_CACHE_DIR=~/.cache/pip
-alias git='git --no-pager'
-2024-12-04 13:38:49,945 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-source ~/.bashrc
-2024-12-04 13:38:50,248 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-
-2024-12-04 13:38:50,249 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-source /swe_util/instance_swe_entry.sh
-2024-12-04 13:38:50,740 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-WORKSPACE_NAME: django__django__3.0
-2024-12-04 13:38:50,740 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-cd /workspace/django__django__3.0
-2024-12-04 13:38:50,866 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-
-2024-12-04 13:38:50,866 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-git reset --hard
-2024-12-04 13:38:53,984 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-Updating files:  24% (1504/6074)Updating files:  25% (1519/6074)Updating files:  26% (1580/6074)Updating files:  27% (1640/6074)Updating files:  28% (1701/6074)Updating files:  29% (1762/6074)Updating files:  30% (1823/6074)Updating files:  31% (1883/6074)Updating files:  32% (1944/6074)Updating files:  33% (2005/6074)Updating files:  34% (2066/6074)Updating files:  35% (2126/6074)Updating files:  36% (2187/6074)Updating files:  37% (2248/6074)Updating files:  38% (2309/6074)Updating files:  39% (2369/6074)Updating files:  40% (2430/6074)Updating files:  41% (2491/6074)Updating files:  42% (2552/6074)Updating files:  43% (2612/6074)Updating files:  44% (2673/6074)Updating files:  45% (2734/6074)Updating files:  46% (2795/6074)Updating files:  47% (2855/6074)Updating files:  48% (2916/6074)Updating files:  49% (2977/6074)Updating files:  50% (3037/6074)Updating files:  51% (3098/6074)Updating files:  52% (3159/6074)Updating files:  53% (3220/6074)Updating files:  54% (3280/6074)Updating files:  55% (3341/6074)Updating files:  56% (3402/6074)Updating files:  57% (3463/6074)Updating files:  58% (3523/6074)Updating files:  59% (3584/6074)Updating files:  60% (3645/6074)Updating files:  61% (3706/6074)Updating files:  62% (3766/6074)Updating files:  62% (3788/6074)Updating files:  63% (3827/6074)Updating files:  64% (3888/6074)Updating files:  65% (3949/6074)Updating files:  66% (4009/6074)Updating files:  67% (4070/6074)Updating files:  68% (4131/6074)Updating files:  69% (4192/6074)Updating files:  70% (4252/6074)Updating files:  71% (4313/6074)Updating files:  72% (4374/6074)Updating files:  73% (4435/6074)Updating files:  74% (4495/6074)Updating files:  75% (4556/6074)Updating files:  76% (4617/6074)Updating files:  77% (4677/6074)Updating files:  78% (4738/6074)Updating files:  79% (4799/6074)Updating files:  80% (4860/6074)Updating files:  81% (4920/6074)Updating files:  82% (4981/6074)Updating files:  83% (5042/6074)Updating files:  84% (5103/6074)Updating files:  85% (5163/6074)Updating files:  86% (5224/6074)Updating files:  87% (5285/6074)Updating files:  88% (5346/6074)Updating files:  89% (5406/6074)Updating files:  90% (5467/6074)Updating files:  91% (5528/6074)Updating files:  92% (5589/6074)Updating files:  93% (5649/6074)Updating files:  94% (5710/6074)Updating files:  95% (5771/6074)Updating files:  96% (5832/6074)Updating files:  97% (5892/6074)Updating files:  98% (5953/6074)Updating files:  99% (6014/6074)Updating files: 100% (6074/6074)Updating files: 100% (6074/6074), done.
-HEAD is now at 21aa2a5e78 Removed unnecessary line in DebugLexer.tokenize().
-2024-12-04 13:38:53,985 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-for remote_name in $(git remote); do git remote remove "${remote_name}"; done
-2024-12-04 13:38:54,123 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-
-2024-12-04 13:38:54,123 - INFO - ------------------------------
-2024-12-04 13:38:54,123 - INFO - END Runtime Initialization Fn
-2024-12-04 13:38:54,123 - INFO - ------------------------------
-2024-12-04 13:38:54,219 - WARNING - Could not restore state from session: sessions/c253529d-0282-489f-89c1-7fd1493b55fe-f39c5661f992baf2/agent_state.pkl
-2024-12-04 13:38:54,220 - INFO - [Agent Controller default] Starting step loop...
-2024-12-04 13:38:54,221 - INFO - [Agent Controller default] Setting agent(CodeActAgent) state from AgentState.LOADING to AgentState.RUNNING
-2024-12-04 13:38:55,325 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 0 GLOBAL STEP 0
-2024-12-04 13:39:01,167 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 1 GLOBAL STEP 1
-2024-12-04 13:39:15,097 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 2 GLOBAL STEP 2
-2024-12-04 13:39:22,508 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 3 GLOBAL STEP 3
-2024-12-04 13:39:31,252 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 4 GLOBAL STEP 4
-2024-12-04 13:39:38,949 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 5 GLOBAL STEP 5
-2024-12-04 13:39:46,045 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 6 GLOBAL STEP 6
-2024-12-04 13:39:53,826 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 7 GLOBAL STEP 7
-2024-12-04 13:40:01,349 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 8 GLOBAL STEP 8
-2024-12-04 13:40:09,756 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 9 GLOBAL STEP 9
-2024-12-04 13:40:17,740 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 10 GLOBAL STEP 10
-2024-12-04 13:40:26,037 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 11 GLOBAL STEP 11
-2024-12-04 13:40:34,383 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 12 GLOBAL STEP 12
-2024-12-04 13:40:43,159 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 13 GLOBAL STEP 13
-2024-12-04 13:40:51,753 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 14 GLOBAL STEP 14
-2024-12-04 13:41:00,651 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 15 GLOBAL STEP 15
-2024-12-04 13:41:09,620 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 16 GLOBAL STEP 16
-2024-12-04 13:41:17,952 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 17 GLOBAL STEP 17
-2024-12-04 13:41:30,759 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 18 GLOBAL STEP 18
-2024-12-04 13:41:39,321 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 19 GLOBAL STEP 19
-2024-12-04 13:41:43,977 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 20 GLOBAL STEP 20
-2024-12-04 13:41:54,917 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 21 GLOBAL STEP 21
-2024-12-04 13:42:01,669 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 22 GLOBAL STEP 22
-2024-12-04 13:42:15,509 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 23 GLOBAL STEP 23
-2024-12-04 13:42:25,030 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 24 GLOBAL STEP 24
-2024-12-04 13:42:37,686 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 25 GLOBAL STEP 25
-2024-12-04 13:42:41,998 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 26 GLOBAL STEP 26
-2024-12-04 13:42:49,218 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 27 GLOBAL STEP 27
-2024-12-04 13:43:03,129 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 28 GLOBAL STEP 28
-2024-12-04 13:43:12,023 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 29 GLOBAL STEP 29
-2024-12-04 13:43:31,150 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 30 GLOBAL STEP 30
-2024-12-04 13:43:39,403 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 31 GLOBAL STEP 31
-2024-12-04 13:43:59,962 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 32 GLOBAL STEP 32
-2024-12-04 13:44:06,965 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 33 GLOBAL STEP 33
-2024-12-04 13:44:27,631 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 34 GLOBAL STEP 34
-2024-12-04 13:44:35,487 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 35 GLOBAL STEP 35
-2024-12-04 13:44:55,982 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 36 GLOBAL STEP 36
-2024-12-04 13:45:03,545 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 37 GLOBAL STEP 37
-2024-12-04 13:45:30,895 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 38 GLOBAL STEP 38
-2024-12-04 13:45:42,168 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 39 GLOBAL STEP 39
-2024-12-04 13:46:04,384 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 40 GLOBAL STEP 40
-2024-12-04 13:46:12,256 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 41 GLOBAL STEP 41
-2024-12-04 13:46:34,287 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 42 GLOBAL STEP 42
-2024-12-04 13:46:46,158 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 43 GLOBAL STEP 43
-2024-12-04 13:47:08,186 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 44 GLOBAL STEP 44
-2024-12-04 13:47:16,667 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 45 GLOBAL STEP 45
-2024-12-04 13:47:39,457 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 46 GLOBAL STEP 46
-2024-12-04 13:47:57,002 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 47 GLOBAL STEP 47
-2024-12-04 13:48:11,736 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 48 GLOBAL STEP 48
-2024-12-04 13:48:22,615 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 49 GLOBAL STEP 49
-2024-12-04 13:48:40,248 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 50 GLOBAL STEP 50
-2024-12-04 13:48:40,250 - INFO - [Agent Controller default] Setting agent(CodeActAgent) state from AgentState.RUNNING to AgentState.ERROR
-2024-12-04 13:48:40,250 - ERROR - Agent reached maximum iteration in headless mode. Current iteration: 50.00, max iteration: 50.00
-2024-12-04 13:48:40,251 - INFO - [Agent Controller default] Setting agent(CodeActAgent) state from AgentState.ERROR to AgentState.ERROR
-2024-12-04 13:48:41,128 - INFO - ------------------------------
-2024-12-04 13:48:41,129 - INFO - BEGIN Runtime Completion Fn
-2024-12-04 13:48:41,129 - INFO - ------------------------------
-2024-12-04 13:48:41,130 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-cd /workspace/django__django__3.0
-2024-12-04 13:48:41,259 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-
-2024-12-04 13:48:41,260 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-git config --global core.pager ""
-2024-12-04 13:48:41,393 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-
-2024-12-04 13:48:41,393 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-git add -A
-2024-12-04 13:48:43,387 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-
-2024-12-04 13:48:43,387 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-git diff --no-color --cached 21aa2a5e785eef1f47beb1c3760fdd7d8915ae09
-2024-12-04 13:48:43,527 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-
-2024-12-04 13:48:43,528 - INFO - ------------------------------
-2024-12-04 13:48:43,528 - INFO - END Runtime Completion Fn
-2024-12-04 13:48:43,528 - INFO - ------------------------------
-2024-12-04 13:48:43,528 - INFO - Got git diff for instance django__django-11265:
---------
-
---------

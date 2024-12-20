@@ -1,136 +1,0 @@
-2024-12-04 11:56:58,151 - INFO - [runtime 28c7d796-2202-486a-b4ab-890d1bb82488-ccd9b7987d130bd4] Building remote runtime with base image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.astropy_s_astropy-14365
-2024-12-04 11:56:58,178 - INFO - Building image: us-central1-docker.pkg.dev/evaluation-092424/runtime-api-docker-repo/runtime:oh_v0.15.0_a6emvs2dbpqy7535_8yyi8tnqgmet7oyx
-2024-12-04 11:57:17,084 - INFO - [runtime 28c7d796-2202-486a-b4ab-890d1bb82488-ccd9b7987d130bd4] Waiting for runtime to be alive...
-2024-12-04 11:57:25,584 - INFO - _register_signal_handlers
-2024-12-04 11:57:25,584 - INFO - _register_signal_handlers:not_main_thread
-2024-12-04 12:03:28,541 - INFO - [runtime 28c7d796-2202-486a-b4ab-890d1bb82488-ccd9b7987d130bd4] Runtime is ready.
-2024-12-04 12:03:28,710 - INFO - ------------------------------
-2024-12-04 12:03:28,710 - INFO - BEGIN Runtime Initialization Fn
-2024-12-04 12:03:28,710 - INFO - ------------------------------
-2024-12-04 12:03:28,710 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-echo 'export SWE_INSTANCE_ID=astropy__astropy-14365' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo "alias git='git --no-pager'" >> ~/.bashrc
-2024-12-04 12:03:28,841 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-
-2024-12-04 12:03:28,842 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-export USER=$(whoami); echo USER=${USER}
-2024-12-04 12:03:29,046 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-USER=root
-2024-12-04 12:03:29,047 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-mkdir -p /swe_util/eval_data/instances
-2024-12-04 12:03:29,214 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-
-2024-12-04 12:03:29,273 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-cat ~/.bashrc
-2024-12-04 12:03:29,408 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-source /opt/miniconda3/etc/profile.d/conda.sh && conda activate testbed
-export SWE_INSTANCE_ID=astropy__astropy-14365
-export PIP_CACHE_DIR=~/.cache/pip
-alias git='git --no-pager'
-2024-12-04 12:03:29,408 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-source ~/.bashrc
-2024-12-04 12:03:29,780 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-
-2024-12-04 12:03:29,780 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-source /swe_util/instance_swe_entry.sh
-2024-12-04 12:03:30,637 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-WORKSPACE_NAME: astropy__astropy__5.1
-2024-12-04 12:03:30,638 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-cd /workspace/astropy__astropy__5.1
-2024-12-04 12:03:30,767 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-
-2024-12-04 12:03:30,768 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-git reset --hard
-2024-12-04 12:03:32,880 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-Updating files:  56% (1064/1870)Updating files:  57% (1066/1870)Updating files:  58% (1085/1870)Updating files:  59% (1104/1870)Updating files:  60% (1122/1870)Updating files:  61% (1141/1870)Updating files:  62% (1160/1870)Updating files:  63% (1179/1870)Updating files:  64% (1197/1870)Updating files:  65% (1216/1870)Updating files:  66% (1235/1870)Updating files:  67% (1253/1870)Updating files:  68% (1272/1870)Updating files:  69% (1291/1870)Updating files:  70% (1309/1870)Updating files:  71% (1328/1870)Updating files:  72% (1347/1870)Updating files:  73% (1366/1870)Updating files:  74% (1384/1870)Updating files:  75% (1403/1870)Updating files:  76% (1422/1870)Updating files:  77% (1440/1870)Updating files:  78% (1459/1870)Updating files:  79% (1478/1870)Updating files:  80% (1496/1870)Updating files:  81% (1515/1870)Updating files:  82% (1534/1870)Updating files:  83% (1553/1870)Updating files:  84% (1571/1870)Updating files:  85% (1590/1870)Updating files:  86% (1609/1870)Updating files:  87% (1627/1870)Updating files:  88% (1646/1870)Updating files:  89% (1665/1870)Updating files:  90% (1683/1870)Updating files:  91% (1702/1870)Updating files:  92% (1721/1870)Updating files:  93% (1740/1870)Updating files:  94% (1758/1870)Updating files:  95% (1777/1870)Updating files:  96% (1796/1870)Updating files:  97% (1814/1870)Updating files:  98% (1833/1870)Updating files:  99% (1852/1870)Updating files: 100% (1870/1870)Updating files: 100% (1870/1870), done.
-HEAD is now at 7269fa3e33 Merge pull request #14013 from WilliamJamieson/deprecate/Voigt1D_humlicek2_option
-2024-12-04 12:03:32,880 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-for remote_name in $(git remote); do git remote remove "${remote_name}"; done
-2024-12-04 12:03:33,049 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-
-2024-12-04 12:03:33,049 - INFO - ------------------------------
-2024-12-04 12:03:33,050 - INFO - END Runtime Initialization Fn
-2024-12-04 12:03:33,050 - INFO - ------------------------------
-2024-12-04 12:03:33,150 - WARNING - Could not restore state from session: sessions/28c7d796-2202-486a-b4ab-890d1bb82488-ccd9b7987d130bd4/agent_state.pkl
-2024-12-04 12:03:33,152 - INFO - [Agent Controller default] Starting step loop...
-2024-12-04 12:03:33,153 - INFO - [Agent Controller default] Setting agent(CodeActAgent) state from AgentState.LOADING to AgentState.RUNNING
-2024-12-04 12:03:34,254 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 0 GLOBAL STEP 0
-2024-12-04 12:03:38,660 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 1 GLOBAL STEP 1
-2024-12-04 12:03:42,716 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 2 GLOBAL STEP 2
-2024-12-04 12:03:49,896 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 3 GLOBAL STEP 3
-2024-12-04 12:03:53,583 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 4 GLOBAL STEP 4
-2024-12-04 12:03:59,354 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 5 GLOBAL STEP 5
-2024-12-04 12:04:03,318 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 6 GLOBAL STEP 6
-2024-12-04 12:04:10,164 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 7 GLOBAL STEP 7
-2024-12-04 12:04:17,374 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 8 GLOBAL STEP 8
-2024-12-04 12:04:23,386 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 9 GLOBAL STEP 9
-2024-12-04 12:04:32,908 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 10 GLOBAL STEP 10
-2024-12-04 12:04:37,612 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 11 GLOBAL STEP 11
-2024-12-04 12:04:45,607 - INFO - [Agent Controller default] Setting agent(CodeActAgent) state from AgentState.RUNNING to AgentState.AWAITING_USER_INPUT
-2024-12-04 12:04:45,608 - INFO - [Agent Controller default] Setting agent(CodeActAgent) state from AgentState.AWAITING_USER_INPUT to AgentState.RUNNING
-2024-12-04 12:04:45,708 - INFO - [Agent Controller default] LEVEL 0 LOCAL STEP 12 GLOBAL STEP 12
-2024-12-04 12:04:56,266 - INFO - [Agent Controller default] Setting agent(CodeActAgent) state from AgentState.RUNNING to AgentState.FINISHED
-2024-12-04 12:04:56,268 - INFO - ------------------------------
-2024-12-04 12:04:56,269 - INFO - BEGIN Runtime Completion Fn
-2024-12-04 12:04:56,269 - INFO - ------------------------------
-2024-12-04 12:04:56,269 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-cd /workspace/astropy__astropy__5.1
-2024-12-04 12:04:56,400 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-
-2024-12-04 12:04:56,400 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-git config --global core.pager ""
-2024-12-04 12:04:56,538 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-
-2024-12-04 12:04:56,539 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-git add -A
-2024-12-04 12:04:58,819 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-
-2024-12-04 12:04:58,819 - INFO - **CmdRunAction (source=None)**
-COMMAND:
-git diff --no-color --cached 7269fa3e33e8d02485a647da91a5a2a60a06af61
-2024-12-04 12:04:58,962 - INFO - **CmdOutputObservation (source=None, exit code=0)**
-diff --git a/astropy/io/ascii/qdp.py b/astropy/io/ascii/qdp.py
-index 83a4f004aa..5f3a3621ec 100644
---- a/astropy/io/ascii/qdp.py
-+++ b/astropy/io/ascii/qdp.py
-@@ -60,7 +60,7 @@ def _line_type(line, delimiter=None):
-     ValueError: Unrecognized QDP line...
-     """
-     _decimal_re = r"[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?"
--    _command_re = r"READ [TS]ERR(\s+[0-9]+)+"
-+    _command_re = r"(?i)READ [TS]ERR(\s+[0-9]+)+"
-
-     sep = delimiter
-     if delimiter is None:
-2024-12-04 12:04:58,962 - INFO - ------------------------------
-2024-12-04 12:04:58,962 - INFO - END Runtime Completion Fn
-2024-12-04 12:04:58,962 - INFO - ------------------------------
-2024-12-04 12:04:58,962 - INFO - Got git diff for instance astropy__astropy-14365:
---------
-diff --git a/astropy/io/ascii/qdp.py b/astropy/io/ascii/qdp.py
-index 83a4f004aa..5f3a3621ec 100644
---- a/astropy/io/ascii/qdp.py
-+++ b/astropy/io/ascii/qdp.py
-@@ -60,7 +60,7 @@ def _line_type(line, delimiter=None):
-     ValueError: Unrecognized QDP line...
-     """
-     _decimal_re = r"[+-]?(\d+(\.\d*)?|\.\d+)([eE][+-]?\d+)?"
--    _command_re = r"READ [TS]ERR(\s+[0-9]+)+"
-+    _command_re = r"(?i)READ [TS]ERR(\s+[0-9]+)+"
-
-     sep = delimiter
-     if delimiter is None:
---------
-2024-12-04 12:05:00,477 - INFO - Using instance container image: us-central1-docker.pkg.dev/evaluation-092424/swe-bench-images/sweb.eval.x86_64.astropy_s_astropy-7166. Please make sure this image exists. Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.
-2024-12-04 12:05:00,478 - INFO - Logging LLM completions for instance astropy__astropy-7166 to evaluation/evaluation_outputs/outputs/princeton-nlp__SWE-bench_Verified-test/CodeActAgent/claude-3-5-sonnet-20241022_maxiter_50_N_v0.15.0-no-hint-run_1/llm_completions/astropy__astropy-7166
