@@ -16,6 +16,7 @@ from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_async_from_sync
+from openhands.utils.shutdown_listener import should_continue
 
 WAIT_TIME_BEFORE_CLOSE = 300
 WAIT_TIME_BEFORE_CLOSE_INTERVAL = 5
@@ -153,7 +154,7 @@ class AgentSession:
 
     async def _close(self):
         seconds_waited = 0
-        while self._initializing:
+        while self._initializing and should_continue():
             logger.debug(
                 f'Waiting for initialization to finish before closing session {self.sid}'
             )
@@ -220,6 +221,11 @@ class AgentSession:
             headless_mode=False,
         )
 
+        # FIXME: this sleep is a terrible hack.
+        # This is to give the websocket a second to connect, so that
+        # the status messages make it through to the frontend.
+        # We should find a better way to plumb status messages through.
+        await asyncio.sleep(1)
         try:
             await self.runtime.connect()
         except AgentRuntimeUnavailableError as e:

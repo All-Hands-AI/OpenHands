@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "openhands-ai"
-version = "0.15.3a0"
+version = "0.16.1a0"
 description = "OpenHands: Code Less, Make More"
 authors = ["OpenHands"]
 license = "MIT"
@@ -38,7 +38,7 @@ boto3 = "*"
 minio = "^7.2.8"
 gevent = "^24.2.1"
 pyarrow = "18.1.0" # transitive dependency, pinned here to avoid conflicts
-tenacity = "^8.5.0"
+tenacity = ">=8.5,<10.0"
 zope-interface = "7.2"
 pathspec = "^0.12.1"
 google-cloud-aiplatform = "*"
@@ -82,7 +82,7 @@ voyageai = "*"
 llama-index-embeddings-voyageai = "*"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.8.3"
+ruff = "0.8.4"
 mypy = "1.13.0"
 pre-commit = "4.0.1"
 build = "*"

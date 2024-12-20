@@ -1,4 +1,3 @@
-import { useLocation, useNavigate } from "react-router";
 import React from "react";
 import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
@@ -17,12 +16,8 @@ import { HeroHeading } from "#/components/shared/hero-heading";
 import { TaskForm } from "#/components/shared/task-form";
 
 function Home() {
-  const { token, gitHubToken } = useAuth();
-
+  const { gitHubToken } = useAuth();
   const dispatch = useDispatch();
-  const location = useLocation();
-  const navigate = useNavigate();
-
   const formRef = React.useRef<HTMLFormElement>(null);
 
   const { data: config } = useConfig();
@@ -35,10 +30,6 @@ function Home() {
     appMode: config?.APP_MODE || null,
     gitHubClientId: config?.GITHUB_CLIENT_ID || null,
   });
-
-  React.useEffect(() => {
-    if (token) navigate("/app");
-  }, [location.pathname]);
 
   return (
     <div
