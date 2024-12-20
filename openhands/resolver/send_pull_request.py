@@ -373,7 +373,9 @@ def send_pull_request(
 
         url = pr_data['html_url']
 
-    print(f'{pr_type} created: {url}\n\n--- Title: {final_pr_title}\n\n--- Body:\n{pr_body}')
+    print(
+        f'{pr_type} created: {url}\n\n--- Title: {final_pr_title}\n\n--- Body:\n{pr_body}'
+    )
 
     return url
 
