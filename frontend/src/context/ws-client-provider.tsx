@@ -5,16 +5,13 @@ import { io, Socket } from "socket.io-client";
 import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
 import { useRate } from "#/hooks/use-rate";
-import AgentState from "#/types/agent-state";
 
 const isOpenHandsMessage = (event: Record<string, unknown>) =>
   event.action === "message";
 
 export enum WsClientProviderStatus {
-  STOPPED,
-  OPENING,
-  ACTIVE,
-  ERROR,
+  CONNECTED,
+  DISCONNECTED,
 }
 
 interface UseWsClient {
@@ -25,7 +22,7 @@ interface UseWsClient {
 }
 
 const WsClientContext = React.createContext<UseWsClient>({
-  status: WsClientProviderStatus.STOPPED,
+  status: WsClientProviderStatus.DISCONNECTED,
   isLoadingMessages: true,
   events: [],
   send: () => {
@@ -34,26 +31,23 @@ const WsClientContext = React.createContext<UseWsClient>({
 });
 
 interface WsClientProviderProps {
-  enabled: boolean;
   conversationId: string;
   ghToken: string | null;
-  selectedRepository: string | null;
 }
 
 export function WsClientProvider({
-  enabled,
   ghToken,
-  selectedRepository,
   conversationId,
   children,
 }: React.PropsWithChildren<WsClientProviderProps>) {
   const sioRef = React.useRef<Socket | null>(null);
   const ghTokenRef = React.useRef<string | null>(ghToken);
-  const selectedRepositoryRef = React.useRef<string | null>(selectedRepository);
   const disconnectRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const [status, setStatus] = React.useState(WsClientProviderStatus.STOPPED);
+  const [status, setStatus] = React.useState(
+    WsClientProviderStatus.DISCONNECTED,
+  );
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
 
@@ -68,7 +62,7 @@ export function WsClientProvider({
   }
 
   function handleConnect() {
-    setStatus(WsClientProviderStatus.OPENING);
+    setStatus(WsClientProviderStatus.CONNECTED);
   }
 
   function handleMessage(event: Record<string, unknown>) {
@@ -80,29 +74,16 @@ export function WsClientProvider({
       lastEventRef.current = event;
     }
 
-    const extras = event.extras as Record<string, unknown>;
-    if (extras?.agent_state === AgentState.INIT) {
-      setStatus(WsClientProviderStatus.ACTIVE);
-    }
-
-    if (
-      status !== WsClientProviderStatus.ACTIVE &&
-      event?.observation === "error"
-    ) {
-      setStatus(WsClientProviderStatus.ERROR);
-      return;
-    }
-
     handleAssistantMessage(event);
   }
 
   function handleDisconnect() {
-    setStatus(WsClientProviderStatus.STOPPED);
+    setStatus(WsClientProviderStatus.DISCONNECTED);
   }
 
   function handleError() {
     posthog.capture("socket_error");
-    setStatus(WsClientProviderStatus.ERROR);
+    setStatus(WsClientProviderStatus.DISCONNECTED);
   }
 
   React.useEffect(() => {
@@ -111,13 +92,6 @@ export function WsClientProvider({
     }
 
     let sio = sioRef.current;
-
-    if (!enabled) {
-      if (sio) {
-        sio.disconnect();
-      }
-      return () => {};
-    }
 
     const lastEvent = lastEventRef.current;
     const query = {
@@ -143,7 +117,6 @@ export function WsClientProvider({
 
     sioRef.current = sio;
     ghTokenRef.current = ghToken;
-    selectedRepositoryRef.current = selectedRepository;
 
     return () => {
       sio.off("connect", handleConnect);
@@ -152,7 +125,7 @@ export function WsClientProvider({
       sio.off("connect_failed", handleError);
       sio.off("disconnect", handleDisconnect);
     };
-  }, [enabled, ghToken, selectedRepository, conversationId]);
+  }, [ghToken, conversationId]);
 
   // Strict mode mounts and unmounts each component twice, so we have to wait in the destructor
   // before actually disconnecting the socket and cancel the operation if the component gets remounted.

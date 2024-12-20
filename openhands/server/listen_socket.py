@@ -69,12 +69,10 @@ async def connect(connection_id: str, environ, auth):
         ):
             continue
         elif isinstance(event, AgentStateChangedObservation):
-            if event.agent_state == 'init':
-                await sio.emit('oh_event', event_to_dict(event), to=connection_id)
-            else:
-                agent_state_changed = event
-                continue
+            agent_state_changed = event
+            continue
         await sio.emit('oh_event', event_to_dict(event), to=connection_id)
+
     if agent_state_changed:
         await sio.emit('oh_event', event_to_dict(agent_state_changed), to=connection_id)
 

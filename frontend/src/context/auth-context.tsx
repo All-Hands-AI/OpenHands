@@ -2,10 +2,8 @@ import posthog from "posthog-js";
 import React from "react";
 import OpenHands from "#/api/open-hands";
 import {
-  removeAuthTokenHeader as removeOpenHandsAuthTokenHeader,
   removeGitHubTokenHeader as removeOpenHandsGitHubTokenHeader,
   setGitHubTokenHeader as setOpenHandsGitHubTokenHeader,
-  setAuthTokenHeader as setOpenHandsAuthTokenHeader,
 } from "#/api/open-hands-axios";
 import {
   setAuthTokenHeader as setGitHubAuthTokenHeader,
@@ -14,12 +12,9 @@ import {
 } from "#/api/github-axios-instance";
 
 interface AuthContextType {
-  token: string | null;
   gitHubToken: string | null;
-  setToken: (token: string | null) => void;
-  setGitHubToken: (token: string | null) => void;
   setUserId: (userId: string) => void;
-  clearToken: () => void;
+  setGitHubToken: (token: string | null) => void;
   clearGitHubToken: () => void;
   refreshToken: () => Promise<boolean>;
   logout: () => void;
@@ -28,9 +23,6 @@ interface AuthContextType {
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 function AuthProvider({ children }: React.PropsWithChildren) {
-  const [tokenState, setTokenState] = React.useState<string | null>(() =>
-    localStorage.getItem("token"),
-  );
   const [gitHubTokenState, setGitHubTokenState] = React.useState<string | null>(
     () => localStorage.getItem("ghToken"),
   );
@@ -38,13 +30,6 @@ function AuthProvider({ children }: React.PropsWithChildren) {
   const [userIdState, setUserIdState] = React.useState<string>(
     () => localStorage.getItem("userId") || "",
   );
-
-  const clearToken = () => {
-    setTokenState(null);
-    localStorage.removeItem("token");
-
-    removeOpenHandsAuthTokenHeader();
-  };
 
   const clearGitHubToken = () => {
     setGitHubTokenState(null);
@@ -54,17 +39,6 @@ function AuthProvider({ children }: React.PropsWithChildren) {
 
     removeOpenHandsGitHubTokenHeader();
     removeGitHubAuthTokenHeader();
-  };
-
-  const setToken = (token: string | null) => {
-    setTokenState(token);
-
-    if (token) {
-      localStorage.setItem("token", token);
-      setOpenHandsAuthTokenHeader(token);
-    } else {
-      clearToken();
-    }
   };
 
   const setGitHubToken = (token: string | null) => {
@@ -107,11 +81,10 @@ function AuthProvider({ children }: React.PropsWithChildren) {
   };
 
   React.useEffect(() => {
-    const storedToken = localStorage.getItem("token");
     const storedGitHubToken = localStorage.getItem("ghToken");
+
     const userId = localStorage.getItem("userId") || "";
 
-    setToken(storedToken);
     setGitHubToken(storedGitHubToken);
     setUserId(userId);
     setupGithubAxiosInterceptors(refreshToken, logout);
@@ -119,17 +92,14 @@ function AuthProvider({ children }: React.PropsWithChildren) {
 
   const value = React.useMemo(
     () => ({
-      token: tokenState,
       gitHubToken: gitHubTokenState,
-      setToken,
       setGitHubToken,
       setUserId,
-      clearToken,
       clearGitHubToken,
       refreshToken,
       logout,
     }),
-    [tokenState, gitHubTokenState],
+    [gitHubTokenState],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
