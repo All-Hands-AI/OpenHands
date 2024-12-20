@@ -102,7 +102,6 @@ export function WsClientProvider({
     setStatus(WsClientProviderStatus.ERROR);
   }
 
-  let connecting = false;
   React.useEffect(() => {
     if (!conversationId) {
       throw new Error("No conversation ID provided");
@@ -126,8 +125,6 @@ export function WsClientProvider({
     const baseUrl =
       import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
 
-    if (connecting) return;
-    connecting = true;
     sio = io(baseUrl, {
       transports: ["websocket"],
       auth: {
@@ -145,7 +142,6 @@ export function WsClientProvider({
     ghTokenRef.current = ghToken;
 
     return () => {
-      connecting = false;
       sio.off("connect", handleConnect);
       sio.off("oh_event", handleMessage);
       sio.off("connect_error", handleError);

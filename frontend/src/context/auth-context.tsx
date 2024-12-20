@@ -2,10 +2,8 @@ import posthog from "posthog-js";
 import React from "react";
 import OpenHands from "#/api/open-hands";
 import {
-  removeAuthTokenHeader as removeOpenHandsAuthTokenHeader,
   removeGitHubTokenHeader as removeOpenHandsGitHubTokenHeader,
   setGitHubTokenHeader as setOpenHandsGitHubTokenHeader,
-  setAuthTokenHeader as setOpenHandsAuthTokenHeader,
 } from "#/api/open-hands-axios";
 import {
   setAuthTokenHeader as setGitHubAuthTokenHeader,
