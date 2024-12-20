@@ -70,7 +70,6 @@ function AppContent() {
 
   return (
     <WsClientProvider
-      enabled
       ghToken={gitHubToken}
       conversationId={conversationId}
     >

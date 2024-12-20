@@ -34,13 +34,11 @@ const WsClientContext = React.createContext<UseWsClient>({
 });
 
 interface WsClientProviderProps {
-  enabled: boolean;
   conversationId: string;
   ghToken: string | null;
 }
 
 export function WsClientProvider({
-  enabled,
   ghToken,
   conversationId,
   children,
@@ -109,13 +107,6 @@ export function WsClientProvider({
 
     let sio = sioRef.current;
 
-    if (!enabled) {
-      if (sio) {
-        sio.disconnect();
-      }
-      return () => {};
-    }
-
     const lastEvent = lastEventRef.current;
     const query = {
       latest_event_id: lastEvent?.id ?? -1,
@@ -148,7 +139,7 @@ export function WsClientProvider({
       sio.off("connect_failed", handleError);
       sio.off("disconnect", handleDisconnect);
     };
-  }, [enabled, ghToken, conversationId]);
+  }, [ghToken, conversationId]);
 
   // Strict mode mounts and unmounts each component twice, so we have to wait in the destructor
   // before actually disconnecting the socket and cancel the operation if the component gets remounted.
