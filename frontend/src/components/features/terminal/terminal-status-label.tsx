@@ -10,7 +10,10 @@ export function TerminalStatusLabel() {
       <div
         className={cn(
           "w-2 h-2 rounded-full",
-          curAgentState === AgentState.LOADING || curAgentState === AgentState.STOPPED ? "bg-red-500 animate-pulse" : "bg-green-500",
+          curAgentState === AgentState.LOADING ||
+            curAgentState === AgentState.STOPPED
+            ? "bg-red-500 animate-pulse"
+            : "bg-green-500",
         )}
       />
       Terminal

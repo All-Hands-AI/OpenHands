@@ -38,7 +38,9 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
   const { data: paths, refetch, error } = useListFiles();
   const { mutate: uploadFiles } = useUploadFiles();
   const { data: vscodeUrl } = useVSCodeUrl({
-    enabled: curAgentState !== AgentState.LOADING && curAgentState !== AgentState.STOPPED,
+    enabled:
+      curAgentState !== AgentState.LOADING &&
+      curAgentState !== AgentState.STOPPED,
   });
 
   const handleOpenVSCode = () => {

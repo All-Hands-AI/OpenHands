@@ -4,7 +4,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "#/context/auth-context";
 import {
   useWsClient,
-  WsClientProviderStatus,
 } from "#/context/ws-client-provider";
 import { getGitHubTokenCommand } from "#/services/terminal-service";
 import { setImportedProjectZip } from "#/state/initial-query-slice";
@@ -25,7 +24,9 @@ export const useHandleRuntimeActive = () => {
   const { data: user } = useGitHubUser();
   const { mutate: uploadFiles } = useUploadFiles();
 
-  const runtimeActive = curAgentState !== AgentState.LOADING && curAgentState !== AgentState.STOPPED;
+  const runtimeActive =
+    curAgentState !== AgentState.LOADING &&
+    curAgentState !== AgentState.STOPPED;
 
   const { importedProjectZip } = useSelector(
     (state: RootState) => state.initalQuery,

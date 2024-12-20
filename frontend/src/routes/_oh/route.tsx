@@ -55,10 +55,7 @@ export default function MainApp() {
     React.useState(!settingsAreUpToDate);
 
   const config = useConfig();
-  const {
-    data: isAuthed,
-    isFetching: isFetchingAuth,
-  } = useIsAuthed();
+  const { data: isAuthed, isFetching: isFetchingAuth } = useIsAuthed();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
     gitHubToken,

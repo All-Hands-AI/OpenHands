@@ -5,7 +5,6 @@ import { io, Socket } from "socket.io-client";
 import EventLogger from "#/utils/event-logger";
 import { handleAssistantMessage } from "#/services/actions";
 import { useRate } from "#/hooks/use-rate";
-import AgentState from "#/types/agent-state";
 
 const isOpenHandsMessage = (event: Record<string, unknown>) =>
   event.action === "message";
@@ -46,7 +45,9 @@ export function WsClientProvider({
   const disconnectRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const [status, setStatus] = React.useState(WsClientProviderStatus.DISCONNECTED);
+  const [status, setStatus] = React.useState(
+    WsClientProviderStatus.DISCONNECTED,
+  );
   const [events, setEvents] = React.useState<Record<string, unknown>[]>([]);
   const lastEventRef = React.useRef<Record<string, unknown> | null>(null);
 
