@@ -67,6 +67,13 @@ export interface ReadObservation extends OpenHandsObservationEvent<"read"> {
   };
 }
 
+export interface EditObservation extends OpenHandsObservationEvent<"edit"> {
+  source: "agent";
+  extras: {
+    path: string;
+  };
+}
+
 export interface ErrorObservation extends OpenHandsObservationEvent<"error"> {
   source: "user";
   extras: {
@@ -82,4 +89,5 @@ export type OpenHandsObservation =
   | BrowseObservation
   | WriteObservation
   | ReadObservation
+  | EditObservation
   | ErrorObservation;
