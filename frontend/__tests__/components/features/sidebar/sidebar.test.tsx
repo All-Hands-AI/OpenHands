@@ -1,22 +1,24 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { renderWithProviders } from "test-utils";
+import { createRoutesStub } from "react-router";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 
-const renderSidebar = () => renderWithProviders(<Sidebar />);
+const renderSidebar = () => {
+  const RouterStub = createRoutesStub([
+    {
+      path: "/conversation/:conversationId",
+      Component: Sidebar,
+    },
+  ]);
+
+  renderWithProviders(<RouterStub initialEntries={["/conversation/123"]} />);
+};
 
 describe("Sidebar", () => {
-  vi.mock("react-router", async (importOriginal) => ({
-    ...(await importOriginal<typeof import("react-router")>()),
-    useSearchParams: vi.fn(() => [{ get: vi.fn() }]),
-    useLocation: vi.fn(() => ({ pathname: "/conversation" })),
-    useNavigate: vi.fn(),
-  }));
-
   it("should have the conversation panel open by default", () => {
     renderSidebar();
-
     expect(screen.getByTestId("conversation-panel")).toBeInTheDocument();
   });
 
