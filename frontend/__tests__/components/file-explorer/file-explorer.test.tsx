@@ -37,8 +37,6 @@ describe.skip("FileExplorer", () => {
     expect(getFilesSpy).toHaveBeenCalledTimes(1); // once for root
   });
 
-  it.todo("should render an empty workspace");
-
   it("should refetch the workspace when clicking the refresh button", async () => {
     const user = userEvent.setup();
     renderFileExplorerWithRunningAgentState();
@@ -86,14 +84,6 @@ describe.skip("FileExplorer", () => {
     expect(uploadFilesSpy).toHaveBeenCalledTimes(2);
     expect(getFilesSpy).toHaveBeenCalled();
   });
-
-  it.todo("should upload files when dragging them to the explorer", () => {
-    // It will require too much work to mock drag logic, especially for our case
-    // https://github.com/testing-library/user-event/issues/440#issuecomment-685010755
-    // TODO: should be tested in an e2e environment such as Cypress/Playwright
-  });
-
-  it.todo("should download a file");
 
   it("should display an error toast if file upload fails", async () => {
     (uploadFilesSpy as Mock).mockRejectedValue(new Error());

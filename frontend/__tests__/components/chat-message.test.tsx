@@ -26,8 +26,6 @@ describe("ChatMessage", () => {
     expect(screen.getByText("'Hello, World!'")).toBeInTheDocument();
   });
 
-  it.todo("should support markdown content");
-
   it("should render the copy to clipboard button when the user hovers over the message", async () => {
     const user = userEvent.setup();
     render(<ChatMessage type="user" message="Hello, World!" />);
@@ -50,14 +48,7 @@ describe("ChatMessage", () => {
     expect(navigator.clipboard.readText()).resolves.toBe("Hello, World!");
   });
 
-  // BUG: vi.useFakeTimers() seems to break the tests
-  it.todo(
-    "should display a checkmark for 200ms and disable the button after copying content to clipboard",
-  );
-
   it("should display an error toast if copying content to clipboard fails", async () => {});
-
-  test.todo("push a toast after successfully copying content to clipboard");
 
   it("should render a component passed as a prop", () => {
     function Component() {
@@ -72,7 +63,12 @@ describe("ChatMessage", () => {
   });
 
   it("should apply correct styles to inline code", () => {
-    render(<ChatMessage type="assistant" message="Here is some `inline code` text" />);
+    render(
+      <ChatMessage
+        type="assistant"
+        message="Here is some `inline code` text"
+      />,
+    );
     const codeElement = screen.getByText("inline code");
 
     expect(codeElement.tagName.toLowerCase()).toBe("code");
