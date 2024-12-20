@@ -59,4 +59,11 @@ async def browse(
             last_browser_action_error=str(e),
             url=asked_url if action.action == ActionType.BROWSE else '',
             trigger_by_action=action.action,
+            open_pages_urls=[],
+            active_page_index=-1,
+            dom_object={},
+            axtree_object={},
+            extra_element_properties={},
+            focused_element_bid='',
+            last_browser_action='',
         )

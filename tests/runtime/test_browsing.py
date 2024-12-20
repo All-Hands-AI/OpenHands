@@ -64,3 +64,27 @@ def test_simple_browse(temp_dir, runtime_cls, run_as_openhands):
     assert obs.exit_code == 0
 
     _close_test_runtime(runtime)
+
+
+def test_browse_error_case(temp_dir, runtime_cls, run_as_openhands):
+    runtime = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+
+    # Test browse with invalid URL to trigger error case
+    action_browse = BrowseURLAction(url='http://invalid.url.that.does.not.exist')
+    logger.info(action_browse, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action_browse)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    assert isinstance(obs, BrowserOutputObservation)
+    assert obs.url == 'http://invalid.url.that.does.not.exist'
+    assert obs.error
+    assert obs.open_pages_urls == []
+    assert obs.active_page_index == -1
+    assert obs.last_browser_action == ''
+    assert obs.last_browser_action_error != ''
+    assert obs.focused_element_bid == ''
+    assert obs.dom_object == {}
+    assert obs.axtree_object == {}
+    assert obs.extra_element_properties == {}
+
+    _close_test_runtime(runtime)
