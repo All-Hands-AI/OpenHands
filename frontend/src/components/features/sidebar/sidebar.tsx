@@ -1,5 +1,6 @@
 import React from "react";
 import { useLocation } from "react-router";
+import FolderIcon from "#/icons/docs.svg?react";
 import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
@@ -13,6 +14,8 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { AccountSettingsModal } from "#/components/shared/modals/account-settings/account-settings-modal";
 import { ExitProjectConfirmationModal } from "#/components/shared/modals/exit-project-confirmation-modal";
 import { SettingsModal } from "#/components/shared/modals/settings/settings-modal";
+import { ConversationPanel } from "../conversation-panel/conversation-panel";
+import { cn } from "#/utils/utils";
 
 export function Sidebar() {
   const location = useLocation();
@@ -28,6 +31,8 @@ export function Sidebar() {
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
   const [startNewProjectModalIsOpen, setStartNewProjectModalIsOpen] =
     React.useState(false);
+  const [conversationPanelIsOpen, setConversationPanelIsOpen] =
+    React.useState(true);
 
   React.useEffect(() => {
     // If the github token is invalid, open the account settings modal again
@@ -54,7 +59,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1">
+      <aside className="h-[40px] md:h-full px-1 flex flex-row md:flex-col gap-1 relative">
         <div className="w-[34px] h-[34px] flex items-center justify-center">
           {user.isLoading && <LoadingSpinner size="small" />}
           {!user.isLoading && <AllHandsLogoButton onClick={handleClickLogo} />}
@@ -67,6 +72,16 @@ export function Sidebar() {
             onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
           />
           <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
+          <button
+            data-testid="toggle-conversation-panel"
+            type="button"
+            onClick={() => setConversationPanelIsOpen((prev) => !prev)}
+            className={cn(
+              conversationPanelIsOpen ? "border-b-2 border-[#FFE165]" : "",
+            )}
+          >
+            <FolderIcon width={28} height={28} />
+          </button>
           <DocsButton />
           {!!token && (
             <ExitProjectButton
@@ -74,7 +89,18 @@ export function Sidebar() {
             />
           )}
         </nav>
+
+        {conversationPanelIsOpen && (
+          <div
+            className="absolute h-full left-[calc(100%+12px)] top-0 z-20" // 12px padding (sidebar parent)
+          >
+            <ConversationPanel
+              onClose={() => setConversationPanelIsOpen(false)}
+            />
+          </div>
+        )}
       </aside>
+
       {accountSettingsModalOpen && (
         <AccountSettingsModal onClose={handleAccountSettingsModalClose} />
       )}
