@@ -1,6 +1,7 @@
 import { useSelector } from "react-redux";
 import { cn } from "#/utils/utils";
 import AgentState from "#/types/agent-state";
+import { RootState } from "#/store";
 
 export function TerminalStatusLabel() {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
