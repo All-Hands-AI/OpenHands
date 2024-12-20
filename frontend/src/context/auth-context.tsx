@@ -15,6 +15,7 @@ import {
 
 interface AuthContextType {
   gitHubToken: string | null;
+  setUserId: (userId: string) => void;
   setGitHubToken: (token: string | null) => void;
   clearGitHubToken: () => void;
   refreshToken: () => Promise<boolean>;
@@ -28,9 +29,15 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     () => localStorage.getItem("ghToken"),
   );
 
+  const [userIdState, setUserIdState] = React.useState<string>(
+    () => localStorage.getItem("userId") || "",
+  );
+
   const clearGitHubToken = () => {
     setGitHubTokenState(null);
+    setUserIdState("");
     localStorage.removeItem("ghToken");
+    localStorage.removeItem("userId");
 
     removeOpenHandsGitHubTokenHeader();
     removeGitHubAuthTokenHeader();
@@ -48,6 +55,11 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     }
   };
 
+  const setUserId = (userId: string) => {
+    setUserIdState(userIdState);
+    localStorage.setItem("userId", userId);
+  };
+
   const logout = () => {
     clearGitHubToken();
     posthog.reset();
@@ -60,7 +72,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
       return false;
     }
 
-    const newToken = await OpenHands.refreshToken(config.APP_MODE);
+    const newToken = await OpenHands.refreshToken(config.APP_MODE, userIdState);
     if (newToken) {
       setGitHubToken(newToken);
       return true;
@@ -72,7 +84,11 @@ function AuthProvider({ children }: React.PropsWithChildren) {
 
   React.useEffect(() => {
     const storedGitHubToken = localStorage.getItem("ghToken");
+
+    const userId = localStorage.getItem("userId") || "";
+
     setGitHubToken(storedGitHubToken);
+    setUserId(userId);
     setupGithubAxiosInterceptors(refreshToken, logout);
   }, []);
 
@@ -80,6 +96,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     () => ({
       gitHubToken: gitHubTokenState,
       setGitHubToken,
+      setUserId,
       clearGitHubToken,
       refreshToken,
       logout,
