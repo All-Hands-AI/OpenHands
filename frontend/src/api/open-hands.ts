@@ -246,7 +246,7 @@ class OpenHands {
   }): Promise<{ conversation_id: string }> {
     const { data } = await openHands.post<{
       conversation_id: string;
-    }>("/api/conversation", {
+    }>("/api/conversations", {
       github_token: params.githubToken,
       args: params.args,
       selected_repository: params.selectedRepository,
