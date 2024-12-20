@@ -61,7 +61,7 @@ export interface AuthenticateResponse {
 }
 
 export interface Conversation {
-  id: string;
+  conversation_id: string;
   name: string;
   repo: string | null;
   lastUpdated: string;

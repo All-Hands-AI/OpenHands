@@ -54,7 +54,7 @@ describe("App", () => {
     const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
 
     getConversationSpy.mockResolvedValue({
-      id: "9999",
+      conversation_id: "9999",
       lastUpdated: "",
       name: "",
       repo: "",

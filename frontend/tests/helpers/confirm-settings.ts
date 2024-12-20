@@ -6,9 +6,11 @@ export const confirmSettings = async (page: Page) => {
   });
   await confirmPreferenceButton.click();
 
-  const configSaveButton = page.getByRole("button", {
-    name: /save/i,
-  });
+  const configSaveButton = page
+    .getByRole("button", {
+      name: /save/i,
+    })
+    .first();
   await configSaveButton.click();
 
   const confirmChanges = page.getByRole("button", {

@@ -10,6 +10,10 @@ test("should redirect to /conversation after uploading a project zip", async ({
   page,
 }) => {
   await page.goto("/");
+  await page.evaluate(() => {
+    localStorage.setItem("analytics-consent", "true");
+    localStorage.setItem("SETTINGS_VERSION", "4");
+  });
 
   const fileInput = page.getByLabel("Upload a .zip");
   const filePath = path.join(dirname, "fixtures/project.zip");

@@ -11,6 +11,7 @@ import {
   Conversation,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
+import { Settings } from "#/services/settings";
 
 class OpenHands {
   /**
@@ -227,8 +228,21 @@ class OpenHands {
     await openHands.put(`/api/conversations/${conversationId}`, conversation);
   }
 
-  static async createConversation(): Promise<Conversation> {
-    const { data } = await openHands.post<Conversation>("/api/conversations");
+  static async createConversation(
+    settings: Settings,
+    githubToken?: string,
+    selectedRepository?: string,
+  ): Promise<Conversation> {
+    const body = {
+      github_token: githubToken,
+      args: settings,
+      selected_repository: selectedRepository,
+    };
+
+    const { data } = await openHands.post<Conversation>(
+      "/api/conversations",
+      body,
+    );
     return data;
   }
 
@@ -273,14 +287,14 @@ class OpenHands {
 
   static async newConversation(params: {
     githubToken?: string;
-    args?: Record<string, unknown>;
+    settings?: Settings;
     selectedRepository?: string;
   }): Promise<{ conversation_id: string }> {
     const { data } = await openHands.post<{
       conversation_id: string;
     }>("/api/conversation", {
       github_token: params.githubToken,
-      args: params.args,
+      args: params.settings,
       selected_repository: params.selectedRepository,
     });
     return data;

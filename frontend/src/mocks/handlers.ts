@@ -3,14 +3,14 @@ import { Conversation } from "#/api/open-hands.types";
 
 const conversations: Conversation[] = [
   {
-    id: "1",
+    conversation_id: "1",
     name: "My New Project",
     repo: null,
     lastUpdated: new Date().toISOString(),
     state: "running",
   },
   {
-    id: "2",
+    conversation_id: "2",
     name: "Repo Testing",
     repo: "octocat/hello-world",
     // 2 days ago
@@ -18,7 +18,7 @@ const conversations: Conversation[] = [
     state: "cold",
   },
   {
-    id: "3",
+    conversation_id: "3",
     name: "Another Project",
     repo: "octocat/earth",
     // 5 days ago
@@ -28,7 +28,10 @@ const conversations: Conversation[] = [
 ];
 
 const CONVERSATIONS = new Map<string, Conversation>(
-  conversations.map((conversation) => [conversation.id, conversation]),
+  conversations.map((conversation) => [
+    conversation.conversation_id,
+    conversation,
+  ]),
 );
 
 const openHandsHandlers = [
@@ -192,14 +195,14 @@ export const handlers = [
 
   http.post("/api/conversations", () => {
     const conversation: Conversation = {
-      id: (Math.random() * 100).toString(),
+      conversation_id: (Math.random() * 100).toString(),
       name: "New Conversation",
       repo: null,
       lastUpdated: new Date().toISOString(),
       state: "warm",
     };
 
-    CONVERSATIONS.set(conversation.id, conversation);
+    CONVERSATIONS.set(conversation.conversation_id, conversation);
     return HttpResponse.json(conversation, { status: 201 });
   }),
 

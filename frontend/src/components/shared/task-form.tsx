@@ -42,11 +42,11 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
   const newConversationMutation = useMutation({
     mutationFn: (variables: { q: string }) => {
       dispatch(setInitialQuery(variables.q));
-      return OpenHands.newConversation({
-        githubToken: gitHubToken || undefined,
-        selectedRepository: selectedRepository || undefined,
-        args: settings || undefined,
-      });
+      return OpenHands.createConversation(
+        settings,
+        gitHubToken || undefined,
+        selectedRepository || undefined,
+      );
     },
     onSuccess: ({ conversation_id: conversationId }, { q }) => {
       posthog.capture("initial_query_submitted", {

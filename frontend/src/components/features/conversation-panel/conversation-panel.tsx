@@ -95,11 +95,11 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
       )}
       {conversations?.map((project) => (
         <ConversationCard
-          key={project.id}
-          onClick={() => handleClickCard(project.id)}
-          onDelete={() => handleDeleteProject(project.id)}
+          key={project.conversation_id}
+          onClick={() => handleClickCard(project.conversation_id)}
+          onDelete={() => handleDeleteProject(project.conversation_id)}
           onChangeTitle={(title) =>
-            handleChangeTitle(project.id, project.name, title)
+            handleChangeTitle(project.conversation_id, project.name, title)
           }
           name={project.name}
           repo={project.repo}
