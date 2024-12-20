@@ -45,7 +45,7 @@ export function ChatInterface() {
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
   const { selectedRepository, importedProjectZip } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
 
   const handleSendMessage = async (content: string, files: File[]) => {

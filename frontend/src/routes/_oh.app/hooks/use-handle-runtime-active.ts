@@ -26,7 +26,7 @@ export const useHandleRuntimeActive = () => {
   const runtimeActive = status === WsClientProviderStatus.ACTIVE;
 
   const { importedProjectZip } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
 
   const userId = React.useMemo(() => {

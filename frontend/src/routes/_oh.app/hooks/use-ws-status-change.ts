@@ -8,11 +8,7 @@ import {
 import { createChatMessage } from "#/services/chat-service";
 import { setCurrentAgentState } from "#/state/agent-slice";
 import { addUserMessage } from "#/state/chat-slice";
-import {
-  clearSelectedRepository,
-  clearFiles,
-  clearInitialQuery,
-} from "#/state/initial-query-slice";
+import { clearFiles, clearInitialQuery } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
 import AgentState from "#/types/agent-state";
 
@@ -24,11 +20,11 @@ export const useWSStatusChange = () => {
   const statusRef = React.useRef<WsClientProviderStatus | null>(null);
 
   const { selectedRepository } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
 
   const { files, importedProjectZip, initialQuery } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
 
   const sendInitialQuery = (query: string, base64Files: string[]) => {
@@ -51,7 +47,6 @@ export const useWSStatusChange = () => {
     let additionalInfo = "";
 
     if (gitHubToken && selectedRepository) {
-      dispatch(clearSelectedRepository());
       additionalInfo = `Repository ${selectedRepository} has been cloned to /workspace. Please check the /workspace for files.`;
     } else if (importedProjectZip) {
       // if there's an uploaded project zip, add it to the chat
