@@ -379,6 +379,7 @@ def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
     reset_logger: bool = True,
+    runtime_failure_count: int = 0,
 ) -> EvalOutput:
     config = get_config(instance, metadata)
 
@@ -389,6 +390,15 @@ def process_instance(
     else:
         logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
+    # Increase resource_factor with increasing attempt_id
+    if runtime_failure_count > 0:
+        config.sandbox.remote_runtime_resource_factor = min(
+            config.sandbox.remote_runtime_resource_factor * (2**runtime_failure_count),
+            2,  # hardcode maximum resource factor to 2
+        )
+        logger.warning(
+            f'This is the second attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
+        )
     runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
 

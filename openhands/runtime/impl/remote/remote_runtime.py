@@ -246,6 +246,7 @@ class RemoteRuntime(Runtime):
             if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true'
             else {},
             'session_id': self.sid,
+            'resource_factor': self.config.sandbox.remote_runtime_resource_factor,
         }
 
         # Start the sandbox using the /start endpoint
@@ -453,10 +454,10 @@ class RemoteRuntime(Runtime):
             )
             raise
         except RequestHTTPError as e:
-            if is_runtime_request and e.response.status_code == 404:
+            if is_runtime_request and e.response.status_code in (404, 502):
                 raise AgentRuntimeDisconnectedError(
-                    f'404 error while connecting to {self.runtime_url}'
-                )
+                    f'{e.response.status_code} error while connecting to {self.runtime_url}'
+                ) from e
             elif is_runtime_request and e.response.status_code == 503:
                 if not is_retry:
                     self.log('warning', 'Runtime appears to be paused. Resuming...')
@@ -464,7 +465,9 @@ class RemoteRuntime(Runtime):
                     self._wait_until_alive()
                     return self._send_request(method, url, True, **kwargs)
                 else:
-                    raise e
+                    raise AgentRuntimeUnavailableError(
+                        f'{e.response.status_code} error while connecting to {self.runtime_url}'
+                    ) from e
 
             else:
                 raise e

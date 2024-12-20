@@ -32,8 +32,10 @@ def send_request(
         try:
             _json = response.json()
         except (requests.exceptions.JSONDecodeError, json.decoder.JSONDecodeError):
-            raise e
+            _json = None
         raise RequestHTTPError(
-            e, response=e.response, detail=_json.get('detail')
+            e,
+            response=e.response,
+            detail=_json.get('detail') if _json is not None else None,
         ) from e
     return response
