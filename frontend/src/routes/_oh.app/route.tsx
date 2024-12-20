@@ -84,7 +84,7 @@ function AppContent() {
   }, [cid]);
 
   useEffectOnce(() => {
-    if (!cid) createConversation();
+    if (!cid) createConversation(settings);
 
     dispatch(clearMessages());
     dispatch(clearTerminal());
