@@ -336,6 +336,7 @@ class AgentController:
         """Resets the agent controller"""
 
         # make sure there is an Observation with the tool call metadata to be recognized by the agent
+        # otherwise the pending action is found in history, but it's incomplete without an obs with tool result
         if self._pending_action and hasattr(self._pending_action, 'tool_call_metadata'):
             # find out if there already is an observation with the same tool call metadata
             found_observation = False
