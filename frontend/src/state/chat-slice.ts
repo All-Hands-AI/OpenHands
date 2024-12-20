@@ -102,11 +102,13 @@ export const chatSlice = createSlice({
           content = `${content.slice(0, MAX_CONTENT_LENGTH)}...`;
         }
         text = `${action.payload.args.path}\n${content}`;
-      } else if (actionID === "read" || actionID === "edit") {
-        text =
-          action.payload.args.translated_ipython_code ||
-          action.payload.args.path;
-      } else if (actionID === "browse") {
+      }
+      //   else if (actionID === "read" || actionID === "edit") {
+      //     text =
+      //       action.payload.args.translated_ipython_code ||
+      //       action.payload.args.path;
+      //   }
+      else if (actionID === "browse") {
         text = `Browsing ${action.payload.args.url}`;
       }
       if (actionID === "run" || actionID === "run_ipython") {
