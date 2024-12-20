@@ -196,14 +196,18 @@ class OpenHands {
    * Get the VSCode URL
    * @returns VSCode URL
    */
-  static async getVSCodeUrl(conversationId: string): Promise<GetVSCodeUrlResponse> {
+  static async getVSCodeUrl(
+    conversationId: string,
+  ): Promise<GetVSCodeUrlResponse> {
     const { data } = await openHands.get<GetVSCodeUrlResponse>(
       `/api/conversations/${conversationId}/vscode-url`,
     );
     return data;
   }
 
-  static async getRuntimeId(conversationId: string): Promise<{ runtime_id: string }> {
+  static async getRuntimeId(
+    conversationId: string,
+  ): Promise<{ runtime_id: string }> {
     const { data } = await openHands.get<{ runtime_id: string }>(
       `/api/conversations/${conversationId}/config`,
     );
