@@ -14,11 +14,8 @@ import {
 } from "#/api/github-axios-instance";
 
 interface AuthContextType {
-  token: string | null;
   gitHubToken: string | null;
-  setToken: (token: string | null) => void;
   setGitHubToken: (token: string | null) => void;
-  clearToken: () => void;
   clearGitHubToken: () => void;
   refreshToken: () => Promise<boolean>;
   logout: () => void;
@@ -27,19 +24,9 @@ interface AuthContextType {
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 function AuthProvider({ children }: React.PropsWithChildren) {
-  const [tokenState, setTokenState] = React.useState<string | null>(() =>
-    localStorage.getItem("token"),
-  );
   const [gitHubTokenState, setGitHubTokenState] = React.useState<string | null>(
     () => localStorage.getItem("ghToken"),
   );
-
-  const clearToken = () => {
-    setTokenState(null);
-    localStorage.removeItem("token");
-
-    removeOpenHandsAuthTokenHeader();
-  };
 
   const clearGitHubToken = () => {
     setGitHubTokenState(null);
@@ -47,17 +34,6 @@ function AuthProvider({ children }: React.PropsWithChildren) {
 
     removeOpenHandsGitHubTokenHeader();
     removeGitHubAuthTokenHeader();
-  };
-
-  const setToken = (token: string | null) => {
-    setTokenState(token);
-
-    if (token) {
-      localStorage.setItem("token", token);
-      setOpenHandsAuthTokenHeader(token);
-    } else {
-      clearToken();
-    }
   };
 
   const setGitHubToken = (token: string | null) => {
@@ -95,17 +71,13 @@ function AuthProvider({ children }: React.PropsWithChildren) {
   };
 
   React.useEffect(() => {
-    const storedToken = localStorage.getItem("token");
     const storedGitHubToken = localStorage.getItem("ghToken");
-
-    setToken(storedToken);
     setGitHubToken(storedGitHubToken);
     setupGithubAxiosInterceptors(refreshToken, logout);
   }, []);
 
   const value = React.useMemo(
     () => ({
-      token: tokenState,
       gitHubToken: gitHubTokenState,
       setToken,
       setGitHubToken,
@@ -114,7 +86,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
       refreshToken,
       logout,
     }),
-    [tokenState, gitHubTokenState],
+    [gitHubTokenState],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -22,7 +22,6 @@ const isErrorObservation = (data: object): data is ErrorObservation =>
 
 export const useHandleWSEvents = () => {
   const { events, send } = useWsClient();
-  const { setToken } = useAuth();
   const endSession = useEndSession();
   const dispatch = useDispatch();
 
@@ -31,10 +30,6 @@ export const useHandleWSEvents = () => {
       return;
     }
     const event = events[events.length - 1];
-    if (event.token && typeof event.token === "string") {
-      setToken(event.token);
-      return;
-    }
 
     if (isServerError(event)) {
       if (event.error_code === 401) {
