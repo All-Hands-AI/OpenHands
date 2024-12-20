@@ -1,7 +1,6 @@
 import React from "react";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
-import { useAuth } from "#/context/auth-context";
 import { useWsClient } from "#/context/ws-client-provider";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { addErrorMessage } from "#/state/chat-slice";

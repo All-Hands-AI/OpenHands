@@ -57,7 +57,6 @@ export default function MainApp() {
   const config = useConfig();
   const {
     data: isAuthed,
-    isFetched,
     isFetching: isFetchingAuth,
   } = useIsAuthed();
 
