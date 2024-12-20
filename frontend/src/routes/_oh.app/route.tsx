@@ -72,7 +72,6 @@ function AppContent() {
     <WsClientProvider
       enabled
       ghToken={gitHubToken}
-      selectedRepository={selectedRepository}
       conversationId={conversationId}
     >
       <EventHandler>
