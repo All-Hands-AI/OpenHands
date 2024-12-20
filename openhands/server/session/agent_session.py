@@ -181,18 +181,7 @@ class AgentSession:
             await self.controller.set_agent_state_to(AgentState.ERROR)
 
     def get_app_pprts(self):
-        # Add port mapping instructions based on runtime type
-        port_instructions = None
-        if isinstance(self.runtime, EventStreamRuntime):
-            port_instructions = (
-                '* When serving some application, use ports 4141 and 4142.'
-            )
-        elif isinstance(self.runtime, RemoteRuntime):
-            port_instructions = (
-                '* When serving some application, use ports 81623 and 81624.'
-            )
-
-        return port_instructions
+        return f'* If you need to run a web application, use one of these ports whenever possible: {self.runtime.web_hosts.join(',')}'
 
     def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
