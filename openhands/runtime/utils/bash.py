@@ -92,19 +92,23 @@ class BashSession:
         no_change_timeout_seconds: float = 30.0,
     ):
         self.NO_CHANGE_TIMEOUT_SECONDS = no_change_timeout_seconds
+        self.work_dir = work_dir
+        self.username = username
+        self._initialized = False
 
+    def initialize(self):
         self.server = libtmux.Server()
         window_command = '/bin/bash'
-        if username:
+        if self.username:
             # This starts a non-login (new) shell for the given user
-            window_command = f'su {username} -'
+            window_command = f'su {self.username} -'
 
-        session_name = f'openhands-{username}-{uuid.uuid4()}'
+        session_name = f'openhands-{self.username}-{uuid.uuid4()}'
         self.session = self.server.new_session(
             session_name=session_name,
             window_name='bash',
             window_command=window_command,
-            start_directory=work_dir,
+            start_directory=self.work_dir,
             kill_session=True,
             x=1000,
             y=1000,
@@ -118,7 +122,7 @@ class BashSession:
         _initial_window = self.session.attached_window
         self.window = self.session.new_window(
             window_shell=window_command,
-            start_directory=work_dir,
+            start_directory=self.work_dir,
         )
         self.pane = self.window.attached_pane
         logger.debug(f'pane: {self.pane}; history_limit: {self.session.history_limit}')
@@ -135,10 +139,11 @@ class BashSession:
         self.prev_status: BashCommandStatus | None = None
         self.prev_output: str = ''
         self._closed: bool = False
-        logger.debug(f'Bash session initialized with work dir: {work_dir}')
+        logger.debug(f'Bash session initialized with work dir: {self.work_dir}')
 
         # Maintain the current working directory
-        self._cwd = os.path.abspath(work_dir)
+        self._cwd = os.path.abspath(self.work_dir)
+        self._initialized = True
 
     def __del__(self):
         """Ensure the session is closed when the object is destroyed."""
@@ -363,6 +368,9 @@ class BashSession:
 
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
         """Execute a command in the bash session."""
+        if not self._initialized:
+            raise RuntimeError('Bash session is not initialized')
+
         # Strip the command of any leading/trailing whitespace
         logger.debug(f'RECEIVED ACTION: {action}')
         command = action.command.strip()

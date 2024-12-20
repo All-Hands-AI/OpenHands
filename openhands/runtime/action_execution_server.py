@@ -101,11 +101,7 @@ class ActionExecutor:
         if _updated_user_id is not None:
             self.user_id = _updated_user_id
 
-        self.bash_session = BashSession(
-            work_dir=work_dir,
-            username=username,
-        )
-
+        self.bash_session: BashSession | None = None
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.browser = BrowserEnv(browsergym_eval_env)
@@ -118,6 +114,12 @@ class ActionExecutor:
         return self._initial_cwd
 
     async def ainit(self):
+        # bash needs to be initialized first
+        self.bash_session = BashSession(
+            work_dir=self._initial_cwd,
+            username=self.username,
+        )
+        self.bash_session.initialize()
         await wait_all(
             (self._init_plugin(plugin) for plugin in self.plugins_to_load),
             timeout=30,
@@ -143,6 +145,7 @@ class ActionExecutor:
         return self._initialized
 
     async def _init_plugin(self, plugin: Plugin):
+        assert self.bash_session is not None
         await plugin.initialize(self.username)
         self.plugins[plugin.name] = plugin
         logger.debug(f'Initializing plugin: {plugin.name}')
@@ -180,10 +183,12 @@ class ActionExecutor:
     async def run(
         self, action: CmdRunAction
     ) -> CmdOutputObservation | ErrorObservation:
+        assert self.bash_session is not None
         obs = await call_sync_from_async(self.bash_session.execute, action)
         return obs
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
+        assert self.bash_session is not None
         if 'jupyter' in self.plugins:
             _jupyter_plugin: JupyterPlugin = self.plugins['jupyter']  # type: ignore
             # This is used to make AgentSkills in Jupyter aware of the
@@ -245,6 +250,7 @@ class ActionExecutor:
         return str(filepath)
 
     async def read(self, action: FileReadAction) -> Observation:
+        assert self.bash_session is not None
         # NOTE: the client code is running inside the sandbox,
         # so there's no need to check permission
         working_dir = self.bash_session.cwd
@@ -294,6 +300,7 @@ class ActionExecutor:
         return FileReadObservation(path=filepath, content=code_view)
 
     async def write(self, action: FileWriteAction) -> Observation:
+        assert self.bash_session is not None
         working_dir = self.bash_session.cwd
         filepath = self._resolve_path(action.path, working_dir)
 
@@ -355,7 +362,8 @@ class ActionExecutor:
         return await browse(action, self.browser)
 
     def close(self):
-        self.bash_session.close()
+        if self.bash_session is not None:
+            self.bash_session.close()
         self.browser.close()
 
 
