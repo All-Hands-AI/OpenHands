@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from difflib import SequenceMatcher
 
 from openhands.core.schema import ObservationType
+from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.observation.observation import Observation
 
 
@@ -11,6 +12,7 @@ class FileReadObservation(Observation):
 
     path: str
     observation: str = ObservationType.READ
+    impl_source: FileReadSource = FileReadSource.DEFAULT
 
     @property
     def message(self) -> str:
@@ -39,6 +41,8 @@ class FileEditObservation(Observation):
     old_content: str
     new_content: str
     observation: str = ObservationType.EDIT
+    impl_source: FileEditSource = FileEditSource.LLM_BASED_EDIT
+    formatted_output_and_error: str = ''
 
     @property
     def message(self) -> str:
@@ -122,6 +126,9 @@ class FileEditObservation(Observation):
         return '\n'.join(result)
 
     def __str__(self) -> str:
+        if self.impl_source == FileEditSource.OH_ACI:
+            return self.formatted_output_and_error
+
         ret = ''
         if not self.prev_exist:
             assert (

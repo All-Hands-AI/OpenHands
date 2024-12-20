@@ -18,6 +18,7 @@ interface AuthContextType {
   gitHubToken: string | null;
   setToken: (token: string | null) => void;
   setGitHubToken: (token: string | null) => void;
+  setUserId: (userId: string) => void;
   clearToken: () => void;
   clearGitHubToken: () => void;
   refreshToken: () => Promise<boolean>;
@@ -34,6 +35,10 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     () => localStorage.getItem("ghToken"),
   );
 
+  const [userIdState, setUserIdState] = React.useState<string>(
+    () => localStorage.getItem("userId") || "",
+  );
+
   const clearToken = () => {
     setTokenState(null);
     localStorage.removeItem("token");
@@ -43,7 +48,9 @@ function AuthProvider({ children }: React.PropsWithChildren) {
 
   const clearGitHubToken = () => {
     setGitHubTokenState(null);
+    setUserIdState("");
     localStorage.removeItem("ghToken");
+    localStorage.removeItem("userId");
 
     removeOpenHandsGitHubTokenHeader();
     removeGitHubAuthTokenHeader();
@@ -72,6 +79,11 @@ function AuthProvider({ children }: React.PropsWithChildren) {
     }
   };
 
+  const setUserId = (userId: string) => {
+    setUserIdState(userIdState);
+    localStorage.setItem("userId", userId);
+  };
+
   const logout = () => {
     clearGitHubToken();
     posthog.reset();
@@ -84,7 +96,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
       return false;
     }
 
-    const newToken = await OpenHands.refreshToken(config.APP_MODE);
+    const newToken = await OpenHands.refreshToken(config.APP_MODE, userIdState);
     if (newToken) {
       setGitHubToken(newToken);
       return true;
@@ -97,9 +109,11 @@ function AuthProvider({ children }: React.PropsWithChildren) {
   React.useEffect(() => {
     const storedToken = localStorage.getItem("token");
     const storedGitHubToken = localStorage.getItem("ghToken");
+    const userId = localStorage.getItem("userId") || "";
 
     setToken(storedToken);
     setGitHubToken(storedGitHubToken);
+    setUserId(userId);
     setupGithubAxiosInterceptors(refreshToken, logout);
   }, []);
 
@@ -109,6 +123,7 @@ function AuthProvider({ children }: React.PropsWithChildren) {
       gitHubToken: gitHubTokenState,
       setToken,
       setGitHubToken,
+      setUserId,
       clearToken,
       clearGitHubToken,
       refreshToken,

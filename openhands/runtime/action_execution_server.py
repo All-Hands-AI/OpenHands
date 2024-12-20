@@ -25,6 +25,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.security import APIKeyHeader
+from openhands_aci.utils.diff import get_diff
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
@@ -39,9 +40,11 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
+    FileEditObservation,
     FileReadObservation,
     FileWriteObservation,
     IPythonRunCellObservation,
@@ -202,24 +205,64 @@ class ActionExecutor:
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
             obs.content = obs.content.rstrip()
             matches = re.findall(
-                r'<oh_aci_output>(.*?)</oh_aci_output>', obs.content, re.DOTALL
+                r'<oh_aci_output_[0-9a-f]{32}>(.*?)</oh_aci_output_[0-9a-f]{32}>',
+                obs.content,
+                re.DOTALL,
             )
             if matches:
-                results = []
-                for match in matches:
+                results: list[str] = []
+                if len(matches) == 1:
+                    # Use specific actions/observations types
+                    match = matches[0]
                     try:
                         result_dict = json.loads(match)
-                        results.append(
-                            result_dict.get('formatted_output_and_error', '')
-                        )
+                        if result_dict.get('path'):  # Successful output
+                            if (
+                                result_dict['new_content'] is not None
+                            ):  # File edit commands
+                                diff = get_diff(
+                                    old_contents=result_dict['old_content']
+                                    or '',  # old_content is None when file is created
+                                    new_contents=result_dict['new_content'],
+                                    filepath=result_dict['path'],
+                                )
+                                return FileEditObservation(
+                                    content=diff,
+                                    path=result_dict['path'],
+                                    old_content=result_dict['old_content'],
+                                    new_content=result_dict['new_content'],
+                                    prev_exist=result_dict['prev_exist'],
+                                    impl_source=FileEditSource.OH_ACI,
+                                    formatted_output_and_error=result_dict[
+                                        'formatted_output_and_error'
+                                    ],
+                                )
+                            else:  # File view commands
+                                return FileReadObservation(
+                                    content=result_dict['formatted_output_and_error'],
+                                    path=result_dict['path'],
+                                    impl_source=FileReadSource.OH_ACI,
+                                )
+                        else:  # Error output
+                            results.append(result_dict['formatted_output_and_error'])
                     except json.JSONDecodeError:
                         # Handle JSON decoding errors if necessary
                         results.append(
                             f"Invalid JSON in 'openhands-aci' output: {match}"
                         )
+                else:
+                    for match in matches:
+                        try:
+                            result_dict = json.loads(match)
+                            results.append(result_dict['formatted_output_and_error'])
+                        except json.JSONDecodeError:
+                            # Handle JSON decoding errors if necessary
+                            results.append(
+                                f"Invalid JSON in 'openhands-aci' output: {match}"
+                            )
 
                 # Combine the results (e.g., join them) or handle them as required
-                obs.content = '\n'.join(results)
+                obs.content = '\n'.join(str(result) for result in results)
 
             if action.include_extra:
                 obs.content += (
@@ -239,6 +282,14 @@ class ActionExecutor:
         return str(filepath)
 
     async def read(self, action: FileReadAction) -> Observation:
+        if action.impl_source == FileReadSource.OH_ACI:
+            return await self.run_ipython(
+                IPythonRunCellAction(
+                    code=action.translated_ipython_code,
+                    include_extra=False,
+                )
+            )
+
         # NOTE: the client code is running inside the sandbox,
         # so there's no need to check permission
         working_dir = self.bash_session.workdir

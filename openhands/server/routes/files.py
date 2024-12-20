@@ -33,11 +33,11 @@ from openhands.server.file_config import (
 )
 from openhands.utils.async_utils import call_sync_from_async
 
-app = APIRouter(prefix='/api')
+app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
 @app.get('/list-files')
-async def list_files(request: Request, path: str | None = None):
+async def list_files(request: Request, conversation_id: str, path: str | None = None):
     """List files in the specified path.
 
     This function retrieves a list of files from the agent's runtime file store,
@@ -149,7 +149,7 @@ async def select_file(file: str, request: Request):
 
 
 @app.post('/upload-files')
-async def upload_file(request: Request, files: list[UploadFile]):
+async def upload_file(request: Request, conversation_id: str, files: list[UploadFile]):
     """Upload a list of files to the workspace.
 
     To upload a files:
@@ -311,7 +311,9 @@ async def save_file(request: Request):
 
 
 @app.get('/zip-directory')
-async def zip_current_workspace(request: Request, background_tasks: BackgroundTasks):
+async def zip_current_workspace(
+    request: Request, conversation_id: str, background_tasks: BackgroundTasks
+):
     try:
         logger.debug('Zipping workspace')
         runtime: Runtime = request.state.conversation.runtime
