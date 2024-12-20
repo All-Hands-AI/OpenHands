@@ -402,7 +402,10 @@ async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_s
 
     # Create a pending action with tool call metadata
     pending_action = CmdRunAction(command='test')
-    pending_action.tool_call_metadata = {'function': 'test_function', 'args': {'arg1': 'value1'}}
+    pending_action.tool_call_metadata = {
+        'function': 'test_function',
+        'args': {'arg1': 'value1'},
+    }
     controller._pending_action = pending_action
 
     # Call reset
@@ -427,7 +430,9 @@ async def test_reset_with_pending_action_no_observation(mock_agent, mock_event_s
 
 
 @pytest.mark.asyncio
-async def test_reset_with_pending_action_existing_observation(mock_agent, mock_event_stream):
+async def test_reset_with_pending_action_existing_observation(
+    mock_agent, mock_event_stream
+):
     """Test reset() when there's a pending action with tool call metadata and an existing observation."""
     controller = AgentController(
         agent=mock_agent,
@@ -440,7 +445,10 @@ async def test_reset_with_pending_action_existing_observation(mock_agent, mock_e
 
     # Create a pending action with tool call metadata
     pending_action = CmdRunAction(command='test')
-    pending_action.tool_call_metadata = {'function': 'test_function', 'args': {'arg1': 'value1'}}
+    pending_action.tool_call_metadata = {
+        'function': 'test_function',
+        'args': {'arg1': 'value1'},
+    }
     controller._pending_action = pending_action
 
     # Add an existing observation to the history
@@ -489,7 +497,9 @@ async def test_reset_without_pending_action(mock_agent, mock_event_stream):
 
 
 @pytest.mark.asyncio
-async def test_reset_with_pending_action_no_metadata(mock_agent, mock_event_stream, monkeypatch):
+async def test_reset_with_pending_action_no_metadata(
+    mock_agent, mock_event_stream, monkeypatch
+):
     """Test reset() when there's a pending action without tool call metadata."""
     controller = AgentController(
         agent=mock_agent,
@@ -504,10 +514,12 @@ async def test_reset_with_pending_action_no_metadata(mock_agent, mock_event_stre
     pending_action = CmdRunAction(command='test')
     # Mock hasattr to return False for tool_call_metadata
     original_hasattr = hasattr
+
     def mock_hasattr(obj, name):
         if obj == pending_action and name == 'tool_call_metadata':
             return False
         return original_hasattr(obj, name)
+
     monkeypatch.setattr('builtins.hasattr', mock_hasattr)
     controller._pending_action = pending_action
 
