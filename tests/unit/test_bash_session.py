@@ -22,13 +22,13 @@ def test_session_initialization():
     session.close()
 
 
-def test_pwd_property(tmp_path):
+def test_cwd_property(tmp_path):
     session = BashSession(work_dir=tmp_path)
     # Change directory and verify pwd updates
     random_dir = tmp_path / 'random'
     random_dir.mkdir()
     session.execute(CmdRunAction(f'cd {random_dir}'))
-    assert session.pwd == str(random_dir)
+    assert session.cwd == str(random_dir)
     session.close()
 
 

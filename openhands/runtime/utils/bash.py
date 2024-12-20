@@ -138,7 +138,7 @@ class BashSession:
         logger.debug(f'Bash session initialized with work dir: {work_dir}')
 
         # Maintain the current working directory
-        self._pwd = os.path.abspath(work_dir)
+        self._cwd = os.path.abspath(work_dir)
 
     def __del__(self):
         """Ensure the session is closed when the object is destroyed."""
@@ -163,8 +163,8 @@ class BashSession:
         self._closed = True
 
     @property
-    def pwd(self):
-        return self._pwd
+    def cwd(self):
+        return self._cwd
 
     def _is_special_key(self, command: str) -> bool:
         """Check if the command is a special key."""
@@ -218,8 +218,8 @@ class BashSession:
         get_content_before_last_match = bool(len(ps1_matches) == 1)
 
         # Update the current working directory if it has changed
-        if metadata.working_dir != self._pwd and metadata.working_dir:
-            self._pwd = metadata.working_dir
+        if metadata.working_dir != self._cwd and metadata.working_dir:
+            self._cwd = metadata.working_dir
 
         logger.debug(f'COMMAND OUTPUT: {pane_content}')
         # Extract the command output between the two PS1 prompts

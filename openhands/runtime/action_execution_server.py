@@ -92,11 +92,11 @@ class ActionExecutor:
         browsergym_eval_env: str | None,
     ) -> None:
         self.plugins_to_load = plugins_to_load
-        self._initial_pwd = work_dir
+        self._initial_cwd = work_dir
         self.username = username
         self.user_id = user_id
         _updated_user_id = init_user_and_working_directory(
-            username=username, user_id=self.user_id, initial_pwd=work_dir
+            username=username, user_id=self.user_id, initial_cwd=work_dir
         )
         if _updated_user_id is not None:
             self.user_id = _updated_user_id
@@ -114,8 +114,8 @@ class ActionExecutor:
         self._initialized = False
 
     @property
-    def initial_pwd(self):
-        return self._initial_pwd
+    def initial_cwd(self):
+        return self._initial_cwd
 
     async def ainit(self):
         await wait_all(
@@ -150,7 +150,7 @@ class ActionExecutor:
         if isinstance(plugin, JupyterPlugin):
             await self.run_ipython(
                 IPythonRunCellAction(
-                    code=f'import os; os.chdir("{self.bash_session.pwd}")'
+                    code=f'import os; os.chdir("{self.bash_session.cwd}")'
                 )
             )
 
@@ -188,22 +188,22 @@ class ActionExecutor:
             _jupyter_plugin: JupyterPlugin = self.plugins['jupyter']  # type: ignore
             # This is used to make AgentSkills in Jupyter aware of the
             # current working directory in Bash
-            jupyter_pwd = getattr(self, '_jupyter_pwd', None)
-            if self.bash_session.pwd != jupyter_pwd:
+            jupyter_cwd = getattr(self, '_jupyter_cwd', None)
+            if self.bash_session.cwd != jupyter_cwd:
                 logger.debug(
-                    f'{self.bash_session.pwd} != {jupyter_pwd} -> reset Jupyter PWD'
+                    f'{self.bash_session.cwd} != {jupyter_cwd} -> reset Jupyter PWD'
                 )
-                reset_jupyter_pwd_code = (
-                    f'import os; os.chdir("{self.bash_session.pwd}")'
+                reset_jupyter_cwd_code = (
+                    f'import os; os.chdir("{self.bash_session.cwd}")'
                 )
-                _aux_action = IPythonRunCellAction(code=reset_jupyter_pwd_code)
+                _aux_action = IPythonRunCellAction(code=reset_jupyter_cwd_code)
                 _reset_obs: IPythonRunCellObservation = await _jupyter_plugin.run(
                     _aux_action
                 )
                 logger.debug(
-                    f'Changed working directory in IPython to: {self.bash_session.pwd}. Output: {_reset_obs}'
+                    f'Changed working directory in IPython to: {self.bash_session.cwd}. Output: {_reset_obs}'
                 )
-                self._jupyter_pwd = self.bash_session.pwd
+                self._jupyter_cwd = self.bash_session.cwd
 
             obs: IPythonRunCellObservation = await _jupyter_plugin.run(action)
             obs.content = obs.content.rstrip()
@@ -229,7 +229,7 @@ class ActionExecutor:
 
             if action.include_extra:
                 obs.content += (
-                    f'\n[Jupyter current working directory: {self.bash_session.pwd}]'
+                    f'\n[Jupyter current working directory: {self.bash_session.cwd}]'
                 )
                 obs.content += f'\n[Jupyter Python interpreter: {_jupyter_plugin.python_interpreter_path}]'
             return obs
@@ -247,7 +247,7 @@ class ActionExecutor:
     async def read(self, action: FileReadAction) -> Observation:
         # NOTE: the client code is running inside the sandbox,
         # so there's no need to check permission
-        working_dir = self.bash_session.pwd
+        working_dir = self.bash_session.cwd
         filepath = self._resolve_path(action.path, working_dir)
         try:
             if filepath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
@@ -294,7 +294,7 @@ class ActionExecutor:
         return FileReadObservation(path=filepath, content=code_view)
 
     async def write(self, action: FileWriteAction) -> Observation:
-        working_dir = self.bash_session.pwd
+        working_dir = self.bash_session.cwd
         filepath = self._resolve_path(action.path, working_dir)
 
         insert = action.content.split('\n')
@@ -615,11 +615,11 @@ if __name__ == '__main__':
 
         # Get the full path of the requested directory
         if path is None:
-            full_path = client.initial_pwd
+            full_path = client.initial_cwd
         elif os.path.isabs(path):
             full_path = path
         else:
-            full_path = os.path.join(client.initial_pwd, path)
+            full_path = os.path.join(client.initial_cwd, path)
 
         if not os.path.exists(full_path):
             # if user just removed a folder, prevent server error 500 in UI

@@ -69,7 +69,7 @@ def _close_test_runtime(runtime: Runtime) -> None:
     time.sleep(1)
 
 
-def _reset_pwd() -> None:
+def _reset_cwd() -> None:
     global project_dir
     # Try to change back to project directory
     try:
@@ -152,16 +152,16 @@ def get_run_as_openhands() -> list[bool]:
 
 @pytest.fixture(scope='module')  # for xdist
 def runtime_setup_module():
-    _reset_pwd()
+    _reset_cwd()
     yield
-    _reset_pwd()
+    _reset_cwd()
 
 
 @pytest.fixture(scope='session')  # not for xdist
 def runtime_setup_session():
-    _reset_pwd()
+    _reset_cwd()
     yield
-    _reset_pwd()
+    _reset_cwd()
 
 
 # This assures that all tests run together per runtime, not alternating between them,
