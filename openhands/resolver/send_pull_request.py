@@ -324,7 +324,11 @@ def send_pull_request(
         raise RuntimeError('Failed to push changes to the remote repository')
 
     # Prepare the PR data: title and body
-    pr_title = pr_title if pr_title else f'Fix issue #{github_issue.number}: {github_issue.title}'
+    pr_title = (
+        pr_title
+        if pr_title
+        else f'Fix issue #{github_issue.number}: {github_issue.title}'
+    )
     pr_body = f'This pull request fixes #{github_issue.number}.'
     if additional_message:
         pr_body += f'\n\n{additional_message}'
