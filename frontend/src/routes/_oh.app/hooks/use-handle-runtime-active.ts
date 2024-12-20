@@ -10,7 +10,7 @@ import { base64ToBlob } from "#/utils/base64-to-blob";
 import { useUploadFiles } from "../../../hooks/mutation/use-upload-files";
 import { useGitHubUser } from "../../../hooks/query/use-github-user";
 import { isGitHubErrorReponse } from "#/api/github-axios-instance";
-import AgentState from "#/types/agent-state";
+import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 
 export const useHandleRuntimeActive = () => {
   const { gitHubToken } = useAuth();
@@ -22,9 +22,7 @@ export const useHandleRuntimeActive = () => {
   const { data: user } = useGitHubUser();
   const { mutate: uploadFiles } = useUploadFiles();
 
-  const runtimeActive =
-    curAgentState !== AgentState.LOADING &&
-    curAgentState !== AgentState.STOPPED;
+  const runtimeActive = !RUNTIME_INACTIVE_STATES.includes(curAgentState);
 
   const { importedProjectZip } = useSelector(
     (state: RootState) => state.initalQuery,

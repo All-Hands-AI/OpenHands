@@ -14,7 +14,7 @@ import {
   clearInitialQuery,
 } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
-import AgentState from "#/types/agent-state";
+import { AgentState } from "#/types/agent-state";
 
 export const useWSStatusChange = () => {
   const { send, status } = useWsClient();

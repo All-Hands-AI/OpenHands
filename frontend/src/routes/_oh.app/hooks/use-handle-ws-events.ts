@@ -4,7 +4,7 @@ import { useDispatch } from "react-redux";
 import { useWsClient } from "#/context/ws-client-provider";
 import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { addErrorMessage } from "#/state/chat-slice";
-import AgentState from "#/types/agent-state";
+import { AgentState } from "#/types/agent-state";
 import { ErrorObservation } from "#/types/core/observations";
 import { useEndSession } from "../../../hooks/use-end-session";
 
