@@ -324,7 +324,7 @@ def send_pull_request(
         raise RuntimeError('Failed to push changes to the remote repository')
 
     # Prepare the PR data: title and body
-    pr_title = (
+    final_pr_title = (
         pr_title
         if pr_title
         else f'Fix issue #{github_issue.number}: {github_issue.title}'
@@ -341,7 +341,7 @@ def send_pull_request(
     else:
         # Prepare the PR for the GitHub API
         data = {
-            'title': pr_title,  # No need to escape title for GitHub API
+            'title': final_pr_title,  # No need to escape title for GitHub API
             'body': pr_body,
             'head': branch_name,
             'base': base_branch,
@@ -373,7 +373,7 @@ def send_pull_request(
 
         url = pr_data['html_url']
 
-    print(f'{pr_type} created: {url}\n\n--- Title: {pr_title}\n\n--- Body:\n{pr_body}')
+    print(f'{pr_type} created: {url}\n\n--- Title: {final_pr_title}\n\n--- Body:\n{pr_body}')
 
     return url
 
