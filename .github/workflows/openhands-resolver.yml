@@ -116,7 +116,7 @@ jobs:
           PAT_USERNAME: ${{ secrets.PAT_USERNAME }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          required_vars=("LLM_MODEL" "LLM_API_KEY")
+          required_vars=("LLM_API_KEY")
           for var in "${required_vars[@]}"; do
             if [ -z "${!var}" ]; then
               echo "Error: Required environment variable $var is not set."
@@ -125,12 +125,12 @@ jobs:
           done
 
           # Check optional variables and warn about fallbacks
-          if [ -z "$PAT_TOKEN" ]; then
-            echo "Warning: PAT_TOKEN is not set, falling back to GITHUB_TOKEN"
-          fi
-
           if [ -z "$LLM_BASE_URL" ]; then
             echo "Warning: LLM_BASE_URL is not set, will use default API endpoint"
+          fi
+
+          if [ -z "$PAT_TOKEN" ]; then
+            echo "Warning: PAT_TOKEN is not set, falling back to GITHUB_TOKEN"
           fi
 
           if [ -z "$PAT_USERNAME" ]; then
