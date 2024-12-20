@@ -5,7 +5,7 @@ export type Settings = {
   LLM_BASE_URL: string;
   AGENT: string;
   LANGUAGE: string;
-  LLM_API_KEY: string;
+  LLM_API_KEY: string | null;
   CONFIRMATION_MODE: boolean;
   SECURITY_ANALYZER: string;
 };
@@ -15,7 +15,7 @@ export const DEFAULT_SETTINGS: Settings = {
   LLM_BASE_URL: "",
   AGENT: "CodeActAgent",
   LANGUAGE: "en",
-  LLM_API_KEY: "",
+  LLM_API_KEY: null,
   CONFIRMATION_MODE: false,
   SECURITY_ANALYZER: "",
 };
@@ -66,39 +66,95 @@ export const maybeMigrateSettings = (logout: () => void) => {
 export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
 
 /**
- * Get the settings from local storage or use the default settings if not found
+ * Get the settings from the server or use the default settings if not found
  */
-export const getSettings = (): Settings => {
-  const model = localStorage.getItem("LLM_MODEL");
+export const getSettings = async (): Promise<Settings> => {
+  try {
+    const response = await fetch("/api/settings");
+    if (!response.ok) {
+      throw new Error("Failed to load settings");
+    }
+    let settings = await response.json();
+    if (settings != null) {
+      // For now, we have the objects with the same keys in upper / lower case and need to translate...
+      settings = Object.keys(settings).reduce((result: any, key: string) => {
+        const settingsKey = key.toUpperCase();
+        result[settingsKey] = settings[key] || DEFAULT_SETTINGS[settingsKey as keyof Settings]
+        return result
+      }, {})
+
+      return {
+        ...DEFAULT_SETTINGS,
+        ...settings,
+      };
+    }
+  } catch (error) {
+    console.error("Error loading settings:", error);
+    return DEFAULT_SETTINGS;
+  }
+  const llmModel = localStorage.getItem("LLM_MODEL");
   const baseUrl = localStorage.getItem("LLM_BASE_URL");
   const agent = localStorage.getItem("AGENT");
   const language = localStorage.getItem("LANGUAGE");
-  const apiKey = localStorage.getItem("LLM_API_KEY");
+  const llmApiKey = localStorage.getItem("LLM_API_KEY");
   const confirmationMode = localStorage.getItem("CONFIRMATION_MODE") === "true";
   const securityAnalyzer = localStorage.getItem("SECURITY_ANALYZER");
 
   return {
-    LLM_MODEL: model || DEFAULT_SETTINGS.LLM_MODEL,
+    LLM_MODEL: llmModel || DEFAULT_SETTINGS.LLM_MODEL,
     LLM_BASE_URL: baseUrl || DEFAULT_SETTINGS.LLM_BASE_URL,
     AGENT: agent || DEFAULT_SETTINGS.AGENT,
     LANGUAGE: language || DEFAULT_SETTINGS.LANGUAGE,
-    LLM_API_KEY: apiKey || DEFAULT_SETTINGS.LLM_API_KEY,
+    LLM_API_KEY: llmApiKey || DEFAULT_SETTINGS.LLM_API_KEY,
     CONFIRMATION_MODE: confirmationMode || DEFAULT_SETTINGS.CONFIRMATION_MODE,
     SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
   };
 };
 
 /**
- * Save the settings to local storage. Only valid settings are saved.
+ * Save the settings to the server. Only valid settings are saved.
  * @param settings - the settings to save
  */
-export const saveSettings = (settings: Partial<Settings>) => {
-  Object.keys(settings).forEach((key) => {
-    const isValid = validKeys.includes(key as keyof Settings);
-    if (!isValid) return;
-    let value = settings[key as keyof Settings];
-    if (value === undefined || value === null) value = "";
-    localStorage.setItem(key, value.toString().trim());
-  });
-  localStorage.setItem("SETTINGS_VERSION", LATEST_SETTINGS_VERSION.toString());
+export const saveSettings = async (
+  settings: Partial<Settings>
+): Promise<boolean> => {
+  try {
+    // For now, we have the objects with the same keys in upper / lower case and need to translate...
+    const validSettings = Object.keys(settings).reduce((result: any, key: string) => {
+      result[key.toLowerCase()] = settings[key as keyof Settings] || DEFAULT_SETTINGS[key as keyof Settings]
+      return result
+    }, {})
+
+    // Clean up values
+    Object.entries(validSettings).forEach(([key, value]) => {
+      if (value === undefined || value === null) {
+        validSettings[key] = "";
+      } else if (typeof value === "string") {
+        validSettings[key] = value.trim();
+      }
+    });
+
+    // Get current settings to preserve API key if not provided
+    const currentSettings = await getSettings();
+
+    const response = await fetch("/api/settings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...currentSettings,
+        ...validSettings,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to save settings");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error saving settings:", error);
+    return false;
+  }
 };
