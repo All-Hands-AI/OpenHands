@@ -15,6 +15,7 @@ from openhands.events.observation.commands import (
     CmdOutputMetadata,
     CmdOutputObservation,
 )
+from openhands.utils.shutdown_listener import should_continue
 
 
 def split_bash_commands(commands):
@@ -412,7 +413,7 @@ class BashSession:
             )
 
         # Loop until the command completes or times out
-        while True:
+        while should_continue():
             _start_time = time.time()
             logger.debug(f'GETTING PANE CONTENT at {_start_time}')
             cur_pane_output = self._get_pane_content()
@@ -467,3 +468,4 @@ class BashSession:
 
             logger.debug(f'SLEEPING for {self.POLL_INTERVAL} seconds for next poll')
             time.sleep(self.POLL_INTERVAL)
+        raise RuntimeError('Bash session was likely interrupted...')
