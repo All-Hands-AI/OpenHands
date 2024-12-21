@@ -318,7 +318,7 @@ jobs:
 
             let prNumber = '';
             let branchName = '';
-            let successExplanation = '';
+            let resultExplanation = '';
 
             try {
               if (success) {
@@ -361,8 +361,8 @@ jobs:
             } else if (!success && branchName) {
               let commentBody = `An attempt was made to automatically fix this issue, but it was unsuccessful. A branch named '${branchName}' has been created with the attempted changes. You can view the branch [here](https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${branchName}). Manual intervention may be required.`;
 
-              if (successExplanation) {
-                commentBody += `\n\nAdditional details about the failure:\n${successExplanation}`;
+              if (resultExplanation) {
+                commentBody += `\n\nAdditional details about the failure:\n${resultExplanation}`;
               }
 
               github.rest.issues.createComment({
