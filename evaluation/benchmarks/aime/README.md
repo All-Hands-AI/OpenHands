@@ -57,24 +57,19 @@ Using the remote runtime can provide additional resources and potentially improv
 
 ## Output
 
-The evaluation script generates the following outputs:
-
-1. An output file (`output.jsonl`) containing detailed results for each problem, including:
-   - The problem statement
-   - The agent's solution process
-   - The final answer provided by the agent
-   - Whether the answer was correct
-
-2. An accuracy file (`accuracy.txt`) containing the overall accuracy of the evaluation.
+The evaluation script generates an output file (`output.jsonl`) containing detailed results for each problem, including:
+- The problem statement
+- The agent's solution process
+- The final answer provided by the agent
+- Whether the answer was correct
 
 ## Metrics
 
 The main metric for this benchmark is the accuracy of the agent's answers. An answer is considered correct if it exactly matches the integer answer provided in the dataset. The script calculates and reports:
 
 1. Individual problem results: For each problem, the script determines whether the agent's answer is correct.
-2. Overall accuracy: The percentage of correctly answered problems across the entire evaluation set.
 
-The overall accuracy is both logged to the console and saved in the `accuracy.txt` file in the evaluation output directory.
+The detailed results for each problem are saved in the `output.jsonl` file in the evaluation output directory. To calculate the overall accuracy, you can process this file to compute the percentage of correctly answered problems across the entire evaluation set.
 
 ## Importance
 

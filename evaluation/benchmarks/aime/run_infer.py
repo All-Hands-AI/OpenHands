@@ -244,7 +244,7 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     prepared_dataset = prepare_dataset(aime_dataset, output_file, args.eval_n_limit)
 
-    results = run_evaluation(
+    run_evaluation(
         dataset=prepared_dataset,
         metadata=metadata,
         output_file=output_file,
@@ -252,12 +252,4 @@ if __name__ == '__main__':
         process_instance_func=process_instance,
     )
 
-    accuracy = calculate_accuracy(results)
-    logger.info(f'Overall accuracy: {accuracy:.2%}')
-
-    # Save accuracy to a file
-    accuracy_file = os.path.join(metadata.eval_output_dir, 'accuracy.txt')
-    with open(accuracy_file, 'w') as f:
-        f.write(f'Overall accuracy: {accuracy:.2%}\n')
-
-    logger.info(f'Accuracy saved to {accuracy_file}')
+    logger.info(f'Evaluation completed. Results saved to {output_file}')
