@@ -215,6 +215,15 @@ if __name__ == '__main__':
     )
     args, _ = parser.parse_known_args()
 
+    # Convert kebab-case to snake_case for compatibility
+    args.llm_config = args.llm_config
+    args.agent_cls = args.agent_cls
+    args.max_iterations = args.max_iterations
+    args.eval_n_limit = args.eval_n_limit
+    args.eval_num_workers = args.eval_num_workers
+    args.eval_note = args.eval_note
+    args.eval_output_dir = args.eval_output_dir
+
     print("Parsed arguments:", vars(args))
     print("LLM config argument:", args.llm_config)
 
@@ -229,7 +238,7 @@ if __name__ == '__main__':
             print("Failed to retrieve LLM config")
 
     if llm_config is None:
-        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
+        raise ValueError(f'Could not find LLM config: --llm-config {args.llm_config}')
 
     dataset = load_dataset('gneubig/aime-1983-2024', split=args.data_split)
     aime_dataset = dataset.to_pandas()

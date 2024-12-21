@@ -24,15 +24,15 @@ The evaluation script (`run_infer.py`) performs the following steps:
 To run the evaluation using Poetry, use the following command from the root directory of the OpenHands project:
 
 ```bash
-poetry run python -m evaluation.benchmarks.aime.run_infer --llm_config <your_llm_config> --agent_cls CodeActAgent --max_iterations 50 --eval_n_limit 10 --eval_num_workers 1 --data-split train
+poetry run python -m evaluation.benchmarks.aime.run_infer --llm-config <your_llm_config> --agent-cls CodeActAgent --max-iterations 50 --eval-n-limit 10 --eval-num-workers 1 --data-split train
 ```
 
 You can adjust the parameters as needed:
-- `--llm_config`: Specify the LLM configuration to use.
-- `--agent_cls`: The agent class to evaluate (currently supports CodeActAgent).
-- `--max_iterations`: Maximum number of iterations for each problem.
-- `--eval_n_limit`: Number of problems to evaluate (use a smaller number for testing).
-- `--eval_num_workers`: Number of worker processes for parallel evaluation.
+- `--llm-config`: Specify the LLM configuration to use.
+- `--agent-cls`: The agent class to evaluate (currently supports CodeActAgent).
+- `--max-iterations`: Maximum number of iterations for each problem.
+- `--eval-n-limit`: Number of problems to evaluate (use a smaller number for testing).
+- `--eval-num-workers`: Number of worker processes for parallel evaluation.
 - `--data-split`: The dataset split to use (e.g., 'train', 'test').
 
 Note: Make sure you're in the root directory of the OpenHands project when running this command, as it uses relative imports.
