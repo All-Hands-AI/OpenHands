@@ -19,7 +19,8 @@ def evaluate_results(output_file):
     # Calculate accuracy by year
     accuracy_by_year = defaultdict(lambda: {'correct': 0, 'total': 0})
     for result in results:
-        year = result['metadata']['details']['Year']
+        # Extract year from instance_id (assuming format like '1983-1')
+        year = result['instance_id'].split('-')[0]
         accuracy_by_year[year]['total'] += 1
         if result['test_result']['result']:
             accuracy_by_year[year]['correct'] += 1
