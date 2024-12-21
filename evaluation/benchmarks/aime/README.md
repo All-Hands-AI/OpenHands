@@ -37,6 +37,23 @@ You can adjust the parameters as needed:
 
 Note: Make sure you're in the root directory of the OpenHands project when running this command, as it uses relative imports.
 
+## Analyzing the Results
+
+After running the evaluation, you can analyze the results using the `eval_infer.py` script. This script calculates overall accuracy and accuracy by year. To run the analysis, use the following command:
+
+```bash
+poetry run python -m evaluation.benchmarks.aime.eval_infer --output_dir <path_to_output_directory>
+```
+
+Replace `<path_to_output_directory>` with the directory where `output.jsonl` was saved (this is printed at the end of the `run_infer.py` execution).
+
+The script will output:
+- Overall accuracy
+- Total number of problems evaluated
+- Accuracy for each year
+
+This provides a comprehensive view of the model's performance on the AIME benchmark, both overall and across different years.
+
 ### Remote Runtime Support
 
 This evaluation script supports running with a remote runtime. To use the remote runtime, set the following environment variables:
