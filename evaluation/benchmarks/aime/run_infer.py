@@ -113,6 +113,12 @@ def compare_answers(model_output: str | None, ground_truth: str):
         return False
 
 
+def calculate_accuracy(results):
+    correct = sum(1 for result in results if result['test_result']['result'])
+    total = len(results)
+    accuracy = correct / total if total > 0 else 0
+    return accuracy
+
 def process_instance(
     instance: pd.Series,
     metadata: EvalMetadata,
@@ -238,10 +244,20 @@ if __name__ == '__main__':
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     prepared_dataset = prepare_dataset(aime_dataset, output_file, args.eval_n_limit)
 
-    run_evaluation(
+    results = run_evaluation(
         dataset=prepared_dataset,
         metadata=metadata,
         output_file=output_file,
         num_workers=args.eval_num_workers,
         process_instance_func=process_instance,
     )
+
+    accuracy = calculate_accuracy(results)
+    logger.info(f'Overall accuracy: {accuracy:.2%}')
+
+    # Save accuracy to a file
+    accuracy_file = os.path.join(metadata.eval_output_dir, 'accuracy.txt')
+    with open(accuracy_file, 'w') as f:
+        f.write(f'Overall accuracy: {accuracy:.2%}\n')
+
+    logger.info(f'Accuracy saved to {accuracy_file}')
