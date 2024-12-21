@@ -32,10 +32,10 @@ async def connect(connection_id: str, environ, auth):
         raise ConnectionRefusedError('No conversation_id in query params')
 
     user_id = ''
-    if auth and 'github_token' in auth:
-        g = Github(auth['github_token'])
-        gh_user = await call_sync_from_async(g.get_user)
-        user_id = gh_user.id
+    if auth and 'github_token' in auth:    
+        with Github(auth['github_token']) as g:
+            gh_user = await call_sync_from_async(g.get_user)
+            user_id = gh_user.id
 
     logger.info(f'User {user_id} is connecting to conversation {conversation_id}')
 
