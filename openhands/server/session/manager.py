@@ -18,6 +18,9 @@ from openhands.utils.shutdown_listener import should_continue
 _REDIS_POLL_TIMEOUT = 1.5
 _CHECK_ALIVE_INTERVAL = 15
 
+_CLEANUP_INTERVAL = 15
+_CLEANUP_EXCEPTION_WAIT_TIME = 15
+
 
 class ConversationDoesNotExistError(Exception):
     pass
@@ -207,6 +210,8 @@ class SessionManager:
 
     async def _cleanup_detached_conversations(self):
         while should_continue():
+            logger.info(f'Attached conversations: {len(self._active_conversations)}')
+            logger.info(f'Detached conversations: {len(self._detached_conversations)}')
             try:
                 async with self._conversations_lock:
                     # Create a list of items to process to avoid modifying dict during iteration
@@ -215,7 +220,7 @@ class SessionManager:
                         await conversation.disconnect()
                         self._detached_conversations.pop(sid, None)
 
-                await asyncio.sleep(60)
+                await asyncio.sleep(_CLEANUP_INTERVAL)
             except asyncio.CancelledError:
                 async with self._conversations_lock:
                     for conversation, _ in self._detached_conversations.values():
@@ -224,7 +229,7 @@ class SessionManager:
                 return
             except Exception:
                 logger.warning('error_cleaning_detached_conversations', exc_info=True)
-                await asyncio.sleep(15)
+                await asyncio.sleep(_CLEANUP_EXCEPTION_WAIT_TIME)
 
     async def _is_session_running_in_cluster(self, sid: str) -> bool:
         """As the rest of the cluster if a session is running. Wait a for a short timeout for a reply"""
