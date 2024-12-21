@@ -79,6 +79,8 @@ echo "Downloading tasks.md..."
 wget https://github.com/TheAgentCompany/TheAgentCompany/releases/download/${VERSION}/tasks.md
 
 while IFS= read -r task_image; do
+    docker pull $task_image
+
     # Remove prefix using ## to remove longest matching pattern from start
     task_name=${task_image##ghcr.io/theagentcompany/}
 
