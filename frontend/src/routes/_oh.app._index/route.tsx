@@ -4,7 +4,7 @@ import { useRouteError } from "react-router";
 import { editor } from "monaco-editor";
 import { EditorProps } from "@monaco-editor/react";
 import { RootState } from "#/store";
-import AgentState from "#/types/agent-state";
+import { AgentState } from "#/types/agent-state";
 import CodeEditorComponent from "../../components/features/editor/code-editor-component";
 import { useFiles } from "#/context/files";
 import { useSaveFile } from "#/hooks/mutation/use-save-file";

@@ -161,7 +161,7 @@ async def test_run_controller_with_fatal_error(mock_agent, mock_event_stream):
     print(f'event_stream: {list(event_stream.get_events())}')
     assert state.iteration == 4
     assert state.agent_state == AgentState.ERROR
-    assert state.last_error == 'Agent got stuck in a loop'
+    assert state.last_error == 'AgentStuckInLoopError: Agent got stuck in a loop'
     assert len(list(event_stream.get_events())) == 11
 
 
@@ -227,7 +227,7 @@ async def test_run_controller_stop_with_stuck():
     assert last_event['observation'] == 'agent_state_changed'
 
     assert state.agent_state == AgentState.ERROR
-    assert state.last_error == 'Agent got stuck in a loop'
+    assert state.last_error == 'AgentStuckInLoopError: Agent got stuck in a loop'
 
 
 @pytest.mark.asyncio

@@ -12,6 +12,13 @@ import requests
 import tenacity
 
 from openhands.core.config import AppConfig
+from openhands.core.exceptions import (
+    AgentRuntimeDisconnectedError,
+    AgentRuntimeError,
+    AgentRuntimeNotFoundError,
+    AgentRuntimeNotReadyError,
+    AgentRuntimeTimeoutError,
+)
 from openhands.core.logger import DEBUG
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
@@ -34,11 +41,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.runtime.base import (
-    Runtime,
-    RuntimeDisconnectedError,
-    RuntimeNotFoundError,
-)
+from openhands.runtime.base import Runtime
 from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.impl.eventstream.containers import remove_all_containers
 from openhands.runtime.plugins import PluginRequirement
@@ -56,7 +59,7 @@ def remove_all_runtime_containers():
     remove_all_containers(CONTAINER_NAME_PREFIX)
 
 
-atexit.register(remove_all_runtime_containers)
+_atexit_registered = False
 
 
 class EventStreamRuntime(Runtime):
@@ -106,6 +109,11 @@ class EventStreamRuntime(Runtime):
         attach_to_existing: bool = False,
         headless_mode: bool = True,
     ):
+        global _atexit_registered
+        if not _atexit_registered:
+            _atexit_registered = True
+            atexit.register(remove_all_runtime_containers)
+
         self.config = config
         self._host_port = 30000  # initial dummy value
         self._container_port = 30001  # initial dummy value
@@ -358,14 +366,16 @@ class EventStreamRuntime(Runtime):
         try:
             container = self.docker_client.containers.get(self.container_name)
             if container.status == 'exited':
-                raise RuntimeDisconnectedError(
+                raise AgentRuntimeDisconnectedError(
                     f'Container {self.container_name} has exited.'
                 )
         except docker.errors.NotFound:
-            raise RuntimeNotFoundError(f'Container {self.container_name} not found.')
+            raise AgentRuntimeNotFoundError(
+                f'Container {self.container_name} not found.'
+            )
 
         if not self.log_streamer:
-            raise RuntimeError('Runtime client is not ready.')
+            raise AgentRuntimeNotReadyError('Runtime client is not ready.')
 
         with send_request(
             self.session,
@@ -445,7 +455,7 @@ class EventStreamRuntime(Runtime):
                     obs = observation_from_dict(output)
                     obs._cause = action.id  # type: ignore[attr-defined]
             except requests.Timeout:
-                raise RuntimeError(
+                raise AgentRuntimeTimeoutError(
                     f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
                 )
 
@@ -514,9 +524,9 @@ class EventStreamRuntime(Runtime):
                 pass
 
         except requests.Timeout:
-            raise TimeoutError('Copy operation timed out')
+            raise AgentRuntimeTimeoutError('Copy operation timed out')
         except Exception as e:
-            raise RuntimeError(f'Copy operation failed: {str(e)}')
+            raise AgentRuntimeError(f'Copy operation failed: {str(e)}')
         finally:
             if recursive:
                 os.unlink(temp_zip_path)

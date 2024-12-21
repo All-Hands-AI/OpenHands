@@ -24,7 +24,7 @@ class RuntimeBuilder(abc.ABC):
                 registry prefix). This should be used for subsequent use (e.g., `docker run`).
 
         Raises:
-            RuntimeError: If the build failed.
+            AgentRuntimeBuildError: If the build failed.
         """
         pass
 

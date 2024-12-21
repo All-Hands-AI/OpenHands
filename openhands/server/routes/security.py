@@ -4,7 +4,7 @@ from fastapi import (
     Request,
 )
 
-app = APIRouter(prefix='/api')
+app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
 @app.route('/security/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])

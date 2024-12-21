@@ -4,6 +4,7 @@ export type OpenHandsEventType =
   | "run"
   | "read"
   | "write"
+  | "edit"
   | "run_ipython"
   | "delegate"
   | "browse"

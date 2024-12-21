@@ -9,6 +9,7 @@ from typing import Callable
 from requests.exceptions import ConnectionError
 
 from openhands.core.config import AppConfig, SandboxConfig
+from openhands.core.exceptions import AgentRuntimeDisconnectedError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
@@ -45,22 +46,6 @@ STATUS_MESSAGES = {
     'STATUS$CONTAINER_STARTED': 'Container started.',
     'STATUS$WAITING_FOR_CLIENT': 'Waiting for client...',
 }
-
-
-class RuntimeUnavailableError(Exception):
-    pass
-
-
-class RuntimeNotReadyError(RuntimeUnavailableError):
-    pass
-
-
-class RuntimeDisconnectedError(RuntimeUnavailableError):
-    pass
-
-
-class RuntimeNotFoundError(RuntimeUnavailableError):
-    pass
 
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
@@ -193,7 +178,7 @@ class Runtime(FileEditRuntimeMixin):
             except Exception as e:
                 err_id = ''
                 if isinstance(e, ConnectionError) or isinstance(
-                    e, RuntimeDisconnectedError
+                    e, AgentRuntimeDisconnectedError
                 ):
                     err_id = 'STATUS$ERROR_RUNTIME_DISCONNECTED'
                 logger.error(
@@ -221,7 +206,7 @@ class Runtime(FileEditRuntimeMixin):
         action = CmdRunAction(
             command=f'git clone {url} {dir_name} ; cd {dir_name} ; git checkout -b openhands-workspace'
         )
-        self.log('info', 'Cloning repo: {selected_repository}')
+        self.log('info', f'Cloning repo: {selected_repository}')
         self.run_action(action)
 
     def get_custom_microagents(self, selected_repository: str | None) -> list[str]:
