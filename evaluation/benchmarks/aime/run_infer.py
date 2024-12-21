@@ -5,7 +5,7 @@ from typing import Callable
 import pandas as pd
 from datasets import load_dataset
 
-from ...utils.shared import (
+from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     compatibility_for_eval_history_pairs,
@@ -118,6 +118,7 @@ def calculate_accuracy(results):
     total = len(results)
     accuracy = correct / total if total > 0 else 0
     return accuracy
+
 
 def process_instance(
     instance: pd.Series,
