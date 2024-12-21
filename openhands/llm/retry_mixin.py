@@ -1,6 +1,9 @@
+from typing import Any
+
 from tenacity import (
     retry,
     retry_if_exception_type,
+    retry_if_not_exception_type,
     stop_after_attempt,
     wait_exponential,
 )
@@ -12,28 +15,35 @@ from openhands.utils.tenacity_stop import stop_if_should_exit
 class RetryMixin:
     """Mixin class for retry logic."""
 
-    def retry_decorator(self, **kwargs):
+    def retry_decorator(self, **kwargs: Any):
         """
         Create a LLM retry decorator with customizable parameters. This is used for 429 errors, and a few other exceptions in LLM classes.
 
         Args:
             **kwargs: Keyword arguments to override default retry behavior.
-                      Keys: num_retries, retry_exceptions, retry_min_wait, retry_max_wait, retry_multiplier
+                      Keys: num_retries, retry_exceptions, exclude_exceptions, retry_min_wait, retry_max_wait, retry_multiplier
 
         Returns:
             A retry decorator with the parameters customizable in configuration.
         """
         num_retries = kwargs.get('num_retries')
-        retry_exceptions = kwargs.get('retry_exceptions')
+        retry_exceptions = kwargs.get('retry_exceptions', ())
+        exclude_exceptions = kwargs.get('exclude_exceptions', ())
         retry_min_wait = kwargs.get('retry_min_wait')
         retry_max_wait = kwargs.get('retry_max_wait')
         retry_multiplier = kwargs.get('retry_multiplier')
+
+        retry_condition = retry_if_exception_type(retry_exceptions)
+        if exclude_exceptions:
+            retry_condition = retry_condition & retry_if_not_exception_type(
+                exclude_exceptions
+            )
 
         return retry(
             before_sleep=self.log_retry_attempt,
             stop=stop_after_attempt(num_retries) | stop_if_should_exit(),
             reraise=True,
-            retry=(retry_if_exception_type(retry_exceptions)),
+            retry=retry_condition,
             wait=wait_exponential(
                 multiplier=retry_multiplier,
                 min=retry_min_wait,
