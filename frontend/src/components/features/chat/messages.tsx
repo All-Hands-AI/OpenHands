@@ -26,7 +26,7 @@ export function Messages({
     }
 
     return (
-      <ChatMessage key={index} type={message.sender} message={message.content}>
+      <ChatMessage key={index} type={message.sender} message={message.content} filePath={message.filePath}>
         {message.imageUrls && message.imageUrls.length > 0 && (
           <ImageCarousel size="small" images={message.imageUrls} />
         )}
