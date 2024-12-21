@@ -42,7 +42,7 @@ Note: Make sure you're in the root directory of the OpenHands project when runni
 After running the evaluation, you can analyze the results using the `eval_infer.py` script. This script calculates overall accuracy and accuracy by year. To run the analysis, use the following command:
 
 ```bash
-poetry run python -m evaluation.benchmarks.aime.eval_infer --output_dir <path_to_output_directory>
+poetry run python -m evaluation.benchmarks.aime.eval_infer --output-dir <path_to_output_directory>
 ```
 
 Replace `<path_to_output_directory>` with the directory where `output.jsonl` was saved (this is printed at the end of the `run_infer.py` execution).
@@ -69,7 +69,7 @@ export RUNTIME=remote
 export ALLHANDS_API_KEY=your_api_key_here
 export SANDBOX_REMOTE_RUNTIME_API_URL=https://your-remote-runtime-url.com
 
-python run_infer.py --llm_config <your_llm_config> --agent_cls CodeActAgent --max_iterations 50 --eval_n_limit 10 --eval_num_workers 1 --data-split train
+python run_infer.py --llm-config <your_llm_config> --agent-cls CodeActAgent --max-iterations 50 --eval-n-limit 10 --eval-num-workers 1 --data-split train
 ```
 
 Using the remote runtime can provide additional resources and potentially improve performance for complex mathematical computations.
