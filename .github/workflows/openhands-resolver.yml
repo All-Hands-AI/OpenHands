@@ -333,16 +333,16 @@ jobs:
 
             try {
               if (!success){
-                // Read success_explanation from JSON file for failed resolution
+                // Read result_explanation from JSON file for failed resolution
                 const outputFilePath = path.resolve('/tmp/output/output.jsonl');
                 if (fs.existsSync(outputFilePath)) {
                   const outputContent = fs.readFileSync(outputFilePath, 'utf8');
                   const jsonLines = outputContent.split('\n').filter(line => line.trim() !== '');
 
                   if (jsonLines.length > 0) {
-                    // First entry in JSON lines has the key 'success_explanation'
+                    // First entry in JSON lines has the key 'result_explanation'
                     const firstEntry = JSON.parse(jsonLines[0]);
-                    successExplanation = firstEntry.success_explanation || '';
+                    successExplanation = firstEntry.result_explanation || '';
                   }
               }
             } catch (error){
