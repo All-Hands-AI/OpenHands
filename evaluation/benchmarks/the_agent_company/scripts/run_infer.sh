@@ -109,4 +109,6 @@ while IFS= read -r task_image; do
     docker system prune -f
 done < tasks.md
 
+rm tasks.md
+
 echo "All evaluation completed successfully!"
