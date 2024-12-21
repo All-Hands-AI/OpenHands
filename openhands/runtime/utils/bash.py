@@ -249,11 +249,16 @@ class BashSession:
         timeout: int,
         keep_prompt: bool = True,
         kill_on_timeout: bool = True,
+        input_text: str | None = None,
     ) -> tuple[str, int]:
         logger.debug(f'Continuing bash with timeout={timeout}')
         try:
-            self.shell.expect(self.__bash_expect_regex, timeout=timeout)
+            # If input is provided, send it to the process
+            if input_text is not None:
+                self.shell.sendline(input_text)
+                logger.debug(f'Sent input: {input_text}')
 
+            self.shell.expect(self.__bash_expect_regex, timeout=timeout)
             output = self.shell.before
 
             # Get exit code
@@ -267,8 +272,11 @@ class BashSession:
             if kill_on_timeout:
                 output, exit_code = self._interrupt_bash(action_timeout=timeout)
             else:
+                # Return what we have so far and indicate input is needed
                 output = self.shell.before or ''
-                exit_code = -1
+                # Add a special marker that will be visible to the LLM
+                output += "\n[WAITING_FOR_INPUT] Please provide input for the command above using an empty command with input_text parameter"
+                exit_code = -1  # Special code indicating input needed
         finally:
             bash_prompt = self._get_bash_prompt_and_update_pwd()
             if keep_prompt:
@@ -285,10 +293,13 @@ class BashSession:
             python_interpreter = ''
             for command in commands:
                 if command == '':
+                    # Empty command means we're continuing a previous command
+                    # This could be providing input to an interactive process
                     output, exit_code = self._continue_bash(
                         timeout=SOFT_TIMEOUT_SECONDS,
                         keep_prompt=action.keep_prompt,
                         kill_on_timeout=False,
+                        input_text=action.input_text if hasattr(action, 'input_text') else None
                     )
                 elif command.lower() == 'ctrl+c':
                     output, exit_code = self._interrupt_bash(
@@ -318,7 +329,7 @@ class BashSession:
                     all_output += command + '\r\n'
 
                 all_output += str(output)
-                if exit_code != 0:
+                if exit_code != 0 and exit_code != -1:  # -1 means waiting for input
                     break
             return CmdOutputObservation(
                 command_id=-1,

@@ -25,6 +25,14 @@ class CmdRunAction(Action):
     # file2.txt
     # root@sandbox:~# <-- this is the command prompt
 
+    input_text: str | None = None
+    # Text to send to the command's stdin when it's waiting for input
+    # This is used for interactive commands that require user input
+
+    timeout: int | None = None
+    # Maximum time in seconds to wait for the command to complete
+    # If None, a default timeout will be used
+
     hidden: bool = False
     action: str = ActionType.RUN
     runnable: ClassVar[bool] = True
