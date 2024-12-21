@@ -242,6 +242,8 @@ if __name__ == '__main__':
 
     dataset = load_dataset('gneubig/aime-1983-2024', split=args.data_split)
     aime_dataset = dataset.to_pandas()
+    print("Dataset columns:", aime_dataset.columns)
+    print("First row of the dataset:", aime_dataset.iloc[0])
     aime_dataset['instance_id'] = aime_dataset.index.astype(str)
 
     if args.agent_cls != 'CodeActAgent':
