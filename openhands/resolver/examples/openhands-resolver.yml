@@ -24,6 +24,7 @@ jobs:
       macro: ${{ vars.OPENHANDS_MACRO || '@openhands-agent' }}
       max_iterations: ${{ fromJson(vars.OPENHANDS_MAX_ITER || 50) }}
       base_container_image: ${{ vars.OPENHANDS_BASE_CONTAINER_IMAGE || '' }}
+      target_branch: ${{ vars.TARGET_BRANCH || '' }}
       LLM_MODEL: ${{ vars.LLM_MODEL || 'anthropic/claude-3-5-sonnet-20241022' }}
     secrets:
       PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
