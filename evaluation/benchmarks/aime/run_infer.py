@@ -141,9 +141,9 @@ Problem Number: {instance['Problem Number']}
 
 {instance['Question']}
 
-Please use Python to verify your results. You can feel free to use numerical libraries such as numpy, sympy, or any others that will be helpful.
+Once you have solved the problem, please use Python to verify your results. You can feel free to use numerical libraries such as numpy, sympy, or any others that will be helpful.
 
-MOST IMPORTANT: Format your final answer as follows:
+MOST IMPORTANT: Format your final answer as follows -- your answer should be a single integer:
 {ACTION_FORMAT}
 
 Additional Instructions:
@@ -227,18 +227,18 @@ if __name__ == '__main__':
     args.eval_note = args.eval_note
     args.eval_output_dir = args.eval_output_dir
 
-    print("Parsed arguments:", vars(args))
-    print("LLM config argument:", args.llm_config)
+    print('Parsed arguments:', vars(args))
+    print('LLM config argument:', args.llm_config)
 
     llm_config = None
     if args.llm_config:
-        print("Attempting to get LLM config...")
+        print('Attempting to get LLM config...')
         llm_config = get_llm_config_arg(args.llm_config)
         if llm_config:
-            print("LLM config retrieved successfully")
+            print('LLM config retrieved successfully')
             llm_config.modify_params = False
         else:
-            print("Failed to retrieve LLM config")
+            print('Failed to retrieve LLM config')
 
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm-config {args.llm_config}')
