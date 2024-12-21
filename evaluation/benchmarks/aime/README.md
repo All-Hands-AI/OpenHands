@@ -35,6 +35,26 @@ You can adjust the parameters as needed:
 - `--eval_num_workers`: Number of worker processes for parallel evaluation.
 - `--data-split`: The dataset split to use (e.g., 'train', 'test').
 
+### Remote Runtime Support
+
+This evaluation script supports running with a remote runtime. To use the remote runtime, set the following environment variables:
+
+- `RUNTIME`: Set this to 'remote' to use the remote runtime (default is 'eventstream').
+- `ALLHANDS_API_KEY`: Your API key for accessing the remote runtime.
+- `SANDBOX_REMOTE_RUNTIME_API_URL`: The URL of the remote runtime API.
+
+Example:
+
+```bash
+export RUNTIME=remote
+export ALLHANDS_API_KEY=your_api_key_here
+export SANDBOX_REMOTE_RUNTIME_API_URL=https://your-remote-runtime-url.com
+
+python run_infer.py --llm_config <your_llm_config> --agent_cls CodeActAgent --max_iterations 50 --eval_n_limit 10 --eval_num_workers 1 --data-split train
+```
+
+Using the remote runtime can provide additional resources and potentially improve performance for complex mathematical computations.
+
 ## Output
 
 The evaluation script generates an output file (`output.jsonl`) containing detailed results for each problem, including:
