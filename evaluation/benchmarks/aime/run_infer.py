@@ -5,7 +5,7 @@ from typing import Callable
 import pandas as pd
 from datasets import load_dataset
 
-from evaluation.utils.shared import (
+from ...utils.shared import (
     EvalMetadata,
     EvalOutput,
     compatibility_for_eval_history_pairs,
