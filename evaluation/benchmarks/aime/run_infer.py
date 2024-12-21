@@ -216,6 +216,11 @@ if __name__ == '__main__':
         default='train',
         help='data split to evaluate, eg. train, test',
     )
+    parser.add_argument(
+        '--year',
+        type=int,
+        help='specific year to evaluate (e.g., 2023)',
+    )
     args, _ = parser.parse_known_args()
 
     # Convert kebab-case to snake_case for compatibility
@@ -246,6 +251,12 @@ if __name__ == '__main__':
     dataset = load_dataset('gneubig/aime-1983-2024', split=args.data_split)
     aime_dataset = dataset.to_pandas()
     aime_dataset['instance_id'] = aime_dataset['ID']
+
+    # Filter by year if specified
+    if args.year is not None:
+        aime_dataset = aime_dataset[aime_dataset['Year'] == args.year]
+        if len(aime_dataset) == 0:
+            raise ValueError(f'No problems found for year {args.year}')
 
     if args.agent_cls != 'CodeActAgent':
         raise ValueError(
