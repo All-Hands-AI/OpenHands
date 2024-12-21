@@ -215,10 +215,18 @@ if __name__ == '__main__':
     )
     args, _ = parser.parse_known_args()
 
+    print("Parsed arguments:", vars(args))
+    print("LLM config argument:", args.llm_config)
+
     llm_config = None
     if args.llm_config:
+        print("Attempting to get LLM config...")
         llm_config = get_llm_config_arg(args.llm_config)
-        llm_config.modify_params = False
+        if llm_config:
+            print("LLM config retrieved successfully")
+            llm_config.modify_params = False
+        else:
+            print("Failed to retrieve LLM config")
 
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
