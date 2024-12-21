@@ -182,6 +182,10 @@ The LLM (Large Language Model) configuration options are defined in the `[llm]` 
 
 To use these with the docker command, pass in `-e LLM_<option>`. Example: `-e LLM_NUM_RETRIES`.
 
+:::note
+For development setups, you can also define custom named LLM configurations. See [Custom LLM Configurations](./llms/custom-llm-configs.md) for details.
+:::
+
 **AWS Credentials**
 - `aws_access_key_id`
   - Type: `str`
