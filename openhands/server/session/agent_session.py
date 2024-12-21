@@ -15,7 +15,7 @@ from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import call_async_from_sync
+from openhands.utils.async_utils import call_async_from_sync, call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
 
 WAIT_TIME_BEFORE_CLOSE = 300
@@ -238,9 +238,10 @@ class AgentSession:
 
         self.runtime.clone_repo(github_token, selected_repository)
         if agent.prompt_manager:
-            agent.prompt_manager.load_microagent_files(
-                self.runtime.get_custom_microagents(selected_repository)
+            microagents = await call_sync_from_async(
+                self.runtime.get_custom_microagents, selected_repository
             )
+            agent.prompt_manager.load_microagent_files(microagents)
 
         logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'
