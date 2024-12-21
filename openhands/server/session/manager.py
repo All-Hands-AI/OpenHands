@@ -329,35 +329,30 @@ class SessionManager:
 
     async def disconnect_from_session(self, connection_id: str):
         sid = self.local_connection_id_to_session_id.pop(connection_id, None)
+        logger.info(f'disconnect_from_session:{connection_id}:{sid}')
         if not sid:
             # This can occur if the init action was never run.
             logger.warning(f'disconnect_from_uninitialized_session:{connection_id}')
             return
 
-        session = self.local_sessions_by_sid.get(sid)
-        if session:
-            logger.info(f'close_session:{connection_id}:{sid}')
-            if should_continue():
-                asyncio.create_task(self._cleanup_session_later(session))
-            else:
-                await self._close_session(session)
+        if should_continue():
+            asyncio.create_task(self._cleanup_session_later(sid))
+        else:
+            await self._close_session(sid)
 
-    async def _cleanup_session_later(self, session: Session):
+    async def _cleanup_session_later(self, sid: str):
         # Once there have been no connections to a session for a reasonable period, we close it
         try:
             await asyncio.sleep(self.config.sandbox.close_delay)
         finally:
             # If the sleep was cancelled, we still want to close these
-            await self._cleanup_session(session)
+            await self._cleanup_session(sid)
 
-    async def _cleanup_session(self, session: Session):
+    async def _cleanup_session(self, sid: str) -> bool:
         # Get local connections
+        logger.info(f'_cleanup_session:{sid}')
         has_local_connections = next(
-            (
-                True
-                for v in self.local_connection_id_to_session_id.values()
-                if v == session.sid
-            ),
+            (True for v in self.local_connection_id_to_session_id.values() if v == sid),
             False,
         )
         if has_local_connections:
@@ -365,33 +360,38 @@ class SessionManager:
 
         # If no local connections, get connections through redis
         redis_client = self._get_redis_client()
-        if redis_client and await self._has_remote_connections(session.sid):
+        if redis_client and await self._has_remote_connections(sid):
             return False
 
         # We alert the cluster in case they are interested
         if redis_client:
             await redis_client.publish(
                 'oh_event',
-                json.dumps({'sid': session.sid, 'message_type': 'session_closing'}),
+                json.dumps({'sid': sid, 'message_type': 'session_closing'}),
             )
 
-        await self._close_session(session)
+        await self._close_session(sid)
         return True
 
-    async def _close_session(self, session: Session):
-        logger.info(f'_close_session:{session.sid}')
+    async def _close_session(self, sid: str):
+        logger.info(f'_close_session:{sid}')
 
         # Clear up local variables
         connection_ids_to_remove = list(
             connection_id
             for connection_id, sid in self.local_connection_id_to_session_id.items()
-            if sid == session.sid
+            if sid == sid
         )
+        logger.info(f'removing connections: {connection_ids_to_remove}')
         for connnnection_id in connection_ids_to_remove:
             self.local_connection_id_to_session_id.pop(connnnection_id, None)
 
-        self.local_sessions_by_sid.pop(session.sid, None)
+        session = self.local_sessions_by_sid.pop(sid, None)
+        if not session:
+            logger.warning(f'no_session_to_close:{sid}')
+            return
 
+        logger.info(f'closing_session:{session.sid}')
         # We alert the cluster in case they are interested
         redis_client = self._get_redis_client()
         if redis_client:
