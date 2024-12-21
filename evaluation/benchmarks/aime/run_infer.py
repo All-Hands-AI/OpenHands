@@ -129,9 +129,9 @@ def process_instance(
 
     if reset_logger:
         log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
-        reset_logger_for_multiprocessing(logger, instance['id'], log_dir)
+        reset_logger_for_multiprocessing(logger, instance['instance_id'], log_dir)
     else:
-        logger.info(f'Starting evaluation for instance {instance["id"]}.')
+        logger.info(f'Starting evaluation for instance {instance["instance_id"]}.')
 
     instruction = f"""
 Solve the following AIME (American Invitational Mathematics Examination) problem:
