@@ -40,7 +40,7 @@ def aime_codeact_user_response(
 ) -> str:
     msg = (
         'If you have finished reporting the answer in the expected format, (and only once that is done), please use the "finish" tool to finish the interaction.\n'
-        f'Again, report the answer in the following format before exiting:\n{ACTION_FORMAT}\n'
+        f'Again, you must report the answer in the following format before exiting:\n{ACTION_FORMAT}\n'
         'If you have not yet continued the task, please continue working on the task, possibly considering multiple approaches if you are stuck.\n'
         'Feel free to use all tools for calculations and solving the problem.\n'
         'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP TO SOLVE THIS TASK.\n'
