@@ -13,6 +13,7 @@ from openhands.server.session.conversation import Conversation
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.server.session.session_init_data import SessionInitData
 from openhands.storage.files import FileStore
+from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
 
 _REDIS_POLL_TIMEOUT = 1.5
@@ -400,4 +401,5 @@ class SessionManager:
                 json.dumps({'sid': session.sid, 'message_type': 'session_closing'}),
             )
 
-        session.close()
+        await call_sync_from_async(session.close)
+        logger.info(f'closed_session:{session.sid}')
