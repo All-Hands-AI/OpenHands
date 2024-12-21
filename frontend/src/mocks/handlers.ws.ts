@@ -1,5 +1,5 @@
 import { delay, WebSocketHandler, ws } from "msw";
-import AgentState from "#/types/agent-state";
+import { AgentState } from "#/types/agent-state";
 import {
   AgentStateChangeObservation,
   CommandObservation,

@@ -35,8 +35,3 @@ class OpenhandsConfigInterface(ABC):
     async def get_config(self) -> dict[str, str]:
         """Configure attributes for frontend"""
         raise NotImplementedError
-
-    @abstractmethod
-    async def github_auth(self, data: dict) -> None:
-        """Handle GitHub authentication."""
-        raise NotImplementedError

@@ -44,7 +44,7 @@ export function ErrorBoundary() {
 }
 
 export default function MainApp() {
-  const { gitHubToken, clearToken } = useAuth();
+  const { gitHubToken } = useAuth();
   const { settings, settingsAreUpToDate } = useUserPrefs();
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(
@@ -55,21 +55,13 @@ export default function MainApp() {
     React.useState(!settingsAreUpToDate);
 
   const config = useConfig();
-  const {
-    data: isAuthed,
-    isFetched,
-    isFetching: isFetchingAuth,
-  } = useIsAuthed();
+  const { data: isAuthed, isFetching: isFetchingAuth } = useIsAuthed();
 
   const gitHubAuthUrl = useGitHubAuthUrl({
     gitHubToken,
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
   });
-
-  React.useEffect(() => {
-    if (isFetched && !isAuthed) clearToken();
-  }, [isFetched, isAuthed]);
 
   React.useEffect(() => {
     if (settings.LANGUAGE) {
