@@ -342,7 +342,7 @@ jobs:
                   if (jsonLines.length > 0) {
                     // First entry in JSON lines has the key 'result_explanation'
                     const firstEntry = JSON.parse(jsonLines[0]);
-                    successExplanation = firstEntry.result_explanation || '';
+                    resultExplanation = firstEntry.result_explanation || '';
                   }
               }
             } catch (error){
