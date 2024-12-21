@@ -242,7 +242,7 @@ if __name__ == '__main__':
 
     dataset = load_dataset('gneubig/aime-1983-2024', split=args.data_split)
     aime_dataset = dataset.to_pandas()
-    aime_dataset['id'] = aime_dataset.index
+    aime_dataset['instance_id'] = aime_dataset.index.astype(str)
 
     if args.agent_cls != 'CodeActAgent':
         raise ValueError(
