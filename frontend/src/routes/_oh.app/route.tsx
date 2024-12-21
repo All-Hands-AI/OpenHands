@@ -37,7 +37,7 @@ function AppContent() {
   useConversationConfig();
 
   const { selectedRepository } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
 
   const { updateCount } = useSelector((state: RootState) => state.browser);

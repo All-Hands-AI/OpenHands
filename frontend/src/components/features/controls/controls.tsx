@@ -20,7 +20,7 @@ export function Controls({
 }: ControlsProps) {
   const { gitHubToken } = useAuth();
   const { selectedRepository } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
 
   const projectMenuCardData = React.useMemo(
