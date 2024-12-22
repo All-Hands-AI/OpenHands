@@ -60,7 +60,7 @@ class Session:
         self.is_alive = False
         self.agent_session.close()
 
-    async def initialize_agent(self, session_init_data: SessionInitData):
+    async def initialize_agent(self, session_init_data: SessionInitData = None):
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,

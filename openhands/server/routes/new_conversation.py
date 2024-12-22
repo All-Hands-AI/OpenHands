@@ -70,5 +70,5 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         )
     )
 
-    await session_manager.start_agent_loop(conversation_id, session_init_data)
+    await session_manager.maybe_start_agent_loop(conversation_id, session_init_data)
     return JSONResponse(content={'status': 'ok', 'conversation_id': conversation_id})

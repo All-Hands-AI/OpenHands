@@ -285,13 +285,16 @@ class SessionManager:
         finally:
             self._has_remote_connections_flags.pop(sid, None)
 
-    async def start_agent_loop(self, sid: str, session_init_data: SessionInitData):
+    async def maybe_start_agent_loop(
+        self, sid: str, session_init_data: SessionInitData = None
+    ):
         logger.info(f'start_agent_loop:{sid}')
         session = Session(
             sid=sid, file_store=self.file_store, config=self.config, sio=self.sio
         )
         self.local_sessions_by_sid[sid] = session
-        await session.initialize_agent(session_init_data)
+        if not self._is_session_running_in_cluster(sid):
+            await session.initialize_agent(session_init_data)
         return session.agent_session.event_stream
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
