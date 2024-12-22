@@ -454,9 +454,7 @@ async def resolve_issue(
                 cwd=repo_dir,
             )
 
-            # Update issue's base_branch if using custom target branch
-            if target_branch:
-                issue.base_branch = target_branch
+
 
             base_commit = (
                 subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
