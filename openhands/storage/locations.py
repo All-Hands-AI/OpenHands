@@ -15,3 +15,7 @@ def get_conversation_event_filename(sid: str, id: int) -> str:
 
 def get_conversation_metadata_filename(sid: str) -> str:
     return f'{get_conversation_dir(sid)}metadata.json'
+
+
+def get_conversation_init_data_filename(sid: str) -> str:
+    return f'{get_conversation_dir(sid)}init.json'
