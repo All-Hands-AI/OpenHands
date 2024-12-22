@@ -76,6 +76,7 @@ echo "Server hostname: $SERVER_HOSTNAME"
 echo "Version: $VERSION"
 
 echo "Downloading tasks.md..."
+rm -f tasks.md
 wget https://github.com/TheAgentCompany/TheAgentCompany/releases/download/${VERSION}/tasks.md
 
 while IFS= read -r task_image; do
