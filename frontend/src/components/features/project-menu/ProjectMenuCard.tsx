@@ -12,6 +12,7 @@ import { InstructionsPanel } from "../instructions/instructions-panel";
 import { MicroagentsPanel } from "../microagents/microagents-panel";
 import { CreateInstructionsModal } from "../../shared/modals/instructions/create-instructions-modal";
 import { DownloadModal } from "#/components/shared/download-modal";
+import { LoadingSpinner } from "#/components/shared/loading-spinner";
 
 interface ProjectMenuCardProps {
   isConnectedToGitHub: boolean;
