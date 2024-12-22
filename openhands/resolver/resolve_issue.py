@@ -315,7 +315,6 @@ async def resolve_issue(
     repo_instruction: str | None,
     issue_number: int,
     comment_id: int | None,
-
     reset_logger: bool = False,
 ) -> None:
     """Resolve a single github issue.
@@ -453,8 +452,6 @@ async def resolve_issue(
                 checkout_cmd,
                 cwd=repo_dir,
             )
-
-
 
             base_commit = (
                 subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)
@@ -644,7 +641,6 @@ def main():
             repo_instruction=repo_instruction,
             issue_number=my_args.issue_number,
             comment_id=my_args.comment_id,
-
         )
     )
 
