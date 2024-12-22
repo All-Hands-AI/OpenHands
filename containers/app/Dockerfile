@@ -47,7 +47,7 @@ ENV FILE_STORE_PATH=~/.openhands
 RUN mkdir -p $WORKSPACE_BASE
 
 RUN apt-get update -y \
-    && apt-get install -y curl ssh sudo
+    && apt-get install -y curl ssh sudo jq
 
 # Default is 1000, but OSX is often 501
 RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs
