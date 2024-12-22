@@ -257,7 +257,7 @@ class SessionManager:
             # Nobody replied in time
             return False
         finally:
-            self._session_is_running_flags.pop(sid)
+            self._session_is_running_flags.pop(sid, None)
 
     async def _has_remote_connections(self, sid: str) -> bool:
         """As the rest of the cluster if they still want this session running. Wait a for a short timeout for a reply"""
@@ -283,7 +283,7 @@ class SessionManager:
             # Nobody replied in time
             return False
         finally:
-            self._has_remote_connections_flags.pop(sid)
+            self._has_remote_connections_flags.pop(sid, None)
 
     async def start_agent_loop(self, sid: str, session_init_data: SessionInitData):
         logger.info(f'start_agent_loop:{sid}')
