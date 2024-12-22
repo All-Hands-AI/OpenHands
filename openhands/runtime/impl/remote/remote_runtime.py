@@ -10,6 +10,14 @@ import requests
 import tenacity
 
 from openhands.core.config import AppConfig
+from openhands.core.exceptions import (
+    AgentRuntimeDisconnectedError,
+    AgentRuntimeError,
+    AgentRuntimeNotFoundError,
+    AgentRuntimeNotReadyError,
+    AgentRuntimeTimeoutError,
+    AgentRuntimeUnavailableError,
+)
 from openhands.events import EventStream
 from openhands.events.action import (
     BrowseInteractiveAction,
@@ -28,17 +36,12 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
-from openhands.runtime.base import (
-    Runtime,
-    RuntimeDisconnectedError,
-    RuntimeNotFoundError,
-    RuntimeNotReadyError,
-    RuntimeUnavailableError,
-)
+from openhands.runtime.base import Runtime
 from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
 from openhands.runtime.utils.request import (
+    RequestHTTPError,
     send_request,
 )
 from openhands.runtime.utils.runtime_build import build_runtime_image
@@ -100,7 +103,7 @@ class RemoteRuntime(Runtime):
     async def connect(self):
         try:
             await call_sync_from_async(self._start_or_attach_to_runtime)
-        except RuntimeNotReadyError:
+        except AgentRuntimeNotReadyError:
             self.log('error', 'Runtime failed to start, timed out before ready')
             raise
         await call_sync_from_async(self.setup_initial_env)
@@ -111,7 +114,7 @@ class RemoteRuntime(Runtime):
         if existing_runtime:
             self.log('debug', f'Using existing runtime with ID: {self.runtime_id}')
         elif self.attach_to_existing:
-            raise RuntimeNotFoundError(
+            raise AgentRuntimeNotFoundError(
                 f'Could not find existing runtime for SID: {self.sid}'
             )
         else:
@@ -149,7 +152,7 @@ class RemoteRuntime(Runtime):
                 'GET',
                 f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
                 is_retry=False,
-                timeout=5,
+                timeout=60,
             ) as response:
                 data = response.json()
                 status = data.get('status')
@@ -180,7 +183,7 @@ class RemoteRuntime(Runtime):
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/registry_prefix',
             is_retry=False,
-            timeout=10,
+            timeout=60,
         ) as response:
             response_json = response.json()
         registry_prefix = response_json['registry_prefix']
@@ -212,10 +215,10 @@ class RemoteRuntime(Runtime):
             f'{self.config.sandbox.remote_runtime_api_url}/image_exists',
             is_retry=False,
             params={'image': self.container_image},
-            timeout=10,
+            timeout=60,
         ) as response:
             if not response.json()['exists']:
-                raise RuntimeError(
+                raise AgentRuntimeError(
                     f'Container image {self.container_image} does not exist'
                 )
 
@@ -244,6 +247,7 @@ class RemoteRuntime(Runtime):
             'working_dir': '/openhands/code/',
             'environment': {'DEBUG': 'true'} if self.config.debug else {},
             'session_id': self.sid,
+            'resource_factor': self.config.sandbox.remote_runtime_resource_factor,
         }
 
         # Start the sandbox using the /start endpoint
@@ -253,6 +257,7 @@ class RemoteRuntime(Runtime):
                 f'{self.config.sandbox.remote_runtime_api_url}/start',
                 is_retry=False,
                 json=start_request,
+                timeout=60,
             ) as response:
                 self._parse_runtime_response(response)
             self.log(
@@ -261,7 +266,7 @@ class RemoteRuntime(Runtime):
             )
         except requests.HTTPError as e:
             self.log('error', f'Unable to start runtime: {e}')
-            raise RuntimeUnavailableError() from e
+            raise AgentRuntimeUnavailableError() from e
 
     def _resume_runtime(self):
         with self._send_request(
@@ -269,7 +274,7 @@ class RemoteRuntime(Runtime):
             f'{self.config.sandbox.remote_runtime_api_url}/resume',
             is_retry=False,
             json={'runtime_id': self.runtime_id},
-            timeout=30,
+            timeout=60,
         ):
             pass
         self.log('debug', 'Runtime resumed.')
@@ -294,7 +299,7 @@ class RemoteRuntime(Runtime):
             with self._send_request(
                 'GET',
                 f'{self.runtime_url}/vscode/connection_token',
-                timeout=10,
+                timeout=60,
             ) as response:
                 response_json = response.json()
             assert isinstance(response_json, dict)
@@ -321,7 +326,7 @@ class RemoteRuntime(Runtime):
             )
             | stop_if_should_exit(),
             reraise=True,
-            retry=tenacity.retry_if_exception_type(RuntimeNotReadyError),
+            retry=tenacity.retry_if_exception_type(AgentRuntimeNotReadyError),
             wait=tenacity.wait_fixed(2),
         )
         return retry_decorator(self._wait_until_alive_impl)()
@@ -331,6 +336,7 @@ class RemoteRuntime(Runtime):
         with self._send_request(
             'GET',
             f'{self.config.sandbox.remote_runtime_api_url}/sessions/{self.sid}',
+            timeout=60,
         ) as runtime_info_response:
             runtime_data = runtime_info_response.json()
         assert 'runtime_id' in runtime_data
@@ -347,13 +353,14 @@ class RemoteRuntime(Runtime):
                 with self._send_request(
                     'GET',
                     f'{self.runtime_url}/alive',
+                    timeout=60,
                 ):  # will raise exception if we don't get 200 back.
                     pass
             except requests.HTTPError as e:
                 self.log(
                     'warning', f"Runtime /alive failed, but pod says it's ready: {e}"
                 )
-                raise RuntimeNotReadyError(
+                raise AgentRuntimeNotReadyError(
                     f'Runtime /alive failed to respond with 200: {e}'
                 )
             return
@@ -362,14 +369,14 @@ class RemoteRuntime(Runtime):
             or pod_status == 'pending'
             or pod_status == 'running'
         ):  # nb: Running is not yet Ready
-            raise RuntimeNotReadyError(
+            raise AgentRuntimeNotReadyError(
                 f'Runtime (ID={self.runtime_id}) is not yet ready. Status: {pod_status}'
             )
         elif pod_status in ('failed', 'unknown', 'crashloopbackoff'):
             # clean up the runtime
             self.close()
-            raise RuntimeError(
-                f'Runtime (ID={self.runtime_id}) failed to start. Current status: {pod_status}'
+            raise AgentRuntimeUnavailableError(
+                f'Runtime (ID={self.runtime_id}) failed to start. Current status: {pod_status}. Pod Logs:\n{runtime_data.get("pod_logs", "N/A")}'
             )
         else:
             # Maybe this should be a hard failure, but passing through in case the API changes
@@ -379,7 +386,7 @@ class RemoteRuntime(Runtime):
             'debug',
             f'Waiting for runtime pod to be active. Current status: {pod_status}',
         )
-        raise RuntimeNotReadyError()
+        raise AgentRuntimeNotReadyError()
 
     def close(self, timeout: int = 10):
         if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
@@ -434,7 +441,7 @@ class RemoteRuntime(Runtime):
                 obs = observation_from_dict(output)
                 obs._cause = action.id  # type: ignore[attr-defined]
             except requests.Timeout:
-                raise RuntimeError(
+                raise AgentRuntimeTimeoutError(
                     f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
                 )
             return obs
@@ -446,11 +453,11 @@ class RemoteRuntime(Runtime):
         except requests.Timeout:
             self.log('error', 'No response received within the timeout period.')
             raise
-        except requests.HTTPError as e:
-            if is_runtime_request and e.response.status_code == 404:
-                raise RuntimeDisconnectedError(
-                    f'404 error while connecting to {self.runtime_url}'
-                )
+        except RequestHTTPError as e:
+            if is_runtime_request and e.response.status_code in (404, 502):
+                raise AgentRuntimeDisconnectedError(
+                    f'{e.response.status_code} error while connecting to {self.runtime_url}'
+                ) from e
             elif is_runtime_request and e.response.status_code == 503:
                 if not is_retry:
                     self.log('warning', 'Runtime appears to be paused. Resuming...')
@@ -458,7 +465,9 @@ class RemoteRuntime(Runtime):
                     self._wait_until_alive()
                     return self._send_request(method, url, True, **kwargs)
                 else:
-                    raise e
+                    raise AgentRuntimeUnavailableError(
+                        f'{e.response.status_code} error while connecting to {self.runtime_url}'
+                    ) from e
 
             else:
                 raise e

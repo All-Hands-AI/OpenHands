@@ -5,13 +5,14 @@ import traceback
 from typing import Callable, ClassVar, Type
 
 import litellm
-from litellm.exceptions import ContextWindowExceededError
+from litellm.exceptions import BadRequestError, ContextWindowExceededError
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.exceptions import (
+    AgentStuckInLoopError,
     FunctionCallNotExistsError,
     FunctionCallValidationError,
     LLMMalformedActionError,
@@ -184,7 +185,7 @@ class AgentController:
         self.state.local_iteration += 1
 
     async def update_state_after_step(self):
-        # update metrics especially for cost. Use deepcopy to avoid it being modified by agent.reset()
+        # update metrics especially for cost. Use deepcopy to avoid it being modified by agent._reset()
         self.state.local_metrics = copy.deepcopy(self.agent.llm.metrics)
 
     async def _react_to_exception(
@@ -196,7 +197,7 @@ class AgentController:
             err_id = ''
             if isinstance(e, litellm.AuthenticationError):
                 err_id = 'STATUS$ERROR_LLM_AUTHENTICATION'
-            self.status_callback('error', err_id, str(e))
+            self.status_callback('error', err_id, type(e).__name__ + ': ' + str(e))
 
     async def start_step_loop(self):
         """The main loop for the agent's step-by-step execution."""
@@ -312,14 +313,29 @@ class AgentController:
                 str(action),
                 extra={'msg_type': 'ACTION', 'event_source': EventSource.USER},
             )
+            # Extend max iterations when the user sends a message (only in non-headless mode)
+            if self._initial_max_iterations is not None and not self.headless_mode:
+                self.state.max_iterations = (
+                    self.state.iteration + self._initial_max_iterations
+                )
+                if (
+                    self.state.traffic_control_state == TrafficControlState.THROTTLING
+                    or self.state.traffic_control_state == TrafficControlState.PAUSED
+                ):
+                    self.state.traffic_control_state = TrafficControlState.NORMAL
+                self.log(
+                    'debug',
+                    f'Extended max iterations to {self.state.max_iterations} after user message',
+                )
             if self.get_agent_state() != AgentState.RUNNING:
                 await self.set_agent_state_to(AgentState.RUNNING)
         elif action.source == EventSource.AGENT and action.wait_for_response:
             await self.set_agent_state_to(AgentState.AWAITING_USER_INPUT)
 
-    def reset_task(self) -> None:
-        """Resets the agent's task."""
-        self.almost_stuck = 0
+    def _reset(self) -> None:
+        """Resets the agent controller"""
+
+        self._pending_action = None
         self.agent.reset()
 
     async def set_agent_state_to(self, new_state: AgentState) -> None:
@@ -337,10 +353,11 @@ class AgentController:
             return
 
         if new_state in (AgentState.STOPPED, AgentState.ERROR):
-            self.reset_task()
+            self._reset()
         elif (
             new_state == AgentState.RUNNING
             and self.state.agent_state == AgentState.PAUSED
+            # TODO: do we really need both THROTTLING and PAUSED states, or can we clean up one of them completely?
             and self.state.traffic_control_state == TrafficControlState.THROTTLING
         ):
             # user intends to interrupt traffic control and let the task resume temporarily
@@ -350,6 +367,7 @@ class AgentController:
                 self.state.iteration is not None
                 and self.state.max_iterations is not None
                 and self._initial_max_iterations is not None
+                and not self.headless_mode
             ):
                 if self.state.iteration >= self.state.max_iterations:
                     self.state.max_iterations += self._initial_max_iterations
@@ -454,13 +472,10 @@ class AgentController:
             await asyncio.sleep(1)
             return
 
-        if self._is_stuck():
-            await self._react_to_exception(RuntimeError('Agent got stuck in a loop'))
-            return
-
         if self.delegate is not None:
             assert self.delegate != self
             if self.delegate.get_agent_state() == AgentState.PAUSED:
+                # no need to check too often
                 await asyncio.sleep(1)
             else:
                 await self._delegate_step()
@@ -487,6 +502,12 @@ class AgentController:
         if stop_step:
             return
 
+        if self._is_stuck():
+            await self._react_to_exception(
+                AgentStuckInLoopError('Agent got stuck in a loop')
+            )
+            return
+
         self.update_state_before_step()
         action: Action = NullAction()
         try:
@@ -507,15 +528,24 @@ class AgentController:
                 EventSource.AGENT,
             )
             return
-        except ContextWindowExceededError:
-            # When context window is exceeded, keep roughly half of agent interactions
-            self.state.history = self._apply_conversation_window(self.state.history)
+        except (ContextWindowExceededError, BadRequestError) as e:
+            # FIXME: this is a hack until a litellm fix is confirmed
+            # Check if this is a nested context window error
+            error_str = str(e).lower()
+            if (
+                'contextwindowexceedederror' in error_str
+                or 'prompt is too long' in error_str
+                or isinstance(e, ContextWindowExceededError)
+            ):
+                # When context window is exceeded, keep roughly half of agent interactions
+                self.state.history = self._apply_conversation_window(self.state.history)
 
-            # Save the ID of the first event in our truncated history for future reloading
-            if self.state.history:
-                self.state.start_id = self.state.history[0].id
-            # Don't add error event - let the agent retry with reduced context
-            return
+                # Save the ID of the first event in our truncated history for future reloading
+                if self.state.history:
+                    self.state.start_id = self.state.history[0].id
+                # Don't add error event - let the agent retry with reduced context
+                return
+            raise
 
         if action.runnable:
             if self.state.confirmation_mode and (
@@ -620,16 +650,24 @@ class AgentController:
             self.state.traffic_control_state = TrafficControlState.NORMAL
         else:
             self.state.traffic_control_state = TrafficControlState.THROTTLING
+            # Format values as integers for iterations, keep decimals for budget
+            if limit_type == 'iteration':
+                current_str = str(int(current_value))
+                max_str = str(int(max_value))
+            else:
+                current_str = f'{current_value:.2f}'
+                max_str = f'{max_value:.2f}'
+
             if self.headless_mode:
                 e = RuntimeError(
                     f'Agent reached maximum {limit_type} in headless mode. '
-                    f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}'
+                    f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}'
                 )
                 await self._react_to_exception(e)
             else:
                 e = RuntimeError(
                     f'Agent reached maximum {limit_type}. '
-                    f'Current {limit_type}: {current_value:.2f}, max {limit_type}: {max_value:.2f}. '
+                    f'Current {limit_type}: {current_str}, max {limit_type}: {max_str}. '
                 )
                 # FIXME: this isn't really an exception--we should have a different path
                 await self._react_to_exception(e)
@@ -901,7 +939,7 @@ class AgentController:
         if self.delegate and self.delegate._is_stuck():
             return True
 
-        return self._stuck_detector.is_stuck()
+        return self._stuck_detector.is_stuck(self.headless_mode)
 
     def __repr__(self):
         return (

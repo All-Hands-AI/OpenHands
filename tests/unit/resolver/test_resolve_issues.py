@@ -84,6 +84,41 @@ def test_initialize_runtime():
     )
 
 
+@pytest.mark.asyncio
+async def test_resolve_issue_no_issues_found():
+    from openhands.resolver.resolve_issue import resolve_issue
+
+    # Mock dependencies
+    mock_handler = MagicMock()
+    mock_handler.get_converted_issues.return_value = []  # Return empty list
+
+    with patch(
+        'openhands.resolver.resolve_issue.issue_handler_factory',
+        return_value=mock_handler,
+    ):
+        with pytest.raises(ValueError) as exc_info:
+            await resolve_issue(
+                owner='test-owner',
+                repo='test-repo',
+                token='test-token',
+                username='test-user',
+                max_iterations=5,
+                output_dir='/tmp',
+                llm_config=LLMConfig(model='test', api_key='test'),
+                runtime_container_image='test-image',
+                prompt_template='test-template',
+                issue_type='pr',
+                repo_instruction=None,
+                issue_number=5432,
+                comment_id=None,
+            )
+
+        assert 'No issues found for issue number 5432' in str(exc_info.value)
+        assert 'test-owner/test-repo' in str(exc_info.value)
+        assert 'exists in the repository' in str(exc_info.value)
+        assert 'correct permissions' in str(exc_info.value)
+
+
 def test_download_issues_from_github():
     llm_config = LLMConfig(model='test', api_key='test')
     handler = IssueHandler('owner', 'repo', 'token', llm_config)
@@ -428,7 +463,7 @@ async def test_process_issue(mock_output_dir, mock_prompt_template):
             assert result.base_commit == base_commit
             assert result.git_patch == 'test patch'
             assert result.success == test_case['expected_success']
-            assert result.success_explanation == test_case['expected_explanation']
+            assert result.result_explanation == test_case['expected_explanation']
             assert result.error == test_case['expected_error']
 
             # Assert that the mocked functions were called

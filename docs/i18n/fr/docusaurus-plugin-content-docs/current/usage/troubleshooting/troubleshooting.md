@@ -9,7 +9,6 @@ Si vous trouvez plus d'informations ou une solution de contournement pour l'un d
 :::tip
 OpenHands ne prend en charge Windows que via [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
 Veuillez vous assurer d'exécuter toutes les commandes à l'intérieur de votre terminal WSL.
-Consultez les [Notes pour les utilisateurs de WSL sur Windows](troubleshooting/windows) pour des guides de dépannage.
 :::
 
 ## Problèmes courants

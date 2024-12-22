@@ -60,7 +60,7 @@ async def test_session_is_running_in_cluster():
         )
     )
     with (
-        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.05),
+        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.1),
     ):
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
@@ -87,7 +87,7 @@ async def test_init_new_local_session():
     is_session_running_in_cluster_mock.return_value = False
     with (
         patch('openhands.server.session.manager.Session', mock_session),
-        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.01),
+        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.1),
         patch(
             'openhands.server.session.manager.SessionManager._redis_subscribe',
             AsyncMock(),
@@ -100,9 +100,8 @@ async def test_init_new_local_session():
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
-            await session_manager.init_or_join_session(
-                'new-session-id', 'new-session-id', SessionInitData()
-            )
+            await session_manager.start_agent_loop('new-session-id', SessionInitData())
+            await session_manager.join_conversation('new-session-id', 'new-session-id')
     assert session_instance.initialize_agent.call_count == 1
     assert sio.enter_room.await_count == 1
 
@@ -131,14 +130,9 @@ async def test_join_local_session():
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
-            # First call initializes
-            await session_manager.init_or_join_session(
-                'new-session-id', 'new-session-id', SessionInitData()
-            )
-            # Second call joins
-            await session_manager.init_or_join_session(
-                'new-session-id', 'extra-connection-id', SessionInitData()
-            )
+            await session_manager.start_agent_loop('new-session-id', SessionInitData())
+            await session_manager.join_conversation('new-session-id', 'new-session-id')
+            await session_manager.join_conversation('new-session-id', 'new-session-id')
     assert session_instance.initialize_agent.call_count == 1
     assert sio.enter_room.await_count == 2
 
@@ -167,10 +161,7 @@ async def test_join_cluster_session():
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
-            # First call initializes
-            await session_manager.init_or_join_session(
-                'new-session-id', 'new-session-id', SessionInitData()
-            )
+            await session_manager.join_conversation('new-session-id', 'new-session-id')
     assert session_instance.initialize_agent.call_count == 0
     assert sio.enter_room.await_count == 1
 
@@ -199,9 +190,8 @@ async def test_add_to_local_event_stream():
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
-            await session_manager.init_or_join_session(
-                'new-session-id', 'connection-id', SessionInitData()
-            )
+            await session_manager.start_agent_loop('new-session-id', SessionInitData())
+            await session_manager.join_conversation('new-session-id', 'connection-id')
             await session_manager.send_to_event_stream(
                 'connection-id', {'event_type': 'some_event'}
             )
@@ -232,9 +222,7 @@ async def test_add_to_cluster_event_stream():
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
-            await session_manager.init_or_join_session(
-                'new-session-id', 'connection-id', SessionInitData()
-            )
+            await session_manager.join_conversation('new-session-id', 'connection-id')
             await session_manager.send_to_event_stream(
                 'connection-id', {'event_type': 'some_event'}
             )
