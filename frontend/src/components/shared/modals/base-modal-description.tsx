@@ -5,7 +5,5 @@ interface BaseModalDescriptionProps {
 }
 
 export function BaseModalDescription({ children }: BaseModalDescriptionProps) {
-  return (
-    <p className="text-sm text-[#A3A3A3]">{children}</p>
-  );
+  return <p className="text-sm text-[#A3A3A3]">{children}</p>;
 }

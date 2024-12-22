@@ -32,8 +32,9 @@ export function ProjectMenuCard({
   const [contextMenuIsOpen, setContextMenuIsOpen] = React.useState(false);
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
     React.useState(false);
-  const [working, setWorking] = React.useState(false);
-  const [createInstructionsModalOpen, setCreateInstructionsModalOpen] = React.useState(false);
+  const [working] = React.useState(false);
+  const [createInstructionsModalOpen, setCreateInstructionsModalOpen] =
+    React.useState(false);
   const [hasInstructions, setHasInstructions] = React.useState(false);
   const [hasMicroagents, setHasMicroagents] = React.useState(false);
   const [downloading, setDownloading] = React.useState(false);

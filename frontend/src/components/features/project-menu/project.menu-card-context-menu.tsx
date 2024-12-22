@@ -56,10 +56,14 @@ export function ProjectMenuCardContextMenu({
             {t(I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$VIEW_MICROAGENTS_LABEL)}
           </ContextMenuListItem>
           <ContextMenuListItem onClick={onAddTemporaryMicroagent}>
-            {t(I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$ADD_TEMPORARY_MICROAGENT_LABEL)}
+            {t(
+              I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$ADD_TEMPORARY_MICROAGENT_LABEL,
+            )}
           </ContextMenuListItem>
           <ContextMenuListItem onClick={onAddPermanentMicroagent}>
-            {t(I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$ADD_PERMANENT_MICROAGENT_LABEL)}
+            {t(
+              I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$ADD_PERMANENT_MICROAGENT_LABEL,
+            )}
           </ContextMenuListItem>
         </>
       )}

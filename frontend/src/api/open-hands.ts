@@ -8,10 +8,6 @@ import {
   GetConfigResponse,
   GetVSCodeUrlResponse,
   AuthenticateResponse,
-  RepoInstructions,
-  MicroAgent,
-  CreateInstructionsPRResponse,
-  AddMicroAgentResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 

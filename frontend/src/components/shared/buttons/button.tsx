@@ -16,7 +16,7 @@ export function Button({ type, variant, text, onClick }: ButtonProps) {
 
   return (
     <button
-      type={type}
+      type={type === "submit" ? "submit" : "button"}
       onClick={onClick}
       className={`${baseClasses} ${variantClasses[variant]}`}
     >

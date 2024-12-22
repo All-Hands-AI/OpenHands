@@ -7,9 +7,5 @@ interface BaseModalProps {
 }
 
 export function BaseModal({ onClose, children }: BaseModalProps) {
-  return (
-    <ModalBackdrop onClose={onClose}>
-      {children}
-    </ModalBackdrop>
-  );
+  return <ModalBackdrop onClose={onClose}>{children}</ModalBackdrop>;
 }
