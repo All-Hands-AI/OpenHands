@@ -4,7 +4,7 @@ import {
   WsClientProviderStatus,
 } from "#/context/ws-client-provider";
 import OpenHands from "#/api/open-hands";
-import { useAuth } from "#/context/auth-context";
+import { useConversation } from "#/context/conversation-context";
 
 interface UseListFilesConfig {
   path?: string;
@@ -12,13 +12,13 @@ interface UseListFilesConfig {
 }
 
 export const useListFiles = (config?: UseListFilesConfig) => {
-  const { token } = useAuth();
+  const { conversationId } = useConversation();
   const { status } = useWsClient();
-  const isActive = status === WsClientProviderStatus.ACTIVE;
+  const isActive = status === WsClientProviderStatus.CONNECTED;
 
   return useQuery({
-    queryKey: ["files", token, config?.path],
-    queryFn: () => OpenHands.getFiles(config?.path),
-    enabled: !!(isActive && config?.enabled && token),
+    queryKey: ["files", conversationId, config?.path],
+    queryFn: () => OpenHands.getFiles(conversationId, config?.path),
+    enabled: !!(isActive && config?.enabled),
   });
 };

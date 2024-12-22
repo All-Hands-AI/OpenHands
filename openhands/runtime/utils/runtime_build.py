@@ -14,6 +14,7 @@ from jinja2 import Environment, FileSystemLoader
 
 import openhands
 from openhands import __version__ as oh_version
+from openhands.core.exceptions import AgentRuntimeBuildError
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.builder import DockerRuntimeBuilder, RuntimeBuilder
 
@@ -364,7 +365,7 @@ def _build_sandbox_image(
         extra_build_args=extra_build_args,
     )
     if not image_name:
-        raise RuntimeError(f'Build failed for image {names}')
+        raise AgentRuntimeBuildError(f'Build failed for image {names}')
 
     return image_name
 

@@ -5,14 +5,13 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.serialization import event_to_dict
 from openhands.events.stream import AsyncEventStreamWrapper
 from openhands.server.data_models.feedback import FeedbackDataModel, store_feedback
-from openhands.server.shared import config
 from openhands.utils.async_utils import call_sync_from_async
 
-app = APIRouter(prefix='/api')
+app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
 @app.post('/submit-feedback')
-async def submit_feedback(request: Request):
+async def submit_feedback(request: Request, conversation_id: str):
     """Submit user feedback.
 
     This function stores the provided feedback data.
@@ -57,18 +56,3 @@ async def submit_feedback(request: Request):
         return JSONResponse(
             status_code=500, content={'error': 'Failed to submit feedback'}
         )
-
-
-@app.get('/api/defaults')
-async def appconfig_defaults():
-    """Retrieve the default configuration settings.
-
-    To get the default configurations:
-    ```sh
-    curl http://localhost:3000/api/defaults
-    ```
-
-    Returns:
-        dict: The default configuration settings.
-    """
-    return config.defaults_dict

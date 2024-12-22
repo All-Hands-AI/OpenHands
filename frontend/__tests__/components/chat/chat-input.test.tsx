@@ -51,6 +51,22 @@ describe("ChatInput", () => {
     expect(onSubmitMock).not.toHaveBeenCalled();
   });
 
+  it("should not call onSubmit when the message is only whitespace", async () => {
+    const user = userEvent.setup();
+    render(<ChatInput onSubmit={onSubmitMock} />);
+    const textarea = screen.getByRole("textbox");
+
+    await user.type(textarea, "   ");
+    await user.keyboard("{Enter}");
+
+    expect(onSubmitMock).not.toHaveBeenCalled();
+
+    await user.type(textarea, " \t\n");
+    await user.keyboard("{Enter}");
+
+    expect(onSubmitMock).not.toHaveBeenCalled();
+  });
+
   it("should disable submit", async () => {
     const user = userEvent.setup();
     render(<ChatInput disabled onSubmit={onSubmitMock} />);
