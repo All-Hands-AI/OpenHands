@@ -66,7 +66,8 @@ class Session:
         self.agent_session.close()
 
     async def _restore_init_data(self, sid: str) -> ConversationInitData:
-        print('restore init data')
+        # FIXME: we should not store/restore this data once we have server-side
+        # LLM configs. Should be done by 1/1/2025
         json_str = await call_sync_from_async(
             self.file_store.read, get_conversation_init_data_filename(sid)
         )
@@ -74,17 +75,16 @@ class Session:
         return ConversationInitData(**data)
 
     async def _save_init_data(self, sid: str, init_data: ConversationInitData):
-        print('save init data')
+        # FIXME: we should not store/restore this data once we have server-side
+        # LLM configs. Should be done by 1/1/2025
         json_str = json.dumps(init_data.__dict__)
         await call_sync_from_async(
             self.file_store.write, get_conversation_init_data_filename(sid), json_str
         )
-        print('save done')
 
     async def initialize_agent(
         self, conversation_init_data: ConversationInitData | None = None
     ):
-        print('init agent')
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,

@@ -233,16 +233,13 @@ class SessionManager:
 
     async def _is_agent_loop_running(self, sid: str) -> bool:
         if await self._is_agent_loop_running_locally(sid):
-            print('found local')
             return True
         if await self._is_agent_loop_running_in_cluster(sid):
-            print('found remote')
             return True
         return False
 
     async def _is_agent_loop_running_locally(self, sid: str) -> bool:
         if self.local_sessions_by_sid.get(sid, None):
-            print('found local')
             return True
         return False
 
