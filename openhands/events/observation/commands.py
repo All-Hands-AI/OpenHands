@@ -40,7 +40,13 @@ class IPythonRunCellObservation(Observation):
 
     @property
     def error(self) -> bool:
-        return False  # IPython cells do not return exit codes
+        # Check for common error indicators in IPython output
+        error_indicators = [
+            'ERROR:',
+            'Error:',
+            'Exception:',
+        ]
+        return any(indicator in self.content for indicator in error_indicators)
 
     @property
     def message(self) -> str:
@@ -48,7 +54,7 @@ class IPythonRunCellObservation(Observation):
 
     @property
     def success(self) -> bool:
-        return True  # IPython cells are always considered successful
+        return not self.error
 
     def __str__(self) -> str:
         return f'**IPythonRunCellObservation**\n{self.content}'
