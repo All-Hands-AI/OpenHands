@@ -13,9 +13,10 @@ from openhands.server.routes.instructions import (
 
 @pytest.fixture
 def mock_github_api():
-    with patch('openhands.server.routes.instructions.requests.get') as mock_get, patch(
-        'openhands.server.routes.instructions.requests.post'
-    ) as mock_post:
+    with (
+        patch('openhands.server.routes.instructions.requests.get') as mock_get,
+        patch('openhands.server.routes.instructions.requests.post') as mock_post,
+    ):
         yield {'get': mock_get, 'post': mock_post}
 
 

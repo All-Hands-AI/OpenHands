@@ -18,8 +18,8 @@ from openhands.server.middleware import (
 )
 from openhands.server.routes.feedback import app as feedback_api_router
 from openhands.server.routes.files import app as files_api_router
-from openhands.server.routes.instructions_router import app as instructions_api_router
 from openhands.server.routes.github import app as github_api_router
+from openhands.server.routes.instructions_router import app as instructions_api_router
 from openhands.server.routes.new_conversation import app as new_conversation_api_router
 from openhands.server.routes.public import app as public_api_router
 from openhands.server.routes.security import app as security_api_router
