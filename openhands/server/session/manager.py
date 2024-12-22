@@ -179,6 +179,7 @@ class SessionManager:
             return c
 
     async def join_conversation(self, sid: str, connection_id: str) -> EventStream:
+        await self.maybe_start_agent_loop(sid)
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self.local_connection_id_to_session_id[connection_id] = sid
 

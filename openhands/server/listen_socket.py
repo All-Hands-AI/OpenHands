@@ -75,7 +75,6 @@ async def connect(connection_id: str, environ, auth):
 
     if agent_state_changed:
         await sio.emit('oh_event', event_to_dict(agent_state_changed), to=connection_id)
-    await session_manager.maybe_start_agent_loop(conversation_id)
 
 
 @sio.event
