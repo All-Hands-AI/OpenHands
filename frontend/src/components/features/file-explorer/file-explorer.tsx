@@ -167,7 +167,7 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
           {isOpen && (
             <OpenVSCodeButton
               onClick={handleOpenVSCode}
-              isDisabled={status === WsClientProviderStatus.DISCONNECTED}
+              isDisabled={RUNTIME_INACTIVE_STATES.includes(curAgentState)}
             />
           )}
         </div>
