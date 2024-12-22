@@ -49,12 +49,13 @@ export function FileExplorer({ isOpen, onToggle }: FileExplorerProps) {
         ),
       );
       window.open(vscodeUrl.vscode_url, "_blank");
-    } else if (vscodeUrl?.error) {
+    } else {
+      const errorMessage = vscodeUrl?.error || t(I18nKey.EXPLORER$VSCODE_SWITCHING_ERROR_MESSAGE, {
+        error: "VSCode server is not ready. Please try again in a few seconds.",
+      });
       toast.error(
         `open-vscode-error-${new Date().getTime()}`,
-        t(I18nKey.EXPLORER$VSCODE_SWITCHING_ERROR_MESSAGE, {
-          error: vscodeUrl.error,
-        }),
+        errorMessage,
       );
     }
   };

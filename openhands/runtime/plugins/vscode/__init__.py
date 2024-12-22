@@ -35,17 +35,19 @@ class VSCodePlugin(Plugin):
             stderr=subprocess.STDOUT,
             shell=True,
         )
-        # read stdout until the kernel gateway is ready
+        # Wait for the VSCode server to start and be ready
         output = ''
-        while should_continue() and self.gateway_process.stdout is not None:
-            line = self.gateway_process.stdout.readline().decode('utf-8')
-            print(line)
-            output += line
-            if 'at' in line:
-                break
+        start_time = time.time()
+        timeout = 30  # 30 seconds timeout
+        
+        while should_continue() and time.time() - start_time < timeout:
+            if not check_port_available(self.vscode_port):
+                # Port is in use, which means server is running
+                logger.debug(f'VSCode server started at port {self.vscode_port}')
+                return
             time.sleep(1)
             logger.debug('Waiting for VSCode server to start...')
 
-        logger.debug(
-            f'VSCode server started at port {self.vscode_port}. Output: {output}'
-        )
+        if check_port_available(self.vscode_port):
+            logger.error('VSCode server failed to start within timeout period')
+            raise RuntimeError('VSCode server failed to start within timeout period')
