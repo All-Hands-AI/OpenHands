@@ -26,7 +26,7 @@ function UserPrefsProvider({ children }: React.PropsWithChildren) {
     queryKey: SETTINGS_QUERY_KEY,
     queryFn: getSettings,
     initialData: DEFAULT_SETTINGS,
-  })
+  });
 
   const [settingsAreUpToDate, setSettingsAreUpToDate] = React.useState(
     checkIfSettingsAreUpToDate(),

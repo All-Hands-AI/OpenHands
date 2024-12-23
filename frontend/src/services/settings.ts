@@ -78,8 +78,8 @@ export const getSettings = async (): Promise<Settings> => {
       // eslint-disable-next-line  @typescript-eslint/no-explicit-any
       settings = Object.keys(settings).reduce((result: any, key: string) => {
         const settingsKey = key.toUpperCase();
-        result[settingsKey] = settings[key] || DEFAULT_SETTINGS[settingsKey as keyof Settings]
-        return result
+        result[settingsKey] = settings[key] || DEFAULT_SETTINGS[settingsKey as keyof Settings];
+        return result;
       }, {})
 
       return {
@@ -115,13 +115,16 @@ export const getSettings = async (): Promise<Settings> => {
  * @param settings - the settings to save
  */
 export const saveSettings = async (
-  settings: Partial<Settings>
+  settings: Partial<Settings>,
 ): Promise<boolean> => {
   try {
     // For now, we have the objects with the same keys in upper / lower case and need to translate...
-    const validSettings = Object.keys(settings).reduce((result: any, key: string) => {
-      result[key.toLowerCase()] = settings[key as keyof Settings] || DEFAULT_SETTINGS[key as keyof Settings]
-      return result
+    const validSettings = Object.keys(settings).reduce((
+      result: any, key: string
+    ) => {
+      result[key.toLowerCase()] =
+        settings[key as keyof Settings] ||
+        DEFAULT_SETTINGS[key as keyof Settings]
     }, {})
 
     // Clean up values
