@@ -1,6 +1,6 @@
 import React from 'react';
 import { screen } from '@testing-library/react';
-import { renderWithProviders } from 'test-utils';
+import { renderWithProviders } from '../../test-utils';
 import InstructionsRoute from '#/routes/_oh.app.instructions/route';
 
 // Mock the InstructionsPanel component

@@ -30,10 +30,10 @@ export default defineConfig(({ mode }) => {
       svgr(),
     ],
     resolve: {
-      alias: {
-        '@': '/src',
-        '#': '/src',
-      },
+      alias: [
+        { find: '@', replacement: '/src' },
+        { find: '#', replacement: '/src' },
+      ],
     },
     server: {
       port: FE_PORT,
@@ -73,11 +73,6 @@ export default defineConfig(({ mode }) => {
         include: ["src/**/*.{ts,tsx}"],
       },
     },
-    resolve: {
-      alias: [
-        { find: '@', replacement: '/workspace/OpenHands/frontend/src' },
-        { find: '#', replacement: '/workspace/OpenHands/frontend/src' },
-      ],
-    },
+
   };
 });

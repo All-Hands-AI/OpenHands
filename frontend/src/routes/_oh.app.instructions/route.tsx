@@ -18,7 +18,7 @@ export default function InstructionsRoute() {
 
   return (
     <InstructionsPanel
-      repoName={selectedRepository}
+      repoName={selectedRepository || ""}
       hasInstructions={hasInstructions}
       tutorialUrl={tutorialUrl}
       onAddInstructions={handleAddInstructions}
