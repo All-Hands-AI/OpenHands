@@ -8,6 +8,7 @@ from openhands.server.settings import Settings
 from openhands.storage import get_file_store
 from openhands.storage.files import FileStore
 from openhands.storage.settings_store import SettingsStore
+from openhands.utils.async_utils import call_sync_from_async
 
 
 @dataclass
@@ -17,7 +18,7 @@ class FileSettingsStore(SettingsStore):
 
     async def load(self) -> Settings | None:
         try:
-            json_str = self.file_store.read(self.path)
+            json_str = await call_sync_from_async(self.file_store.read, self.path)
             kwargs = json.loads(json_str)
             settings = Settings(**kwargs)
             return settings
@@ -26,7 +27,7 @@ class FileSettingsStore(SettingsStore):
 
     async def store(self, settings: Settings):
         json_str = json.dumps(settings.__dict__)
-        self.file_store.write(self.path, json_str)
+        await call_sync_from_async(self.file_store.write, self.path, json_str)
 
     @classmethod
     async def get_instance(cls, config: AppConfig, token: str | None):

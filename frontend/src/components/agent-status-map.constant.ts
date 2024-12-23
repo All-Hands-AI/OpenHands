@@ -1,5 +1,5 @@
 import { I18nKey } from "#/i18n/declaration";
-import AgentState from "#/types/agent-state";
+import { AgentState } from "#/types/agent-state";
 
 enum IndicatorColor {
   BLUE = "bg-blue-500",

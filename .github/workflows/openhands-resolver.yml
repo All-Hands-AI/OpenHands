@@ -313,12 +313,13 @@ jobs:
           github-token: ${{ secrets.PAT_TOKEN || github.token }}
           script: |
             const fs = require('fs');
+            const path = require('path');
             const issueNumber = ${{ env.ISSUE_NUMBER }};
             const success = ${{ steps.check_result.outputs.RESOLUTION_SUCCESS }};
 
             let prNumber = '';
             let branchName = '';
-            let successExplanation = '';
+            let resultExplanation = '';
 
             try {
               if (success) {
@@ -333,17 +334,18 @@ jobs:
 
             try {
               if (!success){
-                // Read success_explanation from JSON file for failed resolution
+                // Read result_explanation from JSON file for failed resolution
                 const outputFilePath = path.resolve('/tmp/output/output.jsonl');
                 if (fs.existsSync(outputFilePath)) {
                   const outputContent = fs.readFileSync(outputFilePath, 'utf8');
                   const jsonLines = outputContent.split('\n').filter(line => line.trim() !== '');
 
                   if (jsonLines.length > 0) {
-                    // First entry in JSON lines has the key 'success_explanation'
+                    // First entry in JSON lines has the key 'result_explanation'
                     const firstEntry = JSON.parse(jsonLines[0]);
-                    successExplanation = firstEntry.success_explanation || '';
+                    resultExplanation = firstEntry.result_explanation || '';
                   }
+                }
               }
             } catch (error){
               console.error('Error reading file:', error);
@@ -361,8 +363,8 @@ jobs:
             } else if (!success && branchName) {
               let commentBody = `An attempt was made to automatically fix this issue, but it was unsuccessful. A branch named '${branchName}' has been created with the attempted changes. You can view the branch [here](https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${branchName}). Manual intervention may be required.`;
 
-              if (successExplanation) {
-                commentBody += `\n\nAdditional details about the failure:\n${successExplanation}`;
+              if (resultExplanation) {
+                commentBody += `\n\nAdditional details about the failure:\n${resultExplanation}`;
               }
 
               github.rest.issues.createComment({

@@ -20,7 +20,7 @@ export function Sidebar() {
   const user = useGitHubUser();
   const { data: isAuthed } = useIsAuthed();
 
-  const { token, logout } = useAuth();
+  const { logout } = useAuth();
   const { settingsAreUpToDate } = useUserPrefs();
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
@@ -68,11 +68,9 @@ export function Sidebar() {
           />
           <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
           <DocsButton />
-          {!!token && (
-            <ExitProjectButton
-              onClick={() => setStartNewProjectModalIsOpen(true)}
-            />
-          )}
+          <ExitProjectButton
+            onClick={() => setStartNewProjectModalIsOpen(true)}
+          />
         </nav>
       </aside>
       {accountSettingsModalOpen && (
