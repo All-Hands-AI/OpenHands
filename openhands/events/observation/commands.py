@@ -118,6 +118,12 @@ class CmdOutputObservation(Observation):
         else:
             self.metadata = metadata or CmdOutputMetadata()
 
+        # Handle legacy attribute
+        if 'exit_code' in kwargs:
+            self.metadata.exit_code = kwargs['exit_code']
+        if 'command_id' in kwargs:
+            self.metadata.pid = kwargs['command_id']
+
     @property
     def command_id(self) -> int:
         return self.metadata.pid
