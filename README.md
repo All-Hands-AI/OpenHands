@@ -79,7 +79,7 @@ Visit [Installation](https://docs.all-hands.dev/modules/usage/installation) for 
 > [get in touch with us](https://docs.google.com/forms/d/e/1FAIpQLSet3VbGaz8z32gW9Wm-Grl4jpt5WgMXPgJ4EDPVmCETCBpJtQ/viewform)
 > for advanced deployment options.
 
-If you want to modify the OpenHands source code, check out [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
+If you want to modify the OpenHands source code, check out [Development.md](./Development.md).
 
 Having issues? The [Troubleshooting Guide](https://docs.all-hands.dev/modules/usage/troubleshooting) can help.
 
@@ -124,7 +124,7 @@ For a list of open source projects and licenses used in OpenHands, please see ou
 
 ## 📚 Cite
 
-```
+```bibtex
 @misc{openhands,
       title={{OpenHands: An Open Platform for AI Software Developers as Generalist Agents}},
       author={Xingyao Wang and Boxuan Li and Yufan Song and Frank F. Xu and Xiangru Tang and Mingchen Zhuge and Jiayi Pan and Yueqi Song and Bowen Li and Jaskirat Singh and Hoang H. Tran and Fuqiang Li and Ren Ma and Mingzhang Zheng and Bill Qian and Yanjun Shao and Niklas Muennighoff and Yizhe Zhang and Binyuan Hui and Junyang Lin and Robert Brennan and Hao Peng and Heng Ji and Graham Neubig},
