@@ -127,7 +127,6 @@ def test_legacy_serialization():
     assert event.hidden is False
 
     event_dict = event_to_dict(event)
-    print(event_dict)
     assert event_dict['success'] is True
     assert event_dict['extras']['metadata']['exit_code'] == 0
     assert event_dict['extras']['metadata']['pid'] == 3
