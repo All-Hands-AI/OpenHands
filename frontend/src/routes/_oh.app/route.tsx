@@ -1,6 +1,6 @@
 import { useDisclosure } from "@nextui-org/react";
 import React from "react";
-import { Outlet, useParams } from "react-router";
+import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import {
@@ -28,13 +28,10 @@ import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
 import { useEndSession } from "#/hooks/use-end-session";
 import { useUserConversation } from "#/hooks/query/get-conversation-permissions";
-import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { CountBadge } from "#/components/layout/count-badge";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 
 function AppContent() {
-  const { conversationId: cid } = useParams();
-
   const { gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
   const endSession = useEndSession();
@@ -44,8 +41,9 @@ function AppContent() {
   const dispatch = useDispatch();
 
   useConversationConfig();
-  const { mutate: createConversation } = useCreateConversation();
-  const { data: conversation, isFetched } = useUserConversation(cid || null);
+  const { data: conversation, isFetched } = useUserConversation(
+    conversationId || null,
+  );
 
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initalQuery,
@@ -78,11 +76,9 @@ function AppContent() {
     dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
-  }, [cid]);
+  }, [conversationId]);
 
   useEffectOnce(() => {
-    if (!cid) createConversation(settings);
-
     dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());
