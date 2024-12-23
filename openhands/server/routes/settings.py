@@ -42,6 +42,7 @@ async def store_settings(
         settings_store = await SettingsStoreImpl.get_instance(config, github_auth)
         existing_settings = await settings_store.load()
         if existing_settings:
+            settings = Settings(**{**existing_settings.__dict__, **settings.__dict__})
             if settings.llm_api_key is None:
                 settings.llm_api_key = existing_settings.llm_api_key
         await settings_store.store(settings)
