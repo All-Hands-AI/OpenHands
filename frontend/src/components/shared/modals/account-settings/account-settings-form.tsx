@@ -50,12 +50,10 @@ export function AccountSettingsForm({
         ({ label }) => label === language,
       )?.value;
 
-      if (languageKey) saveSettings({ LANGUAGE: languageKey });
+      if (languageKey) saveSettings({ language: languageKey });
     }
 
     handleCaptureConsent(analytics);
-    const ANALYTICS = analytics.toString();
-    localStorage.setItem("analytics-consent", ANALYTICS);
 
     onClose();
   };

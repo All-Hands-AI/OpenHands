@@ -1,24 +1,19 @@
-import {
-  settingsAreUpToDate,
-  maybeMigrateSettings,
-  LATEST_SETTINGS_VERSION,
-  Settings,
-} from "#/services/settings";
+import { Settings } from "#/services/settings";
 
 const extractBasicFormData = (formData: FormData) => {
   const provider = formData.get("llm-provider")?.toString();
   const model = formData.get("llm-model")?.toString();
 
-  const LLM_MODEL = `${provider}/${model}`.toLowerCase();
-  const LLM_API_KEY = formData.get("api-key")?.toString();
-  const AGENT = formData.get("agent")?.toString();
-  const LANGUAGE = formData.get("language")?.toString();
+  const llm_model = `${provider}/${model}`.toLowerCase();
+  const llm_api_key = formData.get("api-key")?.toString();
+  const agent = formData.get("agent")?.toString();
+  const language = formData.get("language")?.toString();
 
   return {
-    LLM_MODEL,
-    LLM_API_KEY,
-    AGENT,
-    LANGUAGE,
+    llm_model,
+    llm_api_key,
+    agent,
+    language,
   };
 };
 
@@ -26,70 +21,49 @@ const extractAdvancedFormData = (formData: FormData) => {
   const keys = Array.from(formData.keys());
   const isUsingAdvancedOptions = keys.includes("use-advanced-options");
 
-  let CUSTOM_LLM_MODEL: string | undefined;
-  let LLM_BASE_URL: string | undefined;
-  let CONFIRMATION_MODE = false;
-  let SECURITY_ANALYZER: string | undefined;
+  let custom_llm_model: string | undefined;
+  let llm_base_url: string | undefined;
+  let confirmation_mode = false;
+  let security_analyzer: string | undefined;
 
   if (isUsingAdvancedOptions) {
-    CUSTOM_LLM_MODEL = formData.get("custom-model")?.toString();
-    LLM_BASE_URL = formData.get("base-url")?.toString();
-    CONFIRMATION_MODE = keys.includes("confirmation-mode");
-    if (CONFIRMATION_MODE) {
+    custom_llm_model = formData.get("custom-model")?.toString();
+    llm_base_url = formData.get("base-url")?.toString();
+    confirmation_mode = keys.includes("confirmation-mode");
+    if (confirmation_mode) {
       // only set securityAnalyzer if confirmationMode is enabled
-      SECURITY_ANALYZER = formData.get("security-analyzer")?.toString();
+      security_analyzer = formData.get("security-analyzer")?.toString();
     }
   }
 
   return {
-    CUSTOM_LLM_MODEL,
-    LLM_BASE_URL,
-    CONFIRMATION_MODE,
-    SECURITY_ANALYZER,
+    custom_llm_model,
+    llm_base_url,
+    confirmation_mode,
+    security_analyzer,
   };
 };
 
 const extractSettings = (formData: FormData): Partial<Settings> => {
-  const { LLM_MODEL, LLM_API_KEY, AGENT, LANGUAGE } =
+  const { llm_model, llm_api_key, agent, language } =
     extractBasicFormData(formData);
 
   const {
-    CUSTOM_LLM_MODEL,
-    LLM_BASE_URL,
-    CONFIRMATION_MODE,
-    SECURITY_ANALYZER,
+    custom_llm_model,
+    llm_base_url,
+    confirmation_mode,
+    security_analyzer,
   } = extractAdvancedFormData(formData);
 
   return {
-    LLM_MODEL: CUSTOM_LLM_MODEL || LLM_MODEL,
-    LLM_API_KEY,
-    AGENT,
-    LANGUAGE,
-    LLM_BASE_URL,
-    CONFIRMATION_MODE,
-    SECURITY_ANALYZER,
+    llm_model: custom_llm_model || llm_model,
+    llm_api_key,
+    agent,
+    language,
+    llm_base_url,
+    confirmation_mode,
+    security_analyzer,
   };
 };
 
-const saveSettingsView = (view: "basic" | "advanced") => {
-  localStorage.setItem(
-    "use-advanced-options",
-    view === "advanced" ? "true" : "false",
-  );
-};
-
-/**
- * Updates the settings version in local storage if the current settings are not up to date.
- * If the settings are outdated, it attempts to migrate them before updating the version.
- */
-const updateSettingsVersion = (logout: () => void) => {
-  if (!settingsAreUpToDate()) {
-    maybeMigrateSettings(logout);
-    localStorage.setItem(
-      "SETTINGS_VERSION",
-      LATEST_SETTINGS_VERSION.toString(),
-    );
-  }
-};
-
-export { extractSettings, saveSettingsView, updateSettingsVersion };
+export { extractSettings };
