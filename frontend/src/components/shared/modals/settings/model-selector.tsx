@@ -12,14 +12,16 @@ interface ModelSelectorProps {
   isDisabled?: boolean;
   models: Record<string, { separator: string; models: string[] }>;
   currentModel?: string;
+  onModelChange?: (model: string) => void;
 }
 
 export function ModelSelector({
   isDisabled,
   models,
   currentModel,
+  onModelChange,
 }: ModelSelectorProps) {
-  const [, setLitellmId] = React.useState<string | null>(null);
+  const [litellmId, setLitellmId] = React.useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = React.useState<string | null>(
     null,
   );
@@ -41,7 +43,9 @@ export function ModelSelector({
     setSelectedModel(null);
 
     const separator = models[provider]?.separator || "";
-    setLitellmId(provider + separator);
+    const newLitellmId = provider + separator;
+    setLitellmId(newLitellmId);
+    onModelChange?.(newLitellmId);
   };
 
   const handleChangeModel = (model: string) => {
@@ -53,11 +57,14 @@ export function ModelSelector({
     }
     setLitellmId(fullModel);
     setSelectedModel(model);
+    onModelChange?.(fullModel);
   };
 
   const clear = () => {
     setSelectedProvider(null);
+    setSelectedModel(null);
     setLitellmId(null);
+    onModelChange?.(null);
   };
 
   return (

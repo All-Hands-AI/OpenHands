@@ -8,6 +8,9 @@ import MainApp from "#/routes/_oh/route";
 import i18n from "#/i18n";
 import * as CaptureConsent from "#/utils/handle-capture-consent";
 import OpenHands from "#/api/open-hands";
+import { AuthProvider } from "#/context/auth-context";
+import { UserPrefsProvider } from "#/context/user-prefs-context";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 describe("frontend/routes/_oh", () => {
   const RouteStub = createRoutesStub([{ Component: MainApp, path: "/" }]);
@@ -35,21 +38,34 @@ describe("frontend/routes/_oh", () => {
     localStorage.clear();
   });
 
+  const renderWithProvidersWrapper = (ui) => {
+    const queryClient = new QueryClient();
+    return renderWithProviders(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <UserPrefsProvider>
+            {ui}
+          </UserPrefsProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+  };
+
   it("should render", async () => {
-    renderWithProviders(<RouteStub />);
+    renderWithProvidersWrapper(<RouteStub />);
     await screen.findByTestId("root-layout");
   });
 
   it("should render the AI config modal if settings are not up-to-date", async () => {
     settingsAreUpToDateMock.mockReturnValue(false);
-    renderWithProviders(<RouteStub />);
+    renderWithProvidersWrapper(<RouteStub />);
 
     await screen.findByTestId("ai-config-modal");
   });
 
   it("should not render the AI config modal if the settings are up-to-date", async () => {
     settingsAreUpToDateMock.mockReturnValue(true);
-    renderWithProviders(<RouteStub />);
+    renderWithProvidersWrapper(<RouteStub />);
 
     await waitFor(() => {
       expect(screen.queryByTestId("ai-config-modal")).not.toBeInTheDocument();
@@ -70,7 +86,7 @@ describe("frontend/routes/_oh", () => {
       POSTHOG_CLIENT_KEY: "test-key",
     });
 
-    renderWithProviders(<RouteStub />);
+    renderWithProvidersWrapper(<RouteStub />);
 
     // The user has not consented to tracking
     const consentForm = await screen.findByTestId("user-capture-consent-form");
@@ -98,7 +114,7 @@ describe("frontend/routes/_oh", () => {
       POSTHOG_CLIENT_KEY: "test-key",
     });
 
-    renderWithProviders(<RouteStub />);
+    renderWithProvidersWrapper(<RouteStub />);
 
     await waitFor(() => {
       expect(
@@ -109,7 +125,7 @@ describe("frontend/routes/_oh", () => {
 
   it("should not render the user consent form if the user has already made a decision", async () => {
     localStorage.setItem("analytics-consent", "true");
-    renderWithProviders(<RouteStub />);
+    renderWithProvidersWrapper(<RouteStub />);
 
     await waitFor(() => {
       expect(
@@ -121,7 +137,7 @@ describe("frontend/routes/_oh", () => {
   // TODO: Likely failing due to how tokens are now handled in context. Move to e2e tests
   it.skip("should render a new project button if a token is set", async () => {
     localStorage.setItem("token", "test-token");
-    const { rerender } = renderWithProviders(<RouteStub />);
+    const { rerender } = renderWithProvidersWrapper(<RouteStub />);
 
     await screen.findByTestId("new-project-button");
 
@@ -138,7 +154,7 @@ describe("frontend/routes/_oh", () => {
   // TODO: Move to e2e tests
   it.skip("should update the i18n language when the language settings change", async () => {
     const changeLanguageSpy = vi.spyOn(i18n, "changeLanguage");
-    const { rerender } = renderWithProviders(<RouteStub />);
+    const { rerender } = renderWithProvidersWrapper(<RouteStub />);
 
     // The default language is English
     expect(changeLanguageSpy).toHaveBeenCalledWith("en");
@@ -159,7 +175,7 @@ describe("frontend/routes/_oh", () => {
     localStorage.setItem("ghToken", "test-token");
 
     // const logoutCleanupSpy = vi.spyOn(LogoutCleanup, "logoutCleanup");
-    renderWithProviders(<RouteStub />);
+    renderWithProvidersWrapper(<RouteStub />);
 
     const userActions = await screen.findByTestId("user-actions");
     const userAvatar = within(userActions).getByTestId("user-avatar");
