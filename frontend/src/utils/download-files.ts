@@ -1,4 +1,5 @@
 import OpenHands from "#/api/open-hands";
+import { downloadWorkspace } from "./download-workspace";
 
 interface DownloadProgress {
   filesTotal: number;
@@ -296,14 +297,16 @@ export async function downloadFiles(
     if (error instanceof Error && error.message === "Download cancelled") {
       throw error;
     }
-    // Re-throw the error as is if it's already a user-friendly message
+    // Fallback to old style download
     if (
       error instanceof Error &&
       (error.message.includes("browser doesn't support") ||
         error.message.includes("Failed to select") ||
-        error.message === "Download cancelled")
+        error.message.includes("Permission denied")
+      )
     ) {
-      throw error;
+      await downloadWorkspace(conversationID);
+      return
     }
 
     // Otherwise, wrap it with a generic message
