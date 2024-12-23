@@ -13,11 +13,9 @@ from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
-from openhands.runtime.impl.eventstream.eventstream_runtime import EventStreamRuntime
-from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import call_async_from_sync
+from openhands.utils.async_utils import call_async_from_sync, call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
 
 WAIT_TIME_BEFORE_CLOSE = 300
@@ -181,7 +179,8 @@ class AgentSession:
             await self.controller.set_agent_state_to(AgentState.ERROR)
 
     def get_app_pprts(self):
-        return f'* If you need to run a web application, use one of these ports whenever possible: {self.runtime.web_hosts.join(',')}'
+        if self.runtime is not None:
+            return f'* If you need to run a web application, use one of these ports whenever possible: {",".join(self.runtime.web_hosts)}'
 
     def _create_security_analyzer(self, security_analyzer: str | None):
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
@@ -246,9 +245,10 @@ class AgentSession:
 
         if agent.prompt_manager:
             agent.prompt_manager.set_runtime_info(port_instructions or '')
-            agent.prompt_manager.load_microagent_files(
-                self.runtime.get_custom_microagents(selected_repository)
+            microagents = await call_sync_from_async(
+                self.runtime.get_custom_microagents, selected_repository
             )
+            agent.prompt_manager.load_microagent_files(microagents)
 
         logger.debug(
             f'Runtime initialized with plugins: {[plugin.name for plugin in self.runtime.plugins]}'

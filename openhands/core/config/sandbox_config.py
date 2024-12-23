@@ -36,6 +36,8 @@ class SandboxConfig:
             This is a dictionary where keys are container ports and values are host ports.
             For example, {8080: 8080} maps container port 8080 to host port 8080.
             Note: Port 4141 is always mapped to host port 4141 by default.
+        remote_runtime_resource_factor: Factor to scale the resource allocation for remote runtime.
+            Must be one of [1, 2, 4, 8]. Will only be used if the runtime is remote.
     """
 
     remote_runtime_api_url: str = 'http://localhost:8000'
@@ -61,6 +63,7 @@ class SandboxConfig:
     platform: str | None = None
     close_delay: int = 15
     port_mappings: dict[int, int] = field(default_factory=dict)
+    remote_runtime_resource_factor: int = 1
 
     def defaults_to_dict(self) -> dict:
         """Serialize fields to a dict for the frontend, including type hints, defaults, and whether it's optional."""

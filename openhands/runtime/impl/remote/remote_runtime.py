@@ -41,6 +41,7 @@ from openhands.runtime.builder.remote import RemoteRuntimeBuilder
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.command import get_remote_startup_command
 from openhands.runtime.utils.request import (
+    RequestHTTPError,
     send_request,
 )
 from openhands.runtime.utils.runtime_build import build_runtime_image
@@ -247,6 +248,7 @@ class RemoteRuntime(Runtime):
             'working_dir': '/openhands/code/',
             'environment': {'DEBUG': 'true'} if self.config.debug else {},
             'session_id': self.sid,
+            'resource_factor': self.config.sandbox.remote_runtime_resource_factor,
         }
 
         # Start the sandbox using the /start endpoint
@@ -458,11 +460,11 @@ class RemoteRuntime(Runtime):
         except requests.Timeout:
             self.log('error', 'No response received within the timeout period.')
             raise
-        except requests.HTTPError as e:
-            if is_runtime_request and e.response.status_code == 404:
+        except RequestHTTPError as e:
+            if is_runtime_request and e.response.status_code in (404, 502):
                 raise AgentRuntimeDisconnectedError(
-                    f'404 error while connecting to {self.runtime_url}'
-                )
+                    f'{e.response.status_code} error while connecting to {self.runtime_url}'
+                ) from e
             elif is_runtime_request and e.response.status_code == 503:
                 if not is_retry:
                     self.log('warning', 'Runtime appears to be paused. Resuming...')
@@ -470,7 +472,9 @@ class RemoteRuntime(Runtime):
                     self._wait_until_alive()
                     return self._send_request(method, url, True, **kwargs)
                 else:
-                    raise e
+                    raise AgentRuntimeUnavailableError(
+                        f'{e.response.status_code} error while connecting to {self.runtime_url}'
+                    ) from e
 
             else:
                 raise e

@@ -721,7 +721,7 @@ def test_process_single_pr_update(
         metrics={},
         success=True,
         comment_success=None,
-        success_explanation='[Test success 1]',
+        result_explanation='[Test success 1]',
         error=None,
     )
 
@@ -792,7 +792,7 @@ def test_process_single_issue(
         metrics={},
         success=True,
         comment_success=None,
-        success_explanation='Test success 1',
+        result_explanation='Test success 1',
         error=None,
     )
 
@@ -830,7 +830,7 @@ def test_process_single_issue(
         patch_dir=f'{mock_output_dir}/patches/issue_1',
         pr_type=pr_type,
         fork_owner=None,
-        additional_message=resolver_output.success_explanation,
+        additional_message=resolver_output.result_explanation,
         target_branch=None,
         reviewer=None,
         pr_title=None,
@@ -870,7 +870,7 @@ def test_process_single_issue_unsuccessful(
         metrics={},
         success=False,
         comment_success=None,
-        success_explanation='',
+        result_explanation='',
         error='Test error',
     )
 
@@ -916,7 +916,7 @@ def test_process_all_successful_issues(
         metrics={},
         success=True,
         comment_success=None,
-        success_explanation='Test success 1',
+        result_explanation='Test success 1',
         error=None,
     )
 
@@ -936,7 +936,7 @@ def test_process_all_successful_issues(
         metrics={},
         success=False,
         comment_success=None,
-        success_explanation='',
+        result_explanation='',
         error='Test error 2',
     )
 
@@ -956,7 +956,7 @@ def test_process_all_successful_issues(
         metrics={},
         success=True,
         comment_success=None,
-        success_explanation='Test success 3',
+        result_explanation='Test success 3',
         error=None,
     )
 

@@ -581,7 +581,7 @@ def process_single_issue(
             github_token=github_token,
             github_username=github_username,
             patch_dir=patched_repo_dir,
-            additional_message=resolver_output.success_explanation,
+            additional_message=resolver_output.result_explanation,
             llm_config=llm_config,
         )
     else:
@@ -592,7 +592,7 @@ def process_single_issue(
             patch_dir=patched_repo_dir,
             pr_type=pr_type,
             fork_owner=fork_owner,
-            additional_message=resolver_output.success_explanation,
+            additional_message=resolver_output.result_explanation,
             target_branch=target_branch,
             reviewer=reviewer,
             pr_title=pr_title,
