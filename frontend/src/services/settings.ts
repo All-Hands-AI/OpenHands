@@ -20,8 +20,6 @@ export const DEFAULT_SETTINGS: Settings = {
   SECURITY_ANALYZER: "",
 };
 
-const validKeys = Object.keys(DEFAULT_SETTINGS) as (keyof Settings)[];
-
 export const getCurrentSettingsVersion = () => {
   const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
   if (!settingsVersion) return 0;
@@ -77,6 +75,7 @@ export const getSettings = async (): Promise<Settings> => {
     let settings = await response.json();
     if (settings != null) {
       // For now, we have the objects with the same keys in upper / lower case and need to translate...
+      // eslint-disable-next-line  @typescript-eslint/no-explicit-any
       settings = Object.keys(settings).reduce((result: any, key: string) => {
         const settingsKey = key.toUpperCase();
         result[settingsKey] = settings[key] || DEFAULT_SETTINGS[settingsKey as keyof Settings]

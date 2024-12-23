@@ -1,5 +1,6 @@
 import React from "react";
 import posthog from "posthog-js";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getSettings,
   Settings,
@@ -7,7 +8,6 @@ import {
   settingsAreUpToDate as checkIfSettingsAreUpToDate,
   DEFAULT_SETTINGS,
 } from "#/services/settings";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface UserPrefsContextType {
   settings: Settings;
@@ -21,9 +21,8 @@ const UserPrefsContext = React.createContext<UserPrefsContextType | undefined>(
 
 const SETTINGS_QUERY_KEY = ["settings"];
 
-
 function UserPrefsProvider({ children }: React.PropsWithChildren) {
-  const { data: settings, isLoading } = useQuery({
+  const { data: settings } = useQuery({
     queryKey: SETTINGS_QUERY_KEY,
     queryFn: getSettings,
     initialData: DEFAULT_SETTINGS,
@@ -36,7 +35,7 @@ function UserPrefsProvider({ children }: React.PropsWithChildren) {
 
   const saveSettings = (newSettings: Partial<Settings>) => {
     updateAndSaveSettingsToLocalStorage(newSettings);
-    queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY })
+    queryClient.invalidateQueries({ queryKey: SETTINGS_QUERY_KEY });
     setSettingsAreUpToDate(checkIfSettingsAreUpToDate());
   };
 
