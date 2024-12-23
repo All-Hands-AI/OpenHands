@@ -65,6 +65,17 @@ async def get_hosts(request: Request):
         JSONResponse: A JSON response indicating the success of the operation.
     """
     try:
+        if not hasattr(request.state, 'conversation'):
+            return JSONResponse(
+                status_code=500,
+                content={'error': 'No conversation found in request state'},
+            )
+
+        if not hasattr(request.state.conversation, 'runtime'):
+            return JSONResponse(
+                status_code=500, content={'error': 'No runtime found in conversation'}
+            )
+
         runtime: Runtime = request.state.conversation.runtime
         logger.debug(f'Runtime type: {type(runtime)}')
         logger.debug(f'Runtime hosts: {runtime.web_hosts}')

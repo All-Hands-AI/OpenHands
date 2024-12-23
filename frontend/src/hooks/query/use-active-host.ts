@@ -1,31 +1,33 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import React from "react";
+import { useSelector } from "react-redux";
 import { openHands } from "#/api/open-hands-axios";
-import {
-  useWsClient,
-  WsClientProviderStatus,
-} from "#/context/ws-client-provider";
+import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
+import { RootState } from "#/store";
+import { useConversation } from "#/context/conversation-context";
 
 export const useActiveHost = () => {
-  const { status } = useWsClient();
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const [activeHost, setActiveHost] = React.useState<string | null>(null);
 
+  const { conversationId } = useConversation();
+
   const { data } = useQuery({
-    queryKey: ["hosts"],
+    queryKey: [conversationId, "hosts"],
     queryFn: async () => {
       const response = await openHands.get<{ hosts: string[] }>(
-        "/api/web-hosts",
+        `/api/conversations/${conversationId}/web-hosts`,
       );
       return response.data;
     },
-    enabled: status === WsClientProviderStatus.ACTIVE,
+    enabled: !RUNTIME_INACTIVE_STATES.includes(curAgentState),
     initialData: { hosts: [] },
   });
 
   const apps = useQueries({
     queries: data.hosts.map((port) => ({
-      queryKey: ["hosts", port],
+      queryKey: [conversationId, "hosts", port],
       queryFn: async () => axios.get(port),
       refetchInterval: 3000,
     })),
