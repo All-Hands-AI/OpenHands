@@ -353,16 +353,13 @@ def test_llm_attention_condenser_from_config():
 def test_llm_attention_condenser_keeps_first_events(mock_llm, mock_state):
     """Test that the LLMAttentionCondenser keeps the right number of initial events when forgetting."""
     max_size = 4
-    keep_first = 1
-    condenser = LLMAttentionCondenser(
-        max_size=max_size, keep_first=keep_first, llm=mock_llm
-    )
+    condenser = LLMAttentionCondenser(max_size=max_size, keep_first=1, llm=mock_llm)
 
-    first_event = create_test_event('Event 0')
+    first_event = create_test_event('Event 0', id=0)
     mock_state.history.append(first_event)
 
     for i in range(max_size * 10):
-        event = create_test_event(f'Event {i+1}')
+        event = create_test_event(f'Event {i+1}', id=i + 1)
         mock_state.history.append(event)
 
         mock_llm.set_mock_response_content(
