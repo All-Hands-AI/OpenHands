@@ -1,3 +1,4 @@
+import json
 import uuid
 
 from fastapi import APIRouter, Request
@@ -74,3 +75,34 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         conversation_id, conversation_init_data
     )
     return JSONResponse(content={'status': 'ok', 'conversation_id': conversation_id})
+
+
+@app.get('/conversations')
+async def search_conversations(request: Request):
+    file_store = session_manager.file_store
+    conversations = []
+    try:
+        for path in file_store.list('sessions/') or []:
+            try:
+                session_id = path.split('/')[1]
+                if not session_id.startswith('.'):
+                    events = file_store.list(f'{path}events/')
+                    events = sorted(events)
+                    event_path = events[-1]
+                    event = json.loads(file_store.read(event_path))
+                    conversations.append(
+                        {
+                            'id': session_id,
+                            'last_accessed_at': event.get('timestamp'),
+                        }
+                    )
+            except Exception:  # type: ignore
+                logger.warning(
+                    f'Error loading path: {path}', exc_info=True, stack_info=True
+                )
+    except Exception:  # type: ignore
+        logger.warning('Error loading conversation', exc_info=True, stack_info=True)
+    return {
+        'conversations': conversations,
+        'has_more': False,
+    }
