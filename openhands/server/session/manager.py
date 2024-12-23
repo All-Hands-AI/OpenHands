@@ -179,6 +179,7 @@ class SessionManager:
             return c
 
     async def join_conversation(self, sid: str, connection_id: str) -> EventStream:
+        logger.info(f'join_conversation:{sid}:{connection_id}')
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self.local_connection_id_to_session_id[connection_id] = sid
 
@@ -189,6 +190,7 @@ class SessionManager:
             return session.agent_session.event_stream
 
         if await self._is_agent_loop_running_in_cluster(sid):
+            logger.info(f'found_remote_session:{sid}')
             return EventStream(sid, self.file_store)
 
         return await self.maybe_start_agent_loop(sid)
@@ -313,14 +315,13 @@ class SessionManager:
     ) -> EventStream:
         logger.info(f'maybe_start_agent_loop:{sid}')
         session: Session | None = None
-        if not await self._is_agent_loop_running_locally(sid):
+        if not await self._is_agent_loop_running(sid):
+            logger.info(f'start_agent_loop:{sid}')
             session = Session(
                 sid=sid, file_store=self.file_store, config=self.config, sio=self.sio
             )
             self._local_agent_loops_by_sid[sid] = session
-            if not await self._is_agent_loop_running_in_cluster(sid):
-                logger.info(f'start_agent_loop:{sid}')
-                await session.initialize_agent(conversation_init_data)
+            await session.initialize_agent(conversation_init_data)
 
         session = self._local_agent_loops_by_sid.get(sid)
         if session is not None:
