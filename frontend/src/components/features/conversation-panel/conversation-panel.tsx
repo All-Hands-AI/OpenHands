@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import { ConversationCard } from "./conversation-card";
 import { useUserConversations } from "#/hooks/query/use-user-conversations";
 import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
@@ -15,7 +15,7 @@ interface ConversationPanelProps {
 }
 
 export function ConversationPanel({ onClose }: ConversationPanelProps) {
-  const [searchParams] = useSearchParams();
+  const { conversationId: cid } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -46,7 +46,6 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
       deleteConversation({ conversationId: selectedConversationId });
       setConfirmDeleteModalVisible(false);
 
-      const cid = searchParams.get("cid");
       if (cid === selectedConversationId) {
         endSession();
       }

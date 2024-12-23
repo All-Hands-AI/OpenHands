@@ -24,9 +24,8 @@ describe("ConversationPanel", () => {
       ),
     });
 
-  const { endSessionMock, searchParamsGetMock } = vi.hoisted(() => ({
+  const { endSessionMock } = vi.hoisted(() => ({
     endSessionMock: vi.fn(),
-    searchParamsGetMock: vi.fn(),
   }));
 
   beforeAll(() => {
@@ -35,7 +34,7 @@ describe("ConversationPanel", () => {
       Link: ({ children }: React.PropsWithChildren) => children,
       useNavigate: vi.fn(() => vi.fn()),
       useLocation: vi.fn(() => ({ pathname: "/conversation" })),
-      useSearchParams: vi.fn(() => [{ get: searchParamsGetMock }]),
+      useParams: vi.fn(() => ({ conversationId: "2" })),
     }));
 
     vi.mock("#/hooks/use-end-session", async (importOriginal) => ({
@@ -112,7 +111,6 @@ describe("ConversationPanel", () => {
   });
 
   it("should call endSession after deleting a conversation that is the current session", async () => {
-    searchParamsGetMock.mockReturnValue("2"); // id of the second conversation
     const user = userEvent.setup();
     renderConversationPanel();
 
