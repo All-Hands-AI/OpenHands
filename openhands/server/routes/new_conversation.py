@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.routes.settings import SettingsStoreImpl
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.server.shared import config, session_manager
+from openhands.server.shared import config, session_manager, sio
 from openhands.storage.conversation.conversation_store import (
     ConversationMetadata,
     ConversationStore,
@@ -51,7 +51,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
 
     conversation_store = await ConversationStore.get_instance(config)
 
-    conversation_id = uuid.uuid4().hex
+    conversation_id = sio.eio.generate_id()
     while await conversation_store.exists(conversation_id):
         logger.warning(f'Collision on conversation ID: {conversation_id}. Retrying...')
         conversation_id = uuid.uuid4().hex
