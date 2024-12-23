@@ -27,7 +27,7 @@ Pour plus de détails, veuillez consulter [ce document](https://github.com/All-H
 
 Nous avons à la fois un espace de travail Slack pour la collaboration sur la construction d'OpenHands et un serveur Discord pour discuter de tout ce qui est lié, par exemple, à ce projet, LLM, agent, etc.
 
-- [Espace de travail Slack](https://join.slack.com/t/openhands-ai/shared_invite/zt-2vbfigwev-G03twSpXaErwzYVD4CFiBg)
+- [Espace de travail Slack](https://join.slack.com/t/openhands-ai/shared_invite/zt-2wkh4pklz-w~h_DVDtEe9H5kyQlcNxVw)
 - [Serveur Discord](https://discord.gg/ESHStjSjD4)
 
 Si vous souhaitez contribuer, n'hésitez pas à rejoindre notre communauté. Simplifions ensemble l'ingénierie logicielle !
