@@ -253,13 +253,41 @@ class OpenHands {
     args?: Record<string, unknown>;
     selectedRepository?: string;
   }): Promise<{ conversation_id: string }> {
+    // Load stored settings first
+    const settings = await OpenHands.loadSettings();
+    
+    // Merge stored settings with provided args, giving priority to provided args
+    const mergedArgs = {
+      ...(settings || {}),
+      ...(params.args || {}),
+    };
+
     const { data } = await openHands.post<{
       conversation_id: string;
     }>("/api/conversations", {
       github_token: params.githubToken,
-      args: params.args,
+      args: mergedArgs,
       selected_repository: params.selectedRepository,
     });
+    return data;
+  }
+
+  /**
+   * Load user settings from the backend
+   * @returns The stored settings or null if none exist
+   */
+  static async loadSettings(): Promise<Settings | null> {
+    const { data } = await openHands.get<Settings | null>("/api/settings");
+    return data;
+  }
+
+  /**
+   * Store user settings in the backend
+   * @param settings Settings to store
+   * @returns true if successful
+   */
+  static async storeSettings(settings: Settings): Promise<boolean> {
+    const { data } = await openHands.post<boolean>("/api/settings", settings);
     return data;
   }
 }
