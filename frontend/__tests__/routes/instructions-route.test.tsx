@@ -2,10 +2,13 @@ import React from 'react';
 import { screen } from '@testing-library/react';
 import { renderWithProviders } from '../../test-utils';
 import InstructionsRoute from '#/routes/_oh.app.instructions/route';
+import { describe, it, expect } from 'vitest';
+
+import { vi } from 'vitest';
 
 // Mock the InstructionsPanel component
-jest.mock('../../src/components/features/instructions/instructions-panel', () => ({
-  InstructionsPanel: ({ repoName, hasInstructions, tutorialUrl, onAddInstructions }) => (
+vi.mock('../../src/components/features/instructions/instructions-panel', () => ({
+  InstructionsPanel: ({ repoName, hasInstructions, tutorialUrl, onAddInstructions }: { repoName: string; hasInstructions: boolean; tutorialUrl: string; onAddInstructions: () => void }) => (
     <div data-testid="instructions-panel">
       <p>Repo: {repoName}</p>
       <p>Has Instructions: {hasInstructions.toString()}</p>
@@ -20,6 +23,9 @@ describe('InstructionsRoute', () => {
     const initialState = {
       initalQuery: {
         selectedRepository: 'test-org/test-repo',
+        files: [],
+        initialQuery: null,
+        importedProjectZip: null,
       },
     };
 

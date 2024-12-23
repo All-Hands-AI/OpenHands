@@ -62,7 +62,6 @@
     "lint:fix": "eslint src --ext .ts,.tsx,.js --fix && prettier --write src/**/*.{ts,tsx}",
     "typecheck": "react-router typegen && tsc"
   },
-
   "lint-staged": {
     "src/**/*.{ts,tsx,js}": [
       "eslint --fix --resolve-plugins-relative-to .",
@@ -77,6 +76,7 @@
     "@testing-library/jest-dom": "^6.6.1",
     "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^14.5.2",
+    "@types/jest": "^29.5.14",
     "@types/node": "^22.7.6",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.0",
