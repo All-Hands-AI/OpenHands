@@ -1544,6 +1544,20 @@
     "fr": "Inconnu",
     "tr": "Bilinmeyen"
   },
+  "CHAT$JUMP_TO_FILE_TOOLTIP": {
+    "en": "Jump to file: {{path}}",
+    "zh-CN": "跳转到文件：{{path}}",
+    "de": "Zur Datei springen: {{path}}",
+    "ko-KR": "파일로 이동: {{path}}",
+    "no": "Hopp til fil: {{path}}",
+    "zh-TW": "跳轉到文件：{{path}}",
+    "it": "Vai al file: {{path}}",
+    "pt": "Ir para o arquivo: {{path}}",
+    "es": "Ir al archivo: {{path}}",
+    "ar": "انتقل إلى الملف: {{path}}",
+    "fr": "Aller au fichier: {{path}}",
+    "tr": "Dosyaya git: {{path}}"
+  },
   "SECURITY_ANALYZER$UNKNOWN_RISK": {
     "en": "Unknown Risk",
     "de": "Unbekanntes Risiko",

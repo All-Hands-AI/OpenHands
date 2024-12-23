@@ -8,4 +8,5 @@ type Message = {
   pending?: boolean;
   translationID?: string;
   eventID?: number;
+  filePath?: string;
 };
