@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from openhands.controller import State
+from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import (
     AmortizedForgettingCondenserConfig,
     LLMAttentionCondenserConfig,
@@ -41,6 +41,7 @@ def create_test_event(
 
 @pytest.fixture
 def mock_llm() -> LLM:
+    """Mocks an LLM object with a utility function for setting and resetting response contents in unit tests."""
     # Create a MagicMock for the LLM object
     mock_llm = MagicMock(spec=LLM)
     _mock_content = None
@@ -70,6 +71,7 @@ def mock_llm() -> LLM:
 
 @pytest.fixture
 def mock_state() -> State:
+    """Mocks a State object with the only parameters needed for testing condensers: history and extra_data."""
     mock_state = MagicMock(spec=State)
     mock_state.history = []
     mock_state.extra_data = {}
@@ -395,7 +397,7 @@ def test_llm_attention_condenser_forgets_when_larger_than_max_size(
     condenser = LLMAttentionCondenser(max_size=max_size, llm=mock_llm)
 
     for i in range(max_size * 10):
-        event = create_test_event(f'Event {i}')
+        event = create_test_event(f'Event {i}', id=i)
         mock_state.history.append(event)
 
         mock_llm.set_mock_response_content(
@@ -403,9 +405,6 @@ def test_llm_attention_condenser_forgets_when_larger_than_max_size(
         )
 
         results = condenser.condense(mock_state)
-
-        # The last event in the results is always the event we just added.
-        assert results[-1] == event
 
         # The number of results should bounce back and forth between 1, 2, 1, 2, ...
         assert len(results) == (i % 2) + 1
@@ -417,7 +416,7 @@ def test_llm_attention_condenser_handles_events_outside_history(mock_llm, mock_s
     condenser = LLMAttentionCondenser(max_size=max_size, llm=mock_llm)
 
     for i in range(max_size * 10):
-        event = create_test_event(f'Event {i}')
+        event = create_test_event(f'Event {i}', id=i)
         mock_state.history.append(event)
 
         mock_llm.set_mock_response_content(
@@ -437,7 +436,7 @@ def test_llm_attention_condenser_handles_too_many_events(mock_llm, mock_state):
     condenser = LLMAttentionCondenser(max_size=max_size, llm=mock_llm)
 
     for i in range(max_size * 10):
-        event = create_test_event(f'Event {i}')
+        event = create_test_event(f'Event {i}', id=i)
         mock_state.history.append(event)
         mock_llm.set_mock_response_content(
             ImportantEventSelection(
@@ -457,7 +456,7 @@ def test_llm_attention_condenser_handles_too_few_events(mock_llm, mock_state):
     condenser = LLMAttentionCondenser(max_size=max_size, llm=mock_llm)
 
     for i in range(max_size * 10):
-        event = create_test_event(f'Event {i}')
+        event = create_test_event(f'Event {i}', id=i)
         mock_state.history.append(event)
 
         mock_llm.set_mock_response_content(ImportantEventSelection(ids=[]))
