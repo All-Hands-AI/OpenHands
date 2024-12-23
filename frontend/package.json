@@ -60,17 +60,12 @@
     "prelint": "npm run make-i18n",
     "lint": "eslint src --ext .ts,.tsx,.js && prettier --check src/**/*.{ts,tsx}",
     "lint:fix": "eslint src --ext .ts,.tsx,.js --fix && prettier --write src/**/*.{ts,tsx}",
-    "prepare": "cd .. && husky frontend/.husky",
     "typecheck": "react-router typegen && tsc"
   },
-  "husky": {
-    "hooks": {
-      "pre-commit": "npm run test && lint-staged"
-    }
-  },
+
   "lint-staged": {
     "src/**/*.{ts,tsx,js}": [
-      "eslint --fix",
+      "eslint --fix --resolve-plugins-relative-to .",
       "prettier --write"
     ]
   },
@@ -103,7 +98,7 @@
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^4.6.2",
-    "husky": "^9.1.6",
+    "husky": "^9.1.7",
     "jsdom": "^25.0.1",
     "lint-staged": "^15.2.10",
     "msw": "^2.6.6",
