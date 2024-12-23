@@ -274,7 +274,10 @@ class LLMAttentionCondenser(RollingCondenser):
         # 2. Ask the LLM to rank the events by importance, returning JUST the list of IDs
         # Then we need to use that ranking to construct the tail
 
-        message: str = "You will be given a list of actions, observations, and thoughts from a coding agent. Each item in the list has an identifier. Please sort the identifiers in order of how important the contents of the item are for the next step of the coding agent's task, from most important to least important."
+        message: str = """You will be given a list of actions, observations, and thoughts from a coding agent.
+        Each item in the list has an identifier. Please sort the identifiers in order of how important the
+        contents of the item are for the next step of the coding agent's task, from most important to least
+        important."""
 
         response = self.llm.completion(
             messages=[
