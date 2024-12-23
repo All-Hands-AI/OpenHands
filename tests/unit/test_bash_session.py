@@ -19,6 +19,7 @@ def test_session_initialization():
 
     # Test with custom username
     session = BashSession(work_dir=os.getcwd(), username='nobody')
+    session.initialize()
     assert 'openhands-nobody' in session.session.name
     session.close()
 
