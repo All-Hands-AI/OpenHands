@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.base import Runtime
+from openhands.server.shared import session_manager
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
@@ -103,4 +104,13 @@ async def search_events(
     return {
         'events': matching_events,
         'has_more': has_more,
+    }
+
+
+@app.get('/conversation/search')
+async def search_conversations(request: Request):
+    conversations = session_manager.file_store.list('sessions')
+    return {
+        'conversations': conversations,
+        'has_more': False,
     }
