@@ -94,6 +94,9 @@ async def search_conversations(request: Request):
                         {
                             'id': session_id,
                             'last_accessed_at': event.get('timestamp'),
+                            'status': 'RUNNING'
+                            if session_manager.is_agent_loop_running(session_id)
+                            else 'STOPPED',
                         }
                     )
             except Exception:  # type: ignore
