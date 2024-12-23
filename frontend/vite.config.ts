@@ -29,6 +29,12 @@ export default defineConfig(({ mode }) => {
       viteTsconfigPaths(),
       svgr(),
     ],
+    resolve: {
+      alias: {
+        '@': '/src',
+        '#': '/src',
+      },
+    },
     server: {
       port: FE_PORT,
       proxy: {
@@ -66,6 +72,12 @@ export default defineConfig(({ mode }) => {
         reportsDirectory: "coverage",
         include: ["src/**/*.{ts,tsx}"],
       },
+    },
+    resolve: {
+      alias: [
+        { find: '@', replacement: '/workspace/OpenHands/frontend/src' },
+        { find: '#', replacement: '/workspace/OpenHands/frontend/src' },
+      ],
     },
   };
 });

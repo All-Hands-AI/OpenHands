@@ -14,6 +14,7 @@ import { useEffectOnce } from "#/hooks/use-effect-once";
 import CodeIcon from "#/icons/code.svg?react";
 import GlobeIcon from "#/icons/globe.svg?react";
 import ListIcon from "#/icons/list-type-number.svg?react";
+import InfoIcon from "#/icons/info.svg?react";
 import { clearJupyter } from "#/state/jupyter-slice";
 import { FilesProvider } from "#/context/files";
 import { ChatInterface } from "../../components/features/chat/chat-interface";
@@ -27,6 +28,7 @@ import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
 import { CountBadge } from "#/components/layout/count-badge";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
+import { InstructionsPanel } from "#/components/features/instructions/instructions-panel";
 
 function AppContent() {
   const { gitHubToken } = useAuth();
@@ -93,6 +95,7 @@ function AppContent() {
                     to: "browser",
                     icon: <GlobeIcon />,
                   },
+                  { label: "Instructions", to: "instructions", icon: <InfoIcon /> },
                 ]}
               >
                 <FilesProvider>
