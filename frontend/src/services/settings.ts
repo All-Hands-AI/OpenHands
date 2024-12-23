@@ -80,7 +80,8 @@ export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
  */
 export const getSettings = async (): Promise<Settings> => {
   try {
-    const { data: apiSettings } = await openHands.get<ApiSettings>("/api/settings")
+    const { data: apiSettings } =
+      await openHands.get<ApiSettings>("/api/settings");
     if (apiSettings != null) {
       return {
         LLM_MODEL: apiSettings.llm_model,
