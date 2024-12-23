@@ -1,5 +1,6 @@
 import json
 import uuid
+from datetime import datetime
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
@@ -7,6 +8,9 @@ from github import Github
 from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.server.data_models.conversation_info import ConversationInfo
+from openhands.server.data_models.conversation_result_set import ConversationResultSet
+from openhands.server.data_models.conversation_status import ConversationStatus
 from openhands.server.routes.settings import SettingsStoreImpl
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import config, session_manager
@@ -78,7 +82,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
 
 
 @app.get('/conversations')
-async def search_conversations(request: Request):
+async def search_conversations(request: Request) -> ConversationResultSet:
     file_store = session_manager.file_store
     conversations = []
     try:
@@ -92,12 +96,16 @@ async def search_conversations(request: Request):
                     event = json.loads(file_store.read(event_path))
                     running = await session_manager.is_agent_loop_running(session_id)
                     conversations.append(
-                        {
-                            'id': session_id,
-                            'title': 'TODO',
-                            'updated_at': event.get('timestamp'),
-                            'status': 'RUNNING' if running else 'STOPPED',
-                        }
+                        ConversationInfo(
+                            id=session_id,
+                            title='TODO',
+                            last_updated_at=datetime.fromisoformat(
+                                event.get('timestamp')
+                            ),
+                            status=ConversationStatus.RUNNING
+                            if running
+                            else ConversationStatus.STOPPED,
+                        )
                     )
             except Exception:  # type: ignore
                 logger.warning(
@@ -105,7 +113,4 @@ async def search_conversations(request: Request):
                 )
     except Exception:  # type: ignore
         logger.warning('Error loading conversation', exc_info=True, stack_info=True)
-    return {
-        'conversations': conversations,
-        'has_more': False,
-    }
+    return ConversationResultSet(results=conversations, next_page_id=None)
