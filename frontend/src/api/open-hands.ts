@@ -42,7 +42,9 @@ class OpenHands {
   }
 
   static async getConfig(): Promise<GetConfigResponse> {
-    const { data } = await openHands.get<GetConfigResponse>("/config.json");
+    const { data } = await openHands.get<GetConfigResponse>(
+      "/api/options/config",
+    );
     return data;
   }
 
@@ -51,8 +53,12 @@ class OpenHands {
    * @param path Path to list files from
    * @returns List of files available in the given path. If path is not provided, it lists all the files in the workspace
    */
-  static async getFiles(path?: string): Promise<string[]> {
-    const { data } = await openHands.get<string[]>("/api/list-files", {
+  static async getFiles(
+    conversationId: string,
+    path?: string,
+  ): Promise<string[]> {
+    const url = `/api/conversations/${conversationId}/list-files`;
+    const { data } = await openHands.get<string[]>(url, {
       params: { path },
     });
     return data;
@@ -63,8 +69,9 @@ class OpenHands {
    * @param path Full path of the file to retrieve
    * @returns Content of the file
    */
-  static async getFile(path: string): Promise<string> {
-    const { data } = await openHands.get<{ code: string }>("/api/select-file", {
+  static async getFile(conversationId: string, path: string): Promise<string> {
+    const url = `/api/conversations/${conversationId}/select-file`;
+    const { data } = await openHands.get<{ code: string }>(url, {
       params: { file: path },
     });
 
@@ -78,12 +85,14 @@ class OpenHands {
    * @returns Success message or error message
    */
   static async saveFile(
+    conversationId: string,
     path: string,
     content: string,
   ): Promise<SaveFileSuccessResponse> {
+    const url = `/api/conversations/${conversationId}/save-file`;
     const { data } = await openHands.post<
       SaveFileSuccessResponse | ErrorResponse
-    >("/api/save-file", {
+    >(url, {
       filePath: path,
       content,
     });
@@ -97,13 +106,17 @@ class OpenHands {
    * @param file File to upload
    * @returns Success message or error message
    */
-  static async uploadFiles(files: File[]): Promise<FileUploadSuccessResponse> {
+  static async uploadFiles(
+    conversationId: string,
+    files: File[],
+  ): Promise<FileUploadSuccessResponse> {
+    const url = `/api/conversations/${conversationId}/upload-files`;
     const formData = new FormData();
     files.forEach((file) => formData.append("files", file));
 
     const { data } = await openHands.post<
       FileUploadSuccessResponse | ErrorResponse
-    >("/api/upload-files", formData);
+    >(url, formData);
 
     if ("error" in data) throw new Error(data.error);
     return data;
@@ -114,11 +127,12 @@ class OpenHands {
    * @param data Feedback data
    * @returns The stored feedback data
    */
-  static async submitFeedback(feedback: Feedback): Promise<FeedbackResponse> {
-    const { data } = await openHands.post<FeedbackResponse>(
-      "/api/submit-feedback",
-      feedback,
-    );
+  static async submitFeedback(
+    conversationId: string,
+    feedback: Feedback,
+  ): Promise<FeedbackResponse> {
+    const url = `/api/conversations/${conversationId}/submit-feedback`;
+    const { data } = await openHands.post<FeedbackResponse>(url, feedback);
     return data;
   }
 
@@ -137,11 +151,31 @@ class OpenHands {
   }
 
   /**
+   * Refresh Github Token
+   * @returns Refreshed Github access token
+   */
+  static async refreshToken(
+    appMode: GetConfigResponse["APP_MODE"],
+    userId: string,
+  ): Promise<string> {
+    if (appMode === "oss") return "";
+
+    const response = await openHands.post<GitHubAccessTokenResponse>(
+      "/api/refresh-token",
+      {
+        userId,
+      },
+    );
+    return response.data.access_token;
+  }
+
+  /**
    * Get the blob of the workspace zip
    * @returns Blob of the workspace zip
    */
-  static async getWorkspaceZip(): Promise<Blob> {
-    const response = await openHands.get("/api/zip-directory", {
+  static async getWorkspaceZip(conversationId: string): Promise<Blob> {
+    const url = `/api/conversations/${conversationId}/zip-directory`;
+    const response = await openHands.get(url, {
       responseType: "blob",
     });
     return response.data;
@@ -167,16 +201,65 @@ class OpenHands {
    * Get the VSCode URL
    * @returns VSCode URL
    */
-  static async getVSCodeUrl(): Promise<GetVSCodeUrlResponse> {
-    const { data } =
-      await openHands.get<GetVSCodeUrlResponse>("/api/vscode-url");
+  static async getVSCodeUrl(
+    conversationId: string,
+  ): Promise<GetVSCodeUrlResponse> {
+    const { data } = await openHands.get<GetVSCodeUrlResponse>(
+      `/api/conversations/${conversationId}/vscode-url`,
+    );
     return data;
   }
 
-  static async getRuntimeId(): Promise<{ runtime_id: string }> {
+  static async getRuntimeId(
+    conversationId: string,
+  ): Promise<{ runtime_id: string }> {
     const { data } = await openHands.get<{ runtime_id: string }>(
-      "/api/conversation",
+      `/api/conversations/${conversationId}/config`,
     );
+    return data;
+  }
+
+  static async searchEvents(
+    conversationId: string,
+    params: {
+      query?: string;
+      startId?: number;
+      limit?: number;
+      eventType?: string;
+      source?: string;
+      startDate?: string;
+      endDate?: string;
+    },
+  ): Promise<{ events: Record<string, unknown>[]; has_more: boolean }> {
+    const { data } = await openHands.get<{
+      events: Record<string, unknown>[];
+      has_more: boolean;
+    }>(`/api/conversations/${conversationId}/events/search`, {
+      params: {
+        query: params.query,
+        start_id: params.startId,
+        limit: params.limit,
+        event_type: params.eventType,
+        source: params.source,
+        start_date: params.startDate,
+        end_date: params.endDate,
+      },
+    });
+    return data;
+  }
+
+  static async newConversation(params: {
+    githubToken?: string;
+    args?: Record<string, unknown>;
+    selectedRepository?: string;
+  }): Promise<{ conversation_id: string }> {
+    const { data } = await openHands.post<{
+      conversation_id: string;
+    }>("/api/conversations", {
+      github_token: params.githubToken,
+      args: params.args,
+      selected_repository: params.selectedRepository,
+    });
     return data;
   }
 }

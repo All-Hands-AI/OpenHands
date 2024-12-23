@@ -2,7 +2,7 @@ import { setCurrentAgentState } from "#/state/agent-slice";
 import { setUrl, setScreenshotSrc } from "#/state/browser-slice";
 import store from "#/store";
 import { ObservationMessage } from "#/types/message";
-import AgentState from "#/types/agent-state";
+import { AgentState } from "#/types/agent-state";
 import { appendOutput } from "#/state/command-slice";
 import { appendJupyterOutput } from "#/state/jupyter-slice";
 import ObservationType from "#/types/observation-type";
@@ -46,6 +46,9 @@ export function handleObservationMessage(message: ObservationMessage) {
         store.dispatch(addAssistantMessage(message.content));
       }
       break;
+    case ObservationType.READ:
+    case ObservationType.EDIT:
+      break; // We don't display the default message for these observations
     default:
       store.dispatch(addAssistantMessage(message.message));
       break;
@@ -80,6 +83,18 @@ export function handleObservationMessage(message: ObservationMessage) {
               command_id: Number(message.extras.command_id || 0),
               exit_code: Number(message.extras.exit_code || 0),
               hidden: Boolean(message.extras.hidden),
+            },
+          }),
+        );
+        break;
+      case "read":
+      case "edit":
+        store.dispatch(
+          addAssistantObservation({
+            ...baseObservation,
+            observation,
+            extras: {
+              path: String(message.extras.path || ""),
             },
           }),
         );

@@ -25,6 +25,7 @@ from litellm.exceptions import (
     ServiceUnavailableError,
 )
 from litellm.types.utils import CostPerToken, ModelResponse, Usage
+from litellm.utils import create_pretrained_tokenizer
 
 from openhands.core.exceptions import CloudFlareBlockageError
 from openhands.core.logger import openhands_logger as logger
@@ -100,7 +101,6 @@ class LLM(RetryMixin, DebugMixin):
         self.cost_metric_supported: bool = True
         self.config: LLMConfig = copy.deepcopy(config)
 
-        # litellm actually uses base Exception here for unknown model
         self.model_info: ModelInfo | None = None
 
         if self.config.log_completions:
@@ -122,6 +122,13 @@ class LLM(RetryMixin, DebugMixin):
         if self.is_function_calling_active():
             logger.debug('LLM: model supports function calling')
 
+        # if using a custom tokenizer, make sure it's loaded and accessible in the format expected by litellm
+        if self.config.custom_tokenizer is not None:
+            self.tokenizer = create_pretrained_tokenizer(self.config.custom_tokenizer)
+        else:
+            self.tokenizer = None
+
+        # set up the completion function
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
@@ -198,9 +205,22 @@ class LLM(RetryMixin, DebugMixin):
                         'anthropic-beta': 'prompt-caching-2024-07-31',
                     }
 
+            # set litellm modify_params to the configured value
+            # True by default to allow litellm to do transformations like adding a default message, when a message is empty
+            # NOTE: this setting is global; unlike drop_params, it cannot be overridden in the litellm completion partial
+            litellm.modify_params = self.config.modify_params
+
             try:
+                # Record start time for latency measurement
+                start_time = time.time()
+
                 # we don't support streaming here, thus we get a ModelResponse
                 resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+
+                # Calculate and record latency
+                latency = time.time() - start_time
+                response_id = resp.get('id', 'unknown')
+                self.metrics.add_response_latency(latency, response_id)
 
                 non_fncall_response = copy.deepcopy(resp)
                 if mock_function_calling:
@@ -436,6 +456,11 @@ class LLM(RetryMixin, DebugMixin):
                 self.metrics.accumulated_cost,
             )
 
+        # Add latency to stats if available
+        if self.metrics.response_latencies:
+            latest_latency = self.metrics.response_latencies[-1]
+            stats += 'Response Latency: %.3f seconds\n' % latest_latency.latency
+
         usage: Usage | None = response.get('usage')
 
         if usage:
@@ -478,19 +503,43 @@ class LLM(RetryMixin, DebugMixin):
 
         return cur_cost
 
-    def get_token_count(self, messages) -> int:
-        """Get the number of tokens in a list of messages.
+    def get_token_count(self, messages: list[dict] | list[Message]) -> int:
+        """Get the number of tokens in a list of messages. Use dicts for better token counting.
 
         Args:
-            messages (list): A list of messages.
-
+            messages (list): A list of messages, either as a list of dicts or as a list of Message objects.
         Returns:
             int: The number of tokens.
         """
+        # attempt to convert Message objects to dicts, litellm expects dicts
+        if (
+            isinstance(messages, list)
+            and len(messages) > 0
+            and isinstance(messages[0], Message)
+        ):
+            logger.info(
+                'Message objects now include serialized tool calls in token counting'
+            )
+            messages = self.format_messages_for_llm(messages)  # type: ignore
+
+        # try to get the token count with the default litellm tokenizers
+        # or the custom tokenizer if set for this LLM configuration
         try:
-            return litellm.token_counter(model=self.config.model, messages=messages)
-        except Exception:
-            # TODO: this is to limit logspam in case token count is not supported
+            return litellm.token_counter(
+                model=self.config.model,
+                messages=messages,
+                custom_tokenizer=self.tokenizer,
+            )
+        except Exception as e:
+            # limit logspam in case token count is not supported
+            logger.error(
+                f'Error getting token count for\n model {self.config.model}\n{e}'
+                + (
+                    f'\ncustom_tokenizer: {self.config.custom_tokenizer}'
+                    if self.config.custom_tokenizer is not None
+                    else ''
+                )
+            )
             return 0
 
     def _is_local(self) -> bool:

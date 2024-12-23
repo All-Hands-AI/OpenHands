@@ -16,7 +16,7 @@ class DebugMixin:
         debug_message = MESSAGE_SEPARATOR.join(
             self._format_message_content(msg)
             for msg in messages
-            if msg.get('content', None)
+            if msg['content'] is not None
         )
 
         if debug_message:

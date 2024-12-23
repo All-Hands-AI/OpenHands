@@ -1,3 +1,4 @@
+import json
 from typing import Any
 
 import requests
@@ -24,15 +25,17 @@ def send_request(
     timeout: int = 10,
     **kwargs: Any,
 ) -> requests.Response:
-    response = session.request(method, url, **kwargs)
+    response = session.request(method, url, timeout=timeout, **kwargs)
     try:
         response.raise_for_status()
     except requests.HTTPError as e:
         try:
             _json = response.json()
-        except requests.JSONDecodeError:
-            raise e
+        except (requests.exceptions.JSONDecodeError, json.decoder.JSONDecodeError):
+            _json = None
         raise RequestHTTPError(
-            e, response=e.response, detail=_json.get('detail')
+            e,
+            response=e.response,
+            detail=_json.get('detail') if _json is not None else None,
         ) from e
     return response

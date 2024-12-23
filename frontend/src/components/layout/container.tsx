@@ -3,9 +3,9 @@ import React from "react";
 import { NavTab } from "./nav-tab";
 
 interface ContainerProps {
-  label?: string;
+  label?: React.ReactNode;
   labels?: {
-    label: string;
+    label: string | React.ReactNode;
     to: string;
     icon?: React.ReactNode;
     isBeta?: boolean;
@@ -39,7 +39,7 @@ export function Container({
           {label}
         </div>
       )}
-      <div className="overflow-scroll h-full rounded-b-xl">{children}</div>
+      <div className="overflow-hidden h-full rounded-b-xl">{children}</div>
     </div>
   );
 }

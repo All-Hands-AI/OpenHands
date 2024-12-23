@@ -20,7 +20,7 @@ export function Sidebar() {
   const user = useGitHubUser();
   const { data: isAuthed } = useIsAuthed();
 
-  const { token, logout } = useAuth();
+  const { logout } = useAuth();
   const { settingsAreUpToDate } = useUserPrefs();
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
@@ -45,7 +45,7 @@ export function Sidebar() {
   };
 
   const handleClickLogo = () => {
-    if (location.pathname.startsWith("/app"))
+    if (location.pathname.startsWith("/conversations/"))
       setStartNewProjectModalIsOpen(true);
   };
 
@@ -54,13 +54,13 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="px-1 flex flex-col gap-1">
+      <aside className="h-[40px] md:h-auto px-1 flex flex-row md:flex-col gap-1">
         <div className="w-[34px] h-[34px] flex items-center justify-center">
           {user.isLoading && <LoadingSpinner size="small" />}
           {!user.isLoading && <AllHandsLogoButton onClick={handleClickLogo} />}
         </div>
 
-        <nav className="py-[18px] flex flex-col items-center gap-[18px]">
+        <nav className="md:py-[18px] flex flex-row md:flex-col items-center gap-[18px]">
           <UserActions
             user={user.data ? { avatar_url: user.data.avatar_url } : undefined}
             onLogout={logout}
@@ -68,11 +68,9 @@ export function Sidebar() {
           />
           <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
           <DocsButton />
-          {!!token && (
-            <ExitProjectButton
-              onClick={() => setStartNewProjectModalIsOpen(true)}
-            />
-          )}
+          <ExitProjectButton
+            onClick={() => setStartNewProjectModalIsOpen(true)}
+          />
         </nav>
       </aside>
       {accountSettingsModalOpen && (

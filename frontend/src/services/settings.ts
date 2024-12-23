@@ -1,4 +1,4 @@
-export const LATEST_SETTINGS_VERSION = 3;
+export const LATEST_SETTINGS_VERSION = 4;
 
 export type Settings = {
   LLM_MODEL: string;
@@ -35,10 +35,11 @@ export const getCurrentSettingsVersion = () => {
 export const settingsAreUpToDate = () =>
   getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
 
-export const maybeMigrateSettings = () => {
+export const maybeMigrateSettings = (logout: () => void) => {
   // Sometimes we ship major changes, like a new default agent.
   // In this case, we may want to override a previous choice made by the user.
   const currentVersion = getCurrentSettingsVersion();
+
   if (currentVersion < 1) {
     localStorage.setItem("AGENT", DEFAULT_SETTINGS.AGENT);
   }
@@ -52,6 +53,10 @@ export const maybeMigrateSettings = () => {
   }
   if (currentVersion < 3) {
     localStorage.removeItem("token");
+  }
+
+  if (currentVersion < 4) {
+    logout();
   }
 };
 
@@ -93,7 +98,7 @@ export const saveSettings = (settings: Partial<Settings>) => {
     if (!isValid) return;
     let value = settings[key as keyof Settings];
     if (value === undefined || value === null) value = "";
-    localStorage.setItem(key, value.toString());
+    localStorage.setItem(key, value.toString().trim());
   });
   localStorage.setItem("SETTINGS_VERSION", LATEST_SETTINGS_VERSION.toString());
 };

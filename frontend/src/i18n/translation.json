@@ -2001,9 +2001,9 @@
     "en": "Push to GitHub",
     "es": "Subir a GitHub"
   },
-  "PROJECT_MENU_CARD_CONTEXT_MENU$DOWNLOAD_AS_ZIP_LABEL": {
-    "en": "Download as .zip",
-    "es": "Descargar como .zip"
+  "PROJECT_MENU_CARD_CONTEXT_MENU$DOWNLOAD_FILES_LABEL": {
+    "en": "Download files",
+    "es": "Descargar archivos"
   },
   "ACTION_MESSAGE$RUN": {
     "en": "Running a bash command"
@@ -2014,8 +2014,14 @@
   "ACTION_MESSAGE$READ": {
     "en": "Reading the contents of a file"
   },
+  "ACTION_MESSAGE$EDIT": {
+    "en": "Editing the contents of a file"
+  },
   "ACTION_MESSAGE$WRITE": {
     "en": "Writing to a file"
+  },
+  "ACTION_MESSAGE$BROWSE": {
+    "en": "Browsing the web"
   },
   "OBSERVATION_MESSAGE$RUN": {
     "en": "Ran a bash command"
@@ -2026,8 +2032,14 @@
   "OBSERVATION_MESSAGE$READ": {
     "en": "Read the contents of a file"
   },
+  "OBSERVATION_MESSAGE$EDIT": {
+    "en": "Edited the contents of a file"
+  },
   "OBSERVATION_MESSAGE$WRITE": {
     "en": "Wrote to a file"
+  },
+  "OBSERVATION_MESSAGE$BROWSE": {
+    "en": "Browsing completed"
   },
   "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
     "en": "Show details"
