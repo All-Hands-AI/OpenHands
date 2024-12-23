@@ -1,5 +1,3 @@
-import uuid
-
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from github import Github
@@ -54,7 +52,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     conversation_id = sio.eio.generate_id()
     while await conversation_store.exists(conversation_id):
         logger.warning(f'Collision on conversation ID: {conversation_id}. Retrying...')
-        conversation_id = uuid.uuid4().hex
+        conversation_id = sio.eio.generate_id()
 
     user_id = ''
     if data.github_token:
