@@ -83,8 +83,8 @@ async def test_init_new_local_session():
     mock_session = MagicMock()
     mock_session.return_value = session_instance
     sio = get_mock_sio()
-    is_session_running_in_cluster_mock = AsyncMock()
-    is_session_running_in_cluster_mock.return_value = False
+    is_agent_loop_running_in_cluster_mock = AsyncMock()
+    is_agent_loop_running_in_cluster_mock.return_value = False
     with (
         patch('openhands.server.session.manager.Session', mock_session),
         patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.1),
@@ -94,7 +94,7 @@ async def test_init_new_local_session():
         ),
         patch(
             'openhands.server.session.manager.SessionManager._is_agent_loop_running_in_cluster',
-            is_session_running_in_cluster_mock,
+            is_agent_loop_running_in_cluster_mock,
         ),
     ):
         async with SessionManager(
@@ -115,8 +115,8 @@ async def test_join_local_session():
     mock_session = MagicMock()
     mock_session.return_value = session_instance
     sio = get_mock_sio()
-    is_session_running_in_cluster_mock = AsyncMock()
-    is_session_running_in_cluster_mock.return_value = False
+    is_agent_loop_running_in_cluster_mock = AsyncMock()
+    is_agent_loop_running_in_cluster_mock.return_value = False
     with (
         patch('openhands.server.session.manager.Session', mock_session),
         patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.01),
@@ -126,7 +126,7 @@ async def test_join_local_session():
         ),
         patch(
             'openhands.server.session.manager.SessionManager._is_agent_loop_running_in_cluster',
-            is_session_running_in_cluster_mock,
+            is_agent_loop_running_in_cluster_mock,
         ),
     ):
         async with SessionManager(
@@ -148,8 +148,8 @@ async def test_join_cluster_session():
     mock_session = MagicMock()
     mock_session.return_value = session_instance
     sio = get_mock_sio()
-    is_session_running_in_cluster_mock = AsyncMock()
-    is_session_running_in_cluster_mock.return_value = True
+    is_agent_loop_running_in_cluster_mock = AsyncMock()
+    is_agent_loop_running_in_cluster_mock.return_value = True
     with (
         patch('openhands.server.session.manager.Session', mock_session),
         patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.01),
@@ -159,7 +159,7 @@ async def test_join_cluster_session():
         ),
         patch(
             'openhands.server.session.manager.SessionManager._is_agent_loop_running_in_cluster',
-            is_session_running_in_cluster_mock,
+            is_agent_loop_running_in_cluster_mock,
         ),
     ):
         async with SessionManager(
@@ -177,8 +177,8 @@ async def test_add_to_local_event_stream():
     mock_session = MagicMock()
     mock_session.return_value = session_instance
     sio = get_mock_sio()
-    is_session_running_in_cluster_mock = AsyncMock()
-    is_session_running_in_cluster_mock.return_value = False
+    is_agent_loop_running_in_cluster_mock = AsyncMock()
+    is_agent_loop_running_in_cluster_mock.return_value = False
     with (
         patch('openhands.server.session.manager.Session', mock_session),
         patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.01),
@@ -188,7 +188,7 @@ async def test_add_to_local_event_stream():
         ),
         patch(
             'openhands.server.session.manager.SessionManager._is_agent_loop_running_in_cluster',
-            is_session_running_in_cluster_mock,
+            is_agent_loop_running_in_cluster_mock,
         ),
     ):
         async with SessionManager(
@@ -211,8 +211,8 @@ async def test_add_to_cluster_event_stream():
     mock_session = MagicMock()
     mock_session.return_value = session_instance
     sio = get_mock_sio()
-    is_session_running_in_cluster_mock = AsyncMock()
-    is_session_running_in_cluster_mock.return_value = True
+    is_agent_loop_running_in_cluster_mock = AsyncMock()
+    is_agent_loop_running_in_cluster_mock.return_value = True
     with (
         patch('openhands.server.session.manager.Session', mock_session),
         patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.01),
@@ -222,7 +222,7 @@ async def test_add_to_cluster_event_stream():
         ),
         patch(
             'openhands.server.session.manager.SessionManager._is_agent_loop_running_in_cluster',
-            is_session_running_in_cluster_mock,
+            is_agent_loop_running_in_cluster_mock,
         ),
     ):
         async with SessionManager(
