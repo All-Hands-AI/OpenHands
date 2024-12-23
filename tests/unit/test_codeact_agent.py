@@ -10,16 +10,25 @@ from openhands.agenthub.codeact_agent.function_calling import (
     LLMBasedFileEditTool,
     StrReplaceEditorTool,
     WebReadTool,
+    _BROWSER_DESCRIPTION,
     _BROWSER_TOOL_DESCRIPTION,
     get_tools,
+    response_to_actions,
 )
+from litellm import ModelResponse
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.message import ImageContent, TextContent
 from openhands.events.action import (
     AgentFinishAction,
+    BrowseInteractiveAction,
+    BrowseURLAction,
     CmdRunAction,
+    FileEditAction,
+    FileReadAction,
+    IPythonRunCellAction,
     MessageAction,
 )
+from openhands.core.exceptions import FunctionCallNotExistsError
 from openhands.events.event import EventSource, FileEditSource, FileReadSource
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
@@ -429,6 +438,16 @@ def test_browser_tool():
     assert 'drag_and_drop(' in description
     assert 'upload_file(' in description
 
+    # Test BrowserTool definition
+    assert BrowserTool['type'] == 'function'
+    assert BrowserTool['function']['name'] == 'browser'
+    assert BrowserTool['function']['description'] == _BROWSER_DESCRIPTION
+    assert BrowserTool['function']['parameters']['type'] == 'object'
+    assert 'code' in BrowserTool['function']['parameters']['properties']
+    assert BrowserTool['function']['parameters']['required'] == ['code']
+    assert BrowserTool['function']['parameters']['properties']['code']['type'] == 'string'
+    assert 'description' in BrowserTool['function']['parameters']['properties']['code']
+
 
 def test_mock_function_calling():
     # Test mock function calling when LLM doesn't support it
@@ -438,6 +457,22 @@ def test_mock_function_calling():
     config.use_microagents = False
     agent = CodeActAgent(llm=llm, config=config)
     assert agent.mock_function_calling is True
+
+
+def test_response_to_actions_invalid_tool():
+    # Test response with invalid tool call
+    mock_response = Mock()
+    mock_response.choices = [Mock()]
+    mock_response.choices[0].message = Mock()
+    mock_response.choices[0].message.content = 'Invalid tool'
+    mock_response.choices[0].message.tool_calls = [Mock()]
+    mock_response.choices[0].message.tool_calls[0].id = 'tool_call_10'
+    mock_response.choices[0].message.tool_calls[0].function = Mock()
+    mock_response.choices[0].message.tool_calls[0].function.name = 'invalid_tool'
+    mock_response.choices[0].message.tool_calls[0].function.arguments = '{}'
+
+    with pytest.raises(FunctionCallNotExistsError):
+        response_to_actions(mock_response)
 
 
 def test_step_with_no_pending_actions():
@@ -452,7 +487,7 @@ def test_step_with_no_pending_actions():
 
     llm = Mock()
     llm.completion = Mock(return_value=mock_response)
-    llm.is_function_calling_active = Mock(return_value=False)
+    llm.is_function_calling_active = Mock(return_value=True)  # Enable function calling
     llm.is_caching_prompt_active = Mock(return_value=False)
 
     # Create agent with mocked LLM
@@ -472,5 +507,5 @@ def test_step_with_no_pending_actions():
     state.latest_user_message_tool_call_metadata = None
 
     action = agent.step(state)
-    assert isinstance(action, AgentFinishAction)
-    assert action.thought == 'Task completed'
+    assert isinstance(action, MessageAction)
+    assert action.content == 'Task completed'
