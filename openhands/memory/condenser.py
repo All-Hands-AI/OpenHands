@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
+from pydantic import BaseModel
+
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import (
     AmortizedForgettingCondenserConfig,
@@ -237,105 +239,73 @@ class AmortizedForgettingCondenser(RollingCondenser):
         return head + tail
 
 
-class LLMAttentionCondenser(Condenser):
-    """A condenser that uses LLM attention mechanisms to identify and retain important events."""
+class ImportantEventSelection(BaseModel):
+    ids: list[int]
 
+
+class LLMAttentionCondenser(RollingCondenser):
     def __init__(self, llm: LLM, max_size: int = 100, keep_first: int = 0):
-        """Initialize the condenser.
-
-        Args:
-            llm (LLM): The LLM instance to use for attention-based event selection.
-            max_size (int, optional): Maximum size of history before forgetting. Defaults to 100.
-            keep_first (int, optional): Number of initial events to always keep. Defaults to 0.
-
-        Raises:
-            ValueError: If keep_first is greater than max_size.
-        """
-        if keep_first > max_size:
+        if keep_first >= max_size // 2:
             raise ValueError(
-                f'keep_first ({keep_first}) cannot be greater than max_size ({max_size})'
+                f'keep_first ({keep_first}) must be less than half of max_size ({max_size})'
             )
-        self.llm = llm
+        if keep_first < 0:
+            raise ValueError(f'keep_first ({keep_first}) cannot be negative')
+        if max_size < 1:
+            raise ValueError(f'max_size ({keep_first}) cannot be non-positive')
+
         self.max_size = max_size
         self.keep_first = keep_first
-        self._condensed_history: list[Event] = []
+        self.llm = llm
+        super().__init__()
 
-    def condense(self, state: State) -> list[Event]:
-        """Condense events using LLM attention mechanisms to identify important events.
+    def forget(self, events: list[Event]) -> list[Event]:
+        if len(events) <= self.max_size:
+            return events
 
-        Args:
-            state (State): The state containing the event history to condense.
+        target_size = self.max_size // 2
+        head = events[: self.keep_first]
 
-        Returns:
-            list[Event]: The condensed event sequence.
-        """
-        # Initialize or get the condenser metadata list
-        if CONDENSER_METADATA_KEY not in state.extra_data:
-            state.extra_data[CONDENSER_METADATA_KEY] = []
+        events_from_tail = target_size - len(head)
 
-        # Track changes for this condensation
-        changes: dict[str, list[int]] = {'added_events': [], 'removed_events': []}
+        # Build a prompt using the local LLM that selects events_from_tail events from the tail
+        # The prompt should:
+        # 1. Provide the full list of events (represented as messages) paired with their ID
+        # 2. Ask the LLM to rank the events by importance, returning JUST the list of IDs
+        # Then we need to use that ranking to construct the tail
 
-        # If we have no history yet, initialize with all events
-        if not self._condensed_history:
-            self._condensed_history = state.history.copy()
-            changes['added_events'] = [e.id for e in self._condensed_history]
-        else:
-            # Find the timestamp of our last event
-            last_timestamp = self._condensed_history[-1].timestamp
+        message: str = "You will be given a list of actions, observations, and thoughts from a coding agent. Each item in the list has an identifier. Please sort the identifiers in order of how important the contents of the item are for the next step of the coding agent's task, from most important to least important."
 
-            # Add any new events that occurred after our last event
-            new_events = [e for e in state.history if e.timestamp > last_timestamp]
-            changes['added_events'] = [e.id for e in new_events]
-            self._condensed_history.extend(new_events)
-
-        # If we're over max_size, use LLM to decide which events to keep
-        if len(self._condensed_history) > self.max_size:
-            # Keep the first N events as required
-            keep_events = self._condensed_history[: self.keep_first]
-
-            # For the remaining events, we'll use LLM to decide which ones to keep
-            forgettable_events = self._condensed_history[self.keep_first :]
-
-            # TODO: Implement LLM-based selection of events to keep
-            # This is where you would:
-            # 1. Format the events for LLM input
-            # 2. Ask LLM which events are most important to keep
-            # 3. Parse the response and select events
-            # For now, we'll just keep the most recent events
-            keep_count = self.max_size - len(keep_events)
-            forgotten_events = (
-                forgettable_events[:-keep_count]
-                if keep_count > 0
-                else forgettable_events
-            )
-            changes['removed_events'].extend(e.id for e in forgotten_events)
-
-            # Update condensed history with kept events
-            self._condensed_history = (
-                keep_events + forgettable_events[-keep_count:]
-                if keep_count > 0
-                else keep_events
-            )
-
-        # Record changes in state metadata if any changes occurred
-        if changes['added_events'] or changes['removed_events']:
-            state.extra_data[CONDENSER_METADATA_KEY].append(changes)
-
-        return self._condensed_history
-
-    @classmethod
-    def from_config(cls, config: LLMAttentionCondenserConfig) -> LLMAttentionCondenser:
-        """Create a condenser from a configuration object.
-
-        Args:
-            config (LLMAttentionCondenserConfig): Configuration for the condenser.
-
-        Returns:
-            LLMAttentionCondenser: A condenser instance.
-        """
-        return cls(
-            llm=LLM(config=config.llm_config),
-            max_size=config.max_size,
-            keep_first=config.keep_first,
+        response = self.llm.completion(
+            messages=[
+                {'content': message, 'role': 'user'},
+                *[
+                    {
+                        'content': f'<ID>{e.id}</ID>\n<CONTENT>{e.message}</CONTENT>',
+                        'role': 'user',
+                    }
+                    for e in events
+                ],
+            ],
+            response_format=ImportantEventSelection,
         )
+
+        response_ids = response.choices[0].message.content.ids
+
+        # Filter out any IDs from the head and trim the results down
+        head_ids = [event.id for event in head]
+        response_ids = [
+            response_id for response_id in response_ids if response_id not in head_ids
+        ][:events_from_tail]
+
+        # If the response IDs aren't _long_ enough, iterate backwards through the events and add any unfound IDs to the list.
+        for event in reversed(events):
+            if len(response_ids) >= events_from_tail:
+                break
+            if event.id not in response_ids:
+                response_ids.append(event.id)
+
+        # Grab the events associated with the response IDs
+        tail = [event for event in events if event.id in response_ids]
+
+        return head + tail
