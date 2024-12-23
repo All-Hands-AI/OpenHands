@@ -1,3 +1,5 @@
+import { openHands } from "#/api/open-hands-axios";
+
 export const LATEST_SETTINGS_VERSION = 4;
 
 export type Settings = {
@@ -8,6 +10,16 @@ export type Settings = {
   LLM_API_KEY: string | null;
   CONFIRMATION_MODE: boolean;
   SECURITY_ANALYZER: string;
+};
+
+export type ApiSettings = {
+  llm_model: string;
+  llm_base_url: string;
+  agent: string;
+  language: string;
+  llm_api_key: string | null;
+  confirmation_mode: boolean;
+  security_analyzer: string;
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -68,11 +80,7 @@ export const getDefaultSettings = (): Settings => DEFAULT_SETTINGS;
  */
 export const getSettings = async (): Promise<Settings> => {
   try {
-    const response = await fetch("/api/settings");
-    if (!response.ok) {
-      throw new Error("Failed to load settings");
-    }
-    const apiSettings = await response.json();
+    const { data: apiSettings } = await openHands.get<ApiSettings>("/api/settings")
     if (apiSettings != null) {
       return {
         LLM_MODEL: apiSettings.llm_model,
@@ -125,19 +133,8 @@ export const saveSettings = async (
       llm_api_key: settings.LLM_API_KEY || null,
     };
 
-    const response = await fetch("/api/settings", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(apiSettings),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to save settings");
-    }
-
-    return await response.json();
+    const { data } = await openHands.post("/api/settings", apiSettings);
+    return data;
   } catch (error) {
     console.error("Error saving settings:", error);
     return false;
