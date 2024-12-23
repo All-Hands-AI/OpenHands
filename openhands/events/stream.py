@@ -12,7 +12,7 @@ from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.storage import FileStore
 from openhands.storage.locations import (
     get_conversation_dir,
-    get_conversation_event_file,
+    get_conversation_event_filename,
     get_conversation_events_dir,
 )
 from openhands.utils.async_utils import call_sync_from_async
@@ -77,7 +77,7 @@ class EventStream:
                 self._cur_id = id + 1
 
     def _get_filename_for_id(self, id: int) -> str:
-        return get_conversation_event_file(self.sid, id)
+        return get_conversation_event_filename(self.sid, id)
 
     @staticmethod
     def _get_id_from_filename(filename: str) -> int:

@@ -245,7 +245,7 @@ If the program uses some packages that are incompatible, please figure out alter
 if __name__ == '__main__':
     parser = get_parser()
     parser.add_argument(
-        '--use_knowledge',
+        '--use-knowledge',
         type=str,
         default='false',
         choices=['true', 'false'],

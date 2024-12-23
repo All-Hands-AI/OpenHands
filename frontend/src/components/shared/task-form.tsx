@@ -40,8 +40,8 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
   );
   const [inputIsFocused, setInputIsFocused] = React.useState(false);
   const newConversationMutation = useMutation({
-    mutationFn: (variables: { q: string }) => {
-      dispatch(setInitialQuery(variables.q));
+    mutationFn: (variables: { q?: string }) => {
+      if (variables.q) dispatch(setInitialQuery(variables.q));
       return OpenHands.newConversation({
         githubToken: gitHubToken || undefined,
         selectedRepository: selectedRepository || undefined,
@@ -51,7 +51,7 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
     onSuccess: ({ conversation_id: conversationId }, { q }) => {
       posthog.capture("initial_query_submitted", {
         entry_point: "task_form",
-        query_character_length: q.length,
+        query_character_length: q?.length,
         has_repository: !!selectedRepository,
         has_files: files.length > 0,
       });
@@ -88,8 +88,6 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
     const formData = new FormData(event.currentTarget);
 
     const q = formData.get("q")?.toString();
-    if (!q) return;
-
     newConversationMutation.mutate({ q });
   };
 
