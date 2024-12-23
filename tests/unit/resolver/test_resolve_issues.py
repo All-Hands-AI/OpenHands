@@ -165,24 +165,27 @@ def test_download_pr_from_github():
     llm_config = LLMConfig(model='test', api_key='test')
     handler = PRHandler('owner', 'repo', 'token', llm_config)
     mock_pr_response = MagicMock()
-    mock_pr_response.json.side_effect = [
-        [
-            {
-                'number': 1,
-                'title': 'PR 1',
-                'body': 'This is a pull request',
-                'head': {'ref': 'b1'},
-            },
-            {
-                'number': 2,
-                'title': 'My PR',
-                'body': 'This is another pull request',
-                'head': {'ref': 'b2'},
-            },
-            {'number': 3, 'title': 'PR 3', 'body': 'Final PR', 'head': {'ref': 'b3'}},
-        ],
-        None,
+
+    # Update the side effect to return the PR list for each PR number requested
+    pr_list = [
+        {
+            'number': 1,
+            'title': 'PR 1',
+            'body': 'This is a pull request',
+            'head': {'ref': 'b1'},
+        },
+        {
+            'number': 2,
+            'title': 'My PR',
+            'body': 'This is another pull request',
+            'head': {'ref': 'b2'},
+        },
+        {'number': 3, 'title': 'PR 3', 'body': 'Final PR', 'head': {'ref': 'b3'}},
     ]
+    mock_pr_response.json.side_effect = [
+        pr_list
+    ] * 3  # Return the same list for each PR
+
     mock_pr_response.raise_for_status = MagicMock()
 
     # Mock for PR comments response

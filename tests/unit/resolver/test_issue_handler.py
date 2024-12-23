@@ -10,20 +10,20 @@ def test_get_converted_issues_initializes_review_comments():
     with patch('requests.get') as mock_get:
         # Mock the response for issues
         mock_issues_response = MagicMock()
-        mock_issues_response.json.return_value = [
-            {'number': 1, 'title': 'Test Issue', 'body': 'Test Body'}
-        ]
+        mock_issues_response.json.return_value = {
+            'number': 1,
+            'title': 'Test Issue',
+            'body': 'Test Body',
+        }
         # Mock the response for comments
         mock_comments_response = MagicMock()
         mock_comments_response.json.return_value = []
 
         # Set up the mock to return different responses for different calls
-        # First call is for issues, second call is for comments
         mock_get.side_effect = [
             mock_issues_response,
             mock_comments_response,
-            mock_comments_response,
-        ]  # Need two comment responses because we make two API calls
+        ]
 
         # Create an instance of IssueHandler
         llm_config = LLMConfig(model='test', api_key='test')
@@ -51,9 +51,11 @@ def test_get_converted_issues_handles_empty_body():
     with patch('requests.get') as mock_get:
         # Mock the response for issues
         mock_issues_response = MagicMock()
-        mock_issues_response.json.return_value = [
-            {'number': 1, 'title': 'Test Issue', 'body': None}
-        ]
+        mock_issues_response.json.return_value = {
+            'number': 1,
+            'title': 'Test Issue',
+            'body': None,
+        }
         # Mock the response for comments
         mock_comments_response = MagicMock()
         mock_comments_response.json.return_value = []
@@ -61,7 +63,6 @@ def test_get_converted_issues_handles_empty_body():
         # Set up the mock to return different responses
         mock_get.side_effect = [
             mock_issues_response,
-            mock_comments_response,
             mock_comments_response,
         ]
 
@@ -93,14 +94,12 @@ def test_pr_handler_get_converted_issues_with_comments():
     with patch('requests.get') as mock_get:
         # Mock the response for PRs
         mock_prs_response = MagicMock()
-        mock_prs_response.json.return_value = [
-            {
-                'number': 1,
-                'title': 'Test PR',
-                'body': 'Test Body fixes #1',
-                'head': {'ref': 'test-branch'},
-            }
-        ]
+        mock_prs_response.json.return_value = {
+            'number': 1,
+            'title': 'Test PR',
+            'body': 'Test Body fixes #1',
+            'head': {'ref': 'test-branch'},
+        }
 
         # Mock the response for PR comments
         mock_comments_response = MagicMock()
@@ -136,9 +135,8 @@ def test_pr_handler_get_converted_issues_with_comments():
 
         mock_get.side_effect = [
             mock_prs_response,  # First call for PRs
-            mock_empty_response,  # Second call for PRs (empty page)
-            mock_comments_response,  # Third call for PR comments
-            mock_empty_response,  # Fourth call for PR comments (empty page)
+            mock_comments_response,  # Second call for PR comments
+            mock_empty_response,  # Third call for PR comments (empty page)
             mock_external_issue_response,  # Mock response for the external issue reference #1
         ]
 
@@ -202,14 +200,12 @@ def test_pr_handler_get_converted_issues_with_specific_thread_comment():
     with patch('requests.get') as mock_get:
         # Mock the response for PRs
         mock_prs_response = MagicMock()
-        mock_prs_response.json.return_value = [
-            {
-                'number': 1,
-                'title': 'Test PR',
-                'body': 'Test Body',
-                'head': {'ref': 'test-branch'},
-            }
-        ]
+        mock_prs_response.json.return_value = {
+            'number': 1,
+            'title': 'Test PR',
+            'body': 'Test Body',
+            'head': {'ref': 'test-branch'},
+        }
 
         # Mock the response for PR comments
         mock_comments_response = MagicMock()
@@ -262,9 +258,8 @@ def test_pr_handler_get_converted_issues_with_specific_thread_comment():
 
         mock_get.side_effect = [
             mock_prs_response,  # First call for PRs
-            mock_empty_response,  # Second call for PRs (empty page)
-            mock_comments_response,  # Third call for PR comments
-            mock_empty_response,  # Fourth call for PR comments (empty page)
+            mock_comments_response,  # Second call for PR comments
+            mock_empty_response,  # Third call for PR comments (empty page)
         ]
 
         # Mock the post request for GraphQL
@@ -305,14 +300,12 @@ def test_pr_handler_get_converted_issues_with_specific_review_thread_comment():
     with patch('requests.get') as mock_get:
         # Mock the response for PRs
         mock_prs_response = MagicMock()
-        mock_prs_response.json.return_value = [
-            {
-                'number': 1,
-                'title': 'Test PR',
-                'body': 'Test Body',
-                'head': {'ref': 'test-branch'},
-            }
-        ]
+        mock_prs_response.json.return_value = {
+            'number': 1,
+            'title': 'Test PR',
+            'body': 'Test Body',
+            'head': {'ref': 'test-branch'},
+        }
 
         # Mock the response for PR comments
         mock_comments_response = MagicMock()
@@ -365,9 +358,8 @@ def test_pr_handler_get_converted_issues_with_specific_review_thread_comment():
 
         mock_get.side_effect = [
             mock_prs_response,  # First call for PRs
-            mock_empty_response,  # Second call for PRs (empty page)
-            mock_comments_response,  # Third call for PR comments
-            mock_empty_response,  # Fourth call for PR comments (empty page)
+            mock_comments_response,  # Second call for PR comments
+            mock_empty_response,  # Third call for PR comments (empty page)
         ]
 
         # Mock the post request for GraphQL
@@ -414,14 +406,12 @@ def test_pr_handler_get_converted_issues_with_specific_comment_and_issue_refs():
     with patch('requests.get') as mock_get:
         # Mock the response for PRs
         mock_prs_response = MagicMock()
-        mock_prs_response.json.return_value = [
-            {
-                'number': 1,
-                'title': 'Test PR fixes #3',
-                'body': 'Test Body',
-                'head': {'ref': 'test-branch'},
-            }
-        ]
+        mock_prs_response.json.return_value = {
+            'number': 1,
+            'title': 'Test PR fixes #3',
+            'body': 'Test Body',
+            'head': {'ref': 'test-branch'},
+        }
 
         # Mock the response for PR comments
         mock_comments_response = MagicMock()
@@ -486,11 +476,10 @@ def test_pr_handler_get_converted_issues_with_specific_comment_and_issue_refs():
 
         mock_get.side_effect = [
             mock_prs_response,  # First call for PRs
-            mock_empty_response,  # Second call for PRs (empty page)
-            mock_comments_response,  # Third call for PR comments
-            mock_empty_response,  # Fourth call for PR comments (empty page)
-            mock_external_issue_response_in_body,
-            mock_external_issue_response_review_thread,
+            mock_comments_response,  # Second call for PR comments
+            mock_empty_response,  # Third call for PR comments (empty page)
+            mock_external_issue_response_in_body,  # Mock response for the external issue reference #1
+            mock_external_issue_response_review_thread,  # Mock response for the external issue reference #2
         ]
 
         # Mock the post request for GraphQL
@@ -537,14 +526,12 @@ def test_pr_handler_get_converted_issues_with_duplicate_issue_refs():
     with patch('requests.get') as mock_get:
         # Mock the response for PRs
         mock_prs_response = MagicMock()
-        mock_prs_response.json.return_value = [
-            {
-                'number': 1,
-                'title': 'Test PR',
-                'body': 'Test Body fixes #1',
-                'head': {'ref': 'test-branch'},
-            }
-        ]
+        mock_prs_response.json.return_value = {
+            'number': 1,
+            'title': 'Test PR',
+            'body': 'Test Body fixes #1',
+            'head': {'ref': 'test-branch'},
+        }
 
         # Mock the response for PR comments
         mock_comments_response = MagicMock()
@@ -586,11 +573,10 @@ def test_pr_handler_get_converted_issues_with_duplicate_issue_refs():
 
         mock_get.side_effect = [
             mock_prs_response,  # First call for PRs
-            mock_empty_response,  # Second call for PRs (empty page)
-            mock_comments_response,  # Third call for PR comments
-            mock_empty_response,  # Fourth call for PR comments (empty page)
+            mock_comments_response,  # Second call for PR comments
+            mock_empty_response,  # Third call for PR comments (empty page)
             mock_external_issue_response_in_body,  # Mock response for the external issue reference #1
-            mock_external_issue_response_in_comment,
+            mock_external_issue_response_in_comment,  # Mock response for the external issue reference #2
         ]
 
         # Mock the post request for GraphQL
