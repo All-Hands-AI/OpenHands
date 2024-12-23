@@ -33,9 +33,9 @@ import { CountBadge } from "#/components/layout/count-badge";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 
 function AppContent() {
-  const { cid } = useParams();
+  const { conversationId: cid } = useParams();
 
-  const { gitHubToken, setToken } = useAuth();
+  const { gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
   const endSession = useEndSession();
 
@@ -75,8 +75,6 @@ function AppContent() {
   }, [conversation, isFetched]);
 
   React.useEffect(() => {
-    if (cid) setToken(cid);
-
     dispatch(clearMessages());
     dispatch(clearTerminal());
     dispatch(clearJupyter());

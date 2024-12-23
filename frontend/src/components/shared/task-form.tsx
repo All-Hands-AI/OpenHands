@@ -40,8 +40,8 @@ export const TaskForm = React.forwardRef<HTMLFormElement>((_, ref) => {
   );
   const [inputIsFocused, setInputIsFocused] = React.useState(false);
   const newConversationMutation = useMutation({
-    mutationFn: (variables: { q: string }) => {
-      dispatch(setInitialQuery(variables.q));
+    mutationFn: (variables: { q?: string }) => {
+      if (variables.q) dispatch(setInitialQuery(variables.q));
       return OpenHands.createConversation(
         settings,
         gitHubToken || undefined,

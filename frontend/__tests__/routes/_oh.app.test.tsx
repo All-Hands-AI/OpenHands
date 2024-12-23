@@ -8,7 +8,7 @@ import OpenHands from "#/api/open-hands";
 
 describe("App", () => {
   const RouteStub = createRoutesStub([
-    { Component: App, path: "/conversation" },
+    { Component: App, path: "/conversation/:conversationId" },
   ]);
 
   const { endSessionMock } = vi.hoisted(() => ({
@@ -30,7 +30,7 @@ describe("App", () => {
   });
 
   it("should render", async () => {
-    renderWithProviders(<RouteStub initialEntries={["/conversation"]} />);
+    renderWithProviders(<RouteStub initialEntries={["/conversation/123"]} />);
     await screen.findByTestId("app-route");
   });
 
@@ -39,9 +39,7 @@ describe("App", () => {
     const getConversationSpy = vi.spyOn(OpenHands, "getConversation");
 
     getConversationSpy.mockResolvedValue(null);
-    renderWithProviders(
-      <RouteStub initialEntries={["/conversation?cid=9999"]} />,
-    );
+    renderWithProviders(<RouteStub initialEntries={["/conversation/9999"]} />);
 
     await waitFor(() => {
       expect(endSessionMock).toHaveBeenCalledOnce();
@@ -61,7 +59,7 @@ describe("App", () => {
       state: "cold",
     });
     const { rerender } = renderWithProviders(
-      <RouteStub initialEntries={["/conversation?cid=9999"]} />,
+      <RouteStub initialEntries={["/conversation/9999"]} />,
     );
 
     await waitFor(() => {

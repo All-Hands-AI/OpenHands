@@ -54,27 +54,26 @@ const openHandsHandlers = [
     return HttpResponse.json(["mock-invariant"]);
   }),
 
-  http.get("http://localhost:3001/api/list-files", async ({ request }) => {
-    await delay();
+  http.get(
+    "http://localhost:3001/api/conversations/:conversationId/list-files",
+    async ({ params }) => {
+      await delay();
 
-    const token = request.headers
-      .get("Authorization")
-      ?.replace("Bearer", "")
-      .trim();
+      const cid = params.conversationId?.toString();
+      if (!cid) return HttpResponse.json([], { status: 404 });
 
-    if (!token) return HttpResponse.json([], { status: 401 });
+      let data = ["file1.txt", "file2.txt", "file3.txt"];
+      if (cid === "3") {
+        data = [
+          "reboot_skynet.exe",
+          "target_list.txt",
+          "terminator_blueprint.txt",
+        ];
+      }
 
-    let data = ["file1.txt", "file2.txt", "file3.txt"];
-    if (token === "3") {
-      data = [
-        "reboot_skynet.exe",
-        "target_list.txt",
-        "terminator_blueprint.txt",
-      ];
-    }
-
-    return HttpResponse.json(data);
-  }),
+      return HttpResponse.json(data);
+    },
+  ),
 
   http.post("http://localhost:3001/api/save-file", () =>
     HttpResponse.json(null, { status: 200 }),
