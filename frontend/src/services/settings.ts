@@ -72,19 +72,16 @@ export const getSettings = async (): Promise<Settings> => {
     if (!response.ok) {
       throw new Error("Failed to load settings");
     }
-    let settings = await response.json();
-    if (settings != null) {
-      // For now, we have the objects with the same keys in upper / lower case and need to translate...
-      // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-      settings = Object.keys(settings).reduce((result: any, key: string) => {
-        const settingsKey = key.toUpperCase();
-        result[settingsKey] = settings[key] || DEFAULT_SETTINGS[settingsKey as keyof Settings];
-        return result;
-      }, {})
-
+    const apiSettings = await response.json();
+    if (apiSettings != null) {
       return {
-        ...DEFAULT_SETTINGS,
-        ...settings,
+        LLM_MODEL: apiSettings.llm_model,
+        LLM_BASE_URL: apiSettings.llm_base_url,
+        AGENT: apiSettings.agent,
+        LANGUAGE: apiSettings.language,
+        CONFIRMATION_MODE: apiSettings.confirmation_mode,
+        SECURITY_ANALYZER: apiSettings.security_analyzer,
+        LLM_API_KEY: "",
       };
     }
   } catch (error) {
@@ -118,36 +115,22 @@ export const saveSettings = async (
   settings: Partial<Settings>,
 ): Promise<boolean> => {
   try {
-    // For now, we have the objects with the same keys in upper / lower case and need to translate...
-    const validSettings = Object.keys(settings).reduce((
-      result: any, key: string
-    ) => {
-      result[key.toLowerCase()] =
-        settings[key as keyof Settings] ||
-        DEFAULT_SETTINGS[key as keyof Settings]
-    }, {})
-
-    // Clean up values
-    Object.entries(validSettings).forEach(([key, value]) => {
-      if (value === undefined || value === null) {
-        validSettings[key] = "";
-      } else if (typeof value === "string") {
-        validSettings[key] = value.trim();
-      }
-    });
-
-    // Get current settings to preserve API key if not provided
-    const currentSettings = await getSettings();
+    const apiSettings = {
+      llm_model: settings.LLM_MODEL || null,
+      llm_base_url: settings.LLM_BASE_URL || null,
+      agent: settings.AGENT || null,
+      language: settings.LANGUAGE || null,
+      confirmation_mode: settings.CONFIRMATION_MODE || null,
+      security_analyzer: settings.SECURITY_ANALYZER || null,
+      llm_api_key: settings.LLM_API_KEY || null,
+    };
 
     const response = await fetch("/api/settings", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        ...currentSettings,
-        ...validSettings,
-      }),
+      body: JSON.stringify(apiSettings),
     });
 
     if (!response.ok) {
