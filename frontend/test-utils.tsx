@@ -70,17 +70,17 @@ export function renderWithProviders(
   function Wrapper({ children }: PropsWithChildren<object>): JSX.Element {
     return (
       <Provider store={store}>
-        <UserPrefsProvider>
-          <AuthProvider>
-            <ConversationProvider>
-              <QueryClientProvider client={new QueryClient()}>
+        <QueryClientProvider client={new QueryClient()}>
+          <UserPrefsProvider>
+            <AuthProvider>
+              <ConversationProvider>
                 <I18nextProvider i18n={i18n}>
                     {children}
                 </I18nextProvider>
-              </QueryClientProvider>
-            </ConversationProvider>
-          </AuthProvider>
-        </UserPrefsProvider>
+              </ConversationProvider>
+            </AuthProvider>
+          </UserPrefsProvider>
+        </QueryClientProvider>
       </Provider>
     );
   }
