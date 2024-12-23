@@ -10,6 +10,7 @@ def test_session_initialization():
     # Test with custom working directory
     with tempfile.TemporaryDirectory() as temp_dir:
         session = BashSession(work_dir=temp_dir)
+        session.initialize()
         obs = session.execute(CmdRunAction('pwd'))
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert temp_dir in obs.content
@@ -24,6 +25,7 @@ def test_session_initialization():
 
 def test_cwd_property(tmp_path):
     session = BashSession(work_dir=tmp_path)
+    session.initialize()
     # Change directory and verify pwd updates
     random_dir = tmp_path / 'random'
     random_dir.mkdir()
@@ -34,6 +36,7 @@ def test_cwd_property(tmp_path):
 
 def test_basic_command():
     session = BashSession(work_dir=os.getcwd())
+    session.initialize()
 
     # Test simple command
     obs = session.execute(CmdRunAction("echo 'hello world'"))
@@ -68,6 +71,7 @@ def test_basic_command():
 
 def test_long_running_command_follow_by_execute():
     session = BashSession(work_dir=os.getcwd(), no_change_timeout_seconds=2)
+    session.initialize()
 
     # Test command that produces output slowly
     obs = session.execute(
@@ -118,6 +122,7 @@ def test_long_running_command_follow_by_execute():
 
 def test_interactive_command():
     session = BashSession(work_dir=os.getcwd(), no_change_timeout_seconds=3)
+    session.initialize()
 
     # Test interactive command with blocking=True
     obs = session.execute(
@@ -195,6 +200,7 @@ def test_interactive_command():
 
 def test_ctrl_c():
     session = BashSession(work_dir=os.getcwd(), no_change_timeout_seconds=2)
+    session.initialize()
 
     # Start infinite loop
     obs = session.execute(
@@ -228,6 +234,7 @@ def test_ctrl_c():
 
 def test_empty_command_errors():
     session = BashSession(work_dir=os.getcwd())
+    session.initialize()
 
     # Test empty command without previous command
     obs = session.execute(CmdRunAction(''))
@@ -246,6 +253,7 @@ def test_empty_command_errors():
 
 def test_command_output_continuation():
     session = BashSession(work_dir=os.getcwd(), no_change_timeout_seconds=2)
+    session.initialize()
 
     # Start a command that produces output slowly
     obs = session.execute(CmdRunAction('for i in {1..5}; do echo $i; sleep 3; done'))
@@ -294,6 +302,7 @@ def test_command_output_continuation():
 
 def test_long_output():
     session = BashSession(work_dir=os.getcwd())
+    session.initialize()
 
     # Generate a long output that may exceed buffer size
     obs = session.execute(CmdRunAction('for i in {1..5000}; do echo "Line $i"; done'))
@@ -309,6 +318,7 @@ def test_long_output():
 
 def test_long_output_exceed_history_limit():
     session = BashSession(work_dir=os.getcwd())
+    session.initialize()
 
     # Generate a long output that may exceed buffer size
     obs = session.execute(CmdRunAction('for i in {1..50000}; do echo "Line $i"; done'))
@@ -324,6 +334,7 @@ def test_long_output_exceed_history_limit():
 
 def test_multiline_command():
     session = BashSession(work_dir=os.getcwd())
+    session.initialize()
 
     # Test multiline command with PS2 prompt disabled
     obs = session.execute(
@@ -342,6 +353,7 @@ fi""")
 
 def test_python_interactive_input():
     session = BashSession(work_dir=os.getcwd(), no_change_timeout_seconds=2)
+    session.initialize()
 
     # Test Python program that asks for input - properly escaped for bash
     python_script = """name = input('Enter your name: '); age = input('Enter your age: '); print(f'Hello {name}, you are {age} years old')"""
