@@ -99,4 +99,4 @@ sandbox_user_id="1001"
 
 ## 讨论
 
-对于其他问题或疑问，请加入 [Slack](https://join.slack.com/t/openhands-ai/shared_invite/zt-2wkh4pklz-w~h_DVDtEe9H5kyQlcNxVw) 或 [Discord](https://discord.gg/QQUmpmgd) 提问！
+对于其他问题或疑问，请加入 [Slack](https://join.slack.com/t/openhands-ai/shared_invite/zt-2wkh4pklz-w~h_DVDtEe9H5kyQlcNxVw) 或 [Discord](https://discord.gg/ESHStjSjD4) 提问！

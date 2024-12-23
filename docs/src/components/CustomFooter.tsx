@@ -11,7 +11,7 @@ function CustomFooter() {
           <a href="https://join.slack.com/t/openhands-ai/shared_invite/zt-2wkh4pklz-w~h_DVDtEe9H5kyQlcNxVw" target="_blank" rel="noopener noreferrer">
             <FaSlack />
           </a>
-          <a href="https://discord.gg/QQUmpmgd" target="_blank" rel="noopener noreferrer">
+          <a href="https://discord.gg/ESHStjSjD4" target="_blank" rel="noopener noreferrer">
             <FaDiscord />
           </a>
           <a href="https://github.com/All-Hands-AI/OpenHands" target="_blank" rel="noopener noreferrer">
