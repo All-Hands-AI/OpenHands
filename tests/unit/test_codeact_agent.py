@@ -4,31 +4,25 @@ import pytest
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.agenthub.codeact_agent.function_calling import (
+    _BROWSER_DESCRIPTION,
+    _BROWSER_TOOL_DESCRIPTION,
     BrowserTool,
     CmdRunTool,
     IPythonTool,
     LLMBasedFileEditTool,
     StrReplaceEditorTool,
     WebReadTool,
-    _BROWSER_DESCRIPTION,
-    _BROWSER_TOOL_DESCRIPTION,
     get_tools,
     response_to_actions,
 )
-from litellm import ModelResponse
 from openhands.core.config import AgentConfig, LLMConfig
+from openhands.core.exceptions import FunctionCallNotExistsError
 from openhands.core.message import ImageContent, TextContent
 from openhands.events.action import (
     AgentFinishAction,
-    BrowseInteractiveAction,
-    BrowseURLAction,
     CmdRunAction,
-    FileEditAction,
-    FileReadAction,
-    IPythonRunCellAction,
     MessageAction,
 )
-from openhands.core.exceptions import FunctionCallNotExistsError
 from openhands.events.event import EventSource, FileEditSource, FileReadSource
 from openhands.events.observation.browse import BrowserOutputObservation
 from openhands.events.observation.commands import (
@@ -279,7 +273,7 @@ def test_agent_finish_action_with_tool_metadata(agent: CodeActAgent):
         'total_calls_in_response': 1,
         'choices': [{'message': {'content': 'Task completed'}}],
     }
-    
+
     action = AgentFinishAction(thought='Initial thought')
     action._source = EventSource.AGENT
     action.tool_call_metadata = ToolCallMetadata(
@@ -305,10 +299,10 @@ def test_reset(agent: CodeActAgent):
     action = MessageAction(content='test')
     action._source = EventSource.AGENT
     agent.pending_actions.append(action)
-    
+
     # Reset
     agent.reset()
-    
+
     # Verify state is cleared
     assert len(agent.pending_actions) == 0
 
@@ -318,7 +312,7 @@ def test_step_with_pending_actions(agent: CodeActAgent):
     pending_action = MessageAction(content='test')
     pending_action._source = EventSource.AGENT
     agent.pending_actions.append(pending_action)
-    
+
     # Step should return the pending action
     result = agent.step(Mock())
     assert result == pending_action
@@ -332,7 +326,7 @@ def test_get_tools_default():
         codeact_enable_browsing=True,
     )
     assert len(tools) > 0
-    
+
     # Check required tools are present
     tool_names = [tool['function']['name'] for tool in tools]
     assert 'execute_bash' in tool_names
@@ -382,20 +376,23 @@ def test_ipython_tool():
 def test_llm_based_file_edit_tool():
     assert LLMBasedFileEditTool['type'] == 'function'
     assert LLMBasedFileEditTool['function']['name'] == 'edit_file'
-    
+
     properties = LLMBasedFileEditTool['function']['parameters']['properties']
     assert 'path' in properties
     assert 'content' in properties
     assert 'start' in properties
     assert 'end' in properties
-    
-    assert LLMBasedFileEditTool['function']['parameters']['required'] == ['path', 'content']
+
+    assert LLMBasedFileEditTool['function']['parameters']['required'] == [
+        'path',
+        'content',
+    ]
 
 
 def test_str_replace_editor_tool():
     assert StrReplaceEditorTool['type'] == 'function'
     assert StrReplaceEditorTool['function']['name'] == 'str_replace_editor'
-    
+
     properties = StrReplaceEditorTool['function']['parameters']['properties']
     assert 'command' in properties
     assert 'path' in properties
@@ -404,8 +401,11 @@ def test_str_replace_editor_tool():
     assert 'new_str' in properties
     assert 'insert_line' in properties
     assert 'view_range' in properties
-    
-    assert StrReplaceEditorTool['function']['parameters']['required'] == ['command', 'path']
+
+    assert StrReplaceEditorTool['function']['parameters']['required'] == [
+        'command',
+        'path',
+    ]
 
 
 def test_web_read_tool():
@@ -445,7 +445,9 @@ def test_browser_tool():
     assert BrowserTool['function']['parameters']['type'] == 'object'
     assert 'code' in BrowserTool['function']['parameters']['properties']
     assert BrowserTool['function']['parameters']['required'] == ['code']
-    assert BrowserTool['function']['parameters']['properties']['code']['type'] == 'string'
+    assert (
+        BrowserTool['function']['parameters']['properties']['code']['type'] == 'string'
+    )
     assert 'description' in BrowserTool['function']['parameters']['properties']['code']
 
 

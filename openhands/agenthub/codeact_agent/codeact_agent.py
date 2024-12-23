@@ -83,7 +83,7 @@ class CodeActAgent(Agent):
         - llm (LLM): The llm to be used by this agent
         """
         super().__init__(llm, config)
-        self.pending_actions = deque()
+        self.pending_actions: deque[Action] = deque()
         self.reset()
 
         self.mock_function_calling = False
@@ -110,8 +110,6 @@ class CodeActAgent(Agent):
             prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
             disabled_microagents=self.config.disabled_microagents,
         )
-
-
 
     def get_action_message(
         self,
