@@ -96,7 +96,7 @@ troubleshooting resources, and advanced configuration options.
 OpenHands is a community-driven project, and we welcome contributions from everyone. We do most of our communication
 through Slack, so this is the best place to start, but we also are happy to have you contact us on Discord or Github:
 
-- [Join our Slack workspace](https://join.slack.com/t/openhands-ai/shared_invite/zt-2vbfigwev-G03twSpXaErwzYVD4CFiBg) - Here we talk about research, architecture, and future development.
+- [Join our Slack workspace](https://join.slack.com/t/openhands-ai/shared_invite/zt-2wkh4pklz-w~h_DVDtEe9H5kyQlcNxVw) - Here we talk about research, architecture, and future development.
 - [Join our Discord server](https://discord.gg/QQUmpmgd) - This is a community-run server for general discussion, questions, and feedback.
 - [Read or post Github Issues](https://github.com/All-Hands-AI/OpenHands/issues) - Check out the issues we're working on, or add your own ideas.
 
