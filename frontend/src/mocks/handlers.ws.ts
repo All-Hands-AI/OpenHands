@@ -20,6 +20,20 @@ const chat = ws.link(`ws://${window?.location.host}/socket.io`);
 export const handlers: WebSocketHandler[] = [
   chat.addEventListener("connection", (connection) => {
     const io = toSocketIo(connection);
+    // @ts-expect-error - accessing private property for testing purposes
+    const { url }: { url: URL } = io.client.connection;
+    const conversationId = url.searchParams.get("conversation_id");
+
+    io.client.emit("connect");
+
+    if (conversationId) {
+      emitMessages(io, SESSION_HISTORY["1"]);
+
+      io.client.emit(
+        "oh_event",
+        generateAgentStateChangeObservation(AgentState.AWAITING_USER_INPUT),
+      );
+    }
 
     io.client.on("oh_action", async (_, data) => {
       if (isInitConfig(data)) {
@@ -27,15 +41,6 @@ export const handlers: WebSocketHandler[] = [
           "oh_event",
           generateAgentStateChangeObservation(AgentState.INIT),
         );
-
-        if (data.token) {
-          emitMessages(io, SESSION_HISTORY[data.token]);
-
-          io.client.emit(
-            "oh_event",
-            generateAgentStateChangeObservation(AgentState.AWAITING_USER_INPUT),
-          );
-        }
       } else {
         io.client.emit(
           "oh_event",
