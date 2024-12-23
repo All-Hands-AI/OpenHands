@@ -46,10 +46,17 @@ function UserPrefsProvider({ children }: React.PropsWithChildren) {
     }
   }, [settings?.LLM_API_KEY]);
 
+  const value = React.useMemo(
+    () => ({
+      settings,
+      settingsAreUpToDate,
+      saveSettings,
+    }),
+    [settings, settingsAreUpToDate],
+  );
+
   return (
-    <UserPrefsContext.Provider value={{
-      settings, settingsAreUpToDate, saveSettings
-    }}>
+    <UserPrefsContext.Provider value={value}>
       {children}
     </UserPrefsContext.Provider>
   );
