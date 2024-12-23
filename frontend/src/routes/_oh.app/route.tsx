@@ -2,6 +2,7 @@ import { useDisclosure } from "@nextui-org/react";
 import React from "react";
 import { Outlet } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
+import toast from "react-hot-toast";
 import {
   ConversationProvider,
   useConversation,
@@ -25,16 +26,24 @@ import { useUserPrefs } from "#/context/user-prefs-context";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
+import { useEndSession } from "#/hooks/use-end-session";
+import { useUserConversation } from "#/hooks/query/get-conversation-permissions";
 import { CountBadge } from "#/components/layout/count-badge";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
 
 function AppContent() {
   const { gitHubToken } = useAuth();
   const { settings } = useUserPrefs();
+  const endSession = useEndSession();
+
   const { conversationId } = useConversation();
 
   const dispatch = useDispatch();
+
   useConversationConfig();
+  const { data: conversation, isFetched } = useUserConversation(
+    conversationId || null,
+  );
 
   const { selectedRepository } = useSelector(
     (state: RootState) => state.initalQuery,
@@ -56,6 +65,19 @@ function AppContent() {
     [],
   );
 
+  React.useEffect(() => {
+    if (isFetched && !conversation) {
+      toast.error("You do not have permission to write to this conversation.");
+      endSession();
+    }
+  }, [conversation, isFetched]);
+
+  React.useEffect(() => {
+    dispatch(clearMessages());
+    dispatch(clearTerminal());
+    dispatch(clearJupyter());
+  }, [conversationId]);
+
   useEffectOnce(() => {
     dispatch(clearMessages());
     dispatch(clearTerminal());
@@ -71,7 +93,7 @@ function AppContent() {
   return (
     <WsClientProvider ghToken={gitHubToken} conversationId={conversationId}>
       <EventHandler>
-        <div className="flex flex-col h-full gap-3">
+        <div data-testid="app-route" className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto gap-3">
             <Container className="w-full md:w-[390px] max-h-full relative">
               <ChatInterface />

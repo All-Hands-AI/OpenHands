@@ -1,4 +1,38 @@
 import { delay, http, HttpResponse } from "msw";
+import { Conversation } from "#/api/open-hands.types";
+
+const conversations: Conversation[] = [
+  {
+    conversation_id: "1",
+    name: "My New Project",
+    repo: null,
+    lastUpdated: new Date().toISOString(),
+    state: "running",
+  },
+  {
+    conversation_id: "2",
+    name: "Repo Testing",
+    repo: "octocat/hello-world",
+    // 2 days ago
+    lastUpdated: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    state: "cold",
+  },
+  {
+    conversation_id: "3",
+    name: "Another Project",
+    repo: "octocat/earth",
+    // 5 days ago
+    lastUpdated: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    state: "finished",
+  },
+];
+
+const CONVERSATIONS = new Map<string, Conversation>(
+  conversations.map((conversation) => [
+    conversation.conversation_id,
+    conversation,
+  ]),
+);
 
 const openHandsHandlers = [
   http.get("/api/options/models", async () => {
@@ -20,17 +54,26 @@ const openHandsHandlers = [
     return HttpResponse.json(["mock-invariant"]);
   }),
 
-  http.get("http://localhost:3001/api/list-files", async ({ request }) => {
-    await delay();
+  http.get(
+    "http://localhost:3001/api/conversations/:conversationId/list-files",
+    async ({ params }) => {
+      await delay();
 
-    const token = request.headers
-      .get("Authorization")
-      ?.replace("Bearer", "")
-      .trim();
+      const cid = params.conversationId?.toString();
+      if (!cid) return HttpResponse.json([], { status: 404 });
 
-    if (!token) return HttpResponse.json([], { status: 401 });
-    return HttpResponse.json(["file1.ts", "dir1/file2.ts", "file3.ts"]);
-  }),
+      let data = ["file1.txt", "file2.txt", "file3.txt"];
+      if (cid === "3") {
+        data = [
+          "reboot_skynet.exe",
+          "target_list.txt",
+          "terminator_blueprint.txt",
+        ];
+      }
+
+      return HttpResponse.json(data);
+    },
+  ),
 
   http.post("http://localhost:3001/api/save-file", () =>
     HttpResponse.json(null, { status: 200 }),
@@ -70,21 +113,12 @@ const openHandsHandlers = [
 
 export const handlers = [
   ...openHandsHandlers,
-  http.get("https://api.github.com/user/repos", async ({ request }) => {
-    const token = request.headers
-      .get("Authorization")
-      ?.replace("Bearer", "")
-      .trim();
-
-    if (!token) {
-      return HttpResponse.json([], { status: 401 });
-    }
-
-    return HttpResponse.json([
+  http.get("/api/github/repositories", () =>
+    HttpResponse.json([
       { id: 1, full_name: "octocat/hello-world" },
       { id: 2, full_name: "octocat/earth" },
-    ]);
-  }),
+    ]),
+  ),
   http.get("https://api.github.com/user", () => {
     const user: GitHubUser = {
       id: 1,
@@ -103,5 +137,76 @@ export const handlers = [
   http.post("https://us.i.posthog.com/e", async () =>
     HttpResponse.json(null, { status: 200 }),
   ),
-  http.get("/config.json", () => HttpResponse.json({ APP_MODE: "oss" })),
+
+  http.post("/api/authenticate", async () =>
+    HttpResponse.json({ message: "Authenticated" }),
+  ),
+
+  http.get("/api/options/config", () => HttpResponse.json({ APP_MODE: "oss" })),
+
+  http.get("/api/conversations", async () =>
+    HttpResponse.json(Array.from(CONVERSATIONS.values())),
+  ),
+
+  http.delete("/api/conversations/:conversationId", async ({ params }) => {
+    const { conversationId } = params;
+
+    if (typeof conversationId === "string") {
+      CONVERSATIONS.delete(conversationId);
+      return HttpResponse.json(null, { status: 200 });
+    }
+
+    return HttpResponse.json(null, { status: 404 });
+  }),
+
+  http.put(
+    "/api/conversations/:conversationId",
+    async ({ params, request }) => {
+      const { conversationId } = params;
+
+      if (typeof conversationId === "string") {
+        const conversation = CONVERSATIONS.get(conversationId);
+
+        if (conversation) {
+          const body = await request.json();
+          if (typeof body === "object" && body?.name) {
+            CONVERSATIONS.set(conversationId, {
+              ...conversation,
+              name: body.name,
+            });
+            return HttpResponse.json(null, { status: 200 });
+          }
+        }
+      }
+
+      return HttpResponse.json(null, { status: 404 });
+    },
+  ),
+
+  http.post("/api/conversations", () => {
+    const conversation: Conversation = {
+      conversation_id: (Math.random() * 100).toString(),
+      name: "New Conversation",
+      repo: null,
+      lastUpdated: new Date().toISOString(),
+      state: "warm",
+    };
+
+    CONVERSATIONS.set(conversation.conversation_id, conversation);
+    return HttpResponse.json(conversation, { status: 201 });
+  }),
+
+  http.get("/api/conversations/:conversationId", async ({ params }) => {
+    const { conversationId } = params;
+
+    if (typeof conversationId === "string") {
+      const project = CONVERSATIONS.get(conversationId);
+
+      if (project) {
+        return HttpResponse.json(project, { status: 200 });
+      }
+    }
+
+    return HttpResponse.json(null, { status: 404 });
+  }),
 ];

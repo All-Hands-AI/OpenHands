@@ -11,7 +11,11 @@ interface UseListFilesConfig {
   enabled?: boolean;
 }
 
-export const useListFiles = (config?: UseListFilesConfig) => {
+const DEFAULT_CONFIG: UseListFilesConfig = {
+  enabled: true,
+};
+
+export const useListFiles = (config: UseListFilesConfig = DEFAULT_CONFIG) => {
   const { conversationId } = useConversation();
   const { status } = useWsClient();
   const isActive = status === WsClientProviderStatus.CONNECTED;
