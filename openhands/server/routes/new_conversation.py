@@ -90,13 +90,13 @@ async def search_conversations(request: Request):
                     events = sorted(events)
                     event_path = events[-1]
                     event = json.loads(file_store.read(event_path))
+                    running = await session_manager.is_agent_loop_running(session_id)
                     conversations.append(
                         {
                             'id': session_id,
-                            'last_accessed_at': event.get('timestamp'),
-                            'status': 'RUNNING'
-                            if session_manager.is_agent_loop_running(session_id)
-                            else 'STOPPED',
+                            'title': 'TODO',
+                            'updated_at': event.get('timestamp'),
+                            'status': 'RUNNING' if running else 'STOPPED',
                         }
                     )
             except Exception:  # type: ignore
