@@ -302,11 +302,10 @@ export async function downloadFiles(
       error instanceof Error &&
       (error.message.includes("browser doesn't support") ||
         error.message.includes("Failed to select") ||
-        error.message.includes("Permission denied")
-      )
+        error.message.includes("Permission denied"))
     ) {
       await downloadWorkspace(conversationID);
-      return
+      return;
     }
 
     // Otherwise, wrap it with a generic message
