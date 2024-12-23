@@ -260,6 +260,8 @@ class OpenHands {
       args: params.args,
       selected_repository: params.selectedRepository,
     });
+    // TODO: remove this once we have a multi-conversation UI
+    localStorage.setItem("latest_conversation_id", data.conversation_id);
     return data;
   }
 }
