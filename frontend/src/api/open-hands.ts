@@ -293,21 +293,6 @@ class OpenHands {
     });
     return data;
   }
-
-  static async newConversation(params: {
-    githubToken?: string;
-    settings?: Settings;
-    selectedRepository?: string;
-  }): Promise<{ conversation_id: string }> {
-    const { data } = await openHands.post<{
-      conversation_id: string;
-    }>("/api/conversations", {
-      github_token: params.githubToken,
-      args: params.settings,
-      selected_repository: params.selectedRepository,
-    });
-    return data;
-  }
 }
 
 export default OpenHands;
