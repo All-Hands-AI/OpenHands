@@ -32,7 +32,7 @@ class SessionManager:
     sio: socketio.AsyncServer
     config: AppConfig
     file_store: FileStore
-    local_sessions_by_sid: dict[str, Session] = field(default_factory=dict)
+    _local_agent_loops_by_sid: dict[str, Session] = field(default_factory=dict)
     local_connection_id_to_session_id: dict[str, str] = field(default_factory=dict)
     _last_alive_timestamps: dict[str, float] = field(default_factory=dict)
     _redis_listen_task: asyncio.Task | None = None
@@ -100,12 +100,12 @@ class SessionManager:
         sid = data['sid']
         message_type = data['message_type']
         if message_type == 'event':
-            session = self.local_sessions_by_sid.get(sid)
+            session = self._local_agent_loops_by_sid.get(sid)
             if session:
                 await session.dispatch(data['data'])
         elif message_type == 'is_session_running':
             # Another node in the cluster is asking if the current node is running the session given.
-            session = self.local_sessions_by_sid.get(sid)
+            session = self._local_agent_loops_by_sid.get(sid)
             if session:
                 await self._get_redis_client().publish(
                     'oh_event',
@@ -179,12 +179,11 @@ class SessionManager:
             return c
 
     async def join_conversation(self, sid: str, connection_id: str) -> EventStream:
-        await self.maybe_start_agent_loop(sid)
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self.local_connection_id_to_session_id[connection_id] = sid
 
         # If we have a local session running, use that
-        session = self.local_sessions_by_sid.get(sid)
+        session = self._local_agent_loops_by_sid.get(sid)
         if session:
             logger.info(f'found_local_session:{sid}')
             return session.agent_session.event_stream
@@ -192,9 +191,7 @@ class SessionManager:
         if await self._is_agent_loop_running_in_cluster(sid):
             return EventStream(sid, self.file_store)
 
-        raise ConversationDoesNotExistError(
-            f'no_conversation_for_id:{connection_id}:{sid}'
-        )
+        return await self.maybe_start_agent_loop(sid)
 
     async def detach_from_conversation(self, conversation: Conversation):
         sid = conversation.sid
@@ -239,7 +236,7 @@ class SessionManager:
         return False
 
     async def _is_agent_loop_running_locally(self, sid: str) -> bool:
-        if self.local_sessions_by_sid.get(sid, None):
+        if self._local_agent_loops_by_sid.get(sid, None):
             return True
         return False
 
@@ -308,12 +305,12 @@ class SessionManager:
             session = Session(
                 sid=sid, file_store=self.file_store, config=self.config, sio=self.sio
             )
-            self.local_sessions_by_sid[sid] = session
+            self._local_agent_loops_by_sid[sid] = session
             if not await self._is_agent_loop_running_in_cluster(sid):
                 logger.info(f'start_agent_loop:{sid}')
                 await session.initialize_agent(conversation_init_data)
 
-        session = self.local_sessions_by_sid.get(sid)
+        session = self._local_agent_loops_by_sid.get(sid)
         if session is not None:
             return session.agent_session.event_stream
         raise RuntimeError(f'no_session:{sid}')
@@ -324,7 +321,7 @@ class SessionManager:
         if not sid:
             raise RuntimeError(f'no_connected_session:{connection_id}')
 
-        session = self.local_sessions_by_sid.get(sid)
+        session = self._local_agent_loops_by_sid.get(sid)
         if session:
             await session.dispatch(data)
             return
@@ -411,7 +408,7 @@ class SessionManager:
         for connnnection_id in connection_ids_to_remove:
             self.local_connection_id_to_session_id.pop(connnnection_id, None)
 
-        session = self.local_sessions_by_sid.pop(sid, None)
+        session = self._local_agent_loops_by_sid.pop(sid, None)
         if not session:
             logger.warning(f'no_session_to_close:{sid}')
             return
