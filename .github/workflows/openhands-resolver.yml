@@ -116,7 +116,7 @@ jobs:
           PAT_USERNAME: ${{ secrets.PAT_USERNAME }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          required_vars=("LLM_MODEL" "LLM_API_KEY")
+          required_vars=("LLM_API_KEY")
           for var in "${required_vars[@]}"; do
             if [ -z "${!var}" ]; then
               echo "Error: Required environment variable $var is not set."
@@ -125,12 +125,12 @@ jobs:
           done
 
           # Check optional variables and warn about fallbacks
-          if [ -z "$PAT_TOKEN" ]; then
-            echo "Warning: PAT_TOKEN is not set, falling back to GITHUB_TOKEN"
-          fi
-
           if [ -z "$LLM_BASE_URL" ]; then
             echo "Warning: LLM_BASE_URL is not set, will use default API endpoint"
+          fi
+
+          if [ -z "$PAT_TOKEN" ]; then
+            echo "Warning: PAT_TOKEN is not set, falling back to GITHUB_TOKEN"
           fi
 
           if [ -z "$PAT_USERNAME" ]; then
@@ -313,11 +313,13 @@ jobs:
           github-token: ${{ secrets.PAT_TOKEN || github.token }}
           script: |
             const fs = require('fs');
+            const path = require('path');
             const issueNumber = ${{ env.ISSUE_NUMBER }};
             const success = ${{ steps.check_result.outputs.RESOLUTION_SUCCESS }};
 
             let prNumber = '';
             let branchName = '';
+            let resultExplanation = '';
 
             try {
               if (success) {
@@ -330,6 +332,25 @@ jobs:
             }
 
 
+            try {
+              if (!success){
+                // Read result_explanation from JSON file for failed resolution
+                const outputFilePath = path.resolve('/tmp/output/output.jsonl');
+                if (fs.existsSync(outputFilePath)) {
+                  const outputContent = fs.readFileSync(outputFilePath, 'utf8');
+                  const jsonLines = outputContent.split('\n').filter(line => line.trim() !== '');
+
+                  if (jsonLines.length > 0) {
+                    // First entry in JSON lines has the key 'result_explanation'
+                    const firstEntry = JSON.parse(jsonLines[0]);
+                    resultExplanation = firstEntry.result_explanation || '';
+                  }
+                }
+              }
+            } catch (error){
+              console.error('Error reading file:', error);
+            }
+
             // Check "success" log from resolver output
             if (success && prNumber) {
               github.rest.issues.createComment({
@@ -340,11 +361,17 @@ jobs:
               });
               process.env.AGENT_RESPONDED = 'true';
             } else if (!success && branchName) {
+              let commentBody = `An attempt was made to automatically fix this issue, but it was unsuccessful. A branch named '${branchName}' has been created with the attempted changes. You can view the branch [here](https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${branchName}). Manual intervention may be required.`;
+
+              if (resultExplanation) {
+                commentBody += `\n\nAdditional details about the failure:\n${resultExplanation}`;
+              }
+
               github.rest.issues.createComment({
                 issue_number: issueNumber,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: `An attempt was made to automatically fix this issue, but it was unsuccessful. A branch named '${branchName}' has been created with the attempted changes. You can view the branch [here](https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${branchName}). Manual intervention may be required.`
+                body: commentBody
               });
               process.env.AGENT_RESPONDED = 'true';
             }

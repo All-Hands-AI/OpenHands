@@ -1,6 +1,6 @@
 import { delay, WebSocketHandler, ws } from "msw";
 import { toSocketIo } from "@mswjs/socket.io-binding";
-import AgentState from "#/types/agent-state";
+import { AgentState } from "#/types/agent-state";
 import { InitConfig } from "#/types/core/variances";
 import { SESSION_HISTORY } from "./session-history.mock";
 import {

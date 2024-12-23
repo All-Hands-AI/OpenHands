@@ -1,4 +1,4 @@
-import AgentState from "../agent-state";
+import { AgentState } from "../agent-state";
 import { OpenHandsObservationEvent } from "./base";
 
 export interface AgentStateChangeObservation
@@ -67,6 +67,13 @@ export interface ReadObservation extends OpenHandsObservationEvent<"read"> {
   };
 }
 
+export interface EditObservation extends OpenHandsObservationEvent<"edit"> {
+  source: "agent";
+  extras: {
+    path: string;
+  };
+}
+
 export interface ErrorObservation extends OpenHandsObservationEvent<"error"> {
   source: "user";
   extras: {
@@ -82,4 +89,5 @@ export type OpenHandsObservation =
   | BrowseObservation
   | WriteObservation
   | ReadObservation
+  | EditObservation
   | ErrorObservation;

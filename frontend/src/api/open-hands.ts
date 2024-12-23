@@ -158,11 +158,16 @@ class OpenHands {
    */
   static async refreshToken(
     appMode: GetConfigResponse["APP_MODE"],
+    userId: string,
   ): Promise<string> {
     if (appMode === "oss") return "";
 
-    const response =
-      await openHands.post<GitHubAccessTokenResponse>("/api/refresh-token");
+    const response = await openHands.post<GitHubAccessTokenResponse>(
+      "/api/refresh-token",
+      {
+        userId,
+      },
+    );
     return response.data.access_token;
   }
 

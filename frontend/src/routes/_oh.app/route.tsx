@@ -97,12 +97,7 @@ function AppContent() {
   } = useDisclosure();
 
   return (
-    <WsClientProvider
-      enabled={!!conversation}
-      ghToken={gitHubToken}
-      selectedRepository={selectedRepository}
-      conversationId={conversationId}
-    >
+    <WsClientProvider ghToken={gitHubToken} conversationId={conversationId}>
       <EventHandler>
         <div data-testid="app-route" className="flex flex-col h-full gap-3">
           <div className="flex h-full overflow-auto gap-3">

@@ -14,11 +14,12 @@ import {
   clearInitialQuery,
 } from "#/state/initial-query-slice";
 import { RootState } from "#/store";
-import AgentState from "#/types/agent-state";
+import { AgentState } from "#/types/agent-state";
 
 export const useWSStatusChange = () => {
   const { send, status } = useWsClient();
   const { gitHubToken } = useAuth();
+  const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dispatch = useDispatch();
 
   const statusRef = React.useRef<WsClientProviderStatus | null>(null);
@@ -47,7 +48,7 @@ export const useWSStatusChange = () => {
     dispatch(clearInitialQuery()); // reset initial query
   };
 
-  const handleOnWSActive = () => {
+  const handleAgentInit = () => {
     let additionalInfo = "";
 
     if (gitHubToken && selectedRepository) {
@@ -63,6 +64,11 @@ export const useWSStatusChange = () => {
       dispatchInitialQuery(initialQuery, additionalInfo);
     }
   };
+  React.useEffect(() => {
+    if (curAgentState === AgentState.INIT) {
+      handleAgentInit();
+    }
+  }, [curAgentState]);
 
   React.useEffect(() => {
     if (statusRef.current === status) {
@@ -70,11 +76,7 @@ export const useWSStatusChange = () => {
     }
     statusRef.current = status;
 
-    if (status === WsClientProviderStatus.ACTIVE) {
-      handleOnWSActive();
-    }
-
-    if (status === WsClientProviderStatus.OPENING && initialQuery) {
+    if (status === WsClientProviderStatus.CONNECTED && initialQuery) {
       dispatch(
         addUserMessage({
           content: initialQuery,
@@ -85,7 +87,7 @@ export const useWSStatusChange = () => {
       );
     }
 
-    if (status === WsClientProviderStatus.STOPPED) {
+    if (status === WsClientProviderStatus.DISCONNECTED) {
       dispatch(setCurrentAgentState(AgentState.STOPPED));
     }
   }, [status]);
