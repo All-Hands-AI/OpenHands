@@ -51,9 +51,16 @@ def test_observation_event_props_serialization_deserialization():
         'extras': {
             'command': 'ls -l',
             'hidden': False,
-            'metadata': CmdOutputMetadata(
-                exit_code=0,
-            ),
+            'metadata': {
+                'exit_code': 0,
+                'hostname': None,
+                'pid': -1,
+                'prefix': '',
+                'py_interpreter_path': None,
+                'suffix': '',
+                'username': None,
+                'working_dir': None,
+            },
         },
         'content': 'foo.txt',
         'success': True,
