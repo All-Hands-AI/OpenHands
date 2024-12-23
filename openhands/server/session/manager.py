@@ -207,8 +207,20 @@ class SessionManager:
 
     async def _cleanup_detached_conversations(self):
         while should_continue():
-            logger.info(f'Attached conversations: {len(self._active_conversations)}')
-            logger.info(f'Detached conversations: {len(self._detached_conversations)}')
+            if self._get_redis_client():
+                # Debug info for HA envs
+                logger.info(
+                    f'Attached conversations: {len(self._active_conversations)}'
+                )
+                logger.info(
+                    f'Detached conversations: {len(self._detached_conversations)}'
+                )
+                logger.info(
+                    f'Running agent loops: {len(self._local_agent_loops_by_sid)}'
+                )
+                logger.info(
+                    f'Local connections: {len(self.local_connection_id_to_session_id)}'
+                )
             try:
                 async with self._conversations_lock:
                     # Create a list of items to process to avoid modifying dict during iteration
