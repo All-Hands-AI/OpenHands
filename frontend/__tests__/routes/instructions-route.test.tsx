@@ -1,7 +1,7 @@
 import React from 'react';
 import { screen } from '@testing-library/react';
-import { renderWithProviders } from '../../test-utils';
-import InstructionsRoute from '../../src/routes/_oh.app.instructions/route';
+import { renderWithProviders } from 'test-utils';
+import InstructionsRoute from '#/routes/_oh.app.instructions/route';
 
 // Mock the InstructionsPanel component
 jest.mock('../../src/components/features/instructions/instructions-panel', () => ({
