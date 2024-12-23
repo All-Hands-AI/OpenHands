@@ -71,14 +71,14 @@ prepareApp().then(() =>
       document,
       <StrictMode>
         <Provider store={store}>
-          <UserPrefsProvider>
-            <AuthProvider>
-              <QueryClientProvider client={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            <UserPrefsProvider>
+              <AuthProvider>
                 <HydratedRouter />
                 <PosthogInit />
-              </QueryClientProvider>
-            </AuthProvider>
-          </UserPrefsProvider>
+              </AuthProvider>
+            </UserPrefsProvider>
+          </QueryClientProvider>
         </Provider>
       </StrictMode>,
     );
