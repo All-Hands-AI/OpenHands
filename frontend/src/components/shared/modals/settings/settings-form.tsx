@@ -84,7 +84,6 @@ export function SettingsForm({
     React.useState(false);
   const [confirmEndSessionModalOpen, setConfirmEndSessionModalOpen] =
     React.useState(false);
-  const [showWarningModal, setShowWarningModal] = React.useState(false);
 
   const resetOngoingSession = () => {
     if (location.pathname.startsWith("/conversations/")) {
@@ -125,36 +124,13 @@ export function SettingsForm({
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const apiKey = formData.get("api-key");
 
-    if (!apiKey) {
-      setShowWarningModal(true);
-    } else if (location.pathname.startsWith("/conversations/")) {
+    if (location.pathname.startsWith("/conversations/")) {
       setConfirmEndSessionModalOpen(true);
     } else {
       handleFormSubmission(formData);
       onClose();
     }
-  };
-
-  const handleCloseClick = () => {
-    const formData = new FormData(formRef.current ?? undefined);
-    const apiKey = formData.get("api-key");
-
-    if (!apiKey) setShowWarningModal(true);
-    else onClose();
-  };
-
-  const handleWarningConfirm = () => {
-    setShowWarningModal(false);
-    const formData = new FormData(formRef.current ?? undefined);
-    formData.set("api-key", ""); // Set null value for API key
-    handleFormSubmission(formData);
-    onClose();
-  };
-
-  const handleWarningCancel = () => {
-    setShowWarningModal(false);
   };
 
   return (
@@ -234,7 +210,7 @@ export function SettingsForm({
             <ModalButton
               text={t(I18nKey.SETTINGS_FORM$CLOSE_LABEL)}
               className="bg-[#737373] w-full"
-              onClick={handleCloseClick}
+              onClick={onClose}
             />
           </div>
           <ModalButton
@@ -284,24 +260,6 @@ export function SettingsForm({
               cancel: {
                 text: t(I18nKey.SETTINGS_FORM$CANCEL_LABEL),
                 onClick: () => setConfirmEndSessionModalOpen(false),
-              },
-            }}
-          />
-        </ModalBackdrop>
-      )}
-      {showWarningModal && (
-        <ModalBackdrop>
-          <DangerModal
-            title="Are you sure?"
-            description="You haven't set an API key. Without an API key, you won't be able to use the AI features. Are you sure you want to close the settings?"
-            buttons={{
-              danger: {
-                text: "Yes, close settings",
-                onClick: handleWarningConfirm,
-              },
-              cancel: {
-                text: "Cancel",
-                onClick: handleWarningCancel,
               },
             }}
           />
