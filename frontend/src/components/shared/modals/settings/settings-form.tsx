@@ -13,7 +13,7 @@ import {
   updateSettingsVersion,
 } from "#/utils/settings-utils";
 import { useEndSession } from "#/hooks/use-end-session";
-import { useUserPrefs } from "#/context/user-prefs-context";
+import { useSettings } from "#/context/settings-context";
 import { ModalButton } from "../../buttons/modal-button";
 import { AdvancedOptionSwitch } from "../../inputs/advanced-option-switch";
 import { AgentInput } from "../../inputs/agent-input";
@@ -43,7 +43,7 @@ export function SettingsForm({
   securityAnalyzers,
   onClose,
 }: SettingsFormProps) {
-  const { saveSettings } = useUserPrefs();
+  const { saveSettings } = useSettings();
   const endSession = useEndSession();
   const { logout } = useAuth();
 

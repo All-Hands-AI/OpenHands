@@ -9,19 +9,19 @@ import {
   DEFAULT_SETTINGS,
 } from "#/services/settings";
 
-interface UserPrefsContextType {
+interface SettingsContextType {
   settings: Settings;
   settingsAreUpToDate: boolean;
   saveSettings: (settings: Partial<Settings>) => void;
 }
 
-const UserPrefsContext = React.createContext<UserPrefsContextType | undefined>(
+const SettingsContext = React.createContext<SettingsContextType | undefined>(
   undefined,
 );
 
 const SETTINGS_QUERY_KEY = ["settings"];
 
-function UserPrefsProvider({ children }: React.PropsWithChildren) {
+function SettingsProvider({ children }: React.PropsWithChildren) {
   const { data: settings } = useQuery({
     queryKey: SETTINGS_QUERY_KEY,
     queryFn: getSettings,
@@ -55,18 +55,18 @@ function UserPrefsProvider({ children }: React.PropsWithChildren) {
   );
 
   return (
-    <UserPrefsContext.Provider value={value}>
+    <SettingsContext.Provider value={value}>
       {children}
-    </UserPrefsContext.Provider>
+    </SettingsContext.Provider>
   );
 }
 
-function useUserPrefs() {
-  const context = React.useContext(UserPrefsContext);
+function useSettings() {
+  const context = React.useContext(SettingsContext);
   if (context === undefined) {
-    throw new Error("useUserPrefs must be used within a UserPrefsProvider");
+    throw new Error("useSettings must be used within a SettingsProvider");
   }
   return context;
 }
 
-export { UserPrefsProvider, useUserPrefs };
+export { SettingsProvider, useSettings };

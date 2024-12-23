@@ -12,7 +12,7 @@ import { initReactI18next } from "react-i18next";
 import { AppStore, RootState, rootReducer } from "./src/store";
 import { vi } from "vitest";
 import { AuthProvider } from "#/context/auth-context";
-import { UserPrefsProvider } from "#/context/user-prefs-context";
+import { SettingsProvider } from "#/context/settings-context";
 import { ConversationProvider } from "#/context/conversation-context";
 
 // Mock useParams before importing components
@@ -71,7 +71,7 @@ export function renderWithProviders(
     return (
       <Provider store={store}>
         <QueryClientProvider client={new QueryClient()}>
-          <UserPrefsProvider>
+          <SettingsProvider>
             <AuthProvider>
               <ConversationProvider>
                 <I18nextProvider i18n={i18n}>
@@ -79,7 +79,7 @@ export function renderWithProviders(
                 </I18nextProvider>
               </ConversationProvider>
             </AuthProvider>
-          </UserPrefsProvider>
+          </SettingsProvider>
         </QueryClientProvider>
       </Provider>
     );
