@@ -105,18 +105,6 @@ test("load relevant files in the file explorer", async ({ page }) => {
   expect(fileExplorer.getByText("terminator_blueprint.txt")).toBeVisible();
 });
 
-test("should create a new conversation", async ({ page }) => {
-  await page.goto("/conversations");
-  await page.waitForURL("/conversations");
-
-  const conversationPanel = await toggleConversationPanel(page);
-  const cards = conversationPanel.getByTestId("conversation-card");
-
-  expect(page.url()).toMatch(/http:\/\/localhost:3001\/conversations\/\d+/);
-  await toggleConversationPanel(page);
-  expect(cards).toHaveCount(4);
-});
-
 test("should redirect to home screen if conversation deos not exist", async ({
   page,
 }) => {

@@ -113,21 +113,12 @@ const openHandsHandlers = [
 
 export const handlers = [
   ...openHandsHandlers,
-  http.get("https://api.github.com/user/repos", async ({ request }) => {
-    const token = request.headers
-      .get("Authorization")
-      ?.replace("Bearer", "")
-      .trim();
-
-    if (!token) {
-      return HttpResponse.json([], { status: 401 });
-    }
-
-    return HttpResponse.json([
+  http.get("/api/github/repositories", () =>
+    HttpResponse.json([
       { id: 1, full_name: "octocat/hello-world" },
       { id: 2, full_name: "octocat/earth" },
-    ]);
-  }),
+    ]),
+  ),
   http.get("https://api.github.com/user", () => {
     const user: GitHubUser = {
       id: 1,

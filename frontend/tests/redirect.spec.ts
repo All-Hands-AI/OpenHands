@@ -1,33 +1,31 @@
 import { expect, test } from "@playwright/test";
 import path from "path";
 import { fileURLToPath } from "url";
-import { confirmSettings } from "./helpers/confirm-settings";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 
-test("should redirect to /conversation after uploading a project zip", async ({
-  page,
-}) => {
+test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await page.evaluate(() => {
     localStorage.setItem("analytics-consent", "true");
     localStorage.setItem("SETTINGS_VERSION", "4");
   });
+});
 
+test("should redirect to /conversations after uploading a project zip", async ({
+  page,
+}) => {
   const fileInput = page.getByLabel("Upload a .zip");
   const filePath = path.join(dirname, "fixtures/project.zip");
   await fileInput.setInputFiles(filePath);
 
-  await page.waitForURL("/conversation");
+  await page.waitForURL(/\/conversations\/\d+/);
 });
 
-test("should redirect to /conversation after selecting a repo", async ({
+test("should redirect to /conversations after selecting a repo", async ({
   page,
 }) => {
-  await page.goto("/");
-  await confirmSettings(page);
-
   // enter a github token to view the repositories
   const connectToGitHubButton = page.getByRole("button", {
     name: /connect to github/i,
@@ -46,8 +44,7 @@ test("should redirect to /conversation after selecting a repo", async ({
   const repoItem = page.getByTestId("github-repo-item").first();
   await repoItem.click();
 
-  await page.waitForURL("/conversation");
-  expect(page.url()).toBe("http://localhost:3001/conversation");
+  await page.waitForURL(/\/conversations\/\d+/);
 });
 
 // FIXME: This fails because the MSW WS mocks change state too quickly,
@@ -55,9 +52,6 @@ test("should redirect to /conversation after selecting a repo", async ({
 test.skip("should redirect the user to /conversation with their initial query after selecting a project", async ({
   page,
 }) => {
-  await page.goto("/");
-  await confirmSettings(page);
-
   // enter query
   const testQuery = "this is my test query";
   const textbox = page.getByPlaceholder(/what do you want to build/i);
