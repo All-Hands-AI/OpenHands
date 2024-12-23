@@ -30,10 +30,10 @@ export default defineConfig(({ mode }) => {
       svgr(),
     ],
     resolve: {
-      alias: {
-        '@': '/src',
-        '#': '/src',
-      },
+      alias: [
+        { find: '@', replacement: '/workspace/OpenHands/frontend/src' },
+        { find: '#', replacement: '/workspace/OpenHands/frontend/src' },
+      ],
     },
     server: {
       port: FE_PORT,
@@ -72,12 +72,6 @@ export default defineConfig(({ mode }) => {
         reportsDirectory: "coverage",
         include: ["src/**/*.{ts,tsx}"],
       },
-    },
-    resolve: {
-      alias: [
-        { find: '@', replacement: '/workspace/OpenHands/frontend/src' },
-        { find: '#', replacement: '/workspace/OpenHands/frontend/src' },
-      ],
     },
   };
 });

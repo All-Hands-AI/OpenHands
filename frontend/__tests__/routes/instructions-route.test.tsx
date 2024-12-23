@@ -1,11 +1,17 @@
 import React from 'react';
 import { screen } from '@testing-library/react';
+import { expect, describe, it, vi, test } from 'vitest';
 import { renderWithProviders } from '../../test-utils';
 import InstructionsRoute from '../../src/routes/_oh.app.instructions/route';
 
 // Mock the InstructionsPanel component
-jest.mock('../../src/components/features/instructions/instructions-panel', () => ({
-  InstructionsPanel: ({ repoName, hasInstructions, tutorialUrl, onAddInstructions }) => (
+vi.mock('../../src/components/features/instructions/instructions-panel', () => ({
+  InstructionsPanel: ({ repoName, hasInstructions, tutorialUrl, onAddInstructions }: {
+    repoName: string;
+    hasInstructions: boolean;
+    tutorialUrl: string;
+    onAddInstructions: () => void;
+  }) => (
     <div data-testid="instructions-panel">
       <p>Repo: {repoName}</p>
       <p>Has Instructions: {hasInstructions.toString()}</p>
@@ -24,7 +30,7 @@ describe('InstructionsRoute', () => {
     };
 
     renderWithProviders(<InstructionsRoute />, {
-      preloadedState: initialState,
+      preloadedState: initialState as any,
     });
 
     expect(screen.getByTestId('instructions-panel')).toBeInTheDocument();

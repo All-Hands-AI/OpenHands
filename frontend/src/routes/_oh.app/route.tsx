@@ -28,7 +28,7 @@ import { Container } from "#/components/layout/container";
 import Security from "#/components/shared/modals/security/security";
 import { CountBadge } from "#/components/layout/count-badge";
 import { TerminalStatusLabel } from "#/components/features/terminal/terminal-status-label";
-import { InstructionsPanel } from "#/components/features/instructions/instructions-panel";
+// import { InstructionsPanel } from "#/components/features/instructions/instructions-panel";
 
 function AppContent() {
   const { gitHubToken } = useAuth();
@@ -95,7 +95,11 @@ function AppContent() {
                     to: "browser",
                     icon: <GlobeIcon />,
                   },
-                  { label: "Instructions", to: "instructions", icon: <InfoIcon /> },
+                  {
+                    label: "Instructions",
+                    to: "instructions",
+                    icon: <InfoIcon />,
+                  },
                 ]}
               >
                 <FilesProvider>
