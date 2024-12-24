@@ -4,6 +4,7 @@ import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
+import { openHands } from "#/api/open-hands-axios";
 
 interface GitHubRepositorySelectorProps {
   onSelect: () => void;
@@ -16,12 +17,48 @@ export function GitHubRepositorySelector({
 }: GitHubRepositorySelectorProps) {
   const { data: config } = useConfig();
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = React.useState<string>("");
+  const [searchedRepo, setSearchedRepo] = React.useState<GitHubRepository | null>(null);
 
-  // Add option to install app onto more repos
-  const finalRepositories =
-    config?.APP_MODE === "saas"
-      ? [{ id: -1000, full_name: "Add more repositories..." }, ...repositories]
-      : repositories;
+  React.useEffect(() => {
+    const searchPublicRepo = async () => {
+      if (searchQuery.trim()) {
+        try {
+          const response = await openHands.get<{ items: GitHubRepository[] }>("/api/github/search/repositories", {
+            params: {
+              q: searchQuery,
+              per_page: 1,
+              sort: "updated",
+              order: "desc"
+            }
+          });
+          if (response.data.items.length > 0) {
+            setSearchedRepo(response.data.items[0]);
+          } else {
+            setSearchedRepo(null);
+          }
+        } catch (error) {
+          console.error("Error searching repositories:", error);
+          setSearchedRepo(null);
+        }
+      } else {
+        setSearchedRepo(null);
+      }
+    };
+
+    const debounceTimeout = setTimeout(searchPublicRepo, 300);
+    return () => clearTimeout(debounceTimeout);
+  }, [searchQuery]);
+
+  // Add option to install app onto more repos and include searched repo if found
+  const finalRepositories = [
+    ...(config?.APP_MODE === "saas" ? [{ id: -1000, full_name: "Add more repositories..." }] : []),
+    ...(searchedRepo ? [{
+      ...searchedRepo,
+      full_name: `${searchedRepo.full_name} (${searchedRepo.stargazers_count}⭐)`
+    }] : []),
+    ...repositories
+  ];
 
   const dispatch = useDispatch();
 
@@ -74,6 +111,7 @@ export function GitHubRepositorySelector({
         },
       }}
       onSelectionChange={(id) => handleRepoSelection(id?.toString() ?? null)}
+      onInputChange={(value) => setSearchQuery(value)}
       clearButtonProps={{ onClick: handleClearSelection }}
       listboxProps={{
         emptyContent,
