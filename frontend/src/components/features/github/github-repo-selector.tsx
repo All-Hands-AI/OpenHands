@@ -18,20 +18,24 @@ export function GitHubRepositorySelector({
   const { data: config } = useConfig();
   const [selectedKey, setSelectedKey] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState<string>("");
-  const [searchedRepo, setSearchedRepo] = React.useState<GitHubRepository | null>(null);
+  const [searchedRepo, setSearchedRepo] =
+    React.useState<GitHubRepository | null>(null);
 
   React.useEffect(() => {
     const searchPublicRepo = async () => {
       if (searchQuery.trim()) {
         try {
-          const response = await openHands.get<{ items: GitHubRepository[] }>("/api/github/search/repositories", {
-            params: {
-              q: searchQuery,
-              per_page: 1,
-              sort: "updated",
-              order: "desc"
-            }
-          });
+          const response = await openHands.get<{ items: GitHubRepository[] }>(
+            "/api/github/search/repositories",
+            {
+              params: {
+                q: searchQuery,
+                per_page: 1,
+                sort: "updated",
+                order: "desc",
+              },
+            },
+          );
           if (response.data.items.length > 0) {
             setSearchedRepo(response.data.items[0]);
           } else {
@@ -52,12 +56,18 @@ export function GitHubRepositorySelector({
 
   // Add option to install app onto more repos and include searched repo if found
   const finalRepositories = [
-    ...(config?.APP_MODE === "saas" ? [{ id: -1000, full_name: "Add more repositories..." }] : []),
-    ...(searchedRepo ? [{
-      ...searchedRepo,
-      full_name: `${searchedRepo.full_name} (${searchedRepo.stargazers_count}⭐)`
-    }] : []),
-    ...repositories
+    ...(config?.APP_MODE === "saas"
+      ? [{ id: -1000, full_name: "Add more repositories..." }]
+      : []),
+    ...(searchedRepo
+      ? [
+          {
+            ...searchedRepo,
+            full_name: `${searchedRepo.full_name} (${searchedRepo.stargazers_count}⭐)`,
+          },
+        ]
+      : []),
+    ...repositories,
   ];
 
   const dispatch = useDispatch();
