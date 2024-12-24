@@ -1,0 +1,5 @@
+name: PostgresAgent
+description: Writes and maintains PostgreSQL migrations
+inputs:
+  task: string
+outputs: {}
