@@ -9,6 +9,7 @@ from openhands.core.config import AppConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.stream import EventStream, session_exists
+from openhands.runtime.runtime_manager import RuntimeManager
 from openhands.server.session.conversation import Conversation
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.session.session import ROOM_KEY, Session
@@ -32,6 +33,7 @@ class SessionManager:
     sio: socketio.AsyncServer
     config: AppConfig
     file_store: FileStore
+    runtime_manager: RuntimeManager
     _local_agent_loops_by_sid: dict[str, Session] = field(default_factory=dict)
     local_connection_id_to_session_id: dict[str, str] = field(default_factory=dict)
     _last_alive_timestamps: dict[str, float] = field(default_factory=dict)
@@ -310,7 +312,11 @@ class SessionManager:
         if not await self._is_agent_loop_running(sid):
             logger.info(f'start_agent_loop:{sid}')
             session = Session(
-                sid=sid, file_store=self.file_store, config=self.config, sio=self.sio
+                sid=sid,
+                file_store=self.file_store,
+                config=self.config,
+                sio=self.sio,
+                runtime_manager=self.runtime_manager,
             )
             self._local_agent_loops_by_sid[sid] = session
             await session.initialize_agent(conversation_init_data)

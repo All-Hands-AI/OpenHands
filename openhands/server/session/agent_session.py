@@ -4,7 +4,7 @@ from typing import Callable, Optional
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
-from openhands.core.config import AgentConfig, AppConfig, LLMConfig
+from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
@@ -13,9 +13,6 @@ from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.runtime.base import Runtime
 from openhands.runtime.runtime_manager import RuntimeManager
-from openhands.server.shared import config
-
-runtime_manager = RuntimeManager(config)
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_async_from_sync, call_sync_from_async
@@ -35,6 +32,7 @@ class AgentSession:
     sid: str
     event_stream: EventStream
     file_store: FileStore
+    runtime_manager: RuntimeManager
     controller: AgentController | None = None
     runtime: Runtime | None = None
     security_analyzer: SecurityAnalyzer | None = None
@@ -46,6 +44,7 @@ class AgentSession:
         self,
         sid: str,
         file_store: FileStore,
+        runtime_manager: RuntimeManager,
         status_callback: Optional[Callable] = None,
     ):
         """Initializes a new instance of the Session class
@@ -58,6 +57,7 @@ class AgentSession:
         self.sid = sid
         self.event_stream = EventStream(sid, file_store)
         self.file_store = file_store
+        self.runtime_manager = runtime_manager
         self._status_callback = status_callback
 
     async def start(
@@ -116,7 +116,9 @@ class AgentSession:
             logger.warning('Session closed before starting')
             return
         self._initializing = True
-        self._create_security_analyzer(runtime_manager.config.security.security_analyzer)
+        self._create_security_analyzer(
+            self.runtime_manager.config.security.security_analyzer
+        )
         await self._create_runtime(
             agent=agent,
             github_token=github_token,
@@ -125,7 +127,7 @@ class AgentSession:
 
         self.controller = self._create_controller(
             agent,
-            runtime_manager.config.security.confirmation_mode,
+            self.runtime_manager.config.security.confirmation_mode,
             max_iterations,
             max_budget_per_task=max_budget_per_task,
             agent_to_llm_config=agent_to_llm_config,
@@ -163,7 +165,7 @@ class AgentSession:
             end_state.save_to_session(self.sid, self.file_store)
             await self.controller.close()
         if self.runtime is not None:
-            runtime_manager.destroy_runtime(self.sid)
+            self.runtime_manager.destroy_runtime(self.sid)
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
 
@@ -206,7 +208,7 @@ class AgentSession:
         await asyncio.sleep(1)
 
         try:
-            self.runtime = await runtime_manager.create_runtime(
+            self.runtime = await self.runtime_manager.create_runtime(
                 event_stream=self.event_stream,
                 sid=self.sid,
                 plugins=agent.sandbox_plugins,

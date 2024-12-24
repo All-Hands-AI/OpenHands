@@ -21,7 +21,8 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
-from openhands.server.session.agent_session import AgentSession, runtime_manager
+from openhands.runtime.runtime_manager import RuntimeManager
+from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_init_data_filename
@@ -39,12 +40,14 @@ class Session:
     loop: asyncio.AbstractEventLoop
     config: AppConfig
     file_store: FileStore
+    runtime_manager: RuntimeManager
 
     def __init__(
         self,
         sid: str,
         config: AppConfig,
         file_store: FileStore,
+        runtime_manager: RuntimeManager,
         sio: socketio.AsyncServer | None,
     ):
         self.sid = sid
@@ -52,7 +55,10 @@ class Session:
         self.last_active_ts = int(time.time())
         self.file_store = file_store
         self.agent_session = AgentSession(
-            sid, file_store, status_callback=self.queue_status_message
+            sid,
+            file_store,
+            status_callback=self.queue_status_message,
+            runtime_manager=runtime_manager,
         )
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
@@ -130,7 +136,6 @@ class Session:
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
         try:
-            runtime_manager._config = self.config
             await self.agent_session.start(
                 agent=agent,
                 max_iterations=max_iterations,
