@@ -251,23 +251,14 @@ class OpenHands {
 
   static async newConversation(params: {
     githubToken?: string;
-    args?: Record<string, unknown>;
+    args?: Settings;
     selectedRepository?: string;
   }): Promise<{ conversation_id: string }> {
-    // Load stored settings first
-    const settings = await OpenHands.loadSettings();
-
-    // Merge stored settings with provided args, giving priority to provided args
-    const mergedArgs = {
-      ...(settings || {}),
-      ...(params.args || {}),
-    };
-
     const { data } = await openHands.post<{
       conversation_id: string;
     }>("/api/conversations", {
       github_token: params.githubToken,
-      args: mergedArgs,
+      args: params.args,
       selected_repository: params.selectedRepository,
     });
     return data;

@@ -1,4 +1,9 @@
 import { Settings } from "#/api/open-hands.types";
+import {
+  settingsAreUpToDate,
+  maybeMigrateSettings,
+  LATEST_SETTINGS_VERSION,
+} from "#/services/settings";
 
 const extractBasicFormData = (formData: FormData) => {
   const provider = formData.get("llm-provider")?.toString();
@@ -66,4 +71,25 @@ const extractSettings = (formData: FormData): Partial<Settings> => {
   };
 };
 
-export { extractSettings };
+const saveSettingsView = (view: "basic" | "advanced") => {
+  localStorage.setItem(
+    "use-advanced-options",
+    view === "advanced" ? "true" : "false",
+  );
+};
+
+/**
+ * Updates the settings version in local storage if the current settings are not up to date.
+ * If the settings are outdated, it attempts to migrate them before updating the version.
+ */
+const updateSettingsVersion = (logout: () => void) => {
+  if (!settingsAreUpToDate()) {
+    maybeMigrateSettings(logout);
+    localStorage.setItem(
+      "SETTINGS_VERSION",
+      LATEST_SETTINGS_VERSION.toString(),
+    );
+  }
+};
+
+export { extractSettings, updateSettingsVersion, saveSettingsView };
