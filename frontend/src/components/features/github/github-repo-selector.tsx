@@ -83,22 +83,20 @@ export function GitHubRepositorySelector({
         textValue.toLowerCase().includes(inputValue.toLowerCase())
       }
     >
-      {
-        config?.APP_MODE === "saas" &&
-          config?.APP_SLUG &&
-          ((
-            <AutocompleteItem key="install">
-              <a
-                href={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
-                target="_blank"
-                rel="noreferrer noopener"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Add more repositories...
-              </a>
-            </AutocompleteItem>
-          ) as any) // @ts-expect-error we need `any` here to make types happy
-      }
+      {config?.APP_MODE === "saas" &&
+        config?.APP_SLUG &&
+        ((
+          <AutocompleteItem key="install">
+            <a
+              href={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
+              target="_blank"
+              rel="noreferrer noopener"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Add more repositories...
+            </a>
+          </AutocompleteItem> // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ) as any)}
       {finalRepositories.map((repo) => (
         <AutocompleteItem
           data-testid="github-repo-item"
