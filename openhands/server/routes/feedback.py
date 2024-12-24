@@ -35,7 +35,7 @@ async def submit_feedback(request: Request, conversation_id: str):
     # and there is a function to handle the storage.
     body = await request.json()
     async_stream = AsyncEventStreamWrapper(
-        request.state.conversation.event_stream, filter_hidden=True
+        request.state.runtime.event_stream, filter_hidden=True
     )
     trajectory = []
     async for event in async_stream:

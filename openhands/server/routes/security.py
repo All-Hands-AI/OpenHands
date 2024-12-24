@@ -4,6 +4,9 @@ from fastapi import (
     Request,
 )
 
+from openhands.security import SecurityAnalyzer, options
+from openhands.server.shared import config
+
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
 
 
@@ -22,9 +25,10 @@ async def security_api(request: Request):
     Raises:
         HTTPException: If the security analyzer is not initialized.
     """
-    if not request.state.conversation.security_analyzer:
+    if not request.state.runtime:
         raise HTTPException(status_code=404, detail='Security analyzer not initialized')
+    security_analyzer = options.SecurityAnalyzers.get(
+        config.security.security_analyzer or '', SecurityAnalyzer
+    )(request.state.runtime.event_stream)
 
-    return await request.state.conversation.security_analyzer.handle_api_request(
-        request
-    )
+    return await security_analyzer.handle_api_request(request)

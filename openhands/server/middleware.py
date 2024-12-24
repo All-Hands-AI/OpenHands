@@ -11,7 +11,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
 from openhands.server.session import SessionManager
-from openhands.server.shared import config, file_store, sio
+from openhands.server.shared import config, file_store, runtime_manager, sio
 from openhands.server.types import SessionMiddlewareInterface
 
 session_manager = SessionManager(sio, config, file_store)
@@ -137,10 +137,17 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         """
         Attach the user's session based on the provided authentication token.
         """
-        request.state.conversation = await session_manager.attach_to_conversation(
-            request.state.sid
-        )
-        if not request.state.conversation:
+        request.state.runtime = runtime_manager.get_runtime(request.state.sid)
+        if request.state.runtime is None:
+            event_stream = await session_manager.get_event_stream(request.state.sid)
+            if event_stream:
+                request.state.runtime = await runtime_manager.create_runtime(
+                    event_stream=event_stream,
+                    sid=request.state.sid,
+                    attach_to_existing=True,
+                    headless_mode=False,
+                )
+        if not request.state.runtime:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
                 content={'error': 'Session not found'},
@@ -151,7 +158,7 @@ class AttachConversationMiddleware(SessionMiddlewareInterface):
         """
         Detach the user's session.
         """
-        await session_manager.detach_from_conversation(request.state.conversation)
+        pass
 
     async def __call__(self, request: Request, call_next: Callable):
         if not self._should_attach(request):

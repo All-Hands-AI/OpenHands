@@ -13,7 +13,7 @@ async def get_remote_runtime_config(request: Request):
 
     Currently, this is the session ID and runtime ID (if available).
     """
-    runtime = request.state.conversation.runtime
+    runtime = request.state.runtime
     runtime_id = runtime.runtime_id if hasattr(runtime, 'runtime_id') else None
     session_id = runtime.sid if hasattr(runtime, 'sid') else None
     return JSONResponse(
@@ -37,7 +37,7 @@ async def get_vscode_url(request: Request):
         JSONResponse: A JSON response indicating the success of the operation.
     """
     try:
-        runtime: Runtime = request.state.conversation.runtime
+        runtime: Runtime = request.state.runtime
         logger.debug(f'Runtime type: {type(runtime)}')
         logger.debug(f'Runtime VSCode URL: {runtime.vscode_url}')
         return JSONResponse(status_code=200, content={'vscode_url': runtime.vscode_url})
@@ -81,12 +81,12 @@ async def search_events(
         HTTPException: If conversation is not found
         ValueError: If limit is less than 1 or greater than 100
     """
-    if not request.state.conversation:
+    if not request.state.runtime:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='Conversation not found'
         )
     # Get matching events from the stream
-    event_stream = request.state.conversation.event_stream
+    event_stream = request.state.runtime.event_stream
     matching_events = event_stream.get_matching_events(
         query=query,
         event_type=event_type,
