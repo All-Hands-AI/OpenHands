@@ -309,12 +309,14 @@ jobs:
         run: |
           if [ "${{ steps.check_result.outputs.RESOLUTION_SUCCESS }}" == "true" ]; then
             cd /tmp && python -m openhands.resolver.send_pull_request \
+              --repo ${{ env.TARGET_REPO_OWNER }}/${{ env.TARGET_REPO_NAME }} \
               --issue-number ${{ env.ISSUE_NUMBER }} \
               --pr-type draft \
               --reviewer ${{ github.actor }} | tee pr_result.txt && \
               grep "draft created" pr_result.txt | sed 's/.*\///g' > pr_number.txt
           else
             cd /tmp && python -m openhands.resolver.send_pull_request \
+              --repo ${{ env.TARGET_REPO_OWNER }}/${{ env.TARGET_REPO_NAME }} \
               --issue-number ${{ env.ISSUE_NUMBER }} \
               --pr-type branch \
               --send-on-failure | tee branch_result.txt && \
@@ -408,13 +410,13 @@ jobs:
             if (success && prNumber) {
               github.rest.issues.createComment({
                 issue_number: issueNumber,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
+                owner: process.env.TARGET_REPO_OWNER,
+                repo: process.env.TARGET_REPO_NAME,
                 body: `A potential fix has been generated and a draft PR #${prNumber} has been created. Please review the changes.`
               });
               process.env.AGENT_RESPONDED = 'true';
             } else if (!success && branchName) {
-              let commentBody = `An attempt was made to automatically fix this issue, but it was unsuccessful. A branch named '${branchName}' has been created with the attempted changes. You can view the branch [here](https://github.com/${context.repo.owner}/${context.repo.repo}/tree/${branchName}). Manual intervention may be required.`;
+              let commentBody = `An attempt was made to automatically fix this issue, but it was unsuccessful. A branch named '${branchName}' has been created with the attempted changes. You can view the branch [here](https://github.com/${process.env.TARGET_REPO_OWNER}/${process.env.TARGET_REPO_NAME}/tree/${branchName}). Manual intervention may be required.`;
 
               if (resultExplanation) {
                 commentBody += `\n\nAdditional details about the failure:\n${resultExplanation}`;
@@ -422,8 +424,8 @@ jobs:
 
               github.rest.issues.createComment({
                 issue_number: issueNumber,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
+                owner: process.env.TARGET_REPO_OWNER,
+                repo: process.env.TARGET_REPO_NAME,
                 body: commentBody
               });
               process.env.AGENT_RESPONDED = 'true';
@@ -440,7 +442,7 @@ jobs:
 
             github.rest.issues.createComment({
               issue_number: issueNumber,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `The workflow to fix this issue encountered an error. Please check the [workflow logs](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}) for more information.`
+              owner: process.env.TARGET_REPO_OWNER,
+              repo: process.env.TARGET_REPO_NAME,
+              body: `The workflow to fix this issue encountered an error. Please check the [workflow logs](https://github.com/${process.env.TARGET_REPO_OWNER}/${process.env.TARGET_REPO_NAME}/actions/runs/${context.runId}) for more information.`
             });
