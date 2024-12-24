@@ -59,12 +59,16 @@ export function Sidebar() {
           <div className="w-[34px] h-[34px] flex items-center justify-center">
             <AllHandsLogoButton onClick={handleClickLogo} />
           </div>
-          { user.isLoading && <LoadingSpinner size="small" /> }
-          { !user.isLoading && (<UserActions
-            user={user.data ? { avatar_url: user.data.avatar_url } : undefined}
-            onLogout={logout}
-            onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
-          />) }
+          {user.isLoading && <LoadingSpinner size="small" />}
+          {!user.isLoading && (
+            <UserActions
+              user={
+                user.data ? { avatar_url: user.data.avatar_url } : undefined
+              }
+              onLogout={logout}
+              onClickAccountSettings={() => setAccountSettingsModalOpen(true)}
+            />
+          )}
           <SettingsButton onClick={() => setSettingsModalIsOpen(true)} />
           <DocsButton />
           <ExitProjectButton
