@@ -8,7 +8,7 @@ import { ModalBody } from "../modal-body";
 import { AvailableLanguages } from "#/i18n";
 import { I18nKey } from "#/i18n/declaration";
 import { useAuth } from "#/context/auth-context";
-import { useUserPrefs } from "#/context/user-prefs-context";
+import { useSettings } from "#/context/settings-context";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import { ModalButton } from "../../buttons/modal-button";
 import { CustomInput } from "../../custom-input";
@@ -30,7 +30,7 @@ export function AccountSettingsForm({
 }: AccountSettingsFormProps) {
   const { gitHubToken, setGitHubToken, logout } = useAuth();
   const { data: config } = useConfig();
-  const { saveSettings } = useUserPrefs();
+  const { saveSettings } = useSettings();
   const { t } = useTranslation();
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {

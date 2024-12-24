@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation } from "react-router";
 import { useAuth } from "#/context/auth-context";
-import { useUserPrefs } from "#/context/user-prefs-context";
+import { useSettings } from "#/context/settings-context";
 import { useGitHubUser } from "#/hooks/query/use-github-user";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { UserActions } from "./user-actions";
@@ -21,7 +21,7 @@ export function Sidebar() {
   const { data: isAuthed } = useIsAuthed();
 
   const { logout } = useAuth();
-  const { settingsAreUpToDate } = useUserPrefs();
+  const { settingsAreUpToDate } = useSettings();
 
   const [accountSettingsModalOpen, setAccountSettingsModalOpen] =
     React.useState(false);
