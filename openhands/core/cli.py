@@ -35,8 +35,8 @@ from openhands.events.observation import (
     NullObservation,
 )
 from openhands.llm.llm import LLM
-from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
+from openhands.runtime.runtime_manager import RuntimeManager
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage import get_file_store
 
@@ -125,9 +125,8 @@ async def main():
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(sid, file_store)
 
-    runtime_cls = get_runtime_cls(config.runtime)
-    runtime: Runtime = runtime_cls(  # noqa: F841
-        config=config,
+    runtime_manager = RuntimeManager(config)
+    runtime: Runtime = await runtime_manager.create_runtime(
         event_stream=event_stream,
         sid=sid,
         plugins=agent_cls.sandbox_plugins,
