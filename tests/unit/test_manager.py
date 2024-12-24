@@ -242,7 +242,13 @@ async def test_add_to_cluster_event_stream():
 @pytest.mark.asyncio
 async def test_cleanup_session_connections():
     sio = get_mock_sio()
-    with patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.01):
+    with (
+        patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.01),
+        patch(
+            'openhands.server.session.manager.SessionManager._redis_subscribe',
+            AsyncMock(),
+        ),
+    ):
         async with SessionManager(
             sio, AppConfig(), InMemoryFileStore()
         ) as session_manager:
