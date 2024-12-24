@@ -167,7 +167,7 @@ class SessionManager:
                 return conversation
 
             # Create new conversation if none exists
-            c = Conversation(sid, file_store=self.file_store, config=self.config, runtime_manager=self.runtime_manager)
+            c = Conversation(sid, file_store=self.file_store, config=self.config)
             try:
                 await c.connect()
             except AgentRuntimeUnavailableError as e:
