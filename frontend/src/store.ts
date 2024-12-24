@@ -12,7 +12,7 @@ import statusReducer from "./state/status-slice";
 
 export const rootReducer = combineReducers({
   fileState: fileStateReducer,
-  initalQuery: initialQueryReducer,
+  initialQuery: initialQueryReducer,
   browser: browserReducer,
   chat: chatReducer,
   code: codeReducer,

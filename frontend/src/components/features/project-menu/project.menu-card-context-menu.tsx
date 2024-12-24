@@ -7,7 +7,6 @@ import { I18nKey } from "#/i18n/declaration";
 interface ProjectMenuCardContextMenuProps {
   isConnectedToGitHub: boolean;
   onConnectToGitHub: () => void;
-  onPushToGitHub: () => void;
   onDownloadWorkspace: () => void;
   onClose: () => void;
 }
@@ -15,7 +14,6 @@ interface ProjectMenuCardContextMenuProps {
 export function ProjectMenuCardContextMenu({
   isConnectedToGitHub,
   onConnectToGitHub,
-  onPushToGitHub,
   onDownloadWorkspace,
   onClose,
 }: ProjectMenuCardContextMenuProps) {
@@ -29,11 +27,6 @@ export function ProjectMenuCardContextMenu({
       {!isConnectedToGitHub && (
         <ContextMenuListItem onClick={onConnectToGitHub}>
           {t(I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$CONNECT_TO_GITHUB_LABEL)}
-        </ContextMenuListItem>
-      )}
-      {isConnectedToGitHub && (
-        <ContextMenuListItem onClick={onPushToGitHub}>
-          {t(I18nKey.PROJECT_MENU_CARD_CONTEXT_MENU$PUSH_TO_GITHUB_LABEL)}
         </ContextMenuListItem>
       )}
       <ContextMenuListItem onClick={onDownloadWorkspace}>

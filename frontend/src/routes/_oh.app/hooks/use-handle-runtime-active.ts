@@ -25,7 +25,7 @@ export const useHandleRuntimeActive = () => {
   const runtimeActive = !RUNTIME_INACTIVE_STATES.includes(curAgentState);
 
   const { importedProjectZip } = useSelector(
-    (state: RootState) => state.initalQuery,
+    (state: RootState) => state.initialQuery,
   );
 
   const userId = React.useMemo(() => {
