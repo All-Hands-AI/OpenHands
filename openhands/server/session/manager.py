@@ -300,7 +300,6 @@ class SessionManager:
     async def _cleanup_session(self, sid: str) -> bool:
         # Get local connections
         logger.info(f'_cleanup_session:{sid}')
-        await call_sync_from_async(runtime_manager.destroy_runtime, sid)
         has_local_connections = next(
             (True for v in self.local_connection_id_to_session_id.values() if v == sid),
             False,
@@ -313,6 +312,7 @@ class SessionManager:
         if redis_client and await self._has_remote_connections(sid):
             return False
 
+        await call_sync_from_async(runtime_manager.destroy_runtime, sid)
         # We alert the cluster in case they are interested
         if redis_client:
             await redis_client.publish(
