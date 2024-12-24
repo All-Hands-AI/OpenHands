@@ -54,7 +54,9 @@ class RuntimeManager(metaclass=Singleton):
             raise
 
         self._runtimes[sid] = runtime
-        logger.info(f'Created runtime with ID: {sid}')
+        logger.info(
+            f'Created runtime with ID: {sid}. There are now {len(self._runtimes)} runtimes active.'
+        )
         return runtime
 
     def get_runtime(self, sid: str) -> Optional[Runtime]:
