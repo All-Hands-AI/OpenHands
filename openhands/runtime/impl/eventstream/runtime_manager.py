@@ -15,6 +15,7 @@ from openhands.core.exceptions import (
 from openhands.core.logger import DEBUG, openhands_logger as logger
 from openhands.runtime.plugins import PluginRequirement, VSCodeRequirement
 from openhands.runtime.container import ContainerInfo
+from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.runtime_manager import RuntimeManager
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.log_streamer import LogStreamer
@@ -39,6 +40,7 @@ class EventStreamRuntimeManager(RuntimeManager):
 
         self._containers: Dict[str, ContainerInfo] = {}
         self._docker_client = self._init_docker_client()
+        self._runtime_builder: DockerRuntimeBuilder = DockerRuntimeBuilder(self._docker_client)
 
     @staticmethod
     @functools.lru_cache(maxsize=1)
@@ -50,6 +52,10 @@ class EventStreamRuntimeManager(RuntimeManager):
                 'Launch docker client failed. Please make sure you have installed docker and started docker desktop/daemon.',
             )
             raise ex
+
+    def get_runtime_builder(self) -> DockerRuntimeBuilder:
+        """Get the runtime builder for this manager."""
+        return self._runtime_builder
 
     def _is_port_in_use_docker(self, port):
         containers = self._docker_client.containers.list()
