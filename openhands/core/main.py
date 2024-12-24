@@ -28,6 +28,7 @@ from openhands.events.serialization.event import event_to_trajectory
 from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
+from openhands.runtime.runtime_manager import RuntimeManager
 from openhands.storage import get_file_store
 
 
