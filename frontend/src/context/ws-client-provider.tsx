@@ -42,9 +42,6 @@ export function WsClientProvider({
 }: React.PropsWithChildren<WsClientProviderProps>) {
   const sioRef = React.useRef<Socket | null>(null);
   const ghTokenRef = React.useRef<string | null>(ghToken);
-  const disconnectRef = React.useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
   const [status, setStatus] = React.useState(
     WsClientProviderStatus.DISCONNECTED,
   );
@@ -91,6 +88,7 @@ export function WsClientProvider({
       throw new Error("No conversation ID provided");
     }
 
+
     let sio = sioRef.current;
 
     const lastEvent = lastEventRef.current;
@@ -127,22 +125,13 @@ export function WsClientProvider({
     };
   }, [ghToken, conversationId]);
 
-  // Strict mode mounts and unmounts each component twice, so we have to wait in the destructor
-  // before actually disconnecting the socket and cancel the operation if the component gets remounted.
   React.useEffect(() => {
-    const timeout = disconnectRef.current;
-    if (timeout != null) {
-      clearTimeout(timeout);
-    }
-
     return () => {
-      disconnectRef.current = setTimeout(() => {
-        const sio = sioRef.current;
-        if (sio) {
-          sio.off("disconnect", handleDisconnect);
-          sio.disconnect();
-        }
-      }, 100);
+      const sio = sioRef.current;
+      if (sio) {
+        sio.off("disconnect", handleDisconnect);
+        sio.disconnect();
+      }
     };
   }, []);
 
