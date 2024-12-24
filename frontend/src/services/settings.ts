@@ -1,14 +1,7 @@
 import OpenHands from "#/api/open-hands";
+import { Settings } from "#/api/open-hands.types";
 
-export type Settings = {
-  llm_model: string;
-  llm_base_url: string;
-  agent: string;
-  language: string;
-  llm_api_key: string;
-  confirmation_mode: boolean;
-  security_analyzer: string;
-};
+export const LATEST_SETTINGS_VERSION = 4;
 
 export const DEFAULT_SETTINGS: Settings = {
   llm_model: "anthropic/claude-3-5-sonnet-20241022",
@@ -19,6 +12,19 @@ export const DEFAULT_SETTINGS: Settings = {
   confirmation_mode: false,
   security_analyzer: "",
 };
+
+export const getCurrentSettingsVersion = () => {
+  const settingsVersion = localStorage.getItem("SETTINGS_VERSION");
+  if (!settingsVersion) return 0;
+  try {
+    return parseInt(settingsVersion, 10);
+  } catch (e) {
+    return 0;
+  }
+};
+
+export const settingsAreUpToDate = () =>
+  getCurrentSettingsVersion() === LATEST_SETTINGS_VERSION;
 
 /**
  * Get the default settings
@@ -37,7 +43,9 @@ export const getSettings = async (): Promise<Settings> => {
  * Save the settings to the backend
  * @param settings - the settings to save
  */
-export const saveSettings = async (settings: Partial<Settings>): Promise<void> => {
+export const saveSettings = async (
+  settings: Partial<Settings>,
+): Promise<void> => {
   const currentSettings = await getSettings();
   const newSettings = {
     ...currentSettings,

@@ -8,6 +8,7 @@ import {
   GetConfigResponse,
   GetVSCodeUrlResponse,
   AuthenticateResponse,
+  Settings,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 
@@ -255,7 +256,7 @@ class OpenHands {
   }): Promise<{ conversation_id: string }> {
     // Load stored settings first
     const settings = await OpenHands.loadSettings();
-    
+
     // Merge stored settings with provided args, giving priority to provided args
     const mergedArgs = {
       ...(settings || {}),
