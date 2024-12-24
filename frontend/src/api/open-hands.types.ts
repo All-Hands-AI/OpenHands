@@ -63,7 +63,7 @@ export interface Settings {
   AGENT?: string;
   MAX_ITERATIONS?: number;
   SECURITY_ANALYZER?: string;
-  CONFIRMATION_MODEL?: boolean;
+  CONFIRMATION_MODE?: boolean;
   LLM_MODEL?: string;
   LLM_API_KEY?: string;
   LLM_BASE_URL?: string;

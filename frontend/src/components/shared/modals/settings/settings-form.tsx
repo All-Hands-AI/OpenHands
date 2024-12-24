@@ -64,7 +64,7 @@ export function SettingsForm({
         organizedModels[provider].models.includes(model);
 
       const isUsingSecurityAnalyzer = !!settings.SECURITY_ANALYZER;
-      const isUsingConfirmationMode = !!settings.CONFIRMATION_MODEL;
+      const isUsingConfirmationMode = !!settings.CONFIRMATION_MODE;
       const isUsingBaseUrl = !!settings.LLM_BASE_URL;
       const isUsingCustomModel = !!settings.LLM_MODEL && !isKnownModel;
 

@@ -9,7 +9,7 @@ export const DEFAULT_SETTINGS: Settings = {
   AGENT: "CodeActAgent",
   LANGUAGE: "en",
   LLM_API_KEY: "",
-  CONFIRMATION_MODEL: false,
+  CONFIRMATION_MODE: false,
   SECURITY_ANALYZER: "",
 };
 
