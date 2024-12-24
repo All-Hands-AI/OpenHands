@@ -10,8 +10,11 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
-from openhands.server.shared import session_manager
+from openhands.server.session import SessionManager
+from openhands.server.shared import config, file_store, sio
 from openhands.server.types import SessionMiddlewareInterface
+
+session_manager = SessionManager(sio, config, file_store)
 
 
 class LocalhostCORSMiddleware(CORSMiddleware):
