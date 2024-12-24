@@ -88,7 +88,6 @@ export function WsClientProvider({
       throw new Error("No conversation ID provided");
     }
 
-
     let sio = sioRef.current;
 
     const lastEvent = lastEventRef.current;
@@ -125,15 +124,16 @@ export function WsClientProvider({
     };
   }, [ghToken, conversationId]);
 
-  React.useEffect(() => {
-    return () => {
+  React.useEffect(
+    () => () => {
       const sio = sioRef.current;
       if (sio) {
         sio.off("disconnect", handleDisconnect);
         sio.disconnect();
       }
-    };
-  }, []);
+    },
+    [],
+  );
 
   const value = React.useMemo<UseWsClient>(
     () => ({
