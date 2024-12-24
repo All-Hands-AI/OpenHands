@@ -5,7 +5,7 @@ import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { ExplorerTree } from "#/components/features/file-explorer/explorer-tree";
 import toast from "#/utils/toast";
 import { RootState } from "#/store";
-import { I18nKey } from "#/i18n/declaration";
+import { I18nKey } from "@/i18n/declaration";
 import { useListFiles } from "#/hooks/query/use-list-files";
 import { FileUploadSuccessResponse } from "#/api/open-hands.types";
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";

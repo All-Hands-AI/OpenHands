@@ -1,6 +1,6 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { renderWithProviders } from "test-utils";
+import { renderWithProviders } from "../../test-utils";
 import { vi, describe, afterEach, it, expect } from "vitest";
 import TreeNode from "#/components/features/file-explorer/tree-node";
 import OpenHands from "#/api/open-hands";

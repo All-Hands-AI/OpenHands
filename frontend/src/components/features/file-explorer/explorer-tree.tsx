@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import TreeNode from "./tree-node";
-import { I18nKey } from "#/i18n/declaration";
+import { I18nKey } from "@/i18n/declaration";
 
 interface ExplorerTreeProps {
   files: string[] | null;

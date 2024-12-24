@@ -12,7 +12,7 @@ vi.mock("react-router", async () => {
 
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { renderWithProviders } from "test-utils";
+import { renderWithProviders } from "../../test-utils";
 import { FeedbackForm } from "#/components/features/feedback/feedback-form";
 
 describe("FeedbackForm", () => {

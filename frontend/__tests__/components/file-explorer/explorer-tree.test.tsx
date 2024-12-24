@@ -1,5 +1,5 @@
 import { screen } from "@testing-library/react";
-import { renderWithProviders } from "test-utils";
+import { renderWithProviders } from "../../test-utils";
 import { describe, afterEach, vi, it, expect } from "vitest";
 import { ExplorerTree } from "#/components/features/file-explorer/explorer-tree";
 

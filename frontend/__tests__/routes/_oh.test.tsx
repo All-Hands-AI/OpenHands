@@ -2,7 +2,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import * as router from "react-router";
 import { createRoutesStub } from "react-router";
 import { screen, waitFor, within } from "@testing-library/react";
-import { renderWithProviders } from "test-utils";
+import { renderWithProviders } from "../test-utils";
 import userEvent from "@testing-library/user-event";
 import MainApp from "#/routes/_oh/route";
 import i18n from "#/i18n";

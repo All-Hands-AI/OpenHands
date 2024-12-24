@@ -35,11 +35,10 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
-    "baseUrl": ".",
+    "baseUrl": "src",
     "paths": {
-      "#/*": [
-        "./src/*"
-      ]
+      "#/*": ["./*"],
+      "@/*": ["./*"]
     },
     // Vite takes care of building everything, not tsc.
     "noEmit": true

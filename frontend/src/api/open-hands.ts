@@ -12,28 +12,16 @@ import {
 import { openHands } from "./open-hands-axios";
 
 class OpenHands {
-  /**
-   * Retrieve the list of models available
-   * @returns List of models available
-   */
   static async getModels(): Promise<string[]> {
     const { data } = await openHands.get<string[]>("/api/options/models");
     return data;
   }
 
-  /**
-   * Retrieve the list of agents available
-   * @returns List of agents available
-   */
   static async getAgents(): Promise<string[]> {
     const { data } = await openHands.get<string[]>("/api/options/agents");
     return data;
   }
 
-  /**
-   * Retrieve the list of security analyzers available
-   * @returns List of security analyzers available
-   */
   static async getSecurityAnalyzers(): Promise<string[]> {
     const { data } = await openHands.get<string[]>(
       "/api/options/security-analyzers",
@@ -50,6 +38,7 @@ class OpenHands {
 
   /**
    * Retrieve the list of files available in the workspace
+   * @param conversationId Conversation ID
    * @param path Path to list files from
    * @returns List of files available in the given path. If path is not provided, it lists all the files in the workspace
    */
@@ -66,6 +55,7 @@ class OpenHands {
 
   /**
    * Retrieve the content of a file
+   * @param conversationId Conversation ID
    * @param path Full path of the file to retrieve
    * @returns Content of the file
    */
@@ -78,12 +68,6 @@ class OpenHands {
     return data.code;
   }
 
-  /**
-   * Save the content of a file
-   * @param path Full path of the file to save
-   * @param content Content to save in the file
-   * @returns Success message or error message
-   */
   static async saveFile(
     conversationId: string,
     path: string,
@@ -102,8 +86,9 @@ class OpenHands {
   }
 
   /**
-   * Upload a file to the workspace
-   * @param file File to upload
+   * Upload files to the workspace
+   * @param conversationId Conversation ID
+   * @param files Files to upload
    * @returns Success message or error message
    */
   static async uploadFiles(
@@ -124,7 +109,8 @@ class OpenHands {
 
   /**
    * Send feedback to the server
-   * @param data Feedback data
+   * @param conversationId Conversation ID
+   * @param feedback Feedback data
    * @returns The stored feedback data
    */
   static async submitFeedback(
@@ -136,10 +122,6 @@ class OpenHands {
     return data;
   }
 
-  /**
-   * Authenticate with GitHub token
-   * @returns Response with authentication status and user info if successful
-   */
   static async authenticate(
     appMode: GetConfigResponse["APP_MODE"],
   ): Promise<boolean> {
@@ -152,6 +134,8 @@ class OpenHands {
 
   /**
    * Refresh Github Token
+   * @param appMode Application mode
+   * @param userId User ID
    * @returns Refreshed Github access token
    */
   static async refreshToken(
@@ -171,6 +155,7 @@ class OpenHands {
 
   /**
    * Get the blob of the workspace zip
+   * @param conversationId Conversation ID
    * @returns Blob of the workspace zip
    */
   static async getWorkspaceZip(conversationId: string): Promise<Blob> {
@@ -181,10 +166,6 @@ class OpenHands {
     return response.data;
   }
 
-  /**
-   * @param code Code provided by GitHub
-   * @returns GitHub access token
-   */
   static async getGitHubAccessToken(
     code: string,
   ): Promise<GitHubAccessTokenResponse> {
@@ -199,6 +180,7 @@ class OpenHands {
 
   /**
    * Get the VSCode URL
+   * @param conversationId Conversation ID
    * @returns VSCode URL
    */
   static async getVSCodeUrl(

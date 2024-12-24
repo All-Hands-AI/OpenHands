@@ -6,7 +6,7 @@ import {
 } from "../confirmation-modals/base-modal";
 import { ModalBody } from "../modal-body";
 import { AvailableLanguages } from "#/i18n";
-import { I18nKey } from "#/i18n/declaration";
+import { I18nKey } from "@/i18n/declaration";
 import { useAuth } from "#/context/auth-context";
 import { useUserPrefs } from "#/context/user-prefs-context";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";

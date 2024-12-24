@@ -29,6 +29,12 @@ export default defineConfig(({ mode }) => {
       viteTsconfigPaths(),
       svgr(),
     ],
+    resolve: {
+      alias: [
+        { find: '@', replacement: '/workspace/OpenHands/frontend/src' },
+        { find: '#', replacement: '/workspace/OpenHands/frontend/src' },
+      ],
+    },
     server: {
       port: FE_PORT,
       proxy: {

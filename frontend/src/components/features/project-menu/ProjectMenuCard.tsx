@@ -8,7 +8,11 @@ import { ProjectMenuDetails } from "./project-menu-details";
 import { useWsClient } from "#/context/ws-client-provider";
 import { ConnectToGitHubModal } from "#/components/shared/modals/connect-to-github-modal";
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
+import { InstructionsPanel } from "../instructions/instructions-panel";
+import { MicroagentsPanel } from "../microagents/microagents-panel";
+import { CreateInstructionsModal } from "../../shared/modals/instructions/create-instructions-modal";
 import { DownloadModal } from "#/components/shared/download-modal";
+import { LoadingSpinner } from "#/components/shared/loading-spinner";
 
 interface ProjectMenuCardProps {
   isConnectedToGitHub: boolean;
@@ -28,6 +32,11 @@ export function ProjectMenuCard({
   const [contextMenuIsOpen, setContextMenuIsOpen] = React.useState(false);
   const [connectToGitHubModalOpen, setConnectToGitHubModalOpen] =
     React.useState(false);
+  const [working] = React.useState(false);
+  const [createInstructionsModalOpen, setCreateInstructionsModalOpen] =
+    React.useState(false);
+  const [hasInstructions, setHasInstructions] = React.useState(false);
+  const [hasMicroagents, setHasMicroagents] = React.useState(false);
   const [downloading, setDownloading] = React.useState(false);
 
   const toggleMenuVisibility = () => {
@@ -63,50 +72,104 @@ Please push the changes to GitHub and open a pull request.
     setDownloading(false);
   };
 
+  const handleAddInstructions = () => {
+    posthog.capture("add_instructions_button_clicked");
+    setCreateInstructionsModalOpen(true);
+  };
+
+  const handleAddTemporaryMicroagent = () => {
+    posthog.capture("add_temporary_microagent_button_clicked");
+    // TODO: Implement temporary microagent creation
+  };
+
+  const handleAddPermanentMicroagent = () => {
+    posthog.capture("add_permanent_microagent_button_clicked");
+    // TODO: Implement permanent microagent creation
+  };
+
   return (
-    <div className="px-4 py-[10px] w-[337px] rounded-xl border border-[#525252] flex justify-between items-center relative">
-      {!downloading && contextMenuIsOpen && (
-        <ProjectMenuCardContextMenu
-          isConnectedToGitHub={isConnectedToGitHub}
-          onConnectToGitHub={() => setConnectToGitHubModalOpen(true)}
-          onPushToGitHub={handlePushToGitHub}
-          onDownloadWorkspace={handleDownloadWorkspace}
-          onClose={() => setContextMenuIsOpen(false)}
-        />
-      )}
-      {githubData && (
-        <ProjectMenuDetails
-          repoName={githubData.repoName}
-          avatar={githubData.avatar}
-          lastCommit={githubData.lastCommit}
-        />
-      )}
-      {!githubData && (
-        <ProjectMenuDetailsPlaceholder
-          isConnectedToGitHub={isConnectedToGitHub}
-          onConnectToGitHub={() => setConnectToGitHubModalOpen(true)}
-        />
-      )}
-      <DownloadModal
-        initialPath=""
-        onClose={handleDownloadClose}
-        isOpen={downloading}
-      />
-      {!downloading && (
-        <button
-          type="button"
-          onClick={toggleMenuVisibility}
-          aria-label="Open project menu"
-        >
-          <EllipsisH width={36} height={36} />
-        </button>
-      )}
-      {connectToGitHubModalOpen && (
-        <ModalBackdrop onClose={() => setConnectToGitHubModalOpen(false)}>
-          <ConnectToGitHubModal
-            onClose={() => setConnectToGitHubModalOpen(false)}
+    <div className="flex flex-col gap-4">
+      <div className="px-4 py-[10px] w-[337px] rounded-xl border border-[#525252] flex justify-between items-center relative">
+        {!working && !downloading && contextMenuIsOpen && (
+          <ProjectMenuCardContextMenu
+            isConnectedToGitHub={isConnectedToGitHub}
+            onConnectToGitHub={() => setConnectToGitHubModalOpen(true)}
+            onPushToGitHub={handlePushToGitHub}
+            onDownloadWorkspace={handleDownloadWorkspace}
+            onViewInstructions={() => setHasInstructions(true)}
+            onAddInstructions={handleAddInstructions}
+            onViewMicroagents={() => setHasMicroagents(true)}
+            onAddTemporaryMicroagent={handleAddTemporaryMicroagent}
+            onAddPermanentMicroagent={handleAddPermanentMicroagent}
+            onClose={() => setContextMenuIsOpen(false)}
           />
-        </ModalBackdrop>
+        )}
+        {githubData && (
+          <ProjectMenuDetails
+            repoName={githubData.repoName}
+            avatar={githubData.avatar}
+            lastCommit={githubData.lastCommit}
+          />
+        )}
+        {!githubData && (
+          <ProjectMenuDetailsPlaceholder
+            isConnectedToGitHub={isConnectedToGitHub}
+            onConnectToGitHub={() => setConnectToGitHubModalOpen(true)}
+          />
+        )}
+        <DownloadModal
+          initialPath=""
+          onClose={handleDownloadClose}
+          isOpen={downloading}
+        />
+        {!downloading && (
+          <button
+            type="button"
+            onClick={toggleMenuVisibility}
+            aria-label="Open project menu"
+          >
+            {working ? (
+              <LoadingSpinner size="small" />
+            ) : (
+              <EllipsisH width={36} height={36} />
+            )}
+          </button>
+        )}
+        {connectToGitHubModalOpen && (
+          <ModalBackdrop onClose={() => setConnectToGitHubModalOpen(false)}>
+            <ConnectToGitHubModal
+              onClose={() => setConnectToGitHubModalOpen(false)}
+            />
+          </ModalBackdrop>
+        )}
+      </div>
+
+      {githubData && (
+        <>
+          <InstructionsPanel
+            repoName={githubData.repoName}
+            hasInstructions={hasInstructions}
+            tutorialUrl={`https://github.com/${githubData.repoName}/blob/main/.openhands_instructions`}
+            onAddInstructions={handleAddInstructions}
+          />
+          <MicroagentsPanel
+            repoName={githubData.repoName}
+            hasMicroagents={hasMicroagents}
+            onAddTemporary={handleAddTemporaryMicroagent}
+            onAddPermanent={handleAddPermanentMicroagent}
+          />
+        </>
+      )}
+
+      {createInstructionsModalOpen && (
+        <CreateInstructionsModal
+          repoName={githubData?.repoName || ""}
+          onClose={() => setCreateInstructionsModalOpen(false)}
+          onCreateInstructions={() => {
+            // TODO: Implement instructions creation
+            setCreateInstructionsModalOpen(false);
+          }}
+        />
       )}
     </div>
   );
