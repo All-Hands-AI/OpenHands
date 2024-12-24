@@ -427,8 +427,8 @@ class SessionManager:
         # Clear up local variables
         connection_ids_to_remove = list(
             connection_id
-            for connection_id, sid in self.local_connection_id_to_session_id.items()
-            if sid == sid
+            for connection_id, conn_sid in self.local_connection_id_to_session_id.items()
+            if sid == conn_sid
         )
         logger.info(f'removing connections: {connection_ids_to_remove}')
         for connnnection_id in connection_ids_to_remove:
