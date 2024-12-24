@@ -25,6 +25,26 @@ on:
         type: string
         default: ""
         description: "Custom sandbox env"
+      issue_number:
+        required: false
+        type: string
+        description: "Issue number to process"
+      issue_type:
+        required: false
+        type: string
+        description: "Type of issue (issue or pr)"
+      target_repo_owner:
+        required: false
+        type: string
+        description: "Owner of the target repository"
+      target_repo_name:
+        required: false
+        type: string
+        description: "Name of the target repository"
+      comment_id:
+        required: false
+        type: string
+        description: "ID of the comment to update with progress"
     secrets:
       LLM_MODEL:
         required: false
@@ -36,6 +56,34 @@ on:
         required: false
       PAT_USERNAME:
         required: false
+
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        required: false
+        type: string
+        default: "main"
+        description: "Target branch to pull and create PR against"
+      issue_number:
+        required: true
+        type: string
+        description: "Issue number to process"
+      issue_type:
+        required: true
+        type: string
+        description: "Type of issue (issue or pr)"
+      target_repo_owner:
+        required: true
+        type: string
+        description: "Owner of the target repository"
+      target_repo_name:
+        required: true
+        type: string
+        description: "Name of the target repository"
+      comment_id:
+        required: false
+        type: string
+        description: "ID of the comment to update with progress"
 
   issues:
     types: [labeled]
@@ -57,6 +105,7 @@ jobs:
   auto-fix:
     if: |
       github.event_name == 'workflow_call' ||
+      github.event_name == 'workflow_dispatch' ||
       github.event.label.name == 'fix-me' ||
       github.event.label.name == 'fix-me-experimental' ||
       (
@@ -153,19 +202,23 @@ jobs:
             echo "ISSUE_TYPE=pr" >> $GITHUB_ENV
           # Handle regular issue events
           else
-            echo "ISSUE_NUMBER=${{ github.event.issue.number }}" >> $GITHUB_ENV
-            echo "ISSUE_TYPE=issue" >> $GITHUB_ENV
+            echo "ISSUE_NUMBER=${{ inputs.issue_number || github.event.issue.number }}" >> $GITHUB_ENV
+            echo "ISSUE_TYPE=${{ inputs.issue_type || 'issue' }}" >> $GITHUB_ENV
           fi
 
           if [ -n "${{ github.event.review.body }}" ]; then
             echo "COMMENT_ID=${{ github.event.review.id || 'None' }}" >> $GITHUB_ENV
           else
-            echo "COMMENT_ID=${{ github.event.comment.id || 'None' }}" >> $GITHUB_ENV
+            echo "COMMENT_ID=${{ inputs.comment_id || github.event.comment.id || 'None' }}" >> $GITHUB_ENV
           fi
 
           echo "MAX_ITERATIONS=${{ inputs.max_iterations || 50 }}" >> $GITHUB_ENV
           echo "SANDBOX_ENV_GITHUB_TOKEN=${{ secrets.PAT_TOKEN || github.token }}" >> $GITHUB_ENV
           echo "SANDBOX_ENV_BASE_CONTAINER_IMAGE=${{ inputs.base_container_image }}" >> $GITHUB_ENV
+
+          # Set repository variables
+          echo "TARGET_REPO_OWNER=${{ inputs.target_repo_owner || github.repository_owner }}" >> $GITHUB_ENV
+          echo "TARGET_REPO_NAME=${{ inputs.target_repo_name || github.event.repository.name }}" >> $GITHUB_ENV
 
           # Set branch variables
           echo "TARGET_BRANCH=${{ inputs.target_branch }}" >> $GITHUB_ENV
@@ -178,9 +231,9 @@ jobs:
             const issueType = process.env.ISSUE_TYPE;
             github.rest.issues.createComment({
               issue_number: ${{ env.ISSUE_NUMBER }},
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `[OpenHands](https://github.com/All-Hands-AI/OpenHands) started fixing the ${issueType}! You can monitor the progress [here](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`
+              owner: process.env.TARGET_REPO_OWNER,
+              repo: process.env.TARGET_REPO_NAME,
+              body: `[OpenHands](https://github.com/All-Hands-AI/OpenHands) started fixing the ${issueType}! You can monitor the progress [here](https://github.com/${process.env.TARGET_REPO_OWNER}/${process.env.TARGET_REPO_NAME}/actions/runs/${context.runId}).`
             });
 
       - name: Install OpenHands
@@ -221,7 +274,7 @@ jobs:
           PYTHONPATH: ""
         run: |
           cd /tmp && python -m openhands.resolver.resolve_issue \
-            --repo ${{ github.repository }} \
+            --repo ${{ env.TARGET_REPO_OWNER }}/${{ env.TARGET_REPO_NAME }} \
             --issue-number ${{ env.ISSUE_NUMBER }} \
             --issue-type ${{ env.ISSUE_TYPE }} \
             --max-iterations ${{ env.MAX_ITERATIONS }} \
