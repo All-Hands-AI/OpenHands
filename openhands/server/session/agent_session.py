@@ -171,8 +171,6 @@ class AgentSession:
             end_state.save_to_session(self.sid, self.file_store)
             await self.controller.close()
         if self.runtime is not None:
-            from openhands.runtime.runtime_manager import RuntimeManager
-
             runtime_manager = RuntimeManager()
             runtime_manager.destroy_runtime(self.sid)
         if self.security_analyzer is not None:
