@@ -8,6 +8,7 @@ import {
   GetConfigResponse,
   GetVSCodeUrlResponse,
   AuthenticateResponse,
+  Settings,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 
@@ -250,7 +251,7 @@ class OpenHands {
 
   static async newConversation(params: {
     githubToken?: string;
-    args?: Record<string, unknown>;
+    args?: Settings;
     selectedRepository?: string;
   }): Promise<{ conversation_id: string }> {
     const { data } = await openHands.post<{
@@ -262,6 +263,25 @@ class OpenHands {
     });
     // TODO: remove this once we have a multi-conversation UI
     localStorage.setItem("latest_conversation_id", data.conversation_id);
+    return data;
+  }
+
+  /**
+   * Load user settings from the backend
+   * @returns The stored settings or null if none exist
+   */
+  static async loadSettings(): Promise<Settings | null> {
+    const { data } = await openHands.get<Settings | null>("/api/settings");
+    return data;
+  }
+
+  /**
+   * Store user settings in the backend
+   * @param settings Settings to store
+   * @returns true if successful
+   */
+  static async storeSettings(settings: Settings): Promise<boolean> {
+    const { data } = await openHands.post<boolean>("/api/settings", settings);
     return data;
   }
 }

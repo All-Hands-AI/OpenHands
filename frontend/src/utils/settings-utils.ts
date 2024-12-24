@@ -1,8 +1,8 @@
+import { Settings } from "#/api/open-hands.types";
 import {
   settingsAreUpToDate,
   maybeMigrateSettings,
   LATEST_SETTINGS_VERSION,
-  Settings,
 } from "#/services/settings";
 
 const extractBasicFormData = (formData: FormData) => {
@@ -92,4 +92,4 @@ const updateSettingsVersion = (logout: () => void) => {
   }
 };
 
-export { extractSettings, saveSettingsView, updateSettingsVersion };
+export { extractSettings, updateSettingsVersion, saveSettingsView };
