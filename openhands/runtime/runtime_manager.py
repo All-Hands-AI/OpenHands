@@ -32,6 +32,24 @@ CONTAINER_NAME_PREFIX = 'openhands-runtime-'
 _atexit_registered = False
 
 
+class ContainerInfo:
+    """Information about a running container that a Runtime needs."""
+
+    def __init__(
+        self,
+        container_id: str,
+        api_url: str,
+        host_port: int,
+        container_port: int,
+        container: docker.models.containers.Container,
+    ):
+        self.container_id = container_id
+        self.api_url = api_url
+        self.host_port = host_port
+        self.container_port = container_port
+        self.container = container
+
+
 class RuntimeManager(metaclass=Singleton):
     def __init__(self, config: AppConfig):
         global _atexit_registered
@@ -40,6 +58,7 @@ class RuntimeManager(metaclass=Singleton):
             atexit.register(remove_all_containers, CONTAINER_NAME_PREFIX)
 
         self._runtimes: Dict[str, Runtime] = {}
+        self._containers: Dict[str, ContainerInfo] = {}
         self._config = config
         self._docker_client = self._init_docker_client()
         self._runtime_builder = DockerRuntimeBuilder(self._docker_client)
@@ -75,18 +94,37 @@ class RuntimeManager(metaclass=Singleton):
                 return port
         return port
 
-    def _initialize_container(
+    def initialize_container(
         self,
         runtime_container_image: str,
-        container_name: str,
-        container_port: int,
+        sid: str,
         plugins: Optional[List[PluginRequirement]] = None,
         env_vars: Optional[Dict[str, str]] = None,
         status_callback=None,
-    ):
+    ) -> ContainerInfo:
+        """Initialize a new container for a runtime.
+
+        Args:
+            runtime_container_image: The Docker image to use
+            sid: The session ID that will be used to generate the container name
+            plugins: Optional list of plugins to enable
+            env_vars: Optional environment variables to set
+            status_callback: Optional callback for status updates
+
+        Returns:
+            ContainerInfo object with connection details
+        """
         logger.debug('Preparing to start container...')
         if status_callback:
             status_callback('info', 'STATUS$PREPARING_CONTAINER')
+
+        container_name = f'{CONTAINER_NAME_PREFIX}{sid}'
+        if container_name in self._containers:
+            raise RuntimeError(f'Container {container_name} already exists')
+
+        # Find an available port
+        container_port = self._find_available_port()
+        host_port = container_port  # In future this might differ
 
         plugin_arg = ''
         if plugins:
@@ -98,7 +136,7 @@ class RuntimeManager(metaclass=Singleton):
         port_mapping: dict[str, list[dict[str, str]]] | None = (
             None
             if use_host_network
-            else {f'{container_port}/tcp': [{'HostPort': str(container_port)}]}
+            else {f'{container_port}/tcp': [{'HostPort': str(host_port)}]}
         )
 
         if use_host_network:
@@ -117,7 +155,7 @@ class RuntimeManager(metaclass=Singleton):
         if any(isinstance(plugin, VSCodeRequirement) for plugin in (plugins or [])):
             if isinstance(port_mapping, dict):
                 port_mapping[f'{container_port + 1}/tcp'] = [
-                    {'HostPort': str(container_port + 1)}
+                    {'HostPort': str(host_port + 1)}
                 ]
 
         logger.debug(f'Workspace Base: {self.config.workspace_base}')
@@ -168,12 +206,22 @@ class RuntimeManager(metaclass=Singleton):
                 environment=environment,
                 volumes=volumes,
             )
-            logger.debug(
-                f'Container started. Server url: http://localhost:{container_port}'
-            )
+
+            api_url = f'{self.config.sandbox.local_runtime_url}:{container_port}'
+            logger.debug(f'Container started. Server url: {api_url}')
+
             if status_callback:
                 status_callback('info', 'STATUS$CONTAINER_STARTED')
-            return container
+
+            container_info = ContainerInfo(
+                container_id=container.id,
+                api_url=api_url,
+                host_port=host_port,
+                container_port=container_port,
+                container=container,
+            )
+            self._containers[container_name] = container_info
+            return container_info
 
         except docker.errors.APIError as e:
             if '409' in str(e):
@@ -181,10 +229,9 @@ class RuntimeManager(metaclass=Singleton):
                     f'Container {container_name} already exists. Removing...',
                 )
                 remove_all_containers(container_name)
-                return self._initialize_container(
+                return self.initialize_container(
                     runtime_container_image,
-                    container_name,
-                    container_port,
+                    sid,
                     plugins,
                     env_vars,
                     status_callback,
@@ -201,13 +248,46 @@ class RuntimeManager(metaclass=Singleton):
             logger.error(str(e))
             raise
 
-    def _attach_to_container(self, container_name: str):
-        container = self._docker_client.containers.get(container_name)
-        container_port = 0
-        for port in container.attrs['NetworkSettings']['Ports']:
-            container_port = int(port.split('/')[0])
-            break
-        return container, container_port
+    def attach_to_container(self, sid: str) -> ContainerInfo:
+        """Attach to an existing container.
+
+        Args:
+            sid: The session ID used to generate the container name
+
+        Returns:
+            ContainerInfo object with connection details
+
+        Raises:
+            AgentRuntimeNotFoundError: If the container doesn't exist
+        """
+        container_name = f'{CONTAINER_NAME_PREFIX}{sid}'
+
+        # Check if we already have the container info
+        if container_name in self._containers:
+            return self._containers[container_name]
+
+        try:
+            container = self._docker_client.containers.get(container_name)
+            container_port = 0
+            for port in container.attrs['NetworkSettings']['Ports']:
+                container_port = int(port.split('/')[0])
+                break
+
+            host_port = container_port  # In future this might differ
+            api_url = f'{self.config.sandbox.local_runtime_url}:{container_port}'
+
+            container_info = ContainerInfo(
+                container_id=container.id,
+                api_url=api_url,
+                host_port=host_port,
+                container_port=container_port,
+                container=container,
+            )
+            self._containers[container_name] = container_info
+            return container_info
+
+        except docker.errors.NotFound:
+            raise AgentRuntimeNotFoundError(f'Container {container_name} not found.')
 
     @tenacity.retry(
         stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
@@ -217,15 +297,29 @@ class RuntimeManager(metaclass=Singleton):
         reraise=True,
         wait=tenacity.wait_fixed(2),
     )
-    def _wait_until_alive(
+    def wait_until_alive(
         self,
-        container_name: str,
-        container_port: int,
+        sid: str,
         log_streamer: Optional[LogStreamer] = None,
     ):
+        """Wait until a container is ready to accept connections.
+
+        Args:
+            sid: The session ID used to generate the container name
+            log_streamer: Optional log streamer that must be ready
+
+        Raises:
+            AgentRuntimeNotFoundError: If the container doesn't exist
+            AgentRuntimeDisconnectedError: If the container has exited
+            AgentRuntimeNotReadyError: If the log streamer isn't ready
+        """
+        container_name = f'{CONTAINER_NAME_PREFIX}{sid}'
+        container_info = self._containers.get(container_name)
+        if not container_info:
+            raise AgentRuntimeNotFoundError(f'Container {container_name} not found.')
+
         try:
-            container = self._docker_client.containers.get(container_name)
-            if container.status == 'exited':
+            if container_info.container.status == 'exited':
                 raise AgentRuntimeDisconnectedError(
                     f'Container {container_name} has exited.'
                 )
@@ -238,7 +332,7 @@ class RuntimeManager(metaclass=Singleton):
         with send_request(
             requests.Session(),
             'GET',
-            f'http://localhost:{container_port}/alive',
+            f'{container_info.api_url}/alive',
             timeout=5,
         ):
             pass
@@ -288,15 +382,42 @@ class RuntimeManager(metaclass=Singleton):
     def list_runtimes(self) -> List[str]:
         return list(self._runtimes.keys())
 
+    def cleanup_container(self, sid: str, remove_all: bool = False) -> None:
+        """Clean up a container and its resources.
+
+        Args:
+            sid: The session ID used to generate the container name
+            remove_all: If True, remove all containers with the same prefix
+        """
+        container_name = f'{CONTAINER_NAME_PREFIX}{sid}'
+        if remove_all:
+            remove_all_containers(CONTAINER_NAME_PREFIX)
+            self._containers.clear()
+        else:
+            remove_all_containers(container_name)
+            if container_name in self._containers:
+                del self._containers[container_name]
+
     def destroy_runtime(self, runtime_id: str) -> bool:
+        """Destroy a runtime and its container.
+
+        Args:
+            runtime_id: The runtime ID to destroy
+
+        Returns:
+            True if the runtime was found and destroyed, False otherwise
+        """
         runtime = self._runtimes.get(runtime_id)
         if runtime:
             runtime.close()
+            self.cleanup_container(runtime_id)
             del self._runtimes[runtime_id]
             logger.info(f'Destroyed runtime with ID: {runtime_id}')
             return True
         return False
 
     async def destroy_all_runtimes(self):
+        """Destroy all runtimes and their containers."""
         for runtime_id in list(self._runtimes.keys()):
             self.destroy_runtime(runtime_id)
+        self.cleanup_container('', remove_all=True)
