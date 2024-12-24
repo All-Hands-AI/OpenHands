@@ -71,6 +71,7 @@ export function GitHubRepositorySelector({
       aria-label="GitHub Repository"
       placeholder="Select a GitHub project"
       selectedKey={selectedKey}
+      items={finalRepositories}
       inputProps={{
         classNames: {
           inputWrapper:
@@ -94,19 +95,21 @@ export function GitHubRepositorySelector({
           </a>
         ) : undefined,
       }}
+      defaultItems={finalRepositories}
     >
-      {finalRepositories.map((repo) => (
+      {(item) => (
         <AutocompleteItem
           data-testid="github-repo-item"
-          key={repo.id}
-          value={repo.id}
+          key={item.id}
+          value={item.id}
+          className="data-[selected=true]:bg-default-100"
         >
-          {repo.full_name}
-          {repo.fromPublicRepoSearch && repo.stargazers_count !== undefined && (
-            <span className="ml-1 text-gray-400">({repo.stargazers_count}⭐)</span>
+          {item.full_name}
+          {item.fromPublicRepoSearch && item.stargazers_count !== undefined && (
+            <span className="ml-1 text-gray-400">({item.stargazers_count}⭐)</span>
           )}
         </AutocompleteItem>
-      ))}
+      )}
     </Autocomplete>
   );
 }
