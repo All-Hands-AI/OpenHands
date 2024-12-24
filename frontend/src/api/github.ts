@@ -104,6 +104,34 @@ export const retrieveGitHubUser = async () => {
   return user;
 };
 
+export const searchPublicRepositories = async (
+  query: string,
+  per_page = 1,
+  sort: "" | "updated" | "stars" | "forks" = "",
+  order: "desc" | "asc" = "desc",
+): Promise<GitHubRepository[]> => {
+  if (!query.trim()) {
+    return [];
+  }
+
+  try {
+    const response = await github.get<{ items: GitHubRepository[] }>(
+      "/search/repositories",
+      {
+        params: {
+          q: query,
+          per_page,
+          sort,
+          order,
+        },
+      },
+    );
+    return response.data.items;
+  } catch (error) {
+    return [];
+  }
+};
+
 export const retrieveLatestGitHubCommit = async (
   repository: string,
 ): Promise<GitHubCommit> => {
