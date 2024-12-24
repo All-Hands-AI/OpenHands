@@ -4,16 +4,16 @@ from typing import Callable, Optional
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
-from openhands.core.config import AgentConfig, AppConfig, LLMConfig
+from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
-from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
+from openhands.server.shared import runtime_manager
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_async_from_sync, call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
@@ -59,8 +59,6 @@ class AgentSession:
 
     async def start(
         self,
-        runtime_name: str,
-        config: AppConfig,
         agent: Agent,
         max_iterations: int,
         max_budget_per_task: float | None = None,
@@ -71,8 +69,6 @@ class AgentSession:
     ):
         """Starts the Agent session
         Parameters:
-        - runtime_name: The name of the runtime associated with the session
-        - config:
         - agent:
         - max_iterations:
         - max_budget_per_task:
@@ -87,8 +83,6 @@ class AgentSession:
         asyncio.get_event_loop().run_in_executor(
             None,
             self._start_thread,
-            runtime_name,
-            config,
             agent,
             max_iterations,
             max_budget_per_task,
@@ -107,8 +101,6 @@ class AgentSession:
 
     async def _start(
         self,
-        runtime_name: str,
-        config: AppConfig,
         agent: Agent,
         max_iterations: int,
         max_budget_per_task: float | None = None,
@@ -121,10 +113,10 @@ class AgentSession:
             logger.warning('Session closed before starting')
             return
         self._initializing = True
-        self._create_security_analyzer(config.security.security_analyzer)
+        self._create_security_analyzer(
+            runtime_manager.config.security.security_analyzer
+        )
         await self._create_runtime(
-            runtime_name=runtime_name,
-            config=config,
             agent=agent,
             github_token=github_token,
             selected_repository=selected_repository,
@@ -132,7 +124,7 @@ class AgentSession:
 
         self.controller = self._create_controller(
             agent,
-            config.security.confirmation_mode,
+            runtime_manager.config.security.confirmation_mode,
             max_iterations,
             max_budget_per_task=max_budget_per_task,
             agent_to_llm_config=agent_to_llm_config,
@@ -170,7 +162,7 @@ class AgentSession:
             end_state.save_to_session(self.sid, self.file_store)
             await self.controller.close()
         if self.runtime is not None:
-            self.runtime.close()
+            runtime_manager.destroy_runtime(self.sid)
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
 
@@ -193,8 +185,6 @@ class AgentSession:
 
     async def _create_runtime(
         self,
-        runtime_name: str,
-        config: AppConfig,
         agent: Agent,
         github_token: str | None = None,
         selected_repository: str | None = None,
@@ -202,38 +192,28 @@ class AgentSession:
         """Creates a runtime instance
 
         Parameters:
-        - runtime_name: The name of the runtime associated with the session
-        - config:
         - agent:
         """
 
         if self.runtime is not None:
             raise RuntimeError('Runtime already created')
 
-        logger.debug(f'Initializing runtime `{runtime_name}` now...')
-        runtime_cls = get_runtime_cls(runtime_name)
-        self.runtime = runtime_cls(
-            config=config,
-            event_stream=self.event_stream,
-            sid=self.sid,
-            plugins=agent.sandbox_plugins,
-            status_callback=self._status_callback,
-            headless_mode=False,
-        )
-
         # FIXME: this sleep is a terrible hack.
         # This is to give the websocket a second to connect, so that
         # the status messages make it through to the frontend.
         # We should find a better way to plumb status messages through.
         await asyncio.sleep(1)
+
         try:
-            await self.runtime.connect()
+            self.runtime = await runtime_manager.create_runtime(
+                event_stream=self.event_stream,
+                sid=self.sid,
+                plugins=agent.sandbox_plugins,
+                status_callback=self._status_callback,
+                headless_mode=False,
+            )
         except AgentRuntimeUnavailableError as e:
             logger.error(f'Runtime initialization failed: {e}', exc_info=True)
-            if self._status_callback:
-                self._status_callback(
-                    'error', 'STATUS$ERROR_RUNTIME_DISCONNECTED', str(e)
-                )
             return
 
         self.runtime.clone_repo(github_token, selected_repository)

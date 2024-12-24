@@ -6,9 +6,10 @@ from github import Github
 from pydantic import BaseModel
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.server.middleware import session_manager
 from openhands.server.routes.settings import SettingsStoreImpl
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.server.shared import config, session_manager
+from openhands.server.shared import config
 from openhands.storage.conversation.conversation_store import (
     ConversationMetadata,
     ConversationStore,

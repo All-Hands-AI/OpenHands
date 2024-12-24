@@ -26,8 +26,8 @@ from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.events.serialization.event import event_to_trajectory
 from openhands.llm.llm import LLM
-from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
+from openhands.runtime.runtime_manager import RuntimeManager
 from openhands.storage import get_file_store
 
 
@@ -51,7 +51,7 @@ def read_task_from_stdin() -> str:
     return sys.stdin.read()
 
 
-def create_runtime(
+async def create_runtime(
     config: AppConfig,
     sid: str | None = None,
     headless_mode: bool = True,
@@ -77,10 +77,8 @@ def create_runtime(
     agent_cls = openhands.agenthub.Agent.get_cls(config.default_agent)
 
     # runtime and tools
-    runtime_cls = get_runtime_cls(config.runtime)
-    logger.debug(f'Initializing runtime: {runtime_cls.__name__}')
-    runtime: Runtime = runtime_cls(
-        config=config,
+    runtime_manager = RuntimeManager(config)
+    runtime: Runtime = await runtime_manager.create_runtime(
         event_stream=event_stream,
         sid=session_id,
         plugins=agent_cls.sandbox_plugins,
@@ -129,8 +127,7 @@ async def run_controller(
     sid = sid or generate_sid(config)
 
     if runtime is None:
-        runtime = create_runtime(config, sid=sid, headless_mode=headless_mode)
-        await runtime.connect()
+        runtime = await create_runtime(config, sid=sid, headless_mode=headless_mode)
 
     event_stream = runtime.event_stream
 

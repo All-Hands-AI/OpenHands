@@ -52,7 +52,9 @@ class Session:
         self.last_active_ts = int(time.time())
         self.file_store = file_store
         self.agent_session = AgentSession(
-            sid, file_store, status_callback=self.queue_status_message
+            sid,
+            file_store,
+            status_callback=self.queue_status_message,
         )
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
@@ -131,8 +133,6 @@ class Session:
 
         try:
             await self.agent_session.start(
-                runtime_name=self.config.runtime,
-                config=self.config,
                 agent=agent,
                 max_iterations=max_iterations,
                 max_budget_per_task=self.config.max_budget_per_task,

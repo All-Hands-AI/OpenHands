@@ -199,8 +199,7 @@ async def process_issue(
     )
     config.set_llm_config(llm_config)
 
-    runtime = create_runtime(config)
-    await runtime.connect()
+    runtime = await create_runtime(config)
 
     async def on_event(evt):
         logger.info(evt)
