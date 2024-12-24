@@ -96,6 +96,9 @@ export function GitHubRepositorySelector({
         ) : undefined,
       }}
       defaultItems={finalRepositories}
+      filter={(item, query) => 
+        item.full_name.toLowerCase().includes(query.toLowerCase())
+      }
     >
       {(item) => (
         <AutocompleteItem

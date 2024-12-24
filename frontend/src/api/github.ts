@@ -107,7 +107,7 @@ export const retrieveGitHubUser = async () => {
 export const searchPublicRepositories = async (
   query: string,
   per_page = 1,
-  sort: "updated" | "stars" | "forks" = "updated",
+  sort: "" | "updated" | "stars" | "forks" = "",
   order: "desc" | "asc" = "desc",
 ): Promise<GitHubRepository[]> => {
   if (!query.trim()) {
