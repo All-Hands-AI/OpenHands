@@ -2,6 +2,7 @@ import atexit
 import os
 import tempfile
 import threading
+import time
 from functools import lru_cache
 from pathlib import Path
 from typing import Callable
@@ -73,6 +74,8 @@ class EventStreamRuntime(Runtime):
         plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
         env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
     """
+    # Class variable to track all active runtimes and their creation times
+    _active_runtimes = []  # List of tuples (runtime_name, creation_time)
 
     # Need to provide this method to allow inheritors to init the Runtime
     # without initting the EventStreamRuntime.
@@ -224,6 +227,19 @@ class EventStreamRuntime(Runtime):
     def _init_container(self):
         self.log('debug', 'Preparing to start container...')
         self.send_status_message('STATUS$PREPARING_CONTAINER')
+
+        # Check if we need to remove old runtimes
+        if len(self._active_runtimes) >= self.config.sandbox.max_active_runtimes:
+            # Sort by creation time and remove oldest
+            self._active_runtimes.sort(key=lambda x: x[1])  # Sort by timestamp
+            while len(self._active_runtimes) >= self.config.sandbox.max_active_runtimes:
+                old_name, _ = self._active_runtimes.pop(0)  # Remove oldest
+                try:
+                    remove_all_containers(old_name)
+                    self.log('debug', f'Removed old runtime container: {old_name}')
+                except Exception as e:
+                    self.log('warning', f'Failed to remove old runtime container {old_name}: {e}')
+
         plugin_arg = ''
         if self.plugins is not None and len(self.plugins) > 0:
             plugin_arg = (
@@ -316,6 +332,8 @@ class EventStreamRuntime(Runtime):
                 environment=environment,
                 volumes=volumes,
             )
+            # Track the new runtime
+            self._active_runtimes.append((self.container_name, time.time()))
             self.log('debug', f'Container started. Server url: {self.api_url}')
             self.send_status_message('STATUS$CONTAINER_STARTED')
         except docker.errors.APIError as e:
@@ -405,6 +423,8 @@ class EventStreamRuntime(Runtime):
         close_prefix = (
             CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
         )
+        # Remove from active runtimes tracking
+        self._active_runtimes = [(name, ts) for name, ts in self._active_runtimes if not name.startswith(close_prefix)]
         remove_all_containers(close_prefix)
 
     def run_action(self, action: Action) -> Observation:
