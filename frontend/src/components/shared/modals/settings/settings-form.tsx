@@ -177,12 +177,12 @@ export function SettingsForm({
             <>
               <CustomModelInput
                 isDisabled={!!disabled}
-                defaultValue={settings.LLM_MODEL || ""}
+                defaultValue={settings.LLM_MODEL}
               />
 
               <BaseUrlInput
                 isDisabled={!!disabled}
-                defaultValue={settings.LLM_BASE_URL || ""}
+                defaultValue={settings.LLM_BASE_URL}
               />
             </>
           )}
@@ -197,13 +197,13 @@ export function SettingsForm({
 
           <APIKeyInput
             isDisabled={!!disabled}
-            defaultValue={settings.LLM_API_KEY || ""}
+            defaultValue={settings.LLM_API_KEY}
           />
 
           {showAdvancedOptions && (
             <AgentInput
               isDisabled={!!disabled}
-              defaultValue={settings.AGENT || ""}
+              defaultValue={settings.AGENT}
               agents={agents}
             />
           )}
@@ -212,13 +212,13 @@ export function SettingsForm({
             <>
               <SecurityAnalyzerInput
                 isDisabled={!!disabled}
-                defaultValue={settings.SECURITY_ANALYZER || ""}
+                defaultValue={settings.SECURITY_ANALYZER}
                 securityAnalyzers={securityAnalyzers}
               />
 
               <ConfirmationModeSwitch
                 isDisabled={!!disabled}
-                defaultSelected={settings.CONFIRMATION_MODE || false}
+                defaultSelected={settings.CONFIRMATION_MODE}
               />
             </>
           )}

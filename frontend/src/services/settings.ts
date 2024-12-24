@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS: Settings = {
   LLM_MODEL: "anthropic/claude-3-5-sonnet-20241022",
   LLM_BASE_URL: "",
   AGENT: "CodeActAgent",
+  MAX_ITERATIONS: 100,
   LANGUAGE: "en",
   LLM_API_KEY: "",
   CONFIRMATION_MODE: false,
