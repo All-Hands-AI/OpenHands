@@ -52,7 +52,6 @@ class EventStreamRuntime(Runtime):
         sid (str, optional): The session ID. Defaults to 'default'.
         plugins (list[PluginRequirement] | None, optional): List of plugin requirements. Defaults to None.
         env_vars (dict[str, str] | None, optional): Environment variables to set. Defaults to None.
-        runtime_manager (RuntimeManager): The runtime manager instance.
     """
 
     def init_base_runtime(
@@ -65,7 +64,6 @@ class EventStreamRuntime(Runtime):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
-        runtime_manager: RuntimeManager | None = None,
     ):
         super().__init__(
             config,
