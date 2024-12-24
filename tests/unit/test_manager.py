@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from openhands.core.config.app_config import AppConfig
+from openhands.runtime.runtime_manager import RuntimeManager
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.session.manager import SessionManager
 from openhands.storage.memory import InMemoryFileStore
@@ -39,7 +40,7 @@ async def test_session_not_running_in_cluster():
         patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.01),
     ):
         async with SessionManager(
-            sio, AppConfig(), InMemoryFileStore()
+            sio, AppConfig(), InMemoryFileStore(), RuntimeManager(AppConfig())
         ) as session_manager:
             result = await session_manager._is_agent_loop_running_in_cluster(
                 'non-existant-session'
@@ -63,7 +64,7 @@ async def test_session_is_running_in_cluster():
         patch('openhands.server.session.manager._REDIS_POLL_TIMEOUT', 0.1),
     ):
         async with SessionManager(
-            sio, AppConfig(), InMemoryFileStore()
+            sio, AppConfig(), InMemoryFileStore(), RuntimeManager(AppConfig())
         ) as session_manager:
             result = await session_manager._is_agent_loop_running_in_cluster(
                 'existing-session'
@@ -98,7 +99,7 @@ async def test_init_new_local_session():
         ),
     ):
         async with SessionManager(
-            sio, AppConfig(), InMemoryFileStore()
+            sio, AppConfig(), InMemoryFileStore(), RuntimeManager(AppConfig())
         ) as session_manager:
             await session_manager.maybe_start_agent_loop(
                 'new-session-id', ConversationInitData()
@@ -130,7 +131,7 @@ async def test_join_local_session():
         ),
     ):
         async with SessionManager(
-            sio, AppConfig(), InMemoryFileStore()
+            sio, AppConfig(), InMemoryFileStore(), RuntimeManager(AppConfig())
         ) as session_manager:
             await session_manager.maybe_start_agent_loop(
                 'new-session-id', ConversationInitData()
@@ -163,7 +164,7 @@ async def test_join_cluster_session():
         ),
     ):
         async with SessionManager(
-            sio, AppConfig(), InMemoryFileStore()
+            sio, AppConfig(), InMemoryFileStore(), RuntimeManager(AppConfig())
         ) as session_manager:
             await session_manager.join_conversation('new-session-id', 'new-session-id')
     assert session_instance.initialize_agent.call_count == 0
@@ -192,7 +193,7 @@ async def test_add_to_local_event_stream():
         ),
     ):
         async with SessionManager(
-            sio, AppConfig(), InMemoryFileStore()
+            sio, AppConfig(), InMemoryFileStore(), RuntimeManager(AppConfig())
         ) as session_manager:
             await session_manager.maybe_start_agent_loop(
                 'new-session-id', ConversationInitData()
@@ -226,7 +227,7 @@ async def test_add_to_cluster_event_stream():
         ),
     ):
         async with SessionManager(
-            sio, AppConfig(), InMemoryFileStore()
+            sio, AppConfig(), InMemoryFileStore(), RuntimeManager(AppConfig())
         ) as session_manager:
             await session_manager.join_conversation('new-session-id', 'connection-id')
             await session_manager.send_to_event_stream(
@@ -250,7 +251,7 @@ async def test_cleanup_session_connections():
         ),
     ):
         async with SessionManager(
-            sio, AppConfig(), InMemoryFileStore()
+            sio, AppConfig(), InMemoryFileStore(), RuntimeManager(AppConfig())
         ) as session_manager:
             session_manager.local_connection_id_to_session_id.update(
                 {
