@@ -6,21 +6,17 @@ from dataclasses import dataclass, field
 import socketio
 
 from openhands.core.config import AppConfig
-from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.stream import EventStream, session_exists
-from openhands.server.session.conversation import Conversation
+from openhands.events.stream import EventStream
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.session.session import ROOM_KEY, Session
+from openhands.server.shared import runtime_manager
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
 
 _REDIS_POLL_TIMEOUT = 1.5
 _CHECK_ALIVE_INTERVAL = 15
-
-_CLEANUP_INTERVAL = 15
-_CLEANUP_EXCEPTION_WAIT_TIME = 15
 
 
 class ConversationDoesNotExistError(Exception):
@@ -37,14 +33,6 @@ class SessionManager:
     _last_alive_timestamps: dict[str, float] = field(default_factory=dict)
     _redis_listen_task: asyncio.Task | None = None
     _session_is_running_flags: dict[str, asyncio.Event] = field(default_factory=dict)
-    _active_conversations: dict[str, tuple[Conversation, int]] = field(
-        default_factory=dict
-    )
-    _detached_conversations: dict[str, tuple[Conversation, float]] = field(
-        default_factory=dict
-    )
-    _conversations_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
-    _cleanup_task: asyncio.Task | None = None
     _has_remote_connections_flags: dict[str, asyncio.Event] = field(
         default_factory=dict
     )
@@ -53,16 +41,12 @@ class SessionManager:
         redis_client = self._get_redis_client()
         if redis_client:
             self._redis_listen_task = asyncio.create_task(self._redis_subscribe())
-        self._cleanup_task = asyncio.create_task(self._cleanup_detached_conversations())
         return self
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         if self._redis_listen_task:
             self._redis_listen_task.cancel()
             self._redis_listen_task = None
-        if self._cleanup_task:
-            self._cleanup_task.cancel()
-            self._cleanup_task = None
 
     def _get_redis_client(self):
         redis_client = getattr(self.sio.manager, 'redis', None)
@@ -134,6 +118,7 @@ class SessionManager:
             # Session closing event - We only get this in the event of graceful shutdown,
             # which can't be guaranteed - nodes can simply vanish unexpectedly!
             logger.debug(f'session_closing:{sid}')
+            await call_sync_from_async(runtime_manager.destroy_runtime, sid)
             for (
                 connection_id,
                 local_sid,
@@ -144,95 +129,14 @@ class SessionManager:
                     )
                     await self.sio.disconnect(connection_id)
 
-    async def attach_to_conversation(self, sid: str) -> Conversation | None:
-        start_time = time.time()
-        if not await session_exists(sid, self.file_store):
-            return None
-
-        async with self._conversations_lock:
-            # Check if we have an active conversation we can reuse
-            if sid in self._active_conversations:
-                conversation, count = self._active_conversations[sid]
-                self._active_conversations[sid] = (conversation, count + 1)
-                logger.info(f'Reusing active conversation {sid}')
-                return conversation
-
-            # Check if we have a detached conversation we can reuse
-            if sid in self._detached_conversations:
-                conversation, _ = self._detached_conversations.pop(sid)
-                self._active_conversations[sid] = (conversation, 1)
-                logger.info(f'Reusing detached conversation {sid}')
-                return conversation
-
-            # Create new conversation if none exists
-            c = Conversation(sid, file_store=self.file_store, config=self.config)
-            try:
-                await c.connect()
-            except AgentRuntimeUnavailableError as e:
-                logger.error(f'Error connecting to conversation {c.sid}: {e}')
-                return None
-            end_time = time.time()
-            logger.info(
-                f'Conversation {c.sid} connected in {end_time - start_time} seconds'
-            )
-            self._active_conversations[sid] = (c, 1)
-            return c
-
     async def join_conversation(self, sid: str, connection_id: str) -> EventStream:
         logger.info(f'join_conversation:{sid}:{connection_id}')
         await self.sio.enter_room(connection_id, ROOM_KEY.format(sid=sid))
         self.local_connection_id_to_session_id[connection_id] = sid
-        event_stream = await self._get_event_stream(sid)
+        event_stream = await self.get_event_stream(sid)
         if not event_stream:
             return await self.maybe_start_agent_loop(sid)
         return event_stream
-
-    async def detach_from_conversation(self, conversation: Conversation):
-        sid = conversation.sid
-        async with self._conversations_lock:
-            if sid in self._active_conversations:
-                conv, count = self._active_conversations[sid]
-                if count > 1:
-                    self._active_conversations[sid] = (conv, count - 1)
-                    return
-                else:
-                    self._active_conversations.pop(sid)
-                    self._detached_conversations[sid] = (conversation, time.time())
-
-    async def _cleanup_detached_conversations(self):
-        while should_continue():
-            if self._get_redis_client():
-                # Debug info for HA envs
-                logger.info(
-                    f'Attached conversations: {len(self._active_conversations)}'
-                )
-                logger.info(
-                    f'Detached conversations: {len(self._detached_conversations)}'
-                )
-                logger.info(
-                    f'Running agent loops: {len(self._local_agent_loops_by_sid)}'
-                )
-                logger.info(
-                    f'Local connections: {len(self.local_connection_id_to_session_id)}'
-                )
-            try:
-                async with self._conversations_lock:
-                    # Create a list of items to process to avoid modifying dict during iteration
-                    items = list(self._detached_conversations.items())
-                    for sid, (conversation, detach_time) in items:
-                        await conversation.disconnect()
-                        self._detached_conversations.pop(sid, None)
-
-                await asyncio.sleep(_CLEANUP_INTERVAL)
-            except asyncio.CancelledError:
-                async with self._conversations_lock:
-                    for conversation, _ in self._detached_conversations.values():
-                        await conversation.disconnect()
-                    self._detached_conversations.clear()
-                return
-            except Exception:
-                logger.warning('error_cleaning_detached_conversations', exc_info=True)
-                await asyncio.sleep(_CLEANUP_EXCEPTION_WAIT_TIME)
 
     async def _is_agent_loop_running(self, sid: str) -> bool:
         if await self._is_agent_loop_running_locally(sid):
@@ -318,14 +222,14 @@ class SessionManager:
             self._local_agent_loops_by_sid[sid] = session
             await session.initialize_agent(conversation_init_data)
 
-        event_stream = await self._get_event_stream(sid)
+        event_stream = await self.get_event_stream(sid)
         if not event_stream:
             logger.error(f'No event stream after starting agent loop: {sid}')
             raise RuntimeError(f'no_event_stream:{sid}')
         return event_stream
 
-    async def _get_event_stream(self, sid: str) -> EventStream | None:
-        logger.info(f'_get_event_stream:{sid}')
+    async def get_event_stream(self, sid: str) -> EventStream | None:
+        logger.info(f'get_event_stream:{sid}')
         session = self._local_agent_loops_by_sid.get(sid)
         if session:
             logger.info(f'found_local_agent_loop:{sid}')
@@ -396,6 +300,7 @@ class SessionManager:
     async def _cleanup_session(self, sid: str) -> bool:
         # Get local connections
         logger.info(f'_cleanup_session:{sid}')
+        await call_sync_from_async(runtime_manager.destroy_runtime, sid)
         has_local_connections = next(
             (True for v in self.local_connection_id_to_session_id.values() if v == sid),
             False,

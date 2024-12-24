@@ -58,13 +58,13 @@ async def list_files(request: Request, conversation_id: str, path: str | None = 
     Raises:
         HTTPException: If there's an error listing the files.
     """
-    if not request.state.conversation.runtime:
+    if not request.state.runtime:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Runtime not yet initialized'},
         )
 
-    runtime: Runtime = request.state.conversation.runtime
+    runtime: Runtime = request.state.runtime
     try:
         file_list = await call_sync_from_async(runtime.list_files, path)
     except AgentRuntimeUnavailableError as e:
@@ -124,7 +124,7 @@ async def select_file(file: str, request: Request):
     Raises:
         HTTPException: If there's an error opening the file.
     """
-    runtime: Runtime = request.state.conversation.runtime
+    runtime: Runtime = request.state.runtime
 
     file = os.path.join(runtime.config.workspace_mount_path_in_sandbox, file)
     read_action = FileReadAction(file)
@@ -199,7 +199,7 @@ async def upload_file(request: Request, conversation_id: str, files: list[Upload
                     tmp_file.write(file_contents)
                     tmp_file.flush()
 
-                runtime: Runtime = request.state.conversation.runtime
+                runtime: Runtime = request.state.runtime
                 try:
                     await call_sync_from_async(
                         runtime.copy_to,
@@ -276,7 +276,7 @@ async def save_file(request: Request):
             raise HTTPException(status_code=400, detail='Missing filePath or content')
 
         # Save the file to the agent's runtime file store
-        runtime: Runtime = request.state.conversation.runtime
+        runtime: Runtime = request.state.runtime
         file_path = os.path.join(
             runtime.config.workspace_mount_path_in_sandbox, file_path
         )
@@ -316,7 +316,7 @@ async def zip_current_workspace(
 ):
     try:
         logger.debug('Zipping workspace')
-        runtime: Runtime = request.state.conversation.runtime
+        runtime: Runtime = request.state.runtime
         path = runtime.config.workspace_mount_path_in_sandbox
         try:
             zip_file = await call_sync_from_async(runtime.copy_from, path)
