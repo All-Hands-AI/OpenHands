@@ -170,7 +170,9 @@ class AgentSession:
             end_state.save_to_session(self.sid, self.file_store)
             await self.controller.close()
         if self.runtime is not None:
-            self.runtime.close()
+            from openhands.runtime.runtime_manager import RuntimeManager
+            runtime_manager = RuntimeManager()
+            runtime_manager.destroy_runtime(self.sid)
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
 
@@ -206,28 +208,31 @@ class AgentSession:
         - config:
         - agent:
         """
+        from openhands.runtime.runtime_manager import RuntimeManager
 
         if self.runtime is not None:
             raise RuntimeError('Runtime already created')
 
         logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
-        self.runtime = runtime_cls(
-            config=config,
-            event_stream=self.event_stream,
-            sid=self.sid,
-            plugins=agent.sandbox_plugins,
-            status_callback=self._status_callback,
-            headless_mode=False,
-        )
 
         # FIXME: this sleep is a terrible hack.
         # This is to give the websocket a second to connect, so that
         # the status messages make it through to the frontend.
         # We should find a better way to plumb status messages through.
         await asyncio.sleep(1)
+
+        runtime_manager = RuntimeManager()
         try:
-            await self.runtime.connect()
+            self.runtime = await runtime_manager.create_runtime(
+                runtime_class=runtime_cls,
+                config=config,
+                event_stream=self.event_stream,
+                sid=self.sid,
+                plugins=agent.sandbox_plugins,
+                status_callback=self._status_callback,
+                headless_mode=False,
+            )
         except AgentRuntimeUnavailableError as e:
             logger.error(f'Runtime initialization failed: {e}', exc_info=True)
             if self._status_callback:
