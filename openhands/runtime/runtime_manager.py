@@ -57,8 +57,54 @@ class RuntimeManager(metaclass=Singleton):
         logger.info(f'Created runtime with ID: {sid}')
         return runtime
 
-    def get_runtime(self, runtime_id: str) -> Optional[Runtime]:
-        return self._runtimes.get(runtime_id)
+    async def get_runtime(
+        self,
+        runtime_id: str,
+        create_if_not_exists: bool = False,
+        event_stream: Optional[EventStream] = None,
+        plugins: Optional[List[PluginRequirement]] = None,
+        env_vars: Optional[Dict[str, str]] = None,
+        status_callback=None,
+        attach_to_existing: bool = True,
+        headless_mode: bool = False,
+    ) -> Optional[Runtime]:
+        """Get a runtime by ID, optionally creating it if it doesn't exist.
+
+        Args:
+            runtime_id: The ID of the runtime to get
+            create_if_not_exists: If True and no runtime exists, create one
+            event_stream: Required if create_if_not_exists is True
+            plugins: Optional plugins for the new runtime
+            env_vars: Optional environment variables for the new runtime
+            status_callback: Optional callback for runtime status updates
+            attach_to_existing: Whether to attach to an existing runtime (default True)
+            headless_mode: Whether to run in headless mode (default False)
+
+        Returns:
+            The runtime if it exists or was created, None otherwise
+
+        Raises:
+            ValueError: If create_if_not_exists is True but event_stream is None
+        """
+        runtime = self._runtimes.get(runtime_id)
+        if runtime is None and create_if_not_exists:
+            if event_stream is None:
+                raise ValueError(
+                    'event_stream is required when create_if_not_exists is True'
+                )
+            try:
+                runtime = await self.create_runtime(
+                    event_stream=event_stream,
+                    sid=runtime_id,
+                    plugins=plugins,
+                    env_vars=env_vars,
+                    status_callback=status_callback,
+                    attach_to_existing=attach_to_existing,
+                    headless_mode=headless_mode,
+                )
+            except AgentRuntimeUnavailableError:
+                return None
+        return runtime
 
     def list_runtimes(self) -> List[str]:
         return list(self._runtimes.keys())
