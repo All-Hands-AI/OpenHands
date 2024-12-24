@@ -51,7 +51,7 @@ def read_task_from_stdin() -> str:
     return sys.stdin.read()
 
 
-def create_runtime(
+async def create_runtime(
     config: AppConfig,
     sid: str | None = None,
     headless_mode: bool = True,
@@ -79,7 +79,9 @@ def create_runtime(
     # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)
     logger.debug(f'Initializing runtime: {runtime_cls.__name__}')
-    runtime: Runtime = runtime_cls(
+    runtime_manager = RuntimeManager()
+    runtime: Runtime = await runtime_manager.create_runtime(
+        runtime_class=runtime_cls,
         config=config,
         event_stream=event_stream,
         sid=session_id,
@@ -129,8 +131,7 @@ async def run_controller(
     sid = sid or generate_sid(config)
 
     if runtime is None:
-        runtime = create_runtime(config, sid=sid, headless_mode=headless_mode)
-        await runtime.connect()
+        runtime = await create_runtime(config, sid=sid, headless_mode=headless_mode)
 
     event_stream = runtime.event_stream
 
