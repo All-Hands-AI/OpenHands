@@ -79,7 +79,7 @@ export function WsClientProvider({
 
   function handleDisconnect() {
     setStatus(WsClientProviderStatus.DISCONNECTED);
-    let sio = sioRef.current;
+    const sio = sioRef.current;
     if (!sio) {
       return;
     }
