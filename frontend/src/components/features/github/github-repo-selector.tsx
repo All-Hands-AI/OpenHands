@@ -4,7 +4,7 @@ import { useDispatch } from "react-redux";
 import posthog from "posthog-js";
 import { setSelectedRepository } from "#/state/initial-query-slice";
 import { useConfig } from "#/hooks/query/use-config";
-import { openHands } from "#/api/open-hands-axios";
+import { github } from "#/api/github-axios-instance";
 
 interface GitHubRepositorySelectorProps {
   onSelect: () => void;
@@ -25,8 +25,8 @@ export function GitHubRepositorySelector({
     const searchPublicRepo = async () => {
       if (searchQuery.trim()) {
         try {
-          const response = await openHands.get<{ items: GitHubRepository[] }>(
-            "/api/github/search/repositories",
+          const response = await github.get<{ items: GitHubRepository[] }>(
+            "/search/repositories",
             {
               params: {
                 q: searchQuery,
@@ -63,7 +63,7 @@ export function GitHubRepositorySelector({
       ? [
           {
             ...searchedRepo,
-            full_name: `${searchedRepo.full_name} (${searchedRepo.stargazers_count}⭐)`,
+            fromPublicRepoSearch: true,
           },
         ]
       : []),
@@ -134,6 +134,9 @@ export function GitHubRepositorySelector({
           value={repo.id}
         >
           {repo.full_name}
+          {repo.fromPublicRepoSearch && repo.stargazers_count !== undefined && (
+            <span className="ml-1 text-gray-400">({repo.stargazers_count}⭐)</span>
+          )}
         </AutocompleteItem>
       ))}
     </Autocomplete>
