@@ -65,17 +65,12 @@ export function GitHubRepositorySelector({
   const emptyContent = "No results found.";
 
   return (
-    <Autocomplete<GitHubRepository>
+    <Autocomplete
       data-testid="github-repo-selector"
       name="repo"
       aria-label="GitHub Repository"
       placeholder="Select a GitHub project"
       selectedKey={selectedKey}
-      items={finalRepositories.map(repo => ({
-        label: repo.full_name,
-        value: repo.id.toString(),
-        repo: repo,
-      }))}
       inputProps={{
         classNames: {
           inputWrapper:
@@ -100,21 +95,22 @@ export function GitHubRepositorySelector({
         ) : undefined,
       }}
       filter={(item, query) => 
-        !query || item.label.toLowerCase().includes(query.toLowerCase())
+        !query || item.full_name.toLowerCase().includes(query.toLowerCase())
       }
     >
-      {(item) => (
+      {finalRepositories.map((repo) => (
         <AutocompleteItem
           data-testid="github-repo-item"
-          key={item.value}
+          key={repo.id}
+          value={repo.id}
           className="data-[selected=true]:bg-default-100"
         >
-          {item.label}
-          {item.repo.fromPublicRepoSearch && item.repo.stargazers_count !== undefined && (
-            <span className="ml-1 text-gray-400">({item.repo.stargazers_count}⭐)</span>
+          {repo.full_name}
+          {repo.fromPublicRepoSearch && repo.stargazers_count !== undefined && (
+            <span className="ml-1 text-gray-400">({repo.stargazers_count}⭐)</span>
           )}
         </AutocompleteItem>
-      )}
+      ))}
     </Autocomplete>
   );
 }
