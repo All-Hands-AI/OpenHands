@@ -31,18 +31,13 @@ export function GitHubRepositorySelector({
     return () => clearTimeout(debounceTimeout);
   }, [searchQuery]);
 
-  // Combine searched repo with existing repositories
-  const finalRepositories = [
-    ...(searchedRepo
-      ? [
-          {
-            ...searchedRepo,
-            fromPublicRepoSearch: true,
-          },
-        ]
-      : []),
-    ...repositories,
-  ];
+  const finalRepositories = repositories;
+  if (searchedRepo && !repositories.find((r) => r.id === searchedRepo.id)) {
+    finalRepositories.unshift({
+      ...searchedRepo,
+      fromPublicRepoSearch: true,
+    });
+  }
 
   const dispatch = useDispatch();
 
@@ -107,6 +102,7 @@ export function GitHubRepositorySelector({
           key={repo.id}
           value={repo.id}
           className="data-[selected=true]:bg-default-100"
+          textValue={repo.full_name}
         >
           {repo.full_name}
           {repo.fromPublicRepoSearch && repo.stargazers_count !== undefined && (
