@@ -68,8 +68,8 @@ class RuntimeManager(metaclass=Singleton):
     def destroy_runtime(self, sid: str) -> bool:
         runtime = self._runtimes.get(sid)
         if runtime:
-            runtime.close()
             del self._runtimes[sid]
+            runtime.close()
             logger.info(f'Destroyed runtime with ID: {sid}')
             return True
         return False
