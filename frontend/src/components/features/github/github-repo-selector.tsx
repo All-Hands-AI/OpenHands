@@ -78,24 +78,23 @@ export function GitHubRepositorySelector({
       listboxProps={{
         emptyContent,
       }}
-      startContent={
-        config?.APP_MODE === "saas" && config?.APP_SLUG ? (
-          <a
-            href={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="block w-full px-2 py-2 text-sm text-blue-500 hover:bg-gray-100 dark:hover:bg-gray-800"
-            onClick={(e) => e.stopPropagation()}
-          >
-            Add more repositories...
-          </a>
-        ) : undefined
-      }
       defaultFilter={(textValue, inputValue) =>
         !inputValue ||
         textValue.toLowerCase().includes(inputValue.toLowerCase())
       }
     >
+      {config?.APP_MODE === "saas" && config?.APP_SLUG && (
+        <AutocompleteItem>
+          <a
+            href={`https://github.com/apps/${config.APP_SLUG}/installations/new`}
+            target="_blank"
+            rel="noreferrer noopener"
+            onClick={(e) => e.stopPropagation()}
+          >
+            Add more repositories...
+          </a>
+        </AutocompleteItem>
+      )}
       {finalRepositories.map((repo) => (
         <AutocompleteItem
           data-testid="github-repo-item"
