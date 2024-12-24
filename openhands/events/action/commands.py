@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import ClassVar
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import ActionType
 from openhands.events.action.action import (
     Action,
@@ -12,24 +13,38 @@ from openhands.events.action.action import (
 @dataclass
 class CmdRunAction(Action):
     command: str
+    # When `command` is empty, it will be used to print the current tmux window
     thought: str = ''
     blocking: bool = False
-    # If False, the command will be run in a non-blocking / interactive way
-    # The partial command outputs will be returned as output observation.
-    # If True, the command will be run for max .timeout seconds.
-    keep_prompt: bool = True
-    # if True, the command prompt will be kept in the command output observation
-    # Example of command output:
-    # root@sandbox:~# ls
-    # file1.txt
-    # file2.txt
-    # root@sandbox:~# <-- this is the command prompt
-
+    # If blocking is True, the command will be run in a blocking manner.
+    # e.g., it will NOT return early due to soft timeout.
     hidden: bool = False
     action: str = ActionType.RUN
     runnable: ClassVar[bool] = True
     confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
     security_risk: ActionSecurityRisk | None = None
+
+    def __init__(
+        self,
+        command: str,
+        thought: str = '',
+        blocking: bool = False,
+        hidden: bool = False,
+        action: str = ActionType.RUN,
+        confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED,
+        security_risk: ActionSecurityRisk | None = None,
+        **kwargs,
+    ):
+        self.command = command
+        self.thought = thought
+        self.blocking = blocking
+        self.hidden = hidden
+        self.action = action
+        self.confirmation_state = confirmation_state
+        self.security_risk = security_risk
+        logger.debug(
+            f'CmdRunAction ignored kwargs (likely due to legacy serialization): {kwargs}'
+        )
 
     @property
     def message(self) -> str:

@@ -158,7 +158,7 @@ class RemoteRuntime(Runtime):
                 status = data.get('status')
                 if status == 'running' or status == 'paused':
                     self._parse_runtime_response(response)
-        except requests.HTTPError as e:
+        except RequestHTTPError as e:
             if e.response.status_code == 404:
                 return False
             self.log('debug', f'Error while looking for remote runtime: {e}')
@@ -245,7 +245,9 @@ class RemoteRuntime(Runtime):
             'image': self.container_image,
             'command': command,
             'working_dir': '/openhands/code/',
-            'environment': {'DEBUG': 'true'} if self.config.debug else {},
+            'environment': {'DEBUG': 'true'}
+            if self.config.debug or os.environ.get('DEBUG', 'false').lower() == 'true'
+            else {},
             'session_id': self.sid,
             'resource_factor': self.config.sandbox.remote_runtime_resource_factor,
         }
@@ -264,7 +266,7 @@ class RemoteRuntime(Runtime):
                 'debug',
                 f'Runtime started. URL: {self.runtime_url}',
             )
-        except requests.HTTPError as e:
+        except RequestHTTPError as e:
             self.log('error', f'Unable to start runtime: {e}')
             raise AgentRuntimeUnavailableError() from e
 
@@ -356,7 +358,7 @@ class RemoteRuntime(Runtime):
                     timeout=60,
                 ):  # will raise exception if we don't get 200 back.
                     pass
-            except requests.HTTPError as e:
+            except RequestHTTPError as e:
                 self.log(
                     'warning', f"Runtime /alive failed, but pod says it's ready: {e}"
                 )
@@ -428,7 +430,6 @@ class RemoteRuntime(Runtime):
 
             try:
                 request_body = {'action': event_to_dict(action)}
-                self.log('debug', f'Request body: {request_body}')
                 with self._send_request(
                     'POST',
                     f'{self.runtime_url}/execute_action',
@@ -451,7 +452,10 @@ class RemoteRuntime(Runtime):
         try:
             return send_request(self.session, method, url, **kwargs)
         except requests.Timeout:
-            self.log('error', 'No response received within the timeout period.')
+            self.log(
+                'error',
+                f'No response received within the timeout period for url: {url}',
+            )
             raise
         except RequestHTTPError as e:
             if is_runtime_request and e.response.status_code in (404, 502):

@@ -6,7 +6,11 @@ import pytest
 
 from openhands.core.config import LLMConfig
 from openhands.events.action import CmdRunAction
-from openhands.events.observation import CmdOutputObservation, NullObservation
+from openhands.events.observation import (
+    CmdOutputMetadata,
+    CmdOutputObservation,
+    NullObservation,
+)
 from openhands.llm.llm import LLM
 from openhands.resolver.github_issue import GithubIssue, ReviewThread
 from openhands.resolver.issue_definitions import IssueHandler, PRHandler
@@ -55,23 +59,20 @@ def mock_followup_prompt_template():
     return 'Issue context: {{ issues }}\n\nReview comments: {{ review_comments }}\n\nReview threads: {{ review_threads }}\n\nFiles: {{ files }}\n\nThread comments: {{ thread_context }}\n\nPlease fix this issue.'
 
 
-def create_cmd_output(exit_code: int, content: str, command_id: int, command: str):
+def create_cmd_output(exit_code: int, content: str, command: str):
     return CmdOutputObservation(
-        exit_code=exit_code, content=content, command_id=command_id, command=command
+        content=content,
+        command=command,
+        metadata=CmdOutputMetadata(exit_code=exit_code),
     )
 
 
 def test_initialize_runtime():
     mock_runtime = MagicMock()
     mock_runtime.run_action.side_effect = [
+        create_cmd_output(exit_code=0, content='', command='cd /workspace'),
         create_cmd_output(
-            exit_code=0, content='', command_id=1, command='cd /workspace'
-        ),
-        create_cmd_output(
-            exit_code=0,
-            content='',
-            command_id=2,
-            command='git config --global core.pager ""',
+            exit_code=0, content='', command='git config --global core.pager ""'
         ),
     ]
 
@@ -291,30 +292,19 @@ def test_download_pr_from_github():
 async def test_complete_runtime():
     mock_runtime = MagicMock()
     mock_runtime.run_action.side_effect = [
+        create_cmd_output(exit_code=0, content='', command='cd /workspace'),
         create_cmd_output(
-            exit_code=0, content='', command_id=1, command='cd /workspace'
+            exit_code=0, content='', command='git config --global core.pager ""'
         ),
         create_cmd_output(
             exit_code=0,
             content='',
-            command_id=2,
-            command='git config --global core.pager ""',
-        ),
-        create_cmd_output(
-            exit_code=0,
-            content='',
-            command_id=3,
             command='git config --global --add safe.directory /workspace',
         ),
         create_cmd_output(
-            exit_code=0,
-            content='',
-            command_id=4,
-            command='git diff base_commit_hash fix',
+            exit_code=0, content='', command='git diff base_commit_hash fix'
         ),
-        create_cmd_output(
-            exit_code=0, content='git diff content', command_id=5, command='git apply'
-        ),
+        create_cmd_output(exit_code=0, content='git diff content', command='git apply'),
     ]
 
     result = await complete_runtime(mock_runtime, 'base_commit_hash')
@@ -614,11 +604,7 @@ def test_guess_success():
         title='Test Issue',
         body='This is a test issue',
     )
-    mock_history = [
-        create_cmd_output(
-            exit_code=0, content='', command_id=1, command='cd /workspace'
-        )
-    ]
+    mock_history = [create_cmd_output(exit_code=0, content='', command='cd /workspace')]
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
 
     mock_completion_response = MagicMock()
@@ -758,11 +744,7 @@ def test_guess_success_negative_case():
         title='Test Issue',
         body='This is a test issue',
     )
-    mock_history = [
-        create_cmd_output(
-            exit_code=0, content='', command_id=1, command='cd /workspace'
-        )
-    ]
+    mock_history = [create_cmd_output(exit_code=0, content='', command='cd /workspace')]
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
 
     mock_completion_response = MagicMock()
@@ -795,11 +777,7 @@ def test_guess_success_invalid_output():
         title='Test Issue',
         body='This is a test issue',
     )
-    mock_history = [
-        create_cmd_output(
-            exit_code=0, content='', command_id=1, command='cd /workspace'
-        )
-    ]
+    mock_history = [create_cmd_output(exit_code=0, content='', command='cd /workspace')]
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
 
     mock_completion_response = MagicMock()
