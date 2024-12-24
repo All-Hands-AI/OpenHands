@@ -132,7 +132,6 @@ class Session:
         try:
             runtime_manager._config = self.config
             await self.agent_session.start(
-                runtime_name=self.config.runtime,
                 agent=agent,
                 max_iterations=max_iterations,
                 max_budget_per_task=self.config.max_budget_per_task,

@@ -11,7 +11,6 @@ from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction
 from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
-from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.runtime.runtime_manager import RuntimeManager
 
@@ -62,7 +61,6 @@ class AgentSession:
 
     async def start(
         self,
-        runtime_name: str,
         agent: Agent,
         max_iterations: int,
         max_budget_per_task: float | None = None,
@@ -73,7 +71,6 @@ class AgentSession:
     ):
         """Starts the Agent session
         Parameters:
-        - runtime_name: The name of the runtime associated with the session
         - agent:
         - max_iterations:
         - max_budget_per_task:
@@ -88,7 +85,6 @@ class AgentSession:
         asyncio.get_event_loop().run_in_executor(
             None,
             self._start_thread,
-            runtime_name,
             agent,
             max_iterations,
             max_budget_per_task,
@@ -107,7 +103,6 @@ class AgentSession:
 
     async def _start(
         self,
-        runtime_name: str,
         agent: Agent,
         max_iterations: int,
         max_budget_per_task: float | None = None,
@@ -122,7 +117,6 @@ class AgentSession:
         self._initializing = True
         self._create_security_analyzer(runtime_manager.config.security.security_analyzer)
         await self._create_runtime(
-            runtime_name=runtime_name,
             agent=agent,
             github_token=github_token,
             selected_repository=selected_repository,
@@ -191,7 +185,6 @@ class AgentSession:
 
     async def _create_runtime(
         self,
-        runtime_name: str,
         agent: Agent,
         github_token: str | None = None,
         selected_repository: str | None = None,
@@ -199,15 +192,11 @@ class AgentSession:
         """Creates a runtime instance
 
         Parameters:
-        - runtime_name: The name of the runtime associated with the session
         - agent:
         """
 
         if self.runtime is not None:
             raise RuntimeError('Runtime already created')
-
-        logger.debug(f'Initializing runtime `{runtime_name}` now...')
-        runtime_cls = get_runtime_cls(runtime_name)
 
         # FIXME: this sleep is a terrible hack.
         # This is to give the websocket a second to connect, so that
@@ -217,7 +206,6 @@ class AgentSession:
 
         try:
             self.runtime = await runtime_manager.create_runtime(
-                runtime_class=runtime_cls,
                 event_stream=self.event_stream,
                 sid=self.sid,
                 plugins=agent.sandbox_plugins,
@@ -226,10 +214,6 @@ class AgentSession:
             )
         except AgentRuntimeUnavailableError as e:
             logger.error(f'Runtime initialization failed: {e}', exc_info=True)
-            if self._status_callback:
-                self._status_callback(
-                    'error', 'STATUS$ERROR_RUNTIME_DISCONNECTED', str(e)
-                )
             return
 
         self.runtime.clone_repo(github_token, selected_repository)

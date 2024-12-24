@@ -1,9 +1,10 @@
-from typing import Dict, List, Optional, Type
+from typing import Dict, List, Optional
 
 from openhands.core.config import AppConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
+from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.singleton import Singleton
@@ -20,7 +21,6 @@ class RuntimeManager(metaclass=Singleton):
 
     async def create_runtime(
         self,
-        runtime_class: Type[Runtime],
         event_stream: EventStream,
         sid: str,
         plugins: Optional[List[PluginRequirement]] = None,
@@ -32,6 +32,8 @@ class RuntimeManager(metaclass=Singleton):
         if sid in self._runtimes:
             raise RuntimeError(f'Runtime with ID {sid} already exists')
 
+        runtime_class = get_runtime_cls(self.config.runtime)
+        logger.debug(f'Initializing runtime: {runtime_class.__name__}')
         runtime = runtime_class(
             config=self.config,
             event_stream=event_stream,
