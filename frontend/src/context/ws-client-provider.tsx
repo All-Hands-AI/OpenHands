@@ -83,6 +83,7 @@ export function WsClientProvider({
     if (!sio) {
       return;
     }
+    sio.io.opts.query = sio.io.opts.query || {};
     sio.io.opts.query.latest_event_id = lastEventRef.current?.id;
   }
 
