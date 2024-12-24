@@ -314,7 +314,7 @@ print(file_editor(command='undo_edit', path='/openhands/workspace/test.txt'))
 
 def test_file_read_and_edit_via_oh_aci(runtime_cls, run_as_openhands):
     runtime = _load_runtime(None, runtime_cls, run_as_openhands)
-    sandbox_dir = '/workspace'
+    sandbox_dir = '/openhands/workspace'
 
     actions = [
         {
