@@ -21,7 +21,7 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
-from openhands.server.session.agent_session import AgentSession
+from openhands.server.session.agent_session import AgentSession, runtime_manager
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_init_data_filename
@@ -130,7 +130,7 @@ class Session:
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
         try:
-            self.agent_session.config = self.config
+            runtime_manager._config = self.config
             await self.agent_session.start(
                 runtime_name=self.config.runtime,
                 agent=agent,

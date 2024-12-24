@@ -14,6 +14,8 @@ from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.runtime.runtime_manager import RuntimeManager
+
+runtime_manager = RuntimeManager(AppConfig())
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_async_from_sync, call_sync_from_async
@@ -57,7 +59,6 @@ class AgentSession:
         self.event_stream = EventStream(sid, file_store)
         self.file_store = file_store
         self._status_callback = status_callback
-        self.config: Optional[AppConfig] = None
 
     async def start(
         self,
@@ -119,9 +120,6 @@ class AgentSession:
             logger.warning('Session closed before starting')
             return
         self._initializing = True
-        if self.config is None:
-            raise RuntimeError("AgentSession not initialized with config")
-        runtime_manager = RuntimeManager(self.config)
         self._create_security_analyzer(runtime_manager.config.security.security_analyzer)
         await self._create_runtime(
             runtime_name=runtime_name,
@@ -170,9 +168,6 @@ class AgentSession:
             end_state.save_to_session(self.sid, self.file_store)
             await self.controller.close()
         if self.runtime is not None:
-            if self.config is None:
-                raise RuntimeError("AgentSession not initialized with config")
-            runtime_manager = RuntimeManager(self.config)
             runtime_manager.destroy_runtime(self.sid)
         if self.security_analyzer is not None:
             await self.security_analyzer.close()
@@ -220,9 +215,6 @@ class AgentSession:
         # We should find a better way to plumb status messages through.
         await asyncio.sleep(1)
 
-        if self.config is None:
-            raise RuntimeError("AgentSession not initialized with config")
-        runtime_manager = RuntimeManager(self.config)
         try:
             self.runtime = await runtime_manager.create_runtime(
                 runtime_class=runtime_cls,
