@@ -1,5 +1,4 @@
 from typing import Dict, List, Optional, Type
-from uuid import uuid4
 
 from openhands.core.config import AppConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
@@ -49,7 +48,7 @@ class RuntimeManager(metaclass=Singleton):
             raise
 
         self._runtimes[sid] = runtime
-        logger.info(f"Created runtime with ID: {sid}")
+        logger.info(f'Created runtime with ID: {sid}')
         return runtime
 
     def get_runtime(self, runtime_id: str) -> Optional[Runtime]:
@@ -63,7 +62,7 @@ class RuntimeManager(metaclass=Singleton):
         if runtime:
             runtime.close()
             del self._runtimes[runtime_id]
-            logger.info(f"Destroyed runtime with ID: {runtime_id}")
+            logger.info(f'Destroyed runtime with ID: {runtime_id}')
             return True
         return False
 
