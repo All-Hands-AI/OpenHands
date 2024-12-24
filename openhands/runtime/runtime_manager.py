@@ -6,7 +6,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
-from openhands.utils.singleton import Singleton
+from openhands.runtime.utils.singleton import Singleton
 
 
 class RuntimeManager(metaclass=Singleton):
