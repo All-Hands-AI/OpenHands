@@ -35,7 +35,8 @@ from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
-from openhands.runtime.runtime_manager import RuntimeManager, ContainerInfo
+from openhands.runtime.container import ContainerInfo
+from openhands.runtime.impl.eventstream.runtime_manager import EventStreamRuntimeManager
 from openhands.runtime.utils.log_streamer import LogStreamer
 from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.runtime_build import build_runtime_image
@@ -115,7 +116,7 @@ class EventStreamRuntime(Runtime):
             )
 
     async def connect(self):
-        runtime_manager = RuntimeManager(self.config)
+        runtime_manager = EventStreamRuntimeManager(self.config)
         self.send_status_message('STATUS$STARTING_RUNTIME')
         
         try:
@@ -197,8 +198,8 @@ class EventStreamRuntime(Runtime):
             rm_all_containers = self.config.sandbox.rm_all_containers
 
         if not (self.config.sandbox.keep_runtime_alive or self.attach_to_existing):
-            runtime_manager = RuntimeManager(self.config)
-            runtime_manager.cleanup_container(self.sid, remove_all=rm_all_containers)
+            runtime_manager = EventStreamRuntimeManager(self.config)
+            runtime_manager._cleanup_container(self.sid, remove_all=rm_all_containers)
 
     def run_action(self, action: Action) -> Observation:
         if isinstance(action, FileEditAction):
