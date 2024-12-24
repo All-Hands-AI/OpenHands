@@ -349,8 +349,8 @@ jobs:
             } else if (logContent.includes(noChangesMessage)) {
               github.rest.issues.createComment({
                 issue_number: issueNumber,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
+                owner: process.env.TARGET_REPO_OWNER,
+                repo: process.env.TARGET_REPO_NAME,
                 body: `The workflow to fix this issue encountered an error. Openhands failed to create any code changes.`
               });
               process.env.AGENT_RESPONDED = 'true';
