@@ -13,6 +13,7 @@ from openhands.events.event import EventSource
 from openhands.events.stream import EventStream
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
+from openhands.runtime.runtime_manager import RuntimeManager
 from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_async_from_sync, call_sync_from_async
@@ -171,6 +172,7 @@ class AgentSession:
             await self.controller.close()
         if self.runtime is not None:
             from openhands.runtime.runtime_manager import RuntimeManager
+
             runtime_manager = RuntimeManager()
             runtime_manager.destroy_runtime(self.sid)
         if self.security_analyzer is not None:
@@ -208,7 +210,6 @@ class AgentSession:
         - config:
         - agent:
         """
-        from openhands.runtime.runtime_manager import RuntimeManager
 
         if self.runtime is not None:
             raise RuntimeError('Runtime already created')
